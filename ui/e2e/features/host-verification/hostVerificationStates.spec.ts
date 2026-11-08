@@ -60,6 +60,13 @@ test.describe('@ci host Get Verified states', () => {
     const resubmit = page.getByRole('button', { name: 'Resubmit' });
     await expect(resubmit).toBeEnabled({ timeout: 20_000 });
 
+    // Picking a file can race the dialog's dismiss handling; keep editing if it prompts.
+    const guard = page.getByRole('alertdialog', { name: /Save your changes\?/i });
+    if (await guard.isVisible().catch(() => false)) {
+      await page.getByRole('button', { name: 'Keep editing' }).click();
+      await expect(guard).toHaveCount(0);
+    }
+
     const submitResponse = page.waitForResponse(
       (res) =>
         res.request().method() === 'POST' &&

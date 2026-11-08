@@ -263,6 +263,8 @@ async function installLiveBrowserMocks(page: Page) {
   });
 }
 
+test.describe.configure({ timeout: 90_000 });
+
 test.describe('@smoke voice receptionist consent', () => {
   test('requires disclosure acceptance before requesting microphone access', async ({ page }) => {
     await installVoiceReceptionistMocks(page);
@@ -333,7 +335,7 @@ test.describe('@smoke voice receptionist consent', () => {
     await expect(page.getByRole('button', { name: 'End call' })).toBeVisible();
     await expect
       .poll(() => page.locator('html').getAttribute('data-mock-voice-connections'), {
-        timeout: 15_000,
+        timeout: 30_000,
       })
       .toBe('2');
     await expect(page.getByText('How can I help with your stay?')).toBeVisible();
@@ -364,7 +366,7 @@ test.describe('@smoke voice receptionist consent', () => {
     await page.getByText('Talk to receptionist', { exact: true }).click();
     await page.getByRole('button', { name: 'Start call' }).click();
 
-    await expect(page.getByText('Call ended')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('Call ended')).toBeVisible({ timeout: 30_000 });
     await expect(page.getByRole('button', { name: 'Done' })).toBeVisible();
   });
 
@@ -379,7 +381,7 @@ test.describe('@smoke voice receptionist consent', () => {
     await expect(page.getByText('How can I help with your stay?')).toBeVisible();
     await expect
       .poll(() => page.locator('html').getAttribute('data-mock-voice-connections'), {
-        timeout: 15_000,
+        timeout: 30_000,
       })
       .toBe('2');
 

@@ -159,12 +159,12 @@ export function GuestFeatureShowcase({ className, stageClassName }: GuestFeature
                 className={cn(
                   'focus-visible:ring-ring relative flex min-h-[52px] flex-col items-center justify-center gap-1 overflow-hidden rounded-lg px-0.5 pb-2 pt-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2',
                   selected
-                    ? 'bg-primary/10 text-primary'
+                    ? 'bg-primary/10 text-primary-strong'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
                 <Icon className="size-4" aria-hidden />
-                <span className="text-[9.5px] font-semibold leading-none tracking-tight sm:text-[11px] sm:tracking-normal">
+                <span className="text-foreground text-[9.5px] font-semibold leading-none tracking-tight sm:text-[11px] sm:tracking-normal">
                   {chapter.label}
                 </span>
                 {selected ? (
