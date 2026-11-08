@@ -152,8 +152,10 @@ When a property or parking listing's hosting contract nears expiry, is in grace,
 
 ---
 
-- Modal persuasion when Tier 2 is editable: benefit bullets + compact **Recommended badge preview** live **inside** the Tier 2 card, not above Tier 1. Hidden on Tier 1 changes-requested and when Tier 2 is pending/approved.
-- **Tier rank cards** in the modal header: clickable Verified / Recommended cards with status badges; one tier panel visible at a time. Opens on the most relevant step (e.g. Recommended when Tier 1 is approved).
+- Modal persuasion when Tier 2 is editable: a **Why upgrade** card (benefit bullets + compact **Recommended badge preview**) sits **below** the Documents card, so the required upload is the first thing the host sees. Hidden on Tier 1 changes-requested and when Tier 2 is pending/approved.
+- **Tier switcher** in the modal header: two compact clickable cards (level mark, tier name, status dot + short label such as `In review` / `Approved` / `Not started`). One tier panel is visible at a time, so status is shown once per tier instead of repeating a full status card. Opens on the most relevant step (e.g. Recommended when Tier 1 is approved).
+- **Panel anatomy** (both tiers): the content is a short stack of section cards, each with a title, one optional one-line description, and a right-side count. Tier 1 order is review notes → `Documents to upload` (when the host can upload) → `Submitted documents` → `Listings`. Tier 2 order is `Documents` → `Previous submission` (only when rejected) → `Why upgrade` → `Listings`. Status appears once per panel: a banner for approved / pending, or an inline reason banner for changes requested / declined.
+- **Upload rows** use the compact `DocumentUploadDropzone` variant (one-line row) inside the modal; the full drop box stays for onboarding. Listing proof uploads appear inline under their listing row with an `Add proof for <listing>` caption.
 - Modal title follows the active step: **Get Verified** / **Get Recommended**; **Changes requested** in forced resubmit (stepper hidden).
 - On phone/tablet the modal is a **bottom sheet** (`ResponsiveModal` `sheetLayout="split"`): sticky header + footer, middle section scrolls so long Verified uploads are not clipped.
 - Sidebar CTA uses a soft primary wash and “Earn your Recommended badge.” when Tier 2 is not yet approved. Stays visible as **Verification** when both tiers are approved (status view; contract renewals / reverification later). Shown on **org** admin routes only — property/parking sidebars use the listing verification CTA instead.

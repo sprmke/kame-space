@@ -29,6 +29,10 @@ type Props = {
   tierStatus: OrgVerificationStatus;
   /** Host Tier 1 vs Recommended Tier 2 document ids and asset URLs. */
   tier?: 'host' | 'recommended';
+  /** Own rounded border. Off when the row list sits inside a section card. */
+  framed?: boolean;
+  /** Hide Missing/Optional flags — e.g. a "previously submitted" recap. */
+  hideGaps?: boolean;
 };
 
 type DocRowVariant = 'uploaded' | 'approved' | 'missing' | 'optional';
@@ -68,9 +72,11 @@ function previewUrlForItem(
 
 function docRowVariant(
   item: VerificationChecklistItem,
-  tierStatus: OrgVerificationStatus
+  tierStatus: OrgVerificationStatus,
+  showGaps: boolean
 ): DocRowVariant {
   if (!item.complete) {
+    if (!showGaps) return 'optional';
     return item.optional ? 'optional' : 'missing';
   }
   if (tierStatus === 'approved') return 'approved';
@@ -142,6 +148,8 @@ export function VerificationTier1SubmittedDocs({
   items,
   tierStatus,
   tier = 'host',
+  framed = true,
+  hideGaps = false,
 }: Props) {
   const { data, isLoading } = useOrgVerificationAssets(orgId, enabled);
   const [fullView, setFullView] = useState<VerificationPreviewAsset | null>(null);
@@ -154,18 +162,26 @@ export function VerificationTier1SubmittedDocs({
       : hostTierDocumentChecklistItems(items);
   const assetUrls = data?.assetUrls;
   const hasPreviewItems = documentItems.some((item) => previewUrlForItem(item.id, assetUrls));
+  // A submitted tier can have optional rows blank. "Missing" only applies while the
+  // host can still upload, so pending/approved lists never flag a gap.
+  const showGaps = tierStatus === 'none' || tierStatus === 'rejected';
 
   if (documentItems.length === 0) return null;
 
   return (
     <>
-      <div className="border-border overflow-hidden rounded-xl border">
+      <div
+        className={cn(
+          'overflow-hidden',
+          framed && 'border-border rounded-xl border',
+          !framed && 'border-border/70 border-t'
+        )}
+      >
         <ul className="divide-border divide-y" aria-label="Submitted verification documents">
           {documentItems.map((item) => {
             const previewUrl = previewUrlForItem(item.id, assetUrls);
-            const variant = docRowVariant(item, tierStatus);
+            const variant = docRowVariant(item, tierStatus, showGaps && !hideGaps);
             const canView = Boolean(previewUrl);
-            const showGapLabel = variant === 'missing' || variant === 'optional';
 
             return (
               <li key={item.id}>
@@ -190,15 +206,9 @@ export function VerificationTier1SubmittedDocs({
                     </p>
                   </div>
 
-                  {showGapLabel ? (
-                    <span
-                      className={cn(
-                        'shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium',
-                        variant === 'missing' && 'bg-destructive/10 text-destructive',
-                        variant === 'optional' && 'bg-muted text-muted-foreground'
-                      )}
-                    >
-                      {variant === 'missing' ? 'Missing' : 'Optional'}
+                  {variant === 'missing' ? (
+                    <span className="text-destructive bg-destructive/10 shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium">
+                      Missing
                     </span>
                   ) : null}
 
@@ -215,10 +225,6 @@ export function VerificationTier1SubmittedDocs({
                       <Eye className="size-3.5" aria-hidden />
                       View
                     </Button>
-                  ) : variant === 'uploaded' || variant === 'approved' ? (
-                    <span className="text-muted-foreground w-[3.25rem] shrink-0 text-center text-[11px]">
-                      -
-                    </span>
                   ) : null}
                 </div>
               </li>

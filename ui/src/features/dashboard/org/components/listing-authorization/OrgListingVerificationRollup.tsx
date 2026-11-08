@@ -6,6 +6,7 @@ import { ChevronRight, Home } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { OnboardingProofUpload } from '@/features/dashboard/org/components/onboarding/OnboardingProofUpload';
+import { VerificationSectionCard } from '@/features/dashboard/org/components/verification/VerificationSectionCard';
 import { VerificationStatusBadge } from '@/features/dashboard/org/components/verification/VerificationStatusBadge';
 import {
   useListingAuthorizationAssets,
@@ -87,7 +88,10 @@ function ListingRollupProofUpload({
   };
 
   return (
-    <div className="space-y-3 px-3 pb-3 pt-1 sm:px-4">
+    <div className="border-border/70 bg-muted/20 space-y-2 border-t px-3 py-3 sm:px-4">
+      <p className="text-muted-foreground text-[11px] font-medium leading-none">
+        Add proof for {row.name}
+      </p>
       <OnboardingProofUpload
         id={`${row.listingKind}-${row.listingId}-rollup-proof`}
         label={LISTING_VERIFICATION_DOC_LABELS.proof}
@@ -95,6 +99,7 @@ function ListingRollupProofUpload({
         file={null}
         previewUrl={previewUrl}
         uploading={upload.isPending}
+        compact
         onFileChange={(file) => {
           if (file) void handleUpload(file);
         }}
@@ -117,46 +122,51 @@ export function OrgListingVerificationRollup({
 
   if (!enabled) return null;
 
-  return (
-    <section aria-labelledby="org-listing-verification-rollup-title" className="space-y-3">
-      <div className="min-w-0 space-y-1">
-        <h3
-          id="org-listing-verification-rollup-title"
-          className="text-foreground text-sm font-semibold leading-tight"
-        >
-          Listings
-        </h3>
-        <p className="text-muted-foreground text-xs leading-relaxed">
-          {readOnly
-            ? 'Per-listing authorization is reviewed as separate queue rows.'
-            : hideOpen
-              ? 'Upload proof for each listing that still needs it.'
-              : 'Per-listing authorization status. Open a listing to submit or update its documents.'}
-        </p>
-      </div>
+  const needsAction = listings.filter((row) => row.baseStatus !== 'approved').length;
 
+  return (
+    <VerificationSectionCard
+      title="Listings"
+      description={
+        readOnly
+          ? 'Reviewed as separate queue rows.'
+          : hideOpen
+            ? 'Upload proof for each listing that still needs it.'
+            : 'Each listing is verified separately.'
+      }
+      meta={
+        needsAction > 0 ? (
+          <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+            {needsAction} to do
+          </span>
+        ) : null
+      }
+      bodyClassName="px-0 pb-0"
+    >
       {isLoading ? (
-        <ListRowsSkeleton rows={3} label="Loading listings" />
+        <div className="px-4 pb-4">
+          <ListRowsSkeleton rows={2} label="Loading listings" />
+        </div>
       ) : listings.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No listings yet.</p>
+        <p className="text-muted-foreground px-4 pb-4 text-[13px]">No listings yet.</p>
       ) : (
-        <ul className="border-border divide-border divide-y overflow-hidden rounded-xl border">
+        <ul className="divide-border border-border/70 divide-y border-t">
           {listings.map((row) => {
             const showProofUpload = allowUpload && !readOnly && !row.hasProof;
             return (
               <li key={`${row.listingKind}-${row.listingId}`}>
-                <div className="flex min-h-[44px] items-center gap-3 px-3 py-2.5 sm:px-4">
-                  <span className="bg-muted text-muted-foreground flex size-8 shrink-0 items-center justify-center rounded-full">
+                <div className="flex min-h-[52px] items-center gap-2.5 px-3 py-2.5 sm:px-4">
+                  <span className="bg-muted text-muted-foreground flex size-7 shrink-0 items-center justify-center rounded-full">
                     <Home className="size-3.5" aria-hidden />
                   </span>
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                      <p className="text-foreground truncate text-sm font-medium">{row.name}</p>
-                      <span className="text-muted-foreground text-[11px]">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-foreground truncate text-[13px] font-medium leading-tight">
+                      {row.name}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <span className="text-muted-foreground text-[11px] leading-none">
                         {listingKindLabel(row.listingKind)}
                       </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
                       <VerificationStatusBadge
                         status={row.baseStatus}
                         kind={row.baseRejectionKind}
@@ -179,9 +189,9 @@ export function OrgListingVerificationRollup({
                   {!readOnly && !hideOpen ? (
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      className="min-h-[36px] shrink-0 gap-1 px-2.5 text-xs"
+                      className="min-h-[36px] shrink-0 gap-0.5 px-2 text-xs"
                       onClick={() => navigate(listingOpenPath(orgSlug, row))}
                     >
                       Open
@@ -197,6 +207,6 @@ export function OrgListingVerificationRollup({
           })}
         </ul>
       )}
-    </section>
+    </VerificationSectionCard>
   );
 }
