@@ -1280,3 +1280,38 @@ Yes. In New booking, tick **Paid outside Kame Space**. The booking confirms with
 - source: docs/guides/routes/org/parking/finance.md
 
 Parking Finance shows a read-only **Marketplace payouts** section with the guest price, gross, fee, net and payout status. Payouts are sent manually by the Kame Space team.
+### Why does the guest ID check ask for a phone camera?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/verify.md
+- order: 910
+
+A live photo is much harder to fake than a gallery upload, and it reads the QR on a PhilSys ID directly. Guests can still upload a photo if their camera is blocked, and their result is then reviewed by a person.
+
+### What do the ID badges mean on a booking?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/org/property/bookings-detail.md
+- order: 911
+
+Verified means the document was proven genuine and matched to the guest. Partially verified means it was readable and the person was checked on the device. Needs review means it was captured but not confirmed, so you should look at it. Not accepted means it failed a hard check.
+
+### Do you still send the ID with the GAF request?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/form.md
+- order: 912
+
+Yes. The captured photo is copied into the same place an uploaded ID used to go, so the building receives it the same way.
+
+### How long do you keep ID photos?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/verify.md
+- order: 913
+
+Seven days by default. After that only the result and the guest's name stay with the booking. A guest can delete their verification from their profile at any time.

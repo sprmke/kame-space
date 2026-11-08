@@ -175,7 +175,12 @@
     "seed:verify-ui": "node scripts/dev/verify-local-seed-ui.mjs",
     "check:flaky-quarantine": "node scripts/dev/check-flaky-quarantine.mjs",
     "check:unit-test-quality": "node scripts/dev/check-unit-test-quality.mjs",
-    "check:edge-test-coverage": "node scripts/dev/check-edge-test-coverage.mjs"
+    "check:edge-test-coverage": "node scripts/dev/check-edge-test-coverage.mjs",
+    "test:e2e:host-verification": "playwright test ui/e2e/features/host-verification --project=chromium --grep-invert \"side by side\"",
+    "test:e2e:host-verification:headed": "playwright test ui/e2e/features/host-verification --project=chromium --grep-invert \"side by side\" --headed",
+    "test:e2e:host-verification:side-by-side": "playwright test ui/e2e/features/host-verification/flows/hostRegistrationReviewTwoWindows.spec.ts --project=chromium-side-by-side",
+    "test:e2e:host-verification:side-by-side:slow": "PLAYWRIGHT_SLOW_MO=700 PLAYWRIGHT_DEMO_PAUSE_MS=1800 playwright test ui/e2e/features/host-verification/flows/hostRegistrationReviewTwoWindows.spec.ts --project=chromium-side-by-side",
+    "test:e2e:host-verification:side-by-side:video": "PLAYWRIGHT_RECORD_VIDEO=1 PLAYWRIGHT_SLOW_MO=700 PLAYWRIGHT_DEMO_PAUSE_MS=1800 playwright test ui/e2e/features/host-verification/flows/hostRegistrationReviewTwoWindows.spec.ts --project=chromium-side-by-side"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",

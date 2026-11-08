@@ -508,3 +508,26 @@ Endpoints: `cancel-booking` (host), `respond-cancellation-request` (approve/decl
 - [`.cursor/rules/booking-workflow.mdc`](../../../../../.cursor/rules/booking-workflow.mdc) — canonical status enum, transition graph, side-effect matrix
 - [`.cursor/rules/admin-auth.mdc`](../../../../../.cursor/rules/admin-auth.mdc) §5 — workflow side effects + property email automations
 - [`docs/archive/planning/NEW_FLOW_PLAN.md`](../../../../archive/planning/NEW_FLOW_PLAN.md) §3.1
+
+---
+
+## Identity verdict on guest rows (2026-11-07)
+
+Each guest slot can carry a live identity verdict. `VerificationResultBadge` renders
+`Verified` / `Partially verified` / `Needs review` / `Not accepted` / `Expired`, with a
+tooltip that says what was actually checked.
+
+- Reading a verdict uses the existing `bookings.detail.guests:view` leaf.
+- Overriding a blocking identity flag uses the existing `aiVerdictOverride` path, not a second
+  mechanism.
+- The GAF request still attaches `valid_id_url`; the live path writes that same column.
+- The capture itself is not shown in the booking gallery: it lives in `identity-captures` and
+  expires in 7 days. The `valid-ids` copy is what the host already sees.
+
+**Host Q&A**
+
+- Q: Why does a row say "Needs review"?
+  A: The capture worked but no strong proof was produced (for example the liveness check could
+  not run). Nothing is blocked; it is a prompt to look.
+- Q: Can I still proceed if the ID is flagged?
+  A: Yes, with the same override used for receipts, and it is recorded in the activity log.
