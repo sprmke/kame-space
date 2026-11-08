@@ -28,18 +28,16 @@ import {
   useSceneDuration,
 } from '@/features/guest/marketing/for-hosts/components/film/FilmPrimitives';
 import { FilmShell } from '@/features/guest/marketing/for-hosts/components/film/FilmShell';
+import { KameSpaceBrandIcon } from '@/components/branding/KameSpaceBrandIcon';
 
-import { platformMarkInitial, platformWordmarkParts } from '@/lib/platformBranding';
+import { platformWordmarkParts } from '@/lib/platformBranding';
 
 const wordmark = platformWordmarkParts();
-const markInitial = platformMarkInitial();
 
 function BrandLockup({ frame, delay = 0 }: { frame: number; delay?: number }) {
   return (
     <div className="flex items-center gap-3" style={reveal(frame, delay)}>
-      <span className="bg-primary-strong text-primary-foreground flex size-12 items-center justify-center rounded-2xl text-xl font-black shadow-lg">
-        {markInitial || 'K'}
-      </span>
+      <KameSpaceBrandIcon className="size-12" />
       <p className="text-foreground text-[28px] font-extrabold tracking-tight">
         {wordmark ? (
           <>

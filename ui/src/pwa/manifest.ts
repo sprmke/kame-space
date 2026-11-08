@@ -76,22 +76,22 @@ export function buildWebAppManifest(platformAppName: string): WebAppManifest {
     categories: ['business', 'productivity', 'travel'],
     launch_handler: { client_mode: ['navigate-existing', 'auto'] },
     icons: [
-      { src: '/icons/pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: '/icons/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icons/pwa-192.png?v=f5', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/pwa-512.png?v=f5', sizes: '512x512', type: 'image/png', purpose: 'any' },
       {
-        src: '/icons/pwa-maskable-192.png',
+        src: '/icons/pwa-maskable-192.png?v=f5',
         sizes: '192x192',
         type: 'image/png',
         purpose: 'maskable',
       },
       {
-        src: '/icons/pwa-maskable-512.png',
+        src: '/icons/pwa-maskable-512.png?v=f5',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable',
       },
       {
-        src: '/icons/monochrome-512.png',
+        src: '/icons/monochrome-512.png?v=f5',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'monochrome',

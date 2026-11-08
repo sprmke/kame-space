@@ -75,6 +75,31 @@ describe('injectMetaIntoHtml', () => {
     expect(html).not.toContain(DEFAULT_DESCRIPTION);
   });
 
+  it('uses the branded card when a listing has no image', () => {
+    const html = injectMetaIntoHtml(shell, {
+      title: 'Condo',
+      description: 'A stay',
+      canonicalUrl: 'https://example.com/properties/a',
+    });
+    expect(html).toContain('https://example.com/brand/kame-space-social-f5.png');
+    expect(html).toContain('content="summary_large_image"');
+    expect(html).toContain('property="og:image:width" content="1200"');
+  });
+
+  it('replaces default card metadata with the listing image without stale dimensions', () => {
+    const indexHtml = readFileSync(resolve(__dirname, '../../../index.html'), 'utf8');
+    const html = injectMetaIntoHtml(indexHtml, {
+      title: 'Condo',
+      description: 'A stay',
+      canonicalUrl: 'https://example.com/properties/a',
+      image: 'https://example.com/condo.jpg',
+    });
+    expect(html.match(/property="og:image"/g)).toHaveLength(1);
+    expect(html.match(/name="twitter:image"/g)).toHaveLength(1);
+    expect(html).not.toContain('kame-space-social-f5.png');
+    expect(html).not.toContain('og:image:width');
+  });
+
   it('truncates long descriptions in tags', () => {
     const html = injectMetaIntoHtml(shell, {
       title: 't',

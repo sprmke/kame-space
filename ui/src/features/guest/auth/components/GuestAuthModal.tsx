@@ -6,6 +6,7 @@ import { AuthDivider } from '@/features/guest/auth/components/AuthDivider';
 import { useGuestAuthActions } from '@/features/guest/auth/hooks/useGuestAuthActions';
 
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { KameSpaceBrandIcon } from '@/components/branding/KameSpaceBrandIcon';
 import { useCaptchaToken } from '@/components/security/useCaptchaToken';
 import { Button } from '@/components/ui/button';
 import { SpinnerIcon } from '@/components/ui/icons';
@@ -129,9 +130,7 @@ export function GuestAuthModal({
         className="gap-0 p-0 sm:max-w-[min(calc(100vw-1.5rem),26rem)]"
       >
         <ResponsiveModalHeader className="border-border/60 space-y-4 border-b px-4 pb-4 pt-5 text-center sm:px-6">
-          <div className="from-primary to-primary/80 mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br shadow-md">
-            <span className="text-lg font-bold text-white">K</span>
-          </div>
+          <KameSpaceBrandIcon className="mx-auto h-11 w-11" />
           <ResponsiveModalTitle className="text-center text-lg font-bold sm:text-xl">
             {step === 'email' ? 'Log in or sign up' : 'Confirm your email'}
           </ResponsiveModalTitle>
