@@ -43,7 +43,7 @@ Deno.test('campaignCode round-trips through shortCodeFromCampaign', () => {
 });
 
 Deno.test('buildTrackedUrl: sets all three params and never duplicates them', () => {
-  const once = buildTrackedUrl('https://kamespace.com/p/kame-home', {
+  const once = buildTrackedUrl('https://example.com/p/demo-stay', {
     channel: 'instagram',
     shortCode: 'abcd2345',
   });
@@ -55,9 +55,9 @@ Deno.test('buildTrackedUrl: sets all three params and never duplicates them', ()
 
 Deno.test('stripTracking: removes only our params and keeps the rest', () => {
   const stripped = stripTracking(
-    'https://kamespace.com/p/kame-home?utm_source=instagram&utm_medium=social&utm_campaign=ks-abcd2345&guests=4'
+    'https://example.com/p/demo-stay?utm_source=instagram&utm_medium=social&utm_campaign=ks-abcd2345&guests=4'
   );
-  assertEquals(stripped, 'https://kamespace.com/p/kame-home?guests=4');
+  assertEquals(stripped, 'https://example.com/p/demo-stay?guests=4');
 });
 
 Deno.test('sanitizeAttribution: keeps an allow-listed shape and extracts the item code', () => {
@@ -66,7 +66,7 @@ Deno.test('sanitizeAttribution: keeps an allow-listed shape and extracts the ite
       utmSource: 'instagram',
       utmMedium: 'social',
       utmCampaign: 'ks-abcd2345',
-      landingAt: '/p/kame-home',
+      landingAt: '/p/demo-stay',
       email: 'guest@example.com',
     }),
     {
@@ -74,7 +74,7 @@ Deno.test('sanitizeAttribution: keeps an allow-listed shape and extracts the ite
       utmMedium: 'social',
       utmCampaign: 'ks-abcd2345',
       planItemCode: 'abcd2345',
-      landingAt: '/p/kame-home',
+      landingAt: '/p/demo-stay',
     }
   );
 });

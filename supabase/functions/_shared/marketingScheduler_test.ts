@@ -44,7 +44,7 @@ function input(overrides: Partial<SchedulerInput> = {}): SchedulerInput {
     opportunities: [opportunity()],
     settings: settings(),
     existingOpportunityKeys: new Set<string>(),
-    propertyName: 'Kame Home',
+    propertyName: 'Demo Stay',
     ...overrides,
   };
 }

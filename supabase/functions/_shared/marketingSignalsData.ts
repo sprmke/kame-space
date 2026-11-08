@@ -171,7 +171,8 @@ async function loadCalendarEvents(
     .select('id, scope, property_id, kind, name, starts_on, ends_on, weight')
     .gte('ends_on', from)
     .lte('starts_on', to)
-    .or(`scope.eq.platform,property_id.eq.${propertyId}`);
+    .or(`scope.eq.platform,property_id.eq.${propertyId}`)
+    .limit(200);
   if (error) {
     console.error('[marketing-planner] calendar events:', error);
     return [];
@@ -191,7 +192,10 @@ async function loadPlannerSettings(propertyId: string): Promise<PlannerSettingsR
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from('marketing_planner_settings')
-    .select('*')
+    .select(
+      'property_id, organization_id, goals, cadence_preset, cadence, channels, language, tone, ' +
+        'posting_windows, approval_mode, auto_plan, plan_weekday, plan_time, reminders, onboarded_at'
+    )
     .eq('property_id', propertyId)
     .maybeSingle();
   if (error) {
@@ -236,7 +240,8 @@ async function loadUsedOpportunityKeys(propertyId: string): Promise<Set<string>>
     .eq('property_id', propertyId)
     .is('deleted_at', null)
     .not('opportunity_key', 'is', null)
-    .not('status', 'in', '(skipped,expired,failed)');
+    .not('status', 'in', '(skipped,expired,failed)')
+    .limit(2000);
   if (error) {
     console.error('[marketing-planner] existing items:', error);
     return new Set();

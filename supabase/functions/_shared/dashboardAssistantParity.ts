@@ -380,6 +380,7 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'delete-parking': excluded('parking.settings', 'Irreversible delete'),
   'delete-property': excluded('property.settings', 'Irreversible delete'),
   'import-commit': excluded('property.bookings', 'CSV auto-commit'),
+  'marketing-planner': handoff('property.marketing', 'Marketing Planner build and item edits'),
   'marketing-templates': excluded('property.marketing', 'Template save / delete via chat'),
   'marketing-themes': excluded('property.marketing', 'Theme create / edit / delete via chat'),
   'property-templates-settings': excluded('property.templates', 'Long-form legal templates'),

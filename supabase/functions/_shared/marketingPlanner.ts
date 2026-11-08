@@ -9,13 +9,30 @@ import { addDaysYmd, manilaTodayYmd } from './calendarAvailabilityManila.ts';
 import { logActivity, type ActorContext } from './activityLog.ts';
 import { createServiceClient } from './orgAuth.ts';
 import { formatShortCode } from './marketingTrackedLinks.ts';
-import { PLAYBOOK_VERSION } from './marketingPlaybook.ts';
+import { MAX_ITEMS_PER_RUN, PLAYBOOK_VERSION } from './marketingPlaybook.ts';
 import { buildOpportunities, type PlannerOpportunity } from './marketingSignals.ts';
 import { loadPlannerInputs } from './marketingSignalsData.ts';
 import { scheduleItems, type PlannerItemDraft } from './marketingScheduler.ts';
 import type { PlannerClaims } from './marketingClaims.ts';
 
-export const PLANNER_RANGES = ['today', '3d', '5d', '7d', '14d'] as const;
+const PLAN_COLUMNS =
+  'id, property_id, organization_id, horizon_start, horizon_end, mode, trigger, playbook_version, ' +
+  'signals_snapshot, summary, ai_model, prompt_id, prompt_version, credits_consumed, created_by, ' +
+  'created_at, superseded_at';
+
+const PLAN_ITEM_COLUMNS =
+  'id, short_code, property_id, organization_id, plan_id, source, opportunity_type, opportunity_key, ' +
+  'title, pillar, objective, channel_kind, connection_id, manual_targets, format, scheduled_for, ' +
+  'post_by, target_from, target_to, claims, brief, status, status_reason, asset_kind, asset_id, ' +
+  'asset_version_id, publication_ids, tracked_url, posted_url, posted_at, skipped_reason, results, ' +
+  'created_by, created_at, updated_at, deleted_at';
+
+const SETTINGS_COLUMNS =
+  'property_id, organization_id, goals, cadence_preset, cadence, channels, language, tone, ' +
+  'posting_windows, approval_mode, auto_plan, plan_weekday, plan_time, reminders, onboarded_at, ' +
+  'created_at, updated_at, updated_by';
+
+export const PLANNER_RANGES =  = ['today', '3d', '5d', '7d', '14d'] as const;
 export type PlannerRange = (typeof PLANNER_RANGES)[number];
 
 const RANGE_DAYS: Record<PlannerRange, number> = {
@@ -177,7 +194,7 @@ export async function generatePlan(input: GeneratePlanInput): Promise<GeneratePl
       summary: buildPlanSummary(opportunities, inputs.horizonEnd),
       created_by: input.actor.userId ?? null,
     })
-    .select('*')
+    .select(PLAN_COLUMNS)
     .single();
   if (planError || !plan) {
     throw new Error(`Could not save the plan: ${planError?.message ?? 'unknown error'}`);
@@ -197,7 +214,8 @@ export async function generatePlan(input: GeneratePlanInput): Promise<GeneratePl
     const { data: inserted, error: itemError } = await supabase
       .from('marketing_plan_items')
       .insert(rows)
-      .select('*');
+      .select(PLAN_ITEM_COLUMNS)
+      .limit(MAX_ITEMS_PER_RUN);
     if (itemError) {
       throw new Error(`Could not save plan items: ${itemError.message}`);
     }
@@ -258,13 +276,14 @@ export async function listPlanItems(input: ListPlanInput): Promise<PlannerItemRo
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from('marketing_plan_items')
-    .select('*')
+    .select(PLAN_ITEM_COLUMNS)
     .eq('property_id', input.propertyId)
     .is('deleted_at', null)
     .gte('scheduled_for', `${input.from}T00:00:00+08:00`)
     .lte('scheduled_for', `${input.to}T23:59:59+08:00`)
     .not('status', 'in', '(skipped,expired)')
-    .order('scheduled_for', { ascending: true });
+    .order('scheduled_for', { ascending: true })
+    .limit(200);
   if (error) throw new Error(`Could not load the plan: ${error.message}`);
   return (data ?? []) as PlannerItemRow[];
 }
@@ -273,7 +292,7 @@ export async function latestPlan(propertyId: string): Promise<PlannerPlanRow | n
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from('marketing_plans')
-    .select('*')
+    .select(PLAN_COLUMNS)
     .eq('property_id', propertyId)
     .is('superseded_at', null)
     .order('created_at', { ascending: false })
@@ -287,7 +306,7 @@ async function loadItem(itemId: string, propertyId: string): Promise<PlannerItem
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from('marketing_plan_items')
-    .select('*')
+    .select(PLAN_ITEM_COLUMNS)
     .eq('id', itemId)
     .eq('property_id', propertyId)
     .is('deleted_at', null)
@@ -325,7 +344,7 @@ export async function updatePlanItem(input: {
     .update(update)
     .eq('id', input.itemId)
     .eq('property_id', input.propertyId)
-    .select('*')
+    .select(PLAN_ITEM_COLUMNS)
     .single();
   if (error || !data) throw new Error(`Could not update the item: ${error?.message ?? ''}`);
 
@@ -346,7 +365,7 @@ export async function skipPlanItem(input: {
     .update({ status: 'skipped', skipped_reason: input.reason.slice(0, 200) })
     .eq('id', input.itemId)
     .eq('property_id', input.propertyId)
-    .select('*')
+    .select(PLAN_ITEM_COLUMNS)
     .single();
   if (error || !data) throw new Error(`Could not skip the item: ${error?.message ?? ''}`);
 
@@ -380,7 +399,7 @@ export async function markPlanItemPosted(input: {
     })
     .eq('id', input.itemId)
     .eq('property_id', input.propertyId)
-    .select('*')
+    .select(PLAN_ITEM_COLUMNS)
     .single();
   if (error || !data) throw new Error(`Could not mark the item posted: ${error?.message ?? ''}`);
 
@@ -413,7 +432,7 @@ export async function getPlannerSettings(propertyId: string) {
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from('marketing_planner_settings')
-    .select('*')
+    .select(SETTINGS_COLUMNS)
     .eq('property_id', propertyId)
     .maybeSingle();
   if (error) throw new Error(`Could not load planner settings: ${error.message}`);
@@ -449,7 +468,7 @@ export async function savePlannerSettings(input: {
       },
       { onConflict: 'property_id' }
     )
-    .select('*')
+    .select(SETTINGS_COLUMNS)
     .single();
   if (error || !data) {
     throw new Error(`Could not save planner settings: ${error?.message ?? ''}`);
