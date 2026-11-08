@@ -79,7 +79,7 @@ export function BookingSteps({ stay }: { stay?: PublicPropertyListItem }) {
   const step = STEPS[active];
 
   return (
-    <section aria-labelledby="home-steps" className="bg-muted/40 relative">
+    <section aria-labelledby="home-steps" className="bg-foreground/[0.04] relative">
       <div ref={trackRef} className="relative" style={{ height: `${N * 80 + 20}vh` }}>
         <div className="sticky top-0 flex h-[100dvh] items-center overflow-hidden pb-20 pt-[calc(var(--public-nav-h)+0.5rem)] lg:pb-4">
           <div className="public-shell grid w-full items-center gap-5 lg:grid-cols-12 lg:gap-12">
@@ -262,7 +262,7 @@ function TripPreview({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.9 }}
                 transition={{ duration: 0.35, ease: STEP_EASE }}
-                className="bg-primary/10 text-primary mt-1 shrink-0 rounded-full px-3 py-1 text-xs font-semibold lg:text-sm"
+                className="bg-primary-strong text-primary-foreground mt-1 shrink-0 rounded-full px-3 py-1 text-xs font-semibold lg:text-sm"
               >
                 {step.pill}
               </motion.span>
@@ -287,7 +287,7 @@ function TripPreview({
           </div>
 
           {/* Scene */}
-          <div className="relative min-h-0 flex-1 overflow-hidden px-4 pt-4 lg:px-6 lg:pt-5 lg:pb-5">
+          <div className="relative min-h-0 flex-1 overflow-hidden px-4 pt-4 lg:px-6 lg:pb-5 lg:pt-5">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={active}

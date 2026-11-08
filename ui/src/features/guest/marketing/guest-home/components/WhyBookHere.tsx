@@ -252,7 +252,7 @@ function Row({
         <span
           className={cn(
             'flex size-10 shrink-0 items-center justify-center rounded-xl transition-[background-color,color,transform] duration-500',
-            done ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+            done ? 'bg-primary/10 text-primary-strong' : 'bg-muted text-muted-foreground',
             active && done && 'scale-105'
           )}
         >
@@ -443,7 +443,7 @@ function RemainingPill({ left, reduce }: { left: number; reduce: boolean }) {
     <span
       className={cn(
         'relative inline-flex h-7 shrink-0 items-center overflow-hidden rounded-full px-3 text-xs font-semibold tabular-nums transition-colors duration-500',
-        clear ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+        clear ? 'bg-primary-strong text-primary-foreground' : 'bg-muted text-muted-foreground'
       )}
     >
       <AnimatePresence mode="popLayout" initial={false}>
