@@ -6,7 +6,7 @@ import {
   expectNoUnnamedInteractiveControls,
 } from '../../shared/layoutAssertions';
 
-test.describe('@ci super admin system health', () => {
+test.describe('super admin system health', () => {
   test('@smoke overview lists issues worst first with no layout overflow', async ({ page }) => {
     await installSystemHealthMocks(page);
     await page.goto('/admin/health');

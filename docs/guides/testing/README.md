@@ -67,12 +67,16 @@ The smoke command runs every `@smoke` journey on desktop, 375×812 phone, and
 routes assert that the document does not overflow horizontally and that visible
 interactive controls have an accessible name.
 
-| Tag      | Meaning                                    |
-| -------- | ------------------------------------------ |
-| `@smoke` | Fast PR gate (< ~8 min total)              |
-| `@ci`    | Mocked domain suite on develop             |
-| `@live`  | Local Supabase (`PLAYWRIGHT_LOCAL_LIVE=1`) |
-| `@demo`  | Headed/video; never CI                     |
+Every spec carries **exactly one** lane tag. `bun run check:e2e-lane-tags` fails on a missing or
+duplicate tag, a committed `.only`, or a new `waitForTimeout` call (baselined, shrink-only).
+
+| Tag      | Meaning                                      |
+| -------- | -------------------------------------------- |
+| `@smoke` | Fast PR gate, desktop + phone + tablet       |
+| `@ci`    | Page and journey suite, every PR, sharded 4× |
+| `@pwa`   | Production build, service worker             |
+| `@live`  | Local Supabase (`PLAYWRIGHT_LOCAL_LIVE=1`)   |
+| `@demo`  | Headed/video; never CI                       |
 
 ## Domain guides
 

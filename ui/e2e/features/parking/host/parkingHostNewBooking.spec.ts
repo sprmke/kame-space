@@ -8,7 +8,7 @@ import {
 } from '../shared/parkingFlowHarness';
 import { setParkingScreenSuite } from '../shared/parkingScreenCapture';
 
-test.describe('parking host-assisted booking', () => {
+test.describe('@ci parking host-assisted booking', () => {
   test('host can create a parking booking from the dashboard modal', async ({ page }) => {
     setParkingScreenSuite('host-new-booking');
     const state = createParkingFlowState();

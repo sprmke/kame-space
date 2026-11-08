@@ -6,7 +6,7 @@ import {
   expectNoUnnamedInteractiveControls,
 } from '../../shared/layoutAssertions';
 
-test.describe('@ci super admin AI console', () => {
+test.describe('super admin AI console', () => {
   test('@smoke limits tab lists organizations with flags and no layout overflow', async ({
     page,
   }) => {

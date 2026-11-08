@@ -34,6 +34,7 @@
     "check:ai-gateway": "node scripts/dev/check-ai-gateway.mjs",
     "check:posthog-analytics-only": "bash scripts/dev/check-posthog-analytics-only.sh",
     "check:sentry-imports": "bash scripts/dev/check-sentry-imports.sh",
+    "check:e2e-lane-tags": "node scripts/dev/check-e2e-lane-tags.mjs",
     "check:plan-catalog": "bun scripts/dev/check-plan-catalog.ts",
     "audit:auth-matrix": "node scripts/dev/audit-auth-matrix.mjs",
     "check:auth-matrix": "node scripts/dev/audit-auth-matrix.mjs --check",
@@ -162,7 +163,8 @@
     "env:sync:dev": "bun scripts/dev/sync-dev-env.mjs",
     "env:sync:vercel:dev": "bun scripts/dev/sync-vercel-dev-env.mjs",
     "env:sync:all": "bun scripts/dev/sync-all-env.mjs",
-    "test:e2e:pwa": "playwright test --project=pwa"
+    "test:e2e:pwa": "playwright test --project=pwa",
+    "check:flaky-quarantine": "node scripts/dev/check-flaky-quarantine.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",

@@ -16,7 +16,7 @@ async function openDashboard(page: import('@playwright/test').Page) {
     timeout: 20_000,
   });
 }
-test.describe('@ci stat card help', () => {
+test.describe('stat card help', () => {
   test.beforeEach(async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
   });

@@ -1,0 +1,11 @@
+{
+  "$comment": "Shrink-only baseline for check-e2e-lane-tags.mjs. Each entry is a spec that still calls waitForTimeout. Replace the wait with a role/mock/id assertion and lower the number (delete the entry at 0). Nothing may be added here.",
+  "waitForTimeout": {
+    "ui/e2e/features/a11y/axeSweep.spec.ts": 2,
+    "ui/e2e/features/marketing/marketingAiExamples.spec.ts": 3,
+    "ui/e2e/features/marketing/marketingLibrary.spec.ts": 1,
+    "ui/e2e/features/observability/telemetry.spec.ts": 2,
+    "ui/e2e/features/plans/gates/featureGates.spec.ts": 1,
+    "ui/e2e/features/responsive/mobileChromeScreens.spec.ts": 2
+  }
+}

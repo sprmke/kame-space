@@ -19,7 +19,7 @@ import {
   sideBySideTimeoutMs,
 } from '../shared/parkingSideBySideHelpers';
 
-test.describe('parking guest and host side by side', () => {
+test.describe('@demo parking guest and host side by side', () => {
   test('full marketplace flow: submit, accept, pay, confirm, and complete', async ({
     page: _page,
   }, testInfo) => {

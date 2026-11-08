@@ -33,12 +33,16 @@ No Playwright specs under `ui/src/`.
 
 ## Tags (Playwright describe title)
 
-| Tag      | CI                       |
-| -------- | ------------------------ |
-| `@smoke` | PR + develop             |
-| `@ci`    | develop (mocked domains) |
-| `@live`  | never PR                 |
-| `@demo`  | never CI                 |
+Every spec carries **exactly one** lane tag; `bun run check:e2e-lane-tags` fails on a missing or
+duplicate tag, a committed `.only`, or a new `waitForTimeout`.
+
+| Tag      | CI                                 |
+| -------- | ---------------------------------- |
+| `@smoke` | every PR + develop (3 viewports)   |
+| `@ci`    | every PR + develop, sharded 4 ways |
+| `@pwa`   | every PR (production build)        |
+| `@live`  | never PR (nightly / manual)        |
+| `@demo`  | never CI                           |
 
 ## Same-change requirement
 
@@ -61,7 +65,7 @@ bun run test                  # Vitest UI
 bun run test:edge             # Deno _shared
 bun run test:edge:handlers    # Deno handler tests (no live/integration)
 bun run test:e2e:smoke        # Playwright @smoke
-bun run test:e2e:ci           # Playwright @ci (develop)
+bun run test:e2e:ci           # Playwright @ci (every PR, sharded)
 bun run test:e2e:plans        # Plan tiers: public pricing, Plans page, gates, review dialog
 bun run check:plan-catalog    # pricing_plans (local DB) vs golden tier matrix
 bun run ci:quality            # Full PR parity
