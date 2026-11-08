@@ -54,5 +54,26 @@
     "issue": "https://github.com/sprmke/kame-space/issues/330",
     "expires": "2026-12-31",
     "reason": "Failed in CI on the first real @ci run; marketing Studio home is mid-responsive-pass."
+  },
+  {
+    "spec": "ui/e2e/features/marketing/marketingAiPost.spec.ts",
+    "test": "out of credits shows the quota message and no posts",
+    "issue": "https://github.com/sprmke/kame-space/issues/330",
+    "expires": "2026-12-31",
+    "reason": "Fails only in CI (3/3 attempts, element not found); passes locally where ui/.env exists. Suspect env-dependent quota state."
+  },
+  {
+    "spec": "ui/e2e/features/marketing/marketingAiGenerate.spec.ts",
+    "test": "starting a photo opens one short form with everything else under Advanced",
+    "issue": "https://github.com/sprmke/kame-space/issues/330",
+    "expires": "2026-12-31",
+    "reason": "Fails only in CI shard 2; passes locally. Needs the CI-env reproduction before changing assertions."
+  },
+  {
+    "spec": "ui/e2e/features/marketing/marketingAiGenerate.spec.ts",
+    "test": "below Business, Generate opens the upgrade modal and sends nothing",
+    "issue": "https://github.com/sprmke/kame-space/issues/330",
+    "expires": "2026-12-31",
+    "reason": "Fails only in CI shard 2; plan-tier gate state differs from the local run."
   }
 ]

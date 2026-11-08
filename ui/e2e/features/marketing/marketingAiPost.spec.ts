@@ -192,7 +192,7 @@ test.describe('@ci marketing AI Post', () => {
     });
   });
 
-  test('out of credits shows the quota message and no posts', async ({ page }) => {
+  test('@flaky out of credits shows the quota message and no posts', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await installPosterMocks(page, (route) =>
       route.fulfill({

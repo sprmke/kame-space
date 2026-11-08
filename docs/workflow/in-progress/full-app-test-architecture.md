@@ -41,6 +41,13 @@ deleted`. All three are drift against in-progress tickets (notifications restruc
   contrast finding is a `KNOWN_A11Y_EXCEPTIONS` entry in the axe sweep (#334) so the other
   16 property routes stay audited instead of skipping the whole test.
 
+**Marketing AI Studio specs fail only in CI shard 2** (`marketingAiPost` out-of-credits,
+`marketingAiGenerate` short-form and below-Business gate). Three attempts each, `element(s)
+not found` at 16 to 24s, green locally. The empty-env theory was tested and ruled out by
+moving every `ui/.env*` aside. Current theory is CPU contention with the lazy Polotno /
+Remotion chunks; quarantined with #330 and a follow-up note to await a chunk-loaded marker
+rather than an element.
+
 **Local trap worth knowing:** `reuseExistingServer` means a dev server already bound to
 4173 (another checkout, another session) is silently reused, so local runs can test a
 different build than the one in front of you. `playwright.config.ts` now takes
