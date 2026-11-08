@@ -617,4 +617,7 @@ Daily retention sweep for live identity verification. Expires orphaned sessions,
 verdicts past `expires_at` to `expired`, and deletes capture files for terminal sessions older
 than `IDENTITY_CAPTURE_RETENTION_DAYS` (default 7). Secret header
 `x-identity-purge-cron-secret` from `IDENTITY_PURGE_CRON_SECRET`; fail-open until it is set,
-matching every sibling cron. One `system.cron_run`-style summary per run, never one per file.
+matching every sibling cron. Scheduled daily at **03:20 UTC** by
+`sync_identity_purge_cron_job()` (`20261323000000_identity_captures_purge_cron.sql`); the job
+name is `identity-captures-purge-daily`. One `system.cron_run`-style summary per run, never
+one per file.

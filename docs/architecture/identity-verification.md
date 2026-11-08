@@ -148,7 +148,8 @@ Private bucket `identity-captures`, service-role only, path
 
 - Default retention **7 days** (`IDENTITY_CAPTURE_RETENTION_DAYS`).
 - `identity-captures-purge-cron` deletes files for terminal sessions past retention, expires
-  stale sessions, and flips expired verdicts to `expired`.
+  stale sessions, and flips expired verdicts to `expired`. It runs daily at **03:20 UTC**
+  (`identity-captures-purge-daily`, registered by `20261323000000_identity_captures_purge_cron.sql`).
 - Liveness **frames are not uploaded**; only the pass/fail, the challenge names and timing
   are sent. Fewer biometric bytes stored for the same signal.
 
