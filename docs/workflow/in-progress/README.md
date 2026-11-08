@@ -2,7 +2,7 @@
 title: 'In progress'
 status: active
 tags: [workflow, in-progress]
-updated: 2026-11-07
+updated: 2026-11-08
 stage: in-progress
 kind: reference
 ---
@@ -14,6 +14,8 @@ Implementation **started** — plan not fully complete. Partial phases or v1 sli
 Plans with **implementation complete** and only manual QA left live in [`../for-testing/`](../for-testing/) (**🧪**). **Start QA:** [`production-readiness/qa/QA-BATCH.md`](./production-readiness/qa/QA-BATCH.md).
 
 **Disposition snapshot:** [`MODULE-DISPOSITION.md`](./production-readiness/qa/MODULE-DISPOSITION.md) — what closes vs what needs code.
+
+**Moved in 2026-11-07:** [`app-speed-root-cause-overhaul.md`](./app-speed-root-cause-overhaul.md) — started. Proves the cause of the 2 to 3 s loader plus 1 to 3 s skeleton before changing anything. Phase 0 shipped: permanent boot marks (`ui/src/lib/perf/bootMarks.ts`, first-wins, `null` when a mark never fired) and per-phase `Server-Timing` on every `serve*` wrapper. Phase 1 decided RC-10 rejected, RC-6 confirmed, RC-8 partly resolved. Every later phase needs a hosted run, a Supabase access token, or `kamewave`.
 
 **Moved out 2026-11-07:** [`booking-detail-activity-log.md`](../for-testing/booking-detail-activity-log.md) and [`support-content-and-faq-sync.md`](../for-testing/support-content-and-faq-sync.md) → **for testing** (all phase items checked; manual QA and the live sync run remain). [`ci-cd-environments/`](../done/ci-cd-environments/README.md) → **done** (dual-track superseded by the one-project cutover). The duplicate `public-native-density.md` copy was removed; the live plan stays in [`../for-testing/`](../for-testing/public-native-density.md).
 
