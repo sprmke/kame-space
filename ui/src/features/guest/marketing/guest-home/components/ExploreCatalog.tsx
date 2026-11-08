@@ -50,13 +50,13 @@ export function ExploreCatalog({ stays, residences, parking, cities }: ExploreCa
   ];
 
   return (
-    <section aria-labelledby="v3-explore" className="public-section-y">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section aria-labelledby="home-explore" className="public-section-y">
+      <div className="public-shell">
         <SlidingTabs value={tab} onValueChange={(v) => setTab(v as TabKey)}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-xl">
               <h2
-                id="v3-explore"
+                id="home-explore"
                 className="public-section-title text-foreground text-balance font-semibold"
               >
                 Find your next stay, home, or parking

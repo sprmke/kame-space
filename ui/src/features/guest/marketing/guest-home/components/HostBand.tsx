@@ -7,11 +7,11 @@ import { PLATFORM_APP_NAME } from '@/lib/platformBranding';
 /** Closing band for owners. Brand gradient is reserved for this one surface on the page. */
 export function HostBand() {
   return (
-    <section aria-labelledby="v3-host" className="public-section-y">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section aria-labelledby="home-host" className="public-section-y">
+      <div className="public-shell">
         <div className="relative overflow-hidden rounded-3xl bg-[image:var(--brand-gradient)] p-6 text-white sm:p-10 lg:flex lg:items-center lg:justify-between lg:gap-10 lg:rounded-[2rem] lg:p-12">
           <div className="max-w-xl">
-            <h2 id="v3-host" className="public-section-title text-balance font-semibold">
+            <h2 id="home-host" className="public-section-title text-balance font-semibold">
               Have a unit? Start earning from it.
             </h2>
             <p className="public-lead mt-2 text-white/85">

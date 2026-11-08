@@ -9,7 +9,7 @@ import {
   quickDestinations,
 } from '@/features/guest/marketing/explore-preview/data/explorePreviewContent';
 import { EASE_OUT, rise, riseStagger } from '@/features/guest/marketing/explore-preview/lib/motion';
-import { HeroSearch } from '@/features/guest/marketing/guest-landing/components/HeroSearch';
+import { HeroSearch } from '@/features/guest/marketing/shared/components/hero-search/HeroSearch';
 
 import { cn } from '@/lib/utils';
 

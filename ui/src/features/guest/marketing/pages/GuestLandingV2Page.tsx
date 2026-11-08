@@ -31,7 +31,7 @@ import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 /**
  * `/v2` — guest landing redesign for review next to `/`. Keeps the live page's legacy
- * `?property=` redirect so it can replace `GuestLandingPage` as-is once approved.
+ * `?property=` redirect so it can replace the live home page as-is once approved.
  */
 export function GuestLandingV2Page() {
   usePageTitle(publicPageTitle('Home'));

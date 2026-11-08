@@ -1,15 +1,20 @@
 import { useMemo } from 'react';
 
+import { Navigate, useSearchParams } from 'react-router-dom';
+
+import { stripLegacyFromQueryParam } from '@/features/guest/form/lib/bookingSourceFromSearchParams';
+import { readGuestPropertySlug } from '@/features/guest/form/lib/guestPropertyScope';
+import { guestCalendarPath } from '@/features/guest/lib/guestPublicPaths';
 import { usePublicDevelopments } from '@/features/guest/marketing/developments/hooks/usePublicDevelopments';
 import {
   DEFAULT_DEVELOPMENTS_QUERY,
   toDevelopmentCard,
 } from '@/features/guest/marketing/developments/lib/developmentsQuery';
-import { BookingSteps } from '@/features/guest/marketing/guest-landing-v3/components/BookingSteps';
-import { ExploreCatalog } from '@/features/guest/marketing/guest-landing-v3/components/ExploreCatalog';
-import { HostBand } from '@/features/guest/marketing/guest-landing-v3/components/HostBand';
-import { SpotlightHero } from '@/features/guest/marketing/guest-landing-v3/components/SpotlightHero';
-import { WhyBookHere } from '@/features/guest/marketing/guest-landing-v3/components/WhyBookHere';
+import { BookingSteps } from '@/features/guest/marketing/guest-home/components/BookingSteps';
+import { ExploreCatalog } from '@/features/guest/marketing/guest-home/components/ExploreCatalog';
+import { HostBand } from '@/features/guest/marketing/guest-home/components/HostBand';
+import { SpotlightHero } from '@/features/guest/marketing/guest-home/components/SpotlightHero';
+import { WhyBookHere } from '@/features/guest/marketing/guest-home/components/WhyBookHere';
 import { usePublicParkings } from '@/features/guest/marketing/parkings/hooks/usePublicParkings';
 import {
   DEFAULT_PARKINGS_QUERY,
@@ -19,20 +24,33 @@ import { usePublicProperties } from '@/features/guest/marketing/properties/hooks
 import { DEFAULT_PROPERTIES_QUERY } from '@/features/guest/marketing/properties/lib/propertiesQuery';
 import { usePublicPlaceGroups } from '@/features/guest/marketing/shared/hooks/usePublicPlaceGroups';
 
+import { useRouteContentReady } from '@/hooks/useRouteContentReady';
+import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePageMeta } from '@/lib/seo/usePageMeta';
+
 const PREVIEW_SIZE = 8;
 const STAYS_QUERY = { ...DEFAULT_PROPERTIES_QUERY, pageSize: PREVIEW_SIZE };
 const PARKINGS_QUERY = { ...DEFAULT_PARKINGS_QUERY, pageSize: PREVIEW_SIZE };
 const DEVELOPMENTS_QUERY = { ...DEFAULT_DEVELOPMENTS_QUERY, pageSize: PREVIEW_SIZE };
 
 /**
- * `/v3` guest landing preview. Job: get a visitor into the catalog.
- * Real stay in the hero with the shared search, then the live catalog by type.
+ * Marketing home. Job: get a visitor into the catalog.
+ * Theme-aware hero with the shared search, then the live catalog by type.
  */
-export function GuestLandingV3Page() {
+export function MarketingHomePage() {
   const stays = usePublicProperties(STAYS_QUERY, true, { staleTime: 60_000 });
   const parkings = usePublicParkings(PARKINGS_QUERY);
   const developments = usePublicDevelopments(DEVELOPMENTS_QUERY);
   const places = usePublicPlaceGroups<unknown>('properties', true, 12, 1);
+
+  usePageTitle(publicPageTitle('Home'));
+  usePageMeta({ canonicalPath: '/' });
+
+  const [searchParams] = useSearchParams();
+  const property = readGuestPropertySlug(searchParams);
+  // The hero is static markup, so its content exists at first commit. The catalog
+  // below loads independently and is deliberately not part of this mark.
+  useRouteContentReady(!property);
 
   const stayItems = useMemo(() => stays.data?.data ?? [], [stays.data]);
   const residenceItems = useMemo(
@@ -44,9 +62,17 @@ export function GuestLandingV3Page() {
     [parkings.data]
   );
 
+  // Legacy property-scoped links (`/?property=slug`) go straight to that property's calendar.
+  if (property) {
+    const next = stripLegacyFromQueryParam(new URLSearchParams(searchParams));
+    next.delete('property');
+    next.delete('property_slug');
+    return <Navigate to={guestCalendarPath(property, next)} replace />;
+  }
+
   return (
     <div className="bg-background text-foreground">
-      <SpotlightHero stays={stayItems} isLoading={stays.isLoading} />
+      <SpotlightHero />
       <ExploreCatalog
         stays={{
           items: stayItems,

@@ -1,6 +1,6 @@
 import { motion, useReducedMotion } from 'framer-motion';
 
-import { HeroSearch } from '@/features/guest/marketing/guest-landing/components/HeroSearch';
+import { HeroSearch } from '@/features/guest/marketing/shared/components/hero-search/HeroSearch';
 import {
   EASE_OUT,
   inViewOnce,

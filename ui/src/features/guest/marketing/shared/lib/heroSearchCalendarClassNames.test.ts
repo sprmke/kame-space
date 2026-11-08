@@ -8,7 +8,7 @@ import {
   HERO_SEARCH_SINGLE_MONTH_PANEL_WIDTH,
   HERO_SEARCH_CALENDAR_CLASSNAMES,
   HERO_SEARCH_CALENDAR_TWO_MONTHS,
-} from '@/features/guest/marketing/guest-landing/lib/heroSearchCalendarClassNames';
+} from '@/features/guest/marketing/shared/lib/heroSearchCalendarClassNames';
 
 describe('heroSearchWhenPanelWidth', () => {
   it('heroSearchWhenPanelWidth is exported', () => {

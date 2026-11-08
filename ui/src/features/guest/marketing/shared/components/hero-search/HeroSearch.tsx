@@ -11,12 +11,12 @@ import {
   GuestRow,
   SearchSegment,
   type SegmentPillBounds,
-} from '@/features/guest/marketing/guest-landing/components/HeroSearchParts';
+} from '@/features/guest/marketing/shared/components/hero-search/HeroSearchParts';
 import {
   heroSearchCalendarClassNames,
   heroSearchCalendarMonthCount,
   heroSearchWhenPanelWidth,
-} from '@/features/guest/marketing/guest-landing/lib/heroSearchCalendarClassNames';
+} from '@/features/guest/marketing/shared/lib/heroSearchCalendarClassNames';
 import {
   buildSearchValues,
   computeDropdownLayout,
@@ -32,7 +32,7 @@ import {
   type GuestCounts,
   type HeroSearchValues,
   type SearchField,
-} from '@/features/guest/marketing/guest-landing/lib/heroSearchState';
+} from '@/features/guest/marketing/shared/lib/heroSearchState';
 import { lerp } from '@/features/guest/marketing/shared/lib/listingScrollSearchEasing';
 import { resolveListingSearchPreferType } from '@/features/guest/marketing/shared/lib/listingScrollSearchPaths';
 import type { ListingSearchPreferType } from '@/features/guest/marketing/shared/lib/listingSearchPreferType';

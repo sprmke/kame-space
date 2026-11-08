@@ -292,7 +292,7 @@
     "ui/src/features/guest/marketing/developments/lib/parkingSlotFilters.ts",
     "ui/src/features/guest/marketing/developments/lib/parkingSlotMedia.ts",
     "ui/src/features/guest/marketing/developments/lib/resolvePublicDevelopment.ts",
-    "ui/src/features/guest/marketing/guest-landing/lib/heroSearchCalendarClassNames.ts",
+    "ui/src/features/guest/marketing/shared/lib/heroSearchCalendarClassNames.ts",
     "ui/src/features/guest/marketing/hosts/lib/hostListingGrid.ts",
     "ui/src/features/guest/marketing/parkings/lib/groupParkingsByLocation.ts",
     "ui/src/features/guest/marketing/parkings/lib/parkingDimensions.ts",

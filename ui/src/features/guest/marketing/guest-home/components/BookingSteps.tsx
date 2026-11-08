@@ -10,7 +10,7 @@ import {
   RefundScene,
   RequestScene,
   STEP_EASE,
-} from '@/features/guest/marketing/guest-landing-v3/components/BookingStepScenes';
+} from '@/features/guest/marketing/guest-home/components/BookingStepScenes';
 import type { PublicPropertyListItem } from '@/features/guest/marketing/properties/lib/propertiesQuery';
 import { MarketingImage } from '@/features/guest/marketing/shared/components/MarketingImage';
 
@@ -79,17 +79,17 @@ export function BookingSteps({ stay }: { stay?: PublicPropertyListItem }) {
   const step = STEPS[active];
 
   return (
-    <section aria-labelledby="v3-steps" className="bg-muted/40 relative">
+    <section aria-labelledby="home-steps" className="relative bg-[hsl(var(--band))]">
       <div ref={trackRef} className="relative" style={{ height: `${N * 80 + 20}vh` }}>
         <div className="sticky top-0 flex h-[100dvh] items-center overflow-hidden pb-20 pt-[calc(var(--public-nav-h)+0.5rem)] lg:pb-4">
-          <div className="mx-auto grid w-full max-w-7xl items-center gap-5 px-4 sm:px-6 lg:grid-cols-12 lg:gap-12 lg:px-8">
+          <div className="public-shell grid w-full items-center gap-5 lg:grid-cols-12 lg:gap-12">
             {/* Copy + rail */}
             <div className="lg:col-span-5">
               <span className="border-border text-muted-foreground inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold">
                 How booking works
               </span>
               <h2
-                id="v3-steps"
+                id="home-steps"
                 className="public-section-title text-foreground mt-3 text-balance font-semibold"
               >
                 From request to refund, on one trip page
@@ -262,7 +262,7 @@ function TripPreview({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.9 }}
                 transition={{ duration: 0.35, ease: STEP_EASE }}
-                className="bg-primary/10 text-primary mt-1 shrink-0 rounded-full px-3 py-1 text-xs font-semibold lg:text-sm"
+                className="bg-primary-strong text-primary-foreground mt-1 shrink-0 rounded-full px-3 py-1 text-xs font-semibold lg:text-sm"
               >
                 {step.pill}
               </motion.span>
@@ -287,7 +287,7 @@ function TripPreview({
           </div>
 
           {/* Scene */}
-          <div className="relative min-h-0 flex-1 overflow-hidden px-4 pt-4 lg:px-6 lg:pt-5 lg:pb-5">
+          <div className="relative min-h-0 flex-1 overflow-hidden px-4 pt-4 lg:px-6 lg:pb-5 lg:pt-5">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={active}

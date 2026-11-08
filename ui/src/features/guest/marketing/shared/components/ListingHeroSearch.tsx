@@ -6,7 +6,7 @@ import {
   HeroSearch,
   type HeroSearchField,
   type HeroSearchValues,
-} from '@/features/guest/marketing/guest-landing/components/HeroSearch';
+} from '@/features/guest/marketing/shared/components/hero-search/HeroSearch';
 import { useListingScrollSearchOptional } from '@/features/guest/marketing/shared/context/ListingScrollSearchContext';
 import { resolveListingSearchPreferType } from '@/features/guest/marketing/shared/lib/listingScrollSearchPaths';
 import { useListingSearchDefaultLocation } from '@/features/guest/marketing/shared/lib/listingSearchDefaultLocation';
