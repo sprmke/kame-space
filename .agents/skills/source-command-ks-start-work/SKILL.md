@@ -1,16 +1,8 @@
 ---
-name: 'source-command-ks-start-work'
-description: 'Migrated source command `ks-start-work`'
+name: source-command-ks-start-work
+description: "Run the existing project command ks-start-work when the user requests it."
 ---
-
-# source-command-ks-start-work
-
-Use this skill when the user asks to run the migrated source command `ks-start-work`.
-
-## Command Template
 
 # ks-start-work
 
-Alias for `/kh-start-work` while teammates move to the Kame Space command names.
-
-Follow the same instructions as [`kh-start-work.md`](./kh-start-work.md) in this directory. Nothing else changes.
+Read [.cursor/commands/ks-start-work.md](../../../.cursor/commands/ks-start-work.md) and follow that command using the user’s arguments. Resolve its relative references from the original command directory. Preserve project rules and authorization boundaries. Cursor/Claude-only tool names must map to actually available Codex tools; do not claim unavailable tools ran.
