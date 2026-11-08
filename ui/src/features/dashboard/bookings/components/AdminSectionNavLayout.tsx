@@ -288,7 +288,10 @@ function sectionNavItemClass(active: boolean) {
     'relative z-[1] flex min-h-[44px] w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200',
     active
       ? 'text-primary-foreground'
-      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+      : // Opaque so the sliding teal pill cannot pass *under* an inactive label while it
+        // moves between sections. Muted grey text on the teal pill fails WCAG contrast,
+        // and axe catches the transient frame. Same colour as the page, so it is invisible.
+        'bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
   );
 }
 
