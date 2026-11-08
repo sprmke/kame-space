@@ -24,7 +24,10 @@ test.describe('@ci host Get Verified states', () => {
     await cta.evaluate((element) => (element as HTMLElement).click());
 
     // The modal opens on the Recommended step when Tier 2 is untouched; switch to Tier 1.
-    await page.getByRole('button', { name: /Tier 1: Verified/i }).click();
+    await page
+      .getByRole('navigation', { name: 'Verification tiers' })
+      .getByRole('button', { name: /^Verified/ })
+      .click();
     await expect(page.getByText(/Review usually takes a few hours up to 3 days/i)).toBeVisible({
       timeout: 20_000,
     });
@@ -107,9 +110,10 @@ test.describe('@ci host Get Verified states', () => {
     await expect(cta).toBeVisible({ timeout: 30_000 });
     await cta.evaluate((element) => (element as HTMLElement).click());
 
-    await expect(
-      page.getByText(/Earn a Recommended badge guests notice on your host page/i)
-    ).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('dialog', { name: 'Get Recommended' })).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(page.getByText(/The selfie with your ID is required/i)).toBeVisible();
 
     const submit = page.getByRole('button', { name: /Submit for review/i });
     await expect(submit).toBeDisabled();

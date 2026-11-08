@@ -1,8 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 
-import { Kame, REST, type Pose } from '../../../../../../../marketing/social/src/mascot/Kame';
+import { REST, type Pose } from '../../../../../../../marketing/social/src/mascot/kamePose';
 import type { ReceptionistAvatarState } from '@/features/guest/chat/components/voice/receptionistAvatarTypes';
 import { cn } from '@/lib/utils';
+
+// The rig pulls in three.js (~500 kB), and it is only needed once the booth is on screen.
+const Kame = lazy(() =>
+  import('../../../../../../../marketing/social/src/mascot/Kame').then((m) => ({ default: m.Kame }))
+);
 
 export type { ReceptionistAvatarState };
 
@@ -101,6 +106,29 @@ function blendPoses(from: Pose, to: Pose, amount: number): Pose {
   return blended;
 }
 
+/** A browser without WebGL gets the flat avatar instead of a crashed page. */
+function supportsWebGl(): boolean {
+  if (typeof document === 'undefined') return false;
+  try {
+    const canvas = document.createElement('canvas');
+    return Boolean(canvas.getContext('webgl2') ?? canvas.getContext('webgl'));
+  } catch {
+    return false;
+  }
+}
+
+class KameBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
 /** A1 uses Kame's shared 3D rig; the booth state and live voice meters drive its acting. */
 export function ReceptionistAvatar({ state, size = 160, className }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -115,6 +143,7 @@ export function ReceptionistAvatar({ state, size = 160, className }: Props) {
     blush: 1.12,
   });
   const [currentPose, setCurrentPose] = useState(poseRef.current);
+  const render3d = useRef(supportsWebGl()).current;
 
   useEffect(() => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -161,6 +190,8 @@ export function ReceptionistAvatar({ state, size = 160, className }: Props) {
     return () => window.cancelAnimationFrame(request);
   }, []);
 
+  const flatFallback = <div className="bg-primary/15 size-full rounded-full" aria-hidden />;
+
   return (
     <div
       ref={hostRef}
@@ -171,24 +202,32 @@ export function ReceptionistAvatar({ state, size = 160, className }: Props) {
       style={{ width: size, height: size, backgroundColor: '#DDF7EB' }}
       aria-hidden
     >
-      <Kame
-        w={size}
-        h={size}
-        pose={currentPose}
-        look={{ shadow: '#8c9a75', shadowOpacity: 0.18, bounce: '#e7f7e9', exposure: 0.72 }}
-        framing="full"
-        quality={1.5}
-        headScale={1.2}
-        grinScale={0.92}
-        toeClaws
-        palette={{
-          skin: '#93E85E',
-          skinDeep: '#65C24D',
-          shell: '#8A321D',
-          rim: '#AD4727',
-          scute: '#A84021',
-        }}
-      />
+      {render3d ? (
+        <KameBoundary fallback={flatFallback}>
+          <Suspense fallback={flatFallback}>
+            <Kame
+              w={size}
+              h={size}
+              pose={currentPose}
+              look={{ shadow: '#8c9a75', shadowOpacity: 0.18, bounce: '#e7f7e9', exposure: 0.72 }}
+              framing="full"
+              quality={1.5}
+              headScale={1.2}
+              grinScale={0.92}
+              toeClaws
+              palette={{
+                skin: '#93E85E',
+                skinDeep: '#65C24D',
+                shell: '#8A321D',
+                rim: '#AD4727',
+                scute: '#A84021',
+              }}
+            />
+          </Suspense>
+        </KameBoundary>
+      ) : (
+        flatFallback
+      )}
     </div>
   );
 }
