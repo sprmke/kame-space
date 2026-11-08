@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Loader2, Smartphone } from 'lucide-react';
 
@@ -7,7 +7,6 @@ import { captureAppEvent } from '@/lib/posthog/capture';
 import { cn } from '@/lib/utils';
 
 import { CrossDeviceHandoffPanel } from './CrossDeviceHandoffPanel';
-import { IdentityCaptureFlow } from './IdentityCaptureFlow';
 import { useCreateIdentitySession, useIdentitySessionPolling } from '../hooks/useIdentitySession';
 import {
   cancelIdentitySession,
@@ -15,6 +14,19 @@ import {
   type IdentitySubjectKind,
   type IdentitySubmitResponse,
 } from '../lib/identityApi';
+
+const IdentityCaptureFlow = lazy(() =>
+  import('./IdentityCaptureFlow').then((m) => ({ default: m.IdentityCaptureFlow }))
+);
+
+function InlineStarting() {
+  return (
+    <div className="flex flex-col items-center gap-3 py-10 text-center">
+      <Loader2 className="text-primary h-6 w-6 animate-spin" aria-hidden />
+      <p className="text-muted-foreground text-sm">Starting</p>
+    </div>
+  );
+}
 
 export type IdentityVerificationFlowProps = {
   subjectKind: IdentitySubjectKind;
@@ -137,14 +149,16 @@ export function IdentityVerificationFlow({
 
   if (mode === 'inline' && session) {
     return (
-      <IdentityCaptureFlow
-        token={session.token}
-        subjectKind={subjectKind}
-        onComplete={setCompleted}
-        onCancel={cancel}
-        onDocumentCaptured={onDocumentCaptured}
-        className={className}
-      />
+      <Suspense fallback={<InlineStarting />}>
+        <IdentityCaptureFlow
+          token={session.token}
+          subjectKind={subjectKind}
+          onComplete={setCompleted}
+          onCancel={cancel}
+          onDocumentCaptured={onDocumentCaptured}
+          className={className}
+        />
+      </Suspense>
     );
   }
 
