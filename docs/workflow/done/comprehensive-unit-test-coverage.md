@@ -1000,3 +1000,18 @@ Per session:
 - `bun run ci:quality` passes
 - No lib file without a test or an explicit N/A annotation
 - Route guide Testing columns are updated per session
+
+## Verification results (drift closure, 2026-11-08)
+
+| Gate                                           | Result                                                                                                                          |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `node scripts/dev/lib-unit-test-inventory.mjs` | **0 missing** across 1,707 lib files (was 85)                                                                                   |
+| `bun run test`                                 | **857 files / 5,759 tests passed**, 6 skipped (types-only, Polotno browser). Baseline was 804 / 5,308, so +53 files, +451 tests |
+| `bun run type-check`                           | Green                                                                                                                           |
+| `bun run lint`                                 | 0 errors (warnings pre-date this change)                                                                                        |
+| `bun run ci:quality`                           | See PR checks                                                                                                                   |
+| Tests or N/A markers                           | 85 files closed: 53 new test files, 32 `test: N/A` markers, each with a concrete reason                                         |
+| `Plans` / Team RBAC                            | N/A — test-only change, no product capability added                                                                             |
+| `activity-log`                                 | N/A — no mutation, no edge function, no data write                                                                              |
+
+Known blemish recorded while covering `cancellationPolicy.ts`: a custom 0-day refund tier renders as "on check-in day before check-in". Left as-is because the string is mirrored byte-for-byte by `_shared/cancellationPolicy.ts`; fixing it needs an edge change in its own PR.
