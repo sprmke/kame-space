@@ -1123,6 +1123,62 @@ export const ACTIVITY_ACTION_CATALOG = {
     summary: (c) =>
       `${c.actorName} ${str(c.metadata, 'decision') ?? 'moderated'} a guest-submitted review`,
   },
+  'marketing.plan_generated': {
+    category: 'marketing',
+    severity: 'info',
+    targetType: 'marketing_plan',
+    summary: (c) =>
+      `${c.actorName} generated a ${str(c.metadata, 'mode') ?? 'rules'} marketing plan for ${label(
+        c,
+        'a listing'
+      )}` +
+      (num(c.metadata, 'count') ? ` (${num(c.metadata, 'count')} items)` : ''),
+  },
+  'marketing.plan_item_scheduled': {
+    category: 'marketing',
+    severity: 'info',
+    targetType: 'marketing_plan_item',
+    summary: (c) =>
+      `${c.actorName} scheduled ${label(c, 'a marketing item')} on ${
+        str(c.metadata, 'channel') ?? 'a channel'
+      }`,
+  },
+  'marketing.plan_item_skipped': {
+    category: 'marketing',
+    severity: 'info',
+    targetType: 'marketing_plan_item',
+    summary: (c) =>
+      `${c.actorName} skipped ${label(c, 'a marketing item')}` +
+      (str(c.metadata, 'reason') ? ` (${str(c.metadata, 'reason')})` : ''),
+  },
+  'marketing.plan_item_posted_manually': {
+    category: 'marketing',
+    severity: 'info',
+    targetType: 'marketing_plan_item',
+    summary: (c) => `${c.actorName} marked ${label(c, 'a marketing item')} posted by hand`,
+  },
+  'marketing.scheduled_publish_held': {
+    category: 'marketing',
+    severity: 'warning',
+    targetType: 'marketing_publication',
+    summary: (c) =>
+      `Held ${label(c, 'a scheduled post')}: ${str(c.metadata, 'reason') ?? 'its claim changed'}`,
+  },
+  'marketing.planner_settings_saved': {
+    category: 'marketing',
+    severity: 'info',
+    targetType: 'settings',
+    summary: (c) => `${c.actorName} changed marketing planner settings for ${label(c, 'a listing')}`,
+  },
+  'marketing.calendar_event_saved': {
+    category: 'marketing',
+    severity: 'info',
+    targetType: 'marketing_calendar_event',
+    summary: (c) =>
+      `${c.actorName} saved the marketing calendar event ${
+        str(c.metadata, 'name') ?? 'an event'
+      }`,
+  },
   'inbox.chat_template_sent': {
     category: 'inbox',
     severity: 'info',

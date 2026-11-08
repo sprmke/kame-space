@@ -1064,6 +1064,9 @@ verify_jwt = false
 [functions.publish-to-meta]
 verify_jwt = false
 
+[functions.marketing-planner]
+verify_jwt = false
+
 [functions.generate-marketing-caption]
 verify_jwt = false
 
