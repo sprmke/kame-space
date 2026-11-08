@@ -1,5 +1,5 @@
 ---
-stage: planned
+stage: in-progress
 title: 'Marketing Planner: AI strategy, schedule and execution for listing promotion'
 status: planned
 tags:
