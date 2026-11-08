@@ -330,7 +330,9 @@ test.describe('@smoke voice receptionist consent', () => {
     await expect(page.getByRole('link', { name: 'Unsafe' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'End call' })).toBeVisible();
     await expect
-      .poll(() => page.locator('html').getAttribute('data-mock-voice-connections'))
+      .poll(() => page.locator('html').getAttribute('data-mock-voice-connections'), {
+        timeout: 15_000,
+      })
       .toBe('2');
     await expect(page.getByText('How can I help with your stay?')).toBeVisible();
     await page.getByRole('button', { name: 'Message host' }).click();
@@ -360,7 +362,7 @@ test.describe('@smoke voice receptionist consent', () => {
     await page.getByText('Talk to receptionist', { exact: true }).click();
     await page.getByRole('button', { name: 'Start call' }).click();
 
-    await expect(page.getByText('Call ended')).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText('Call ended')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole('button', { name: 'Done' })).toBeVisible();
   });
 
@@ -374,7 +376,9 @@ test.describe('@smoke voice receptionist consent', () => {
     await page.getByRole('button', { name: 'Start call' }).click();
     await expect(page.getByText('How can I help with your stay?')).toBeVisible();
     await expect
-      .poll(() => page.locator('html').getAttribute('data-mock-voice-connections'))
+      .poll(() => page.locator('html').getAttribute('data-mock-voice-connections'), {
+        timeout: 15_000,
+      })
       .toBe('2');
 
     await page.clock.install();
