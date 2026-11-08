@@ -108,7 +108,7 @@ test.describe('@ci property booking Free-tier manual workflow', () => {
     await expect(popup).toHaveURL(new RegExp(`/parkings\\?.*linkStay=${PROPERTY_BOOKING_ID}`));
   });
 
-  test('@flaky Proceed skips plan-gated emails, toasts, and expands Automation Triggers', async ({
+  test('Proceed skips plan-gated emails, toasts, and expands Automation Triggers', async ({
     page,
   }) => {
     setParkingScreenSuite('property-free-manual-workflow-proceed-skip');
