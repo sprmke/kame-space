@@ -170,7 +170,9 @@
     "seed:feature-flags": "bash scripts/dev/seed-feature-flags.sh",
     "seed:integrations": "bash scripts/dev/seed-integrations.sh",
     "seed:verify-ui": "node scripts/dev/verify-local-seed-ui.mjs",
-    "check:flaky-quarantine": "node scripts/dev/check-flaky-quarantine.mjs"
+    "check:flaky-quarantine": "node scripts/dev/check-flaky-quarantine.mjs",
+    "check:unit-test-quality": "node scripts/dev/check-unit-test-quality.mjs",
+    "check:edge-test-coverage": "node scripts/dev/check-edge-test-coverage.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",

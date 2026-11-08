@@ -41,6 +41,13 @@ deleted`. All three are drift against in-progress tickets (notifications restruc
   contrast finding is a `KNOWN_A11Y_EXCEPTIONS` entry in the axe sweep (#334) so the other
   16 property routes stay audited instead of skipping the whole test.
 
+**Marketing AI Studio specs fail only in CI shard 2** (`marketingAiPost` out-of-credits,
+`marketingAiGenerate` short-form and below-Business gate). Three attempts each, `element(s)
+not found` at 16 to 24s, green locally. The empty-env theory was tested and ruled out by
+moving every `ui/.env*` aside. Current theory is CPU contention with the lazy Polotno /
+Remotion chunks; quarantined with #330 and a follow-up note to await a chunk-loaded marker
+rather than an element.
+
 **Local trap worth knowing:** `reuseExistingServer` means a dev server already bound to
 4173 (another checkout, another session) is silently reused, so local runs can test a
 different build than the one in front of you. `playwright.config.ts` now takes
@@ -48,6 +55,28 @@ different build than the one in front of you. `playwright.config.ts` now takes
 
 Final lane state: 96 specs, one tag each — `@smoke` 23, `@ci` 68 (62 executable, 6 quarantined),
 `@pwa` 1, `@live` 2, `@demo` 2. `@ci` runs in 3.1 min locally.
+
+### Handler testability (shipped 2026-11-08)
+
+`index.ts` could not be imported because `serve*` called `serve()` at module scope. Fixed in
+one file: `_shared/serveEdge.ts` now mounts the composed handler in a registry when
+`EDGE_HANDLER_TEST=1`, and still calls `serve()` in production. No `index.ts` changed.
+
+```ts
+Deno.env.set('EDGE_HANDLER_TEST', '1');
+await import('../../get-feature-availability/index.ts');
+const handler = getMountedEdgeHandler('get-feature-availability')!;
+const res = await handler(new Request(url, { headers: { Authorization: 'Bearer token' } }));
+```
+
+The first test (`tests/handlers/get-feature-availability.test.ts`) drives the real wrapper:
+401 on a missing bearer, 401 on an invalid session, the `{ success, data }` envelope, the
+per-viewer `Cache-Control: private`, no PII in the body, and a super-admin seeing a
+bypassable kill switch as `bypassed` rather than as a missing feature. Supabase is stubbed
+at `fetch`, the only boundary the handler crosses.
+
+Next: the same shape for `cancel-booking`, `guest-cancel-booking`, `submit-form` and the
+webhooks, which is where `stubDb()` / `stubProvider()` from §1 pay off.
 
 ### Decisions taken
 
