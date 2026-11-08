@@ -5,8 +5,13 @@ import { PropertySettingsIssuesSync } from '@/features/dashboard/org/components/
 import { RequireOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { RequireOrgNotHardRejected } from '@/features/dashboard/org/components/RequireOrgNotHardRejected';
 
+import { useAdminRouteChunkPrefetch } from '@/hooks/useAdminRouteChunkPrefetch';
+
 /** Property-scoped admin shell: auth + org/property context + persistent AdminLayout. */
 export function PropertyAdminShell() {
+  // Outside the guards on purpose: the page chunk must not wait for the guard queries.
+  useAdminRouteChunkPrefetch();
+
   return (
     <RequireAdmin>
       <RequireOrgNotHardRejected>

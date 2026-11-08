@@ -134,6 +134,7 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { FeatureAvailabilityBanner } from '@/components/feature-availability/FeatureAvailabilityBanner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SlidingActivePill } from '@/components/ui/SlidingActivePill';
+import { useAfterFirstPaint } from '@/hooks/useAfterFirstPaint';
 import { prefetchChunkOnce } from '@/hooks/usePrefetchOnIntent';
 import { useSlidingActivePill } from '@/hooks/useSlidingActivePill';
 import { useFavicon } from '@/lib/favicon';
@@ -424,9 +425,16 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
     permissionAllowed: assistantPermissionAllowed,
     settings: assistantSettings,
   } = useAiAssistantAccess(propertyId);
-  const { data: notificationsPreview } = useNotificationsList('preview');
+  // Non-critical chrome: the notification preview and the announcement unread dot only
+  // decorate the shell, so they start after the first paint instead of competing with the
+  // page's own reads for the phone's 4 to 6 connections. The badges still appear, just
+  // one idle tick later.
+  const afterFirstPaint = useAfterFirstPaint();
+  const { data: notificationsPreview } = useNotificationsList('preview', {
+    enabled: afterFirstPaint,
+  });
   const unreadNotificationCount = notificationsPreview?.pages[0]?.unreadCount ?? 0;
-  const hostAnnouncementsHaveUnread = useHostAnnouncementHasUnread();
+  const hostAnnouncementsHaveUnread = useHostAnnouncementHasUnread({ enabled: afterFirstPaint });
   const showAssistantFab = isAiAssistantFabVisible(
     assistantAccessible,
     assistantSettings,
