@@ -97,7 +97,15 @@ test.describe('@ci boot timing marks', () => {
     await expect(page).toHaveURL(/\/properties/);
     await waitForMarks(page);
 
-    const marks = await readMarks(page);
+    let marks = await readMarks(page);
+    if (!marks.includes('nav:start')) {
+      // A click that lands before hydration falls through to a document load, which
+      // resets the timeline. Retry in-app once the page is interactive.
+      await page.locator('a[href="/parkings"]:visible').first().click();
+      await expect(page).toHaveURL(/\/parkings/);
+      await waitForMarks(page);
+      marks = await readMarks(page);
+    }
     expect(marks).toContain('app:script-start');
     expect(marks).toContain('nav:start');
   });

@@ -62,6 +62,7 @@ test.describe('@ci host Get Verified states', () => {
 
     // Picking a file can race the dialog's dismiss handling; keep editing if it prompts.
     const guard = page.getByRole('alertdialog', { name: /Save your changes\?/i });
+    await guard.waitFor({ state: 'visible', timeout: 2_000 }).catch(() => undefined);
     if (await guard.isVisible().catch(() => false)) {
       await page.getByRole('button', { name: 'Keep editing' }).click();
       await expect(guard).toHaveCount(0);
