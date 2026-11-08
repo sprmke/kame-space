@@ -8,8 +8,14 @@ import path from 'node:path';
 
 const UI_SRC = path.resolve(process.cwd(), 'ui/src');
 
+/**
+ * A behavioural assertion. The argument may call a function (`expect(fn(input))`), so the
+ * match has to allow nested parentheses; `[^)]+` used to classify the most natural test
+ * style as export-only. The negative lookahead still excludes `toBe('function')`, which is
+ * exactly the scaffold this audit exists to find.
+ */
 const MEANINGFUL =
-  /expect\([^)]+\)\.(toBe|toEqual|toMatch|toThrow|toBeNull|toContain|toBeGreaterThan|toBeLessThan)\((?!['"]function['"]\))/;
+  /expect\(.+\)\.(toBe|toEqual|toMatch|toThrow|toBeNull|toContain|toContainEqual|toBeGreaterThan|toBeGreaterThanOrEqual|toBeLessThan|toBeLessThanOrEqual|toHaveLength|toBeTruthy|toBeFalsy|toBeUndefined|toBeInstanceOf)\((?!['"]function['"]\))/;
 
 async function walk(dir, out = []) {
   const entries = await readdir(dir, { withFileTypes: true });

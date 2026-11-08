@@ -164,7 +164,9 @@
     "env:sync:vercel:dev": "bun scripts/dev/sync-vercel-dev-env.mjs",
     "env:sync:all": "bun scripts/dev/sync-all-env.mjs",
     "test:e2e:pwa": "playwright test --project=pwa",
-    "check:flaky-quarantine": "node scripts/dev/check-flaky-quarantine.mjs"
+    "check:flaky-quarantine": "node scripts/dev/check-flaky-quarantine.mjs",
+    "check:unit-test-quality": "node scripts/dev/check-unit-test-quality.mjs",
+    "check:edge-test-coverage": "node scripts/dev/check-edge-test-coverage.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
