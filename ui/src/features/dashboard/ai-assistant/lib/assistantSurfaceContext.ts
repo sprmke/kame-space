@@ -1,3 +1,7 @@
+/**
+ * test: N/A — React context and hooks that resolve an href for the current
+ * surface; exercising them needs a renderer.
+ */
 import { createContext, useCallback, useContext } from 'react';
 
 import { useNavigate } from 'react-router-dom';

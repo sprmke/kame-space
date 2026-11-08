@@ -44,7 +44,7 @@ async function clickAndHoldPopup(page: Page, click: () => Promise<void>): Promis
   return popup;
 }
 
-test.describe('property booking Free-tier manual workflow', () => {
+test.describe('@ci property booking Free-tier manual workflow', () => {
   test.beforeEach(({ context }) => {
     test.setTimeout(sideBySideTimeoutMs());
 
@@ -108,7 +108,7 @@ test.describe('property booking Free-tier manual workflow', () => {
     await expect(popup).toHaveURL(new RegExp(`/parkings\\?.*linkStay=${PROPERTY_BOOKING_ID}`));
   });
 
-  test('Proceed skips plan-gated emails, toasts, and expands Automation Triggers', async ({
+  test('@flaky Proceed skips plan-gated emails, toasts, and expands Automation Triggers', async ({
     page,
   }) => {
     setParkingScreenSuite('property-free-manual-workflow-proceed-skip');

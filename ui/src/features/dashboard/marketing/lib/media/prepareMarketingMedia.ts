@@ -8,6 +8,12 @@
  * browser cannot encode or decode, we fall back to the original file and the server caps apply.
  */
 
+/**
+ * test: N/A — browser media pipeline (createImageBitmap, MediaRecorder, audio decode).
+ * Nothing here runs in the Node test environment; the uploaded-file contract is
+ * covered by the Marketing Studio upload E2E slice.
+ */
+
 import {
   AUDIO_PEAK_COUNT,
   exceedsVideoLength,

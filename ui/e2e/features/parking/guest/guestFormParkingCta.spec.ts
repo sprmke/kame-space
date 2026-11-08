@@ -63,7 +63,7 @@ async function openGuestFormSuccessWithState(page: Page) {
   await page.reload();
 }
 
-test.describe('guest form parking CTA', () => {
+test.describe('@ci guest form parking CTA', () => {
   test('shows marketplace link after submit when guest needs parking', async ({ page }) => {
     setParkingScreenSuite('guest-form-parking-cta');
     await installGuestFormSuccessMocks(page);

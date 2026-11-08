@@ -14,6 +14,7 @@ Kame Space does **not** use a single “100% Vitest line coverage on `ui/src/**`
 | Layer         | What it covers                                                                                 | Command                                   |
 | ------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | **UI unit**   | Pure logic in `**/lib/*.ts`, `utils/**` (validators, gates, formatters, workflow mirrors)      | `bun run test`                            |
+| **UI DOM**    | Hooks with state and small components with behaviour (`*.test.tsx`, happy-dom)                 | `bun run test:dom`                        |
 | **UI E2E**    | Public marketing, guest flows, org/property/parking dashboards (load, key actions, a11y smoke) | `bun run test:e2e:smoke`, `test:e2e:ci`   |
 | **Edge unit** | Booking workflow, plan entitlements, orchestrator branches                                     | `bun run test:edge`, `test:edge:handlers` |
 
@@ -48,4 +49,4 @@ Together these cover **functionality behind** every major route. They do **not**
 
 ## Hooks and browser-only code
 
-`ui/src/hooks/*` and Polotno/PDF canvas helpers stay **Playwright** or manual unless we add a jsdom Vitest project. That is intentional (see [`comprehensive-unit-test-coverage.md`](../../workflow/done/comprehensive-unit-test-coverage.md)).
+`ui/src/hooks/*` logic now has a home: the `dom` Vitest project (`*.test.tsx`, happy-dom), added 2026-11-08. Canvas, Polotno, PDF and service-worker code stays **Playwright** or manual because it needs a real browser. See [`full-app-test-architecture.md`](../../workflow/in-progress/full-app-test-architecture.md).

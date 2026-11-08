@@ -1,4 +1,8 @@
 /**
+ * test: N/A — static Lucide path data. Rendering of these nodes is covered by
+ * `posterIcons.test.ts`.
+ */
+/**
  * Icon path data for Marketing Studio posters (see posterIcons.ts).
  *
  * Paths are copied from lucide v0.294 (ISC, same set the app already ships via

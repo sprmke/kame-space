@@ -7,7 +7,7 @@ import { seedSupabaseAuthSession } from '../../shared/authSeam';
 
 const VALID_ID_FIXTURE = path.join(process.cwd(), 'ui/public/icons/pwa-192.png');
 
-test.describe('@smoke @ci guest form submit', () => {
+test.describe('@smoke guest form submit', () => {
   test('Airbnb guest can submit mocked form and reach success', async ({ page }) => {
     test.setTimeout(60_000);
 

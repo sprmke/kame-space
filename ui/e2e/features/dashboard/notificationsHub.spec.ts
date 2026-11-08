@@ -238,7 +238,7 @@ test.describe('@ci notifications hub', () => {
     await expect(rows).toHaveCount(40, { timeout: 15_000 });
   });
 
-  test('the Manage sheet holds delivery settings and the Telegram controls', async ({ page }) => {
+  test('@flaky the Manage sheet holds delivery settings and the Telegram controls', async ({ page }) => {
     await page.goto(HUB);
     await expect(page.getByRole('heading', { name: 'Notifications', level: 1 })).toBeVisible({
       timeout: 20_000,

@@ -23,6 +23,8 @@ Plans with **implementation complete** and only manual QA left live in [`../for-
 
 **Moved in 2026-11-07 (second pass):** [`activity-log-followups.md`](./activity-log-followups.md) (planned → in progress: `org.activity:view` + listing `activity:view` shipped, four crons emit `system.cron_run`; export leaves, helper, notice emitters, ticket handlers and partitioning remain) and [`marketing-video-editor-multitrack.md`](./marketing-video-editor-multitrack.md) (for testing → in progress: T1.10, T1.11, T1.13 and T2.7 are still unimplemented).
 
+**Moved in 2026-11-08:** [`full-app-test-architecture.md`](./full-app-test-architecture.md) (planned → in progress: Phase 0 shipped — `@ci` lane wired into `ci.yml` and `ci-quality-gate.sh`, 17 orphan specs tagged, lane-tag and flaky-quarantine guards, Vitest pinned to `TZ=Asia/Manila`; Phases 1 to 9 remain).
+
 **Moved in 2026-11-07:** [`mobile-app-chrome-header-and-tab-bar.md`](./mobile-app-chrome-header-and-tab-bar.md) (planned → in-progress; Phase 1 + 1b shipped), [`notifications-page-restructure.md`](./notifications-page-restructure.md) and [`google-services-production-hardening.md`](./google-services-production-hardening.md) (planned → in-progress).
 
 **Moved in 2026-11-06:** [`telegram-delivery-and-history.md`](./telegram-delivery-and-history.md) — implemented, migration pending deploy. Read-only copy of what each Telegram group received (15-day window, 20 per page), a master delivery switch per property/parking, and all Telegram management moved into the header Manage sheet with Activity / Telegram tabs.

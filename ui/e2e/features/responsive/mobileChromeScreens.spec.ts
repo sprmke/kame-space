@@ -159,7 +159,7 @@ const DASHBOARD_ROUTES: { name: string; path: string; heading: RegExp | string }
   { name: 'dash-public-pages', path: teamRbacPaths.publicPages, heading: /Public pages/i },
 ];
 
-test.describe('mobile chrome capture', () => {
+test.describe('@ci mobile chrome capture', () => {
   test.skip(!captureEnabled, 'Set PLAYWRIGHT_CAPTURE_SCREENS=1 to capture');
   test.describe.configure({ mode: 'serial', timeout: 120_000 });
 

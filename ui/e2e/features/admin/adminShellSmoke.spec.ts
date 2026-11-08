@@ -44,7 +44,7 @@ const mockSuperAdminOverview = {
   },
 };
 
-test.describe('@smoke @ci super admin shell', () => {
+test.describe('@smoke super admin shell', () => {
   test('admin overview renders for mocked super-admin session', async ({ page }) => {
     await seedSupabaseAuthSession(page, 'host');
     await mockEdgeFunctions(page, [

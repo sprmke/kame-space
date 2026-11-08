@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 4173;
+// Overridable so two checkouts (or two sessions) never reuse each other's dev server.
+// `reuseExistingServer` makes a stale server on the default port silently serve an old
+// build, which looks like a flaky test and is very hard to diagnose.
+const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 4173);
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 /**
  * The `pwa` project runs against a **production build** (`vite build` + `vite
@@ -8,7 +11,7 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
  * dev-server test could never observe precache, offline navigation or the update
  * flow (PWA v2 task 9.3).
  */
-const PWA_PORT = 4174;
+const PWA_PORT = Number(process.env.PLAYWRIGHT_PWA_PORT ?? 4174);
 const PWA_BASE_URL = `http://127.0.0.1:${PWA_PORT}`;
 
 const recordVideo = process.env.PLAYWRIGHT_RECORD_VIDEO === '1';
@@ -21,6 +24,10 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
+  // 30s is the Playwright default and it is too tight for the Polotno/Remotion editors,
+  // which cold-render a canvas behind mocked APIs. Three marketing specs failed at
+  // 31.9s/32.4s on the first real @ci run and passed locally in under 10s.
+  timeout: 45_000,
   // 99 @smoke tests × 3 projects were serializing to 45+ min on GHA; parallelize files only.
   workers: process.env.CI ? 4 : undefined,
   globalTimeout: process.env.CI ? 45 * 60 * 1000 : undefined,
@@ -28,6 +35,10 @@ export default defineConfig({
   outputDir: 'test-results/playwright',
   use: {
     baseURL: BASE_URL,
+    // Deterministic clock and locale. Every user-visible time is Asia/Manila, and
+    // date-boundary bugs (UTC midnight vs Manila) are a recurring class here.
+    timezoneId: 'Asia/Manila',
+    locale: 'en-PH',
     trace: 'on-first-retry',
     video: recordVideo ? 'on' : 'retain-on-failure',
     screenshot: 'only-on-failure',

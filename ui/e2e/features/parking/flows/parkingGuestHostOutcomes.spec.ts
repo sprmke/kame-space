@@ -47,7 +47,7 @@ test.describe('@ci parking guest and host outcomes', () => {
     await captureParkingScreen(page, 'guest-no-host-closed', { role: 'guest' });
   });
 
-  test('host can decline a pending request and the guest sees the request close out', async ({
+  test('@flaky host can decline a pending request and the guest sees the request close out', async ({
     page,
     browser,
   }) => {

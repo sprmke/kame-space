@@ -10,7 +10,7 @@ import {
 } from '../shared/parkingFlowHarness';
 import { setParkingScreenSuite } from '../shared/parkingScreenCapture';
 
-test.describe('parking marketplace edge cases', () => {
+test.describe('@ci parking marketplace edge cases', () => {
   test('shows no availability when every slot is excluded', async ({ page }) => {
     setParkingScreenSuite('no-parking-available');
     const state = createParkingFlowState();

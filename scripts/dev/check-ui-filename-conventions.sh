@@ -47,6 +47,12 @@ while IFS= read -r -d '' f; do
   fi
 
   if [[ "$ext" == "tsx" ]]; then
+    # Co-located component/hook tests (e.g. InfoHint.test.tsx, run by the `dom` Vitest
+    # project). Same exemption as `*.test.ts` below.
+    if [[ "$base" == *.test.tsx ]]; then
+      continue
+    fi
+
     if [[ "$rel" == */components/* ]] || [[ "$rel" == */pages/* ]] || [[ "$rel" == components/* ]]; then
       if ! is_pascal_case "$name"; then
         fail "$rel (expected PascalCase.tsx)"
