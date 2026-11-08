@@ -3,7 +3,7 @@ stage: planned
 title: 'AI Opportunities Roadmap — Guest Form Management'
 status: planned
 tags: [planning, planned-modules, ai, roadmap]
-updated: 2026-08-06
+updated: 2026-11-09
 ---
 
 # AI Opportunities Roadmap — Guest Form Management
@@ -45,7 +45,7 @@ Each idea: **Title** — Problem → AI approach · Data/APIs needed · Effort (
 9. **Dynamic pricing suggestions** — **Promoted → [`../for-testing/smart-pricing-ai.md`](../for-testing/smart-pricing-ai.md)** (Smart Pricing; Phases 0–3 shipped 2026-09-04, for-testing). Deterministic `base × multiplier` engine over the property's own calendar history + forward occupancy, Autopilot or Review-and-apply, optional AI rationale pass. Pro+ `smartPricing` plan key.
 10. **Finance narrative + expense anomaly digest** — `finance-summary` shows numbers only; admins manually spot problems. → Monthly AI-generated narrative: biggest expense categories, revenue trend, one or two suggested actions; flag outlier line items. · Gemini text over `finance-bookings`/`finance-line-items` data · M · High
 11. **Maintenance ticket auto-drafting from inbox** — Guests report issues ("AC not working") in chat; admins manually create maintenance items. → Detect maintenance-shaped messages in Guest Inbox and offer a one-click "create maintenance item" pre-filled by AI. · Gemini text, `maintenance-items` fn, inbox message stream · M · Med
-12. **Marketing strategy suggestions** — Marketing Studio generates captions/videos on demand, but has no signal on _when_ to promote. → Analyze occupancy/booking trends per property and recommend campaigns ("low occupancy in 2 weeks — suggest a flash-sale post for these dates"), surfaced in Marketing Studio. · Gemini text over booking + pricing data · M · High
+12. **Marketing strategy suggestions** — Marketing Studio generates captions/videos on demand, but has no signal on _when_ to promote. → Analyze occupancy/booking trends per property and recommend campaigns ("low occupancy in 2 weeks — suggest a flash-sale post for these dates"), surfaced in Marketing Studio. · Gemini text over booking + pricing data · M · High · **Plan:** [`marketing-strategy-planner.md`](./marketing-strategy-planner.md)
 13. **Inbox conversation triage** — All Meta/web-chat threads look equal in the list; urgent ones aren't surfaced. → Auto-tag threads by intent/urgency (question, complaint, booking-related, spam) for sort/filter in the inbox list. · Extend `socialInboxAiService.ts` classification · S/M · Med
 14. **Auto-reply guardrail check** — Auto-reply (off by default) could promise something outside policy (refund amount, dates) with no check. → Add a policy-compliance pass before an auto-reply sends, rejecting/flagging risky drafts. · Extend `socialInboxAiService.ts` · S · Med (risk mitigation)
 15. **AI-drafted template starting point** — House-rules/instruction templates start blank. → Generate a first-draft template from a short prompt describing the property, which the admin edits. · Gemini text, existing templates schema · S · Low-Med

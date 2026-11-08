@@ -3,7 +3,7 @@ stage: planned
 title: 'Buy more AI credits (paid top-up wallet — Phase 4 of AI metering)'
 status: planned
 tags: [planning, planned-modules, ai, billing, paymongo, plans, credits, plans-and-permissions]
-updated: 2026-09-11
+updated: 2026-11-09
 ---
 
 # Buy more AI credits when the monthly allowance runs out
@@ -17,6 +17,91 @@ updated: 2026-09-11
 3. Purchased credits are a **persistent, non-resetting** balance in `ai_platform_org_credit_wallet.balance_credits`. They are drawn down **only after** the plan's monthly allowance (`ai_platform_org_settings.monthly_credit_limit`, kept in sync with the plan by `syncAiCreditsFromPlan()`) is exhausted — the exact behaviour `assertOrgAndPropertyAiQuota()` / `recordAiUsage()` already implement.
 4. Credits **extend the volume allowance** of AI features the plan already grants. They **do not unlock plan-gated AI features** (`aiReceptionist`, `aiMarketingGeneration`, …) — those stay behind `requireOrgPropertyFeature`. Copy must say this plainly.
 5. Reuses **all** existing PayMongo plumbing: `_shared/paymongoClient.ts`, `_shared/paymongoWebhookVerify.ts`, `paymongo-webhook` (dispatches by `metadata.kind`), `processed_paymongo_events` dedupe, `platform_payment_settings` rails, `PUBLIC_GUEST_APP_ORIGIN` return URLs, `getPaymongoProviderPaymentState()` reconciliation. No new secrets, no new webhook endpoint.
+
+## 2026-11-09 review addendum (read this first)
+
+The plan above was checked against the code on 2026-11-09 as part of [`payments-paymongo-hardening.md`](./payments-paymongo-hardening.md). The architecture still holds: the wallet, ledger, `adjustOrgCreditWallet()`, the over-allowance gate in `aiUsageService.ts`, and the stub "Buy credits" toast (`aiQuotaToast.ts:43`) are all where the plan says. The changes below override the matching sections above.
+
+### Relation to auto-renew subscriptions (2026-11-09)
+
+Subscriptions move to automatic monthly billing in [`auto-renew-subscription-billing.md`](./auto-renew-subscription-billing.md). AI credits stay a separate **one-time** purchase: any active one-time rail (QR Ph, plus card and Maya when active), never added to the subscription invoice, kept on cancel or downgrade. Saved-card one-click and auto top-up are later items listed in that plan.
+
+### Hard dependency
+
+**Do not ship this plan before Phase 1 of the hardening plan.** Edge cases #1 and #5 above assume PayMongo retries are safe. Today they are not: the webhook stores its dedupe row before processing, so a failed fulfilment is answered `duplicate: true` on retry and the credit is never added (hardening F-01). Phase 1.1 fixes it for every `metadata.kind`, including `ai_credit_topup`.
+
+### Corrections to the sections above
+
+| Section                                | Was                                   | Now                                                                                                                                                                                  |
+| -------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Edge case #19, PayMongo plumbing table | Fallback rails `qrph, paymaya, gcash` | Rails come from `_shared/paymentRails.ts` (hardening 1.3). Launch rail is **QR Ph only**. Copy: "Pay with QR Ph. Scan with GCash, Maya, or your bank app."                           |
+| Edge case #8 `payment.failed`          | Row goes `failed`                     | Row stays `pending` while the session is open; a later `paid` still credits (hardening 1.2, F-02). Failure email once, only after the session expires unpaid.                        |
+| Fulfilment                             | Trusts `transaction_id` → DB row      | Also checks paid amount, currency, and `livemode` against the purchase row. Mismatch → `paid` + `fulfillment_error='amount_mismatch'`, no credit, super-admin queue (hardening 1.4). |
+| Reconcile on `ai-credit-wallet` GET    | GET reconciles and fulfils            | GET is read-only. Reconcile runs from an owner-only `POST reconcile-ai-credit-purchase` on return (`?topup=success`), from the cron, and from super-admin (hardening 2.4, F-15).     |
+| Pending reuse (#17, #26)               | Reuse same-pack open session          | One pending purchase per org. Reuse only if pack, price snapshot, and credits match; otherwise expire it on our side and on PayMongo first (hardening 1.5).                          |
+| Verification section                   | "No test suite in this repo"          | Out of date. Use the hardening Phase 5 harness (pure Deno units, PayMongo fake, local-Supabase integration, Playwright mocked). Scenarios below.                                     |
+| Super-admin UI                         | Packs CRUD + read-only purchases      | Expanded below.                                                                                                                                                                      |
+
+### Product decisions (recommended defaults, confirm with pricing owner)
+
+1. **No expiry** on purchased credits (they were paid for). Keeps the wallet a single balance.
+2. **Buyer:** org owner only. Others see balance and packs with "Ask the org owner to buy credits".
+3. **Eligibility:** plan must include AI (`aiMonthlyCreditAllowance > 0`). Block when `suspended`. Allow when `past_due` but show the overdue banner above the packs.
+4. **Spend order:** monthly allowance first, then wallet. Unchanged.
+5. **Downgrade to a plan without AI:** the wallet is kept but can't be spent. UI says "You have N credits saved. They work again when your plan includes AI." No auto-refund.
+6. **Refund after some credits are spent:** refund in the PayMongo dashboard, then super-admin "Mark refunded" claws back `min(balance, credits bought)` (RPC clamps at 0) and records the shortfall on the purchase row.
+
+### Super-admin control (adds to "Super-admin UI" above)
+
+All writes: `serveSuperAdmin` + step-up + `logSuperAdminAction` + org `activity_log`.
+
+- [ ] **Kill switch** `ai_topup_enabled` in `platform_payment_settings` (hardening 3.4). Off → Buy hidden, checkout returns 503 "Credit top-ups are paused".
+- [ ] **Packs CRUD** at `/admin/pricing/credit-packs` (as above) plus `eligible_plan_codes` per pack and a preview of how the pack card looks.
+- [ ] **Limits:** no purchase cap by default. Hosts can buy anytime, as many times as they want. One pending checkout at a time (concurrency only). Optional per-org monthly cap and a velocity guard (default off) for fraud. Per-org "block top-ups" flag with reason (fraud or dispute).
+- [ ] **Purchases queue** in `/admin/billing` (hardening 3.1): paid not credited, amount mismatch, superseded, stuck pending. Actions: Reconcile, Apply credit, Cancel pending, Mark refunded (with clawback).
+- [ ] **Grant credits** (promotional): reuse `AiCreditWalletCard` manual adjust with `entry_type='promotional_grant'`, a required reason, and an optional expiry note (informational only, since decision 1 is no expiry).
+- [ ] **Reporting:** credits sold, revenue, credits consumed from wallet vs allowance, top buyers. CSV export.
+
+### Host UX additions
+
+- [ ] **Before they run out:** in-app notification + email once per month at 80% and 100% of the monthly allowance, with "Buy credits" (deduped in `org_billing_notices`, hardening 2.3).
+- [ ] **Inline, where the error happens:** when an AI action fails with the credit `upgradeHook` (assistant chat, marketing generation, inbox suggest), show an inline card "You're out of AI credits" with Buy credits, not only a toast. Owner sees Buy; others see "Ask the org owner".
+- [ ] **Return to where they were:** checkout carries a validated same-origin `returnTo` path. After `topup=success` and confirmation, show "N credits added" and a link back.
+- [ ] **Pack card:** credits, bonus, price, price per 1,000 credits, and a plain estimate ("about 200 assistant replies") once per-feature averages exist (open decision 6 above).
+- [ ] **States:** confirming (poll up to 2 min), still checking (we'll email you), cancelled (nothing charged), failed (try again), paused (kill switch), not eligible (upgrade CTA), blocked (contact support).
+- [ ] Mobile: purchase dialog is a bottom sheet on phone; pack grid one column at 375.
+
+### Test scenarios (add to hardening Phase 5)
+
+| #   | Scenario                                                                                  | Expected                                                                      | Layer                          |
+| --- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------ |
+| A01 | Buy pack, `checkout_session.payment.paid`                                                 | One `purchase_credit` ledger row, balance up by credits + bonus, receipt once | I                              |
+| A02 | Both paid events delivered                                                                | Credited once                                                                 | I                              |
+| A03 | Handler throws, PayMongo retries                                                          | Credited once on retry                                                        | I                              |
+| A04 | Failed attempt then paid                                                                  | Credited                                                                      | I                              |
+| A05 | Webhook missed, host returns                                                              | Reconcile POST credits once                                                   | I + E                          |
+| A06 | Amount mismatch                                                                           | Not credited, in admin queue                                                  | I                              |
+| A07 | Pack price edited after checkout                                                          | Snapshot price/credits used                                                   | I                              |
+| A08 | Pack deactivated mid-checkout                                                             | Pending still fulfils at snapshot                                             | I                              |
+| A09 | Free plan org calls checkout                                                              | 4xx "upgrade to buy credits"                                                  | I                              |
+| A10 | Suspended org calls checkout                                                              | 4xx with pay-first message                                                    | I                              |
+| A11 | Non-owner calls checkout                                                                  | 403                                                                           | I                              |
+| A12 | Optional cap set by super-admin and reached; default no cap allows a 6th, 7th, … purchase | 4xx with cap message only when a cap is set                                   | I                              |
+| A13 | Kill switch off                                                                           | 503, UI hides Buy                                                             | I + E                          |
+| A14 | Allowance exhausted, wallet > 0                                                           | AI call allowed, `usage_debit` row                                            | I (exists in metering, re-run) |
+| A15 | Wallet hits 0 mid-month                                                                   | Next AI call blocked with credit upgradeHook, inline Buy card                 | I + E                          |
+| A16 | Mark refunded after partial spend                                                         | Clawback clamps at 0, shortfall recorded, audit rows                          | I                              |
+| A17 | Downgrade to Free with balance                                                            | Balance kept, copy shown, not spendable                                       | I + E                          |
+| A18 | 80% / 100% notices                                                                        | Each sent once per month                                                      | U + I                          |
+| A19 | `returnTo` with external URL                                                              | Ignored, falls back to AI credits tab                                         | U                              |
+| A20 | Host UI states at 375 / 1280                                                              | Each state renders with the right action                                      | E                              |
+
+### Phase order (replaces "Phase breakdown" order above)
+
+1. Hardening Phase 1 (shared money safety) and 3.4 (settings + kill switch).
+2. This plan Phase 1 (catalog) and Phase 2 (purchase backend, with the corrections above).
+3. This plan Phase 3 (host UI, with the UX additions) and the super-admin additions.
+4. This plan Phase 4 (ops hardening) folded into hardening Phase 3 (`/admin/billing`).
 
 ## Why this is not greenfield — what already exists
 

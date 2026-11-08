@@ -3,7 +3,7 @@ stage: planned
 title: 'Marketing — Meta publishing feature gaps (scheduling, confirmation, Reels)'
 status: planned
 tags: [workflow, planned, marketing, publishing, meta]
-updated: 2026-09-09
+updated: 2026-11-09
 kind: plan
 ---
 
@@ -46,6 +46,7 @@ kind: plan
 
 ## Related
 
+- Planned: [`./marketing-strategy-planner.md`](./marketing-strategy-planner.md) depends on this plan. Its Phase 3 (publish, schedule, share) builds on scope 1 to 4 here and adds carousel, a pre-publish claim check and plan item links; ship this first or implement it there.
 - Done: [`../done/marketing-module-refinement.md`](../done/marketing-module-refinement.md) (Marketing 5 — perf / AI-gen / IG video race)
 - Done: [`../done/guest-inbox-meta-hardening.md`](../done/guest-inbox-meta-hardening.md) (Meta OAuth / webhook hardening)
 - `docs/guides/routes/org/property/marketing.md` · `docs/archive/operations/scheduled-jobs-and-testing.md`
