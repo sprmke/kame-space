@@ -90,11 +90,22 @@ result badge and any warnings on the booking, not the ID number.
 
 ## Testing
 
-| Layer  | Coverage                                                                                                                             |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Unit   | `captureQuality.test.ts`, `identityVerdict.test.ts`                                                                                  |
-| Deno   | `identitySessionToken_test.ts`, `identityVerification_test.ts`, `identitySessionService_test.ts`, `philsysQr_test.ts`, `mrz_test.ts` |
-| Manual | `docs/guides/testing/identity-verification-manual.md`                                                                                |
+| Layer              | Coverage                                                                                                                                                                                        |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit               | `captureQuality.test.ts`, `identityVerdict.test.ts`                                                                                                                                             |
+| Deno               | `identitySessionToken_test.ts`, `identityVerification_test.ts`, `identitySessionService_test.ts`, `philsysQr_test.ts`, `mrz_test.ts`                                                            |
+| E2E mocked (`@ci`) | `ui/e2e/features/host-verification/` — 12 tests: registration → onboarding → live capture → submit, expired link, camera denied, pipeline failure, every Get Verified state, super-admin review |
+| E2E side by side   | `flows/hostRegistrationReviewTwoWindows.spec.ts` — host onboarding in one window, super-admin approval in the other                                                                             |
+| Manual             | `docs/guides/testing/identity-verification-manual.md`                                                                                                                                           |
+
+```bash
+bun run test:e2e:host-verification                    # @ci, mocked
+bun run test:e2e:host-verification:headed
+bun run test:e2e:host-verification:side-by-side:slow:video
+```
+
+`PLAYWRIGHT_PORT` / `PLAYWRIGHT_PWA_PORT` override the dev and PWA ports, so a worktree can run
+its own server while another session owns 4173.
 
 ## Edge cases
 
