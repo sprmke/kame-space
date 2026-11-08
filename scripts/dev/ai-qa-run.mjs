@@ -38,9 +38,9 @@ const SRK =
 const EMAIL = process.env.AI_QA_EMAIL ?? 'sprmke.dev@gmail.com';
 const GUEST_EMAIL = process.env.AI_QA_GUEST_EMAIL ?? 'ai-qa-guest@example.test';
 const MEMBER_EMAIL = process.env.AI_QA_MEMBER_EMAIL ?? 'ai-qa-member@example.test';
-const ORG = process.env.AI_QA_ORG ?? 'kame-home';
-const PROPERTY = process.env.AI_QA_PROPERTY ?? 'monaco-2612';
-const PROPERTY_SLUG = process.env.AI_QA_PUBLIC_SLUG ?? 'monaco-2612';
+const ORG = process.env.AI_QA_ORG ?? 'kame-homes';
+const PROPERTY = process.env.AI_QA_PROPERTY ?? 'kame-home';
+const PROPERTY_SLUG = process.env.AI_QA_PUBLIC_SLUG ?? 'kame-home';
 
 const args = process.argv.slice(2);
 const flag = (name, fallback = null) => {
@@ -57,7 +57,11 @@ const isGuestSurface = SURFACE === 'guest' || SURFACE === 'voice';
 const VIEWPORT = String(flag('viewport', '1440')); // 1440 | 768 | 375
 const ALL = Boolean(flag('all', false));
 const BRIEFING = Boolean(flag('briefing', false));
-const IDS = flag('ids', null) ? String(flag('ids')).split(',').map((s) => s.trim()) : null;
+const IDS = flag('ids', null)
+  ? String(flag('ids'))
+      .split(',')
+      .map((s) => s.trim())
+  : null;
 const TIMEOUT_MS = Number(flag('timeout', 90_000));
 let guestConversationId = null;
 const PAGE_ERRORS = [];
@@ -194,7 +198,14 @@ async function dumpAiModeFail(page, label) {
   const failPath = resolve(dir, '_ai-mode-fail.png');
   await page.screenshot({ path: failPath, fullPage: true });
   const snippet = (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 400);
-  const root = (await page.locator('#root').innerHTML().catch(() => '')).replace(/\s+/g, ' ').slice(0, 240);
+  const root = (
+    await page
+      .locator('#root')
+      .innerHTML()
+      .catch(() => '')
+  )
+    .replace(/\s+/g, ' ')
+    .slice(0, 240);
   const html = (await page.content().catch(() => '')).replace(/\s+/g, ' ').slice(0, 360);
   const mode = await page
     .locator('[data-dashboard-mode]')
@@ -236,7 +247,9 @@ async function ensureAiMode(page) {
   }
   const inner = row.locator('[role="switch"]').first();
   const turnOn = async () => {
-    const checked = await inner.getAttribute('aria-checked', { timeout: 5_000 }).catch(() => 'false');
+    const checked = await inner
+      .getAttribute('aria-checked', { timeout: 5_000 })
+      .catch(() => 'false');
     if (checked === 'true') return;
     await inner.click({ timeout: 8_000 }).catch(async () => {
       await page.keyboard.press('Meta+j');
@@ -273,7 +286,10 @@ async function sendHostQuestion(page, question, { continueThread = false } = {})
   if (SURFACE === 'ai') {
     await ensureAiMode(page);
     if (!continueThread) {
-      const newChat = page.getByRole('button', { name: 'New chat' }).locator('visible=true').first();
+      const newChat = page
+        .getByRole('button', { name: 'New chat' })
+        .locator('visible=true')
+        .first();
       if (await newChat.isVisible().catch(() => false)) {
         await newChat.click();
         await page.waitForTimeout(400);
@@ -301,7 +317,10 @@ async function sendHostQuestion(page, question, { continueThread = false } = {})
   await composer.fill(question.message);
   const send =
     SURFACE === 'sheet'
-      ? page.getByRole('dialog', { name: 'AI Assistant' }).getByRole('button', { name: 'Send message' }).first()
+      ? page
+          .getByRole('dialog', { name: 'AI Assistant' })
+          .getByRole('button', { name: 'Send message' })
+          .first()
       : page.getByRole('button', { name: 'Send message' }).locator('visible=true').first();
   const enabledUntil = Date.now() + 20_000;
   while (Date.now() < enabledUntil) {
@@ -361,11 +380,18 @@ async function sendHostQuestion(page, question, { continueThread = false } = {})
         for (const event of ev) {
           if (event.type === 'blocks') captured.blocks = event.blocks ?? event;
         }
-        const stillProposed = await page.getByRole('button', { name: 'Cancel' }).locator('visible=true').count();
+        const stillProposed = await page
+          .getByRole('button', { name: 'Cancel' })
+          .locator('visible=true')
+          .count();
         if (stillProposed === 0) break;
         await page.waitForTimeout(250);
       }
-      await page.getByText('Suggestions').last().waitFor({ timeout: 5_000 }).catch(() => undefined);
+      await page
+        .getByText('Suggestions')
+        .last()
+        .waitFor({ timeout: 5_000 })
+        .catch(() => undefined);
       const done = page.getByText('Done.').last();
       if (await done.isVisible().catch(() => false)) {
         await done.scrollIntoViewIfNeeded().catch(() => undefined);
@@ -452,19 +478,23 @@ async function closeVoiceBooth(page) {
   if (await done.isVisible().catch(() => false)) {
     await done.click().catch(() => undefined);
   }
-  await page.getByRole('region', { name: 'Voice receptionist' }).waitFor({
-    state: 'hidden',
-    timeout: 8_000,
-  }).catch(() => undefined);
+  await page
+    .getByRole('region', { name: 'Voice receptionist' })
+    .waitFor({
+      state: 'hidden',
+      timeout: 8_000,
+    })
+    .catch(() => undefined);
 }
 
 async function openVoiceBoothFromMenu(page) {
   const booth = page.getByRole('region', { name: 'Voice receptionist' });
   await ensureGuestComposer(page);
   await page.getByRole('button', { name: 'Chat options' }).click();
-  const talk = page.getByRole('option', { name: 'Talk to receptionist' }).or(
-    page.getByRole('menuitem', { name: 'Talk to receptionist' })
-  ).or(page.getByRole('button', { name: 'Talk to receptionist' }));
+  const talk = page
+    .getByRole('option', { name: 'Talk to receptionist' })
+    .or(page.getByRole('menuitem', { name: 'Talk to receptionist' }))
+    .or(page.getByRole('button', { name: 'Talk to receptionist' }));
   try {
     await talk.first().click({ timeout: 8_000 });
   } catch {
@@ -472,7 +502,14 @@ async function openVoiceBoothFromMenu(page) {
     mkdirSync(dir, { recursive: true });
     const failPath = resolve(dir, '_voice-menu-fail.png');
     await page.screenshot({ path: failPath, fullPage: true }).catch(() => undefined);
-    const snippet = (await page.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 400);
+    const snippet = (
+      await page
+        .locator('body')
+        .innerText()
+        .catch(() => '')
+    )
+      .replace(/\s+/g, ' ')
+      .slice(0, 400);
     throw new Error(
       `Talk to receptionist not in Chat options (${snippet}). screenshot ${failPath.replace(`${ROOT}/`, '')}`
     );
@@ -513,7 +550,7 @@ async function ensureVoiceBooth(page, { forceNew = false } = {}) {
   } else {
     const retry = page.getByRole('button', { name: 'Retry' });
     const start = page.getByRole('button', { name: 'Start call' });
-    if (await retry.isVisible().catch(() => false) || issue) {
+    if ((await retry.isVisible().catch(() => false)) || issue) {
       if (await retry.isVisible().catch(() => false)) await retry.click();
       else await start.click().catch(() => undefined);
     } else if (await start.isVisible().catch(() => false)) {
@@ -546,7 +583,12 @@ async function ensureVoiceBooth(page, { forceNew = false } = {}) {
       mkdirSync(dir, { recursive: true });
       const failPath = resolve(dir, '_voice-connect-fail.png');
       await page.screenshot({ path: failPath, fullPage: true }).catch(() => undefined);
-      const alert = (await page.getByRole('alert').innerText().catch(() => '')).replace(/\s+/g, ' ');
+      const alert = (
+        await page
+          .getByRole('alert')
+          .innerText()
+          .catch(() => '')
+      ).replace(/\s+/g, ' ');
       const snippet = (await booth.innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 400);
       throw new Error(
         `voice booth failed to connect${alert ? ` (${alert})` : ''}: ${snippet}. screenshot ${failPath.replace(`${ROOT}/`, '')}`
@@ -580,7 +622,13 @@ async function sendVoiceQuestion(page, question) {
     }
   }
   const panel = page.getByRole('region', { name: 'Voice receptionist' });
-  const beforeAssistant = ((await panel.locator('.self-start').last().innerText().catch(() => '')) || '').trim();
+  const beforeAssistant = (
+    (await panel
+      .locator('.self-start')
+      .last()
+      .innerText()
+      .catch(() => '')) || ''
+  ).trim();
   const started = Date.now();
   const sent = await page.evaluate((text) => {
     const send = window.__aiQaVoiceSend;
@@ -597,7 +645,13 @@ async function sendVoiceQuestion(page, question) {
   const waitMs = Math.min(Math.max(TIMEOUT_MS, 20_000), 45_000);
   const deadline = Date.now() + waitMs;
   while (Date.now() < deadline) {
-    const assistant = ((await panel.locator('.self-start').last().innerText().catch(() => '')) || '').trim();
+    const assistant = (
+      (await panel
+        .locator('.self-start')
+        .last()
+        .innerText()
+        .catch(() => '')) || ''
+    ).trim();
     if (assistant && assistant !== beforeAssistant) {
       const settleUntil = Date.now() + 8_000;
       while (Date.now() < settleUntil) {
@@ -749,7 +803,8 @@ async function exhaustGuestAutoReplyBudget(conversationId) {
   // Local functions serve sets INBOX_AUTO_REPLY_PER_CONVERSATION_PER_HOUR=80 so a
   // full guest corpus on one thread is not cut off. Production stays at 10.
   const envLimit = Number(process.env.INBOX_AUTO_REPLY_PER_CONVERSATION_PER_HOUR);
-  const limit = Number.isFinite(envLimit) && envLimit > 0 ? Math.min(Math.floor(envLimit), 200) : 80;
+  const limit =
+    Number.isFinite(envLimit) && envLimit > 0 ? Math.min(Math.floor(envLimit), 200) : 80;
   const bumps = limit + 2;
   let lastCount = 0;
   for (let i = 0; i < bumps; i++) {
@@ -848,8 +903,17 @@ async function dumpGuestComposerFail(page, message) {
   mkdirSync(dir, { recursive: true });
   const failPath = resolve(dir, '_guest-composer-fail.png');
   await page.screenshot({ path: failPath, fullPage: true }).catch(() => undefined);
-  const snippet = (await page.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 400);
-  throw new Error(`${message} at ${page.url()} (${snippet}). screenshot ${failPath.replace(`${ROOT}/`, '')}`);
+  const snippet = (
+    await page
+      .locator('body')
+      .innerText()
+      .catch(() => '')
+  )
+    .replace(/\s+/g, ' ')
+    .slice(0, 400);
+  throw new Error(
+    `${message} at ${page.url()} (${snippet}). screenshot ${failPath.replace(`${ROOT}/`, '')}`
+  );
 }
 
 async function captureBriefing(page) {
@@ -901,7 +965,7 @@ function appendLedger(row) {
     );
   }
   const t = row.timing || {};
-  const line = `| ${row.id} | ${SURFACE} | ${VIEWPORT} | ${row.wallMs ?? ''} | ${t.total_ms ?? ''} | ${t.preload_ms ?? ''} | ${(t.model_ms || []).reduce((a, b) => a + b, 0) || ''} | ${((t.tools_ms || []).reduce((a, b) => a + (b.ms || 0), 0)) || ''} | ${t.synth_ms ?? ''} | ${t.guard_ms ?? ''} | ${(row.blockTypes || []).join(', ')} | ${row.error ? String(row.error.message || row.error.type || 'error').replace(/\|/g, '/') : ''} | \`${row.screenshot}\` |\n`;
+  const line = `| ${row.id} | ${SURFACE} | ${VIEWPORT} | ${row.wallMs ?? ''} | ${t.total_ms ?? ''} | ${t.preload_ms ?? ''} | ${(t.model_ms || []).reduce((a, b) => a + b, 0) || ''} | ${(t.tools_ms || []).reduce((a, b) => a + (b.ms || 0), 0) || ''} | ${t.synth_ms ?? ''} | ${t.guard_ms ?? ''} | ${(row.blockTypes || []).join(', ')} | ${row.error ? String(row.error.message || row.error.type || 'error').replace(/\|/g, '/') : ''} | \`${row.screenshot}\` |\n`;
   appendFileSync(path, line);
 }
 
@@ -939,14 +1003,18 @@ async function installSseTap(page) {
               const blocks = json?.data?.blocks ?? json?.blocks;
               if (Array.isArray(blocks)) window.__aiQaEvents.push({ type: 'blocks', blocks });
               if (json?.error || json?.success === false) {
-                window.__aiQaEvents.push({ type: 'error', message: json.error || 'request failed' });
+                window.__aiQaEvents.push({
+                  type: 'error',
+                  message: json.error || 'request failed',
+                });
               }
             })
             .catch(() => undefined);
           return res;
         }
       }
-      if (!url.includes('dashboard-assistant-chat') || !ct.includes('text/event-stream')) return res;
+      if (!url.includes('dashboard-assistant-chat') || !ct.includes('text/event-stream'))
+        return res;
       const clone = res.clone();
       (async () => {
         const reader = clone.body?.getReader();
@@ -982,7 +1050,7 @@ async function fetchOrgId() {
     headers: { apikey: SRK, Authorization: `Bearer ${SRK}` },
   });
   const rows = await res.json().catch(() => []);
-  return Array.isArray(rows) ? rows[0]?.id ?? null : null;
+  return Array.isArray(rows) ? (rows[0]?.id ?? null) : null;
 }
 
 async function fetchPropertyId() {
@@ -990,7 +1058,7 @@ async function fetchPropertyId() {
     headers: { apikey: SRK, Authorization: `Bearer ${SRK}` },
   });
   const rows = await res.json().catch(() => []);
-  return Array.isArray(rows) ? rows[0]?.id ?? null : null;
+  return Array.isArray(rows) ? (rows[0]?.id ?? null) : null;
 }
 
 /** Property member with assistant access and no org billing leaf (H-64). */
@@ -1089,7 +1157,10 @@ async function dismissBlockingOverlays(page) {
     }
     const assistantOpen =
       SURFACE === 'sheet' &&
-      (await page.getByRole('dialog', { name: 'AI Assistant' }).isVisible().catch(() => false));
+      (await page
+        .getByRole('dialog', { name: 'AI Assistant' })
+        .isVisible()
+        .catch(() => false));
     const scrim = page.locator('.modal-scrim[data-state="open"]');
     if ((await scrim.count()) === 0) return;
     // The assistant sheet uses the same scrim; Esc would close it.
@@ -1113,7 +1184,9 @@ async function ensureAdvancedMode(page) {
   const row = page.locator('[data-testid="dashboard-mode-toggle"]').locator('visible=true').first();
   const inner = row.locator('[role="switch"]').first();
   if ((await row.count()) > 0) {
-    const checked = await inner.getAttribute('aria-checked', { timeout: 5_000 }).catch(() => 'false');
+    const checked = await inner
+      .getAttribute('aria-checked', { timeout: 5_000 })
+      .catch(() => 'false');
     if (checked === 'true') {
       await inner.click({ timeout: 8_000 }).catch(async () => {
         await page.keyboard.press('Meta+j');
@@ -1136,7 +1209,10 @@ async function ensureSheetComposer(page) {
   await ensureAdvancedMode(page);
   const panel = page.getByRole('dialog', { name: 'AI Assistant' });
   const composer = composerLocator(page);
-  if ((await panel.isVisible().catch(() => false)) && (await composer.isVisible().catch(() => false))) {
+  if (
+    (await panel.isVisible().catch(() => false)) &&
+    (await composer.isVisible().catch(() => false))
+  ) {
     return;
   }
   const fab = page.getByRole('button', { name: 'Open AI assistant' });
@@ -1399,12 +1475,14 @@ async function main() {
     }
     const errText = String(result.error?.message || result.error?.type || '');
     const dailyQuota = /quota exceeded|generate_content_free_tier|retry in \d+h/i.test(errText);
-    const rateLimited = /too many requests|rate limit|429|high demand|try again later|dns error|no address associated|hostname/i.test(
-      errText
-    );
-    const crashed = /something went wrong|shell missing|toggle missing|invalid or expired session/i.test(
-      String(result.error?.message || result.error?.type || '')
-    );
+    const rateLimited =
+      /too many requests|rate limit|429|high demand|try again later|dns error|no address associated|hostname/i.test(
+        errText
+      );
+    const crashed =
+      /something went wrong|shell missing|toggle missing|invalid or expired session/i.test(
+        String(result.error?.message || result.error?.type || '')
+      );
     const guestComposerGone =
       SURFACE === 'guest' &&
       /textbox.*Message|Request failed/i.test(String(result.error?.message || ''));
@@ -1505,7 +1583,9 @@ async function main() {
       break;
     }
     if (dailyQuota) {
-      console.error('Gemini daily quota exceeded; stopping this surface. Recapture remaining ids after reset.');
+      console.error(
+        'Gemini daily quota exceeded; stopping this surface. Recapture remaining ids after reset.'
+      );
       break;
     }
   }

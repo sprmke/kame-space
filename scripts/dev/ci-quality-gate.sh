@@ -41,6 +41,7 @@ run_step "support content format" bun run check:support-content
 run_step "support content parser tests" bun run test:support-content
 run_step "migration versions" bash scripts/dev/check-migration-versions.sh
 run_step "migration security" bash scripts/dev/check-migration-security.sh
+run_step "local seed identity" node scripts/dev/check-seed-identity.mjs
 run_step "unit tests (Vitest)" bun run test
 run_step "unit coverage floor (lib + utils)" bun run test:coverage:lib
 run_step "edge type check (Deno)" bun run check:edge-types

@@ -34,10 +34,10 @@ if (!token) {
   process.exit(1);
 }
 
-const verify = await fetch(
-  `http://127.0.0.1:54321/auth/v1/verify?token=${token}&type=magiclink`,
-  { headers: { apikey: ANON }, redirect: 'manual' }
-);
+const verify = await fetch(`http://127.0.0.1:54321/auth/v1/verify?token=${token}&type=magiclink`, {
+  headers: { apikey: ANON },
+  redirect: 'manual',
+});
 const loc = verify.headers.get('location') || '';
 const h = new URLSearchParams(loc.split('#')[1] || '');
 const s = {
@@ -68,7 +68,9 @@ console.log('inject', JSON.stringify(emailOut));
 
 await $`bun x playwright-cli reload`.nothrow().quiet();
 await Bun.sleep(1200);
-await $`bun x playwright-cli goto http://localhost:5173/org/kame-home/property/monaco-2612/plans`.nothrow().quiet();
+await $`bun x playwright-cli goto http://localhost:5173/org/kame-homes/property/kame-home/plans`
+  .nothrow()
+  .quiet();
 await Bun.sleep(2500);
 
 const plan = await cliEval(`(() => ({

@@ -23,7 +23,9 @@ if (!tok.access_token) {
   console.log('need_reauth');
   await $`bun scripts/dev/qa-phase4-auth-inject.mjs`.nothrow();
 }
-const tok2 = await cliEval(`(() => ({ access_token: JSON.parse(localStorage.getItem('sb-127-auth-token')||'{}').access_token }))()`);
+const tok2 = await cliEval(
+  `(() => ({ access_token: JSON.parse(localStorage.getItem('sb-127-auth-token')||'{}').access_token }))()`
+);
 const access = tok2.access_token;
 const anon =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
@@ -35,7 +37,7 @@ const headers = {
 };
 
 const props = await fetch(
-  'http://127.0.0.1:54321/rest/v1/properties?slug=eq.monaco-2612&select=id,organization_id',
+  'http://127.0.0.1:54321/rest/v1/properties?slug=eq.kame-home&select=id,organization_id',
   { headers: { apikey: anon, Authorization: `Bearer ${access}` } }
 ).then((r) => r.json());
 const propertyId = props?.[0]?.id;
@@ -69,7 +71,7 @@ const oauthRes = await fetch(
     method: 'POST',
     headers,
     body: JSON.stringify({
-      returnPath: '/org/kame-home/property/monaco-2612/inbox',
+      returnPath: '/org/kame-homes/property/kame-home/inbox',
       propertyId,
       organizationId: orgId,
     }),
@@ -91,7 +93,9 @@ console.log(
 );
 
 // Shared bot: React fill via native setter + Save and test
-await $`bun x playwright-cli goto http://localhost:5173/org/kame-home/property/monaco-2612/notifications`.nothrow().quiet();
+await $`bun x playwright-cli goto http://localhost:5173/org/kame-homes/property/kame-home/notifications`
+  .nothrow()
+  .quiet();
 await Bun.sleep(2500);
 await $`bun x playwright-cli click ${`getByRole('button', { name: 'Chat' })`}`.nothrow().quiet();
 await Bun.sleep(1000);
@@ -110,7 +114,9 @@ const filled = await cliEval(`(() => {
 })()`);
 console.log('react_fill', JSON.stringify(filled));
 
-await $`bun x playwright-cli click ${`getByRole('button', { name: 'Save and test' })`}`.nothrow().quiet();
+await $`bun x playwright-cli click ${`getByRole('button', { name: 'Save and test' })`}`
+  .nothrow()
+  .quiet();
 await Bun.sleep(5000);
 const after = await cliEval(`(() => ({
   toasts: [...document.querySelectorAll('[data-sonner-toast]')].map(t => t.innerText.trim()).slice(0, 8),
@@ -120,9 +126,13 @@ const after = await cliEval(`(() => ({
 console.log('global_save_test', JSON.stringify(after));
 
 // Marketing publish dialog CTA quality
-await $`bun x playwright-cli goto http://localhost:5173/org/kame-home/property/monaco-2612/marketing`.nothrow().quiet();
+await $`bun x playwright-cli goto http://localhost:5173/org/kame-homes/property/kame-home/marketing`
+  .nothrow()
+  .quiet();
 await Bun.sleep(2500);
-await $`bun x playwright-cli click ${`getByRole('button', { name: /Publish/i })`}`.nothrow().quiet();
+await $`bun x playwright-cli click ${`getByRole('button', { name: /Publish/i })`}`
+  .nothrow()
+  .quiet();
 await Bun.sleep(1500);
 const pub = await cliEval(`(() => {
   const dlg = document.querySelector('[role=dialog]');

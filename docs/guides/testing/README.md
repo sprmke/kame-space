@@ -23,6 +23,8 @@ Sitewide pyramid for Kame Space. Plan: [`docs/workflow/done/sitewide-automated-t
 | Post-deploy                     | `./scripts/deploy/ci-smoke.sh dev` | after develop deploy |
 | Full local parity               | `bun run ci:quality`               | before push          |
 
+Local database fixtures: [`local-seed-data.md`](./local-seed-data.md) — one org, one property, one parking, every module populated.
+
 ## Comprehensive lib coverage
 
 Every `ui/src/**/lib/*.ts` and `ui/src/utils/**/*.ts` module has a colocated Vitest file, or an explicit `test: N/A` marker when it is React-runtime-only, browser-only (canvas, service worker, fonts) or pure data (see [`docs/workflow/done/comprehensive-unit-test-coverage.md`](../../workflow/done/comprehensive-unit-test-coverage.md)).
