@@ -34,7 +34,7 @@ const liveIdentity: IdentitySummary = {
  * pre-screened verdict and approves. Both windows share one state object, so the approval
  * is visible to the host without a manual data reset.
  */
-test.describe('host registration and super-admin review side by side', () => {
+test.describe('@demo host registration and super-admin review side by side', () => {
   test('host onboards with a live ID, admin approves, host sees the next step', async ({
     page: _page,
   }, testInfo) => {

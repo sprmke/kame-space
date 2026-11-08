@@ -9,7 +9,7 @@ import {
 /**
  * Lab measurement of the host dashboard cold open, read from the Phase 0.1 boot marks.
  *
- * `@perf` and never part of `@smoke` / `@ci`: it reports numbers instead of asserting a
+ * `@perf` and never part of the smoke or ci lanes: it reports numbers instead of asserting a
  * threshold, because a timing threshold on a shared CI runner is a flaky gate. Run it
  * directly to compare two builds:
  *
