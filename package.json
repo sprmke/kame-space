@@ -161,7 +161,12 @@
     "env:sync:dev": "bun scripts/dev/sync-dev-env.mjs",
     "env:sync:vercel:dev": "bun scripts/dev/sync-vercel-dev-env.mjs",
     "env:sync:all": "bun scripts/dev/sync-all-env.mjs",
-    "test:e2e:pwa": "playwright test --project=pwa"
+    "test:e2e:pwa": "playwright test --project=pwa",
+    "test:e2e:host-verification": "playwright test ui/e2e/features/host-verification --project=chromium --grep-invert \"side by side\"",
+    "test:e2e:host-verification:headed": "playwright test ui/e2e/features/host-verification --project=chromium --grep-invert \"side by side\" --headed",
+    "test:e2e:host-verification:side-by-side": "playwright test ui/e2e/features/host-verification/flows/hostRegistrationReviewTwoWindows.spec.ts --project=chromium-side-by-side",
+    "test:e2e:host-verification:side-by-side:slow": "PLAYWRIGHT_SLOW_MO=700 PLAYWRIGHT_DEMO_PAUSE_MS=1800 playwright test ui/e2e/features/host-verification/flows/hostRegistrationReviewTwoWindows.spec.ts --project=chromium-side-by-side",
+    "test:e2e:host-verification:side-by-side:video": "PLAYWRIGHT_RECORD_VIDEO=1 PLAYWRIGHT_SLOW_MO=700 PLAYWRIGHT_DEMO_PAUSE_MS=1800 playwright test ui/e2e/features/host-verification/flows/hostRegistrationReviewTwoWindows.spec.ts --project=chromium-side-by-side"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",

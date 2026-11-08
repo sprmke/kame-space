@@ -683,6 +683,8 @@ export function GetVerifiedModal({
   const [hostTouched, setHostTouched] = useState(false);
   const [verifiedTouched, setVerifiedTouched] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  /** Set when the host captured their ID live; the server copies the photo into the asset. */
+  const [liveValidId, setLiveValidId] = useState<string | null>(null);
 
   const isDirty = [validId, socialProof, selfie, platformAdmin, businessPermit].some(
     (slot) => slot.file !== null
@@ -757,7 +759,7 @@ export function GetVerifiedModal({
     detail,
     hostModes,
     {
-      validId: slotReady(validId),
+      validId: slotReady(validId) || Boolean(liveValidId),
       socialProof: slotReady(socialProof),
     },
     hostChangesRequested ? { changesRequestedDocs: detail.baseChangesRequestedDocs } : undefined
@@ -799,6 +801,7 @@ export function GetVerifiedModal({
         body: JSON.stringify({
           orgId: org.id,
           tier: 'base',
+          ...(liveValidId ? { identityVerificationId: liveValidId } : {}),
         }),
       });
       await queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY });
@@ -885,7 +888,7 @@ export function GetVerifiedModal({
     <OnboardingHostVerificationSection
       file={validId.file}
       previewUrl={validId.previewUrl}
-      error={slotRequiredError(hostTouched, submitting !== null, validId)}
+      error={liveValidId ? null : slotRequiredError(hostTouched, submitting !== null, validId)}
       onFileChange={(file, preview) => {
         setValidId({
           file,
@@ -914,6 +917,7 @@ export function GetVerifiedModal({
             onDocumentCaptured={(file) =>
               setValidId({ file, previewUrl: URL.createObjectURL(file), path: null })
             }
+            onVerified={(result) => setLiveValidId(result.verificationId)}
           />
         ) : null
       }

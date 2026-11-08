@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 4173;
+// Overridable so a worktree can run its own server while another session owns 4173.
+const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 4173);
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 /**
  * The `pwa` project runs against a **production build** (`vite build` + `vite
@@ -8,7 +9,7 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
  * dev-server test could never observe precache, offline navigation or the update
  * flow (PWA v2 task 9.3).
  */
-const PWA_PORT = 4174;
+const PWA_PORT = Number(process.env.PLAYWRIGHT_PWA_PORT ?? 4174);
 const PWA_BASE_URL = `http://127.0.0.1:${PWA_PORT}`;
 
 const recordVideo = process.env.PLAYWRIGHT_RECORD_VIDEO === '1';

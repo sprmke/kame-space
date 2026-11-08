@@ -45,7 +45,12 @@ export function MobileCaptureHandoffPage() {
             {session.isError && (
               <div className="flex flex-col items-center gap-3 py-10 text-center">
                 <AlertCircle className="text-destructive h-6 w-6" aria-hidden />
-                <p className="text-sm font-medium">This link is not valid</p>
+                <p className="text-sm font-medium">
+                  {/* A 410 is an expiry, not a bad link; the server message says which. */}
+                  {/expired/i.test(session.error?.message ?? '')
+                    ? 'This link expired'
+                    : 'This link is not valid'}
+                </p>
                 <p className="text-muted-foreground text-xs">
                   Start again on your computer and scan the new QR code.
                 </p>
