@@ -1240,3 +1240,43 @@ Guests cannot self-cancel after check-in. The host handles early departures and 
 - source: docs/guides/routes/trip.md
 
 No. Calendar-synced Airbnb and other channel bookings are handled on the channel where they were made. The trip page says so and does not offer a cancel button.
+
+### What happens if I cancel a parking booking after the guest paid?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/org/parking/bookings.md
+
+The guest is emailed, the booking is cancelled, and the payment moves to refund review. Your payout for that booking is blocked until a super admin records the refund. Add a short reason so the guest and our team understand why.
+
+### Should I archive or delete a parking slot?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/org/parking/settings.md
+
+Archive when you want to stop taking new bookings but keep the history. Delete is only offered for a slot with no bookings. Deleting also removes its manual finance entries, so archive is the safer choice once you have used the slot.
+
+### Why is the price a guest sees different from my nightly rate?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/parkings.md
+
+Guests always see and pay the platform guest rate. Your nightly rate is what your payout is calculated from, after commission. The guest rate is also the price cap, so a slot priced above it is not matched.
+
+### Can I record a parking booking the guest already paid in cash?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/org/parking/bookings.md
+
+Yes. In New booking, tick **Paid outside Kame Space**. The booking confirms without a payment link and no platform fee is taken. The guest still gets the confirmation and the PMO endorsement.
+
+### Where do I see my parking marketplace payments?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/org/parking/finance.md
+
+Parking Finance shows a read-only **Marketplace payouts** section with the guest price, gross, fee, net and payout status. Payouts are sent manually by the Kame Space team.

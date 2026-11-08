@@ -78,12 +78,14 @@ export type BookingRow = {
   parking_broadcast_expires_at?: string | null;
   parking_claimed_at?: string | null;
   parking_endorsement_note?: string | null;
+  tower_and_unit_number?: string | null;
   parking_request_organization_id?: string | null;
   /** TTL while status is PENDING_PAYMENT — null once paid or released. */
   parking_payment_expires_at?: string | null;
 
   // ── Parking endorsement automation (Phase 5) ────────────────────────────────
   endorsement_sent_at?: string | null;
+  endorsement_send_error?: string | null;
 
   // ── Pets ──────────────────────────────────────────────────────────────────
   has_pets: boolean | null;

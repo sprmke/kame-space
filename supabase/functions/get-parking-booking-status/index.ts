@@ -35,8 +35,9 @@ servePublic('get-parking-booking-status', async (req) => {
     return jsonError(req, `Method ${req.method} not allowed`, 405);
   }
 
-
-  const limited = await publicGetRateLimitGate(req, 'get-parking-booking-status', { maxPerMin: 30 });
+  const limited = await publicGetRateLimitGate(req, 'get-parking-booking-status', {
+    maxPerMin: 30,
+  });
   if (limited) return limited;
 
   const url = new URL(req.url);
@@ -49,7 +50,12 @@ servePublic('get-parking-booking-status', async (req) => {
   const { data: booking, error } = await supabase
     .from('guest_submissions')
     .select(
-      'id, status, parking_id, parking_check_in_date, parking_check_out_date, check_in_date, check_out_date, parking_broadcast_expires_at, parking_payment_expires_at, parking_broadcast_batch_number, parking_endorsement_note, parking_request_organization_id, endorsement_sent_at, endorsement_send_error, endorsement_email_snapshot'
+      `id, status, parking_id, parking_check_in_date, parking_check_out_date,
+       check_in_date, check_out_date, parking_broadcast_expires_at,
+       parking_payment_expires_at, parking_broadcast_batch_number,
+       parking_endorsement_note, parking_request_organization_id,
+       endorsement_sent_at, endorsement_send_error, endorsement_email_snapshot,
+       guest_auth_user_id, guest_email`
     )
     .eq('id', bookingId)
     .maybeSingle();
@@ -64,6 +70,27 @@ servePublic('get-parking-booking-status', async (req) => {
   if (!isParkingRow) {
     return jsonError(req, 'Not found', 404);
   }
+
+  // The booking UUID travels through emails, screenshots and referrers, so it is not enough
+  // to reveal the endorsement HTML (guest name, plate, unit) or host contact. Those are only
+  // returned to the owning signed-in guest (M-10). No write here: this is a GET.
+  const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
+  let viewerUserId: string | null = null;
+  let viewerEmail = '';
+  if (token) {
+    const { data: userData } = await supabase.auth.getUser(token);
+    if (userData?.user) {
+      viewerUserId = userData.user.id;
+      viewerEmail = (userData.user.email ?? '').trim().toLowerCase();
+    }
+  }
+  const guestEmail = String(booking.guest_email ?? '')
+    .trim()
+    .toLowerCase();
+  const viewerOwnsBooking =
+    Boolean(viewerUserId) &&
+    (String(booking.guest_auth_user_id ?? '') === viewerUserId ||
+      (Boolean(guestEmail) && guestEmail === viewerEmail));
 
   let parkingLabel: string | null = null;
   let parkingSlug: string | null = null;
@@ -98,8 +125,9 @@ servePublic('get-parking-booking-status', async (req) => {
         .maybeSingle();
       organizationName = (org?.name as string | undefined) ?? null;
 
-      // Phase 5 decision #6 — guest sees host contact only once endorsement is sent.
-      if (booking.endorsement_sent_at) {
+      // Phase 5 decision #6 — guest sees host contact only once endorsement is sent, and
+      // only when the caller is the owning guest (M-10).
+      if (booking.endorsement_sent_at && viewerOwnsBooking) {
         hostContact = await resolveParkingHostContact(supabase, {
           id: String(booking.parking_id),
           organization_id: parking.organization_id as string,
@@ -141,13 +169,15 @@ servePublic('get-parking-booking-status', async (req) => {
     coverImage,
     brandColor,
     logoUrl,
-    endorsementNote: booking.parking_endorsement_note ?? null,
+    endorsementNote: viewerOwnsBooking ? (booking.parking_endorsement_note ?? null) : null,
     organizationName,
     endorsementSentAt: booking.endorsement_sent_at ?? null,
-    endorsementSendError: booking.endorsement_send_error ?? null,
-    endorsementEmailSnapshot: booking.endorsement_sent_at
-      ? (booking.endorsement_email_snapshot ?? null)
-      : null,
+    viewerOwnsBooking,
+    endorsementSendError: viewerOwnsBooking ? (booking.endorsement_send_error ?? null) : null,
+    endorsementEmailSnapshot:
+      viewerOwnsBooking && booking.endorsement_sent_at
+        ? (booking.endorsement_email_snapshot ?? null)
+        : null,
     hostContact,
     supportEscalationPhone: platformSettings.supportEscalationPhone,
   });

@@ -78,7 +78,8 @@ export async function reconcilePendingOrgPaymentTransaction(
   // Only legacy Payment Links are auto-expired while still open. Hosted Checkout Sessions
   // (`cs_…`) must never be expired here — a transient API miss used to mark paid checkouts
   // expired before fulfillment.
-  if (isPaymongoPaymentLinkRef(providerRef) && paymongoState !== 'paid') {
+  // `paid` already returned above, so any remaining state on a legacy link is safe to expire.
+  if (isPaymongoPaymentLinkRef(providerRef)) {
     await expirePendingTransaction(transactionId);
     return 'expired';
   }

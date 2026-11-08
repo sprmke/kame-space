@@ -23,6 +23,8 @@ export type SubmitParkingBookingRequestInput = {
   linkedPropertyBookingId?: string;
   /** Phase 8 — the ?dl= token from a host's shared direct-booking link, if any. */
   directLinkToken?: string;
+  /** Host-only: booking was paid outside Kame Space (cash or bank transfer). */
+  paymentMode?: 'online' | 'offline';
   /** Anti-spam heuristics (honeypot + form-load timestamp); server reads these off the body. */
   contact_time?: string;
   formLoadedAt?: string;

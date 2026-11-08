@@ -56,7 +56,12 @@ export async function logParkingStatusChange(input: {
   actor: ActorContext;
   action?: Extract<
     ActivityAction,
-    'parking.status_changed' | 'parking.cancelled' | 'parking.claimed' | 'parking.declined'
+    | 'parking.status_changed'
+    | 'parking.cancelled'
+    | 'parking.claimed'
+    | 'parking.declined'
+    | 'parking.cancelled_by_host'
+    | 'parking.auto_completed'
   >;
   metadata?: Record<string, unknown>;
 }): Promise<void> {

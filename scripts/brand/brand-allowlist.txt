@@ -112,3 +112,7 @@ docs/guides/routes/legal.md  # documents the rename disclosure and structured da
 ui/src/lib/platformBranding.test.ts  # asserts the rename disclosure copy and legacy-name detector
 ui/src/lib/platformBranding.test.ts  # tests the retired-name disclosure
 docs/workflow/in-progress/README.md:kamespace-03-rebrand  # links the rename plan filename
+
+# K-19 canonical local seed slugs (kame-homes / kame-home) are identifiers, not the product name
+docs/PROJECT.md:kame-homes  # local seed org slug
+docs/workflow/in-progress/README.md:local-seed-dataset  # links the local seed plan

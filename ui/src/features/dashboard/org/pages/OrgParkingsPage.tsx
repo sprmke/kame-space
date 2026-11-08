@@ -54,7 +54,7 @@ export function OrgParkingsPage() {
   const { data: orgsData, isLoading: orgsLoading } = useOrganizations();
   const { data: parkingsData, isLoading: parkingsLoading } = useParkings(orgSlug);
   const { data: orgAccess } = useOrgPermissions();
-  const canCreateParkings = hasOrgPermission(orgAccess?.permissions, 'org:parkings:create');
+  const canCreateParkings = hasOrgPermission(orgAccess?.permissions, 'org.parkings:create');
 
   const [addOpen, setAddOpen] = useState(false);
   const [filters, setFilters] = useState<OrgParkingsFilters>({

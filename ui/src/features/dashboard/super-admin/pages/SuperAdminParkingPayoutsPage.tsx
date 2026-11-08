@@ -9,11 +9,13 @@ import {
   SuperAdminSettingsRow,
 } from '@/features/dashboard/super-admin/components/shared/SuperAdminSettingsCard';
 import {
+  type ParkingPayoutStatusFilter,
   type ParkingPayoutTransaction,
   useMarkParkingPayoutDisbursed,
   useParkingPayouts,
   usePlatformParkingSettings,
   useRecordParkingPayoutClawback,
+  useRecordParkingPayoutRefund,
   useUpdatePlatformParkingSettings,
 } from '@/features/dashboard/super-admin/hooks/usePlatformParkingSettings';
 
@@ -183,6 +185,101 @@ function RecordClawbackDialog({ transaction }: { transaction: ParkingPayoutTrans
   );
 }
 
+function RecordRefundDialog({ transaction }: { transaction: ParkingPayoutTransaction }) {
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState(String(transaction.guestChargeTotal));
+  const [reference, setReference] = useState('');
+  const [reason, setReason] = useState('');
+  const recordRefund = useRecordParkingPayoutRefund();
+
+  const submitRefund = async (): Promise<boolean> => {
+    if (!amount || !reference.trim() || !reason.trim()) return false;
+    try {
+      await recordRefund.mutateAsync({
+        transactionId: transaction.id,
+        amount: Number(amount),
+        reference: reference.trim(),
+        reason: reason.trim(),
+      });
+    } catch {
+      return false;
+    }
+    setOpen(false);
+    return true;
+  };
+
+  const { onOpenChange: guardedOpenChange, dialogProps } = useGuardedClose({
+    open,
+    onOpenChange: setOpen,
+    isDirty: amount !== '' || reference !== '' || reason !== '',
+    onSave: submitRefund,
+    onDiscard: () => {
+      setAmount(String(transaction.guestChargeTotal));
+      setReference('');
+      setReason('');
+    },
+  });
+
+  return (
+    <>
+      <AdminDialogShell
+        open={open}
+        onOpenChange={guardedOpenChange}
+        title="Record a guest refund"
+        description="Record a refund you issued in the PayMongo dashboard. This closes the refund review; it does not move money."
+        trigger={
+          <ResponsiveModalTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="min-h-[44px]">
+              Record refund
+            </Button>
+          </ResponsiveModalTrigger>
+        }
+        footer={
+          <Button
+            type="button"
+            disabled={recordRefund.isPending || !amount || !reference.trim() || !reason.trim()}
+            className="min-h-[44px]"
+            onClick={() => void submitRefund()}
+          >
+            Confirm refund
+          </Button>
+        }
+      >
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="refund-amount">Amount (₱)</Label>
+            <Input
+              id="refund-amount"
+              type="number"
+              min={0.01}
+              step={0.01}
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="refund-reference">PayMongo reference</Label>
+            <Input
+              id="refund-reference"
+              value={reference}
+              onChange={(event) => setReference(event.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="refund-reason">Reason</Label>
+            <Textarea
+              id="refund-reason"
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+            />
+          </div>
+        </div>
+      </AdminDialogShell>
+      <UnsavedChangesDialog {...dialogProps} />
+    </>
+  );
+}
+
 function ParkingSettingsCard() {
   const { data, isLoading, error } = usePlatformParkingSettings();
   const save = useUpdatePlatformParkingSettings();
@@ -327,15 +424,22 @@ function ParkingSettingsCard() {
 }
 
 function PayoutRowActions({ txn }: { txn: ParkingPayoutTransaction }) {
+  const refundable = txn.status === 'paid' || txn.status === 'refund_review';
   return (
     <div className="flex flex-wrap gap-2">
-      {!txn.disbursedAt ? <MarkDisbursedDialog transaction={txn} /> : null}
+      {!txn.disbursedAt && txn.status === 'paid' ? <MarkDisbursedDialog transaction={txn} /> : null}
+      {refundable ? <RecordRefundDialog transaction={txn} /> : null}
       <RecordClawbackDialog transaction={txn} />
     </div>
   );
 }
 
 function PayoutStatusBadge({ txn }: { txn: ParkingPayoutTransaction }) {
+  if (txn.status === 'refunded') return <Badge variant="secondary">Refunded</Badge>;
+  if (txn.status === 'refund_review') {
+    return <Badge variant="destructive">Refund review</Badge>;
+  }
+  if (txn.failureReason) return <Badge variant="outline">Needs review</Badge>;
   return txn.disbursedAt ? (
     <Badge variant="secondary">Disbursed</Badge>
   ) : (
@@ -343,19 +447,51 @@ function PayoutStatusBadge({ txn }: { txn: ParkingPayoutTransaction }) {
   );
 }
 
+const PAYOUT_FILTERS: Array<{ id: ParkingPayoutStatusFilter; label: string }> = [
+  { id: 'paid', label: 'Paid' },
+  { id: 'refund_review', label: 'Refund review' },
+  { id: 'needs_review', label: 'Needs review' },
+  { id: 'refunded', label: 'Refunded' },
+  { id: 'all', label: 'All' },
+];
+
 function PayoutsLedger() {
-  const { data, isLoading, error } = useParkingPayouts();
+  const [filter, setFilter] = useState<ParkingPayoutStatusFilter>('paid');
+  const { data, isLoading, error } = useParkingPayouts(filter);
 
   if (isLoading && !data) return <SuperAdminAdminListBodySkeleton metricCount={0} />;
   if (error) return <p className="text-destructive text-sm">Could not load the payout ledger.</p>;
 
   const transactions = data ?? [];
+  const filters = (
+    <div className="flex flex-wrap gap-2">
+      {PAYOUT_FILTERS.map((option) => (
+        <Button
+          key={option.id}
+          type="button"
+          size="sm"
+          variant={filter === option.id ? 'default' : 'outline'}
+          className="min-h-[44px]"
+          onClick={() => setFilter(option.id)}
+        >
+          {option.label}
+        </Button>
+      ))}
+    </div>
+  );
+
   if (transactions.length === 0) {
-    return <SuperAdminEmptyState icon={Wallet} title="No paid parking bookings yet" />;
+    return (
+      <div className="space-y-3">
+        {filters}
+        <SuperAdminEmptyState icon={Wallet} title="No parking payments in this view" />
+      </div>
+    );
   }
 
   return (
     <>
+      {filters}
       {/* Desktop table */}
       <Card className="hidden overflow-hidden lg:block">
         <div className="overflow-x-auto">

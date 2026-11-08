@@ -123,6 +123,51 @@ export class ParkingEndorsementRequestError extends Error {
 
 const POST_PAYMENT_STATUSES = ['PENDING_REVIEW', 'READY_FOR_CHECKIN', 'COMPLETED'];
 
+/**
+ * Host-triggered resend. The caller has already passed `verifyParkingTeamAccess(parkingId,
+ * 'bookings:edit')` and `verifyBookingBelongsToParking`, so this only enforces the booking
+ * state and the first-send-wins guard.
+ */
+export async function resendParkingEndorsementAsHost(
+  bookingId: string
+): Promise<{ sent: boolean }> {
+  const supabase = createServiceClient();
+  const { data: booking } = await supabase
+    .from('guest_submissions')
+    .select(
+      `id, status, guest_email, primary_guest_name, parking_id, parking_check_in_date,
+       parking_check_out_date, check_in_date, check_out_date, endorsement_sent_at`
+    )
+    .eq('id', bookingId)
+    .maybeSingle();
+
+  if (!booking) throw new ParkingEndorsementRequestError('Booking not found', 404);
+  if (!POST_PAYMENT_STATUSES.includes(String(booking.status))) {
+    throw new ParkingEndorsementRequestError('Payment has not been confirmed yet', 409);
+  }
+  if (booking.endorsement_sent_at) {
+    throw new ParkingEndorsementRequestError('Endorsement has already been sent', 409);
+  }
+
+  const { data: parkingRow } = await supabase
+    .from('parkings')
+    .select('*')
+    .eq('id', String(booking.parking_id ?? ''))
+    .maybeSingle();
+  if (!parkingRow) throw new ParkingEndorsementRequestError('Parking not found', 404);
+
+  await sendParkingEndorsementEmail({
+    bookingId,
+    guestName: String(booking.primary_guest_name ?? ''),
+    guestEmail: String(booking.guest_email ?? ''),
+    checkInDate: String(booking.parking_check_in_date ?? booking.check_in_date ?? ''),
+    checkOutDate: String(booking.parking_check_out_date ?? booking.check_out_date ?? ''),
+    parking: parkingRow as ParkingRow,
+  });
+
+  return { sent: true };
+}
+
 /** Guest-triggered resend — mirrors the ownership-check pattern in `parkingCancellation.ts`. */
 export async function requestParkingEndorsementResend(
   bookingId: string,

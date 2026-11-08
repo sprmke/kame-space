@@ -7,7 +7,11 @@
  * eligible candidates. Returns 422 with no insert when zero candidates are eligible.
  */
 
-import { createServiceClient, type ParkingRow } from '../_shared/orgAuth.ts';
+import {
+  createServiceClient,
+  type ParkingRow,
+  verifyParkingTeamAccess,
+} from '../_shared/orgAuth.ts';
 import {
   jsonError,
   jsonSuccess,
@@ -31,6 +35,7 @@ import {
 } from '../_shared/ownerDefaultParking.ts';
 import {
   fulfillComplimentaryOwnerParking,
+  fulfillOfflineParkingPayment,
   ParkingPaymentError,
 } from '../_shared/parkingPaymentOrchestrator.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
@@ -38,6 +43,7 @@ import { countStayNights } from '../_shared/utils.ts';
 import { antiSpamGate } from '../_shared/antiSpam.ts';
 import { capturePostHogEvent } from '../_shared/posthog.ts';
 import { recipientCountBucket } from '../_shared/analyticsBuckets.ts';
+import { manilaTodayYmd } from '../_shared/calendarAvailabilityManila.ts';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -80,6 +86,8 @@ serveAuthenticated('submit-parking-booking-request', async (req, user) => {
     typeof body.linkedPropertyBookingId === 'string' ? body.linkedPropertyBookingId.trim() : '';
   const directLinkToken =
     typeof body.directLinkToken === 'string' ? body.directLinkToken.trim() : '';
+  // Only a host with `bookings:edit` may record an offline-paid booking (see R-4 check below).
+  const paymentMode = body.paymentMode === 'offline' ? 'offline' : 'online';
 
   if (!parkingId && !bodyOrgId) {
     return jsonError(req, 'parkingId or organizationId is required');
@@ -90,21 +98,42 @@ serveAuthenticated('submit-parking-booking-request', async (req, user) => {
   if (checkOutDate <= checkInDate) {
     return jsonError(req, 'checkOutDate must be after checkInDate');
   }
+  if (checkInDate < manilaTodayYmd()) {
+    return jsonError(req, 'check_in_in_past', 400);
+  }
+  const requestedNights = countStayNights(checkInDate, checkOutDate);
+  if (requestedNights > 60) {
+    return jsonError(req, 'Stay cannot exceed 60 nights', 400);
+  }
   if (!primaryGuestName || primaryGuestName.length < 2) {
     return jsonError(req, 'primaryGuestName is required');
+  }
+  if (primaryGuestName.length > 120) {
+    return jsonError(req, 'primaryGuestName is too long', 400);
   }
   if (!EMAIL_RE.test(guestEmail)) {
     return jsonError(req, 'A valid guestEmail is required');
   }
-  // No hard match-check against the authenticated user's own email: the admin dashboard's
-  // "New booking" modal reuses this same endpoint to submit on a guest's behalf (see
-  // docs/guides/routes/org/parking/bookings.md), where the caller (host) and guestEmail are
-  // legitimately different people. guest_auth_user_id below is the real ownership binding for
-  // pay-now/cancel, not this field. That same mismatch is also how we tell a genuine guest
-  // self-submission apart from a host submitting on someone else's behalf — the anti-spam
-  // limit below only applies to the former (a host legitimately creating several bookings for
-  // different guests should never get rate-limited as if they were spamming).
-  const isSelfServiceGuestSubmit = guestEmail.toLowerCase() === user.email.toLowerCase();
+  // Email mismatch alone is not proof of a host-on-behalf submit. A host may only submit for
+  // a different guest when they hold `bookings:edit` on the pinned parking; otherwise a guest
+  // could type someone else's address to skip the per-account anti-spam limits and send mail
+  // to an arbitrary inbox. See R-4 in the parking hardening plan.
+  let isHostOnBehalf = false;
+  if (parkingId) {
+    try {
+      await verifyParkingTeamAccess(req, parkingId, 'bookings:edit');
+      isHostOnBehalf = true;
+    } catch (err) {
+      if (!(err instanceof Response) || err.status !== 403) {
+        throw err;
+      }
+    }
+  }
+  const isSelfServiceGuestSubmit =
+    !isHostOnBehalf && guestEmail.toLowerCase() === user.email.toLowerCase();
+  if (!isHostOnBehalf && !isSelfServiceGuestSubmit) {
+    return jsonError(req, 'Sign in with the guest email to submit this request', 403);
+  }
   if (isSelfServiceGuestSubmit) {
     try {
       await assertParkingSubmitAllowed(user.id);
@@ -127,6 +156,14 @@ serveAuthenticated('submit-parking-booking-request', async (req, user) => {
   if (!carColor) {
     return jsonError(req, 'carColor is required');
   }
+  if (unitNumber.length > 60) return jsonError(req, 'unitNumber is too long', 400);
+  if (carPlateNumber.length > 15 || !/^[A-Z0-9 -]+$/i.test(carPlateNumber)) {
+    return jsonError(req, 'carPlateNumber must be 1-15 letters, numbers, spaces or dashes', 400);
+  }
+  if (carBrandModel.length > 80) return jsonError(req, 'carBrandModel is too long', 400);
+  if (carColor.length > 40) return jsonError(req, 'carColor is too long', 400);
+  if (notes.length > 1000) return jsonError(req, 'notes is too long', 400);
+  if (guestPhone.length > 30) return jsonError(req, 'guestPhone is too long', 400);
   if (linkedPropertyBookingId) {
     try {
       await verifyLinkablePropertyBooking(linkedPropertyBookingId, user.id, user.email);
@@ -209,6 +246,7 @@ serveAuthenticated('submit-parking-booking-request', async (req, user) => {
       parking_booking_channel: bookingChannel,
       linked_property_booking_id: linkedPropertyBookingId || null,
       guest_auth_user_id: guestAuthUserId,
+      created_by_host_user_id: isHostOnBehalf ? user.id : null,
       requested_vehicle_type: vehicleType,
       status: 'PENDING_HOST_ACCEPTANCE',
       status_updated_at: new Date().toISOString(),
@@ -288,8 +326,12 @@ serveAuthenticated('submit-parking-booking-request', async (req, user) => {
   // Falls through to Phase 5 listing autoAcceptTopMatch when that toggle is on.
   try {
     const topCandidate = batch[0]?.candidate;
+    // A host creating a booking for a guest on their own pinned slot already holds
+    // `bookings:edit`, so do not make them Accept their own request. Owner-owned links keep
+    // the same behaviour. Auto-accept still covers guest-facing listings.
     const shouldAutoClaim =
       ownerOwnedSameOrg ||
+      isHostOnBehalf ||
       (topCandidate && (await parkingAutomationEnabled(topCandidate.id, 'autoAcceptTopMatch')));
     if (topCandidate && shouldAutoClaim) {
       const { data: parkingRow } = await supabase
@@ -323,6 +365,16 @@ serveAuthenticated('submit-parking-booking-request', async (req, user) => {
           parkingRow as ParkingRow,
           { skipAwaitingPaymentEmail }
         );
+        if (paymentMode === 'offline' && isHostOnBehalf && !ownerOwnedSameOrg) {
+          try {
+            await fulfillOfflineParkingPayment(String(inserted.id));
+          } catch (offlineErr) {
+            console.error(
+              '[submit-parking-booking-request] offline fulfillment failed:',
+              offlineErr instanceof Error ? offlineErr.message : offlineErr
+            );
+          }
+        }
         if (ownerOwnedSameOrg) {
           try {
             await fulfillComplimentaryOwnerParking(String(inserted.id));

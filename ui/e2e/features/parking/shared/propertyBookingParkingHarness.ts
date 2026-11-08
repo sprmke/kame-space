@@ -96,8 +96,8 @@ function ownerDefaultPayload(propertyState: PropertyBookingParkingState) {
       available: [],
       defaultParking: null,
       unavailableReason: 'none_owned' as const,
-      checkInDate: '2026-08-25',
-      checkOutDate: '2026-08-27',
+      checkInDate: '2027-08-25',
+      checkOutDate: '2027-08-27',
     };
   }
   return {
@@ -119,8 +119,8 @@ function ownerDefaultPayload(propertyState: PropertyBookingParkingState) {
       createdAt: '2026-01-01T00:00:00.000Z',
     },
     unavailableReason: null,
-    checkInDate: '2026-08-25',
-    checkOutDate: '2026-08-27',
+    checkInDate: '2027-08-25',
+    checkOutDate: '2027-08-27',
   };
 }
 

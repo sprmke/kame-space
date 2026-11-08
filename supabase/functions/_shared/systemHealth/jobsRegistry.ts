@@ -64,6 +64,12 @@ export const SCHEDULED_JOBS: ScheduledJobDef[] = [
     features: ['Parking reminders'],
   },
   {
+    fn: 'complete-parking-bookings',
+    label: 'Parking auto-complete',
+    secretEnv: 'PARKING_COMPLETION_CRON_SECRET',
+    features: ['Parking requests'],
+  },
+  {
     fn: 'contract-expiry-cron',
     label: 'Contract expiry',
     secretEnv: 'CONTRACT_EXPIRY_CRON_SECRET',

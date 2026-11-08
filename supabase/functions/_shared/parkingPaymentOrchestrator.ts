@@ -172,14 +172,22 @@ export async function createParkingPaymentTransaction(
   const parkingId = String(booking.parking_id ?? '');
   if (!parkingId) throw new ParkingPaymentError('No claimed parking slot', 409);
 
+  // Reuse only a link that belongs to the slot currently claimed on this booking. A pending
+  // row from a previous host/price is stale money: expire it before creating a fresh one.
   const { data: existing } = await supabase
     .from('parking_payment_transactions')
-    .select('id, checkout_url')
+    .select('id, checkout_url, parking_id')
     .eq('booking_id', bookingId)
     .eq('status', 'pending')
     .maybeSingle();
-  if (existing?.checkout_url) {
-    return { checkoutUrl: String(existing.checkout_url) };
+  if (existing) {
+    if (String(existing.parking_id) === parkingId && existing.checkout_url) {
+      return { checkoutUrl: String(existing.checkout_url) };
+    }
+    await expirePendingParkingTransactions(
+      bookingId,
+      'Superseded by a new claim or a different parking slot'
+    );
   }
 
   const checkInDate = String(booking.parking_check_in_date ?? booking.check_in_date ?? '');
@@ -217,6 +225,19 @@ export async function createParkingPaymentTransaction(
     .select('id')
     .single();
   if (insertError || !inserted) {
+    // Two Pay taps raced the partial unique index. The winner's row already exists; return
+    // that link instead of a 500 (the second tap is the same guest and the same booking).
+    if ((insertError as { code?: string } | null)?.code === '23505') {
+      const { data: winner } = await supabase
+        .from('parking_payment_transactions')
+        .select('checkout_url')
+        .eq('booking_id', bookingId)
+        .eq('status', 'pending')
+        .maybeSingle();
+      if (winner?.checkout_url) {
+        return { checkoutUrl: String(winner.checkout_url) };
+      }
+    }
     throw new ParkingPaymentError('Failed to start payment', 500);
   }
 
@@ -234,7 +255,7 @@ export async function createParkingPaymentTransaction(
       .from('parking_payment_transactions')
       .update({ provider_reference: link.id, checkout_url: link.checkoutUrl })
       .eq('id', inserted.id);
-    await capturePostHogEvent('parking_checkout_started', {
+    await captureParkingEvent('parking_checkout_started', {
       logPrefix: 'parking-payment',
       distinctId: userId,
       groups: { organization: String(parking.organization_id), parking: parkingId },
@@ -372,8 +393,131 @@ type ParkingPaymentTransactionRow = {
   parking_id: string;
   organization_id: string;
   provider_reference: string | null;
+  checkout_url: string | null;
+  guest_charge_total: number | string | null;
+  payment_method_type: string | null;
+  failure_reason: string | null;
+  paid_at: string | null;
   status: string;
 };
+
+/**
+ * Telemetry must never be able to fail a money path. Every PostHog call in this file goes
+ * through this wrapper: a network error, missing key or serialization bug is logged and
+ * dropped, never re-thrown into the outer fulfillment `catch` that marks a paid transaction
+ * `failed`.
+ */
+async function captureParkingEvent(
+  event: Parameters<typeof capturePostHogEvent>[0],
+  properties: Parameters<typeof capturePostHogEvent>[1]
+): Promise<void> {
+  try {
+    await capturePostHogEvent(event, properties);
+  } catch (err) {
+    console.error(
+      '[parkingPaymentOrchestrator] analytics capture failed:',
+      err instanceof Error ? err.message : err
+    );
+  }
+}
+
+/**
+ * Marks open payment links for a booking `expired` so a later webhook can never confirm it.
+ * Payment Links have no server-side expiry, so the ledger row is the authority.
+ */
+export async function expirePendingParkingTransactions(
+  bookingId: string,
+  reason: string
+): Promise<void> {
+  const supabase = createServiceClient();
+  const { error } = await supabase
+    .from('parking_payment_transactions')
+    .update({
+      status: 'expired',
+      failure_reason: reason.slice(0, 500),
+    })
+    .eq('booking_id', bookingId)
+    .eq('status', 'pending');
+  if (error) {
+    console.error('[parkingPaymentOrchestrator] expirePendingParkingTransactions:', error.message);
+  }
+}
+
+/**
+ * Host records a booking that was already paid outside Kame Space (cash or bank transfer).
+ * No platform fee and no PayMongo charge: a ₱0 `provider: 'offline'` row plus the normal
+ * fulfillment path (confirmation, endorsement, linked property gate).
+ */
+export async function fulfillOfflineParkingPayment(bookingId: string): Promise<void> {
+  const supabase = createServiceClient();
+  const { data: booking } = await supabase
+    .from('guest_submissions')
+    .select(
+      `id, status, parking_id, parking_booking_channel, parking_check_in_date,
+       parking_check_out_date, check_in_date, check_out_date`
+    )
+    .eq('id', bookingId)
+    .maybeSingle();
+  if (!booking) throw new ParkingPaymentError('Booking not found', 404);
+  if (booking.status !== 'PENDING_PAYMENT') return;
+
+  const parkingId = String(booking.parking_id ?? '');
+  if (!parkingId) throw new ParkingPaymentError('No claimed parking slot', 409);
+
+  const { data: existingPaid } = await supabase
+    .from('parking_payment_transactions')
+    .select('id')
+    .eq('booking_id', bookingId)
+    .eq('status', 'paid')
+    .maybeSingle();
+  if (existingPaid) {
+    await fulfillParkingPayment({
+      transactionId: String(existingPaid.id),
+      paymentMethodType: 'offline',
+    });
+    return;
+  }
+
+  const { data: parking } = await supabase
+    .from('parkings')
+    .select('organization_id')
+    .eq('id', parkingId)
+    .maybeSingle();
+  if (!parking?.organization_id) throw new ParkingPaymentError('Parking slot not found', 404);
+
+  const checkInDate = String(booking.parking_check_in_date ?? booking.check_in_date ?? '');
+  const checkOutDate = String(booking.parking_check_out_date ?? booking.check_out_date ?? '');
+  const nights = Math.max(1, nightsInRange(checkInDate, checkOutDate).length);
+  const bookingChannel =
+    (booking.parking_booking_channel as 'standard' | 'direct_link' | null) ?? 'standard';
+
+  const { data: inserted, error } = await supabase
+    .from('parking_payment_transactions')
+    .insert({
+      booking_id: bookingId,
+      parking_id: parkingId,
+      organization_id: parking.organization_id,
+      guest_charge_total: 0,
+      host_gross_total: 0,
+      commission_pct: 0,
+      host_net_total: 0,
+      nights,
+      booking_channel: bookingChannel,
+      provider: 'offline',
+      status: 'pending',
+    })
+    .select('id')
+    .single();
+  if (error || !inserted) {
+    throw new ParkingPaymentError('Failed to record offline payment', 500);
+  }
+
+  await fulfillParkingPayment({
+    transactionId: String(inserted.id),
+    paymentMethodType: 'offline',
+    providerReference: `offline:${bookingId}`,
+  });
+}
 
 export async function resolveParkingTransactionFromWebhookPayload(
   payload: Record<string, unknown>
@@ -443,17 +587,51 @@ export async function fulfillParkingPayment(input: {
 }): Promise<void> {
   const supabase = createServiceClient();
 
-  const { data: txn, error: txnError } = await supabase
+  const { data: txnData, error: txnError } = await supabase
     .from('parking_payment_transactions')
     .select('*')
     .eq('id', input.transactionId)
     .maybeSingle();
   if (txnError) throw new Error(txnError.message);
-  if (!txn) throw new Error('Parking payment transaction not found');
+  if (!txnData) throw new Error('Parking payment transaction not found');
+  const txn = txnData as unknown as ParkingPaymentTransactionRow;
   if (txn.status === 'paid') return;
 
   const bookingId = String(txn.booking_id);
   const paidAt = input.paidAt ?? new Date().toISOString();
+
+  const { data: bookingBefore, error: bookingBeforeError } = await supabase
+    .from('guest_submissions')
+    .select('id, status, parking_id')
+    .eq('id', bookingId)
+    .maybeSingle();
+  if (bookingBeforeError) throw new Error(bookingBeforeError.message);
+
+  const bookingParkingId = String(bookingBefore?.parking_id ?? '');
+  const txnParkingId = String(txn.parking_id ?? '');
+  const slotMismatch =
+    Boolean(bookingParkingId) && Boolean(txnParkingId) && bookingParkingId !== txnParkingId;
+  const deadTransaction = txn.status === 'expired' || txn.status === 'cancelled';
+
+  if (deadTransaction || slotMismatch) {
+    // The link was invalidated (payment window released/guest cancelled) or it belongs to a
+    // slot this booking no longer holds. Money arrived, so record it for reconciliation but
+    // never confirm the booking from a dead checkout.
+    await supabase
+      .from('parking_payment_transactions')
+      .update({
+        status: 'paid',
+        provider_reference: input.providerReference ?? txn.provider_reference,
+        payment_method_type: input.paymentMethodType ?? null,
+        paid_at: paidAt,
+        raw_webhook_payload: input.rawPayload ?? null,
+        failure_reason: deadTransaction
+          ? 'Payment arrived on an expired/cancelled checkout - needs manual review'
+          : 'Payment parking slot no longer matches the booking - needs manual review',
+      })
+      .eq('id', input.transactionId);
+    return;
+  }
 
   try {
     const { data: confirmed, error: confirmError } = await supabase
@@ -507,11 +685,14 @@ export async function fulfillParkingPayment(input: {
       })
       .eq('id', input.transactionId);
 
-    await capturePostHogEvent('parking_payment_completed', {
+    const guestEmail = String(confirmed.guest_email ?? '').trim();
+    const parkingId = String(confirmed.parking_id ?? '');
+
+    await captureParkingEvent('parking_payment_completed', {
       logPrefix: 'parking-payment',
       groups: {
         organization: String(txn.organization_id ?? confirmed.organization_id ?? ''),
-        parking: parkingId,
+        parking: parkingId || null,
       },
       properties: {
         amount_bucket: amountBucketPhp(Number(txn.guest_charge_total ?? 0)),
@@ -520,8 +701,6 @@ export async function fulfillParkingPayment(input: {
       system: true,
     });
 
-    const guestEmail = String(confirmed.guest_email ?? '').trim();
-    const parkingId = String(confirmed.parking_id ?? '');
     if (guestEmail && parkingId) {
       const { data: parkingRow } = await supabase
         .from('parkings')
@@ -665,7 +844,7 @@ export async function handleParkingPaymentWebhookEvent(
     const txn = await resolveParkingTransactionFromWebhookPayload(payload);
     if (!txn || txn.status !== 'pending') return { handled: false };
     await markParkingPaymentFailed(txn.id, 'Payment failed', payload);
-    await capturePostHogEvent('parking_payment_failed', {
+    await captureParkingEvent('parking_payment_failed', {
       logPrefix: 'parking-payment',
       groups: {
         organization: String(txn.organization_id ?? ''),
@@ -751,6 +930,12 @@ export async function releaseParkingClaim(
     .update({ response: 'expired', responded_at: nowIso })
     .eq('booking_id', bookingId)
     .eq('response', 'claimed');
+
+  // The claim is gone, so its checkout must never be able to confirm a future claim.
+  await expirePendingParkingTransactions(
+    bookingId,
+    'Claim released before payment (window lapsed)'
+  );
 
   return { released: true, batchNumber: Number(released.parking_broadcast_batch_number ?? 1) };
 }

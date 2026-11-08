@@ -41,9 +41,9 @@ import { useSetupGuide } from '@/features/dashboard/setup-guide/components/setup
 import { useRegisterStepSave } from '@/features/dashboard/setup-guide/components/SetupGuideSaveContext';
 import { SetupGuideStepSkeleton } from '@/features/dashboard/setup-guide/components/SetupGuideStepSkeleton';
 import { useSetupGuideStateWrite } from '@/features/dashboard/setup-guide/hooks/useSetupGuideStateWrite';
-import { useOrgPermissions } from '@/features/dashboard/team/hooks/useOrgPermissions';
+import { useParkingPermissions } from '@/features/dashboard/team/hooks/useParkingPermissions';
 import { usePropertyPermissions } from '@/features/dashboard/team/hooks/usePropertyPermissions';
-import { hasOrgPermission } from '@/features/dashboard/team/lib/orgPermissions';
+import { hasParkingPermission } from '@/features/dashboard/team/lib/parkingPermissions';
 import { hasPropertyPermission } from '@/features/dashboard/team/lib/propertyPermissions';
 
 function markPricingReviewed(
@@ -215,8 +215,8 @@ export function SetupGuideParkingPricingEmbed({ parkingId }: { parkingId: string
   const { org, persisted } = useSetupGuide();
   const write = useSetupGuideStateWrite(org?.id);
   const stepId = `parking.${parkingId}.pricing`;
-  const { data: orgAccess } = useOrgPermissions();
-  const canEdit = hasOrgPermission(orgAccess?.permissions, 'org:parkings:manage');
+  const { data: parkingAccess } = useParkingPermissions(parkingId);
+  const canEdit = hasParkingPermission(parkingAccess?.permissions, 'pricing:edit');
 
   const [currentMonth] = useState(() => new Date());
   const { data: pricingData, isLoading, isError, error } = useParkingPricing(currentMonth);

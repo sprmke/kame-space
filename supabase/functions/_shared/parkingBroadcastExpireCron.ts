@@ -13,7 +13,8 @@ import {
 } from './parkingBroadcast.ts';
 import { sendParkingNoHostAvailableEmail } from './parkingBroadcastEmail.ts';
 import { parkingAutomationEnabled } from './parkingAutomationToggles.ts';
-import { releaseParkingClaim } from './parkingPaymentOrchestrator.ts';
+import { fulfillParkingPayment, releaseParkingClaim } from './parkingPaymentOrchestrator.ts';
+import { getPaymongoProviderPaymentState } from './paymongoClient.ts';
 import { buildActorContext } from './activityLog.ts';
 import { logParkingStatusChange } from './parkingActivity.ts';
 
@@ -255,9 +256,28 @@ export async function runExpireParkingPayments(): Promise<Record<string, unknown
   let advancedCount = 0;
   let terminatedCount = 0;
 
+  let fulfilledLateCount = 0;
+
   for (const booking of expiredPayments ?? []) {
     const bookingId = String(booking.id);
     try {
+      // A guest can finish paying in the last seconds of the window. Ask PayMongo before
+      // releasing the slot; if the money is already in, fulfill instead (M-3).
+      const { data: pendingTxn } = await supabase
+        .from('parking_payment_transactions')
+        .select('id, provider_reference')
+        .eq('booking_id', bookingId)
+        .eq('status', 'pending')
+        .maybeSingle();
+      if (pendingTxn?.provider_reference) {
+        const state = await getPaymongoProviderPaymentState(String(pendingTxn.provider_reference));
+        if (state === 'paid') {
+          await fulfillParkingPayment({ transactionId: String(pendingTxn.id) });
+          fulfilledLateCount += 1;
+          continue;
+        }
+      }
+
       const { released, batchNumber } = await releaseParkingClaim(bookingId);
       if (!released || batchNumber === null) continue;
       releasedCount += 1;
@@ -273,10 +293,39 @@ export async function runExpireParkingPayments(): Promise<Record<string, unknown
     }
   }
 
+  // Reconcile missed webhooks: a pending checkout older than 15 minutes whose provider state
+  // is already paid should have completed. Fulfillment is idempotent and never confirms a
+  // booking whose claim was released (that path lands in manual review).
+  let reconciledCount = 0;
+  const staleCutoff = new Date(Date.now() - 15 * 60_000).toISOString();
+  const { data: stalePending } = await supabase
+    .from('parking_payment_transactions')
+    .select('id, provider_reference')
+    .eq('status', 'pending')
+    .not('provider_reference', 'is', null)
+    .lt('created_at', staleCutoff)
+    .limit(25);
+
+  for (const txn of stalePending ?? []) {
+    try {
+      const state = await getPaymongoProviderPaymentState(String(txn.provider_reference));
+      if (state !== 'paid') continue;
+      await fulfillParkingPayment({ transactionId: String(txn.id) });
+      reconciledCount += 1;
+    } catch (err) {
+      console.error(
+        `[expire-parking-broadcasts] reconcile ${txn.id} failed:`,
+        err instanceof Error ? err.message : err
+      );
+    }
+  }
+
   return {
     scanned: expiredPayments?.length ?? 0,
     released: releasedCount,
     advanced: advancedCount,
     terminated: terminatedCount,
+    fulfilledLate: fulfilledLateCount,
+    reconciled: reconciledCount,
   };
 }

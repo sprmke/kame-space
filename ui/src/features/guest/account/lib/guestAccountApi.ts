@@ -174,6 +174,7 @@ export const GUEST_TRIPS_QUERY_KEY = ['guest-trips'] as const;
 /** Property bookings for the signed-in guest (`guest-trips`), newest check-in first. */
 export type GuestTripListItemDto = {
   id: string;
+  kind: 'property' | 'parking';
   status: string;
   /** YYYY-MM-DD */
   checkInDate: string;
@@ -181,6 +182,8 @@ export type GuestTripListItemDto = {
   checkOutDate: string;
   propertySlug: string | null;
   propertyName: string | null;
+  parkingSlug: string | null;
+  parkingName: string | null;
   imageUrl: string | null;
   guestFacebookName: string | null;
 };

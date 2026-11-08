@@ -8,7 +8,8 @@ import { SlidersHorizontal } from 'lucide-react';
 import { ParkingFilters, ParkingToolbar } from '@/features/guest/marketing/developments/components';
 import type { ParkingSortKey } from '@/features/guest/marketing/developments/lib/parkingSlotFilters';
 import { DEFAULT_PARKING_FILTERS } from '@/features/guest/marketing/developments/lib/parkingSlotFilters';
-import { ParkingsByLocation, ParkingsHero } from '@/features/guest/marketing/parkings/components';
+import { ParkingsByLocation } from '@/features/guest/marketing/parkings/components/ParkingsByLocation';
+import { ParkingsHero } from '@/features/guest/marketing/parkings/components/ParkingsHero';
 import { useCaptureParkingLinkStay } from '@/features/guest/marketing/parkings/hooks/useCaptureParkingLinkStay';
 import {
   usePrefetchPublicParkings,

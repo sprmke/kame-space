@@ -37,8 +37,8 @@ function e2eSupabaseAuthSession() {
 }
 
 export const parkingFlowPaths = {
-  guestForm: '/parkings/slot-12a/form?checkInDate=2026-08-25&checkOutDate=2026-08-27',
-  guestDirectLinkForm: `/parkings/slot-12a/form?checkInDate=2026-08-25&checkOutDate=2026-08-27&dl=${DIRECT_LINK_TOKEN}`,
+  guestForm: '/parkings/slot-12a/form?checkInDate=2027-08-25&checkOutDate=2027-08-27',
+  guestDirectLinkForm: `/parkings/slot-12a/form?checkInDate=2027-08-25&checkOutDate=2027-08-27&dl=${DIRECT_LINK_TOKEN}`,
   guestStatus: `/parkings/requests/${BOOKING_ID}`,
   hostBookings: '/org/sample-stays-ph/parking/slot-12a/bookings?from=2026-08-01&to=2026-08-31',
   hostBookingDetail: `/org/sample-stays-ph/parking/slot-12a/bookings/${BOOKING_ID}`,
@@ -64,7 +64,7 @@ export const parkingFlowLabels = {
   accessInstructions: 'Access instructions',
   payNow: 'Pay now',
   cancelRequest: 'Cancel request',
-  markReady: 'Mark ready',
+  markReady: 'Approve for check-in',
   complete: 'Complete',
 } as const;
 
@@ -80,7 +80,7 @@ export const parkingGuestStatusLabels = {
   nonRefundable: 'Non-refundable once paid.',
   hostAndEndorsement: 'Host & endorsement',
   chatWithHost: 'Chat with host',
-  stayRange: 'Aug 25-27, 2026',
+  stayRange: 'Aug 25-27, 2027',
   confirmRequest: 'Confirm request',
   assignedSlot: 'Tower 1 · B2 · 12A',
   assignedSlotEyebrow: 'One Palm Residences · Tower 1 · B2 · 12A',
@@ -123,6 +123,12 @@ export type ParkingFlowState = {
   endorsementEmailSnapshot: string | null;
   hostContact: { name: string; email: string; phone: string | null } | null;
   supportEscalationPhone: string | null;
+  /** Default true; set false to simulate a signed-out status viewer (M-10). */
+  viewerOwnsBooking: boolean;
+  /** Override parking-access permissions for view-only / pricing-only specs. */
+  accessPermissions: string[] | null;
+  /** Payment rows returned by parking-payments. */
+  payments: Array<Record<string, unknown>>;
   lastSubmitBody: Record<string, unknown> | null;
   /** When true, submit-parking-booking-request returns no_parking_available. */
   rejectSubmitNoParking: boolean;
@@ -167,6 +173,9 @@ export function createParkingFlowState(): ParkingFlowState {
     endorsementEmailSnapshot: null,
     hostContact: null,
     supportEscalationPhone: '+639171234567',
+    viewerOwnsBooking: true,
+    accessPermissions: null,
+    payments: [],
     lastSubmitBody: null,
     rejectSubmitNoParking: false,
     autoAcceptTopMatch: false,
@@ -312,6 +321,10 @@ function bookingRow(state: ParkingFlowState) {
         ? '2026-08-24T16:03:00.000Z'
         : null,
     parking_endorsement_note: state.endorsementNote,
+    endorsement_sent_at: state.endorsementSentAt,
+    endorsement_send_error: state.endorsementSendError,
+    tower_and_unit_number: 'Tower 1 - 1802',
+    guest_special_requests: 'Please use the ramp entrance.',
     parking_request_organization_id: ORG_ID,
     parking_booking_channel: state.bookingChannel,
     linked_property_booking_id: state.linkedPropertyBookingId,
@@ -341,8 +354,8 @@ function guestStatusPayload(state: ParkingFlowState) {
   const status = effectiveStatus(state);
   return {
     status,
-    checkInDate: '2026-08-25',
-    checkOutDate: '2026-08-27',
+    checkInDate: '2027-08-25',
+    checkOutDate: '2027-08-27',
     expiresAt:
       status === 'PENDING_HOST_ACCEPTANCE'
         ? state.expiresAt
@@ -364,8 +377,9 @@ function guestStatusPayload(state: ParkingFlowState) {
     endorsementSentAt: state.endorsementSentAt,
     endorsementSendError: state.endorsementSendError,
     endorsementEmailSnapshot: state.endorsementEmailSnapshot,
-    hostContact: state.hostContact,
+    hostContact: state.viewerOwnsBooking ? state.hostContact : null,
     supportEscalationPhone: state.supportEscalationPhone,
+    viewerOwnsBooking: state.viewerOwnsBooking,
   };
 }
 
@@ -794,6 +808,81 @@ export async function installParkingFlowMocks(page: Page, state: ParkingFlowStat
         return;
       case 'list-linkable-property-bookings':
         await fulfillJson(route, { success: true, data: linkablePropertyBookings() });
+        return;
+      case 'org-access':
+        await fulfillJson(route, {
+          success: true,
+          data: {
+            accessKind: 'owner',
+            permissions: ['org.parkings:view', 'org.parkings:create', 'org.parkings:manage'],
+            memberId: null,
+            canListAllProperties: true,
+            orgId: ORG_ID,
+            orgSlug: 'sample-stays-ph',
+            orgName: 'Sample Stays PH',
+            canManageTeam: true,
+            canInviteTeam: true,
+            canCreateProperties: true,
+            canManageProperties: true,
+            canCreateParkings: true,
+            canManageParkings: true,
+            canEditBasicSettings: true,
+            canEditSocials: true,
+            canEditAiPlatform: true,
+            canEditAiAssistant: true,
+            canEditSettings: true,
+          },
+        });
+        return;
+      case 'parking-access':
+        await fulfillJson(route, {
+          success: true,
+          data: {
+            accessKind: 'owner',
+            permissions: state.accessPermissions ?? [
+              'bookings:view',
+              'bookings:edit',
+              'finance:view',
+              'finance:edit',
+              'pricing:view',
+              'pricing:edit',
+              'notifications:view',
+              'notifications:edit',
+              'settings:view',
+              'settings:edit',
+              'team:view',
+              'team:invite',
+              'team:manage',
+              'inbox:view',
+              'inbox:reply',
+              'inbox:manage',
+              'activity:view',
+            ],
+            memberId: null,
+            parkingId: 'parking-e2e-001',
+            orgSlug: 'sample-stays-ph',
+            parkingSlug: 'slot-12a',
+            parkingName: 'Tower 1 · B2 · 12A',
+          },
+        });
+        return;
+      case 'parking-payments': {
+        const bookingId = new URL(route.request().url()).searchParams.get('bookingId');
+        if (bookingId) {
+          await fulfillJson(route, {
+            success: true,
+            data: {
+              transaction: state.payments.find((row) => row.bookingId === bookingId) ?? null,
+            },
+          });
+          return;
+        }
+        await fulfillJson(route, { success: true, data: { transactions: state.payments } });
+        return;
+      }
+      case 'resend-parking-endorsement':
+        retryParkingEndorsement(state);
+        await fulfillJson(route, { success: true, data: { sent: true } });
         return;
       case 'parking-pricing':
         if (route.request().method() === 'GET') {

@@ -61,8 +61,8 @@ function payParkingBootstrap(state: PayParkingFlowState) {
     linked_parking_booking_id: state.linkedParkingBookingId,
     city_location_slug: state.cityLocationSlug,
     owner_default_parking_slug: state.ownerDefaultParkingSlug,
-    owner_default_check_in: state.ownerDefaultParkingSlug ? '2026-08-25' : null,
-    owner_default_check_out: state.ownerDefaultParkingSlug ? '2026-08-27' : null,
+    owner_default_check_in: state.ownerDefaultParkingSlug ? '2027-08-25' : null,
+    owner_default_check_out: state.ownerDefaultParkingSlug ? '2027-08-27' : null,
   };
 }
 
@@ -82,6 +82,34 @@ export async function installPayParkingFlowMocks(page: Page, state: PayParkingFl
     switch (endpoint) {
       case 'get-pay-parking':
         await fulfillJson(route, { success: true, data: payParkingBootstrap(state) });
+        return;
+      case 'list-public-parkings':
+        await fulfillJson(route, {
+          success: true,
+          data: [
+            {
+              id: 'parking-e2e-001',
+              slug: 'slot-12a',
+              name: 'Slot 12A',
+              tower: 'Tower 1',
+              level: 'B2',
+              slotLabel: '12A',
+              parkingType: 'inside_tower',
+              ratePerNight: 400,
+              features: [],
+              residenceName: 'One Palm Residences',
+              city: 'Cebu City',
+            },
+          ],
+          total: 1,
+          facets: {
+            locations: [{ value: 'inside_tower', label: 'Inside tower', count: 1 }],
+            towers: [{ value: 'Tower 1', label: 'Tower 1', count: 1 }],
+            price: { min: 400, max: 400 },
+          },
+          page: 1,
+          pageSize: 24,
+        });
         return;
       case 'get-guest-payment-info':
         await fulfillJson(route, {

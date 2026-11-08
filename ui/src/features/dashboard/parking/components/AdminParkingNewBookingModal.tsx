@@ -18,6 +18,8 @@ import { BOOKINGS_QUERY_KEY } from '@/features/dashboard/bookings/hooks/useBooki
 import { parkingBookingDetailPath } from '@/features/dashboard/org/lib/tenantPaths';
 
 import { UnsavedChangesDialog } from '@/components/forms/UnsavedChangesDialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
   ResponsiveModal,
   ResponsiveModalContent,
@@ -85,11 +87,13 @@ export function AdminParkingNewBookingModal({
   const [formKey, setFormKey] = useState(0);
 
   const [formDirty, setFormDirty] = useState(false);
+  const [paidOutside, setPaidOutside] = useState(false);
 
   const resetState = useCallback(() => {
     setView('form');
     setResult(null);
     setFormDirty(false);
+    setPaidOutside(false);
   }, []);
 
   const handleOpenChange = useCallback(
@@ -123,6 +127,7 @@ export function AdminParkingNewBookingModal({
           carBrandModel: values.carBrandModel,
           carColor: values.carColor,
           notes: values.notes,
+          ...(paidOutside ? { paymentMode: 'offline' as const } : {}),
         });
         void queryClient.invalidateQueries({ queryKey: BOOKINGS_QUERY_KEY });
         setFormDirty(false);
@@ -173,12 +178,30 @@ export function AdminParkingNewBookingModal({
               onViewBooking={handleViewBooking}
             />
           ) : open ? (
-            <ParkingRegistrationForm
-              key={formKey}
-              towerLabel={towerLabel}
-              onSubmit={handleSubmit}
-              onDirtyChange={setFormDirty}
-            />
+            <>
+              <label className="border-border/60 mb-3 flex items-start gap-2 rounded-lg border p-3">
+                <Checkbox
+                  checked={paidOutside}
+                  onCheckedChange={(checked) => {
+                    setPaidOutside(checked === true);
+                    setFormDirty(true);
+                  }}
+                  aria-label="Paid outside Kame Space"
+                />
+                <span className="space-y-0.5">
+                  <Label className="text-sm font-medium">Paid outside Kame Space</Label>
+                  <span className="text-muted-foreground block text-xs">
+                    Cash or bank transfer. Confirms without a payment link.
+                  </span>
+                </span>
+              </label>
+              <ParkingRegistrationForm
+                key={formKey}
+                towerLabel={towerLabel}
+                onSubmit={handleSubmit}
+                onDirtyChange={setFormDirty}
+              />
+            </>
           ) : null}
         </div>
       </ResponsiveModalContent>

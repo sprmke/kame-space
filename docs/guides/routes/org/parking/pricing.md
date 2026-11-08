@@ -20,7 +20,7 @@ Route: `/org/:orgSlug/parking/:parkingSlug/pricing`
 | Date blocks                   | ✅       | ✅         | Done | `parking_blocked_dates`; broadcast + calendar UI                                       |
 | Fees                          | —        | —          | N/A  | Not applicable for parking                                                             |
 | Booked nights                 | ✅       | —          | Done | `bookedDateKeys` from claimed parking bookings                                         |
-| Team access                   | —        | —          | Done | `org:parkings:view` / `org:parkings:manage`                                            |
+| Team access                   | —        | —          | Done | Parking team `pricing:view` / `pricing:edit`                                           |
 | Payout preview (Phase 3/4)    | —        | —          | Done | Service fee + net payout shown under each rate field — display only, live commission % |
 | Guest-rate cap (Phase 3/4)    | ✅       | ✅         | Done | Rejected client- and server-side, not silently clamped; cap is live super-admin config |
 | Direct booking link (Phase 8) | —        | —          | Done | Copyable link at a reduced commission — see below                                      |
@@ -31,7 +31,7 @@ Route: `/org/:orgSlug/parking/:parkingSlug/pricing`
 
 Parking **Pricing** mirrors the property pricing calendar but only stores **weekday** and **Fri–Sun weekend** nightly rates. There are **no fee defaults** (no down payment, security deposit, pet fee, etc.).
 
-**Permissions:** `org:parkings:view` to open the page; `org:parkings:manage` to edit rates and calendar overrides.
+**Permissions:** parking team `pricing:view` to open the page; `pricing:edit` to edit rates and calendar overrides. A parking member with `pricing:edit` can edit without holding an org-level parking permission.
 
 **Defaults (seed):** weekday ₱300, weekend ₱400.
 
@@ -119,7 +119,7 @@ which commission rate applies, not whether sign-in is required.
 | GET    | `parking-pricing` | `?parking_id=` | — (also returns `directCommissionPct`/`directBookingToken`/`directBookingSlug`, Phase 8)     |
 | PATCH  | `parking-pricing` | `?parking_id=` | `weekdayNightlyRate`, `weekendNightlyRate`, `dateOverrides`, `blockRange`, `unblockDateKeys` |
 
-Auth: signed-in user + org parking permission. `verify_jwt = false`; handler uses `verifyAuthenticatedUser` + `resolveScopedParkingAccess`.
+Auth: signed-in user + parking team permission. `verify_jwt = false`; handler uses `resolveScopedParkingTeamAccess` (`pricing:view` / `pricing:edit`).
 
 ---
 
