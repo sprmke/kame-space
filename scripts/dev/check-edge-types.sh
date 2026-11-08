@@ -63,5 +63,22 @@ targets=(
   super-admin-system-health/index.ts
 )
 
+# Parking graph — added after P0-1 shipped a runtime TDZ error that CI missed because the
+# hand-picked list had no parking files. Globs, not names, so a new parking function or shared
+# module is checked automatically and cannot drift out again.
+for handler in *parking*/index.ts; do
+  [[ -f "$handler" ]] && targets+=("$handler")
+done
+for shared in _shared/parking*.ts _shared/ownerDefaultParking*.ts; do
+  [[ -f "$shared" ]] && targets+=("$shared")
+done
+targets+=(
+  paymongo-webhook/index.ts
+  list-linkable-property-bookings/index.ts
+  get-linked-parking-booking/index.ts
+  complete-parking-bookings/index.ts
+  resend-parking-endorsement/index.ts
+)
+
 echo "→ deno check (${#targets[@]} launch and cron edge modules)"
 deno check --allow-import "${targets[@]}"

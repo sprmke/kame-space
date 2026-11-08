@@ -91,7 +91,7 @@ serveAuthenticated('telegram-parking-settings', async (req, user) => {
 
     if (action === 'send_draft_preview') {
       const text = parseDraftText(body);
-      if (!text.trim()) {
+      if (!text || !text.trim()) {
         return jsonError(req, 'text is required');
       }
       const result = await sendParkingDraftPreview(text, parkingId);
@@ -100,6 +100,7 @@ serveAuthenticated('telegram-parking-settings', async (req, user) => {
 
     if (action === 'render_draft_preview') {
       const text = parseDraftText(body);
+      if (!text) return jsonError(req, 'text is required');
       return jsonSuccess(req, { renderedText: renderParkingTemplatePreview(text) });
     }
 

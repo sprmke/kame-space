@@ -842,3 +842,19 @@ alter table parking_settings drop column payment_methods;
 ```
 
 Pre-flight (read-only): count rows with a non-empty `parking_owner_emails`, `automation_toggles ? 'emailParkingBroadcast'`, stored `email-parking-request` rows, and non-empty `parking_settings.payment_methods`. Check edge logs for `submit-pay-parking`, `parking-broadcast-email`, and `upload-parking-settings-asset` before deleting those function dirs. Then drop the retired functions from `supabase/config.toml` and `_shared/dashboardAssistantParity.ts`. Back up first (`bun run backup:supabase:dev`). Verify: `select to_regclass('public.parking_settings');` still works, and no `column … does not exist` errors on Property or Parking Settings.
+
+### Parking hardening (`20261203130000_parking_claim_guard.sql`, `20261203130100_parking_completion_cron.sql`, `20261203130200_parking_guest_rate_index.sql`)
+
+1. **Claim guard** — adds `parking_booking_broadcasts.response_reason`, refund-review columns on `parking_payment_transactions` (`refund_review_at`, `refunded_at`, `refund_amount`, `refund_reference`, `refund_reason`, `refunded_by`; status CHECK gains `refund_review`), `guest_submissions.created_by_host_user_id`, and `public.claim_parking_booking_slot(...)`. The function is `SECURITY DEFINER` with a fixed `search_path`, takes a per-parking advisory lock, and is executable by `service_role` only. Apply before deploying the matching edge functions; the new `claim-parking-booking` calls the RPC.
+2. **Auto-complete** — seeds `public.sync_parking_completion_cron_job()` and the `parking-complete-daily` job. Provision Vault `parking_completion_cron_secret` and the function env `PARKING_COMPLETION_CRON_SECRET` (header `X-Parking-Completion-Cron-Secret`) before relying on the cron; without it the job runs unauthenticated only outside production.
+3. **Guest rate index** — redefines `pls_refresh_parking()` to store the platform weekday guest rate in `public_listing_search.price`, adds a trigger on `platform_parking_settings`, and backfills every parking row. Safe to re-run; it only recomputes index rows.
+
+Verify after apply:
+
+```sql
+SELECT proname FROM pg_proc WHERE proname = 'claim_parking_booking_slot';
+SELECT count(*) FROM public.public_listing_search WHERE family = 'parking'; -- matches ACTIVE parkings
+SELECT jobname FROM cron.job WHERE jobname = 'parking-complete-daily';
+```
+
+Remote writes need `kamewave`. Back up first.

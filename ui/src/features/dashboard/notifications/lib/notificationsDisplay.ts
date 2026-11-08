@@ -51,6 +51,7 @@ const NOTIFICATION_ICONS: Record<NotificationType, LucideIcon> = {
   booking_gaf_auto_approved: FileCheck,
   booking_pet_auto_approved: PawPrint,
   booking_parking_matched: Car,
+  parking_cancelled_by_host: Car,
   calendar_sync_failing: CalendarX,
   calendar_conflict: AlertTriangle,
   booking_external_imported: RefreshCw,

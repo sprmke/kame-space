@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { supabase } from '@/lib/supabase/client';
+
 const FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
@@ -38,6 +40,8 @@ export type ParkingBookingStatus = {
   /** Guest-facing host contact reveal — null until endorsementSentAt is set. */
   hostContact: ParkingHostContact | null;
   supportEscalationPhone: string | null;
+  /** False for a signed-out visitor or a signed-in account that does not own this request. */
+  viewerOwnsBooking: boolean;
 };
 
 const TERMINAL_STATUSES: ReadonlySet<string> = new Set([
@@ -53,12 +57,16 @@ const IN_FLIGHT_STATUSES: ReadonlySet<string> = new Set([
 ]);
 
 async function fetchParkingBookingStatus(bookingId: string): Promise<ParkingBookingStatus> {
+  // Send the guest session when one exists so the endpoint can reveal access details to the
+  // owner only. Signed-out visitors still get the public status projection.
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token ?? SUPABASE_ANON_KEY;
   const res = await fetch(
     `${FUNCTIONS_URL}/get-parking-booking-status?bookingId=${encodeURIComponent(bookingId)}`,
     {
       headers: {
         apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${token}`,
       },
     }
   );
@@ -87,10 +95,14 @@ export function useParkingBookingStatus(bookingId: string) {
     enabled: Boolean(bookingId),
     retry: 1,
     refetchInterval: (query) => {
-      const status = query.state.data?.status;
+      const data = query.state.data;
+      const status = data?.status;
       if (!status || TERMINAL_STATUSES.has(status)) return false;
-      if (!IN_FLIGHT_STATUSES.has(status)) return false;
-      return 4000;
+      if (IN_FLIGHT_STATUSES.has(status)) return 4000;
+      // Paid but endorsement has not landed yet: keep polling slowly so the access
+      // details appear without a manual reload (G-3).
+      if (!data?.endorsementSentAt) return 15_000;
+      return false;
     },
   });
 }

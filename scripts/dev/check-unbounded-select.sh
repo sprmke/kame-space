@@ -127,6 +127,12 @@ ALLOWLIST=(
   '_shared/parkingReminderCron.ts'
   '_shared/parkingScope.ts'
   '_shared/parkingTeamService.ts'
+  # Single-row update-returning read (`.eq('id', parkingRow.id).single()`); bounded by the
+  # parking primary key, and pending-offer sweep is capped with `.limit(500)`.
+  'update-parking/index.ts'
+  # Update-returning read of the paid ledger row(s) for one booking id; at most one pending
+  # paid row per booking by the partial unique index. Heuristic cannot see the update bound.
+  'transition-parking-booking/index.ts'
   '_shared/planEntitlements.ts'
   '_shared/preferredOwnerParkingDefaults.ts'
   '_shared/propertyBlockedDates.ts'

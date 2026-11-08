@@ -30,6 +30,19 @@ export type ParkingPlatformSettings = {
   supportEscalationPhone: string | null;
 };
 
+/**
+ * Guest-facing nightly rate. Cards, detail, form summary, status and checkout must all use
+ * this instead of the listing's host rate (`parkings.rate_per_night` /
+ * `parking_settings.weekday_nightly_rate`), which is a payout input only (G-1).
+ */
+export async function resolveParkingGuestNightlyRate(): Promise<{
+  weekday: number;
+  weekend: number;
+}> {
+  const settings = await resolveParkingPlatformSettings();
+  return { weekday: settings.guestRateWeekday, weekend: settings.guestRateWeekend };
+}
+
 export async function resolveParkingPlatformSettings(): Promise<ParkingPlatformSettings> {
   const supabase = createServiceClient();
   const { data } = await supabase

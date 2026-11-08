@@ -18,7 +18,7 @@ import {
   readJsonBody,
   requireHttpMethod,
 } from '../_shared/httpResponse.ts';
-import { resolveScopedParkingAccess } from '../_shared/parkingScope.ts';
+import { resolveScopedParkingTeamAccess } from '../_shared/parkingScope.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 import {
   computePaymentSettingsFingerprint,
@@ -52,8 +52,8 @@ function serializeParkingSettingsRow(
 }
 
 serveAuthenticated('parking-settings', async (req, user) => {
-  const permission = req.method === 'GET' ? 'org.parkings:view' : 'org.parkings:manage';
-  const access = await resolveScopedParkingAccess(req, permission);
+  const permission = req.method === 'GET' ? 'settings:view' : 'settings:edit';
+  const access = await resolveScopedParkingTeamAccess(req, permission);
   const { parkingRow, org } = access;
   const parkingId = parkingRow.id;
   const supabase = createServiceClient();

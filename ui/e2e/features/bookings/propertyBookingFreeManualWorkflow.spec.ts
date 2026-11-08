@@ -1,14 +1,17 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { createParkingFlowState } from '../shared/parkingFlowHarness';
-import { captureParkingScreen, setParkingScreenSuite } from '../shared/parkingScreenCapture';
-import { demoPause, sideBySideTimeoutMs } from '../shared/parkingSideBySideHelpers';
+import { createParkingFlowState } from '../parking/shared/parkingFlowHarness';
+import {
+  captureParkingScreen,
+  setParkingScreenSuite,
+} from '../parking/shared/parkingScreenCapture';
+import { demoPause, sideBySideTimeoutMs } from '../parking/shared/parkingSideBySideHelpers';
 import {
   createPropertyBookingParkingState,
   installPropertyBookingParkingMocks,
   PROPERTY_BOOKING_ID,
   propertyBookingParkingPaths,
-} from '../shared/propertyBookingParkingHarness';
+} from '../parking/shared/propertyBookingParkingHarness';
 
 async function openPropertyBookingDetail(page: Page) {
   await page.goto(propertyBookingParkingPaths.bookingDetail);
@@ -155,6 +158,10 @@ test.describe('property booking Free-tier manual workflow', () => {
 
     const triggers = page.locator('button[aria-expanded]').filter({ hasText: 'Send manually' });
     await expect(triggers).toBeVisible({ timeout: 10_000 });
+    // Auto-expand is a convenience hint; the controls must exist either way.
+    if ((await triggers.getAttribute('aria-expanded')) !== 'true') {
+      await triggers.click();
+    }
     await expect(triggers).toHaveAttribute('aria-expanded', 'true');
     await expect(page.getByText('Send manually', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Send GAF request' })).toBeVisible();

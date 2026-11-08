@@ -69,7 +69,6 @@ This page combines every property stay and every parking-slot reservation across
 
 Parking-scoped list: `?parking_id=…` with parking team `bookings:view`.
 
-Admin create: `POST create-parking-booking?parking_id=…`  
 Status changes: `POST transition-parking-booking?parking_id=…` with `{ bookingId, toStatus }`.
 
 ---

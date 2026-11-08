@@ -11,7 +11,7 @@ import {
   assertParkingGuestOwnership,
   ParkingGuestOwnershipError,
 } from './parkingGuestOwnership.ts';
-import { releaseParkingClaim } from './parkingPaymentOrchestrator.ts';
+import { expirePendingParkingTransactions } from './parkingPaymentOrchestrator.ts';
 
 export class ParkingCancellationError extends Error {
   status: number;
@@ -31,9 +31,9 @@ export async function cancelParkingBooking(
   const { data: booking } = await supabase
     .from('guest_submissions')
     .select(
-      'id, status, guest_auth_user_id, parking_broadcast_batch_number, guest_email, ' +
-        'parking_id, parking_request_organization_id, primary_guest_name, guest_facebook_name, ' +
-        'parking_check_in_date'
+      `id, status, guest_auth_user_id, parking_broadcast_batch_number, guest_email,
+       parking_id, parking_request_organization_id, primary_guest_name, guest_facebook_name,
+       parking_check_in_date`
     )
     .eq('id', bookingId)
     .maybeSingle();
@@ -82,16 +82,33 @@ export async function cancelParkingBooking(
   }
 
   if (booking.status === 'PENDING_PAYMENT') {
-    const { released } = await releaseParkingClaim(bookingId);
-    if (!released) throw new ParkingCancellationError('Nothing to cancel', 409);
-
-    // Terminal step, not a batch-advance — the guest asked to stop, not to keep searching.
-    const { error } = await supabase
+    // One guarded write, not release-then-cancel: a half state between the two writes let the
+    // expire cron re-broadcast a request the guest was already cancelling (M-4).
+    const { data: cancelled, error } = await supabase
       .from('guest_submissions')
-      .update({ status: 'CANCELLED', status_updated_at: nowIso, updated_at: nowIso })
+      .update({
+        status: 'CANCELLED',
+        parking_id: null,
+        parking_claimed_at: null,
+        parking_endorsement_note: null,
+        parking_payment_expires_at: null,
+        status_updated_at: nowIso,
+        updated_at: nowIso,
+      })
       .eq('id', bookingId)
-      .eq('status', 'PENDING_HOST_ACCEPTANCE');
+      .eq('status', 'PENDING_PAYMENT')
+      .select('id')
+      .maybeSingle();
     if (error) throw new ParkingCancellationError('Failed to cancel booking', 500);
+    if (!cancelled) throw new ParkingCancellationError('Nothing to cancel', 409);
+
+    await supabase
+      .from('parking_booking_broadcasts')
+      .update({ response: 'expired', responded_at: nowIso })
+      .eq('booking_id', bookingId)
+      .eq('response', 'claimed');
+
+    await expirePendingParkingTransactions(bookingId, 'Guest cancelled while awaiting payment');
 
     await logParkingStatusChange({
       booking,

@@ -3,8 +3,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { setParkingScreenSuite } from '../shared/parkingScreenCapture';
 
 const GUEST_FORM_SUCCESS_BOOKING = {
-  checkInDate: '2026-08-25',
-  checkOutDate: '2026-08-27',
+  checkInDate: '2027-08-25',
+  checkOutDate: '2027-08-27',
   checkInTime: '14:00',
   checkOutTime: '12:00',
   numberOfAdults: 2,

@@ -33,8 +33,8 @@ serveAuthenticated('get-linked-parking-booking', async (req) => {
   const { data: parkingBooking } = await supabase
     .from('guest_submissions')
     .select(
-      'id, status, parking_id, organization_id:parking_request_organization_id, ' +
-        'endorsement_sent_at, endorsement_send_error, endorsement_email_snapshot'
+      `id, status, parking_id, organization_id:parking_request_organization_id,
+       endorsement_sent_at, endorsement_send_error, endorsement_email_snapshot`
     )
     .eq('linked_property_booking_id', bookingId)
     .maybeSingle();

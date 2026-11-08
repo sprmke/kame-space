@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Link, useParams } from 'react-router-dom';
 
@@ -16,7 +16,14 @@ import {
   useTransitionParkingBooking,
 } from '@/features/dashboard/parking/hooks/useParkingBookingMutations';
 import { useParkingBroadcastStatus } from '@/features/dashboard/parking/hooks/useParkingBroadcastStatus';
+import {
+  useParkingBookingPayment,
+  useResendParkingEndorsement,
+} from '@/features/dashboard/parking/hooks/useParkingPayments';
+import { useParkingPermissions } from '@/features/dashboard/team/hooks/useParkingPermissions';
+import { hasParkingPermission } from '@/features/dashboard/team/lib/parkingPermissions';
 
+import { AdminDialogShell } from '@/components/AdminDialogShell';
 import { FloatingPanel } from '@/components/mobile/FloatingPanel';
 import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
 import {
@@ -26,19 +33,49 @@ import {
 } from '@/components/parking/ParkingFlowStepper';
 import { ParkingStaySummary } from '@/components/parking/ParkingStaySummary';
 import { ParkingBookingDetailPageSkeleton } from '@/components/skeletons/AdminSkeletons';
+import { UnsavedChangesDialog } from '@/components/forms/UnsavedChangesDialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useGuardedClose } from '@/hooks/useGuardedClose';
 import { parkingDashboardPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { PARKING_HOST_STATUS_NOTE } from '@/lib/parking/parkingFlowCopy';
 import { parkingFlowFadeUp, parkingFlowTransition } from '@/lib/parking/parkingFlowMotion';
 import { cn } from '@/lib/utils';
 
 const NEXT_STATUS: Record<string, { label: string; to: string } | undefined> = {
-  PENDING_REVIEW: { label: 'Mark ready', to: 'READY_FOR_CHECKIN' },
+  PENDING_REVIEW: { label: 'Approve for check-in', to: 'READY_FOR_CHECKIN' },
   READY_FOR_CHECKIN: { label: 'Complete', to: 'COMPLETED' },
 };
 
 const ENDORSEMENT_NOTE_MAX = 500;
+
+function formatPeso(value: number): string {
+  return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+const PAID_STATUSES = ['PENDING_REVIEW', 'READY_FOR_CHECKIN', 'COMPLETED'];
+
+/** Re-renders when a broadcast offer crosses its deadline, so Accept disables itself. */
+function useOfferExpired(expiresAt: string | null | undefined): boolean {
+  const [expired, setExpired] = useState(
+    () => Boolean(expiresAt) && new Date(String(expiresAt)).getTime() <= Date.now()
+  );
+
+  useEffect(() => {
+    if (!expiresAt) {
+      setExpired(false);
+      return;
+    }
+    const check = () => setExpired(new Date(expiresAt).getTime() <= Date.now());
+    check();
+    const id = setInterval(check, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+
+  return expired;
+}
 
 function DetailField({
   label,
@@ -80,6 +117,9 @@ export function ParkingBookingDetailPage() {
   const decline = useDeclineParkingBooking(parking.id);
   const [endorsementNote, setEndorsementNote] = useState('');
   const [endorsementExpanded, setEndorsementExpanded] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelNote, setCancelNote] = useState('');
 
   const isPendingAcceptance = booking?.status === 'PENDING_HOST_ACCEPTANCE';
   const isPendingPayment = booking?.status === 'PENDING_PAYMENT';
@@ -87,6 +127,14 @@ export function ParkingBookingDetailPage() {
     bookingId,
     parking.id,
     isPendingAcceptance
+  );
+  const { data: parkingAccess } = useParkingPermissions();
+  const canEdit = hasParkingPermission(parkingAccess?.permissions, 'bookings:edit');
+  const canViewFinance = hasParkingPermission(parkingAccess?.permissions, 'finance:view');
+  const { data: payment } = useParkingBookingPayment(bookingId, canViewFinance);
+  const resendEndorsement = useResendParkingEndorsement();
+  const offerExpired = useOfferExpired(
+    booking?.status === 'PENDING_HOST_ACCEPTANCE' ? booking?.parking_broadcast_expires_at : null
   );
 
   const next = booking?.status ? NEXT_STATUS[String(booking.status)] : undefined;
@@ -97,6 +145,37 @@ export function ParkingBookingDetailPage() {
     booking.status !== 'CANCELLED' &&
     booking.status !== 'COMPLETED' &&
     booking.status !== 'NO_HOST_AVAILABLE';
+  const wasPaid = booking?.status === 'PENDING_REVIEW' || booking?.status === 'READY_FOR_CHECKIN';
+
+  const resetCancelDraft = () => {
+    setCancelReason('');
+    setCancelNote('');
+  };
+
+  const submitCancel = async (): Promise<boolean> => {
+    if (!cancelReason.trim()) return false;
+    try {
+      await transition.mutateAsync({
+        bookingId: String(bookingId),
+        toStatus: 'CANCELLED',
+        reason: cancelReason.trim(),
+        note: cancelNote.trim() || undefined,
+      });
+    } catch {
+      return false;
+    }
+    setCancelOpen(false);
+    resetCancelDraft();
+    return true;
+  };
+
+  const { onOpenChange: onCancelOpenChange, dialogProps: cancelDialogProps } = useGuardedClose({
+    open: cancelOpen,
+    onOpenChange: setCancelOpen,
+    isDirty: cancelReason.trim() !== '' || cancelNote.trim() !== '',
+    onSave: submitCancel,
+    onDiscard: resetCancelDraft,
+  });
 
   if (isLoading || (isPendingAcceptance && broadcastLoading)) {
     return (
@@ -124,14 +203,15 @@ export function ParkingBookingDetailPage() {
     );
   }
 
-  const myBroadcastPending = isPendingAcceptance && broadcastStatus?.response === 'pending';
+  const myBroadcastPending =
+    isPendingAcceptance && broadcastStatus?.response === 'pending' && !offerExpired;
   const busy = claim.isPending || decline.isPending;
   const vehicleLabel =
     [booking.car_brand_model, booking.car_color].filter(Boolean).join(' · ') || '-';
   const hostNote =
     PARKING_HOST_STATUS_NOTE[booking.status as keyof typeof PARKING_HOST_STATUS_NOTE];
 
-  const desktopActions = (
+  const desktopActions = !canEdit ? null : (
     <div className="flex flex-wrap gap-2">
       {myBroadcastPending ? (
         <>
@@ -174,7 +254,7 @@ export function ParkingBookingDetailPage() {
           variant="outline"
           disabled={transition.isPending}
           className="min-h-[44px]"
-          onClick={() => transition.mutate({ bookingId: booking.id, toStatus: 'CANCELLED' })}
+          onClick={() => setCancelOpen(true)}
         >
           Cancel
         </Button>
@@ -189,7 +269,7 @@ export function ParkingBookingDetailPage() {
       titleId="parking-booking-heading"
       desktopActions={desktopActions}
     >
-      {(myBroadcastPending || next || canCancel) && (
+      {canEdit && (myBroadcastPending || next || canCancel) && (
         <div className="flex flex-wrap gap-2 lg:hidden">{desktopActions}</div>
       )}
 
@@ -255,9 +335,11 @@ export function ParkingBookingDetailPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={booking.status} />
-          {isPendingAcceptance && booking.parking_broadcast_expires_at && !myBroadcastPending && (
+          {isPendingAcceptance && offerExpired ? (
+            <span className="text-destructive text-xs font-medium">Offer expired</span>
+          ) : isPendingAcceptance && booking.parking_broadcast_expires_at && !myBroadcastPending ? (
             <ParkingBroadcastCountdown expiresAt={booking.parking_broadcast_expires_at} />
-          )}
+          ) : null}
         </div>
 
         <ParkingStaySummary
@@ -308,7 +390,90 @@ export function ParkingBookingDetailPage() {
           <DetailField label="Phone" value={booking.guest_phone_number ?? '-'} icon={Phone} />
           <DetailField label="Plate" value={booking.car_plate_number ?? '-'} icon={Car} />
           <DetailField label="Vehicle" value={vehicleLabel} icon={Car} />
+          {booking.tower_and_unit_number ? (
+            <DetailField label="Unit / tower" value={booking.tower_and_unit_number} icon={Car} />
+          ) : null}
         </dl>
+
+        {booking.guest_special_requests ? (
+          <div className="border-border/60 border-t pt-4">
+            <p className="text-muted-foreground text-xs">Guest notes</p>
+            <p className="text-foreground mt-1 text-sm leading-relaxed">
+              {booking.guest_special_requests}
+            </p>
+          </div>
+        ) : null}
+
+        {payment ? (
+          <div className="border-border/60 border-t pt-4">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-section-title">Payment</h2>
+              <span className="text-muted-foreground text-xs capitalize">
+                {payment.status.replace(/_/g, ' ')}
+              </span>
+            </div>
+            <dl className="grid gap-2 text-sm sm:grid-cols-2">
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Guest paid</dt>
+                <dd className="font-medium">{formatPeso(payment.guestChargeTotal)}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Your rate</dt>
+                <dd className="font-medium">{formatPeso(payment.hostGrossTotal)}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">
+                  Fee ({(payment.commissionPct * 100).toFixed(1)}%)
+                </dt>
+                <dd className="font-medium">
+                  {formatPeso(payment.hostGrossTotal - payment.hostNetTotal)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Your payout</dt>
+                <dd className="font-semibold">{formatPeso(payment.hostNetTotal)}</dd>
+              </div>
+            </dl>
+            <p className="text-muted-foreground mt-2 text-xs">
+              {payment.refundedAt
+                ? `Refunded ${formatPeso(payment.refundAmount ?? 0)}`
+                : payment.status === 'refund_review'
+                  ? 'Refund review. Payout is on hold.'
+                  : payment.disbursedAt
+                    ? `Disbursed${payment.disbursementReference ? ` (${payment.disbursementReference})` : ''}`
+                    : 'Awaiting payout'}
+              {payment.bookingChannel === 'direct_link' ? ' · Direct link' : ''}
+            </p>
+          </div>
+        ) : null}
+
+        {PAID_STATUSES.includes(String(booking.status)) ? (
+          <div className="border-border/60 space-y-2 border-t pt-4">
+            <h2 className="text-section-title">Endorsement</h2>
+            {booking.endorsement_sent_at ? (
+              <p className="text-muted-foreground text-sm">Sent to the PMO.</p>
+            ) : (
+              <>
+                <p className="text-muted-foreground text-sm">
+                  {booking.endorsement_send_error
+                    ? `Not sent: ${booking.endorsement_send_error}`
+                    : 'Not sent yet.'}
+                </p>
+                {canEdit ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="min-h-[44px]"
+                    disabled={resendEndorsement.isPending}
+                    onClick={() => resendEndorsement.mutate(String(bookingId))}
+                  >
+                    {resendEndorsement.isPending ? 'Sending…' : 'Resend endorsement'}
+                  </Button>
+                ) : null}
+              </>
+            )}
+          </div>
+        ) : null}
 
         {booking.parking_endorsement_note ? (
           <div className="border-border/60 border-t pt-4">
@@ -344,6 +509,48 @@ export function ParkingBookingDetailPage() {
           </Button>
         )}
       </FloatingPanel>
+
+      <AdminDialogShell
+        open={cancelOpen}
+        onOpenChange={onCancelOpenChange}
+        title="Cancel booking"
+        description={
+          wasPaid
+            ? 'The guest is notified and a refund is placed in review. Their payout is blocked until the refund is recorded.'
+            : 'The guest is notified that this booking is cancelled.'
+        }
+        footer={
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={transition.isPending || !cancelReason.trim()}
+            className="min-h-[44px]"
+            onClick={() => void submitCancel()}
+          >
+            Cancel booking
+          </Button>
+        }
+      >
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="parking-cancel-reason">Reason</Label>
+            <Input
+              id="parking-cancel-reason"
+              value={cancelReason}
+              onChange={(event) => setCancelReason(event.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="parking-cancel-note">Note (optional)</Label>
+            <Textarea
+              id="parking-cancel-note"
+              value={cancelNote}
+              onChange={(event) => setCancelNote(event.target.value)}
+            />
+          </div>
+        </div>
+      </AdminDialogShell>
+      <UnsavedChangesDialog {...cancelDialogProps} />
     </AdminMobilePage>
   );
 }

@@ -34,7 +34,6 @@ import {
 } from '@/features/dashboard/org/lib/tenantPaths';
 import { superAdminPaths } from '@/features/dashboard/super-admin/lib/superAdminPaths';
 import { SUPER_ADMIN_NAV_GROUPS } from '@/features/dashboard/super-admin/lib/superAdminPlatformNav';
-import type { OrgPermissionId } from '@/features/dashboard/team/lib/orgPermissions';
 import {
   hasOrgPermission,
   ORG_NAV_VIEW_PERMISSION,
@@ -325,15 +324,6 @@ export function filterPropertyNavSections(
     .filter((section) => section.items.some((item) => item.href || item.disabled));
 }
 
-const LEGACY_PARKING_NAV_VIEW_PERMISSION: Record<string, OrgPermissionId> = {
-  Dashboard: 'org:parkings:view',
-  Bookings: 'org:parkings:view',
-  Finance: 'org:parkings:view',
-  Pricing: 'org:parkings:view',
-  Notifications: 'org:parkings:view',
-  Settings: 'org:parkings:manage',
-};
-
 /** Hide parking nav items using parking-scoped team permissions. */
 export function filterParkingNavSections(
   sections: SidebarNavSection[],
@@ -347,12 +337,8 @@ export function filterParkingNavSections(
       items: section.items.filter((item) => {
         if (item.disabled || !item.href) return true;
         const parkingRequired = PARKING_NAV_VIEW_PERMISSION[item.label];
-        if (parkingRequired) {
-          return hasParkingPermission(granted, parkingRequired);
-        }
-        const orgRequired = LEGACY_PARKING_NAV_VIEW_PERMISSION[item.label];
-        if (!orgRequired) return true;
-        return hasOrgPermission(granted, orgRequired);
+        if (!parkingRequired) return true;
+        return hasParkingPermission(granted, parkingRequired);
       }),
     }))
     .filter((section) => section.items.some((item) => item.href || item.disabled));

@@ -14,6 +14,7 @@ import {
 import { serveSuperAdmin } from '../_shared/serveEdge.ts';
 import { logSuperAdminAction } from '../_shared/superAdminAudit.ts';
 import { requireSuperAdminStepUp } from '../_shared/superAdminVerification.ts';
+import { logActivity } from '../_shared/activityLog.ts';
 
 const LEDGER_LIMIT = 200;
 
@@ -52,6 +53,12 @@ function serializeRow(row: Record<string, unknown>) {
     clawbackAmount: row.clawback_amount == null ? null : Number(row.clawback_amount as number),
     clawbackReason: (row.clawback_reason as string | undefined) ?? null,
     clawbackAt: (row.clawback_at as string | undefined) ?? null,
+    refundReviewAt: (row.refund_review_at as string | undefined) ?? null,
+    refundedAt: (row.refunded_at as string | undefined) ?? null,
+    refundAmount: row.refund_amount == null ? null : Number(row.refund_amount as number),
+    refundReference: (row.refund_reference as string | undefined) ?? null,
+    refundReason: (row.refund_reason as string | undefined) ?? null,
+    failureReason: (row.failure_reason as string | undefined) ?? null,
   };
 }
 
@@ -69,12 +76,28 @@ serveSuperAdmin('parking-payouts', async (req, admin) => {
   const supabase = createServiceClient();
 
   if (req.method === 'GET') {
-    const { data, error } = await supabase
+    const statusFilter = new URL(req.url).searchParams.get('status')?.trim() ?? 'paid';
+    let query = supabase
       .from('parking_payment_transactions')
       .select(SELECT_WITH_JOINS)
-      .eq('status', 'paid')
       .order('paid_at', { ascending: false })
       .limit(LEDGER_LIMIT);
+
+    if (statusFilter === 'needs_review') {
+      query = query.eq('status', 'paid').not('failure_reason', 'is', null);
+    } else if (statusFilter === 'all') {
+      // No filter.
+    } else if (
+      statusFilter === 'paid' ||
+      statusFilter === 'refund_review' ||
+      statusFilter === 'refunded'
+    ) {
+      query = query.eq('status', statusFilter);
+    } else {
+      return jsonError(req, 'Unknown status filter', 400);
+    }
+
+    const { data, error } = await query;
     if (error) return jsonError(req, error.message, 500);
 
     return jsonSuccess(req, {
@@ -142,6 +165,63 @@ serveSuperAdmin('parking-payouts', async (req, admin) => {
         targetId: transactionId,
         summary: `Recorded ₱${amount} clawback on parking payout ${transactionId}`,
         metadata: { amount, reason },
+      });
+      return jsonSuccess(req, { transaction: serializeRow(data as Record<string, unknown>) });
+    }
+
+    if (action === 'record_refund') {
+      const amount = Number(body.amount);
+      const reference = typeof body.reference === 'string' ? body.reference.trim() : '';
+      const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return jsonError(req, 'amount must be a positive number');
+      }
+      if (!reference) return jsonError(req, 'reference is required');
+      if (!reason) return jsonError(req, 'reason is required');
+
+      const nowIso = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('parking_payment_transactions')
+        .update({
+          status: 'refunded',
+          refunded_at: nowIso,
+          refund_amount: amount,
+          refund_reference: reference,
+          refund_reason: reason,
+          refunded_by: admin.id,
+        })
+        .eq('id', transactionId)
+        .in('status', ['paid', 'refund_review'])
+        .select(SELECT_WITH_JOINS)
+        .maybeSingle();
+      if (error) return jsonError(req, error.message, 500);
+      if (!data) return jsonError(req, 'Refundable transaction not found', 404);
+
+      const organizationId = String((data as Record<string, unknown>).organization_id ?? '');
+      if (organizationId) {
+        await logActivity({
+          action: 'parking.refund_recorded',
+          organizationId,
+          parkingId: String((data as Record<string, unknown>).parking_id ?? ''),
+          scope: 'parking',
+          actor: {
+            actorType: 'super_admin',
+            source: 'dashboard',
+            userId: admin.id,
+            email: admin.email,
+          },
+          targetType: 'parking_payment_transaction',
+          targetId: transactionId,
+          targetLabel: `Refund ${transactionId.slice(0, 8)}`,
+          metadata: { amount, reference, reason },
+        });
+      }
+      await logSuperAdminAction(admin, {
+        action: 'parking_payout.refund',
+        targetType: 'parking_payment_transaction',
+        targetId: transactionId,
+        summary: `Recorded ₱${amount} parking refund on ${transactionId}`,
+        metadata: { amount, reference, reason },
       });
       return jsonSuccess(req, { transaction: serializeRow(data as Record<string, unknown>) });
     }

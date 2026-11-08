@@ -210,24 +210,10 @@ verify_jwt = false
 [functions.get-pay-parking]
 verify_jwt = false
 
-[functions.submit-pay-parking]
-verify_jwt = false
-static_files = [
-  "./functions/_shared/email-templates/*.html",
-  "./functions/_shared/email-templates/fragments/*.html",
-  "./functions/_shared/email-assets/kame-home-gcash-qr-payment.jpg",
-]
 
-# ── Admin functions — Kong JWT gate disabled; verifyAdminJwt() in handler is the gate ──
-# verify_jwt = true uses Kong's HS256 secret which rejects newer ES256 auth tokens
-# (Supabase local dev ≥ 1.x issues ES256 JWTs). Our verifyAdminJwt() calls
-# supabase.auth.getUser() which handles both algorithms and additionally
-# checks the ADMIN_ALLOWED_EMAILS allow-list — stronger than the Kong gate.
 [functions.list-bookings]
 verify_jwt = false
 
-[functions.create-parking-booking]
-verify_jwt = false
 
 [functions.transition-parking-booking]
 verify_jwt = false
@@ -262,6 +248,9 @@ static_files = [
   "./functions/_shared/email-templates/*.html",
   "./functions/_shared/email-templates/fragments/*.html",
 ]
+
+[functions.complete-parking-bookings]
+verify_jwt = false
 
 # Airbnb / OTA calendar sync. ical-export + get-form-completion are public (token-guarded in the
 # handler). calendar-sync-cron: global sweep (optional X-Calendar-Sync-Cron-Secret) + scoped
@@ -362,13 +351,6 @@ static_files = [
 [functions.cancellation-refund-cron]
 verify_jwt = false
 
-[functions.parking-broadcast-email]
-verify_jwt = false
-static_files = [
-  "./functions/_shared/email-templates/*.html",
-  "./functions/_shared/email-templates/fragments/*.html",
-  "./functions/_shared/email-assets/kame-home-gcash-qr-payment.jpg",
-]
 
 [functions.send-sd-refund-form-email]
 verify_jwt = false
@@ -759,6 +741,16 @@ verify_jwt = false
 
 [functions.parking-pricing]
 verify_jwt = false
+
+[functions.parking-payments]
+verify_jwt = false
+
+[functions.resend-parking-endorsement]
+verify_jwt = false
+static_files = [
+  "./functions/_shared/email-templates/*.html",
+  "./functions/_shared/email-templates/fragments/*.html",
+]
 
 [functions.get-public-parking]
 verify_jwt = false

@@ -5,7 +5,6 @@ import { Route } from 'react-router-dom';
 
 import type { ParkingRouteFn } from '@/features/dashboard/org/routes/guards';
 
-import { RouteSkeletonBoundary } from '@/components/skeletons/RouteSkeleton';
 import {
   ParkingBookingsRouteSkeleton,
   ParkingBookingDetailRouteSkeleton,
@@ -58,64 +57,61 @@ const ParkingSettingsPage = lazy(() =>
   }))
 );
 
+/**
+ * Every parking section goes through `parkingRoute()` — parity with `propertyRoute()`.
+ * A bare route let a member open a page from a bookmarked URL even when the nav hid it, and
+ * the page then 403'd on its first API call instead of showing the restricted state.
+ */
 export function parkingAdminRoutes(parkingRoute: ParkingRouteFn): ReactNode {
   return (
     <>
       <Route
         index
-        element={
-          <RouteSkeletonBoundary skeleton={<ParkingDashboardRouteSkeleton />}>
-            <ParkingDashboardPage />
-          </RouteSkeletonBoundary>
-        }
+        element={parkingRoute(
+          'dashboard',
+          <ParkingDashboardPage />,
+          <ParkingDashboardRouteSkeleton />
+        )}
       />
       <Route
         path="bookings"
-        element={
-          <RouteSkeletonBoundary skeleton={<ParkingBookingsRouteSkeleton />}>
-            <ParkingBookingsPage />
-          </RouteSkeletonBoundary>
-        }
+        element={parkingRoute(
+          'bookings',
+          <ParkingBookingsPage />,
+          <ParkingBookingsRouteSkeleton />
+        )}
       />
       <Route
         path="bookings/:bookingId"
-        element={
-          <RouteSkeletonBoundary skeleton={<ParkingBookingDetailRouteSkeleton />}>
-            <ParkingBookingDetailPage />
-          </RouteSkeletonBoundary>
-        }
+        element={parkingRoute(
+          'bookings',
+          <ParkingBookingDetailPage />,
+          <ParkingBookingDetailRouteSkeleton />
+        )}
       />
       <Route
         path="finance"
-        element={
-          <RouteSkeletonBoundary skeleton={<ParkingFinanceRouteSkeleton />}>
-            <ParkingFinancePage />
-          </RouteSkeletonBoundary>
-        }
+        element={parkingRoute('finance', <ParkingFinancePage />, <ParkingFinanceRouteSkeleton />)}
       />
       <Route
         path="pricing"
-        element={
-          <RouteSkeletonBoundary skeleton={<ParkingPricingRouteSkeleton />}>
-            <ParkingPricingPage />
-          </RouteSkeletonBoundary>
-        }
+        element={parkingRoute('pricing', <ParkingPricingPage />, <ParkingPricingRouteSkeleton />)}
       />
       <Route
         path="notifications"
-        element={
-          <RouteSkeletonBoundary skeleton={<ParkingNotificationsRouteSkeleton />}>
-            <ParkingNotificationsPage />
-          </RouteSkeletonBoundary>
-        }
+        element={parkingRoute(
+          'notifications',
+          <ParkingNotificationsPage />,
+          <ParkingNotificationsRouteSkeleton />
+        )}
       />
       <Route
         path="settings"
-        element={
-          <RouteSkeletonBoundary skeleton={<ParkingSettingsRouteSkeleton />}>
-            <ParkingSettingsPage />
-          </RouteSkeletonBoundary>
-        }
+        element={parkingRoute(
+          'settings',
+          <ParkingSettingsPage />,
+          <ParkingSettingsRouteSkeleton />
+        )}
       />
       <Route
         path="inbox"

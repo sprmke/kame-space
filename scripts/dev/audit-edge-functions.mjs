@@ -65,10 +65,8 @@ const ACTIVITY_LOG_PATTERNS = [
 const RAW_SERVE_ALLOWLIST = new Set([
   'ical-export',
   'meta-inbox-oauth-callback',
-  'parking-broadcast-email',
   'submit-form',
   'submit-form-completion',
-  'submit-pay-parking',
   'submit-sd-form',
   'calendar-sync-cron',
   'sd-refund-cron',
@@ -123,7 +121,11 @@ function inferExpectedTier(fnDir) {
   if (name.includes('super-admin') || name.includes('platform-')) return 'super-admin (guess)';
   if (name.endsWith('-cron') || name.includes('cron')) return 'serveCronPost (guess)';
   if (name.includes('webhook')) return 'servePublic + webhook verification (guess)';
-  if (name.startsWith('get-public') || name.startsWith('list-public') || name.startsWith('submit-')) {
+  if (
+    name.startsWith('get-public') ||
+    name.startsWith('list-public') ||
+    name.startsWith('submit-')
+  ) {
     return 'servePublic (guess)';
   }
   if (name.startsWith('search-') || name.startsWith('get-') || name.startsWith('list-')) {
@@ -257,7 +259,11 @@ function main() {
     );
     console.log('| --- | --- | --- | --- | --- | --- | --- | --- |');
     for (const r of rows) {
-      const boundedQueryCell = r.hasSelect ? (r.hasBoundedQuery ? 'yes' : 'NO (has select)') : 'n/a';
+      const boundedQueryCell = r.hasSelect
+        ? r.hasBoundedQuery
+          ? 'yes'
+          : 'NO (has select)'
+        : 'n/a';
       console.log(
         `| \`${r.fn}\` | ${r.wrapper} | ${r.hasValidation ? 'yes' : 'no'} | ${
           r.usesJsonSuccess || r.usesJsonError ? 'yes' : 'NO'
@@ -312,7 +318,9 @@ function main() {
   console.error(`${noJsonHelpers} functions with no jsonSuccess/jsonError usage detected`);
   console.error(`${noIdempotency} functions with no _shared/idempotency.ts import`);
   console.error(`${unboundedSelect} functions with .select( but no .limit(/.range( anywhere`);
-  console.error(`${noActivityLog} functions with no _shared/activityLog.ts reference or N/A comment`);
+  console.error(
+    `${noActivityLog} functions with no _shared/activityLog.ts reference or N/A comment`
+  );
   console.error(`${zeroGaps} functions with zero flagged gaps (heuristic-clean)`);
   console.error('');
   console.error('Note: heuristics are string/regex based, not type-aware. A "gap" here is a');

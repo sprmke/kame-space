@@ -7,7 +7,7 @@ import type { SupabaseClient } from './supabaseJs.ts';
 
 import { resolveAppSettings } from './appSettings.ts';
 import { createServiceClient, type ParkingRow } from './orgAuth.ts';
-import { parkingDatesOverlap } from './parkingDateOverlap.ts';
+import { parkingDatesOverlap, toIsoParkingDate } from './parkingDateOverlap.ts';
 import { hasParkingBlockedNightsInRange } from './parkingBlockedDates.ts';
 import { parkingAutomationEnabled } from './parkingAutomationToggles.ts';
 import { minutesBetweenTimes } from './cleaningBuffer.ts';
@@ -39,6 +39,93 @@ const OCCUPYING_STATUSES = [
   'READY_FOR_CHECKIN',
   'COMPLETED',
 ];
+
+/** Raised by the app-level availability pre-check; the database RPC is the real guard. */
+export class ParkingSlotUnavailableError extends Error {
+  reason: 'slot_unavailable' | 'parking_not_found' | 'parking_inactive';
+
+  constructor(reason: 'slot_unavailable' | 'parking_not_found' | 'parking_inactive') {
+    super(reason);
+    this.name = 'ParkingSlotUnavailableError';
+    this.reason = reason;
+  }
+}
+
+export function isParkingSlotUnavailableError(err: unknown): err is ParkingSlotUnavailableError {
+  return err instanceof ParkingSlotUnavailableError;
+}
+
+/**
+ * Single-slot availability check used by the claim path before the database RPC. Mirrors
+ * `findParkingBroadcastCandidates`: occupancy statuses, half-open date overlap, 30-minute
+ * same-day turnover, owner blocks and `status = 'ACTIVE'`.
+ *
+ * Dates are `MM-DD-YYYY` (guest_submissions storage format).
+ */
+export async function assertParkingSlotAvailable(
+  parkingId: string,
+  checkInDate: string,
+  checkOutDate: string,
+  options?: { excludeBookingId?: string }
+): Promise<void> {
+  const supabase = createServiceClient();
+  const { data: parking, error: parkingError } = await supabase
+    .from('parkings')
+    .select('id, status, settings')
+    .eq('id', parkingId)
+    .maybeSingle();
+  if (parkingError) {
+    throw new Error(`assertParkingSlotAvailable (parking): ${parkingError.message}`);
+  }
+  if (!parking) throw new ParkingSlotUnavailableError('parking_not_found');
+  if (parking.status !== 'ACTIVE') {
+    throw new ParkingSlotUnavailableError('parking_inactive');
+  }
+
+  let occupancyQuery = supabase
+    .from('guest_submissions')
+    .select('id, parking_check_in_date, parking_check_out_date, check_in_date, check_out_date')
+    .eq('parking_id', parkingId)
+    .in('status', OCCUPYING_STATUSES);
+  if (options?.excludeBookingId) {
+    occupancyQuery = occupancyQuery.neq('id', options.excludeBookingId);
+  }
+  const { data: occupying, error: occupancyError } = await occupancyQuery;
+  if (occupancyError) {
+    throw new Error(`assertParkingSlotAvailable (occupancy): ${occupancyError.message}`);
+  }
+
+  const settings = (parking.settings ?? {}) as Record<string, unknown>;
+  const listingCheckInTime =
+    typeof settings.checkInTime === 'string' && settings.checkInTime.trim()
+      ? settings.checkInTime.trim()
+      : '14:00';
+  const listingCheckOutTime =
+    typeof settings.checkOutTime === 'string' && settings.checkOutTime.trim()
+      ? settings.checkOutTime.trim()
+      : '12:00';
+  const turnoverGap = minutesBetweenTimes(listingCheckOutTime, listingCheckInTime);
+
+  for (const row of occupying ?? []) {
+    const existingCheckIn = String(row.parking_check_in_date ?? row.check_in_date ?? '');
+    const existingCheckOut = String(row.parking_check_out_date ?? row.check_out_date ?? '');
+    if (!existingCheckIn || !existingCheckOut) continue;
+    if (parkingDatesOverlap(checkInDate, checkOutDate, existingCheckIn, existingCheckOut)) {
+      throw new ParkingSlotUnavailableError('slot_unavailable');
+    }
+    const isSameDayTurnover = checkInDate === existingCheckOut || checkOutDate === existingCheckIn;
+    if (isSameDayTurnover && turnoverGap < PARKING_TURNOVER_BUFFER_MINUTES) {
+      throw new ParkingSlotUnavailableError('slot_unavailable');
+    }
+  }
+
+  const blocked = await hasParkingBlockedNightsInRange(
+    parkingId,
+    toIsoParkingDate(checkInDate),
+    toIsoParkingDate(checkOutDate)
+  );
+  if (blocked) throw new ParkingSlotUnavailableError('slot_unavailable');
+}
 
 /** Same-day check-in (Asia/Manila) gets a short TTL; everything else gets the standard window. */
 export function parkingBroadcastTtlMs(
@@ -173,8 +260,8 @@ export async function findParkingBroadcastCandidates(input: {
   for (const candidate of withoutBookingConflicts) {
     const blocked = await hasParkingBlockedNightsInRange(
       candidate.id,
-      input.checkInDate,
-      input.checkOutDate
+      toIsoParkingDate(input.checkInDate),
+      toIsoParkingDate(input.checkOutDate)
     );
     if (!blocked) available.push(candidate);
   }

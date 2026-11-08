@@ -11,7 +11,7 @@ import { ParkingRegistrationForm } from '@/features/guest/marketing/parkings/com
 import { useLinkableParkingBookings } from '@/features/guest/marketing/parkings/hooks/useLinkableParkingBookings';
 import { usePublicParkingDetail } from '@/features/guest/marketing/parkings/hooks/usePublicParkingDetail';
 import { useSubmitParkingBookingRequest } from '@/features/guest/marketing/parkings/hooks/useSubmitParkingBookingRequest';
-import { formatParkingLocation } from '@/features/guest/marketing/parkings/lib/formatParkingLocation';
+import { formatParkingLocation } from '@/features/dashboard/org/lib/formatParkingLocation';
 import {
   captureParkingLinkStayFromSearch,
   clearParkingLinkStayId,

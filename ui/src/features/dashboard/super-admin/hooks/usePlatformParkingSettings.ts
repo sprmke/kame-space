@@ -37,7 +37,16 @@ export type ParkingPayoutTransaction = {
   clawbackAmount: number | null;
   clawbackReason: string | null;
   clawbackAt: string | null;
+  refundReviewAt: string | null;
+  refundedAt: string | null;
+  refundAmount: number | null;
+  refundReference: string | null;
+  refundReason: string | null;
+  failureReason: string | null;
 };
+
+export type ParkingPayoutStatusFilter =
+  'paid' | 'refund_review' | 'refunded' | 'needs_review' | 'all';
 
 const PARKING_SETTINGS_KEY = ['super-admin', 'platform-parking-settings'] as const;
 const PARKING_PAYOUTS_KEY = ['super-admin', 'parking-payouts'] as const;
@@ -70,13 +79,13 @@ export function useUpdatePlatformParkingSettings() {
   });
 }
 
-export function useParkingPayouts() {
+export function useParkingPayouts(status: ParkingPayoutStatusFilter = 'paid') {
   return useQuery({
-    queryKey: PARKING_PAYOUTS_KEY,
+    queryKey: [...PARKING_PAYOUTS_KEY, status],
     queryFn: () =>
-      callEdgeFunction<{ transactions: ParkingPayoutTransaction[] }>('parking-payouts').then(
-        (data) => data.transactions
-      ),
+      callEdgeFunction<{ transactions: ParkingPayoutTransaction[] }>(
+        `parking-payouts?status=${encodeURIComponent(status)}`
+      ).then((data) => data.transactions),
   });
 }
 
@@ -94,6 +103,29 @@ export function useMarkParkingPayoutDisbursed() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Could not mark disbursed');
+    },
+  });
+}
+
+export function useRecordParkingPayoutRefund() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      transactionId: string;
+      amount: number;
+      reference: string;
+      reason: string;
+    }) =>
+      callEdgeFunction<{ transaction: ParkingPayoutTransaction }>('parking-payouts', {
+        method: 'PATCH',
+        body: JSON.stringify({ action: 'record_refund', ...input }),
+      }).then((data) => data.transaction),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: PARKING_PAYOUTS_KEY });
+      toast.success('Refund recorded');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Could not record refund');
     },
   });
 }

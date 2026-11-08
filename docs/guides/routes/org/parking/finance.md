@@ -13,6 +13,8 @@ Route: `/org/:orgSlug/parking/:parkingSlug/finance`
 
 ## Overview
 
+**Marketplace payouts** are read-only rows from `parking-payments`: guest paid, gross, fee, net, and payout/refund status. They are separate from the manual finance ledger; disbursements and refunds are recorded by a super admin on `/admin/parking/payouts`.
+
 Same finance dashboard as property **`FinancePage`**, including the **brand hero** shell on phone/tablet (`AdminMobilePage` — one ··· menu for Add transaction + PDF export; date range in overlapping toolbar). Month/date filter, summary cards, cash-flow chart, ledger toolbar (table / card / calendar), **Add Transaction**, and **Export report**. Operating income and expense lines are scoped to the parking slot via `parking_id` on `finance_line_items`. There is no stays ledger for parking (no `guest_submissions` link); summary cards and charts reflect operating transactions only.
 
 ---

@@ -15,13 +15,13 @@ import {
   type ParkingPricingPatch,
 } from '../_shared/parkingPricing.ts';
 import { isValidCalendarDateKey } from '../_shared/parkingBlockedDates.ts';
-import { resolveScopedParkingAccess } from '../_shared/parkingScope.ts';
+import { resolveScopedParkingTeamAccess } from '../_shared/parkingScope.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 import { logAssetActivity } from '../_shared/assetActivity.ts';
 
 serveAuthenticated('parking-pricing', async (req) => {
-  const permission = req.method === 'GET' ? 'org.parkings:view' : 'org.parkings:manage';
-  const access = await resolveScopedParkingAccess(req, permission);
+  const permission = req.method === 'GET' ? 'pricing:view' : 'pricing:edit';
+  const access = await resolveScopedParkingTeamAccess(req, permission);
   const { parkingRow, user } = access;
   const parkingId = parkingRow.id;
   const url = new URL(req.url);
@@ -48,10 +48,18 @@ serveAuthenticated('parking-pricing', async (req) => {
     const patch: ParkingPricingPatch = {};
 
     if (body.weekdayNightlyRate !== undefined) {
-      patch.weekdayNightlyRate = body.weekdayNightlyRate;
+      const rate = Number(body.weekdayNightlyRate);
+      if (!Number.isFinite(rate) || rate < 0) {
+        return jsonError(req, 'weekdayNightlyRate must be a non-negative number', 400);
+      }
+      patch.weekdayNightlyRate = rate;
     }
     if (body.weekendNightlyRate !== undefined) {
-      patch.weekendNightlyRate = body.weekendNightlyRate;
+      const rate = Number(body.weekendNightlyRate);
+      if (!Number.isFinite(rate) || rate < 0) {
+        return jsonError(req, 'weekendNightlyRate must be a non-negative number', 400);
+      }
+      patch.weekendNightlyRate = rate;
     }
 
     if (body.dateOverrides !== undefined) {

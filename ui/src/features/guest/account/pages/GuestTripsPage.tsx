@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import { ChevronRight, Luggage } from 'lucide-react';
+import { Car, ChevronRight, Luggage } from 'lucide-react';
 
 import { GuestAccountContentCard } from '@/features/guest/account/components/GuestAccountContentCard';
 import { GuestAccountEmptyState } from '@/features/guest/account/components/GuestAccountEmptyState';
@@ -27,12 +27,17 @@ const GROUPS = [
   { key: 'cancelled', label: 'Cancelled' },
 ] as const;
 
-function TripRow({ trip }: { trip: GuestTripListItemDto & { propertySlug: string } }) {
+function TripRow({ trip }: { trip: GuestTripListItemDto }) {
   const cancelled = trip.status === 'CANCELLED';
+  const isParking = trip.kind === 'parking';
+  const href = isParking
+    ? `/parkings/requests/${trip.id}`
+    : guestTripPath(trip.propertySlug ?? '', trip.id);
+  const title = isParking ? (trip.parkingName ?? 'Parking request') : (trip.propertyName ?? 'Stay');
   return (
     <li>
       <Link
-        to={guestTripPath(trip.propertySlug, trip.id)}
+        to={href}
         className="hover:bg-muted/60 focus-visible:ring-ring flex min-h-[72px] items-center gap-3 rounded-xl p-2 transition-colors focus-visible:outline-none focus-visible:ring-2"
       >
         <div className="bg-muted relative size-14 shrink-0 overflow-hidden rounded-lg sm:size-16">
@@ -44,12 +49,14 @@ function TripRow({ trip }: { trip: GuestTripListItemDto & { propertySlug: string
               sizes="64px"
               className={cn('object-cover', cancelled && 'grayscale')}
             />
+          ) : isParking ? (
+            <Car className="text-muted-foreground absolute inset-0 m-auto size-5" aria-hidden />
           ) : (
             <Luggage className="text-muted-foreground absolute inset-0 m-auto size-5" aria-hidden />
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{trip.propertyName ?? 'Stay'}</p>
+          <p className="truncate text-sm font-semibold">{title}</p>
           <p className="text-muted-foreground truncate text-xs">
             {formatStayDateRange(trip.checkInDate, trip.checkOutDate) ?? ''}
           </p>
@@ -92,9 +99,7 @@ export function GuestTripsPage() {
     );
   }
 
-  const linkable = trips.filter((trip): trip is GuestTripListItemDto & { propertySlug: string } =>
-    Boolean(trip.propertySlug)
-  );
+  const linkable = trips.filter((trip) => Boolean(trip.propertySlug) || trip.kind === 'parking');
 
   if (linkable.length === 0) {
     return (
@@ -126,23 +131,23 @@ export function GuestTripsPage() {
     <>
       <InstallInlineCard />
       <GuestAccountContentCard bodyClassName="p-2 sm:p-4">
-      <div className="space-y-4">
-        {grouped.map((group) => (
-          <section key={group.key} aria-labelledby={`trips-${group.key}`} className="space-y-1">
-            <h2
-              id={`trips-${group.key}`}
-              className="text-muted-foreground px-2 pt-2 text-xs font-semibold uppercase tracking-wider"
-            >
-              {group.label}
-            </h2>
-            <ul className="space-y-0.5">
-              {group.trips.map((trip) => (
-                <TripRow key={trip.id} trip={trip} />
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
+        <div className="space-y-4">
+          {grouped.map((group) => (
+            <section key={group.key} aria-labelledby={`trips-${group.key}`} className="space-y-1">
+              <h2
+                id={`trips-${group.key}`}
+                className="text-muted-foreground px-2 pt-2 text-xs font-semibold uppercase tracking-wider"
+              >
+                {group.label}
+              </h2>
+              <ul className="space-y-0.5">
+                {group.trips.map((trip) => (
+                  <TripRow key={trip.id} trip={trip} />
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
       </GuestAccountContentCard>
     </>
   );

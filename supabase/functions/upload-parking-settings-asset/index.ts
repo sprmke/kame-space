@@ -6,7 +6,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from '../_shared/supabaseJs.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { handleEdgeError } from '../_shared/httpResponse.ts';
-import { resolveScopedParkingAccess } from '../_shared/parkingScope.ts';
+import { resolveScopedParkingTeamAccess } from '../_shared/parkingScope.ts';
 import { assertWithinUploadLimit } from '../_shared/uploadLimits.ts';
 import { formatPublicUrl } from '../_shared/utils.ts';
 import { assertUploadMatchesBytes } from '../_shared/sniffMime.ts';
@@ -28,7 +28,7 @@ serve(async (req) => {
   }
 
   try {
-    const { parkingRow } = await resolveScopedParkingAccess(req, 'org.parkings:manage');
+    const { parkingRow } = await resolveScopedParkingTeamAccess(req, 'settings:edit');
     const parkingId = parkingRow.id;
 
     if (req.method !== 'POST') {
