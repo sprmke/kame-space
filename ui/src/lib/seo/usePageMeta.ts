@@ -1,3 +1,8 @@
+/**
+ * test: N/A — React hook that writes `<head>` tags inside an effect (no return value to
+ * assert in the Node test environment). The pure formatting lives in `seoMeta.ts`, which
+ * has colocated Vitest coverage.
+ */
 import { useEffect } from 'react';
 
 import {

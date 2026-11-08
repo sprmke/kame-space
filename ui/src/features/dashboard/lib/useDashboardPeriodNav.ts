@@ -1,3 +1,7 @@
+/**
+ * test: N/A — composes router params with `dashboardPeriod.ts` and
+ * `useDateNavigation`, both covered by Vitest.
+ */
 import { useCallback, useEffect, useMemo } from 'react';
 
 import { useSearchParams } from 'react-router-dom';

@@ -1,3 +1,7 @@
+/**
+ * test: N/A — copy-only module. Every `*HelpCopy.ts` file is scanned by
+ * `ui/src/lib/help/helpCopy.test.ts`.
+ */
 import { Bell, BellRing, Send, SlidersHorizontal } from 'lucide-react';
 
 import type { HelpCopyModule, HowItWorksCopy } from '@/lib/help/types';

@@ -1,3 +1,7 @@
+/**
+ * test: N/A — Remotion web renderer + Blob download. Preflight rules live in
+ * `video/v2/exportPreflight.ts` and have colocated coverage.
+ */
 import { canRenderMediaOnWeb, renderMediaOnWeb } from '@remotion/web-renderer';
 
 import {

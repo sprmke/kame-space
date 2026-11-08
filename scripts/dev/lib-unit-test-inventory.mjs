@@ -2,14 +2,26 @@
 /**
  * Lists ui/src feature lib/*.ts files missing a colocated *.test.ts (or *Test.ts).
  * Usage: node scripts/dev/lib-unit-test-inventory.mjs [--json]
+ *
+ * A file may opt out with a `test: N/A` marker plus a reason in its leading
+ * comment block. See docs/workflow/done/comprehensive-unit-test-coverage.md.
  */
-import { readdir, stat } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 const UI_SRC = path.resolve(process.cwd(), 'ui/src');
 
 const SKIP_NAME =
   /(\.test\.ts$|Test\.ts$|\.d\.ts$|types\.ts$|mock|Mock|Api\.ts$|edgeClient\.ts$)/i;
+
+/** Only the leading comment block counts, so a mention in code cannot opt a file out. */
+const NA_MARKER = /\btest:\s*N\/A\b/;
+const NA_HEADER_LINES = 12;
+
+async function isMarkedNotApplicable(file) {
+  const text = await readFile(file, 'utf8');
+  return NA_MARKER.test(text.split('\n', NA_HEADER_LINES).join('\n'));
+}
 
 async function walk(dir, out = []) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -45,9 +57,9 @@ async function main() {
     if (SKIP_NAME.test(path.basename(file))) continue;
     const dir = path.dirname(file);
     const dirFiles = await readdir(dir);
-    if (!hasTest(path.basename(file), dirFiles)) {
-      missing.push(path.relative(process.cwd(), file));
-    }
+    if (hasTest(path.basename(file), dirFiles)) continue;
+    if (await isMarkedNotApplicable(file)) continue;
+    missing.push(path.relative(process.cwd(), file));
   }
 
   missing.sort();

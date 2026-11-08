@@ -1,3 +1,7 @@
+/**
+ * test: N/A — dynamic import seam that only warms Vite chunks; no branching worth
+ * asserting without a bundler.
+ */
 import type { ComponentType } from 'react';
 
 import type {

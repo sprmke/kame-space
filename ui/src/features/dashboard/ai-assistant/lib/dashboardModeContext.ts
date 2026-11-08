@@ -1,3 +1,7 @@
+/**
+ * test: N/A — React context with an inert default value. The mode logic lives in
+ * `dashboardMode.ts`.
+ */
 import { createContext, useContext } from 'react';
 
 import type {

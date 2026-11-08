@@ -1,3 +1,8 @@
+/**
+ * test: N/A — registers a canvas text measurer after `document.fonts` loads, which
+ * the Node environment does not provide. Width estimation is covered in
+ * `posterText.test.ts`.
+ */
 import {
   posterFontFamilies,
   type PosterTypeRole,

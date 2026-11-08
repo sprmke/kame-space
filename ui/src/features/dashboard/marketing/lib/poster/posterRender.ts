@@ -1,3 +1,8 @@
+/**
+ * test: N/A — renders the compiled document through Polotno and Konva in a browser.
+ * The document it renders is covered by `posterModules.test.ts` and
+ * `posterAudit.test.ts`.
+ */
 import Konva from 'konva';
 
 import {

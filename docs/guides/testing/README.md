@@ -2,7 +2,7 @@
 title: 'Testing index'
 status: active
 tags: [guides, testing]
-updated: 2026-09-23
+updated: 2026-11-08
 ---
 
 # Testing index
@@ -25,13 +25,23 @@ Sitewide pyramid for Kame Space. Plan: [`docs/workflow/done/sitewide-automated-t
 
 ## Comprehensive lib coverage
 
-Every `ui/src/**/lib/*.ts` and `ui/src/utils/**/*.ts` module has a colocated Vitest file (see [`docs/workflow/done/comprehensive-unit-test-coverage.md`](../../workflow/done/comprehensive-unit-test-coverage.md)).
+Every `ui/src/**/lib/*.ts` and `ui/src/utils/**/*.ts` module has a colocated Vitest file, or an explicit `test: N/A` marker when it is React-runtime-only, browser-only (canvas, service worker, fonts) or pure data (see [`docs/workflow/done/comprehensive-unit-test-coverage.md`](../../workflow/done/comprehensive-unit-test-coverage.md)).
+
+The inventory reads the marker from a file's leading comment block, so "N/A" is a durable decision recorded next to the code, not a gap:
+
+```ts
+/**
+ * test: N/A — React context plus accessor hooks; the behaviour lives in the provider.
+ */
+```
+
+Current state (2026-11-08): **1,707** lib files, **0** missing, **863** Vitest files (`857` pass, `6` skipped for types-only and Polotno browser modules).
 
 **Pages, sections, and UI elements** are not duplicated as Vitest cases. See [`application-coverage-model.md`](./application-coverage-model.md) for how public + dashboard routes map to **Playwright** (`@smoke` / `@ci`) plus colocated **lib** unit tests. Line coverage for logic only: `bun run test:coverage:lib`.
 
 | Script                                                         | Purpose                                                                             |
 | -------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `node scripts/dev/lib-unit-test-inventory.mjs`                 | List lib files still missing `*.test.ts`                                            |
+| `node scripts/dev/lib-unit-test-inventory.mjs`                 | List lib files still missing `*.test.ts` and no `test: N/A` marker                  |
 | `node scripts/dev/scaffold-missing-lib-unit-tests.mjs --write` | Scaffold colocated tests (regenerate only when adding new lib files)                |
 | `node scripts/dev/enrich-lib-unit-tests.mjs --write`           | Replace export-only scaffolds with per-export `describe` blocks (safe export smoke) |
 | `node scripts/dev/enrich-lib-unit-tests.mjs --repair-unsafe`   | Re-run after bad heuristic upgrades (`--write` with `--repair-unsafe`)              |

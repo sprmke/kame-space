@@ -1,3 +1,6 @@
+/**
+ * test: N/A — MediaRecorder and Web Audio capture; browser only.
+ */
 export const VOICE_MIC_SAMPLE_RATE = 16_000;
 
 const WORKLET_URL = '/worklets/voice-pcm-recorder.js';
