@@ -96,11 +96,41 @@ async function enforceOrLogRateCheck(
   }
 }
 
+/**
+ * Handler registry for tests.
+ *
+ * `serve()` starts an HTTP server the moment a wrapper is called, which is why an
+ * `index.ts` could never be imported by a test: importing it booted a server. With
+ * `EDGE_HANDLER_TEST=1` the wrapper mounts the composed handler here instead, so a test
+ * can call it directly with a `Request` and assert the real HTTP contract (auth tier,
+ * validation, envelope, activity side effects) without a deploy.
+ *
+ * Production is unchanged: the env var is unset there, so `serve()` still runs.
+ */
+const EDGE_HANDLER_TEST_ENV = 'EDGE_HANDLER_TEST';
+const mountedEdgeHandlers = new Map<string, (req: Request) => Promise<Response>>();
+
+function mountEdgeHandler(
+  logPrefix: string,
+  handler: (req: Request) => Promise<Response>
+): void {
+  mountedEdgeHandlers.set(logPrefix, handler);
+  if (Deno.env.get(EDGE_HANDLER_TEST_ENV) === '1') return;
+  serve(handler);
+}
+
+/** Test-only accessor: the composed handler behind a mounted `serve*` wrapper. */
+export function getMountedEdgeHandler(
+  logPrefix: string
+): ((req: Request) => Promise<Response>) | null {
+  return mountedEdgeHandlers.get(logPrefix) ?? null;
+}
+
 export function serveAdmin(
   logPrefix: string,
   handler: (req: Request, admin: AdminUser) => Promise<Response>
 ): void {
-  serve(async (req) => {
+  mountEdgeHandler(logPrefix, async (req) => {
     const options = handleOptions(req);
     if (options) return options;
     // Verified outside the try so the catch can name the user. A JWT failure leaves it
@@ -123,7 +153,7 @@ export function serveSuperAdmin(
   logPrefix: string,
   handler: (req: Request, user: AuthenticatedUser) => Promise<Response>
 ): void {
-  serve(async (req) => {
+  mountEdgeHandler(logPrefix, async (req) => {
     const options = handleOptions(req);
     if (options) return options;
     let userId: string | undefined;
@@ -142,7 +172,7 @@ export function serveAuthenticated(
   logPrefix: string,
   handler: (req: Request, user: AuthenticatedUser) => Promise<Response>
 ): void {
-  serve(async (req) => {
+  mountEdgeHandler(logPrefix, async (req) => {
     const options = handleOptions(req);
     if (options) return options;
     let userId: string | undefined;
@@ -159,7 +189,7 @@ export function serveAuthenticated(
 }
 
 export function servePublic(logPrefix: string, handler: (req: Request) => Promise<Response>): void {
-  serve(async (req) => {
+  mountEdgeHandler(logPrefix, async (req) => {
     const options = handleOptions(req);
     if (options) return options;
     try {
@@ -180,7 +210,7 @@ export function serveCronPost(
    */
   cron?: CronMonitorConfig
 ): void {
-  serve(async (req) => {
+  mountEdgeHandler(logPrefix, async (req) => {
     const options = handleOptions(req);
     if (options) return options;
     try {

@@ -80,7 +80,6 @@
     "get-booking-asset-url",
     "get-development",
     "get-external-review-assets",
-    "get-feature-availability",
     "get-form",
     "get-form-completion",
     "get-guest-booking-document",

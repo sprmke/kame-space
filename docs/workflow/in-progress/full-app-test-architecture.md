@@ -39,6 +39,28 @@ deleted`. All three are drift against in-progress tickets (notifications restruc
 Final lane state: 96 specs, one tag each — `@smoke` 23, `@ci` 68 (62 executable, 6 quarantined),
 `@pwa` 1, `@live` 2, `@demo` 2. `@ci` runs in 3.1 min locally.
 
+### Handler testability (shipped 2026-11-08)
+
+`index.ts` could not be imported because `serve*` called `serve()` at module scope. Fixed in
+one file: `_shared/serveEdge.ts` now mounts the composed handler in a registry when
+`EDGE_HANDLER_TEST=1`, and still calls `serve()` in production. No `index.ts` changed.
+
+```ts
+Deno.env.set('EDGE_HANDLER_TEST', '1');
+await import('../../get-feature-availability/index.ts');
+const handler = getMountedEdgeHandler('get-feature-availability')!;
+const res = await handler(new Request(url, { headers: { Authorization: 'Bearer token' } }));
+```
+
+The first test (`tests/handlers/get-feature-availability.test.ts`) drives the real wrapper:
+401 on a missing bearer, 401 on an invalid session, the `{ success, data }` envelope, the
+per-viewer `Cache-Control: private`, no PII in the body, and a super-admin seeing a
+bypassable kill switch as `bypassed` rather than as a missing feature. Supabase is stubbed
+at `fetch`, the only boundary the handler crosses.
+
+Next: the same shape for `cancel-booking`, `guest-cancel-booking`, `submit-form` and the
+webhooks, which is where `stubDb()` / `stubProvider()` from §1 pay off.
+
 ### Decisions taken
 
 | Decision                   | Choice                                                                                                         | Why                                                                                                                                      |
