@@ -160,6 +160,7 @@ Run **`bun run check:ai-tooling-sync`** after changing hooks, commands, agents, 
 | `performance`                 | Vite bundle, query tuning                                                                        |
 | `batch-commit`                | Daily N commits × 5–10 files (not whole tree)                                                    |
 | `self-review`                 | Deep production-readiness module review (`/self-review`) — gaps, edge cases, ship verdict        |
+| `execute-plan`                | Audit a written plan, then implement it end to end in an isolated worktree (`/ks-execute-plan`)  |
 | `github-issues`               | GitHub Issues — view, create, ship                                                               |
 | `workflow`                    | Workflow docs lifecycle — start/done, in-progress tracking                                       |
 | `workflow-intake-scratchpads` | Sync `_to-prompt.md` / `_to-plan.md` emojis with planned/in-progress/done/wont-do                |
@@ -182,7 +183,7 @@ Run **`bun run check:ai-tooling-sync`** after changing hooks, commands, agents, 
 | `/kh-check-before-pr`   | `bun run ci:quality` before review               |
 | `/kh-submit-for-review` | Push + open PR **into `develop`**                |
 
-Also: `/self-review`, `/github-issue`, `/fix-merge-conflicts`, `/workflow-*`, `/superpowers-*` — see `.claude/README.md`.
+Also: `/ks-execute-plan`, `/self-review`, `/github-issue`, `/fix-merge-conflicts`, `/workflow-*`, `/superpowers-*` — see `.claude/README.md`.
 
 ## Subagents (`.cursor/agents/`)
 
