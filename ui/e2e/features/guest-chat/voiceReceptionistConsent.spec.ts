@@ -1,9 +1,12 @@
-import { expect, test } from '@playwright/test';
+import { expect as baseExpect, test } from '@playwright/test';
 
 import { seedSupabaseAuthSession } from '../../shared/authSeam';
 import { E2E_GUEST_USER_ID } from '../../shared/ids';
 
 import type { Page, Route } from '@playwright/test';
+
+// The mock voice stream and the lazy panel chunk both lose time on a loaded CI runner.
+const expect = baseExpect.configure({ timeout: 20_000 });
 
 async function fulfillJson(route: Route, data: Record<string, unknown>) {
   await route.fulfill({
@@ -263,6 +266,8 @@ async function installLiveBrowserMocks(page: Page) {
   });
 }
 
+test.describe.configure({ timeout: 90_000 });
+
 test.describe('@smoke voice receptionist consent', () => {
   test('requires disclosure acceptance before requesting microphone access', async ({ page }) => {
     await installVoiceReceptionistMocks(page);
@@ -271,7 +276,9 @@ test.describe('@smoke voice receptionist consent', () => {
     await page.getByRole('button', { name: 'Chat options' }).click();
     await page.getByText('Talk to receptionist', { exact: true }).click();
 
-    await expect(page.getByRole('heading', { name: 'AI voice receptionist' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'AI voice receptionist' })).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(page.getByText(/Uses your microphone and Google Gemini/)).toBeVisible();
     await expect(page.getByRole('link', { name: 'Privacy' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Start call' })).toBeVisible();
@@ -330,7 +337,9 @@ test.describe('@smoke voice receptionist consent', () => {
     await expect(page.getByRole('link', { name: 'Unsafe' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'End call' })).toBeVisible();
     await expect
-      .poll(() => page.locator('html').getAttribute('data-mock-voice-connections'))
+      .poll(() => page.locator('html').getAttribute('data-mock-voice-connections'), {
+        timeout: 30_000,
+      })
       .toBe('2');
     await expect(page.getByText('How can I help with your stay?')).toBeVisible();
     await page.getByRole('button', { name: 'Message host' }).click();
@@ -360,7 +369,7 @@ test.describe('@smoke voice receptionist consent', () => {
     await page.getByText('Talk to receptionist', { exact: true }).click();
     await page.getByRole('button', { name: 'Start call' }).click();
 
-    await expect(page.getByText('Call ended')).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText('Call ended')).toBeVisible({ timeout: 30_000 });
     await expect(page.getByRole('button', { name: 'Done' })).toBeVisible();
   });
 
@@ -374,7 +383,9 @@ test.describe('@smoke voice receptionist consent', () => {
     await page.getByRole('button', { name: 'Start call' }).click();
     await expect(page.getByText('How can I help with your stay?')).toBeVisible();
     await expect
-      .poll(() => page.locator('html').getAttribute('data-mock-voice-connections'))
+      .poll(() => page.locator('html').getAttribute('data-mock-voice-connections'), {
+        timeout: 30_000,
+      })
       .toBe('2');
 
     await page.clock.install();

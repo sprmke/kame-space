@@ -13,12 +13,16 @@ import { callEdgeFunction } from '@/features/dashboard/org/lib/edgeClient';
 
 export const HOST_ANNOUNCEMENTS_QUERY_KEY = ['host-announcements'] as const;
 
-export function useHostAnnouncements() {
+export function useHostAnnouncements(
+  /** `false` holds the request until the caller is ready (the shell defers the unread dot). */
+  options: { enabled?: boolean } = {}
+) {
   const location = useLocation();
   const { orgId } = useNotificationsOrgScope();
   const orgContext = useOptionalOrgContext();
   const parkingContext = useOptionalParkingContext();
   const enabled =
+    options.enabled !== false &&
     Boolean(orgId) &&
     !isSuperAdminPath(location.pathname) &&
     !location.pathname.startsWith('/onboarding');

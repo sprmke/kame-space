@@ -14,52 +14,9 @@ import { SPEC } from './spec';
  * A pose is plain data (see `Pose`), built with `poses.*` and `blendPose` in `poses.ts`.
  */
 
-export type Eyes = 'open' | 'happy' | 'closed';
-export type Prop = 'none' | 'receipt' | 'key' | 'phone' | 'coin';
+import { type Pose, type Prop } from './kamePose';
 
-export interface Pose {
-  /** Arm angles in degrees (0 = straight down; right arm positive goes out and up). */
-  armL: number;
-  armR: number;
-  /** Whole body lift in model units (a hop). */
-  hop: number;
-  /** Body turn in degrees, added to the model's default three-quarter yaw. */
-  yaw: number;
-  /** Head turn / nod / tilt, degrees. */
-  headYaw: number;
-  headPitch: number;
-  tilt: number;
-  eyes: Eyes;
-  /** Eye openness 0..1 (blinks, sleepy). */
-  lids: number;
-  /** 0 = closed smile, >0 = open grin (talking, cheering). */
-  open: number;
-  /** Mouth width for speech shapes, 0..1. */
-  wide: number;
-  /** Cheek scale, 1 = default. */
-  blush: number;
-  /** Breathing phase input (frame); 0 freezes the body. */
-  breath: number;
-  /** What the right hand holds. */
-  prop: Prop;
-}
-
-export const REST: Pose = {
-  armL: SPEC.groups.armL.rest ?? -18,
-  armR: SPEC.groups.armR.rest ?? 18,
-  hop: 0,
-  yaw: 0,
-  headYaw: 0,
-  headPitch: 0,
-  tilt: 0,
-  eyes: 'open',
-  lids: 1,
-  open: 0,
-  wide: 0.5,
-  blush: 1,
-  breath: 0,
-  prop: 'none',
-};
+export { REST, type Eyes, type Pose, type Prop } from './kamePose';
 
 export interface KameLook {
   /** Contact shadow color (a darker shade of the plane), or null for none. */
@@ -86,6 +43,7 @@ interface Rig {
   armL: THREE.Group;
   armR: THREE.Group;
   headPivot: THREE.Group;
+  head: THREE.Group;
   eyeL: THREE.Group;
   eyeR: THREE.Group;
   happyL: THREE.Group;
@@ -274,7 +232,11 @@ function buildProps(mat: ReturnType<typeof makeMaterials>) {
   };
 }
 
-function buildRig(canvas: HTMLCanvasElement): Rig {
+function buildRig(
+  canvas: HTMLCanvasElement,
+  palette: Partial<Record<string, string>> = {},
+  toeClaws = false
+): Rig {
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
@@ -358,7 +320,9 @@ function buildRig(canvas: HTMLCanvasElement): Rig {
   const eyeMeshes: THREE.Mesh[] = [];
   const cheeks: THREE.Mesh[] = [];
   for (const p of SPEC.parts) {
-    const m = new THREE.Mesh(p.half ? HEMI : SPH, mat(p.color, p.mat));
+    const colorKey = Object.entries(SPEC.palette).find(([, color]) => color === p.color)?.[0];
+    const color = colorKey ? (palette[colorKey] ?? p.color) : p.color;
+    const m = new THREE.Mesh(p.half ? HEMI : SPH, mat(color, p.mat));
     m.position.set(p.c[0], p.c[1], p.c[2]);
     m.quaternion.set(p.q[0], p.q[1], p.q[2], p.q[3]);
     m.scale.set(p.r[0], p.r[1], p.r[2]);
@@ -368,6 +332,18 @@ function buildRig(canvas: HTMLCanvasElement): Rig {
     G[p.group].add(m);
     if (p.group === 'eyeL' || p.group === 'eyeR') eyeMeshes.push(m);
     if (p.name === 'cheek') cheeks.push(m);
+  }
+
+  if (toeClaws) {
+    const nailMat = mat('#FFF6E0', 'flat');
+    for (const side of [-1, 1]) {
+      for (const offset of [-0.12, 0, 0.12]) {
+        const nail = new THREE.Mesh(SPH, nailMat);
+        nail.position.set(side * 0.34 + offset, 0.1, 0.43);
+        nail.scale.set(0.065, 0.05, 0.035);
+        G.body.add(nail);
+      }
+    }
   }
 
   // Face curves drawn on the head ellipsoid (same maths as the artifact).
@@ -448,6 +424,7 @@ function buildRig(canvas: HTMLCanvasElement): Rig {
     armL: G.armL,
     armR: G.armR,
     headPivot,
+    head: G.head,
     eyeL: G.eyeL,
     eyeR: G.eyeR,
     happyL: G.happyL,
@@ -540,6 +517,10 @@ export function Kame({
   look = {},
   framing = 'full',
   quality = 1.5,
+  headScale = 1,
+  palette = {},
+  grinScale = 0.58,
+  toeClaws = false,
   style,
 }: {
   /** Box size in design pixels; the character is fitted inside it. */
@@ -550,6 +531,14 @@ export function Kame({
   framing?: 'full' | 'bust';
   /** Supersampling factor for crisp edges. */
   quality?: number;
+  /** Per-character head scale for design variants. */
+  headScale?: number;
+  /** Palette overrides for character variants; defaults preserve Kame v6. */
+  palette?: Partial<Record<string, string>>;
+  /** Smile width multiplier; the default preserves existing Kame compositions. */
+  grinScale?: number;
+  /** Add small ivory toe tips for A1-style feet. */
+  toeClaws?: boolean;
   style?: CSSProperties;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -559,8 +548,10 @@ export function Kame({
 
   useLayoutEffect(() => {
     if (!canvas.current) return;
-    if (!rig.current) rig.current = buildRig(canvas.current);
+    if (!rig.current) rig.current = buildRig(canvas.current, palette, toeClaws);
     const r = rig.current;
+    r.head.scale.setScalar(headScale);
+    r.grin.parent?.scale.setScalar(grinScale);
     r.renderer.setSize(pw, ph, false);
     frameCamera(r, pw, ph, framing);
     apply(r, pose, look);

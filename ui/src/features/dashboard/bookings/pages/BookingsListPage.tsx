@@ -57,6 +57,7 @@ import { BookingsStageSummarySkeleton } from '@/components/skeletons/BookingsExt
 import { Button } from '@/components/ui/button';
 import { useIsBelowLg, useIsBelowMd } from '@/hooks/useMediaQuery';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useRouteContentReady } from '@/hooks/useRouteContentReady';
 import { fromIsoDate } from '@/lib/date/navigation';
 import { buildPageItems, normalizeAdminPageLimit } from '@/lib/table/pagination';
 
@@ -262,6 +263,9 @@ export function BookingsListPage({ scope = 'property' }: BookingsListPageProps) 
   const { data, isLoading, isFetching, dataUpdatedAt, error, refetch } = useBookings(listQuery, {
     scope,
   });
+
+  // Perf timeline: resolved list (success or error) is the content the user came for.
+  useRouteContentReady(!isLoading);
   const pullToRefresh = usePullToRefresh({
     onRefresh: () => Promise.all([refetch(), refetchSummary()]),
   });

@@ -1,7 +1,6 @@
 import { safeRedirect } from '@/features/guest/auth/lib/authRedirect';
 
 export const HOST_LOGIN_PATH = '/for-hosts/login';
-export const HOST_REGISTER_PATH = '/for-hosts/register';
 
 export { safeRedirect };
 

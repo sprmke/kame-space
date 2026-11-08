@@ -11,6 +11,7 @@ import { RequireAdmin } from '@/features/dashboard/bookings/components/RequireAd
 import { useAdminSession } from '@/features/dashboard/bookings/hooks/useAdminSession';
 import { OnboardingFeatureShowcase } from '@/features/dashboard/org/components/onboarding/OnboardingFeatureShowcase';
 import { OnboardingHostVerificationSection } from '@/features/dashboard/org/components/onboarding/OnboardingHostVerificationSection';
+import { HostIdentityVerifyButton } from '@/features/verification/components/HostIdentityVerifyButton';
 import {
   OnboardingProfileHeader,
   readGoogleAvatarUrl,
@@ -217,6 +218,8 @@ export function OnboardingPage() {
   const [userContractEndDate, setUserContractEndDate] = useState('');
   const [validIdFile, setValidIdFile] = useState<File | null>(null);
   const [validIdPreview, setValidIdPreview] = useState<string | null>(null);
+  /** A live capture replaces the file; the server copies the photo into the org asset. */
+  const [liveValidId, setLiveValidId] = useState<string | null>(null);
   const [socialProofFile, setSocialProofFile] = useState<File | null>(null);
   const [socialProofPreview, setSocialProofPreview] = useState<string | null>(null);
   const [verificationTouched, setVerificationTouched] = useState(false);
@@ -348,7 +351,7 @@ export function OnboardingPage() {
     !towerUnitChecking &&
     userRoleReady;
 
-  const hostVerificationReady = Boolean(validIdFile && socialProofFile);
+  const hostVerificationReady = Boolean((validIdFile || liveValidId) && socialProofFile);
   const verificationReady = hostVerificationReady;
 
   const canAdvance =
@@ -509,13 +512,17 @@ export function OnboardingPage() {
       }
 
       // Host Tier 1 — Valid ID + Facebook Page screenshot (org scope).
-      await uploadVerificationAsset(data.organization.id, 'valid_id', validIdFile!);
+      // A live capture already holds the photo server-side, so there is no file to upload.
+      if (validIdFile) {
+        await uploadVerificationAsset(data.organization.id, 'valid_id', validIdFile);
+      }
       await uploadVerificationAsset(data.organization.id, 'social_proof', socialProofFile!);
       await callEdgeFunction('submit-org-verification', {
         method: 'POST',
         body: JSON.stringify({
           orgId: data.organization.id,
           tier: 'base',
+          ...(liveValidId ? { identityVerificationId: liveValidId } : {}),
         }),
       });
 
@@ -1045,7 +1052,9 @@ export function OnboardingPage() {
                           <OnboardingHostVerificationSection
                             file={validIdFile}
                             previewUrl={validIdPreview}
-                            error={verificationTouched && !validIdFile ? 'Required' : null}
+                            error={
+                              verificationTouched && !validIdFile && !liveValidId ? 'Required' : null
+                            }
                             onFileChange={(file, preview) => {
                               setValidIdFile(file);
                               setValidIdPreview(preview);
@@ -1060,6 +1069,17 @@ export function OnboardingPage() {
                               setSocialProofPreview(preview);
                             }}
                             onUploadError={setError}
+                            verifyAction={
+                              !validIdFile ? (
+                                <HostIdentityVerifyButton
+                                  onDocumentCaptured={(file) => {
+                                    setValidIdFile(file);
+                                    setValidIdPreview(URL.createObjectURL(file));
+                                  }}
+                                  onVerified={(result) => setLiveValidId(result.verificationId)}
+                                />
+                              ) : null
+                            }
                           />
                         </>
                       )}

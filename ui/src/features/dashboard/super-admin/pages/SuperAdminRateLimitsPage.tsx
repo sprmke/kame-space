@@ -70,7 +70,7 @@ export function SuperAdminRateLimitsPage() {
       <Card padding="sm" className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Gauge className="text-muted-foreground size-4" aria-hidden />
-          <p className="text-sm font-medium">
+          <div className="text-sm font-medium">
             Enforcement is{' '}
             <Badge variant={data?.enforceEnabled ? 'success' : 'secondary'}>
               {data?.enforceEnabled ? 'ON - 429 on limit' : 'OFF - log-only'}
@@ -80,7 +80,7 @@ export function SuperAdminRateLimitsPage() {
                 {data.limit} requests / 60s per user
               </span>
             ) : null}
-          </p>
+          </div>
         </div>
         <Button variant="outline" size="sm" className="min-h-[44px]" asChild>
           <Link to={superAdminPaths.platformSettings}>Change in Platform settings</Link>

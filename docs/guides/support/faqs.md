@@ -2,7 +2,7 @@
 title: 'Curated support FAQs'
 status: active
 tags: [guides, support, faqs, help-center]
-updated: 2026-11-06
+updated: 2026-11-08
 ---
 
 # Curated support FAQs
@@ -1166,6 +1166,24 @@ Guests can browse dates and fill out the form first. They are asked to verify th
 
 No. Each email is one host account, and signing in opens the existing workspace. You cannot create a second organization with the same email.
 
+### Where do I create an account?
+
+- category: Account & Security
+- audience: public
+- source: docs/guides/routes/auth.md
+- order: 55
+
+The sign-in page does it. Enter your email and confirm the code we send, and your account exists. There is no separate sign-up form, so new and returning people use the same page.
+
+### I opened the wrong sign-in page for my role. How do I switch?
+
+- category: Account & Security
+- audience: public
+- source: docs/guides/routes/auth.md
+- order: 56
+
+Use the link under the form. It reads "Sign in as host" on the guest page and "Sign in as guest" on the host page.
+
 ### Does the public Support page show the same answers as Help and Support in the dashboard?
 
 - category: Account & Security
@@ -1280,3 +1298,38 @@ Yes. In New booking, tick **Paid outside Kame Space**. The booking confirms with
 - source: docs/guides/routes/org/parking/finance.md
 
 Parking Finance shows a read-only **Marketplace payouts** section with the guest price, gross, fee, net and payout status. Payouts are sent manually by the Kame Space team.
+### Why does the guest ID check ask for a phone camera?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/verify.md
+- order: 910
+
+A live photo is much harder to fake than a gallery upload, and it reads the QR on a PhilSys ID directly. Guests can still upload a photo if their camera is blocked, and their result is then reviewed by a person.
+
+### What do the ID badges mean on a booking?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/org/property/bookings-detail.md
+- order: 911
+
+Verified means the document was proven genuine and matched to the guest. Partially verified means it was readable and the person was checked on the device. Needs review means it was captured but not confirmed, so you should look at it. Not accepted means it failed a hard check.
+
+### Do you still send the ID with the GAF request?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/form.md
+- order: 912
+
+Yes. The captured photo is copied into the same place an uploaded ID used to go, so the building receives it the same way.
+
+### How long do you keep ID photos?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/verify.md
+- order: 913
+
+Seven days by default. After that only the result and the guest's name stay with the booking. A guest can delete their verification from their profile at any time.

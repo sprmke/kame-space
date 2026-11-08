@@ -133,9 +133,8 @@ Tabs and their contents:
      footer (hairline divider) with the recommendation, a named deep link (`Go to Pricing`, from
      `analytics/lib/aiReviewDeepLink.ts`, falling back to `Go there`), and a secondary playbook tip
      (text button, not a filled chip). Working items that have no next step omit the footer.
-     Local QA: `bun run seed:analytics-demo` inserts a mock latest review for `monaco-2612`
-     (model `analytics-demo`) so this card renders without waiting for the weekly cron or Gemini,
-     and seeds `platform_analytics_benchmark_cache` so **How you compare** has a peer sample.
+     Local QA: `bun run db:reset` seeds one mock latest review for `kame-home`
+     (model `local_seed`) so this card renders without waiting for the weekly cron or Gemini.
      **Feature availability (super-admin):** Keys `analytics.ai_review` (whole section) and
      `analytics.ai_review.regenerate` (Analyze/Refresh + weekly cron). Last review stays visible
      when only regenerate is off.

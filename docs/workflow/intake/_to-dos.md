@@ -32,7 +32,7 @@ kind: backlog
 - ✅ iCal sync to Airbnb
   → **Done:** [`../done/airbnb-calendar-sync.md`](../done/airbnb-calendar-sync.md)
 - 📋 Live identity verification to simplify real identity checks
-  → **Planned:** [`../planned/live-identity-verification.md`](../planned/live-identity-verification.md)
+  → **In progress:** [`../in-progress/live-identity-verification.md`](../in-progress/live-identity-verification.md)
 - 🚧 Booking detail: email sent history, quick resend, and view sent email content.
 - 🚧 Cleanup tasks
   - ✅ Cleanup unused settings and email templates related to Parking.
@@ -76,6 +76,14 @@ kind: backlog
 - Improve paid/pro subscription badge/flow
 - Control for auto transition to ready for check-in status?
 - Refine edit booking detail page
+- App performance improvements and make the app very fast on both desktop and pwa
+- Improve backend performance
+- Pricing plans refinement
+- Payment e2e and management from super admin
+- Super admin - playbook articles?
+- Super admin -> System health warnings & errors
+- AI usage, estimates, cost and profits? Implement buy more credits
+- Refine super admin pages, sections, etc
 - Make sure updated with new changes and features that we have
   - Subscriptions tier & validation
   - Team access

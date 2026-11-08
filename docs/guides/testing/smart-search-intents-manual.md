@@ -20,7 +20,7 @@ Live `/search` reads **ACTIVE** DB rows (not UI mocks). Seed Azure inventory so 
 docker exec -i supabase_db_guest-form-management psql -U postgres < scripts/dev/seed-search-fixtures.sql
 ```
 
-Also applied on `supabase db reset` via `supabase/seed.sql`. Marketing mocks (`mockDevelopments` / `mockProperties` / `mockParkingSlots`) include matching Azure names for browse-page demos.
+Also available as an optional seed: `bun run seed:search-fixtures` (not loaded on `db reset`). The canonical reset dataset contains one property and one parking, so the typeahead **See all** state only appears after this command. Marketing mocks (`mockDevelopments` / `mockProperties` / `mockParkingSlots`) include matching Azure names for browse-page demos.
 
 | Sample string | Expect in typeahead                                                     | Verify                                                                                   |
 | ------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |

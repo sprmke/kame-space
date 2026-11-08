@@ -7,10 +7,12 @@ import { useHasHostAnnouncementsArchiveScope } from '@/features/dashboard/announ
 import { useNotificationsOrgScope } from '@/features/dashboard/notifications/lib/notificationsScope';
 
 /** True when any active announcement is unread — drives sidebar / More red dots. */
-export function useHostAnnouncementHasUnread(): boolean {
+export function useHostAnnouncementHasUnread(options: { enabled?: boolean } = {}): boolean {
   const hasArchive = useHasHostAnnouncementsArchiveScope();
   const { orgId } = useNotificationsOrgScope();
-  const { announcements, isLoading, isError } = useHostAnnouncements();
+  const { announcements, isLoading, isError } = useHostAnnouncements({
+    enabled: options.enabled,
+  });
 
   const activeIdentityKeys = useMemo(
     () => announcements.map((entry) => hostAnnouncementIdentityKey(entry)),

@@ -59,6 +59,22 @@ describe('shouldPersistQuery', () => {
     expect(shouldPersistQuery(query(['notifications'], 'success', deep))).toBe(false);
   });
 
+  it('persists the shell gate data so a warm open does not re-run the waterfall', () => {
+    // These are the queries the admin guards block on (app-speed plan 3.4). Dropping one
+    // silently returns the cold-open wait to every repeat visit.
+    for (const root of [
+      'organizations',
+      'properties',
+      'parkings',
+      'property-access',
+      'parking-access',
+      'org-access',
+      'property',
+    ]) {
+      expect(shouldPersistQuery(query([root, 'x'])), root).toBe(true);
+    }
+  });
+
   it('keeps the allowlist free of write-only and super-admin surfaces', () => {
     const roots = offlinePersistRoots();
     for (const forbidden of [

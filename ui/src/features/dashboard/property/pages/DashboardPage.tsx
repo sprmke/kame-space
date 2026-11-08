@@ -26,6 +26,7 @@ import { FloatingPanel, FloatingToolbar } from '@/components/mobile/FloatingPane
 import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
 import { DashboardSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { useIsBelowMd } from '@/hooks/useMediaQuery';
+import { useRouteContentReady } from '@/hooks/useRouteContentReady';
 import { detectPresetFromRange, fromIsoDate } from '@/lib/date/navigation';
 
 /**
@@ -43,6 +44,9 @@ export function DashboardPage() {
   const canViewFinance = hasPropertyPermission(access?.permissions, 'finance:view');
   const canViewMaintenance = hasPropertyPermission(access?.permissions, 'maintenance:view');
   const { data, isLoading, error, refetch } = useDashboardStats();
+
+  // Perf timeline: the dashboard counts as "content" once its stats have resolved.
+  useRouteContentReady(!isLoading);
 
   const period = useMemo(() => resolveDashboardPeriod(searchParams), [searchParams]);
 
@@ -123,7 +127,10 @@ export function DashboardPage() {
       {isLoading && !data ? (
         <DashboardSkeleton showFinance={canViewFinance} showMaintenance={canViewMaintenance} />
       ) : error ? (
-        <FloatingPanel padding="lg" className="flex flex-col items-center gap-3 py-8 sm:py-12 text-center">
+        <FloatingPanel
+          padding="lg"
+          className="flex flex-col items-center gap-3 py-8 text-center sm:py-12"
+        >
           <p className="text-foreground text-sm font-semibold">Could not load dashboard</p>
           <p className="text-caption max-w-sm">
             {error instanceof Error ? error.message : 'Please try again.'}

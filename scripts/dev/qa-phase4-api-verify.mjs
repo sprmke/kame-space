@@ -33,12 +33,15 @@ const headers = {
 };
 
 const props = await fetch(
-  'http://127.0.0.1:54321/rest/v1/properties?slug=eq.monaco-2612&select=id,organization_id',
+  'http://127.0.0.1:54321/rest/v1/properties?slug=eq.kame-home&select=id,organization_id',
   { headers: { apikey: anon, Authorization: `Bearer ${access}` } }
 ).then((r) => r.json());
 const propertyId = props?.[0]?.id;
 const orgId = props?.[0]?.organization_id;
-console.log('ids', JSON.stringify({ propertyId: !!propertyId, orgId: !!orgId, propStatus: Array.isArray(props) }));
+console.log(
+  'ids',
+  JSON.stringify({ propertyId: !!propertyId, orgId: !!orgId, propStatus: Array.isArray(props) })
+);
 
 const verifyRes = await fetch(
   `http://127.0.0.1:54321/functions/v1/telegram-chat-settings?property_id=${propertyId}`,
@@ -66,12 +69,12 @@ console.log(
 const startMetaInboxOAuthBodies = [
   {
     organizationId: orgId,
-    returnPath: '/org/kame-home/property/monaco-2612/inbox',
+    returnPath: '/org/kame-homes/property/kame-home/inbox',
   },
   {
     orgId,
     orgSlug: 'kame-home',
-    returnPath: '/org/kame-home/property/monaco-2612/inbox',
+    returnPath: '/org/kame-homes/property/kame-home/inbox',
   },
 ];
 
@@ -92,14 +95,24 @@ for (const body of startMetaInboxOAuthBodies) {
       hasUrl: !!url,
       isFacebook: /facebook\.com/.test(url),
       appIdInUrl: /1322356823214127/.test(url),
-      host: url ? (() => { try { return new URL(url).host; } catch { return 'bad'; } })() : null,
+      host: url
+        ? (() => {
+            try {
+              return new URL(url).host;
+            } catch {
+              return 'bad';
+            }
+          })()
+        : null,
     })
   );
   if (url) break;
 }
 
 // Shared bot Save and test: fill from module token length only — copy via UI without printing
-await $`bun x playwright-cli goto http://localhost:5173/org/kame-home/property/monaco-2612/notifications`.nothrow().quiet();
+await $`bun x playwright-cli goto http://localhost:5173/org/kame-homes/property/kame-home/notifications`
+  .nothrow()
+  .quiet();
 await Bun.sleep(2000);
 await $`bun x playwright-cli click ${`getByRole('button', { name: 'Chat' })`}`.nothrow().quiet();
 await Bun.sleep(1000);
@@ -117,7 +130,9 @@ const copy = await cliEval(`(() => {
   return { moduleLen: v.length, globalLen: global.value.length, saveDisabled: save?.disabled };
 })()`);
 console.log('copy_token', JSON.stringify(copy));
-await $`bun x playwright-cli click ${`getByRole('button', { name: 'Save and test' })`}`.nothrow().quiet();
+await $`bun x playwright-cli click ${`getByRole('button', { name: 'Save and test' })`}`
+  .nothrow()
+  .quiet();
 await Bun.sleep(4000);
 const after = await cliEval(`(() => ({
   toasts: [...document.querySelectorAll('[data-sonner-toast]')].map(t => t.innerText.trim()).slice(0, 8),

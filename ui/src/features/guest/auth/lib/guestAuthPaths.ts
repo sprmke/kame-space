@@ -3,7 +3,6 @@ import { safeRedirect } from '@/features/guest/auth/lib/authRedirect';
 export { safeRedirect };
 
 export const GUEST_LOGIN_PATH = '/for-guests/login';
-export const GUEST_REGISTER_PATH = '/for-guests/register';
 
 /** Guest login URL with optional post-auth redirect. */
 export function guestLoginPath(redirectPath?: string): string {
