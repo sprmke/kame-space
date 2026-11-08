@@ -1,3 +1,7 @@
+/**
+ * test: N/A — post-render correction that measures real Konva stage text in a
+ * browser. The fitting maths it corrects is covered in `posterText.test.ts`.
+ */
 import Konva from 'konva';
 
 import type { PolotnoStore } from '@/features/dashboard/marketing/lib/polotno/polotnoStore';

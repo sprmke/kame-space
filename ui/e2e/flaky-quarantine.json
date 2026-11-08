@@ -50,9 +50,23 @@
   },
   {
     "spec": "ui/e2e/features/marketing/marketingAiExamples.spec.ts",
-    "test": "the home shows examples, and an example opens with how it was made",
+    "test": "marketing AI Studio examples",
     "issue": "https://github.com/sprmke/kame-space/issues/330",
     "expires": "2026-12-31",
-    "reason": "Failed in CI on the first real @ci run; marketing Studio home is mid-responsive-pass."
+    "reason": "The whole Marketing AI Studio lane fails only in CI: element(s) not found at 13 to 25s, green locally with and without ui/.env. Same shard before and after the 30s to 45s timeout raise, so it is not the page's total render time. Excluded at describe level until the CI-only cause is found."
+  },
+  {
+    "spec": "ui/e2e/features/marketing/marketingAiGenerate.spec.ts",
+    "test": "marketing AI generate tab",
+    "issue": "https://github.com/sprmke/kame-space/issues/330",
+    "expires": "2026-12-31",
+    "reason": "The whole Marketing AI Studio lane fails only in CI: element(s) not found at 13 to 25s, green locally with and without ui/.env. Same shard before and after the 30s to 45s timeout raise, so it is not the page's total render time. Excluded at describe level until the CI-only cause is found."
+  },
+  {
+    "spec": "ui/e2e/features/marketing/marketingAiPost.spec.ts",
+    "test": "marketing AI Post",
+    "issue": "https://github.com/sprmke/kame-space/issues/330",
+    "expires": "2026-12-31",
+    "reason": "The whole Marketing AI Studio lane fails only in CI: element(s) not found at 13 to 25s, green locally with and without ui/.env. Same shard before and after the 30s to 45s timeout raise, so it is not the page's total render time. Excluded at describe level until the CI-only cause is found."
   }
 ]

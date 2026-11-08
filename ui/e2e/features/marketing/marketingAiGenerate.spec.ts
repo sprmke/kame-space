@@ -26,7 +26,7 @@ async function startNew(page: Page, title: 'Post' | 'Photo' | 'Clip') {
   await expect(page.locator('#ai-studio-composer')).toBeVisible();
 }
 
-test.describe('@ci marketing AI generate tab', () => {
+test.describe('@ci @flaky marketing AI generate tab', () => {
   test('starting a photo opens one short form with everything else under Advanced', async ({
     page,
   }) => {

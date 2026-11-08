@@ -1,3 +1,7 @@
+/**
+ * test: N/A — test builders, not app code. They are exercised by the video v2
+ * unit tests.
+ */
 /** Test builders for v2 projects. Not imported by app code. */
 
 import {
