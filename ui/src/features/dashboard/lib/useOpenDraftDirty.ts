@@ -1,3 +1,6 @@
+/**
+ * test: N/A — four-line React hook built on a ref; needs a renderer to exercise.
+ */
 import { useRef } from 'react';
 
 /**
