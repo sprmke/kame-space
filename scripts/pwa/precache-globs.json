@@ -8,18 +8,12 @@
   "_shellSources": "Source paths (substring match, relative to ui/src) forced into the shell tier. Normally empty: a chunk statically imported by a shell chunk is promoted automatically.",
   "shellSources": [],
   "_hostPrefixes": "Source paths (prefix match, relative to ui/src) that belong to the host tier.",
-  "hostPrefixes": [
-    "features/dashboard/",
-    "features/super-admin/",
-    "features/reviews/"
-  ],
+  "hostPrefixes": ["features/dashboard/", "features/super-admin/", "features/reviews/"],
   "_onDemandPrefixes": "Heavy, task-specific modules that must never be precached. Prefix match, relative to ui/src.",
   "onDemandPrefixes": [
     "features/guest/marketing/pages/ForHosts",
     "features/guest/marketing/pages/ExplorePreviewPage",
     "features/guest/marketing/pages/GuestLandingV2Page",
-    "features/guest/marketing/pages/GuestLandingV3Page",
-    "features/guest/marketing/guest-landing-v3/",
     "features/guest/marketing/shared/components/HostWorkspaceSidePanel",
     "features/guest/auth/components/GuestExperienceSidePanel",
     "features/guest/auth/components/GuestFeatureShowcase",
@@ -81,11 +75,5 @@
     "offline.css",
     "offline.js"
   ],
-  "globIgnores": [
-    "maintenance.html",
-    "worklets/**",
-    "templates/**",
-    "marketing/**",
-    "avatars/**"
-  ]
+  "globIgnores": ["maintenance.html", "worklets/**", "templates/**", "marketing/**", "avatars/**"]
 }

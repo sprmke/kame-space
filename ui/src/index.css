@@ -7,6 +7,8 @@
     /* Canvas sits below white cards (mirrors dark: 7% bg / 10% card). Cool 220° harmonizes with teal primary. */
     --background: 220 18% 97%;
     --foreground: 224 71% 4%;
+    /* Full-width band that separates stacked sections on the public canvas. */
+    --band: 220 14% 92%;
 
     --card: 0 0% 100%;
     --card-foreground: 224 71% 4%;
@@ -96,6 +98,8 @@
   .dark {
     --background: 0 0% 7%;
     --foreground: 0 0% 95%;
+    /* Same step in dark: band is lighter than the canvas, like the card. */
+    --band: 0 0% 11%;
 
     --card: 0 0% 10%;
     --card-foreground: 0 0% 95%;
@@ -2764,6 +2768,127 @@ input.ui-native-datetime[type='datetime-local']::-webkit-calendar-picker-indicat
   .mode-transition-word {
     transition-duration: 1ms !important;
   }
+}
+
+/* ── Marketing page shell ─────────────────────────────────────────────────────────────────────
+ * The single horizontal rhythm for every public marketing surface: nav, footer, and each landing
+ * section. One element per surface (`<nav class="public-shell">`, `<section><div class="public-shell">`)
+ * puts its content box at the same left and right edge at every width.
+ *
+ * Why the odd max-width: the content column is 80rem (max-w-7xl), and the gutter is padding
+ * *inside* that shell. So `max-width: 84rem` with `2rem` padding yields a 80rem content box that
+ * starts 2rem in from the shell edge. That is what makes the logo, the hero photo panel, the
+ * catalog cards and the footer columns all share one left edge. Previously the nav used Tailwind
+ * `container` (84rem + 1rem padding at 2xl) while sections used `max-w-7xl`, so the nav sat 28px
+ * left of the hero on a 1600px desktop.
+ *
+ * Never add `mx-auto max-w-*` or horizontal padding on top of this class: it already owns both. */
+.public-shell {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 84rem;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 640px) {
+  .public-shell {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .public-shell {
+    padding-inline: 2rem;
+  }
+}
+
+/* Marketing home hero art — day dissolves into night. No zoom, no pan: the two renders share
+   the same frame, so a straight dissolve is the whole transition. The night layer paints on
+   top and is the only layer whose opacity animates, so the panel is never uncovered mid-switch
+   and the light art never shifts. */
+.hero-theme-layer--light {
+  opacity: 1;
+}
+
+.hero-theme-layer--dark {
+  opacity: 0;
+  transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .hero-theme-layer--dark {
+  opacity: 1;
+}
+
+/* Reduced motion: swap the art with no dissolve. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-theme-layer--dark {
+    transition: opacity 1ms !important;
+  }
+}
+
+/* Marketing home hero legibility scrim, split in two so no part of the photo is darkened more than it
+   needs to be. The sunrise render carries its own dark left vignette; a full-panel wash on top
+   of that read as a grey wall against the light page.
+
+   The sunrise render carries its own dark left vignette from the render itself. The earlier
+   full-panel wash stacked a rectangular grey slab on top of it, which is what read as a wall of
+   paint against the light page: the straight vertical edge was the tell, not the darkness.
+
+   So both layers are now soft and rounded off the corner, never a straight band:
+   `.hero-scrim-base` — a shallow bottom lift for the search bar.
+   `.hero-scrim-copy` — a radial shade anchored to the bottom-left corner that falls off before
+   it reaches the middle of the photo, so it hugs the copy without cutting a line across the
+   image. The headline and lead also carry a text shadow (see `.hero-copy`), which buys local
+   contrast right at the glyphs instead of darkening open sky.
+
+   Sizing is measured on the rendered composite: the copy sits at 10:1 contrast at the median
+   background pixel and above 4:1 at p90, against the photo's own vignette. */
+.hero-scrim-base {
+  background-image: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.42),
+    rgb(0 0 0 / 0.12) 26%,
+    transparent 52%
+  );
+}
+
+.hero-scrim-copy {
+  background-image: radial-gradient(
+    128% 100% at 0% 100%,
+    rgb(0 0 0 / 0.6) 0%,
+    rgb(0 0 0 / 0.46) 30%,
+    rgb(0 0 0 / 0.24) 55%,
+    transparent 76%
+  );
+}
+
+/* Local contrast for the hero copy: a tight shadow plus a wide soft one. Keeps the glyphs
+   readable over the sun flare without another layer of paint over the photo. Sized so the lead
+   clears AA against the brightest background it can sit on (p90 3.3:1 -> ~4.6:1). */
+.hero-copy {
+  text-shadow:
+    0 1px 2px rgb(0 0 0 / 0.6),
+    0 2px 10px rgb(0 0 0 / 0.55),
+    0 4px 26px rgb(0 0 0 / 0.4);
+}
+
+.dark .hero-scrim-base {
+  background-image: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.55),
+    rgb(0 0 0 / 0.12) 28%,
+    transparent 52%
+  );
+}
+
+.dark .hero-scrim-copy {
+  background-image: radial-gradient(
+    118% 92% at 0% 100%,
+    rgb(0 0 0 / 0.4) 0%,
+    rgb(0 0 0 / 0.24) 32%,
+    rgb(0 0 0 / 0.08) 58%,
+    transparent 78%
+  );
 }
 
 /* App loader (AppLoader.tsx) — light sweep only: a band of light crosses the mark, then

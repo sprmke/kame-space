@@ -89,7 +89,7 @@ This is the guest-facing date picker guests see before filling out a booking for
 | Routes           | `ui/src/features/guest/property/routes/index.tsx`                                |
 | Guest-auth gate  | `ui/src/features/guest/auth/context/GuestAuthContext.tsx` (`requireGuestAuth`)   |
 | Paths            | `ui/src/features/guest/lib/guestPublicPaths.ts`                                  |
-| Landing redirect | `ui/src/features/guest/marketing/pages/GuestLandingPage.tsx`                     |
+| Landing redirect | `ui/src/features/guest/marketing/pages/MarketingHomePage.tsx`                    |
 
 ---
 

@@ -14,7 +14,7 @@ import {
   Wallet,
 } from 'lucide-react';
 
-import { STEP_EASE } from '@/features/guest/marketing/guest-landing-v3/components/BookingStepScenes';
+import { STEP_EASE } from '@/features/guest/marketing/guest-home/components/BookingStepScenes';
 import { MarketingBrandLogo } from '@/features/guest/marketing/shared/components/MarketingBrandLogo';
 
 import { usePrefersReducedMotion } from '@/hooks/useMediaQuery';
@@ -122,14 +122,14 @@ export function WhyBookHere() {
   const handled = reduce ? N : count;
 
   return (
-    <section aria-labelledby="v3-why" className="public-section-y overflow-x-clip">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section aria-labelledby="home-why" className="public-section-y overflow-x-clip">
+      <div className="public-shell">
         <div className="mx-auto max-w-2xl text-center">
           <span className="border-border text-muted-foreground inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold">
             Why {PLATFORM_APP_NAME}
           </span>
           <h2
-            id="v3-why"
+            id="home-why"
             className="public-section-title text-foreground mt-3 text-balance font-semibold"
           >
             The messages you won’t have to send
@@ -252,7 +252,7 @@ function Row({
         <span
           className={cn(
             'flex size-10 shrink-0 items-center justify-center rounded-xl transition-[background-color,color,transform] duration-500',
-            done ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+            done ? 'bg-primary/10 text-primary-strong' : 'bg-muted text-muted-foreground',
             active && done && 'scale-105'
           )}
         >
@@ -382,7 +382,7 @@ function Message({
             transition={{ duration: 0.3, ease: STEP_EASE, delay: done && !reduce ? 0.25 : 0 }}
             className={cn(
               'flex items-center gap-1',
-              done ? 'text-primary' : 'text-muted-foreground'
+              done ? 'text-brand-ink' : 'text-muted-foreground'
             )}
           >
             {done ? (
@@ -443,7 +443,7 @@ function RemainingPill({ left, reduce }: { left: number; reduce: boolean }) {
     <span
       className={cn(
         'relative inline-flex h-7 shrink-0 items-center overflow-hidden rounded-full px-3 text-xs font-semibold tabular-nums transition-colors duration-500',
-        clear ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+        clear ? 'bg-primary-strong text-primary-foreground' : 'bg-muted text-muted-foreground'
       )}
     >
       <AnimatePresence mode="popLayout" initial={false}>

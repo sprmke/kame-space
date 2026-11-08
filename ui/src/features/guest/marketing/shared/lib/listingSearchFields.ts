@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom';
 import {
   HERO_SEARCH_FIELDS,
   type HeroSearchField,
-} from '@/features/guest/marketing/guest-landing/components/HeroSearch';
+} from '@/features/guest/marketing/shared/components/hero-search/HeroSearch';
 import {
   getListingSearchPreferType,
   type ListingSearchPreferType,

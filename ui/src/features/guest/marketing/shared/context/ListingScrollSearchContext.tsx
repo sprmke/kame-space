@@ -15,7 +15,7 @@ import {
   HeroSearch,
   type HeroSearchField,
   type HeroSearchValues,
-} from '@/features/guest/marketing/guest-landing/components/HeroSearch';
+} from '@/features/guest/marketing/shared/components/hero-search/HeroSearch';
 import {
   clamp01,
   easeOutCubic,

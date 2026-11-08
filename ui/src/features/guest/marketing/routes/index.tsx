@@ -66,19 +66,14 @@ const ForHostsPricingPage = lazy(() =>
     default: m.ForHostsPricingPage,
   }))
 );
-const GuestLandingPage = lazy(() =>
-  import('@/features/guest/marketing/pages/GuestLandingPage').then((m) => ({
-    default: m.GuestLandingPage,
-  }))
-);
 const GuestLandingV2Page = lazy(() =>
   import('@/features/guest/marketing/pages/GuestLandingV2Page').then((m) => ({
     default: m.GuestLandingV2Page,
   }))
 );
-const GuestLandingV3Page = lazy(() =>
-  import('@/features/guest/marketing/pages/GuestLandingV3Page').then((m) => ({
-    default: m.GuestLandingV3Page,
+const MarketingHomePage = lazy(() =>
+  import('@/features/guest/marketing/pages/MarketingHomePage').then((m) => ({
+    default: m.MarketingHomePage,
   }))
 );
 const HostPublicPage = lazy(() =>
@@ -159,7 +154,7 @@ function DevelopmentParkingCategoryRedirect() {
 /** PMA (marketing) guest site routes — mock data until public APIs ship. */
 export const marketingRoutes = [
   <Route key="marketing-shell" element={<MarketingLayoutShell />}>
-    <Route index element={<GuestLandingPage />} />
+    <Route index element={<MarketingHomePage />} />
     <Route path="search" element={<SearchResultsPage />} />
     <Route path="for-hosts/pricing" element={<ForHostsPricingPage />} />
     {/* v2 redesign - swap into `for-hosts` below once approved. */}
@@ -170,7 +165,6 @@ export const marketingRoutes = [
     {/* Guest landing redesign previews - manual review, not linked from nav. */}
     <Route path="explore-preview" element={<ExplorePreviewPage />} />
     <Route path="v2" element={<GuestLandingV2Page />} />
-    <Route path="v3" element={<GuestLandingV3Page />} />
     <Route path="for-hosts" element={<ForHostsPage />} />
     <Route path="services" element={<ServicesPage />} />
     <Route path="hosts/:orgSlug" element={<HostPublicPage />} />

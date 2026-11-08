@@ -1,6 +1,6 @@
 import { Building2, Mountain, Navigation, Palmtree, Waves, type LucideIcon } from 'lucide-react';
 
-import { suggestedDestinations } from '@/features/guest/marketing/guest-landing/data/landingContent';
+import { suggestedDestinations } from '@/features/guest/marketing/shared/data/landingContent';
 import type { ListingSearchPreferType } from '@/features/guest/marketing/shared/lib/listingSearchPreferType';
 import {
   suggestedSectionTitle,

@@ -127,7 +127,7 @@ first data load. Both use the same page chrome, so nothing jumps when the chunk 
 
 | Route                                                  | Skeleton                                                                                                                      |
 | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `/`, `/for-hosts`, marketing landing                   | `PublicLandingPageSkeleton` — hero + alternating feature sections                                                             |
+| `/`, `/for-hosts`, marketing landing                   | `PublicLandingPageSkeleton` — rounded hero photo panel with a bottom-left copy block, then the catalog heading and card grid  |
 | `/properties`, `/parkings`, `/developments`, `/search` | `PublicListingBrowseSkeleton` — hero, filters sidebar, toolbar, listing grid                                                  |
 | `/properties/:slug`                                    | `PropertyDetailPageSkeleton` — gallery, title/meta, stat strip, host, About / amenities / location headings                   |
 | `/parkings/:slug`                                      | `ParkingDetailPageSkeleton` — gallery, title/meta, description, booking card                                                  |

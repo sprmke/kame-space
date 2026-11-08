@@ -12,7 +12,7 @@ import {
 } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 
-import { HeroSearch } from '@/features/guest/marketing/guest-landing/components/HeroSearch';
+import { HeroSearch } from '@/features/guest/marketing/shared/components/hero-search/HeroSearch';
 import { apertureBackdrop } from '@/features/guest/marketing/guest-landing-v2/data/landingV2Content';
 import { useV2FeaturedStays } from '@/features/guest/marketing/guest-landing-v2/hooks/useV2FeaturedStays';
 import {

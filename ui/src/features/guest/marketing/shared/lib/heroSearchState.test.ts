@@ -9,7 +9,7 @@ import {
   parseDateParam,
   parseGuestBreakdown,
   readWhereParam,
-} from '@/features/guest/marketing/guest-landing/lib/heroSearchState';
+} from '@/features/guest/marketing/shared/lib/heroSearchState';
 
 describe('heroSearchState', () => {
   it('parses dates and rejects garbage', () => {

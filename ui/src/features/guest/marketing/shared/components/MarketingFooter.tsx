@@ -49,7 +49,7 @@ export function MarketingFooter() {
 
   return (
     <footer className="bg-muted text-foreground border-border hidden border-t lg:block">
-      <div className="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
+      <div className="public-shell py-16">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:grid-cols-6 lg:gap-12">
           <div className="col-span-2">
             <Link
@@ -145,7 +145,7 @@ export function MarketingFooter() {
       </div>
 
       <div className="border-border border-t">
-        <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        <div className="public-shell py-6">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-muted-foreground text-sm">{platformCopyrightLine()}</p>
