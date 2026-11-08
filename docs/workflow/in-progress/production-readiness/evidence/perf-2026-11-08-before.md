@@ -72,6 +72,35 @@ for first paint. `motion-vendor` is 46.7 KiB.
 The budget gate currently allows 500 KiB entry and 1200 KiB initial, so today's numbers pass with
 ~2x headroom and the gate cannot catch a regression. Lowering it is Phase 8.1.
 
+## Dashboard cold open, measured in the lab
+
+`bun run perf:boot-timeline` (`ui/e2e/features/observability/adminBootTimeline.spec.ts`) opens
+the property dashboard against mocked edge calls and reads the Phase 0.1 boot marks. Three
+runs each, 390x844.
+
+| Mark             | 1x CPU | 4x CPU throttle |
+| ---------------- | ------ | --------------- |
+| `firstRenderMs`  | 40 ms  | 130 ms          |
+| `loaderMs`       | 587 ms | 748 ms          |
+| `routeContentMs` | 812 ms | 1410 ms         |
+
+What this proves, and what it does not.
+
+- The loader **is not CPU-bound**. At 4x CPU it grows 27%. With the network fully mocked,
+  a 587 ms loader is time spent waiting on promises, not parsing or rendering.
+- `HIDE_BRIDGE_MS` in `appLoaderHost.ts` is a fixed **220 ms** of that number, on purpose:
+  it bridges Suspense to the guards without a blank flash.
+- So roughly 370 ms is the guard and query chain even when every response is instant. Against
+  real edge calls, which the probes measured at 2.2 to 5.1 s cold and ~0.3 s warm, the same
+  chain is the 2 to 3 s the user reports.
+- `routeContentMs` doubles under 4x CPU (812 to 1410), so the phase after the loader is the
+  CPU-sensitive one. That is where `AdminLayout` render cost (RC-14) lives.
+
+Conclusion: the cold open is a **network waterfall with a CPU tail**, not a bundle problem.
+Phase 3.1 (one bootstrap call) is the right fix for the loader; RC-14 is the right fix for the
+tail. Neither can be measured further without a read-only host account, because this harness
+answers every call instantly.
+
 ## Not captured in this pass
 
 - Lighthouse on production routes. Needs to run without other work on the machine.

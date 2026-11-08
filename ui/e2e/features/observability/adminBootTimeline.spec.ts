@@ -64,7 +64,17 @@ test.describe('@perf host dashboard cold open', () => {
     await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible({
       timeout: 30_000,
     });
-    await page.waitForTimeout(500);
+    // Wait for the mark itself, not a wall-clock guess: the heading can be a shell title
+    // that paints before the page's own data resolves.
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() =>
+            performance.getEntriesByType('mark').some((entry) => entry.name === 'route:content')
+          ),
+        { timeout: 30_000 }
+      )
+      .toBe(true);
 
     const timeline = await readTimeline(page);
     // One machine-readable line so two runs can be diffed with grep.
@@ -73,5 +83,37 @@ test.describe('@perf host dashboard cold open', () => {
     // Shape only. Exact numbers are the report, not a gate.
     expect(timeline.routeContentMs).not.toBeNull();
     expect(timeline.routeContentMs!).toBeGreaterThanOrEqual(0);
+  });
+
+  /**
+   * Same measurement at 4x CPU throttle, which is the closest a desktop runner gets to a
+   * mid-range phone. Comparing the two runs is the point: if the loader grows with CPU but
+   * not with network, the cold open is main-thread work and a bootstrap endpoint cannot fix
+   * it. If it barely moves, the cost is network and the waterfall is the target.
+   */
+  test('reports the same timings at 4x CPU throttle', async ({ page }) => {
+    const client = await page.context().newCDPSession(page);
+    await client.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+
+    await installPropertyTeamRbacMocks(page, 'full_access');
+    await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}`);
+
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible({
+      timeout: 60_000,
+    });
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() =>
+            performance.getEntriesByType('mark').some((entry) => entry.name === 'route:content')
+          ),
+        { timeout: 60_000 }
+      )
+      .toBe(true);
+
+    const timeline = await readTimeline(page);
+    console.log(`[boot-timeline-4x] ${JSON.stringify(timeline)}`);
+
+    expect(timeline.routeContentMs).not.toBeNull();
   });
 });

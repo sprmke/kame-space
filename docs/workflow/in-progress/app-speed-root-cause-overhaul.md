@@ -88,6 +88,14 @@ Each row has a confirm-by test. A cause that fails its test is dropped and noted
 
 Confirm by: Playwright trace + HAR of a cold property dashboard open, listing each request's start and end. Expect 3 to 4 serial network phases before the page chunk starts.
 
+> **CONFIRMED IN THE LAB 2026-11-08, hosted trace still open.** With every edge call mocked to
+> answer instantly, the loader is still **587 ms** (748 ms at 4x CPU), of which **220 ms is the
+> fixed `HIDE_BRIDGE_MS`** in `appLoaderHost.ts`. The loader barely reacts to CPU throttle
+> (+27%) while `routeContentMs` doubles (812 to 1410), so the loader is time spent **waiting on
+> promises**, not parsing. Substituting the probes' real edge latency (2.2 to 5.1 s cold, ~0.3 s
+> warm) reproduces the reported 2 to 3 s exactly. Phase 3.1 is the right fix.
+> Harness: `bun run perf:boot-timeline`. Numbers: `perf-2026-11-08-before.md`.
+
 **RC-2. Every authenticated edge call pays 3 to 4 round trips before its handler runs.** `serveAuthenticated` / `serveAdmin` call `supabase.auth.getUser(jwt)` (HTTP to Auth), `isIdentityBlocked` (cached), `getPlatformSettingsSnapshot` (60 s cache), and `checkRateLimit` (a `bump_rate_limit` write). `verifyAdminJwt` adds an org ownership count. `list-organizations` then runs up to 6 **sequential** PostgREST queries.
 
 Confirm by: add `Server-Timing` to the wrappers (auth, ratelimit, handler, db) and read it in the HAR.
@@ -527,8 +535,8 @@ Note: Vitest silently ignores `.test.tsx` component tests in this repo, so put c
 | ----- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 0     | partial (0.1, 0.2, DB capture shipped)                  | `bootMarks.ts` + 10 Vitest, `serverTiming.ts` + 10 Deno, `bootMarks.spec.ts` 3 E2E. Baseline captured: `perf-2026-11-08-before.md` + `2026-11-08-pg-stat-before.json`, via the new `perf:pg-stat:snapshot` (no `psql` needed). Lighthouse and authenticated edge latency still open. |
 | 1     | partial (RC-6, RC-8, RC-9, RC-10, RC-11, RC-16 decided) | RC-6 and RC-16 confirmed with numbers, RC-9 and RC-8 partly rejected, RC-10 rejected, RC-11 confirmed and fixed. Remaining RCs need a hosted HAR trace.                                                                                                                              |
-| 2     | 2.3 blocked                                             | Contradicts 0.1 (see note). Bundle baseline recorded: entry 246.5 KiB gzip, initial 633.2 KiB gzip.                                                                                                                                                                                  |
-| 3     | not started                                             | Needs the bootstrap endpoint design decision and a hosted parity run.                                                                                                                                                                                                                |
+| 2     | 2.3 blocked, 2.5 already present                        | Deferring telemetry contradicts 0.1 (see note). `MarketingImage` + `responsiveImage.ts` already ship `srcset`, `sizes` and `fetchPriority` on the LCP image. Bundle unchanged: 246.4 / 633.2 KiB.                                                                                    |
+| 3     | partial (3.3, 3.5)                                      | Page chunk starts with the shell; notification preview and announcement dot deferred past first paint. **3.1 (bootstrap endpoint) and 3.2 (TenantGate) still open**: highest value and highest risk, needs a role-parity suite.                                                      |
 | 4     | not started                                             | 4.1 needs S-2 (region A/B, hosted). 4.2 is D-2.                                                                                                                                                                                                                                      |
 | 5     | not started                                             | Needs D-1 and `kamewave` to test the Vercel proxy.                                                                                                                                                                                                                                   |
 | 6     | analysed, no fix yet                                    | Top statements captured (`perf-2026-11-08-before.md`). RC-16 confirmed at 85% Realtime. 6.1 to 6.5 need a decision on whether to move Realtime to Broadcast, which is a behaviour change and not a query fix.                                                                        |
