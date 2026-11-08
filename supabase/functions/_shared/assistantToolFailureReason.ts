@@ -90,7 +90,8 @@ const MODEL_FACING_HINT: Record<ToolFailureClass, string> = {
     "Do not retry - the host's role cannot access this. Tell them plainly and move on.",
   plan_denied:
     "Do not retry - this is not included in the host's current plan. Tell them plainly and move on.",
-  not_found: 'Do not retry with the same id - confirm the target exists first, or tell the host.',
+  not_found:
+    "Do not retry with the same id. If the host gave you this id, do not search for a substitute - tell them you couldn't find it and ask which one they mean. Only look it up with a read tool if you picked the id yourself.",
   retryable:
     'This looks temporary - retry once with the same arguments, then tell the host if it fails again.',
   invalid_arguments:

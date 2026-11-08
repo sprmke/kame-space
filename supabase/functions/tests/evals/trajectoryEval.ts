@@ -19,9 +19,17 @@ import {
 } from '../../_shared/ai/llmTools.ts';
 import type { PromptRef } from '../../_shared/ai/prompt.ts';
 import { RESPOND_WITH_BLOCKS_NAME } from '../../_shared/ai/prompts/dashboardAssistant.ts';
+import {
+  classifyToolFailure,
+  modelFacingToolFailureHint,
+} from '../../_shared/assistantToolFailureReason.ts';
 import { readJsonl } from './evalDatasets.ts';
 
 export type MockToolResult = { ok: boolean; data?: unknown; error?: string };
+
+function withModelHint(error: string): string {
+  return `${error} ${modelFacingToolFailureHint(classifyToolFailure(error))}`.trim();
+}
 
 const mockFixtureCache = new Map<string, Record<string, MockToolResult>>();
 
@@ -186,7 +194,10 @@ export async function runTrajectory(input: {
           name: call.name,
           response: {
             result: mocked.ok ? (mocked.data ?? null) : null,
-            error: mocked.ok ? null : (mocked.error ?? 'Mocked tool returned no result.'),
+            // Same `${error} ${hint}` shape dashboard-assistant-chat sends the model.
+            error: mocked.ok
+              ? null
+              : withModelHint(mocked.error ?? 'Mocked tool returned no result.'),
           },
         },
       });

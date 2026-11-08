@@ -97,7 +97,7 @@ The switch animates smoothly between modes and keeps the conversation. The end g
 - **Sheet-coupled UI:** `AiAssistantPanel.tsx` (429 lines) is a Radix `Sheet` mounted beside the `Outlet` in `AdminLayout.tsx` (1123 lines). Chat state lives in `useAiAssistantChat`'s `useState`, so remounting the chat elsewhere would lose the thread.
 - **Parking scope bug:** `PageContext` in `ui/src/features/dashboard/ai-assistant/lib/aiAssistantApi.ts` is `{ propertyId?, bookingId? }`, and the panel never sends `parkingId`, even though `dashboard-assistant-chat` supports it.
 - **No tool routing:** all ~100 declarations go to Gemini 2.5 Flash on every round (`dashboard-assistant-chat/index.ts`, `tools: TOOL_DECLARATIONS`).
-- **Short agent loop:** `MAX_TOOL_ROUNDS = 4`, with no plan-then-execute path and no background tasks.
+- **Short agent loop:** `MAX_TOOL_ROUNDS = 4`, with no plan-then-execute path and no background tasks. Covered by [`agentic-ai-assistants.md`](../in-progress/agentic-ai-assistants.md): super-admin round cap (`assistantMaxToolRounds`), `plan_task`, and plan-card approval. Background tasks stay out of scope.
 - **Simulated streaming:** text is chunked about every 18ms after synthesis. This is intentional, because the grounding guard fails closed.
 - **Conversations:** capped at the 20 most recent, with no search, rename, pin, delete, or pagination.
 - **No memory or instructions:** there are no per-user or per-org standing preferences.
