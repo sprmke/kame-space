@@ -22,6 +22,7 @@ Route: `/`
 | Destinations     | —        | —          | Documented | 3 editorial destination tiles                         |
 | Social proof     | —        | —          | Documented | Single review + trust stats                           |
 | Preview redesign | —        | —          | Documented | `/explore-preview` — cinematic redesign, pending swap |
+| Preview v3       | —        | —          | Documented | `/v3`: live spotlight + catalog tabs, pending review  |
 | Mobile shell     | —        | —          | Documented | `MarketingLayoutShell` bottom tabs — see below        |
 
 ---
@@ -94,6 +95,23 @@ Page component `ExplorePreviewPage.tsx`; all sections under `ui/src/features/gue
 - **To ship it:** point `/` at `ExplorePreviewPage` (or fold its sections into `GuestLandingPage`), retire the old `guest-landing/` components, drop the `/explore-preview` route, and update this guide.
 
 Sections: `ExploreHero`, `ExploreTrustRibbon`, `ExploreFeaturedStays`, `ExploreDestinationAtlas`, `ExploreStayJourney`, `ExploreGuestVoice`, `ExploreClosingCta`.
+
+---
+
+## Preview v3: `/v3`
+
+A from-scratch guest landing served at **`/v3`** for manual review. Not linked from nav. One job: get a visitor into the catalog. Built entirely on `DESIGN.md` tokens (theme-aware light and dark), Plus Jakarta Sans, the `public-*` type and spacing scale, and the shared listing cards.
+
+Page `ui/src/features/guest/marketing/pages/GuestLandingV3Page.tsx`; sections under `ui/src/features/guest/marketing/guest-landing-v3/components/`.
+
+- **`SpotlightHero`:** rounded photo panel of a real recommended stay (up to 4 rotate every 7s; static under reduced motion). Headline, one lead line, and the shared `ListingHeroSearch` (submits to `/search`). A chip at the top links to the stay shown, with its nightly rate.
+- **`ExploreCatalog`:** "Find your next stay, home, or parking" with the line "Every listing is booked straight with its host." and Stays / Residences / Parking tabs (live totals). Up to 8 real cards per tab using `PropertyCard`, `DevelopmentsGrid`, `ParkingsEntriesGrid`. Stays tab adds centered city chips into `/properties/in/:location`. A centered "See all N ..." button (or "Browse ...") sits under the grid only when the tab has listings; it is hidden while loading, on error, and when empty. Loading skeletons and `ListingLoadError` retry per tab.
+- **`SpotlightHero` search dropdown:** the photo layer is clipped on its own, so the search dropdown can extend past the panel.
+- **`BookingSteps` (scroll story):** pinned for about five screens of scroll; scrolling down or up moves an example trip through five steps (request, host confirms, building paperwork, check-in, deposit back). Desktop: step rail with a scroll-linked progress line (click a step to scroll to it). Phone: segmented step bar with the current title and body. The right side is a large trip-page preview (up to 580px wide): property photo inset at the top (first live stay, or a condo photo fallback; no overlay or gradient), name and status pill below it (labels match `guestTripStatusLabel`), five-segment progress, then a scene per step from `BookingStepScenes.tsx` (guest counter and ID slide-in, email drop-in with drawn check, "Approved" stamp and parking, key turn and stay guide, deposit refund timeline). Labeled "Example trip". Reduced motion: scenes render without animation.
+- **`WhyBookHere`:** "The messages you won't have to send". Centered heading over a before/after stage. Desktop: one "Booked on Kame Space" card in the middle with five rows (parking, building pass, booking status, check-in details, security deposit), flanked by the chat message a guest would usually send a host for each one on other sites, alternating left and right. As each row passes about 62% of the viewport height, a line draws from its message into the card, the message is crossed out ("No need to ask"), and the row fills in with a check. The header pill counts down from "5 messages to send" to "Nothing to send". Hovering a row highlights its message. Phone: each message covers its row and slides off when handled. Scroll back up to reverse; reduced motion shows the final state. Ends with a "Find a stay" link to `/properties`. Messages name no other brand.
+- **`HostBand`:** brand-gradient band for owners: "Have a unit? Start earning from it." plus one line, **Become a host** to `/for-hosts` and **See pricing** to `/for-hosts/pricing`.
+- **Listings are live.** Sample content: the labeled example trip in `BookingSteps` and the condo photo fallback.
+- **To ship it:** point the index route at `GuestLandingV3Page`, retire the older landing modules, drop the `/v3` route, and update this guide.
 
 ---
 

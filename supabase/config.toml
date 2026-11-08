@@ -22,10 +22,33 @@ major_version = 17
 
 [db.seed]
 enabled = true
+# Canonical local dataset: one org, one property, one parking, every module.
+# See docs/guides/testing/local-seed-data.md. Optional seeds (search fixtures,
+# feature-flag demos) are manual and never run on reset.
 sql_paths = [
-  "../scripts/dev/seed-local-org-bootstrap.sql",
-  "./seed.sql",
-  "../scripts/dev/seed-dashboard-demo-data.sql",
+  "../scripts/dev/seed/00-reference-guards.sql",
+  "../scripts/dev/seed/01-identity.sql",
+  "../scripts/dev/seed/02-subscription.sql",
+  "../scripts/dev/seed/03-settings.sql",
+  "../scripts/dev/seed/04-team.sql",
+  "../scripts/dev/seed/05-bookings-property.sql",
+  "../scripts/dev/seed/06-bookings-parking.sql",
+  "../scripts/dev/seed/07-finance.sql",
+  "../scripts/dev/seed/08-maintenance.sql",
+  "../scripts/dev/seed/09-pricing.sql",
+  "../scripts/dev/seed/10-marketing.sql",
+  "../scripts/dev/seed/11-reviews.sql",
+  "../scripts/dev/seed/12-inbox.sql",
+  "../scripts/dev/seed/13-public-pages.sql",
+  "../scripts/dev/seed/14-support.sql",
+  "../scripts/dev/seed/15-notifications.sql",
+  "../scripts/dev/seed/16-activity.sql",
+  "../scripts/dev/seed/17-analytics.sql",
+  "../scripts/dev/seed/18-ai.sql",
+  "../scripts/dev/seed/19-super-admin.sql",
+  "../scripts/dev/seed/20-guest-portal.sql",
+  "../scripts/dev/seed/21-refresh-public-cache.sql",
+  "../scripts/dev/seed/99-verify.sql",
 ]
 
 # Admin sign-in (Google OAuth). Set GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET in
@@ -210,10 +233,13 @@ verify_jwt = false
 [functions.get-pay-parking]
 verify_jwt = false
 
-
+# ── Admin functions — Kong JWT gate disabled; verifyAdminJwt() in handler is the gate ──
+# verify_jwt = true uses Kong's HS256 secret which rejects newer ES256 auth tokens
+# (Supabase local dev ≥ 1.x issues ES256 JWTs). Our verifyAdminJwt() calls
+# supabase.auth.getUser() which handles both algorithms and additionally
+# checks the ADMIN_ALLOWED_EMAILS allow-list — stronger than the Kong gate.
 [functions.list-bookings]
 verify_jwt = false
-
 
 [functions.transition-parking-booking]
 verify_jwt = false
@@ -350,7 +376,6 @@ static_files = [
 
 [functions.cancellation-refund-cron]
 verify_jwt = false
-
 
 [functions.send-sd-refund-form-email]
 verify_jwt = false
@@ -535,6 +560,38 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.submit-org-verification]
+verify_jwt = false
+
+# ── Live identity verification ────────────────────────────────────────────────
+# verify_jwt = false on every one: the phone is not signed in, and the desktop
+# bootstrap is anonymous. The real gate is the 10-minute HMAC handoff token
+# (`_shared/identitySessionToken.ts`) plus the service-role-only tables.
+
+[functions.identity-session-create]
+verify_jwt = false
+
+[functions.identity-session-get]
+verify_jwt = false
+
+[functions.identity-session-upload]
+verify_jwt = false
+
+[functions.identity-session-submit]
+verify_jwt = false
+
+[functions.identity-session-cancel]
+verify_jwt = false
+
+[functions.identity-verification-mine]
+verify_jwt = false
+
+[functions.identity-verification-delete]
+verify_jwt = false
+
+[functions.identity-verification-review]
+verify_jwt = false
+
+[functions.identity-captures-purge-cron]
 verify_jwt = false
 
 [functions.list-org-verifications]

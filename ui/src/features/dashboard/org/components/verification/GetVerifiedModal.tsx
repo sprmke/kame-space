@@ -12,10 +12,16 @@ import {
 } from '@/features/dashboard/bookings/lib/adminSidebarNav';
 import { OrgListingVerificationRollup } from '@/features/dashboard/org/components/listing-authorization/OrgListingVerificationRollup';
 import { OnboardingHostVerificationSection } from '@/features/dashboard/org/components/onboarding/OnboardingHostVerificationSection';
+import { HostIdentityVerifyButton } from '@/features/verification/components/HostIdentityVerifyButton';
 import { OnboardingProofUpload } from '@/features/dashboard/org/components/onboarding/OnboardingProofUpload';
 import { useOptionalOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { RecommendedBadgePreview } from '@/features/dashboard/org/components/verification/RecommendedBadgePreview';
 import { VerificationChecklist } from '@/features/dashboard/org/components/verification/VerificationChecklist';
+import {
+  VerificationSectionCard,
+  VerificationSectionCount,
+} from '@/features/dashboard/org/components/verification/VerificationSectionCard';
+import { VerificationStatusBanner } from '@/features/dashboard/org/components/verification/VerificationStatusBanner';
 import {
   defaultVerificationStepIndex,
   VerificationTierProgress,
@@ -157,12 +163,6 @@ function slotRequiredError(touched: boolean, submitting: boolean, slot: ProofSlo
   return 'Required';
 }
 
-function VerificationPendingNote() {
-  return (
-    <p className="text-muted-foreground text-xs leading-relaxed">{VERIFICATION_REVIEW_TIMELINE}</p>
-  );
-}
-
 function VerificationFeedbackAlert({
   kind,
   title,
@@ -263,10 +263,14 @@ function VerifiedTierStepPanel({
 }) {
   const documentChecklist = hostTierDocumentChecklistItems(checklist);
   const doneCount = documentChecklist.filter((item) => item.complete).length;
-  const isResubmit = Boolean(children);
   const approved = tier.status === 'approved';
   const rejected = tier.status === 'rejected';
   const isChangesResubmit = changesResubmit && rejectionKind === 'changes';
+  const hasUploads = Boolean(children);
+  const canHostCopy = PLATFORM_APP_NAME
+    ? `You can host on ${platformProductLabel()}.`
+    : 'You can start hosting.';
+
   const submittedDocsSection =
     showSubmittedDocs && orgId ? (
       <Suspense fallback={null}>
@@ -275,110 +279,72 @@ function VerifiedTierStepPanel({
           enabled={Boolean(modalOpen)}
           items={checklist}
           tierStatus={tier.status}
+          framed={false}
+          hideGaps={isChangesResubmit}
         />
       </Suspense>
     ) : null;
 
-  if (isChangesResubmit) {
-    return (
-      <section aria-labelledby="verification-resubmit-title" className="space-y-4">
-        <h3 id="verification-resubmit-title" className="sr-only">
-          Resubmit verification documents
-        </h3>
-        {rejectionReason ? (
-          <VerificationFeedbackAlert
-            kind="changes"
-            title="What to update"
-            message={rejectionReason}
-          />
-        ) : null}
-        {children}
-        {submittedDocsSection ? (
-          <div className="space-y-2">
-            <p className="text-muted-foreground text-[11px] font-semibold uppercase tracking-wide">
-              Previously submitted
-            </p>
-            {submittedDocsSection}
-          </div>
-        ) : null}
-        <ListingVerificationRollupSection
-          orgId={orgId}
-          orgSlug={orgSlug}
-          modalOpen={modalOpen}
-          allowUpload={allowListingUpload}
-          hideOpen={hideListingOpen}
-        />
-      </section>
-    );
-  }
-
-  if (isResubmit) {
-    return (
-      <section aria-labelledby="verification-resubmit-title" className="space-y-4">
-        <h3 id="verification-resubmit-title" className="sr-only">
-          Resubmit verification documents
-        </h3>
-        {rejectionReason ? (
-          <VerificationFeedbackAlert
-            kind={rejectionKind === 'changes' ? 'changes' : 'rejected'}
-            title={rejectionKind === 'changes' ? 'What to update' : 'Rejection reason'}
-            message={rejectionReason}
-          />
-        ) : null}
-        {children}
-        {submittedDocsSection}
-        <ListingVerificationRollupSection
-          orgId={orgId}
-          orgSlug={orgSlug}
-          modalOpen={modalOpen}
-          allowUpload={allowListingUpload}
-          hideOpen={hideListingOpen}
-        />
-      </section>
-    );
-  }
-
   return (
-    <section aria-labelledby="verification-tier-verified-panel-title" className="space-y-4">
-      <div className="min-w-0 space-y-1">
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <h3
-            id="verification-tier-verified-panel-title"
-            className="text-foreground text-sm font-semibold leading-tight"
-          >
-            Submitted documents
-          </h3>
-          <span className="text-muted-foreground text-xs leading-none">
-            {doneCount}/{documentChecklist.length} docs
-          </span>
-        </div>
-        {pendingNote ? (
-          <p className="text-muted-foreground text-xs leading-relaxed">
-            {VERIFICATION_REVIEW_TIMELINE}
-          </p>
-        ) : null}
-      </div>
-
-      {showSubmittedDocs && orgId ? (
-        submittedDocsSection
-      ) : (
-        <VerificationChecklist items={checklist} compact />
-      )}
-
-      {approved ? (
-        <p className="text-muted-foreground text-xs leading-relaxed">
-          {PLATFORM_APP_NAME
-            ? `You can host on ${platformProductLabel()}.`
-            : 'You can start hosting.'}
-        </p>
-      ) : null}
-
-      {rejected && rejectionReason ? (
+    <div className="space-y-3">
+      {isChangesResubmit && rejectionReason ? (
+        <VerificationFeedbackAlert
+          kind="changes"
+          title="What to update"
+          message={rejectionReason}
+        />
+      ) : rejected && rejectionReason ? (
         <VerificationFeedbackAlert
           kind={rejectionKind === 'changes' ? 'changes' : 'rejected'}
           title={rejectionKind === 'changes' ? 'What to update' : 'Rejection reason'}
           message={rejectionReason}
         />
+      ) : null}
+
+      {hasUploads ? (
+        <VerificationSectionCard
+          title={isChangesResubmit ? 'Replace documents' : 'Documents to upload'}
+          description={
+            isChangesResubmit
+              ? 'Replace the flagged files, then resubmit.'
+              : 'Add both files, then submit for review.'
+          }
+          meta={
+            <VerificationSectionCount>
+              {doneCount}/{documentChecklist.length}
+            </VerificationSectionCount>
+          }
+        >
+          {children}
+        </VerificationSectionCard>
+      ) : null}
+
+      {submittedDocsSection ? (
+        <VerificationSectionCard
+          title={isChangesResubmit ? 'Previously submitted' : 'Submitted documents'}
+          description={pendingNote ? VERIFICATION_REVIEW_TIMELINE : undefined}
+          meta={
+            isChangesResubmit || pendingNote ? undefined : (
+              <VerificationSectionCount>
+                {doneCount}/{documentChecklist.length}
+              </VerificationSectionCount>
+            )
+          }
+          bodyClassName="px-0 pb-0"
+        >
+          {submittedDocsSection}
+        </VerificationSectionCard>
+      ) : !hasUploads ? (
+        <VerificationSectionCard title="Documents">
+          <VerificationChecklist items={checklist} compact />
+        </VerificationSectionCard>
+      ) : null}
+
+      {approved ? (
+        <p className="text-muted-foreground flex items-center gap-1.5 px-0.5 text-xs leading-snug">
+          <Check className="size-3.5 shrink-0 text-emerald-600" strokeWidth={2.5} aria-hidden />
+          {canHostCopy}
+        </p>
       ) : null}
 
       <ListingVerificationRollupSection
@@ -388,7 +354,7 @@ function VerifiedTierStepPanel({
         allowUpload={allowListingUpload}
         hideOpen={hideListingOpen}
       />
-    </section>
+    </div>
   );
 }
 
@@ -397,13 +363,11 @@ function RecommendedTierSubmittedDocs({
   modalOpen,
   checklist,
   tierStatus,
-  pendingNote = false,
 }: {
   orgId: string;
   modalOpen: boolean;
   checklist: ReturnType<typeof buildVerifiedTierChecklist>;
   tierStatus: OrgVerificationStatus;
-  pendingNote?: boolean;
 }) {
   const documentChecklist = recommendedTierDocumentChecklistItems(checklist);
   const doneCount = documentChecklist.filter((item) => item.complete).length;
@@ -411,26 +375,15 @@ function RecommendedTierSubmittedDocs({
   if (documentChecklist.length === 0) return null;
 
   return (
-    <section aria-labelledby="verification-tier-recommended-docs-title" className="space-y-4">
-      <div className="min-w-0 space-y-1">
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <h3
-            id="verification-tier-recommended-docs-title"
-            className="text-foreground text-sm font-semibold leading-tight"
-          >
-            Submitted documents
-          </h3>
-          <span className="text-muted-foreground text-xs leading-none">
-            {doneCount}/{documentChecklist.length} docs
-          </span>
-        </div>
-        {pendingNote ? (
-          <p className="text-muted-foreground text-xs leading-relaxed">
-            {VERIFICATION_REVIEW_TIMELINE}
-          </p>
-        ) : null}
-      </div>
-
+    <VerificationSectionCard
+      title="Submitted documents"
+      meta={
+        <VerificationSectionCount>
+          {doneCount}/{documentChecklist.length}
+        </VerificationSectionCount>
+      }
+      bodyClassName="px-0 pb-0"
+    >
       <Suspense fallback={null}>
         <VerificationTier1SubmittedDocs
           orgId={orgId}
@@ -438,14 +391,14 @@ function RecommendedTierSubmittedDocs({
           items={checklist}
           tierStatus={tierStatus}
           tier="recommended"
+          framed={false}
         />
       </Suspense>
-    </section>
+    </VerificationSectionCard>
   );
 }
 
 function RecommendedTierStepPanel({
-  hideTitle = false,
   tier,
   orgName,
   orgId,
@@ -468,7 +421,6 @@ function RecommendedTierStepPanel({
   onPlatformAdminChange,
   onBusinessPermitChange,
 }: {
-  hideTitle?: boolean;
   tier: VerificationTierDefinition;
   orgName?: string | null;
   orgId?: string;
@@ -507,79 +459,39 @@ function RecommendedTierStepPanel({
         modalOpen={modalOpen}
         checklist={checklist}
         tierStatus={tier.status}
-        pendingNote={verifiedPending}
       />
     ) : null;
 
-  const panelTitle = (
-    <h3
-      id="verification-tier-recommended-panel-title"
-      className={hideTitle ? 'sr-only' : 'text-foreground text-sm font-semibold leading-tight'}
-    >
-      Recommended
-    </h3>
-  );
-
   if (verifiedApproved) {
     return (
-      <section aria-labelledby="verification-tier-recommended-panel-title" className="space-y-4">
-        {panelTitle}
-        {submittedDocsSection ? (
-          <>
-            {submittedDocsSection}
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              {VERIFICATION_TIER2_APPROVED}
-            </p>
-          </>
-        ) : (
-          <p className="text-foreground text-sm leading-relaxed">{VERIFICATION_TIER2_APPROVED}</p>
-        )}
+      <div className="space-y-3">
+        <VerificationStatusBanner
+          tone="success"
+          title="Badge is live"
+          detail={VERIFICATION_TIER2_APPROVED}
+        />
+        {submittedDocsSection}
         {listingRollup}
-      </section>
+      </div>
     );
   }
 
   if (verifiedPending) {
     return (
-      <section aria-labelledby="verification-tier-recommended-panel-title" className="space-y-4">
-        {panelTitle}
-        {submittedDocsSection ?? <VerificationPendingNote />}
+      <div className="space-y-3">
+        <VerificationStatusBanner
+          tone="pending"
+          title="In review"
+          detail={VERIFICATION_REVIEW_TIMELINE}
+        />
+        {submittedDocsSection}
         {listingRollup}
-      </section>
+      </div>
     );
   }
 
   return (
-    <section aria-labelledby="verification-tier-recommended-panel-title" className="space-y-5">
-      <div className="space-y-1">
-        {panelTitle}
-        <p className="text-muted-foreground text-xs leading-relaxed">{tier.benefit}</p>
-      </div>
-
-      <div className="border-border bg-card overflow-hidden rounded-xl border">
-        <div className="border-border border-b px-4 py-2.5 sm:px-4">
-          <h4 className="text-foreground text-xs font-semibold">Perks &amp; benefits</h4>
-        </div>
-        <div className="grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(11rem,14rem)] sm:items-start sm:gap-4">
-          <ul className="space-y-2">
-            {VERIFICATION_BENEFIT_BULLETS.map((bullet) => (
-              <li
-                key={bullet}
-                className="text-foreground flex items-start gap-2 text-xs leading-snug sm:text-sm"
-              >
-                <Check
-                  className="text-primary mt-0.5 size-3.5 shrink-0"
-                  strokeWidth={2.5}
-                  aria-hidden
-                />
-                <span>{bullet}</span>
-              </li>
-            ))}
-          </ul>
-          <RecommendedBadgePreview hostName={orgName} />
-        </div>
-      </div>
-
+    <div className="space-y-3">
       {enhancedStatus === 'rejected' ? (
         <VerificationFeedbackAlert
           kind={enhancedRejectionKind === 'changes' ? 'changes' : 'rejected'}
@@ -588,20 +500,11 @@ function RecommendedTierStepPanel({
         />
       ) : null}
 
-      {submittedDocsSection && enhancedStatus === 'rejected' ? (
-        <div className="space-y-2">
-          <p className="text-muted-foreground text-[11px] font-semibold uppercase tracking-wide">
-            Previously submitted
-          </p>
-          {submittedDocsSection}
-        </div>
-      ) : null}
-
-      <div className="border-border bg-card overflow-hidden rounded-xl border">
-        <div className="border-border border-b px-4 py-2.5 sm:px-4">
-          <h4 className="text-foreground text-xs font-semibold">Docs required</h4>
-        </div>
-        <div className="space-y-4 p-4">
+      <VerificationSectionCard
+        title="Documents"
+        description="The selfie with your ID is required. The other two are optional."
+      >
+        <div className="space-y-3.5">
           <OnboardingProofUpload
             id="enhanced-selfie"
             label={VERIFICATION_TIER2_DOC_LABELS.selfie}
@@ -609,6 +512,7 @@ function RecommendedTierStepPanel({
             file={selfie.file}
             previewUrl={selfie.previewUrl}
             error={verifiedTouched && !slotReady(selfie) ? 'Required' : null}
+            compact
             onFileChange={onSelfieChange}
           />
           <OnboardingProofUpload
@@ -618,6 +522,7 @@ function RecommendedTierStepPanel({
             required={false}
             file={platformAdmin.file}
             previewUrl={platformAdmin.previewUrl}
+            compact
             onFileChange={onPlatformAdminChange}
           />
           <OnboardingProofUpload
@@ -627,13 +532,37 @@ function RecommendedTierStepPanel({
             required={false}
             file={businessPermit.file}
             previewUrl={businessPermit.previewUrl}
+            compact
             onFileChange={onBusinessPermitChange}
           />
         </div>
-      </div>
+      </VerificationSectionCard>
+
+      {submittedDocsSection && enhancedStatus === 'rejected' ? submittedDocsSection : null}
+
+      <VerificationSectionCard title="Why upgrade">
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(10rem,12rem)] sm:items-center sm:gap-4">
+          <ul className="space-y-1.5">
+            {VERIFICATION_BENEFIT_BULLETS.map((bullet) => (
+              <li
+                key={bullet}
+                className="text-foreground flex items-start gap-2 text-xs leading-snug"
+              >
+                <Check
+                  className="text-primary mt-px size-3.5 shrink-0"
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
+                <span>{bullet}</span>
+              </li>
+            ))}
+          </ul>
+          <RecommendedBadgePreview hostName={orgName} />
+        </div>
+      </VerificationSectionCard>
 
       {listingRollup}
-    </section>
+    </div>
   );
 }
 
@@ -663,7 +592,6 @@ export function GetVerifiedModal({
   const hostChangesRequested = isHostVerificationChangesRequestedFromDetail(detail);
   const hostHardRejected = isHostVerificationHardRejectedFromDetail(detail);
   const blockDismiss = forced || hostChangesRequested;
-  const fixValidId = hostChangesRequested;
 
   const showTier1SubmittedDocs = detail.baseStatus !== 'none';
   const showTier2SubmittedDocs = detail.enhancedStatus !== 'none';
@@ -682,6 +610,8 @@ export function GetVerifiedModal({
   const [hostTouched, setHostTouched] = useState(false);
   const [verifiedTouched, setVerifiedTouched] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  /** Set when the host captured their ID live; the server copies the photo into the asset. */
+  const [liveValidId, setLiveValidId] = useState<string | null>(null);
 
   const isDirty = [validId, socialProof, selfie, platformAdmin, businessPermit].some(
     (slot) => slot.file !== null
@@ -756,7 +686,7 @@ export function GetVerifiedModal({
     detail,
     hostModes,
     {
-      validId: slotReady(validId),
+      validId: slotReady(validId) || Boolean(liveValidId),
       socialProof: slotReady(socialProof),
     },
     hostChangesRequested ? { changesRequestedDocs: detail.baseChangesRequestedDocs } : undefined
@@ -798,6 +728,7 @@ export function GetVerifiedModal({
         body: JSON.stringify({
           orgId: org.id,
           tier: 'base',
+          ...(liveValidId ? { identityVerificationId: liveValidId } : {}),
         }),
       });
       await queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY });
@@ -881,32 +812,52 @@ export function GetVerifiedModal({
   const showHostSubmit = hostChangesRequested || hostFirstUpload;
 
   const hostUploadFields = (
-    <OnboardingHostVerificationSection
-      file={validId.file}
-      previewUrl={validId.previewUrl}
-      error={slotRequiredError(hostTouched, submitting !== null, validId)}
-      onFileChange={(file, preview) => {
-        setValidId({
-          file,
-          previewUrl: preview,
-          path: file ? null : validId.path,
-        });
-      }}
-      socialProofFile={socialProof.file}
-      socialProofPreviewUrl={socialProof.previewUrl}
-      socialProofError={slotRequiredError(hostTouched, submitting !== null, socialProof)}
-      onSocialProofChange={(file, preview) => {
-        setSocialProof({
-          file,
-          previewUrl: preview,
-          path: file ? null : socialProof.path,
-        });
-      }}
-      onUploadError={(message) => {
-        setUploadError(message);
-        if (message) toast.error(message);
-      }}
-    />
+    <div className="space-y-4">
+      <OnboardingHostVerificationSection
+        file={validId.file}
+        previewUrl={validId.previewUrl}
+        error={liveValidId ? null : slotRequiredError(hostTouched, submitting !== null, validId)}
+        onFileChange={(file, preview) => {
+          setValidId({
+            file,
+            previewUrl: preview,
+            path: file ? null : validId.path,
+          });
+        }}
+        socialProofFile={socialProof.file}
+        socialProofPreviewUrl={socialProof.previewUrl}
+        socialProofError={slotRequiredError(hostTouched, submitting !== null, socialProof)}
+        onSocialProofChange={(file, preview) => {
+          setSocialProof({
+            file,
+            previewUrl: preview,
+            path: file ? null : socialProof.path,
+          });
+        }}
+        onUploadError={(message) => {
+          setUploadError(message);
+          if (message) toast.error(message);
+        }}
+        verifyAction={
+          org && !validId.previewUrl && !validId.file ? (
+            <HostIdentityVerifyButton
+              organizationId={org.id}
+              onDocumentCaptured={(file) =>
+                setValidId({ file, previewUrl: URL.createObjectURL(file), path: null })
+              }
+              onVerified={(result) => setLiveValidId(result.verificationId)}
+            />
+          ) : null
+        }
+        framed={false}
+        compact
+      />
+      {uploadError ? (
+        <p role="alert" className="text-destructive text-xs">
+          {uploadError}
+        </p>
+      ) : null}
+    </div>
   );
 
   const flowBody = (
@@ -926,26 +877,10 @@ export function GetVerifiedModal({
           hideListingOpen={hideListingOpen}
           showSubmittedDocs={showTier1SubmittedDocs}
         >
-          {hostChangesRequested ? (
-            <div className="space-y-4">
-              {fixValidId ? hostUploadFields : null}
-              {uploadError ? (
-                <p role="alert" className="text-destructive text-xs">
-                  {uploadError}
-                </p>
-              ) : null}
-            </div>
-          ) : hostFirstUpload ? (
-            <div className="space-y-4">
-              {hostUploadFields}
-              {uploadError ? (
-                <p role="alert" className="text-destructive text-xs">
-                  {uploadError}
-                </p>
-              ) : null}
-            </div>
+          {hostChangesRequested || hostFirstUpload ? (
+            hostUploadFields
           ) : hostHardRejected ? (
-            <p className="text-muted-foreground text-sm leading-relaxed">
+            <p className="text-muted-foreground text-[13px] leading-relaxed">
               This verification was declined. Start a new application to try again with updated
               documents.
             </p>
@@ -953,7 +888,6 @@ export function GetVerifiedModal({
         </VerifiedTierStepPanel>
       ) : (
         <RecommendedTierStepPanel
-          hideTitle={embedded}
           tier={verifiedTier}
           orgName={org?.name}
           orgId={org?.id}
@@ -1048,29 +982,29 @@ export function GetVerifiedModal({
             if (blockDismiss) event.preventDefault();
           }}
           className={cn(
-            'flex h-[min(90dvh,40rem)] max-h-[min(90dvh,40rem)] w-[min(calc(100vw-1.5rem),40rem)] max-w-none flex-col gap-0 overflow-hidden p-0',
-            'sm:h-[min(90dvh,42rem)] sm:max-h-[min(90dvh,42rem)] sm:w-[min(92vw,40rem)] sm:max-w-[40rem] sm:p-0'
+            'flex h-[min(92dvh,44rem)] max-h-[min(92dvh,44rem)] w-[min(calc(100vw-1.5rem),44rem)] max-w-none flex-col gap-0 overflow-hidden p-0',
+            'sm:h-[min(90dvh,46rem)] sm:max-h-[min(90dvh,46rem)] sm:w-[min(92vw,46rem)] sm:max-w-[46rem] sm:p-0'
           )}
         >
           <ResponsiveModalHeader
             className={cn(
-              'border-border shrink-0 space-y-3 border-b px-5 pb-3.5 pt-5 text-left sm:px-6',
-              blockDismiss && 'pr-5 sm:pr-6'
+              'border-border shrink-0 gap-3 space-y-0 border-b px-4 pb-3 pt-4 text-left sm:px-6 sm:pb-3.5 sm:pt-5',
+              blockDismiss && 'pr-4 sm:pr-6'
             )}
           >
             <ResponsiveModalTitle className="flex items-center gap-2.5 text-left text-base font-semibold sm:text-lg">
               <span
                 className={cn(
-                  'flex size-9 shrink-0 items-center justify-center rounded-full',
+                  'flex size-8 shrink-0 items-center justify-center rounded-full sm:size-9',
                   hostChangesRequested
                     ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
                     : 'bg-primary/10 text-primary'
                 )}
               >
                 {hostChangesRequested ? (
-                  <AlertCircle className="size-5" aria-hidden />
+                  <AlertCircle className="size-[18px]" aria-hidden />
                 ) : (
-                  <BadgeCheck className="size-5" aria-hidden />
+                  <BadgeCheck className="size-[18px]" aria-hidden />
                 )}
               </span>
               {hostChangesRequested
@@ -1090,11 +1024,11 @@ export function GetVerifiedModal({
             ) : null}
           </ResponsiveModalHeader>
 
-          <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-5 py-4 [-webkit-overflow-scrolling:touch] sm:px-6">
-            <div className="pb-1">{flowBody}</div>
+          <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-3.5 [-webkit-overflow-scrolling:touch] sm:px-6 sm:py-4">
+            {flowBody}
           </div>
 
-          <ResponsiveModalFooter className="border-border shrink-0 gap-2 border-t px-5 py-3.5 sm:flex-row sm:justify-end sm:px-6 sm:py-4">
+          <ResponsiveModalFooter className="border-border shrink-0 gap-2 border-t px-4 py-3 sm:flex-row sm:justify-end sm:px-6 sm:py-4">
             {!blockDismiss ? (
               <Button
                 type="button"

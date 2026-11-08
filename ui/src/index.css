@@ -3339,3 +3339,13 @@ html[data-mode-transition='reduced']::view-transition-new(*) {
     }
   }
 }
+
+/* Guest auth feature showcase: autoplay fill on the active chapter tab (GuestFeatureShowcase). */
+@keyframes guest-showcase-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}

@@ -103,6 +103,57 @@ the response path.
    exactly like a clean sweep.
 6. Mark the row N/A with a reason if the surface genuinely has neither.
 
+## Boot and request timing
+
+Speed work needs the same discipline as fault work: a number before the change, the same
+number after it, or the change is a guess. Two permanent instruments provide it.
+
+### Browser boot marks (`ui/src/lib/perf/bootMarks.ts`)
+
+One fixed set of `performance.mark` names, written once per session and never removed:
+
+| Mark               | Fires when                                             |
+| ------------------ | ------------------------------------------------------ |
+| `app:script-start` | top of `main.tsx`, before Sentry and PostHog init      |
+| `app:first-render` | one frame after the first commit of `AppShell`         |
+| `loader:show`      | the full-screen `AppLoader` host is attached to `body` |
+| `loader:hide`      | that host is removed                                   |
+| `skeleton:show`    | a route skeleton actually paints                       |
+| `skeleton:hide`    | that skeleton unmounts                                 |
+| `route:content`    | first page of the session reaches its primary data     |
+| `nav:start`        | a later route change commits                           |
+| `nav:content`      | that route reaches its primary data                    |
+
+Boot marks are **first-wins** so a re-mount cannot shrink a measured duration. Navigation
+marks are the exception: each tap is its own pair, so they overwrite.
+
+Pages call `useRouteContentReady(isReady)` (`ui/src/hooks/useRouteContentReady.ts`) with one
+boolean that is true only when the content a user came for is on screen. Not "loading is
+false", not "the fetch resolved": the thing they came for. Wire it to the top pages first;
+every route without it reports `null` rather than a fabricated number.
+
+`readBootTimeline()` returns `firstRenderMs`, `loaderMs`, `skeletonMs`, `routeContentMs`,
+`navContentMs`, with `null` for anything that never fired. `lib/sentry/bootMeasurements.ts`
+sends the non-null values to Sentry as `boot.first_render`, `boot.loader`, `boot.skeleton`,
+`boot.route_content` and `boot.nav_content` on the active route transaction. PostHog stays
+outcome-only, so there is deliberately no PostHog counterpart.
+
+`nav:start` measures from the commit of the new route, so `navContentMs` is a **lower bound**
+on tap-to-content. This is stated in the code comment and must stay stated; a lower bound
+presented as a full number is how a regression hides.
+
+### Edge phase timings (`_shared/serverTiming.ts`)
+
+`serveAdmin`, `serveAuthenticated`, `serveSuperAdmin` and `servePublic` time each phase and
+return them as `Server-Timing: auth;dur=12.3, settings;dur=0.4, ratelimit;dur=4.1,
+blocklist;dur=1.2, handler;dur=88.2`. A phase that throws is still recorded, so a failed
+auth shows up instead of disappearing.
+
+Durations only. No ids, no function arguments, no counts, which is why
+`Timing-Allow-Origin: *` is safe here. `timePhase` records even on throw; `withServerTiming`
+passes the body through untouched and returns the original response if the body was already
+read.
+
 ## Do not
 
 - Emit `activity_log` from either vendor, or a telemetry event to replace `activity_log`.

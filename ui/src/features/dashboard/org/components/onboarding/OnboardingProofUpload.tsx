@@ -15,6 +15,8 @@ type Props = {
   previewUrl: string | null;
   uploading?: boolean;
   error?: string | null;
+  /** One-line dropzone instead of a tall box. */
+  compact?: boolean;
   onFileChange: (file: File | null, previewUrl: string | null) => void;
 };
 
@@ -27,6 +29,7 @@ export function OnboardingProofUpload({
   previewUrl,
   uploading = false,
   error = null,
+  compact = false,
   onFileChange,
 }: Props) {
   const handleSelect = (selected: File | undefined) => {
@@ -59,6 +62,8 @@ export function OnboardingProofUpload({
         previewUrl={previewUrl}
         uploading={uploading}
         hasError={Boolean(error)}
+        compact={compact}
+        emptyHint={compact ? 'JPEG, PNG, or PDF · 5 MB' : undefined}
         onFileSelect={handleSelect}
         onClear={() => onFileChange(null, null)}
       />

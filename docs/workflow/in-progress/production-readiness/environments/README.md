@@ -1,7 +1,7 @@
 ---
 title: 'Test environments, accounts, fixtures'
 status: active
-updated: 2026-11-06
+updated: 2026-11-08
 stage: in-progress
 kind: reference
 readiness: unverified
@@ -57,7 +57,7 @@ Probes and walks that use the seed:
 
 ## Seeds
 
-Local-only SQL seeds still apply to the Docker stack (`seed-search-fixtures.sql`, `seed-monaco-2612-demo-data.sql`, `seed-dashboard-demo-data.sql`, `seed-analytics-demo-data.sql`, `seed-ai-qa.ts`). Gaps: paid-tier org, role members, large-tenant 10k bookings (PR-052). RLS local probe: `probe-rls-anon-local.sh` after `db:reset`.
+Canonical local seed (`scripts/dev/seed/`, loaded on `db reset`) now covers one org on Business, role members at org / property / parking, and every module. Optional: `seed:search-fixtures` (typeahead), `seed:mock-listings` (320-listing perf), `seed-ai-qa`. Remaining gap: large-tenant 10k bookings (PR-052). RLS local probe: `probe-rls-anon-local.sh` after `db:reset`. Guide: `docs/guides/testing/local-seed-data.md`.
 
 ## Rollback rehearsal
 

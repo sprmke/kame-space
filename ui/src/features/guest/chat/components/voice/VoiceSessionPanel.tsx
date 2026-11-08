@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 
 import { Loader2, Mic, MicOff, PhoneOff } from 'lucide-react';
 
-import { ReceptionistAvatar } from '@/features/guest/chat/components/voice/ReceptionistAvatar';
 import { VoiceBoothRing } from '@/features/guest/chat/components/voice/VoiceBoothRing';
 import { VoiceMicWaveform } from '@/features/guest/chat/components/voice/VoiceMicWaveform';
 import { useDwellValue } from '@/features/guest/chat/hooks/useDwellValue';
@@ -31,6 +30,13 @@ type Props = {
 const VOICE_CONSENT_KEY = 'guest-voice-receptionist-consent-v1';
 const EXIT_MS = 180;
 const AVATAR_SIZE = 138;
+
+// The mascot rig is heavy, and the call can end before it renders.
+const ReceptionistAvatar = lazy(() =>
+  import('@/features/guest/chat/components/voice/ReceptionistAvatar').then((m) => ({
+    default: m.ReceptionistAvatar,
+  }))
+);
 
 function formatCountdown(seconds: number | null): string {
   if (seconds === null) return '';
@@ -242,7 +248,9 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
           />
           <VoiceBoothRing state={voiceViewAvatarState(view)} busy={isBusyVoiceView(view)} />
           <div className="absolute inset-[11px] flex items-center justify-center">
-            <ReceptionistAvatar state={voiceViewAvatarState(view)} size={AVATAR_SIZE} />
+            <Suspense fallback={<div style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }} aria-hidden />}>
+              <ReceptionistAvatar state={voiceViewAvatarState(view)} size={AVATAR_SIZE} />
+            </Suspense>
           </div>
         </div>
 

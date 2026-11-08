@@ -1,0 +1,42 @@
+---
+description: >-
+  Exactly one synthetic test tenant exists in production. It is intentional. Never create a
+  second org, property or parking for testing, and never make it public.
+alwaysApply: true
+---
+
+# Test tenant (production) — do not create another
+
+`kame-test-tenant` (`org`), `kame-test-property`, `kame-test-parking` exist in production on
+purpose, so an agent can measure and verify against real data without touching a host's rows.
+It is **not a bug** and must not be removed.
+
+Full reference: **`docs/architecture/test-tenant.md`**.
+
+## Hard rules
+
+| Rule                                                             | Why                                                                                                                                            |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Never create a second test org.**                              | `organizations_single_test_tenant` is a unique index; the insert fails anyway, and a "workaround" would mean weakening a production guardrail. |
+| **Never set `properties.is_test` / `parkings.is_test` by hand.** | A trigger derives them from the org. Writing them is ignored at best.                                                                          |
+| **Never make a test listing `ACTIVE`.**                          | `properties_test_never_active` rejects it, and ACTIVE is exactly what would put it on public listing pages, search, facets and map results.    |
+| **Never retype `organizations.is_test`.**                        | It is immutable by trigger; children would desynchronise.                                                                                      |
+| **Never use the probe account on real tenants.**                 | It exists to read and measure the test org. Real hosts' data is off limits.                                                                    |
+| **Never propose deleting the test tenant as cleanup.**           | It is intentional infrastructure. Say so if a lint or audit flags it.                                                                          |
+
+## When you need somewhere to try something
+
+1. Prefer the **local seed dataset** (`docs/guides/testing/local-seed-data.md`). Most work
+   needs no production at all.
+2. If it must be production (real edge latency, real caches, deployed build), use the existing
+   test tenant read-only.
+3. If the existing tenant genuinely cannot express the case, that is a **design decision**,
+   not a quick insert. Write it down, get it reviewed, and change
+   `docs/architecture/test-tenant.md` in the same change.
+
+## Operating it
+
+```bash
+node scripts/dev/test-tenant.mjs            # read-only audit
+CONFIRM_TEST_TENANT=yes node scripts/dev/test-tenant.mjs --apply   # create, once
+```

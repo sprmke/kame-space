@@ -2,6 +2,43 @@
 -- Goal: typing `azure` returns ≥4 properties, ≥4 parkings, ≥3 developments
 -- so the typeahead preview (max 3) shows **See all**.
 -- Safe to re-run: ON CONFLICT / fixed UUIDs.
+--
+-- Dashboard demo (bookings / finance / maintenance): also loaded on db reset via
+-- `supabase/config.toml` → `../scripts/dev/seed-dashboard-demo-data.sql`.
+
+-- ── Seed owner + organization ────────────────────────────────────────
+-- The property/parking fixtures below point at this organization. A fresh
+-- `db reset` starts with empty `auth.users` and `organizations`, so create both
+-- here or the seed dies on `properties_organization_id_fkey`.
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+)
+VALUES (
+  'd74b9d44-6244-40f0-9160-7c281738e8c0',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'seed-owner@example.com',
+  crypt('seed-password', gen_salt('bf')),
+  now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{}'::jsonb,
+  now(),
+  now()
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO organizations (id, owner_id, name, slug, settings, host_modes)
+VALUES (
+  '405ea07f-cc21-4bcc-b540-28729be79f0d',
+  'd74b9d44-6244-40f0-9160-7c281738e8c0',
+  'Kame Space',
+  'kame-homes',
+  '{}'::jsonb,
+  ARRAY['property']::text[]
+)
+ON CONFLICT (id) DO NOTHING;
 
 -- ── Developments (name unique globally) ──────────────────────────────
 INSERT INTO developments (
@@ -18,7 +55,7 @@ VALUES
     'ACTIVE',
     'Parañaque, Metro Manila',
     'Parañaque',
-    'Search fixture — sibling Azure development for typeahead See all.',
+    'Search fixture: sibling Azure development for typeahead See all.',
     'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=85',
     jsonb_build_object(
       'images', jsonb_build_array(
@@ -36,7 +73,7 @@ VALUES
     'ACTIVE',
     'San Fernando, Pampanga',
     'San Fernando',
-    'Search fixture — Azure North Bay promenade cluster.',
+    'Search fixture: Azure North Bay promenade cluster.',
     'https://images.unsplash.com/photo-1599423300746-b62533397364?w=1200&q=85',
     jsonb_build_object(
       'images', jsonb_build_array(
@@ -54,7 +91,7 @@ VALUES
     'ACTIVE',
     'San Fernando, Pampanga',
     'San Fernando',
-    'Search fixture — Phase 2 tower cluster for typeahead.',
+    'Search fixture: Phase 2 tower cluster for typeahead.',
     'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=85',
     jsonb_build_object(
       'images', jsonb_build_array(
@@ -73,7 +110,7 @@ ON CONFLICT (slug) DO UPDATE SET
   updated_at = now();
 
 -- ── Properties (tower ∈ Monaco|Bali|Barbados; unique ACTIVE tower+unit) ──
--- Org: Kame (405ea07f-…) — same as kame-homes / parking seed org.
+-- Org: Kame (405ea07f-…) — same as Kame Home / parking.
 INSERT INTO properties (
   id, organization_id, name, slug, type, status, residence_name,
   max_guests, tower, unit_number, tower_and_unit, city, address, settings

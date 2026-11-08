@@ -1,10 +1,10 @@
-import { BadgeCheck, Check, Shield } from 'lucide-react';
+import { Check } from 'lucide-react';
 
-import { VerificationStatusBadge } from '@/features/dashboard/org/components/verification/VerificationStatusBadge';
 import type { OrgVerificationStatus } from '@/features/dashboard/org/lib/orgVerification';
 import {
   type OrgVerificationRejectionKind,
   type VerificationTierDefinition,
+  verificationStatusLabel,
 } from '@/features/dashboard/org/lib/orgVerificationTiers';
 
 import { cn } from '@/lib/utils';
@@ -41,42 +41,40 @@ export function defaultVerificationStepIndex(tiers: VerificationTierDefinition[]
   return 1;
 }
 
-function tierAccentClass(status: OrgVerificationStatus, selected: boolean): string {
-  if (status === 'approved') {
-    return selected
-      ? 'border-emerald-500/50 bg-emerald-500/[0.08] ring-1 ring-emerald-500/25'
-      : 'border-emerald-500/30 bg-emerald-500/[0.04]';
-  }
-  if (status === 'pending') {
-    return selected
-      ? 'border-amber-500/50 bg-amber-500/[0.08] ring-1 ring-amber-500/25'
-      : 'border-amber-500/30 bg-amber-500/[0.04]';
-  }
-  if (status === 'rejected') {
-    return selected
-      ? 'border-destructive/50 bg-destructive/[0.06] ring-1 ring-destructive/20'
-      : 'border-destructive/30 bg-destructive/[0.04]';
-  }
-  return selected
-    ? 'border-primary bg-primary/[0.06] ring-1 ring-primary/20'
-    : 'border-border bg-muted/30 hover:bg-muted/45';
+function statusDotClass(status: OrgVerificationStatus, changesRequested: boolean): string {
+  if (status === 'approved') return 'bg-emerald-500';
+  if (status === 'pending' || changesRequested) return 'bg-amber-500';
+  if (status === 'rejected') return 'bg-destructive';
+  return 'bg-muted-foreground/40';
 }
 
-function TierLevelBadge({ level, approved }: { level: number; approved: boolean }) {
+function statusTextClass(status: OrgVerificationStatus, changesRequested: boolean): string {
+  if (status === 'approved') return 'text-emerald-700 dark:text-emerald-400';
+  if (status === 'pending' || changesRequested) return 'text-amber-700 dark:text-amber-400';
+  if (status === 'rejected') return 'text-destructive';
+  return 'text-muted-foreground';
+}
+
+function TierLevelMark({ level, approved }: { level: number; approved: boolean }) {
   return (
     <span
       className={cn(
-        'border-border bg-background text-muted-foreground flex size-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold',
-        approved && 'border-emerald-600 bg-emerald-600 text-white'
+        'flex size-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold',
+        approved
+          ? 'border-emerald-600 bg-emerald-600 text-white'
+          : 'border-border bg-background text-muted-foreground'
       )}
       aria-hidden
     >
-      {approved ? <Check className="size-3.5" strokeWidth={2.5} /> : level}
+      {approved ? <Check className="size-3" strokeWidth={3} /> : level}
     </span>
   );
 }
 
-/** Clickable tier rank cards — tier status is shown once per tab only. */
+/**
+ * Compact tier switcher. One tier panel shows at a time, so status lives here once
+ * (dot + short label) instead of being repeated on a full-height card per tier.
+ */
 export function VerificationTierProgress({
   tiers,
   activeStep,
@@ -88,10 +86,10 @@ export function VerificationTierProgress({
     <nav aria-label="Verification tiers" className="w-full">
       <ol className="grid grid-cols-2 gap-2">
         {tiers.map((tier, index) => {
-          const kind = rejectionKindFor(tier, hostRejectionKind, verifiedRejectionKind);
           const selected = index === activeStep;
-          const isHostTier = tier.level === 1;
           const approved = tier.status === 'approved';
+          const kind = rejectionKindFor(tier, hostRejectionKind, verifiedRejectionKind);
+          const changesRequested = tier.status === 'rejected' && kind === 'changes';
 
           return (
             <li key={tier.id} className="min-w-0">
@@ -100,57 +98,35 @@ export function VerificationTierProgress({
                 onClick={() => onStepChange(index)}
                 aria-current={selected ? 'step' : undefined}
                 className={cn(
-                  'flex min-h-[44px] w-full flex-col gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors duration-200',
+                  'flex min-h-[52px] w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition-colors',
                   'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-                  tierAccentClass(tier.status, selected)
+                  selected
+                    ? 'border-primary/50 bg-primary/[0.06] ring-primary/20 ring-1'
+                    : 'border-border bg-muted/20 hover:bg-muted/40'
                 )}
               >
-                <div className="flex w-full min-w-0 items-start gap-2">
-                  <TierLevelBadge level={tier.level} approved={approved} />
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex min-w-0 items-start justify-between gap-2">
-                      <p
-                        className={cn(
-                          'truncate text-sm font-semibold leading-tight',
-                          selected ? 'text-foreground' : 'text-foreground/90'
-                        )}
-                      >
-                        {tier.title}
-                      </p>
-                      {isHostTier ? (
-                        <Shield
-                          className={cn(
-                            'mt-0.5 size-3.5 shrink-0',
-                            approved ? 'text-emerald-600' : 'text-muted-foreground/60'
-                          )}
-                          aria-hidden
-                        />
-                      ) : (
-                        <BadgeCheck
-                          className={cn(
-                            'mt-0.5 size-3.5 shrink-0',
-                            approved ? 'text-emerald-600' : 'text-primary/70'
-                          )}
-                          aria-hidden
-                        />
+                <TierLevelMark level={tier.level} approved={approved} />
+                <span className="min-w-0 flex-1">
+                  <span className="text-foreground block truncate text-[13px] font-semibold leading-tight">
+                    {tier.title}
+                  </span>
+                  <span className="mt-0.5 flex min-w-0 items-center gap-1">
+                    <span
+                      className={cn(
+                        'size-1.5 shrink-0 rounded-full',
+                        statusDotClass(tier.status, changesRequested)
                       )}
-                    </div>
-                    <p className="text-muted-foreground truncate text-[11px] leading-none">
-                      Tier {tier.level} ·{' '}
-                      {tier.requirementLabel ??
-                        (isHostTier ? 'Required to host' : 'Optional badge')}
-                    </p>
-                  </div>
-                </div>
-                <VerificationStatusBadge
-                  status={tier.status}
-                  kind={kind}
-                  showIcon
-                  className="w-fit"
-                />
-                <span className="sr-only">
-                  Tier {tier.level}: {tier.title}
-                  {selected ? ', current view' : ''}
+                      aria-hidden
+                    />
+                    <span
+                      className={cn(
+                        'truncate text-[11px] leading-none',
+                        statusTextClass(tier.status, changesRequested)
+                      )}
+                    >
+                      {verificationStatusLabel(tier.status, kind)}
+                    </span>
+                  </span>
                 </span>
               </button>
             </li>

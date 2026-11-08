@@ -25,6 +25,7 @@ export function pricingPropertyRoute(propertyRoute: PropertyRouteFn): ReactNode 
         )}
       />
       <Route path="calendar" element={<Navigate to="../pricing" replace />} />
+      <Route path="pricing/calendar" element={<Navigate to=".." replace />} />
     </>
   );
 }

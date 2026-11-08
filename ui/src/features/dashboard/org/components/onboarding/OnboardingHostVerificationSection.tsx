@@ -1,8 +1,12 @@
+import type { ReactNode } from 'react';
+
 import { OnboardingProofUpload } from '@/features/dashboard/org/components/onboarding/OnboardingProofUpload';
 import {
   propertyAccessScreenshotHelp,
   validateVerificationFile,
 } from '@/features/dashboard/org/lib/orgVerification';
+
+import { cn } from '@/lib/utils';
 
 type Props = {
   file: File | null;
@@ -14,6 +18,12 @@ type Props = {
   socialProofError: string | null;
   onSocialProofChange: (file: File | null, preview: string | null) => void;
   onUploadError: (message: string | null) => void;
+  /** Optional live-capture action rendered above the Valid ID field. */
+  verifyAction?: ReactNode;
+  /** Own bordered card. Off when the parent already provides one. */
+  framed?: boolean;
+  /** One-line dropzones. */
+  compact?: boolean;
 };
 
 export function OnboardingHostVerificationSection({
@@ -26,15 +36,21 @@ export function OnboardingHostVerificationSection({
   socialProofError,
   onSocialProofChange,
   onUploadError,
+  verifyAction,
+  framed = true,
+  compact = false,
 }: Props) {
   return (
-    <div className="border-border space-y-4 rounded-xl border p-3 sm:p-4">
-      <div className="space-y-0.5">
-        <p className="text-foreground text-sm font-semibold">Host verification</p>
-        <p className="text-muted-foreground text-xs leading-snug">
-          Upload a government-issued photo ID that matches your host name.
-        </p>
-      </div>
+    <div className={cn('space-y-4', framed && 'border-border rounded-xl border p-3 sm:p-4')}>
+      {framed ? (
+        <div className="space-y-0.5">
+          <p className="text-foreground text-sm font-semibold">Host verification</p>
+          <p className="text-muted-foreground text-xs leading-snug">
+            Upload a government-issued photo ID that matches your host name.
+          </p>
+        </div>
+      ) : null}
+      {verifyAction}
       <OnboardingProofUpload
         id="onboarding-valid-id"
         label="Valid ID"
@@ -42,6 +58,7 @@ export function OnboardingHostVerificationSection({
         file={file}
         previewUrl={previewUrl}
         error={error}
+        compact={compact}
         onFileChange={(nextFile, preview) => {
           if (nextFile) {
             const err = validateVerificationFile(nextFile);
@@ -62,6 +79,7 @@ export function OnboardingHostVerificationSection({
         file={socialProofFile}
         previewUrl={socialProofPreviewUrl}
         error={socialProofError}
+        compact={compact}
         onFileChange={(nextFile, preview) => {
           if (nextFile) {
             const err = validateVerificationFile(nextFile);
