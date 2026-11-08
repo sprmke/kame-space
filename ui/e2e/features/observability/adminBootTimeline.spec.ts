@@ -16,9 +16,19 @@ import {
  *   npx playwright test ui/e2e/features/observability/adminBootTimeline.spec.ts \
  *     --project=chromium-ci --reporter=list
  *
- * What it measures, in order: how long the full-screen loader was visible, how long the
+ * What it measures: how long the first full-screen loader window was visible, how long the
  * route skeleton was visible, and the time from entry script to the dashboard's primary
  * data being on screen (`route:content`).
+ *
+ * Two things to keep in mind when reading the numbers:
+ *
+ * - `route:content` fires when the data is ready, but the loader hides ~220 ms later
+ *   (`HIDE_BRIDGE_MS`), so add that bridge to get what the user actually saw.
+ * - `AppLoader` is ref-counted and can cycle more than once during a boot. `loaderMs` is
+ *   the **first** show-to-hide window; the absolute hide time is not meaningful.
+ * - Timings come from a dev server on the local machine. Clear `ui/node_modules/.vite`
+ *   before a comparison run: a cache built while the tree was stashed will serve a stale
+ *   module graph and quietly invalidate the measurement.
  */
 
 type Mark = { name: string; startTime: number };
@@ -42,18 +52,10 @@ async function readTimeline(page: Parameters<typeof test>[0]['page']) {
     return a === null || b === null ? null : Math.round(b - a);
   };
 
-  const loaderHide = at('loader:hide');
-
   return {
     loaderMs: span('loader:show', 'loader:hide'),
     skeletonMs: span('skeleton:show', 'skeleton:hide'),
     routeContentMs: span('app:script-start', 'route:content'),
-    /**
-     * What the user actually experiences. `route:content` fires when the data is ready,
-     * but the full-screen loader covers the page until it hides (220ms bridge later), so
-     * content-ready alone overstates how fast the app felt.
-     */
-    perceivedMs: loaderHide === null ? null : Math.round(loaderHide),
     firstRenderMs: span('app:script-start', 'app:first-render'),
     sawLoader: at('loader:show') !== null,
     sawSkeleton: at('skeleton:show') !== null,
@@ -69,7 +71,7 @@ async function waitForLoaderGone(page: Parameters<typeof test>[0]['page']) {
     .toBe(true);
 }
 
-test.describe('@perf host dashboard cold open', () => {
+test.describe('@live host dashboard cold open', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test('reports loader, skeleton and content timings', async ({ page }) => {
@@ -160,8 +162,20 @@ test.describe('@perf host dashboard cold open', () => {
         { timeout: 30_000 }
       )
       .toBe(true);
-    // Let the persister finish its IndexedDB write before reloading.
-    await page.waitForTimeout(1500);
+    // Wait for the persister to actually create its IndexedDB store instead of guessing
+    // at a delay: a fixed timeout either wastes time or reloads before the write lands,
+    // which would silently measure a cold open twice.
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(async () => {
+            if (typeof indexedDB === 'undefined' || !indexedDB.databases) return false;
+            const databases = await indexedDB.databases();
+            return databases.some((database) => Boolean(database.name));
+          }),
+        { timeout: 15_000 }
+      )
+      .toBe(true);
 
     await page.reload();
     await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible({

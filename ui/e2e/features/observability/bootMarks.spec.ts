@@ -43,7 +43,7 @@ async function readMarks(page: PerfPage): Promise<string[]> {
   )) as string[];
 }
 
-test.describe('@smoke @ci boot timing marks', () => {
+test.describe('@ci boot timing marks', () => {
   test('public landing records script start, first render and content', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Find your next stay/i })).toBeVisible({
