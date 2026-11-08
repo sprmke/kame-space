@@ -56,8 +56,31 @@ function db(): Promise<IDBPDatabase<OutboxDB>> {
       database.addEventListener('close', drop);
       return database;
     });
+    // Do not cache a failed open: Safari reports "unable to open database file on disk"
+    // when storage is briefly unavailable, and every later call must be able to retry.
+    dbPromise.catch(() => {
+      dbPromise = null;
+    });
   }
   return dbPromise;
+}
+
+/**
+ * `InvalidStateError: ... connection is closing` happens when a transaction starts on a
+ * handle that `releaseOutboxConnection` (or a blocked delete) just closed. Drop the cached
+ * handle and retry once on a fresh connection; any other failure is the caller's to handle.
+ */
+async function withDb<T>(run: (database: IDBPDatabase<OutboxDB>) => Promise<T>): Promise<T> {
+  const attempt = async () => run(await db());
+  try {
+    return await attempt();
+  } catch (error) {
+    const name = error && typeof error === 'object' ? (error as { name?: unknown }).name : '';
+    const message = error instanceof Error ? error.message : '';
+    if (name !== 'InvalidStateError' || !/clos(e|ing)/i.test(message)) throw error;
+    dbPromise = null;
+    return attempt();
+  }
 }
 
 /** Close the cached handle so a following `deleteDatabase` is not blocked. */
@@ -85,30 +108,30 @@ export async function outboxAdd(
     attempts: 0,
     status: 'pending',
   };
-  await (await db()).put('mutations', full);
+  await withDb((database) => database.put('mutations', full));
   return full;
 }
 
 export async function outboxList(): Promise<OutboxItem[]> {
-  const all = await (await db()).getAllFromIndex('mutations', 'by-createdAt');
-  return all;
+  return withDb((database) => database.getAllFromIndex('mutations', 'by-createdAt'));
 }
 
 export async function outboxRemove(id: string): Promise<void> {
-  await (await db()).delete('mutations', id);
+  await withDb((database) => database.delete('mutations', id));
 }
 
 export async function outboxUpdate(id: string, patch: Partial<OutboxItem>): Promise<void> {
-  const database = await db();
-  const existing = await database.get('mutations', id);
-  if (!existing) return;
-  await database.put('mutations', { ...existing, ...patch });
+  await withDb(async (database) => {
+    const existing = await database.get('mutations', id);
+    if (!existing) return;
+    await database.put('mutations', { ...existing, ...patch });
+  });
 }
 
 export async function outboxClear(): Promise<void> {
-  await (await db()).clear('mutations');
+  await withDb((database) => database.clear('mutations'));
 }
 
 export async function outboxCount(): Promise<number> {
-  return (await db()).count('mutations');
+  return withDb((database) => database.count('mutations'));
 }

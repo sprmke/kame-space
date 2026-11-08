@@ -7,7 +7,7 @@ import {
 
 import * as Sentry from '@sentry/react';
 
-import { detectAnalyticsEnvironment, detectAppTrack } from '@/lib/posthog/env';
+import { detectAnalyticsEnvironment, detectAppTrack, isLoopbackHost } from '@/lib/posthog/env';
 import { scrubRecord, scrubUrl } from '@/lib/telemetry/scrub';
 
 /**
@@ -39,9 +39,7 @@ export function isSentryInitialised(): boolean {
  * Exported with injectable inputs so the policy is testable without booting the SDK.
  */
 export function resolveTracesSampleRate(
-  raw: string | undefined = import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as
-    | string
-    | undefined,
+  raw: string | undefined = import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as string | undefined,
   environment: string = detectAnalyticsEnvironment()
 ): number {
   const trimmed = (raw ?? '').trim();
@@ -93,6 +91,11 @@ export function scrubEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent {
 
 export function initSentry(): void {
   if (!dsn || initialised) return;
+
+  // A production build served from a developer machine (`vite preview`, Playwright) must
+  // never post to the production project: `import.meta.env.DEV` is false there, but the
+  // traffic is still test noise. Real hosts are never loopback.
+  if (typeof window !== 'undefined' && isLoopbackHost(window.location.hostname)) return;
 
   try {
     Sentry.init({

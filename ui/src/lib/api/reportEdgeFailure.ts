@@ -5,14 +5,15 @@ import { edgeFunctionName } from './edgeRequestId';
 /**
  * One report per broken edge call, at the shared wrappers only.
  *
- * A failed edge call is a fault when the server broke (5xx) or the request never landed
- * (status 0 while the browser believes it is online). Everything else is an outcome the
- * caller already handles:
+ * A failed edge call is a fault only when the server broke (5xx). Everything else is an
+ * outcome the caller already handles:
  *
  * - 4xx is the handler answering correctly. Validation, 401 step-up, 409 race, 429 quota
  *   are all normal traffic; reporting them would bury the real faults.
- * - Offline is expected. `navigator.onLine === false` means the user's connection dropped,
- *   not that the platform failed.
+ * - Transport failures (status 0) mean the request never reached the server: dropped Wi-Fi,
+ *   a captive portal, DNS/ad-blocker interference, or a flaky mobile network. `navigator.onLine`
+ *   is not a reliable signal there (it stays true with no route), so this is a client
+ *   connectivity outcome, not a platform fault. PostHog counts the outcome; Sentry stays quiet.
  *
  * Fingerprint is `['edge', fn, statusBucket]` so one broken endpoint is one issue instead
  * of thousands of one-offs.
@@ -28,7 +29,8 @@ export type EdgeFailure = {
 };
 
 function isReportable(status: number): boolean {
-  if (status === 0) return typeof navigator === 'undefined' || navigator.onLine !== false;
+  // 0 is a transport failure: the request never landed. Connectivity, not a server fault.
+  if (status === 0) return false;
   return status >= 500;
 }
 

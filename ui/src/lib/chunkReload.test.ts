@@ -1,10 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  decideChunkRecovery,
-  isChunkLoadError,
-  reloadForChunkError,
-} from '@/lib/chunkReload';
+import { decideChunkRecovery, isChunkLoadError, reloadForChunkError } from '@/lib/chunkReload';
 
 function memoryStorage() {
   const map = new Map<string, string>();
@@ -136,7 +132,7 @@ describe('reloadForChunkError', () => {
 });
 
 describe('chunk-load reporting', () => {
-  it('warns through reload and reset, and errors only when recovery failed', async () => {
+  it('stays quiet through reload and reset, and reports only when recovery failed', async () => {
     vi.resetModules();
     const capture = vi.fn();
     vi.doMock('@/lib/sentry/capture', () => ({ captureError: capture }));
@@ -145,20 +141,18 @@ describe('chunk-load reporting', () => {
     const storage = memoryStorage();
     const fn = vi.fn();
 
+    // First failure: the normal stale-tab-after-deploy case. Reloading is the fix.
     expect(reload({ storage, now: 5_000, pageId: 'a', reload: fn })).toBe(true);
-    expect(capture.mock.calls[0]?.[1]).toMatchObject({
-      level: 'warning',
-      fingerprint: ['chunk_load', 'first_failure'],
-    });
+    expect(capture).not.toHaveBeenCalled();
 
+    // Second failure: reset the stale worker. Still recovery, not an incident.
     expect(reload({ storage, now: 6_000, pageId: 'b', reload: fn })).toBe(true);
-    expect(capture.mock.calls[1]?.[1]).toMatchObject({
-      level: 'warning',
-      fingerprint: ['chunk_load', 'shell_reset'],
-    });
+    expect(capture).not.toHaveBeenCalled();
 
+    // Recovery failed twice: the new build itself cannot load.
     expect(reload({ storage, now: 7_000, pageId: 'c', reload: fn })).toBe(false);
-    expect(capture.mock.calls[2]?.[1]).toMatchObject({
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(capture.mock.calls[0]?.[1]).toMatchObject({
       level: 'error',
       fingerprint: ['chunk_load', 'repeat_failure'],
     });
