@@ -2,7 +2,7 @@
 title: 'Comprehensive unit test coverage for all pages and features'
 status: done
 tags: [testing, vitest, unit-tests, coverage]
-updated: 2026-09-23
+updated: 2026-11-08
 stage: done
 kind: plan
 ---
@@ -23,6 +23,33 @@ kind: plan
 | **Route guides**              | Existing per-route **Testing** sections + [`docs/guides/testing/README.md`](../../guides/testing/README.md) pyramid                                                                  |
 
 **Follow-up (optional):** deepen export-only tests flagged by `lib-behavioral-coverage-audit.mjs` using the session tables below.
+
+## Drift closure (2026-11-08, execute-plan)
+
+> **Revised 2026-11-08 (execute-plan):** reopened the shipped plan against the current tree.
+> `lib-unit-test-inventory.mjs` reports **85** lib files with no colocated test, all added
+> after the 2026-09-23 ship. This pass closes that delta. The session tables below stay as
+> the historical record of the original 461.
+
+| Finding                                                             | Detail                                                                                                                                                                       |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Drift                                                               | 1,707 lib `.ts` files; 85 have no sibling test. Nothing from the original sessions regressed.                                                                                |
+| Scope                                                               | The 85 only. No second pass over already-tested modules.                                                                                                                     |
+| N/A rule                                                            | The inventory script had no "no test needed" path, so 0-missing was only reachable by writing tautological tests. Add a file-level `test: N/A — <reason>` marker it honours. |
+| Quality bar                                                         | `docs/workflow/planned/full-app-test-architecture.md` (C8) bans export-only scaffolds. Tests assert behaviour or an enforced rule, never `expect(CONST).toBe(CONST)`.        |
+| Docs                                                                | `docs/guides/testing/README.md` coverage table + this file. No route-guide rows: no route UX changed.                                                                        |
+| Access / Audit / Observability / Loading / Mobile / Unsaved changes | N/A — tests only. No runtime behaviour, no UI, no mutation, no new dependency.                                                                                               |
+
+### Decisions
+
+| Decision             | Choice                                                                                                                  | Why                                                                                                                                                     |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Plan lifecycle       | stay in `done/` with this section instead of moving to `in-progress/`                                                   | The 2026-09-23 slice is genuinely shipped. Reopening it would report shipped work as unfinished, and `workflow-move.sh start` does not resolve `done/`. |
+| N/A representation   | `/* test: N/A — <reason> */` in the file's leading comment block                                                        | Durable in the file itself (survives renames) and keeps the 0-missing gate honest.                                                                      |
+| Copy-only modules    | assert the shared copy rule, not the literal strings                                                                    | A copy module's contract is `collectHelpCopyViolations` (no em dash, ≤200 chars, no AI-tell phrases, unique keys).                                      |
+| Browser-only modules | behavioural test against a stub (`fetch`, `document`, `navigator`) when the logic is real; N/A only for pure SDK wiring | C8: no scaffolds.                                                                                                                                       |
+| Verification         | `node scripts/dev/lib-unit-test-inventory.mjs` → 0, `bun run test`, `type-check`, `lint`                                | Each is a command that proves the phase, not a description.                                                                                             |
+| Rollback             | revert the branch                                                                                                       | Test-only change: no migrations, no runtime behaviour, nothing to unwind.                                                                               |
 
 ## Goal
 

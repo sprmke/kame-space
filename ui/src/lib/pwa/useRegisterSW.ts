@@ -1,3 +1,8 @@
+/**
+ * test: N/A — browser service-worker registration lifecycle (Workbox, BroadcastChannel,
+ * navigator.serviceWorker). The decision logic lives in `updateController.ts` and
+ * `swRegistration.ts`, which have colocated Vitest coverage.
+ */
 import { useCallback, useState, type Dispatch, type SetStateAction } from 'react';
 
 import {
