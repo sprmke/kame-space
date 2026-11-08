@@ -87,9 +87,17 @@ messages, or today's arrivals.
 
 **Common host questions**
 
+**Why does KameSpace have a new icon?**
+
+The four-piece shell is the new KameSpace logo. Your account, bookings and organization branding stay the same. A saved home-screen icon or shared link preview may take longer to refresh than the website.
+
 - Q: I installed the app and it opens to a booking list instead of my dashboard. Why?
   A: The app remembers the property or parking space you used last. Open the dashboard you want once and it will be remembered next time.
 - Q: The shortcut opens the wrong property. How do I change it?
   A: Shortcuts open your most recently used property or parking space. Switch to the one you want in the app, then use the shortcut again.
 - Q: I was signed out after installing. Is something broken?
   A: No. On iPhone the installed app stores its own sign-in, so you may need to sign in once inside the app.
+
+## Platform branding
+
+Shared platform chrome uses the approved F5 shell mark. Light and dark themes keep the teal icon; wordmark text adapts to the background. The public HTML includes a branded default share image, while listing links retain their property photos. Asset inventory and regeneration: [brand assets](../../architecture/brand-assets.md).

@@ -1,10 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="Kame Space">
-  <defs>
-    <linearGradient id="kameBrand" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#24A88E" />
-      <stop offset="1" stop-color="#4EB8A3" />
-    </linearGradient>
-  </defs>
-  <rect width="1024" height="1024" rx="307" fill="url(#kameBrand)" />
-  <path fill="#FFFFFF" transform="translate(308.38 717) scale(0.55034 -0.55034)" d="M72 0V745H208V413L488 745H659L401 438L668 0H508L308 328L208 209V0Z" />
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="KameSpace">
+<rect width="1024" height="1024" rx="350" fill="#2DAA97"/>
+<path fill="#FFFFFF" d="M222 470C222 359 309 274 418 274H456Q496 274 496 314V466Q496 536 426 536H268Q222 536 222 490Z"/>
+<path fill="#BDEFE1" d="M520 320Q520 218 622 218H690C766 218 814 266 814 342V418Q814 502 730 502H604Q520 502 520 418Z"/>
+<path fill="#BDEFE1" d="M222 610Q222 558 274 558H424Q488 558 488 622V760Q488 810 438 810H410C301 810 222 733 222 624Z"/>
+<path fill="#FFFFFF" d="M512 614Q512 526 600 526H740Q782 526 782 568V598C782 705 698 792 590 792H552Q512 792 512 752Z"/>
 </svg>

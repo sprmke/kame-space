@@ -80,3 +80,7 @@ No server round-trip beyond the SPA route — **`LegacySignInRedirect`** renders
 - [For hosts landing](./for-hosts.md)
 - [Route index](./README.md)
 - [`docs/architecture/routing.md`](../../architecture/routing.md)
+
+## Platform mark
+
+The guest sign-in dialog uses the shared F5 shell icon. Login behavior and organization logos are unchanged. See [brand assets](../../architecture/brand-assets.md).

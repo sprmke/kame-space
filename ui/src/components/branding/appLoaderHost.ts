@@ -9,7 +9,7 @@
 
 import { buildWordmarkWave } from '@/components/branding/appLoaderWordmark';
 import { markBoot } from '@/lib/perf/bootMarks';
-import { platformMarkInitial, platformWordmarkParts } from '@/lib/platformBranding';
+import { platformWordmarkParts } from '@/lib/platformBranding';
 
 const HOST_ID = 'app-loader-host';
 /** Bridges Suspense → RequireAdmin → RequireOrgContext handoffs without a blank flash. */
@@ -28,12 +28,9 @@ function clearHideTimer() {
 
 function buildLockupHtml(): string {
   const parts = platformWordmarkParts();
-  const initial = platformMarkInitial();
   const words = parts ? buildWordmarkWave(parts) : [];
 
-  const markInner = initial
-    ? `<span class="app-loader-mark__initial">${escapeHtml(initial)}</span>`
-    : `<span class="app-loader-mark__dot"></span>`;
+  const markInner = '<img src="/brand/kame-space-mark.svg" width="48" height="48" alt="" />';
 
   const wordmark =
     words.length > 0
