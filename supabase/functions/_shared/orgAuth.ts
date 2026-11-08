@@ -1051,6 +1051,81 @@ export async function resolveAssignedListingIdsForOrgUser(
 }
 
 /**
+ * Listings where an org user holds a specific property permission leaf.
+ *
+ * Used by the org Reviews rollup to decide, per listing, whether the caller may
+ * respond to a review or write a guest review. Owners and org admins with
+ * `all_listings` get every property; property members are matched on their
+ * stored permission array (the same source `verifyPropertyAccess` uses).
+ */
+export async function resolvePropertyIdsWithPermissionForOrgUser(
+  userId: string,
+  orgId: string,
+  permission: TeamPermissionId
+): Promise<string[]> {
+  const supabase = createServiceClient();
+
+  const [{ data: org, error: orgError }, { data: propertyRows, error: propertyError }] =
+    await Promise.all([
+      supabase.from('organizations').select('owner_id').eq('id', orgId).maybeSingle(),
+      supabase.from('properties').select('id').eq('organization_id', orgId),
+    ]);
+
+  if (orgError || !org) {
+    console.error('[orgAuth] org lookup failed:', orgError?.message);
+    throw forbiddenResponse('Could not verify organization access');
+  }
+  if (propertyError) {
+    console.error('[orgAuth] property lookup failed:', propertyError.message);
+    throw forbiddenResponse('Could not verify organization access');
+  }
+
+  const allPropertyIds = [
+    ...new Set((propertyRows ?? []).map((row) => String(row.id)).filter(Boolean)),
+  ];
+
+  if ((org as { owner_id: string }).owner_id === userId) {
+    return allPropertyIds;
+  }
+
+  const { data: orgMember, error: orgMemberError } = await supabase
+    .from('organization_members')
+    .select('status, all_listings')
+    .eq('organization_id', orgId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (orgMemberError) {
+    console.error('[orgAuth] org member lookup failed:', orgMemberError.message);
+    throw forbiddenResponse('Could not verify organization access');
+  }
+  if (orgMember && orgMember.status === 'active' && orgMember.all_listings === true) {
+    return allPropertyIds;
+  }
+
+  const { data: memberRows, error: memberError } = await supabase
+    .from('property_members')
+    .select('property_id, permissions, properties!inner(organization_id)')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .eq('properties.organization_id', orgId);
+
+  if (memberError) {
+    console.error('[orgAuth] property member lookup failed:', memberError.message);
+    throw forbiddenResponse('Could not verify organization access');
+  }
+
+  return [
+    ...new Set(
+      (memberRows ?? [])
+        .filter((row) => normalizePermissionIds(row.permissions).includes(permission))
+        .map((row) => String(row.property_id))
+        .filter(Boolean)
+    ),
+  ];
+}
+
+/**
  * Listings whose activity log this member may read: an active membership that carries the
  * `activity:view` leaf. Owners, org admins, and platform admins bypass this (see list-activity-log).
  */

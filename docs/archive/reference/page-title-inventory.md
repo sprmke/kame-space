@@ -68,7 +68,7 @@ All use `Kame Homes - ${page}`.
 | Route                        | Page name       | Status |
 | ---------------------------- | --------------- | ------ |
 | `/for-hosts/login`           | Sign In         | Set    |
-| `/for-hosts/register`        | Register        | Set    |
+| `/for-guests/login`          | Sign In         | Set    |
 | `/for-hosts/forgot-password` | Forgot Password | Set    |
 | `/for-hosts/reset-password`  | Reset Password  | Set    |
 | `/for-hosts/verify-email`    | Verify Email    | Set    |

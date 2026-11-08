@@ -12,7 +12,7 @@ async function cliEval(js) {
   }
 }
 
-const BASE = 'http://localhost:5173/org/kame-home/property/monaco-2612';
+const BASE = 'http://localhost:5173/org/kame-homes/property/kame-home';
 
 console.log('=== TELEGRAM ===');
 await $`bun x playwright-cli goto ${`${BASE}/notifications`}`.nothrow().quiet();
@@ -30,8 +30,16 @@ let snap = await cliEval(`(() => {
 console.log('chat_module', JSON.stringify(snap));
 
 // Click Connect if available (re-verify existing credentials) — avoid logging secrets
-const connectOut = await $`bun x playwright-cli click ${`getByRole('button', { name: /^Connect$/ })`}`.nothrow().text();
-console.log('connect_click', /Ran Playwright|Error|strict mode/i.test(connectOut) ? connectOut.match(/Error[\s\S]{0,200}|### Ran[\s\S]{0,120}|strict mode[\s\S]{0,120}/)?.[0] : 'ok');
+const connectOut =
+  await $`bun x playwright-cli click ${`getByRole('button', { name: /^Connect$/ })`}`
+    .nothrow()
+    .text();
+console.log(
+  'connect_click',
+  /Ran Playwright|Error|strict mode/i.test(connectOut)
+    ? connectOut.match(/Error[\s\S]{0,200}|### Ran[\s\S]{0,120}|strict mode[\s\S]{0,120}/)?.[0]
+    : 'ok'
+);
 await Bun.sleep(3500);
 
 snap = await cliEval(`(() => {
@@ -47,7 +55,9 @@ snap = await cliEval(`(() => {
 console.log('after_connect', JSON.stringify(snap));
 
 // Shared bot Save and test if visible
-await $`bun x playwright-cli click ${`getByRole('button', { name: 'Save and test' })`}`.nothrow().quiet();
+await $`bun x playwright-cli click ${`getByRole('button', { name: 'Save and test' })`}`
+  .nothrow()
+  .quiet();
 await Bun.sleep(3000);
 snap = await cliEval(`(() => ({
   toasts: [...document.querySelectorAll('[data-sonner-toast]')].map(t => t.innerText.trim()).slice(0,8),
@@ -73,7 +83,9 @@ await Bun.sleep(500);
 console.log('=== META INBOX ===');
 await $`bun x playwright-cli goto ${`${BASE}/inbox`}`.nothrow().quiet();
 await Bun.sleep(2500);
-await $`bun x playwright-cli click ${`getByRole('button', { name: 'Channels' })`}`.nothrow().quiet();
+await $`bun x playwright-cli click ${`getByRole('button', { name: 'Channels' })`}`
+  .nothrow()
+  .quiet();
 await Bun.sleep(1200);
 snap = await cliEval(`(() => {
   const dlg = [...document.querySelectorAll('[role=dialog]')].map(e => e.innerText.replace(/\\s+/g,' ').trim().slice(0,500));
@@ -82,7 +94,9 @@ snap = await cliEval(`(() => {
 console.log('channels', JSON.stringify(snap));
 
 // Capture navigation on Connect Meta without completing Facebook login
-await $`bun x playwright-cli click ${`getByRole('button', { name: 'Connect Meta' })`}`.nothrow().quiet();
+await $`bun x playwright-cli click ${`getByRole('button', { name: 'Connect Meta' })`}`
+  .nothrow()
+  .quiet();
 await Bun.sleep(2500);
 snap = await cliEval(`(() => {
   const dlgs = [...document.querySelectorAll('[role=dialog]')].map(e => e.innerText.replace(/\\s+/g,' ').trim().slice(0,400));
@@ -112,7 +126,9 @@ snap = await cliEval(`(() => {
 })()`);
 console.log('marketing', JSON.stringify(snap));
 
-await $`bun x playwright-cli click ${`getByRole('button', { name: /Publish/i })`}`.nothrow().quiet();
+await $`bun x playwright-cli click ${`getByRole('button', { name: /Publish/i })`}`
+  .nothrow()
+  .quiet();
 await Bun.sleep(2000);
 snap = await cliEval(`(() => {
   const dlgs = [...document.querySelectorAll('[role=dialog]')].map(e => e.innerText.replace(/\\s+/g,' ').trim().slice(0,800));

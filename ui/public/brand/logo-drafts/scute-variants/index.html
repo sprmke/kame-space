@@ -1,0 +1,1914 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Kame Space, Scute House variants</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        background: #f6f7f7;
+        color: #0f2e29;
+      }
+      header {
+        padding: 32px 24px 8px;
+        max-width: 1200px;
+        margin: auto;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0;
+      }
+      main {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 20px;
+        padding: 24px;
+        max-width: 1200px;
+        margin: auto;
+      }
+      .card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 20px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+      .sw {
+        aspect-ratio: 1;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        padding: 14px;
+      }
+      .sw svg,
+      .sizes svg,
+      .lm svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      .light {
+        background: #f2f5f4;
+      }
+      .tile {
+        padding: 6px;
+      }
+      .dark {
+        background: #121212;
+      }
+      .lockup {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 16px 0 4px;
+      }
+      .lm {
+        width: 36px;
+      }
+      .lockup span {
+        font-weight: 800;
+        font-size: 22px;
+        letter-spacing: -0.02em;
+      }
+      .sizes {
+        display: flex;
+        align-items: flex-end;
+        gap: 12px;
+        margin: 12px 0;
+      }
+      h2 {
+        font-size: 16px;
+        margin: 8px 0 2px;
+      }
+      p {
+        font-size: 13px;
+        color: #5b6b68;
+        margin: 0 0 8px;
+      }
+      code {
+        font-size: 11px;
+        color: #1f9e88;
+      }
+    </style>
+  </head>
+  <body>
+    <header><h1>Scute House variants</h1></header>
+    <main>
+      <section class="card">
+        <div class="row">
+          <div class="sw light">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#1F9E88"
+                stroke="#1F9E88"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="#FFFFFF"
+                stroke-width="3.5"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path
+                  d="M60 59 L60 10 M71.26 65.5 L112 50 M71.26 78.5 L112 94 M60 85 L60 112 M48.74 78.5 L8 94 M48.74 65.5 L8 50"
+                />
+              </g>
+            </svg>
+          </div>
+          <div class="sw tile">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="3.5"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path
+                  d="M60 59 L60 10 M71.26 65.5 L112 50 M71.26 78.5 L112 94 M60 85 L60 112 M48.74 78.5 L8 94 M48.74 65.5 L8 50"
+                />
+              </g>
+            </svg>
+          </div>
+          <div class="sw dark">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#4EB8A3"
+                stroke="#4EB8A3"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="#121212"
+                stroke-width="3.5"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path
+                  d="M60 59 L60 10 M71.26 65.5 L112 50 M71.26 78.5 L112 94 M60 85 L60 112 M48.74 78.5 L8 94 M48.74 65.5 L8 50"
+                />
+              </g>
+            </svg>
+          </div>
+        </div>
+        <div class="lockup">
+          <div class="lm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#1F9E88"
+                stroke="#1F9E88"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="#FFFFFF"
+                stroke-width="3.5"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path
+                  d="M60 59 L60 10 M71.26 65.5 L112 50 M71.26 78.5 L112 94 M60 85 L60 112 M48.74 78.5 L8 94 M48.74 65.5 L8 50"
+                />
+              </g>
+            </svg>
+          </div>
+          <span>Kame Space</span>
+        </div>
+        <div class="sizes">
+          <div style="width: 48px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="3.5"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path
+                  d="M60 59 L60 10 M71.26 65.5 L112 50 M71.26 78.5 L112 94 M60 85 L60 112 M48.74 78.5 L8 94 M48.74 65.5 L8 50"
+                />
+              </g>
+            </svg>
+          </div>
+          <div style="width: 32px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="3.5"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path
+                  d="M60 59 L60 10 M71.26 65.5 L112 50 M71.26 78.5 L112 94 M60 85 L60 112 M48.74 78.5 L8 94 M48.74 65.5 L8 50"
+                />
+              </g>
+            </svg>
+          </div>
+          <div style="width: 16px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="3.5"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path
+                  d="M60 59 L60 10 M71.26 65.5 L112 50 M71.26 78.5 L112 94 M60 85 L60 112 M48.74 78.5 L8 94 M48.74 65.5 L8 50"
+                />
+              </g>
+            </svg>
+          </div>
+        </div>
+        <h2>Refined</h2>
+        <p>Original idea, thinner lines and softer corners.</p>
+        <code>s1-refined.svg</code>
+      </section>
+      <section class="card">
+        <div class="row">
+          <div class="sw light">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#1F9E88"
+                stroke="#1F9E88"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="#FFFFFF"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M60 59 L60 10 M71.26 78.5 L112 94 M48.74 78.5 L8 94" />
+              </g>
+            </svg>
+          </div>
+          <div class="sw tile">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M60 59 L60 10 M71.26 78.5 L112 94 M48.74 78.5 L8 94" />
+              </g>
+            </svg>
+          </div>
+          <div class="sw dark">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#4EB8A3"
+                stroke="#4EB8A3"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="#121212"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M60 59 L60 10 M71.26 78.5 L112 94 M48.74 78.5 L8 94" />
+              </g>
+            </svg>
+          </div>
+        </div>
+        <div class="lockup">
+          <div class="lm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#1F9E88"
+                stroke="#1F9E88"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="#FFFFFF"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M60 59 L60 10 M71.26 78.5 L112 94 M48.74 78.5 L8 94" />
+              </g>
+            </svg>
+          </div>
+          <span>Kame Space</span>
+        </div>
+        <div class="sizes">
+          <div style="width: 48px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M60 59 L60 10 M71.26 78.5 L112 94 M48.74 78.5 L8 94" />
+              </g>
+            </svg>
+          </div>
+          <div style="width: 32px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M60 59 L60 10 M71.26 78.5 L112 94 M48.74 78.5 L8 94" />
+              </g>
+            </svg>
+          </div>
+          <div style="width: 16px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M60 59 L60 10 M71.26 78.5 L112 94 M48.74 78.5 L8 94" />
+              </g>
+            </svg>
+          </div>
+        </div>
+        <h2>Tri-plate</h2>
+        <p>Only three seams. Calmer, still clearly a shell.</p>
+        <code>s2-tri.svg</code>
+      </section>
+      <section class="card">
+        <div class="row">
+          <div class="sw light">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#1F9E88"
+                stroke="#1F9E88"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="#FFFFFF"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M48.74 78.5 L8 94 M60 85 L60 112 M71.26 78.5 L112 94" />
+              </g>
+            </svg>
+          </div>
+          <div class="sw tile">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M48.74 78.5 L8 94 M60 85 L60 112 M71.26 78.5 L112 94" />
+              </g>
+            </svg>
+          </div>
+          <div class="sw dark">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#4EB8A3"
+                stroke="#4EB8A3"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="#121212"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M48.74 78.5 L8 94 M60 85 L60 112 M71.26 78.5 L112 94" />
+              </g>
+            </svg>
+          </div>
+        </div>
+        <div class="lockup">
+          <div class="lm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#1F9E88"
+                stroke="#1F9E88"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="#FFFFFF"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M48.74 78.5 L8 94 M60 85 L60 112 M71.26 78.5 L112 94" />
+              </g>
+            </svg>
+          </div>
+          <span>Kame Space</span>
+        </div>
+        <div class="sizes">
+          <div style="width: 48px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M48.74 78.5 L8 94 M60 85 L60 112 M71.26 78.5 L112 94" />
+              </g>
+            </svg>
+          </div>
+          <div style="width: 32px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M48.74 78.5 L8 94 M60 85 L60 112 M71.26 78.5 L112 94" />
+              </g>
+            </svg>
+          </div>
+          <div style="width: 16px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M48.74 78.5 L8 94 M60 85 L60 112 M71.26 78.5 L112 94" />
+              </g>
+            </svg>
+          </div>
+        </div>
+        <h2>Clean roof</h2>
+        <p>Roof stays solid, plates only in the body.</p>
+        <code>s3-lower.svg</code>
+      </section>
+      <section class="card">
+        <div class="row">
+          <div class="sw light">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#1F9E88"
+                stroke="#1F9E88"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="#FFFFFF"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M48.74 65.5 L8 50 M71.26 65.5 L112 50 M60 85 L60 112" />
+              </g>
+            </svg>
+          </div>
+          <div class="sw tile">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M48.74 65.5 L8 50 M71.26 65.5 L112 50 M60 85 L60 112" />
+              </g>
+            </svg>
+          </div>
+          <div class="sw dark">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#4EB8A3"
+                stroke="#4EB8A3"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="#121212"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M48.74 65.5 L8 50 M71.26 65.5 L112 50 M60 85 L60 112" />
+              </g>
+            </svg>
+          </div>
+        </div>
+        <div class="lockup">
+          <div class="lm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#1F9E88"
+                stroke="#1F9E88"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="#FFFFFF"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M48.74 65.5 L8 50 M71.26 65.5 L112 50 M60 85 L60 112" />
+              </g>
+            </svg>
+          </div>
+          <span>Kame Space</span>
+        </div>
+        <div class="sizes">
+          <div style="width: 48px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M48.74 65.5 L8 50 M71.26 65.5 L112 50 M60 85 L60 112" />
+              </g>
+            </svg>
+          </div>
+          <div style="width: 32px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M48.74 65.5 L8 50 M71.26 65.5 L112 50 M60 85 L60 112" />
+              </g>
+            </svg>
+          </div>
+          <div style="width: 16px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <clipPath id="hc"><path d="M60 16 L105 52 V105 H15 V52 Z" /></clipPath>
+              <g
+                clip-path="url(#hc)"
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="4"
+                stroke-linejoin="round"
+              >
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M48.74 65.5 L8 50 M71.26 65.5 L112 50 M60 85 L60 112" />
+              </g>
+            </svg>
+          </div>
+        </div>
+        <h2>Y-plate</h2>
+        <p>Three seams fanning up from a door line.</p>
+        <code>s7-y.svg</code>
+      </section>
+      <section class="card">
+        <div class="row">
+          <div class="sw light">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#1F9E88"
+                stroke="#1F9E88"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="3"
+                stroke-linejoin="round"
+                d="M60 58 L72.12 65.00 V79.00 L60 86 L47.88 79.00 V65.00 Z"
+              />
+            </svg>
+          </div>
+          <div class="sw tile">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <path
+                fill="url(#g)"
+                stroke="url(#g)"
+                stroke-width="3"
+                stroke-linejoin="round"
+                d="M60 58 L72.12 65.00 V79.00 L60 86 L47.88 79.00 V65.00 Z"
+              />
+            </svg>
+          </div>
+          <div class="sw dark">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#4EB8A3"
+                stroke="#4EB8A3"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <path
+                fill="#121212"
+                stroke="#121212"
+                stroke-width="3"
+                stroke-linejoin="round"
+                d="M60 58 L72.12 65.00 V79.00 L60 86 L47.88 79.00 V65.00 Z"
+              />
+            </svg>
+          </div>
+        </div>
+        <div class="lockup">
+          <div class="lm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#1F9E88"
+                stroke="#1F9E88"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="3"
+                stroke-linejoin="round"
+                d="M60 58 L72.12 65.00 V79.00 L60 86 L47.88 79.00 V65.00 Z"
+              />
+            </svg>
+          </div>
+          <span>Kame Space</span>
+        </div>
+        <div class="sizes">
+          <div style="width: 48px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <path
+                fill="url(#g)"
+                stroke="url(#g)"
+                stroke-width="3"
+                stroke-linejoin="round"
+                d="M60 58 L72.12 65.00 V79.00 L60 86 L47.88 79.00 V65.00 Z"
+              />
+            </svg>
+          </div>
+          <div style="width: 32px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <path
+                fill="url(#g)"
+                stroke="url(#g)"
+                stroke-width="3"
+                stroke-linejoin="round"
+                d="M60 58 L72.12 65.00 V79.00 L60 86 L47.88 79.00 V65.00 Z"
+              />
+            </svg>
+          </div>
+          <div style="width: 16px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <path
+                fill="url(#g)"
+                stroke="url(#g)"
+                stroke-width="3"
+                stroke-linejoin="round"
+                d="M60 58 L72.12 65.00 V79.00 L60 86 L47.88 79.00 V65.00 Z"
+              />
+            </svg>
+          </div>
+        </div>
+        <h2>Hex window</h2>
+        <p>Just the house and one shell plate. Most minimal.</p>
+        <code>s4-hex.svg</code>
+      </section>
+      <section class="card">
+        <div class="row">
+          <div class="sw light">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#1F9E88"
+                stroke="#1F9E88"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <path
+                fill="none"
+                stroke="#FFFFFF"
+                stroke-width="5"
+                stroke-linejoin="round"
+                d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z"
+              />
+            </svg>
+          </div>
+          <div class="sw tile">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <path
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="5"
+                stroke-linejoin="round"
+                d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z"
+              />
+            </svg>
+          </div>
+          <div class="sw dark">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#4EB8A3"
+                stroke="#4EB8A3"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <path
+                fill="none"
+                stroke="#121212"
+                stroke-width="5"
+                stroke-linejoin="round"
+                d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z"
+              />
+            </svg>
+          </div>
+        </div>
+        <div class="lockup">
+          <div class="lm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <path
+                fill="#1F9E88"
+                stroke="#1F9E88"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <path
+                fill="none"
+                stroke="#FFFFFF"
+                stroke-width="5"
+                stroke-linejoin="round"
+                d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z"
+              />
+            </svg>
+          </div>
+          <span>Kame Space</span>
+        </div>
+        <div class="sizes">
+          <div style="width: 48px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <path
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="5"
+                stroke-linejoin="round"
+                d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z"
+              />
+            </svg>
+          </div>
+          <div style="width: 32px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <path
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="5"
+                stroke-linejoin="round"
+                d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z"
+              />
+            </svg>
+          </div>
+          <div style="width: 16px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <path
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                stroke-width="12"
+                stroke-linejoin="round"
+                d="M60 24 L98 55 V98 H22 V55 Z"
+              />
+              <path
+                fill="none"
+                stroke="url(#g)"
+                stroke-width="5"
+                stroke-linejoin="round"
+                d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z"
+              />
+            </svg>
+          </div>
+        </div>
+        <h2>Hex ring</h2>
+        <p>House with an open hexagon. Light and airy.</p>
+        <code>s5-ring.svg</code>
+      </section>
+      <section class="card">
+        <div class="row">
+          <div class="sw light">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <g
+                fill="none"
+                stroke="#1F9E88"
+                stroke-width="6"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              >
+                <path d="M60 24 L98 55 V98 H22 V55 Z" />
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M60 59 V24 M71.26 78.5 L98 86 M48.74 78.5 L22 86" />
+              </g>
+            </svg>
+          </div>
+          <div class="sw tile">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <g
+                fill="none"
+                stroke="#FFFFFF"
+                stroke-width="6"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              >
+                <path d="M60 24 L98 55 V98 H22 V55 Z" />
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M60 59 V24 M71.26 78.5 L98 86 M48.74 78.5 L22 86" />
+              </g>
+            </svg>
+          </div>
+          <div class="sw dark">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <g
+                fill="none"
+                stroke="#4EB8A3"
+                stroke-width="6"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              >
+                <path d="M60 24 L98 55 V98 H22 V55 Z" />
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M60 59 V24 M71.26 78.5 L98 86 M48.74 78.5 L22 86" />
+              </g>
+            </svg>
+          </div>
+        </div>
+        <div class="lockup">
+          <div class="lm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 120 120"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <g
+                fill="none"
+                stroke="#1F9E88"
+                stroke-width="6"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              >
+                <path d="M60 24 L98 55 V98 H22 V55 Z" />
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M60 59 V24 M71.26 78.5 L98 86 M48.74 78.5 L22 86" />
+              </g>
+            </svg>
+          </div>
+          <span>Kame Space</span>
+        </div>
+        <div class="sizes">
+          <div style="width: 48px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <g
+                fill="none"
+                stroke="#FFFFFF"
+                stroke-width="6"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              >
+                <path d="M60 24 L98 55 V98 H22 V55 Z" />
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M60 59 V24 M71.26 78.5 L98 86 M48.74 78.5 L22 86" />
+              </g>
+            </svg>
+          </div>
+          <div style="width: 32px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <g
+                fill="none"
+                stroke="#FFFFFF"
+                stroke-width="6"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              >
+                <path d="M60 24 L98 55 V98 H22 V55 Z" />
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M60 59 V24 M71.26 78.5 L98 86 M48.74 78.5 L22 86" />
+              </g>
+            </svg>
+          </div>
+          <div style="width: 16px">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="-30 -30 180 180"
+              width="512"
+              height="512"
+              role="img"
+              aria-label="Kame Space"
+            >
+              <defs>
+                <linearGradient
+                  id="g"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-30"
+                  y1="-30"
+                  x2="150"
+                  y2="150"
+                >
+                  <stop offset="0" stop-color="#24A88E" />
+                  <stop offset="1" stop-color="#4EB8A3" />
+                </linearGradient>
+              </defs>
+              <rect x="-30" y="-30" width="180" height="180" rx="50" fill="url(#g)" />
+              <g
+                fill="none"
+                stroke="#FFFFFF"
+                stroke-width="6"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              >
+                <path d="M60 24 L98 55 V98 H22 V55 Z" />
+                <path d="M60 59 L71.26 65.50 V78.50 L60 85 L48.74 78.50 V65.50 Z" />
+                <path d="M60 59 V24 M71.26 78.5 L98 86 M48.74 78.5 L22 86" />
+              </g>
+            </svg>
+          </div>
+        </div>
+        <h2>Outline</h2>
+        <p>Line version of the plates, for a lighter feel.</p>
+        <code>s6-outline.svg</code>
+      </section>
+    </main>
+  </body>
+</html>

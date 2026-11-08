@@ -2,7 +2,7 @@
 title: 'Curated support FAQs'
 status: active
 tags: [guides, support, faqs, help-center]
-updated: 2026-11-06
+updated: 2026-11-08
 ---
 
 # Curated support FAQs
@@ -1165,6 +1165,24 @@ Guests can browse dates and fill out the form first. They are asked to verify th
 - order: 50
 
 No. Each email is one host account, and signing in opens the existing workspace. You cannot create a second organization with the same email.
+
+### Where do I create an account?
+
+- category: Account & Security
+- audience: public
+- source: docs/guides/routes/auth.md
+- order: 55
+
+The sign-in page does it. Enter your email and confirm the code we send, and your account exists. There is no separate sign-up form, so new and returning people use the same page.
+
+### I opened the wrong sign-in page for my role. How do I switch?
+
+- category: Account & Security
+- audience: public
+- source: docs/guides/routes/auth.md
+- order: 56
+
+Use the link under the form. It reads "Sign in as host" on the guest page and "Sign in as guest" on the host page.
 
 ### Does the public Support page show the same answers as Help and Support in the dashboard?
 

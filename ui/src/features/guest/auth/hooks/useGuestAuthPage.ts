@@ -11,7 +11,7 @@ type Options = {
   defaultRedirect?: string;
 };
 
-/** Drives the standalone `/for-guests/login` and `/for-guests/register` pages. */
+/** Drives the standalone guest sign-in page (`/for-guests/login`). */
 export function useGuestAuthPage({ defaultRedirect = '/' }: Options = {}) {
   const [params] = useSearchParams();
   const navigate = useNavigate();

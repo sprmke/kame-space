@@ -11,6 +11,8 @@ type Props = {
   uploading?: boolean;
   hasError?: boolean;
   emptyHint?: string;
+  /** One-line row instead of a tall box — for inline uploads inside lists. */
+  compact?: boolean;
   onFileSelect: (file: File | undefined) => void;
   onClear: () => void;
 };
@@ -31,6 +33,7 @@ export function DocumentUploadDropzone({
   uploading = false,
   hasError = false,
   emptyHint = 'JPEG, PNG, WebP, or PDF · max 5 MB',
+  compact = false,
   onFileSelect,
   onClear,
 }: Props) {
@@ -41,14 +44,20 @@ export function DocumentUploadDropzone({
   return (
     <div
       className={cn(
-        'border-border bg-muted/20 relative flex min-h-[140px] items-center justify-center overflow-hidden rounded-xl border border-dashed',
+        'border-border bg-muted/20 relative flex items-center justify-center overflow-hidden rounded-xl border border-dashed',
+        compact ? 'min-h-[48px]' : 'min-h-[140px]',
         hasError && 'border-destructive',
         uploading && 'opacity-70'
       )}
     >
       {uploading ? (
-        <div className="text-muted-foreground flex flex-col items-center gap-2 text-sm">
-          <Loader2 className="size-5 animate-spin" aria-hidden />
+        <div
+          className={cn(
+            'text-muted-foreground flex items-center gap-2 text-sm',
+            compact ? 'py-2.5' : 'flex-col gap-2'
+          )}
+        >
+          <Loader2 className="size-4 animate-spin" aria-hidden />
           Uploading…
         </div>
       ) : hasImagePreview ? (
@@ -58,9 +67,14 @@ export function DocumentUploadDropzone({
         </>
       ) : hasDocument ? (
         <>
-          <div className="flex w-full flex-col items-center gap-2 px-4 py-6">
-            <FileText className="text-primary size-8" aria-hidden />
-            <p className="text-foreground max-w-full truncate text-sm font-medium">
+          <div
+            className={cn(
+              'flex w-full items-center gap-2 px-3',
+              compact ? 'py-2.5' : 'flex-col gap-2 px-4 py-6'
+            )}
+          >
+            <FileText className="text-primary size-4 shrink-0" aria-hidden />
+            <p className="text-foreground max-w-full truncate text-[13px] font-medium">
               {file?.name ?? 'Document uploaded'}
             </p>
           </div>
@@ -69,13 +83,30 @@ export function DocumentUploadDropzone({
       ) : (
         <label
           htmlFor={id}
-          className="flex min-h-[140px] w-full cursor-pointer flex-col items-center justify-center gap-2 px-4 py-6 text-center"
+          title={compact ? emptyHint : undefined}
+          className={cn(
+            'flex w-full cursor-pointer items-center justify-center gap-2 px-3 text-center',
+            compact ? 'min-h-[44px] py-2 text-left' : 'min-h-[140px] flex-col gap-2 py-6'
+          )}
         >
-          <span className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-full">
-            <ImagePlus className="size-5" aria-hidden />
+          <span
+            className={cn(
+              'bg-primary/10 text-primary flex shrink-0 items-center justify-center rounded-full',
+              compact ? 'size-7' : 'size-10'
+            )}
+          >
+            <ImagePlus className={compact ? 'size-3.5' : 'size-5'} aria-hidden />
           </span>
-          <span className="text-foreground text-sm font-medium">Upload</span>
-          <span className="text-muted-foreground text-xs">{emptyHint}</span>
+          <span className="min-w-0">
+            <span className="text-foreground block text-[13px] font-medium leading-tight">
+              {compact ? 'Upload proof' : 'Upload'}
+            </span>
+            {compact ? null : (
+              <span className="text-muted-foreground block text-[11px] leading-tight">
+                {emptyHint}
+              </span>
+            )}
+          </span>
         </label>
       )}
       <input

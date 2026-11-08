@@ -87,6 +87,7 @@ Same as Cursor's `.cursor/commands/`; Claude Code commands and skills both creat
 | `/fix-migration-issues` | Apply pending **local** migrations (`bun run db:migrate`) — no reset/deploy by default                      |
 | `/github-issue`         | View / create / update / ship issues on `sprmke/kame-space` (backed by `scripts/dev/gh-issue.mjs`)          |
 | `/self-review`          | Deep production-readiness review of a module/change (skill: `self-review`) — gaps, edge cases, ship verdict |
+| `/ks-execute-plan`      | Audit a written plan, then implement it end to end in an isolated worktree (skill: `execute-plan`)          |
 
 ## Display (`~/.claude/settings.json` — user scope, not committed)
 

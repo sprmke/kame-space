@@ -12,7 +12,7 @@ async function cliEval(js) {
   }
 }
 
-const BASE = 'http://localhost:5173/org/kame-home/property/monaco-2612';
+const BASE = 'http://localhost:5173/org/kame-homes/property/kame-home';
 
 await $`bun x playwright-cli goto ${`${BASE}/notifications`}`.nothrow().quiet();
 await Bun.sleep(2500);
@@ -41,7 +41,9 @@ console.log('fields', JSON.stringify(s));
 
 await $`bun x playwright-cli click ${`getByRole('button', { name: 'Manage' })`}`.nothrow().quiet();
 await Bun.sleep(1200);
-await $`bun x playwright-cli click ${`getByRole('button', { name: 'Send preview' })`}`.nothrow().quiet();
+await $`bun x playwright-cli click ${`getByRole('button', { name: 'Send preview' })`}`
+  .nothrow()
+  .quiet();
 await Bun.sleep(4500);
 s = await cliEval(`(() => ({
   toasts: [...document.querySelectorAll('[data-sonner-toast]')].map(t => t.innerText.trim()).slice(0, 10),
@@ -62,7 +64,7 @@ s = await cliEval(`async () => {
   const anon = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 
   const propRes = await fetch(
-    'http://127.0.0.1:54321/rest/v1/properties?slug=eq.monaco-2612&select=id,organization_id',
+    'http://127.0.0.1:54321/rest/v1/properties?slug=eq.kame-home&select=id,organization_id',
     { headers: { apikey: anon, Authorization: 'Bearer ' + token } }
   );
   const props = await propRes.json();
@@ -118,9 +120,9 @@ s = await cliEval(`async () => {
     body: JSON.stringify({
       orgId,
       orgSlug: 'kame-home',
-      returnPath: '/org/kame-home/property/monaco-2612/inbox',
+      returnPath: '/org/kame-homes/property/kame-home/inbox',
       scope: 'property',
-      propertySlug: 'monaco-2612',
+      propertySlug: 'kame-home',
     }),
   });
   const body = await res.json().catch(() => ({}));

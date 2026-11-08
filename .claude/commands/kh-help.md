@@ -9,6 +9,7 @@ Show the **Kame Space teammate commands** (`/kh-*`) and when to use each. The sa
 | **/kh-help**              | See this list                                                  |
 | **/kh-create-new-ticket** | File a bug/feature ticket or **sub-issue** (uses the template) |
 | **/kh-start-work**        | Pick up #N: update `develop`, create a branch                  |
+| **/ks-execute-plan**      | Hand a whole written plan to an agent: audit it, then build it |
 | **/kh-pull-new-changes**  | Get the latest code from `develop`                             |
 | **/kh-start-app**         | Run the app (default: UI → `kamespace.com` backend)            |
 | **/kh-check-before-pr**   | Run CI quality checks before review                            |
@@ -20,6 +21,7 @@ Show the **Kame Space teammate commands** (`/kh-*`) and when to use each. The sa
 2. `/kh-start-app` → test on the route in the ticket
 3. Found a bug? `/kh-create-new-ticket`
 4. Fixing it? `/kh-start-work` → implement → `/kh-check-before-pr` → `/kh-submit-for-review`
+5. Got a full plan already written? `/ks-execute-plan <slug>` — the agent audits the plan, works in an isolated worktree, and opens the PR
 
 ## Important defaults
 
@@ -32,6 +34,7 @@ Show the **Kame Space teammate commands** (`/kh-*`) and when to use each. The sa
 
 | Command                        | Purpose                                             |
 | ------------------------------ | --------------------------------------------------- |
+| `/ks-execute-plan`             | Audit a plan, then implement it end to end          |
 | `/github-issue`                | Full issue CLI (view / update / **ship**)           |
 | `/self-review`                 | Deep production-readiness review of a module        |
 | `/production-readiness-review` | Code review for checklist phases 5–10 before Tier 2 |

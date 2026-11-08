@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import { type Voucher } from '@/features/guest/sd-form/lib/voucher';
 import { prefersReducedMotion } from '@/features/guest/sd-form/lib/voucherRevealMotion';
+import { VOUCHER_WHEEL_SEGMENT_FILLS } from '@/features/guest/sd-form/lib/voucherWheelPalette';
 
 import { cn } from '@/lib/utils';
 
@@ -9,16 +10,6 @@ const WHEEL_SIZE_PX = 280;
 const SPIN_ROUNDS = 5;
 const SPIN_DURATION_MS = 7000;
 const SETTLE_PAUSE_MS = 400;
-
-const SEGMENT_FILLS = [
-  '#10b981',
-  '#0ea5e9',
-  '#f59e0b',
-  '#f43f5e',
-  '#f97316',
-  '#14b8a6',
-  '#8b5cf6',
-] as const;
 
 export const WHEEL_SHELL_WIDTH_CLASS = 'mx-auto w-full max-w-sm';
 
@@ -201,7 +192,7 @@ function WheelSvg({ segments, muted }: { segments: ReadonlyArray<Voucher>; muted
           <g key={prize?.code ?? i}>
             <path
               d={describeSlice(cx, cy, r, start, end)}
-              fill={SEGMENT_FILLS[i % SEGMENT_FILLS.length]}
+              fill={VOUCHER_WHEEL_SEGMENT_FILLS[i % VOUCHER_WHEEL_SEGMENT_FILLS.length]}
               opacity={muted ? 0.55 : 0.9}
             />
             <text
