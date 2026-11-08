@@ -15,6 +15,7 @@ import { sendCronCheckIn, type CronMonitorConfig } from './sentryCron.ts';
 import { getPlatformSettingsSnapshot } from './platformSettingsCache.ts';
 import { checkRateLimit, identityFromRequest, isIdentityBlocked } from './rateLimit.ts';
 import { recordJobHeartbeat } from './systemHealth/jobHeartbeat.ts';
+import { type EdgeTimings, timePhase, withServerTiming } from './serverTiming.ts';
 
 /**
  * Default per-user authenticated-wrapper limit — production-readiness doc 23
@@ -39,23 +40,30 @@ const DEFAULT_AUTHENTICATED_WRAPPER_WINDOW_SEC = 60;
 async function enforceOrLogRateCheck(
   req: Request,
   logPrefix: string,
-  userId: string
+  userId: string,
+  timings?: EdgeTimings
 ): Promise<Response | null> {
   const identity = identityFromRequest(req, { id: userId });
+  // Timing is optional: a caller with no interest in the header still gets the
+  // rate-limit decision, and the discarded record costs one empty object.
+  const t: EdgeTimings = timings ?? {};
 
   try {
-    if (await isIdentityBlocked(identity)) {
+    const blocked = await timePhase(t, 'blocklist', () => isIdentityBlocked(identity));
+    if (blocked) {
       console.warn(`[rateLimit:blocked] ${logPrefix} - identity ${identity} is on the block list`);
       return jsonError(req, 'Access temporarily restricted. Contact support.', 403);
     }
 
-    const settings = await getPlatformSettingsSnapshot();
-    const decision = await checkRateLimit({
-      scope: `wrapper-default:${logPrefix}`,
-      identity,
-      limit: settings.authenticatedRateLimitPerMin,
-      windowSec: DEFAULT_AUTHENTICATED_WRAPPER_WINDOW_SEC,
-    });
+    const settings = await timePhase(t, 'settings', () => getPlatformSettingsSnapshot());
+    const decision = await timePhase(t, 'ratelimit', () =>
+      checkRateLimit({
+        scope: `wrapper-default:${logPrefix}`,
+        identity,
+        limit: settings.authenticatedRateLimitPerMin,
+        windowSec: DEFAULT_AUTHENTICATED_WRAPPER_WINDOW_SEC,
+      })
+    );
     if (decision.allowed) return null;
 
     if (!settings.authenticatedRateLimitEnforce) {
@@ -106,14 +114,19 @@ export function serveAdmin(
     // Verified outside the try so the catch can name the user. A JWT failure leaves it
     // unknown, which is correct: there is no one to attribute it to.
     let userId: string | undefined;
+    const timings: EdgeTimings = {};
     try {
-      const admin = await verifyAdminJwt(req);
+      const admin = await timePhase(timings, 'auth', () => verifyAdminJwt(req));
       userId = admin.id;
-      const limited = await enforceOrLogRateCheck(req, logPrefix, admin.id);
-      if (limited) return limited;
-      return await handler(req, admin);
+      const limited = await enforceOrLogRateCheck(req, logPrefix, admin.id, timings);
+      if (limited) return withServerTiming(limited, timings);
+      const response = await timePhase(timings, 'handler', () => handler(req, admin));
+      return withServerTiming(response, timings);
     } catch (error) {
-      return handleEdgeError(req, error, logPrefix, 'Unauthorized', { userId });
+      return withServerTiming(
+        await handleEdgeError(req, error, logPrefix, 'Unauthorized', { userId }),
+        timings
+      );
     }
   });
 }
@@ -127,12 +140,17 @@ export function serveSuperAdmin(
     const options = handleOptions(req);
     if (options) return options;
     let userId: string | undefined;
+    const timings: EdgeTimings = {};
     try {
-      const user = await verifySuperAdminJwt(req);
+      const user = await timePhase(timings, 'auth', () => verifySuperAdminJwt(req));
       userId = user.id;
-      return await handler(req, user);
+      const response = await timePhase(timings, 'handler', () => handler(req, user));
+      return withServerTiming(response, timings);
     } catch (error) {
-      return handleEdgeError(req, error, logPrefix, 'Unauthorized', { userId });
+      return withServerTiming(
+        await handleEdgeError(req, error, logPrefix, 'Unauthorized', { userId }),
+        timings
+      );
     }
   });
 }
@@ -146,14 +164,19 @@ export function serveAuthenticated(
     const options = handleOptions(req);
     if (options) return options;
     let userId: string | undefined;
+    const timings: EdgeTimings = {};
     try {
-      const user = await verifyAuthenticatedUser(req);
+      const user = await timePhase(timings, 'auth', () => verifyAuthenticatedUser(req));
       userId = user.id;
-      const limited = await enforceOrLogRateCheck(req, logPrefix, user.id);
-      if (limited) return limited;
-      return await handler(req, user);
+      const limited = await enforceOrLogRateCheck(req, logPrefix, user.id, timings);
+      if (limited) return withServerTiming(limited, timings);
+      const response = await timePhase(timings, 'handler', () => handler(req, user));
+      return withServerTiming(response, timings);
     } catch (error) {
-      return handleEdgeError(req, error, logPrefix, 'Unauthorized', { userId });
+      return withServerTiming(
+        await handleEdgeError(req, error, logPrefix, 'Unauthorized', { userId }),
+        timings
+      );
     }
   });
 }
@@ -162,10 +185,12 @@ export function servePublic(logPrefix: string, handler: (req: Request) => Promis
   serve(async (req) => {
     const options = handleOptions(req);
     if (options) return options;
+    const timings: EdgeTimings = {};
     try {
-      return await handler(req);
+      const response = await timePhase(timings, 'handler', () => handler(req));
+      return withServerTiming(response, timings);
     } catch (error) {
-      return handleEdgeError(req, error, logPrefix);
+      return withServerTiming(await handleEdgeError(req, error, logPrefix), timings);
     }
   });
 }
