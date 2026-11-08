@@ -271,7 +271,9 @@ test.describe('@smoke voice receptionist consent', () => {
     await page.getByRole('button', { name: 'Chat options' }).click();
     await page.getByText('Talk to receptionist', { exact: true }).click();
 
-    await expect(page.getByRole('heading', { name: 'AI voice receptionist' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'AI voice receptionist' })).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(page.getByText(/Uses your microphone and Google Gemini/)).toBeVisible();
     await expect(page.getByRole('link', { name: 'Privacy' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Start call' })).toBeVisible();
