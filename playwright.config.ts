@@ -24,6 +24,10 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
+  // 30s is the Playwright default and it is too tight for the Polotno/Remotion editors,
+  // which cold-render a canvas behind mocked APIs. Three marketing specs failed at
+  // 31.9s/32.4s on the first real @ci run and passed locally in under 10s.
+  timeout: 45_000,
   // 99 @smoke tests × 3 projects were serializing to 45+ min on GHA; parallelize files only.
   workers: process.env.CI ? 4 : undefined,
   globalTimeout: process.env.CI ? 45 * 60 * 1000 : undefined,
