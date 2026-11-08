@@ -200,6 +200,9 @@ fi
 # --- 8. Verify parity -------------------------------------------------------
 
 info "Running check-ai-tooling-sync"
+# Codex skill, command, agent and hook compatibility
+python3 "$ROOT/.codex/sync.py"
+
 bash "$ROOT/scripts/dev/check-ai-tooling-sync.sh"
 
 cat <<'EOF'

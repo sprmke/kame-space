@@ -1,16 +1,8 @@
 ---
-name: 'source-command-ks-pull-new-changes'
-description: 'Migrated source command `ks-pull-new-changes`'
+name: source-command-ks-pull-new-changes
+description: "Run the existing project command ks-pull-new-changes when the user requests it."
 ---
-
-# source-command-ks-pull-new-changes
-
-Use this skill when the user asks to run the migrated source command `ks-pull-new-changes`.
-
-## Command Template
 
 # ks-pull-new-changes
 
-Alias for `/kh-pull-new-changes` while teammates move to the Kame Space command names.
-
-Follow the same instructions as [`kh-pull-new-changes.md`](./kh-pull-new-changes.md) in this directory. Nothing else changes.
+Read [.cursor/commands/ks-pull-new-changes.md](../../../.cursor/commands/ks-pull-new-changes.md) and follow that command using the user’s arguments. Resolve its relative references from the original command directory. Preserve project rules and authorization boundaries. Cursor/Claude-only tool names must map to actually available Codex tools; do not claim unavailable tools ran.

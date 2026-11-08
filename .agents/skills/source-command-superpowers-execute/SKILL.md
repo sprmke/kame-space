@@ -1,32 +1,8 @@
 ---
-name: 'source-command-superpowers-execute'
-description: 'Migrated source command `superpowers-execute`'
+name: source-command-superpowers-execute
+description: "Run the existing project command superpowers-execute when the user requests it."
 ---
-
-# source-command-superpowers-execute
-
-Use this skill when the user asks to run the migrated source command `superpowers-execute`.
-
-## Command Template
 
 # superpowers-execute
 
-Execute an existing plan in **lean mode** (hooks enforce — subagents blocked).
-
-## Lean constraints (mandatory)
-
-Read **`.agent/skills/superpowers/SKILL.md`** § Lean mode (execute) first.
-
-- Implement inline in this session — one task at a time, main thread only.
-- No subagents, no Explore, no Task tool, no subagent-driven-development.
-- Read the plan from `docs/workflow/in-progress/` or `docs/workflow/planned/`; per-task files only via targeted `rg`/`Read`.
-- Override plugin `executing-plans` and `subagent-driven-development` — do not dispatch a subagent per task.
-
-## Steps
-
-1. Read **`.agent/skills/superpowers/SKILL.md`** (doc paths + lean execute rules).
-2. Read the plan path the user gives, or the latest `docs/workflow/in-progress/*.md`, else `docs/workflow/planned/*.md`.
-3. If not already in-progress, run `/workflow-start <slug>` first.
-4. Follow **`superpowers:executing-plans`** single-threaded — work through tasks in order without subagents.
-
-Use a **fresh session** after planning (`/clear`). Opts in to Superpowers for this chat.
+Read [.cursor/commands/superpowers-execute.md](../../../.cursor/commands/superpowers-execute.md) and follow that command using the user’s arguments. Resolve its relative references from the original command directory. Preserve project rules and authorization boundaries. Cursor/Claude-only tool names must map to actually available Codex tools; do not claim unavailable tools ran.

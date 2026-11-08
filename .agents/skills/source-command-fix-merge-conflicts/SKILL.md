@@ -1,16 +1,8 @@
 ---
-name: 'source-command-fix-merge-conflicts'
-description: 'Migrated source command `fix-merge-conflicts`'
+name: source-command-fix-merge-conflicts
+description: "Run the existing project command fix-merge-conflicts when the user requests it."
 ---
-
-# source-command-fix-merge-conflicts
-
-Use this skill when the user asks to run the migrated source command `fix-merge-conflicts`.
-
-## Command Template
 
 # fix-merge-conflicts
 
-Pull new changes from main. Please fix merge conflicts and make sure we don't break existing functionality between our ticket changes here and upcoming changes from main.
-
-This command is available in chat with **/fix-merge-conflicts**
+Read [.cursor/commands/fix-merge-conflicts.md](../../../.cursor/commands/fix-merge-conflicts.md) and follow that command using the user’s arguments. Resolve its relative references from the original command directory. Preserve project rules and authorization boundaries. Cursor/Claude-only tool names must map to actually available Codex tools; do not claim unavailable tools ran.

@@ -1,32 +1,8 @@
 ---
-name: 'source-command-superpowers-plan'
-description: 'Migrated source command `superpowers-plan`'
+name: source-command-superpowers-plan
+description: "Run the existing project command superpowers-plan when the user requests it."
 ---
-
-# source-command-superpowers-plan
-
-Use this skill when the user asks to run the migrated source command `superpowers-plan`.
-
-## Command Template
 
 # superpowers-plan
 
-Run the **Superpowers writing-plans** workflow in **lean mode** (hooks enforce — subagents blocked).
-
-## Lean constraints (mandatory)
-
-Read **`.agent/skills/superpowers/SKILL.md`** § Lean mode first.
-
-- Plan only. No subagents, no Explore, no Task tool.
-- Read `docs/PROJECT.md` and the relevant route guide only.
-- Save to `docs/workflow/planned/<slug>.md` — short actionable checklist, not TDD micro-steps.
-- Stop when the plan is saved; do not offer subagent-driven execution.
-
-## Steps
-
-1. Read **`.agent/skills/superpowers/SKILL.md`** (repo path overrides + lean mode).
-2. Follow **`superpowers:writing-plans`** but **override** its subagent/TDD granularity per lean mode.
-3. **Save the plan to `docs/workflow/planned/<feature>.md`** — never `docs/superpowers/plans/`. **No date prefix.**
-4. Add an index row to `docs/workflow/planned/README.md`.
-
-Use after a spec exists (often via `/superpowers-brainstorm`). Opts in to Superpowers for this chat.
+Read [.cursor/commands/superpowers-plan.md](../../../.cursor/commands/superpowers-plan.md) and follow that command using the user’s arguments. Resolve its relative references from the original command directory. Preserve project rules and authorization boundaries. Cursor/Claude-only tool names must map to actually available Codex tools; do not claim unavailable tools ran.

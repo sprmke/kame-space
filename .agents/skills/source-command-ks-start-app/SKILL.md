@@ -1,16 +1,8 @@
 ---
-name: 'source-command-ks-start-app'
-description: 'Migrated source command `ks-start-app`'
+name: source-command-ks-start-app
+description: "Run the existing project command ks-start-app when the user requests it."
 ---
-
-# source-command-ks-start-app
-
-Use this skill when the user asks to run the migrated source command `ks-start-app`.
-
-## Command Template
 
 # ks-start-app
 
-Alias for `/kh-start-app` while teammates move to the Kame Space command names.
-
-Follow the same instructions as [`kh-start-app.md`](./kh-start-app.md) in this directory. Nothing else changes.
+Read [.cursor/commands/ks-start-app.md](../../../.cursor/commands/ks-start-app.md) and follow that command using the user’s arguments. Resolve its relative references from the original command directory. Preserve project rules and authorization boundaries. Cursor/Claude-only tool names must map to actually available Codex tools; do not claim unavailable tools ran.
