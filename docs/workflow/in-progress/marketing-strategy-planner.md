@@ -539,13 +539,15 @@ Sizes: S (≤2 days), M (3 to 5 days), L (1 to 2 weeks). Each phase ships on its
 
 ### Phase 0: Decisions, spikes and foundations (M)
 
-- [ ] **P0.1** Confirm §10 decisions D1 to D7 with the owner; record answers at the top of this file.
+- [x] **P0.1** Confirm §10 decisions D1 to D7 with the owner; record answers at the top of this file.
 - [ ] **P0.2** Meta spike on the dev app: FB Reels upload session, FB photo/video stories endpoints and scheduling, IG carousel with `location_id`, `content_publishing_limit`, insights metric names on Graph v25+ for IG media and FB posts. Write findings into §3.5.
 - [ ] **P0.3** Measure token use of a draft `marketing_plan_brief` prompt on 5 fixture properties; set credit price; add router entry and client price mirror with parity test.
-- [ ] **P0.4** Migrations: `marketing_planner_settings`, `marketing_calendar_events` (+ 2026/2027 PH seed from Proclamation 1006 and its 2027 successor when published), `marketing_plans`, `marketing_plan_items`, `marketing_post_metrics`, plan keys, permission leaf + backfill, notification types, feature availability keys. Apply locally with `bun run db:migrate`.
-- [ ] **P0.5** `_shared/marketingPlaybook.ts` and `marketingCopyLibrary.ts` (English, Filipino, Taglish rules copy per opportunity type, reviewed with `human-copy`).
-- [ ] **P0.6** Architecture doc `docs/architecture/marketing-planner.md` (layering, data model, truth rules, playbook versioning).
+- [x] **P0.4** Migrations: `marketing_planner_settings`, `marketing_calendar_events` (+ 2026/2027 PH seed from Proclamation 1006 and its 2027 successor when published), `marketing_plans`, `marketing_plan_items`, `marketing_post_metrics`, plan keys, permission leaf + backfill, notification types, feature availability keys. Apply locally with `bun run db:migrate`.
+- [x] **P0.5** `_shared/marketingPlaybook.ts` and `marketingCopyLibrary.ts` (English, Filipino, Taglish rules copy per opportunity type, reviewed with `human-copy`).
+- [x] **P0.6** Architecture doc `docs/architecture/marketing-planner.md` (layering, data model, truth rules, playbook versioning).
 - [ ] **P0.7** PostHog event catalog entries (`posthogCatalog.ts`): `planner_viewed`, `planner_onboarded`, `plan_generated`, `planner_item_created_asset`, `planner_item_completed`, `planner_item_skipped`, `planner_share_used`, `upgrade_modal_opened{source:planner}`.
+
+**Status (2026-11-09):** P0.1, P0.4, P0.5 and P0.6 shipped. P0.2 (Meta spike), P0.3 (AI token measurement) and P0.7 (PostHog catalog entries) are open; nothing in Phase 1 depends on them.
 
 **Exit:** migrations apply cleanly on a fresh `db:reset`; decisions recorded; spike notes in §3.5.
 **Acceptance:** `bun run db:migrate` applies, `bun run check:plan-catalog` passes, `bun run test` passes for the new playbook/copy fixtures.
@@ -555,9 +557,9 @@ Sizes: S (≤2 days), M (3 to 5 days), L (1 to 2 weeks). Each phase ships on its
 Engine (Deno, pure, tested):
 
 - [ ] **P1.1** `marketingSignalsData.ts`: one loader that reuses `computeAnalyticsBundle` (cached per property per Manila day), night-level availability with min stay and cleaning buffer, upcoming events, review candidates, live rates, asset inventory and last-posted dates.
-- [ ] **P1.2** `marketingSignals.ts`: every opportunity in §4.3 except `freed_dates` (Phase 3) and learned weights (Phase 5). Fixture suite: empty calendar, fully booked, scattered gaps, thin history (`sufficiency.enough = false`), long weekend in range, Manila midnight boundaries, DST-free but UTC-offset edge cases.
-- [ ] **P1.3** `marketingScheduler.ts`: cadence caps, pillar mix, per-day max, quiet hours, default windows, post-by rules, dedupe by `opportunity_key`, never schedule in the past, keep host-edited items untouched on regenerate.
-- [ ] **P1.4** `marketingClaims.ts`: build and validate claims (open nights, nights left, rate, rating, review id).
+- [x] **P1.2** `marketingSignals.ts`: every opportunity in §4.3 except `freed_dates` (Phase 3) and learned weights (Phase 5). Fixture suite: empty calendar, fully booked, scattered gaps, thin history (`sufficiency.enough = false`), long weekend in range, Manila midnight boundaries, DST-free but UTC-offset edge cases.
+- [x] **P1.3** `marketingScheduler.ts`: cadence caps, pillar mix, per-day max, quiet hours, default windows, post-by rules, dedupe by `opportunity_key`, never schedule in the past, keep host-edited items untouched on regenerate.
+- [x] **P1.4** `marketingClaims.ts`: build and validate claims (open nights, nights left, rate, rating, review id).
 - [ ] **P1.5** `marketingPlanner.ts` service + `marketing-planner` edge function (GET range, settings, `generate` mode `rules`, `add_item`, `update_item`, `skip`, `mark_posted`). Zod bodies, RBAC, plan gates, feature availability, activity log.
 - [ ] **P1.6** Debounced refresh on booking create, cancel and date block (marks `stale` with reason).
 
@@ -567,13 +569,26 @@ UI:
 - [ ] **P1.8** `PlannerSetupWizard` (3 steps, data-driven preselects, Connect link to Inbox, manual places list) with `useGuardedClose`.
 - [ ] **P1.9** `PlannerHome`: summary card + Why sheet, range chips, opportunity chips, agenda grouped by day, Coming up strip, empty and done states.
 - [ ] **P1.10** `PlanItemCard` + `PlanItemSheet` (brief from rules copy, truth panel, reschedule, change format, skip with reason, mark posted). Brief edits use `useUnsavedChangesGuard`.
-- [ ] **P1.11** Lower-tier showcase: Free / Starter see the summary and top 3 suggestions; other actions open the upgrade modal with planner-specific copy.
+- [x] **P1.11** Lower-tier showcase: Free / Starter see the summary and top 3 suggestions; other actions open the upgrade modal with planner-specific copy.
 - [ ] **P1.12** Mobile: bottom sheets, sticky main action, 44px targets, swipe actions on cards; verify at 375 / 768 / 1024+ (`mobile-responsive`).
+
+**Status (2026-11-09):** the engine, a first endpoint, the Plan tab and the tier showcase shipped. Known gaps, deliberately left open rather than half-claimed:
+
+- P1.1: no per-day memo cache, min stay is fixed at 1 and the cleaning buffer is not applied to opportunity nights yet.
+- P1.5: `add_item` (host-authored items) is not implemented, and the `marketing.planner*` feature-availability keys are deferred (X9).
+- P1.6: no debounced refresh on booking create, cancel or date block, so claims are re-checked on read rather than moved to `stale` automatically.
+- P1.8: no setup wizard. New properties get defaults and can build a plan.
+- P1.9: no Coming up strip and no Why sheet.
+- P1.10: no item sheet, no reschedule or format-change UI. The card can copy the caption, skip and mark posted.
+- P1.12: not verified in a browser at 375 / 768 / 1024.
+- P1.2/P1.3/P1.4: `content_refresh` cannot fire yet (X8), and `freed_dates` is Phase 3 by design.
 
 **Exit:** a Pro property gets a correct rules plan for Today / 3 / 5 / 7 days with zero AI calls; claims go stale when a booking lands; gates behave per §5.7.
 **Acceptance:** `bun run test:edge` covers signals/scheduler/claims fixtures; `bun run test:edge:handlers` covers `marketing-planner`; `bun run test:e2e:smoke` loads `?tab=plan` at 375 and 1024.
 
 ### Phase 2: Prepare (one tap to a finished draft) (M)
+
+> Not started.
 
 - [ ] **P2.1** `plannerHandoff.ts`: map each `opportunity_type` × `format` to a preset or recipe and a binding payload (dates, nights left, rate, review id, photo ids, copy). Reuse the review and AI Studio handoff patterns.
 - [ ] **P2.2** Editors accept the planner payload and call `attach_asset` on first save (design, video, calendar, AI session). The item moves to `ready`.
@@ -584,6 +599,8 @@ UI:
 **Exit:** every catalog opportunity opens a filled, editable draft; batch prepare works for a 7-day plan.
 
 ### Phase 3: Publish, schedule and share (L)
+
+> Not started.
 
 Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gaps.md); implement that plan's scope 1 to 4 here if it has not shipped.
 
@@ -599,6 +616,8 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 
 ### Phase 4: AI strategist (M/L)
 
+> Not started.
+
 - [ ] **P4.1** `marketing_plan_brief` prompt module, schema, `marketingPlanBriefAi.ts`, `marketingPlanGuard.ts`.
 - [ ] **P4.2** `generate` mode `ai`: rules skeleton → AI briefs → guard → persist; fail-open to rules copy; credits shown before running; rate limits.
 - [ ] **P4.3** `refresh_brief` for one item ("make it shorter", "more playful", "Taglish") with the same guard.
@@ -609,6 +628,8 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 **Exit:** Business properties get AI briefs that pass the guard at 90%+ on the live suite; AI outages never break a plan.
 
 ### Phase 5: Measure and learn (L)
+
+> Not started.
 
 - [ ] **P5.1** `marketingTrackedLinks.ts`: every item gets `?utm_source=<channel>&utm_medium=social&utm_campaign=ks-<code>` on the property page or booking link; captions include it where links work (Facebook, manual), Instagram uses "link in bio" copy.
 - [ ] **P5.2** Public pages keep first-touch UTM in `sessionStorage`; the booking form sends it as `attribution`; `submit-form` stores it.
@@ -622,6 +643,8 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 
 ### Phase 6: Autopilot, portfolio and reach (M)
 
+> Not started.
+
 - [ ] **P6.1** Weekly AI auto-plan for opted-in Business properties (cron, cost-batched).
 - [ ] **P6.2** Auto-prepare drafts on plan creation (template items only by default; AI Studio items need a per-week credit cap set by the host).
 - [ ] **P6.3** `approval_mode = auto_publish_connected`: items in `ready` publish at their slot after claim check; a daily digest lists what went out. Off by default; feature availability key `marketing.planner.autopublish`.
@@ -631,6 +654,23 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 - [ ] **P6.7** Analytics AI review deep link: improvements like "Promote open weeknights" link to `?tab=plan`; host playbook articles for marketing tactics.
 
 ---
+
+## 6.1 Verification results (2026-11-09)
+
+| Gate                            | Result                                                        |
+| ------------------------------- | ------------------------------------------------------------- |
+| `bun run db:migrate`            | applied `20261324000000_marketing_planner` on the local stack |
+| `bun run check:plan-catalog`    | pass (6 plans vs golden matrix)                               |
+| `bun run test` (Vitest)         | 5861 passed, 6 skipped                                        |
+| `bun run test:edge` (Deno)      | 1471 passed                                                   |
+| `bun run type-check`            | pass                                                          |
+| `bun run lint`                  | 0 errors (warnings only, all pre-existing)                    |
+| `bun run check:filenames`       | pass                                                          |
+| `bun run build`                 | pass, precache budget OK                                      |
+| `bun run check:support-content` | pass (148 FAQs)                                               |
+
+Not run: `test:e2e:smoke` (no planner journey spec yet), `check:plan-catalog` against a fresh
+`db:reset` (applied incrementally on the running local stack).
 
 ## 7. Testing
 
