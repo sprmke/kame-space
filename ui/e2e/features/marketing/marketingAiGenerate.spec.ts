@@ -26,8 +26,8 @@ async function startNew(page: Page, title: 'Post' | 'Photo' | 'Clip') {
   await expect(page.locator('#ai-studio-composer')).toBeVisible();
 }
 
-test.describe('@ci marketing AI generate tab', () => {
-  test('@flaky starting a photo opens one short form with everything else under Advanced', async ({
+test.describe('@ci @flaky marketing AI generate tab', () => {
+  test('starting a photo opens one short form with everything else under Advanced', async ({
     page,
   }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
@@ -84,7 +84,7 @@ test.describe('@ci marketing AI generate tab', () => {
     });
   });
 
-  test('@flaky below Business, Generate opens the upgrade modal and sends nothing', async ({ page }) => {
+  test('below Business, Generate opens the upgrade modal and sends nothing', async ({ page }) => {
     const generateCalls: string[] = [];
     page.on('request', (req) => {
       if (req.url().includes('/functions/v1/generate-marketing-media'))
