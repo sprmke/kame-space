@@ -26,7 +26,11 @@ Parking-slot **reservations** for one slot — separate from stay `need_parking`
 
 **Entry:** **New booking** button in the page header (desktop) or hero icon (mobile). Opens `AdminParkingNewBookingModal` — no route change, target parking slot fixed from the current page context; **Tower** is pre-filled read-only from the slot's record. Rendered as a **`ResponsiveModal`** (`sheetLayout="split"`): centered dialog on desktop, **full-width bottom sheet** with a sticky header + scrolling body on phone/tablet.
 
-Unlike the property booking modal, no separate admin-only auth bypass is needed here — the host's own dashboard session is itself a valid signed-in identity, and `submit-parking-booking-request` (Phase 3: guest-authenticated) accepts any signed-in caller, not just the guest. **Known gap**: because the host is the one calling the endpoint, the booking's payment/cancel ownership binds to the _host's_ account, not the guest's — once matched, the guest can't self-serve "Pay Now" or cancel from the public status page for a booking created this way (they'd need to be signed in as the host, which they aren't). For now, collect payment for admin-created bookings the same way you would outside this flow (e.g. on-site/manual) rather than relying on the guest status page.
+`submit-parking-booking-request` is guest-authenticated. A caller may submit with a guest email that is not their own only when they hold `bookings:edit` on the pinned parking; otherwise the caller must use their own email. This is what separates a host creating a booking for a guest from a guest trying to skip the per-account request limits. The row records `created_by_host_user_id`.
+
+Payment and cancel ownership initially binds to the host account. The guest recovers access by signing in with the booking email (the ownership check rebinds on an email match), after which they can pay or cancel from the status page. If that is not practical, collect payment the way you would outside this flow.
+
+**Paid outside Kame Space:** a host with `bookings:edit` can tick that option in the New booking modal for cash or bank transfer. The request auto-claims, records a ₱0 offline ledger row, and confirms without a payment link. No platform fee is taken. The guest still receives the confirmation and the PMO endorsement.
 
 On success, the modal shows an inline summary (dates, guest, email, phone, vehicle) instead of navigating to the public request-status page, with two actions: **Add another booking** (resets the form for another entry, same modal) and **View booking** (closes the modal and opens the new booking's detail page). The bookings list refreshes in the background so the new booking appears without a manual reload.
 
@@ -40,6 +44,8 @@ On success, the modal shows an inline summary (dates, guest, email, phone, vehic
 - **Awaiting guest payment** — muted strip + payment countdown when status is `PENDING_PAYMENT` (`parking_payment_expires_at`)
 - Context line from shared `PARKING_HOST_STATUS_NOTE` for non-actionable states
 - **Access instructions** textarea (500 chars) on accept; saved **Your access note** collapses after claim
+- **Payment card** — guest paid, your rate, fee, net payout, payout/refund status, direct-link marker
+- **Endorsement card** — sent, not sent with the failure reason, and **Resend endorsement** for hosts with `bookings:edit`
 - **Message guest** → parking Inbox once endorsement sent
 
 Status badge labels match guest surfaces via `parkingFlowCopy.ts` (e.g. **Finding host**, **Awaiting payment**). Claim/payment urgency strips animate in/out on status change (`parkingFlowMotion.ts`, `motion-reduce`-aware).
@@ -79,11 +85,13 @@ Manage guests who booked **this parking slot only**. If a guest's parking is bun
 
 `GET list-bookings?parking_id=…` — parking team `bookings:view`
 
-`POST create-parking-booking?parking_id=…` — `bookings:edit` (API still available; dashboard **New booking** goes through `submit-parking-booking-request` instead, same as a guest submission)
+`POST transition-parking-booking?parking_id=…` — `{ bookingId, toStatus, reason?, note? }` (rejects `PENDING_HOST_ACCEPTANCE` and `PENDING_PAYMENT` — use claim/decline below; `PENDING_PAYMENT` only resolves via guest payment, timeout, or guest cancel). Cancelling a paid booking (`PENDING_REVIEW` / `READY_FOR_CHECKIN`) requires `reason`; the guest is emailed, the ledger row moves to `refund_review`, and the payout is blocked until a super admin records the refund.
 
-`POST transition-parking-booking?parking_id=…` — `{ bookingId, toStatus }` (rejects `PENDING_HOST_ACCEPTANCE` and `PENDING_PAYMENT` — use claim/decline below; `PENDING_PAYMENT` only resolves via guest payment, timeout, or guest cancel)
+`POST claim-parking-booking?parking_id=…` — `{ bookingId, parkingId, endorsementNote? }` — `bookings:edit` — sets `PENDING_PAYMENT` (not confirmed yet), guest gets a pay-to-confirm email. A taken slot returns `409 slot_unavailable`; a lapsed offer returns `410 offer_expired`.
 
-`POST claim-parking-booking?parking_id=…` — `{ bookingId, parkingId, endorsementNote? }` — `bookings:edit` — sets `PENDING_PAYMENT` (not confirmed yet), guest gets a pay-to-confirm email
+`POST resend-parking-endorsement?parking_id=…` — `{ bookingId }` — `bookings:edit` — retries the PMO email while `endorsement_sent_at` is still null.
+
+`GET parking-payments?parking_id=…&bookingId=…` — `finance:view` — payment card data for one booking; omit `bookingId` for the Marketplace payouts list.
 
 `POST decline-parking-booking?parking_id=…` — `{ bookingId, parkingId }` — `bookings:edit`
 

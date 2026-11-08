@@ -14,6 +14,7 @@
  */
 
 import { createServiceClient } from './orgAuth.ts';
+import { resolveParkingGuestNightlyRate } from './parkingPlatformSettings.ts';
 import { asSettings, readSettingsString } from './listingPlace.ts';
 import { batchLoadIsSuperhostByPropertyId } from './orgSuperhost.ts';
 import {
@@ -144,9 +145,7 @@ export async function loadPropertyCards(ids: string[]): Promise<PublicPropertyCa
   const rows = await loadRowsByKeyChunks('property cards', ids, (chunk, from, to) =>
     supabase
       .from('properties')
-      .select(
-        'id, slug, name, type, city, residence_name, max_guests, tower, settings, created_at'
-      )
+      .select('id, slug, name, type, city, residence_name, max_guests, tower, settings, created_at')
       .in('id', chunk)
       .order('id')
       .range(from, to)
@@ -319,6 +318,7 @@ export type PublicParkingCard = {
 export async function loadParkingCards(ids: string[]): Promise<PublicParkingCard[]> {
   if (ids.length === 0) return [];
   const supabase = createServiceClient();
+  const guestRate = await resolveParkingGuestNightlyRate();
 
   const rows = await loadRowsByKeyChunks('parking cards', ids, (chunk, from, to) =>
     supabase
@@ -361,8 +361,8 @@ export async function loadParkingCards(ids: string[]): Promise<PublicParkingCard
       tower: summary.tower ?? undefined,
       level: summary.level ?? undefined,
       slotLabel: summary.slotLabel,
-      // Charged rate (parking_settings via the index), so cards match detail + checkout.
-      ratePerNight: stats.get(id)?.price ?? summary.ratePerNight ?? 0,
+      // Charged rate is the platform guest rate everywhere (G-1).
+      ratePerNight: guestRate.weekday,
       features: summary.features,
       coverImage: summary.coverImage ?? undefined,
       residenceName: summary.residenceName ?? undefined,
@@ -408,7 +408,11 @@ export async function loadPropertySearchSummaries(ids: string[]): Promise<Proper
         max_guests: (row.max_guests as number | null) ?? null,
         settings: row.settings,
       },
-      { price: stat?.price ?? null, rating: stat?.rating ?? null, reviewCount: stat?.reviewCount ?? 0 }
+      {
+        price: stat?.price ?? null,
+        rating: stat?.rating ?? null,
+        reviewCount: stat?.reviewCount ?? 0,
+      }
     );
   });
   return orderByIds(ids, summaries);
@@ -456,6 +460,7 @@ export async function loadDevelopmentSearchSummaries(
 export async function loadParkingSearchSummaries(ids: string[]): Promise<ParkingSearchSummary[]> {
   if (ids.length === 0) return [];
   const supabase = createServiceClient();
+  const guestRate = await resolveParkingGuestNightlyRate();
   const [rows, stats] = await Promise.all([
     loadRowsByKeyChunks('parking summaries', ids, (chunk, from, to) =>
       supabase
@@ -482,9 +487,8 @@ export async function loadParkingSearchSummaries(ids: string[]): Promise<Parking
       rate_per_night: row.rate_per_night != null ? Number(row.rate_per_night) : null,
       settings: row.settings,
     });
-    // Charged rate, consistent with browse cards and the detail page.
-    const charged = stats.get(row.id as string)?.price;
-    return charged != null ? { ...summary, ratePerNight: charged } : summary;
+    // Charged rate, consistent with browse cards, detail, form and checkout (G-1).
+    return { ...summary, ratePerNight: guestRate.weekday };
   });
   return orderByIds(ids, summaries);
 }

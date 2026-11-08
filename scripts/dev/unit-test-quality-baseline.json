@@ -297,7 +297,6 @@
     "ui/src/features/guest/marketing/developments/lib/resolvePublicDevelopment.ts",
     "ui/src/features/guest/marketing/guest-landing/lib/heroSearchCalendarClassNames.ts",
     "ui/src/features/guest/marketing/hosts/lib/hostListingGrid.ts",
-    "ui/src/features/guest/marketing/parkings/lib/formatParkingLocation.ts",
     "ui/src/features/guest/marketing/parkings/lib/groupParkingsByLocation.ts",
     "ui/src/features/guest/marketing/parkings/lib/parkingDimensions.ts",
     "ui/src/features/guest/marketing/parkings/lib/parkingLinkStay.ts",

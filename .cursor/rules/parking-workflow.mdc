@@ -115,6 +115,13 @@ rankAndDedupeParkingCandidates` and a `PARKING_BATCH_SIZE` slice; see "Ranked ba
    optimization only, not a second authority; a concurrent claim/decline/expire always loses
    the race at the `guest_submissions.status` guard, so it can never double-win even if the
    broadcast-row pre-check briefly disagrees. A losing claim gets `409 already_claimed`.
+   **Since 2026-11-07 the write runs inside `public.claim_parking_booking_slot(...)`**, a
+   `SECURITY DEFINER` RPC that takes `pg_advisory_xact_lock(hashtext(parking_id))`, re-checks
+   occupancy, owner blocks, the 30-minute turnover buffer, `status = 'ACTIVE'` and the offer
+   TTL, then performs the guarded update. A slot that is already taken returns
+   `409 slot_unavailable`; a lapsed offer returns `410 offer_expired`. The JS
+   `assertParkingSlotAvailable()` call is a friendly pre-check only — never the authority
+   (two concurrent Accepts can both pass an app-level read).
    Optional endorsement note (host-authored, shown to guest after Accept; ≤500 chars in the
    UI, ≤2000 server-side). **Sets `PENDING_PAYMENT`** (not `PENDING_REVIEW`) with a fresh
    `parking_payment_expires_at` (same TTL asymmetry via `parkingBroadcastTtlMs`), and emails the
@@ -192,6 +199,11 @@ offer. Locked constants (not admin-configurable in v1): `PARKING_BATCH_SIZE = 3`
   `platform_parking_settings`. **Resolved values are snapshotted onto the
   `parking_payment_transactions` row at creation time** — a later admin config change never
   touches an already-created transaction (see "Platform config & payouts" below).
+  `parking_payment_transactions` has one `pending` row per booking (partial unique index).
+  Reuse is allowed only when `parking_id` still equals the booking's current `parking_id`;
+  a stale row is marked `expired` first. `releaseParkingClaim` and both guest-cancel branches
+  must call `expirePendingParkingTransactions()` — otherwise an old Payment Link stays
+  payable and its webhook could confirm a booking that no longer exists.
   `paymongo-webhook` → `handlePaymongoWebhookEvent` dispatches on `metadata.kind ===
 'parking_booking'` **first** (checked before the org-subscription path — without this a
   parking webhook would silently no-op against the wrong table) → `fulfillParkingPayment`:
@@ -199,7 +211,11 @@ offer. Locked constants (not admin-configurable in v1): `PARKING_BATCH_SIZE = 3`
 'PENDING_PAYMENT'` to `PENDING_REVIEW`, **then** sends `sendParkingConfirmedEmail` (moved here
   from claim-time). If the booking already moved on by the time the webhook lands (released by
   a timeout race), the transaction is still marked `paid` with a manual-review flag instead of
-  forcing a status flip — never creates a second paid reservation for one request.
+  forcing a status flip — never creates a second paid reservation for one request. A payment
+  for an `expired`/`cancelled` transaction, or one whose `parking_id` no longer matches the
+  booking, is marked `paid` with a manual-review `failure_reason` and **never** flips the
+  booking. Telemetry in this file goes through `captureParkingEvent()`; a PostHog failure can
+  never reach the outer `catch` that marks a collected payment `failed`.
 - **Payment window times out**: `runExpireParkingPayments` (same cron tick as
   `runExpireParkingBroadcasts`, `expire-parking-broadcasts` endpoint — no separate `pg_cron`
   entry) sweeps `parking_payment_expires_at`, calls `releaseParkingClaim` then
@@ -207,9 +223,20 @@ offer. Locked constants (not admin-configurable in v1): `PARKING_BATCH_SIZE = 3`
   exhausted). The guest didn't ask to stop.
 - **Guest cancels**: `cancel-parking-booking` → `cancelParkingBooking`
   (`parkingCancellation.ts`) — while `PENDING_HOST_ACCEPTANCE`, straight to `CANCELLED`; while
-  `PENDING_PAYMENT`, calls the **same** `releaseParkingClaim` primitive but then sets
-  `CANCELLED` instead of resuming — **the guest explicitly asked to stop**, this must never
-  fall through to `advanceOrTerminateParkingBatch`.
+  `PENDING_PAYMENT`, a **single** guarded `PENDING_PAYMENT → CANCELLED` update that clears the
+  claim fields, then expires broadcast rows and pending transactions. Never release to
+  `PENDING_HOST_ACCEPTANCE` first: the half state let the expire cron re-broadcast a request
+  the guest was cancelling. **The guest explicitly asked to stop**, so this must never fall
+  through to `advanceOrTerminateParkingBatch`.
+- **Auto-complete**: `complete-parking-bookings` (daily `parking-complete-daily` cron) moves
+  `READY_FOR_CHECKIN` rows whose checkout has passed (Asia/Manila) to `COMPLETED` with
+  `actorType: 'cron'` and `parking.auto_completed`. It deliberately does **not** touch
+  `PENDING_REVIEW`; that is a host attention item.
+- **Host cancel after payment**: `transition-parking-booking` requires a reason for
+  `PENDING_REVIEW`/`READY_FOR_CHECKIN → CANCELLED`, emails the guest, moves the paid ledger
+  row to `refund_review` (blocking `mark_disbursed`), notifies a linked property host, and
+  emits `parking.cancelled_by_host`. A super admin records the manual refund with
+  `parking-payouts` `record_refund` (status becomes `refunded`).
 
 `releaseParkingClaim` (`parkingPaymentOrchestrator.ts`) is the shared low-level "un-claim"
 primitive both paths above call — it never decides what happens next, only the caller does. Do
@@ -431,6 +458,15 @@ Every host-facing endpoint (`claim`, `decline`, `get-parking-broadcast-status`,
 **specific `parkingId` in the request**, not just "any authenticated org member" — never trust
 a client-supplied `organizationId` for authorization, only for candidate matching.
 
+Settings, Pricing, Notifications, uploads and Telegram go through
+`resolveScopedParkingTeamAccess(req, '<parking leaf>')` (`parkingScope.ts`), which resolves the
+parking then delegates to `verifyParkingTeamAccess`. `resolveScopedParkingAccess` is **only**
+for org-level operations (delete/archive) and never for a host settings surface. Delete and
+archive additionally call `verifyParkingTeamAccess(..., 'settings:edit')` and reject
+`accessKind === 'member'`, so an unassigned scoped org admin or a parking member cannot remove
+the listing. The seven `/org/:orgSlug/parking/:parkingSlug/*` admin routes are all wrapped in
+`parkingRoute()`; do not mount one bare.
+
 ## Guest status surface
 
 `get-parking-booking-status` (public/anon) takes a booking UUID (unguessable, bearer-capability
@@ -439,7 +475,16 @@ identically whether the row doesn't exist or isn't a parking row. The guest stat
 (`ParkingRequestStatusPage.tsx`) **polls every 4s**, not Supabase Realtime — this is a
 documented deviation from the original "locked" Realtime decision in
 `parking-e2e-phase1-guest-request-realtime-status.md`; it was kept because it already satisfies
-that doc's own ≤5s fallback acceptance bar. If true Realtime is ever implemented, it needs a
+that doc's own ≤5s fallback acceptance bar.
+
+**PII split (2026-11-07):** the booking UUID is a bearer capability, not proof of identity.
+`status`, dates, timers, listing card, branding and the support phone are public. The
+endorsement note, `endorsement_email_snapshot` (contains guest name, plate and unit) and host
+contact are returned only when the caller sends a Supabase session that owns the booking
+(auth id or guest email). The response includes `viewerOwnsBooking`; the status page shows a
+sign-in row when it is false. Do not "simplify" this back to the raw snapshot.
+
+If true Realtime is ever implemented, it needs a
 `guest_auth_user_id` column + RLS-scoped channel per that doc's "locked approach" section — do
 not silently half-implement it.
 

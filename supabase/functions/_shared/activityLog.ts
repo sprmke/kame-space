@@ -442,6 +442,34 @@ export const ACTIVITY_ACTION_CATALOG = {
     targetType: 'parking_booking',
     summary: (c) => `${c.actorName} submitted ${label(c, 'a parking request')}`,
   },
+  'parking.cancelled_by_host': {
+    category: 'parking',
+    severity: 'warning',
+    targetType: 'parking_booking',
+    summary: (c) => {
+      const reason = str(c.metadata, 'reason');
+      return `${c.actorName} cancelled ${label(c, 'a paid parking booking')}${reason ? ` (${reason})` : ''}`;
+    },
+  },
+  'parking.auto_completed': {
+    category: 'parking',
+    severity: 'info',
+    targetType: 'parking_booking',
+    summary: (c) => `${c.actorName} auto-completed ${label(c, 'a parking booking')} after checkout`,
+  },
+  'parking.refund_recorded': {
+    category: 'parking',
+    severity: 'notice',
+    targetType: 'parking_payment_transaction',
+    summary: (c) => `${c.actorName} recorded a refund on ${label(c, 'a parking payment')}`,
+  },
+  'parking.claim_conflict': {
+    category: 'parking',
+    severity: 'warning',
+    targetType: 'parking_booking',
+    summary: (c) =>
+      `${c.actorName} could not claim ${label(c, 'a parking request')}: slot unavailable`,
+  },
 
   // ── Team & RBAC ──────────────────────────────────────────────────────────
   'team.invite_sent': {

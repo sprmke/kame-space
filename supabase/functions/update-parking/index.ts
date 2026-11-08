@@ -11,13 +11,17 @@ import {
   requireHttpMethod,
 } from '../_shared/httpResponse.ts';
 import { parseAcceptedVehicleTypes } from '../_shared/parkingDimensionDefaults.ts';
-import { resolveScopedParkingAccess } from '../_shared/parkingScope.ts';
+import {
+  resolveScopedParkingAccess,
+  resolveScopedParkingTeamAccess,
+} from '../_shared/parkingScope.ts';
 import {
   DUPLICATE_PARKING_SLOT_MESSAGE,
   findParkingSlotConflict,
   parseParkingSlotFromBody,
 } from '../_shared/parkingSlotUnit.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
+import { declineParkingBooking } from '../_shared/parkingBroadcastActions.ts';
 import { validateOrgBrandColor } from '../_shared/orgSettingsValidation.ts';
 import { invalidateParkingBrandColorCache } from '../_shared/parkingBranding.ts';
 
@@ -37,8 +41,18 @@ serveAuthenticated('update-parking', async (req) => {
     headers: req.headers,
   });
 
-  const parkingAccess = await resolveScopedParkingAccess(scopedReq, 'org.parkings:manage');
+  const parkingAccess = await resolveScopedParkingTeamAccess(scopedReq, 'settings:edit');
   const { parkingRow } = parkingAccess;
+
+  // Archiving/restoring stays an org-level decision, not a parking-team settings edit. A
+  // parking member (even MANAGER) cannot archive; a scoped org admin must be assigned.
+  if (typeof body.status === 'string') {
+    await resolveScopedParkingAccess(scopedReq, 'org.parkings:manage');
+    if (parkingAccess.accessKind === 'member') {
+      return jsonError(req, 'Access restricted', 403);
+    }
+  }
+
   const patch: Record<string, unknown> = {};
 
   if (typeof body.name === 'string') {
@@ -177,12 +191,34 @@ serveAuthenticated('update-parking', async (req) => {
 
   invalidateParkingBrandColorCache(parkingRow.id);
 
+  // Archiving removes the slot from search and new broadcasts, but it must also stop the
+  // offers already sitting in hosts' queues (M-9). Confirmed bookings are left untouched.
+  if (patch.status === 'INACTIVE') {
+    const { data: pendingOffers } = await supabase
+      .from('parking_booking_broadcasts')
+      .select('booking_id')
+      .eq('parking_id', parkingRow.id)
+      .eq('response', 'pending')
+      .limit(500);
+    const bookingIds = [...new Set((pendingOffers ?? []).map((row) => String(row.booking_id)))];
+    for (const bookingId of bookingIds) {
+      try {
+        await declineParkingBooking(parkingRow.id, bookingId, { reason: 'parking_archived' });
+      } catch (err) {
+        console.error(
+          '[update-parking] archive decline failed:',
+          err instanceof Error ? err.message : err
+        );
+      }
+    }
+  }
+
   await logActivity({
     action: 'parking.updated',
     organizationId: parkingRow.organization_id,
     parkingId: parkingRow.id,
     scope: 'parking',
-    actor: buildActorContext('dashboard', { orgAccess: parkingAccess }, req),
+    actor: buildActorContext('dashboard', { parkingAccess }, req),
     targetType: 'parking',
     targetId: parkingRow.id,
     targetLabel: (data.name as string | undefined) ?? parkingRow.name,

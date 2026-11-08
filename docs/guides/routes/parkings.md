@@ -179,7 +179,7 @@ Distinct from:
 - **Registration form:** auth required; **Which stay?** chooser when linkable stays exist → confirm & submit for linked stays, or **Different booking — enter details** → `ParkingFlowStepper` (Guest · Booking · Vehicle); no chooser when none
 - **Waiting UX:** animated **`ParkingHostSearchVisual`** (radar pulse) while finding a host; compact countdown row (“Updates within · MM:SS”) + thin drain bar — not a giant timer
 - While finding a host: **Cancel request** only; browse appears on terminal / paid
-- **Pay to confirm:** **Pay now** + cancel; short non-refundable note
+- **Pay to confirm:** **Pay now** + cancel; short non-refundable note. The nightly price shown on cards and the detail page is the same platform guest rate checkout charges (not the host's payout rate).
 - Paid: slot + access; host/endorsement under fold; support phone after pay / terminal
 - `NO_HOST_AVAILABLE` / `CANCELLED`: short detail + **Browse parking**
 - Host booking detail uses the same **Match · Pay · Done** stepper for pending/payment/review

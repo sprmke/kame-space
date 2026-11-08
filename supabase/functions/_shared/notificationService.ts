@@ -13,6 +13,7 @@ export type NotificationType =
   | 'booking_gaf_auto_approved'
   | 'booking_pet_auto_approved'
   | 'booking_parking_matched'
+  | 'parking_cancelled_by_host'
   | 'inbox_new_message'
   | 'calendar_sync_failing'
   | 'calendar_conflict'

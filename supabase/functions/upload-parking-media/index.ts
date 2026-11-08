@@ -7,7 +7,7 @@ import { createClient } from '../_shared/supabaseJs.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { handleEdgeError } from '../_shared/httpResponse.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
-import { resolveScopedParkingAccess } from '../_shared/parkingScope.ts';
+import { resolveScopedParkingTeamAccess } from '../_shared/parkingScope.ts';
 import { PROPERTY_MEDIA_BUCKET } from '../_shared/propertyMedia.ts';
 import { applyParkingCoverFromBytes } from '../_shared/parkingMediaUpload.ts';
 
@@ -48,7 +48,7 @@ serve(async (req) => {
   }
 
   try {
-    const { parkingRow } = await resolveScopedParkingAccess(req, 'org.parkings:manage');
+    const { parkingRow } = await resolveScopedParkingTeamAccess(req, 'settings:edit');
     const parkingId = parkingRow.id;
 
     const supabase = createClient(
@@ -98,7 +98,9 @@ serve(async (req) => {
       fileName,
     });
 
-    console.log(`[upload-parking-media] Uploaded cover for ${parkingId}: ${result.coverImageStoragePath}`);
+    console.log(
+      `[upload-parking-media] Uploaded cover for ${parkingId}: ${result.coverImageStoragePath}`
+    );
 
     return new Response(
       JSON.stringify({

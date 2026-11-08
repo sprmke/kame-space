@@ -8,7 +8,7 @@ import { useGuestAuth } from '@/features/guest/auth/context/GuestAuthContext';
 import { ContactHostSheet } from '@/features/guest/chat/components/ContactHostSheet';
 import { ParkingBookingFormModal } from '@/features/guest/marketing/parkings/components/ParkingBookingFormModal';
 import { ParkingOverview } from '@/features/guest/marketing/parkings/components/ParkingOverview';
-import { ParkingPublicBrandShell } from '@/features/guest/marketing/parkings/components/ParkingPublicBrandShell';
+import { GuestPublicBrandShell } from '@/features/guest/marketing/shared/components/GuestPublicBrandShell';
 import { useCaptureParkingLinkStay } from '@/features/guest/marketing/parkings/hooks/useCaptureParkingLinkStay';
 import { useParkingReserve } from '@/features/guest/marketing/parkings/hooks/useParkingReserve';
 import { usePublicParkingDetail } from '@/features/guest/marketing/parkings/hooks/usePublicParkingDetail';
@@ -274,7 +274,7 @@ export function ParkingDetailPage() {
   const locationCity = data.city.trim() || development?.locationLabel.split(',')[0]?.trim() || '';
 
   return (
-    <ParkingPublicBrandShell brandColor={data.brandColor}>
+    <GuestPublicBrandShell brandColor={data.brandColor}>
       <div
         className={cn(
           '@container bg-background public-page-top min-h-screen w-full min-w-0',
@@ -418,6 +418,6 @@ export function ParkingDetailPage() {
           />
         ) : null}
       </div>
-    </ParkingPublicBrandShell>
+    </GuestPublicBrandShell>
   );
 }

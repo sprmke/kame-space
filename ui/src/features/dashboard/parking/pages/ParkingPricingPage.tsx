@@ -33,8 +33,8 @@ import {
 import { mergeDateRateOverrides } from '@/features/dashboard/pricing/lib/pricingCalendarUtils';
 import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
 import { pricingCalendarFormGridClassName } from '@/features/dashboard/pricing/lib/pricingCalendarLayout';
-import { useOrgPermissions } from '@/features/dashboard/team/hooks/useOrgPermissions';
-import { hasOrgPermission } from '@/features/dashboard/team/lib/orgPermissions';
+import { useParkingPermissions } from '@/features/dashboard/team/hooks/useParkingPermissions';
+import { hasParkingPermission } from '@/features/dashboard/team/lib/parkingPermissions';
 
 import { FloatingPanel } from '@/components/mobile/FloatingPanel';
 import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
@@ -43,8 +43,8 @@ import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 
 export function ParkingPricingPage() {
   const compactChrome = useDashboardCompactChrome();
-  const { data: orgAccess } = useOrgPermissions();
-  const canEdit = hasOrgPermission(orgAccess?.permissions, 'org:parkings:manage');
+  const { data: parkingAccess } = useParkingPermissions();
+  const canEdit = hasParkingPermission(parkingAccess?.permissions, 'pricing:edit');
 
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const { data: pricingData, isLoading, isError, error } = useParkingPricing(currentMonth);
@@ -371,6 +371,13 @@ export function ParkingPricingPage() {
         subtitle="Manage pricing and availability."
         titleId="parking-pricing-heading"
       >
+        <FloatingPanel padding="md">
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            Requests go to up to 3 eligible slots at a time, cheapest first. The first host to
+            accept wins. Slots priced above the guest rate are not matched.
+          </p>
+        </FloatingPanel>
+
         <ParkingPricingStatsRow
           weekdayRate={weekdayRate}
           weekendRate={weekendRate}

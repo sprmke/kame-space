@@ -90,7 +90,9 @@ export async function applyParkingCoverFromBytes(
   }
   assertUploadMatchesBytes(input.bytes, mime, ALLOWED_MIME);
 
-  const file = new File([input.bytes], input.fileName || 'cover.jpg', { type: mime });
+  const file = new File([input.bytes as unknown as BlobPart], input.fileName || 'cover.jpg', {
+    type: mime,
+  });
   assertWithinUploadLimit(file, 'image');
 
   const current = await readParkingSettings(input.parkingId);

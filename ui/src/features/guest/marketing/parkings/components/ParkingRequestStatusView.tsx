@@ -52,6 +52,7 @@ type StatusData = {
   endorsementSendError: string | null;
   endorsementEmailSnapshot: string | null;
   hostContact: HostContact | null;
+  viewerOwnsBooking?: boolean;
   supportEscalationPhone: string | null;
 };
 
@@ -174,6 +175,8 @@ export function ParkingRequestStatusView({ bookingId, data, countdown, isRefetch
   const requestEndorsement = useRequestParkingEndorsement(bookingId);
   const [showEndorsementCopy, setShowEndorsementCopy] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [returnedFromPayment, setReturnedFromPayment] = useState(false);
+  const payReturnKey = `parking-pay-return:${bookingId}`;
 
   const meta = parkingStatusGuest(data.status);
   const isSearching = data.status === 'PENDING_HOST_ACCEPTANCE';
@@ -197,9 +200,20 @@ export function ParkingRequestStatusView({ bookingId, data, countdown, isRefetch
     });
   };
 
+  useEffect(() => {
+    if (!isPayment) {
+      window.sessionStorage.removeItem(payReturnKey);
+      setReturnedFromPayment(false);
+      return;
+    }
+    const until = Number(window.sessionStorage.getItem(payReturnKey) ?? 0);
+    setReturnedFromPayment(until > Date.now());
+  }, [isPayment, payReturnKey]);
+
   const handlePayNow = () => {
     createCheckout.mutate(bookingId, {
       onSuccess: ({ checkoutUrl }) => {
+        window.sessionStorage.setItem(payReturnKey, String(Date.now() + 10 * 60_000));
         window.location.assign(checkoutUrl);
       },
       onError: (err) => {
@@ -315,6 +329,11 @@ export function ParkingRequestStatusView({ bookingId, data, countdown, isRefetch
       {endorsementSent ? (
         <DetailsFold title="Host & endorsement">
           <div className="space-y-3">
+            {data.viewerOwnsBooking === false ? (
+              <p className="text-muted-foreground text-sm">
+                Sign in with the email you booked with to see your host contact and access details.
+              </p>
+            ) : null}
             {data.hostContact ? (
               <div className="space-y-1.5">
                 <p className="text-foreground text-sm font-semibold">{data.hostContact.name}</p>
@@ -383,27 +402,42 @@ export function ParkingRequestStatusView({ bookingId, data, countdown, isRefetch
 
       <div className="border-border/60 flex flex-col gap-2 border-t pt-4">
         {isPayment ? (
-          <>
-            <Button
-              className="min-h-[44px] w-full"
-              onClick={handlePayNow}
-              disabled={createCheckout.isPending}
+          returnedFromPayment ? (
+            <div
+              className="bg-muted/40 flex items-start gap-2 rounded-xl px-3 py-3"
+              aria-live="polite"
             >
-              {createCheckout.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-              ) : (
-                <Wallet className="mr-2 h-4 w-4" aria-hidden />
-              )}
-              Pay now
-            </Button>
-            {canCancel ? (
-              <CancelRequestButton
-                status={data.status}
-                busy={cancelBooking.isPending}
-                onConfirm={handleCancel}
+              <Loader2
+                className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0 animate-spin"
+                aria-hidden
               />
-            ) : null}
-          </>
+              <p className="text-muted-foreground text-sm">
+                Confirming your payment. This page updates on its own. Keep it open.
+              </p>
+            </div>
+          ) : (
+            <>
+              <Button
+                className="min-h-[44px] w-full"
+                onClick={handlePayNow}
+                disabled={createCheckout.isPending}
+              >
+                {createCheckout.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <Wallet className="mr-2 h-4 w-4" aria-hidden />
+                )}
+                Pay now
+              </Button>
+              {canCancel ? (
+                <CancelRequestButton
+                  status={data.status}
+                  busy={cancelBooking.isPending}
+                  onConfirm={handleCancel}
+                />
+              ) : null}
+            </>
+          )
         ) : isSearching ? (
           canCancel ? (
             <CancelRequestButton

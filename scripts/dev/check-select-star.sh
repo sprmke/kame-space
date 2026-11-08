@@ -39,6 +39,8 @@ ALLOWLIST=(
   # Added 2026-10-19: insert/update-returning single rows (`.single()`/`.maybeSingle()`)
   # on narrow tables; marketing_themes list is capped at 40 per property and every
   # column is serialized; system_health_probe_results holds one row per probe id.
+  # Single-row update-returning read of a parking row that is immediately serialized in full.
+  'update-parking/index.ts'
   'marketing-themes/index.ts'
   '_shared/supportTicketSubmitterActions.ts'
   '_shared/inboxQuickReplyTemplates.ts'

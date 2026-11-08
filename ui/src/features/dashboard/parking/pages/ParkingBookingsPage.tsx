@@ -33,6 +33,8 @@ import {
 import { useParkingContext } from '@/features/dashboard/org/components/RequireParkingContext';
 import { AdminParkingNewBookingModal } from '@/features/dashboard/parking/components/AdminParkingNewBookingModal';
 import { useParkingBookings } from '@/features/dashboard/parking/hooks/useParkingBookings';
+import { useParkingPermissions } from '@/features/dashboard/team/hooks/useParkingPermissions';
+import { hasParkingPermission } from '@/features/dashboard/team/lib/parkingPermissions';
 
 import { FloatingPanel, FloatingToolbar } from '@/components/mobile/FloatingPanel';
 import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
@@ -114,6 +116,8 @@ function writeQueryToParams(q: BookingsQuery, cur: URLSearchParams): URLSearchPa
 
 export function ParkingBookingsPage() {
   const { parking, orgSlug } = useParkingContext();
+  const { data: parkingAccess } = useParkingPermissions();
+  const canEdit = hasParkingPermission(parkingAccess?.permissions, 'bookings:edit');
   const [searchParams, setSearchParams] = useSearchParams();
   const [newBookingOpen, setNewBookingOpen] = useState(false);
   const isMobileLayout = useIsBelowLg();
@@ -279,15 +283,17 @@ export function ParkingBookingsPage() {
         onClear={handleClearDate}
         fullWidth={isBelowMd}
       />
-      <button
-        type="button"
-        className="native-cta sm:w-auto sm:px-3.5"
-        onClick={() => setNewBookingOpen(true)}
-      >
-        <CalendarPlus className="size-4" aria-hidden />
-        <span className="hidden sm:inline">New booking</span>
-        <span className="sm:hidden">New</span>
-      </button>
+      {canEdit ? (
+        <button
+          type="button"
+          className="native-cta sm:w-auto sm:px-3.5"
+          onClick={() => setNewBookingOpen(true)}
+        >
+          <CalendarPlus className="size-4" aria-hidden />
+          <span className="hidden sm:inline">New booking</span>
+          <span className="sm:hidden">New</span>
+        </button>
+      ) : null}
     </div>
   );
 
@@ -329,11 +335,11 @@ export function ParkingBookingsPage() {
     </FloatingToolbar>
   );
 
-  const heroNewBooking = (
+  const heroNewBooking = canEdit ? (
     <MobileHeroActionButton aria-label="New booking" onClick={() => setNewBookingOpen(true)}>
       <CalendarPlus className="size-5" aria-hidden />
     </MobileHeroActionButton>
-  );
+  ) : null;
 
   return (
     <>

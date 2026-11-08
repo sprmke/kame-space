@@ -68,7 +68,6 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'respond-to-host-review': guest,
   'submit-form': guest,
   'submit-form-completion': guest,
-  'submit-pay-parking': guest,
   'submit-sd-form': guest,
   'submit-parking-booking-request': guest,
   'ical-export': guest,
@@ -84,7 +83,7 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'meta-inbox-webhook': system,
   'meta-inbox-oauth-callback': system,
   'meta-inbox-backfill': system,
-  'parking-broadcast-email': system,
+  'complete-parking-bookings': system,
 
   // ── Assistant internals ───────────────────────────────────────────────────────────────────
   'dashboard-assistant-briefing': internal,
@@ -164,6 +163,8 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'org-access': read,
   'org-plan': read,
   'parking-access': read,
+  'parking-payments': read,
+  'resend-parking-endorsement': handoff('parking.bookings', 'Endorsement resend'),
   'preview-guest-stay-guide': read,
   'property-access': read,
   'property-entitlements': read,
@@ -357,7 +358,6 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'analytics-ai-review': excluded('property.analytics', 'AI Performance Review regenerate'),
   'copy-property-settings': excluded('org.properties', 'Multi-target settings clone'),
   'create-organization': excluded('org.dashboard', 'Onboarding flow'),
-  'create-parking-booking': excluded('parking.bookings', 'Admin booking create'),
   'delete-organization': excluded('org.settings', 'Irreversible delete'),
   'delete-parking': excluded('parking.settings', 'Irreversible delete'),
   'delete-property': excluded('property.settings', 'Irreversible delete'),

@@ -243,6 +243,55 @@ export async function sendParkingAwaitingPaymentEmail(
   });
 }
 
+const GUEST_HOST_CANCELLED_BODY_TEMPLATE = `<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;">The host cancelled your parking reservation for <strong>{{parking_location}}</strong> ({{check_in_date}} to {{check_out_date}}).</p>
+<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;">If you already paid, our team will review your refund and contact you. You can find another slot any time.</p>
+<p>{{status_cta}}</p>`;
+
+export type ParkingHostCancelledEmailInput = {
+  to: string;
+  parking: Pick<
+    ParkingRow,
+    'name' | 'organization_id' | 'residence_name' | 'tower' | 'level' | 'slot_label'
+  >;
+  checkInDate: string;
+  checkOutDate: string;
+  bookingId: string;
+};
+
+/** Guest notice when a host cancels a paid or confirmed parking booking (M-1). */
+export async function sendParkingHostCancelledEmail(
+  input: ParkingHostCancelledEmailInput
+): Promise<void> {
+  const { brandingPropertyId, settings, branding } = await resolveParkingEmailBranding(
+    input.parking.organization_id
+  );
+  const statusUrl = `${settings.publicGuestAppOrigin.replace(/\/+$/, '')}/parkings/requests/${input.bookingId}`;
+
+  const html = await renderPropertyTemplateSendEmail({
+    propertyId: brandingPropertyId,
+    templateKey: 'email-booking-acknowledgement',
+    emailTitle: 'Parking Cancelled by Host',
+    contentOverride: GUEST_HOST_CANCELLED_BODY_TEMPLATE,
+    branding,
+    placeholderVars: {
+      parking_location: escapeHtml(parkingLocationLabel(input.parking)),
+      check_in_date: escapeHtml(input.checkInDate),
+      check_out_date: escapeHtml(input.checkOutDate),
+      status_cta: buildCtaHtml(statusUrl, 'View request', settings.brandColor),
+    },
+  });
+
+  await sendResendEmail({
+    fromDisplayName: branding.organizationName,
+    fromEmail: branding.fromEmail,
+    to: input.to,
+    replyTo: settings.emailReplyTo,
+    subject: `${branding.organizationName} - Parking Cancelled ${formatEmailDateRange(input.checkInDate, input.checkOutDate)}`,
+    html,
+    errorLabel: 'parking host-cancelled email',
+  });
+}
+
 export type ParkingNoHostAvailableEmailInput = {
   to: string;
   organizationId: string;

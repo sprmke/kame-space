@@ -11,7 +11,7 @@ import {
   verifyOrgAccess,
   verifyParkingTeamAccess,
 } from './orgAuth.ts';
-import { loadParkingPricing } from './parkingPricing.ts';
+import { resolveParkingGuestNightlyRate } from './parkingPlatformSettings.ts';
 import { loadResolvedBrandColorByParkingId } from './parkingBranding.ts';
 import {
   readParkingHeightClearanceM,
@@ -21,6 +21,7 @@ import {
 import { formatCheckTime12h } from './publicPropertyService.ts';
 import { isListingRecommendedBadge, resolveListingAuthorization } from './listingAuthorization.ts';
 import type { OrgPermissionParam } from './orgTeamPermissions.ts';
+import type { ParkingTeamPermissionId } from './parkingTeamPermissions.ts';
 import { resolvePublicDevelopmentLink } from './publicDevelopmentLink.ts';
 
 export type ParkingAccessContext = OrgAccessContext & {
@@ -159,6 +160,49 @@ export async function resolveScopedParkingAccess(
   };
 }
 
+export type ParkingTeamAccessWithParking = ParkingTeamAccessContext & {
+  parkingRow: ParkingRow;
+};
+
+/**
+ * Parking-scoped authorization for host endpoints. This is the one to use for settings,
+ * pricing, uploads, Telegram, finance reads and endorsement actions: it resolves the parking
+ * from `?parking_id=` / `?parking=` and then delegates to `verifyParkingTeamAccess`, which
+ * understands the owner, platform admins, org admins (all-listings vs assigned) and
+ * `parking_members` with their parking permission leaves.
+ *
+ * `resolveScopedParkingAccess` stays only for org-level operations that must not be available
+ * to a parking member (delete/archive). Never use it as the gate for a host settings surface.
+ */
+export async function resolveScopedParkingTeamAccess(
+  req: Request,
+  permission: ParkingTeamPermissionId
+): Promise<ParkingTeamAccessWithParking> {
+  const url = new URL(req.url);
+  const parkingId = readParkingIdFromUrl(url);
+  const parkingSlug = readParkingSlugFromUrl(url);
+  if (!parkingId && !parkingSlug) {
+    throw new Response(
+      JSON.stringify({ success: false, error: 'parking_id or parking slug is required' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const parkingRow = await loadParkingRow({
+    parkingId: parkingId ?? undefined,
+    parkingSlug: parkingSlug ?? undefined,
+  });
+  if (!parkingRow) {
+    throw new Response(JSON.stringify({ success: false, error: 'Parking not found' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const access = await verifyParkingTeamAccess(req, parkingRow.id as string, permission);
+  return { ...access, parkingRow };
+}
+
 /** Read parking team access without a specific permission gate. */
 export async function resolveParkingTeamAccessContext(
   req: Request,
@@ -187,7 +231,7 @@ export async function loadPublicParkingBySlug(slug: string) {
   if (error || !data) return null;
 
   const parkingId = data.id as string;
-  const pricing = await loadParkingPricing(parkingId);
+  const guestRate = await resolveParkingGuestNightlyRate();
 
   const org = data.organizations as { slug: string; name: string; settings?: unknown };
   const orgSettings =
@@ -228,7 +272,8 @@ export async function loadPublicParkingBySlug(slug: string) {
     level: data.level as string | null,
     slotLabel: data.slot_label as string,
     parkingType: data.parking_type as string,
-    ratePerNight: pricing.weekdayNightlyRate,
+    // Guests see the amount checkout charges, never the host payout rate (G-1).
+    ratePerNight: guestRate.weekday,
     brandColor,
     description,
     spaceLengthM: readParkingSpaceLengthM(settings),
@@ -237,9 +282,9 @@ export async function loadPublicParkingBySlug(slug: string) {
     checkInTime: formatCheckTime12h(checkInRaw),
     checkOutTime: formatCheckTime12h(checkOutRaw),
     pricing: {
-      weekdayNightlyRate: pricing.weekdayNightlyRate,
-      weekendNightlyRate: pricing.weekendNightlyRate,
-      dateOverrides: pricing.dateOverrides,
+      weekdayNightlyRate: guestRate.weekday,
+      weekendNightlyRate: guestRate.weekend,
+      dateOverrides: {} as Record<string, number>,
       currency: 'PHP',
     },
     coverImage: typeof settings.coverImage === 'string' ? settings.coverImage : (images[0] ?? null),

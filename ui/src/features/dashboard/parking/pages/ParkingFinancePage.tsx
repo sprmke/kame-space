@@ -23,6 +23,7 @@ import { FinanceSummaryCards } from '@/features/dashboard/finance/components/Fin
 import { FinanceTransactionModals } from '@/features/dashboard/finance/components/FinanceTransactionModals';
 import { FinanceTransactionsChart } from '@/features/dashboard/finance/components/FinanceTransactionsChart';
 import { useFinanceLineItems } from '@/features/dashboard/finance/hooks/useFinanceLineItems';
+import { useParkingPayments } from '@/features/dashboard/parking/hooks/useParkingPayments';
 import { useFinanceSummary } from '@/features/dashboard/finance/hooks/useFinanceSummary';
 import { buildFinanceChartData } from '@/features/dashboard/finance/lib/financeChartData';
 import {
@@ -53,6 +54,54 @@ import { useAdminMobileCardViewGuard } from '@/hooks/useAdminMobileCardViewGuard
 import { useIsBelowLg, useIsBelowMd } from '@/hooks/useMediaQuery';
 import { fromIsoDate } from '@/lib/date/navigation';
 import { buildPageItems } from '@/lib/table/pagination';
+import { formatMoney } from '@/utils/format/currency';
+
+function MarketplacePayoutsSection() {
+  const { data, isLoading } = useParkingPayments();
+  const rows = data ?? [];
+
+  return (
+    <FloatingPanel padding="md" className="space-y-3">
+      <div>
+        <h2 className="text-section-title">Marketplace payouts</h2>
+        <p className="text-muted-foreground text-xs">
+          Paid bookings. Payouts are sent manually by the Kame Space team.
+        </p>
+      </div>
+      {isLoading && rows.length === 0 ? (
+        <p className="text-muted-foreground text-sm">Loading payouts…</p>
+      ) : rows.length === 0 ? (
+        <p className="text-muted-foreground text-sm">No marketplace payments yet.</p>
+      ) : (
+        <ul className="divide-border/60 divide-y">
+          {rows.map((row) => (
+            <li key={row.id} className="flex items-start justify-between gap-3 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">
+                  {formatMoney(row.hostNetTotal)} net
+                  {row.bookingChannel === 'direct_link' ? ' · Direct link' : ''}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  Guest paid {formatMoney(row.guestChargeTotal)} · Gross{' '}
+                  {formatMoney(row.hostGrossTotal)} · Fee {(row.commissionPct * 100).toFixed(1)}%
+                </p>
+              </div>
+              <span className="text-muted-foreground shrink-0 text-right text-xs">
+                {row.status === 'refunded'
+                  ? 'Refunded'
+                  : row.status === 'refund_review'
+                    ? 'Refund review'
+                    : row.disbursedAt
+                      ? 'Disbursed'
+                      : 'Awaiting payout'}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </FloatingPanel>
+  );
+}
 
 export function ParkingFinancePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -293,7 +342,7 @@ export function ParkingFinancePage() {
         pagedEntries.rows.length === 0 && !isLedgerLoading ? (
           <FloatingPanel
             padding="lg"
-            className="flex flex-col items-center justify-center py-8 sm:py-12 text-center"
+            className="flex flex-col items-center justify-center py-8 text-center sm:py-12"
           >
             <p className="text-foreground text-sm font-semibold">No transactions in this period</p>
           </FloatingPanel>
@@ -319,6 +368,8 @@ export function ParkingFinancePage() {
           ariaLabel="Finance ledger pagination"
         />
       ) : null}
+
+      <MarketplacePayoutsSection />
 
       <FinanceTransactionModals
         query={query}

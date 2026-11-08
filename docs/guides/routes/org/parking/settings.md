@@ -27,6 +27,8 @@ Route: `/org/:orgSlug/parking/:parkingSlug/settings`
 
 ## Overview
 
+**Permissions:** parking team `settings:view` to open; `settings:edit` to save sections and upload media. Archiving/restoring also requires the org-level `org.parkings:manage` permission and cannot be done by a parking member. Delete is org-level and is blocked once the slot has any booking history.
+
 Configure one parking slot: cover photo, dimensions and check-in times, amenities, location, automation emails, integrations status, and delete. Guests pay through PayMongo, so there is no payment method section. Saves update the public listing guests see at `/parkings/:slug` and the admin sidebar for this slot. Aligned with [Property Settings](../property/settings.md): required fields, save-blocking validation, and section red-dot tracking follow the same pattern. Field helpers use a **?** beside the label (`FieldLabel` / `SettingsField` `help`) — not muted text under the control.
 
 ---
@@ -125,8 +127,8 @@ Parking type, residence, tower, level, and slot number can only be set when the 
 - Location → `PATCH update-parking` (location fields in `parkings.settings`)
 - Automations → `PATCH parking-settings?parking_id=` `{ automationToggles: { emailParkingReservationRequest, emailParkingGuestConfirmed, emailParkingNoHostAvailable, autoAcceptTopMatch } }`
 - Integrations status → `GET parking-settings?parking_id=` (`parkingIntegrations`, `platformSecrets`); Telegram credentials saved from **Notifications** modules
-- Archive / restore → `PATCH update-parking` `{ parkingId, status: 'INACTIVE' | 'ACTIVE' }` — hides/shows public listing (`list-public-parkings` / `get-public-parking` return **ACTIVE** only)
-- Delete → `DELETE delete-parking`
+- Archive / restore → `PATCH update-parking` `{ parkingId, status: 'INACTIVE' | 'ACTIVE' }` — hides/shows public listing (`list-public-parkings` / `get-public-parking` return **ACTIVE** only). Archiving declines that slot's pending broadcast offers; confirmed bookings are kept.
+- Delete → `DELETE delete-parking` — returns `409 has_bookings` when the slot has any booking history or pending offer. Show Archive instead.
 
 Since parking type, residence, tower, level, and slot number can't change in Settings, the slug is fixed at creation and Settings never navigates to a new URL.
 

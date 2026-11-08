@@ -2,7 +2,7 @@
  * Resolve property or parking scope for Telegram admin edge handlers.
  */
 
-import { resolveScopedParkingAccess, readParkingIdFromUrl } from './parkingScope.ts';
+import { resolveScopedParkingTeamAccess, readParkingIdFromUrl } from './parkingScope.ts';
 import { readPropertyIdFromUrl, resolveScopedPropertyAccess } from './propertyScope.ts';
 import { ensureTelegramParkingSettings } from './parkingTelegramSettingsSeed.ts';
 import { ensurePropertySettings } from './propertySettingsSeed.ts';
@@ -54,8 +54,8 @@ export async function resolveTelegramAssetAccess(
   }
 
   if (parkingId) {
-    const permission = req.method === 'GET' ? 'org.parkings:view' : 'org.parkings:manage';
-    const { parkingRow } = await resolveScopedParkingAccess(req, permission);
+    const permission = req.method === 'GET' ? 'notifications:view' : 'notifications:edit';
+    const { parkingRow } = await resolveScopedParkingTeamAccess(req, permission);
     return { kind: 'parking', id: parkingRow.id };
   }
 

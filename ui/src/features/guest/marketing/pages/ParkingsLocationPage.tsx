@@ -11,7 +11,8 @@ import {
   type ParkingFilterState,
   type ParkingSortKey,
 } from '@/features/guest/marketing/developments/lib/parkingSlotFilters';
-import { ParkingsEntriesGrid, ParkingsHero } from '@/features/guest/marketing/parkings/components';
+import { ParkingsEntriesGrid } from '@/features/guest/marketing/parkings/components/ParkingsEntriesGrid';
+import { ParkingsHero } from '@/features/guest/marketing/parkings/components/ParkingsHero';
 import { useCaptureParkingLinkStay } from '@/features/guest/marketing/parkings/hooks/useCaptureParkingLinkStay';
 import {
   usePrefetchPublicParkings,

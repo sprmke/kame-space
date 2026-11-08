@@ -29,7 +29,15 @@ export function useClaimParkingBooking(parkingId: string | null) {
       toast.success('Booking accepted');
     },
     onError: (err: Error) => {
-      toast.error(err.message === 'already_claimed' ? 'Already claimed' : err.message);
+      const message =
+        err.message === 'already_claimed'
+          ? 'Already claimed'
+          : err.message === 'slot_unavailable'
+            ? 'This slot is already booked for these dates'
+            : err.message === 'offer_expired'
+              ? 'Offer expired'
+              : err.message;
+      toast.error(message);
       queryClient.invalidateQueries({ queryKey: BOOKINGS_QUERY_KEY });
     },
   });
@@ -62,7 +70,12 @@ export function useTransitionParkingBooking(parkingId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: { bookingId: string; toStatus: string }) => {
+    mutationFn: (payload: {
+      bookingId: string;
+      toStatus: string;
+      reason?: string;
+      note?: string;
+    }) => {
       if (!parkingId) throw new Error('Parking context required');
       return callEdgeFunction<BookingRow>(
         parkingScopedPath('transition-parking-booking', parkingId),

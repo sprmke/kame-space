@@ -7,8 +7,14 @@ import type { ParkingAccessPayload } from '@/features/dashboard/team/lib/parking
 export const PARKING_ACCESS_QUERY_KEY = (parkingId: string) =>
   ['parking-access', parkingId] as const;
 
-export function useParkingPermissions() {
-  const parkingId = useOptionalParkingContext()?.parking.id ?? null;
+/**
+ * Parking team permission payload. Pass `parkingIdOverride` on screens that render a parking
+ * outside the `/org/:orgSlug/parking/:parkingSlug` route (for example the org setup guide),
+ * where `useOptionalParkingContext()` is null.
+ */
+export function useParkingPermissions(parkingIdOverride?: string | null) {
+  const contextParkingId = useOptionalParkingContext()?.parking.id ?? null;
+  const parkingId = parkingIdOverride?.trim() || contextParkingId;
 
   return useQuery({
     queryKey: PARKING_ACCESS_QUERY_KEY(parkingId ?? ''),

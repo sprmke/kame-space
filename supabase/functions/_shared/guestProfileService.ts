@@ -193,11 +193,15 @@ export async function patchGuestProfile(
 
 export type GuestTripDto = {
   id: string;
+  /** Property stay or standalone/marketplace parking request. */
+  kind: 'property' | 'parking';
   status: string;
   checkInDate: string;
   checkOutDate: string;
   propertySlug: string | null;
   propertyName: string | null;
+  parkingSlug: string | null;
+  parkingName: string | null;
   imageUrl: string | null;
   guestFacebookName: string | null;
 };
@@ -209,6 +213,14 @@ type BookingRow = {
   check_out_date: string;
   guest_facebook_name: string | null;
   property_id: string | null;
+};
+
+type GuestTripRow = BookingRow & {
+  parking_id: string | null;
+  parking_request_organization_id: string | null;
+  parking_pinned_id: string | null;
+  parking_check_in_date: string | null;
+  parking_check_out_date: string | null;
 };
 
 type PropertyRow = {
@@ -358,10 +370,12 @@ export async function listGuestTrips(user: AuthenticatedUser): Promise<GuestTrip
   const email = user.email.trim().toLowerCase();
   const { data: bookings, error } = await supabase
     .from('guest_submissions')
-    .select('id, status, check_in_date, check_out_date, guest_facebook_name, property_id')
+    .select(
+      `id, status, check_in_date, check_out_date, guest_facebook_name, property_id,
+       parking_id, parking_request_organization_id, parking_pinned_id,
+       parking_check_in_date, parking_check_out_date`
+    )
     .or(`guest_user_id.eq.${user.id},and(guest_user_id.is.null,guest_email.eq.${email})`)
-    .not('property_id', 'is', null)
-    .is('parking_id', null)
     .order('created_at', { ascending: false })
     .limit(100);
 
@@ -370,9 +384,16 @@ export async function listGuestTrips(user: AuthenticatedUser): Promise<GuestTrip
     throw new Error('Failed to load trips');
   }
 
-  const rows = (bookings ?? []) as BookingRow[];
+  const rows = (bookings ?? []) as GuestTripRow[];
   const propertyIds = [
     ...new Set(rows.map((row) => row.property_id).filter((id): id is string => Boolean(id))),
+  ];
+  const parkingIds = [
+    ...new Set(
+      rows
+        .map((row) => row.parking_id ?? row.parking_pinned_id)
+        .filter((id): id is string => Boolean(id))
+    ),
   ];
 
   const propertyMap = new Map<string, PropertyRow>();
@@ -387,25 +408,57 @@ export async function listGuestTrips(user: AuthenticatedUser): Promise<GuestTrip
     }
   }
 
+  const parkingMap = new Map<string, ParkingRow>();
+  if (parkingIds.length > 0) {
+    const { data: parkings } = await supabase
+      .from('parkings')
+      .select('id, slug, name, settings')
+      .in('id', parkingIds);
+    for (const parking of (parkings ?? []) as ParkingRow[]) {
+      parkingMap.set(parking.id, parking);
+    }
+  }
+
   // Dates are stored as MM-DD-YYYY text, so sort after normalizing (newest check-in first).
   return rows
-    .map((row) => ({
-      row,
-      checkInYmd: normalizeBookingDateToYmd(row.check_in_date) ?? row.check_in_date,
-      checkOutYmd: normalizeBookingDateToYmd(row.check_out_date) ?? row.check_out_date,
-    }))
+    .map((row) => {
+      const isParking =
+        Boolean(row.parking_id) ||
+        Boolean(row.parking_request_organization_id) ||
+        Boolean(row.parking_pinned_id);
+      const checkIn = isParking
+        ? (row.parking_check_in_date ?? row.check_in_date)
+        : row.check_in_date;
+      const checkOut = isParking
+        ? (row.parking_check_out_date ?? row.check_out_date)
+        : row.check_out_date;
+      return {
+        row,
+        isParking,
+        checkInYmd: normalizeBookingDateToYmd(checkIn) ?? checkIn,
+        checkOutYmd: normalizeBookingDateToYmd(checkOut) ?? checkOut,
+      };
+    })
     .sort((a, b) => b.checkInYmd.localeCompare(a.checkInYmd))
-    .map(({ row, checkInYmd, checkOutYmd }) => {
+    .map(({ row, isParking, checkInYmd, checkOutYmd }) => {
       const property = row.property_id ? propertyMap.get(row.property_id) : undefined;
-      const settings = property?.settings ?? {};
+      const parkingKey = row.parking_id ?? row.parking_pinned_id ?? '';
+      const parking = parkingKey ? parkingMap.get(parkingKey) : undefined;
+      const propertySettings = property?.settings ?? {};
+      const parkingSettings = (parking?.settings ?? {}) as Record<string, unknown>;
       return {
         id: row.id,
+        kind: isParking ? 'parking' : 'property',
         status: row.status,
         checkInDate: checkInYmd,
         checkOutDate: checkOutYmd,
         propertySlug: property?.slug ?? null,
         propertyName: property?.name ?? null,
-        imageUrl: firstPropertyImage(settings),
+        parkingSlug: parking?.slug ?? null,
+        parkingName: parking?.name ?? (isParking ? 'Parking request' : null),
+        imageUrl: isParking
+          ? firstParkingImage(parkingSettings)
+          : firstPropertyImage(propertySettings),
         guestFacebookName: row.guest_facebook_name,
       } satisfies GuestTripDto;
     });

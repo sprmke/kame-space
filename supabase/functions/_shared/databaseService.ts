@@ -592,88 +592,6 @@ export class DatabaseService {
     return data;
   }
 
-  /** Insert a parking-only reservation row (no property stay workflow). */
-  static async createParkingBooking(input: {
-    parkingId: string;
-    primaryGuestName: string;
-    guestEmail: string;
-    guestPhoneNumber: string;
-    checkInDate: string;
-    checkOutDate: string;
-    numberOfNights: number;
-    carPlateNumber: string;
-    carBrandModel?: string | null;
-    carColor?: string | null;
-    parkingLabel: string;
-    residenceName?: string | null;
-  }) {
-    const now = new Date().toISOString();
-    const guestName = input.primaryGuestName.trim();
-    const locationLabel =
-      [input.residenceName, input.parkingLabel].filter(Boolean).join(' · ') || input.parkingLabel;
-
-    const row = {
-      parking_id: input.parkingId,
-      property_id: null,
-      status: 'PENDING_REVIEW',
-      status_updated_at: now,
-      guest_facebook_name: guestName,
-      primary_guest_name: guestName,
-      guest_email: input.guestEmail.trim(),
-      guest_phone_number: input.guestPhoneNumber.trim(),
-      guest_address: locationLabel,
-      check_in_date: input.checkInDate,
-      check_out_date: input.checkOutDate,
-      parking_check_in_date: input.checkInDate,
-      parking_check_out_date: input.checkOutDate,
-      number_of_nights: input.numberOfNights,
-      number_of_adults: 1,
-      number_of_children: 0,
-      need_parking: true,
-      car_plate_number: input.carPlateNumber.trim(),
-      car_brand_model: input.carBrandModel?.trim() || null,
-      car_color: input.carColor?.trim() || null,
-      has_pets: false,
-      find_us: 'Parking',
-      booking_source: 'Parking',
-      payment_receipt_url: 'parking-only',
-      valid_id_url: null,
-      unit_owner: input.parkingLabel,
-      tower_and_unit_number: locationLabel,
-      owner_onsite_contact_person: 'N/A',
-      owner_contact_number: 'N/A',
-    };
-
-    const { data, error } = await this.supabase
-      .from('guest_submissions')
-      .insert(row)
-      .select()
-      .single();
-
-    if (error) throw new Error(`Failed to create parking booking: ${error.message}`);
-
-    try {
-      const organizationId = await resolveOrganizationIdForParking(input.parkingId);
-      await createNotification({
-        organizationId,
-        parkingId: input.parkingId,
-        type: 'booking_pending_review',
-        title: 'New booking submitted',
-        body: `${guestName} submitted a new parking booking request.`,
-        bookingId: data.id,
-        metadata: bookingNotificationMetadata(data),
-        dedupeKey: `${data.id}:booking_pending_review`,
-      });
-    } catch (notifErr) {
-      console.error(
-        '[databaseService] Could not create parking notification (non-fatal):',
-        notifErr
-      );
-    }
-
-    return data;
-  }
-
   /**
    * Update `status` + `status_updated_at` for a booking.
    * Only the orchestrator should call this — no side effects here.
@@ -1150,8 +1068,7 @@ export class DatabaseService {
       p_parking_id: parkingId ?? null,
       p_property_ids: propertyIds && propertyIds.length > 0 ? propertyIds : null,
       p_parking_ids: parkingIds && parkingIds.length > 0 ? parkingIds : null,
-      p_extra_booking_ids:
-        extraBookingIds && extraBookingIds.length > 0 ? extraBookingIds : null,
+      p_extra_booking_ids: extraBookingIds && extraBookingIds.length > 0 ? extraBookingIds : null,
       p_booking_kind: bookingKind,
       p_q: q.trim() || null,
       p_status: status.length > 0 ? status : null,
@@ -1169,14 +1086,15 @@ export class DatabaseService {
     if (error) {
       // 42883 / PGRST202 = function not found (migration not applied yet).
       // Anything else is logged once per request and also falls back.
-      console.warn('[DatabaseService] list_bookings_page RPC failed, using fallback:', error.message);
+      console.warn(
+        '[DatabaseService] list_bookings_page RPC failed, using fallback:',
+        error.message
+      );
       return null;
     }
 
     const payload = (Array.isArray(data) ? data[0] : data) as
-      | { rows?: unknown; total?: unknown }
-      | null
-      | undefined;
+      { rows?: unknown; total?: unknown } | null | undefined;
     if (!payload || !Array.isArray(payload.rows)) {
       console.warn('[DatabaseService] list_bookings_page returned an unexpected shape');
       return null;

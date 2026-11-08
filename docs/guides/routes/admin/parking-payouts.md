@@ -32,14 +32,18 @@ Two things on one page, per Phase 4 of the parking marketplace build:
    also the price cap: a host priced at or above the guest rate for any night is excluded from
    the match pool entirely. Includes a second, independently configurable commission rate
    (default 5%) for bookings made through a host's Phase 8 direct-booking link.
-2. **Payout ledger** — every paid parking booking (`parking_payment_transactions`, `status =
-'paid'`), with a manual "mark disbursed" and "record clawback" action per row. There is no
+2. **Payout ledger** — paid, refund-review, refunded and needs-review parking rows, with manual
+   **mark disbursed**, **record clawback** and **record refund** actions. Filters: Paid,
+   Refund review, Needs review, Refunded, All. `record_refund` is a bookkeeping action only
+   (issue the money in the PayMongo dashboard); it moves the row to `refunded`. A host cancel
+   after payment already moved it to `refund_review`, which blocks `mark_disbursed` until the
+   refund is recorded. There is no
    automated payout yet — PayMongo Platforms split-payout requires a business application
    Kame Space hasn't made; this is the day-one manual path until that ships.
 
 **Access:** `RequireSuperAdmin`.
 
-**Step-up OTP:** saving commission/rate config and every mark-disbursed / record-clawback action need a fresh email verification code (~15-min sudo window) — see [`overview.md`](overview.md#step-up-verification-all-admin-pages) / `.cursor/rules/admin-auth.mdc` §8.
+**Step-up OTP:** saving commission/rate config and every mark-disbursed / record-clawback / record-refund action need a fresh email verification code (~15-min sudo window) — see [`overview.md`](overview.md#step-up-verification-all-admin-pages) / `.cursor/rules/admin-auth.mdc` §8.
 
 **Browser tab title:** `Kame Space - Parking payouts`
 

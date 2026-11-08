@@ -69,6 +69,7 @@ const SCOPE_PATTERNS = [
   /\bverifyPropertyOwner\s*\(/,
   /\bverifyParkingTeamAccess\s*\(/,
   /\bresolveScopedParkingAccess\s*\(/,
+  /\bresolveScopedParkingTeamAccess\s*\(/,
   /\bresolveScopedPropertyAccess\s*\(/,
   /\bresolvePropertyAccessContext\s*\(/,
   /\bresolveOrgAccessContext\s*\(/,
@@ -275,7 +276,11 @@ function auditFunction(fnDir) {
 
   const wrapper = detectWrapper(src);
   const rawServe = !wrapper && detectRawServe(src);
-  const declaredTier = wrapper ? WRAPPER_TIER[wrapper] : rawServe ? 'UNKNOWN (raw serve)' : 'UNKNOWN (no serve detected)';
+  const declaredTier = wrapper
+    ? WRAPPER_TIER[wrapper]
+    : rawServe
+      ? 'UNKNOWN (raw serve)'
+      : 'UNKNOWN (no serve detected)';
 
   const hasScopeCheck = detectAny(src, SCOPE_PATTERNS) || SCOPE_VIA_CALLEE_ALLOWLIST.has(fnDir);
   const hasPermissionLeaf = detectAny(src, PERMISSION_LEAF_PATTERNS);

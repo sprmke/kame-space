@@ -40,7 +40,9 @@ function emittedEdgeEvents(): string[] {
   const found = new Set<string>();
   for (const file of walk(FUNCTIONS_ROOT)) {
     const source = readFileSync(file, 'utf8');
-    for (const match of source.matchAll(/capturePostHogEvent\(\s*['"]([a-z0-9_]+)['"]/g)) {
+    for (const match of source.matchAll(
+      /capture(?:AppEvent|PostHogEvent|ParkingEvent)\(\s*['"]([a-z0-9_]+)['"]/g
+    )) {
       found.add(match[1]!);
     }
   }
@@ -59,7 +61,9 @@ function emittedBrowserEvents(): string[] {
       continue;
     }
     const source = readFileSync(file, 'utf8');
-    for (const match of source.matchAll(/captureAppEvent\(\s*['"]([a-z0-9_]+)['"]/g)) {
+    for (const match of source.matchAll(
+      /capture(?:AppEvent|PostHogEvent|ParkingEvent)\(\s*['"]([a-z0-9_]+)['"]/g
+    )) {
       found.add(match[1]!);
     }
   }
