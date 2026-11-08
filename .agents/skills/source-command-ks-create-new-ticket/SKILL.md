@@ -1,16 +1,8 @@
 ---
-name: 'source-command-ks-create-new-ticket'
-description: 'Migrated source command `ks-create-new-ticket`'
+name: source-command-ks-create-new-ticket
+description: "Run the existing project command ks-create-new-ticket when the user requests it."
 ---
-
-# source-command-ks-create-new-ticket
-
-Use this skill when the user asks to run the migrated source command `ks-create-new-ticket`.
-
-## Command Template
 
 # ks-create-new-ticket
 
-Alias for `/kh-create-new-ticket` while teammates move to the Kame Space command names.
-
-Follow the same instructions as [`kh-create-new-ticket.md`](./kh-create-new-ticket.md) in this directory. Nothing else changes.
+Read [.cursor/commands/ks-create-new-ticket.md](../../../.cursor/commands/ks-create-new-ticket.md) and follow that command using the user’s arguments. Resolve its relative references from the original command directory. Preserve project rules and authorization boundaries. Cursor/Claude-only tool names must map to actually available Codex tools; do not claim unavailable tools ran.

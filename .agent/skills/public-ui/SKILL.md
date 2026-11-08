@@ -1,3 +1,8 @@
+---
+name: public-ui
+description: "Use when porting or changing **guest-facing** pages: PMA marketing site, calendar, form, sd-form, pay-parking."
+---
+
 # Public UI (guest marketing + operational flows)
 
 Use when porting or changing **guest-facing** pages: PMA marketing site, calendar, form, sd-form, pay-parking.

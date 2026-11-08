@@ -1,0 +1,454 @@
+{
+  "skills": [
+    "accessibility",
+    "admin-dashboard",
+    "agent-reporting",
+    "ask-matt",
+    "audit-logging",
+    "banner-design",
+    "batch-commit",
+    "booking-workflow",
+    "bookings-table",
+    "brainstorming",
+    "branch-lifecycle",
+    "brand",
+    "cavecrew",
+    "caveman",
+    "caveman-commit",
+    "caveman-help",
+    "caveman-review",
+    "claude-api",
+    "code-review",
+    "codebase-design",
+    "competitive-ux-research",
+    "component-generator",
+    "design",
+    "design-md",
+    "design-system",
+    "design-taste-frontend",
+    "diagnosing-bugs",
+    "diagnosing-superpowers",
+    "dispatching-parallel-agents",
+    "doc-coauthoring",
+    "docs-first",
+    "documentation-maintenance",
+    "docx",
+    "domain-modeling",
+    "emails",
+    "executing-plans",
+    "finishing-a-development-branch",
+    "fix-migration-issues",
+    "forms",
+    "frontend-design",
+    "full-output-enforcement",
+    "git-commits",
+    "github-issues",
+    "gmail-listener",
+    "graphify-codex",
+    "grill-me",
+    "grill-with-docs",
+    "grilling",
+    "handoff",
+    "high-end-visual-design",
+    "human-copy",
+    "image-to-code",
+    "impeccable",
+    "implement",
+    "implement-spec",
+    "improve-codebase-architecture",
+    "integrations",
+    "investigate-first",
+    "karpathy-guidelines",
+    "lean-build",
+    "mcp-builder",
+    "megacave",
+    "meta-messaging",
+    "migration",
+    "minimal-ui-copy",
+    "mobile-responsive",
+    "multi-tenancy",
+    "notifications",
+    "observability",
+    "pdf",
+    "performance",
+    "plans-and-permissions",
+    "playwright-cli",
+    "ponytail",
+    "ponytail-audit",
+    "ponytail-debt",
+    "ponytail-gain",
+    "ponytail-help",
+    "ponytail-review",
+    "pptx",
+    "pr",
+    "production-readiness-review",
+    "property-dashboard-qa",
+    "prototype",
+    "public-ui",
+    "receiving-code-review",
+    "redesign-existing-projects",
+    "requesting-code-review",
+    "research",
+    "retro",
+    "route-guides",
+    "safe-refactor",
+    "security-audit",
+    "self-review",
+    "sentry",
+    "setup-matt-pocock-skills",
+    "skeleton-loaders",
+    "skill-creator",
+    "slides",
+    "social-creative",
+    "social-inbox",
+    "source-command-fix-merge-conflicts",
+    "source-command-github-issue",
+    "source-command-kh-check-before-pr",
+    "source-command-kh-create-new-ticket",
+    "source-command-kh-help",
+    "source-command-kh-pull-new-changes",
+    "source-command-kh-start-app",
+    "source-command-kh-start-work",
+    "source-command-kh-submit-for-review",
+    "source-command-ks-check-before-pr",
+    "source-command-ks-create-new-ticket",
+    "source-command-ks-help",
+    "source-command-ks-pull-new-changes",
+    "source-command-ks-start-app",
+    "source-command-ks-start-work",
+    "source-command-ks-submit-for-review",
+    "source-command-production-readiness-review",
+    "source-command-self-review",
+    "source-command-superpowers-brainstorm",
+    "source-command-superpowers-debug",
+    "source-command-superpowers-execute",
+    "source-command-superpowers-plan",
+    "source-command-workflow-done",
+    "source-command-workflow-start",
+    "source-command-workflow-sync-scratchpads",
+    "source-command-workflow-wont-do",
+    "stitch-design-taste",
+    "subagent-driven-development",
+    "supabase-auth",
+    "supabase-stack",
+    "superpowers",
+    "support-content",
+    "surgical-patch",
+    "systematic-debugging",
+    "tanstack-query",
+    "tanstack-table",
+    "tdd",
+    "teach",
+    "test-driven-development",
+    "testing",
+    "to-questionnaire",
+    "to-spec",
+    "to-tickets",
+    "triage",
+    "ui-styling",
+    "ui-ux-pro-max",
+    "ultracave",
+    "unsaved-changes-guard",
+    "using-git-worktrees",
+    "using-superpowers",
+    "vercel-composition-patterns",
+    "vercel-react-best-practices",
+    "vercel-react-view-transitions",
+    "verification-before-completion",
+    "verify",
+    "verify-and-stop",
+    "wait-what",
+    "wayfinder",
+    "web-design-guidelines",
+    "webapp-testing",
+    "wizard",
+    "workflow",
+    "workflow-intake-scratchpads",
+    "writing-for-agents",
+    "writing-plans",
+    "writing-skills",
+    "xlsx"
+  ],
+  "commands": {
+    "fix-merge-conflicts": ".cursor/commands/fix-merge-conflicts.md",
+    "github-issue": ".cursor/commands/github-issue.md",
+    "kh-check-before-pr": ".cursor/commands/kh-check-before-pr.md",
+    "kh-create-new-ticket": ".cursor/commands/kh-create-new-ticket.md",
+    "kh-help": ".cursor/commands/kh-help.md",
+    "kh-pull-new-changes": ".cursor/commands/kh-pull-new-changes.md",
+    "kh-start-app": ".cursor/commands/kh-start-app.md",
+    "kh-start-work": ".cursor/commands/kh-start-work.md",
+    "kh-submit-for-review": ".cursor/commands/kh-submit-for-review.md",
+    "ks-check-before-pr": ".cursor/commands/ks-check-before-pr.md",
+    "ks-create-new-ticket": ".cursor/commands/ks-create-new-ticket.md",
+    "ks-help": ".cursor/commands/ks-help.md",
+    "ks-pull-new-changes": ".cursor/commands/ks-pull-new-changes.md",
+    "ks-start-app": ".cursor/commands/ks-start-app.md",
+    "ks-start-work": ".cursor/commands/ks-start-work.md",
+    "ks-submit-for-review": ".cursor/commands/ks-submit-for-review.md",
+    "production-readiness-review": ".cursor/commands/production-readiness-review.md",
+    "self-review": ".cursor/commands/self-review.md",
+    "superpowers-brainstorm": ".cursor/commands/superpowers-brainstorm.md",
+    "superpowers-debug": ".cursor/commands/superpowers-debug.md",
+    "superpowers-execute": ".cursor/commands/superpowers-execute.md",
+    "superpowers-plan": ".cursor/commands/superpowers-plan.md",
+    "workflow-done": ".cursor/commands/workflow-done.md",
+    "workflow-start": ".cursor/commands/workflow-start.md",
+    "workflow-sync-scratchpads": ".cursor/commands/workflow-sync-scratchpads.md",
+    "workflow-wont-do": ".cursor/commands/workflow-wont-do.md"
+  },
+  "agents": [
+    "verifier.toml",
+    "security-auditor.toml",
+    "debugger.toml",
+    "test-runner.toml"
+  ],
+  "rules": [
+    {
+      "path": ".cursor/rules/accessibility.mdc",
+      "always": false,
+      "scope": "- 'ui/src/**/*.tsx"
+    },
+    {
+      "path": ".cursor/rules/admin-auth.mdc",
+      "always": false,
+      "scope": "- 'supabase/functions/_shared/auth.ts"
+    },
+    {
+      "path": ".cursor/rules/agent-reporting.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/ai-assistant-parity.mdc",
+      "always": false,
+      "scope": "- ui/src/features/dashboard/**/*"
+    },
+    {
+      "path": ".cursor/rules/ai-usage.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/architecture.mdc",
+      "always": false,
+      "scope": "- 'ui/src/**/*"
+    },
+    {
+      "path": ".cursor/rules/audit-logging.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/booking-workflow.mdc",
+      "always": false,
+      "scope": "- 'supabase/functions/_shared/statusMachine.ts"
+    },
+    {
+      "path": ".cursor/rules/branch-lifecycle.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/competitive-ux-research.mdc",
+      "always": false,
+      "scope": "- 'ui/src/features/**/*.tsx"
+    },
+    {
+      "path": ".cursor/rules/components.mdc",
+      "always": false,
+      "scope": "- 'ui/src/**/*.tsx"
+    },
+    {
+      "path": ".cursor/rules/documentation-maintenance.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/forms.mdc",
+      "always": false,
+      "scope": "- 'ui/src/**/*Form*.tsx"
+    },
+    {
+      "path": ".cursor/rules/git-commits.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/github-issues.mdc",
+      "always": false,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/human-copy.mdc",
+      "always": true,
+      "scope": "- 'ui/src/**/*.tsx"
+    },
+    {
+      "path": ".cursor/rules/karpathy-guidelines.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/markitdown-mcp.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/mobile-native-ui.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/mobile-responsive.mdc",
+      "always": false,
+      "scope": "- 'ui/src/**/*.tsx"
+    },
+    {
+      "path": ".cursor/rules/naming-conventions.mdc",
+      "always": false,
+      "scope": "- 'ui/src/**/*"
+    },
+    {
+      "path": ".cursor/rules/no-prod-deploy.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/notifications.mdc",
+      "always": false,
+      "scope": "- supabase/migrations/*notifications*.sql"
+    },
+    {
+      "path": ".cursor/rules/observability.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/page-titles.mdc",
+      "always": true,
+      "scope": "- 'ui/src/**/*.tsx"
+    },
+    {
+      "path": ".cursor/rules/parking-workflow.mdc",
+      "always": false,
+      "scope": "- 'supabase/functions/_shared/parkingStatusMachine.ts"
+    },
+    {
+      "path": ".cursor/rules/plan-mode.mdc",
+      "always": false,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/plans-and-permissions.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/project-context.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/property-dashboard-qa.mdc",
+      "always": false,
+      "scope": "- ui/src/features/dashboard/property/**"
+    },
+    {
+      "path": ".cursor/rules/public-ui.mdc",
+      "always": false,
+      "scope": "- 'ui/src/features/guest/marketing/**/*"
+    },
+    {
+      "path": ".cursor/rules/pwa.mdc",
+      "always": false,
+      "scope": "- ui/src/pwa/**"
+    },
+    {
+      "path": ".cursor/rules/route-guides.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/security.mdc",
+      "always": false,
+      "scope": "- 'supabase/functions/**/*.ts"
+    },
+    {
+      "path": ".cursor/rules/self-review.mdc",
+      "always": false,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/sentry.mdc",
+      "always": false,
+      "scope": "- ui/src/lib/sentry/**"
+    },
+    {
+      "path": ".cursor/rules/skeleton-loaders.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/social-creative.mdc",
+      "always": false,
+      "scope": "- 'marketing/social/**"
+    },
+    {
+      "path": ".cursor/rules/social-inbox.mdc",
+      "always": false,
+      "scope": "- supabase/functions/**/meta-inbox-*/**"
+    },
+    {
+      "path": ".cursor/rules/state-management.mdc",
+      "always": false,
+      "scope": "- 'ui/src/**/hooks/**/*.ts"
+    },
+    {
+      "path": ".cursor/rules/supabase-edge-functions.mdc",
+      "always": false,
+      "scope": "supabase/functions/**/*.ts"
+    },
+    {
+      "path": ".cursor/rules/supabase-platform.mdc",
+      "always": false,
+      "scope": "- 'supabase/migrations/**/*.sql"
+    },
+    {
+      "path": ".cursor/rules/superpowers-opt-in.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/support-content.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/tech-stack.mdc",
+      "always": false,
+      "scope": "- 'ui/**/*.{ts,tsx}"
+    },
+    {
+      "path": ".cursor/rules/testing.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/ui-minimal-copy.mdc",
+      "always": true,
+      "scope": "- 'ui/src/**/*.tsx"
+    },
+    {
+      "path": ".cursor/rules/unsaved-changes.mdc",
+      "always": true,
+      "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/workflow-docs.mdc",
+      "always": false,
+      "scope": "Task-specific; read when relevant"
+    }
+  ],
+  "adapted_hooks": 15
+}

@@ -6,7 +6,7 @@ This file provides guidance to Codex (claude.ai/code) when working with code in 
 
 **Guest Form Management (GFM)** — a multi-tenant property-management platform, not just a guest form. Core loop: guests submit a booking form; admins run each booking through a status workflow (`PENDING_REVIEW` → … → `COMPLETED`) with Resend email and inbound approval email for Azure GAF/pet documents.
 
-Beyond that loop: org/property/**parking** multi-tenancy (parking is a separate vertical + RBAC, not a property sub-feature) with org verification tiers and a super-admin layer (`/admin/*`); Guest Inbox (Meta + web chat, AI replies); Marketing Studio (AI content, Meta publishing); Finance/Maintenance modules; pricing calendars; an authenticated guest portal (separate identity from the anon booking form); AI receipt validation; a voucher system. Not all of these have a dedicated skill yet — check `.Codex/README.md` before assuming coverage.
+Beyond that loop: org/property/**parking** multi-tenancy (parking is a separate vertical + RBAC, not a property sub-feature) with org verification tiers and a super-admin layer (`/admin/*`); Guest Inbox (Meta + web chat, AI replies); Marketing Studio (AI content, Meta publishing); Finance/Maintenance modules; pricing calendars; an authenticated guest portal (separate identity from the anon booking form); AI receipt validation; a voucher system. Not all of these have a dedicated skill yet — check `.codex/README.md` before assuming coverage.
 
 Stack: **Vite + React 18 SPA** (`ui/`) + **Supabase Edge Functions** (Deno, `supabase/functions/`) — no Node API, no tRPC/Drizzle/Next.js. Postgres (plain SQL migrations, no ORM), Supabase Storage, Supabase Auth.
 
@@ -179,11 +179,11 @@ SessionStart and PostToolUse hooks also inject this reminder — do not ignore t
 | Backlog / shipped work                                                                             | GitHub Issues + `docs/README.md` (Product backlog section); shipped history in `docs/archive/todos/shipped/`                                                                                                                                                                                                                    |
 | Booking-flow redesign decisions                                                                    | `docs/archive/planning/NEW_FLOW_PLAN.md`                                                                                                                                                                                                                                                                                        |
 
-Trivial fixes (typos, internal renames with no behavior/API/UX impact) don't need doc updates — everything else does. Doc index: `docs/README.md`. Full rules/skills index: `.cursor/rules/README.md` · Codex: `.Codex/README.md`. Skills: `documentation-maintenance`, `docs-first`, `route-guides`, `plans-and-permissions`, `audit-logging`, `support-content`, `unsaved-changes-guard`.
+Trivial fixes (typos, internal renames with no behavior/API/UX impact) don't need doc updates — everything else does. Doc index: `docs/README.md`. Full rules/skills index: `.cursor/rules/README.md` · Codex: `.codex/README.md`. Skills: `documentation-maintenance`, `docs-first`, `route-guides`, `plans-and-permissions`, `audit-logging`, `support-content`, `unsaved-changes-guard`.
 
 ## Agent tooling
 
-Full index: `.Codex/README.md` (Codex) · `.cursor/rules/README.md` (Cursor) · **`.opencode/README.md`** (OpenCode) · root **`opencode.json`**. Skills (mirrors `.cursor/skills/` + Codex-only `verify`), subagents (`security-auditor`, `debugger`, `test-runner`, `verifier`), commands (`/kh-*` teammate helpers — start with `/kh-help`, `/fix-merge-conflicts`, `/github-issue`, `/workflow-*`, `/superpowers-*`), hooks (auto-format, wrong-stack warning, shell/migration guards — OpenCode via `.opencode/plugins/gfm-ai-tooling.ts`), and MCP servers (`supabase`, `playwright`, `context7`, `markitdown` — need `SUPABASE_ACCESS_TOKEN`/`SUPABASE_PROJECT_REF` exported locally, never committed). Check those indexes before re-deriving conventions.
+Full index: `.codex/README.md` (Codex) · `.cursor/rules/README.md` (Cursor) · **`.opencode/README.md`** (OpenCode) · root **`opencode.json`**. Skills (mirrors `.cursor/skills/` + Codex-only `verify`), subagents (`security-auditor`, `debugger`, `test-runner`, `verifier`), commands (`/kh-*` teammate helpers — start with `/kh-help`, `/fix-merge-conflicts`, `/github-issue`, `/workflow-*`, `/superpowers-*`), hooks (auto-format, wrong-stack warning, shell/migration guards — OpenCode via `.opencode/plugins/gfm-ai-tooling.ts`), and MCP servers (`supabase`, `playwright`, `context7`, `markitdown` — need `SUPABASE_ACCESS_TOKEN`/`SUPABASE_PROJECT_REF` exported locally, never committed). Check those indexes before re-deriving conventions.
 
 ## Don'ts
 
@@ -194,3 +194,10 @@ Full index: `.Codex/README.md` (Codex) · `.cursor/rules/README.md` (Cursor) · 
 - Co-author trailers or AI commit/PR attribution — `.cursor/rules/git-commits.mdc` and **`git-commits`** skill; `.husky/commit-msg` strips `Co-authored-by` lines automatically.
 - **Production Supabase/DB deploys without unlock** — `.cursor/rules/no-prod-deploy.mdc`. Never run or recommend `deploy:supabase`, `db push`, `functions deploy`, or remote migrations unless the user said **`kamewave`** in the same message. Shell hooks enforce this.
 - Trusting a skill just because it's in the picker — if `property-management-app` (a separate Next.js/tRPC/Drizzle repo) is also open this session, its skills will appear too; ignore them here.
+
+
+## Codex compatibility
+
+Before working, read [.codex/README.md](.codex/README.md). It lists this project’s always-on Cursor rules and scoped rules to read for the affected files. Codex skills are discovered in `.agents/skills`; specialist definitions are in `.codex/agents`. Existing Cursor/Claude model aliases are not Codex model settings. Use available Codex tools and preserve project-specific architecture and authorization rules.
+
+Superpowers workflows and subagent delegation remain opt-in; do not start them automatically. Run `python3 .codex/sync.py` after changing project skills, commands or agent definitions. Review/trust hooks through Codex before relying on their enforcement. This repository setup is independent of the hourly job-search task in the personal chat.

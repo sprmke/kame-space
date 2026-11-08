@@ -1,27 +1,8 @@
 ---
-name: 'source-command-superpowers-debug'
-description: 'Migrated source command `superpowers-debug`'
+name: source-command-superpowers-debug
+description: "Run the existing project command superpowers-debug when the user requests it."
 ---
-
-# source-command-superpowers-debug
-
-Use this skill when the user asks to run the migrated source command `superpowers-debug`.
-
-## Command Template
 
 # superpowers-debug
 
-Run the **Superpowers systematic-debugging** workflow in **lean mode** (hooks enforce — subagents blocked).
-
-## Lean constraints (mandatory)
-
-Read **`.agent/skills/superpowers/SKILL.md`** § Lean mode first.
-
-- Single-threaded debug. No subagents, no Explore, no Task tool.
-- Read `docs/PROJECT.md` and files directly relevant to the bug.
-
-## Steps
-
-Read and follow **`superpowers:systematic-debugging`** completely before proposing fixes — **without** spawning subagents.
-
-This command opts in to Superpowers for the current chat. Available as **/superpowers-debug**.
+Read [.cursor/commands/superpowers-debug.md](../../../.cursor/commands/superpowers-debug.md) and follow that command using the user’s arguments. Resolve its relative references from the original command directory. Preserve project rules and authorization boundaries. Cursor/Claude-only tool names must map to actually available Codex tools; do not claim unavailable tools ran.
