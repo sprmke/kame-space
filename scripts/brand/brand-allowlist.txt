@@ -116,3 +116,15 @@ docs/workflow/in-progress/README.md:kamespace-03-rebrand  # links the rename pla
 # K-19 canonical local seed slugs (kame-homes / kame-home) are identifiers, not the product name
 docs/PROJECT.md:kame-homes  # local seed org slug
 docs/workflow/in-progress/README.md:local-seed-dataset  # links the local seed plan
+
+# K-11 (2026-11-08) canonical local seed dataset under scripts/dev/seed/ and its docs
+scripts/dev/seed/**  # local seed tenant slugs
+scripts/dev/check-seed-identity.mjs  # canonical seed identity guard
+scripts/dev/verify-local-seed-ui.mjs  # local seed tenant
+scripts/dev/attach-local-admin.sh  # local seed tenant
+scripts/dev/seed-plan.sh  # local seed tenant
+docs/guides/testing/local-seed-data.md  # documents the canonical seed slugs
+docs/workflow/in-progress/local-seed-dataset.md  # documents the canonical seed slugs
+docs/guides/routes/org/property/analytics.md:kame-home  # local seed property slug
+AGENTS.md:local seed  # documents the canonical seed slugs
+.cursor/rules/project-context.mdc:local seed  # documents the canonical seed slugs
