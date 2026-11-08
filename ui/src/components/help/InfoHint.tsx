@@ -205,7 +205,7 @@ export function InfoHint({
             onFocus={handleFocus}
             onBlur={handleBlur}
             className={cn(
-              'text-muted-foreground/70 hover:text-foreground relative inline-flex h-4 w-6 shrink-0 touch-manipulation items-center justify-center rounded-full transition-colors',
+              'text-muted-foreground/70 hover:text-foreground relative inline-flex h-6 w-6 shrink-0 touch-manipulation items-center justify-center rounded-full transition-colors',
               'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
               "before:absolute before:-inset-x-2.5 before:-inset-y-3.5 before:content-['']",
               className

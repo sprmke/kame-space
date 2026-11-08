@@ -17,7 +17,7 @@ async function openBookingDetailParkingActions(page: import('@playwright/test').
   await page.getByRole('button', { name: 'More actions' }).click();
 }
 
-test.describe('property booking parking panel', () => {
+test.describe('@ci property booking parking panel', () => {
   test('shows linked marketplace match instead of legacy owner fields', async ({ page }) => {
     setParkingScreenSuite('property-linked-parking');
     const parkingState = createParkingFlowState();

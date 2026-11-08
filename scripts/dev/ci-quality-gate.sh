@@ -42,6 +42,7 @@ run_step "support content parser tests" bun run test:support-content
 run_step "migration versions" bash scripts/dev/check-migration-versions.sh
 run_step "migration security" bash scripts/dev/check-migration-security.sh
 run_step "unit tests (Vitest)" bun run test
+run_step "unit coverage floor (lib + utils)" bun run test:coverage:lib
 run_step "edge type check (Deno)" bun run check:edge-types
 run_step "edge unit tests (Deno _shared)" bun run test:edge
 run_step "servePublic rate-limit coverage" bash scripts/dev/check-serve-public-rate-limit.sh
@@ -53,6 +54,10 @@ run_step "sentry has one import surface" bash scripts/dev/check-sentry-imports.s
 run_step "cache class guard" bash scripts/dev/check-cache-class.sh
 run_step "select('*') guard" bash scripts/dev/check-select-star.sh
 run_step "public static asset size" bash scripts/dev/check-public-asset-size.sh
+run_step "playwright lane tags (one tag per spec)" node scripts/dev/check-e2e-lane-tags.mjs
+run_step "flaky quarantine discipline" node scripts/dev/check-flaky-quarantine.mjs
+run_step "unit test quality (no new export-only tests)" node scripts/dev/check-unit-test-quality.mjs
+run_step "edge handler coverage ratchet" node scripts/dev/check-edge-test-coverage.mjs
 run_step "vercel cache/security headers" bash scripts/dev/check-vercel-headers.sh
 run_step "CSP theme script hash (production-readiness doc 22)" bash scripts/dev/check-csp-theme-hash.sh
 run_step "storage upload cacheControl" node scripts/dev/check-storage-cache-control.mjs
@@ -62,6 +67,7 @@ run_step "auth matrix — zero-authz-signal guard (production-readiness doc 21)"
   node scripts/dev/audit-auth-matrix.mjs --check
 run_step "edge handler tests (Deno)" bun run test:edge:handlers
 run_step "playwright smoke (@smoke)" bun run test:e2e:smoke
+run_step "playwright page and journey specs (@ci)" bun run test:e2e:ci
 run_step "build UI" bun run build
 run_step "assert image optimizer stays lazy (plan §10.6)" \
   node scripts/media/assert-lazy-optimizer.mjs

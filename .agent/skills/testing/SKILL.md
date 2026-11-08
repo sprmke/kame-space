@@ -34,7 +34,9 @@ Plan: **`docs/workflow/done/sitewide-automated-testing.md`**. Index: **`docs/gui
 
 1. Reuse **`ui/e2e/shared/authSeam.ts`** for host/guest session mocks.
 2. Reuse **`interceptEdge.ts`** for `**/functions/v1/*` route mocks.
-3. Tag specs: `@smoke` (PR), `@ci` (develop), `@live` (manual/nightly).
+3. Tag specs with exactly one lane: `@smoke` (every PR, 3 viewports), `@ci` (every PR, sharded),
+   `@pwa` (production build), `@live` (manual/nightly), `@demo` (never CI).
+   `bun run check:e2e-lane-tags` enforces this.
 4. One happy path + 1–3 edge journeys per domain.
 
 ## Deno pattern

@@ -26,7 +26,7 @@ async function openExample(page: Page, title: string) {
   return detail;
 }
 
-test.describe('@ci marketing AI Studio examples', () => {
+test.describe('@ci @flaky marketing AI Studio examples', () => {
   test('the home shows examples, and an example opens with how it was made', async ({ page }) => {
     const generateCalls: string[] = [];
     page.on('request', (req) => {

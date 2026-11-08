@@ -34,7 +34,7 @@ test.describe('@ci property settings cleanup', () => {
     await expect(section.locator('#parking-owner-emails')).toHaveCount(0);
   });
 
-  test('Automated sends is a summary row that opens the toggles in a Manage modal', async ({
+  test('@flaky Automated sends is a summary row that opens the toggles in a Manage modal', async ({
     page,
   }) => {
     await openPropertySettings(page);

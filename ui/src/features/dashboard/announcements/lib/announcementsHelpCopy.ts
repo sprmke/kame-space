@@ -1,3 +1,7 @@
+/**
+ * test: N/A — copy-only module. Every `*HelpCopy.ts` file is scanned by
+ * `ui/src/lib/help/helpCopy.test.ts`.
+ */
 import type { HelpCopyModule } from '@/lib/help/types';
 
 /** Announcement summary cards. Severity maps to action, attention, and updates. */

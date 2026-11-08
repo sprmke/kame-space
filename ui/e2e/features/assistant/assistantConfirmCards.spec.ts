@@ -8,7 +8,7 @@ import {
   sendAssistantMessage,
 } from './shared/assistantConfirmHarness';
 
-test.describe('AI assistant confirm cards - §11–13 UI subset', () => {
+test.describe('@ci AI assistant confirm cards - §11–13 UI subset', () => {
   test('§11.2 workflow email shows destructive Send confirm (external_send)', async ({ page }) => {
     queueAssistantChatBlocks([
       { type: 'text', text: 'I can send the booking acknowledgement for this stay.' },

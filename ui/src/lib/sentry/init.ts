@@ -35,31 +35,39 @@ export function isSentryInitialised(): boolean {
 /**
  * Production samples 5%, preview 20%, local nothing. An explicit
  * `VITE_SENTRY_TRACES_SAMPLE_RATE` wins so a drill can raise it without a rebuild.
+ *
+ * Exported with injectable inputs so the policy is testable without booting the SDK.
  */
-function resolveTracesSampleRate(): number {
-  const raw = ((import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as string | undefined) ?? '').trim();
-  if (raw) {
-    const parsed = Number(raw);
+export function resolveTracesSampleRate(
+  raw: string | undefined = import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as
+    | string
+    | undefined,
+  environment: string = detectAnalyticsEnvironment()
+): number {
+  const trimmed = (raw ?? '').trim();
+  if (trimmed) {
+    const parsed = Number(trimmed);
     if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 1) return parsed;
   }
-  const environment = detectAnalyticsEnvironment();
   if (environment === 'production') return 0.05;
   if (environment === 'preview') return 0.2;
   return 0;
 }
 
 /** Only our own edge functions get trace headers. Never third parties, never PostHog. */
-function resolveTracePropagationTargets(): string[] {
-  const functionsUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim();
-  if (!functionsUrl) return [];
+export function resolveTracePropagationTargets(
+  functionsUrl: string | undefined = import.meta.env.VITE_SUPABASE_URL as string | undefined
+): string[] {
+  const trimmed = (functionsUrl ?? '').trim();
+  if (!trimmed) return [];
   try {
-    return [new URL(functionsUrl).origin + '/functions/v1'];
+    return [new URL(trimmed).origin + '/functions/v1'];
   } catch {
     return [];
   }
 }
 
-function scrubBreadcrumb(breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb | null {
+export function scrubBreadcrumb(breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb | null {
   const data = breadcrumb.data;
   if (!data || typeof data !== 'object') return breadcrumb;
   const nextData: Record<string, unknown> = { ...data };
@@ -69,7 +77,7 @@ function scrubBreadcrumb(breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb | nul
   return { ...breadcrumb, data: nextData };
 }
 
-function scrubEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent {
+export function scrubEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent {
   if (event.request?.url) event.request.url = scrubUrl(event.request.url);
   if (event.tags && typeof event.tags.url === 'string') event.tags.url = scrubUrl(event.tags.url);
   if (event.extra) event.extra = scrubRecord(event.extra as Record<string, unknown>);

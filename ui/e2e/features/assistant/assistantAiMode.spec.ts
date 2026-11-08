@@ -45,7 +45,7 @@ test.beforeEach(() => {
   queueAssistantChatBlocksForMocks([{ type: 'text', text: 'Two bookings need your review.' }]);
 });
 
-test.describe('@ci AI mode', () => {
+test.describe('AI mode', () => {
   test('@smoke toggles Advanced to AI and back, keeping the page in the canvas', async ({
     page,
   }) => {

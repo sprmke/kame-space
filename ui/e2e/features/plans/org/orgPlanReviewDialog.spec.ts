@@ -64,12 +64,15 @@ test.describe('@ci org plan review dialog, per transition', () => {
       ...UNLOCKS['starter>growth'],
       ...UNLOCKS['growth>pro'],
     ]);
-    // Team seats, AI credits and search placement upgrade in place: only the final value is listed.
+    // Team seats, AI credits, search placement and media storage upgrade in place:
+    // only the final value is listed.
     const rolled = [
       'Up to 3 team members',
       'Up to 5 team members',
       '5,000 AI credits per month',
       'Top 30 search placement',
+      '3 GB of media storage, 500 files, 60s video',
+      '500 MB of media storage, 100 files, 60s video',
     ];
     for (const label of rolled) expected.delete(label);
     expect([...shown].sort()).toEqual([...expected].sort());

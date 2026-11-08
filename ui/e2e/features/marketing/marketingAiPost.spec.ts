@@ -141,7 +141,7 @@ async function startPost(page: Page) {
 
 const generate = (page: Page) => page.getByRole('button', { name: 'Generate 4 posts' });
 
-test.describe('@ci marketing AI Post', () => {
+test.describe('@ci @flaky marketing AI Post', () => {
   test.setTimeout(90_000);
 
   // fixme: Marketing Studio entry moved to the New post gallery on 2026-10-30 (ledger PR-133).

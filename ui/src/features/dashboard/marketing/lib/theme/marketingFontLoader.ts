@@ -1,3 +1,8 @@
+/**
+ * test: N/A — injects a Google Fonts stylesheet and awaits `document.fonts`. No
+ * DOM in the Node test environment; the allowed family list is covered in
+ * `marketingThemeFonts.test.ts`.
+ */
 import { PRELOADED_MARKETING_FONT_FAMILIES } from '@/features/dashboard/marketing/lib/theme/marketingThemeFonts';
 
 /**

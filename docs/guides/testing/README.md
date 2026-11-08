@@ -2,7 +2,7 @@
 title: 'Testing index'
 status: active
 tags: [guides, testing]
-updated: 2026-09-23
+updated: 2026-11-08
 ---
 
 # Testing index
@@ -25,13 +25,23 @@ Sitewide pyramid for Kame Space. Plan: [`docs/workflow/done/sitewide-automated-t
 
 ## Comprehensive lib coverage
 
-Every `ui/src/**/lib/*.ts` and `ui/src/utils/**/*.ts` module has a colocated Vitest file (see [`docs/workflow/done/comprehensive-unit-test-coverage.md`](../../workflow/done/comprehensive-unit-test-coverage.md)).
+Every `ui/src/**/lib/*.ts` and `ui/src/utils/**/*.ts` module has a colocated Vitest file, or an explicit `test: N/A` marker when it is React-runtime-only, browser-only (canvas, service worker, fonts) or pure data (see [`docs/workflow/done/comprehensive-unit-test-coverage.md`](../../workflow/done/comprehensive-unit-test-coverage.md)).
+
+The inventory reads the marker from a file's leading comment block, so "N/A" is a durable decision recorded next to the code, not a gap:
+
+```ts
+/**
+ * test: N/A — React context plus accessor hooks; the behaviour lives in the provider.
+ */
+```
+
+Current state (2026-11-08): **1,707** lib files, **0** missing, **863** Vitest files (`857` pass, `6` skipped for types-only and Polotno browser modules).
 
 **Pages, sections, and UI elements** are not duplicated as Vitest cases. See [`application-coverage-model.md`](./application-coverage-model.md) for how public + dashboard routes map to **Playwright** (`@smoke` / `@ci`) plus colocated **lib** unit tests. Line coverage for logic only: `bun run test:coverage:lib`.
 
 | Script                                                         | Purpose                                                                             |
 | -------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `node scripts/dev/lib-unit-test-inventory.mjs`                 | List lib files still missing `*.test.ts`                                            |
+| `node scripts/dev/lib-unit-test-inventory.mjs`                 | List lib files still missing `*.test.ts` and no `test: N/A` marker                  |
 | `node scripts/dev/scaffold-missing-lib-unit-tests.mjs --write` | Scaffold colocated tests (regenerate only when adding new lib files)                |
 | `node scripts/dev/enrich-lib-unit-tests.mjs --write`           | Replace export-only scaffolds with per-export `describe` blocks (safe export smoke) |
 | `node scripts/dev/enrich-lib-unit-tests.mjs --repair-unsafe`   | Re-run after bad heuristic upgrades (`--write` with `--repair-unsafe`)              |
@@ -59,20 +69,62 @@ docs/guides/testing/
 
 ## Playwright tags
 
-Vitest intentionally stays Node-only for deterministic helpers, validators, and
-client/server mirrors. Rendered component behavior is covered by mocked
-Playwright journeys so the repo does not maintain a second DOM simulation layer.
+Vitest runs two projects:
+
+| Project                        | Environment                 | Files               | Covers                                                                                        |
+| ------------------------------ | --------------------------- | ------------------- | --------------------------------------------------------------------------------------------- |
+| `node` (default)               | Node, no DOM                | `src/**/*.test.ts`  | Pure helpers, validators, client/server mirrors, gates, money math                            |
+| `dom` (`vitest.dom.config.ts`) | happy-dom + Testing Library | `src/**/*.test.tsx` | Hooks with state and small components with behaviour (dismiss, dirty tracking, media queries) |
+
+The extension decides the project, so a test file can never be matched by neither. Layout,
+Tailwind classes and shadcn primitives stay in Playwright, which can see a real browser.
+
+`bun run test` runs both projects. `bun run test:dom` runs only the DOM one.
+
 The smoke command runs every `@smoke` journey on desktop, 375×812 phone, and
 768×1024 tablet projects. Primary public, guest-form, booking, and super-admin
 routes assert that the document does not overflow horizontally and that visible
 interactive controls have an accessible name.
 
-| Tag      | Meaning                                    |
-| -------- | ------------------------------------------ |
-| `@smoke` | Fast PR gate (< ~8 min total)              |
-| `@ci`    | Mocked domain suite on develop             |
-| `@live`  | Local Supabase (`PLAYWRIGHT_LOCAL_LIVE=1`) |
-| `@demo`  | Headed/video; never CI                     |
+### Lanes
+
+| Specs | Lane                                                           |
+| ----- | -------------------------------------------------------------- |
+| 23    | `@smoke`, every PR on 3 viewports                              |
+| 68    | `@ci`, every PR, sharded 4 ways (62 executable, 6 quarantined) |
+| 1     | `@pwa`, production build                                       |
+| 2     | `@live`, manual / nightly                                      |
+| 2     | `@demo`, headed only                                           |
+
+E2E and Deno move to `Asia/Manila` alongside Vitest, so a date-boundary test cannot pass on
+one machine and fail on another.
+
+Every spec carries **exactly one** lane tag. `bun run check:e2e-lane-tags` fails on a missing or
+duplicate tag, a committed `.only`, or a new `waitForTimeout` call (baselined, shrink-only).
+
+| Tag      | Meaning                                      |
+| -------- | -------------------------------------------- |
+| `@smoke` | Fast PR gate, desktop + phone + tablet       |
+| `@ci`    | Page and journey suite, every PR, sharded 4× |
+| `@pwa`   | Production build, service worker             |
+| `@live`  | Local Supabase (`PLAYWRIGHT_LOCAL_LIVE=1`)   |
+| `@demo`  | Headed/video; never CI                       |
+
+## Local runs: do not reuse a stale dev server
+
+`playwright.config.ts` reuses an already-running server on `127.0.0.1:4173` outside CI. If
+another checkout (or another session) already owns that port, your run silently tests
+**that** build instead of your branch. The symptom is a test that fails locally, passes in
+CI, or changes result between runs with no diff.
+
+Set a free port per checkout:
+
+```bash
+PLAYWRIGHT_PORT=4199 PLAYWRIGHT_PWA_PORT=4200 bun run test:e2e:ci
+```
+
+Or stop the other server. The same applies to `bun run ci:quality`, which starts the smoke
+and `@ci` suites one after another on the same port.
 
 ## Domain guides
 

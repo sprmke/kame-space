@@ -6,7 +6,7 @@ import {
   teamRbacPaths,
 } from '../team/shared/propertyTeamRbacHarness';
 
-test.describe('@smoke @ci legacy route redirects', () => {
+test.describe('@smoke legacy route redirects', () => {
   test('account wishlist redirects to favorites', async ({ page }) => {
     await installGuestFavoritesMocks(page);
     await page.goto('/account/wishlist');
