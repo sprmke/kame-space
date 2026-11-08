@@ -7,6 +7,8 @@
     /* Canvas sits below white cards (mirrors dark: 7% bg / 10% card). Cool 220° harmonizes with teal primary. */
     --background: 220 18% 97%;
     --foreground: 224 71% 4%;
+    /* Full-width band that separates stacked sections on the public canvas. */
+    --band: 220 14% 92%;
 
     --card: 0 0% 100%;
     --card-foreground: 224 71% 4%;
@@ -96,6 +98,8 @@
   .dark {
     --background: 0 0% 7%;
     --foreground: 0 0% 95%;
+    /* Same step in dark: band is lighter than the canvas, like the card. */
+    --band: 0 0% 11%;
 
     --card: 0 0% 10%;
     --card-foreground: 0 0% 95%;
