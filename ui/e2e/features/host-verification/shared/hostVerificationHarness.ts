@@ -67,8 +67,8 @@ export type HostVerificationState = {
 
 export const HOST_VERIFICATION_ORG = {
   id: 'org-host-001',
-  slug: 'kame-homes',
-  name: 'Kame Homes',
+  slug: 'test-host-org',
+  name: 'Test Host Org',
   hostModes: ['property'],
 };
 

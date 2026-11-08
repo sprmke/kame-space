@@ -17,7 +17,7 @@ test.describe('@ci host Get Verified states', () => {
     const state = createHostVerificationState({ baseStatus: 'pending' });
     await installHostVerificationMocks(page, state);
 
-    await page.goto('/org/kame-homes/activity');
+    await page.goto('/org/test-host-org/activity');
     const cta = page.getByRole('button', { name: /Verification in review/i });
     await expect(cta).toBeVisible({ timeout: 30_000 });
     // `evaluate` avoids the sidebar re-render racing the actionability check.
@@ -41,7 +41,7 @@ test.describe('@ci host Get Verified states', () => {
     });
     await installHostVerificationMocks(page, state);
 
-    await page.goto('/org/kame-homes/activity');
+    await page.goto('/org/test-host-org/activity');
 
     // Changes requested force the modal open; there is no CTA to click.
     await expect(page.getByRole('dialog', { name: 'Changes requested' })).toBeVisible({
@@ -81,7 +81,7 @@ test.describe('@ci host Get Verified states', () => {
     });
     await installHostVerificationMocks(page, state);
 
-    await page.goto('/org/kame-homes/activity');
+    await page.goto('/org/test-host-org/activity');
 
     // A hard reject redirects the whole org shell, so there is no sidebar CTA to click.
     await expect(page.getByRole('heading', { name: 'Verification declined' })).toBeVisible({
@@ -102,7 +102,7 @@ test.describe('@ci host Get Verified states', () => {
     });
     await installHostVerificationMocks(page, state);
 
-    await page.goto('/org/kame-homes/activity');
+    await page.goto('/org/test-host-org/activity');
     const cta = page.getByRole('button', { name: /Get Recommended badge/i });
     await expect(cta).toBeVisible({ timeout: 30_000 });
     await cta.evaluate((element) => (element as HTMLElement).click());

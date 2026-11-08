@@ -32,7 +32,7 @@ test.describe('@ci host onboarding with live identity capture', () => {
     await expect(page.getByRole('heading', { name: 'Organization' })).toBeVisible({
       timeout: 20_000,
     });
-    await page.getByLabel(/Organization name/i).fill('Kame Homes');
+    await page.getByLabel(/Organization name/i).fill('Test Host Org');
     await page.waitForResponse(
       (res) => res.url().includes('/functions/v1/check-organization-name') && res.ok()
     );
@@ -46,7 +46,7 @@ test.describe('@ci host onboarding with live identity capture', () => {
     await page.waitForResponse(
       (res) => res.url().includes('/functions/v1/check-tower-unit') && res.ok()
     );
-    await page.locator('#property-name').fill('Kame Home');
+    await page.locator('#property-name').fill('Monaco Test Unit');
     await page.waitForResponse(
       (res) => res.url().includes('/functions/v1/check-property-name') && res.ok()
     );

@@ -61,7 +61,7 @@ test.describe('host registration and super-admin review side by side', () => {
       await expect(hostPage.getByRole('heading', { name: 'Organization' })).toBeVisible({
         timeout: 30_000,
       });
-      await hostPage.getByLabel(/Organization name/i).fill('Kame Homes');
+      await hostPage.getByLabel(/Organization name/i).fill('Test Host Org');
       await hostPage.getByLabel(/^Contact number/i).fill('09876543210');
       await hostPage.getByRole('button', { name: 'Continue' }).click();
       await demoPause(hostPage, adminPage);
@@ -71,7 +71,7 @@ test.describe('host registration and super-admin review side by side', () => {
       });
       await hostPage.getByRole('button', { name: 'Property', exact: true }).click();
       await hostPage.locator('#unit-number').fill('2604');
-      await hostPage.locator('#property-name').fill('Kame Home');
+      await hostPage.locator('#property-name').fill('Monaco Test Unit');
       await hostPage.locator('#property-rights-rights').click();
       await hostPage.getByRole('option', { name: 'Property Owner' }).click();
       await hostPage.getByRole('button', { name: 'Continue' }).click();
@@ -117,7 +117,7 @@ test.describe('host registration and super-admin review side by side', () => {
 
       // ── Admin window: the pre-screened review ───────────────────────────────
       await adminPage.goto('/admin/approvals');
-      const reviewRow = adminPage.locator('[aria-label="Review Kame Homes"]').first();
+      const reviewRow = adminPage.locator('[aria-label="Review Test Host Org"]').first();
       await expect(reviewRow).toBeVisible({ timeout: 30_000 });
       await demoPause(adminPage);
 
@@ -133,7 +133,7 @@ test.describe('host registration and super-admin review side by side', () => {
       await demoPause(adminPage, hostPage);
 
       // ── Host window: the approval is already reflected ──────────────────────
-      await hostPage.goto('/org/kame-homes/activity');
+      await hostPage.goto('/org/test-host-org/activity');
       await expect(hostPage.getByRole('button', { name: /Get Recommended badge/i })).toBeVisible({
         timeout: 30_000,
       });

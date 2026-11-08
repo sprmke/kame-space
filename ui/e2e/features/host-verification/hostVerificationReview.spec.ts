@@ -23,10 +23,10 @@ const pendingIdentity: IdentitySummary = {
 
 async function openPendingReview(page: Page) {
   await page.goto('/admin/approvals');
-  const row = page.locator('[aria-label="Review Kame Homes"]').first();
+  const row = page.locator('[aria-label="Review Test Host Org"]').first();
   await expect(row).toBeVisible({ timeout: 30_000 });
   await row.click();
-  await expect(page.getByRole('dialog', { name: 'Kame Homes' })).toBeVisible({
+  await expect(page.getByRole('dialog', { name: 'Test Host Org' })).toBeVisible({
     timeout: 20_000,
   });
 }
@@ -63,7 +63,7 @@ test.describe('@ci super admin host verification review', () => {
 
     expect(state.calls.approve).toHaveLength(1);
     expect(state.baseStatus).toBe('approved');
-    await expect(page.locator('[aria-label="Review Kame Homes"]')).toHaveCount(0, {
+    await expect(page.locator('[aria-label="Review Test Host Org"]')).toHaveCount(0, {
       timeout: 20_000,
     });
   });
