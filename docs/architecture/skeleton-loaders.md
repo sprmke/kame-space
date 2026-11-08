@@ -160,3 +160,7 @@ first data load. Both use the same page chrome, so nothing jumps when the chunk 
 - 375 / 768 / 1024px: skeleton aligns with loaded UI; no horizontal scroll.
 - Slow 3G: lazy routes show route skeleton, not `AppLoader`, once inside admin/marketing shell.
 - No hero / header jump when the route chunk resolves.
+
+### Platform boot mark
+
+The singleton app loader renders the static F5 shell immediately from the shell-precached brand SVG. Only its existing decorative sheen animates; the brand and product wordmark do not depend on an API response.

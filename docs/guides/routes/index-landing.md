@@ -54,6 +54,8 @@ This is the main guest homepage: search, featured stays, and destination tiles t
 
 **Common host questions**
 
+- Q: Why does KameSpace have a new icon?
+  A: The four-piece shell is the new KameSpace logo. Your account, bookings and organization branding stay the same. A saved home-screen icon or shared link preview may take longer to refresh than the website.
 - Q: How often does the Featured stays row change?
   A: It refreshes every few minutes and always shows active homes with the best ratings first.
 - Q: Will my listing appear on the home page automatically?
@@ -137,3 +139,7 @@ Page `ui/src/features/guest/marketing/pages/MarketingHomePage.tsx`; sections und
 - [ ] Wire hero search to real property list filters / API
 - [ ] Replace mock featured cards with live published properties
 - [ ] Re-introduce developments block when catalog API exists (secondary section)
+
+## Platform branding
+
+Shared platform chrome uses the approved F5 shell mark. Light and dark themes keep the teal icon; wordmark text adapts to the background. The public HTML includes a branded default share image, while listing links retain their property photos. Asset inventory and regeneration: [brand assets](../../architecture/brand-assets.md).

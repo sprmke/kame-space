@@ -4,17 +4,17 @@
  *
  * Source of truth: the vector marks in `ui/public/brand/`:
  *
- *   kame-space-mark.svg        rounded square tile + white K (favicon, logo, Google)
- *   kame-space-tile.svg        full-bleed square tile + white K (maskable, Apple, manifest)
- *   kame-space-mark-mono.svg   white K silhouette (monochrome + notification badge)
+ *   kame-space-mark.svg        rounded square tile + F5 shell (favicon, logo, Google)
+ *   kame-space-tile.svg        full-bleed square tile + F5 shell (maskable, Apple, manifest)
+ *   kame-space-mark-mono.svg   F5 shell silhouette (monochrome + notification badge)
  *
  * Produces every raster the app references:
  *
  *   ui/public/icons/pwa-192.png / pwa-512.png        any-purpose mark
  *   ui/public/icons/pwa-maskable-192.png / -512.png  full-bleed tile
  *   ui/public/icons/apple-touch-icon.png             180×180 full-bleed tile
- *   ui/public/icons/notification-badge.png           96×96 monochrome K
- *   ui/public/icons/monochrome-512.png               512×512 monochrome K
+ *   ui/public/icons/notification-badge.png           96×96 monochrome shell
+ *   ui/public/icons/monochrome-512.png               512×512 monochrome shell
  *   ui/public/icons/shortcut-*.png                   96×96 shortcut glyphs
  *   ui/public/favicon/favicon-96x96.png              mark
  *   ui/public/favicon/favicon.ico                    16/32/48 ICO
@@ -42,7 +42,7 @@ const MARK_SRC = path.join(BRAND_DIR, 'kame-space-mark.svg');
 const TILE_SRC = path.join(BRAND_DIR, 'kame-space-tile.svg');
 const MONO_SRC = path.join(BRAND_DIR, 'kame-space-mark-mono.svg');
 // Brand token --primary (hsl(168 65% 40%)) for solid backgrounds around the mark.
-const BRAND_BG = { r: 0x24, g: 0xa8, b: 0x8e, alpha: 1 };
+const BRAND_BG = { r: 0x2d, g: 0xaa, b: 0x97, alpha: 1 };
 
 async function render(source, size, background = { r: 0, g: 0, b: 0, alpha: 0 }) {
   const svg = await readFile(source);
@@ -165,10 +165,7 @@ async function main() {
   await writeTo(path.join(icons, 'pwa-maskable-192.png'), await tile(192));
   await writeTo(path.join(icons, 'pwa-maskable-512.png'), await tile(512));
   await writeTo(path.join(icons, 'apple-touch-icon.png'), await tile(180));
-  await writeTo(
-    path.join(icons, 'notification-badge.png'),
-    await render(MONO_SRC, 96)
-  );
+  await writeTo(path.join(icons, 'notification-badge.png'), await render(MONO_SRC, 96));
   await writeTo(path.join(icons, 'monochrome-512.png'), await render(MONO_SRC, 512));
   await writeTo(path.join(icons, 'shortcut-bookings.png'), await shortcutIcon(96, 'bookings'));
   await writeTo(path.join(icons, 'shortcut-inbox.png'), await shortcutIcon(96, 'inbox'));
@@ -178,10 +175,7 @@ async function main() {
   await writeTo(path.join(favicon, 'apple-touch-icon.png'), await tile(180));
   await writeTo(path.join(favicon, 'web-app-manifest-192x192.png'), await mark(192));
   await writeTo(path.join(favicon, 'web-app-manifest-512x512.png'), await tile(512));
-  await writeTo(
-    path.join(favicon, 'favicon.svg'),
-    await readFile(MARK_SRC)
-  );
+  await writeTo(path.join(favicon, 'favicon.svg'), await readFile(MARK_SRC));
 
   const icoEntries = [];
   for (const size of [16, 32, 48]) {
@@ -189,6 +183,13 @@ async function main() {
     icoEntries.push({ size, buf: await mark(size) });
   }
   await writeTo(path.join(favicon, 'favicon.ico'), icoFromPngs(icoEntries));
+  await writeTo(path.join(repoRoot, 'ui/public/favicon.ico'), icoFromPngs(icoEntries));
+  await writeTo(path.join(repoRoot, 'ui/public/apple-touch-icon.png'), await tile(180));
+  for (const size of [16, 32, 48]) {
+    await writeTo(path.join(favicon, `favicon-${size}x${size}.png`), await mark(size));
+  }
+  const mono = (await readFile(MONO_SRC, 'utf8')).replaceAll('#FFFFFF', '#000000');
+  await writeTo(path.join(favicon, 'safari-pinned-tab.svg'), mono);
 
   await writeTo(path.join(images, 'logo.png'), await mark(512));
   await writeTo(path.join(BRAND_DIR, 'kame-space-mark-120.png'), await mark(120));
@@ -199,13 +200,39 @@ async function main() {
       // eslint-disable-next-line no-await-in-loop
       const buf = await splashScreen(width, height, theme);
       // eslint-disable-next-line no-await-in-loop
-      await writeTo(
-        path.join(splashDir, `splash-${width}x${height}-${theme.name}.png`),
-        buf
-      );
+      await writeTo(path.join(splashDir, `splash-${width}x${height}-${theme.name}.png`), buf);
     }
   }
 
+  // Portable vector lockups are outlined, so raster exports do not depend on fonts.
+  for (const size of [1024, 2048]) {
+    await writeTo(path.join(BRAND_DIR, `kame-space-mark-${size}.png`), await mark(size));
+  }
+  for (const theme of ['light', 'dark']) {
+    const source = await readFile(path.join(BRAND_DIR, `kame-space-lockup-${theme}.svg`));
+    await writeTo(
+      path.join(BRAND_DIR, `kame-space-lockup-${theme}.png`),
+      await sharp(source, { density: 288 }).resize({ width: 2400 }).png().toBuffer()
+    );
+  }
+  // Branded default share card: 1200 x 630, safe margins, large readable lockup.
+  const lockup = await sharp(await readFile(path.join(BRAND_DIR, 'kame-space-lockup-light.svg')))
+    .resize({ width: 920 })
+    .png()
+    .toBuffer();
+  const card = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
+    <rect width="1200" height="630" fill="#F5F8F7"/>
+    <circle cx="1190" cy="0" r="260" fill="#E2F3ED"/>
+    <circle cx="0" cy="650" r="180" fill="#E2F3ED"/>
+    <path d="M80 535H1120" stroke="#C9DFD6" stroke-width="2"/>
+  </svg>`);
+  await writeTo(
+    path.join(BRAND_DIR, 'kame-space-social-f5.png'),
+    await sharp(card)
+      .composite([{ input: lockup, gravity: 'center' }])
+      .png()
+      .toBuffer()
+  );
   console.log('Brand assets generated.');
 }
 

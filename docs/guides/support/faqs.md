@@ -1298,6 +1298,7 @@ Yes. In New booking, tick **Paid outside Kame Space**. The booking confirms with
 - source: docs/guides/routes/org/parking/finance.md
 
 Parking Finance shows a read-only **Marketplace payouts** section with the guest price, gross, fee, net and payout status. Payouts are sent manually by the Kame Space team.
+
 ### Why does the guest ID check ask for a phone camera?
 
 - category: Bookings
@@ -1333,3 +1334,11 @@ Yes. The captured photo is copied into the same place an uploaded ID used to go,
 - order: 913
 
 Seven days by default. After that only the result and the guest's name stay with the booking. A guest can delete their verification from their profile at any time.
+
+### Why do I still see the old KameSpace icon?
+
+- category: Getting Started
+- audience: public
+- source: docs/guides/routes/app.md
+
+Browsers, home-screen shortcuts and messaging apps can keep older icons or link previews for a while. Reopen the website to load the latest version. If an iPhone home-screen shortcut still has the old icon, you may need to remove that shortcut and add it again. Your account and bookings are unchanged.

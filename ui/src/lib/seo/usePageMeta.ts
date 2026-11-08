@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 
 import {
   DEFAULT_DESCRIPTION,
+  DEFAULT_SOCIAL_IMAGE,
   SITE_NAME,
   serializeJsonLd,
   truncateDescription,
@@ -73,15 +74,21 @@ export function usePageMeta(input: PageMetaInput, enabled = true): void {
     upsertMeta('property', 'og:title', ogTitle);
     upsertMeta('property', 'og:description', text);
     upsertMeta('property', 'og:url', canonical);
-    upsertMeta('name', 'twitter:card', image ? 'summary_large_image' : 'summary');
+    upsertMeta('name', 'twitter:card', 'summary_large_image');
     upsertMeta('name', 'twitter:title', ogTitle);
     upsertMeta('name', 'twitter:description', text);
-    if (image) {
-      upsertMeta('property', 'og:image', absoluteUrl(image));
-      upsertMeta('name', 'twitter:image', absoluteUrl(image));
-    } else {
-      removeOwned('meta[property="og:image"]');
-      removeOwned('meta[name="twitter:image"]');
+    upsertMeta('property', 'og:image', absoluteUrl(image || DEFAULT_SOCIAL_IMAGE));
+    upsertMeta('name', 'twitter:image', absoluteUrl(image || DEFAULT_SOCIAL_IMAGE));
+    // Static shell dimensions describe the default card, never an arbitrary listing photo.
+    for (const key of ['og:image:width', 'og:image:height', 'og:image:alt']) {
+      document.head.querySelector(`meta[property="${key}"]`)?.remove();
+    }
+    document.head.querySelector('meta[name="twitter:image:alt"]')?.remove();
+    if (!image) {
+      upsertMeta('property', 'og:image:width', '1200');
+      upsertMeta('property', 'og:image:height', '630');
+      upsertMeta('property', 'og:image:alt', 'KameSpace');
+      upsertMeta('name', 'twitter:image:alt', 'KameSpace');
     }
 
     let link = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
@@ -108,8 +115,12 @@ export function usePageMeta(input: PageMetaInput, enabled = true): void {
     return () => {
       removeOwned('script[type="application/ld+json"]');
       removeOwned('meta[name="robots"]');
-      removeOwned('meta[property="og:image"]');
-      removeOwned('meta[name="twitter:image"]');
+      upsertMeta('property', 'og:image', absoluteUrl(DEFAULT_SOCIAL_IMAGE));
+      upsertMeta('name', 'twitter:image', absoluteUrl(DEFAULT_SOCIAL_IMAGE));
+      upsertMeta('property', 'og:image:width', '1200');
+      upsertMeta('property', 'og:image:height', '630');
+      upsertMeta('property', 'og:image:alt', 'KameSpace');
+      upsertMeta('name', 'twitter:image:alt', 'KameSpace');
       upsertMeta('name', 'description', DEFAULT_DESCRIPTION);
     };
   }, [enabled, description, canonicalPath, image, title, jsonLdText, noindex]);
