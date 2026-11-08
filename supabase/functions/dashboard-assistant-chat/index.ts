@@ -136,6 +136,10 @@ import {
 import { createTurnDeadline, turnDeadlineMsFromEnv } from '../_shared/ai/agent/turnBudget.ts';
 import { TurnLedger } from '../_shared/ai/agent/turnLedger.ts';
 import { buildHeldBackBlocks } from '../_shared/ai/agent/heldBackSteps.ts';
+import {
+  PROPOSAL_QUEUED_NOTE,
+  shouldKeepGatheringAfterProposal,
+} from '../_shared/ai/agent/proposalContinuation.ts';
 import { callSignature } from '../_shared/ai/agent/agentLoop.ts';
 import {
   REQUEST_TOOLS_DECLARATION,
@@ -845,6 +849,8 @@ serveAuthenticated('dashboard-assistant-chat', async (req, user) => {
 
         const responseParts: GeminiContent['parts'] = [];
         let shortCircuit = false;
+        /** functionResponse payloads of writes proposed for host approval this round. */
+        const proposalResponses: Array<Record<string, unknown>> = [];
         /** Any real (non-meta) tool call that succeeded this round — advances a declared goal. */
         let anyToolSucceededThisRound = false;
 
@@ -994,7 +1000,16 @@ serveAuthenticated('dashboard-assistant-chat', async (req, user) => {
             } else {
               proposedAction = { toolName: call.name, result };
             }
-            shortCircuit = true;
+            const proposalPart = responseParts[responseParts.length - 1];
+            if (
+              proposalPart &&
+              'functionResponse' in proposalPart &&
+              proposalPart.functionResponse
+            ) {
+              proposalResponses.push(
+                proposalPart.functionResponse.response as Record<string, unknown>
+              );
+            }
           } else if (
             !result.ok &&
             typeof result.error === 'string' &&
@@ -1024,9 +1039,34 @@ serveAuthenticated('dashboard-assistant-chat', async (req, user) => {
           });
         }
 
+        // Phase 3 determinism: a proposal no longer has to end the turn. On a multi-ask turn (or
+        // one with a declared goal still open) the loop keeps going so the model can propose the
+        // other writes in later rounds and they land on one plan card, instead of relying on the
+        // model batching every write into the same round. Nothing commits mid-turn: Tier-2 steps
+        // wait for approval and Tier-1 writes stay queued in deferredWrites until the turn ends.
+        const keepGatheringAfterProposal = shouldKeepGatheringAfterProposal({
+          hasProposal: proposedAction != null,
+          shortCircuit,
+          planApprovalEnabled,
+          turnHasMultipleIntents,
+          openDeclaredGoals: taskPlan.getOpenSteps().length,
+          hasRoomForAnotherRound:
+            round < effectiveMaxRounds - 1 &&
+            estimateHistoryTokens(history) <= TURN_HISTORY_TOKEN_BUDGET &&
+            turnDeadline.hasRoomForAnotherRound() &&
+            turnCreditsConsumed < orgSettings.turnCreditCeiling,
+        });
+        if (keepGatheringAfterProposal) {
+          for (const response of proposalResponses) response.note = PROPOSAL_QUEUED_NOTE;
+        }
+
         history.push({ role: 'user', parts: responseParts });
 
         if (shortCircuit) break;
+        if (proposedAction) {
+          if (keepGatheringAfterProposal) continue;
+          break;
+        }
         if (
           round === effectiveMaxRounds - 1 ||
           estimateHistoryTokens(history) > TURN_HISTORY_TOKEN_BUDGET ||
