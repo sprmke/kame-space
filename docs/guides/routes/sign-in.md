@@ -39,7 +39,7 @@ If someone shared an old "sign in" link with you, it still works. You'll land on
 - Q: Is my old "sign-in" bookmark still valid?
   A: Yes. It redirects to the host login page; sign in with Google there as usual.
 - Q: I expected a password field on the old sign-in link, but the page changed. What happened?
-  A: Host sign-in moved to the For Hosts login page and uses Google only; the old link is just a shortcut that sends you there.
+  A: Host sign-in moved to the For Hosts login page. Use a one-time email code or Google; there is no password. The old link is just a shortcut that sends you there.
 - Q: Can guests use the old sign-in link to log in?
   A: No, that path is for hosts. Guests sign in only when booking or saving a listing, through the popup on those pages.
 

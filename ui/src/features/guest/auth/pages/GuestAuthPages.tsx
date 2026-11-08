@@ -11,26 +11,6 @@ export function GuestLoginPage() {
   return (
     <AuthPageContent
       config={AUTH_PAGE_CONFIG.guest}
-      mode="login"
-      actions={{
-        sendEmailOtp: guestAuth.sendEmailOtp,
-        verifyEmailOtp: guestAuth.verifyEmailOtp,
-        signInWithGoogle: guestAuth.signInWithGoogle,
-        googleLoading: guestAuth.googleLoading,
-        bannerError: guestAuth.error,
-      }}
-    />
-  );
-}
-
-export function GuestRegisterPage() {
-  usePageTitle(publicPageTitle('Register'));
-  const guestAuth = useGuestAuthPage({ defaultRedirect: '/' });
-
-  return (
-    <AuthPageContent
-      config={AUTH_PAGE_CONFIG.guest}
-      mode="register"
       actions={{
         sendEmailOtp: guestAuth.sendEmailOtp,
         verifyEmailOtp: guestAuth.verifyEmailOtp,

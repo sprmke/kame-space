@@ -37,7 +37,6 @@ export interface AuthPageActions {
 
 interface AuthPageContentProps {
   config: AuthPageConfig;
-  mode: 'login' | 'register';
   actions: AuthPageActions;
 }
 
@@ -45,8 +44,7 @@ function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-export function AuthPageContent({ config, mode, actions }: AuthPageContentProps) {
-  const c = mode === 'login' ? config.login : config.register;
+export function AuthPageContent({ config, actions }: AuthPageContentProps) {
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -146,9 +144,9 @@ export function AuthPageContent({ config, mode, actions }: AuthPageContentProps)
       ) : null}
 
       <div className={cn(step === 'otp' ? 'mb-6 text-center' : 'mb-8')}>
-        {step === 'email' && mode === 'login' ? (
+        {step === 'email' ? (
           <div className="bg-primary/10 text-brand-ink mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
-            <span>{config.login.badge}</span>
+            <span>{config.badge}</span>
           </div>
         ) : null}
 
@@ -161,8 +159,8 @@ export function AuthPageContent({ config, mode, actions }: AuthPageContentProps)
           </>
         ) : (
           <>
-            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{c.title}</h1>
-            <p className="text-muted-foreground mt-2">{c.subtitle}</p>
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{config.title}</h1>
+            <p className="text-muted-foreground mt-2">{config.subtitle}</p>
           </>
         )}
       </div>
@@ -255,27 +253,15 @@ export function AuthPageContent({ config, mode, actions }: AuthPageContentProps)
       </div>
 
       {step === 'email' ? (
-        mode === 'login' ? (
-          <p className="text-muted-foreground mt-8 text-center text-sm">
-            Don&apos;t have an account?{' '}
-            <Link
-              to={config.login.registerHref}
-              className="text-brand-ink hover:text-brand-ink/80 font-semibold transition-colors"
-            >
-              Create one now
-            </Link>
-          </p>
-        ) : (
-          <p className="text-muted-foreground mt-8 text-center text-sm">
-            Already have an account?{' '}
-            <Link
-              to={config.register.loginHref}
-              className="text-brand-ink hover:text-brand-ink/80 font-semibold transition-colors"
-            >
-              Sign in
-            </Link>
-          </p>
-        )
+        <p className="text-muted-foreground mt-8 text-center text-sm">
+          {config.otherPrompt}{' '}
+          <Link
+            to={config.otherHref}
+            className="text-brand-ink hover:text-brand-ink/80 font-semibold transition-colors"
+          >
+            {config.otherLinkLabel}
+          </Link>
+        </p>
       ) : null}
     </div>
   );
