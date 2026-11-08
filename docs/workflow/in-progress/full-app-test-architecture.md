@@ -35,6 +35,16 @@ deleted`. All three are drift against in-progress tickets (notifications restruc
 - **Flaky, watched:** `adminAiConsole`, `assistantAiMode`, `voucherRedemptionMocked` passed on
   rerun and stay in the lane; CI retries (2) cover them. Promote to quarantine if either
   appears twice on `develop`.
+- **Found on the first real CI run (shard 1):** `notificationsHub` Manage sheet and a
+  `[serious] color-contrast` on `/notifications`, plus `marketingAiExamples`. All three are
+  drift in areas that are being rewritten. The two specs are quarantined (#334, #330); the
+  contrast finding is a `KNOWN_A11Y_EXCEPTIONS` entry in the axe sweep (#334) so the other
+  16 property routes stay audited instead of skipping the whole test.
+
+**Local trap worth knowing:** `reuseExistingServer` means a dev server already bound to
+4173 (another checkout, another session) is silently reused, so local runs can test a
+different build than the one in front of you. `playwright.config.ts` now takes
+`PLAYWRIGHT_PORT` / `PLAYWRIGHT_PWA_PORT`. Half of one debugging session went into this.
 
 Final lane state: 96 specs, one tag each — `@smoke` 23, `@ci` 68 (62 executable, 6 quarantined),
 `@pwa` 1, `@live` 2, `@demo` 2. `@ci` runs in 3.1 min locally.

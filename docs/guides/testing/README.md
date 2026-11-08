@@ -100,6 +100,22 @@ duplicate tag, a committed `.only`, or a new `waitForTimeout` call (baselined, s
 | `@live`  | Local Supabase (`PLAYWRIGHT_LOCAL_LIVE=1`)   |
 | `@demo`  | Headed/video; never CI                       |
 
+## Local runs: do not reuse a stale dev server
+
+`playwright.config.ts` reuses an already-running server on `127.0.0.1:4173` outside CI. If
+another checkout (or another session) already owns that port, your run silently tests
+**that** build instead of your branch. The symptom is a test that fails locally, passes in
+CI, or changes result between runs with no diff.
+
+Set a free port per checkout:
+
+```bash
+PLAYWRIGHT_PORT=4199 PLAYWRIGHT_PWA_PORT=4200 bun run test:e2e:ci
+```
+
+Or stop the other server. The same applies to `bun run ci:quality`, which starts the smoke
+and `@ci` suites one after another on the same port.
+
 ## Domain guides
 
 | Doc                                                                      | Domain                              |
