@@ -42,14 +42,31 @@ async function readTimeline(page: Parameters<typeof test>[0]['page']) {
     return a === null || b === null ? null : Math.round(b - a);
   };
 
+  const loaderHide = at('loader:hide');
+
   return {
     loaderMs: span('loader:show', 'loader:hide'),
     skeletonMs: span('skeleton:show', 'skeleton:hide'),
     routeContentMs: span('app:script-start', 'route:content'),
+    /**
+     * What the user actually experiences. `route:content` fires when the data is ready,
+     * but the full-screen loader covers the page until it hides (220ms bridge later), so
+     * content-ready alone overstates how fast the app felt.
+     */
+    perceivedMs: loaderHide === null ? null : Math.round(loaderHide),
     firstRenderMs: span('app:script-start', 'app:first-render'),
     sawLoader: at('loader:show') !== null,
     sawSkeleton: at('skeleton:show') !== null,
   };
+}
+
+/** The loader host is the real "screen is usable" signal, so wait for it to leave. */
+async function waitForLoaderGone(page: Parameters<typeof test>[0]['page']) {
+  await expect
+    .poll(async () => page.evaluate(() => document.getElementById('app-loader-host') === null), {
+      timeout: 20_000,
+    })
+    .toBe(true);
 }
 
 test.describe('@perf host dashboard cold open', () => {
@@ -76,6 +93,7 @@ test.describe('@perf host dashboard cold open', () => {
       )
       .toBe(true);
 
+    await waitForLoaderGone(page);
     const timeline = await readTimeline(page);
     // One machine-readable line so two runs can be diffed with grep.
     console.log(`[boot-timeline] ${JSON.stringify(timeline)}`);
@@ -111,8 +129,57 @@ test.describe('@perf host dashboard cold open', () => {
       )
       .toBe(true);
 
+    await waitForLoaderGone(page);
     const timeline = await readTimeline(page);
     console.log(`[boot-timeline-4x] ${JSON.stringify(timeline)}`);
+
+    expect(timeline.routeContentMs).not.toBeNull();
+  });
+
+  /**
+   * Warm repeat open, which is what a host actually experiences most of the time.
+   *
+   * Two loads in the same browser context: the first populates the persisted query cache,
+   * the second is measured. `performance` marks reset on reload, so the second boot is a
+   * clean measurement of a returning viewer.
+   */
+  test('reports the warm repeat open after the query cache is warm', async ({ page }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access');
+    const url = `/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}`;
+
+    await page.goto(url);
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() =>
+            performance.getEntriesByType('mark').some((entry) => entry.name === 'route:content')
+          ),
+        { timeout: 30_000 }
+      )
+      .toBe(true);
+    // Let the persister finish its IndexedDB write before reloading.
+    await page.waitForTimeout(1500);
+
+    await page.reload();
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() =>
+            performance.getEntriesByType('mark').some((entry) => entry.name === 'route:content')
+          ),
+        { timeout: 30_000 }
+      )
+      .toBe(true);
+
+    await waitForLoaderGone(page);
+    const timeline = await readTimeline(page);
+    console.log(`[boot-timeline-warm] ${JSON.stringify(timeline)}`);
 
     expect(timeline.routeContentMs).not.toBeNull();
   });

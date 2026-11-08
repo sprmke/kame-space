@@ -41,6 +41,19 @@ const OFFLINE_PERSIST_KEY_ROOTS: ReadonlySet<string> = new Set([
   'analytics-summary',
   'org-analytics-summary',
   'host-announcements',
+  // Shell gate data (app-speed plan 3.4). These are the queries every admin guard
+  // blocks on: without them a returning host waits on four serial edge calls before the
+  // loader lifts, even though the answer almost never changes. Cached per viewer and
+  // purged on sign-out by `PwaQueryPersistence`, and any action still goes through
+  // `verifyPropertyAccess` / `verifyOrgAccess` on the server, so a stale shell cannot be
+  // used to reach anything. `property` is the entitlements key root and nothing else.
+  'organizations',
+  'properties',
+  'parkings',
+  'property-access',
+  'parking-access',
+  'org-access',
+  'property',
   // Settings the shell needs to render offline
   'org-settings',
   'parking-settings',
