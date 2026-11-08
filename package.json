@@ -104,6 +104,7 @@
     "perf:edge-latency": "node scripts/performance/edge-latency-baseline.mjs",
     "verify:deployed-preview": "node scripts/performance/verify-deployed-preview.mjs",
     "perf:pg-stat-statements": "bash scripts/performance/capture-pg-stat-statements.sh",
+    "perf:pg-stat:snapshot": "node scripts/performance/pg-stat-snapshot.mjs",
     "perf:supabase:metrics": "node scripts/performance/capture-supabase-metrics.mjs",
     "perf:supabase:advisors": "node scripts/performance/capture-supabase-advisors.mjs",
     "perf:supabase:snapshot": "bun run perf:supabase:metrics && bun run perf:supabase:advisors",
