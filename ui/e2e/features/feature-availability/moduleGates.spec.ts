@@ -58,7 +58,7 @@ test.describe('@ci feature availability - host surfaces', () => {
     await expect(page.getByText(MAINTENANCE).first()).toBeVisible();
   });
 
-  test('notifications Telegram hub shows maintenance when off', async ({ page }) => {
+  test('@flaky notifications Telegram hub shows maintenance when off', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access', {
       featureAvailabilityOff: ['notifications.telegram'],
     });

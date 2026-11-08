@@ -36,7 +36,7 @@ async function openHostBooking(page: import('@playwright/test').Page) {
   await bookingRow.click();
 }
 
-test.describe('parking guest and host extra scenarios', () => {
+test.describe('@ci parking guest and host extra scenarios', () => {
   test.skip(({ browserName }) => browserName !== 'chromium', 'Side-by-side uses Chromium.');
 
   test('auto-accept claims the top match without a host click', async ({ page: _page }, testInfo) => {

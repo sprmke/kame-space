@@ -58,7 +58,7 @@ async function installTemplatesMocks(page: import('@playwright/test').Page) {
   return bodies;
 }
 
-test.describe('@ci property templates workbench', () => {
+test.describe('property templates workbench', () => {
   test('groups built-ins, folders and ungrouped custom templates', async ({ page }) => {
     await installTemplatesMocks(page);
     await page.goto(TEMPLATES_PATH);

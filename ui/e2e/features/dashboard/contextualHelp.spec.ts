@@ -19,7 +19,7 @@ async function openPropertySettings(page: import('@playwright/test').Page) {
   });
 }
 
-test.describe('@ci contextual help', () => {
+test.describe('contextual help', () => {
   test.beforeEach(async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
   });

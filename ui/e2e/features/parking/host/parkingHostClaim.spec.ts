@@ -11,7 +11,7 @@ import {
 } from '../shared/parkingFlowHarness';
 import { captureParkingScreen, setParkingScreenSuite } from '../shared/parkingScreenCapture';
 
-test.describe('parking host flow', () => {
+test.describe('@ci parking host flow', () => {
   test('host can claim a pending parking request from the dashboard', async ({
     page,
     browser,

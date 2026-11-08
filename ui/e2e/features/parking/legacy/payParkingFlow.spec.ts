@@ -9,7 +9,7 @@ import {
   PAY_PARKING_LINKED_REQUEST_ID,
 } from '../shared/payParkingFlowHarness';
 
-test.describe('legacy property pay-parking → marketplace redirect', () => {
+test.describe('@ci legacy property pay-parking → marketplace redirect', () => {
   test('unlinked stay redirects to find parking with linkStay', async ({ page }) => {
     setParkingScreenSuite('pay-parking-find-redirect');
     const state = createPayParkingFlowState();

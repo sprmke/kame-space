@@ -69,20 +69,62 @@ docs/guides/testing/
 
 ## Playwright tags
 
-Vitest intentionally stays Node-only for deterministic helpers, validators, and
-client/server mirrors. Rendered component behavior is covered by mocked
-Playwright journeys so the repo does not maintain a second DOM simulation layer.
+Vitest runs two projects:
+
+| Project                        | Environment                 | Files               | Covers                                                                                        |
+| ------------------------------ | --------------------------- | ------------------- | --------------------------------------------------------------------------------------------- |
+| `node` (default)               | Node, no DOM                | `src/**/*.test.ts`  | Pure helpers, validators, client/server mirrors, gates, money math                            |
+| `dom` (`vitest.dom.config.ts`) | happy-dom + Testing Library | `src/**/*.test.tsx` | Hooks with state and small components with behaviour (dismiss, dirty tracking, media queries) |
+
+The extension decides the project, so a test file can never be matched by neither. Layout,
+Tailwind classes and shadcn primitives stay in Playwright, which can see a real browser.
+
+`bun run test` runs both projects. `bun run test:dom` runs only the DOM one.
+
 The smoke command runs every `@smoke` journey on desktop, 375×812 phone, and
 768×1024 tablet projects. Primary public, guest-form, booking, and super-admin
 routes assert that the document does not overflow horizontally and that visible
 interactive controls have an accessible name.
 
-| Tag      | Meaning                                    |
-| -------- | ------------------------------------------ |
-| `@smoke` | Fast PR gate (< ~8 min total)              |
-| `@ci`    | Mocked domain suite on develop             |
-| `@live`  | Local Supabase (`PLAYWRIGHT_LOCAL_LIVE=1`) |
-| `@demo`  | Headed/video; never CI                     |
+### Lanes
+
+| Specs | Lane                                                           |
+| ----- | -------------------------------------------------------------- |
+| 23    | `@smoke`, every PR on 3 viewports                              |
+| 68    | `@ci`, every PR, sharded 4 ways (62 executable, 6 quarantined) |
+| 1     | `@pwa`, production build                                       |
+| 2     | `@live`, manual / nightly                                      |
+| 2     | `@demo`, headed only                                           |
+
+E2E and Deno move to `Asia/Manila` alongside Vitest, so a date-boundary test cannot pass on
+one machine and fail on another.
+
+Every spec carries **exactly one** lane tag. `bun run check:e2e-lane-tags` fails on a missing or
+duplicate tag, a committed `.only`, or a new `waitForTimeout` call (baselined, shrink-only).
+
+| Tag      | Meaning                                      |
+| -------- | -------------------------------------------- |
+| `@smoke` | Fast PR gate, desktop + phone + tablet       |
+| `@ci`    | Page and journey suite, every PR, sharded 4× |
+| `@pwa`   | Production build, service worker             |
+| `@live`  | Local Supabase (`PLAYWRIGHT_LOCAL_LIVE=1`)   |
+| `@demo`  | Headed/video; never CI                       |
+
+## Local runs: do not reuse a stale dev server
+
+`playwright.config.ts` reuses an already-running server on `127.0.0.1:4173` outside CI. If
+another checkout (or another session) already owns that port, your run silently tests
+**that** build instead of your branch. The symptom is a test that fails locally, passes in
+CI, or changes result between runs with no diff.
+
+Set a free port per checkout:
+
+```bash
+PLAYWRIGHT_PORT=4199 PLAYWRIGHT_PWA_PORT=4200 bun run test:e2e:ci
+```
+
+Or stop the other server. The same applies to `bun run ci:quality`, which starts the smoke
+and `@ci` suites one after another on the same port.
 
 ## Domain guides
 

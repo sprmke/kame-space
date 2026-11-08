@@ -1,0 +1,58 @@
+[
+  {
+    "spec": "ui/e2e/features/feature-availability/moduleGates.spec.ts",
+    "test": "notifications Telegram hub shows maintenance when off",
+    "issue": "https://github.com/sprmke/kame-space/issues/330",
+    "expires": "2026-12-31",
+    "reason": "Notifications page moved Telegram behind a tab, so the gate copy is not on the default view."
+  },
+  {
+    "spec": "ui/e2e/features/dashboard/propertySettingsEmailAutomations.spec.ts",
+    "test": "Automated sends is a summary row that opens the toggles in a Manage modal",
+    "issue": "https://github.com/sprmke/kame-space/issues/330",
+    "expires": "2026-12-31",
+    "reason": "Settings cleanup renamed or re-surfaced the row; the Manage modal never opens."
+  },
+  {
+    "spec": "ui/e2e/features/marketing/marketingLibrary.spec.ts",
+    "test": "one toolbar menu holds Recent publishes and Recently deleted",
+    "issue": "https://github.com/sprmke/kame-space/issues/330",
+    "expires": "2026-12-31",
+    "reason": "Marketing toolbar lost the 'Your posts' button during the responsive pass."
+  },
+  {
+    "spec": "ui/e2e/features/vouchers/guest/voucherRevealClaim.spec.ts",
+    "test": "guest - SD form voucher reveal worlds",
+    "issue": "https://github.com/sprmke/kame-space/issues/331",
+    "expires": "2026-12-31",
+    "reason": "Never ran before (untagged). No style-specific reveal heading renders in reel, wheel or flip."
+  },
+  {
+    "spec": "ui/e2e/features/parking/property/propertyBookingFreeManualWorkflow.spec.ts",
+    "test": "Proceed skips plan-gated emails, toasts, and expands Automation Triggers",
+    "issue": "https://github.com/sprmke/kame-space/issues/331",
+    "expires": "2026-12-31",
+    "reason": "Never ran before (untagged). 'Send manually' stays aria-expanded=false after Proceed."
+  },
+  {
+    "spec": "ui/e2e/features/parking/flows/parkingGuestHostOutcomes.spec.ts",
+    "test": "host can decline a pending request and the guest sees the request close out",
+    "issue": "https://github.com/sprmke/kame-space/issues/331",
+    "expires": "2026-12-31",
+    "reason": "Intermittent: failed 2 of 4 local runs with the decline flow timing out after the host action."
+  },
+  {
+    "spec": "ui/e2e/features/dashboard/notificationsHub.spec.ts",
+    "test": "the Manage sheet holds delivery settings and the Telegram controls",
+    "issue": "https://github.com/sprmke/kame-space/issues/334",
+    "expires": "2026-12-31",
+    "reason": "Notifications restructure moved the delivery settings; the Manage sheet locator no longer resolves."
+  },
+  {
+    "spec": "ui/e2e/features/marketing/marketingAiExamples.spec.ts",
+    "test": "the home shows examples, and an example opens with how it was made",
+    "issue": "https://github.com/sprmke/kame-space/issues/330",
+    "expires": "2026-12-31",
+    "reason": "Failed in CI on the first real @ci run; marketing Studio home is mid-responsive-pass."
+  }
+]

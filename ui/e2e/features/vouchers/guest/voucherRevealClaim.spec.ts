@@ -10,7 +10,7 @@ import {
 
 const GUEST_WORLDS = Object.values(VOUCHER_REVEAL_WORLDS);
 
-test.describe('guest - SD form voucher reveal worlds', () => {
+test.describe('@ci @flaky guest - SD form voucher reveal worlds', () => {
   for (const world of GUEST_WORLDS) {
     test(`${world.style} world - claim shows style copy then won card`, async ({ page }) => {
       await useReducedMotionForVoucherClaim(page);

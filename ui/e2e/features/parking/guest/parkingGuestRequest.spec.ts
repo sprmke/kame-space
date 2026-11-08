@@ -11,7 +11,7 @@ import {
 } from '../shared/parkingFlowHarness';
 import { captureParkingScreen, setParkingScreenSuite } from '../shared/parkingScreenCapture';
 
-test.describe('@smoke @ci parking guest flow', () => {
+test.describe('@smoke parking guest flow', () => {
   test.describe.configure({ mode: 'serial' });
 
   test('guest can submit a parking request and land on the waiting screen', async ({ page }) => {

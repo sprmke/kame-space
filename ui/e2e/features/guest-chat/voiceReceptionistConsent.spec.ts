@@ -263,7 +263,7 @@ async function installLiveBrowserMocks(page: Page) {
   });
 }
 
-test.describe('@smoke @ci voice receptionist consent', () => {
+test.describe('@smoke voice receptionist consent', () => {
   test('requires disclosure acceptance before requesting microphone access', async ({ page }) => {
     await installVoiceReceptionistMocks(page);
     await page.goto('/properties/solea/messages?checkInDate=2026-10-01&checkOutDate=2026-10-03');
