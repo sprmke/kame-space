@@ -3,7 +3,7 @@ import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { Minus, Plus } from 'lucide-react';
 
-import type { SearchField } from '@/features/guest/marketing/guest-landing/lib/heroSearchState';
+import type { SearchField } from '@/features/guest/marketing/shared/lib/heroSearchState';
 import { lerp, smoothstep } from '@/features/guest/marketing/shared/lib/listingScrollSearchEasing';
 
 import { cn } from '@/lib/utils';

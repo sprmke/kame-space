@@ -313,6 +313,11 @@ export function DevelopmentDetailPageSkeleton() {
 }
 
 /** Marketing landing / for-hosts: centered hero, then alternating feature sections. */
+/**
+ * Marketing home (`MarketingHomePage`). Mirrors the real layout: rounded photo panel with a
+ * bottom-left copy block over it, then the catalog heading and tab strip. The chrome (nav,
+ * footer) stays mounted outside this fallback.
+ */
 export function PublicLandingPageSkeleton() {
   return (
     <div
@@ -321,47 +326,34 @@ export function PublicLandingPageSkeleton() {
       aria-busy="true"
       aria-label="Loading page"
     >
-      <section className="pt-[calc(var(--public-nav-h)+2rem)] md:pt-[calc(var(--public-nav-h)+4rem)]">
-        <div className="container mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
-          <Skeleton className="mx-auto h-7 w-36 rounded-full" />
-          <div className="mt-5 space-y-3">
-            <Skeleton className="mx-auto h-10 w-full max-w-3xl rounded-lg sm:h-14" />
-            <Skeleton className="mx-auto h-10 w-3/4 max-w-2xl rounded-lg sm:h-14" />
+      {/* Hero panel: same height, radius and gutters as `.public-page-top` + the real panel. */}
+      <section className="public-page-top public-shell">
+        <div className="bg-muted relative flex min-h-[540px] flex-col justify-end rounded-3xl sm:min-h-[580px] lg:h-[min(76svh,700px)] lg:rounded-[2rem]">
+          <div className="relative z-10 p-5 pt-24 sm:p-8 lg:p-12">
+            <Skeleton className="h-8 w-full max-w-[16ch] sm:h-10 lg:h-12" />
+            <Skeleton className="mt-3 h-8 w-4/5 max-w-[13ch] sm:h-10 lg:h-12" />
+            <Skeleton className="mt-4 h-4 w-full max-w-[34ch]" />
+            <Skeleton className="mt-2 h-4 w-3/5 max-w-[30ch]" />
+            <Skeleton className="mt-6 h-14 w-full max-w-3xl rounded-full lg:mt-8 lg:h-[92px]" />
           </div>
-          <div className="mx-auto mt-6 max-w-3xl space-y-2">
-            <Skeleton className="mx-auto h-4 w-full" />
-            <Skeleton className="mx-auto h-4 w-5/6" />
-          </div>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Skeleton className="h-12 w-40 rounded-full" />
-            <Skeleton className="h-12 w-44 rounded-full" />
-          </div>
-          <Skeleton className="mx-auto mt-10 aspect-[16/9] w-full max-w-4xl rounded-2xl" />
         </div>
       </section>
 
-      <div className="mx-auto mt-16 max-w-6xl space-y-16 px-4 sm:px-6 lg:px-8">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div
-            key={index}
-            className={cn(
-              'grid items-center gap-8 lg:grid-cols-2 lg:gap-12',
-              index % 2 === 1 && 'lg:[&>*:first-child]:order-2'
-            )}
-          >
-            <div className="space-y-4">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-8 w-2/3 max-w-md" />
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-5/6" />
-                <Skeleton className="h-4 w-2/3" />
-              </div>
+      {/* Catalog: heading, real tab strip, then the card grid. */}
+      <section className="public-section-y public-shell">
+        <Skeleton className="h-7 w-72 max-w-full sm:h-8" />
+        <Skeleton className="mt-2 h-4 w-64 max-w-full" />
+        <Skeleton className="mt-6 h-10 w-72 max-w-full rounded-full" />
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="space-y-3">
+              <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
             </div>
-            <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

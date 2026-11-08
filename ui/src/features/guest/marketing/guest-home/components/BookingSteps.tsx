@@ -10,7 +10,7 @@ import {
   RefundScene,
   RequestScene,
   STEP_EASE,
-} from '@/features/guest/marketing/guest-landing-v3/components/BookingStepScenes';
+} from '@/features/guest/marketing/guest-home/components/BookingStepScenes';
 import type { PublicPropertyListItem } from '@/features/guest/marketing/properties/lib/propertiesQuery';
 import { MarketingImage } from '@/features/guest/marketing/shared/components/MarketingImage';
 
@@ -79,17 +79,17 @@ export function BookingSteps({ stay }: { stay?: PublicPropertyListItem }) {
   const step = STEPS[active];
 
   return (
-    <section aria-labelledby="v3-steps" className="bg-muted/40 relative">
+    <section aria-labelledby="home-steps" className="bg-muted/40 relative">
       <div ref={trackRef} className="relative" style={{ height: `${N * 80 + 20}vh` }}>
         <div className="sticky top-0 flex h-[100dvh] items-center overflow-hidden pb-20 pt-[calc(var(--public-nav-h)+0.5rem)] lg:pb-4">
-          <div className="mx-auto grid w-full max-w-7xl items-center gap-5 px-4 sm:px-6 lg:grid-cols-12 lg:gap-12 lg:px-8">
+          <div className="public-shell grid w-full items-center gap-5 lg:grid-cols-12 lg:gap-12">
             {/* Copy + rail */}
             <div className="lg:col-span-5">
               <span className="border-border text-muted-foreground inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold">
                 How booking works
               </span>
               <h2
-                id="v3-steps"
+                id="home-steps"
                 className="public-section-title text-foreground mt-3 text-balance font-semibold"
               >
                 From request to refund, on one trip page

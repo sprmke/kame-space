@@ -14,7 +14,7 @@ import {
   Wallet,
 } from 'lucide-react';
 
-import { STEP_EASE } from '@/features/guest/marketing/guest-landing-v3/components/BookingStepScenes';
+import { STEP_EASE } from '@/features/guest/marketing/guest-home/components/BookingStepScenes';
 import { MarketingBrandLogo } from '@/features/guest/marketing/shared/components/MarketingBrandLogo';
 
 import { usePrefersReducedMotion } from '@/hooks/useMediaQuery';
@@ -122,14 +122,14 @@ export function WhyBookHere() {
   const handled = reduce ? N : count;
 
   return (
-    <section aria-labelledby="v3-why" className="public-section-y overflow-x-clip">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section aria-labelledby="home-why" className="public-section-y overflow-x-clip">
+      <div className="public-shell">
         <div className="mx-auto max-w-2xl text-center">
           <span className="border-border text-muted-foreground inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold">
             Why {PLATFORM_APP_NAME}
           </span>
           <h2
-            id="v3-why"
+            id="home-why"
             className="public-section-title text-foreground mt-3 text-balance font-semibold"
           >
             The messages you won’t have to send

@@ -223,7 +223,7 @@ Both layers must agree on what the guest is looking at. Availability helpers are
 | Params        | `ui/.../search/lib/searchParams.ts` (`focus` + `buildSearchHref`)                                                                    |
 | Page focus    | `ui/.../marketing/shared/lib/listingSearchPreferType.ts`, `listingScrollSearchPaths.ts`                                              |
 | Hooks         | `ui/src/features/guest/search/hooks/useSearchSuggestions.ts`, `useSearchListings.ts` (All-scoped overview + optional category fetch) |
-| Hero          | `ui/src/features/guest/marketing/guest-landing/components/HeroSearch.tsx`                                                            |
+| Hero          | `ui/src/features/guest/marketing/shared/components/hero-search/HeroSearch.tsx`                                                       |
 | Edge          | `supabase/functions/search-suggestions/`, `search-listings/`, `list-public-*`                                                        |
 | Migration     | `supabase/migrations/20261005130000_search_indexes.sql`                                                                              |
 | Manual QA     | `docs/guides/testing/smart-search-intents-manual.md`                                                                                 |

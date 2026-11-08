@@ -189,7 +189,7 @@ export function MarketingNav() {
         headerSolid ? 'bg-background/80 border-b shadow-sm backdrop-blur-xl' : 'bg-transparent'
       )}
     >
-      <nav className="container relative mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="public-shell relative">
         <div className="relative flex h-[var(--public-nav-h)] items-center justify-between overflow-hidden">
           {/*
            * Phone back control on detail routes.

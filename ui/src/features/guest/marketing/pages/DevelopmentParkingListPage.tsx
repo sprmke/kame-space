@@ -17,7 +17,7 @@ import {
   type ParkingFilterState,
   type ParkingSortKey,
 } from '@/features/guest/marketing/developments/lib/parkingSlotFilters';
-import type { HeroSearchValues } from '@/features/guest/marketing/guest-landing/components/HeroSearch';
+import type { HeroSearchValues } from '@/features/guest/marketing/shared/components/hero-search/HeroSearch';
 import {
   usePrefetchPublicParkings,
   usePublicParkings,

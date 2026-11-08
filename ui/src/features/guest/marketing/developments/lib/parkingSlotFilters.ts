@@ -1,4 +1,4 @@
-import type { HeroSearchValues } from '@/features/guest/marketing/guest-landing/components/HeroSearch';
+import type { HeroSearchValues } from '@/features/guest/marketing/shared/components/hero-search/HeroSearch';
 
 import type { ParkingSlot } from '../types';
 

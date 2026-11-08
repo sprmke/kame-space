@@ -3,7 +3,7 @@ import { addDays, format } from 'date-fns';
 import {
   HERO_SEARCH_SINGLE_MONTH_PANEL_WIDTH,
   heroSearchWhenPanelWidth,
-} from '@/features/guest/marketing/guest-landing/lib/heroSearchCalendarClassNames';
+} from '@/features/guest/marketing/shared/lib/heroSearchCalendarClassNames';
 
 import type { DateRange } from 'react-day-picker';
 

@@ -22,7 +22,6 @@ Route: `/`
 | Destinations     | —        | —          | Documented | 3 editorial destination tiles                         |
 | Social proof     | —        | —          | Documented | Single review + trust stats                           |
 | Preview redesign | —        | —          | Documented | `/explore-preview` — cinematic redesign, pending swap |
-| Preview v3       | —        | —          | Documented | `/v3`: live spotlight + catalog tabs, pending review  |
 | Mobile shell     | —        | —          | Documented | `MarketingLayoutShell` bottom tabs — see below        |
 
 ---
@@ -92,39 +91,43 @@ Page component `ExplorePreviewPage.tsx`; all sections under `ui/src/features/gue
 - **Direction:** cinematic arrival + editorial spine. Full-bleed cross-dissolving destination hero with the real `HeroSearch` in a floating console; then an editorial route through stays, a destination mosaic, a 3-step "how a stay comes together" strip, one guest voice, and a brand-gradient closing CTA. No layout family repeats.
 - **Constraints honored:** Plus Jakarta Sans only, existing HSL tokens (teal `--primary` the sole accent; gradient only on the closing band), Lucide icons, framer-motion. One authored motion idea (content rises in) plus the hero dissolve and hover zoom; every motion gated on `prefers-reduced-motion`.
 - **Reuses:** `HeroSearch` (unchanged), `MarketingLayoutShell` nav + footer.
-- **To ship it:** point `/` at `ExplorePreviewPage` (or fold its sections into `GuestLandingPage`), retire the old `guest-landing/` components, drop the `/explore-preview` route, and update this guide.
+- **To ship it:** point `/` at `ExplorePreviewPage`, drop the `/explore-preview` route, and update this guide. (Superseded for now by the current `guest-home` landing.)
 
 Sections: `ExploreHero`, `ExploreTrustRibbon`, `ExploreFeaturedStays`, `ExploreDestinationAtlas`, `ExploreStayJourney`, `ExploreGuestVoice`, `ExploreClosingCta`.
 
 ---
 
-## Preview v3: `/v3`
+## Home: `/`
 
-A from-scratch guest landing served at **`/v3`** for manual review. Not linked from nav. One job: get a visitor into the catalog. Built entirely on `DESIGN.md` tokens (theme-aware light and dark), Plus Jakarta Sans, the `public-*` type and spacing scale, and the shared listing cards.
+The guest landing at **`/`**. One job: get a visitor into the catalog. Built entirely on `DESIGN.md` tokens (theme-aware light and dark), Plus Jakarta Sans, the `public-*` type and spacing scale, and the shared listing cards.
 
-Page `ui/src/features/guest/marketing/pages/GuestLandingV3Page.tsx`; sections under `ui/src/features/guest/marketing/guest-landing-v3/components/`.
+Page `ui/src/features/guest/marketing/pages/MarketingHomePage.tsx`; sections under `ui/src/features/guest/marketing/guest-home/components/`. Shared search primitives live in `ui/src/features/guest/marketing/shared/components/hero-search/`.
 
-- **`SpotlightHero`:** rounded photo panel of a real recommended stay (up to 4 rotate every 7s; static under reduced motion). Headline, one lead line, and the shared `ListingHeroSearch` (submits to `/search`). A chip at the top links to the stay shown, with its nightly rate.
+- **`SpotlightHero`:** rounded photo panel with the headline, one lead line, and the shared `ListingHeroSearch` (submits to `/search`). The panel art is theme-aware: a sunrise render in light mode and a matching moonlit render in dark mode, both at `ui/public/marketing/home/` (`hero-day.*` and `hero-night.*`, 1672×941, WebP with a JPEG fallback). Both layers stay mounted and the night layer dissolves over the day layer on theme change. No zoom or pan: the renders share a frame, so the dissolve is the whole transition. Reduced motion swaps with no animation. The hero has no stay chip; stay and price live in the catalog below.
 - **`ExploreCatalog`:** "Find your next stay, home, or parking" with the line "Every listing is booked straight with its host." and Stays / Residences / Parking tabs (live totals). Up to 8 real cards per tab using `PropertyCard`, `DevelopmentsGrid`, `ParkingsEntriesGrid`. Stays tab adds centered city chips into `/properties/in/:location`. A centered "See all N ..." button (or "Browse ...") sits under the grid only when the tab has listings; it is hidden while loading, on error, and when empty. Loading skeletons and `ListingLoadError` retry per tab.
-- **`SpotlightHero` search dropdown:** the photo layer is clipped on its own, so the search dropdown can extend past the panel.
+- **`SpotlightHero` legibility scrim:** the sunrise render carries its own dark left vignette, so the panel uses two soft layers (`.hero-scrim-base` bottom lift, `.hero-scrim-copy` radial corner shade) plus a `.hero-copy` text shadow on the headline and lead. No straight-edged band across the photo, and the photo layer is still clipped on its own so the search dropdown can extend past the panel. The artwork's black point is lifted in the asset to 20% at the left edge (`hero-day.*`), so the corner no longer reads as a black slab against the light page. White copy clears AA at the p90 background pixel: headline 4.19:1 (needs 3:1), lead 4.52:1 (needs 4.5:1).
 - **`BookingSteps` (scroll story):** pinned for about five screens of scroll; scrolling down or up moves an example trip through five steps (request, host confirms, building paperwork, check-in, deposit back). Desktop: step rail with a scroll-linked progress line (click a step to scroll to it). Phone: segmented step bar with the current title and body. The right side is a large trip-page preview (up to 580px wide): property photo inset at the top (first live stay, or a condo photo fallback; no overlay or gradient), name and status pill below it (labels match `guestTripStatusLabel`), five-segment progress, then a scene per step from `BookingStepScenes.tsx` (guest counter and ID slide-in, email drop-in with drawn check, "Approved" stamp and parking, key turn and stay guide, deposit refund timeline). Labeled "Example trip". Reduced motion: scenes render without animation.
 - **`WhyBookHere`:** "The messages you won't have to send". Centered heading over a before/after stage. Desktop: one "Booked on Kame Space" card in the middle with five rows (parking, building pass, booking status, check-in details, security deposit), flanked by the chat message a guest would usually send a host for each one on other sites, alternating left and right. As each row passes about 62% of the viewport height, a line draws from its message into the card, the message is crossed out ("No need to ask"), and the row fills in with a check. The header pill counts down from "5 messages to send" to "Nothing to send". Hovering a row highlights its message. Phone: each message covers its row and slides off when handled. Scroll back up to reverse; reduced motion shows the final state. Ends with a "Find a stay" link to `/properties`. Messages name no other brand.
 - **`HostBand`:** brand-gradient band for owners: "Have a unit? Start earning from it." plus one line, **Become a host** to `/for-hosts` and **See pricing** to `/for-hosts/pricing`.
-- **Listings are live.** Sample content: the labeled example trip in `BookingSteps` and the condo photo fallback.
-- **To ship it:** point the index route at `GuestLandingV3Page`, retire the older landing modules, drop the `/v3` route, and update this guide.
+- **Listings are live.** Sample content: the labeled example trip in `BookingSteps`, the condo photo fallback, and both hero renders.
+- **Shared page shell:** nav, footer and every home section use `.public-shell` (`ui/src/index.css`). One class owns both centering and the gutter: `max-width: 84rem` with `padding-inline` 1rem / 1.5rem / 2rem, so the content box is 80rem (1280px) at every width ≥ 1440px. The logo, hero photo panel, catalog cards, steps column and footer columns therefore share one left and right edge. Do not add `mx-auto max-w-*` or horizontal padding on top of it.
+- **Shipped.** `/` renders this page. The earlier `guest-landing/` module, `GuestLandingPage`, and the `/v3` preview route were removed; `/v3` now 404s. `/v2` and `/explore-preview` remain as unlinked previews.
+- **Legacy redirect:** `/?property=<slug>` still forwards to that property's calendar, so old shared links keep working.
+- **SEO:** the page sets `usePageTitle(publicPageTitle('Home'))` and `usePageMeta({ canonicalPath: '/' })`.
 
 ---
 
 ## Implementation map
 
-| Concern | Path                                                                         |
-| ------- | ---------------------------------------------------------------------------- |
-| Page    | `ui/src/features/guest/marketing/pages/GuestLandingPage.tsx`                 |
-| Content | `ui/src/features/guest/marketing/guest-landing/data/landingContent.ts`       |
-| Hero    | `ui/src/features/guest/marketing/guest-landing/components/GuestHero.tsx`     |
-| Canvas  | `ui/src/features/guest/marketing/guest-landing/components/HeroCanvas.tsx`    |
-| Layout  | `ui/src/features/guest/marketing/shared/components/MarketingLayoutShell.tsx` |
-| Routes  | `ui/src/features/guest/marketing/routes/index.tsx`                           |
+| Concern  | Path                                                                           |
+| -------- | ------------------------------------------------------------------------------ |
+| Page     | `ui/src/features/guest/marketing/pages/MarketingHomePage.tsx`                  |
+| Sections | `ui/src/features/guest/marketing/guest-home/components/`                       |
+| Hero art | `ui/public/marketing/home/` (`hero-day.*`, `hero-night.*`)                     |
+| Search   | `ui/src/features/guest/marketing/shared/components/hero-search/HeroSearch.tsx` |
+| Content  | `ui/src/features/guest/marketing/shared/data/landingContent.ts`                |
+| Layout   | `ui/src/features/guest/marketing/shared/components/MarketingLayoutShell.tsx`   |
+| Routes   | `ui/src/features/guest/marketing/routes/index.tsx`                             |
 
 ---
 

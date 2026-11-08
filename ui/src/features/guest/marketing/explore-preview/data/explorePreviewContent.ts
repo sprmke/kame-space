@@ -2,7 +2,7 @@
  * Content for the `/explore-preview` landing redesign proposal.
  *
  * Self-contained on purpose: this route is a manual-review preview and must not
- * couple to (or mutate) the live landing data in `../../guest-landing/data`.
+ * couple to (or mutate) the live landing data in `../../shared/data`.
  * Photos and rates are sample content for the preview, surfaced as such in the
  * page footnote.
  */
