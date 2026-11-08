@@ -31,8 +31,13 @@ First full `@ci` run on this branch: **338 passed, 8 failed, 3.5 min**. Triage:
 deleted`. All three are drift against in-progress tickets (notifications restructure,
   settings cleanup, marketing responsive pass). Registry: `ui/e2e/flaky-quarantine.json`,
   issue [#330](https://github.com/sprmke/kame-space/issues/330).
-- **Flaky, not quarantined:** `adminAiConsole`, `assistantAiMode`, `parkingGuestHostOutcomes`
-  failed once and passed on rerun. CI retries (2) cover these; watch the flake dashboard item.
+- **Flaky, quarantined:** `parkingGuestHostOutcomes` (decline flow, 2 failures in 4 runs).
+- **Flaky, watched:** `adminAiConsole`, `assistantAiMode`, `voucherRedemptionMocked` passed on
+  rerun and stay in the lane; CI retries (2) cover them. Promote to quarantine if either
+  appears twice on `develop`.
+
+Final lane state: 96 specs, one tag each — `@smoke` 23, `@ci` 68 (62 executable, 6 quarantined),
+`@pwa` 1, `@live` 2, `@demo` 2. `@ci` runs in 3.1 min locally.
 
 ### Decisions taken
 

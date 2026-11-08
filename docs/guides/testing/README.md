@@ -59,13 +59,35 @@ docs/guides/testing/
 
 ## Playwright tags
 
-Vitest intentionally stays Node-only for deterministic helpers, validators, and
-client/server mirrors. Rendered component behavior is covered by mocked
-Playwright journeys so the repo does not maintain a second DOM simulation layer.
+Vitest runs two projects:
+
+| Project                        | Environment                 | Files               | Covers                                                                                        |
+| ------------------------------ | --------------------------- | ------------------- | --------------------------------------------------------------------------------------------- |
+| `node` (default)               | Node, no DOM                | `src/**/*.test.ts`  | Pure helpers, validators, client/server mirrors, gates, money math                            |
+| `dom` (`vitest.dom.config.ts`) | happy-dom + Testing Library | `src/**/*.test.tsx` | Hooks with state and small components with behaviour (dismiss, dirty tracking, media queries) |
+
+The extension decides the project, so a test file can never be matched by neither. Layout,
+Tailwind classes and shadcn primitives stay in Playwright, which can see a real browser.
+
+`bun run test` runs both projects. `bun run test:dom` runs only the DOM one.
+
 The smoke command runs every `@smoke` journey on desktop, 375×812 phone, and
 768×1024 tablet projects. Primary public, guest-form, booking, and super-admin
 routes assert that the document does not overflow horizontally and that visible
 interactive controls have an accessible name.
+
+### Lanes
+
+| Specs | Lane                                                           |
+| ----- | -------------------------------------------------------------- |
+| 23    | `@smoke`, every PR on 3 viewports                              |
+| 68    | `@ci`, every PR, sharded 4 ways (62 executable, 6 quarantined) |
+| 1     | `@pwa`, production build                                       |
+| 2     | `@live`, manual / nightly                                      |
+| 2     | `@demo`, headed only                                           |
+
+E2E and Deno move to `Asia/Manila` alongside Vitest, so a date-boundary test cannot pass on
+one machine and fail on another.
 
 Every spec carries **exactly one** lane tag. `bun run check:e2e-lane-tags` fails on a missing or
 duplicate tag, a committed `.only`, or a new `waitForTimeout` call (baselined, shrink-only).
