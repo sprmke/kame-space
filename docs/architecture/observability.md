@@ -2,7 +2,7 @@
 title: Observability — faults vs outcomes
 status: in-progress
 tags: [architecture, observability, sentry, posthog]
-updated: 2026-11-01
+updated: 2026-11-09
 ---
 
 # Observability — faults vs outcomes
@@ -33,6 +33,24 @@ heuristic anti-spam block, a 404 route, or a deliberate 4xx `EdgeError` is an ou
 Browser fetch helpers that unwrap an edge envelope keep the HTTP status on the thrown error
 (`EdgeResponseError`), because `reportQueryError` can only apply this rule when it can see
 the status.
+
+## Browser noise filters
+
+The browser half of the rule is applied at two seams, `reportQueryError` and
+`reportEdgeFailure`, so no call site decides on its own:
+
+| Condition                                                                      | Why it is not a Sentry fault                                                                                                                                                                       |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Transport failure (status 0, or a fetch `TypeError`)                           | The request never reached the server. Dropped Wi-Fi, a captive portal, DNS/ad-blocker interference. `navigator.onLine` stays true with no route, so it cannot gate this. PostHog owns the outcome. |
+| Missing session (`Not signed in`, `No active session`, `Session expired`)      | The dashboard mounted before the session landed, or the auth flow already redirected.                                                                                                              |
+| 4xx / 401                                                                      | The handler answered correctly; the auth flow owns 401.                                                                                                                                            |
+| Aborted request                                                                | Cancelled on purpose.                                                                                                                                                                              |
+| Recoverable chunk load                                                         | An open tab from a previous release reloads (then resets its worker). Only a failure that survives both attempts is reported.                                                                      |
+| Service-worker storage failure (`Unable to open database file on disk`, quota) | Browser storage eviction, not app code.                                                                                                                                                            |
+| Local host                                                                     | A production build served on `localhost` / `127.0.0.1` never initialises Sentry, and `environment` resolves to `local`.                                                                            |
+
+Server faults (5xx), thrown logic errors, and a chunk load that survives recovery still
+report. Filtering belongs in those two modules, not in per-feature catches.
 
 ## Shared ids
 

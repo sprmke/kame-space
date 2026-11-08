@@ -422,6 +422,10 @@ export default defineConfig({
       'react-dom',
       'react-konva',
       'konva',
+      // Remotion keeps the composition context in the `remotion` module. A nested copy
+      // (bun can hoist one per @remotion/* package) makes useVideoConfig throw
+      // "No video config found" inside a real <Player>. Force a single copy in the bundle.
+      'remotion',
       '@blueprintjs/core',
       '@blueprintjs/icons',
       '@blueprintjs/select',

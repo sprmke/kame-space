@@ -378,7 +378,6 @@
     "ui/src/lib/pdf/usePdfBrandColor.ts",
     "ui/src/lib/posthog/bootstrapTelemetry.ts",
     "ui/src/lib/posthog/context.ts",
-    "ui/src/lib/posthog/env.ts",
     "ui/src/lib/posthog/guestFormAnalytics.ts",
     "ui/src/lib/query/refetchWhenVisible.ts",
     "ui/src/lib/security/antiSpamRequest.ts",

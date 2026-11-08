@@ -13,14 +13,17 @@ import { captureError } from './capture';
  *
  * - **Abort** — the request was cancelled on purpose (unmount, route change, a new query
  *   superseding the old one). Not a fault.
- * - **Offline** — `navigator.onLine === false`. The user's connection dropped; the platform
- *   did not fail.
+ * - **Offline / transport failure** — the browser could not reach the network. `navigator.onLine`
+ *   is unreliable (true behind a captive portal or with no route), so a fetch-level TypeError is
+ *   treated as a connectivity outcome whether or not the browser reports online. PostHog owns
+ *   that count; Sentry owns server faults.
+ * - **Missing session** — the dashboard mounted while signed out or the session expired and was
+ *   cleared. The auth flow owns that redirect; it is not a server or app fault.
  * - **4xx** — the handler answered correctly. Validation, 401 (the auth flow owns it), 409
  *   races and 429 quotas are normal traffic. Reporting them buries the real faults.
  * - **`meta: { sentry: false }`** — an endpoint allowed to fail, such as a poll.
  *
- * Everything else is a fault: 5xx, a network error while the browser believes it is online,
- * status 0, or a thrown non-HTTP error (parse, invariant, logic).
+ * Everything else is a fault: 5xx, or a thrown non-HTTP error (parse, invariant, logic).
  *
  * Fingerprint is `['query', keyRoot, statusBucket]` so one broken endpoint is one issue
  * rather than one per user per retry.
@@ -53,6 +56,37 @@ function isOffline(): boolean {
   return typeof navigator !== 'undefined' && navigator.onLine === false;
 }
 
+/**
+ * A fetch-level failure: no response object exists, so there is no server fault to report.
+ * `navigator.onLine` cannot be trusted here, so match the browser's own wording.
+ */
+function isTransportFailure(error: unknown): boolean {
+  const like = asErrorLike(error);
+  if (!like) return false;
+  const name = typeof like.name === 'string' ? like.name : '';
+  const message = typeof like.message === 'string' ? like.message : '';
+  if (name !== 'TypeError' && name !== 'NetworkError') return false;
+  return /failed to fetch|load failed|networkerror|network request failed|fetch failed|connection (?:lost|closed)/i.test(
+    message
+  );
+}
+
+/**
+ * Signing in is the auth surface's job. A dashboard read that fires before the session lands,
+ * or after it expires, throws one of these; reporting them only adds noise.
+ */
+const AUTH_MISSING_MESSAGES = [
+  'not signed in',
+  'no active session. please sign in',
+  'your session expired. please sign in again.',
+];
+
+function isAuthMissing(error: unknown): boolean {
+  const like = asErrorLike(error);
+  const message = typeof like?.message === 'string' ? like.message.trim().toLowerCase() : '';
+  return message !== '' && AUTH_MISSING_MESSAGES.includes(message);
+}
+
 /** Status from our edge wrapper, a Supabase/PostgREST error, or a plain `{ status }` shape. */
 function statusOf(error: unknown): number | null {
   if (error instanceof AdminEdgeFetchError) return error.status;
@@ -74,10 +108,12 @@ function requestIdOf(error: unknown): string | null {
 function isReportable(error: unknown): boolean {
   if (isAbort(error)) return false;
   if (isOffline()) return false;
+  if (isTransportFailure(error)) return false;
+  if (isAuthMissing(error)) return false;
 
   const status = statusOf(error);
   if (status === null) return true; // thrown non-HTTP error: a real fault
-  if (status === 0) return true; // network failure while online
+  if (status === 0) return false; // transport failure: never reached the server
   if (status === 401) return false; // the auth flow owns this
   return status >= 500;
 }

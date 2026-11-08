@@ -82,9 +82,18 @@ function pushStoreSnapshot(items: OutboxItem[]) {
   );
 }
 
-/** Refresh the in-memory projection the UI reads. */
+/**
+ * Refresh the in-memory projection the UI reads.
+ *
+ * Best effort: Safari can fail to open the outbox database (evicted storage, private
+ * mode), and a projection refresh must never become an unhandled rejection.
+ */
 export async function refreshOutboxView(): Promise<void> {
-  pushStoreSnapshot(await outboxList());
+  try {
+    pushStoreSnapshot(await outboxList());
+  } catch {
+    // No readable outbox on this device — the Sync Center stays empty, sync retries later.
+  }
 }
 
 async function invalidate(keys: string[]) {

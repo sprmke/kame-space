@@ -879,7 +879,11 @@ export async function reapStaleVoiceReceptionistSessions(): Promise<{
     )
     .order('last_activity_at', { ascending: true })
     .limit(200);
-  if (error) throw new Error('Failed to load stale voice sessions');
+  if (error) {
+    // Keep the database message: a missing column (unapplied migration) and a transient
+    // connection failure need different responses, and a generic string hides both.
+    throw new Error(`Failed to load stale voice sessions: ${error.message}`);
+  }
 
   const propertyStats = new Map<string, { reaped: number; transcriptsDeleted: number }>();
   let reaped = 0;
