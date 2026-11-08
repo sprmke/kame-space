@@ -10,6 +10,7 @@ import { AppErrorBoundary } from '@/components/error/AppErrorBoundary';
 import { RouteErrorFallback } from '@/components/error/RouteErrorFallback';
 import { AppShell } from '@/components/routing/AppShell';
 import { installChunkErrorRecovery } from '@/lib/chunkReload';
+import { markBoot } from '@/lib/perf/bootMarks';
 import { bootstrapPostHogTelemetry } from '@/lib/posthog/bootstrapTelemetry';
 import { posthog } from '@/lib/posthog/client';
 import { reactRootErrorHandlers } from '@/lib/sentry/capture';
@@ -23,7 +24,9 @@ import '@/lib/pwa/installPrompt'; // capture beforeinstallprompt early
 import 'react-day-picker/dist/style.css';
 import './index.css';
 
-// First, so an error thrown while the rest of the app boots is still reported.
+// First, so the mark is the earliest possible measurement of the session, and so
+// an error thrown while the rest of the app boots is still reported.
+markBoot('app:script-start');
 initSentry();
 
 bootstrapPostHogTelemetry();

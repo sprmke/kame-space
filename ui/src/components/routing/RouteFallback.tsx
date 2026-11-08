@@ -1,6 +1,9 @@
+import { useEffect } from 'react';
+
 import { AppLoader } from '@/components/branding/AppLoader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDelayedLoading } from '@/hooks/useDelayedLoading';
+import { markBoot } from '@/lib/perf/bootMarks';
 
 /**
  * Suspense unmounts a fallback the instant its child resolves, so a fallback can only
@@ -14,9 +17,24 @@ function useShowAfterDelay(): boolean {
   return useDelayedLoading(true, { minVisibleMs: 0 });
 }
 
+/**
+ * The skeleton window, for the boot timeline. Only a painted skeleton counts: the
+ * 180ms anti-flash delay means a fast chunk never shows one, and that is the point.
+ */
+function useSkeletonMarks(visible: boolean): void {
+  useEffect(() => {
+    if (!visible) return;
+    markBoot('skeleton:show');
+    return () => {
+      markBoot('skeleton:hide');
+    };
+  }, [visible]);
+}
+
 /** Suspense fallback for a lazy-loaded route rendered inside an already-mounted shell (sidebar/nav stay put). */
 export function SectionLoadingFallback() {
   const show = useShowAfterDelay();
+  useSkeletonMarks(show);
   if (!show) return null;
 
   return (
