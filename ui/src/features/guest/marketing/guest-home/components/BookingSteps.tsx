@@ -79,7 +79,7 @@ export function BookingSteps({ stay }: { stay?: PublicPropertyListItem }) {
   const step = STEPS[active];
 
   return (
-    <section aria-labelledby="home-steps" className="bg-foreground/[0.04] relative">
+    <section aria-labelledby="home-steps" className="relative bg-[hsl(var(--band))]">
       <div ref={trackRef} className="relative" style={{ height: `${N * 80 + 20}vh` }}>
         <div className="sticky top-0 flex h-[100dvh] items-center overflow-hidden pb-20 pt-[calc(var(--public-nav-h)+0.5rem)] lg:pb-4">
           <div className="public-shell grid w-full items-center gap-5 lg:grid-cols-12 lg:gap-12">
