@@ -1,3 +1,6 @@
+/**
+ * test: N/A — React context plus a two-line accessor hook.
+ */
 import { createContext, useContext } from 'react';
 
 import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';

@@ -1,3 +1,7 @@
+/**
+ * test: N/A — React context plus accessor hooks. The behaviour lives in the
+ * provider and is covered by the assistant E2E slice.
+ */
 import { createContext, useContext } from 'react';
 
 import type { AiAssistantChatState } from '@/features/dashboard/ai-assistant/hooks/useAiAssistantChat';

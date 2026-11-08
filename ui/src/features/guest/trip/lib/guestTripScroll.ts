@@ -1,3 +1,6 @@
+/**
+ * test: N/A — DOM scroll helper for the guest trip hub; needs a browser.
+ */
 /** Scroll to an in-page section and move focus to its heading for keyboard / screen reader users. */
 export function scrollToTripSection(hash: string): void {
   const target = document.getElementById(hash.replace(/^#/, ''));

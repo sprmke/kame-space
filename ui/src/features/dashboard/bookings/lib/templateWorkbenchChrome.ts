@@ -1,4 +1,8 @@
 /**
+ * test: N/A — Tailwind class constants shared by the Templates workbench and its
+ * route skeleton; no logic to assert.
+ */
+/**
  * Layout classes shared by the Templates workbench and its route skeleton.
  *
  * Kept component-free so `RouteSkeletons` (eagerly loaded) can match the
