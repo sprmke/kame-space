@@ -54,10 +54,8 @@ This is the main guest homepage: search, featured stays, and destination tiles t
 
 **Common host questions**
 
-**Why does KameSpace have a new icon?**
-
-The four-piece shell is the new KameSpace logo. Your account, bookings and organization branding stay the same. A saved home-screen icon or shared link preview may take longer to refresh than the website.
-
+- Q: Why does KameSpace have a new icon?
+  A: The four-piece shell is the new KameSpace logo. Your account, bookings and organization branding stay the same. A saved home-screen icon or shared link preview may take longer to refresh than the website.
 - Q: How often does the Featured stays row change?
   A: It refreshes every few minutes and always shows active homes with the best ratings first.
 - Q: Will my listing appear on the home page automatically?

@@ -87,10 +87,8 @@ messages, or today's arrivals.
 
 **Common host questions**
 
-**Why does KameSpace have a new icon?**
-
-The four-piece shell is the new KameSpace logo. Your account, bookings and organization branding stay the same. A saved home-screen icon or shared link preview may take longer to refresh than the website.
-
+- Q: Why does KameSpace have a new icon?
+  A: The four-piece shell is the new KameSpace logo. Your account, bookings and organization branding stay the same. A saved home-screen icon or shared link preview may take longer to refresh than the website.
 - Q: I installed the app and it opens to a booking list instead of my dashboard. Why?
   A: The app remembers the property or parking space you used last. Open the dashboard you want once and it will be remembered next time.
 - Q: The shortcut opens the wrong property. How do I change it?
