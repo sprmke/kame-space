@@ -12,6 +12,22 @@ import { captureError } from './capture';
 
 const SW_ERROR_MESSAGE_TYPE = 'gfm:sw-error';
 
+/**
+ * Browser storage failures are not code faults. Safari reports "unable to open database
+ * file on disk" when its storage is evicted or exhausted (low disk, private mode); the
+ * worker can only degrade, and there is no fix for the platform. Reporting one per device
+ * buries the faults we can act on.
+ */
+const STORAGE_FAILURE_PATTERNS = [
+  /unable to open database file/i,
+  /quotaexceeded/i,
+  /database (?:connection is closing|is closed)/i,
+];
+
+export function isBrowserStorageFailure(message: string): boolean {
+  return STORAGE_FAILURE_PATTERNS.some((pattern) => pattern.test(message));
+}
+
 type SwErrorPayload = {
   type?: string;
   handler?: unknown;
@@ -37,6 +53,8 @@ export function installServiceWorkerErrorBridge(): void {
 
     const error = new Error(`Service worker (${handler}): ${message}`);
     if (typeof data.stack === 'string' && data.stack) error.stack = data.stack;
+
+    if (isBrowserStorageFailure(message)) return;
 
     captureError(error, {
       tags: { runtime: 'service_worker', sw_handler: handler },

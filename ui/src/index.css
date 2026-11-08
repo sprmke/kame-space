@@ -2917,8 +2917,7 @@ input.ui-native-datetime[type='datetime-local']::-webkit-calendar-picker-indicat
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: calc(var(--radius) + 4px);
-  background-image: var(--brand-gradient);
+  border-radius: 34%;
 }
 
 .app-loader-mark__sheen {

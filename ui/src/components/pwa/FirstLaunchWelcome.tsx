@@ -46,9 +46,14 @@ export function FirstLaunchWelcome() {
     if (readInstallMemory().firstLaunchSeen) return;
     setOpen(true);
     void requestPersistentStorage();
-    void getPushState().then((state) => {
-      setPushAvailable(state.supported && state.needsInstallFirst === false && !state.subscribed);
-    });
+    void getPushState()
+      .then((state) => {
+        setPushAvailable(state.supported && state.needsInstallFirst === false && !state.subscribed);
+      })
+      .catch(() => {
+        // A device without a working push service simply hides the prompt.
+        setPushAvailable(false);
+      });
   }, [standalone, status]);
 
   if (!open) return null;

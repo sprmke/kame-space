@@ -429,3 +429,7 @@ Full local stack needs Docker (~2–4 GB). Use `--ui-only` when you only need th
 | Telegram marketing         | `_shared/telegramMarketing.ts`                          |
 | Receipt AI                 | `_shared/receiptValidationService.ts`                   |
 | Dates                      | `ui/src/utils/format/dates.ts`, `_shared/utils.ts`      |
+
+## F5 platform logo and sharing
+
+The platform uses the approved four-piece F5 shell in browser chrome, app headers, loaders, PWA icons and light/dark launch screens. Vector masters, theme exports, generation commands, default social previews and cache rollout notes: [Brand assets](./brand-assets.md).

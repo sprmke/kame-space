@@ -363,3 +363,7 @@ _Last updated from repository analysis (internal documentation)._
 ### Host Setup Guide + Recommended reward
 
 Post-onboarding **Setup Guide** overlay (`ui/src/features/dashboard/setup-guide/`) embeds live org/property/parking settings controllers. The rail is one row per listing; listing sub-steps use the shared `ParkingFlowStepper`. Verification and Recommended stay inline (no nested task dialog). Meta-only persistence via `setup-guide-state` + `set_org_setup_guide_state` RPC (`organizations.settings.setupGuide`). Optional Recommended verification reward: `platform_settings.host_reward_*`, grant/expire/revoke in `_shared/hostVerificationReward.ts`, offer via `get-host-reward-offer`, super-admin card on Platform settings. Free hosts may submit Recommended when reward-eligible (skips `recommendedBadgeEligible`). See [`docs/guides/routes/org/setup-guide.md`](guides/routes/org/setup-guide.md).
+
+## F5 platform logo and sharing
+
+The platform uses the approved four-piece F5 shell in browser chrome, app headers, loaders, PWA icons and light/dark launch screens. Vector masters, theme exports, generation commands, default social previews and cache rollout notes: [Brand assets](./architecture/brand-assets.md).

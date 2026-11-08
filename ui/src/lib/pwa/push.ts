@@ -96,7 +96,7 @@ export async function getPushState(): Promise<PushState> {
     hasVapidKey: Boolean(VAPID_PUBLIC_KEY),
     workerActive: Boolean(reg?.active),
   });
-  const existing = await reg?.pushManager.getSubscription().catch(() => null);
+  const existing = await readExistingSubscription(reg);
 
   return {
     ...base,
@@ -104,6 +104,21 @@ export async function getPushState(): Promise<PushState> {
     reason,
     subscribed: Boolean(existing),
   };
+}
+
+/**
+ * iOS Safari throws `InvalidStateError: Push service initialization failed` from the
+ * `pushManager` getter when the push service is unavailable. Reading state must never
+ * reject, so a native failure is reported as "no subscription".
+ */
+async function readExistingSubscription(
+  reg: ServiceWorkerRegistration | null | undefined
+): Promise<PushSubscription | null> {
+  try {
+    return (await reg?.pushManager.getSubscription()) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -132,13 +147,22 @@ export async function enablePush(): Promise<PushState> {
     throw new Error('Notifications are not ready on this device yet. Reload the page.');
   }
 
-  const preExisting = await reg.pushManager.getSubscription();
+  const preExisting = await readExistingSubscription(reg);
   const sub =
     preExisting ??
-    (await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToArrayBuffer(VAPID_PUBLIC_KEY),
-    }));
+    (await (async () => {
+      try {
+        return await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToArrayBuffer(VAPID_PUBLIC_KEY),
+        });
+      } catch {
+        // iOS Safari raises InvalidStateError here when the push service cannot start
+        // (not installed to the home screen, or the OS service is down). The toggle must
+        // explain the device limitation instead of surfacing a raw browser exception.
+        throw new Error('Notifications are not available on this device yet. Try again later.');
+      }
+    })());
 
   try {
     await callEdgeFunction('push-subscribe', {
@@ -169,7 +193,7 @@ export async function enablePush(): Promise<PushState> {
 /** Unsubscribe locally + server-side. Safe to call when not subscribed. */
 export async function disablePush(): Promise<PushState> {
   const reg = await whenSwReady(PUSH_STATE_SW_TIMEOUT_MS);
-  const sub = await reg?.pushManager.getSubscription();
+  const sub = await readExistingSubscription(reg);
   if (sub) {
     const endpoint = sub.endpoint;
     try {

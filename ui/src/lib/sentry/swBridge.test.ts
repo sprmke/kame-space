@@ -74,6 +74,26 @@ describe('installServiceWorkerErrorBridge', () => {
     expect(captureError).not.toHaveBeenCalled();
   });
 
+  it('skips browser storage failures, which are not code faults', async () => {
+    const worker = fakeServiceWorker();
+    vi.stubGlobal('navigator', { serviceWorker: worker });
+    const { installServiceWorkerErrorBridge } = await loadBridge();
+
+    installServiceWorkerErrorBridge();
+    worker.emit({
+      type: 'gfm:sw-error',
+      handler: 'unhandledrejection',
+      message: 'Unable to open database file on disk',
+    });
+    worker.emit({
+      type: 'gfm:sw-error',
+      handler: 'global',
+      message: 'QuotaExceededError: exceeded the quota',
+    });
+
+    expect(captureError).not.toHaveBeenCalled();
+  });
+
   it('falls back to safe labels when the payload is thin', async () => {
     const worker = fakeServiceWorker();
     vi.stubGlobal('navigator', { serviceWorker: worker });

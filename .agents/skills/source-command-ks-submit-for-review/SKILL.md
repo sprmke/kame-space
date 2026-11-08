@@ -1,16 +1,8 @@
 ---
-name: 'source-command-ks-submit-for-review'
-description: 'Migrated source command `ks-submit-for-review`'
+name: source-command-ks-submit-for-review
+description: "Run the existing project command ks-submit-for-review when the user requests it."
 ---
-
-# source-command-ks-submit-for-review
-
-Use this skill when the user asks to run the migrated source command `ks-submit-for-review`.
-
-## Command Template
 
 # ks-submit-for-review
 
-Alias for `/kh-submit-for-review` while teammates move to the Kame Space command names.
-
-Follow the same instructions as [`kh-submit-for-review.md`](./kh-submit-for-review.md) in this directory. Nothing else changes.
+Read [.cursor/commands/ks-submit-for-review.md](../../../.cursor/commands/ks-submit-for-review.md) and follow that command using the user’s arguments. Resolve its relative references from the original command directory. Preserve project rules and authorization boundaries. Cursor/Claude-only tool names must map to actually available Codex tools; do not claim unavailable tools ran.

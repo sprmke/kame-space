@@ -44,13 +44,52 @@ describe('push support detection', () => {
 
 describe('enablePush', () => {
   it('does nothing when permission is denied', async () => {
-    vi.stubGlobal('Notification', { permission: 'denied', requestPermission: async () => 'denied' });
+    vi.stubGlobal('Notification', {
+      permission: 'denied',
+      requestPermission: async () => 'denied',
+    });
     vi.stubGlobal('ServiceWorkerRegistration', class {});
     vi.stubGlobal('PushManager', class {});
     const push = await loadPush();
     const state = await push.enablePush();
     expect(state.subscribed).toBe(false);
     expect(callEdgeFunction).not.toHaveBeenCalled();
+  });
+});
+
+describe('push state', () => {
+  it('does not reject when the browser throws from the push service', async () => {
+    vi.stubGlobal('navigator', {
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X)',
+      platform: 'iPhone',
+      serviceWorker: { controller: null },
+    });
+    vi.stubGlobal('window', {
+      Notification: class {},
+      PushManager: class {},
+      matchMedia: () => ({ matches: false }),
+    });
+    vi.stubGlobal('Notification', { permission: 'default' });
+
+    let pushManagerReads = 0;
+    const registration = {
+      active: {},
+      get pushManager(): never {
+        pushManagerReads += 1;
+        throw new DOMException('Push service initialization failed', 'InvalidStateError');
+      },
+    };
+
+    const push = await loadPush();
+    const swRegistration = await import('@/lib/pwa/swRegistration');
+    swRegistration.setSwRegistration(registration as unknown as ServiceWorkerRegistration);
+    try {
+      await expect(push.getPushState()).resolves.toMatchObject({ subscribed: false });
+      // Proves the native getter was actually exercised, not short-circuited earlier.
+      expect(pushManagerReads).toBeGreaterThan(0);
+    } finally {
+      swRegistration.setSwRegistration(null);
+    }
   });
 });
 

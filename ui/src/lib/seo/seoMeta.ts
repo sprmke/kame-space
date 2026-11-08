@@ -7,6 +7,7 @@
  */
 
 export const SITE_NAME = 'Kame Space';
+export const DEFAULT_SOCIAL_IMAGE = '/brand/kame-space-social-f5.png';
 export const DEFAULT_DESCRIPTION =
   'Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.';
 export const MAX_DESCRIPTION_LENGTH = 160;
@@ -160,7 +161,11 @@ export function buildDevelopmentJsonLd(input: {
 
 /** Head tags for crawler HTML (all values escaped). */
 export function renderMetaTags(input: SeoMeta): string {
-  const meta = { ...input, description: truncateDescription(input.description) };
+  const meta = {
+    ...input,
+    image: input.image || new URL(DEFAULT_SOCIAL_IMAGE, input.canonicalUrl).href,
+    description: truncateDescription(input.description),
+  };
   const tags = [
     `<meta name="description" content="${escapeHtml(meta.description)}" />`,
     `<link rel="canonical" href="${escapeHtml(meta.canonicalUrl)}" />`,
@@ -176,6 +181,12 @@ export function renderMetaTags(input: SeoMeta): string {
   if (meta.image) {
     tags.push(`<meta property="og:image" content="${escapeHtml(meta.image)}" />`);
     tags.push(`<meta name="twitter:image" content="${escapeHtml(meta.image)}" />`);
+  }
+  if (!input.image) {
+    tags.push('<meta property="og:image:width" content="1200" />');
+    tags.push('<meta property="og:image:height" content="630" />');
+    tags.push('<meta property="og:image:alt" content="KameSpace" />');
+    tags.push('<meta name="twitter:image:alt" content="KameSpace" />');
   }
   if (meta.noindex) tags.push('<meta name="robots" content="noindex" />');
   if (meta.jsonLd) {

@@ -27,7 +27,11 @@ describe('reportQueryError', () => {
 
     expect(captureMock).toHaveBeenCalledTimes(1);
     const [, options] = captureMock.mock.calls[0]!;
-    expect(options?.tags).toMatchObject({ error_kind: 'query', http_status: '500', request_id: 'req-1' });
+    expect(options?.tags).toMatchObject({
+      error_kind: 'query',
+      http_status: '500',
+      request_id: 'req-1',
+    });
     // First key segment only: the org id must not become part of the fingerprint.
     expect(options?.tags?.query_key_root).toBe('bookings');
     expect(options?.fingerprint).toEqual(['query', 'bookings', '5xx']);
@@ -58,18 +62,29 @@ describe('reportQueryError', () => {
     expect(captureMock).not.toHaveBeenCalled();
   });
 
-  it('reports a network failure while online', () => {
+  it('does not report a network failure even when the browser reports online', () => {
+    // navigator.onLine is unreliable (captive portal, no route, ad-blocker): a fetch-level
+    // failure never reached the server, so it is a connectivity outcome, not a fault.
     vi.stubGlobal('navigator', { onLine: true });
     reportQueryError(new TypeError('Failed to fetch'), 'query', ['bookings']);
-    expect(captureMock).toHaveBeenCalledTimes(1);
-    expect(captureMock.mock.calls[0]?.[1]?.fingerprint).toEqual(['query', 'bookings', 'thrown']);
+    expect(captureMock).not.toHaveBeenCalled();
   });
 
-  it('reports a 0 status while online', () => {
+  it('does not report a 0 status transport failure', () => {
     vi.stubGlobal('navigator', { onLine: true });
     reportQueryError(edgeError(0), 'mutation', ['save-booking']);
-    expect(captureMock).toHaveBeenCalledTimes(1);
-    expect(captureMock.mock.calls[0]?.[1]?.fingerprint).toEqual(['mutation', 'save-booking', 'network']);
+    expect(captureMock).not.toHaveBeenCalled();
+  });
+
+  it('does not report a missing session - the auth flow owns it', () => {
+    for (const message of [
+      'Not signed in',
+      'No active session. Please sign in',
+      'Your session expired. Please sign in again.',
+    ]) {
+      reportQueryError(new Error(message), 'query', ['app-settings']);
+    }
+    expect(captureMock).not.toHaveBeenCalled();
   });
 
   it('honours the meta opt-out for endpoints allowed to fail', () => {
@@ -80,7 +95,11 @@ describe('reportQueryError', () => {
   it('keeps distinct mutation messages in separate issues when there is no key', () => {
     reportQueryError(new Error('ids is not iterable'), 'mutation', undefined);
     reportQueryError(new Error('booking_rate must be a number'), 'mutation', undefined);
-    reportQueryError(new Error('booking 04bc05fc-11e3-4770-bc1a-b5ef128e59b1 is locked'), 'mutation', undefined);
+    reportQueryError(
+      new Error('booking 04bc05fc-11e3-4770-bc1a-b5ef128e59b1 is locked'),
+      'mutation',
+      undefined
+    );
 
     const fingerprints = captureMock.mock.calls.map(([, options]) => options?.fingerprint);
     expect(fingerprints[0]).toEqual(['mutation', 'ids is not iterable', 'thrown']);

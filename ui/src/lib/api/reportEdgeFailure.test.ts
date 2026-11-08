@@ -51,15 +51,12 @@ describe('reportEdgeFailure', () => {
     expect(captureError).not.toHaveBeenCalled();
   });
 
-  it('reports a transport failure while the browser believes it is online', () => {
+  it('stays silent on a transport failure, which is the user connection, not the server', () => {
     vi.stubGlobal('navigator', { onLine: true });
 
     reportEdgeFailure({ path: 'submit-form', status: 0 });
 
-    const { error, options } = lastCapture();
-    expect(error.message).toBe('Edge call failed: submit-form (network failure)');
-    expect(options.fingerprint).toEqual(['edge', 'submit-form', 'network']);
-    expect(options.tags).not.toHaveProperty('request_id');
+    expect(captureError).not.toHaveBeenCalled();
   });
 
   it('stays silent when the browser is offline', () => {

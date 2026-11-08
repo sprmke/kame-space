@@ -16,7 +16,9 @@ import { PWA_VERSION_URL } from '@/pwa/shared';
  *      looping and let the caller show its error UI.
  *
  * Reporting is deliberately quiet on the first two: they are the ordinary
- * stale-tab-after-deploy case. Only a failure that survives recovery is an error.
+ * stale-tab-after-deploy case, and a successful reload is the fix, not an incident.
+ * Only a failure that survives recovery, or a route that cannot load while offline,
+ * is worth a Sentry event.
  */
 
 const STATE_KEY = 'kh-chunk-reload-at';
@@ -208,20 +210,10 @@ export function reloadForChunkError(deps: ReloadDeps = {}): boolean {
 
   writeState(storage, state);
   if (action === 'reload') {
-    captureError(new Error('Chunk load failed, reloading once'), {
-      level: 'warning',
-      tags: { chunk_load: 'first_failure' },
-      fingerprint: ['chunk_load', 'first_failure'],
-    });
     reload();
     return true;
   }
 
-  captureError(new Error('Chunk load failed again, resetting the service worker'), {
-    level: 'warning',
-    tags: { chunk_load: 'shell_reset' },
-    fingerprint: ['chunk_load', 'shell_reset'],
-  });
   (deps.reset ?? unregisterThenReload)(reload);
   return true;
 }
