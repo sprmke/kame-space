@@ -86,6 +86,12 @@ jobs:
       - name: Flaky quarantine discipline (issue + expiry for every @flaky test)
         run: node scripts/dev/check-flaky-quarantine.mjs
 
+      - name: Unit test quality (no new export-only tests)
+        run: node scripts/dev/check-unit-test-quality.mjs
+
+      - name: Edge handler coverage ratchet (no new untested function)
+        run: node scripts/dev/check-edge-test-coverage.mjs
+
       - name: Tracked secret pattern scan (production-readiness doc 26)
         run: bash scripts/dev/check-tracked-secrets.sh
 
@@ -148,6 +154,9 @@ jobs:
 
       - name: Unit tests (Vitest)
         run: bun run test
+
+      - name: Unit coverage floor (lib + utils)
+        run: bun run test:coverage:lib
 
       - name: Edge type check (Deno)
         run: bun run check:edge-types
