@@ -135,6 +135,13 @@ Confirm by: a warm repeat-open trace with persistence on. Guards should still wa
 
 Confirm by: `perf:chunk-graph` + Lighthouse "unused JS", plus an A/B with deferred telemetry init.
 
+> **PARTLY REJECTED 2026-11-07.** `mockProperties` / `mockDevelopments` are **not** in the
+> entry: the only importers are `useShowcaseData` and `resolvePublicDevelopment`, both reached
+> from lazy page modules, and the built entry chunk contains neither name.
+> `perf:chunk-graph` reports no forbidden chunk in the initial graph. What remains from RC-9
+> is server data weight: `observability-vendor` 90.7 KiB and `motion-vendor` 46.7 KiB gzip are
+> still module-preloaded (see the measurement note under 2.3).
+
 ### PWA in-app navigation (the "0.5 to 1 s per tap")
 
 **RC-10. Built-in skeleton hold.** `useDelayedLoading` waits 180 ms and then holds the skeleton for at least 300 ms. Any fetch slower than 180 ms costs at least 480 ms of skeleton, even if the data lands at 200 ms.
@@ -150,6 +157,12 @@ Confirm by: `perf:chunk-graph` + Lighthouse "unused JS", plus an A/B with deferr
 > (RC-11, RC-12), not the skeleton timer.
 
 **RC-11. No data prefetch on intent, and no prefetch on the phone tab bar.** `adminNavPrefetch` warms chunks on sidebar hover only. The bottom tab bar (the PWA's main navigation) gets no chunk or data prefetch, and nothing prefetches page queries anywhere.
+
+> **CONFIRMED AND FIXED 2026-11-07 (chunk half).** The sidebar already wired
+> `onMouseEnter` / `onFocus` / `onTouchStart`; the phone tab bar had none. Worse, the single
+> trailing-segment map handed the org bookings tab the _property_ bookings chunk, so even the
+> sidebar warmed bytes it never used for two of three scopes. Fixed in Phase 7.2 below.
+> Data prefetch is deliberately still absent: the query keys belong to the page.
 
 **RC-12. Each tap's queries are cold or stale.** The default `staleTime` is 15 s, and every page read is a separate edge call with its own auth round trips (RC-2) and possibly a cold start (RC-5).
 
@@ -168,6 +181,14 @@ Confirm by: launch timing under "Slow 4G" and "offline-ish" (high latency) profi
 **RC-16. Slow or hot queries.** Last known: `realtime.list_changes` was 84% of DB time (Postgres Changes polling) and `net.http_post` led the outliers (cron fan-out). Since the 2026-11-04 fixes this is unmeasured.
 
 Confirm by: `perf:supabase:snapshot` + `perf:pg-stat-statements` before/after, reset stats at the baseline point with operator approval, and `EXPLAIN (ANALYZE, BUFFERS)` the top 10 by total and by mean time against the large-tenant seed locally.
+
+> **CONFIRMED 2026-11-08, and worse than recorded.** `pg_stat_statements` on production
+> (96 days since reset, no reset performed) puts Realtime `list_changes` at **85.02%** of all
+> database time, 12.88M ms across 1,664,792 calls. Index and table cache hit rates are both
+> **1.00**, so no index can help. Two findings the plan did not have:
+> `SELECT name FROM pg_timezone_names` costs **393 ms per call** over 869 calls, and a
+> recursive domain base-type walk costs ~113 ms over the same 869 calls. Details:
+> `production-readiness/evidence/perf-2026-11-08-before.md`.
 
 **RC-17. Remaining app-side heavy reads.** `fetchAllBookingsForFinance` (`select('*')`, period filtering in JS), dashboard stat endpoints, `contractExpiryCron` full scan, and `get-public-property` (many queries per call).
 
@@ -313,16 +334,29 @@ Tests: header tests per endpoint class; E2E publish → public view reflects wit
 
 ## Phase 7: PWA and in-app navigation
 
-| #   | Change                                                                                                                                                                                                                     | Root cause   | Tests                                                                          |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------ |
-| 7.1 | Tune `useDelayedLoading` from S-6: keep the anti-flash delay but drop the forced minimum when data lands before the skeleton paints; never hold content behind a skeleton                                                  | RC-10        | Vitest for the hook's timing table; visual check for strobing                  |
-| 7.2 | Intent prefetch on the **phone tab bar** and "More" sheet (`pointerdown`/`touchstart`) for both the chunk and the page's primary query                                                                                     | RC-11        | E2E: tap triggers one chunk + one data request; no prefetch storm on scroll    |
-| 7.3 | Keep the previous screen until the next screen's primary data is ready (`startTransition` navigation + `placeholderData`/Suspense-query on top pages), with a thin top progress bar instead of a skeleton for fast fetches | RC-10, RC-12 | E2E: no blank frame; back navigation instant from cache                        |
-| 7.4 | Per-resource `staleTime` from the data's change rate (documented table), for module landing reads only                                                                                                                     | RC-12        | Invalidation tests for each raised key                                         |
-| 7.5 | Warm host-tier chunks right after the bootstrap call resolves (not only after sign-in), at idle priority                                                                                                                   | RC-13        | Precache budget unchanged; SW test                                             |
-| 7.6 | Enable **navigation preload** in the SW and shorten the standalone launch timeout; serve the precached shell first in standalone when a cached build matches `pwa-version.json` (keeps the stale-build fix)                | RC-15        | SW unit tests; E2E offline boot; update flow ("new version" toast) still works |
-| 7.7 | `AdminLayout` re-render audit from S-7: memoize only the subtrees the profiler names                                                                                                                                       | RC-14        | Profiler commit count before/after recorded                                    |
-| 7.8 | Touch feedback: `:active` states and `touch-action: manipulation` on nav targets so the tap acknowledges instantly                                                                                                         | perceived    | Mobile E2E at 375 px                                                           |
+| #   | Change                                                                                                                                                                    | Root cause | Tests                                                                       |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------- |
+| 7.1 | Tune `useDelayedLoading` from S-6: keep the anti-flash delay but drop the forced minimum when data lands before the skeleton paints; never hold content behind a skeleton | RC-10      | Vitest for the hook's timing table; visual check for strobing               |
+| 7.2 | Intent prefetch on the **phone tab bar** and "More" sheet (`pointerdown`/`touchstart`) for both the chunk and the page's primary query                                    | RC-11      | E2E: tap triggers one chunk + one data request; no prefetch storm on scroll |
+
+> **Chunk half shipped 2026-11-08; data half still open.** `BottomTabItem.onIntent` fires on
+> `pointerdown` and `focus`; `AdminLayout` maps each tab href through
+> `resolveAdminNavPrefetch`. The prefetch map is now split per scope, which also fixes the
+> sidebar warming the wrong chunk for org and parking scopes. Coverage is a unit test
+> (`adminNavPrefetch.test.ts`, 12 cases) rather than an E2E network assertion: the mocked
+> admin harness can already have the module loaded, so a request-based assertion is flaky and
+> a flaky gate is worse than a scoped one. Data prefetch stays out on purpose, per the
+> no-guessed-cache-keys guardrail.
+> | 7.3 | Keep the previous screen until the next screen's primary data is ready (`startTransition` navigation + `placeholderData`/Suspense-query on top pages), with a thin top progress bar instead of a skeleton for fast fetches | RC-10, RC-12 | E2E: no blank frame; back navigation instant from cache |
+> | 7.4 | Per-resource `staleTime` from the data's change rate (documented table), for module landing reads only | RC-12 | Invalidation tests for each raised key |
+> | 7.5 | Warm host-tier chunks right after the bootstrap call resolves (not only after sign-in), at idle priority | RC-13 | Precache budget unchanged; SW test |
+> | 7.6 | Enable **navigation preload** in the SW and shorten the standalone launch timeout; serve the precached shell first in standalone when a cached build matches `pwa-version.json` (keeps the stale-build fix) | RC-15 | SW unit tests; E2E offline boot; update flow ("new version" toast) still works |
+> | 7.7 | `AdminLayout` re-render audit from S-7: memoize only the subtrees the profiler names | RC-14 | Profiler commit count before/after recorded |
+> | 7.8 | Touch feedback: `:active` states and `touch-action: manipulation` on nav targets so the tap acknowledges instantly | perceived | Mobile E2E at 375 px |
+
+> **Already done, verified 2026-11-08.** `BottomTabBar`'s `mobileBottomBarClassName` already
+> carries `touch-manipulation`, and the tab surface uses `native-press` for the active state.
+> Nothing to add here.
 
 ## Phase 8: regression gates (keep it fast)
 
@@ -489,19 +523,19 @@ Note: Vitest silently ignores `.test.tsx` component tests in this repo, so put c
 
 ## Status ledger
 
-| Phase | State                               | Evidence                                                                                                                                                                                                                                                  |
-| ----- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | partial (0.1, 0.2 shipped)          | `ui/src/lib/perf/bootMarks.ts` + `bootMarks.test.ts` (10 Vitest cases), `_shared/serverTiming.ts` + `serverTiming_test.ts` (10 Deno cases), `ui/e2e/features/observability/bootMarks.spec.ts`. 0.3 and 0.4 need `SUPABASE_ACCESS_TOKEN` and a hosted run. |
-| 1     | partial (RC-6, RC-8, RC-10 decided) | RC-10 rejected, RC-6 confirmed, RC-8 partly resolved. Remaining RCs need a hosted Playwright/HAR run.                                                                                                                                                     |
-| 2     | 2.3 blocked                         | Contradicts 0.1 (see note). Bundle baseline recorded: entry 246.5 KiB gzip, initial 633.2 KiB gzip.                                                                                                                                                       |
-| 3     | not started                         | Needs the bootstrap endpoint design decision and a hosted parity run.                                                                                                                                                                                     |
-| 4     | not started                         | 4.1 needs S-2 (region A/B, hosted). 4.2 is D-2.                                                                                                                                                                                                           |
-| 5     | not started                         | Needs D-1 and `kamewave` to test the Vercel proxy.                                                                                                                                                                                                        |
-| 6     | not started                         | Needs `perf:supabase:snapshot`, which needs `SUPABASE_ACCESS_TOKEN`.                                                                                                                                                                                      |
-| 7     | 7.1 dropped                         | RC-10 rejected. Remaining items need a standalone-PWA trace.                                                                                                                                                                                              |
-| 8     | not started                         | Depends on the phases above producing new numbers.                                                                                                                                                                                                        |
-| 9     | not started                         | Depends on Phase 0.3 and a production release.                                                                                                                                                                                                            |
-| 10    | not started                         | Needs Management API + PostHog + Sentry read tokens.                                                                                                                                                                                                      |
+| Phase | State                                                   | Evidence                                                                                                                                                                                                                                                                             |
+| ----- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0     | partial (0.1, 0.2, DB capture shipped)                  | `bootMarks.ts` + 10 Vitest, `serverTiming.ts` + 10 Deno, `bootMarks.spec.ts` 3 E2E. Baseline captured: `perf-2026-11-08-before.md` + `2026-11-08-pg-stat-before.json`, via the new `perf:pg-stat:snapshot` (no `psql` needed). Lighthouse and authenticated edge latency still open. |
+| 1     | partial (RC-6, RC-8, RC-9, RC-10, RC-11, RC-16 decided) | RC-6 and RC-16 confirmed with numbers, RC-9 and RC-8 partly rejected, RC-10 rejected, RC-11 confirmed and fixed. Remaining RCs need a hosted HAR trace.                                                                                                                              |
+| 2     | 2.3 blocked                                             | Contradicts 0.1 (see note). Bundle baseline recorded: entry 246.5 KiB gzip, initial 633.2 KiB gzip.                                                                                                                                                                                  |
+| 3     | not started                                             | Needs the bootstrap endpoint design decision and a hosted parity run.                                                                                                                                                                                                                |
+| 4     | not started                                             | 4.1 needs S-2 (region A/B, hosted). 4.2 is D-2.                                                                                                                                                                                                                                      |
+| 5     | not started                                             | Needs D-1 and `kamewave` to test the Vercel proxy.                                                                                                                                                                                                                                   |
+| 6     | analysed, no fix yet                                    | Top statements captured (`perf-2026-11-08-before.md`). RC-16 confirmed at 85% Realtime. 6.1 to 6.5 need a decision on whether to move Realtime to Broadcast, which is a behaviour change and not a query fix.                                                                        |
+| 7     | partial                                                 | 7.1 dropped (RC-10 rejected), 7.2 chunk half shipped, 7.8 already present. 7.3 to 7.7 need a standalone-PWA trace.                                                                                                                                                                   |
+| 8     | not started                                             | Depends on the phases above producing new numbers.                                                                                                                                                                                                                                   |
+| 9     | not started                                             | Depends on Phase 0.3 and a production release.                                                                                                                                                                                                                                       |
+| 10    | not started                                             | Needs Management API + PostHog + Sentry read tokens.                                                                                                                                                                                                                                 |
 
 ## Plan revisions
 
