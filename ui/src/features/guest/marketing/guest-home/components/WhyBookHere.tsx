@@ -382,7 +382,7 @@ function Message({
             transition={{ duration: 0.3, ease: STEP_EASE, delay: done && !reduce ? 0.25 : 0 }}
             className={cn(
               'flex items-center gap-1',
-              done ? 'text-primary' : 'text-muted-foreground'
+              done ? 'text-brand-ink' : 'text-muted-foreground'
             )}
           >
             {done ? (

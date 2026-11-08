@@ -261,7 +261,7 @@ export function PaperworkScene({ reduce }: { reduce: boolean }) {
           initial={reduce ? false : { scale: 1.8, opacity: 0, rotate: -4 }}
           animate={{ scale: 1, opacity: 1, rotate: -10 }}
           transition={{ delay: 0.85, type: 'spring', stiffness: 380, damping: 16 }}
-          className="border-primary text-primary bg-background absolute bottom-4 right-4 rounded-lg border-2 px-3 py-1 text-xs font-bold uppercase tracking-wider lg:text-sm"
+          className="border-primary-strong dark:border-primary text-brand-ink bg-background absolute bottom-4 right-4 rounded-lg border-2 px-3 py-1 text-xs font-bold uppercase tracking-wider lg:text-sm"
         >
           Approved
         </motion.span>
@@ -334,7 +334,7 @@ export function RefundScene({ reduce }: { reduce: boolean }) {
       >
         <div className="flex items-center justify-between">
           <Value>Security deposit</Value>
-          <motion.span {...rise(1.7, reduce, 4)} className="text-primary text-sm font-semibold">
+          <motion.span {...rise(1.7, reduce, 4)} className="text-brand-ink text-sm font-semibold">
             Refunded
           </motion.span>
         </div>
