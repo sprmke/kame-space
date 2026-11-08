@@ -57,7 +57,15 @@ function notificationsListLimit(mode: NotificationsListMode): number {
   return mode === 'preview' ? NOTIFICATIONS_BELL_PREVIEW_LIMIT : 20;
 }
 
-export function useNotificationsList(mode: NotificationsListMode = 'full') {
+export function useNotificationsList(
+  mode: NotificationsListMode = 'full',
+  /**
+   * `enabled: false` holds the request until the caller is ready (the shell defers the
+   * preview until after first paint). Defaults to on, so every existing call site is
+   * unchanged.
+   */
+  options: { enabled?: boolean } = {}
+) {
   const { orgSlug, orgId } = useNotificationsOrgScope();
   const limit = notificationsListLimit(mode);
 
@@ -66,7 +74,7 @@ export function useNotificationsList(mode: NotificationsListMode = 'full') {
     queryFn: ({ pageParam }) => fetchNotifications(orgSlug, orgId, pageParam, limit),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => (mode === 'preview' ? null : last.nextCursor),
-    enabled: Boolean(orgSlug || orgId),
+    enabled: options.enabled !== false && Boolean(orgSlug || orgId),
     staleTime: 15_000,
   });
 }

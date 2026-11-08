@@ -19,6 +19,12 @@ export type BottomTabItem = {
   badge?: boolean | number;
   /** When set, tab acts as a button (e.g. More) instead of a link. */
   onClick?: () => void;
+  /**
+   * Called on pointer-down and keyboard focus, before the tap resolves. Used to
+   * warm the target route's lazy chunk during the "am I really tapping this"
+   * pause instead of after it. Never fires on scroll or hover-only devices.
+   */
+  onIntent?: () => void;
 };
 
 type Props = {
@@ -172,6 +178,8 @@ export function BottomTabBar({
                 type="button"
                 role="listitem"
                 onClick={item.onClick}
+                onPointerDown={item.onIntent}
+                onFocus={item.onIntent}
                 aria-current={active ? 'page' : undefined}
                 aria-label={itemAriaLabel}
                 aria-expanded={item.onClick ? active : undefined}
@@ -191,6 +199,8 @@ export function BottomTabBar({
               aria-current={active ? 'page' : undefined}
               aria-label={itemAriaLabel}
               className={sharedClass}
+              onPointerDown={item.onIntent}
+              onFocus={item.onIntent}
               onClick={() => scrollAdminViewToTop('auto')}
             >
               {content}

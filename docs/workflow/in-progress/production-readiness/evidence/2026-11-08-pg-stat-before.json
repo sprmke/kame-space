@@ -1,0 +1,515 @@
+{
+  "capturedAt": "2026-11-08T03:37:01.239Z",
+  "label": "before",
+  "mode": "pg_stat_statements-read-only",
+  "overview": {
+    "total_exec_ms": "15150158",
+    "statements": "4761",
+    "stats_reset": "2026-08-03T16:01:45.269Z",
+    "db_size": "101 MB"
+  },
+  "topByTotalTime": [
+    {
+      "queryid": "3314095572600851995",
+      "query": "SELECT wal->>$5 as type, wal->>$6 as schema, wal->>$7 as table, COALESCE(wal->>$8, $9) as columns, COALESCE(wal->>$10, $11) as record, COALESCE(wal->>$12, $13) as ol",
+      "calls": "1664792",
+      "total_ms": "12880918.1",
+      "mean_ms": "7.74",
+      "pct_of_total": "85.02",
+      "rows": "1667919",
+      "cache_hits": "3006275777",
+      "disk_reads": "3",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "-7726440967385220442",
+      "query": "SELECT name FROM pg_timezone_names",
+      "calls": "869",
+      "total_ms": "341561.7",
+      "mean_ms": "393.05",
+      "pct_of_total": "2.25",
+      "rows": "1039324",
+      "cache_hits": "0",
+      "disk_reads": "0",
+      "cache_hit_pct": null
+    },
+    {
+      "queryid": "-3624255165991810161",
+      "query": "SELECT net.http_post( url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = $1) || $2, headers := ( CASE WHEN EXISTS ( SELECT $3 FROM vault.decrypted",
+      "calls": "24923",
+      "total_ms": "279652.5",
+      "mean_ms": "11.22",
+      "pct_of_total": "1.85",
+      "rows": "24923",
+      "cache_hits": "4406193",
+      "disk_reads": "30",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "-2647655532108368607",
+      "query": "SELECT e.name, n.nspname AS schema, e.default_version, x.extversion AS installed_version, e.comment, ev.schema AS default_version_schema FROM pg_available_extensions e LEFT JOIN pg_ext",
+      "calls": "177",
+      "total_ms": "107218.5",
+      "mean_ms": "605.75",
+      "pct_of_total": "0.71",
+      "rows": "13806",
+      "cache_hits": "1482",
+      "disk_reads": "0",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "-8856799461280935852",
+      "query": "WITH -- Recursively get the base types of domains base_types AS ( WITH RECURSIVE recurse AS ( SELECT oid, typbasetype, typnamespace AS base_namespace, COALESCE(NULLIF(t",
+      "calls": "869",
+      "total_ms": "98236.9",
+      "mean_ms": "113.05",
+      "pct_of_total": "0.65",
+      "rows": "107942",
+      "cache_hits": "4557801",
+      "disk_reads": "634",
+      "cache_hit_pct": "99.99"
+    },
+    {
+      "queryid": "171062851821495019",
+      "query": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_scope\", \"p_identity\", \"p_window_start\" FROM json_to_record(pgrst_payload.json_data)",
+      "calls": "27341",
+      "total_ms": "64517.6",
+      "mean_ms": "2.36",
+      "pct_of_total": "0.43",
+      "rows": "27341",
+      "cache_hits": "1440420",
+      "disk_reads": "43",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "4762134411122352677",
+      "query": "select schemaname, tablename, format($2, schemaname, tablename)::regclass as oid from pg_publication_tables where pubname = $1",
+      "calls": "28404",
+      "total_ms": "64240.4",
+      "mean_ms": "2.26",
+      "pct_of_total": "0.42",
+      "rows": "84985",
+      "cache_hits": "10212348",
+      "disk_reads": "5",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "-3001337520044240156",
+      "query": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_scope\", \"p_identity\", \"p_window_start\" FROM json_to_record(pgrst_payload.json_data)",
+      "calls": "18425",
+      "total_ms": "49104.6",
+      "mean_ms": "2.67",
+      "pct_of_total": "0.32",
+      "rows": "18425",
+      "cache_hits": "471813",
+      "disk_reads": "2",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "-8752032835001580448",
+      "query": "select name,id,updated_at,created_at,last_accessed_at,metadata,version,archived_at,is_delete_marker,is_versioned from storage.search($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
+      "calls": "1811",
+      "total_ms": "48498.7",
+      "mean_ms": "26.78",
+      "pct_of_total": "0.32",
+      "rows": "3733",
+      "cache_hits": "154165",
+      "disk_reads": "8",
+      "cache_hit_pct": "99.99"
+    },
+    {
+      "queryid": "-1819067131897720912",
+      "query": "SELECT net.http_post( url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = $1) || $2, headers := ( CASE WHEN EXISTS (SELECT $3 FROM vault.decrypted_secrets ",
+      "calls": "3434",
+      "total_ms": "48019.0",
+      "mean_ms": "13.98",
+      "pct_of_total": "0.32",
+      "rows": "3434",
+      "cache_hits": "601495",
+      "disk_reads": "6",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "-6612888254775744482",
+      "query": "SELECT read_allowed, write_allowed FROM realtime.authorize( role_name => $1, topic_name => $2, claims => $3, sub => $4, headers => $5, read_extensions => $6, write_extensions => $7 )",
+      "calls": "2147",
+      "total_ms": "41239.6",
+      "mean_ms": "19.21",
+      "pct_of_total": "0.27",
+      "rows": "2147",
+      "cache_hits": "146082",
+      "disk_reads": "79",
+      "cache_hit_pct": "99.95"
+    },
+    {
+      "queryid": "3326688728085609320",
+      "query": "select set_config('search_path', $1, true), set_config($2, $3, true), set_config($4, $5, true), set_config('role', $6, true), set_config('request.jwt.claims', $7, true), set_config('request.method', $",
+      "calls": "438508",
+      "total_ms": "29066.9",
+      "mean_ms": "0.07",
+      "pct_of_total": "0.19",
+      "rows": "438508",
+      "cache_hits": "516141",
+      "disk_reads": "0",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "4553260694322739036",
+      "query": "WITH pgrst_source AS ( SELECT \"public\".\"guest_submissions\".* FROM \"public\".\"guest_submissions\" WHERE \"public\".\"guest_submissions\".\"property_id\" = $1 ORDER BY \"public\".\"guest_submissions\".\"created_at",
+      "calls": "281",
+      "total_ms": "28533.6",
+      "mean_ms": "101.54",
+      "pct_of_total": "0.19",
+      "rows": "281",
+      "cache_hits": "187090",
+      "disk_reads": "5",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "3393632725691790249",
+      "query": "SELECT * FROM pgbouncer.get_auth($1)",
+      "calls": "9367",
+      "total_ms": "28439.6",
+      "mean_ms": "3.04",
+      "pct_of_total": "0.19",
+      "rows": "9367",
+      "cache_hits": "86282",
+      "disk_reads": "3",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "1799743823665871856",
+      "query": "SELECT e.extname AS name, n.nspname AS schema, e.extrelocatable AS relocatable, dv.schema::text AS control_schema, obj_description(e.oid, $1) AS comment FROM pg_ex",
+      "calls": "41",
+      "total_ms": "25508.2",
+      "mean_ms": "622.15",
+      "pct_of_total": "0.17",
+      "rows": "287",
+      "cache_hits": "2337",
+      "disk_reads": "0",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "5299301975933694258",
+      "query": "WITH -- Recursively get the base types of domains base_types AS ( WITH RECURSIVE recurse AS ( SELECT oid, typbasetype, typnamespace AS base_namespace, COALESCE(NULLIF(t",
+      "calls": "528",
+      "total_ms": "25082.9",
+      "mean_ms": "47.51",
+      "pct_of_total": "0.17",
+      "rows": "27928",
+      "cache_hits": "971044",
+      "disk_reads": "168",
+      "cache_hit_pct": "99.98"
+    },
+    {
+      "queryid": "-6459127463705557683",
+      "query": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p_job_name\", \"p_ok\", \"p_started_at\", \"p_duration_ms\", \"p_error\" FROM json_to_record(p",
+      "calls": "19347",
+      "total_ms": "24941.9",
+      "mean_ms": "1.29",
+      "pct_of_total": "0.16",
+      "rows": "19347",
+      "cache_hits": "1660609",
+      "disk_reads": "3",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "4868794970434878014",
+      "query": "SELECT case when pg_is_in_recovery() then $2 else (pg_walfile_name_offset(lsn)).file_name end, lsn::text, pg_is_in_recovery() FROM pg_backup_start($1, $3) lsn",
+      "calls": "99",
+      "total_ms": "24256.5",
+      "mean_ms": "245.02",
+      "pct_of_total": "0.16",
+      "rows": "99",
+      "cache_hits": "0",
+      "disk_reads": "0",
+      "cache_hit_pct": null
+    },
+    {
+      "queryid": "5034839715343203888",
+      "query": "SELECT m0.\"id\" FROM \"realtime\".\"messages\" AS m0 WHERE (m0.\"id\" = ANY($1))",
+      "calls": "11444",
+      "total_ms": "23545.1",
+      "mean_ms": "2.06",
+      "pct_of_total": "0.16",
+      "rows": "44",
+      "cache_hits": "375055",
+      "disk_reads": "0",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "2160652048201294652",
+      "query": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p\" FROM json_to_record(pgrst_payload.json_data) AS _(\"p\" jsonb) LIMIT $4) pgrst_body ",
+      "calls": "1122",
+      "total_ms": "23383.1",
+      "mean_ms": "20.84",
+      "pct_of_total": "0.15",
+      "rows": "1122",
+      "cache_hits": "124576",
+      "disk_reads": "0",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "-3048995630381531915",
+      "query": "WITH dep AS ( SELECT d.classid, d.objid, d.objsubid, d.refclassid, d.refobjid, d.refobjsubid FROM pg_depend d WHERE d.deptype IN ($1, $2) -- sequence OWNED BY is",
+      "calls": "41",
+      "total_ms": "20180.7",
+      "mean_ms": "492.21",
+      "pct_of_total": "0.13",
+      "rows": "255054",
+      "cache_hits": "624537",
+      "disk_reads": "2",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "-7330580891943518974",
+      "query": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SELECT \"p\" FROM json_to_record(pgrst_payload.json_data) AS _(\"p\" jsonb) LIMIT $4) pgrst_body ",
+      "calls": "569",
+      "total_ms": "20086.5",
+      "mean_ms": "35.30",
+      "pct_of_total": "0.13",
+      "rows": "569",
+      "cache_hits": "718862",
+      "disk_reads": "12",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "-356085824413177285",
+      "query": "insert into cron.job_run_details (jobid, runid, database, username, command, status) values ($1,$2,$3,$4,$5,$6)",
+      "calls": "28389",
+      "total_ms": "18649.9",
+      "mean_ms": "0.66",
+      "pct_of_total": "0.12",
+      "rows": "28389",
+      "cache_hits": "103388",
+      "disk_reads": "5",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "2343734153471095499",
+      "query": "with sub_tables as ( select rr.entity from pg_publication_tables pub, lateral ( select format($12, pub.schemaname, pub.tablename)::regclass enti",
+      "calls": "1833",
+      "total_ms": "18202.0",
+      "mean_ms": "9.93",
+      "pct_of_total": "0.12",
+      "rows": "1833",
+      "cache_hits": "66090",
+      "disk_reads": "0",
+      "cache_hit_pct": "100.00"
+    },
+    {
+      "queryid": "6908682427559685386",
+      "query": "SELECT t.tableoid, t.oid, i.indrelid, t.relname AS indexname, pg_catalog.pg_get_indexdef(i.indexrelid) AS indexdef, i.indkey, i.indisclustered, c.contype, c.conname, c.condeferrable, c.condeferred, c.",
+      "calls": "318",
+      "total_ms": "16276.4",
+      "mean_ms": "51.18",
+      "pct_of_total": "0.11",
+      "rows": "139851",
+      "cache_hits": "5943675",
+      "disk_reads": "2",
+      "cache_hit_pct": "100.00"
+    }
+  ],
+  "topByMeanTime": [
+    {
+      "queryid": "1799743823665871856",
+      "query": "SELECT e.extname AS name, n.nspname AS schema, e.extrelocatable AS relocatable, dv.schema::text AS control_schema, obj_description(e.oid, $1) AS comment FROM pg_ex",
+      "calls": "41",
+      "total_ms": "25508.2",
+      "mean_ms": "622.15",
+      "rows": "287"
+    },
+    {
+      "queryid": "-2647655532108368607",
+      "query": "SELECT e.name, n.nspname AS schema, e.default_version, x.extversion AS installed_version, e.comment, ev.schema AS default_version_schema FROM pg_available_extensions e LEFT JOIN pg_ext",
+      "calls": "177",
+      "total_ms": "107218.5",
+      "mean_ms": "605.75",
+      "rows": "13806"
+    },
+    {
+      "queryid": "7290605562220974499",
+      "query": "do $$ declare t record; n bigint; sz bigint; begin for t in select c.relname, c.oid from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' ",
+      "calls": "13",
+      "total_ms": "6690.1",
+      "mean_ms": "514.62",
+      "rows": "0"
+    },
+    {
+      "queryid": "-3048995630381531915",
+      "query": "WITH dep AS ( SELECT d.classid, d.objid, d.objsubid, d.refclassid, d.refobjid, d.refobjsubid FROM pg_depend d WHERE d.deptype IN ($1, $2) -- sequence OWNED BY is",
+      "calls": "41",
+      "total_ms": "20180.7",
+      "mean_ms": "492.21",
+      "rows": "255054"
+    },
+    {
+      "queryid": "-7726440967385220442",
+      "query": "SELECT name FROM pg_timezone_names",
+      "calls": "869",
+      "total_ms": "341561.7",
+      "mean_ms": "393.05",
+      "rows": "1039324"
+    },
+    {
+      "queryid": "-4699137610195767146",
+      "query": "-- reports-database-large-objects SELECT SCHEMA_NAME, relname, table_size FROM (SELECT pg_catalog.pg_namespace.nspname AS SCHEMA_NAME, relname",
+      "calls": "9",
+      "total_ms": "2480.1",
+      "mean_ms": "275.57",
+      "rows": "45"
+    },
+    {
+      "queryid": "4868794970434878014",
+      "query": "SELECT case when pg_is_in_recovery() then $2 else (pg_walfile_name_offset(lsn)).file_name end, lsn::text, pg_is_in_recovery() FROM pg_backup_start($1, $3) lsn",
+      "calls": "99",
+      "total_ms": "24256.5",
+      "mean_ms": "245.02",
+      "rows": "99"
+    },
+    {
+      "queryid": "1860527503676813721",
+      "query": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT \"public\".\"get_system_health_capacity\"() pgrst_scalar) pgrst_call) SELECT $3::bigint AS total_result_set, $4 AS page_total, coalesce(js",
+      "calls": "5",
+      "total_ms": "1182.2",
+      "mean_ms": "236.44",
+      "rows": "5"
+    },
+    {
+      "queryid": "3020308542773473532",
+      "query": "SELECT n.nspname AS schema, c.relname AS table, a.attname AS name, a.attnum AS position, c.relkind AS table_kind, format_type(a.atttypid, a.atttypmod) AS type, ",
+      "calls": "41",
+      "total_ms": "8127.5",
+      "mean_ms": "198.23",
+      "rows": "91880"
+    },
+    {
+      "queryid": "-3076875962393720596",
+      "query": "with f as ( -- CTE with sane arg_modes, arg_names, and arg_types. -- All three are always of the same length. -- All three include all args, including OUT and TABLE args. with functions as ( ",
+      "calls": "17",
+      "total_ms": "2840.3",
+      "mean_ms": "167.08",
+      "rows": "2240"
+    },
+    {
+      "queryid": "9214467207699760482",
+      "query": "WITH pgrst_source AS (INSERT INTO \"public\".\"ai_dashboard_assistant_knowledge_base\"(\"answer\", \"question\", \"route_guide_path\", \"route_guide_title\", \"route_path\", \"updated_at\") SELECT \"pgrst_body\".\"answe",
+      "calls": "34",
+      "total_ms": "5329.2",
+      "mean_ms": "156.74",
+      "rows": "34"
+    },
+    {
+      "queryid": "7900293630026771324",
+      "query": "WITH pgrst_source AS (INSERT INTO \"public\".\"ai_dashboard_assistant_knowledge_base\"(\"answer\", \"question\", \"route_guide_path\", \"route_guide_title\", \"route_path\", \"updated_at\") SELECT \"pgrst_body\".\"answe",
+      "calls": "14",
+      "total_ms": "2089.6",
+      "mean_ms": "149.26",
+      "rows": "14"
+    },
+    {
+      "queryid": "-8856799461280935852",
+      "query": "WITH -- Recursively get the base types of domains base_types AS ( WITH RECURSIVE recurse AS ( SELECT oid, typbasetype, typnamespace AS base_namespace, COALESCE(NULLIF(t",
+      "calls": "869",
+      "total_ms": "98236.9",
+      "mean_ms": "113.05",
+      "rows": "107942"
+    },
+    {
+      "queryid": "4465304201091341649",
+      "query": "with extension_oids as ( select objid from pg_depend d WHERE d.refclassid = $1::regclass and d.classid = $2::regclass ), enums as ( SELECT t.oid as enum_oid, n",
+      "calls": "72",
+      "total_ms": "7913.3",
+      "mean_ms": "109.91",
+      "rows": "161514"
+    },
+    {
+      "queryid": "8732698689243537280",
+      "query": "WITH pgrst_source AS ( SELECT \"public\".\"guest_submissions\".*, row_to_json(\"guest_submissions_properties_1\".*)::jsonb AS \"properties\" FROM \"public\".\"guest_submissions\" INNER JOIN LATERAL ( SELECT \"prop",
+      "calls": "30",
+      "total_ms": "3286.5",
+      "mean_ms": "109.55",
+      "rows": "30"
+    },
+    {
+      "queryid": "-2514625306543477689",
+      "query": "WITH total_objects AS ( SELECT c.relkind, pg_size_pretty(SUM(pg_relation_size(c.oid))) AS size FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.relkind IN ($3, $4, $5) AND N",
+      "calls": "7",
+      "total_ms": "739.6",
+      "mean_ms": "105.66",
+      "rows": "7"
+    },
+    {
+      "queryid": "-733869263948011471",
+      "query": "do $$ declare migrations text; begin if pg_catalog.to_regclass('supabase_migrations.schema_migrations') is not null then select coalesce( pg_catalog.jsonb_agg(pg_",
+      "calls": "94",
+      "total_ms": "9798.4",
+      "mean_ms": "104.24",
+      "rows": "0"
+    },
+    {
+      "queryid": "8488596593203820615",
+      "query": "with extension_oids as ( select objid, classid::regclass::text as classid from pg_depend d WHERE d.refclassid = $1::regclass and d.classid = $2::regclass ), extensi",
+      "calls": "72",
+      "total_ms": "7437.1",
+      "mean_ms": "103.29",
+      "rows": "48618"
+    },
+    {
+      "queryid": "2058045999195969845",
+      "query": "WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT \"public\".\"get_system_health_snapshot\"() pgrst_scalar) pgrst_call) SELECT $3::bigint AS total_result_set, $4 AS page_total, coalesce(js",
+      "calls": "29",
+      "total_ms": "2979.6",
+      "mean_ms": "102.75",
+      "rows": "29"
+    },
+    {
+      "queryid": "4553260694322739036",
+      "query": "WITH pgrst_source AS ( SELECT \"public\".\"guest_submissions\".* FROM \"public\".\"guest_submissions\" WHERE \"public\".\"guest_submissions\".\"property_id\" = $1 ORDER BY \"public\".\"guest_submissions\".\"created_at",
+      "calls": "281",
+      "total_ms": "28533.6",
+      "mean_ms": "101.54",
+      "rows": "281"
+    },
+    {
+      "queryid": "7435272051063124457",
+      "query": "WITH pgrst_source AS ( SELECT \"public\".\"guest_submissions\".*, row_to_json(\"guest_submissions_properties_1\".*)::jsonb AS \"properties\" FROM \"public\".\"guest_submissions\" INNER JOIN LATERAL ( SELECT \"prop",
+      "calls": "24",
+      "total_ms": "2429.9",
+      "mean_ms": "101.25",
+      "rows": "24"
+    },
+    {
+      "queryid": "3354590260071959761",
+      "query": "SELECT ts.name, pg_size_pretty(ts.table_size_bytes) AS table_size, pg_size_pretty(ts.index_size_bytes) AS index_size, pg_size_pretty(ts.total_size_bytes) AS total_size, COALESCE(rc.estimated",
+      "calls": "8",
+      "total_ms": "722.5",
+      "mean_ms": "90.31",
+      "rows": "1134"
+    },
+    {
+      "queryid": "-8284206376421340856",
+      "query": "SELECT query, (interval $1 * total_exec_time)::text AS total_exec_time, to_char((total_exec_time/sum(total_exec_time) OVER()) * $2, $3) || $4 AS prop_exec_time, to_char(calls, $5) AS ncalls, ",
+      "calls": "9",
+      "total_ms": "763.2",
+      "mean_ms": "84.80",
+      "rows": "90"
+    },
+    {
+      "queryid": "-968257996675475524",
+      "query": "select case when not exists ( select $2 from pg_replication_slots where slot_name = $1 ) then ( select $3 from pg_create_logical_replica",
+      "calls": "80",
+      "total_ms": "6649.1",
+      "mean_ms": "83.11",
+      "rows": "80"
+    },
+    {
+      "queryid": "3772000438174864667",
+      "query": "WITH pgrst_source AS ( SELECT \"public\".\"guest_submissions\".* FROM \"public\".\"guest_submissions\" WHERE ( \"public\".\"guest_submissions\".\"status\" = ANY ($1) OR NOT \"public\".\"guest_submissions\".\"imported_",
+      "calls": "10",
+      "total_ms": "764.8",
+      "mean_ms": "76.48",
+      "rows": "10"
+    }
+  ]
+}

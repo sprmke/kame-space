@@ -117,6 +117,30 @@ Full phase status — what's classified vs. deferred, real bugs found during sel
 - **Client side (admin surface only):** `ui/src/lib/api/adminEdgeFetch.ts` sends a fresh `x-request-id` on every `adminEdgeFetch`/`assetEdgeFetch` call; `AdminEdgeFetchError.requestId` carries it back on failure. Guest-side fetch call sites do not send this header yet — extending the pattern there is the natural next slice, not done this session.
 - **Never log:** guest names, emails, phone numbers, addresses, ID/document contents, tokens, secrets, full request bodies. Log identifiers (`bookingId`), not the row/object. A PII-in-logs audit of all `console.*` call sites across `supabase/functions/**` found and fixed 3 violations of this rule (2026-09-19) — see doc 27's implementation status for specifics.
 
+### Per-phase latency (`Server-Timing`)
+
+`serveAdmin` / `serveAuthenticated` / `serveSuperAdmin` / `servePublic` emit
+`Server-Timing` with one duration per phase: `auth`, `settings`, `blocklist`, `ratelimit`,
+`handler`. See [`serverTiming.ts`](../../supabase/functions/_shared/serverTiming.ts).
+
+```text
+Server-Timing: auth;dur=12.3, settings;dur=0.4, blocklist;dur=1.2, ratelimit;dur=4.1, handler;dur=88.2
+Timing-Allow-Origin: *
+```
+
+Rules:
+
+- **Durations only.** No user id, function argument, row count or token. That is what makes
+  `Timing-Allow-Origin: *` acceptable; do not add identifiers and keep the wildcard.
+- **A throwing phase is still recorded.** `timePhase` writes in a `finally`, so a rejected
+  JWT shows its cost instead of vanishing from the breakdown.
+- **The body is not buffered.** `withServerTiming` re-wraps `response.body`, and returns the
+  original response unchanged when the body was already read or there is nothing to report.
+- **Always on, including production.** The cost is a few `Date.now()` calls and one `Headers`
+  clone. This header is the difference between "the dashboard is slow" and "the dashboard
+  spends 340ms in auth".
+- **`CronPost` is excluded.** A scheduled job has no client reading the header.
+
 ---
 
 ## Error status contract (`EdgeError`)

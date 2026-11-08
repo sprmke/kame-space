@@ -8,6 +8,7 @@
  */
 
 import { buildWordmarkWave } from '@/components/branding/appLoaderWordmark';
+import { markBoot } from '@/lib/perf/bootMarks';
 import { platformMarkInitial, platformWordmarkParts } from '@/lib/platformBranding';
 
 const HOST_ID = 'app-loader-host';
@@ -90,6 +91,7 @@ function ensureHost() {
   document.body.appendChild(el);
   host = el;
   syncHostChrome();
+  markBoot('loader:show');
 }
 
 function teardownHost() {
@@ -97,6 +99,7 @@ function teardownHost() {
   host.remove();
   host = null;
   wantsFullScreen = false;
+  markBoot('loader:hide');
 }
 
 /** @internal Exported for tests. */
