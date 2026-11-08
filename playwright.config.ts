@@ -28,6 +28,10 @@ export default defineConfig({
   outputDir: 'test-results/playwright',
   use: {
     baseURL: BASE_URL,
+    // Deterministic clock and locale. Every user-visible time is Asia/Manila, and
+    // date-boundary bugs (UTC midnight vs Manila) are a recurring class here.
+    timezoneId: 'Asia/Manila',
+    locale: 'en-PH',
     trace: 'on-first-retry',
     video: recordVideo ? 'on' : 'retain-on-failure',
     screenshot: 'only-on-failure',

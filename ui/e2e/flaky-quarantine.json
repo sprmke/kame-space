@@ -33,5 +33,12 @@
     "issue": "https://github.com/sprmke/kame-space/issues/331",
     "expires": "2026-12-31",
     "reason": "Never ran before (untagged). 'Send manually' stays aria-expanded=false after Proceed."
+  },
+  {
+    "spec": "ui/e2e/features/parking/flows/parkingGuestHostOutcomes.spec.ts",
+    "test": "host can decline a pending request and the guest sees the request close out",
+    "issue": "https://github.com/sprmke/kame-space/issues/331",
+    "expires": "2026-12-31",
+    "reason": "Intermittent: failed 2 of 4 local runs with the decline flow timing out after the host action."
   }
 ]
