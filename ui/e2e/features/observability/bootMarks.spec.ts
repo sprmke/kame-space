@@ -18,6 +18,18 @@ import {
 
 type PerfPage = { evaluate: (fn: () => unknown) => Promise<unknown> };
 
+/**
+ * Vite's dev server reloads the document once when it re-optimises dependencies, which
+ * wipes `performance` marks. Polling re-reads after that reload instead of asserting
+ * against an empty array and calling the instrumentation broken.
+ */
+async function waitForMarks(page: PerfPage): Promise<string[]> {
+  await expect
+    .poll(async () => (await readMarks(page)).length, { timeout: 15_000 })
+    .toBeGreaterThan(0);
+  return readMarks(page);
+}
+
 async function readMarks(page: PerfPage): Promise<string[]> {
   // The prefixes are inlined: this function body is serialized into the browser,
   // where a Node-side closure constant does not exist.
@@ -38,10 +50,7 @@ test.describe('@smoke @ci boot timing marks', () => {
       timeout: 20_000,
     });
 
-    // The first commit is one rAF after mount; give it a beat.
-    await page.waitForTimeout(300);
-
-    const marks = await readMarks(page);
+    const marks = await waitForMarks(page);
     expect(marks).toContain('app:script-start');
     expect(marks).toContain('app:first-render');
     expect(marks).toContain('route:content');
@@ -55,7 +64,7 @@ test.describe('@smoke @ci boot timing marks', () => {
     await expect(page.getByRole('heading', { name: /Find your next stay/i })).toBeVisible({
       timeout: 20_000,
     });
-    await page.waitForTimeout(300);
+    await waitForMarks(page);
 
     const entries = (await page.evaluate(() =>
       performance.getEntriesByType('mark').map((entry) => entry.name)
@@ -86,7 +95,7 @@ test.describe('@smoke @ci boot timing marks', () => {
     // and a phone bottom tab bar, and the hidden copy is still in the DOM.
     await page.locator('a[href="/properties"]:visible').first().click();
     await expect(page).toHaveURL(/\/properties/);
-    await page.waitForTimeout(500);
+    await waitForMarks(page);
 
     const marks = await readMarks(page);
     expect(marks).toContain('app:script-start');

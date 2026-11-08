@@ -607,9 +607,25 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
     });
   };
 
+  // Phone tabs are the PWA's primary navigation, so they warm their target chunk on
+  // pointer-down rather than only on sidebar hover (which a thumb never triggers).
+  // Chunk-only: the page's own queries still run on mount, because pretending to
+  // prefetch data we do not own the cache keys for is how stale views happen.
+  const tabItemsWithPrefetch = useMemo(
+    () =>
+      tabItemsWithBadges.map((item) => {
+        if (!item.href) return item;
+        const loader = resolveAdminNavPrefetch(item.href);
+        if (!loader) return item;
+        const href = item.href;
+        return { ...item, onIntent: () => prefetchChunkOnce(href, loader) };
+      }),
+    [tabItemsWithBadges]
+  );
+
   // AI mode: the composer dock is the only bottom layer on phone.
   const mobileTabBar = aiMode ? null : (
-    <BottomTabBar items={tabItemsWithBadges} activeKey={tabActiveKey} aria-label="Admin" />
+    <BottomTabBar items={tabItemsWithPrefetch} activeKey={tabActiveKey} aria-label="Admin" />
   );
 
   // Warm the AI mode chunk once the toggle is usable so the first switch is instant.
