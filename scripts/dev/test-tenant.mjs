@@ -224,7 +224,7 @@ async function createTenant(client) {
       `INSERT INTO public.properties
          (organization_id, name, slug, type, status, inactive_reason, address, tower_and_unit, max_guests)
        VALUES ($1, $2, $3, 'CONDO', 'INACTIVE', 'pending_verification', $4, $5, 2)
-       ON CONFLICT (organization_id, slug) DO UPDATE
+       ON CONFLICT (slug) DO UPDATE
          SET name = EXCLUDED.name, status = 'INACTIVE', inactive_reason = 'pending_verification'
        RETURNING id, slug, status, is_test`,
       [org.id, PROPERTY_NAME, PROPERTY_SLUG, 'Test address', 'Test Tower 1']

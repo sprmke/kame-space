@@ -527,6 +527,13 @@ Note: Vitest silently ignores `.test.tsx` component tests in this repo, so put c
 
 ## Operator inputs
 
+**Test tenant (2026-11-08).** `kame-test-tenant` exists in production so the remaining
+phases can be measured against real latency without touching a host's data. The database
+enforces exactly one and forbids an ACTIVE test listing, so it cannot appear publicly.
+Verified live: the guest property endpoint 404s, listing and parking search return zero
+rows, and the served HTML contains no test-property data. Reference:
+`docs/architecture/test-tenant.md`.
+
 - `SUPABASE_ACCESS_TOKEN` + `SUPABASE_PROJECT_REF` exported locally for MCP/`supabase inspect` (missing in this session).
 - PR-025 GitHub secrets (`DEV_DB_URL`, etc.) for CI-side advisors and pg_stat capture.
 - A test host account on production data for read-only authenticated Lighthouse/boot runs (or a dedicated demo org).
