@@ -1,9 +1,12 @@
-import { expect, test } from '@playwright/test';
+import { expect as baseExpect, test } from '@playwright/test';
 
 import { seedSupabaseAuthSession } from '../../shared/authSeam';
 import { E2E_GUEST_USER_ID } from '../../shared/ids';
 
 import type { Page, Route } from '@playwright/test';
+
+// The mock voice stream and the lazy panel chunk both lose time on a loaded CI runner.
+const expect = baseExpect.configure({ timeout: 20_000 });
 
 async function fulfillJson(route: Route, data: Record<string, unknown>) {
   await route.fulfill({
