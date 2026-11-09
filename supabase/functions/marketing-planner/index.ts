@@ -33,7 +33,7 @@ import {
   skipPlanItem,
   updatePlanItem,
 } from '../_shared/marketingPlanner.ts';
-import { manilaTodayYmd } from '../_shared/calendarAvailabilityManila.ts';
+import { addDaysYmd, manilaTodayYmd } from '../_shared/calendarAvailabilityManila.ts';
 import { PlanFeatureRequiredError } from '../_shared/planEntitlements.ts';
 import { requirePropertyPermissionAndFeature } from '../_shared/orgAuth.ts';
 import { resolveScopedPropertyAccess } from '../_shared/propertyScope.ts';
@@ -128,12 +128,20 @@ serveAuthenticated('marketing-planner', async (req) => {
       latestPlan(propertyId),
     ]);
 
+    // Coming up: the next few items past the chip's window, so a staged campaign is visible
+    // without widening the agenda.
+    const upcomingFrom = addDaysYmd(to, 1);
+    const upcoming = plan?.horizon_end && plan.horizon_end >= upcomingFrom
+      ? (await listPlanItems({ propertyId, from: upcomingFrom, to: plan.horizon_end })).slice(0, 3)
+      : [];
+
     return jsonSuccess(req, {
       range,
       from,
       to,
       plan,
       items,
+      upcoming,
       summary: plan?.summary ?? null,
     });
   }

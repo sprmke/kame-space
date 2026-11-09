@@ -61,6 +61,7 @@ export type PlannerPlanResponse = {
   to: string;
   plan: PlannerPlanDto | null;
   items: PlannerItemDto[];
+  upcoming: PlannerItemDto[];
   summary: string | null;
 };
 
@@ -141,6 +142,7 @@ export async function fetchMarketingPlan(
     to: string;
     plan?: RawItem | null;
     items?: RawItem[];
+    upcoming?: RawItem[];
     summary?: string | null;
   }>(res);
   return {
@@ -149,6 +151,7 @@ export async function fetchMarketingPlan(
     to: data.to,
     plan: mapPlan(data.plan),
     items: (data.items ?? []).map(mapItem),
+    upcoming: (data.upcoming ?? []).map(mapItem),
     summary: data.summary ?? null,
   };
 }

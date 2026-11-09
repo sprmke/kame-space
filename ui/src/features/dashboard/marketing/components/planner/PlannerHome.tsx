@@ -151,6 +151,22 @@ export function PlannerHome() {
         </section>
       ))}
 
+      {data && data.upcoming.length > 0 ? (
+        <section className="space-y-1">
+          <h3 className="text-section-title text-muted-foreground">Coming up</h3>
+          <ul className="space-y-1 text-sm">
+            {data.upcoming.map((item) => (
+              <li key={item.id} className="flex flex-wrap items-baseline gap-1">
+                <span className="text-muted-foreground">
+                  {formatDayHeading(item.scheduledFor?.slice(0, 10) ?? 'unscheduled', today)}
+                </span>
+                <span>{item.title}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <PlanItemSheet
         open={openItem !== null}
         onOpenChange={(next) => {

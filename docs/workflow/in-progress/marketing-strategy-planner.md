@@ -569,7 +569,7 @@ UI:
 
 - [ ] **P1.7** Plan tab (`?tab=plan`), first in `MarketingStudioModeTabs`, default for properties without a remembered tab; route skeleton per `skeleton-loaders.md`.
 - [ ] **P1.8** `PlannerSetupWizard` (3 steps, data-driven preselects, Connect link to Inbox, manual places list) with `useGuardedClose`.
-- [ ] **P1.9** `PlannerHome`: summary card + Why sheet, range chips, opportunity chips, agenda grouped by day, Coming up strip, empty and done states.
+- [x] **P1.9** `PlannerHome`: summary card + Why sheet, range chips, opportunity chips, agenda grouped by day, Coming up strip, empty and done states.
 - [x] **P1.10** `PlanItemCard` + `PlanItemSheet` (brief from rules copy, truth panel, reschedule, change format, skip with reason, mark posted). Brief edits use `useUnsavedChangesGuard`.
 - [x] **P1.11** Lower-tier showcase: Free / Starter see the summary and top 3 suggestions; other actions open the upgrade modal with planner-specific copy.
 - [ ] **P1.12** Mobile: bottom sheets, sticky main action, 44px targets, swipe actions on cards; verify at 375 / 768 / 1024+ (`mobile-responsive`).
@@ -580,7 +580,8 @@ UI:
 - P1.5: `add_item` (host-authored items) is not implemented, and the `marketing.planner*` feature-availability keys are deferred (X9).
 - P1.6: no debounced refresh on booking create, cancel or date block, so claims are re-checked on read rather than moved to `stale` automatically.
 - P1.8: no setup wizard. New properties get defaults and can build a plan.
-- P1.9: no Coming up strip. The item sheet now carries the why line and the claim list.
+- P1.9 shipped: summary, chips, agenda and the Coming up strip. There is no separate Why sheet;
+  the why line and claim list sit in the item sheet.
 - P1.12: not verified in a browser at 375 / 768 / 1024.
 - P1.2/P1.3/P1.4: `content_refresh` cannot fire yet (X8), and `freed_dates` is Phase 3 by design.
 - P1.6 is done as an availability-only re-check on every plan read, not a background refresh queue.
