@@ -106,6 +106,14 @@ sessionStorage. The booking form sends it as an `attribution` field; `submit-for
 through `sanitizeAttribution` (allow-listed keys, length caps, relative landing path only) and
 stores it on `guest_submissions.attribution`. No identifiers are involved.
 
+## Learning
+
+`marketingTimingModel.ts` blends engagement per view by weekday and hour from
+`marketing_post_metrics` with the playbook prior. Shrinkage is `posts / (posts + 12)`, so one good
+week never rewrites the plan. `bestLearnedWindows` returns null below 12 posts with views, and the
+scheduler only substitutes a learned hour when it is outside quiet hours and has not already passed.
+Nothing here can change truth rules, cadence caps or quiet hours.
+
 ## Crons
 
 | Job                                | Schedule     | Does                                                                                     |

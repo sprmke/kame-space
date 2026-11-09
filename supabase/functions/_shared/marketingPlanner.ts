@@ -183,6 +183,7 @@ export async function generatePlan(input: GeneratePlanInput): Promise<GeneratePl
     settings: inputs.settings,
     existingOpportunityKeys: inputs.signals.usedOpportunityKeys,
     propertyName: inputs.propertyName,
+    preferredHourByWeekday: inputs.learnedPreferredHours,
   });
 
   const mode: 'rules' | 'ai' = input.mode === 'ai' ? 'ai' : 'rules';

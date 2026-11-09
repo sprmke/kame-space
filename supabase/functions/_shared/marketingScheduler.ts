@@ -50,6 +50,11 @@ export type SchedulerInput = {
   /** Opportunity keys that already have a live item; regenerating never duplicates. */
   existingOpportunityKeys: ReadonlySet<string>;
   propertyName: string;
+  /**
+   * Learned best hour per weekday (1 to 7), from the property's own post results. Absent
+   * until the property has enough published posts with insights.
+   */
+  preferredHourByWeekday?: Readonly<Record<number, number>> | null;
 };
 
 export type PlannerItemDraft = {
@@ -152,13 +157,28 @@ function chooseFormat(
   return null;
 }
 
+function dayOfWeek(ymd: string): number {
+  const [year, month, day] = ymd.split('-').map(Number);
+  const dow = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+  return dow === 0 ? 7 : dow;
+}
+
 function slotForDay(
   ymd: string,
   format: MarketingFormat,
   windows: readonly PostingWindow[],
   isToday: boolean,
-  nowMinute: number
+  nowMinute: number,
+  preferredHour: number | null
 ): { ymd: string; minuteOfDay: number } | null {
+  // A learned hour wins when it is a sane time and has not passed yet today.
+  if (preferredHour != null && preferredHour >= 0 && preferredHour < 24) {
+    const minuteOfDay = preferredHour * 60;
+    if (!isWithinQuietHours(minuteOfDay) && !(isToday && minuteOfDay <= nowMinute)) {
+      return { ymd, minuteOfDay };
+    }
+  }
+
   const preferred = FORMAT_WINDOW_INDEX[format];
   const order = [preferred, 0, 1, 2];
   for (const index of order) {
@@ -243,7 +263,14 @@ export function scheduleItems(input: SchedulerInput): PlannerItemDraft[] {
     while (day && !slot) {
       const used = perDay.get(day) ?? 0;
       if (used < cadence.maxItemsPerDay) {
-        slot = slotForDay(day, format, windows, day === input.today, input.nowMinute);
+        slot = slotForDay(
+          day,
+          format,
+          windows,
+          day === input.today,
+          input.nowMinute,
+          input.preferredHourByWeekday?.[dayOfWeek(day)] ?? null
+        );
       }
       if (!slot) day = day >= input.horizonEnd ? null : addDaysYmd(day, 1);
     }

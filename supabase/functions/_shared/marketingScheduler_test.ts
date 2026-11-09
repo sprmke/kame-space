@@ -166,3 +166,34 @@ Deno.test('scheduler: a Taglish plan uses Taglish copy', () => {
   assertEquals(drafts[0].title, 'Open this weekend');
   assertEquals(drafts[0].hook.includes('this weekend'), true);
 });
+
+Deno.test('scheduler: a learned hour wins over the default window', () => {
+  const drafts = scheduleItems(
+    input({
+      opportunities: [opportunity({ postBy: TODAY, formats: ['post'] })],
+      preferredHourByWeekday: { 1: 15 },
+    })
+  );
+  assertEquals(drafts[0].scheduledFor, '2026-11-09T15:00:00+08:00');
+});
+
+Deno.test('scheduler: a learned hour inside quiet hours is ignored', () => {
+  const drafts = scheduleItems(
+    input({
+      opportunities: [opportunity({ postBy: TODAY, formats: ['post'] })],
+      preferredHourByWeekday: { 1: 2 },
+    })
+  );
+  assertEquals(drafts[0].scheduledFor, '2026-11-09T19:00:00+08:00');
+});
+
+Deno.test('scheduler: a learned hour in the past today is ignored', () => {
+  const drafts = scheduleItems(
+    input({
+      nowMinute: 20 * 60,
+      opportunities: [opportunity({ postBy: TODAY, formats: ['post'] })],
+      preferredHourByWeekday: { 1: 15 },
+    })
+  );
+  assertEquals(drafts[0].scheduledFor.startsWith('2026-11-10'), true);
+});

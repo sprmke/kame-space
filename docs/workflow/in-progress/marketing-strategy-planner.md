@@ -657,15 +657,19 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 > The item sheet now shows tracked visits plus platform views and reach when the insights rollup
 > writes them (P5.5 read side).
 >
-> Not started: the insights cron and scope request (needs App Review), learned windows (P5.6) and
-> the Analytics section (P5.7).
+> Learned windows (P5.6) ship: engagement per view by weekday and hour, shrunk toward the playbook
+> prior by the property's own post count, and the scheduler prefers the learned hour when it is not
+> a quiet hour and has not passed. It stays dormant until 12 posts carry insights.
+>
+> Not started: the insights cron and scope request (needs App Review) and the Analytics section
+> (P5.7).
 
 - [x] **P5.1** `marketingTrackedLinks.ts`: every item gets `?utm_source=<channel>&utm_medium=social&utm_campaign=ks-<code>` on the property page or booking link; captions include it where links work (Facebook, manual), Instagram uses "link in bio" copy.
 - [x] **P5.2** Public pages keep first-touch UTM in `sessionStorage`; the booking form sends it as `attribution`; `submit-form` stores it.
 - [ ] **P5.3** Request insight scopes (§5.9) and file App Review; reconnect prompt in Results.
 - [x] **P5.4** `marketing-insights-cron` + metric mapper isolated in `_shared/marketingInsights.ts` (one place to update when Meta renames metrics).
 - [x] **P5.5** (partial) Results on cards and sheet; weekly recap (`marketing_plan_ready` body) with last week's posts, visits and booking requests.
-- [ ] **P5.6** `marketingTimingModel.ts` and learned format / angle weights (§4.6), surfaced only past the data threshold.
+- [x] **P5.6** `marketingTimingModel.ts` and learned format / angle weights (§4.6), surfaced only past the data threshold.
 - [ ] **P5.7** Analytics module: a "Marketing" section with tracked visits and attributed requests by item and channel.
 
 **Exit:** a published item shows Meta metrics and tracked visits; an attributed booking request links back to its item; learned windows replace defaults after 12 posts.

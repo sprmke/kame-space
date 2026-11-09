@@ -22,6 +22,7 @@ import type {
   PlannerSignalsInput,
 } from './marketingSignals.ts';
 import { resolveCadence, type CadencePreset } from './marketingPlaybook.ts';
+import { bestLearnedWindows, type TimingSample } from './marketingTimingModel.ts';
 import type { PlannerLanguage } from './marketingCopyLibrary.ts';
 import { createServiceClient } from './orgAuth.ts';
 
@@ -48,6 +49,8 @@ export type PlannerSettingsRow = {
 
 export type PlannerInputs = {
   signals: PlannerSignalsInput;
+  /** Learned best hour per weekday (1 to 7), or null until the sample is thick enough. */
+  learnedPreferredHours: Record<number, number> | null;
   propertyName: string;
   settings: PlannerSettingsShape;
   settingsRow: PlannerSettingsRow | null;
@@ -274,6 +277,79 @@ export async function loadBlockedNightKeys(propertyId: string): Promise<Set<stri
   return blocked;
 }
 
+/**
+ * Best posting hour per weekday from the property's own results. Null until it has enough
+ * published posts with insights, so the defaults keep working for a new property.
+ */
+export async function loadLearnedPreferredHours(
+  propertyId: string
+): Promise<Record<number, number> | null> {
+  const supabase = createServiceClient();
+  const { data: metrics, error } = await supabase
+    .from('marketing_post_metrics')
+    .select('publication_id, views, interactions')
+    .eq('property_id', propertyId)
+    .not('views', 'is', null)
+    .limit(500);
+  if (error || !metrics || metrics.length === 0) return null;
+
+  const publicationIds = [
+    ...new Set(
+      metrics
+        .map((row) => (typeof row.publication_id === 'string' ? row.publication_id : null))
+        .filter((id): id is string => id !== null)
+    ),
+  ];
+  if (publicationIds.length === 0) return null;
+
+  const { data: publications, error: publicationError } = await supabase
+    .from('marketing_publications')
+    .select('id, published_at')
+    .in('id', publicationIds)
+    .limit(500);
+  if (publicationError || !publications) return null;
+
+  const publishedById = new Map<string, string>();
+  for (const row of publications) {
+    if (typeof row.id === 'string' && typeof row.published_at === 'string') {
+      publishedById.set(row.id, row.published_at);
+    }
+  }
+
+  const samples: TimingSample[] = [];
+  for (const row of metrics) {
+    const publicationId = typeof row.publication_id === 'string' ? row.publication_id : null;
+    const publishedAt = publicationId ? publishedById.get(publicationId) : undefined;
+    if (!publishedAt) continue;
+    const manila = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Manila',
+      weekday: 'short',
+      hour: '2-digit',
+      hour12: false,
+    }).formatToParts(new Date(publishedAt));
+    const weekdayLabel = manila.find((part) => part.type === 'weekday')?.value ?? '';
+    const hour = Number(manila.find((part) => part.type === 'hour')?.value ?? '-1');
+    const order = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const weekday = order.indexOf(weekdayLabel) + 1;
+    if (weekday < 1 || hour < 0) continue;
+    samples.push({
+      weekday,
+      hour,
+      views: Number(row.views) || 0,
+      engagement: Number(row.interactions) || 0,
+    });
+  }
+
+  const learned = bestLearnedWindows(samples);
+  if (!learned) return null;
+
+  const byWeekday: Record<number, number> = {};
+  for (const window of learned) {
+    if (byWeekday[window.weekday] == null) byWeekday[window.weekday] = window.startHour;
+  }
+  return Object.keys(byWeekday).length > 0 ? byWeekday : null;
+}
+
 /** Months inside the horizon with no open night at all. */
 function fullyBookedMonths(blocked: ReadonlySet<string>, today: string, horizonEnd: string): string[] {
   const months = new Set<string>();
@@ -442,6 +518,7 @@ export async function loadPlannerInputs(propertyId: string): Promise<PlannerInpu
 
   return {
     signals,
+    learnedPreferredHours: await loadLearnedPreferredHours(propertyId).catch(() => null),
     propertyName: String(property.name ?? 'this property'),
     settings,
     settingsRow,
