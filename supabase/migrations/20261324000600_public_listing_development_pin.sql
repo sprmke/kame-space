@@ -63,6 +63,9 @@ WHERE t.lat IS NULL
   AND public.pls_try_number(d.settings -> 'latitude') IS NOT NULL
   AND public.pls_try_number(d.settings -> 'longitude') IS NOT NULL;
 
+-- A trigger function is never called by an API role.
+REVOKE ALL ON FUNCTION public.pls_fill_development_pin() FROM PUBLIC, anon, authenticated;
+
 COMMENT ON FUNCTION public.pls_fill_development_pin() IS
   'Fills a missing public search pin from the matching development settings. Runs before insert/update on public_listing_search.';
 

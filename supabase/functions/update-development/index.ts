@@ -22,6 +22,7 @@ import {
   validateResidenceStructure,
 } from '../_shared/residenceProfile.ts';
 import { verifySuperAdminJwt } from '../_shared/superAdminAuth.ts';
+import { logSuperAdminAction } from '../_shared/superAdminAudit.ts';
 import { validatePropertyMediaArray } from '../_shared/propertyMedia.ts';
 import { parseUnitTypes, validateUnitTypes } from '../_shared/unitTypes.ts';
 import {
@@ -66,7 +67,7 @@ function objectOrEmpty(value: unknown): Record<string, unknown> {
 
 serveAuthenticated('update-development', async (req) => {
   requireHttpMethod(req, 'PATCH');
-  await verifySuperAdminJwt(req);
+  const admin = await verifySuperAdminJwt(req);
 
   const body = await readJsonBody(req);
   const developmentId = typeof body.developmentId === 'string' ? body.developmentId.trim() : '';
@@ -87,6 +88,67 @@ serveAuthenticated('update-development', async (req) => {
   }
   if (!existing) {
     return jsonError(req, 'Development not found', 404);
+  }
+
+  // Optimistic concurrency: the editor sends the `updated_at` it loaded. A second save
+  // from a stale tab gets a 409 instead of silently overwriting the other admin.
+  const expectedUpdatedAt =
+    typeof body.expectedUpdatedAt === 'string' ? body.expectedUpdatedAt.trim() : '';
+  if (expectedUpdatedAt && expectedUpdatedAt !== (existing as DevelopmentRow).updated_at) {
+    return jsonError(
+      req,
+      'This development changed since you loaded it. Reload to see the latest version.',
+      409
+    );
+  }
+
+  const restoreHistoryId =
+    typeof body.restoreHistoryId === 'string' ? body.restoreHistoryId.trim() : '';
+  if (restoreHistoryId) {
+    const { data: version, error: versionError } = await supabase
+      .from('development_settings_history')
+      .select('id, settings, saved_at, saved_by_email')
+      .eq('id', restoreHistoryId)
+      .eq('development_id', developmentId)
+      .maybeSingle();
+    if (versionError) {
+      console.error('[update-development] history load:', versionError.message);
+      throw new Error('Failed to load that version');
+    }
+    if (!version) return jsonError(req, 'Version not found', 404);
+
+    const { error: restoreError } = await supabase
+      .from('developments')
+      .update({ settings: (version as { settings: unknown }).settings, updated_at: new Date().toISOString() })
+      .eq('id', developmentId);
+    if (restoreError) {
+      console.error('[update-development] restore:', restoreError.message);
+      throw new Error('Failed to restore that version');
+    }
+
+    await logSuperAdminAction(admin, {
+      action: 'development.settings_restored',
+      targetType: 'development',
+      targetId: developmentId,
+      summary: `Restored a settings version of ${(existing as DevelopmentRow).name}`,
+      metadata: { historyId: restoreHistoryId, savedAt: (version as { saved_at?: string }).saved_at },
+    });
+
+    const { data: restored } = await supabase
+      .from('developments')
+      .select('*')
+      .eq('id', developmentId)
+      .maybeSingle();
+
+    const restoredRow = (restored ?? existing) as DevelopmentRow;
+    const statsMap = await developmentStatsByName(supabase, [restoredRow.name]);
+    return jsonSuccess(req, {
+      development: serializeDevelopment(
+        restoredRow,
+        statsMap.get(restoredRow.name) ?? { propertyCount: 0, parkingCount: 0 }
+      ),
+      restored: true,
+    });
   }
 
   const patch: Record<string, unknown> = {
@@ -330,6 +392,17 @@ serveAuthenticated('update-development', async (req) => {
       return jsonError(req, guestInfoError);
     }
     patch.settings = settingsPatch;
+
+    // Keep the previous settings so a bad edit to a live residence is reversible.
+    const { error: historyError } = await supabase.from('development_settings_history').insert({
+      development_id: developmentId,
+      settings: (existing as DevelopmentRow).settings ?? {},
+      saved_by: admin.id ?? null,
+      saved_by_email: admin.email ?? null,
+    });
+    if (historyError) {
+      console.error('[update-development] history insert:', historyError.message);
+    }
   }
 
   const { data, error } = await supabase
@@ -345,6 +418,17 @@ serveAuthenticated('update-development', async (req) => {
   }
 
   const row = data as DevelopmentRow;
+
+  await logSuperAdminAction(admin, {
+    action: typeof patch.name === 'string' ? 'development.renamed' : 'development.settings_updated',
+    targetType: 'development',
+    targetId: developmentId,
+    summary:
+      typeof patch.name === 'string'
+        ? `Renamed a development to ${row.name}`
+        : `Updated the settings of ${row.name}`,
+    metadata: { settingsChanged, fields: Object.keys(patch) },
+  });
 
   // The FK is the identity; `residence_name` is the display copy. Keep it in step on rename
   // so grouping, search place slugs and the unmatched-row view stay consistent.

@@ -42,10 +42,31 @@ serveAuthenticated('get-development', async (req) => {
   const row = data as DevelopmentRow;
   const statsMap = await developmentStatsByName(supabase, [row.name]);
 
+  // Recent settings versions for one-click restore. Metadata only; the settings payload
+  // never leaves the server until a restore is requested.
+  const { data: history, error: historyError } = await supabase
+    .from('development_settings_history')
+    .select('id, saved_at, saved_by_email')
+    .eq('development_id', row.id)
+    .order('saved_at', { ascending: false })
+    .limit(10);
+  if (historyError) {
+    console.warn('[get-development] history load failed:', historyError.message);
+  }
+
+  const development = serializeDevelopment(
+    row,
+    statsMap.get(row.name) ?? { propertyCount: 0, parkingCount: 0 }
+  );
+
   return jsonSuccess(req, {
-    development: serializeDevelopment(
-      row,
-      statsMap.get(row.name) ?? { propertyCount: 0, parkingCount: 0 }
-    ),
+    development: {
+      ...development,
+      history: (history ?? []).map((entry) => ({
+        id: entry.id,
+        savedAt: entry.saved_at,
+        savedByEmail: entry.saved_by_email,
+      })),
+    },
   });
 });

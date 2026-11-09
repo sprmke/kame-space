@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   Building2,
   Image as ImageIcon,
+  History,
   Info,
   Mail,
   MapPin,
@@ -68,6 +69,9 @@ type Props = {
   onMediaPersisted: (media: PropertyMediaItem[]) => void;
   onPersistMediaOrder: (media: PropertyMediaItem[]) => Promise<void>;
   mediaGalleryBusy?: boolean;
+  history?: Array<{ id: string; savedAt: string; savedByEmail: string | null }>;
+  onRestore?: (historyId: string) => void;
+  restoring?: boolean;
 };
 
 export function DevelopmentProfileSections({
@@ -81,6 +85,9 @@ export function DevelopmentProfileSections({
   onMediaPersisted,
   onPersistMediaOrder,
   mediaGalleryBusy = false,
+  history = [],
+  onRestore,
+  restoring = false,
 }: Props) {
   const [customAmenityInput, setCustomAmenityInput] = useState('');
 
@@ -342,6 +349,45 @@ export function DevelopmentProfileSections({
           disabled={disabled}
           onChange={(structure) => onChange('structure', structure)}
         />
+      </AdminSection>
+
+      <AdminSection id="history" title="History" icon={History}>
+        {history.length === 0 ? (
+          <p className="text-muted-foreground text-sm">No saved versions yet.</p>
+        ) : (
+          <ul className="divide-border divide-y">
+            {history.map((version) => (
+              <li
+                key={version.id}
+                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <p className="text-sm font-medium">
+                    {new Date(version.savedAt).toLocaleString('en-PH', {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    {version.savedByEmail ?? 'Unknown admin'}
+                  </p>
+                </div>
+                {onRestore ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="settings-action"
+                    disabled={disabled || restoring}
+                    onClick={() => onRestore(version.id)}
+                  >
+                    Restore
+                  </Button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
       </AdminSection>
 
       <AdminSection id="danger" title="Danger Zone" icon={AlertTriangle}>

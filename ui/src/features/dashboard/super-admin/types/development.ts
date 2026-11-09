@@ -23,4 +23,6 @@ export type Development = {
   stats: DevelopmentListStats;
   createdAt: string;
   updatedAt: string;
+  /** Last 10 settings versions, from `get-development`. */
+  history?: Array<{ id: string; savedAt: string; savedByEmail: string | null }>;
 };
