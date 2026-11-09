@@ -2,29 +2,13 @@
   "duration": 6.66,
   "frames": 221,
   "fps": 30,
-  "mouthShapes": [
-    "X",
-    "D",
-    "C",
-    "B",
-    "A",
-    "F",
-    "G",
-    "E",
-    "H"
-  ],
+  "mouthShapes": ["X", "D", "C", "B", "A", "F", "G", "E", "H"],
   "alpha": {
     "zero": 963017,
     "partial": 581797,
     "pixels": 1572580
   },
-  "viewportWidths": [
-    375,
-    390,
-    768,
-    1024,
-    1440
-  ],
+  "viewportWidths": [375, 390, 768, 1024, 1440],
   "playback": "passed",
   "pause": "passed",
   "reducedMotion": "passed",

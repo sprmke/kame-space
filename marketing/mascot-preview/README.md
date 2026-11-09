@@ -39,14 +39,14 @@ disables blinking and body/hand movement while retaining speech articulation.
 
 ## Assets and provenance
 
-| File | Purpose |
-| --- | --- |
-| `assets/welcome.png` | Approved-style transparent welcome pose from the image-generation session |
-| `assets/face-base.png` | Same framing, eyes and mouth removed for facial compositing |
-| `assets/mouth-atlas.png` | 3×3 transparent rendered mouth atlas; row-major X, A, B, C, D, E, F, G, H |
-| `assets/greeting.wav` | Local sample voice, mono PCM at 16 kHz |
-| `assets/greeting.txt` | Exact sample transcript supplied to the recognizer |
-| `assets/greeting-cues.json` | Rhubarb 1.14.0 mouth-shape timings |
+| File                        | Purpose                                                                   |
+| --------------------------- | ------------------------------------------------------------------------- |
+| `assets/welcome.png`        | Approved-style transparent welcome pose from the image-generation session |
+| `assets/face-base.png`      | Same framing, eyes and mouth removed for facial compositing               |
+| `assets/mouth-atlas.png`    | 3×3 transparent rendered mouth atlas; row-major X, A, B, C, D, E, F, G, H |
+| `assets/greeting.wav`       | Local sample voice, mono PCM at 16 kHz                                    |
+| `assets/greeting.txt`       | Exact sample transcript supplied to the recognizer                        |
+| `assets/greeting-cues.json` | Rhubarb 1.14.0 mouth-shape timings                                        |
 
 Images were created with the built-in imagegen tool. The final approved
 two-view reference used an orange-on-orange recessed four-quadrant logo on the
@@ -105,6 +105,15 @@ those live-stream requirements. Rhubarb's file-based analysis is suitable for
 the sample and is not assumed to run in a guest browser.
 
 ## Scope checklist
+
+Validation on this review branch: deterministic 30 fps export completed (221
+frames, all nine mouth shapes), playback/pause and reduced-motion checks passed,
+and no browser page errors or horizontal overflow occurred at the five tested
+widths. Decoding the WebM alpha plane confirmed fully transparent pixels and
+partial-alpha pixels. The repository quality gate passed frontend type-check,
+lint, unit tests and coverage, and edge type-check; it stopped in `test:edge`
+because Deno could not resolve `npm:@types/node` in the isolated checkout.
+Later stages of that gate were not run.
 
 - Documentation maintenance: this README describes the prototype and limits.
 - Route guides, support content, skeletons, save guards: not applicable; no app
