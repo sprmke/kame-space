@@ -55,7 +55,7 @@ export function PlannerHome() {
   const generate = useGeneratePlan();
   const { skip, markPosted, update } = usePlanItemActions();
   const refreshBrief = useRefreshPlanBrief();
-  const { setTab } = useMarketingTheme();
+  const { setTab, startAiSession } = useMarketingTheme();
   const settings = usePlannerSettings();
   const saveSettings = useSavePlannerSettings();
   const [setupOpen, setSetupOpen] = useState(false);
@@ -98,7 +98,10 @@ export function PlannerHome() {
     });
     void navigator.clipboard?.writeText(caption).catch(() => undefined);
     setOpenItem(null);
-    setTab(target.tab);
+    // AI Studio opens a fresh session so its composer can pick the draft up; the other
+    // editors land on their tab and take the caption from the clipboard for now.
+    if (target.tab === 'generate') startAiSession(target.output ?? 'post', { replace: true });
+    else setTab(target.tab);
   };
 
   return (

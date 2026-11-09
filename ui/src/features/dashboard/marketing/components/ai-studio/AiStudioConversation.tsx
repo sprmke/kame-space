@@ -18,6 +18,10 @@ import { toast } from 'sonner';
 
 import { AI_OUTPUT_ICON } from '@/features/dashboard/marketing/components/ai-studio/AiSessionCard';
 import {
+  handoffDescription,
+  takePendingPlannerDraft,
+} from '@/features/dashboard/marketing/lib/planner/plannerHandoff';
+import {
   AiStudioCreate,
   OUTPUT_FEATURE,
   POST_FORMATS,
@@ -226,6 +230,13 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
 
   const [text, setText] = useState('');
   const [started, setStarted] = useState(false);
+
+  // A Marketing Planner item opened in AI Studio: start from its finished copy, once.
+  useEffect(() => {
+    const draft = takePendingPlannerDraft();
+    if (!draft) return;
+    setText(handoffDescription(draft));
+  }, []);
   const [pending, setPending] = useState<Array<AiPendingTurn & { awaitId?: string }>>([]);
   const [postWork, setPostWork] = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);

@@ -13,7 +13,7 @@ describe('resolveHandoffTarget', () => {
   });
 
   it('opens the video editor for a reel', () => {
-    expect(resolveHandoffTarget('reel', 'weekend_open')).toEqual({ tab: 'video', output: 'clip' });
+    expect(resolveHandoffTarget('reel', 'weekend_open')).toEqual({ tab: 'video' });
   });
 
   it('opens Posts for a designed post, story or carousel', () => {

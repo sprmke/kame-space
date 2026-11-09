@@ -11,7 +11,7 @@ export type PlannerEditorTab = 'design' | 'video' | 'calendar' | 'generate';
 export type PlannerHandoffTarget = {
   tab: PlannerEditorTab;
   /** AI Studio output type, when the item is best finished there. */
-  output?: 'post' | 'image' | 'clip';
+  output?: 'post' | 'image' | 'video';
 };
 
 export type PlannerHandoffPayload = {
@@ -31,7 +31,7 @@ export function resolveHandoffTarget(
   opportunityType: string | null
 ): PlannerHandoffTarget {
   if (format === 'calendar') return { tab: 'calendar' };
-  if (format === 'reel') return { tab: 'video', output: 'clip' };
+  if (format === 'reel') return { tab: 'video' };
   if (format === 'story' || format === 'carousel' || format === 'post') {
     if (isAiFirst(opportunityType)) return { tab: 'generate', output: 'post' };
     return { tab: 'design' };
