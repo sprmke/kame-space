@@ -2,7 +2,7 @@ import { Check, X } from 'lucide-react';
 
 import { Lines } from '../concepts';
 import { reveal, SETTLED } from '../motion';
-import { Box, Cta, Diamond, Frame, Kicker, Sub, useFrameCtx, Wordmark } from '../primitives';
+import { Box, Cta, Frame, KameSpaceMark, Kicker, Sub, useFrameCtx, Wordmark } from '../primitives';
 import { c, STORY_SAFE, type Format } from '../theme';
 import { TopBar } from './shared';
 
@@ -89,7 +89,7 @@ function Table({
             color: c.white,
           }}
         >
-          <Diamond size={18 * k} color={c.white} /> Kame Space
+          <KameSpaceMark size={24 * k} mono /> Kame Space
         </span>
       </div>
       {list.map(([label, old, kame], i) => (

@@ -19,6 +19,12 @@ Colors: container `#2DAA97`, white `#FFFFFF`, mint `#BDEFE1`; light wordmark `#0
 
 `MarketingBrandLogo`, `KameSpaceBrandIcon`, and `appLoaderHost` use the same SVG. The shell precache includes that file for offline launch. Manifest icon URLs have an F5 version query; the app's manifest `id`, start URL and shortcuts stay unchanged. Stable brand/icon URLs revalidate through Vercel. Existing email and organization fallbacks at `/images/logo.png` contain F5.
 
+Working outside the app bundle:
+
+- `marketing/social` renders the same four paths through `KameSpaceMark` in `src/primitives.tsx` (wordmarks and mock phone app icons). Re-render the stills and videos after a mark change: `bun run render:all`.
+- `docs/brand/logo-drafts/` keeps rejected explorations. It lives outside `ui/public/` so drafts never ship with the build.
+- `docs/screenshots/` holds the README portfolio images. Regenerate with `bun scripts/dev/capture-readme-screenshots.mjs`, `capture-readme-extra.mjs` and `capture-readme-tour-chapters.mjs`; they capture production, so run them after the mark is live.
+
 `ui/index.html` contains Open Graph and Twitter large-image metadata without requiring JavaScript. Its default image uses the canonical production asset URL. Listing crawler middleware keeps listing titles and photos; listings without photos use the brand card on their own origin. `usePageMeta` uses the same fallback for client navigation and removes default card dimensions when a listing photo is selected.
 
 The brand pack is deployed with the web build. This does not update logos manually uploaded to Google OAuth, social profiles or other provider consoles: use `kame-space-mark-120.png` or the larger icon export there. Search engines and messaging platforms may retain old previews until recrawled; use their rescrape tools after deployment where available. Installed apps may retain the old launcher icon until the OS refreshes the manifest; on iOS, removing and adding the home-screen shortcut may be needed. Do not clear user data or change the manifest identity to force an icon refresh.
