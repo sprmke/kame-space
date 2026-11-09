@@ -97,6 +97,15 @@ read-only, plan gates, feature kill switches and public route health. 97 tests, 
 desktop only. `check:e2e-lane-tags` enforces one lane per spec and that `@critical` is not used
 as a lane.
 
+Following the same measurement, the deploy job was the new long pole: 21 min, of which
+**19 min was `supabase functions deploy` pushing all 345 functions on a merge that touched
+none**. `cd-prod` now resolves the last *successful* deploy via the Actions API and skips the
+Supabase deploy, the schema diff and the backup when `supabase/functions` and
+`supabase/migrations` are unchanged since then. A failed or partial run leaves the marker
+older, so its changes stay in the diff, and `workflow_dispatch` has `force_deploy` to
+override. Smoke and migration parity still run either way, so a skipped deploy still proves
+production is healthy.
+
 Rejected on purpose: `--only-changed` selection. Playwright's flag matches changed _spec_
 files, not changed source, so a source change would select nothing. Source-to-spec selection
 needs the page manifests from Phase 3; until then, the PR gate runs the full breadth (10 min)
