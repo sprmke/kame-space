@@ -627,18 +627,20 @@ Each phase ships independently. Azure snapshots are diffed after every phase. Ne
 
 ### Phase 1: Structure (towers, units, parking, identity)
 
-- [ ] Migrate flat `propertyTowers` / `parkingTowers` / `parkingLevels` into `structure` for every development; Azure gets per-tower levels, codes and parking types matching `parkingResidences.ts`.
-- [ ] `propertyTowerUnit.ts`, `parkingSlotUnit.ts`, `check-tower-unit`, `useTowerUnitConflict` read structure and formats from the resolver.
-- [ ] `create-property` / `create-parking` / `update-property` validate against the resolved residence; remove `azureLocation` branch, seed location from the profile.
-- [ ] Onboarding residence picker; delete `ORG_DEVELOPMENTS` and `DEFAULT_DEVELOPMENT_NAME`.
-- [ ] `PropertyProfileSettingsSections.tsx` residence + tower dropdowns and labels from the resolver.
-- [ ] Rename cascade in `update-development`; `delete-development` and stats by FK.
-- [ ] `publicGeoScope.ts` and SQL `pls_listing_lat/lng` read the development's coordinates via `development_id` (new migration redefining the functions).
-- [ ] Super-admin Structure group (§5.1).
+- [x] Migrate flat `propertyTowers` / `parkingTowers` / `parkingLevels` into `structure` for every development; Azure gets per-tower levels, codes and parking types matching `parkingResidences.ts` (`20261324000400`). The development row also owns the map pin and seed address (`20261324000500`).
+- [x] `propertyTowerUnit.ts`, `parkingSlotUnit.ts`, `check-tower-unit`, `useTowerUnitConflict` read structure and formats from the resolver.
+- [x] `create-property` / `create-parking` / `update-property` / `create-organization` validate against the resolved residence; removed the `azureLocation` branch and seed location from the profile. Tower+unit and slot conflict lookups are scoped by `development_id`.
+- [x] Rename cascade in `update-development`; `delete-development` blocks by FK (unmatched rows still block by name).
+- [x] `PropertyProfileSettingsSections.tsx` validation follows the property's residence (tower and unit are read-only there today).
+- [x] Add-listing UI: the New listing dialog loads ACTIVE residences and renders each one's tower list, unit/format rules and parking structure (`useResidenceOptions`, `list-residence-options`). Covered by `@ci` `orgAddListingResidenceRules.spec.ts`.
+- [x] Public read endpoints `list-residence-options` and `get-residence-profile` return the public slice only.
+- [ ] Onboarding residence picker; delete `ORG_DEVELOPMENTS` and `DEFAULT_DEVELOPMENT_NAME`. **Remaining** — `OnboardingPage.tsx` still hardcodes Azure (1141 lines, its own E2E lane).
+- [ ] `publicGeoScope.ts` and SQL `pls_listing_lat/lng` read the development's coordinates via `development_id`. **Remaining** — the SQL half needs the three `pls_refresh_*` functions recreated; deliberately deferred rather than copied blind.
+- [ ] Super-admin Structure group (§5.1). **Remaining** — folded into Phase 4 editor work.
 
-**Gate:** in local dev, create a property and a parking slot in Test Residence with its own units and levels; it appears in search at the development pin. Azure dropdowns, codes and snapshots unchanged.
+**Gate (partial):** property and parking creation in Test Residence are validated by its own structure and the add-listing dialog renders it. Not yet proven: onboarding picker, search pin for a second residence.
 
-**Acceptance:** `bun run test:edge` (structure resolver), `bun run test:e2e:ci -- --grep "onboarding residence"`, and `bun scripts/dev/residence-snapshots.ts --check` zero diff.
+**Acceptance:** `bun run test:edge` (structure resolver, 16 cases), `npx playwright test ui/e2e/features/org/orgAddListingResidenceRules.spec.ts --project=chromium-ci`, and `bun scripts/dev/residence-snapshots.ts --check` zero diff.
 
 ### Phase 2: Guest rules and guest form
 
@@ -826,7 +828,40 @@ Fill in after each phase. A phase is not done until every row is `pass`.
 Not run here: a production or hosted-dev unmatched-row count. That is a read-only query the
 owner should run before Phase 1.
 
-## 15. Merge and deploy guard
+## 15. Work log and remaining items (execute-plan, 2026-11-09)
+
+**Done and tested**
+
+| Slice                    | What shipped                                                                                                                                                                                                                                                                            | Proof                                                                                       |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Phase 0                  | FK, scoped unique index, snapshot column, settings history, mirrored resolver, drift check, snapshot fixture, generic document requirements, Azure blank-residence fallbacks removed, second local residence                                                                            | 16 Deno + 14 Vitest cases, `test:edge` 1427, `test` 5825, local `db:migrate` + `seed:local` |
+| Phase 1 (server)         | `structure` + location migrations, profile-driven tower/unit/parking validation, scoped conflicts, rename cascade, FK delete block, public read endpoints                                                                                                                               | Deno structure tests, `test:edge` 1427, handler tests for both endpoints                    |
+| Phase 1 (add-listing UI) | New listing dialog + property-settings validation read the residence profile                                                                                                                                                                                                            | `@ci` `orgAddListingResidenceRules.spec.ts`                                                 |
+| Phase 2 (server)         | `guestFormSettings` clamps adults/children to the building cap, ANDs pets/parking/decor with the building rule, reads building times, exposes `childMaxAge` / `adultMinAge` / `idRequiredFromAge` / `primaryGuestMinAge`; `assertPropertyGuestPartyRules` takes the residence child age | `test:edge` 1427                                                                            |
+
+**Remaining, with the reason each was not done here**
+
+| Item                                                                                          | Phase | Why it is open                                                                                                                                                                       |
+| --------------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Onboarding residence picker; delete `ORG_DEVELOPMENTS` / `DEFAULT_DEVELOPMENT_NAME`           | 1     | `OnboardingPage.tsx` is 1141 lines with its own E2E lane; a rushed rewrite risks the signup flow. Next slice.                                                                        |
+| `publicGeoScope.ts` + SQL `pls_listing_lat/lng` from the development pin                      | 1     | Needs the three `pls_refresh_*` functions recreated in a new migration (~300 lines of copied SQL). Do it with a snapshot of the search rows before/after.                            |
+| Super-admin Structure group                                                                   | 1 / 4 | The plan puts editor completion in Phase 4; all super-admin groups land together there.                                                                                              |
+| Guest form client age rules + copy registry                                                   | 2     | `GuestForm.tsx` (2000+ lines) and the copy registry need the residence slice from `get-guest-payment-info`. Server truth already clamps; the UI still uses the age-3 / 18 constants. |
+| Guest form preview route                                                                      | 2     | Needs Phase 4 editor draft state to preview against.                                                                                                                                 |
+| Approval steps engine (v2 requirements, PDF templates, inbound routing, per-booking snapshot) | 3     | Largest phase. Needs real PDF fixtures and a webhook change that must be deployed.                                                                                                   |
+| Super-admin editor completion and safety                                                      | 4     | Grouped IA, concurrency, history restore, duplicate, readiness checklist, mobile pass.                                                                                               |
+| Property seeds and building info                                                              | 5     | Depends on Phase 4 editor groups.                                                                                                                                                    |
+| Route audit sweep                                                                             | 6     | Purely mechanical once 1 to 5 land.                                                                                                                                                  |
+| Cleanup (drop flat keys, delete maps, NOT NULL, retire PDF copies)                            | 7     | Irreversible; only after snapshots pass on prod-like data.                                                                                                                           |
+
+**Owner decisions still needed**
+
+1. Run the read-only unmatched-row count on the hosted database (`select * from development_unmatched_assets`). Until it is known, the blank-residence behavior change is only proven locally.
+2. Confirm §11.1 multi-development orgs = yes (recommended).
+3. Confirm §11.5 `developments.is_test` for testing a residence on production (recommended).
+4. Approve the onboarding picker being the next slice, since it is the only thing between "server supports a second residence" and "a host can sign up into one".
+
+## 16. Merge and deploy guard
 
 | Artifact                            | Role                                                                                                                                         |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
