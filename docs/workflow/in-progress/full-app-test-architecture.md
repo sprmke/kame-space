@@ -2,7 +2,7 @@
 title: 'Full-app test architecture: page-mirrored suites, access matrix, enforced coverage'
 status: planned
 tags: [planning, testing, vitest, playwright, deno, pgtap, ci-cd, rbac, plans, governance]
-updated: 2026-11-08
+updated: 2026-11-09
 stage: in-progress
 kind: plan
 ---
@@ -77,6 +77,30 @@ at `fetch`, the only boundary the handler crosses.
 
 Next: the same shape for `cancel-booking`, `guest-cancel-booking`, `submit-form` and the
 webhooks, which is where `stubDb()` / `stubProvider()` from §1 pay off.
+
+### CI tiering (shipped 2026-11-09)
+
+Measured on deploy run 42529655784: the deploy gate was **39.3 min**, of which
+`@smoke` (12.2) and `@ci` (18.9) were 31. Both had already run on the PR, because
+`develop` requires the `quality` check.
+
+| Gate                       | Content                                                                                                           | Before   | After                |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------- | -------------------- |
+| `bun run test:fast`        | filenames, lane tags, types, lint, unit (node + dom)                                                              | —        | ~2.5 min             |
+| PR `ci.yml`                | unchanged, full breadth + 4-way `@ci`                                                                             | ~10 min  | ~10 min              |
+| Deploy `ci-deploy-gate.sh` | all static guards, lint, types, unit + coverage, dom, edge unit + handlers, build + budgets, `@critical` journeys | 39.3 min | target ~9 min        |
+| `bun run ci:quality`       | full parity, now with one unit run instead of two                                                                 | 39.3 min | ~37 min (local only) |
+
+`@critical` is a modifier, not a lane: 12 specs today covering guest intake, booking
+transitions, parking link/request, SD form, stay-guide token access, auth redirect, RBAC
+read-only, plan gates, feature kill switches and public route health. 97 tests, 1.2 min,
+desktop only. `check:e2e-lane-tags` enforces one lane per spec and that `@critical` is not used
+as a lane.
+
+Rejected on purpose: `--only-changed` selection. Playwright's flag matches changed _spec_
+files, not changed source, so a source change would select nothing. Source-to-spec selection
+needs the page manifests from Phase 3; until then, the PR gate runs the full breadth (10 min)
+and the deploy gate runs the critical set.
 
 ### Decisions taken
 
