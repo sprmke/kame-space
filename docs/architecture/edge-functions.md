@@ -141,6 +141,13 @@ Consequence to keep in mind: log-only counts are per isolate, so they under-repo
 tenant is spread across isolates. That is acceptable for a log and is the reason enforcement
 must never use the in-memory path.
 
+**Production currently runs with enforcement ON** (`platform_settings.authenticated_rate_limit_enforce
+= true`, read 2026-11-09), so production still pays the durable write on every authenticated
+call. The in-isolate path is a speed option for whoever chooses log-only; it is not a saving
+this deployment collected. Making an _enforced_ limit cheap needs a different design (sample
+the durable counter through an in-isolate fast path), which trades quota accuracy for
+latency and is not done.
+
 ### Per-phase latency (`Server-Timing`)
 
 `serveAdmin` / `serveAuthenticated` / `serveSuperAdmin` / `servePublic` emit
