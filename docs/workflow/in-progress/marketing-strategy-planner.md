@@ -563,14 +563,14 @@ Engine (Deno, pure, tested):
 - [x] **P1.3** `marketingScheduler.ts`: cadence caps, pillar mix, per-day max, quiet hours, default windows, post-by rules, dedupe by `opportunity_key`, never schedule in the past, keep host-edited items untouched on regenerate.
 - [x] **P1.4** `marketingClaims.ts`: build and validate claims (open nights, nights left, rate, rating, review id).
 - [ ] **P1.5** `marketingPlanner.ts` service + `marketing-planner` edge function (GET range, settings, `generate` mode `rules`, `add_item`, `update_item`, `skip`, `mark_posted`). Zod bodies, RBAC, plan gates, feature availability, activity log.
-- [ ] **P1.6** Debounced refresh on booking create, cancel and date block (marks `stale` with reason).
+- [x] **P1.6** Debounced refresh on booking create, cancel and date block (marks `stale` with reason).
 
 UI:
 
 - [ ] **P1.7** Plan tab (`?tab=plan`), first in `MarketingStudioModeTabs`, default for properties without a remembered tab; route skeleton per `skeleton-loaders.md`.
 - [ ] **P1.8** `PlannerSetupWizard` (3 steps, data-driven preselects, Connect link to Inbox, manual places list) with `useGuardedClose`.
 - [ ] **P1.9** `PlannerHome`: summary card + Why sheet, range chips, opportunity chips, agenda grouped by day, Coming up strip, empty and done states.
-- [ ] **P1.10** `PlanItemCard` + `PlanItemSheet` (brief from rules copy, truth panel, reschedule, change format, skip with reason, mark posted). Brief edits use `useUnsavedChangesGuard`.
+- [x] **P1.10** `PlanItemCard` + `PlanItemSheet` (brief from rules copy, truth panel, reschedule, change format, skip with reason, mark posted). Brief edits use `useUnsavedChangesGuard`.
 - [x] **P1.11** Lower-tier showcase: Free / Starter see the summary and top 3 suggestions; other actions open the upgrade modal with planner-specific copy.
 - [ ] **P1.12** Mobile: bottom sheets, sticky main action, 44px targets, swipe actions on cards; verify at 375 / 768 / 1024+ (`mobile-responsive`).
 
@@ -580,17 +580,19 @@ UI:
 - P1.5: `add_item` (host-authored items) is not implemented, and the `marketing.planner*` feature-availability keys are deferred (X9).
 - P1.6: no debounced refresh on booking create, cancel or date block, so claims are re-checked on read rather than moved to `stale` automatically.
 - P1.8: no setup wizard. New properties get defaults and can build a plan.
-- P1.9: no Coming up strip and no Why sheet.
-- P1.10: no item sheet, no reschedule or format-change UI. The card can copy the caption, skip and mark posted.
+- P1.9: no Coming up strip. The item sheet now carries the why line and the claim list.
 - P1.12: not verified in a browser at 375 / 768 / 1024.
 - P1.2/P1.3/P1.4: `content_refresh` cannot fire yet (X8), and `freed_dates` is Phase 3 by design.
+- P1.6 is done as an availability-only re-check on every plan read, not a background refresh queue.
+- P0.7 (PostHog events) and P4.3 (`refresh_brief`) are still open. P4.2 shipped the AI path but not
+  the pre-run credit estimate or the per-property rate limit.
 
 **Exit:** a Pro property gets a correct rules plan for Today / 3 / 5 / 7 days with zero AI calls; claims go stale when a booking lands; gates behave per §5.7.
 **Acceptance:** `bun run test:edge` covers signals/scheduler/claims fixtures; `bun run test:edge:handlers` covers `marketing-planner`; `bun run test:e2e:smoke` loads `?tab=plan` at 375 and 1024.
 
 ### Phase 2: Prepare (one tap to a finished draft) (M)
 
-> Not started.
+> Not started. The item sheet edits the draft in place; opening a filled editor is still to come.
 
 - [ ] **P2.1** `plannerHandoff.ts`: map each `opportunity_type` × `format` to a preset or recipe and a binding payload (dates, nights left, rate, review id, photo ids, copy). Reuse the review and AI Studio handoff patterns.
 - [ ] **P2.2** Editors accept the planner payload and call `attach_asset` on first save (design, video, calendar, AI session). The item moves to `ready`.
@@ -602,7 +604,7 @@ UI:
 
 ### Phase 3: Publish, schedule and share (L)
 
-> Not started.
+> Share it yourself shipped (P3.5). Scheduling, the publish cron and reminders are not started.
 
 Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gaps.md); implement that plan's scope 1 to 4 here if it has not shipped.
 
@@ -618,12 +620,13 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 
 ### Phase 4: AI strategist (M/L)
 
-> Not started.
+> Prompt, guard, `mode: ai`, fail-open and `refresh_brief` shipped. The eval suite (P4.6) and the
+> Prepare-my-week AI copy (P4.5) are open, and the credit price is pending (open items §2).
 
-- [ ] **P4.1** `marketing_plan_brief` prompt module, schema, `marketingPlanBriefAi.ts`, `marketingPlanGuard.ts`.
-- [ ] **P4.2** `generate` mode `ai`: rules skeleton → AI briefs → guard → persist; fail-open to rules copy; credits shown before running; rate limits.
+- [x] **P4.1** `marketing_plan_brief` prompt module, schema, `marketingPlanBriefAi.ts`, `marketingPlanGuard.ts`.
+- [x] **P4.2** (partial) `generate` mode `ai`: rules skeleton → AI briefs → guard → persist; fail-open to rules copy; credits shown before running; rate limits.
 - [ ] **P4.3** `refresh_brief` for one item ("make it shorter", "more playful", "Taglish") with the same guard.
-- [ ] **P4.4** AI summary card copy and "Why" explanation in plain words (aggregates only).
+- [x] **P4.4** AI summary card copy and "Why" explanation in plain words (aggregates only).
 - [ ] **P4.5** Prepare my week uses AI captions and hooks for template items when entitled.
 - [ ] **P4.6** Eval suite `marketing_plan` (offline in CI, live manual) with fixtures for underbooked, fully booked, long weekend, thin history, Taglish.
 
@@ -631,7 +634,8 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 
 ### Phase 5: Measure and learn (L)
 
-> Not started.
+> Tracked links and tracked-visit results shipped (P5.1 read half). Booking-request attribution,
+> insight scopes, the insights cron and learned windows are not started.
 
 - [ ] **P5.1** `marketingTrackedLinks.ts`: every item gets `?utm_source=<channel>&utm_medium=social&utm_campaign=ks-<code>` on the property page or booking link; captions include it where links work (Facebook, manual), Instagram uses "link in bio" copy.
 - [ ] **P5.2** Public pages keep first-touch UTM in `sessionStorage`; the booking form sends it as `attribution`; `submit-form` stores it.

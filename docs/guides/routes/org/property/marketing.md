@@ -63,10 +63,20 @@ already holds, with no AI required.
 - Scheduling never places an item in quiet hours (23:00 to 07:00 Manila), never in the past on the
   same day, and never past the horizon.
 - A property with no connected channel still gets items, marked for manual sharing.
-- `mode: ai` is rejected until Phase 4 ships.
+- `mode: ai` runs the rules skeleton first, then rewrites the words. Every string is checked by a
+  deterministic guard: an invented number or month drops that item back to rules copy. AI outages
+  never block a plan.
+- Every plan read re-checks availability claims and moves a broken item to `needs update` with a
+  plain reason, so a booking that lands between visits is caught before the host posts.
+- Items carry a tracked link. Plan reads count matching page views and show them on the card. This
+  works without any Meta insight scope.
 
-**Not in this phase:** Prepare (one-tap drafts), scheduling and publishing to Meta, Share it
-yourself, AI briefs, insights, autopilot. See
+**Share it yourself** opens from an item: caption plus tracked link, a checklist of the host's
+places, the phone share sheet where the browser allows it, a copy fallback otherwise, and I posted
+it with an optional link.
+
+**Not in this phase:** Prepare handoffs into the editors, scheduling and publishing to Meta,
+reminders, insight snapshots, autopilot. See
 [marketing-strategy-planner.md](../../../workflow/in-progress/marketing-strategy-planner.md).
 
 **Plans and permissions**

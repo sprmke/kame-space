@@ -11,9 +11,10 @@ The planner turns data the app already holds into a dated, ranked list of market
 carries each item to a finished post. Full product plan and phase status:
 [marketing-strategy-planner.md](../workflow/in-progress/marketing-strategy-planner.md).
 
-**Shipped:** Phase 0 (foundations) and Phase 1 (rules engine, endpoint, Plan tab).
-**Not shipped yet:** Prepare, publishing and scheduling, Share it yourself, AI briefs, insights,
-autopilot.
+**Shipped:** Phase 0 (foundations), Phase 1 (rules engine, endpoint, Plan tab), the AI brief pass
+(Phase 4 core) and Share it yourself with tracked-visit results (Phase 3.5 and Phase 5.1).
+**Not shipped yet:** Prepare handoffs into the editors, publishing and scheduling, insight
+snapshots, reminders, autopilot.
 
 ## Layering
 
@@ -29,6 +30,8 @@ _shared/marketingPlanner.ts (service: load inputs, run engine, persist)
    ├─ marketingClaims.ts       PURE  claims vs live availability/rate → ok | stale(reason)
    ├─ marketingPlaybook.ts     DATA  cadence, pillar mix, windows, opportunity catalog
    ├─ marketingCopyLibrary.ts  DATA  rules-mode copy per opportunity × language
+   ├─ marketingPlanBriefAi.ts  AI    generateStructured(feature 'marketing_plan_brief')
+   ├─ marketingPlanGuard.ts    PURE  AI copy grounding check
    └─ marketingTrackedLinks.ts PURE  campaign codes, attribution sanitizing
 ```
 
@@ -79,6 +82,24 @@ plan can always be explained after the defaults change.
 - Activity: `marketing.plan_generated`, `marketing.plan_item_skipped`,
   `marketing.plan_item_posted_manually`, `marketing.planner_settings_saved` (others reserved for the
   phases that emit them).
+
+## AI briefs
+
+`generate` with `mode: 'ai'` runs the rules skeleton first, then `maybeDraftPlanBriefs` rewrites the
+words for those exact items. The model cannot add an item, a date, a time or a channel. Every
+returned string goes through `marketingPlanGuard`, which rejects any number or month the item's
+claims do not support. Rejected or unavailable AI leaves rules copy in place, and the plan records
+`mode`, `credits_consumed` and the prompt id and version.
+
+Pricing for `marketing_plan_brief` is still open (open items §2), so the router entry is marked
+`PENDING-PRICING`.
+
+## Results without Meta scopes
+
+Each item carries `tracked_url`, a relative path like
+`/properties/<slug>?utm_source=…&utm_campaign=ks-<code>`. Plan reads count matching
+`property_page_views` rows and attach `results.trackedVisits`, so Results works from day one. Meta
+insight snapshots (`marketing_post_metrics`) land with Phase 5.4.
 
 ## Privacy
 

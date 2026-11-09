@@ -8,7 +8,7 @@
 import { addDaysYmd, manilaTodayYmd } from './calendarAvailabilityManila.ts';
 import { logActivity, type ActorContext } from './activityLog.ts';
 import { createServiceClient } from './orgAuth.ts';
-import { buildTrackedPath, formatShortCode } from './marketingTrackedLinks.ts';
+import { buildTrackedPath, campaignCode, formatShortCode } from './marketingTrackedLinks.ts';
 import { MAX_ITEMS_PER_RUN, PLAYBOOK_VERSION } from './marketingPlaybook.ts';
 import { maybeDraftPlanBriefs, type PlanBriefCopy } from './marketingPlanBriefAi.ts';
 import { MARKETING_PLAN_BRIEF_PROMPT } from './ai/prompts/marketingPlanBrief.ts';
@@ -356,6 +356,38 @@ async function revalidateAvailability(
   );
 }
 
+/**
+ * Tracked visits per item: page views whose `utm_campaign` is the item's campaign code.
+ * This is the half of Results that needs no Meta scopes, so it works from day one.
+ */
+async function withTrackedVisits(
+  propertyId: string,
+  items: PlannerItemRow[]
+): Promise<PlannerItemRow[]> {
+  if (items.length === 0) return items;
+  const campaigns = items.map((item) => campaignCode(item.short_code));
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from('property_page_views')
+    .select('utm_campaign')
+    .eq('property_id', propertyId)
+    .in('utm_campaign', campaigns)
+    .limit(5000);
+  if (error) {
+    console.error('[marketing-planner] tracked visits:', error);
+    return items;
+  }
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const campaign = typeof row.utm_campaign === 'string' ? row.utm_campaign : '';
+    counts.set(campaign, (counts.get(campaign) ?? 0) + 1);
+  }
+  return items.map((item) => {
+    const trackedVisits = counts.get(campaignCode(item.short_code)) ?? 0;
+    return { ...item, results: { ...(item.results ?? {}), trackedVisits } };
+  });
+}
+
 export async function listPlanItems(input: ListPlanInput): Promise<PlannerItemRow[]> {
   const supabase = createServiceClient();
   const { data, error } = await supabase
@@ -369,7 +401,11 @@ export async function listPlanItems(input: ListPlanInput): Promise<PlannerItemRo
     .order('scheduled_for', { ascending: true })
     .limit(200);
   if (error) throw new Error(`Could not load the plan: ${error.message}`);
-  return revalidateAvailability(input.propertyId, (data ?? []) as PlannerItemRow[]);
+  const revalidated = await revalidateAvailability(
+    input.propertyId,
+    (data ?? []) as PlannerItemRow[]
+  );
+  return withTrackedVisits(input.propertyId, revalidated);
 }
 
 export async function latestPlan(propertyId: string): Promise<PlannerPlanRow | null> {

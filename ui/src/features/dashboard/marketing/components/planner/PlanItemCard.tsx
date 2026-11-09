@@ -59,6 +59,12 @@ export function PlanItemCard({ item, day, today, onOpen, onSkip, onMarkPosted, r
         {item.statusReason ? (
           <p className="text-caption text-amber-700">{item.statusReason}</p>
         ) : null}
+        {item.trackedVisits > 0 ? (
+          <p className="text-caption text-muted-foreground">
+            {item.trackedVisits} {item.trackedVisits === 1 ? 'page visit' : 'page visits'} from
+            this link
+          </p>
+        ) : null}
 
         {!readOnly ? (
           <div className="flex flex-wrap items-center gap-2 pt-1">

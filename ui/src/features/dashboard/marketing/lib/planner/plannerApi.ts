@@ -43,6 +43,7 @@ export type PlannerItemDto = {
   statusReason: string | null;
   trackedUrl: string | null;
   postedUrl: string | null;
+  trackedVisits: number;
 };
 
 export type PlannerPlanDto = {
@@ -95,6 +96,10 @@ function mapItem(row: RawItem): PlannerItemDto {
     statusReason: nullableStr(row.status_reason),
     trackedUrl: nullableStr(row.tracked_url),
     postedUrl: nullableStr(row.posted_url),
+    trackedVisits:
+      row.results && typeof row.results === 'object'
+        ? Number((row.results as Record<string, unknown>).trackedVisits ?? 0) || 0
+        : 0,
   };
 }
 
