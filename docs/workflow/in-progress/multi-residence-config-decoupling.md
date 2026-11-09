@@ -634,11 +634,11 @@ Each phase ships independently. Azure snapshots are diffed after every phase. Ne
 - [x] `PropertyProfileSettingsSections.tsx` validation follows the property's residence (tower and unit are read-only there today).
 - [x] Add-listing UI: the New listing dialog loads ACTIVE residences and renders each one's tower list, unit/format rules and parking structure (`useResidenceOptions`, `list-residence-options`). Covered by `@ci` `orgAddListingResidenceRules.spec.ts`.
 - [x] Public read endpoints `list-residence-options` and `get-residence-profile` return the public slice only.
-- [ ] Onboarding residence picker; delete `ORG_DEVELOPMENTS` and `DEFAULT_DEVELOPMENT_NAME`. **Remaining** — `OnboardingPage.tsx` still hardcodes Azure (1141 lines, its own E2E lane).
-- [ ] `publicGeoScope.ts` and SQL `pls_listing_lat/lng` read the development's coordinates via `development_id`. **Remaining** — the SQL half needs the three `pls_refresh_*` functions recreated; deliberately deferred rather than copied blind.
-- [ ] Super-admin Structure group (§5.1). **Remaining** — folded into Phase 4 editor work.
+- [x] Onboarding residence picker; deleted `ORG_DEVELOPMENTS` and `DEFAULT_DEVELOPMENT_NAME`. The wizard loads ACTIVE residences and renders tower, unit and parking rules from the picked one.
+- [x] Public listing pin from the development row (`20261324000600_public_listing_development_pin.sql`): a before-insert/update trigger on `public_listing_search` fills a missing pin from the matching development, plus a backfill. The TS summary mapper prefers the indexed pin.
+- [x] Super-admin Structure group (§5.1): labels, required-tower toggle, floors max, tower and parking-tower rows with code/active/levels/type, unit and slot format presets with examples, and custom patterns.
 
-**Gate (partial):** property and parking creation in Test Residence are validated by its own structure and the add-listing dialog renders it. Not yet proven: onboarding picker, search pin for a second residence.
+**Gate:** property and parking creation in Test Residence are validated by its own structure; the add-listing dialog and onboarding render it; the search pin comes from the development row (proven with a rolled-back insert); Azure's structure, formats and pin are unchanged.
 
 **Acceptance:** `bun run test:edge` (structure resolver, 16 cases), `npx playwright test ui/e2e/features/org/orgAddListingResidenceRules.spec.ts --project=chromium-ci`, and `bun scripts/dev/residence-snapshots.ts --check` zero diff.
 

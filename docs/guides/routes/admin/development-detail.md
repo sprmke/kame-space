@@ -26,7 +26,7 @@ Route: `/admin/developments/:developmentSlug`
 | Announcements         | Done     | Done       | Done | Host Announcements page for this development                      |
 | Amenities             | Done     | —          | Done | Suggested chips + free-text add                                   |
 | Location              | Done     | Done       | Done | Location line + `PropertyLocationPicker`                          |
-| Towers & Parking      | Done     | —          | Done | Free-text tag lists                                               |
+| Structure             | Done     | Done       | Done | Tower/unit labels, towers, parking towers, formats                |
 | Danger Zone           | Done     | Done       | Done | Delete blocked (409) while linked                                 |
 
 ---
@@ -197,9 +197,23 @@ Uses the shared `PropertyLocationPicker`. The location line auto-suggests from c
 
 ---
 
-## Towers & Parking
+## Structure
 
-Three free-text tag lists stored in `developments.settings`: `propertyTowers`, `parkingTowers`, `parkingLevels`. **These are write-only today.** No host dropdown and no edge validator reads them; host tower and level choices still come from the hardcoded `propertyResidences.ts` / `parkingResidences.ts` maps. Phase 1 of [`multi-residence-config-decoupling`](../../../workflow/in-progress/multi-residence-config-decoupling.md) moves them into `settings.structure` and wires the readers.
+The building's physical rules, stored in **`developments.settings.structure`** (migration `20261324000400`). This is the runtime source of truth for hosts and the server.
+
+| Field                    | Storage                                        | Notes                                                                                                              |
+| ------------------------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Tower label / unit label | `structure.towerLabel` / `structure.unitLabel` | Shown in onboarding, the New listing dialog and property settings (`Phase`, `Block & Lot`, …)                      |
+| Tower required           | `structure.towersRequired`                     | `false` hides the tower field for a subdivision or lot-only residence                                              |
+| Floors max               | `structure.floorsMax`                          | Nullable                                                                                                           |
+| Towers                   | `structure.propertyTowers[]`                   | `{ name, code, active }`. Case-insensitive uniqueness, max 60                                                      |
+| Parking towers           | `structure.parkingTowers[]`                    | `{ name, code, active, levels[], parkingType }`. Per-tower levels, `inside_tower` / `outside_tower` / `motorcycle` |
+| Unit format              | `structure.unitNumberFormat`                   | `digits4` / `digits` / `alnum` / `custom` + `pattern` + `example`                                                  |
+| Slot format              | `structure.parkingSlotFormat`                  | `digits1to4` / `alnum` / `custom` + `pattern` + `example`                                                          |
+
+Save path: batched **Save Changes** → **`PATCH update-development`** with `structure`. The handler normalises it with the shared resolver and rejects an invalid shape (empty labels, duplicate tower or level, a custom pattern that does not compile or does not match its example, floors outside 1–200). The flat `propertyTowers` / `parkingTowers` / `parkingLevels` keys are written from `structure` for compatibility until Phase 7 retires them.
+
+The same structure drives the public reads **`list-residence-options`** (onboarding, New listing) and **`get-residence-profile`**.
 
 ---
 
