@@ -71,6 +71,8 @@ type Props = {
     instruction: 'shorter' | 'playful' | 'taglish'
   ) => Promise<PlannerItemDto | null>;
   isRefreshing?: boolean;
+  /** Opens the editor that finishes this item and copies the caption. */
+  onOpenEditor?: (item: PlannerItemDto) => void;
 };
 
 export function PlanItemSheet({
@@ -81,6 +83,7 @@ export function PlanItemSheet({
   onSave,
   onRefresh,
   isRefreshing,
+  onOpenEditor,
 }: Props) {
   const [draft, setDraft] = useState<Draft | null>(null);
 
@@ -257,6 +260,11 @@ export function PlanItemSheet({
           </div>
 
           <ResponsiveModalFooter className="flex flex-wrap gap-2">
+            {onOpenEditor ? (
+              <Button size="sm" variant="outline" onClick={() => onOpenEditor(item)}>
+                Open in editor
+              </Button>
+            ) : null}
             <Button size="sm" variant="outline" onClick={guard.requestClose}>
               Cancel
             </Button>

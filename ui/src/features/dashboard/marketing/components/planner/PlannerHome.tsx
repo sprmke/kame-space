@@ -5,6 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { captureAppEvent } from '@/lib/posthog/capture';
+import { useMarketingTheme } from '@/features/dashboard/marketing/components/themes/MarketingThemeProvider';
+import {
+  resolveHandoffTarget,
+  setPendingPlannerDraft,
+} from '@/features/dashboard/marketing/lib/planner/plannerHandoff';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 import { PlanItemCard } from '@/features/dashboard/marketing/components/planner/PlanItemCard';
@@ -50,6 +55,7 @@ export function PlannerHome() {
   const generate = useGeneratePlan();
   const { skip, markPosted, update } = usePlanItemActions();
   const refreshBrief = useRefreshPlanBrief();
+  const { setTab } = useMarketingTheme();
   const settings = usePlannerSettings();
   const saveSettings = useSavePlannerSettings();
   const [setupOpen, setSetupOpen] = useState(false);
@@ -78,6 +84,26 @@ export function PlannerHome() {
   }, [data, range]);
 
   const handleOpen = (item: PlannerItemDto) => setOpenItem(item);
+
+  const handleOpenEditor = (item: PlannerItemDto) => {
+    const target = resolveHandoffTarget(item.format, item.opportunityType);
+    const caption = [item.brief.hook, item.brief.message, item.brief.cta]
+      .filter((part): part is string => Boolean(part))
+      .join('\n\n');
+    setPendingPlannerDraft({
+      itemId: item.id,
+      title: item.title,
+      hook: item.brief.hook ?? '',
+      message: item.brief.message ?? '',
+      cta: item.brief.cta ?? '',
+      dates: item.claims.openNights ?? [],
+      trackedUrl: item.trackedUrl,
+      photoIds: [],
+    });
+    void navigator.clipboard?.writeText(caption).catch(() => undefined);
+    setOpenItem(null);
+    setTab(target.tab);
+  };
 
   return (
     <div className="space-y-4">
@@ -212,6 +238,7 @@ export function PlannerHome() {
                 refreshBrief.mutateAsync({ itemId: target.id, instruction }).catch(() => null)
             : undefined
         }
+        onOpenEditor={allowed ? handleOpenEditor : undefined}
         onSave={(target, patch) =>
           update.mutateAsync({ itemId: target.id, ...patch }).then(
             () => true,
