@@ -19,7 +19,7 @@ async function expectPublicPageReady(page: Parameters<typeof expectNoPageHorizon
   await expectNoUnnamedInteractiveControls(page);
 }
 
-test.describe('@smoke public marketing pages', () => {
+test.describe('@smoke @critical public marketing pages', () => {
   test('guest landing loads hero', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Find your next stay/i })).toBeVisible({

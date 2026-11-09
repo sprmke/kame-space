@@ -10,7 +10,7 @@ import {
   propertyBookingParkingPaths,
 } from '../parking/shared/propertyBookingParkingHarness';
 
-test.describe('@ci property booking parking edit', () => {
+test.describe('@ci @critical property booking parking edit', () => {
   test('adding parking on Pending Documents keeps the current status', async ({ page }) => {
     const parkingState = createParkingFlowState();
     const propertyState = createPropertyBookingParkingState({ linked: false });
