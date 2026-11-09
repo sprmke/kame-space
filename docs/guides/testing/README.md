@@ -81,6 +81,7 @@ Current state (2026-11-08): **1,707** lib files, **0** missing, **863** Vitest f
 | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `node scripts/dev/lib-unit-test-inventory.mjs`                 | List lib files still missing `*.test.ts` and no `test: N/A` marker                             |
 | `node scripts/dev/check-guide-spec-refs.mjs`                   | Fails when a route guide names a spec that does not exist; prints specs unclaimed by any guide |
+| `bash scripts/dev/check-migration-version-collisions.sh`       | Fails when a branch reuses a migration version from its base branch                            |
 | `node scripts/dev/scaffold-missing-lib-unit-tests.mjs --write` | Scaffold colocated tests (regenerate only when adding new lib files)                           |
 | `node scripts/dev/enrich-lib-unit-tests.mjs --write`           | Replace export-only scaffolds with per-export `describe` blocks (safe export smoke)            |
 | `node scripts/dev/enrich-lib-unit-tests.mjs --repair-unsafe`   | Re-run after bad heuristic upgrades (`--write` with `--repair-unsafe`)                         |

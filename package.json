@@ -185,7 +185,8 @@
     "ci:deploy": "./scripts/dev/ci-deploy-gate.sh",
     "test:fast": "bun run check:filenames && node scripts/dev/check-e2e-lane-tags.mjs && bun run type-check && bun run lint && bun run test",
     "test:dom": "cd ui && bun run test:dom",
-    "check:guide-spec-refs": "node scripts/dev/check-guide-spec-refs.mjs"
+    "check:guide-spec-refs": "node scripts/dev/check-guide-spec-refs.mjs",
+    "check:migration-collisions": "bash scripts/dev/check-migration-version-collisions.sh"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
