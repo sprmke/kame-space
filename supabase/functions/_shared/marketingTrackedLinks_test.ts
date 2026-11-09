@@ -1,6 +1,7 @@
 import { assertEquals, assert } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 
 import {
+  buildTrackedPath,
   buildTrackedUrl,
   campaignCode,
   formatShortCode,
@@ -91,4 +92,15 @@ Deno.test('sanitizeAttribution: drops an absolute landing URL and empty values',
 Deno.test('sanitizeAttribution: caps value length', () => {
   const long = 'x'.repeat(300);
   assertEquals(sanitizeAttribution({ utmSource: long })?.utmSource?.length, 120);
+});
+
+Deno.test('buildTrackedPath: relative path keeps a leading slash and encodes the code', () => {
+  assertEquals(
+    buildTrackedPath('/properties/demo-stay', { channel: 'facebook_page', shortCode: 'abcd2345' }),
+    '/properties/demo-stay?utm_source=facebook_page&utm_medium=social&utm_campaign=ks-abcd2345'
+  );
+  assertEquals(
+    buildTrackedPath('properties/demo-stay', { channel: 'instagram', shortCode: 'abcd2345' }),
+    '/properties/demo-stay?utm_source=instagram&utm_medium=social&utm_campaign=ks-abcd2345'
+  );
 });

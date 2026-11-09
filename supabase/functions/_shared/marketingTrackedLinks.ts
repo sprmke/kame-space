@@ -60,6 +60,23 @@ export function buildTrackedUrl(
   return url.toString();
 }
 
+/**
+ * Same tracking on a relative app path, e.g. `/properties/demo-stay`. Stored on the item
+ * so the client can absolutize it with the current origin.
+ */
+export function buildTrackedPath(
+  basePath: string,
+  input: { channel: string; shortCode: string }
+): string {
+  const path = basePath.startsWith('/') ? basePath : `/${basePath}`;
+  const params = new URLSearchParams({
+    utm_source: input.channel,
+    utm_medium: TRACKED_MEDIUM,
+    utm_campaign: campaignCode(input.shortCode),
+  });
+  return `${path}?${params.toString()}`;
+}
+
 /** Real links in a caption: drop tracking params from a tracked URL for display. */
 export function stripTracking(url: string): string {
   const parsed = new URL(url);

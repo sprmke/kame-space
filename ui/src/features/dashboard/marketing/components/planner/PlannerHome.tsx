@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 import { PlanItemCard } from '@/features/dashboard/marketing/components/planner/PlanItemCard';
+import { ShareItYourselfSheet } from '@/features/dashboard/marketing/components/planner/ShareItYourselfSheet';
 import type { PlannerItemDto } from '@/features/dashboard/marketing/lib/planner/plannerApi';
 import {
   PLANNER_RANGES,
@@ -43,6 +44,7 @@ export function PlannerHome() {
   const { data, isLoading, isError, error } = useMarketingPlan(range);
   const generate = useGeneratePlan();
   const { skip, markPosted } = usePlanItemActions();
+  const [shareItem, setShareItem] = useState<PlannerItemDto | null>(null);
 
   const today = todayManilaYmd();
   const allowed = planGate.allowed;
@@ -138,12 +140,24 @@ export function PlannerHome() {
                 readOnly={!allowed}
                 onOpen={handleOpen}
                 onSkip={(target) => skip.mutate({ itemId: target.id, reason: 'Not this week' })}
-                onMarkPosted={(target) => markPosted.mutate({ itemId: target.id })}
+                onMarkPosted={(target) => setShareItem(target)}
               />
             ))}
           </div>
         </section>
       ))}
+
+      <ShareItYourselfSheet
+        open={shareItem !== null}
+        onOpenChange={(next) => {
+          if (!next) setShareItem(null);
+        }}
+        item={shareItem}
+        isPosting={markPosted.isPending}
+        onPosted={(target, postedUrl) =>
+          markPosted.mutate({ itemId: target.id, postedUrl })
+        }
+      />
 
       {!allowed && !planGate.isLoading && (data?.items.length ?? 0) > 0 ? (
         <Card className="border-primary/30">

@@ -8,13 +8,14 @@
 import { addDaysYmd, manilaTodayYmd } from './calendarAvailabilityManila.ts';
 import { logActivity, type ActorContext } from './activityLog.ts';
 import { createServiceClient } from './orgAuth.ts';
-import { formatShortCode } from './marketingTrackedLinks.ts';
+import { buildTrackedPath, formatShortCode } from './marketingTrackedLinks.ts';
 import { MAX_ITEMS_PER_RUN, PLAYBOOK_VERSION } from './marketingPlaybook.ts';
 import { maybeDraftPlanBriefs, type PlanBriefCopy } from './marketingPlanBriefAi.ts';
 import { MARKETING_PLAN_BRIEF_PROMPT } from './ai/prompts/marketingPlanBrief.ts';
 import { buildOpportunities, type PlannerOpportunity } from './marketingSignals.ts';
 import { validateAvailabilityClaims } from './marketingClaims.ts';
 import { loadBlockedNightKeys, loadPlannerInputs } from './marketingSignalsData.ts';
+import { resolvePropertySlugById } from './propertyScope.ts';
 import { scheduleItems, type PlannerItemDraft } from './marketingScheduler.ts';
 import type { PlannerClaims } from './marketingClaims.ts';
 
@@ -117,12 +118,14 @@ function toInsertRow(
     organizationId: string;
     planId: string;
     actorId: string | null;
+    propertySlug: string | null;
     copy?: PlanBriefCopy;
   }
 ): Record<string, unknown> {
   const copy = input.copy;
+  const shortCode = newShortCode();
   return {
-    short_code: newShortCode(),
+    short_code: shortCode,
     property_id: input.propertyId,
     organization_id: input.organizationId,
     plan_id: input.planId,
@@ -147,6 +150,12 @@ function toInsertRow(
       why: draft.evidence,
     },
     status: 'planned',
+    tracked_url: input.propertySlug
+      ? buildTrackedPath(`/properties/${input.propertySlug}`, {
+          channel: draft.channelKind,
+          shortCode,
+        })
+      : null,
     created_by: input.actorId,
   };
 }
@@ -229,12 +238,14 @@ export async function generatePlan(input: GeneratePlanInput): Promise<GeneratePl
     throw new Error(`Could not save the plan: ${planError?.message ?? 'unknown error'}`);
   }
 
+  const propertySlug = await resolvePropertySlugById(input.propertyId).catch(() => null);
   const rows = drafts.map((draft) =>
     toInsertRow(draft, {
       propertyId: input.propertyId,
       organizationId: input.organizationId,
       planId: String(plan.id),
       actorId: input.actor.userId ?? null,
+      propertySlug,
       copy: aiResult?.copies.get(draft.opportunityKey),
     })
   );
@@ -515,10 +526,12 @@ export async function addPlanItem(input: {
   item: NewPlanItemInput;
 }): Promise<PlannerItemRow> {
   const supabase = createServiceClient();
+  const shortCode = newShortCode();
+  const propertySlug = await resolvePropertySlugById(input.propertyId).catch(() => null);
   const { data, error } = await supabase
     .from('marketing_plan_items')
     .insert({
-      short_code: newShortCode(),
+      short_code: shortCode,
       property_id: input.propertyId,
       organization_id: input.organizationId,
       plan_id: null,
@@ -535,6 +548,12 @@ export async function addPlanItem(input: {
       claims: {},
       brief: input.item.brief ?? {},
       status: 'planned',
+      tracked_url: propertySlug
+        ? buildTrackedPath(`/properties/${propertySlug}`, {
+            channel: input.item.channelKind,
+            shortCode,
+          })
+        : null,
       created_by: input.actor.userId ?? null,
     })
     .select('*')
