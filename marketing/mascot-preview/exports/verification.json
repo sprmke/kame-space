@@ -1,14 +1,36 @@
 {
   "duration": 6.66,
+  "isolation": {
+    "protectedRegions": 4,
+    "sampleTimes": 6,
+    "faceAndBodyUnchanged": true,
+    "armResponds": true
+  },
   "frames": 442,
   "fps": 60,
-  "mouthShapes": ["X", "D", "C", "B", "A", "F", "G", "E", "H"],
+  "mouthShapes": [
+    "X",
+    "D",
+    "C",
+    "B",
+    "A",
+    "F",
+    "G",
+    "E",
+    "H"
+  ],
   "alpha": {
-    "zero": 963017,
-    "partial": 581797,
-    "pixels": 1572580
+    "zero": 241978,
+    "partial": 24093,
+    "pixels": 393450
   },
-  "viewportWidths": [375, 390, 768, 1024, 1440],
+  "viewportWidths": [
+    375,
+    390,
+    768,
+    1024,
+    1440
+  ],
   "playback": "passed",
   "pause": "passed",
   "reducedMotion": "passed",

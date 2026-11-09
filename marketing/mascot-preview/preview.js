@@ -90,103 +90,126 @@ const sizes = {
   H: [147, 74],
 };
 
-function renderer() {
-  const gl = canvas.getContext('webgl', {
-    alpha: true,
-    premultipliedAlpha: true,
-    preserveDrawingBuffer: true,
-    antialias: true,
-  });
-  if (!gl) throw new Error('This motion preview needs WebGL. Try another browser.');
-  const shader = (type, code) => {
-    const s = gl.createShader(type);
-    gl.shaderSource(s, code);
-    gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
-    return s;
-  };
-  const program = gl.createProgram();
-  gl.attachShader(
-    program,
-    shader(
-      gl.VERTEX_SHADER,
-      'attribute vec2 p; varying vec2 uv; void main(){uv=(p+1.0)*0.5;gl_Position=vec4(p,0.,1.);}'
-    )
-  );
-  gl.attachShader(
-    program,
-    shader(
-      gl.FRAGMENT_SHADER,
-      `precision highp float; varying vec2 uv; uniform sampler2D art; uniform float time; uniform float motion;
-    void main(){
-      vec2 p=vec2(uv.x,1.-uv.y)*vec2(1220.,1289.);
-      // A coordinated performance with anchored feet and contact shadow.
-      // Inverse texture-space transforms keep the existing rendered lighting.
-      float settle=1.-smoothstep(6.1,6.9,time);
-      float body=1.-smoothstep(960.,1130.,p.y);
-      p.x+=(sin(time*1.9)*11.+sin(time*.85)*6.)*body*motion;
-      p.y+=sin(time*2.5)*5.*body*motion;
-      float nod=exp(-pow((time-.7)/.24,2.))+exp(-pow((time-2.8)/.3,2.))*.8+exp(-pow((time-5.5)/.35,2.));
-      vec2 h=(p-vec2(640.,385.))/vec2(350.,295.);
-      float head=1.-smoothstep(.8,1.15,length(h));
-      float angle=(sin(time*1.5)*.045+sin(time*.7)*.018)*motion*head;
-      vec2 q=p-vec2(625.,610.);
-      p=vec2(cos(angle)*q.x-sin(angle)*q.y,sin(angle)*q.x+cos(angle)*q.y)+vec2(625.,610.);
-      p.y+=nod*13.*head*motion*settle;
-      float hand=(1.-smoothstep(350.,465.,p.x))*smoothstep(420.,500.,p.y)*(1.-smoothstep(660.,760.,p.y));
-      float hello=sin(time*7.5)*pow(sin(clamp(time/2.3,0.,1.)*3.14159265),2.)*step(time,2.3);
-      float explain=sin((time-2.3)*3.8)*smoothstep(2.3,2.7,time)*(1.-smoothstep(5.9,6.6,time));
-      float handAngle=(hello*.27+explain*.18)*hand*motion;
-      vec2 arm=p-vec2(445.,713.);
-      p=vec2(cos(handAngle)*arm.x-sin(handAngle)*arm.y,sin(handAngle)*arm.x+cos(handAngle)*arm.y)+vec2(445.,713.);
-      float other=smoothstep(770.,855.,p.x)*(1.-smoothstep(945.,1010.,p.x))*smoothstep(635.,730.,p.y)*(1.-smoothstep(920.,1000.,p.y));
-      float offer=sin(time*2.7)*smoothstep(2.,2.6,time)*settle*motion;
-      p.x-=offer*25.*other;p.y+=offer*10.*other;
-      vec4 color=texture2D(art,p/vec2(1220.,1289.));gl_FragColor=color;
-    }`
-    )
-  );
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS))
-    throw new Error(gl.getProgramInfoLog(program));
-  gl.useProgram(program);
-  const buffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-  gl.bufferData(
-    gl.ARRAY_BUFFER,
-    new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
-    gl.STATIC_DRAW
-  );
-  const pos = gl.getAttribLocation(program, 'p');
-  gl.enableVertexAttribArray(pos);
-  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
-  gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-  const t = gl.getUniformLocation(program, 'time'),
-    m = gl.getUniformLocation(program, 'motion');
-  return (time, motion) => {
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, plate);
-    gl.uniform1f(t, time);
-    gl.uniform1f(m, motion);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
+// Rigid layer motion only. Never displace pixels through spatial masks: masks
+// that overlap a cheek or torso deform those surfaces as gesture strength grows.
+function armOutline(c) {
+  c.beginPath();
+  c.moveTo(190, 478);
+  c.lineTo(328, 478);
+  c.lineTo(355, 512);
+  c.lineTo(380, 549);
+  c.lineTo(417, 582);
+  c.lineTo(460, 611);
+  c.lineTo(505, 635);
+  c.lineTo(500, 648);
+  c.lineTo(413, 739);
+  c.lineTo(339, 714);
+  c.lineTo(255, 665);
+  c.lineTo(190, 590);
+  c.closePath();
+}
+function renderer(base, repair) {
+  const output = canvas.getContext('2d');
+  const arm = document.createElement('canvas');
+  arm.width = W;
+  arm.height = H;
+  const ac = arm.getContext('2d');
+  ac.save();
+  // Stay inside the arm's upper edge: the adjacent cheek must never enter
+  // this moving layer, including its antialiased boundary pixels.
+  ac.beginPath();
+  ac.moveTo(190, 478);
+  ac.lineTo(324, 478);
+  ac.lineTo(330, 518);
+  ac.lineTo(353, 555);
+  ac.lineTo(390, 590);
+  ac.lineTo(435, 621);
+  ac.lineTo(480, 643);
+  ac.lineTo(500, 648);
+  ac.lineTo(413, 739);
+  ac.lineTo(339, 714);
+  ac.lineTo(255, 665);
+  ac.lineTo(190, 590);
+  ac.closePath();
+  ac.clip();
+  ac.drawImage(base, 0, 0, W, H);
+  ac.restore();
+
+  const clean = document.createElement('canvas');
+  clean.width = W;
+  clean.height = H;
+  const cc = clean.getContext('2d');
+  cc.drawImage(base, 0, 0, W, H);
+  cc.save();
+  armOutline(cc);
+  cc.clip();
+  cc.clearRect(0, 0, W, H);
+  cc.drawImage(repair, 0, 0, W, H);
+  cc.restore();
+
+  return {
+    clean,
+    draw(time, strength) {
+      const motion = Math.max(0, Math.min(1.5, Number.isFinite(strength) ? strength : 0));
+      const smooth = (x) => {
+        const v = Math.max(0, Math.min(1, x));
+        return v * v * (3 - 2 * v);
+      };
+      const hello =
+        time < 2.3 ? Math.sin(time * 7.5) * Math.sin((Math.max(0, time) / 2.3) * Math.PI) ** 2 : 0;
+      const explain =
+        Math.sin((time - 2.3) * 3.8) *
+        smooth((time - 2.3) / 0.4) *
+        (1 - smooth((time - 5.9) / 0.7));
+      // Maximum 8.6 degrees. No scale, shear, or per-pixel deformation.
+      const angle = (hello * 0.1 + explain * 0.065) * motion;
+      output.clearRect(0, 0, canvas.width, canvas.height);
+      output.drawImage(plate, 0, 0, canvas.width, canvas.height);
+      output.save();
+      output.scale(canvas.width / W, canvas.height / H);
+      output.translate(458, 676);
+      output.rotate(angle);
+      output.translate(-458, -676);
+      output.drawImage(arm, 0, 0);
+      output.restore();
+      // Original face and front torso occlude the rotating shoulder. The shell
+      // remains behind the arm. This is draw order, not a deformation mask.
+      output.save();
+      output.scale(canvas.width / W, canvas.height / H);
+      output.beginPath();
+      output.moveTo(300, 0);
+      output.lineTo(1100, 0);
+      output.lineTo(1100, 1200);
+      output.lineTo(390, 1200);
+      output.lineTo(390, 820);
+      output.lineTo(413, 739);
+      output.lineTo(500, 648);
+      output.lineTo(490, 635);
+      output.lineTo(445, 611);
+      output.lineTo(402, 582);
+      output.lineTo(365, 549);
+      output.lineTo(340, 512);
+      output.lineTo(320, 460);
+      output.lineTo(300, 400);
+      output.closePath();
+      output.clip();
+      output.drawImage(plate, 0, 0);
+      output.restore();
+    },
   };
 }
 
 async function init() {
-  const [source, base, atlas, cues] = await Promise.all([
+  const [source, base, repair, atlas, cues] = await Promise.all([
     loadImage('assets/welcome.png'),
     loadImage('assets/face-base.png'),
+    loadImage('assets/arm-clean-plate.png'),
     loadImage('assets/mouth-atlas.png'),
     response('assets/greeting-cues.json'),
   ]);
   const eyes = [extractEye(source, [415, 270, 145, 160]), extractEye(source, [690, 325, 150, 165])];
   const mouths = extractMouths(atlas),
-    drawGL = renderer();
+    rig = renderer(base, repair);
   const drawMouth = (key, alpha = 1) => {
     const [w, h] = sizes[key];
     ctx.save();
@@ -200,7 +223,7 @@ async function init() {
     const moving = $('motion').checked;
     const strength = moving ? Number($('energy').value) : 0;
     ctx.clearRect(0, 0, W, H);
-    ctx.drawImage(base, 0, 0, W, H);
+    ctx.drawImage(rig.clean, 0, 0, W, H);
     let blink = 1;
     if (moving) {
       for (const at of [1.55, 3.95, 4.24, 7.7, 11.2]) {
@@ -234,7 +257,7 @@ async function init() {
     const blend = rawBlend * rawBlend * (3 - 2 * rawBlend);
     if (previous !== cue.value && blend < 1) drawMouth(previous, 1 - blend);
     drawMouth(cue.value, previous === cue.value ? 1 : blend);
-    drawGL(performanceTime, strength);
+    rig.draw(performanceTime, strength);
     smallCtx.clearRect(0, 0, 320, 320);
     smallCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 9, 0, 302, 320);
     $('cue').textContent = `${time.toFixed(2)} s · mouth ${cue.value}`;
@@ -322,14 +345,14 @@ async function init() {
       document.querySelector(`[data-bg="${value}"]`).click();
     },
     alphaStats() {
-      const data = ctx.getImageData(0, 0, W, H).data;
+      const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
       let zero = 0,
         partial = 0;
       for (let i = 3; i < data.length; i += 4) {
         if (data[i] === 0) zero++;
         else if (data[i] < 255) partial++;
       }
-      return { zero, partial, pixels: W * H };
+      return { zero, partial, pixels: canvas.width * canvas.height };
     },
   };
   sync();

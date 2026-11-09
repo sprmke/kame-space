@@ -12,5 +12,9 @@
   "mouthAtlas": {
     "source": "exec-327d5572-22b8-4252-8748-e4d6d5d6e0c5.png",
     "prompt": "Generate ONLY a mouth-sprite atlas for this exact reference turtle character. TRUE alpha transparent background. No face, head, green skin patches, body, eyes, labels, letters, grid lines or numbers. Nine separate small 3D rendered mouth shapes in an exactly evenly spaced 3-column by 3-row square grid. Each mouth centered in its own equal-sized square cell with at least 20% margin. Every mouth uses identical dark warm brown lip edge, softly shaded dark inner mouth, coral tongue when open, matching reference's gentle cute 3D-rendered style and lighting. Slight smile corners, no scary human teeth, no realistic lips, no external skin border, no cast shadow outside mouth. These are transparent facial overlays for compositing over the original green turtle face. Camera frontal, no perspective or angle variation. Consistent width and scale. Row 1 left to right: relaxed closed curved smile (X); firmly closed smile for M B P (A); narrow slightly open horizontal smiling mouth for consonants (B). Row 2 left to right: medium open smile for EH (C); tall open delighted mouth for AH with coral tongue, closely matching the reference mouth (D); small rounded oval opening for OH (E). Row 3 left to right: very small rounded O opening for OO/W (F); narrow mouth with tiny subtle cream upper edge for F/V (G); medium opening with raised coral tongue for L (H). Output atlas only. Nine distinct mouths, crisp clean alpha edges, no green background."
+  },
+  "armCleanPlate": {
+    "source": "exec-75ffddf9-eade-40b3-b234-cdc87e25739a.png",
+    "instructions": "Remove only the raised viewer-left arm from face-base.png. Reconstruct underlying shell and shoulder; preserve framing, blank face, colors, body, transparency and ground shadow. Runtime uses this repair only within the original arm outline."
   }
 }

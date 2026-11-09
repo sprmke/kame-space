@@ -54,6 +54,54 @@ try {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.waitForFunction(() => document.getElementById('motion').checked);
   await page.setViewportSize({ width: 1280, height: 1100 });
+  const isolation = await page.evaluate(() => {
+    const c = document.getElementById('mascot');
+    const ctx = c.getContext('2d');
+    const energy = document.getElementById('energy');
+    const regions = [
+      [380, 210, 500, 270],
+      [500, 490, 350, 145],
+      [450, 750, 300, 230],
+      [320, 1020, 570, 150],
+    ];
+    let handChanges = 0;
+    for (const time of [0.6, 1.1, 1.5, 2.8, 4.6, 6.1]) {
+      energy.value = '0.6';
+      window.kamePreview.renderAt(time);
+      const low = ctx.getImageData(0, 0, c.width, c.height).data;
+      energy.value = '1.5';
+      window.kamePreview.renderAt(time);
+      const high = ctx.getImageData(0, 0, c.width, c.height).data;
+      for (const [x, y, w, h] of regions) {
+        for (
+          let py = Math.ceil((y / 1289) * c.height);
+          py < Math.floor(((y + h) / 1289) * c.height);
+          py++
+        ) {
+          for (
+            let px = Math.ceil((x / 1220) * c.width);
+            px < Math.floor(((x + w) / 1220) * c.width);
+            px++
+          ) {
+            const i = (py * c.width + px) * 4;
+            if (low.slice(i, i + 4).some((v, k) => v !== high[i + k]))
+              throw new Error(
+                `Gesture altered protected face/body pixels at ${time}s (${px}, ${py})`
+              );
+          }
+        }
+      }
+      for (let i = 0; i < low.length; i++) if (low[i] !== high[i]) handChanges++;
+    }
+    energy.value = '1';
+    if (!handChanges) throw new Error('Arm did not respond to strength');
+    return {
+      protectedRegions: regions.length,
+      sampleTimes: 6,
+      faceAndBodyUnchanged: true,
+      armResponds: true,
+    };
+  });
   const fps = 60,
     count = Math.ceil((duration + 0.7) * fps);
   const shapes = new Set();
@@ -132,6 +180,7 @@ try {
     JSON.stringify(
       {
         duration,
+        isolation,
         frames: count,
         fps,
         mouthShapes: [...shapes],

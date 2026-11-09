@@ -27,9 +27,10 @@ disables blinking and body/hand movement while retaining speech articulation.
 - Rhubarb-generated mouth cues follow the audio element's playback position.
   Short crossfades soften cue boundaries. This is audio-derived timing, not
   random mouth movement or an amplitude-only animation.
-- Local texture deformation adds a greeting wave followed by conversational hand gestures,
-  movement in the other arm, speech-emphasis nods, head inclination, and breathing. Feet and contact shadow remain anchored. This is 2.5D artwork,
-  not a skeletal 3D rig, and it cannot produce arbitrary turns.
+- A separate arm layer rotates rigidly at the shoulder, with an eased greeting
+  wave and smaller conversational gestures. Gesture strength cannot stretch or
+  warp the face, torso, feet, or opposite arm. Those surfaces remain stationary.
+  This fixed-angle 2.5D study is not a skeletal 3D rig.
 - Actual alpha transparency, including the contact shadow. The WebM export
   contains a VP9 alpha plane; MP4 uses a pale mint background. WebM alpha support
   must be checked on deployment browsers, especially Safari; canvas/PNG alpha
@@ -93,7 +94,8 @@ This is a visual and timing review, not validated production lip sync. The mouth
 shapes are broad sound groups rather than an exact articulatory simulation;
 F/V and tongue poses are stylized, and automatic cues may need corrections.
 Blinking uses compressed original eye layers rather than a sculpted eyelid rig.
-The wave is a small local texture deformation rather than a full arm rotation.
+The wave rotates the original arm artwork independently; head and torso motion
+is intentionally disabled until separate, properly occluded layers are available.
 Review these at 160 px before expanding the action library.
 
 The current receptionist receives streamed PCM audio and text transcripts in
@@ -122,20 +124,29 @@ Later stages of that gate were not run.
 - Activity log, plans, and permissions: not applicable to this local media study.
 - Merge remains a separate decision after visual review.
 
-## Motion study 02
+## Motion study 03: rigid arm isolation
 
-The performance now continues throughout the greeting. The first hand wave eases
-in and out with zero-speed envelope boundaries, followed by smaller explanatory
-gestures. Head nods emphasize three beats in this recorded sample; those beats
-are authored for this greeting, not inferred from arbitrary conversation.
-The second arm and torso move subtly while feet and shadow stay anchored.
-Blink closing and reopening use eased, asymmetric timing with an occasional
-double blink. Mouth transitions use eased crossfades capped by each cue duration.
-The browser renders on requestAnimationFrame; exports use 60 fps. The gesture
-strength slider ranges from 0.6 to 1.5. Idle movement continues before and after
-the greeting, while pausing mid-sentence freezes the pose.
+Removed the spatial texture-warp shader entirely. It displaced cheek and body
+pixels along with the arm, and increasing strength amplified the deformation.
+Canvas now rotates an isolated crop of the original arm around its shoulder.
+An image-generated arm-free repair supplies only the formerly covered area;
+all other original pixels are retained. Face and front torso are composited in
+front of the arm, with the shell behind it. No scale, shear, head deformation,
+second-arm displacement, or torso bending is applied.
 
-This remains local texture deformation of fixed-angle rendered artwork. Large
-rotations, hands crossing the face, and new silhouettes require additional
-artwork or a proper character rig. These limits prevent overextending the image
-and distorting the approved character.
+The strength control remains 0.6–1.5, clamped in the renderer. Maximum arm
+rotation is 8.6 degrees. The greeting wave and smaller conversational gestures
+have eased entrances and exits. Eye blinking and audio-timed mouth crossfades
+remain independent of gesture strength. The browser renders on
+requestAnimationFrame; exports use 60 fps. Pausing mid-sentence freezes the pose.
+
+Regression checks compare face, lower cheek, belly, and feet pixels at minimum
+and maximum strength across six greeting times. These regions must remain
+pixel-identical while the arm must change. Tests also cover playback, reduced
+motion, alpha, page errors, and five desktop/mobile viewport widths.
+
+New asset: `assets/arm-clean-plate.png`, generated from `face-base.png` by removing
+only the raised viewer-left arm and reconstructing the underlying shell. The
+renderer restricts this repair to the arm's original outline to preserve the
+approved face and body. Further independent head/body gestures need separated
+artwork or a real rig; they must not be simulated by stretching this image.
