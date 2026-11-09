@@ -325,6 +325,28 @@ serveAuthenticated('update-development', async (req) => {
   }
 
   const row = data as DevelopmentRow;
+
+  // The FK is the identity; `residence_name` is the display copy. Keep it in step on rename
+  // so grouping, search place slugs and the unmatched-row view stay consistent.
+  if (typeof patch.name === 'string') {
+    const [{ error: propertyRenameError }, { error: parkingRenameError }] = await Promise.all([
+      supabase
+        .from('properties')
+        .update({ residence_name: row.name })
+        .eq('development_id', developmentId),
+      supabase
+        .from('parkings')
+        .update({ residence_name: row.name })
+        .eq('development_id', developmentId),
+    ]);
+    if (propertyRenameError) {
+      console.error('[update-development] property rename:', propertyRenameError.message);
+    }
+    if (parkingRenameError) {
+      console.error('[update-development] parking rename:', parkingRenameError.message);
+    }
+  }
+
   const statsMap = await developmentStatsByName(supabase, [row.name]);
 
   return jsonSuccess(req, {

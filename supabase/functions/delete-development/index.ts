@@ -39,18 +39,28 @@ serveAuthenticated('delete-development', async (req) => {
 
   const name = existing.name as string;
 
-  const [{ count: propertyCount }, { count: parkingCount }] = await Promise.all([
-    supabase
-      .from('properties')
-      .select('id', { count: 'exact', head: true })
-      .eq('residence_name', name),
-    supabase
-      .from('parkings')
-      .select('id', { count: 'exact', head: true })
-      .eq('residence_name', name),
-  ]);
+  // Count by the real FK. Unmatched legacy rows still count by display name so a
+  // development can never be deleted out from under them.
+  const [{ count: propertyCount }, { count: parkingCount }, { count: namedProperties }] =
+    await Promise.all([
+      supabase
+        .from('properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('development_id', developmentId),
+      supabase
+        .from('parkings')
+        .select('id', { count: 'exact', head: true })
+        .eq('development_id', developmentId),
+      supabase
+        .from('properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('residence_name', name)
+        .is('development_id', null),
+    ]);
 
-  if ((propertyCount ?? 0) > 0 || (parkingCount ?? 0) > 0) {
+  const propertyCount = (propertyCount ?? 0) + (namedProperties ?? 0);
+
+  if (propertyCount > 0 || (parkingCount ?? 0) > 0) {
     return jsonError(
       req,
       'Cannot delete a development that still has linked properties or parking slots',
