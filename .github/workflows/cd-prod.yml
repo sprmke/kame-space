@@ -107,38 +107,38 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
+          # Safe default first: GitHub keeps the LAST value written, so `false` is only ever
+          # published after the diff has actually been proven empty. Any unexpected failure
+          # in this step therefore deploys rather than skipping. `set -e` is deliberately off
+          # for the same reason.
+          set -uo pipefail
+          echo "changed=true" >> "$GITHUB_OUTPUT"
 
           if [[ "${{ github.event.inputs.force_deploy }}" == "true" ]]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Manual dispatch asked for a full deploy."
             exit 0
           fi
 
           prev=$(gh api \
             "repos/${{ github.repository }}/actions/workflows/cd-prod.yml/runs?branch=develop&status=success&per_page=10" \
-            --jq --arg sha "${{ github.sha }}" \
-            '[.workflow_runs[] | select(.head_sha != $sha)][0].head_sha // ""')
+            --jq '[.workflow_runs[] | select(.head_sha != "'"$GITHUB_SHA"'")][0].head_sha // ""' 2>/dev/null || echo "")
 
           if [[ -z "$prev" ]]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "No previous successful deploy found; deploying everything."
             exit 0
           fi
 
-          if ! git fetch --no-tags --depth=1 origin "$prev"; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+          if ! git fetch --no-tags --depth=1 origin "$prev" 2>/dev/null; then
             echo "Could not fetch the previous deploy commit $prev; deploying everything."
             exit 0
           fi
 
-          if git diff --quiet FETCH_HEAD "${{ github.sha }}" -- supabase/functions supabase/migrations; then
+          if git diff --quiet FETCH_HEAD "$GITHUB_SHA" -- supabase/functions supabase/migrations; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No function or migration changes since $prev."
           else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Backend changes since $prev:"
-            git diff --name-only FETCH_HEAD "${{ github.sha }}" -- supabase/functions supabase/migrations | sed 's/^/  /'
+            git diff --name-only FETCH_HEAD "$GITHUB_SHA" -- supabase/functions supabase/migrations | sed 's/^/  /'
           fi
 
       - name: Capture pre-deploy schema diff

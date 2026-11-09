@@ -54,6 +54,7 @@ run_step "playwright lane tags" node scripts/dev/check-e2e-lane-tags.mjs
 run_step "flaky quarantine discipline" node scripts/dev/check-flaky-quarantine.mjs
 run_step "unit test quality" node scripts/dev/check-unit-test-quality.mjs
 run_step "edge handler coverage ratchet" node scripts/dev/check-edge-test-coverage.mjs
+run_step "route guides point at real specs" node scripts/dev/check-guide-spec-refs.mjs
 run_step "brand guard" bun scripts/brand/check-brand.ts --check
 run_step "support content" bash -c 'bun run check:ai-knowledge-coverage && bun run check:support-content'
 run_step "migration versions and security" bash -c \
