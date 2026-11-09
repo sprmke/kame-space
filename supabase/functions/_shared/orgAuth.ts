@@ -332,9 +332,15 @@ type PropertyMemberDbRow = {
 export async function verifyPropertyAccess(
   req: Request,
   propertyId: string,
-  requiredPermission?: TeamPermissionId
+  requiredPermission?: TeamPermissionId,
+  /**
+   * Already-verified caller. `serveAuthenticated` has just verified this exact token, so
+   * re-verifying it here is a second network round trip for the same answer. Pass it from
+   * the handler whenever it is available; omit it and this falls back to verifying.
+   */
+  verifiedUser?: AuthenticatedUser
 ): Promise<PropertyAccessContext> {
-  const user = await verifyAuthenticatedUser(req);
+  const user = verifiedUser ?? (await verifyAuthenticatedUser(req));
   const supabase = createServiceClient();
 
   const { data: property, error: propError } = await supabase
@@ -718,13 +724,14 @@ export async function verifyParkingTeamAccess(
 export async function verifyOrgListAccess(
   req: Request,
   orgId?: string,
-  orgSlug?: string
+  orgSlug?: string,
+  verifiedUser?: AuthenticatedUser
 ): Promise<{
   user: AuthenticatedUser;
   org: OrgRow;
   canListAllProperties: boolean;
 }> {
-  const user = await verifyAuthenticatedUser(req);
+  const user = verifiedUser ?? (await verifyAuthenticatedUser(req));
   const supabase = createServiceClient();
 
   let org: OrgRow | null = null;

@@ -81,19 +81,38 @@ a saving this deployment collected.
 Open decision: local JWT verification for reads would remove the `auth` cost for the first
 call in a burst too, at the price of revocation lag up to token lifetime.
 
-### Remaining handler hotspots (measured, not yet fixed)
+### Boot-path handlers, after exact duplicate-verification removal
 
-| Endpoint                | Handler, warm               |
-| ----------------------- | --------------------------- |
-| `property-entitlements` | 505-743 ms                  |
-| `list-properties`       | 381-800 ms                  |
-| `property-access`       | 261-399 ms                  |
-| `list-organizations`    | 128 ms, after the fix above |
-| `parkings`              | fast (no per-phase header)  |
+**Date:** 2026-11-09. The wrapper's verified user is now passed into `verifyPropertyAccess`,
+`verifyOrgListAccess` and `resolveScopedPropertyAccess`, so the inner checks reuse it instead
+of verifying the same token again. This is exact, not a TTL: no revocation window is widened.
+It replaces the five-second cache for these endpoints; the cache stays for the many other
+callers that have not been threaded yet.
 
-These three are the remaining dashboard-boot cost: about 1.0 to 1.4 s of handler time per
-boot, on top of ~90 ms auth and ~130 ms rate limit per call. Each is a multi-query PostgREST
-handler like `list-organizations` was, so the same treatment applies.
+Medians of seven warm calls each, taken after deploy.
+
+| Endpoint                | Handler before    | Handler after | Change   |
+| ----------------------- | ----------------- | ------------- | -------- |
+| `property-access`       | 261-399 ms (~390) | **250 ms**    | ~-36%    |
+| `property-entitlements` | 505-743 ms (~636) | **517 ms**    | ~-19%    |
+| `list-properties`       | 381-800 ms (~400) | **371 ms**    | ~-7%     |
+| `list-organizations`    | 488 ms            | **128 ms**    | **-74%** |
+
+`auth` reads `0 ms` on every call in a burst, with an occasional 84-121 ms when the five-second
+window lapses between calls. Previously every call paid it.
+
+### Still open, and why it is not a quick win
+
+`list-properties` is the one handler whose remaining cost is not round trips. It selects
+**every booking row in the organization** and aggregates them in JavaScript into
+`activeBookings`, `monthlyRevenue` and `occupancyRate` (`_shared/propertyListStats.ts` to
+`computePropertyPeriodStats`).
+
+`activeBookings` deliberately counts non-cancelled, non-completed bookings **regardless of
+date**, while revenue and occupancy are month-scoped. A naive date or status filter in SQL
+would therefore change numbers a host sees. Porting it needs a full KPI-parity test against
+the current implementation, which is a dedicated change rather than something to fold into a
+latency pass. Recorded here so it is not lost.
 
 ---
 

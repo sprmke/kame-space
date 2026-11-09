@@ -11,7 +11,7 @@ import {
 import { jsonError, jsonSuccess, requireHttpMethod } from '../_shared/httpResponse.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 
-serveAuthenticated('list-properties', async (req) => {
+serveAuthenticated('list-properties', async (req, user) => {
   requireHttpMethod(req, 'GET');
 
   const url = new URL(req.url);
@@ -22,10 +22,13 @@ serveAuthenticated('list-properties', async (req) => {
     return jsonError(req, 'orgId or orgSlug is required');
   }
 
-  const { user, org, canListAllProperties } = await verifyOrgListAccess(
+  // `user` came from the wrapper, so the access check reuses it instead of verifying the
+  // same token a second time.
+  const { org, canListAllProperties } = await verifyOrgListAccess(
     req,
     orgId || undefined,
-    orgSlug || undefined
+    orgSlug || undefined,
+    user
   );
 
   const supabase = createServiceClient();

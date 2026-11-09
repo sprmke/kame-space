@@ -4,7 +4,7 @@ status: planned
 stage: in-progress
 kind: plan
 tags: [performance, pwa, supabase, edge-functions, lighthouse, production-readiness, caching]
-updated: 2026-11-08
+updated: 2026-11-09
 readiness: unverified
 launch_gate: A
 launch_blocker: true
@@ -518,12 +518,22 @@ Note: Vitest silently ignores `.test.tsx` component tests in this repo, so put c
 | ID  | Decision                                                                       | Recommended                                                                    | Needed by  |
 | --- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ---------- |
 | D-1 | Public read caching option                                                     | Same-origin Vercel proxy + fix anon `no-store`, then fewer queries per call    | Phase 5    |
-| D-2 | Local JWT verification for reads (revocation lag up to token lifetime)         | Yes for reads, `getUser` kept for writes and sensitive actions                 | Phase 4.2  |
+| D-2 | Local JWT verification for reads (revocation lag up to token lifetime)         | **DEFERRED** — see the note below                                              | Phase 4.2  |
 | D-3 | Accepted staleness per public endpoint class                                   | 60 s listings/search, 300 s static content, 30 s availability                  | Phase 5    |
 | D-4 | `pg_stat_statements_reset()` at the baseline point on production               | Yes, once, with `kamewave`, after the before snapshot is saved                 | Phase 0    |
 | D-5 | Make the Lighthouse CI gate blocking                                           | After 2 green weeks                                                            | Phase 8    |
 | D-6 | Edge latency source: daily log pull vs. in-isolate counters flushed on a timer | Daily log pull (zero request-path cost); counters only if logs prove too lossy | Phase 0.4  |
 | D-7 | Regression threshold for a `perf:*` finding                                    | p95 up > 20% week over week with >= 100 calls                                  | Phase 10.5 |
+
+> **D-2 deferred (2026-11-09), with the reasoning.** Local verification is technically
+> available: tokens are ES256 and the project publishes a matching JWKS. It is not worth it
+> now. The five-second token cache plus threading the verified user into the inner checks
+> already removed the duplicate verification, so D-2's remaining gain is **~90 ms once per
+> burst**, about 3-5% of what is left on the authenticated path. Against that, `getUser` is
+> what makes sign-out, session revocation and account disable take effect **immediately**; local
+> verification would leave each of those accepting reads for up to the token lifetime
+> (measured: 3600 s) on a surface that exposes guest PII. Revisit only as an explicit product
+> decision with a stated maximum offboarding delay, and then for reads only.
 
 ## Operator inputs
 
