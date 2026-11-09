@@ -10,6 +10,8 @@ kind: plan
 
 # Marketing Planner: AI strategy, schedule and execution for listing promotion
 
+> **Open items I need from the owner:** [marketing-strategy-planner-open-items.md](./marketing-strategy-planner-open-items.md)
+>
 > **Revised 2026-11-09 (execute-plan):**
 >
 > - Audited every named path, symbol and endpoint against the tree; all exist. Two drift notes fixed: `_shared/bookingPace.ts` is a bucketed new-bookings series (Analytics Trends), not a summary "pace vs last year" signal, so §2 now says the planner derives the comparison from it; `resolveDefaultMarketingStudioTab({ lastTab, aiAvailable })` and `MARKETING_STUDIO_TABS` need extending in Phase 1 (recorded in §6 P1.7).
