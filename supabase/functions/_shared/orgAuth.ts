@@ -168,8 +168,37 @@ function extractBearerJwt(req: Request): string {
 }
 
 /** Validates JWT only — any signed-in Google user. */
+/**
+ * Very short cache for `getUser`, keyed by the bearer token.
+ *
+ * A property-scoped request verifies the same token twice: once in the `serveAuthenticated`
+ * wrapper, then again inside `verifyPropertyAccess` / `verifyOrgAccess`. Each
+ * `auth.getUser` is a network round trip of roughly 90 ms in production, so the second one is
+ * pure waste.
+ *
+ * Five seconds is deliberate. It collapses the duplicate call inside one request (which
+ * happens within milliseconds) without meaningfully widening the revocation window: a token
+ * revoked by an admin still stops working almost immediately. Anyone wanting a longer window
+ * is making the D-2 trade-off, which is a separate decision and must not be smuggled in here.
+ *
+ * The token itself never leaves memory and the map is size-bounded.
+ */
+const USER_CACHE_TTL_MS = 5_000;
+const USER_CACHE_MAX_ENTRIES = 500;
+const verifiedUserCache = new Map<string, { user: AuthenticatedUser; expiresAt: number }>();
+
+/** Test seam. */
+export function resetVerifiedUserCacheForTests(): void {
+  verifiedUserCache.clear();
+}
+
 export async function verifyAuthenticatedUser(req: Request): Promise<AuthenticatedUser> {
   const jwt = extractBearerJwt(req);
+
+  const cached = verifiedUserCache.get(jwt);
+  if (cached && cached.expiresAt > Date.now()) return cached.user;
+  if (cached) verifiedUserCache.delete(jwt);
+
   const supabase = createServiceClient();
   const { data, error } = await supabase.auth.getUser(jwt);
   if (error || !data.user) {
@@ -179,7 +208,15 @@ export async function verifyAuthenticatedUser(req: Request): Promise<Authenticat
   if (!email) {
     throw unauthorizedResponse('Account email is required');
   }
-  return { id: data.user.id, email };
+  const user: AuthenticatedUser = { id: data.user.id, email };
+
+  if (verifiedUserCache.size >= USER_CACHE_MAX_ENTRIES) {
+    const oldest = verifiedUserCache.keys().next().value;
+    if (oldest !== undefined) verifiedUserCache.delete(oldest);
+  }
+  verifiedUserCache.set(jwt, { user, expiresAt: Date.now() + USER_CACHE_TTL_MS });
+
+  return user;
 }
 
 /** Optional JWT — returns null when missing or invalid (public endpoints). */

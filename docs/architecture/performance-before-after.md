@@ -34,7 +34,33 @@ with mixed access kinds (owner, org admin) inside a rolled-back transaction befo
 
 ---
 
-## 2. Authenticated wrapper cost
+## 2. Duplicate `auth.getUser` per request
+
+**Date:** 2026-11-09. `verifyAuthenticatedUser` in `_shared/orgAuth.ts`.
+
+A property-scoped request verified the same JWT **twice**: once in the `serveAuthenticated`
+wrapper, then again inside `verifyPropertyAccess`. Each `auth.getUser` is a network round trip.
+
+Fix: a five-second cache keyed by the bearer token. It collapses the duplicate inside one
+request (milliseconds apart) without meaningfully widening the revocation window, and it is
+deliberately short so it is not the D-2 trade-off in disguise.
+
+| Metric                                          | Before         | After     |
+| ----------------------------------------------- | -------------- | --------- |
+| `auth` phase, first call in a burst             | 84-110 ms      | 84-126 ms |
+| `auth` phase, following calls in the same burst | 84-110 ms each | **0 ms**  |
+
+Observed live after deploy: `list-properties` reported `auth;dur=0.0` on every call after the
+first, where it previously paid the round trip each time. A dashboard boot makes 4 to 6
+authenticated calls in quick succession, so this removes roughly 90 ms multiplied by the
+number of calls after the first.
+
+Not claimed: this does not remove the _first_ verification per burst. Doing that is D-2 (local
+JWT verification), which is still open.
+
+---
+
+## 3. Authenticated wrapper cost
 
 **Date:** 2026-11-09. Measured, not yet reduced.
 
@@ -52,12 +78,26 @@ Every authenticated call runs `auth`, `blocklist`, `settings`, `ratelimit` then 
 pays the write. Correcting this after the fact: the log-only change is a speed _option_, not
 a saving this deployment collected.
 
-Open decision: local JWT verification for reads would remove the `auth` cost (~90 ms per
-call, roughly 0.5 s per dashboard boot) at the price of revocation lag up to token lifetime.
+Open decision: local JWT verification for reads would remove the `auth` cost for the first
+call in a burst too, at the price of revocation lag up to token lifetime.
+
+### Remaining handler hotspots (measured, not yet fixed)
+
+| Endpoint                | Handler, warm               |
+| ----------------------- | --------------------------- |
+| `property-entitlements` | 505-743 ms                  |
+| `list-properties`       | 381-800 ms                  |
+| `property-access`       | 261-399 ms                  |
+| `list-organizations`    | 128 ms, after the fix above |
+| `parkings`              | fast (no per-phase header)  |
+
+These three are the remaining dashboard-boot cost: about 1.0 to 1.4 s of handler time per
+boot, on top of ~90 ms auth and ~130 ms rate limit per call. Each is a multi-query PostgREST
+handler like `list-organizations` was, so the same treatment applies.
 
 ---
 
-## 3. Public site
+## 4. Public site
 
 **Date:** 2026-11-09. Measured, no change shipped in this window.
 
@@ -79,7 +119,7 @@ Public edge handlers, warm:
 
 ---
 
-## 4. Database
+## 5. Database
 
 **Date:** 2026-11-08. `pg_stat_statements`, 96 days since reset (no reset performed).
 
@@ -96,7 +136,7 @@ No index can help; cache is already perfect. The 85% is background Postgres Chan
 
 ---
 
-## 5. Dashboard cold open (lab)
+## 6. Dashboard cold open (lab)
 
 **Date:** 2026-11-08. Local build, mocked edge calls, Phases 0.1 marks. Directional only:
 mocks answer instantly, so this cannot show a network saving.
@@ -112,7 +152,7 @@ spent waiting on promises, not parsing. ~220 ms of it is the deliberate anti-fla
 
 ---
 
-## 6. Bundle
+## 7. Bundle
 
 **Date:** 2026-11-08.
 
@@ -125,7 +165,7 @@ spent waiting on promises, not parsing. ~220 ms of it is the deliberate anti-fla
 
 ---
 
-## 7. Rejected, with numbers
+## 8. Rejected, with numbers
 
 | Change                                             | Result                                             |
 | -------------------------------------------------- | -------------------------------------------------- |
