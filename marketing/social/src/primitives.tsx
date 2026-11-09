@@ -206,6 +206,45 @@ export function Kicker({ children, style }: { children: ReactNode; style?: CSSPr
  * Brand marks
  * ------------------------------------------------------------------ */
 
+/** Approved four-piece F5 shell. Same paths as `ui/public/brand/kame-space-mark.svg`. */
+export function KameSpaceMark({
+  size = 20,
+  mono = false,
+  style,
+}: {
+  size?: number;
+  mono?: boolean;
+  style?: CSSProperties;
+}) {
+  return (
+    <svg
+      viewBox="0 0 1024 1024"
+      width={size}
+      height={size}
+      aria-hidden="true"
+      style={{ flex: 'none', display: 'block', ...style }}
+    >
+      {mono ? null : <rect width="1024" height="1024" rx="350" fill="#2DAA97" />}
+      <path
+        fill="#FFFFFF"
+        d="M222 470C222 359 309 274 418 274H456Q496 274 496 314V466Q496 536 426 536H268Q222 536 222 490Z"
+      />
+      <path
+        fill={mono ? '#FFFFFF' : '#BDEFE1'}
+        d="M520 320Q520 218 622 218H690C766 218 814 266 814 342V418Q814 502 730 502H604Q520 502 520 418Z"
+      />
+      <path
+        fill={mono ? '#FFFFFF' : '#BDEFE1'}
+        d="M222 610Q222 558 274 558H424Q488 558 488 622V760Q488 810 438 810H410C301 810 222 733 222 624Z"
+      />
+      <path
+        fill="#FFFFFF"
+        d="M512 614Q512 526 600 526H740Q782 526 782 568V598C782 705 698 792 590 792H552Q512 792 512 752Z"
+      />
+    </svg>
+  );
+}
+
 export function Diamond({
   size = 20,
   color = c.brand,
@@ -246,7 +285,7 @@ export function Wordmark({ size = 30, color }: { size?: number; color?: string }
         whiteSpace: 'nowrap',
       }}
     >
-      <Diamond size={size * 0.62} color={t.mark} />
+      <KameSpaceMark size={size * 0.86} mono={t.bg === c.brand} />
       Kame Space
     </div>
   );
