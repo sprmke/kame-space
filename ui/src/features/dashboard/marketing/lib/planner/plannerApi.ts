@@ -194,6 +194,21 @@ export async function skipPlannerItem(
   await parseEdgeJsonOrQuota(res);
 }
 
+export type RefreshInstruction = 'shorter' | 'playful' | 'taglish';
+
+export async function refreshPlannerBrief(
+  propertyId: string | null,
+  itemId: string,
+  instruction: RefreshInstruction
+): Promise<PlannerItemDto> {
+  const res = await authorizedFetch('marketing-planner', propertyId, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'refresh_brief', itemId, instruction }),
+  });
+  const data = await parseEdgeJsonOrQuota<{ item: RawItem }>(res);
+  return mapItem(data.item);
+}
+
 export async function markPlannerItemPosted(
   propertyId: string | null,
   itemId: string,

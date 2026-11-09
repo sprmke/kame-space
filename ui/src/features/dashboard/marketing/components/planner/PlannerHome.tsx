@@ -22,6 +22,7 @@ import {
   useGeneratePlan,
   useMarketingPlan,
   usePlanItemActions,
+  useRefreshPlanBrief,
 } from '@/features/dashboard/marketing/hooks/useMarketingPlan';
 
 const SHOWCASE_ITEMS = 3;
@@ -45,6 +46,7 @@ export function PlannerHome() {
   const { data, isLoading, isError, error } = useMarketingPlan(range);
   const generate = useGeneratePlan();
   const { skip, markPosted, update } = usePlanItemActions();
+  const refreshBrief = useRefreshPlanBrief();
   const [shareItem, setShareItem] = useState<PlannerItemDto | null>(null);
   const viewed = useRef(false);
   const [openItem, setOpenItem] = useState<PlannerItemDto | null>(null);
@@ -156,6 +158,13 @@ export function PlannerHome() {
         }}
         item={openItem}
         isSaving={update.isPending}
+        isRefreshing={refreshBrief.isPending}
+        onRefresh={
+          aiGate.allowed
+            ? async (target, instruction) =>
+                refreshBrief.mutateAsync({ itemId: target.id, instruction }).catch(() => null)
+            : undefined
+        }
         onSave={(target, patch) =>
           update.mutateAsync({ itemId: target.id, ...patch }).then(
             () => true,

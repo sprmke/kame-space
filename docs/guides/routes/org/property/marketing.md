@@ -63,6 +63,8 @@ already holds, with no AI required.
 - Scheduling never places an item in quiet hours (23:00 to 07:00 Manila), never in the past on the
   same day, and never past the horizon.
 - A property with no connected channel still gets items, marked for manual sharing.
+- The item sheet offers **Shorter**, **More playful** and **Taglish** when the host is entitled. A
+  rewrite goes through the same guard and leaves the stored copy alone if it fails.
 - `mode: ai` runs the rules skeleton first, then rewrites the words. Every string is checked by a
   deterministic guard: an invented number or month drops that item back to rules copy. AI outages
   never block a plan.

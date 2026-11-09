@@ -10,7 +10,12 @@ import { logActivity, type ActorContext } from './activityLog.ts';
 import { createServiceClient } from './orgAuth.ts';
 import { buildTrackedPath, campaignCode, formatShortCode } from './marketingTrackedLinks.ts';
 import { MAX_ITEMS_PER_RUN, PLAYBOOK_VERSION } from './marketingPlaybook.ts';
-import { maybeDraftPlanBriefs, type PlanBriefCopy } from './marketingPlanBriefAi.ts';
+import {
+  maybeDraftPlanBriefs,
+  maybeRefreshPlanBrief,
+  type PlanBriefCopy,
+  type RefreshInstruction,
+} from './marketingPlanBriefAi.ts';
 import { MARKETING_PLAN_BRIEF_PROMPT } from './ai/prompts/marketingPlanBrief.ts';
 import { buildOpportunities, type PlannerOpportunity } from './marketingSignals.ts';
 import { validateAvailabilityClaims } from './marketingClaims.ts';
@@ -533,6 +538,55 @@ export async function markPlanItemPosted(input: {
     metadata: { channel: String(data.channel_kind ?? '') },
   });
 
+  return data as PlannerItemRow;
+}
+
+/**
+ * Rewrite one item's copy with AI. Returns null when AI is unavailable or its copy fails
+ * the guard, and the stored brief stays untouched.
+ */
+export async function refreshPlanBrief(input: {
+  propertyId: string;
+  organizationId: string;
+  actor: ActorContext;
+  itemId: string;
+  instruction: RefreshInstruction;
+}): Promise<PlannerItemRow | null> {
+  const existing = await loadItem(input.itemId, input.propertyId);
+  const inputs = await loadPlannerInputs(input.propertyId);
+  const result = await maybeRefreshPlanBrief({
+    organizationId: input.organizationId,
+    propertyId: input.propertyId,
+    propertyName: inputs.propertyName,
+    amenities: inputs.signals.amenities,
+    language: inputs.settings.language,
+    claim: existing.claims ?? {},
+    itemKey: existing.opportunity_key ?? existing.id,
+    title: existing.title,
+    evidence: String((existing.brief as Record<string, unknown> | null)?.why ?? ''),
+    instruction: input.instruction,
+    actorType: 'staff',
+  });
+  if (!result) return null;
+
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from('marketing_plan_items')
+    .update({
+      title: result.copy.title,
+      source: 'ai',
+      brief: {
+        ...(existing.brief ?? {}),
+        hook: result.copy.hook,
+        message: result.copy.message,
+        cta: result.copy.cta,
+      },
+    })
+    .eq('id', input.itemId)
+    .eq('property_id', input.propertyId)
+    .select('*')
+    .single();
+  if (error || !data) throw new Error(`Could not refresh the item: ${error?.message ?? ''}`);
   return data as PlannerItemRow;
 }
 

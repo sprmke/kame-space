@@ -159,3 +159,101 @@ export async function maybeDraftPlanBriefs(input: {
     rejected: guarded.rejected.length,
   };
 }
+
+export const REFRESH_INSTRUCTIONS = ['shorter', 'playful', 'taglish'] as const;
+export type RefreshInstruction = (typeof REFRESH_INSTRUCTIONS)[number];
+
+const INSTRUCTION_RULE: Record<RefreshInstruction, string> = {
+  shorter: 'Rewrite it 30% shorter. Keep every fact.',
+  playful: 'Rewrite it in a warmer, lighter voice. Keep every fact.',
+  taglish: 'Rewrite it in natural Taglish. Keep every fact.',
+};
+
+/**
+ * Rewrite one item's copy on request. Same guard as the batch pass: an invented number
+ * or month returns null and the stored copy stays.
+ */
+export async function maybeRefreshPlanBrief(input: {
+  organizationId: string;
+  propertyId: string;
+  propertyName: string;
+  amenities: readonly string[];
+  language: 'en' | 'fil' | 'taglish';
+  claim: PlannerClaims;
+  itemKey: string;
+  title: string;
+  evidence: string;
+  instruction: RefreshInstruction;
+  actorType: 'staff' | 'system';
+}): Promise<{ copy: PlanBriefCopy; creditsConsumed: number } | null> {
+  try {
+    await assertOrgAndPropertyAiQuota(input.organizationId, input.propertyId, PLAN_BRIEF_FEATURE);
+  } catch {
+    return null;
+  }
+
+  const { system, user } = buildMarketingPlanBriefPrompt({
+    propertyName: input.propertyName,
+    area: null,
+    amenities: input.amenities,
+    language: input.instruction === 'taglish' ? 'taglish' : input.language,
+    tone: input.instruction === 'playful' ? 'playful' : 'warm',
+    horizonEnd: '',
+    items: [
+      {
+        key: input.itemKey,
+        opportunityType: 'refresh',
+        format: 'post',
+        channel: 'facebook_page',
+        evidence: `${input.evidence} Existing title: ${input.title}. ${INSTRUCTION_RULE[input.instruction]}`,
+        claimsSummary: describeClaims(input.claim).join(' '),
+      },
+    ],
+  });
+
+  let result;
+  try {
+    result = await generateStructured({
+      feature: PLAN_BRIEF_FEATURE,
+      prompt: MARKETING_PLAN_BRIEF_PROMPT,
+      system,
+      user,
+      temperature: 0.6,
+      schema: ResponseSchema,
+      jsonSchema: MARKETING_PLAN_BRIEF_SCHEMA as unknown as Record<string, unknown>,
+      billing: {
+        organizationId: input.organizationId,
+        propertyId: input.propertyId,
+        actorType: input.actorType,
+        quotaChecked: true,
+      },
+    });
+  } catch (err) {
+    console.warn('[marketingPlanBriefAi] refresh failed:', (err as Error).message);
+    return null;
+  }
+
+  const first = result.data.items[0];
+  if (!first) return null;
+
+  const copy: GuardedItemCopy = {
+    itemKey: input.itemKey,
+    title: clamp(first.title, 40),
+    hook: clamp(first.hook, 80),
+    message: clamp(first.message, 160),
+    cta: clamp(first.cta, 40),
+  };
+  const guarded = guardPlanBriefs([copy], new Map([[input.itemKey, input.claim]]));
+  const accepted = guarded.accepted[0];
+  if (!accepted?.title || !accepted.hook || !accepted.message || !accepted.cta) return null;
+
+  return {
+    copy: {
+      title: accepted.title,
+      hook: accepted.hook,
+      message: accepted.message,
+      cta: accepted.cta,
+    },
+    creditsConsumed: result.creditsConsumed,
+  };
+}

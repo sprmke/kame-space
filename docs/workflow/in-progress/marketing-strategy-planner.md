@@ -547,7 +547,7 @@ Sizes: S (≤2 days), M (3 to 5 days), L (1 to 2 weeks). Each phase ships on its
 - [x] **P0.4** Migrations: `marketing_planner_settings`, `marketing_calendar_events` (+ 2026/2027 PH seed from Proclamation 1006 and its 2027 successor when published), `marketing_plans`, `marketing_plan_items`, `marketing_post_metrics`, plan keys, permission leaf + backfill, notification types, feature availability keys. Apply locally with `bun run db:migrate`.
 - [x] **P0.5** `_shared/marketingPlaybook.ts` and `marketingCopyLibrary.ts` (English, Filipino, Taglish rules copy per opportunity type, reviewed with `human-copy`).
 - [x] **P0.6** Architecture doc `docs/architecture/marketing-planner.md` (layering, data model, truth rules, playbook versioning).
-- [ ] **P0.7** PostHog event catalog entries (`posthogCatalog.ts`): `planner_viewed`, `planner_onboarded`, `plan_generated`, `planner_item_created_asset`, `planner_item_completed`, `planner_item_skipped`, `planner_share_used`, `upgrade_modal_opened{source:planner}`.
+- [x] **P0.7** PostHog event catalog entries (`posthogCatalog.ts`): `planner_viewed`, `planner_onboarded`, `plan_generated`, `planner_item_created_asset`, `planner_item_completed`, `planner_item_skipped`, `planner_share_used`, `upgrade_modal_opened{source:planner}`.
 
 **Status (2026-11-09):** P0.1, P0.4, P0.5 and P0.6 shipped. P0.2 (Meta spike), P0.3 (AI token measurement) and P0.7 (PostHog catalog entries) are open; nothing in Phase 1 depends on them.
 
@@ -584,8 +584,9 @@ UI:
 - P1.12: not verified in a browser at 375 / 768 / 1024.
 - P1.2/P1.3/P1.4: `content_refresh` cannot fire yet (X8), and `freed_dates` is Phase 3 by design.
 - P1.6 is done as an availability-only re-check on every plan read, not a background refresh queue.
-- P0.7 (PostHog events) and P4.3 (`refresh_brief`) are still open. P4.2 shipped the AI path but not
-  the pre-run credit estimate or the per-property rate limit.
+- P4.2 shipped the AI path but not the pre-run credit estimate or the per-property rate limit.
+- P0.7 (PostHog events) now ships: `planner_viewed`, `planner_onboarded`, `plan_generated`,
+  `planner_item_completed`, `planner_item_skipped`, `planner_share_used`.
 
 **Exit:** a Pro property gets a correct rules plan for Today / 3 / 5 / 7 days with zero AI calls; claims go stale when a booking lands; gates behave per §5.7.
 **Acceptance:** `bun run test:edge` covers signals/scheduler/claims fixtures; `bun run test:edge:handlers` covers `marketing-planner`; `bun run test:e2e:smoke` loads `?tab=plan` at 375 and 1024.
@@ -625,7 +626,7 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 
 - [x] **P4.1** `marketing_plan_brief` prompt module, schema, `marketingPlanBriefAi.ts`, `marketingPlanGuard.ts`.
 - [x] **P4.2** (partial) `generate` mode `ai`: rules skeleton → AI briefs → guard → persist; fail-open to rules copy; credits shown before running; rate limits.
-- [ ] **P4.3** `refresh_brief` for one item ("make it shorter", "more playful", "Taglish") with the same guard.
+- [x] **P4.3** `refresh_brief` for one item ("make it shorter", "more playful", "Taglish") with the same guard.
 - [x] **P4.4** AI summary card copy and "Why" explanation in plain words (aggregates only).
 - [ ] **P4.5** Prepare my week uses AI captions and hooks for template items when entitled.
 - [ ] **P4.6** Eval suite `marketing_plan` (offline in CI, live manual) with fixtures for underbooked, fully booked, long weekend, thin history, Taglish.

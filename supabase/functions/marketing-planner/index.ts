@@ -27,6 +27,7 @@ import {
   latestPlan,
   listPlanItems,
   markPlanItemPosted,
+  refreshPlanBrief,
   resolvePlannerRange,
   savePlannerSettings,
   skipPlanItem,
@@ -56,6 +57,12 @@ const skipSchema = z.object({
   action: z.literal('skip'),
   itemId: z.string().uuid(),
   reason: z.string().trim().min(1).max(200),
+});
+
+const refreshSchema = z.object({
+  action: z.literal('refresh_brief'),
+  itemId: z.string().uuid(),
+  instruction: z.enum(['shorter', 'playful', 'taglish']).default('shorter'),
 });
 
 const postedSchema = z.object({
@@ -211,6 +218,27 @@ serveAuthenticated('marketing-planner', async (req) => {
           itemId: parsed.data.itemId,
           reason: parsed.data.reason,
         });
+        return jsonSuccess(req, { item });
+      }
+
+      if (action === 'refresh_brief') {
+        const parsed = refreshSchema.safeParse(body);
+        if (!parsed.success) return jsonError(req, 'Invalid refresh_brief body', 400);
+        await requirePropertyPermissionAndFeature(
+          req,
+          propertyId,
+          'marketing.plan:edit',
+          'aiMarketingPlanner'
+        );
+        const actor = buildActorContext('dashboard', { propertyAccess: scoped }, req);
+        const item = await refreshPlanBrief({
+          propertyId,
+          organizationId: scoped.org.id,
+          actor,
+          itemId: parsed.data.itemId,
+          instruction: parsed.data.instruction,
+        });
+        if (!item) return jsonError(req, 'Could not rewrite that item', 502);
         return jsonSuccess(req, { item });
       }
 

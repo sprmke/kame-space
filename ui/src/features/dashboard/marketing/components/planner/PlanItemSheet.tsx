@@ -65,9 +65,23 @@ type Props = {
   item: PlannerItemDto | null;
   isSaving?: boolean;
   onSave: (item: PlannerItemDto, patch: Record<string, unknown>) => Promise<boolean> | boolean;
+  /** Present only when the host can use AI briefs; the buttons stay hidden otherwise. */
+  onRefresh?: (
+    item: PlannerItemDto,
+    instruction: 'shorter' | 'playful' | 'taglish'
+  ) => Promise<PlannerItemDto | null>;
+  isRefreshing?: boolean;
 };
 
-export function PlanItemSheet({ open, onOpenChange, item, isSaving, onSave }: Props) {
+export function PlanItemSheet({
+  open,
+  onOpenChange,
+  item,
+  isSaving,
+  onSave,
+  onRefresh,
+  isRefreshing,
+}: Props) {
   const [draft, setDraft] = useState<Draft | null>(null);
 
   useEffect(() => {
@@ -150,6 +164,31 @@ export function PlanItemSheet({ open, onOpenChange, item, isSaving, onSave }: Pr
                 onChange={(event) => setDraft({ ...draft, message: event.target.value })}
               />
             </div>
+
+            {onRefresh ? (
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    ['shorter', 'Shorter'],
+                    ['playful', 'More playful'],
+                    ['taglish', 'Taglish'],
+                  ] as const
+                ).map(([instruction, label]) => (
+                  <Button
+                    key={instruction}
+                    size="sm"
+                    variant="outline"
+                    disabled={isRefreshing}
+                    onClick={async () => {
+                      const next = await onRefresh(item, instruction);
+                      if (next) setDraft(draftFrom(next));
+                    }}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            ) : null}
 
             <div className="space-y-1">
               <label htmlFor="planner-item-cta" className="text-caption text-muted-foreground">

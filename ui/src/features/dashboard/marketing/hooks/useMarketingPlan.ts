@@ -7,6 +7,7 @@ import {
   fetchMarketingPlan,
   generateMarketingPlan,
   markPlannerItemPosted,
+  refreshPlannerBrief,
   savePlannerSettings,
   skipPlannerItem,
   updatePlannerItem,
@@ -93,6 +94,17 @@ export function usePlanItemActions() {
   });
 
   return { skip, markPosted, update };
+}
+
+export function useRefreshPlanBrief() {
+  const propertyId = usePropertyIdParam();
+  const invalidate = usePlanInvalidation();
+  return useMutation({
+    mutationFn: (input: { itemId: string; instruction: 'shorter' | 'playful' | 'taglish' }) =>
+      refreshPlannerBrief(propertyId, input.itemId, input.instruction),
+    onSuccess: () => invalidate(),
+    onError: (error: Error) => toast.error(error.message || 'Could not rewrite the item'),
+  });
 }
 
 export function useSavePlannerSettings() {

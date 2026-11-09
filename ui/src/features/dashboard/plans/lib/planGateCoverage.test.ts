@@ -204,8 +204,7 @@ const GATE_COVERAGE: Record<PlanFeatureKey, Coverage> = {
   },
   aiMarketingPlanner: {
     client: ['dashboard/marketing/components/planner/PlannerHome.tsx'],
-    serverNa:
-      'AI briefs land in Phase 4; the handler rejects mode ai today, so there is no server gate to scan yet.',
+    server: ['marketing-planner'],
   },
 };
 
