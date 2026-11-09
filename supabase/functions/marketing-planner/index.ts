@@ -149,13 +149,14 @@ serveAuthenticated('marketing-planner', async (req) => {
           req,
           propertyId,
           'marketing.plan:edit',
-          'marketingPlanner'
+          parsed.data.mode === 'ai' ? 'aiMarketingPlanner' : 'marketingPlanner'
         );
         const actor = buildActorContext('dashboard', { propertyAccess: scoped }, req);
         const result = await generatePlan({
           propertyId,
           organizationId: scoped.org.id,
           actor,
+          mode: parsed.data.mode,
         });
         return jsonSuccess(req, result);
       }

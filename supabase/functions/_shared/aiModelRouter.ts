@@ -30,6 +30,7 @@ export const AI_FEATURES = [
   'dashboard_assistant',
   'dashboard_assistant_complex',
   'smart_pricing',
+  'marketing_plan_brief',
   'host_analytics',
   'review_draft',
   'marketing_image_generate',
@@ -309,6 +310,18 @@ const FEATURE_MODELS: Record<AiFeature, AiModelConfig> = {
     thinkingBudget: 0,
     timeoutMs: 45000,
     groqFallback: false,
+  },
+  marketing_plan_brief: {
+    // PENDING-PRICING: the per-generation credit price is the owner's call (open items §2).
+    // Token cost is measured on fixtures; the model tier is the same text tier as smart_pricing.
+    model: 'gemini-2.5-flash',
+    tier: 'flash',
+    inputUsdPer1M: 0.3,
+    outputUsdPer1M: 2.5,
+    defaultMaxOutputTokens: 2048,
+    thinkingBudget: 0,
+    timeoutMs: 45000,
+    groqFallback: true,
   },
   marketing_video_generate: {
     model: 'veo-3.1-fast-generate-preview',

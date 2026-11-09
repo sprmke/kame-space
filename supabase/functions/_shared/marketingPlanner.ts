@@ -10,6 +10,8 @@ import { logActivity, type ActorContext } from './activityLog.ts';
 import { createServiceClient } from './orgAuth.ts';
 import { formatShortCode } from './marketingTrackedLinks.ts';
 import { MAX_ITEMS_PER_RUN, PLAYBOOK_VERSION } from './marketingPlaybook.ts';
+import { maybeDraftPlanBriefs, type PlanBriefCopy } from './marketingPlanBriefAi.ts';
+import { MARKETING_PLAN_BRIEF_PROMPT } from './ai/prompts/marketingPlanBrief.ts';
 import { buildOpportunities, type PlannerOpportunity } from './marketingSignals.ts';
 import { validateAvailabilityClaims } from './marketingClaims.ts';
 import { loadBlockedNightKeys, loadPlannerInputs } from './marketingSignalsData.ts';
@@ -79,6 +81,8 @@ export type GeneratePlanInput = {
   organizationId: string;
   actor: ActorContext;
   trigger?: 'host' | 'weekly_cron' | 'event';
+  /** `ai` writes briefs on top of the rules skeleton. Any AI failure falls back to rules copy. */
+  mode?: 'rules' | 'ai';
 };
 
 export type GeneratePlanResult = {
@@ -86,6 +90,8 @@ export type GeneratePlanResult = {
   items: PlannerItemRow[];
   created: number;
   skipped: number;
+  /** Items that kept rules copy because the AI pass was skipped or its copy was rejected. */
+  rulesFallback: number;
 };
 
 function newShortCode(): string {
@@ -106,17 +112,24 @@ export function buildPlanSummary(opportunities: PlannerOpportunity[], horizonEnd
 
 function toInsertRow(
   draft: PlannerItemDraft,
-  input: { propertyId: string; organizationId: string; planId: string; actorId: string | null }
+  input: {
+    propertyId: string;
+    organizationId: string;
+    planId: string;
+    actorId: string | null;
+    copy?: PlanBriefCopy;
+  }
 ): Record<string, unknown> {
+  const copy = input.copy;
   return {
     short_code: newShortCode(),
     property_id: input.propertyId,
     organization_id: input.organizationId,
     plan_id: input.planId,
-    source: 'rules',
+    source: copy ? 'ai' : 'rules',
     opportunity_type: draft.opportunityType,
     opportunity_key: draft.opportunityKey,
-    title: draft.title,
+    title: copy?.title ?? draft.title,
     pillar: draft.pillar,
     objective: null,
     channel_kind: draft.channelKind,
@@ -128,9 +141,9 @@ function toInsertRow(
     target_to: draft.targetTo,
     claims: draft.claims,
     brief: {
-      hook: draft.hook,
-      message: draft.message,
-      cta: draft.cta,
+      hook: copy?.hook ?? draft.hook,
+      message: copy?.message ?? draft.message,
+      cta: copy?.cta ?? draft.cta,
       why: draft.evidence,
     },
     status: 'planned',
@@ -158,6 +171,33 @@ export async function generatePlan(input: GeneratePlanInput): Promise<GeneratePl
     propertyName: inputs.propertyName,
   });
 
+  const mode: 'rules' | 'ai' = input.mode === 'ai' ? 'ai' : 'rules';
+
+  // AI is additive: it rewrites words for the drafts the rules engine already produced.
+  // Any failure returns null and the plan ships with rules copy.
+  const aiResult =
+    mode === 'ai' && drafts.length > 0
+      ? await maybeDraftPlanBriefs({
+          organizationId: input.organizationId,
+          propertyId: input.propertyId,
+          propertyName: inputs.propertyName,
+          area: null,
+          amenities: inputs.signals.amenities,
+          language: inputs.settings.language,
+          tone: 'warm',
+          horizonEnd: inputs.horizonEnd,
+          actorType: 'staff',
+          items: drafts.map((draft) => ({
+            key: draft.opportunityKey,
+            opportunityType: draft.opportunityType,
+            format: draft.format,
+            channel: draft.channelKind,
+            evidence: draft.evidence,
+            claims: draft.claims,
+          })),
+        })
+      : null;
+
   const { data: plan, error: planError } = await supabase
     .from('marketing_plans')
     .insert({
@@ -165,7 +205,7 @@ export async function generatePlan(input: GeneratePlanInput): Promise<GeneratePl
       organization_id: input.organizationId,
       horizon_start: today,
       horizon_end: inputs.horizonEnd,
-      mode: 'rules',
+      mode: aiResult ? 'ai' : 'rules',
       trigger: input.trigger ?? 'host',
       playbook_version: PLAYBOOK_VERSION,
       signals_snapshot: {
@@ -174,8 +214,13 @@ export async function generatePlan(input: GeneratePlanInput): Promise<GeneratePl
         opportunityCount: opportunities.length,
         plannedCount: drafts.length,
         goalKeys: inputs.signals.goals,
+        aiRejected: aiResult?.rejected ?? 0,
       },
-      summary: buildPlanSummary(opportunities, inputs.horizonEnd),
+      summary: aiResult?.summary || buildPlanSummary(opportunities, inputs.horizonEnd),
+      ai_model: aiResult ? 'gemini-2.5-flash' : null,
+      prompt_id: aiResult ? MARKETING_PLAN_BRIEF_PROMPT.id : null,
+      prompt_version: aiResult ? MARKETING_PLAN_BRIEF_PROMPT.version : null,
+      credits_consumed: aiResult?.creditsConsumed ?? 0,
       created_by: input.actor.userId ?? null,
     })
     .select('*')
@@ -190,6 +235,7 @@ export async function generatePlan(input: GeneratePlanInput): Promise<GeneratePl
       organizationId: input.organizationId,
       planId: String(plan.id),
       actorId: input.actor.userId ?? null,
+      copy: aiResult?.copies.get(draft.opportunityKey),
     })
   );
 
@@ -222,7 +268,7 @@ export async function generatePlan(input: GeneratePlanInput): Promise<GeneratePl
     targetId: String(plan.id),
     targetLabel: inputs.propertyName,
     metadata: {
-      mode: 'rules',
+      mode: aiResult ? 'ai' : 'rules',
       trigger: input.trigger ?? 'host',
       count: items.length,
       horizonEnd: inputs.horizonEnd,
@@ -234,6 +280,7 @@ export async function generatePlan(input: GeneratePlanInput): Promise<GeneratePl
     items,
     created: items.length,
     skipped: opportunities.length - drafts.length,
+    rulesFallback: aiResult ? drafts.length - aiResult.copies.size : drafts.length,
   };
 }
 
