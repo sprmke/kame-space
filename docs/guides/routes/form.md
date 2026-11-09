@@ -191,10 +191,21 @@ Shown on the last step, never gated by `?dev=true`. Checkboxes (all on by defaul
 
 ## Identity verification (2026-11-07)
 
-Each adult guest slot accepts **either** a gallery/photo file **or** a live identity
-verification. The UI (`GuestIdentityCapture`) offers "Verify your ID" first and
-"Upload a photo instead" as an equal fallback.
+An ID is still **required** for every guest aged 18+, because the host's GAF request attaches
+the image. What changed is **how** it is sent: the slot shows two equal options, not a primary
+action with a fallback.
 
+| Option       | Label                                           | Behaviour                                                                |
+| ------------ | ----------------------------------------------- | ------------------------------------------------------------------------ |
+| Live capture | **Verify with camera** · "Takes about a minute" | Opens the identity flow in a sheet; the phone handoff is used on desktop |
+| File         | **Upload a photo** · "Use one you already have" | The original gallery uploader, unchanged                                 |
+
+- The required marker stays on the label: the _identity_ is required, the _method_ is not.
+- A signed-in primary guest who already has a live verification gets it attached
+  automatically and sees a confirmation row with "Use a different ID". The lookup is
+  `identity-verification-mine`, restricted to slot 1: additional guests are different people
+  and are never given the booker's identity.
+- **Choose another way** returns from the uploader to the two options while nothing is chosen.
 - A completed verification stores its id on `primaryIdentityVerificationId` /
   `guest2IdentityVerificationId` … `guest5IdentityVerificationId`.
 - At submit, `DatabaseService.processFormData` validates the verdict belongs to this booking's
@@ -202,7 +213,8 @@ verification. The UI (`GuestIdentityCapture`) offers "Verify your ID" first and
   deterministic key, and writes `valid_id_url` exactly as an upload would. GAF attachments,
   admin previews and `GuestAvatar` are unchanged.
 - `identity_capture_mode` is `live` when any slot used the camera path.
-- The schema now accepts `validId || primaryIdentityVerificationId` for ages 18+.
+- The schema accepts `validId || <slot>IdentityVerificationId` for ages 18+, and
+  `isGuestFormStepComplete` re-runs that schema, so choosing the camera never blocks Continue.
 
 Guide for the phone side: [`verify.md`](./verify.md). Spec:
 [`../../architecture/identity-verification.md`](../../architecture/identity-verification.md).
@@ -212,4 +224,6 @@ Guide for the phone side: [`verify.md`](./verify.md). Spec:
 - Q: Does the guest still have to upload a photo?
   A: No. A live verification replaces it, and the captured photo is filed for you.
 - Q: What if the guest's camera is blocked?
-  A: They use "Upload a photo instead" and nothing else changes.
+  A: They pick "Upload a photo" and nothing else changes.
+- Q: Is the camera required?
+  A: No. Both options are shown side by side and either one satisfies the ID requirement.

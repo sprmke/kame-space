@@ -1,14 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import { BadgeCheck, ScanFace, Upload } from 'lucide-react';
+import { BadgeCheck, Camera, ImagePlus } from 'lucide-react';
+
+import { useGuestSession } from '@/features/guest/auth/hooks/useGuestSession';
 
 import { IdentityVerificationFlow } from '@/features/verification/components/IdentityVerificationFlow';
 import { VerificationResultBadge } from '@/features/verification/components/VerificationResultBadge';
+import { useMyIdentity } from '@/features/verification/hooks/useIdentitySession';
 import type { IdentitySubmitResponse } from '@/features/verification/lib/identityApi';
 import type { IdentityVerdict } from '@/features/verification/lib/identityVerdict';
 
 import { FormControl, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { ResponsiveModal, ResponsiveModalContent, ResponsiveModalTitle } from '@/components/ui/responsive-modal';
+import {
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalTitle,
+} from '@/components/ui/responsive-modal';
 
 import { GuestFormValidIdUpload } from './GuestFormValidIdUpload';
 
@@ -31,10 +38,15 @@ type GuestIdentityCaptureProps = {
 };
 
 /**
- * One ID slot on the booking form. Three states:
- *   * a live verification is attached → a confirmation row with a "Use a different ID" escape
- *   * a file is attached → the existing preview/uploader
- *   * nothing yet → verify with the camera, or upload as a fallback
+ * One ID slot on the booking form.
+ *
+ * An ID is still required for guests aged 18+ (the host's GAF workflow attaches it), but the
+ * *way* it is sent is the guest's choice: verify with the camera, or upload a photo. Both are
+ * presented as equal options — neither is a "fallback" the guest is nudged away from.
+ *
+ * A signed-in primary guest who already holds a live verification gets it attached
+ * automatically, so a returning guest never repeats the capture. Additional guests are
+ * different people and are never given the booker's identity.
  */
 export function GuestIdentityCapture({
   label,
@@ -53,14 +65,45 @@ export function GuestIdentityCapture({
   fieldProps,
 }: GuestIdentityCaptureProps) {
   const [open, setOpen] = useState(false);
-  const [verdict, setVerdict] = useState<IdentityVerdict | null>(null);
-
   const [upload, setUpload] = useState(false);
+  const [verdict, setVerdict] = useState<IdentityVerdict | null>(null);
+  const [verifiedName, setVerifiedName] = useState<string | null>(null);
+  const reusedAccountIdentity = useRef(false);
+
+  const { status: guestAuthStatus } = useGuestSession();
+  const myIdentity = useMyIdentity(guestSlot === 1 && guestAuthStatus === 'authenticated');
+  const accountVerification = guestSlot === 1 ? (myIdentity.data?.verification ?? null) : null;
+
+  // Verify once, book again: attach the guest's own live verification to this booking.
+  useEffect(() => {
+    if (reusedAccountIdentity.current) return;
+    if (!myIdentity.data?.hasIdentity || !accountVerification) return;
+    if (identityVerificationId || value || preview) return;
+    reusedAccountIdentity.current = true;
+    setVerdict(accountVerification.verdict);
+    setVerifiedName(accountVerification.maskedName);
+    onIdentityChange(accountVerification.id);
+  }, [
+    accountVerification,
+    identityVerificationId,
+    myIdentity.data?.hasIdentity,
+    onIdentityChange,
+    preview,
+    value,
+  ]);
 
   const handleComplete = (result: IdentitySubmitResponse) => {
     setVerdict(result.verdict);
+    setVerifiedName(result.maskedName);
     onIdentityChange(result.verificationId);
     setOpen(false);
+    setUpload(false);
+  };
+
+  const resetToOptions = () => {
+    onIdentityChange(undefined);
+    setVerdict(null);
+    setVerifiedName(null);
     setUpload(false);
   };
 
@@ -70,21 +113,19 @@ export function GuestIdentityCapture({
         <FormLabel>{label}</FormLabel>
         <FormControl>
           <div className="flex items-center justify-between gap-3 rounded-xl border p-3">
-            <div className="flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4 text-emerald-500" aria-hidden />
+            <div className="flex min-w-0 items-center gap-2">
+              <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{guestName || 'Guest'} verified</p>
+                <p className="truncate text-sm font-medium">
+                  {verifiedName || guestName || 'Guest'} verified
+                </p>
                 {verdict && <VerificationResultBadge verdict={verdict} />}
               </div>
             </div>
             <button
               type="button"
-              className="text-muted-foreground hover:text-foreground text-xs underline"
-              onClick={() => {
-                onIdentityChange(undefined);
-                setVerdict(null);
-                setUpload(true);
-              }}
+              className="text-muted-foreground hover:text-foreground shrink-0 text-xs underline"
+              onClick={resetToOptions}
             >
               Use a different ID
             </button>
@@ -97,18 +138,31 @@ export function GuestIdentityCapture({
 
   if (upload || preview || value) {
     return (
-      <GuestFormValidIdUpload
-        label={label}
-        preview={preview}
-        value={value}
-        imageLoadError={imageLoadError}
-        onChange={onChange}
-        onPreviewChange={onPreviewChange}
-        onImageLoadErrorChange={onImageLoadErrorChange}
-        fieldProps={fieldProps}
-      />
+      <>
+        <GuestFormValidIdUpload
+          label={label}
+          preview={preview}
+          value={value}
+          imageLoadError={imageLoadError}
+          onChange={onChange}
+          onPreviewChange={onPreviewChange}
+          onImageLoadErrorChange={onImageLoadErrorChange}
+          fieldProps={fieldProps}
+        />
+        {!preview && !value && (
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-foreground -mt-2 ml-0 inline-flex text-xs underline"
+            onClick={() => setUpload(false)}
+          >
+            Choose another way
+          </button>
+        )}
+      </>
     );
   }
+
+  const emailMissing = !email.trim();
 
   return (
     <FormItem>
@@ -116,29 +170,40 @@ export function GuestIdentityCapture({
         {label} <span className="text-destructive">*</span>
       </FormLabel>
       <FormControl>
-        <div className="flex flex-col gap-2 rounded-xl border p-3">
+        <div className="grid gap-2 sm:grid-cols-2">
           <button
             type="button"
-            disabled={!email.trim()}
-            className="hover:bg-muted focus-visible:ring-ring flex min-h-[52px] items-center gap-3 rounded-lg px-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={emailMissing}
+            className="hover:bg-muted focus-visible:ring-ring flex min-h-[72px] w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
             onClick={() => setOpen(true)}
           >
-            <ScanFace className="text-primary h-5 w-5" aria-hidden />
-            <span className="text-sm font-medium">Verify your ID</span>
+            <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg">
+              <Camera className="h-4 w-4" aria-hidden />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">Verify with camera</span>
+              <span className="text-muted-foreground block text-xs">Takes about a minute</span>
+            </span>
           </button>
-          {!email.trim() && (
-            <p className="text-muted-foreground px-2 text-xs">Enter your email first</p>
-          )}
+
           <button
             type="button"
-            className="text-muted-foreground flex min-h-[44px] items-center gap-3 rounded-lg px-2 text-left text-sm"
+            className="hover:bg-muted focus-visible:ring-ring flex min-h-[72px] w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
             onClick={() => setUpload(true)}
           >
-            <Upload className="h-4 w-4" aria-hidden />
-            Upload a photo instead
+            <span className="bg-muted text-muted-foreground flex size-9 shrink-0 items-center justify-center rounded-lg">
+              <ImagePlus className="h-4 w-4" aria-hidden />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">Upload a photo</span>
+              <span className="text-muted-foreground block text-xs">Use one you already have</span>
+            </span>
           </button>
         </div>
       </FormControl>
+      {emailMissing && (
+        <p className="text-muted-foreground text-xs">Enter your email to verify with camera</p>
+      )}
       <FormMessage />
 
       <ResponsiveModal open={open} onOpenChange={setOpen}>

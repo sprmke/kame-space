@@ -110,6 +110,10 @@ The guest booking form is anonymous, so an identity cannot be keyed on `auth.use
 Reuse-by-email was rejected deliberately: typing someone else's address must not grant their
 verification.
 
+On the booking form, a signed-in **primary** guest with a live verdict gets it attached
+automatically and sees a confirmation row with "Use a different ID". Additional guest slots
+are different people and never inherit the booker's identity.
+
 ### Host verification at registration
 
 A host signs in with Google **before** any organization exists, so an `org_owner` verdict is

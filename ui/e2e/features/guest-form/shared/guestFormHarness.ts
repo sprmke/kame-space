@@ -72,6 +72,13 @@ export async function installGuestFormMocks(page: Page, options: GuestFormMockOp
       body: { success: true, data: { bookedDates: options.bookedDates ?? [] } },
     },
     {
+      // The primary slot asks whether the guest already holds a live verification. Mock an
+      // empty answer so the flow never falls through to a real endpoint.
+      name: 'identity-verification-mine',
+      method: 'GET',
+      body: { success: true, data: { hasIdentity: false, verification: null } },
+    },
+    {
       name: 'submit-form',
       method: 'POST',
       body: { success: true, bookingId: 'guest-form-e2e-booking-001' },

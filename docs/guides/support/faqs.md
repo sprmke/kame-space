@@ -1306,7 +1306,7 @@ Parking Finance shows a read-only **Marketplace payouts** section with the guest
 - source: docs/guides/routes/verify.md
 - order: 910
 
-A live photo is much harder to fake than a gallery upload, and it reads the QR on a PhilSys ID directly. Guests can still upload a photo if their camera is blocked, and their result is then reviewed by a person.
+An ID is required for adult guests, but the guest chooses how to send it. Verifying with the camera takes about a minute and is harder to fake than an upload. Uploading an existing photo works just as well and is shown next to it, not hidden behind it.
 
 ### What do the ID badges mean on a booking?
 
