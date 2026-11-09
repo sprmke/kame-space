@@ -4,7 +4,9 @@ import {
   PUBLISH_BACKOFF_MINUTES,
   decidePublishAction,
   isDue,
+  isItemDueForReminder,
   nextAttemptIso,
+  reminderLeadMinutes,
 } from './marketingPublishScheduler.ts';
 
 const healthy = { claim: 'ok' as const, attempts: 0, connectionHealthy: true };
@@ -61,6 +63,54 @@ Deno.test('isDue: only scheduled rows past their window', () => {
   );
   assertEquals(
     isDue({ status: 'published', scheduledAt: '2026-11-09T09:00:00.000Z', nextAttemptAt: null, nowIso: now }),
+    false
+  );
+});
+
+Deno.test('reminderLeadMinutes: defaults to 30 and clamps to a sane range', () => {
+  assertEquals(reminderLeadMinutes(undefined), 30);
+  assertEquals(reminderLeadMinutes('nope'), 30);
+  assertEquals(reminderLeadMinutes(0), 5);
+  assertEquals(reminderLeadMinutes(10_000), 24 * 60);
+  assertEquals(reminderLeadMinutes(45), 45);
+});
+
+Deno.test('isItemDueForReminder: only open items inside the lead window', () => {
+  const now = '2026-11-09T10:00:00.000Z';
+  assertEquals(
+    isItemDueForReminder({
+      status: 'planned',
+      scheduledFor: '2026-11-09T10:20:00.000Z',
+      nowIso: now,
+      leadMinutes: 30,
+    }),
+    true
+  );
+  assertEquals(
+    isItemDueForReminder({
+      status: 'planned',
+      scheduledFor: '2026-11-09T11:00:00.000Z',
+      nowIso: now,
+      leadMinutes: 30,
+    }),
+    false
+  );
+  assertEquals(
+    isItemDueForReminder({
+      status: 'published',
+      scheduledFor: '2026-11-09T10:10:00.000Z',
+      nowIso: now,
+      leadMinutes: 30,
+    }),
+    false
+  );
+  assertEquals(
+    isItemDueForReminder({
+      status: 'planned',
+      scheduledFor: '2026-11-09T09:50:00.000Z',
+      nowIso: now,
+      leadMinutes: 30,
+    }),
     false
   );
 });

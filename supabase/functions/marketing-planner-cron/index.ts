@@ -16,6 +16,10 @@ import { logActivity, buildActorContext } from '../_shared/activityLog.ts';
 import { manilaTodayYmd } from '../_shared/calendarAvailabilityManila.ts';
 import { verifyCronSecret } from '../_shared/cronSecretGate.ts';
 import { generatePlan } from '../_shared/marketingPlanner.ts';
+import {
+  isItemDueForReminder,
+  reminderLeadMinutes,
+} from '../_shared/marketingPublishScheduler.ts';
 import { createOrCoalesceNotification } from '../_shared/notificationService.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
 import { serveCronPost } from '../_shared/serveEdge.ts';
@@ -148,22 +152,56 @@ async function expireStaleItems(
   return data?.length ?? 0;
 }
 
+/**
+ * Remind the host before a manual item is due. The window comes from the property's own
+ * `reminders.leadMinutes`, so a host who wants an hour of warning gets one.
+ */
 async function sendDueReminders(
   sb: ReturnType<typeof createServiceClient>,
   now: Date
 ): Promise<number> {
-  const soon = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+  // The widest window any property can ask for, so one query covers them all.
+  const soon = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
   const { data } = await sb
     .from('marketing_plan_items')
     .select('id, property_id, organization_id, title, channel_kind, scheduled_for, status')
-    .in('status', ['planned', 'ready'])
+    .in('status', ['planned', 'ready', 'scheduled'])
     .not('scheduled_for', 'is', null)
     .gte('scheduled_for', now.toISOString())
     .lte('scheduled_for', soon)
-    .limit(50);
+    .limit(100);
+  if (!data || data.length === 0) return 0;
+
+  const propertyIds = [...new Set(data.map((item) => String(item.property_id)))];
+  const { data: settings } = await sb
+    .from('marketing_planner_settings')
+    .select('property_id, reminders')
+    .in('property_id', propertyIds)
+    .limit(100);
+
+  const leadByProperty = new Map<string, number>();
+  for (const row of settings ?? []) {
+    const reminders = row.reminders;
+    const raw =
+      reminders && typeof reminders === 'object'
+        ? (reminders as Record<string, unknown>).leadMinutes
+        : undefined;
+    leadByProperty.set(String(row.property_id), reminderLeadMinutes(raw));
+  }
 
   let sent = 0;
-  for (const item of data ?? []) {
+  for (const item of data) {
+    const leadMinutes = leadByProperty.get(String(item.property_id)) ?? 30;
+    if (
+      !isItemDueForReminder({
+        status: String(item.status ?? ''),
+        scheduledFor: item.scheduled_for ? String(item.scheduled_for) : null,
+        nowIso: now.toISOString(),
+        leadMinutes,
+      })
+    ) {
+      continue;
+    }
     await createOrCoalesceNotification({
       organizationId: String(item.organization_id),
       propertyId: String(item.property_id),
@@ -171,7 +209,7 @@ async function sendDueReminders(
       title: 'Time to post',
       body: String(item.title ?? '').slice(0, 200),
       dedupeKey: `marketing_item_due:${item.id}`,
-      metadata: { planItemId: item.id, channel: item.channel_kind },
+      metadata: { planItemId: item.id, channel: item.channel_kind, leadMinutes },
     });
     sent += 1;
   }

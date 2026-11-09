@@ -59,3 +59,29 @@ export function isDue(input: {
   if (input.nextAttemptAt) return input.nextAttemptAt <= input.nowIso;
   return Boolean(input.scheduledAt) && input.scheduledAt! <= input.nowIso;
 }
+
+/** Reminder window before a manual item is due, in minutes. Clamped to sane bounds. */
+export function reminderLeadMinutes(raw: unknown): number {
+  const value = Number(raw);
+  if (!Number.isFinite(value)) return 30;
+  return Math.min(24 * 60, Math.max(5, Math.round(value)));
+}
+
+/**
+ * True when a manual item should be reminded about now: it is scheduled between now and
+ * `leadMinutes` ahead, and it is not already posted or skipped.
+ */
+export function isItemDueForReminder(input: {
+  status: string;
+  scheduledFor: string | null;
+  nowIso: string;
+  leadMinutes: number;
+}): boolean {
+  if (!input.scheduledFor) return false;
+  if (!['planned', 'ready', 'scheduled'].includes(input.status)) return false;
+  const scheduled = Date.parse(input.scheduledFor);
+  const now = Date.parse(input.nowIso);
+  if (!Number.isFinite(scheduled) || !Number.isFinite(now)) return false;
+  if (scheduled < now) return false;
+  return scheduled - now <= input.leadMinutes * 60_000;
+}

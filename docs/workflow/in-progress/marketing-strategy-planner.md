@@ -613,7 +613,8 @@ wizard reads real connections from the Inbox connection list, so it stores real 
 ### Phase 3: Publish, schedule and share (L)
 
 > Shipped: the publish scheduler cron with claim re-check and hold (P3.1, P3.2), Share it yourself
-> (P3.5), and the planner cron for weekly rules plans, expiry and reminders (P3.6).
+> (P3.5), and the planner cron for weekly rules plans, expiry and reminders (P3.6). Reminders honour
+> each property's `reminders.leadMinutes`, clamped to 5 minutes to 24 hours.
 >
 > Also shipped: the property Dashboard **Marketing today** card (P3.7 first half). Still open from
 > this phase: carousel and Reels in `PublishDialog` (P3.3), the Facebook Reels and stories decision
