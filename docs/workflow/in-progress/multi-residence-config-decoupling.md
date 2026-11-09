@@ -674,11 +674,11 @@ Each phase ships independently. Azure snapshots are diffed after every phase. Ne
 
 ### Phase 4: Super-admin editor completion and safety
 
-- [ ] Grouped IA with per-group save and unsaved-changes guards.
-- [ ] Source badges, reset, impact lines, clamp warnings.
-- [ ] Optimistic concurrency, history + restore, `activity_log` diffs.
-- [ ] Duplicate residence, type presets at create, readiness checklist gating `ACTIVE`.
-- [ ] Mobile pass at 375px on every group (`mobile-responsive`).
+- [ ] Grouped IA with per-group save and unsaved-changes guards. **Remaining** — the page still saves every group with one Save Changes (which does have the unsaved-changes guard).
+- [ ] Source badges, reset, impact lines, clamp warnings. **Remaining**.
+- [x] Optimistic concurrency (`expectedUpdatedAt` → 409 with a Reload action), history + one-click restore (`development_settings_history`, last 10 versions, restore disabled while dirty), and super-admin audit events (`development.settings_updated`, `development.renamed`, `development.settings_restored`). Platform-level writes use `super_admin_audit_events`; `activity-log: N/A` because a development is not org-scoped.
+- [ ] Duplicate residence, type presets at create, readiness checklist gating `ACTIVE`. **Remaining**.
+- [ ] Mobile pass at 375px on every group (`mobile-responsive`). **Remaining** — Structure uses the shared SettingsField/grid primitives but was not walked at 375px.
 
 **Acceptance:** `bun run test:e2e:ci -- --grep "development editor"`, `bun run test:edge:handlers` (`update-development` 409 + validation), and a 375 / 768 / 1024 px walkthrough of every group.
 

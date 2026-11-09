@@ -27,6 +27,7 @@ Route: `/admin/developments/:developmentSlug`
 | Amenities             | Done     | —          | Done | Suggested chips + free-text add                                   |
 | Location              | Done     | Done       | Done | Location line + `PropertyLocationPicker`                          |
 | Structure             | Done     | Done       | Done | Tower/unit labels, towers, parking towers, formats                |
+| History               | Done     | Done       | Done | Last 10 settings versions, one-click restore                      |
 | Danger Zone           | Done     | Done       | Done | Delete blocked (409) while linked                                 |
 
 ---
@@ -214,6 +215,18 @@ The building's physical rules, stored in **`developments.settings.structure`** (
 Save path: batched **Save Changes** → **`PATCH update-development`** with `structure`. The handler normalises it with the shared resolver and rejects an invalid shape (empty labels, duplicate tower or level, a custom pattern that does not compile or does not match its example, floors outside 1–200). The flat `propertyTowers` / `parkingTowers` / `parkingLevels` keys are written from `structure` for compatibility until Phase 7 retires them.
 
 The same structure drives the public reads **`list-residence-options`** (onboarding, New listing) and **`get-residence-profile`**.
+
+---
+
+## History and concurrent edits
+
+Every save that changes `settings` writes the **previous** settings into `development_settings_history` (`development_id`, `settings`, `saved_by`, `saved_by_email`, `saved_at`). `GET get-development` returns the last 10 versions as metadata only (`id`, `savedAt`, `savedByEmail`); the payload stays on the server.
+
+**Restore** → **`PATCH update-development`** with `restoreHistoryId`. The server checks the version belongs to this development, replaces `settings` wholesale, writes a `development.settings_restored` super-admin audit event, and returns the restored row. Restore is disabled while the draft has unsaved edits.
+
+**Concurrent edits.** Save sends the `updatedAt` it loaded as `expectedUpdatedAt`. A second admin saving from a stale tab gets **409** with a message; the toast offers **Reload**, which refetches the latest version. Nothing is overwritten silently.
+
+Platform-level writes emit `super_admin_audit_events` (`development.settings_updated`, `development.renamed`, `development.settings_restored`), not org `activity_log`, because a development is not org-scoped.
 
 ---
 
