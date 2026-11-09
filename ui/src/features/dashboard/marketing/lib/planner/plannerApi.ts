@@ -44,6 +44,8 @@ export type PlannerItemDto = {
   trackedUrl: string | null;
   postedUrl: string | null;
   trackedVisits: number;
+  /** Meta insight rollup, when the insights cron has run for this item. */
+  insights: { views: number | null; reach: number | null; interactions: number | null } | null;
 };
 
 export type PlannerPlanDto = {
@@ -75,6 +77,11 @@ function nullableStr(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
 }
 
+function numberOrNull(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function mapItem(row: RawItem): PlannerItemDto {
   return {
     id: str(row.id),
@@ -101,6 +108,14 @@ function mapItem(row: RawItem): PlannerItemDto {
       row.results && typeof row.results === 'object'
         ? Number((row.results as Record<string, unknown>).trackedVisits ?? 0) || 0
         : 0,
+    insights:
+      row.results && typeof row.results === 'object' && 'views' in (row.results as object)
+        ? {
+            views: numberOrNull((row.results as Record<string, unknown>).views),
+            reach: numberOrNull((row.results as Record<string, unknown>).reach),
+            interactions: numberOrNull((row.results as Record<string, unknown>).interactions),
+          }
+        : null,
   };
 }
 

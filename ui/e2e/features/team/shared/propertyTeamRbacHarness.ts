@@ -499,6 +499,8 @@ function entitlementsPayload(
     aiValidations: false,
     aiMonthlyCreditAllowance: 0,
     marketingStudio: true,
+    marketingPlanner: !freePlan,
+    aiMarketingPlanner: !freePlan,
     aiMarketingImageGeneration: !freePlan,
     aiMarketingVideoGeneration: videoPlanAllowed,
     customPages: true,

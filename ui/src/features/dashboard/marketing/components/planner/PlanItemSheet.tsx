@@ -257,6 +257,25 @@ export function PlanItemSheet({
                 <p className="mt-2 text-caption text-muted-foreground">{item.brief.why}</p>
               ) : null}
             </div>
+
+            {item.trackedVisits > 0 || item.insights ? (
+              <div className="space-y-1 text-sm">
+                <p className="text-caption text-muted-foreground">Results</p>
+                {item.trackedVisits > 0 ? (
+                  <p>
+                    {item.trackedVisits}{' '}
+                    {item.trackedVisits === 1 ? 'person opened' : 'people opened'} your page from
+                    this post.
+                  </p>
+                ) : null}
+                {item.insights?.views != null ? (
+                  <p>{item.insights.views} views on the platform.</p>
+                ) : null}
+                {item.insights?.reach != null ? (
+                  <p>{item.insights.reach} accounts reached.</p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <ResponsiveModalFooter className="flex flex-wrap gap-2">

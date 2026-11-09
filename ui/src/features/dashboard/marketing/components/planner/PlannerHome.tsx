@@ -74,10 +74,6 @@ export function PlannerHome() {
   const groups = useMemo(() => groupItemsByDay(items), [items]);
 
   useEffect(() => {
-    if (!settings.isLoading && settings.data === null) setSetupOpen(true);
-  }, [settings.isLoading, settings.data]);
-
-  useEffect(() => {
     if (viewed.current || !data) return;
     viewed.current = true;
     captureAppEvent('planner_viewed', { range, itemCount: data.items.length });
@@ -143,6 +139,17 @@ export function PlannerHome() {
           </Button>
         </div>
       </div>
+
+      {allowed && settings.isSuccess && settings.data === null ? (
+        <Card className="border-primary/30">
+          <CardContent className="flex flex-wrap items-center justify-between gap-2 p-4">
+            <p className="text-sm">Set up your plan: goals, where you post, and how much time.</p>
+            <Button size="sm" onClick={() => setSetupOpen(true)}>
+              Set up
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {isLoading ? (
         <Card>

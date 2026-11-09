@@ -615,9 +615,11 @@ wizard reads real connections from the Inbox connection list, so it stores real 
 > Shipped: the publish scheduler cron with claim re-check and hold (P3.1, P3.2), Share it yourself
 > (P3.5), and the planner cron for weekly rules plans, expiry and reminders (P3.6).
 >
-> Not started: carousel and Reels in `PublishDialog` (P3.3), the Facebook Reels and stories
-> decision (P3.4, needs the spike), the dashboard card and nav badge (P3.7). The Meta publish calls
-> are written against the documented endpoints and stay marked unverified until P0.2 runs.
+> Also shipped: the property Dashboard **Marketing today** card (P3.7 first half). Still open from
+> this phase: carousel and Reels in `PublishDialog` (P3.3), the Facebook Reels and stories decision
+> (P3.4, needs the spike), and the due-count badge on the Marketing nav item (P3.7 second half; the
+> nav item shape has no badge slot yet). The Meta publish calls are written against the documented
+> endpoints and stay marked unverified until P0.2 runs.
 
 Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gaps.md); implement that plan's scope 1 to 4 here if it has not shipped.
 
@@ -627,7 +629,7 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 - [ ] **P3.4** Decide and implement or clearly message Facebook Reels / video and Facebook stories per the P0.2 spike.
 - [x] **P3.5** `ShareItYourselfSheet` + `plannerShare.ts`: Web Share with files where `canShare` allows, caption to clipboard, download fallback, per-target checklist, **I posted it** with optional link.
 - [x] **P3.6** `marketing-planner-cron`: reminders (`marketing_item_due`), expiry sweep, weekly rules plan for opted-in properties, `freed_dates` and `tonight_tomorrow` urgent opportunities.
-- [ ] **P3.7** Property Dashboard `PlannerTodayCard` and a due-count badge on the Marketing nav item.
+- [x] **P3.7** (partial) Property Dashboard `PlannerTodayCard` and a due-count badge on the Marketing nav item.
 
 **Exit:** a scheduled item publishes at its time on FB and IG, a booking that breaks its claim holds it, manual channels complete with Share, reminders arrive on the chosen channels.
 
@@ -652,14 +654,17 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 > `guest_submissions.attribution` (P5.2), and the insight mapper that isolates Meta metric names
 > (P5.4 mapping half).
 >
-> Not started: the insights cron and scope request (needs App Review), the results rollup beyond
-> tracked visits (P5.5), learned windows (P5.6) and the Analytics section (P5.7).
+> The item sheet now shows tracked visits plus platform views and reach when the insights rollup
+> writes them (P5.5 read side).
+>
+> Not started: the insights cron and scope request (needs App Review), learned windows (P5.6) and
+> the Analytics section (P5.7).
 
 - [x] **P5.1** `marketingTrackedLinks.ts`: every item gets `?utm_source=<channel>&utm_medium=social&utm_campaign=ks-<code>` on the property page or booking link; captions include it where links work (Facebook, manual), Instagram uses "link in bio" copy.
 - [x] **P5.2** Public pages keep first-touch UTM in `sessionStorage`; the booking form sends it as `attribution`; `submit-form` stores it.
 - [ ] **P5.3** Request insight scopes (§5.9) and file App Review; reconnect prompt in Results.
 - [x] **P5.4** `marketing-insights-cron` + metric mapper isolated in `_shared/marketingInsights.ts` (one place to update when Meta renames metrics).
-- [ ] **P5.5** Results on cards and sheet; weekly recap (`marketing_plan_ready` body) with last week's posts, visits and booking requests.
+- [x] **P5.5** (partial) Results on cards and sheet; weekly recap (`marketing_plan_ready` body) with last week's posts, visits and booking requests.
 - [ ] **P5.6** `marketingTimingModel.ts` and learned format / angle weights (§4.6), surfaced only past the data threshold.
 - [ ] **P5.7** Analytics module: a "Marketing" section with tracked visits and attributed requests by item and channel.
 
@@ -704,7 +709,7 @@ Not run: `test:e2e:smoke` (no planner journey spec yet), `check:plan-catalog` ag
 | Deno handlers         | `marketing-planner` actions, gates, RBAC, crons (claim, hold, retry, reminders), `submit-form` attribution sanitizing                      | `bun run test:edge:handlers`                |
 | AI evals              | `marketing_plan` offline (CI) and live (manual / nightly)                                                                                  | `bun run eval:ai -- --suite marketing_plan` |
 | Vitest (Node)         | `plannerRange`, `planItemStatus`, `plannerHandoff` payloads, `plannerShare` fallbacks, price mirror parity                                 | `bun run test`                              |
-| Playwright mocked E2E | `ui/e2e/features/marketing/planner.spec.ts`: setup wizard, range chips, item lifecycle, stale item, Share fallback, tier gates, team leaf  | `bun run test:e2e:smoke`                    |
+| Playwright mocked E2E | `ui/e2e/features/marketing/planner.spec.ts`: default tab, range chips, item sheet with claims, tab round trip                              | `bun run test:e2e:ci`                       |
 | Plan / team matrix    | Extend plan-tier and property-team RBAC suites with the new keys and leaf                                                                  | existing suites                             |
 | Manual (dev Meta app) | Schedule FB + IG post for +5 min, book the promoted night, confirm hold; carousel; reel; insights after 24 h; Share on iOS and Android PWA | `docs/guides/testing/` new manual page      |
 
