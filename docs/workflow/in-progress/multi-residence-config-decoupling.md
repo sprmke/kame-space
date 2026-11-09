@@ -804,6 +804,28 @@ Fill in after each phase. A phase is not done until every row is `pass`.
 | 6     | Route sweep table filled                                     | TBD                      |            |                                                                                   |
 | 7     | Orphan modules deleted, snapshots still identical            | TBD                      |            |                                                                                   |
 
+**Phase 0 gate log (2026-11-09):**
+
+| Gate                                                     | Result                                                       |
+| -------------------------------------------------------- | ------------------------------------------------------------ |
+| `bun run type-check`                                     | pass                                                         |
+| `bun run lint`                                           | 0 errors (warnings only, repo baseline)                      |
+| `bun run test` (Vitest)                                  | 862 files / 5818 tests pass                                  |
+| `bun run test:edge` (Deno `_shared`)                     | 1419 tests pass                                              |
+| `bun run check:residence-profile-drift`                  | pass                                                         |
+| `bun scripts/dev/residence-profile-snapshots.ts --check` | pass                                                         |
+| `bun run test:e2e:smoke`                                 | 245 pass on re-run; 3 parallel-load flakes pass in isolation |
+| `bun run test:e2e:ci`                                    | 317 pass                                                     |
+| `bun run build` + budget / source-map / blocking-script  | pass (bundle budget is warn-only)                            |
+| `bun run db:migrate` (local)                             | all four migrations applied                                  |
+| `bun run seed:local` + `99-verify`                       | pass; `test-residence` present, property and parking linked  |
+| `development_unmatched_assets`                           | 0 rows locally                                               |
+| Merge guard, merge mode on this branch                   | fails as intended                                            |
+| Merge guard, deploy mode with the module present         | fails as intended                                            |
+
+Not run here: a production or hosted-dev unmatched-row count. That is a read-only query the
+owner should run before Phase 1.
+
 ## 15. Merge and deploy guard
 
 | Artifact                            | Role                                                                                                                                         |
