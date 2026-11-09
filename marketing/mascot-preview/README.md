@@ -1,11 +1,10 @@
-# Kame talking prototype
+# Kame motion study 04
 
-Review checkpoint for the approved soft-green turtle with orange shell. This
-standalone preview tests whether layered, rendered artwork can preserve the
-chosen appearance while supporting speech and small gestures. It is not wired
-into the application or the live receptionist.
+Standalone review prototype for the approved soft-green turtle with an orange
+shell. It tests a fixed-camera layered character rig with eight selectable
+actions. It does not replace the live receptionist or any application route.
 
-## Run
+## Preview
 
 From this directory:
 
@@ -13,58 +12,100 @@ From this directory:
 python3 -m http.server 4318 --bind 127.0.0.1
 ```
 
-Open <http://127.0.0.1:4318>. Select **Play greeting**. The large view and the
-160 px receptionist view share the same frame. Background controls show white,
-mint, dark teal, and an alpha checkerboard. Native audio controls allow seeking;
-the custom controls support pause/resume and replay. Reduced-motion preference
-disables blinking and body/hand movement while retaining speech articulation.
+Open <http://127.0.0.1:4318/?study=4>. Select a gesture or **Play all**.
+**Pause motion** freezes the gesture and blink clock. **Play greeting** runs the
+recorded voice and a wave. Gestures can also be selected while speech plays;
+mouth cues continue to follow the audio clock independently. Audio and motion
+have separate pause controls. Each action returns to idle after its duration.
 
-## What is implemented
+| Action    | Duration  | Motion                                         |
+| --------- | --------- | ---------------------------------------------- |
+| Idle      | 4 s cycle | Gentle torso movement and head inclination     |
+| Wave      | 3.6 s     | Arm lifts, waves, and lowers                   |
+| Laugh     | 3.2 s     | Small body/head bounces, squint, open smile    |
+| Think     | 5 s       | Hand approaches the chin with a head tilt      |
+| Sit down  | 6 s       | Torso lowers, hips rotate outward, then stands |
+| Jump      | 2.8 s     | Anticipation, lift, landing, and settling      |
+| Listen    | 4.2 s     | Attentive tilt with small nod-like movement    |
+| Celebrate | 4 s       | Both arms lift with light body movement        |
 
-- Approved rendered artwork, with a generated clean facial plate and nine
-  generated mouth overlays. Original rendered eye patches are feathered into
-  the plate; no new geometric turtle model is used.
-- Rhubarb-generated mouth cues follow the audio element's playback position.
-  Short crossfades soften cue boundaries. This is audio-derived timing, not
-  random mouth movement or an amplitude-only animation.
-- A separate arm layer rotates rigidly at the shoulder, with an eased greeting
-  wave and smaller conversational gestures. Gesture strength cannot stretch or
-  warp the face, torso, feet, or opposite arm. Those surfaces remain stationary.
-  This fixed-angle 2.5D study is not a skeletal 3D rig.
-- Actual alpha transparency, including the contact shadow. The WebM export
-  contains a VP9 alpha plane; MP4 uses a pale mint background. WebM alpha support
-  must be checked on deployment browsers, especially Safari; canvas/PNG alpha
-  is the preview's primary path.
-- A 6.66-second sample recorded with the macOS Samantha voice. This voice is
-  only for a local review and does not replace the receptionist voice.
+The large and 160 px receptionist views share one frame. Light, mint, dark, and
+checkerboard backgrounds expose alpha edges. Reduced motion keeps the resting
+pose and disables blinking, while audio-driven mouth shapes remain available.
 
-## Assets and provenance
+## Why this approach
 
-| File                        | Purpose                                                                   |
-| --------------------------- | ------------------------------------------------------------------------- |
-| `assets/welcome.png`        | Approved-style transparent welcome pose from the image-generation session |
-| `assets/face-base.png`      | Same framing, eyes and mouth removed for facial compositing               |
-| `assets/mouth-atlas.png`    | 3×3 transparent rendered mouth atlas; row-major X, A, B, C, D, E, F, G, H |
-| `assets/greeting.wav`       | Local sample voice, mono PCM at 16 kHz                                    |
-| `assets/greeting.txt`       | Exact sample transcript supplied to the recognizer                        |
-| `assets/greeting-cues.json` | Rhubarb 1.14.0 mouth-shape timings                                        |
+Study 02 applied spatial texture deformation to one flattened image. Masks
+crossed the cheek and shoulder, so increasing gesture strength visibly warped
+the character. Study 03 removed that distortion but left the body stationary.
 
-Images were created with the built-in imagegen tool. The final approved
-two-view reference used an orange-on-orange recessed four-quadrant logo on the
-shell and original oval crown spots. This fixed front view does not expose the
-back engraving. No paid video generation was used.
+Study 04 separates the head, torso, arms, and legs. Animation applies only rigid
+rotation and translation to those layers. There is no texture-warp shader,
+animated character scaling, shear, optical-flow interpolation, or crossfade
+between full character images. The head, eyes, cheeks, crown spots, and mouth
+move together. The ground shadow stays on the floor during jumps.
 
-Generation instructions: preserve the approved character's shape, pose, camera,
-colors, and translucent ground shadow; remove only eyes and mouth for the base.
-The mouth atlas uses nine equally spaced transparent cells with dark brown
-edges and shaded interiors, coral tongues, no skin patches, and no labels.
-Prompts and review references are in `generation.json`.
+Every action starts and ends at the same joint pose with eased boundaries.
+Selecting another action mid-movement samples the current pose, eases back to
+rest over 450 ms, then starts the new action. Rapid clicks replace the pending
+action without accumulating a queue. Strength is bounded at 0.6–1.5; it affects
+expressive accents, not the required sitting or jumping geometry.
 
-## Reproduce speech and export
+The approved artwork guides the generated cutouts and limbs; this is not a
+claim of identical pixels for newly exposed surfaces. The face retains the
+approved design and original eye patches. New hidden torso/limb surfaces need
+visual approval. This front view does not expose the engraved shell logo.
 
-Install [Rhubarb Lip Sync 1.14.0](https://github.com/DanielSWolf/rhubarb-lip-sync/releases/tag/v1.14.0)
-locally. Do not commit its binaries. Rhubarb is MIT licensed and its generated
-timing data belongs to the user; see its [license](https://github.com/DanielSWolf/rhubarb-lip-sync/blob/master/LICENSE.md).
+## Assets and code
+
+| File                        | Purpose                                                                 |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `assets/welcome.png`        | Original approved-style rendered reference and eye source               |
+| `assets/head-layer.png`     | Isolated blank head, with cheeks and crown spots                        |
+| `assets/torso-layer.png`    | Torso/shell cutout with hidden areas reconstructed                      |
+| `assets/body-parts.png`     | Transparent six-cell atlas; the two arms and legs are used              |
+| `assets/mouth-atlas.png`    | Nine rendered mouth overlays, X/A/B/C/D/E/F/G/H                         |
+| `assets/greeting.wav`       | Local macOS Samantha sample voice, 6.66 seconds                         |
+| `assets/greeting-cues.json` | Rhubarb 1.14.0 audio-derived mouth timing                               |
+| `motion.mjs`                | Pure joint poses, easing, action durations, interruption controller     |
+| `rig.js`                    | Layer extraction, shoulder overlap, rigid rendering and floor shadow    |
+| `preview.js`                | Playback, expression composition, controls and deterministic review API |
+
+The atlas torso and bent arm are unused: dedicated torso artwork and a complete
+rotating arm gave better consistency. Earlier face/arm repair plates remain as
+provenance for previous studies. Images use the built-in image-generation tool;
+no paid video-generation service or new runtime dependency was used. Prompts
+and source identifiers are recorded in `generation.json`.
+
+The mouth follows broad audio-derived sound groups, with eased crossfades.
+Blinking compresses the isolated eye patches; it is not a sculpted eyelid rig.
+Laughing is visual only, with no generated laugh audio. During speech, speech
+mouth cues take precedence over the open laugh expression.
+
+## Verification and export
+
+With repository Playwright dependencies and local FFmpeg available:
+
+```sh
+node --test motion.test.mjs
+node exportPreview.mjs /absolute/path/to/output http://127.0.0.1:4318
+node exportGestures.mjs /absolute/path/to/output http://127.0.0.1:4318
+```
+
+Unit tests sample all actions at 120 Hz and several strengths, checking finite,
+bounded joint changes, neutral endpoints, continuous hip motion, jump landing,
+and interruption continuity. Browser verification checks the actual drawing
+transforms for stretching/shearing across all eight actions at maximum strength,
+plus action controls, rapid switching, motion pause, speech playback/pause,
+reduced motion, alpha, browser errors, and widths 375/390/768/1024/1440 px.
+
+`exportPreview.mjs` renders the greeting at 60 fps and writes MP4, transparent
+VP9 WebM, gesture snapshots and verification JSON. `exportGestures.mjs` renders
+all eight complete actions into a silent 60 fps MP4, with chapter times in JSON.
+These exports are reproducible samples; the browser rig provides interactive
+transitions rather than playing pre-baked clips.
+
+To regenerate speech timing locally:
 
 ```sh
 say -v Samantha -r 165 -f assets/greeting.txt -o /tmp/kame-greeting.aiff
@@ -72,81 +113,46 @@ ffmpeg -i /tmp/kame-greeting.aiff -ar 16000 -ac 1 assets/greeting.wav
 rhubarb -f json -d assets/greeting.txt -o assets/greeting-cues.json assets/greeting.wav
 ```
 
-Normalize `metadata.soundFile` to `greeting.wav` before committing cues, so local
-filesystem paths are not recorded. The greeting pronunciation is that of the
-installed system voice; brand pronunciation needs a separate voice review.
+Normalize the cue metadata path to `greeting.wav` before committing.
+[Rhubarb](https://github.com/DanielSWolf/rhubarb-lip-sync) is MIT licensed.
+WebM alpha needs deployment-browser testing; Canvas/PNG alpha is the primary
+review path. The sample voice does not replace the receptionist's voice.
 
-With the preview server running, Playwright installed via the repository's
-dependencies, and FFmpeg available:
+## Production boundary
 
-```sh
-node exportPreview.mjs /absolute/path/to/output http://127.0.0.1:4318
-```
+This is a fixed-angle 2.5D puppet, not a completed 3D character. Rigid sprites
+avoid rubber-like distortion but cannot provide changing perspective, moving
+3D lighting, hidden-side detail, physically articulated elbows, or arbitrary
+shell turns. Sitting is a stylized hip rotation, not a newly simulated 3D pose.
+The numerical checks do not certify visual quality; review the full gestures.
 
-The exporter verifies viewport overflow, playback/pause, reduced motion, alpha,
-and page errors. It renders deterministic frames at 60 fps, then writes a
-background-composited MP4, transparent WebM, screenshots, and verification JSON.
-The default output is under `marketing/.artifacts/mascot-preview` (gitignored).
+For a long-lived receptionist with unrestricted movements, the recommended
+production asset is a matching, manually reviewed 3D model with an armature,
+facial shape keys, and authored action clips. Blender's
+[glTF exporter](https://docs.blender.org/manual/id/5.0/addons/import_export/scene_gltf2.html)
+supports object/bone transforms and shape keys; Three.js provides an
+[animation mixer](https://threejs.org/docs/pages/AnimationMixer) for playback.
+The free toolchain is available, but creating and validating the matching model
+is separate work. Generated videos alone do not solve interruptible speech,
+consistent clip boundaries, or exact live lip sync.
 
-## Boundaries for the next iteration
+The live receptionist uses `useVoiceSession.ts` and `voicePlaybackQueue.ts` in
+`ui/src/features/guest/chat/hooks/`. Integration still needs a streaming
+mouth-cue provider, synchronization to that playback clock, cue clearing on
+interruption, semantic action selection, and mobile runtime profiling. This
+preview exposes `playAction(name)` for action testing, but has no live AI model
+connection and does not infer emotion or gestures from a guest conversation.
 
-This is a visual and timing review, not validated production lip sync. The mouth
-shapes are broad sound groups rather than an exact articulatory simulation;
-F/V and tongue poses are stylized, and automatic cues may need corrections.
-Blinking uses compressed original eye layers rather than a sculpted eyelid rig.
-The wave rotates the original arm artwork independently; head and torso motion
-is intentionally disabled until separate, properly occluded layers are available.
-Review these at 160 px before expanding the action library.
+## Scope and quality gate
 
-The current receptionist receives streamed PCM audio and text transcripts in
-`ui/src/features/guest/chat/hooks/useVoiceSession.ts`; its playback clock lives
-in `voicePlaybackQueue.ts`. A live version needs a streaming mouth-cue provider,
-latency measurements, and synchronization with that clock. It must clear queued
-cues immediately on interruption. This recorded-file prototype does not solve
-those live-stream requirements. Rhubarb's file-based analysis is suitable for
-the sample and is not assumed to run in a guest browser.
+Documentation maintenance: this README and generation provenance describe the
+local prototype. Route guides, support content, save guards, skeletons, audit
+logging, plans and permissions are not applicable: no app route, user data,
+editable form, or live capability changes. Mobile controls use 44 px targets;
+the stage and gesture grid remain available on phones.
 
-## Scope checklist
-
-Validation on this review branch: deterministic 60 fps export completed (442
-frames, all nine mouth shapes), playback/pause and reduced-motion checks passed,
-and no browser page errors or horizontal overflow occurred at the five tested
-widths. Decoding the WebM alpha plane confirmed fully transparent pixels and
-partial-alpha pixels. The repository quality gate passed frontend type-check,
-lint, unit tests and coverage, and edge type-check; it stopped in `test:edge`
-because Deno could not resolve `npm:@types/node` in the isolated checkout.
-Later stages of that gate were not run.
-
-- Documentation maintenance: this README describes the prototype and limits.
-- Route guides, support content, skeletons, save guards: not applicable; no app
-  route, user flow, data mutation, form, or live feature is changed.
-- Mobile review: 375, 390, 768, 1024, and 1440 px; controls are at least 44 px.
-- Activity log, plans, and permissions: not applicable to this local media study.
-- Merge remains a separate decision after visual review.
-
-## Motion study 03: rigid arm isolation
-
-Removed the spatial texture-warp shader entirely. It displaced cheek and body
-pixels along with the arm, and increasing strength amplified the deformation.
-Canvas now rotates an isolated crop of the original arm around its shoulder.
-An image-generated arm-free repair supplies only the formerly covered area;
-all other original pixels are retained. Face and front torso are composited in
-front of the arm, with the shell behind it. No scale, shear, head deformation,
-second-arm displacement, or torso bending is applied.
-
-The strength control remains 0.6–1.5, clamped in the renderer. Maximum arm
-rotation is 8.6 degrees. The greeting wave and smaller conversational gestures
-have eased entrances and exits. Eye blinking and audio-timed mouth crossfades
-remain independent of gesture strength. The browser renders on
-requestAnimationFrame; exports use 60 fps. Pausing mid-sentence freezes the pose.
-
-Regression checks compare face, lower cheek, belly, and feet pixels at minimum
-and maximum strength across six greeting times. These regions must remain
-pixel-identical while the arm must change. Tests also cover playback, reduced
-motion, alpha, page errors, and five desktop/mobile viewport widths.
-
-New asset: `assets/arm-clean-plate.png`, generated from `face-base.png` by removing
-only the raised viewer-left arm and reconstructing the underlying shell. The
-renderer restricts this repair to the arm's original outline to preserve the
-approved face and body. Further independent head/body gestures need separated
-artwork or a real rig; they must not be simulated by stretching this image.
+The earlier repository-wide quality gate passed frontend type-check, lint,
+unit tests/coverage, and edge type-check, then stopped because Deno could not
+resolve `npm:@types/node` in the isolated checkout. Later stages were not run.
+This iteration uses the focused motion and browser/export checks above. The
+branch remains a draft PR into `develop`; merging requires visual review.

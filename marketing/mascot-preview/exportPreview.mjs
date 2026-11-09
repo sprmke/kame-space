@@ -55,53 +55,55 @@ try {
   await page.waitForFunction(() => document.getElementById('motion').checked);
   await page.setViewportSize({ width: 1280, height: 1100 });
   const isolation = await page.evaluate(() => {
-    const c = document.getElementById('mascot');
-    const ctx = c.getContext('2d');
-    const energy = document.getElementById('energy');
-    const regions = [
-      [380, 210, 500, 270],
-      [500, 490, 350, 145],
-      [450, 750, 300, 230],
-      [320, 1020, 570, 150],
-    ];
-    let handChanges = 0;
-    for (const time of [0.6, 1.1, 1.5, 2.8, 4.6, 6.1]) {
-      energy.value = '0.6';
-      window.kamePreview.renderAt(time);
-      const low = ctx.getImageData(0, 0, c.width, c.height).data;
-      energy.value = '1.5';
-      window.kamePreview.renderAt(time);
-      const high = ctx.getImageData(0, 0, c.width, c.height).data;
-      for (const [x, y, w, h] of regions) {
-        for (
-          let py = Math.ceil((y / 1289) * c.height);
-          py < Math.floor(((y + h) / 1289) * c.height);
-          py++
-        ) {
-          for (
-            let px = Math.ceil((x / 1220) * c.width);
-            px < Math.floor(((x + w) / 1220) * c.width);
-            px++
-          ) {
-            const i = (py * c.width + px) * 4;
-            if (low.slice(i, i + 4).some((v, k) => v !== high[i + k]))
-              throw new Error(
-                `Gesture altered protected face/body pixels at ${time}s (${px}, ${py})`
-              );
-          }
-        }
-      }
-      for (let i = 0; i < low.length; i++) if (low[i] !== high[i]) handChanges++;
-    }
-    energy.value = '1';
-    if (!handChanges) throw new Error('Arm did not respond to strength');
-    return {
-      protectedRegions: regions.length,
-      sampleTimes: 6,
-      faceAndBodyUnchanged: true,
-      armResponds: true,
+    const canvas = document.getElementById('mascot');
+    const context = canvas.getContext('2d');
+    const draw = context.drawImage.bind(context);
+    let samples = 0;
+    context.drawImage = function (...args) {
+      const m = this.getTransform();
+      const a = m.a / (canvas.width / 1220),
+        b = m.b / (canvas.height / 1289);
+      const c = m.c / (canvas.width / 1220),
+        d = m.d / (canvas.height / 1289);
+      if (
+        Math.abs(a * a + b * b - 1) > 1e-5 ||
+        Math.abs(c * c + d * d - 1) > 1e-5 ||
+        Math.abs(a * c + b * d) > 1e-5
+      )
+        throw new Error('A character part was stretched or sheared');
+      samples++;
+      return draw(...args);
     };
+    try {
+      for (const [name, action] of Object.entries(window.kamePreview.actions)) {
+        for (let frame = 0; frame <= action.duration * 30; frame++)
+          window.kamePreview.renderAction(name, frame / 30, 1.5);
+      }
+    } finally {
+      context.drawImage = draw;
+    }
+    return { rigidDraws: samples, maximumStrength: 1.5, noStretchOrShear: true };
   });
+  for (const [name, action] of Object.entries(
+    await page.evaluate(() => window.kamePreview.actions)
+  )) {
+    await page.evaluate(({ name, time }) => window.kamePreview.renderAction(name, time, 1.5), {
+      name,
+      time: name === 'jump' ? 1 : action.duration / 2,
+    });
+    await page.locator('#mascot').screenshot({ path: resolve(output, `${name}.png`) });
+  }
+  await page.getByRole('button', { name: 'Think', exact: true }).click();
+  await page.waitForFunction(() => window.kamePreview.state().name === 'think');
+  await page.getByRole('button', { name: 'Pause motion', exact: true }).click();
+  const clock = await page.evaluate(() => window.kamePreview.state().gestureClock);
+  await page.waitForTimeout(120);
+  if (await page.evaluate((clock) => window.kamePreview.state().gestureClock !== clock, clock))
+    throw new Error('Gesture pause did not freeze the clock');
+  await page.getByRole('button', { name: 'Resume motion', exact: true }).click();
+  await page.getByRole('button', { name: 'Sit down', exact: true }).click();
+  await page.getByRole('button', { name: 'Jump', exact: true }).click();
+  await page.waitForFunction(() => window.kamePreview.state().name === 'jump');
   const fps = 60,
     count = Math.ceil((duration + 0.7) * fps);
   const shapes = new Set();

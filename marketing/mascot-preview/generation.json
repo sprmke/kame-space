@@ -16,5 +16,20 @@
   "armCleanPlate": {
     "source": "exec-75ffddf9-eade-40b3-b234-cdc87e25739a.png",
     "instructions": "Remove only the raised viewer-left arm from face-base.png. Reconstruct underlying shell and shoulder; preserve framing, blank face, colors, body, transparency and ground shadow. Runtime uses this repair only within the original arm outline."
+  },
+  "study04": {
+    "bodyParts": {
+      "source": "exec-5fddef45-de00-4a64-8a9a-c2754003e570.png",
+      "initial": "exec-6432c320-79af-45dc-add1-b5f34ba8c79a.png",
+      "instructions": "Six isolated body parts in 3x2 atlas matching welcome.png materials and lighting: torso, left waving arm, right hanging arm, left leg, right leg, bent thinking arm. Follow-up removes background, grid and shadows to true alpha. Runtime uses only arms and legs."
+    },
+    "head": {
+      "source": "exec-de91b3cd-ef32-424a-a01e-02ae93b3e01b.png",
+      "instructions": "Keep only blank head from face-base.png with cheeks and crown spots; preserve canvas, size and position. Remove entire body and all shadows."
+    },
+    "torso": {
+      "source": "exec-10c2a0fe-0a0e-4270-9f16-2b5f6c8208e1.png",
+      "instructions": "Keep torso, cream belly and orange shell from face-base.png. Remove head, arms, legs and shadow; reconstruct hidden shoulder and neck. Match perspective, panel shapes, colors and lighting. Runtime aligns generated alpha bounds to the reference layout."
+    }
   }
 }

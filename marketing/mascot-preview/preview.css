@@ -314,3 +314,26 @@ footer strong {
     width: 100%;
   }
 }
+
+.gestures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin: 14px 0;
+}
+.gestures button {
+  background: #eef3f1;
+  color: #466458;
+  font-size: 13px;
+}
+.gestures button[aria-pressed='true'] {
+  background: #16846e;
+  color: white;
+}
+@media (min-width: 768px) {
+  .stage {
+    position: sticky;
+    top: 20px;
+    align-self: start;
+  }
+}

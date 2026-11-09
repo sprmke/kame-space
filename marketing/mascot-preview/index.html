@@ -11,12 +11,12 @@
     <main>
       <header>
         <a class="brand" href="#">Kame<span>Space</span></a
-        ><span class="tag">Motion study 03</span>
+        ><span class="tag">Motion study 04</span>
       </header>
       <div class="intro">
         <p class="eyebrow">A LITTLE PERSONALITY</p>
         <h1>Meet your friendly host.</h1>
-        <p>One greeting. A wave, a blink, and a smile.</p>
+        <p>A little movement. A lot of personality.</p>
       </div>
       <div class="layout">
         <section class="stage surface light" aria-label="Large animated mascot preview">
@@ -31,6 +31,26 @@
           <p class="stage-note">Transparent artwork · soft contact shadow</p>
         </section>
         <aside>
+          <section class="card controls">
+            <div class="card-heading">
+              <h2>Try a gesture</h2>
+              <span id="gesture-status" role="status">Idle</span>
+            </div>
+            <div class="gestures" aria-label="Mascot gestures">
+              <button data-action="idle" aria-pressed="true" disabled>Idle</button>
+              <button data-action="wave" aria-pressed="false" disabled>Wave</button>
+              <button data-action="laugh" aria-pressed="false" disabled>Laugh</button>
+              <button data-action="think" aria-pressed="false" disabled>Think</button>
+              <button data-action="sit" aria-pressed="false" disabled>Sit down</button>
+              <button data-action="jump" aria-pressed="false" disabled>Jump</button>
+              <button data-action="listen" aria-pressed="false" disabled>Listen</button>
+              <button data-action="celebrate" aria-pressed="false" disabled>Celebrate</button>
+            </div>
+            <div class="actions">
+              <button id="demo" disabled>Play all</button
+              ><button id="pause-motion" class="secondary" disabled>Pause motion</button>
+            </div>
+          </section>
           <section class="card">
             <div class="card-heading">
               <h2>Receptionist size</h2>
@@ -76,7 +96,7 @@
               </div>
             </fieldset>
             <label class="toggle"
-              ><input type="checkbox" id="motion" checked /> Blink & hand motion</label
+              ><input type="checkbox" id="motion" checked /> Character motion</label
             >
             <label class="toggle"><input type="checkbox" id="guide" /> Show mouth timing</label>
             <label class="toggle" for="energy"

@@ -1,10 +1,9 @@
 {
   "duration": 6.66,
   "isolation": {
-    "protectedRegions": 4,
-    "sampleTimes": 6,
-    "faceAndBodyUnchanged": true,
-    "armResponds": true
+    "rigidDraws": 6944,
+    "maximumStrength": 1.5,
+    "noStretchOrShear": true
   },
   "frames": 442,
   "fps": 60,
@@ -20,8 +19,8 @@
     "H"
   ],
   "alpha": {
-    "zero": 241978,
-    "partial": 24093,
+    "zero": 251463,
+    "partial": 85796,
     "pixels": 393450
   },
   "viewportWidths": [
