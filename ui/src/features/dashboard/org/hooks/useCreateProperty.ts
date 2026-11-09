@@ -12,6 +12,7 @@ export type CreatePropertyInput = {
   tower: string;
   unitNumber: string;
   residenceName?: string;
+  developmentId?: string;
 };
 
 export function useCreateProperty() {
@@ -27,6 +28,7 @@ export function useCreateProperty() {
           tower: input.tower,
           unitNumber: input.unitNumber,
           residenceName: input.residenceName,
+          developmentId: input.developmentId,
         }),
       }),
     onSuccess: (data, input) => {

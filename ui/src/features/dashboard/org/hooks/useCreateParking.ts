@@ -13,6 +13,7 @@ type CreateParkingInput = {
   slotLabel: string;
   parkingType: string;
   residenceName?: string;
+  developmentId?: string;
   ratePerNight?: number;
 };
 
@@ -31,6 +32,7 @@ export function useCreateParking() {
           slotLabel: input.slotLabel,
           parkingType: input.parkingType,
           residenceName: input.residenceName,
+          developmentId: input.developmentId,
           ratePerNight: input.ratePerNight,
         }),
       }),

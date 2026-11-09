@@ -8,8 +8,9 @@
  * (Phase 1), invalidated by the super-admin save.
  */
 
-import type { DocumentRequirement } from '@/features/dashboard/bookings/lib/documentRequirements';
 import { MAX_GUESTS } from '@/features/guest/form/lib/guestCounts';
+
+import type { DocumentRequirement } from '@/features/dashboard/bookings/lib/documentRequirements';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -932,8 +933,8 @@ export function validateTowerForProfile(
   };
 }
 
-const ALNUM_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 .\-\/#]{0,14}$/;
-const SLOT_ALNUM_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 .\-]{0,9}$/;
+const ALNUM_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 ./#-]{0,14}$/;
+const SLOT_ALNUM_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 .-]{0,9}$/;
 
 function compilePattern(pattern: string | undefined): RegExp | null {
   if (!pattern) return null;

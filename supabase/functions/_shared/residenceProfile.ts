@@ -935,8 +935,8 @@ export function validateTowerForProfile(
   };
 }
 
-const ALNUM_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 .\-\/#]{0,14}$/;
-const SLOT_ALNUM_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 .\-]{0,9}$/;
+const ALNUM_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 ./#-]{0,14}$/;
+const SLOT_ALNUM_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 .-]{0,9}$/;
 
 function compilePattern(pattern: string | undefined): RegExp | null {
   if (!pattern) return null;
