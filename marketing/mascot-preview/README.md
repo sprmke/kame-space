@@ -27,8 +27,8 @@ disables blinking and body/hand movement while retaining speech articulation.
 - Rhubarb-generated mouth cues follow the audio element's playback position.
   Short crossfades soften cue boundaries. This is audio-derived timing, not
   random mouth movement or an amplitude-only animation.
-- Local texture deformation adds a small greeting wave, head inclination, and
-  breathing. Feet and contact shadow remain anchored. This is 2.5D artwork,
+- Local texture deformation adds a greeting wave followed by conversational hand gestures,
+  movement in the other arm, speech-emphasis nods, head inclination, and breathing. Feet and contact shadow remain anchored. This is 2.5D artwork,
   not a skeletal 3D rig, and it cannot produce arbitrary turns.
 - Actual alpha transparency, including the contact shadow. The WebM export
   contains a VP9 alpha plane; MP4 uses a pale mint background. WebM alpha support
@@ -83,7 +83,7 @@ node exportPreview.mjs /absolute/path/to/output http://127.0.0.1:4318
 ```
 
 The exporter verifies viewport overflow, playback/pause, reduced motion, alpha,
-and page errors. It renders deterministic frames at 30 fps, then writes a
+and page errors. It renders deterministic frames at 60 fps, then writes a
 background-composited MP4, transparent WebM, screenshots, and verification JSON.
 The default output is under `marketing/.artifacts/mascot-preview` (gitignored).
 
@@ -106,7 +106,7 @@ the sample and is not assumed to run in a guest browser.
 
 ## Scope checklist
 
-Validation on this review branch: deterministic 30 fps export completed (221
+Validation on this review branch: deterministic 60 fps export completed (442
 frames, all nine mouth shapes), playback/pause and reduced-motion checks passed,
 and no browser page errors or horizontal overflow occurred at the five tested
 widths. Decoding the WebM alpha plane confirmed fully transparent pixels and
@@ -121,3 +121,21 @@ Later stages of that gate were not run.
 - Mobile review: 375, 390, 768, 1024, and 1440 px; controls are at least 44 px.
 - Activity log, plans, and permissions: not applicable to this local media study.
 - Merge remains a separate decision after visual review.
+
+## Motion study 02
+
+The performance now continues throughout the greeting. The first hand wave eases
+in and out with zero-speed envelope boundaries, followed by smaller explanatory
+gestures. Head nods emphasize three beats in this recorded sample; those beats
+are authored for this greeting, not inferred from arbitrary conversation.
+The second arm and torso move subtly while feet and shadow stay anchored.
+Blink closing and reopening use eased, asymmetric timing with an occasional
+double blink. Mouth transitions use eased crossfades capped by each cue duration.
+The browser renders on requestAnimationFrame; exports use 60 fps. The gesture
+strength slider ranges from 0.6 to 1.5. Idle movement continues before and after
+the greeting, while pausing mid-sentence freezes the pose.
+
+This remains local texture deformation of fixed-angle rendered artwork. Large
+rotations, hands crossing the face, and new silhouettes require additional
+artwork or a proper character rig. These limits prevent overextending the image
+and distorting the approved character.

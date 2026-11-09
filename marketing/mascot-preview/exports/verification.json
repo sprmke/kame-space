@@ -1,7 +1,7 @@
 {
   "duration": 6.66,
-  "frames": 221,
-  "fps": 30,
+  "frames": 442,
+  "fps": 60,
   "mouthShapes": ["X", "D", "C", "B", "A", "F", "G", "E", "H"],
   "alpha": {
     "zero": 963017,

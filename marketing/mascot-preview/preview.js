@@ -120,17 +120,28 @@ function renderer() {
       `precision highp float; varying vec2 uv; uniform sampler2D art; uniform float time; uniform float motion;
     void main(){
       vec2 p=vec2(uv.x,1.-uv.y)*vec2(1220.,1289.);
-      // The feet and soft shadow stay anchored. Deformations are small and local.
-      float body=1.-smoothstep(1010.,1140.,p.y);
-      p.y+=sin(time*2.0)*2.5*body*motion;
+      // A coordinated performance with anchored feet and contact shadow.
+      // Inverse texture-space transforms keep the existing rendered lighting.
+      float settle=1.-smoothstep(6.1,6.9,time);
+      float body=1.-smoothstep(960.,1130.,p.y);
+      p.x+=(sin(time*1.9)*11.+sin(time*.85)*6.)*body*motion;
+      p.y+=sin(time*2.5)*5.*body*motion;
+      float nod=exp(-pow((time-.7)/.24,2.))+exp(-pow((time-2.8)/.3,2.))*.8+exp(-pow((time-5.5)/.35,2.));
       vec2 h=(p-vec2(640.,385.))/vec2(350.,295.);
-      float head=1.-smoothstep(.65,1.12,length(h));
-      float angle=sin(time*1.45)*.014*motion*head;
-      vec2 q=p-vec2(625.,590.);
-      p=vec2(cos(angle)*q.x-sin(angle)*q.y,sin(angle)*q.x+cos(angle)*q.y)+vec2(625.,590.);
-      float hand=(1.-smoothstep(340.,460.,p.x))*smoothstep(440.,500.,p.y)*(1.-smoothstep(625.,750.,p.y));
-      float wave=sin(time*8.)*sin(min(time/2.7,1.)*3.14159265)*step(time,2.7);
-      p.x+=wave*17.*hand*motion;p.y+=wave*9.*hand*motion;
+      float head=1.-smoothstep(.8,1.15,length(h));
+      float angle=(sin(time*1.5)*.045+sin(time*.7)*.018)*motion*head;
+      vec2 q=p-vec2(625.,610.);
+      p=vec2(cos(angle)*q.x-sin(angle)*q.y,sin(angle)*q.x+cos(angle)*q.y)+vec2(625.,610.);
+      p.y+=nod*13.*head*motion*settle;
+      float hand=(1.-smoothstep(350.,465.,p.x))*smoothstep(420.,500.,p.y)*(1.-smoothstep(660.,760.,p.y));
+      float hello=sin(time*7.5)*pow(sin(clamp(time/2.3,0.,1.)*3.14159265),2.)*step(time,2.3);
+      float explain=sin((time-2.3)*3.8)*smoothstep(2.3,2.7,time)*(1.-smoothstep(5.9,6.6,time));
+      float handAngle=(hello*.27+explain*.18)*hand*motion;
+      vec2 arm=p-vec2(445.,713.);
+      p=vec2(cos(handAngle)*arm.x-sin(handAngle)*arm.y,sin(handAngle)*arm.x+cos(handAngle)*arm.y)+vec2(445.,713.);
+      float other=smoothstep(770.,855.,p.x)*(1.-smoothstep(945.,1010.,p.x))*smoothstep(635.,730.,p.y)*(1.-smoothstep(920.,1000.,p.y));
+      float offer=sin(time*2.7)*smoothstep(2.,2.6,time)*settle*motion;
+      p.x-=offer*25.*other;p.y+=offer*10.*other;
       vec4 color=texture2D(art,p/vec2(1220.,1289.));gl_FragColor=color;
     }`
     )
@@ -161,7 +172,7 @@ function renderer() {
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, plate);
     gl.uniform1f(t, time);
-    gl.uniform1f(m, motion ? 1 : 0);
+    gl.uniform1f(m, motion);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   };
 }
@@ -185,15 +196,19 @@ async function init() {
     ctx.drawImage(atlas, ...mouths[key], -w / 2, key === 'X' || key === 'A' ? -3 : -19, w, h);
     ctx.restore();
   };
-  function renderAt(time, speaking = true) {
+  function renderAt(time, speaking = true, performanceTime = time) {
     const moving = $('motion').checked;
+    const strength = moving ? Number($('energy').value) : 0;
     ctx.clearRect(0, 0, W, H);
     ctx.drawImage(base, 0, 0, W, H);
     let blink = 1;
     if (moving) {
-      for (const at of [1.6, 4.8, 8.3, 11.6]) {
-        const d = Math.abs((time % 14) - at);
-        if (d < 0.105) blink = Math.min(blink, Math.max(0.035, d / 0.105));
+      for (const at of [1.55, 3.95, 4.24, 7.7, 11.2]) {
+        const d = (performanceTime % 14) - at;
+        if (d > -0.075 && d < 0.15) {
+          const openness = d < 0 ? -d / 0.075 : d / 0.15;
+          blink = Math.min(blink, 0.035 + 0.965 * openness * openness * (3 - 2 * openness));
+        }
       }
     }
     for (const {
@@ -209,10 +224,17 @@ async function init() {
     const index = speaking ? cues.mouthCues.findIndex((c) => time >= c.start && time < c.end) : -1;
     const cue = index >= 0 ? cues.mouthCues[index] : { value: 'X', start: 0 };
     const previous = index > 0 ? cues.mouthCues[index - 1].value : 'X';
-    const blend = index >= 0 ? Math.min(1, Math.max(0, (time - cue.start) / 0.035)) : 1;
+    const rawBlend =
+      index >= 0
+        ? Math.min(
+            1,
+            Math.max(0, (time - cue.start) / Math.min(0.065, (cue.end - cue.start) * 0.45))
+          )
+        : 1;
+    const blend = rawBlend * rawBlend * (3 - 2 * rawBlend);
     if (previous !== cue.value && blend < 1) drawMouth(previous, 1 - blend);
     drawMouth(cue.value, previous === cue.value ? 1 : blend);
-    drawGL(time, moving);
+    drawGL(performanceTime, strength);
     smallCtx.clearRect(0, 0, 320, 320);
     smallCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 9, 0, 302, 320);
     $('cue').textContent = `${time.toFixed(2)} s · mouth ${cue.value}`;
@@ -268,11 +290,20 @@ async function init() {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) audio.pause();
   });
-  let last = 0;
+
+  let idleStart = performance.now();
+  let wasSpeaking = false;
   function loop(now) {
-    if (manualTime === null && now - last > 1000 / 30) {
-      renderAt(audio.currentTime, !audio.paused && !audio.ended);
-      last = now;
+    if (manualTime === null) {
+      const speaking = !audio.paused && !audio.ended;
+      if (wasSpeaking && !speaking) idleStart = now;
+      // Pause mid-sentence freezes the pose; before/after speech, idle stays alive.
+      const idle = audio.currentTime === 0 || audio.ended;
+      const motionTime = idle
+        ? (audio.ended ? audio.duration : 7) + (now - idleStart) / 1000
+        : audio.currentTime;
+      renderAt(audio.currentTime, speaking, motionTime);
+      wasSpeaking = speaking;
     }
     requestAnimationFrame(loop);
   }

@@ -54,7 +54,7 @@ try {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.waitForFunction(() => document.getElementById('motion').checked);
   await page.setViewportSize({ width: 1280, height: 1100 });
-  const fps = 30,
+  const fps = 60,
     count = Math.ceil((duration + 0.7) * fps);
   const shapes = new Set();
   for (let frame = 0; frame < count; frame++) {
@@ -86,7 +86,7 @@ try {
   run([
     ...input,
     '-filter_complex',
-    'color=c=0xeff8f3:s=610x646:r=30[bg];[bg][0:v]overlay=0:0:shortest=1:format=auto,format=yuv420p[v];[1:a]apad[a]',
+    'color=c=0xeff8f3:s=610x646:r=60[bg];[bg][0:v]overlay=0:0:shortest=1:format=auto,format=yuv420p[v];[1:a]apad[a]',
     '-map',
     '[v]',
     '-map',
