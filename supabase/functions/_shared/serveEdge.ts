@@ -13,7 +13,12 @@ import { corsHeaders } from './cors.ts';
 import { captureSentryException } from './sentry.ts';
 import { sendCronCheckIn, type CronMonitorConfig } from './sentryCron.ts';
 import { getPlatformSettingsSnapshot } from './platformSettingsCache.ts';
-import { checkRateLimit, identityFromRequest, isIdentityBlocked } from './rateLimit.ts';
+import {
+  checkRateLimit,
+  checkRateLimitInMemory,
+  identityFromRequest,
+  isIdentityBlocked,
+} from './rateLimit.ts';
 import { recordJobHeartbeat } from './systemHealth/jobHeartbeat.ts';
 import { type EdgeTimings, timePhase, withServerTiming } from './serverTiming.ts';
 
@@ -56,13 +61,21 @@ async function enforceOrLogRateCheck(
     }
 
     const settings = await timePhase(t, 'settings', () => getPlatformSettingsSnapshot());
+
+    // Log-only is the shipped default. Paying a database write per request just to emit a
+    // log line cost 120 to 280 ms in production (measured 2026-11-09) while the handler
+    // itself took under 1 ms, so the log-only path now counts in the isolate. Enforcement
+    // still uses the durable counter, because a per-isolate count is not a quota.
+    const limitOptions = {
+      scope: `wrapper-default:${logPrefix}`,
+      identity,
+      limit: settings.authenticatedRateLimitPerMin,
+      windowSec: DEFAULT_AUTHENTICATED_WRAPPER_WINDOW_SEC,
+    };
     const decision = await timePhase(t, 'ratelimit', () =>
-      checkRateLimit({
-        scope: `wrapper-default:${logPrefix}`,
-        identity,
-        limit: settings.authenticatedRateLimitPerMin,
-        windowSec: DEFAULT_AUTHENTICATED_WRAPPER_WINDOW_SEC,
-      })
+      settings.authenticatedRateLimitEnforce
+        ? checkRateLimit(limitOptions)
+        : Promise.resolve(checkRateLimitInMemory(limitOptions))
     );
     if (decision.allowed) return null;
 
@@ -118,10 +131,7 @@ async function enforceOrLogRateCheck(
 const EDGE_HANDLER_TEST_ENV = 'EDGE_HANDLER_TEST';
 const mountedEdgeHandlers = new Map<string, (req: Request) => Promise<Response>>();
 
-function mountEdgeHandler(
-  logPrefix: string,
-  handler: (req: Request) => Promise<Response>
-): void {
+function mountEdgeHandler(logPrefix: string, handler: (req: Request) => Promise<Response>): void {
   mountedEdgeHandlers.set(logPrefix, handler);
   if (Deno.env.get(EDGE_HANDLER_TEST_ENV) === '1') return;
   serve(handler);

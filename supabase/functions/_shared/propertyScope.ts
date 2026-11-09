@@ -3,6 +3,7 @@
  */
 
 import {
+  type AuthenticatedUser,
   createServiceClient,
   type OrgAccessContext,
   type PropertyAccessContext,
@@ -96,19 +97,21 @@ export function requireExplicitPropertyId(propertyId: string | null | undefined)
 export async function resolveScopedPropertyAccess(
   req: Request,
   requiredPermission: TeamPermissionId,
-  explicitPropertyId?: string | null
+  explicitPropertyId?: string | null,
+  verifiedUser?: AuthenticatedUser
 ): Promise<PropertyAccessContext> {
   const url = new URL(req.url);
   const propertyId = requireExplicitPropertyId(
     explicitPropertyId?.trim() || readPropertyIdFromUrl(url)
   );
-  return verifyPropertyAccess(req, propertyId, requiredPermission);
+  return verifyPropertyAccess(req, propertyId, requiredPermission, verifiedUser);
 }
 
 /** Read access without a specific permission gate (any active member / owner). */
 export async function resolvePropertyAccessContext(
   req: Request,
-  explicitPropertyId?: string | null
+  explicitPropertyId?: string | null,
+  verifiedUser?: AuthenticatedUser
 ): Promise<PropertyAccessContext> {
   const url = new URL(req.url);
   const propertyId = explicitPropertyId?.trim() || readPropertyIdFromUrl(url);
@@ -118,7 +121,7 @@ export async function resolvePropertyAccessContext(
       headers: { 'Content-Type': 'application/json' },
     });
   }
-  return verifyPropertyAccess(req, propertyId);
+  return verifyPropertyAccess(req, propertyId, undefined, verifiedUser);
 }
 
 /** Org access — ?org_id= or ?org_slug=; optional permission gate on callers. */

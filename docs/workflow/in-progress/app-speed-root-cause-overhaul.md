@@ -4,7 +4,7 @@ status: planned
 stage: in-progress
 kind: plan
 tags: [performance, pwa, supabase, edge-functions, lighthouse, production-readiness, caching]
-updated: 2026-11-08
+updated: 2026-11-09
 readiness: unverified
 launch_gate: A
 launch_blocker: true
@@ -518,12 +518,22 @@ Note: Vitest silently ignores `.test.tsx` component tests in this repo, so put c
 | ID  | Decision                                                                       | Recommended                                                                    | Needed by  |
 | --- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ---------- |
 | D-1 | Public read caching option                                                     | Same-origin Vercel proxy + fix anon `no-store`, then fewer queries per call    | Phase 5    |
-| D-2 | Local JWT verification for reads (revocation lag up to token lifetime)         | Yes for reads, `getUser` kept for writes and sensitive actions                 | Phase 4.2  |
+| D-2 | Local JWT verification for reads (revocation lag up to token lifetime)         | **DEFERRED** — see the note below                                              | Phase 4.2  |
 | D-3 | Accepted staleness per public endpoint class                                   | 60 s listings/search, 300 s static content, 30 s availability                  | Phase 5    |
 | D-4 | `pg_stat_statements_reset()` at the baseline point on production               | Yes, once, with `kamewave`, after the before snapshot is saved                 | Phase 0    |
 | D-5 | Make the Lighthouse CI gate blocking                                           | After 2 green weeks                                                            | Phase 8    |
 | D-6 | Edge latency source: daily log pull vs. in-isolate counters flushed on a timer | Daily log pull (zero request-path cost); counters only if logs prove too lossy | Phase 0.4  |
 | D-7 | Regression threshold for a `perf:*` finding                                    | p95 up > 20% week over week with >= 100 calls                                  | Phase 10.5 |
+
+> **D-2 deferred (2026-11-09), with the reasoning.** Local verification is technically
+> available: tokens are ES256 and the project publishes a matching JWKS. It is not worth it
+> now. The five-second token cache plus threading the verified user into the inner checks
+> already removed the duplicate verification, so D-2's remaining gain is **~90 ms once per
+> burst**, about 3-5% of what is left on the authenticated path. Against that, `getUser` is
+> what makes sign-out, session revocation and account disable take effect **immediately**; local
+> verification would leave each of those accepting reads for up to the token lifetime
+> (measured: 3600 s) on a surface that exposes guest PII. Revisit only as an explicit product
+> decision with a stated maximum offboarding delay, and then for reads only.
 
 ## Operator inputs
 
@@ -562,19 +572,19 @@ rows, and the served HTML contains no test-property data. Reference:
 
 ## Status ledger
 
-| Phase | State                                                   | Evidence                                                                                                                                                                                                                                                                             |
-| ----- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 0     | partial (0.1, 0.2, DB capture shipped)                  | `bootMarks.ts` + 10 Vitest, `serverTiming.ts` + 10 Deno, `bootMarks.spec.ts` 3 E2E. Baseline captured: `perf-2026-11-08-before.md` + `2026-11-08-pg-stat-before.json`, via the new `perf:pg-stat:snapshot` (no `psql` needed). Lighthouse and authenticated edge latency still open. |
-| 1     | partial (RC-6, RC-8, RC-9, RC-10, RC-11, RC-16 decided) | RC-6 and RC-16 confirmed with numbers, RC-9 and RC-8 partly rejected, RC-10 rejected, RC-11 confirmed and fixed. Remaining RCs need a hosted HAR trace.                                                                                                                              |
-| 2     | 2.3 blocked, 2.5 already present                        | Deferring telemetry contradicts 0.1 (see note). `MarketingImage` + `responsiveImage.ts` already ship `srcset`, `sizes` and `fetchPriority` on the LCP image. Bundle unchanged: 246.4 / 633.2 KiB.                                                                                    |
-| 3     | partial (3.3, 3.4, 3.5)                                 | Page chunk starts with the shell, gate queries persist across reloads, notification preview and announcement dot deferred. **3.1/3.2 (bootstrap endpoint + TenantGate) remain**: highest value, highest risk, needs a role-parity suite.                                             |
-| 4     | 4.1 rejected                                            | `x-region: ap-southeast-1` measured 34% slower than default routing (0.376 s vs 0.28 s warm). Not shipping a pessimization. 4.2 (local JWT verification) is D-2 and stays open.                                                                                                      |
-| 5     | not started                                             | Needs D-1 and `kamewave` to test the Vercel proxy.                                                                                                                                                                                                                                   |
-| 6     | analysed, no fix yet                                    | Top statements captured (`perf-2026-11-08-before.md`). RC-16 confirmed at 85% Realtime. 6.1 to 6.5 need a decision on whether to move Realtime to Broadcast, which is a behaviour change and not a query fix.                                                                        |
-| 7     | partial                                                 | 7.1 dropped (RC-10 rejected), 7.2 chunk half shipped, 7.8 already present. 7.3 to 7.7 need a standalone-PWA trace.                                                                                                                                                                   |
-| 8     | not started                                             | Depends on the phases above producing new numbers.                                                                                                                                                                                                                                   |
-| 9     | not started                                             | Depends on Phase 0.3 and a production release.                                                                                                                                                                                                                                       |
-| 10    | not started                                             | Needs Management API + PostHog + Sentry read tokens.                                                                                                                                                                                                                                 |
+| Phase | State                                                   | Evidence                                                                                                                                                                                                                                                                                                                |
+| ----- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | partial (0.1, 0.2, DB capture shipped)                  | `bootMarks.ts` + 10 Vitest, `serverTiming.ts` + 10 Deno, `bootMarks.spec.ts` 3 E2E. Baseline captured: `perf-2026-11-08-before.md` + `2026-11-08-pg-stat-before.json`, via the new `perf:pg-stat:snapshot` (no `psql` needed). Lighthouse and authenticated edge latency still open.                                    |
+| 1     | partial (RC-6, RC-8, RC-9, RC-10, RC-11, RC-16 decided) | RC-6 and RC-16 confirmed with numbers, RC-9 and RC-8 partly rejected, RC-10 rejected, RC-11 confirmed and fixed. Remaining RCs need a hosted HAR trace.                                                                                                                                                                 |
+| 2     | 2.3 blocked, 2.5 already present                        | Deferring telemetry contradicts 0.1 (see note). `MarketingImage` + `responsiveImage.ts` already ship `srcset`, `sizes` and `fetchPriority` on the LCP image. Bundle unchanged: 246.4 / 633.2 KiB.                                                                                                                       |
+| 3     | partial (3.3, 3.4, 3.5)                                 | Page chunk starts with the shell, gate queries persist across reloads, notification preview and announcement dot deferred. **3.1/3.2 (bootstrap endpoint + TenantGate) remain**: highest value, highest risk, needs a role-parity suite.                                                                                |
+| 4     | 4.1 rejected                                            | `x-region: ap-southeast-1` measured 34% slower than default routing (0.376 s vs 0.28 s warm). Not shipping a pessimization. 4.2 (local JWT verification) is D-2 and stays open.                                                                                                                                         |
+| 5     | not started                                             | Needs D-1 and `kamewave` to test the Vercel proxy.                                                                                                                                                                                                                                                                      |
+| 6     | analysed, no fix yet                                    | Top statements captured (`perf-2026-11-08-before.md`). RC-16 confirmed at 85% Realtime. 6.1 to 6.5 need a decision on whether to move Realtime to Broadcast, which is a behaviour change and not a query fix.                                                                                                           |
+| 7     | partial                                                 | 7.1 dropped (RC-10 rejected), 7.2 chunk half shipped, 7.8 already present. 7.3 to 7.7 need a standalone-PWA trace.                                                                                                                                                                                                      |
+| 8     | partial                                                 | Bundle budget ratcheted to the measured build (260 / 660 KiB, was 500 / 1200, which passed at ~2x the real size and could not catch a regression). Durable rules captured in `.cursor/rules/edge-latency.mdc`. Lighthouse CI, the `@perf` regression lane and Sentry alerts need hosted infrastructure and remain open. |
+| 9     | not started                                             | Depends on Phase 0.3 and a production release.                                                                                                                                                                                                                                                                          |
+| 10    | not started                                             | Needs Management API + PostHog + Sentry read tokens.                                                                                                                                                                                                                                                                    |
 
 ## Plan revisions
 

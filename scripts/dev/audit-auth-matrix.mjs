@@ -186,6 +186,11 @@ const SCOPE_VIA_CALLEE_ALLOWLIST = new Set([
   'dashboard-assistant-briefing', // same resolveDashboardStatsScope() as dashboard-stats
   'list-my-reviews', // listMyReviews(user, tab, cursor) scopes rows to the caller's guest identity
   'respond-to-host-review', // guestOwnsHostReview(user, review.id) before respondToHostReview()
+  // `list_user_organizations(p_user_id => user.id)` filters every branch on the caller's id
+  // (owned / active membership / org-hub role / plan-limited), and the platform-admin
+  // variant is only reachable behind isSuperAdminEmail. Scope moved from seven PostgREST
+  // reads into one SQL function in 20261324000000; verified by reading both RPCs.
+  'list-organizations',
 ]);
 
 /** Permission-leaf check call sites (check type 3 — action within a resource). */
