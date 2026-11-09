@@ -30,6 +30,8 @@ Parking-slot **reservations** for one slot — separate from stay `need_parking`
 
 Payment and cancel ownership initially binds to the host account. The guest recovers access by signing in with the booking email (the ownership check rebinds on an email match), after which they can pay or cancel from the status page. If that is not practical, collect payment the way you would outside this flow.
 
+**Host notifications.** You get an in-app notification when a guest cancels while the request is searching, when a guest cancels after accepting but before payment, when a payment window expires, and when an endorsement could not be sent.
+
 **Paid outside Kame Space:** a host with `bookings:edit` can tick that option in the New booking modal for cash or bank transfer. The request auto-claims, records a ₱0 offline ledger row, and confirms without a payment link. No platform fee is taken. The guest still receives the confirmation and the PMO endorsement.
 
 On success, the modal shows an inline summary (dates, guest, email, phone, vehicle) instead of navigating to the public request-status page, with two actions: **Add another booking** (resets the form for another entry, same modal) and **View booking** (closes the modal and opens the new booking's detail page). The bookings list refreshes in the background so the new booking appears without a manual reload.

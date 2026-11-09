@@ -858,3 +858,9 @@ SELECT jobname FROM cron.job WHERE jobname = 'parking-complete-daily';
 ```
 
 Remote writes need `kamewave`. Back up first.
+
+### Parking list pre-claim visibility (`20261324000000_list_bookings_preclaim.sql`)
+
+Replaces `public.list_bookings_page` so org-wide and scoped-assigned booking lists include parking requests that are still `PENDING_HOST_ACCEPTANCE` and therefore have `parking_id = null`. It also treats those rows as `booking_kind = 'parking'`. No schema change, no backfill. Apply before deploying `list-bookings` if you want the RPC path to return pre-claim rows; the PostgREST fallback already includes them.
+
+Verify with an org that has a pending parking request: open the org Bookings list and confirm it appears before a host accepts.

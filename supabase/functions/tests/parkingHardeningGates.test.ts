@@ -105,13 +105,40 @@ Deno.test('every parking admin route is permission-wrapped', async () => {
   assertEquals(routeCount, guardedCount);
 });
 
-Deno.test('payouts expose a manual refund path and block disbursement after host cancel', async () => {
-  const src = await source('parking-payouts/index.ts');
-  assert(src.includes("action === 'record_refund'"));
-  assert(src.includes("status: 'refunded'"));
-  assert(src.includes("'parking.refund_recorded'"));
-  assert(src.includes(".eq('status', 'paid')"));
+Deno.test('org-wide booking lists include pre-claim parking requests', async () => {
+  const sql = await source('../../supabase/migrations/20261324000000_list_bookings_preclaim.sql');
+  assert(sql.includes('gs.parking_request_organization_id = p_org_id'));
+  assert(sql.includes("b.response = 'pending'"));
+  assert(sql.includes('s.parking_request_organization_id IS NOT NULL'));
+  const svc = await source('_shared/databaseService.ts');
+  assert(svc.includes("eq('parking_request_organization_id', orgId)"));
+  assert(svc.includes("from('parking_booking_broadcasts')"));
 });
+
+Deno.test('paying host is notified when the payment window expires', async () => {
+  const src = await source('_shared/parkingBroadcastExpireCron.ts');
+  assert(src.includes("type: 'parking_payment_expired'"));
+  assert(src.includes('payment window expired'));
+});
+
+Deno.test('guest cancellation and endorsement failure produce host notifications', async () => {
+  const cancel = await source('_shared/parkingCancellation.ts');
+  assert(cancel.includes("type: 'parking_request_cancelled'"));
+  assert(cancel.includes('notifyHostsOfCancellation'));
+  const pay = await source('_shared/parkingPaymentOrchestrator.ts');
+  assert(pay.includes("type: 'parking_endorsement_failed'"));
+});
+
+Deno.test(
+  'payouts expose a manual refund path and block disbursement after host cancel',
+  async () => {
+    const src = await source('parking-payouts/index.ts');
+    assert(src.includes("action === 'record_refund'"));
+    assert(src.includes("status: 'refunded'"));
+    assert(src.includes("'parking.refund_recorded'"));
+    assert(src.includes(".eq('status', 'paid')"));
+  }
+);
 
 Deno.test('host parking payment + endorsement reads are parking-team gated', async () => {
   const payments = await source('parking-payments/index.ts');
