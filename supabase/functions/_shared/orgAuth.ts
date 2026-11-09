@@ -343,32 +343,40 @@ export async function verifyPropertyAccess(
   const user = verifiedUser ?? (await verifyAuthenticatedUser(req));
   const supabase = createServiceClient();
 
-  const { data: property, error: propError } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('id', propertyId)
-    .maybeSingle();
+  // One read for property + org + both membership rows. This replaced four sequential
+  // round trips; the decision tree below is unchanged, so an authorisation bug would have to
+  // come from the rows, not from a reordered branch.
+  const { data: accessRows, error: accessError } = await supabase.rpc('resolve_property_access', {
+    p_property_id: propertyId,
+    p_user_id: user.id,
+  });
 
-  if (propError) {
-    console.error('[orgAuth] property lookup failed:', propError.message);
+  if (accessError) {
+    console.error('[orgAuth] property access lookup failed:', accessError.message);
     throw forbiddenResponse('Could not verify property access');
   }
-  if (!property) {
+
+  const accessRow = (accessRows ?? [])[0] as
+    | {
+        property: PropertyRow | null;
+        org: OrgRow | null;
+        org_member: Record<string, unknown> | null;
+        property_member: Record<string, unknown> | null;
+      }
+    | undefined;
+
+  if (!accessRow?.property) {
+    // The property id does not exist. A property whose org row is missing is impossible
+    // (FK), so the old "org lookup failed" 403 branch had no reachable input here.
     throw notFoundResponse('Property not found');
   }
 
-  const { data: org, error: orgError } = await supabase
-    .from('organizations')
-    .select('*')
-    .eq('id', property.organization_id)
-    .maybeSingle();
-
-  if (orgError || !org) {
+  if (!accessRow.org) {
     throw forbiddenResponse('Could not verify organization access');
   }
 
-  const orgRow = org as OrgRow;
-  const propertyRow = property as PropertyRow;
+  const orgRow = accessRow.org;
+  const propertyRow = accessRow.property;
 
   // Archived is read-only for team members (owner / platform admin still manage it).
   // Restoring needs the lifecycle leaf, which stays available so a member can undo the archive.
@@ -412,17 +420,7 @@ export async function verifyPropertyAccess(
     return ctx;
   }
 
-  const { data: orgAdminMember, error: orgAdminError } = await supabase
-    .from('organization_members')
-    .select('id, status, role_id, plan_limited, permissions, all_listings')
-    .eq('organization_id', orgRow.id)
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (orgAdminError) {
-    console.error('[orgAuth] org member lookup failed:', orgAdminError.message);
-    throw forbiddenResponse('Could not verify property access');
-  }
+  const orgAdminMember = accessRow.org_member;
 
   if (
     orgAdminMember &&
@@ -468,17 +466,7 @@ export async function verifyPropertyAccess(
     // Scoped org admin — fall through to property_members row below.
   }
 
-  const { data: member, error: memberError } = await supabase
-    .from('property_members')
-    .select('id, role_id, permissions, status, plan_limited')
-    .eq('property_id', propertyId)
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (memberError) {
-    console.error('[orgAuth] property member lookup failed:', memberError.message);
-    throw forbiddenResponse('Could not verify property access');
-  }
+  const member = accessRow.property_member;
 
   if (member && member.status === 'inactive' && member.plan_limited === true) {
     // Soft-allow for property-access / gates only — permissioned callers still 403.

@@ -91,12 +91,24 @@ callers that have not been threaded yet.
 
 Medians of seven warm calls each, taken after deploy.
 
-| Endpoint                | Handler before    | Handler after | Change   |
-| ----------------------- | ----------------- | ------------- | -------- |
-| `property-access`       | 261-399 ms (~390) | **250 ms**    | ~-36%    |
-| `property-entitlements` | 505-743 ms (~636) | **517 ms**    | ~-19%    |
-| `list-properties`       | 381-800 ms (~400) | **371 ms**    | ~-7%     |
-| `list-organizations`    | 488 ms            | **128 ms**    | **-74%** |
+| Endpoint                    | Handler before | Handler after | Change   |
+| --------------------------- | -------------- | ------------- | -------- |
+| `list-organizations`        | 488 ms         | **128 ms**    | **-74%** |
+| `property-access`           | ~390 ms        | **125 ms**    | **-68%** |
+| `property-entitlements`     | ~636 ms        | **389 ms**    | **-39%** |
+| `list-properties`           | ~400 ms        | **393 ms**    | ~0%      |
+| **Boot-path handler total** | **~1914 ms**   | **~1035 ms**  | **-46%** |
+
+The last three improved from `resolve_property_access` (migration `20261325000000`), which
+returns the property, its org and both membership rows in one read. `verifyPropertyAccess` used
+to fetch those in up to four sequential round trips. **No permission rule moved**: the same
+decision tree runs on the same rows, so an authorisation mistake would have to come from the
+data, not from a reordered branch. `property-access` is the clearest case: one read replaced
+three for an owner.
+
+Access control re-checked against production after deploy: owner `200`; unknown property
+`404`; missing `property_id` `400`; no token and bad token `401`; a different org's
+`list-properties` `403`.
 
 `auth` reads `0 ms` on every call in a burst, with an occasional 84-121 ms when the five-second
 window lapses between calls. Previously every call paid it.
