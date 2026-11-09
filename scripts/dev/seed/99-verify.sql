@@ -54,6 +54,25 @@ BEGIN
     v_errors := array_append(v_errors, 'monaco-level-2-slot-27 parking missing');
   END IF;
 
+  -- Local dev must never be single-residence (multi-residence Phase 0).
+  IF NOT EXISTS (SELECT 1 FROM public.developments WHERE slug = 'test-residence') THEN
+    v_errors := array_append(v_errors, 'test-residence development missing (03b-test-residence.sql)');
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.properties p
+    JOIN public.developments d ON d.id = p.development_id
+    WHERE p.slug = 'kame-home' AND d.slug = 'azure-north-residences'
+  ) THEN
+    v_errors := array_append(v_errors, 'kame-home is not linked to azure-north-residences by development_id');
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.parkings k
+    JOIN public.developments d ON d.id = k.development_id
+    WHERE k.slug = 'monaco-level-2-slot-27' AND d.slug = 'azure-north-residences'
+  ) THEN
+    v_errors := array_append(v_errors, 'monaco-level-2-slot-27 is not linked to azure-north-residences by development_id');
+  END IF;
+
   IF NOT EXISTS (
     SELECT 1
     FROM public.org_subscriptions s

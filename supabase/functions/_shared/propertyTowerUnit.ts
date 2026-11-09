@@ -47,8 +47,7 @@ export function parsePropertyTowerUnitFromBody(
 ): ParsedPropertyTowerUnit {
   const residenceName =
     options?.residenceName?.trim() ||
-    (typeof body.residenceName === 'string' ? body.residenceName.trim() : '') ||
-    DEFAULT_RESIDENCE_NAME;
+    (typeof body.residenceName === 'string' ? body.residenceName.trim() : '');
 
   const towerRaw = typeof body.tower === 'string' ? body.tower.trim() : '';
   const unitRaw = typeof body.unitNumber === 'string' ? body.unitNumber.trim() : '';

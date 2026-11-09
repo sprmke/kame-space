@@ -86,7 +86,20 @@ For booking status/transition/side-effect specifics, start at `.cursor/rules/boo
 
 ## Local seed data
 
-`bun run db:reset` loads one canonical dataset: org `kame-homes`, property `kame-home` (Monaco 2604), parking `monaco-level-2-slot-27`, Business plan, and realistic rows for every module. Files: `scripts/dev/seed/`. Commands: `seed:local`, `seed:refresh`, `seed:verify`, `seed:attach-admin`, `seed:search-fixtures` (opt-in typeahead fixtures). Guide: [`docs/guides/testing/local-seed-data.md`](guides/testing/local-seed-data.md).
+`bun run db:reset` loads one canonical dataset: org `kame-homes`, property `kame-home` (Monaco 2604), parking `monaco-level-2-slot-27`, Business plan, and realistic rows for every module. It also seeds a second **`INACTIVE`** development, `test-residence` (SUBDIVISION, no towers, alnum units, pets off, two manual approval steps), so local dev is never single-residence. Files: `scripts/dev/seed/` (`03b-test-residence.sql`). Commands: `seed:local`, `seed:refresh`, `seed:verify`, `seed:attach-admin`, `seed:search-fixtures` (opt-in typeahead fixtures). Guide: [`docs/guides/testing/local-seed-data.md`](guides/testing/local-seed-data.md).
+
+## Multi-residence profiles (Phase 0 foundation)
+
+A residence profile is the building rulebook stored on `developments.settings` and edited only by super admins at `/admin/developments/:slug`. Phase 0 ships the foundation with **no Azure behavior change**:
+
+- **`properties.development_id` / `parkings.development_id`** (`20261324000000_development_identity.sql`), backfilled by trimmed, case-insensitive `residence_name` → `developments.name`. `development_id IS NULL` means **unmatched**: it resolves the generic profile, never Azure. Read-only review queue: `public.development_unmatched_assets`.
+- **Scoped tower + unit uniqueness** (`20261324000100_development_scoped_tower_unit_unique.sql`): `(development_id, lower(tower), unit_number)` for ACTIVE rows, so two residences may share "Tower 1 / 0101".
+- **`guest_submissions.document_requirements_snapshot`** (nullable JSONB) and **`development_settings_history`** (`20261324000200_document_requirement_snapshot_and_history.sql`) for in-flight booking safety and one-click settings restore.
+- **Mirrored resolver** `supabase/functions/_shared/residenceProfile.ts` + `ui/src/lib/residence/residenceProfile.ts`. The shared core is byte-identical; `bun run check:residence-profile-drift` fails on divergence. Parsing is total, unknown or blank residences resolve `GENERIC_RESIDENCE_PROFILE`, and a load error throws in strict mode so a transition never silently skips documents.
+- **No building approval steps by default.** `mergeDocumentRequirements(undefined)` returns `[]`; existing developments were seeded with today's list in `20261324000300_seed_document_requirements_for_existing_developments.sql`.
+- **Merge and deploy guard**: `docs/workflow/merge-guard.json` + `bun run check:merge-guard` (`merge` mode in `ci.yml`, `deploy` mode in `cd-prod.yml`). This module is blocked until the owner clears it.
+
+Plan and remaining phases: [`docs/workflow/in-progress/multi-residence-config-decoupling.md`](workflow/in-progress/multi-residence-config-decoupling.md). `Plans: N/A` (super-admin platform capability). `activity-log: N/A` in Phase 0 (no new mutation surface; development writes get events in Phase 4).
 
 ## Org Activity & Audit Log
 

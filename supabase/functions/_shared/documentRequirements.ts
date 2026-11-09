@@ -124,15 +124,14 @@ export function parseDocumentRequirements(raw: unknown): DocumentRequirement[] |
     .sort((a, b) => a.order - b.order);
 }
 
+/**
+ * A residence with no explicit list has no building approval steps. Never falls back to
+ * Azure's GAF and pet steps: a new residence must not inherit another building's rules.
+ * Existing rows keep their list from the development record (Phase 0 seeded it).
+ */
 export function mergeDocumentRequirements(raw: unknown): DocumentRequirement[] {
-  if (raw === null || raw === undefined) {
-    return DEFAULT_DOCUMENT_REQUIREMENTS.map((req) => ({ ...req }));
-  }
-  const parsed = parseDocumentRequirements(raw);
-  if (parsed === null) {
-    return DEFAULT_DOCUMENT_REQUIREMENTS.map((req) => ({ ...req }));
-  }
-  return parsed;
+  if (raw === null || raw === undefined) return [];
+  return parseDocumentRequirements(raw) ?? [];
 }
 
 function bookingFlagTrue(value: unknown): boolean {
@@ -217,7 +216,11 @@ async function loadDocumentRequirementsOverride(propertyId: string): Promise<unk
   return data?.document_requirements_override ?? null;
 }
 
-async function loadPropertyResidenceName(propertyId: string): Promise<string> {
+type RequirementSourceLoad<T> = { ok: true; value: T } | { ok: false; message: string };
+
+async function loadPropertyResidenceName(
+  propertyId: string
+): Promise<RequirementSourceLoad<string>> {
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -230,15 +233,21 @@ async function loadPropertyResidenceName(propertyId: string): Promise<string> {
 
   if (error) {
     console.warn('[documentRequirements] residence load failed:', error.message);
-    return '';
+    return { ok: false, message: error.message };
   }
 
-  return trimOrEmpty(data?.residence_name as string | null | undefined);
+  return { ok: true, value: trimOrEmpty(data?.residence_name as string | null | undefined) };
 }
 
-async function loadDevelopmentDocumentRequirements(residenceName: string): Promise<unknown> {
+/**
+ * `ok: true, value: undefined` means the residence simply has no list (not an error).
+ * `ok: false` means the read failed and the caller must not treat it as "no steps".
+ */
+async function loadDevelopmentDocumentRequirements(
+  residenceName: string
+): Promise<RequirementSourceLoad<unknown>> {
   const name = trimOrEmpty(residenceName);
-  if (!name) return null;
+  if (!name) return { ok: true, value: undefined };
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -252,11 +261,13 @@ async function loadDevelopmentDocumentRequirements(residenceName: string): Promi
 
   if (error) {
     console.warn('[documentRequirements] development load failed:', error.message);
-    return null;
+    return { ok: false, message: error.message };
   }
 
   const settings = data?.settings;
-  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return null;
+  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+    return { ok: true, value: undefined };
+  }
 
   const workflowDefaults = (settings as Record<string, unknown>).workflowDefaults;
   if (
@@ -264,23 +275,32 @@ async function loadDevelopmentDocumentRequirements(residenceName: string): Promi
     typeof workflowDefaults !== 'object' ||
     Array.isArray(workflowDefaults)
   ) {
-    return null;
+    return { ok: true, value: undefined };
   }
 
-  return (workflowDefaults as Record<string, unknown>).documentRequirements ?? null;
+  return { ok: true, value: (workflowDefaults as Record<string, unknown>).documentRequirements };
 }
 
-/** Residence-type default → `DEFAULT_DOCUMENT_REQUIREMENTS` — ignores property override. */
+/**
+ * Residence default — ignores the per-property override.
+ *
+ * No list means no building approval steps. A read error throws so a transition fails and
+ * retries instead of silently skipping a live booking's GAF.
+ */
 export async function resolveResidenceDefaultDocumentRequirements(
   propertyId: string
 ): Promise<DocumentRequirement[]> {
-  const residenceName = await loadPropertyResidenceName(propertyId);
-  const developmentRaw = await loadDevelopmentDocumentRequirements(residenceName);
-  if (developmentRaw !== null && developmentRaw !== undefined) {
-    return mergeDocumentRequirements(developmentRaw);
+  const residence = await loadPropertyResidenceName(propertyId);
+  if (!residence.ok) {
+    throw new Error("Could not load this property's residence. Try again.");
   }
 
-  return DEFAULT_DOCUMENT_REQUIREMENTS.map((req) => ({ ...req }));
+  const development = await loadDevelopmentDocumentRequirements(residence.value);
+  if (!development.ok) {
+    throw new Error("Could not load this residence's approval steps. Try again.");
+  }
+
+  return mergeDocumentRequirements(development.value);
 }
 
 export async function resolveDocumentRequirements(

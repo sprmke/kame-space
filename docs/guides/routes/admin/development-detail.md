@@ -102,7 +102,7 @@ Each row: **label**, **trigger** (Always required / Guest has pets / Guest needs
 
 Save path: batched **Save Changes** → **`PATCH update-development`** with `documentRequirements`. The handler rejects the payload if any row is missing `id`, `label`, `order`, `triggerCondition`, or `approvalSource` rather than silently dropping it.
 
-Edge resolution for bookings: `documentRequirements.ts#resolveDocumentRequirements` (property override column deprecated; development default → `DEFAULT_DOCUMENT_REQUIREMENTS` fallback).
+Edge resolution for bookings: `documentRequirements.ts#resolveDocumentRequirements` (property override column deprecated; development default → **empty list**). An unconfigured development has **no** building approval steps; it never inherits another building's GAF and pet steps. A development read error **throws** so a live transition fails and retries instead of skipping documents. Existing developments were seeded with today's list by migration `20261324000300_seed_document_requirements_for_existing_developments.sql`; a new development starts empty.
 
 ---
 
@@ -199,7 +199,7 @@ Uses the shared `PropertyLocationPicker`. The location line auto-suggests from c
 
 ## Towers & Parking
 
-Three free-text tag lists stored in `developments.settings`: `propertyTowers`, `parkingTowers`, `parkingLevels`. These populate tower/level choices offered to admins when they set up individual properties/parking slots that belong to this development.
+Three free-text tag lists stored in `developments.settings`: `propertyTowers`, `parkingTowers`, `parkingLevels`. **These are write-only today.** No host dropdown and no edge validator reads them; host tower and level choices still come from the hardcoded `propertyResidences.ts` / `parkingResidences.ts` maps. Phase 1 of [`multi-residence-config-decoupling`](../../../workflow/in-progress/multi-residence-config-decoupling.md) moves them into `settings.structure` and wires the readers.
 
 ---
 

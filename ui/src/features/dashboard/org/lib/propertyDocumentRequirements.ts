@@ -32,6 +32,7 @@ export const DOCUMENT_TRIGGER_CONDITION_LABELS: Record<DocumentTriggerCondition,
 export const DOCUMENT_APPROVAL_SOURCE_LABELS: Record<DocumentApprovalSource, string> = {
   manual: 'Manual (admin marks complete)',
   'email-listener': 'Email listener (auto-approve)',
+  none: 'No approval',
 };
 
 export const DOCUMENT_PDF_TEMPLATE_LABELS: Record<RequestPdfTemplateId, string> = {

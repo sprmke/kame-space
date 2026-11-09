@@ -417,11 +417,11 @@ async function loadPropertyResidenceName(propertyId: string): Promise<string> {
 
   if (error) {
     console.warn('[appSettings] residence load failed:', error.message);
-    return DEFAULT_RESIDENCE_NAME;
+    // Never fall back to a real building's name: a blank residence is generic.
+    return '';
   }
 
-  const name = trimOrEmpty(data?.residence_name as string | null | undefined);
-  return name || DEFAULT_RESIDENCE_NAME;
+  return trimOrEmpty(data?.residence_name as string | null | undefined);
 }
 
 function pickPaymentProvider(row: AppSettingsRow | null): {
@@ -482,9 +482,7 @@ export async function resolveAppSettings(propertyId?: string | null): Promise<Ap
   const [row, orgRow, residenceName, brandColor] = await Promise.all([
     loadSettingsRow(propertyId),
     propertyId ? loadOrgSettingsRowByPropertyId(propertyId) : Promise.resolve(null),
-    propertyId
-      ? loadPropertyResidenceName(resolvedPropertyId)
-      : Promise.resolve(DEFAULT_RESIDENCE_NAME),
+    propertyId ? loadPropertyResidenceName(resolvedPropertyId) : Promise.resolve(''),
     loadOrgBrandColorByPropertyId(resolvedPropertyId),
   ]);
   const org = pickOrgSettingsFieldsFromRow(orgRow);
@@ -598,9 +596,7 @@ export async function serializeAppSettingsForAdmin(
   const org = pickOrgSettingsFieldsFromRow(orgRow);
   const originBase = resolvePublicGuestAppOrigin(org.origin.value || null);
   const resolvedPropertyId = propertyId ?? (await getDefaultPropertyId());
-  const residenceName = propertyId
-    ? await loadPropertyResidenceName(resolvedPropertyId)
-    : DEFAULT_RESIDENCE_NAME;
+  const residenceName = propertyId ? await loadPropertyResidenceName(resolvedPropertyId) : '';
   const developmentPmoEmail = await loadDevelopmentPmoEmailByName(
     createServiceClient(),
     residenceName

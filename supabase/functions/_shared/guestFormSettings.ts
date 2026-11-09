@@ -102,7 +102,7 @@ export async function resolveGuestFormSettings(propertyId: string): Promise<Gues
       : {};
 
   const residenceName = typeof data?.residence_name === 'string' ? data.residence_name.trim() : '';
-  const residenceDefaults = getResidencePropertyDefaults(residenceName || DEFAULT_RESIDENCE_NAME);
+  const residenceDefaults = getResidencePropertyDefaults(residenceName);
 
   const propertyName = String(data?.name ?? '').trim();
   const towerAndUnit = String(data?.tower_and_unit ?? '').trim() || null;

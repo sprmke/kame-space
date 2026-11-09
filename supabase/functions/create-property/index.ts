@@ -97,7 +97,7 @@ serveAuthenticated('create-property', async (req, user) => {
   }
 
   const slug = await allocatePropertySlug(supabase, name);
-  const effectiveResidence = residenceName ?? 'Azure North Residences';
+  const effectiveResidence = residenceName ?? '';
   const defaultSettings = defaultPropertySettingsForResidence(effectiveResidence);
   const azureLocation = isAzureNorthResidence(effectiveResidence) ? azureNorthLocationSeed() : null;
 

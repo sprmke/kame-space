@@ -76,9 +76,8 @@ export function validatePropertyDetailsForResidence(settings: {
   maxAdults?: unknown;
   maxChildren?: unknown;
 }): string | null {
-  const defaults = getResidencePropertyDefaults(
-    (settings.residenceName ?? '').trim() || DEFAULT_RESIDENCE_NAME
-  );
+  // A blank residence resolves the generic range. Never another building's.
+  const defaults = getResidencePropertyDefaults((settings.residenceName ?? '').trim());
   const bedrooms = Number(settings.bedrooms);
   const bathrooms = Number(settings.bathrooms);
   const floors = Number(settings.floors);

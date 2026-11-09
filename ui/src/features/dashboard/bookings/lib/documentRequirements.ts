@@ -6,7 +6,7 @@
  * ⚠️  Keep in sync with the server file when either changes.
  */
 
-export type DocumentApprovalSource = 'manual' | 'email-listener';
+export type DocumentApprovalSource = 'manual' | 'email-listener' | 'none';
 export type DocumentTriggerCondition = 'always' | 'has_pets' | 'need_parking';
 
 export type DocumentRequirement = {
@@ -127,15 +127,14 @@ export function parseDocumentRequirements(raw: unknown): DocumentRequirement[] |
     .sort((a, b) => a.order - b.order);
 }
 
+/**
+ * A residence with no explicit list has no building approval steps. Never falls back to
+ * Azure's GAF and pet steps: a new residence must not inherit another building's rules.
+ * Existing rows keep their list from the development record (Phase 0 seeded it).
+ */
 export function mergeDocumentRequirements(raw: unknown): DocumentRequirement[] {
-  if (raw === null || raw === undefined) {
-    return DEFAULT_DOCUMENT_REQUIREMENTS.map((req) => ({ ...req }));
-  }
-  const parsed = parseDocumentRequirements(raw);
-  if (parsed === null) {
-    return DEFAULT_DOCUMENT_REQUIREMENTS.map((req) => ({ ...req }));
-  }
-  return parsed;
+  if (raw === null || raw === undefined) return [];
+  return parseDocumentRequirements(raw) ?? [];
 }
 
 export type RequestPdfTemplateId = 'gaf' | 'pet';
