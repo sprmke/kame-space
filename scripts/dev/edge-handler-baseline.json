@@ -186,6 +186,8 @@
     "marketing-media-sweeper",
     "marketing-music",
     "marketing-planner",
+    "marketing-planner-cron",
+    "marketing-publish-scheduler-cron",
     "marketing-templates",
     "marketing-themes",
     "meta-inbox-backfill",

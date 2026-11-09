@@ -9,6 +9,7 @@ import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeMo
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 import { PlanItemCard } from '@/features/dashboard/marketing/components/planner/PlanItemCard';
 import { PlanItemSheet } from '@/features/dashboard/marketing/components/planner/PlanItemSheet';
+import { PlannerSetupWizard } from '@/features/dashboard/marketing/components/planner/PlannerSetupWizard';
 import { ShareItYourselfSheet } from '@/features/dashboard/marketing/components/planner/ShareItYourselfSheet';
 import type { PlannerItemDto } from '@/features/dashboard/marketing/lib/planner/plannerApi';
 import {
@@ -22,7 +23,9 @@ import {
   useGeneratePlan,
   useMarketingPlan,
   usePlanItemActions,
+  usePlannerSettings,
   useRefreshPlanBrief,
+  useSavePlannerSettings,
 } from '@/features/dashboard/marketing/hooks/useMarketingPlan';
 
 const SHOWCASE_ITEMS = 3;
@@ -47,6 +50,9 @@ export function PlannerHome() {
   const generate = useGeneratePlan();
   const { skip, markPosted, update } = usePlanItemActions();
   const refreshBrief = useRefreshPlanBrief();
+  const settings = usePlannerSettings();
+  const saveSettings = useSavePlannerSettings();
+  const [setupOpen, setSetupOpen] = useState(false);
   const [shareItem, setShareItem] = useState<PlannerItemDto | null>(null);
   const viewed = useRef(false);
   const [openItem, setOpenItem] = useState<PlannerItemDto | null>(null);
@@ -60,6 +66,10 @@ export function PlannerHome() {
   }, [allowed, data?.items]);
 
   const groups = useMemo(() => groupItemsByDay(items), [items]);
+
+  useEffect(() => {
+    if (!settings.isLoading && settings.data === null) setSetupOpen(true);
+  }, [settings.isLoading, settings.data]);
 
   useEffect(() => {
     if (viewed.current || !data) return;
@@ -90,6 +100,14 @@ export function PlannerHome() {
               AI plan
             </Button>
           ) : null}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setSetupOpen(true)}
+            disabled={!allowed}
+          >
+            Setup
+          </Button>
           <Button
             size="sm"
             disabled={!allowed || generate.isPending}
@@ -166,6 +184,19 @@ export function PlannerHome() {
           </ul>
         </section>
       ) : null}
+
+      <PlannerSetupWizard
+        open={setupOpen}
+        onOpenChange={setSetupOpen}
+        isSaving={saveSettings.isPending}
+        initial={settings.data ?? null}
+        onSave={(patch) =>
+          saveSettings.mutateAsync(patch).then(
+            () => true,
+            () => false
+          )
+        }
+      />
 
       <PlanItemSheet
         open={openItem !== null}

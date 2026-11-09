@@ -5,6 +5,7 @@ import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
 import { captureAppEvent } from '@/lib/posthog/capture';
 import {
   fetchMarketingPlan,
+  fetchPlannerSettings,
   generateMarketingPlan,
   markPlannerItemPosted,
   refreshPlannerBrief,
@@ -30,6 +31,16 @@ export function useMarketingPlan(range: PlannerRange) {
 function usePlanInvalidation() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ queryKey: ['marketing-plan'] });
+}
+
+export function usePlannerSettings() {
+  const propertyId = usePropertyIdParam();
+  return useQuery({
+    queryKey: ['marketing-planner-settings', propertyId],
+    queryFn: () => fetchPlannerSettings(propertyId),
+    enabled: Boolean(propertyId),
+    staleTime: 60_000,
+  });
 }
 
 export function useGeneratePlan() {

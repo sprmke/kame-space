@@ -1067,6 +1067,12 @@ verify_jwt = false
 [functions.marketing-planner]
 verify_jwt = false
 
+[functions.marketing-planner-cron]
+verify_jwt = false
+
+[functions.marketing-publish-scheduler-cron]
+verify_jwt = false
+
 [functions.generate-marketing-caption]
 verify_jwt = false
 
