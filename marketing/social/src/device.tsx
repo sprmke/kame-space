@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 
 import { BatteryFull, Signal, Wifi } from 'lucide-react';
 
-import { Diamond } from './primitives';
+import { KameSpaceMark } from './primitives';
 import { c, FONT } from './theme';
 
 /**
@@ -134,23 +134,9 @@ export function StatusBar({ dark = false, time = '9:41' }: { dark?: boolean; tim
   );
 }
 
-/** App icon: teal squircle with the diamond mark. */
+/** App icon: the approved four-piece shell. */
 export function AppIcon({ size = 38 }: { size?: number }) {
-  return (
-    <span
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size * 0.24,
-        background: c.brand,
-        display: 'grid',
-        placeItems: 'center',
-        flex: 'none',
-      }}
-    >
-      <Diamond size={size * 0.36} color={c.white} />
-    </span>
-  );
+  return <KameSpaceMark size={size} style={{ flex: 'none' }} />;
 }
 
 /** iOS-style lock screen notification. */

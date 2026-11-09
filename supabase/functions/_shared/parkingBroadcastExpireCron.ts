@@ -17,6 +17,7 @@ import { fulfillParkingPayment, releaseParkingClaim } from './parkingPaymentOrch
 import { getPaymongoProviderPaymentState } from './paymongoClient.ts';
 import { buildActorContext } from './activityLog.ts';
 import { logParkingStatusChange } from './parkingActivity.ts';
+import { createNotification } from './notificationService.ts';
 
 export function verifyParkingBroadcastExpireCronSecret(req: Request): boolean {
   return verifyCronSecret(req, {
@@ -244,7 +245,7 @@ export async function runExpireParkingPayments(): Promise<Record<string, unknown
 
   const { data: expiredPayments, error } = await supabase
     .from('guest_submissions')
-    .select('id')
+    .select('id, parking_id, primary_guest_name, guest_facebook_name')
     .eq('status', 'PENDING_PAYMENT')
     .lt('parking_payment_expires_at', nowIso);
 
@@ -285,6 +286,37 @@ export async function runExpireParkingPayments(): Promise<Record<string, unknown
       const result = await advanceOrTerminateParkingBatch(bookingId, batchNumber);
       if (result.advanced) advancedCount += 1;
       if (result.terminated) terminatedCount += 1;
+
+      // The host who accepted should know the payment window lapsed, not discover it later.
+      const parkingId = String(booking.parking_id ?? '');
+      if (parkingId) {
+        try {
+          const { data: parking } = await supabase
+            .from('parkings')
+            .select('organization_id')
+            .eq('id', parkingId)
+            .maybeSingle();
+          if (parking?.organization_id) {
+            const guestName =
+              String(booking.primary_guest_name ?? booking.guest_facebook_name ?? '').trim() ||
+              'The guest';
+            await createNotification({
+              organizationId: String(parking.organization_id),
+              parkingId,
+              type: 'parking_payment_expired',
+              title: 'Payment window expired',
+              body: `${guestName}'s payment window expired. The request is searching again.`,
+              bookingId,
+              dedupeKey: `parking-payment-expired:${bookingId}:${parkingId}`,
+            });
+          }
+        } catch (notifyErr) {
+          console.error(
+            '[expire-parking-broadcasts] payment-expired notification failed:',
+            notifyErr instanceof Error ? notifyErr.message : notifyErr
+          );
+        }
+      }
     } catch (err) {
       console.error(
         `[expire-parking-broadcasts] runExpireParkingPayments failed for ${bookingId}:`,

@@ -28,13 +28,13 @@ const shots = [
   ['https://kamespace.com/properties', 'properties'],
   ['https://kamespace.com/parkings', 'parkings'],
   ['https://kamespace.com/for-hosts', 'for-hosts'],
-  ['https://kamespace.com/for-hosts/pricing', 'pricing'],
+  ['https://kamespace.com/for-hosts/pricing', 'pricing', 9000],
   ['https://kamespace.com/sign-in', 'sign-in'],
 ];
 
-for (const [url, name] of shots) {
+for (const [url, name, waitMs] of shots) {
   if (only.length && !only.includes(name)) continue;
-  await shot(url, name);
+  await shot(url, name, waitMs);
 }
 
 if (!only.length || only.includes('property-listing')) {
