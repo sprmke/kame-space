@@ -751,6 +751,22 @@ export async function fulfillParkingPayment(input: {
             '[parkingPaymentOrchestrator] endorsement email failed:',
             err instanceof Error ? err.message : err
           );
+          try {
+            await createNotification({
+              organizationId: String(parkingRow.organization_id),
+              parkingId,
+              type: 'parking_endorsement_failed',
+              title: 'Endorsement not sent',
+              body: `Add the PMO email for ${String(parkingRow.residence_name ?? 'this development')} and resend the endorsement.`,
+              bookingId,
+              dedupeKey: `parking-endorsement-failed:${bookingId}`,
+            });
+          } catch (notifyErr) {
+            console.error(
+              '[parkingPaymentOrchestrator] endorsement failure notification failed:',
+              notifyErr instanceof Error ? notifyErr.message : notifyErr
+            );
+          }
         }
       }
     }
