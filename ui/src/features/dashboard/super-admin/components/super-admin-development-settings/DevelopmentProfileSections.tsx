@@ -21,6 +21,7 @@ import type { PropertyMediaItem } from '@/features/dashboard/org/lib/propertySet
 import { DevelopmentAnnouncementsSection } from '@/features/dashboard/super-admin/components/super-admin-development-settings/DevelopmentAnnouncementsSection';
 import { DevelopmentDocumentRequirementsSection } from '@/features/dashboard/super-admin/components/super-admin-development-settings/DevelopmentDocumentRequirementsSection';
 import { DevelopmentGuestInfoSection } from '@/features/dashboard/super-admin/components/super-admin-development-settings/DevelopmentGuestInfoSection';
+import { DevelopmentStructureSection } from '@/features/dashboard/super-admin/components/super-admin-development-settings/DevelopmentStructureSection';
 import { DevelopmentUnitTypesSection } from '@/features/dashboard/super-admin/components/super-admin-development-settings/DevelopmentUnitTypesSection';
 import {
   shouldAutoUpdateDevelopmentLocationLine,
@@ -53,81 +54,6 @@ function FieldGrid({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-x-5">{children}</div>;
 }
 
-function StringListEditor({
-  label,
-  values,
-  onChange,
-  disabled,
-  placeholder,
-}: {
-  label: string;
-  values: string[];
-  onChange: (values: string[]) => void;
-  disabled?: boolean;
-  placeholder?: string;
-}) {
-  const [input, setInput] = useState('');
-
-  const addValue = () => {
-    const trimmed = input.trim();
-    if (!trimmed || values.includes(trimmed)) return;
-    onChange([...values, trimmed]);
-    setInput('');
-  };
-
-  return (
-    <div className="space-y-3">
-      <p className="text-sm font-medium">{label}</p>
-      <div className="flex gap-2">
-        <Input
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          placeholder={placeholder}
-          className="h-10"
-          disabled={disabled}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              addValue();
-            }
-          }}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          className="min-h-[44px] min-w-[44px] shrink-0 px-3"
-          onClick={addValue}
-          disabled={disabled}
-          aria-label={`Add ${label}`}
-        >
-          <Plus className="size-4" aria-hidden />
-        </Button>
-      </div>
-      {values.length > 0 ? (
-        <ul className="flex flex-wrap gap-2">
-          {values.map((value) => (
-            <li
-              key={value}
-              className="bg-muted inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
-            >
-              {value}
-              <button
-                type="button"
-                className="hover:bg-background/80 flex min-h-[24px] min-w-[24px] items-center justify-center rounded-full"
-                onClick={() => onChange(values.filter((item) => item !== value))}
-                disabled={disabled}
-                aria-label={`Remove ${value}`}
-              >
-                <X className="size-3" aria-hidden />
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </div>
-  );
-}
-
 type Props = {
   developmentId: string;
   draft: DevelopmentProfileDraft;
@@ -136,11 +62,11 @@ type Props = {
     value: DevelopmentProfileDraft[K]
   ) => void;
   disabled?: boolean;
-  onDelete?: () => void;
+  onDelete: () => void;
   deleteBlockedReason?: string | null;
   busy?: boolean;
-  onMediaPersisted?: (media: PropertyMediaItem[]) => void;
-  onPersistMediaOrder?: (media: PropertyMediaItem[]) => Promise<void>;
+  onMediaPersisted: (media: PropertyMediaItem[]) => void;
+  onPersistMediaOrder: (media: PropertyMediaItem[]) => Promise<void>;
   mediaGalleryBusy?: boolean;
 };
 
@@ -410,27 +336,11 @@ export function DevelopmentProfileSections({
         />
       </AdminSection>
 
-      <AdminSection id="towers" title="Towers & Parking" icon={Building2}>
-        <StringListEditor
-          label="Property towers"
-          values={draft.propertyTowers}
-          onChange={(values) => onChange('propertyTowers', values)}
+      <AdminSection id="towers" title="Structure" icon={Building2}>
+        <DevelopmentStructureSection
+          structure={draft.structure}
           disabled={disabled}
-          placeholder="Monaco"
-        />
-        <StringListEditor
-          label="Parking"
-          values={draft.parkingTowers}
-          onChange={(values) => onChange('parkingTowers', values)}
-          disabled={disabled}
-          placeholder="Bay"
-        />
-        <StringListEditor
-          label="Parking levels"
-          values={draft.parkingLevels}
-          onChange={(values) => onChange('parkingLevels', values)}
-          disabled={disabled}
-          placeholder="Level 1"
+          onChange={(structure) => onChange('structure', structure)}
         />
       </AdminSection>
 

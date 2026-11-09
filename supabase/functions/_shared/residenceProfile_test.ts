@@ -14,7 +14,9 @@ import {
   residenceLocationSeed,
   resolvePropertyValue,
   sanitizeSlotLabel,
+  normalizeResidenceStructure,
   unitNumberError,
+  validateResidenceStructure,
   validateTowerForProfile,
 } from './residenceProfile.ts';
 
@@ -247,4 +249,104 @@ Deno.test('structure: location seed returns null without coordinates', () => {
   const seed = residenceLocationSeed(located);
   assertEquals(seed?.address, 'Somewhere');
   assertEquals(seed?.settings.latitude, 15.1);
+});
+
+Deno.test('validateResidenceStructure: accepts a valid structure', () => {
+  const structure = normalizeResidenceStructure({
+    towerLabel: 'Tower',
+    unitLabel: 'Unit',
+    towersRequired: true,
+    propertyTowers: [{ name: 'Monaco', code: 'M', active: true }],
+    parkingTowers: [
+      { name: 'Monaco', code: 'M', levels: ['Level 1'], parkingType: 'inside_tower' },
+    ],
+    unitNumberFormat: { preset: 'digits4', example: '2604' },
+    parkingSlotFormat: { preset: 'digits1to4', example: '26' },
+    floorsMax: 29,
+  });
+
+  assertEquals(validateResidenceStructure(structure), null);
+});
+
+Deno.test('validateResidenceStructure: rejects duplicates and empty names', () => {
+  const base = normalizeResidenceStructure({
+    towerLabel: 'Tower',
+    unitLabel: 'Unit',
+    propertyTowers: [{ name: 'A', code: 'A', active: true }],
+    unitNumberFormat: { preset: 'alnum', example: '1' },
+    parkingSlotFormat: { preset: 'alnum', example: '1' },
+  });
+
+  assertEquals(
+    validateResidenceStructure({
+      ...base,
+      propertyTowers: [...base.propertyTowers, { name: 'a', code: 'a', active: true }],
+    }),
+    'Duplicate tower: a'
+  );
+  assertEquals(
+    validateResidenceStructure({
+      ...base,
+      propertyTowers: [{ name: '  ', code: '', active: true }],
+    }),
+    'Every tower needs a name'
+  );
+  assertEquals(
+    validateResidenceStructure({
+      ...base,
+      parkingTowers: [
+        {
+          name: 'Bay',
+          code: 'BY',
+          active: true,
+          levels: ['Level 1', 'level 1'],
+          parkingType: 'outside_tower',
+        },
+      ],
+    }),
+    'Duplicate level under Bay: level 1'
+  );
+});
+
+Deno.test('validateResidenceStructure: custom patterns must compile and match the example', () => {
+  const base = normalizeResidenceStructure({
+    towerLabel: 'Tower',
+    unitLabel: 'Unit',
+    propertyTowers: [],
+    unitNumberFormat: { preset: 'alnum', example: '1' },
+    parkingSlotFormat: { preset: 'alnum', example: '1' },
+  });
+
+  const broken = {
+    ...base,
+    unitNumberFormat: { preset: 'custom' as const, pattern: '[', example: '1' },
+  };
+  assertEquals(
+    validateResidenceStructure(broken),
+    'Unit format pattern is not a valid regular expression'
+  );
+
+  const mismatch = {
+    ...base,
+    unitNumberFormat: { preset: 'custom' as const, pattern: '^[A-Z]{2}$', example: '12' },
+  };
+  assertEquals(validateResidenceStructure(mismatch), 'Unit format example does not match the pattern');
+
+  const ok = {
+    ...base,
+    unitNumberFormat: { preset: 'custom' as const, pattern: '^[A-Z]{2}$', example: 'AB' },
+  };
+  assertEquals(validateResidenceStructure(ok), null);
+});
+
+Deno.test('validateResidenceStructure: floors and labels are bounded', () => {
+  const base = normalizeResidenceStructure({
+    towerLabel: 'Tower',
+    unitLabel: 'Unit',
+    unitNumberFormat: { preset: 'alnum', example: '1' },
+    parkingSlotFormat: { preset: 'alnum', example: '1' },
+  });
+
+  assertEquals(validateResidenceStructure({ ...base, floorsMax: 0 }), 'Floors must be between 1 and 200');
+  assertEquals(validateResidenceStructure({ ...base, towerLabel: ' ' }), 'Tower label cannot be empty');
 });

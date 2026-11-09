@@ -17,6 +17,10 @@ import {
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 import { validateOptionalEmail } from '../_shared/appSettings.ts';
 import { parseDocumentRequirements } from '../_shared/documentRequirements.ts';
+import {
+  normalizeResidenceStructure,
+  validateResidenceStructure,
+} from '../_shared/residenceProfile.ts';
 import { verifySuperAdminJwt } from '../_shared/superAdminAuth.ts';
 import { validatePropertyMediaArray } from '../_shared/propertyMedia.ts';
 import { parseUnitTypes, validateUnitTypes } from '../_shared/unitTypes.ts';
@@ -207,6 +211,22 @@ serveAuthenticated('update-development', async (req) => {
       if (err) return jsonError(req, err);
     }
     settingsPatch[key] = value;
+    settingsChanged = true;
+  }
+
+  if (body.structure !== undefined) {
+    const structure = normalizeResidenceStructure(body.structure);
+    const structureError = validateResidenceStructure(structure);
+    if (structureError) {
+      return jsonError(req, structureError);
+    }
+    settingsPatch.structure = structure;
+    // Flat keys stay in sync until Phase 7 retires them.
+    settingsPatch.propertyTowers = structure.propertyTowers.map((tower) => tower.name);
+    settingsPatch.parkingTowers = structure.parkingTowers.map((tower) => tower.name);
+    settingsPatch.parkingLevels = [
+      ...new Set(structure.parkingTowers.flatMap((tower) => tower.levels)),
+    ];
     settingsChanged = true;
   }
 

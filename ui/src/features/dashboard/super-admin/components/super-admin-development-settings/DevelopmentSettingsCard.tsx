@@ -65,7 +65,7 @@ const SETTINGS_SECTIONS: AdminSectionNavItem[] = [
   { id: 'announcements', label: 'Announcements', icon: Megaphone },
   { id: 'amenities', label: 'Amenities', icon: Sparkles },
   { id: 'location', label: 'Location', icon: MapPin },
-  { id: 'towers', label: 'Towers & Parking', icon: Building2 },
+  { id: 'towers', label: 'Structure', icon: Building2 },
   { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
 ];
 

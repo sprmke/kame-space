@@ -1204,4 +1204,110 @@ export function residenceLocationSeed(
   };
 }
 
+/** Normalise a raw `settings.structure` payload. Total: malformed input degrades. */
+export function normalizeResidenceStructure(raw: unknown): ResidenceProfile['structure'] {
+  return parseResidenceProfile({ settings: { structure: raw } }).structure;
+}
+
+/**
+ * Save-time validation for the super-admin Structure editor. Returns a short message or
+ * null. Structural validity only; it never decides policy.
+ */
+export function validateResidenceStructure(
+  structure: ResidenceProfile['structure']
+): string | null {
+  if (structure.towerLabel.trim().length > 40) return 'Tower label is too long';
+  if (structure.unitLabel.trim().length > 40) return 'Unit label is too long';
+  if (structure.towerLabel.trim().length === 0) return 'Tower label cannot be empty';
+  if (structure.unitLabel.trim().length === 0) return 'Unit label cannot be empty';
+
+  if (structure.propertyTowers.length > 60) return 'Too many towers';
+
+  const towerNames = new Set<string>();
+  for (const tower of structure.propertyTowers) {
+    const name = tower.name.trim();
+    if (!name) return 'Every tower needs a name';
+    if (name.length > 40) return 'Tower names must be 40 characters or fewer';
+    const key = name.toLowerCase();
+    if (towerNames.has(key)) return `Duplicate tower: ${name}`;
+    towerNames.add(key);
+  }
+
+  const parkingNames = new Set<string>();
+  for (const tower of structure.parkingTowers) {
+    const name = tower.name.trim();
+    if (!name) return 'Every parking tower needs a name';
+    if (name.length > 40) return 'Parking tower names must be 40 characters or fewer';
+    const key = name.toLowerCase();
+    if (parkingNames.has(key)) return `Duplicate parking tower: ${name}`;
+    parkingNames.add(key);
+
+    const levels = new Set<string>();
+    for (const level of tower.levels) {
+      const trimmed = level.trim();
+      if (!trimmed) return `Remove the empty level under ${name}`;
+      if (levels.has(trimmed.toLowerCase())) return `Duplicate level under ${name}: ${trimmed}`;
+      levels.add(trimmed.toLowerCase());
+    }
+  }
+
+  const unitError = validateFormatPreset(
+    structure.unitNumberFormat.preset,
+    structure.unitNumberFormat.pattern,
+    'Unit format'
+  );
+  if (unitError) return unitError;
+  const slotError = validateFormatPreset(
+    structure.parkingSlotFormat.preset,
+    structure.parkingSlotFormat.pattern,
+    'Slot format'
+  );
+  if (slotError) return slotError;
+
+  if (!structure.unitNumberFormat.example.trim()) return 'Add a unit number example';
+  if (!structure.parkingSlotFormat.example.trim()) return 'Add a slot number example';
+
+  if (structure.unitNumberFormat.preset === 'custom') {
+    const pattern = structure.unitNumberFormat.pattern ?? '';
+    if (pattern) {
+      const checked = compilePattern(pattern);
+      if (!checked) return 'Unit format pattern is not a valid regular expression';
+      if (!checked.test(structure.unitNumberFormat.example.trim())) {
+        return 'Unit format example does not match the pattern';
+      }
+    }
+  }
+  if (structure.parkingSlotFormat.preset === 'custom') {
+    const pattern = structure.parkingSlotFormat.pattern ?? '';
+    if (pattern) {
+      const checked = compilePattern(pattern);
+      if (!checked) return 'Slot format pattern is not a valid regular expression';
+      if (!checked.test(structure.parkingSlotFormat.example.trim())) {
+        return 'Slot format example does not match the pattern';
+      }
+    }
+  }
+
+  if (
+    structure.floorsMax !== null &&
+    (!Number.isFinite(structure.floorsMax) || structure.floorsMax < 1 || structure.floorsMax > 200)
+  ) {
+    return 'Floors must be between 1 and 200';
+  }
+
+  return null;
+}
+
+function validateFormatPreset(
+  preset: string,
+  _pattern: string | undefined,
+  label: string
+): string | null {
+  if (preset === 'digits4' || preset === 'digits' || preset === 'alnum' || preset === 'custom') {
+    return null;
+  }
+  if (preset === 'digits1to4') return null;
+  return `${label} preset is not supported`;
+}
+
 // #endregion shared-core
