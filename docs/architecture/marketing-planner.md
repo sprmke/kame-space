@@ -11,17 +11,19 @@ The planner turns data the app already holds into a dated, ranked list of market
 carries each item to a finished post. Full product plan and phase status:
 [marketing-strategy-planner.md](../workflow/in-progress/marketing-strategy-planner.md).
 
-**Shipped:** Phase 0 (foundations), Phase 1 (rules engine, endpoint, Plan tab), the AI brief pass
-(Phase 4 core) and Share it yourself with tracked-visit results (Phase 3.5 and Phase 5.1).
-**Not shipped yet:** Prepare handoffs into the editors, publishing and scheduling, insight
-snapshots, reminders, autopilot.
+**Shipped:** foundations, the rules engine and Plan tab, the setup wizard, the AI brief pass and
+per-item rewrites, Share it yourself, the publish scheduler cron with claim holds, the planner cron
+(weekly rules plans, expiry, reminders), tracked links with first-touch attribution, the insight
+mapper, and a read-only assistant tool.
+**Not shipped yet:** Prepare handoffs into the editors, carousel and Reels in the publish dialog,
+insight snapshots (App Review), learned windows, autopilot.
 
 ## Layering
 
 ```
-marketing-planner (edge, thin)          marketing-planner-cron (planned)
-  auth → leaf → plan gate → zod            verifyCronSecret
-        ↓
+marketing-planner (edge, thin)          marketing-planner-cron        marketing-publish-scheduler-cron
+  auth → leaf → plan gate → zod            verifyCronSecret              verifyCronSecret
+        ↓                                       ↓                                ↓
 _shared/marketingPlanner.ts (service: load inputs, run engine, persist)
    ├─ marketingSignalsData.ts  DB loads: analytics bundle, blocked nights, events,
    │                           reviews, pricing, publications, planner settings
@@ -93,6 +95,30 @@ claims do not support. Rejected or unavailable AI leaves rules copy in place, an
 
 Pricing for `marketing_plan_brief` is still open (open items §2), so the router entry is marked
 `PENDING-PRICING`.
+
+The dashboard assistant exposes one read tool, `get_marketing_plan`, which returns this week's
+items, their status and tracked visits. Write tools are Phase 6.
+
+## Attribution
+
+`useFirstTouchUtm` runs on the public property layout and stores the earliest campaign in
+sessionStorage. The booking form sends it as an `attribution` field; `submit-form` sanitizes it
+through `sanitizeAttribution` (allow-listed keys, length caps, relative landing path only) and
+stores it on `guest_submissions.attribution`. No identifiers are involved.
+
+## Crons
+
+| Job                                | Schedule     | Does                                                                                     |
+| ---------------------------------- | ------------ | ---------------------------------------------------------------------------------------- |
+| `marketing-planner-cron`           | every 15 min | weekly rules plans for opted-in properties, expiry sweep, `marketing_item_due` reminders |
+| `marketing-publish-scheduler-cron` | every minute | claim due publications, re-check claims, publish, retry or hold                          |
+
+Both use `serveCronPost` and the self-healing Vault-secret pattern. Locally `cron.job` does not
+exist, so the sync functions return `ok: false` and do nothing; hosted `pg_cron` schedules them.
+
+The publish cron never publishes a post whose availability claim went false: it holds the
+publication, marks the item `held`, notifies the host and writes `marketing.scheduled_publish_held`.
+Retries climb `PUBLISH_BACKOFF_MINUTES` (5, 30, 180) and then fail loudly.
 
 ## Results without Meta scopes
 

@@ -97,6 +97,20 @@ Tick a box when it is addressed. If an answer changes a shipped default, the pla
 
 ---
 
+## 5. Remaining deep work (no decision needed, just time)
+
+- [ ] **Prepare handoffs into the four editors.** Create on an item should open a filled design,
+      video, calendar or AI Studio draft and attach the result back. This is the one deep item left.
+      **Meanwhile:** the item sheet edits the draft in place, and Share it yourself works today.
+
+- [ ] **Carousel and Reels in the publish dialog.** Needs the P0.2 spike to confirm the endpoints.
+
+- [ ] **Insight snapshots cron.** The mapper (`_shared/marketingInsights.ts`) is done and tested;
+      the cron that calls Meta waits on the insight scopes.
+
+- [ ] **Learned posting windows.** Needs 12 published posts with insights per property, so it is
+      gated on real data, not code.
+
 ## What is NOT on this list
 
 Things I can and will finish without you, so they are not listed as blockers:

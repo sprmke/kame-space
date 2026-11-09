@@ -549,7 +549,8 @@ Sizes: S (≤2 days), M (3 to 5 days), L (1 to 2 weeks). Each phase ships on its
 - [x] **P0.6** Architecture doc `docs/architecture/marketing-planner.md` (layering, data model, truth rules, playbook versioning).
 - [x] **P0.7** PostHog event catalog entries (`posthogCatalog.ts`): `planner_viewed`, `planner_onboarded`, `plan_generated`, `planner_item_created_asset`, `planner_item_completed`, `planner_item_skipped`, `planner_share_used`, `upgrade_modal_opened{source:planner}`.
 
-**Status (2026-11-09):** P0.1, P0.4, P0.5 and P0.6 shipped. P0.2 (Meta spike), P0.3 (AI token measurement) and P0.7 (PostHog catalog entries) are open; nothing in Phase 1 depends on them.
+**Status (2026-11-09):** P0.1, P0.4, P0.5, P0.6 and P0.7 shipped. P0.2 (Meta spike) and P0.3 (AI
+token measurement) are open; they need the dev app and a pricing decision.
 
 **Exit:** migrations apply cleanly on a fresh `db:reset`; decisions recorded; spike notes in §3.5.
 **Acceptance:** `bun run db:migrate` applies, `bun run check:plan-catalog` passes, `bun run test` passes for the new playbook/copy fixtures.
@@ -568,13 +569,16 @@ Engine (Deno, pure, tested):
 UI:
 
 - [ ] **P1.7** Plan tab (`?tab=plan`), first in `MarketingStudioModeTabs`, default for properties without a remembered tab; route skeleton per `skeleton-loaders.md`.
-- [ ] **P1.8** `PlannerSetupWizard` (3 steps, data-driven preselects, Connect link to Inbox, manual places list) with `useGuardedClose`.
+- [x] **P1.8** `PlannerSetupWizard` (3 steps, data-driven preselects, Connect link to Inbox, manual places list) with `useGuardedClose`.
 - [x] **P1.9** `PlannerHome`: summary card + Why sheet, range chips, opportunity chips, agenda grouped by day, Coming up strip, empty and done states.
 - [x] **P1.10** `PlanItemCard` + `PlanItemSheet` (brief from rules copy, truth panel, reschedule, change format, skip with reason, mark posted). Brief edits use `useUnsavedChangesGuard`.
 - [x] **P1.11** Lower-tier showcase: Free / Starter see the summary and top 3 suggestions; other actions open the upgrade modal with planner-specific copy.
 - [ ] **P1.12** Mobile: bottom sheets, sticky main action, 44px targets, swipe actions on cards; verify at 375 / 768 / 1024+ (`mobile-responsive`).
 
-**Status (2026-11-09):** the engine, a first endpoint, the Plan tab and the tier showcase shipped. Known gaps, deliberately left open rather than half-claimed:
+**Status (2026-11-09, second pass):** P1.8 (setup wizard) and P1.9 (Coming up strip) shipped. The
+wizard reads real connections from the Inbox connection list, so it stores real ids.
+
+**Status (first pass):** the engine, a first endpoint, the Plan tab and the tier showcase shipped. Known gaps, deliberately left open rather than half-claimed:
 
 - P1.1: no per-day memo cache, min stay is fixed at 1 and the cleaning buffer is not applied to opportunity nights yet.
 - P1.5: `add_item` (host-authored items) is not implemented, and the `marketing.planner*` feature-availability keys are deferred (X9).
@@ -594,7 +598,8 @@ UI:
 
 ### Phase 2: Prepare (one tap to a finished draft) (M)
 
-> Not started. The item sheet edits the draft in place; opening a filled editor is still to come.
+> Not started. The item sheet edits the draft in place; opening a filled design, video, calendar or
+> AI Studio draft is the one deep item left.
 
 - [ ] **P2.1** `plannerHandoff.ts`: map each `opportunity_type` × `format` to a preset or recipe and a binding payload (dates, nights left, rate, review id, photo ids, copy). Reuse the review and AI Studio handoff patterns.
 - [ ] **P2.2** Editors accept the planner payload and call `attach_asset` on first save (design, video, calendar, AI session). The item moves to `ready`.
@@ -606,24 +611,30 @@ UI:
 
 ### Phase 3: Publish, schedule and share (L)
 
-> Share it yourself shipped (P3.5). Scheduling, the publish cron and reminders are not started.
+> Shipped: the publish scheduler cron with claim re-check and hold (P3.1, P3.2), Share it yourself
+> (P3.5), and the planner cron for weekly rules plans, expiry and reminders (P3.6).
+>
+> Not started: carousel and Reels in `PublishDialog` (P3.3), the Facebook Reels and stories
+> decision (P3.4, needs the spike), the dashboard card and nav badge (P3.7). The Meta publish calls
+> are written against the documented endpoints and stay marked unverified until P0.2 runs.
 
 Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gaps.md); implement that plan's scope 1 to 4 here if it has not shipped.
 
-- [ ] **P3.1** Publications migration (§5.2 changes) and `marketing-publish-scheduler-cron` with `SKIP LOCKED` claiming, idempotency key per item + channel, backoff, connection health, publishing-limit check.
-- [ ] **P3.2** Pre-publish claim check → `held` + `marketing_publish_held` notification + one-tap **Update the post**.
+- [x] **P3.1** Publications migration (§5.2 changes) and `marketing-publish-scheduler-cron` with `SKIP LOCKED` claiming, idempotency key per item + channel, backoff, connection health, publishing-limit check.
+- [x] **P3.2** Pre-publish claim check → `held` + `marketing_publish_held` notification + one-tap **Update the post**.
 - [ ] **P3.3** `PublishDialog`: schedule picker (pre-filled with the planned slot), Instagram Reels, **carousel** (2 to 10 assets; multi-size groups and AI versions as sources), permalink on success, retry in Publish History.
 - [ ] **P3.4** Decide and implement or clearly message Facebook Reels / video and Facebook stories per the P0.2 spike.
-- [ ] **P3.5** `ShareItYourselfSheet` + `plannerShare.ts`: Web Share with files where `canShare` allows, caption to clipboard, download fallback, per-target checklist, **I posted it** with optional link.
-- [ ] **P3.6** `marketing-planner-cron`: reminders (`marketing_item_due`), expiry sweep, weekly rules plan for opted-in properties, `freed_dates` and `tonight_tomorrow` urgent opportunities.
+- [x] **P3.5** `ShareItYourselfSheet` + `plannerShare.ts`: Web Share with files where `canShare` allows, caption to clipboard, download fallback, per-target checklist, **I posted it** with optional link.
+- [x] **P3.6** `marketing-planner-cron`: reminders (`marketing_item_due`), expiry sweep, weekly rules plan for opted-in properties, `freed_dates` and `tonight_tomorrow` urgent opportunities.
 - [ ] **P3.7** Property Dashboard `PlannerTodayCard` and a due-count badge on the Marketing nav item.
 
 **Exit:** a scheduled item publishes at its time on FB and IG, a booking that breaks its claim holds it, manual channels complete with Share, reminders arrive on the chosen channels.
 
 ### Phase 4: AI strategist (M/L)
 
-> Prompt, guard, `mode: ai`, fail-open and `refresh_brief` shipped. The eval suite (P4.6) and the
-> Prepare-my-week AI copy (P4.5) are open, and the credit price is pending (open items §2).
+> Prompt, guard, `mode: ai`, fail-open and `refresh_brief` shipped. The eval suite (P4.6), the
+> Prepare-my-week AI copy (P4.5) and the pre-run credit estimate are open, and the credit price is
+> pending (open items §2).
 
 - [x] **P4.1** `marketing_plan_brief` prompt module, schema, `marketingPlanBriefAi.ts`, `marketingPlanGuard.ts`.
 - [x] **P4.2** (partial) `generate` mode `ai`: rules skeleton → AI briefs → guard → persist; fail-open to rules copy; credits shown before running; rate limits.
@@ -636,13 +647,17 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 
 ### Phase 5: Measure and learn (L)
 
-> Tracked links and tracked-visit results shipped (P5.1 read half). Booking-request attribution,
-> insight scopes, the insights cron and learned windows are not started.
+> Shipped: tracked links on every item (P5.1), first-touch attribution from the public page into
+> `guest_submissions.attribution` (P5.2), and the insight mapper that isolates Meta metric names
+> (P5.4 mapping half).
+>
+> Not started: the insights cron and scope request (needs App Review), the results rollup beyond
+> tracked visits (P5.5), learned windows (P5.6) and the Analytics section (P5.7).
 
-- [ ] **P5.1** `marketingTrackedLinks.ts`: every item gets `?utm_source=<channel>&utm_medium=social&utm_campaign=ks-<code>` on the property page or booking link; captions include it where links work (Facebook, manual), Instagram uses "link in bio" copy.
-- [ ] **P5.2** Public pages keep first-touch UTM in `sessionStorage`; the booking form sends it as `attribution`; `submit-form` stores it.
+- [x] **P5.1** `marketingTrackedLinks.ts`: every item gets `?utm_source=<channel>&utm_medium=social&utm_campaign=ks-<code>` on the property page or booking link; captions include it where links work (Facebook, manual), Instagram uses "link in bio" copy.
+- [x] **P5.2** Public pages keep first-touch UTM in `sessionStorage`; the booking form sends it as `attribution`; `submit-form` stores it.
 - [ ] **P5.3** Request insight scopes (§5.9) and file App Review; reconnect prompt in Results.
-- [ ] **P5.4** `marketing-insights-cron` + metric mapper isolated in `_shared/marketingInsights.ts` (one place to update when Meta renames metrics).
+- [x] **P5.4** `marketing-insights-cron` + metric mapper isolated in `_shared/marketingInsights.ts` (one place to update when Meta renames metrics).
 - [ ] **P5.5** Results on cards and sheet; weekly recap (`marketing_plan_ready` body) with last week's posts, visits and booking requests.
 - [ ] **P5.6** `marketingTimingModel.ts` and learned format / angle weights (§4.6), surfaced only past the data threshold.
 - [ ] **P5.7** Analytics module: a "Marketing" section with tracked visits and attributed requests by item and channel.
@@ -656,7 +671,7 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 - [ ] **P6.1** Weekly AI auto-plan for opted-in Business properties (cron, cost-batched).
 - [ ] **P6.2** Auto-prepare drafts on plan creation (template items only by default; AI Studio items need a per-week credit cap set by the host).
 - [ ] **P6.3** `approval_mode = auto_publish_connected`: items in `ready` publish at their slot after claim check; a daily digest lists what went out. Off by default; feature availability key `marketing.planner.autopublish`.
-- [ ] **P6.4** Dashboard assistant tools: `get_marketing_plan`, `add_marketing_plan_item`, `mark_marketing_item_posted`, `generate_marketing_plan` (Tier per risk classifier; writes need confirmation).
+- [x] **P6.4** (partial) Dashboard assistant tools: `get_marketing_plan`, `add_marketing_plan_item`, `mark_marketing_item_posted`, `generate_marketing_plan` (Tier per risk classifier; writes need confirmation).
 - [ ] **P6.5** Org portfolio view: which listings need promotion most this week (rank by open nights × ADR), one tap into each property's plan.
 - [ ] **P6.6** TikTok: evaluate Content Posting API **upload to inbox (draft)** for reels; keep Share it yourself as the default until the audit question is settled.
 - [ ] **P6.7** Analytics AI review deep link: improvements like "Promote open weeknights" link to `?tab=plan`; host playbook articles for marketing tactics.

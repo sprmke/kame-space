@@ -73,6 +73,14 @@ already holds, with no AI required.
 - Items carry a tracked link. Plan reads count matching page views and show them on the card. This
   works without any Meta insight scope.
 
+**Setup** opens on first visit and from the header. Three steps: goals (up to two), where you post
+(connected Facebook Page and Instagram from Inbox, plus manual places), then time budget and
+language. It stores real connection ids; the wizard is guarded against unsaved edits.
+
+**Crons:** a quarter-hour sweep builds the weekly plan for opted-in properties, expires items whose
+post-by date passed and sends due reminders. A every-minute sweep publishes scheduled posts, re-checks
+each post's claims first, and holds instead of publishing a stale date or price.
+
 **Share it yourself** opens from an item: caption plus tracked link, a checklist of the host's
 places, the phone share sheet where the browser allows it, a copy fallback otherwise, and I posted
 it with an optional link.
