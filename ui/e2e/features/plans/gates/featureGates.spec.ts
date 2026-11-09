@@ -230,7 +230,7 @@ const SURFACES: GateSurface[] = [
 
 const tierIndex = (code: string) => TIER_ORDER.indexOf(code as TierCode);
 
-test.describe('@ci plan feature gates, per tier', () => {
+test.describe('@ci @critical plan feature gates, per tier', () => {
   test.describe.configure({ mode: 'parallel' });
   // First hit on a route compiles it in the Vite dev server; parallel workers make that slow.
   test.setTimeout(75_000);

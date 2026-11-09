@@ -42,8 +42,10 @@ run_step "support content parser tests" bun run test:support-content
 run_step "migration versions" bash scripts/dev/check-migration-versions.sh
 run_step "migration security" bash scripts/dev/check-migration-security.sh
 run_step "local seed identity" node scripts/dev/check-seed-identity.mjs
-run_step "unit tests (Vitest)" bun run test
-run_step "unit coverage floor (lib + utils)" bun run test:coverage:lib
+# `test:coverage:lib` runs the whole unit suite (node project) and enforces the floor, so a
+# separate `bun run test` here was a duplicate pass. The dom project is not covered by v8.
+run_step "unit tests + coverage floor (Vitest)" bun run test:coverage:lib
+run_step "dom tests (component/hook)" bun run test:dom
 run_step "edge type check (Deno)" bun run check:edge-types
 run_step "edge unit tests (Deno _shared)" bun run test:edge
 run_step "servePublic rate-limit coverage" bash scripts/dev/check-serve-public-rate-limit.sh

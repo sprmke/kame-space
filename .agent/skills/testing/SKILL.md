@@ -37,6 +37,8 @@ Plan: **`docs/workflow/done/sitewide-automated-testing.md`**. Index: **`docs/gui
 3. Tag specs with exactly one lane: `@smoke` (every PR, 3 viewports), `@ci` (every PR, sharded),
    `@pwa` (production build), `@live` (manual/nightly), `@demo` (never CI).
    `bun run check:e2e-lane-tags` enforces this.
+   Add `@critical` (a modifier, not a lane) to money, tenancy, workflow and access journeys;
+   those also run in the deploy gate via `bun run test:e2e:critical`.
 4. One happy path + 1–3 edge journeys per domain.
 
 ## Deno pattern
