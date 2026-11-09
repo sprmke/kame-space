@@ -73,6 +73,10 @@ already holds, with no AI required.
 - Items carry a tracked link. Plan reads count matching page views and show them on the card. This
   works without any Meta insight scope.
 
+**Open in editor** on an item picks the tab from its format (calendar builder, Videos for a reel,
+Posts, or AI Studio for types that read better as a generated image), stashes the draft and copies
+the caption, so the host pastes instead of retyping.
+
 **Setup** opens on first visit and from the header. Three steps: goals (up to two), where you post
 (connected Facebook Page and Instagram from Inbox, plus manual places), then time budget and
 language. It stores real connection ids; the wizard is guarded against unsaved edits.

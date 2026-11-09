@@ -598,11 +598,12 @@ wizard reads real connections from the Inbox connection list, so it stores real 
 
 ### Phase 2: Prepare (one tap to a finished draft) (M)
 
-> Not started. The item sheet edits the draft in place; opening a filled design, video, calendar or
-> AI Studio draft is the one deep item left.
+> P2.1 shipped: the item sheet's **Open in editor** picks the right tab from the format and
+> opportunity type, stashes the draft and copies the caption. P2.2 is the remaining half: each
+> editor still has to consume the stashed draft on mount.
 
-- [ ] **P2.1** `plannerHandoff.ts`: map each `opportunity_type` × `format` to a preset or recipe and a binding payload (dates, nights left, rate, review id, photo ids, copy). Reuse the review and AI Studio handoff patterns.
-- [ ] **P2.2** Editors accept the planner payload and call `attach_asset` on first save (design, video, calendar, AI session). The item moves to `ready`.
+- [x] **P2.1** `plannerHandoff.ts`: map each `opportunity_type` × `format` to a preset or recipe and a binding payload (dates, nights left, rate, review id, photo ids, copy). Reuse the review and AI Studio handoff patterns.
+- [ ] **P2.2** (partial) Editors accept the planner payload and call `attach_asset` on first save (design, video, calendar, AI session). The item moves to `ready`.
 - [ ] **P2.3** Photo picking: rank listing photos by use count and recency so suggestions vary between items.
 - [ ] **P2.4** `PrepareWeekDialog`: batch-create template drafts for all items in range (free), list AI Studio items with total credits, run on confirm, show progress per item.
 - [ ] **P2.5** Item preview uses stored thumbnails only (no editor engines in the Plan bundle). Check the PWA precache budget in the build.
