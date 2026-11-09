@@ -43,6 +43,69 @@ export async function installOnboardingMocks(page: Page) {
       case 'check-tower-unit':
         await fulfillJson(route, towerUnitAvailable);
         return;
+      case 'list-residence-options':
+        await fulfillJson(route, {
+          success: true,
+          data: {
+            residences: [
+              {
+                developmentId: 'dev-azure',
+                name: 'Azure North Residences',
+                type: 'CONDOMINIUM',
+                structure: {
+                  towerLabel: 'Tower',
+                  unitLabel: 'Unit',
+                  towersRequired: true,
+                  propertyTowers: [
+                    { name: 'Monaco', code: 'Monaco', active: true },
+                    { name: 'Bali', code: 'Bali', active: true },
+                  ],
+                  parkingTowers: [
+                    {
+                      name: 'Monaco',
+                      code: 'M',
+                      active: true,
+                      levels: ['Level 1', 'Level 2', 'Level 3'],
+                      parkingType: 'inside_tower',
+                    },
+                  ],
+                  unitNumberFormat: { preset: 'digits4', example: '2604' },
+                  parkingSlotFormat: { preset: 'digits1to4', example: '26' },
+                  floorsMax: 29,
+                },
+                location: {
+                  latitude: 15.1696,
+                  longitude: 120.5598,
+                  address: 'Azure',
+                  city: 'San Fernando',
+                  province: 'Pampanga',
+                  country: 'Philippines',
+                  zipCode: '',
+                },
+                occupancy: {
+                  maxAdultsCap: 6,
+                  maxChildrenCap: 4,
+                  childMaxAge: 3,
+                  adultMinAge: 18,
+                  idRequiredFromAge: 18,
+                  primaryGuestMinAge: 18,
+                },
+                stay: {
+                  checkInTime: '14:00',
+                  checkOutTime: '12:00',
+                  petsAllowed: true,
+                  paidParkingAvailable: true,
+                  surpriseDecorAllowed: true,
+                  petTypes: ['Dog', 'Cat'],
+                  petVaccinationRequired: true,
+                },
+                terms: {},
+                copy: {},
+              },
+            ],
+          },
+        });
+        return;
       default:
         await route.continue();
     }
