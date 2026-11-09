@@ -91,7 +91,10 @@ function buildPropertyEyebrow(
 }
 
 /** Reads properties.settings guest-form keys; missing booleans default true. */
-export async function resolveGuestFormSettings(propertyId: string): Promise<GuestFormSettings> {
+export async function resolveGuestFormSettings(
+  propertyId: string,
+  options: { strictResidence?: boolean } = {}
+): Promise<GuestFormSettings> {
   const { data, error } = await createServiceClient()
     .from('properties')
     .select('name, tower_and_unit, residence_name, development_id, settings, organization_id')
@@ -116,7 +119,9 @@ export async function resolveGuestFormSettings(propertyId: string): Promise<Gues
       developmentId: (data as { development_id?: string | null } | null)?.development_id ?? null,
       residenceName,
     },
-    { strict: false }
+    // Booking submission fails closed: a residence read error must not fall back to
+    // generic rules that would allow pets or parking the building forbids.
+    { strict: options.strictResidence ?? false }
   );
 
   const propertyName = String(data?.name ?? '').trim();

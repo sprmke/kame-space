@@ -371,7 +371,9 @@ export class DatabaseService {
 
       const partySlots = guestPartySlotsFromFormData(formData);
       const resolvedPropertyId = propertyId ?? (await getDefaultPropertyId());
-      const guestFormSettings = await resolveGuestFormSettings(resolvedPropertyId);
+      const guestFormSettings = await resolveGuestFormSettings(resolvedPropertyId, {
+        strictResidence: true,
+      });
       assertPropertyGuestPartyRules(
         partySlots,
         {

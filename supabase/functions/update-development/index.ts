@@ -117,9 +117,20 @@ serveAuthenticated('update-development', async (req) => {
     }
     if (!version) return jsonError(req, 'Version not found', 404);
 
+    // An old version was valid when saved, but a schema rule may have tightened since.
+    const restoredSettings = (version as { settings?: Record<string, unknown> }).settings ?? {};
+    if (restoredSettings.structure !== undefined) {
+      const restoredStructure = normalizeResidenceStructure(restoredSettings.structure);
+      const restoredStructureError = validateResidenceStructure(restoredStructure);
+      if (restoredStructureError) {
+        return jsonError(req, `That version is no longer valid: ${restoredStructureError}`);
+      }
+      restoredSettings.structure = restoredStructure;
+    }
+
     const { error: restoreError } = await supabase
       .from('developments')
-      .update({ settings: (version as { settings: unknown }).settings, updated_at: new Date().toISOString() })
+      .update({ settings: restoredSettings, updated_at: new Date().toISOString() })
       .eq('id', developmentId);
     if (restoreError) {
       console.error('[update-development] restore:', restoreError.message);

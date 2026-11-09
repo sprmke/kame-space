@@ -1251,14 +1251,14 @@ export function validateResidenceStructure(
 
   const unitError = validateFormatPreset(
     structure.unitNumberFormat.preset,
-    structure.unitNumberFormat.pattern,
-    'Unit format'
+    'Unit format',
+    UNIT_FORMAT_PRESETS
   );
   if (unitError) return unitError;
   const slotError = validateFormatPreset(
     structure.parkingSlotFormat.preset,
-    structure.parkingSlotFormat.pattern,
-    'Slot format'
+    'Slot format',
+    SLOT_FORMAT_PRESETS
   );
   if (slotError) return slotError;
 
@@ -1296,16 +1296,11 @@ export function validateResidenceStructure(
   return null;
 }
 
-function validateFormatPreset(
-  preset: string,
-  _pattern: string | undefined,
-  label: string
-): string | null {
-  if (preset === 'digits4' || preset === 'digits' || preset === 'alnum' || preset === 'custom') {
-    return null;
-  }
-  if (preset === 'digits1to4') return null;
-  return `${label} preset is not supported`;
+const UNIT_FORMAT_PRESETS = new Set(['digits4', 'digits', 'alnum', 'custom']);
+const SLOT_FORMAT_PRESETS = new Set(['digits1to4', 'alnum', 'custom']);
+
+function validateFormatPreset(preset: string, label: string, allowed: Set<string>): string | null {
+  return allowed.has(preset) ? null : `${label} preset is not supported`;
 }
 
 // #endregion shared-core
