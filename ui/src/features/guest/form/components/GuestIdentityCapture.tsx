@@ -173,6 +173,20 @@ export function GuestIdentityCapture({
         <div className="grid gap-2 sm:grid-cols-2">
           <button
             type="button"
+            className="hover:bg-muted focus-visible:ring-ring flex min-h-[72px] w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            onClick={() => setUpload(true)}
+          >
+            <span className="bg-muted text-muted-foreground flex size-9 shrink-0 items-center justify-center rounded-lg">
+              <ImagePlus className="h-4 w-4" aria-hidden />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">Upload a photo</span>
+              <span className="text-muted-foreground block text-xs">Photo or screenshot</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
             disabled={emailMissing}
             className="hover:bg-muted focus-visible:ring-ring flex min-h-[72px] w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
             onClick={() => setOpen(true)}
@@ -183,20 +197,6 @@ export function GuestIdentityCapture({
             <span className="min-w-0">
               <span className="block text-sm font-medium">Verify with camera</span>
               <span className="text-muted-foreground block text-xs">Takes about a minute</span>
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className="hover:bg-muted focus-visible:ring-ring flex min-h-[72px] w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
-            onClick={() => setUpload(true)}
-          >
-            <span className="bg-muted text-muted-foreground flex size-9 shrink-0 items-center justify-center rounded-lg">
-              <ImagePlus className="h-4 w-4" aria-hidden />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-medium">Upload a photo</span>
-              <span className="text-muted-foreground block text-xs">Use one you already have</span>
             </span>
           </button>
         </div>

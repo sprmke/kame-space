@@ -116,7 +116,13 @@ One rights select on the hosting step — **Property Rights** inside the Propert
 4. Per created listing: `POST submit-listing-authorization` (relationship + contract end, **no proof file**) → `settings.listingAuthorization.baseStatus = pending`. A listing already **pending** returns success (idempotent retry).
 5. Redirect: property settings → parking settings → org dashboard
 
-Host Tier 2 (Get Verified after onboarding): required `selfie_with_id`; optional `platform_admin_proof` and `business_permit_bir`. Facebook Page stays on Tier 1 (not re-uploaded). Plan-gated with **`recommendedBadgeEligible`**.
+Host Tier 2 (Get Verified after onboarding): the **live identity check** replaces the old
+`selfie_with_id` upload. `submit-org-verification` accepts `identityVerificationId` and accepts
+only a verdict of `verified` or `partially_verified` (both imply a completed liveness check);
+the verdict is stamped on `settings.verification.liveIdentityVerifiedAt` so a reload still shows
+the item as done. Optional `platform_admin_proof` and `business_permit_bir` are unchanged.
+Facebook Page stays on Tier 1 (not re-uploaded). Legacy rows that already uploaded a selfie keep
+working. Plan-gated with **`recommendedBadgeEligible`**.
 
 Listing Tier 2 (listing verification modal): additional proof + Azure PMO. `submit-listing-recommended` still needs listing Verified approved + **`recommendedBadgeEligible`**. Contract **renewal** still requires the primary proof file on the listing Verified tab.
 
