@@ -14,8 +14,13 @@
 import { z } from 'zod';
 
 import { buildActorContext } from '../_shared/activityLog.ts';
+import {
+  assertFeatureAvailable,
+  catchFeatureUnavailableError,
+} from '../_shared/featureAvailability.ts';
 import { jsonError, jsonSuccess, jsonUpgradeHook, readJsonBody } from '../_shared/httpResponse.ts';
 import {
+  addPlanItem,
   generatePlan,
   getPlannerSettings,
   isPlannerRange,
@@ -57,6 +62,26 @@ const postedSchema = z.object({
   action: z.literal('mark_posted'),
   itemId: z.string().uuid(),
   postedUrl: z.string().url().max(500).optional(),
+});
+
+const addItemSchema = z.object({
+  action: z.literal('add_item'),
+  title: z.string().trim().min(1).max(120),
+  format: z.enum(['post', 'carousel', 'story', 'reel', 'calendar']),
+  channelKind: z.enum([
+    'facebook_page',
+    'instagram',
+    'facebook_group',
+    'tiktok',
+    'messenger',
+    'viber',
+    'whatsapp',
+    'google_business',
+    'other',
+  ]),
+  scheduledFor: z.string().datetime({ offset: true }),
+  manualTargets: z.array(z.string().trim().min(1).max(80)).max(10).optional(),
+  brief: z.record(z.unknown()).optional(),
 });
 
 const settingsSchema = z.object({
@@ -116,10 +141,10 @@ serveAuthenticated('marketing-planner', async (req) => {
       if (action === 'generate') {
         const parsed = generateSchema.safeParse(body);
         if (!parsed.success) return jsonError(req, 'Invalid generate body', 400);
-        if (parsed.data.mode === 'ai') {
-          // AI briefs land in Phase 4; rules generation is the shipped path.
-          return jsonError(req, 'AI plans are not available yet', 400);
-        }
+        await assertFeatureAvailable(
+          parsed.data.mode === 'ai' ? 'marketing.planner.ai' : 'marketing.planner',
+          { user: scoped.user }
+        );
         await requirePropertyPermissionAndFeature(
           req,
           propertyId,
@@ -133,6 +158,26 @@ serveAuthenticated('marketing-planner', async (req) => {
           actor,
         });
         return jsonSuccess(req, result);
+      }
+
+      if (action === 'add_item') {
+        const parsed = addItemSchema.safeParse(body);
+        if (!parsed.success) return jsonError(req, 'Invalid add_item body', 400);
+        const actor = buildActorContext('dashboard', { propertyAccess: scoped }, req);
+        const item = await addPlanItem({
+          propertyId,
+          organizationId: scoped.org.id,
+          actor,
+          item: {
+            title: parsed.data.title,
+            format: parsed.data.format,
+            channelKind: parsed.data.channelKind,
+            scheduledFor: parsed.data.scheduledFor,
+            manualTargets: parsed.data.manualTargets,
+            brief: parsed.data.brief,
+          },
+        });
+        return jsonSuccess(req, { item });
       }
 
       if (action === 'update_item') {
@@ -185,6 +230,8 @@ serveAuthenticated('marketing-planner', async (req) => {
       return jsonError(req, 'Unknown action', 400);
     } catch (err) {
       if (err instanceof Response) return err;
+      const unavailable = catchFeatureUnavailableError(req, err);
+      if (unavailable) return unavailable;
       if (err instanceof PlanFeatureRequiredError) {
         return jsonUpgradeHook(req, err.message, { feature: err.feature });
       }

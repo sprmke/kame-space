@@ -71,12 +71,15 @@ function formatNightLabel(ymd: string): string {
 }
 
 /**
- * Validate an item's claims against live data. The first broken claim wins, so the
- * host gets one plain reason instead of a list.
+ * Availability-only check: nights, dates left, sold-out window. Cheap enough to run on
+ * every plan read, since it needs nothing but the blocked-night set.
  */
-export function validateClaims(claims: PlannerClaims, ctx: ClaimContext): ClaimValidation {
+export function validateAvailabilityClaims(
+  claims: PlannerClaims,
+  blockedNights: ReadonlySet<string>
+): ClaimValidation {
   for (const night of claims.openNights ?? []) {
-    if (ctx.blockedNights.has(night)) {
+    if (blockedNights.has(night)) {
       return { ok: false, reason: `${formatNightLabel(night)} got booked` };
     }
   }
@@ -84,7 +87,7 @@ export function validateClaims(claims: PlannerClaims, ctx: ClaimContext): ClaimV
   if (claims.nightsLeftInMonth != null) {
     const anchor = claims.openNights?.[0];
     if (anchor) {
-      const live = openNightsLeftInMonth(anchor, ctx.blockedNights);
+      const live = openNightsLeftInMonth(anchor, blockedNights);
       if (live < claims.nightsLeftInMonth) {
         return {
           ok: false,
@@ -93,6 +96,30 @@ export function validateClaims(claims: PlannerClaims, ctx: ClaimContext): ClaimV
       }
     }
   }
+
+  if (claims.fullyBookedWindow) {
+    const { from, to } = claims.fullyBookedWindow;
+    const month = monthKey(from);
+    const [year, monthIndex] = month.split('-').map(Number);
+    const daysInMonth = new Date(Date.UTC(year, monthIndex, 0)).getUTCDate();
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const ymd = `${month}-${String(day).padStart(2, '0')}`;
+      if (ymd >= from && ymd <= to && !blockedNights.has(ymd)) {
+        return { ok: false, reason: 'A date in that window is open again' };
+      }
+    }
+  }
+
+  return CLAIMS_OK;
+}
+
+/**
+ * Validate an item's claims against live data. The first broken claim wins, so the
+ * host gets one plain reason instead of a list.
+ */
+export function validateClaims(claims: PlannerClaims, ctx: ClaimContext): ClaimValidation {
+  const availability = validateAvailabilityClaims(claims, ctx.blockedNights);
+  if (!availability.ok) return availability;
 
   if (claims.rateFrom != null) {
     if (ctx.liveRateFrom == null) {
@@ -116,19 +143,6 @@ export function validateClaims(claims: PlannerClaims, ctx: ClaimContext): ClaimV
 
   if (claims.reviewId && ctx.liveReviewIds && !ctx.liveReviewIds.has(claims.reviewId)) {
     return { ok: false, reason: 'That review can no longer be used' };
-  }
-
-  if (claims.fullyBookedWindow) {
-    const { from, to } = claims.fullyBookedWindow;
-    const month = monthKey(from);
-    const [year, monthIndex] = month.split('-').map(Number);
-    const daysInMonth = new Date(Date.UTC(year, monthIndex, 0)).getUTCDate();
-    for (let day = 1; day <= daysInMonth; day += 1) {
-      const ymd = `${month}-${String(day).padStart(2, '0')}`;
-      if (ymd >= from && ymd <= to && !ctx.blockedNights.has(ymd)) {
-        return { ok: false, reason: 'A date in that window is open again' };
-      }
-    }
   }
 
   return CLAIMS_OK;

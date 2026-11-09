@@ -263,6 +263,17 @@ async function loadAssetCounts(propertyId: string): Promise<number> {
   return count ?? 0;
 }
 
+/** Every night that is occupied or blocked, from bookings and manual/OTA blocks. */
+export async function loadBlockedNightKeys(propertyId: string): Promise<Set<string>> {
+  const [bookingRanges, blockedKeys] = await Promise.all([
+    DatabaseService.listBookingRangesForAvailability(propertyId).catch(() => []),
+    loadBlockedDateKeys(propertyId).catch(() => [] as string[]),
+  ]);
+  const blocked = new Set<string>(blockedKeys);
+  for (const night of collectBlockedNights(bookingRanges)) blocked.add(night);
+  return blocked;
+}
+
 /** Months inside the horizon with no open night at all. */
 function fullyBookedMonths(blocked: ReadonlySet<string>, today: string, horizonEnd: string): string[] {
   const months = new Set<string>();

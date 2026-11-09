@@ -1,6 +1,10 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 
-import { openNightsLeftInMonth, validateClaims } from './marketingClaims.ts';
+import {
+  openNightsLeftInMonth,
+  validateAvailabilityClaims,
+  validateClaims,
+} from './marketingClaims.ts';
 
 const blocked = (...nights: string[]) => new Set(nights);
 
@@ -97,4 +101,21 @@ Deno.test('validateClaims: a fully booked window that reopened fails', () => {
 Deno.test('openNightsLeftInMonth: counts from the anchor day, not the 1st', () => {
   assertEquals(openNightsLeftInMonth('2026-11-29', new Set<string>()), 2);
   assertEquals(openNightsLeftInMonth('2026-11-29', blocked('2026-11-30')), 1);
+});
+
+Deno.test('validateAvailabilityClaims: ignores rate and rating claims', () => {
+  assertEquals(
+    validateAvailabilityClaims(
+      { openNights: ['2026-11-13'], rateFrom: 3200, rating: { avg: 4.9, count: 38 } },
+      blocked()
+    ),
+    { ok: true }
+  );
+});
+
+Deno.test('validateAvailabilityClaims: a booked night fails without needing a live rate', () => {
+  assertEquals(validateAvailabilityClaims({ openNights: ['2026-11-13'] }, blocked('2026-11-13')), {
+    ok: false,
+    reason: 'Nov 13 got booked',
+  });
 });
