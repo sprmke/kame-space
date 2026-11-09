@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Kame · Motion study</title><link rel="icon" href="data:,">
+  <link rel="stylesheet" href="preview.css">
+</head>
+<body>
+  <main>
+    <header><a class="brand" href="#">Kame<span>Space</span></a><span class="tag">Motion study 01</span></header>
+    <div class="intro"><p class="eyebrow">A LITTLE PERSONALITY</p><h1>Meet your friendly host.</h1><p>One greeting. A wave, a blink, and a smile.</p></div>
+    <div class="layout">
+      <section class="stage surface light" aria-label="Large animated mascot preview">
+        <span class="stage-label">Appearance & movement</span>
+        <canvas id="mascot" width="610" height="645" role="img" aria-label="Kame turtle mascot waving and speaking"></canvas>
+        <p class="stage-note">Transparent artwork · soft contact shadow</p>
+      </section>
+      <aside>
+        <section class="card">
+          <div class="card-heading"><h2>Receptionist size</h2><span>160 px</span></div>
+          <div class="small-stage surface light"><canvas id="small" width="320" height="320" role="img" aria-label="Same animation at receptionist size"></canvas></div>
+          <div class="status"><span id="dot"></span><span id="status" role="status">Preparing preview</span></div>
+          <p id="caption">Hi! I am Kame, your friendly host. Welcome to Kame Space. Shall we find your next happy place?</p>
+          <audio id="audio" controls preload="auto" src="assets/greeting.wav" aria-label="Greeting playback"></audio>
+          <div class="actions"><button id="play" disabled>Play greeting</button><button id="replay" class="secondary" disabled>Replay</button></div>
+        </section>
+        <section class="card controls">
+          <h2>Check the details</h2>
+          <fieldset><legend>Background</legend><div class="swatches">
+            <button data-bg="light" aria-pressed="true">Light</button><button data-bg="mint" aria-pressed="false">Mint</button><button data-bg="dark" aria-pressed="false">Dark</button><button data-bg="grid" aria-pressed="false">Alpha</button>
+          </div></fieldset>
+          <label class="toggle"><input type="checkbox" id="motion" checked> Gentle movement</label>
+          <label class="toggle"><input type="checkbox" id="guide"> Show mouth timing</label>
+          <div id="timing" hidden><span id="cue">Rest</span><progress id="progress" max="1" value="0" aria-label="Speech progress"></progress></div>
+        </section>
+      </aside>
+    </div>
+    <footer><strong>Local prototype.</strong> Recorded sample voice with audio-derived mouth cues. Fixed-angle layered artwork; live conversation and full 3D turns are not included.</footer>
+    <p id="error" role="alert" hidden></p>
+  </main>
+  <script type="module" src="preview.js"></script>
+</body>
+</html>
