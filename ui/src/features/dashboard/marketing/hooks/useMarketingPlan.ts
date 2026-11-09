@@ -69,17 +69,22 @@ export function usePlanItemActions() {
     onError: (error: Error) => toast.error(error.message || 'Could not mark the item'),
   });
 
-  const reschedule = useMutation({
-    mutationFn: (input: { itemId: string; scheduledFor: string }) =>
-      updatePlannerItem(propertyId, input),
+  const update = useMutation({
+    mutationFn: (input: {
+      itemId: string;
+      scheduledFor?: string;
+      format?: string;
+      title?: string;
+      brief?: Record<string, unknown>;
+    }) => updatePlannerItem(propertyId, input),
     onSuccess: () => {
       invalidate();
-      toast.success('Rescheduled');
+      toast.success('Saved');
     },
-    onError: (error: Error) => toast.error(error.message || 'Could not reschedule'),
+    onError: (error: Error) => toast.error(error.message || 'Could not save the item'),
   });
 
-  return { skip, markPosted, reschedule };
+  return { skip, markPosted, update };
 }
 
 export function useSavePlannerSettings() {

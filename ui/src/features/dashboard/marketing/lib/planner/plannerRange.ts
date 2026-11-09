@@ -80,3 +80,41 @@ export function formatItemTime(scheduledFor: string | null): string | null {
   const display = hours % 12 === 0 ? 12 : hours % 12;
   return `${display}:${minutes} ${suffix}`;
 }
+
+/** `2026-11-09T19:00:00+08:00` -> `2026-11-09T19:00` for a datetime-local input. */
+export function toDatetimeLocal(iso: string | null): string {
+  if (!iso) return '';
+  const match = iso.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
+  return match ? `${match[1]}T${match[2]}` : '';
+}
+
+/** `2026-11-09T19:00` -> `2026-11-09T19:00:00+08:00`, the planner's stored shape. */
+export function fromDatetimeLocal(value: string): string | null {
+  const match = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})$/);
+  return match ? `${match[1]}T${match[2]}:00+08:00` : null;
+}
+
+/** Human claim lines for the truth panel. */
+export function describeClaimLines(claims: {
+  openNights?: string[];
+  nightsLeftInMonth?: number;
+  rateFrom?: number;
+  rating?: { avg: number; count: number };
+  fullyBookedWindow?: { from: string; to: string };
+}): string[] {
+  const lines: string[] = [];
+  if (claims.openNights?.length) {
+    lines.push(`Open: ${claims.openNights.join(', ')}`);
+  }
+  if (claims.nightsLeftInMonth != null) {
+    lines.push(`${claims.nightsLeftInMonth} dates left this month`);
+  }
+  if (claims.rateFrom != null) lines.push(`From ${claims.rateFrom} a night`);
+  if (claims.rating) {
+    lines.push(`${claims.rating.avg.toFixed(1)} from ${claims.rating.count} reviews`);
+  }
+  if (claims.fullyBookedWindow) {
+    lines.push(`Sold out ${claims.fullyBookedWindow.from} to ${claims.fullyBookedWindow.to}`);
+  }
+  return lines;
+}

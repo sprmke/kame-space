@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 import { PlanItemCard } from '@/features/dashboard/marketing/components/planner/PlanItemCard';
+import { PlanItemSheet } from '@/features/dashboard/marketing/components/planner/PlanItemSheet';
 import { ShareItYourselfSheet } from '@/features/dashboard/marketing/components/planner/ShareItYourselfSheet';
 import type { PlannerItemDto } from '@/features/dashboard/marketing/lib/planner/plannerApi';
 import {
@@ -21,7 +22,6 @@ import {
   useMarketingPlan,
   usePlanItemActions,
 } from '@/features/dashboard/marketing/hooks/useMarketingPlan';
-import { toast } from 'sonner';
 
 const SHOWCASE_ITEMS = 3;
 
@@ -43,8 +43,9 @@ export function PlannerHome() {
   const { open: openUpgradeModal } = useUpgradeModal();
   const { data, isLoading, isError, error } = useMarketingPlan(range);
   const generate = useGeneratePlan();
-  const { skip, markPosted } = usePlanItemActions();
+  const { skip, markPosted, update } = usePlanItemActions();
   const [shareItem, setShareItem] = useState<PlannerItemDto | null>(null);
+  const [openItem, setOpenItem] = useState<PlannerItemDto | null>(null);
 
   const today = todayManilaYmd();
   const allowed = planGate.allowed;
@@ -56,14 +57,7 @@ export function PlannerHome() {
 
   const groups = useMemo(() => groupItemsByDay(items), [items]);
 
-  const handleOpen = (item: PlannerItemDto) => {
-    if (item.brief.message) {
-      void navigator.clipboard?.writeText(item.brief.message).catch(() => undefined);
-      toast.success('Caption copied');
-      return;
-    }
-    toast.info('Open the editor from Posts to finish this item');
-  };
+  const handleOpen = (item: PlannerItemDto) => setOpenItem(item);
 
   return (
     <div className="space-y-4">
@@ -146,6 +140,21 @@ export function PlannerHome() {
           </div>
         </section>
       ))}
+
+      <PlanItemSheet
+        open={openItem !== null}
+        onOpenChange={(next) => {
+          if (!next) setOpenItem(null);
+        }}
+        item={openItem}
+        isSaving={update.isPending}
+        onSave={(target, patch) =>
+          update.mutateAsync({ itemId: target.id, ...patch }).then(
+            () => true,
+            () => false
+          )
+        }
+      />
 
       <ShareItYourselfSheet
         open={shareItem !== null}
