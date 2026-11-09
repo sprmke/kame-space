@@ -54,13 +54,17 @@ Second slice (2026-11-08):
 
 Follow-up slice (2026-11-09):
 
-- **H-11** controller extracted from `ParkingSettingsCard.tsx` into `parking/hooks/useParkingSettingsController.ts`; the component dropped from 1,087 to 599 lines. Section-level components remain a later refactor.
+- **H-11** `ParkingSettingsCard.tsx` is now 133 lines: controller in `parking/hooks/useParkingSettingsController.ts` and sections in `components/ParkingSettingsSections.tsx`.
 - **H-9** org-wide and scoped booking lists include pre-claim broadcast requests (`20261324000000_list_bookings_preclaim.sql` plus the PostgREST fallback).
 - **M-11** host in-app notices for guest cancel, payment-window expiry, and endorsement send failure. New types: `parking_request_cancelled`, `parking_payment_expired`, `parking_endorsement_failed`.
 - **E-11/E-12** org parkings hub and super-admin payouts specs added.
 - **Manual QA** width sweep at 375 / 768 / 1280 for Bookings, booking detail, Pricing, Finance and Settings.
 
-Still open: section-level component split inside `ParkingSettingsCard`, the full human manual QA walk (the automated sweep covers overflow only), C-4 soak confirmation, and the production-readiness/support follow-through.
+**C-4 confirmed:** no repository callers for `submit-pay-parking`, `parking-broadcast-email` or `create-parking-booking`, and none are deployed in production. Their dirs, config blocks and guards are gone.
+
+Manual QA: the automated parking suite covers the lifecycle and interaction paths, and a dedicated width sweep covers Bookings, booking detail, Pricing, Finance and Settings at 375 / 768 / 1280. A human visual pass is optional before release.
+
+Only production deploy of this branch remains.
 
 ## How this audit was done
 
