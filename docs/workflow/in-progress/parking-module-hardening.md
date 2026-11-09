@@ -58,7 +58,8 @@ Follow-up slice (2026-11-09):
 - **H-9** org-wide and scoped booking lists include pre-claim broadcast requests (`20261324000000_list_bookings_preclaim.sql` plus the PostgREST fallback).
 - **M-11** host in-app notices for guest cancel, payment-window expiry, and endorsement send failure. New types: `parking_request_cancelled`, `parking_payment_expired`, `parking_endorsement_failed`.
 - **E-11/E-12** org parkings hub and super-admin payouts specs added.
-- **Manual QA** width sweep at 375 / 768 / 1280 for Bookings, booking detail, Pricing, Finance and Settings.
+- **Manual QA** width sweep at 375 / 768 / 1280 for Bookings, booking detail, Pricing, Finance and Settings, now asserting loaded content rather than just the page shell.
+- **Mobile QA fix** the pricing calendar kept square cells from its 56px minimum height and the nowrap direct-link URL widened the right column, so 375px clipped the weekend columns. Compact card padding + 2px week gaps keep all seven days on screen at ~45px cells, and the right column now shrinks. A Playwright test asserts the last day cell stays inside the 375px viewport.
 
 **C-4 confirmed:** no repository callers for `submit-pay-parking`, `parking-broadcast-email` or `create-parking-booking`, and none are deployed in production. Their dirs, config blocks and guards are gone.
 

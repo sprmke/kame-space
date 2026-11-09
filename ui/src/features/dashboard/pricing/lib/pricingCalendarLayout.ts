@@ -11,12 +11,12 @@ export function pricingCalendarFormGridClassName(compactChrome: boolean): string
 }
 
 export function pricingCalendarWeekGapClassName(compactChrome: boolean): string {
-  return compactChrome ? 'gap-1' : 'gap-1.5 sm:gap-2';
+  return compactChrome ? 'gap-0.5 sm:gap-1' : 'gap-1.5 sm:gap-2';
 }
 
 export function pricingCalendarOutsideCellClassName(compactChrome: boolean): string {
   return cn(
-    'aspect-square',
+    'sm:aspect-square',
     compactChrome ? 'min-h-[3rem] sm:min-h-[3.25rem]' : 'min-h-[3.5rem] sm:min-h-[4.5rem]'
   );
 }
