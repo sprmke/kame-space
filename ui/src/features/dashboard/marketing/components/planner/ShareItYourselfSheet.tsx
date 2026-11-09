@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { captureAppEvent } from '@/lib/posthog/capture';
+
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -69,6 +71,7 @@ export function ShareItYourselfSheet({ open, onOpenChange, item, onPosted, isPos
   };
 
   const share = async () => {
+    captureAppEvent('planner_share_used', { mode: plan, channel: item.channelKind });
     if (plan === 'copy-only') {
       await copyCaption();
       return;

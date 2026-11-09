@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
+import { captureAppEvent } from '@/lib/posthog/capture';
 import {
   fetchMarketingPlan,
   generateMarketingPlan,
@@ -37,6 +38,11 @@ export function useGeneratePlan() {
     mutationFn: () => generateMarketingPlan(propertyId),
     onSuccess: (result) => {
       invalidate();
+      captureAppEvent('plan_generated', {
+        mode: 'rules',
+        created: result.created,
+        skipped: result.skipped,
+      });
       toast.success(
         result.created > 0 ? `${result.created} items planned` : 'Your plan is up to date'
       );
@@ -54,6 +60,7 @@ export function usePlanItemActions() {
       skipPlannerItem(propertyId, input.itemId, input.reason),
     onSuccess: () => {
       invalidate();
+      captureAppEvent('planner_item_skipped');
       toast.success('Item skipped');
     },
     onError: (error: Error) => toast.error(error.message || 'Could not skip the item'),
@@ -64,6 +71,7 @@ export function usePlanItemActions() {
       markPlannerItemPosted(propertyId, input.itemId, input.postedUrl),
     onSuccess: () => {
       invalidate();
+      captureAppEvent('planner_item_completed', { channel: 'manual' });
       toast.success('Marked as posted');
     },
     onError: (error: Error) => toast.error(error.message || 'Could not mark the item'),
@@ -94,6 +102,7 @@ export function useSavePlannerSettings() {
     mutationFn: (patch: Record<string, unknown>) => savePlannerSettings(propertyId, patch),
     onSuccess: () => {
       invalidate();
+      captureAppEvent('planner_onboarded');
       toast.success('Saved');
     },
     onError: (error: Error) => toast.error(error.message || 'Could not save'),

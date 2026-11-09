@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { captureAppEvent } from '@/lib/posthog/capture';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 import { PlanItemCard } from '@/features/dashboard/marketing/components/planner/PlanItemCard';
@@ -45,6 +46,7 @@ export function PlannerHome() {
   const generate = useGeneratePlan();
   const { skip, markPosted, update } = usePlanItemActions();
   const [shareItem, setShareItem] = useState<PlannerItemDto | null>(null);
+  const viewed = useRef(false);
   const [openItem, setOpenItem] = useState<PlannerItemDto | null>(null);
 
   const today = todayManilaYmd();
@@ -56,6 +58,12 @@ export function PlannerHome() {
   }, [allowed, data?.items]);
 
   const groups = useMemo(() => groupItemsByDay(items), [items]);
+
+  useEffect(() => {
+    if (viewed.current || !data) return;
+    viewed.current = true;
+    captureAppEvent('planner_viewed', { range, itemCount: data.items.length });
+  }, [data, range]);
 
   const handleOpen = (item: PlannerItemDto) => setOpenItem(item);
 
