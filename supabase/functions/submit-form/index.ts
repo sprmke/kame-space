@@ -9,6 +9,7 @@ import { notifyTelegramNewBookingRequest } from '../_shared/telegramMarketing.ts
 import { notifyTelegramAdminNewBooking } from '../_shared/telegramAdmin.ts';
 import { notifyTelegramStaffSameDayCheckIn } from '../_shared/telegramStaff.ts';
 import { compareFormData, shouldRevertReadyForCheckinToPendingReview } from '../_shared/utils.ts';
+import { sanitizeAttribution } from '../_shared/marketingTrackedLinks.ts';
 import {
   shouldRevertGuestFieldEditsToPendingReview,
   canGuestPublicUpdateForm,
@@ -377,6 +378,28 @@ serve(async (req) => {
         guestUser?.id,
         revertReadyForCheckinToPendingReview ? guestFormChangedFields : []
       );
+
+    // First-touch attribution: campaign values only, allow-listed and length-capped. A bad
+    // payload never fails the submission; it is simply not stored.
+    if (isSaveToDatabaseEnabled && submissionData?.id) {
+      const rawAttribution = formData.get('attribution');
+      if (typeof rawAttribution === 'string' && rawAttribution.trim()) {
+        try {
+          const attribution = sanitizeAttribution(JSON.parse(rawAttribution));
+          if (attribution) {
+            const attributionError = await createServiceClient()
+              .from('guest_submissions')
+              .update({ attribution })
+              .eq('id', submissionData.id);
+            if (attributionError.error) {
+              console.warn('[submit-form] attribution not stored:', attributionError.error.message);
+            }
+          }
+        } catch {
+          // Malformed JSON: ignore, the booking itself is valid.
+        }
+      }
+    }
 
     let voucherApplied = false;
     let voucherWarning: string | null = null;

@@ -118,6 +118,8 @@ import { requireMarketingPublishAllowed } from './planEntitlements.ts';
 import { updatePropertyPatchPermissions } from './settingsPatchPermissions.ts';
 import type { TeamPermissionId } from './propertyTeamPermissions.ts';
 import { generateMarketingCaption } from './marketingCaptionAi.ts';
+import { addDaysYmd, manilaTodayYmd } from './calendarAvailabilityManila.ts';
+import { listPlanItems } from './marketingPlanner.ts';
 import { generateMarketingTemplateTokens } from './marketingTemplateGenerationAi.ts';
 import { fetchJamendoTracks, readJamendoClientId } from './jamendoMusic.ts';
 import {
@@ -1651,6 +1653,47 @@ async function toolListMarketingTemplates(
       platform: t.platform,
       updatedAt: t.updated_at,
     })),
+  };
+}
+
+async function toolGetMarketingPlan(
+  ctx: ToolExecutionContext,
+  args: Record<string, unknown>
+): Promise<ToolResult> {
+  const propertyId = str(args, 'propertyId');
+  if (!propertyId) return { ok: false, error: 'propertyId is required' };
+  const access = await verifyMarketingPropertyAccess(
+    ctx,
+    propertyId,
+    'marketing:view',
+    'marketingPlanner'
+  );
+  const today = manilaTodayYmd();
+  const items = await listPlanItems({
+    propertyId: access.propertyId,
+    from: today,
+    to: addDaysYmd(today, 6),
+  });
+  return {
+    ok: true,
+    auditPropertyId: access.propertyId,
+    data: {
+      from: today,
+      items: items.map((item) => ({
+        id: item.id,
+        title: item.title,
+        status: item.status,
+        statusReason: item.status_reason,
+        format: item.format,
+        channel: item.channel_kind,
+        scheduledFor: item.scheduled_for,
+        why: (item.brief as Record<string, unknown> | null)?.why ?? null,
+        trackedVisits:
+          item.results && typeof item.results === 'object'
+            ? Number((item.results as Record<string, unknown>).trackedVisits ?? 0) || 0
+            : 0,
+      })),
+    },
   };
 }
 
@@ -4551,6 +4594,7 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   get_host_announcement: (ctx, args) => toolGetHostAnnouncement(ctx, args),
   get_org_plan_snapshot: (ctx) => toolGetOrgPlanSnapshot(ctx),
   list_marketing_templates: (ctx, args) => toolListMarketingTemplates(ctx, args),
+  get_marketing_plan: (ctx, args) => toolGetMarketingPlan(ctx, args),
   get_marketing_publish_history: (ctx, args) => toolGetMarketingPublishHistory(ctx, args),
   search_marketing_music: (ctx, args) => toolSearchMarketingMusic(ctx, args),
   draft_marketing_caption: (ctx, args) => toolDraftMarketingCaption(ctx, args),
@@ -5405,6 +5449,16 @@ export const TOOL_DECLARATIONS = [
     name: 'list_marketing_templates',
     description:
       "List a property's saved Marketing Studio templates (calendar/design/video). Global-admin only - see note on Marketing Studio access.",
+    parameters: {
+      type: 'object',
+      properties: { propertyId: { type: 'string' } },
+      required: ['propertyId'],
+    },
+  },
+  {
+    name: 'get_marketing_plan',
+    description:
+      "Get this week's Marketing Planner items for a property: what to post, when, why, and tracked visits. Read only.",
     parameters: {
       type: 'object',
       properties: { propertyId: { type: 'string' } },
