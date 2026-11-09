@@ -29,7 +29,7 @@ import {
 import { readOrgVerificationFromSettings } from '../_shared/orgVerification.ts';
 import {
   DUPLICATE_TOWER_UNIT_MESSAGE,
-  parsePropertyTowerUnitFromBody,
+  parsePropertyTowerUnitWithProfile,
 } from '../_shared/propertyTowerUnit.ts';
 import {
   jsonError,
@@ -40,7 +40,7 @@ import {
 import {
   DUPLICATE_PARKING_SLOT_MESSAGE,
   findParkingSlotConflict,
-  parseParkingSlotFromBody,
+  parseParkingSlotWithProfile,
 } from '../_shared/parkingSlotUnit.ts';
 import { seedParkingSettings } from '../_shared/parkingSettingsSeed.ts';
 import { assignDefaultOrgPlanIfConfigured } from '../_shared/defaultOrgPlan.ts';
@@ -119,7 +119,6 @@ serveAuthenticated('create-organization', async (req, user) => {
   const residenceName =
     typeof body.residenceName === 'string' ? body.residenceName.trim() || null : null;
 
-  const towerUnitParsed = parsePropertyTowerUnitFromBody(body);
   const hasTowerUnitFields =
     typeof body.tower === 'string' ||
     typeof body.unitNumber === 'string' ||
@@ -129,7 +128,6 @@ serveAuthenticated('create-organization', async (req, user) => {
     body.parking && typeof body.parking === 'object' && !Array.isArray(body.parking)
       ? (body.parking as Record<string, unknown>)
       : body;
-  const parkingParsed = parseParkingSlotFromBody(parkingBlock);
   const hasParkingSlotFields =
     typeof parkingBlock.tower === 'string' ||
     typeof parkingBlock.level === 'string' ||
@@ -142,6 +140,22 @@ serveAuthenticated('create-organization', async (req, user) => {
     hostModes.includes('parking') || (hostModes.length === 0 && hasParkingSlotFields);
 
   const supabase = createServiceClient();
+
+  const requestedDevelopmentId =
+    typeof body.developmentId === 'string' ? body.developmentId.trim() || null : null;
+  const profile = await loadResidenceProfileForResidence(supabase, {
+    developmentId: requestedDevelopmentId,
+    residenceName:
+      residenceName ??
+      (typeof parkingBlock.residenceName === 'string'
+        ? parkingBlock.residenceName.trim() || null
+        : null),
+  });
+  const resolvedResidenceName = residenceName ?? profile.developmentName;
+  const resolvedDevelopmentId = requestedDevelopmentId ?? profile.developmentId;
+  const locationSeed = residenceLocationSeed(profile);
+  const towerUnitParsed = parsePropertyTowerUnitWithProfile(body, profile);
+  const parkingParsed = parseParkingSlotWithProfile(parkingBlock, profile);
 
   const { data: ownedOrgs, error: ownedError } = await supabase
     .from('organizations')
@@ -285,7 +299,10 @@ serveAuthenticated('create-organization', async (req, user) => {
         tower,
         unit_number: unitNumber,
         tower_and_unit: towerAndUnit,
-        residence_name: residenceName,
+        residence_name: resolvedResidenceName,
+        development_id: resolvedDevelopmentId,
+        address: locationSeed?.address ?? null,
+        settings: locationSeed?.settings,
       })
       .select('*')
       .single();
@@ -321,10 +338,12 @@ serveAuthenticated('create-organization', async (req, user) => {
     try {
       const conflict = await findParkingSlotConflict(
         supabase,
-        parkingParsed.residenceName,
+        resolvedResidenceName ?? '',
         parkingParsed.tower,
         parkingParsed.level,
-        parkingParsed.slotLabel
+        parkingParsed.slotLabel,
+        undefined,
+        resolvedDevelopmentId
       );
       if (conflict) {
         await rollbackOrg();
@@ -352,13 +371,14 @@ serveAuthenticated('create-organization', async (req, user) => {
         organization_id: org.id,
         name: parkingName,
         slug: parkSlug,
-        residence_name: parkingParsed.residenceName,
+        residence_name: resolvedResidenceName,
+        development_id: resolvedDevelopmentId,
         tower: parkingParsed.tower,
         level: parkingParsed.level,
         slot_label: parkingParsed.slotLabel,
         parking_type: parkingParsed.parkingType,
         rate_per_night: ratePerNight,
-        settings: { features: ['CCTV', '24/7 Security'] },
+        settings: { features: ['CCTV', '24/7 Security'], ...(locationSeed?.settings ?? {}) },
       })
       .select('*')
       .single();

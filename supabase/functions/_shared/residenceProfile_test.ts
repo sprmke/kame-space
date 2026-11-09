@@ -3,9 +3,19 @@ import { assertEquals, assertRejects } from 'https://deno.land/std@0.224.0/asser
 import type { SupabaseClient } from './supabaseJs.ts';
 import {
   GENERIC_RESIDENCE_PROFILE,
+  formatParkingCodeForProfile,
+  formatParkingLocation,
   loadResidenceProfile,
+  parkingLevelsForTower,
+  parkingSlotError,
+  parkingSlotLocationError,
+  parkingTypeForTower,
   parseResidenceProfile,
+  residenceLocationSeed,
   resolvePropertyValue,
+  sanitizeSlotLabel,
+  unitNumberError,
+  validateTowerForProfile,
 } from './residenceProfile.ts';
 
 Deno.test('parseResidenceProfile: null row is generic and has no building approvals', () => {
@@ -127,4 +137,114 @@ Deno.test('loadResidenceProfile: parses a development row', async () => {
   assertEquals(profile.structure.unitLabel, 'Lot');
   assertEquals(profile.stay.petsAllowed, false);
   assertEquals(profile.occupancy.maxAdultsCap, 2);
+});
+
+const AZURE_STRUCTURE = {
+  id: 'dev-azure',
+  name: 'Azure North Residences',
+  type: 'CONDOMINIUM',
+  settings: {
+    structure: {
+      towerLabel: 'Tower',
+      unitLabel: 'Unit',
+      towersRequired: true,
+      propertyTowers: [
+        { name: 'Monaco', code: 'Monaco', active: true },
+        { name: 'Bali', code: 'Bali', active: true },
+      ],
+      parkingTowers: [
+        {
+          name: 'Monaco',
+          code: 'M',
+          active: true,
+          levels: ['Level 1', 'Level 2'],
+          parkingType: 'inside_tower',
+        },
+        {
+          name: 'Bay',
+          code: 'BY',
+          active: true,
+          levels: ['Level 1'],
+          parkingType: 'outside_tower',
+        },
+      ],
+      unitNumberFormat: { preset: 'digits4', example: '2604' },
+      parkingSlotFormat: { preset: 'digits1to4', example: '26' },
+      floorsMax: 29,
+    },
+  },
+};
+
+const AZURE_PROFILE = parseResidenceProfile(AZURE_STRUCTURE);
+
+const GENERIC_PROFILE = parseResidenceProfile({ id: 'dev-lot', type: 'SUBDIVISION', settings: {} });
+
+Deno.test('structure: 4-digit preset rejects letters and short units', () => {
+  assertEquals(unitNumberError(AZURE_PROFILE, '12A'), 'Unit number does not match this residence\'s format (example: 2604)');
+  assertEquals(unitNumberError(AZURE_PROFILE, '123'), 'Unit number does not match this residence\'s format (example: 2604)');
+  assertEquals(unitNumberError(AZURE_PROFILE, '0101'), null);
+});
+
+Deno.test('structure: a generic residence accepts an alphanumeric lot number', () => {
+  assertEquals(unitNumberError(GENERIC_PROFILE, 'Blk 3 Lot 5'), null);
+  assertEquals(unitNumberError(GENERIC_PROFILE, ''), 'Unit number is required');
+});
+
+Deno.test('structure: tower list is enforced case-insensitively, empty list is permissive', () => {
+  assertEquals(validateTowerForProfile(AZURE_PROFILE, 'monaco'), { ok: true, tower: 'Monaco' });
+  assertEquals(validateTowerForProfile(AZURE_PROFILE, 'Bali'), { ok: true, tower: 'Bali' });
+  const rejected = validateTowerForProfile(AZURE_PROFILE, 'Bay');
+  assertEquals(rejected.ok, false);
+
+  assertEquals(validateTowerForProfile(GENERIC_PROFILE, ''), { ok: true, tower: '' });
+  assertEquals(validateTowerForProfile(GENERIC_PROFILE, 'Phase 2'), { ok: true, tower: 'Phase 2' });
+});
+
+Deno.test('structure: required towers reject an empty value', () => {
+  const required = parseResidenceProfile({
+    id: 'dev-1',
+    settings: { structure: { towersRequired: true, propertyTowers: [] } },
+  });
+
+  const result = validateTowerForProfile(required, '');
+  assertEquals(result.ok, false);
+});
+
+Deno.test('structure: parking levels and type come from the residence', () => {
+  assertEquals(parkingLevelsForTower(AZURE_PROFILE, 'Bay'), ['Level 1']);
+  assertEquals(parkingLevelsForTower(AZURE_PROFILE, 'Monaco'), ['Level 1', 'Level 2']);
+  assertEquals(parkingTypeForTower(AZURE_PROFILE, 'Bay'), 'outside_tower');
+  assertEquals(parkingTypeForTower(AZURE_PROFILE, 'Monaco'), 'inside_tower');
+  assertEquals(parkingSlotLocationError(AZURE_PROFILE, 'Bali', 'Level 1') !== null, true);
+  assertEquals(parkingSlotLocationError(AZURE_PROFILE, 'Bay', 'Level 2') !== null, true);
+  assertEquals(parkingSlotLocationError(AZURE_PROFILE, 'Bay', 'Level 1'), null);
+  assertEquals(parkingSlotLocationError(GENERIC_PROFILE, 'Anything', 'Any level'), null);
+});
+
+Deno.test('structure: slot sanitising keeps digits-only presets clean and alnum slots intact', () => {
+  assertEquals(sanitizeSlotLabel(AZURE_PROFILE, 'B2-27'), '227');
+  const alnum = parseResidenceProfile({
+    id: 'dev-2',
+    settings: { structure: { parkingSlotFormat: { preset: 'alnum', example: 'P-12' } } },
+  });
+  assertEquals(sanitizeSlotLabel(alnum, 'P-12'), 'P-12');
+  assertEquals(parkingSlotError(alnum, 'P-12'), null);
+});
+
+Deno.test('structure: display name and compact code keep the current shape', () => {
+  assertEquals(formatParkingLocation(AZURE_PROFILE, 'Monaco', 'Level 1', '26'), 'Monaco - Level 1 - Slot 26');
+  assertEquals(formatParkingCodeForProfile(AZURE_PROFILE, 'Monaco', 'Level 1', '26'), 'ML1S26');
+  assertEquals(formatParkingCodeForProfile(AZURE_PROFILE, 'Bay', 'Level 1', '7'), 'BYL1S7');
+  assertEquals(formatParkingCodeForProfile(AZURE_PROFILE, 'Unknown', 'Level 1', '7'), '');
+});
+
+Deno.test('structure: location seed returns null without coordinates', () => {
+  assertEquals(residenceLocationSeed(GENERIC_PROFILE), null);
+  const located = parseResidenceProfile({
+    id: 'dev-3',
+    settings: { latitude: 15.1, longitude: 120.5, address: 'Somewhere', city: 'City' },
+  });
+  const seed = residenceLocationSeed(located);
+  assertEquals(seed?.address, 'Somewhere');
+  assertEquals(seed?.settings.latitude, 15.1);
 });

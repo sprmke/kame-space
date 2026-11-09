@@ -19,15 +19,15 @@ import {
   DUPLICATE_PARKING_SLOT_MESSAGE,
   ensureOrgHostMode,
   findParkingSlotConflict,
-  parseParkingSlotFromBody,
+  parseParkingSlotWithProfile,
 } from '../_shared/parkingSlotUnit.ts';
 import { parseAcceptedVehicleTypes } from '../_shared/parkingDimensionDefaults.ts';
 import { seedParkingSettings } from '../_shared/parkingSettingsSeed.ts';
 import { syncPreferredOwnerParkingDefaults } from '../_shared/preferredOwnerParkingDefaults.ts';
 import {
-  azureNorthLocationSeed,
-  isAzureNorthResidence,
-} from '../_shared/propertyLocationDefaults.ts';
+  loadResidenceProfileForResidence,
+  residenceLocationSeed,
+} from '../_shared/residenceProfile.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 
 serveAuthenticated('create-parking', async (req) => {
@@ -41,7 +41,20 @@ serveAuthenticated('create-parking', async (req) => {
 
   const orgAccess = await verifyOrgAccess(req, { orgId }, 'org.parkings:create');
 
-  const parsed = parseParkingSlotFromBody(body);
+  const supabase = createServiceClient();
+
+  const requestedResidenceName =
+    typeof body.residenceName === 'string' ? body.residenceName.trim() || null : null;
+  const requestedDevelopmentId =
+    typeof body.developmentId === 'string' ? body.developmentId.trim() || null : null;
+  const profile = await loadResidenceProfileForResidence(supabase, {
+    developmentId: requestedDevelopmentId,
+    residenceName: requestedResidenceName,
+  });
+  const residenceName = requestedResidenceName ?? profile.developmentName;
+  const developmentId = requestedDevelopmentId ?? profile.developmentId;
+
+  const parsed = parseParkingSlotWithProfile(body, profile);
   if (!parsed.ok) {
     return jsonError(req, parsed.error);
   }
@@ -67,15 +80,15 @@ serveAuthenticated('create-parking', async (req) => {
     acceptedVehicleTypes = parsedTypes.value;
   }
 
-  const supabase = createServiceClient();
-
   try {
     const conflict = await findParkingSlotConflict(
       supabase,
-      parsed.residenceName,
+      residenceName ?? '',
       parsed.tower,
       parsed.level,
-      parsed.slotLabel
+      parsed.slotLabel,
+      undefined,
+      developmentId
     );
     if (conflict) {
       return jsonError(req, DUPLICATE_PARKING_SLOT_MESSAGE, 409);
@@ -87,9 +100,7 @@ serveAuthenticated('create-parking', async (req) => {
 
   const slug = await allocateParkingSlug(supabase, name);
 
-  const azureLocation = isAzureNorthResidence(parsed.residenceName)
-    ? azureNorthLocationSeed()
-    : null;
+  const locationSeed = residenceLocationSeed(profile);
 
   const { data, error } = await supabase
     .from('parkings')
@@ -97,7 +108,8 @@ serveAuthenticated('create-parking', async (req) => {
       organization_id: orgId,
       name,
       slug,
-      residence_name: parsed.residenceName,
+      residence_name: residenceName,
+      development_id: developmentId,
       tower: parsed.tower,
       level: parsed.level,
       slot_label: parsed.slotLabel,
@@ -108,7 +120,7 @@ serveAuthenticated('create-parking', async (req) => {
         enabledParkingAmenities: ['cctv', 'security_24_7'],
         customParkingAmenities: [],
         features: ['CCTV', '24/7 Security'],
-        ...(azureLocation?.settings ?? {}),
+        ...(locationSeed?.settings ?? {}),
       },
     })
     .select('*')

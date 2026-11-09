@@ -103,6 +103,15 @@ export type ResidenceProfile = {
     petTypes: string[];
     petVaccinationRequired: boolean;
   };
+  location: {
+    latitude: number | null;
+    longitude: number | null;
+    address: string | null;
+    city: string | null;
+    province: string | null;
+    country: string | null;
+    zipCode: string | null;
+  };
   approvals: {
     buildingAdminLabel: string;
     pmoEmail: string | null;
@@ -128,7 +137,7 @@ export const GENERIC_RESIDENCE_PROFILE: ResidenceProfile = {
   structure: {
     towerLabel: 'Tower',
     unitLabel: 'Unit',
-    towersRequired: true,
+    towersRequired: false,
     propertyTowers: [],
     parkingTowers: [],
     unitNumberFormat: { preset: 'alnum', example: '0101' },
@@ -151,6 +160,15 @@ export const GENERIC_RESIDENCE_PROFILE: ResidenceProfile = {
     surpriseDecorAllowed: true,
     petTypes: ['Dog', 'Cat'],
     petVaccinationRequired: true,
+  },
+  location: {
+    latitude: null,
+    longitude: null,
+    address: null,
+    city: null,
+    province: null,
+    country: null,
+    zipCode: null,
   },
   approvals: {
     buildingAdminLabel: 'Building admin',
@@ -340,6 +358,7 @@ export function parseResidenceProfile(row: unknown): ResidenceProfile {
     structure: { ...GENERIC_RESIDENCE_PROFILE.structure },
     occupancy: { ...GENERIC_RESIDENCE_PROFILE.occupancy },
     stay: { ...GENERIC_RESIDENCE_PROFILE.stay },
+    location: { ...GENERIC_RESIDENCE_PROFILE.location },
     approvals: { ...GENERIC_RESIDENCE_PROFILE.approvals },
     terms: {},
     copy: {},
@@ -409,6 +428,17 @@ export function parseResidenceProfile(row: unknown): ResidenceProfile {
     petTypes: readStringArray(stay, 'petTypes') ?? base.stay.petTypes,
     petVaccinationRequired:
       readBoolean(stay, 'petVaccinationRequired') ?? base.stay.petVaccinationRequired,
+  };
+
+  const locationSettings = asRecord(settings?.location) ?? settings;
+  base.location = {
+    latitude: readNumber(locationSettings, 'latitude'),
+    longitude: readNumber(locationSettings, 'longitude'),
+    address: readString(locationSettings, 'address') ?? readString(settings, 'address'),
+    city: readString(locationSettings, 'city'),
+    province: readString(locationSettings, 'province'),
+    country: readString(locationSettings, 'country'),
+    zipCode: readString(locationSettings, 'zipCode'),
   };
 
   const approvals = asRecord(settings?.approvals);
@@ -852,6 +882,323 @@ export async function loadResidenceProfile(
   }
 
   return parseResidenceProfile(data);
+}
+
+// ---------------------------------------------------------------------------
+// Structure: towers, unit and slot formats, parking levels
+// ---------------------------------------------------------------------------
+
+export type ResidenceParkingType = 'inside_tower' | 'outside_tower' | 'motorcycle';
+
+export type ResidenceTowerValidation = { ok: true; tower: string } | { ok: false; error: string };
+
+export function activePropertyTowers(profile: ResidenceProfile): ResidenceTower[] {
+  return profile.structure.propertyTowers.filter((tower) => tower.active);
+}
+
+export function activeParkingTowers(profile: ResidenceProfile): ResidenceParkingTower[] {
+  return profile.structure.parkingTowers.filter((tower) => tower.active);
+}
+
+function sameName(left: string, right: string): boolean {
+  return left.trim().toLowerCase() === right.trim().toLowerCase();
+}
+
+/**
+ * `towersRequired: false` plus an empty list means the residence has no tower concept
+ * (a subdivision lot, for example). A provided value is accepted as typed so the resolver
+ * never becomes a hard lock; a configured list is enforced.
+ */
+export function validateTowerForProfile(
+  profile: ResidenceProfile,
+  rawValue: string
+): ResidenceTowerValidation {
+  const value = rawValue.trim();
+  const towers = activePropertyTowers(profile);
+
+  if (!value) {
+    if (!profile.structure.towersRequired) return { ok: true, tower: '' };
+    return { ok: false, error: `${profile.structure.towerLabel} is required` };
+  }
+
+  if (towers.length === 0) return { ok: true, tower: value };
+
+  const match = towers.find((tower) => sameName(tower.name, value));
+  if (match) return { ok: true, tower: match.name };
+
+  return {
+    ok: false,
+    error: `${profile.structure.towerLabel} must be one of: ${towers.map((tower) => tower.name).join(', ')}`,
+  };
+}
+
+const ALNUM_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 .\-\/#]{0,14}$/;
+const SLOT_ALNUM_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 .\-]{0,9}$/;
+
+function compilePattern(pattern: string | undefined): RegExp | null {
+  if (!pattern) return null;
+  try {
+    return new RegExp(pattern);
+  } catch {
+    warnOnce('structure.pattern', 'invalid custom pattern, falling back to the preset');
+    return null;
+  }
+}
+
+function unitNumberPattern(format: ResidenceUnitNumberFormat): RegExp {
+  switch (format.preset) {
+    case 'digits4':
+      return /^\d{4}$/;
+    case 'digits':
+      return /^\d{1,6}$/;
+    case 'custom':
+      return compilePattern(format.pattern) ?? ALNUM_PATTERN;
+    case 'alnum':
+    default:
+      return ALNUM_PATTERN;
+  }
+}
+
+function slotPattern(format: ResidenceParkingSlotFormat): RegExp {
+  switch (format.preset) {
+    case 'digits1to4':
+      return /^\d{1,4}$/;
+    case 'custom':
+      return compilePattern(format.pattern) ?? SLOT_ALNUM_PATTERN;
+    case 'alnum':
+    default:
+      return SLOT_ALNUM_PATTERN;
+  }
+}
+
+export function unitNumberExample(profile: ResidenceProfile): string {
+  return profile.structure.unitNumberFormat.example;
+}
+
+export function parkingSlotExample(profile: ResidenceProfile): string {
+  return profile.structure.parkingSlotFormat.example;
+}
+
+/** Null when valid, otherwise a short host-facing message. */
+export function unitNumberError(profile: ResidenceProfile, rawValue: string): string | null {
+  const value = rawValue.trim();
+  if (!value) return 'Unit number is required';
+  const format = profile.structure.unitNumberFormat;
+  if (!unitNumberPattern(format).test(value)) {
+    const example = format.example ? ` (example: ${format.example})` : '';
+    return `Unit number does not match this residence's format${example}`;
+  }
+  return null;
+}
+
+/** Null when valid, otherwise a short host-facing message. */
+export function parkingSlotError(profile: ResidenceProfile, rawValue: string): string | null {
+  const value = rawValue.trim();
+  if (!value) return 'Slot number is required';
+  const format = profile.structure.parkingSlotFormat;
+  if (!slotPattern(format).test(value)) {
+    const example = format.example ? ` (example: ${format.example})` : '';
+    return `Slot number does not match this residence's format${example}`;
+  }
+  return null;
+}
+
+/** Digits-only presets strip punctuation as the host types; alnum presets keep the value. */
+export function sanitizeSlotLabel(profile: ResidenceProfile, rawValue: string): string {
+  const format = profile.structure.parkingSlotFormat;
+  if (format.preset === 'digits1to4') return rawValue.replace(/\D/g, '').slice(0, 4);
+  return rawValue.trim().slice(0, 20);
+}
+
+export function formatUnitLabel(
+  _profile: ResidenceProfile,
+  tower: string,
+  unitNumber: string
+): string {
+  const towerTrim = tower.trim();
+  const unitTrim = unitNumber.trim();
+  return towerTrim ? `${towerTrim} ${unitTrim}` : unitTrim;
+}
+
+export function parkingLevelsForTower(profile: ResidenceProfile, towerName: string): string[] {
+  const tower = profile.structure.parkingTowers.find((entry) => sameName(entry.name, towerName));
+  return tower ? [...tower.levels] : [];
+}
+
+export function parkingTypeForTower(
+  profile: ResidenceProfile,
+  towerName: string
+): ResidenceParkingType {
+  const tower = profile.structure.parkingTowers.find((entry) => sameName(entry.name, towerName));
+  return tower?.parkingType ?? 'inside_tower';
+}
+
+export function parkingTowerCode(profile: ResidenceProfile, towerName: string): string {
+  const tower = profile.structure.parkingTowers.find((entry) => sameName(entry.name, towerName));
+  return tower?.code?.trim() || '';
+}
+
+/**
+ * Validates a parking location against the residence. A residence with no configured
+ * parking towers falls back to accepting the value (it has no slot structure yet).
+ */
+export function parkingSlotLocationError(
+  profile: ResidenceProfile,
+  towerName: string,
+  level: string
+): string | null {
+  const towers = activeParkingTowers(profile);
+  if (towers.length === 0) return null;
+
+  const tower = towers.find((entry) => sameName(entry.name, towerName));
+  if (!tower) {
+    return `Parking tower must be one of: ${towers.map((entry) => entry.name).join(', ')}`;
+  }
+  if (tower.levels.length > 0 && !tower.levels.some((entry) => sameName(entry, level))) {
+    return `Level must be one of: ${tower.levels.join(', ')}`;
+  }
+  return null;
+}
+
+function levelShortCode(level: string): string {
+  const match = level.trim().match(/^Level\s+(\d+)$/i);
+  return match ? `L${match[1]}` : '';
+}
+
+/** e.g. `Monaco - Level 1 - Slot 26`; falls back to a plain join when a part is missing. */
+export function formatParkingLocation(
+  _profile: ResidenceProfile,
+  tower: string,
+  level: string,
+  slotLabel: string
+): string {
+  const parts = [tower.trim(), level.trim(), slotLabel.trim()].filter(Boolean);
+  if (parts.length < 2) return parts.join(' - ');
+  return `${parts[0]} - ${parts[1]} - Slot ${parts[2]}`;
+}
+
+/** Compact code for narrow UI, e.g. `ML1S26`. Empty when the tower has no code. */
+export function formatParkingCodeForProfile(
+  profile: ResidenceProfile,
+  tower: string,
+  level: string,
+  slotLabel: string
+): string {
+  const towerCode = parkingTowerCode(profile, tower);
+  const levelCode = levelShortCode(level);
+  const slot = slotLabel.trim();
+  if (!towerCode || !levelCode || !slot) return '';
+  return `${towerCode}${levelCode}S${slot}`;
+}
+
+/**
+ * Load the profile for an existing property, by `development_id` when linked and by the
+ * denormalized `residence_name` for rows the Phase 0 backfill could not match.
+ */
+export async function loadResidenceProfileForProperty(
+  supabase: SupabaseClient,
+  propertyId: string,
+  options: { strict?: boolean } = {}
+): Promise<ResidenceProfile> {
+  const strict = options.strict ?? true;
+  const { data, error } = await supabase
+    .from('properties')
+    .select('development_id, residence_name')
+    .eq('id', propertyId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('[residenceProfile] property load failed:', error.message);
+    if (strict) throw new Error("Could not load this property's residence. Try again.");
+    return parseResidenceProfile(null);
+  }
+
+  const developmentId = (data as { development_id?: string | null } | null)?.development_id ?? null;
+  if (developmentId) return loadResidenceProfile(supabase, developmentId, options);
+
+  const residenceName = (data as { residence_name?: string | null } | null)?.residence_name ?? '';
+  return loadResidenceProfileForResidence(supabase, { residenceName }, options);
+}
+
+export async function loadResidenceProfileForParking(
+  supabase: SupabaseClient,
+  parkingId: string,
+  options: { strict?: boolean } = {}
+): Promise<ResidenceProfile> {
+  const strict = options.strict ?? true;
+  const { data, error } = await supabase
+    .from('parkings')
+    .select('development_id, residence_name')
+    .eq('id', parkingId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('[residenceProfile] parking load failed:', error.message);
+    if (strict) throw new Error("Could not load this parking's residence. Try again.");
+    return parseResidenceProfile(null);
+  }
+
+  const developmentId = (data as { development_id?: string | null } | null)?.development_id ?? null;
+  if (developmentId) return loadResidenceProfile(supabase, developmentId, options);
+
+  const residenceName = (data as { residence_name?: string | null } | null)?.residence_name ?? '';
+  return loadResidenceProfileForResidence(supabase, { residenceName }, options);
+}
+
+/** Profile for a create/update request that knows a development id or a residence name. */
+export async function loadResidenceProfileForResidence(
+  supabase: SupabaseClient,
+  input: { developmentId?: string | null; residenceName?: string | null },
+  options: { strict?: boolean } = {}
+): Promise<ResidenceProfile> {
+  const strict = options.strict ?? true;
+  const developmentId = input.developmentId?.trim();
+  if (developmentId) return loadResidenceProfile(supabase, developmentId, options);
+
+  const residenceName = input.residenceName?.trim();
+  if (!residenceName) return parseResidenceProfile(null);
+
+  const { data, error } = await supabase
+    .from('developments')
+    .select('id, name, slug, type, settings')
+    .eq('name', residenceName)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('[residenceProfile] residence name lookup failed:', error.message);
+    if (strict) throw new Error("Could not load this residence's settings. Try again.");
+    return parseResidenceProfile(null);
+  }
+
+  return parseResidenceProfile(data);
+}
+
+function mapsUrl(latitude: number, longitude: number): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${latitude},${longitude}`)}`;
+}
+
+/**
+ * Settings and address for a NEW property or parking in this residence. Null when the
+ * residence has no location data, which leaves the host to place the pin.
+ */
+export function residenceLocationSeed(
+  profile: ResidenceProfile
+): { address: string; settings: Record<string, unknown> } | null {
+  const { latitude, longitude } = profile.location;
+  if (latitude === null || longitude === null) return null;
+  return {
+    address: profile.location.address ?? '',
+    settings: {
+      city: profile.location.city ?? '',
+      province: profile.location.province ?? '',
+      country: profile.location.country ?? 'Philippines',
+      zipCode: profile.location.zipCode ?? '',
+      latitude,
+      longitude,
+      mapsUrl: mapsUrl(latitude, longitude),
+      placeId: '',
+    },
+  };
 }
 
 // #endregion shared-core

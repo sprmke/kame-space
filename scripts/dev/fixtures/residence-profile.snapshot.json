@@ -7,7 +7,7 @@
     "structure": {
       "towerLabel": "Tower",
       "unitLabel": "Unit",
-      "towersRequired": true,
+      "towersRequired": false,
       "propertyTowers": [],
       "parkingTowers": [],
       "unitNumberFormat": {
@@ -36,6 +36,15 @@
       "surpriseDecorAllowed": true,
       "petTypes": ["Dog", "Cat"],
       "petVaccinationRequired": true
+    },
+    "location": {
+      "latitude": null,
+      "longitude": null,
+      "address": null,
+      "city": null,
+      "province": null,
+      "country": null,
+      "zipCode": null
     },
     "approvals": {
       "buildingAdminLabel": "Building admin",
@@ -143,6 +152,15 @@
       "surpriseDecorAllowed": true,
       "petTypes": ["Dog", "Cat"],
       "petVaccinationRequired": true
+    },
+    "location": {
+      "latitude": null,
+      "longitude": null,
+      "address": null,
+      "city": null,
+      "province": null,
+      "country": null,
+      "zipCode": null
     },
     "approvals": {
       "buildingAdminLabel": "Building admin",

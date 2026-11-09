@@ -22,10 +22,11 @@ import {
   findPropertyNameConflict,
 } from './propertyNameConflict.ts';
 import { validatePropertySettingsPatch } from './propertySettingsValidation.ts';
+import { loadResidenceProfileForResidence } from './residenceProfile.ts';
 import {
   DUPLICATE_TOWER_UNIT_MESSAGE,
   findPropertyTowerUnitConflict,
-  parsePropertyTowerUnitFromBody,
+  parsePropertyTowerUnitWithProfile,
 } from './propertyTowerUnit.ts';
 
 export type PropertyProfilePatchInput = {
@@ -68,13 +69,16 @@ export async function applyPropertyProfilePatch(
   }
 
   if (typeof fields.tower === 'string' || typeof fields.unitNumber === 'string') {
-    const residenceForTower =
-      typeof fields.residenceName === 'string'
-        ? fields.residenceName.trim()
-        : property.residence_name;
-    const parsed = parsePropertyTowerUnitFromBody(
+    const profile = await loadResidenceProfileForResidence(supabase, {
+      developmentId: (property as { development_id?: string | null }).development_id,
+      residenceName:
+        typeof fields.residenceName === 'string'
+          ? fields.residenceName.trim()
+          : property.residence_name,
+    });
+    const parsed = parsePropertyTowerUnitWithProfile(
       { tower: fields.tower, unitNumber: fields.unitNumber },
-      { residenceName: residenceForTower }
+      profile
     );
     if (!parsed.ok) {
       throw new PropertyProfilePatchError(parsed.error);

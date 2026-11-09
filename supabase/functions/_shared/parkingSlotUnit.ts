@@ -1,5 +1,14 @@
 import type { SupabaseClient } from './supabaseJs.ts';
 import {
+  activeParkingTowers,
+  parkingSlotError,
+  parkingSlotLocationError,
+  parkingTypeForTower,
+  sanitizeSlotLabel,
+  type ResidenceParkingType,
+  type ResidenceProfile,
+} from './residenceProfile.ts';
+import {
   AZURE_NORTH_PARKING_TOWERS,
   DEFAULT_PARKING_RESIDENCE_NAME,
   getParkingLevelsForTower,
@@ -15,6 +24,66 @@ import {
 
 export const DUPLICATE_PARKING_SLOT_MESSAGE =
   'A parking slot with this residence, tower, level, and label already exists';
+
+export type ParsedParkingSlotWithProfile =
+  | {
+      ok: true;
+      tower: string;
+      level: string;
+      slotLabel: string;
+      parkingType: ResidenceParkingType;
+    }
+  | { ok: false; error: string };
+
+/**
+ * Residence-aware parking slot parser. A residence with no configured parking towers
+ * accepts any tower/level so a building without a slot structure is never locked out.
+ */
+export function parseParkingSlotWithProfile(
+  body: Record<string, unknown>,
+  profile: ResidenceProfile
+): ParsedParkingSlotWithProfile {
+  const tower = typeof body.tower === 'string' ? body.tower.trim() : '';
+  const level = typeof body.level === 'string' ? body.level.trim() : '';
+  const slotLabelRaw =
+    typeof body.slotLabel === 'string'
+      ? body.slotLabel.trim()
+      : typeof body.slotNumber === 'string' || typeof body.slotNumber === 'number'
+        ? String(body.slotNumber).trim()
+        : '';
+  const parkingTypeRaw =
+    typeof body.parkingType === 'string'
+      ? body.parkingType.trim()
+      : typeof body.type === 'string'
+        ? body.type.trim()
+        : '';
+
+  if (!tower || !level || !slotLabelRaw) {
+    return { ok: false, error: 'Tower, level, and slot number are required' };
+  }
+
+  const locationMessage = parkingSlotLocationError(profile, tower, level);
+  if (locationMessage) return { ok: false, error: locationMessage };
+
+  const slotLabel = sanitizeSlotLabel(profile, slotLabelRaw);
+  const slotMessage = parkingSlotError(profile, slotLabel);
+  if (slotMessage) return { ok: false, error: slotMessage };
+
+  const configured = activeParkingTowers(profile).length > 0;
+  const parkingType = parkingTypeRaw
+    ? parkingTypeRaw === 'outside_tower' ||
+      parkingTypeRaw === 'motorcycle' ||
+      parkingTypeRaw === 'inside_tower'
+      ? (parkingTypeRaw as ResidenceParkingType)
+      : null
+    : configured
+      ? parkingTypeForTower(profile, tower)
+      : null;
+
+  if (!parkingType) return { ok: false, error: 'Invalid parking type' };
+
+  return { ok: true, tower, level, slotLabel, parkingType };
+}
 
 export type ParsedParkingSlot =
   | {
@@ -93,16 +162,23 @@ export async function findParkingSlotConflict(
   tower: string,
   level: string,
   slotLabel: string,
-  excludeParkingId?: string
+  excludeParkingId?: string,
+  developmentId?: string | null
 ): Promise<boolean> {
   let query = supabase
     .from('parkings')
     .select('id')
-    .eq('residence_name', residenceName)
     .eq('tower', tower)
     .eq('level', level)
     .eq('slot_label', normalizeSlotLabel(slotLabel))
     .limit(1);
+
+  // Prefer the real FK; fall back to the denormalized name for unlinked rows.
+  if (developmentId) {
+    query = query.eq('development_id', developmentId);
+  } else {
+    query = query.eq('residence_name', residenceName);
+  }
 
   if (excludeParkingId) {
     query = query.neq('id', excludeParkingId);
