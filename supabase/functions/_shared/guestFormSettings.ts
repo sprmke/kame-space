@@ -7,10 +7,8 @@ import { DEFAULT_CLEANING_BUFFER_MINUTES, isValidCleaningBufferMinutes } from '.
 import { createServiceClient } from './orgAuth.ts';
 import { resolvePublicBrandName } from './platformBrand.ts';
 import { normalizePropertyMediaItems } from './propertyMedia.ts';
-import {
-  DEFAULT_RESIDENCE_NAME,
-  getResidencePropertyDefaults,
-} from './propertyResidenceDefaults.ts';
+import { getResidencePropertyDefaults } from './propertyResidenceDefaults.ts';
+import { loadResidenceProfileForResidence } from './residenceProfile.ts';
 
 export type GuestFormSettings = {
   allowPets: boolean;
@@ -22,6 +20,11 @@ export type GuestFormSettings = {
   cleaningBufferMinutes: number;
   maxAdults: number;
   maxChildren: number;
+  /** Building occupancy rules. 0 disables the age exception / ID requirement where noted. */
+  childMaxAge: number;
+  adultMinAge: number;
+  idRequiredFromAge: number;
+  primaryGuestMinAge: number;
   propertyName: string;
   propertyEyebrow: string;
   propertyCoverImageUrl: string | null;
@@ -38,6 +41,10 @@ export const DEFAULT_GUEST_FORM_SETTINGS: GuestFormSettings = {
   cleaningBufferMinutes: DEFAULT_CLEANING_BUFFER_MINUTES,
   maxAdults: 4,
   maxChildren: 0,
+  childMaxAge: 3,
+  adultMinAge: 18,
+  idRequiredFromAge: 18,
+  primaryGuestMinAge: 18,
   propertyName: '',
   propertyEyebrow: '',
   propertyCoverImageUrl: null,
@@ -87,7 +94,7 @@ function buildPropertyEyebrow(
 export async function resolveGuestFormSettings(propertyId: string): Promise<GuestFormSettings> {
   const { data, error } = await createServiceClient()
     .from('properties')
-    .select('name, tower_and_unit, residence_name, settings, organization_id')
+    .select('name, tower_and_unit, residence_name, development_id, settings, organization_id')
     .eq('id', propertyId)
     .maybeSingle();
 
@@ -103,6 +110,14 @@ export async function resolveGuestFormSettings(propertyId: string): Promise<Gues
 
   const residenceName = typeof data?.residence_name === 'string' ? data.residence_name.trim() : '';
   const residenceDefaults = getResidencePropertyDefaults(residenceName);
+  const profile = await loadResidenceProfileForResidence(
+    createServiceClient(),
+    {
+      developmentId: (data as { development_id?: string | null } | null)?.development_id ?? null,
+      residenceName,
+    },
+    { strict: false }
+  );
 
   const propertyName = String(data?.name ?? '').trim();
   const towerAndUnit = String(data?.tower_and_unit ?? '').trim() || null;
@@ -126,23 +141,41 @@ export async function resolveGuestFormSettings(propertyId: string): Promise<Gues
     organizationName = String(org?.name ?? '').trim();
   }
 
+  const propertyMaxAdults = readSettingsNumber(
+    settings,
+    'maxAdults',
+    residenceDefaults.maxAdults.default
+  );
+  const propertyMaxChildren = readSettingsNumber(
+    settings,
+    'maxChildren',
+    residenceDefaults.maxChildren.default
+  );
+
   return {
-    allowPets: readSettingsBoolean(settings, 'allowPets', true),
-    allowParking: readSettingsBoolean(settings, 'allowParking', true),
-    allowSurpriseDecor: readSettingsBoolean(settings, 'allowSurpriseDecor', true),
-    checkInTime: readSettingsString(settings, 'checkInTime', residenceDefaults.checkInTime),
-    checkOutTime: readSettingsString(settings, 'checkOutTime', residenceDefaults.checkOutTime),
+    // A building rule can only take an option away.
+    allowPets: profile.stay.petsAllowed && readSettingsBoolean(settings, 'allowPets', true),
+    allowParking:
+      profile.stay.paidParkingAvailable && readSettingsBoolean(settings, 'allowParking', true),
+    allowSurpriseDecor:
+      profile.stay.surpriseDecorAllowed && readSettingsBoolean(settings, 'allowSurpriseDecor', true),
+    checkInTime: readSettingsString(settings, 'checkInTime', profile.stay.checkInTime),
+    checkOutTime: readSettingsString(settings, 'checkOutTime', profile.stay.checkOutTime),
     cleaningBufferMinutes: (() => {
       const value = settings.cleaningBufferMinutes;
       return typeof value === 'number' && isValidCleaningBufferMinutes(value)
         ? value
         : DEFAULT_CLEANING_BUFFER_MINUTES;
     })(),
-    maxAdults: readSettingsNumber(settings, 'maxAdults', residenceDefaults.maxAdults.default),
-    maxChildren: Math.max(
-      readSettingsNumber(settings, 'maxChildren', residenceDefaults.maxChildren.default),
-      0
+    maxAdults: Math.max(
+      1,
+      Math.min(propertyMaxAdults, profile.occupancy.maxAdultsCap)
     ),
+    maxChildren: Math.max(0, Math.min(propertyMaxChildren, profile.occupancy.maxChildrenCap)),
+    childMaxAge: profile.occupancy.childMaxAge,
+    adultMinAge: profile.occupancy.adultMinAge,
+    idRequiredFromAge: profile.occupancy.idRequiredFromAge,
+    primaryGuestMinAge: profile.occupancy.primaryGuestMinAge,
     propertyName,
     propertyEyebrow: buildPropertyEyebrow(propertyName, residenceName || null, towerAndUnit),
     propertyCoverImageUrl: primaryImage?.url?.trim() || null,
