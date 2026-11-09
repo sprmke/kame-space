@@ -9,6 +9,7 @@
  */
 
 import type { DocumentRequirement } from '@/features/dashboard/bookings/lib/documentRequirements';
+import { MAX_GUESTS } from '@/features/guest/form/lib/guestCounts';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -117,8 +118,6 @@ export type ResidenceProfile = {
   guestInfoVisibility: { stayGuide: boolean; propertyPage: boolean };
   verification: { tier2BuildingProofLabel: string; tier2BuildingProofRequired: boolean };
 };
-
-export const MAX_GUESTS = 5;
 
 /** Generic, building-neutral defaults. No Azure values live here. */
 export const GENERIC_RESIDENCE_PROFILE: ResidenceProfile = {
@@ -421,6 +420,8 @@ export function parseResidenceProfile(row: unknown): ResidenceProfile {
     // The existing flat key wins so v1 rows keep reading their PMO address.
     pmoEmail: readString(settings, 'pmoEmail') ?? readString(approvals, 'pmoEmail') ?? null,
     ccPropertyEmail: readBoolean(approvals, 'ccPropertyEmail') ?? base.approvals.ccPropertyEmail,
+    // Read raw here; the resolution path parses with `parseDocumentRequirements`.
+    // Phase 3 replaces this with the immutable DocumentRequirementV2 parser.
     documentRequirements: Array.isArray(workflowRequirements)
       ? (workflowRequirements as DocumentRequirement[])
       : base.approvals.documentRequirements,
