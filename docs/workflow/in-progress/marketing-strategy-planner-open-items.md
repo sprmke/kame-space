@@ -103,6 +103,9 @@ Tick a box when it is addressed. If an answer changes a shipped default, the pla
       video, calendar or AI Studio draft and attach the result back. This is the one deep item left.
       **Meanwhile:** the item sheet edits the draft in place, and Share it yourself works today.
 
+- [ ] **Nav badge.** The Marketing nav item has no badge slot in its shape yet; adding one touches
+      the sidebar and bottom-nav chrome on every page, so it waits for a nav pass.
+
 - [ ] **Carousel and Reels in the publish dialog.** Needs the P0.2 spike to confirm the endpoints.
 
 - [ ] **Insight snapshots cron.** The mapper (`_shared/marketingInsights.ts`) is done and tested;
@@ -110,6 +113,20 @@ Tick a box when it is addressed. If an answer changes a shipped default, the pla
 
 - [ ] **Learned posting windows.** Needs 12 published posts with insights per property, so it is
       gated on real data, not code.
+
+## 6. Known repo state, not caused by this branch
+
+- [ ] **Two pre-existing `@ci` failures.** `orgPlanCheckout.spec.ts` ("successful return confirms
+      payment", "celebration modal compare plans") fail on `origin/develop` too; verified by running
+      them in a clean worktree at `origin/develop`. Not fixed here.
+
+- [ ] **Develop CI is red** for `build-and-budgets`, `lint-and-types`, `static-guards` and others as
+      of run 42567363673. Unrelated to the planner.
+
+**Running E2E locally:** `playwright.config.ts` sets `reuseExistingServer: !CI`, so a Vite server
+from another worktree (for example `.worktrees/deploy-skip` on 4199/4200) will be reused and the
+tests run against the wrong code. Use `CI=1 PLAYWRIGHT_PORT=4273 PLAYWRIGHT_PWA_PORT=4274` when
+other worktrees are open.
 
 ## What is NOT on this list
 
