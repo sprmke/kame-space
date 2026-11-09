@@ -2,7 +2,7 @@
 title: 'In progress'
 status: active
 tags: [workflow, in-progress]
-updated: 2026-11-08
+updated: 2026-11-09
 stage: in-progress
 kind: reference
 ---
@@ -24,6 +24,8 @@ Plans with **implementation complete** and only manual QA left live in [`../for-
 **Moved in 2026-11-07 (third pass):** [`host-onboarding-setup-guide.md`](./host-onboarding-setup-guide.md) (for testing → in progress: reward reminder/unlock emails are still unimplemented).
 
 **Moved in 2026-11-07 (second pass):** [`activity-log-followups.md`](./activity-log-followups.md) (planned → in progress: `org.activity:view` + listing `activity:view` shipped, four crons emit `system.cron_run`; export leaves, helper, notice emitters, ticket handlers and partitioning remain) and [`marketing-video-editor-multitrack.md`](./marketing-video-editor-multitrack.md) (for testing → in progress: T1.10, T1.11, T1.13 and T2.7 are still unimplemented).
+
+**Moved in 2026-11-09:** [`multi-residence-config-decoupling.md`](./multi-residence-config-decoupling.md) — **merge and deploy blocked** by `docs/workflow/merge-guard.json`; do not mark its PR ready and do not merge it into `develop`. Phase 0 shipped: FK + scoped unique index + snapshot/history migrations, the mirrored `residenceProfile.ts` resolver with a drift check, generic document-requirement defaults, and the Azure blank-residence fallbacks removed. Phases 1 to 7 remain and need manual testing on local Supabase.
 
 **Moved in 2026-11-08:** [`full-app-test-architecture.md`](./full-app-test-architecture.md) (planned → in progress: Phase 0 shipped — `@ci` lane wired into `ci.yml` and `ci-quality-gate.sh`, 17 orphan specs tagged, lane-tag and flaky-quarantine guards, Vitest pinned to `TZ=Asia/Manila`; Phases 1 to 9 remain).
 

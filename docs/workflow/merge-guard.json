@@ -1,0 +1,18 @@
+{
+  "$comment": "Plans that must not be merged into develop or deployed until the owner clears them. Merging into develop IS a production Supabase deploy in this repo, so blockMerge protects both. An agent must never edit clearedAt or clearedBy.",
+  "version": 1,
+  "plans": [
+    {
+      "slug": "multi-residence-config-decoupling",
+      "title": "Multi-residence support: residence profiles managed from super admin",
+      "planFile": "docs/workflow/in-progress/multi-residence-config-decoupling.md",
+      "branches": ["feat/multi-residence-config-decoupling"],
+      "blockMerge": true,
+      "blockDeploy": true,
+      "deployMarkerFiles": ["supabase/functions/_shared/residenceProfile.ts"],
+      "reason": "Large multi-phase change. Every phase needs manual testing on local Supabase and the owner has asked to approve the release personally. Do not merge, do not mark the PR ready, do not deploy.",
+      "clearedAt": null,
+      "clearedBy": null
+    }
+  ]
+}

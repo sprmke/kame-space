@@ -45,6 +45,11 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
+      # Fail closed while a guarded plan (docs/workflow/merge-guard.json) is present
+      # in the tree and the owner has not cleared it. A develop merge is a deploy.
+      - name: Merge guard (deploy mode)
+        run: node scripts/dev/check-merge-guard.mjs --mode=deploy
+
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: latest
