@@ -129,9 +129,100 @@ describe('suggestExtendBefore / suggestExtendAfter', () => {
     expect(suggestExtendAfter('2026-03-15', 'monthly', '2026-01-15')).toBe('2027-03-15');
   });
 
-  // Observed but not pinned: extending from a 31st drifts instead of clamping to the same
-  // day each month (2026-03-31 with a 2026-01-31 series start lands on 2027-12-31). The
-  // intended behaviour is unknown, so this test does not lock either reading in.
+  it('anchors a month-end series to its own day', () => {
+    // Twelve monthly steps from 31 Mar with a 31 Jan series start land on 31 Mar, not on
+    // the drifted end of the year that the pre-clamp roll-over produced.
+    expect(suggestExtendAfter('2026-03-31', 'monthly', '2026-01-31')).toBe('2027-03-31');
+    expect(suggestExtendBefore('2026-01-31', 'monthly')).toBe('2025-01-31');
+  });
+});
+
+describe('month-end series clamp instead of skipping short months', () => {
+  // The client mirror used to clamp after `setMonth`, so a series on the 31st jumped
+  // 31 Mar -> 31 May and lost April, June, September and November: 8 entries a year.
+  // `_shared/financeRecurrence.ts` already clamped correctly; these are the same dates
+  // pinned in `financeRecurrence_test.ts`.
+  function dates(
+    anchorDate: string,
+    recurrenceInterval: 'monthly' | 'twice_monthly' | 'every_2_months' | 'quarterly' | 'every_6_months' | 'yearly',
+    recurrenceUntil: string
+  ) {
+    const preview = buildTelegramReminderSchedule({
+      anchorDate,
+      recurrenceInterval,
+      recurrenceUntil,
+      daysBefore: 0,
+    });
+    return {
+      previews: preview?.windows.map((w) => w.windowEnd) ?? [],
+      totalCount: preview?.totalCount ?? 0,
+    };
+  }
+
+  it('keeps every month of a monthly series started on the 31st', () => {
+    expect(dates('2026-03-31', 'monthly', '2026-08-31')).toEqual({
+      previews: ['2026-03-31', '2026-04-30', '2026-05-31'],
+      totalCount: 6,
+    });
+  });
+
+  it('clamps quarterly and every-2-months series on the 31st', () => {
+    expect(dates('2026-01-31', 'quarterly', '2026-10-31')).toEqual({
+      previews: ['2026-01-31', '2026-04-30', '2026-07-31'],
+      totalCount: 4,
+    });
+    expect(dates('2026-01-31', 'every_2_months', '2026-07-31')).toEqual({
+      previews: ['2026-01-31', '2026-03-31', '2026-05-31'],
+      totalCount: 4,
+    });
+  });
+
+  it('clamps every-6-months series on the 31st', () => {
+    expect(dates('2026-01-31', 'every_6_months', '2027-01-31')).toEqual({
+      previews: ['2026-01-31', '2026-07-31', '2027-01-31'],
+      totalCount: 3,
+    });
+  });
+
+  it('clamps a leap-day yearly series and restores the 29th on the next leap year', () => {
+    expect(dates('2024-02-29', 'yearly', '2028-02-29')).toEqual({
+      previews: ['2024-02-29', '2025-02-28', '2026-02-28'],
+      totalCount: 5,
+    });
+  });
+
+  it('still steps twice-monthly series through both slots', () => {
+    const preview = buildTelegramReminderSchedule({
+      anchorDate: '2026-01-15',
+      recurrenceInterval: 'twice_monthly',
+      recurrenceUntil: '2026-03-15',
+      daysBefore: 0,
+    });
+    expect(preview?.windows.map((w) => w.windowEnd)).toEqual([
+      '2026-01-15',
+      '2026-01-30',
+      '2026-02-15',
+    ]);
+    expect(preview?.totalCount).toBe(5);
+  });
+
+  it('keeps twice-monthly collapsing to one slot when the anchor is the last day', () => {
+    // Both this mirror and `_shared/financeRecurrence.ts` clamp the second slot to the
+    // month end, so a 31st anchor yields 31/31. Pinned so the two stay in step; whether
+    // the second slot should be 16 is a separate product question, not fixed here.
+    const preview = buildTelegramReminderSchedule({
+      anchorDate: '2026-01-31',
+      recurrenceInterval: 'twice_monthly',
+      recurrenceUntil: '2026-03-31',
+      daysBefore: 0,
+    });
+    expect(preview?.windows.map((w) => w.windowEnd)).toEqual([
+      '2026-01-31',
+      '2026-02-28',
+      '2026-03-31',
+    ]);
+    expect(preview?.totalCount).toBe(3);
+  });
 });
 
 
