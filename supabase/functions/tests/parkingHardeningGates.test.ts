@@ -187,6 +187,28 @@ Deno.test('host cancel requires a reason and moves paid rows to refund review', 
   assert(src.includes("action: 'parking.cancelled_by_host'"));
 });
 
+Deno.test('delete and archive guard booking history and pending offers', async () => {
+  const deleteSrc = await source('delete-parking/index.ts');
+  assert(deleteSrc.includes('has_bookings'));
+  assert(deleteSrc.includes('verifyParkingTeamAccess'));
+  assert(deleteSrc.includes('org.parkings:manage'));
+  const updateSrc = await source('update-parking/index.ts');
+  assert(updateSrc.includes('declineParkingBooking'));
+  assert(updateSrc.includes("reason: 'parking_archived'"));
+});
+
+Deno.test('parking submit validates past dates, stay length, plate, and field caps', async () => {
+  const src = await source('submit-parking-booking-request/index.ts');
+  assert(src.includes('check_in_in_past'));
+  assert(src.includes('Stay cannot exceed 60 nights'));
+  assert(src.includes('carPlateNumber must be 1-15 letters, numbers, spaces or dashes'));
+  assert(src.includes('primaryGuestName is too long'));
+  assert(src.includes('unitNumber is too long'));
+  assert(src.includes('carBrandModel is too long'));
+  assert(src.includes('carColor is too long'));
+  assert(src.includes('notes is too long'));
+});
+
 Deno.test('the latest public listing refresh uses the platform guest rate', async () => {
   const latest = await latestMigrationDefining(
     'CREATE OR REPLACE FUNCTION public.pls_refresh_parking'
