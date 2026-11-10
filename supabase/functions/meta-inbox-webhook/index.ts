@@ -2,7 +2,6 @@
  * Meta webhook receiver — GET verify, POST messaging + read receipts.
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { runAfterResponse } from '../_shared/backgroundTask.ts';
 import { maybeAutoReplyToInboundDm } from '../_shared/metaInboxAutoReply.ts';
@@ -15,7 +14,7 @@ import { verifyMetaWebhookSignatureAsync } from '../_shared/metaInboxGraph.ts';
 import { jsonError } from '../_shared/httpResponse.ts';
 import { identityFromRequest, rateLimitGate } from '../_shared/rateLimit.ts';
 import { captureSentryException } from '../_shared/sentry.ts';
-import { withEdgeErrorCapture } from '../_shared/serveEdge.ts';
+import { servePublic } from '../_shared/serveEdge.ts';
 import { buildDmThreadId } from '../_shared/socialInboxService.ts';
 import {
   isTransientMetaWebhookError,
@@ -23,11 +22,8 @@ import {
   type MetaMessagingPlatform,
 } from '../_shared/metaInboxEvents.ts';
 
-const handler = async (req: Request): Promise<Response> => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders(req) });
-  }
-
+// Public by contract: Meta calls this, and the signature check below is the boundary.
+servePublic('meta-inbox-webhook', async (req) => {
   const url = new URL(req.url);
 
   if (req.method === 'GET') {
@@ -121,7 +117,7 @@ const handler = async (req: Request): Promise<Response> => {
     status: 200,
     headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
   });
-};
+});
 
 async function processMetaMessagingEvent(
   pageOrIgId: string,
@@ -149,5 +145,3 @@ async function processMetaMessagingEvent(
     maybeAutoReplyToInboundDm(orgId, buildDmThreadId(platform, guestId), platform, inboundMid)
   );
 }
-
-serve(withEdgeErrorCapture('meta-inbox-webhook', handler));
