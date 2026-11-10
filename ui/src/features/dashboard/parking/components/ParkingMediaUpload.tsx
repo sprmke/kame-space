@@ -1,225 +1,225 @@
-import { useRef, type MouseEvent } from 'react';
-
-import { Loader2, Plus, Trash2, Upload } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState } from 'react';
 
 import {
-  ACCEPT_PROPERTY_IMAGE_INPUT,
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
+import { toast } from 'sonner';
+
+import { PropertyMediaPreviewDialog } from '@/features/dashboard/org/components/property-settings/PropertyMediaPreviewDialog';
+import {
+  AddMediaSlot,
+  SortableImageCard,
+} from '@/features/dashboard/org/components/property-settings/PropertyMediaUpload';
+import {
   formatPropertyMediaSizeLimit,
   validatePropertyMediaFile,
 } from '@/features/dashboard/org/lib/propertyMedia';
+import type { PropertyMediaItem } from '@/features/dashboard/org/lib/propertySettingsConstants';
 import { useUploadParkingMedia } from '@/features/dashboard/parking/hooks/useUploadParkingMedia';
+import {
+  MAX_PARKING_IMAGES,
+  normalizeParkingMediaDraft,
+  sequencedParkingMedia,
+} from '@/features/dashboard/parking/lib/parkingMedia';
 
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 type ParkingMediaUploadProps = {
-  coverImage: string;
-  onCoverChange: (url: string) => void;
+  items: PropertyMediaItem[];
+  onChange: (items: PropertyMediaItem[]) => void;
+  onPersistOrder: (items: PropertyMediaItem[]) => Promise<void>;
   disabled?: boolean;
 };
 
-/** Shared frame for empty drop zone and uploaded preview — keeps both states the same size. */
-const COVER_FRAME_CLASS =
-  'relative w-full aspect-[16/10] overflow-hidden rounded-xl sm:aspect-[2/1]';
-
-function stopOverlayClick(event: MouseEvent) {
-  event.stopPropagation();
-}
-
 export function ParkingMediaUpload({
-  coverImage,
-  onCoverChange,
+  items,
+  onChange,
+  onPersistOrder,
   disabled = false,
 }: ParkingMediaUploadProps) {
-  const fileRef = useRef<HTMLInputElement>(null);
   const { upload, remove } = useUploadParkingMedia();
-  const isBusy = upload.isPending || remove.isPending;
-  const hasCover = Boolean(coverImage.trim());
-  const pickerEnabled = !disabled && !isBusy;
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [uploadingSlotKey, setUploadingSlotKey] = useState<string | null>(null);
+  const [previewItem, setPreviewItem] = useState<PropertyMediaItem | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
-  const handleFile = async (file: File) => {
-    const validationError = validatePropertyMediaFile(file, 'image', hasCover ? 1 : 0, 0);
-    if (validationError) {
-      toast.error(validationError);
-      return;
+  const images = normalizeParkingMediaDraft(items);
+  const isBusy = upload.isPending || remove.isPending || Boolean(uploadingSlotKey);
+  const imagePickerEnabled = !disabled && !isBusy && images.length < MAX_PARKING_IMAGES;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const processFiles = async (files: FileList | File[], slotKey?: string) => {
+    const list = Array.from(files);
+    if (list.length === 0) return;
+
+    setUploadingSlotKey(slotKey ?? `slot-${images.length}`);
+    let working = images;
+    let uploadedCount = 0;
+
+    for (const file of list) {
+      if (working.length >= MAX_PARKING_IMAGES) {
+        toast.error(`You can upload up to ${MAX_PARKING_IMAGES} photos`);
+        break;
+      }
+
+      const validationError = validatePropertyMediaFile(file, 'image', working.length, 0);
+      if (validationError) {
+        toast.error(validationError);
+        continue;
+      }
+
+      try {
+        const result = await upload.mutateAsync(file);
+        working = normalizeParkingMediaDraft(result.media);
+        onChange(working);
+        uploadedCount += 1;
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Upload failed');
+        break;
+      }
     }
 
-    try {
-      const result = await upload.mutateAsync(file);
-      onCoverChange(result.coverImage ?? '');
-      toast.success('Photo uploaded');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Upload failed');
+    if (uploadedCount > 0) {
+      toast.success(uploadedCount > 1 ? 'Photos uploaded' : 'Photo uploaded');
     }
+    setUploadingSlotKey(null);
   };
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) void handleFile(file);
+  const handleFileInput = (event: React.ChangeEvent<HTMLInputElement>, slotKey: string) => {
+    const files = event.target.files;
+    if (files?.length) void processFiles(files, slotKey);
     event.target.value = '';
   };
 
   const handleDrop = (event: React.DragEvent) => {
     event.preventDefault();
-    if (!pickerEnabled) return;
-    const file = event.dataTransfer.files?.[0];
-    if (file) void handleFile(file);
+    if (!imagePickerEnabled) return;
+    if (event.dataTransfer.files?.length) void processFiles(event.dataTransfer.files);
   };
 
-  const handleRemove = async () => {
+  const persistOrder = async (next: PropertyMediaItem[]) => {
+    onChange(next);
     try {
-      await remove.mutateAsync();
-      onCoverChange('');
-      toast.success('Photo removed');
+      await onPersistOrder(next);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to remove photo');
+      toast.error(error instanceof Error ? error.message : 'Failed to save photo order');
     }
   };
 
-  const openPicker = () => {
-    if (pickerEnabled) fileRef.current?.click();
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = images.findIndex((item) => item.id === active.id);
+    const newIndex = images.findIndex((item) => item.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    void persistOrder(sequencedParkingMedia(arrayMove(images, oldIndex, newIndex)));
   };
 
+  const handleRemove = async (item: PropertyMediaItem) => {
+    setBusyId(item.id);
+    try {
+      const result = await remove.mutateAsync({
+        mediaId: item.id,
+        storagePath: item.storagePath,
+      });
+      onChange(normalizeParkingMediaDraft(result.media));
+      toast.success('Photo removed');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to remove photo');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const openPreview = (item: PropertyMediaItem) => {
+    setPreviewItem(item);
+    setPreviewOpen(true);
+  };
+
+  const slots = Array.from({ length: MAX_PARKING_IMAGES }, (_, index) => images[index] ?? null);
+
   return (
-    <div className="border-border/60 bg-card w-full rounded-xl border p-3">
-      <input
-        ref={fileRef}
-        type="file"
-        accept={ACCEPT_PROPERTY_IMAGE_INPUT}
-        className="hidden"
-        disabled={!pickerEnabled}
-        aria-label="Parking cover photo"
-        onChange={handleInputChange}
+    <div className="space-y-3">
+      <PropertyMediaPreviewDialog
+        item={previewItem}
+        items={images}
+        open={previewOpen}
+        onOpenChange={(nextOpen) => {
+          setPreviewOpen(nextOpen);
+          if (!nextOpen) setPreviewItem(null);
+        }}
+        onNavigate={setPreviewItem}
       />
 
-      {hasCover ? (
-        <div
-          tabIndex={pickerEnabled ? 0 : -1}
-          className={cn(
-            COVER_FRAME_CLASS,
-            'group/cover border-primary bg-muted ring-primary/30 border ring-1',
-            'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-            isBusy && 'opacity-60'
-          )}
-        >
-          <img
-            src={coverImage}
-            alt=""
-            className={cn(
-              'absolute inset-0 size-full object-cover',
-              upload.isPending && 'opacity-50'
-            )}
-            loading="lazy"
-            draggable={false}
-          />
+      {images.length > 0 ? (
+        <p className="text-muted-foreground text-xs sm:text-[13px]">
+          Drag to reorder · starred photo is the cover
+        </p>
+      ) : null}
 
-          <div
-            className={cn(
-              'bg-background/80 absolute inset-0 flex items-center justify-center gap-2 px-3 transition-opacity motion-reduce:transition-none',
-              isBusy
-                ? 'opacity-100'
-                : 'opacity-0 group-focus-within/cover:opacity-100 group-hover/cover:opacity-100 [@media(hover:none)]:opacity-100'
-            )}
-          >
-            {isBusy ? (
-              <div className="text-foreground flex flex-col items-center gap-2 text-sm font-medium">
-                <Loader2 className="text-primary size-5 animate-spin" aria-hidden />
-                <span>{upload.isPending ? 'Uploading…' : 'Removing…'}</span>
-              </div>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={!pickerEnabled}
-                  className="min-h-[44px] gap-1.5"
-                  onClick={(event) => {
-                    stopOverlayClick(event);
-                    openPicker();
-                  }}
-                >
-                  <Upload className="size-4" aria-hidden />
-                  Replace
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={!pickerEnabled}
-                  className="min-h-[44px] gap-1.5"
-                  onClick={(event) => {
-                    stopOverlayClick(event);
-                    void handleRemove();
-                  }}
-                >
-                  <Trash2 className="size-4" aria-hidden />
-                  Remove
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      ) : (
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <div
-          role="button"
-          tabIndex={pickerEnabled ? 0 : -1}
-          onClick={openPicker}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              openPicker();
-            }
-          }}
           onDrop={handleDrop}
           onDragOver={(event) => {
             event.preventDefault();
-            if (pickerEnabled) event.dataTransfer.dropEffect = 'copy';
+            if (imagePickerEnabled) event.dataTransfer.dropEffect = 'copy';
           }}
           className={cn(
-            COVER_FRAME_CLASS,
-            'border-border bg-muted/20 flex cursor-pointer flex-col items-center justify-center gap-3 border-2 border-dashed p-4 text-center transition-colors',
-            'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-            pickerEnabled && 'hover:border-primary/40 hover:bg-muted/40',
-            !pickerEnabled && 'cursor-not-allowed opacity-60'
+            'grid max-w-md grid-cols-3 gap-2.5 sm:gap-3',
+            (disabled || isBusy) && 'opacity-60'
           )}
         >
-          {isBusy ? (
-            <>
-              <Loader2 className="text-primary size-8 animate-spin" aria-hidden />
-              <span className="text-sm font-medium">Uploading…</span>
-            </>
-          ) : (
-            <>
-              <div className="bg-muted rounded-full p-4">
-                <Upload className="text-muted-foreground size-8" aria-hidden />
-              </div>
-              <div>
-                <p className="text-sm font-medium sm:text-base">
-                  Drop a photo here or tap to upload
-                </p>
-                <p className="text-muted-foreground text-xs sm:text-sm">
-                  Images up to {formatPropertyMediaSizeLimit('image')} (1 max)
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!pickerEnabled}
-                className="min-h-[44px] gap-2"
-                onClick={(event) => {
-                  stopOverlayClick(event);
-                  openPicker();
-                }}
-              >
-                <Plus className="size-4" aria-hidden />
-                Upload photo
-              </Button>
-            </>
-          )}
+          <SortableContext items={images.map((item) => item.id)} strategy={rectSortingStrategy}>
+            {slots.map((item, index) =>
+              item ? (
+                <SortableImageCard
+                  key={item.id}
+                  item={item}
+                  disabled={disabled}
+                  busy={busyId === item.id}
+                  reorderDisabled={Boolean(uploadingSlotKey)}
+                  onSetPrimary={() => void persistOrder(sequencedParkingMedia(images, item.id))}
+                  onRemove={() => void handleRemove(item)}
+                  onPreview={() => openPreview(item)}
+                />
+              ) : (
+                <AddMediaSlot
+                  key={`parking-photo-slot-${index}`}
+                  kind="image"
+                  slotKey={`slot-${index}`}
+                  enabled={imagePickerEnabled}
+                  busy={uploadingSlotKey === `slot-${index}`}
+                  onSelected={(event) => handleFileInput(event, `slot-${index}`)}
+                />
+              )
+            )}
+          </SortableContext>
         </div>
-      )}
+      </DndContext>
+
+      <p className="text-muted-foreground text-xs tabular-nums">
+        {images.length} of {MAX_PARKING_IMAGES} photos · {formatPropertyMediaSizeLimit('image')} max
+      </p>
     </div>
   );
 }
