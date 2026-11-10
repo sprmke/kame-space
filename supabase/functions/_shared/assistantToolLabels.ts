@@ -316,6 +316,11 @@ const TOOL_LABELS: Record<string, { progress: string; done: string; failed: stri
     done: 'Listed marketing templates',
     failed: 'Template list failed',
   },
+  get_marketing_plan: {
+    progress: 'Loading the marketing plan…',
+    done: 'Loaded the marketing plan',
+    failed: 'Marketing plan failed',
+  },
   get_marketing_publish_history: {
     progress: 'Loading publish history…',
     done: 'Loaded publish history',

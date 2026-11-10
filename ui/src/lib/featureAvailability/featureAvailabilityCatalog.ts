@@ -13,6 +13,8 @@ export const FEATURE_AVAILABILITY_KEYS = [
   'pricing.channel_sync.import',
   'marketing.ai_studio',
   'marketing.ai_studio.generate',
+  'marketing.planner',
+  'marketing.planner.ai',
   'analytics.ai_review',
   'analytics.ai_review.regenerate',
   'notifications.telegram',
@@ -114,6 +116,22 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     description:
       'calendar-sync-cron global sweep, "Sync now", add/edit/remove feed, assistant propose_run_channel_sync',
     provider: 'Airbnb',
+  },
+  {
+    key: 'marketing.planner',
+    parent: null,
+    module: 'marketing',
+    surface: 'section (tab)',
+    label: 'Marketing Planner',
+    description: 'Plan tab content and every planner write: build, reschedule, skip, mark posted',
+  },
+  {
+    key: 'marketing.planner.ai',
+    parent: 'marketing.planner',
+    module: 'marketing',
+    surface: 'button',
+    label: 'AI plan briefs',
+    description: 'AI-written hooks, captions and plan summaries (rules copy keeps working)',
   },
   {
     key: 'marketing.ai_studio',

@@ -195,6 +195,17 @@ const GATE_COVERAGE: Record<PlanFeatureKey, Coverage> = {
     client: ['dashboard/activity/components/ActivityLogPanel.tsx'],
     server: ['activity-log-export'],
   },
+  marketingPlanner: {
+    client: [
+      'dashboard/marketing/components/shared/MarketingStudioModeTabs.tsx',
+      'dashboard/marketing/components/planner/PlannerHome.tsx',
+    ],
+    server: ['marketing-planner'],
+  },
+  aiMarketingPlanner: {
+    client: ['dashboard/marketing/components/planner/PlannerHome.tsx'],
+    server: ['marketing-planner'],
+  },
 };
 
 /** Advertised but unenforced today. Fixing one means removing it here (the test then passes). */

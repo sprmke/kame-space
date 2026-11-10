@@ -75,6 +75,10 @@ export const PLAN_FEATURE_PERMISSION_COVERAGE: Record<
   },
   analyticsInsights: { leaves: ['analytics:export', 'analytics.aiReview:add'] },
   activityLogExport: { na: 'Owner and org-admin only at the auth layer.' },
+  marketingPlanner: { leaves: ['marketing.plan:edit'] },
+  aiMarketingPlanner: {
+    na: 'Reuses marketing.generate:add, already owned by aiMarketingGeneration.',
+  },
 };
 
 /** Leaf id → plan feature, derived from the coverage table above. */

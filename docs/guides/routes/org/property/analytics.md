@@ -14,6 +14,17 @@ Route: `/org/:orgSlug/property/:propertySlug/analytics`
 > Ask Analytics), Phase 5 shipped as org portfolio rollup + CSV export.
 > Plan: [`../../../../workflow/for-testing/host-analytics-module.md`](../../../../workflow/for-testing/host-analytics-module.md)
 
+## Marketing results
+
+`MarketingResultsCard` sits in the Overview grid. It reads the `marketing` block on
+`analytics-summary`: tracked visits and attributed booking requests from planner tracked links,
+grouped by channel.
+
+- Numbers are **at least**: attribution is first-touch and campaign-code based, so Instagram link
+  in bio and manual posts undercount.
+- The card renders only when the server returns the block; a missing or failed query says
+  "No tracked planner visits in this period" rather than showing zeros as fact.
+
 ## Progress overview
 
 | Section                                      | E2E save | Validation | Docs    | Notes                                                                                                                                                                                                                                                                                                                                                                      |
