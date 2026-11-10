@@ -104,6 +104,11 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.pls_refresh_parking(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.pls_trg_platform_parking_settings() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.pls_refresh_parking(uuid) TO service_role;
+GRANT EXECUTE ON FUNCTION public.pls_trg_platform_parking_settings() TO service_role;
+
 DROP TRIGGER IF EXISTS pls_platform_parking_settings_sync ON public.platform_parking_settings;
 CREATE TRIGGER pls_platform_parking_settings_sync
   AFTER INSERT OR UPDATE OF guest_rate_weekday ON public.platform_parking_settings
