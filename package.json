@@ -101,6 +101,7 @@
     "build:ui": "cd ui && bun run build",
     "build": "bun run build:ui",
     "check:budgets": "node scripts/performance/check-budgets.mjs && node scripts/performance/analyze-chunk-graph.mjs",
+    "check:landing-preload": "node scripts/performance/assert-landing-preload.mjs",
     "perf:baseline": "node scripts/performance/capture-baseline.mjs",
     "perf:chunk-graph": "node scripts/performance/analyze-chunk-graph.mjs",
     "perf:lighthouse": "node scripts/performance/lighthouse-routes.mjs",
