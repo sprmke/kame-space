@@ -133,12 +133,52 @@ jobs:
             exit 0
           fi
 
+          # Safe default: deploy every function. Narrowed below only when provably safe.
+          echo "functions=all" >> "$GITHUB_OUTPUT"
+
           if git diff --quiet FETCH_HEAD "$GITHUB_SHA" -- supabase/functions supabase/migrations; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "functions=none" >> "$GITHUB_OUTPUT"
             echo "No function or migration changes since $prev."
+            exit 0
+          fi
+
+          echo "Backend changes since $prev:"
+          git diff --name-only FETCH_HEAD "$GITHUB_SHA" -- supabase/functions supabase/migrations | sed 's/^/  /'
+
+          # Deploying all 345 functions took ~19 minutes per deploy. Narrow it to the changed
+          # directories, but deploy everything whenever shared code moved: `_shared/**` is
+          # bundled into every function at deploy time, so a change there can affect all.
+          if git diff --quiet FETCH_HEAD "$GITHUB_SHA" -- supabase/functions; then
+            echo "functions=none" >> "$GITHUB_OUTPUT"
+            echo "Only migrations changed; functions deploy skipped."
+            exit 0
+          fi
+
+          changed_functions=$(git diff --name-only FETCH_HEAD "$GITHUB_SHA" -- supabase/functions)
+
+          if echo "$changed_functions" \
+            | grep -qE '^supabase/functions/(_shared/|deno\.json|import_map\.json|\.npmrc)'; then
+            echo "functions=all" >> "$GITHUB_OUTPUT"
+            echo "Shared edge code changed; deploying every function."
+            exit 0
+          fi
+
+          names=$(echo "$changed_functions" \
+            | awk -F/ 'NF >= 3 && $3 != "tests" && $3 !~ /\./ { print $3 }' \
+            | sort -u | tr '\n' ' ' | sed 's/ *$//')
+
+          if [[ -z "$names" ]]; then
+            if ! echo "$changed_functions" | grep -qvE '^supabase/functions/tests/'; then
+              echo "functions=none" >> "$GITHUB_OUTPUT"
+              echo "Only edge test files changed; functions deploy skipped."
+            else
+              echo "functions=all" >> "$GITHUB_OUTPUT"
+              echo "Could not narrow the function list; deploying everything."
+            fi
           else
-            echo "Backend changes since $prev:"
-            git diff --name-only FETCH_HEAD "$GITHUB_SHA" -- supabase/functions supabase/migrations | sed 's/^/  /'
+            echo "functions=$names" >> "$GITHUB_OUTPUT"
+            echo "Deploying only: $names"
           fi
 
       - name: Capture pre-deploy schema diff
@@ -160,6 +200,7 @@ jobs:
         if: steps.backend.outputs.changed == 'true'
         env:
           CI: '1'
+          DEPLOY_FUNCTIONS: ${{ steps.backend.outputs.functions }}
           DEPLOY_CONFIRM: prod
           INCLUDE_ALL: ${{ github.event.inputs.include_all }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
