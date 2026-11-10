@@ -339,12 +339,27 @@ function stayNightCount(numberOfNights: number): number {
 function bookingRateLodgingInRange(
   row: Record<string, unknown>,
   numberOfNights: number,
-  nightsInRange: number
+  nightsInRange: number,
+  rateOverride?: number
 ): number {
   if (nightsInRange === 0) return 0;
-  const bookingRate = bookingRateForDisplay(row) ?? 0;
+  const bookingRate = rateOverride ?? bookingRateForDisplay(row) ?? 0;
   const perNight = bookingRate / stayNightCount(numberOfNights);
   return roundMoney(perNight * nightsInRange);
+}
+
+type ParkingLedgerTotals = {
+  status: string;
+  guestChargeTotal: number;
+  hostNetTotal: number;
+};
+
+function parkingLedgerTotals(row: Record<string, unknown>): ParkingLedgerTotals {
+  return {
+    status: String(row.status ?? ''),
+    guestChargeTotal: roundMoney(Number(row.guest_charge_total ?? 0)),
+    hostNetTotal: roundMoney(Number(row.host_net_total ?? 0)),
+  };
 }
 
 function hostNetForDashboardKpi(row: Record<string, unknown>, _status: string): number {
@@ -364,7 +379,8 @@ type PeriodKpiSnapshot = {
 function computePeriodKpiSnapshot(
   rows: Record<string, unknown>[],
   from: string,
-  to: string
+  to: string,
+  parkingLedgerByBookingId?: Map<string, ParkingLedgerTotals>
 ): PeriodKpiSnapshot {
   let netProfit = 0;
   let occupiedNights = 0;
@@ -382,6 +398,9 @@ function computePeriodKpiSnapshot(
 
     const numberOfNights = Number(row.number_of_nights ?? 0) || 0;
     const checkInInRange = checkInIso >= from && checkInIso <= to;
+    const isParking = Boolean(String(row.parking_id ?? '').trim());
+    const parkingLedger = parkingLedgerByBookingId?.get(String(row.id));
+    const rate = parkingLedger?.guestChargeTotal;
 
     const nightsInRange = countOccupiedNightsInRange(
       checkInIso,
@@ -394,13 +413,15 @@ function computePeriodKpiSnapshot(
 
     if (nightsInRange > 0) {
       ratedRevenue = roundMoney(
-        ratedRevenue + bookingRateLodgingInRange(row, numberOfNights, nightsInRange)
+        ratedRevenue + bookingRateLodgingInRange(row, numberOfNights, nightsInRange, rate)
       );
       ratedNights += nightsInRange;
     }
 
     if (checkInInRange) {
-      const net = hostNetForDashboardKpi(row, status);
+      const net = isParking
+        ? (parkingLedger?.hostNetTotal ?? 0)
+        : hostNetForDashboardKpi(row, status);
       netProfit = roundMoney(netProfit + net);
     }
   }
@@ -643,6 +664,46 @@ export async function computeDashboardStats(
   const pipelineCounts = new Map<string, number>();
   for (const s of PIPELINE_STATUSES) pipelineCounts.set(s, 0);
 
+  // Parking rows are scored from the marketplace ledger, not the property booking formula.
+  // `booking_rate` is the guest charge and does not carry the commission, so using the
+  // property net here would overstate host revenue. Keep the newest paid row per booking.
+  const parkingLedgerByBookingId = new Map<string, ParkingLedgerTotals>();
+  const ledgerScope: { kind: 'parking' | 'org' | 'ids'; value: string | string[] } | null =
+    params.parkingId
+      ? { kind: 'parking', value: params.parkingId }
+      : params.orgId && params.scopedParkingIds === undefined
+        ? { kind: 'org', value: params.orgId }
+        : parkingIds && parkingIds.length > 0
+          ? { kind: 'ids', value: parkingIds }
+          : null;
+  if (ledgerScope) {
+    let parkingLedgerQuery = supabase
+      .from('parking_payment_transactions')
+      .select('booking_id, status, guest_charge_total, host_net_total')
+      .in('status', ['pending', 'paid'])
+      .order('created_at', { ascending: false });
+    if (ledgerScope.kind === 'parking') {
+      parkingLedgerQuery = parkingLedgerQuery.eq('parking_id', String(ledgerScope.value));
+    } else if (ledgerScope.kind === 'org') {
+      parkingLedgerQuery = parkingLedgerQuery.eq('organization_id', String(ledgerScope.value));
+    } else {
+      parkingLedgerQuery = parkingLedgerQuery.in('parking_id', ledgerScope.value as string[]);
+    }
+    const { data: ledgerRows, error: ledgerError } = await parkingLedgerQuery;
+    if (ledgerError) {
+      throw new Error(`dashboard parking ledger query failed: ${ledgerError.message}`);
+    }
+    for (const row of ledgerRows ?? []) {
+      const bookingId = String(row.booking_id ?? '').trim();
+      if (!bookingId) continue;
+      const totals = parkingLedgerTotals(row as Record<string, unknown>);
+      const existing = parkingLedgerByBookingId.get(bookingId);
+      if (!existing || (totals.status === 'paid' && existing.status !== 'paid')) {
+        parkingLedgerByBookingId.set(bookingId, totals);
+      }
+    }
+  }
+
   const statusBreakdownCounts = new Map<string, number>();
   for (const s of STATUS_BREAKDOWN_DISPLAY_STATUSES) {
     statusBreakdownCounts.set(s, 0);
@@ -696,6 +757,8 @@ export async function computeDashboardStats(
     const propertyId = String(row.property_id ?? '').trim();
     const parkingId = String(row.parking_id ?? '').trim();
     const bookingKind: 'property' | 'parking' = parkingId ? 'parking' : 'property';
+    const parkingLedger =
+      bookingKind === 'parking' ? parkingLedgerByBookingId.get(String(row.id)) : undefined;
     const numberOfNights = Number(row.number_of_nights ?? 0) || 0;
     const checkInInRange = checkInIso >= from && checkInIso <= to;
     const fin = computeBookingFinancials(row);
@@ -725,14 +788,25 @@ export async function computeDashboardStats(
       };
       perf.occupiedNights += nightsInRange;
       perf.revenue = roundMoney(
-        perf.revenue + bookingRateLodgingInRange(row, numberOfNights, nightsInRange)
+        perf.revenue +
+          bookingRateLodgingInRange(
+            row,
+            numberOfNights,
+            nightsInRange,
+            parkingLedger?.guestChargeTotal
+          )
       );
       performanceMap.set(assetId, perf);
 
       for (const nightIso of occupiedNightIsoDatesForRow(checkInIso, checkOutIso, numberOfNights)) {
         const bucketKey = bucketKeyForDate(nightIso, from, to);
         if (!bucketKey || !trendRevenueByKey.has(bucketKey)) continue;
-        const perNight = bookingRateLodgingInRange(row, numberOfNights, 1);
+        const perNight = bookingRateLodgingInRange(
+          row,
+          numberOfNights,
+          1,
+          parkingLedger?.guestChargeTotal
+        );
         trendRevenueByKey.set(
           bucketKey,
           roundMoney((trendRevenueByKey.get(bucketKey) ?? 0) + perNight)
@@ -793,7 +867,7 @@ export async function computeDashboardStats(
         checkInIso,
         checkOutIso,
         status,
-        amount: bookingRateForDisplay(row) ?? 0,
+        amount: parkingLedger?.guestChargeTotal ?? bookingRateForDisplay(row) ?? 0,
       });
 
       if (status !== 'COMPLETED') {
@@ -801,7 +875,9 @@ export async function computeDashboardStats(
         if (pipelineCounts.has(status)) {
           pipelineCounts.set(status, (pipelineCounts.get(status) ?? 0) + 1);
         }
-        if (fin.projectedNet != null) {
+        if (bookingKind === 'parking') {
+          if (parkingLedger) pipelineEstimate += parkingLedger.hostNetTotal;
+        } else if (fin.projectedNet != null) {
           pipelineEstimate += fin.projectedNet;
         }
       }
@@ -810,7 +886,12 @@ export async function computeDashboardStats(
       if (DOCUMENTS_STATUSES.has(status)) pendingDocuments += 1;
       if (status === 'PENDING_SD_REFUND') pendingSdRefund += 1;
 
-      if (fin.guestUnpaid != null && fin.guestUnpaid > 0 && status !== 'COMPLETED') {
+      if (
+        bookingKind === 'property' &&
+        fin.guestUnpaid != null &&
+        fin.guestUnpaid > 0 &&
+        status !== 'COMPLETED'
+      ) {
         unpaidBalanceCount += 1;
         outstandingBalance += fin.guestUnpaid;
       }
@@ -820,7 +901,8 @@ export async function computeDashboardStats(
     if (todayInRange && checkOutIso === today) checkOutsToday += 1;
 
     if (status === 'COMPLETED' && checkInInRange) {
-      periodNet = roundMoney(periodNet + fin.hostNet);
+      const net = bookingKind === 'parking' ? (parkingLedger?.hostNetTotal ?? 0) : fin.hostNet;
+      periodNet = roundMoney(periodNet + net);
       periodCompletedStays += 1;
     }
   }
@@ -897,8 +979,13 @@ export async function computeDashboardStats(
 
   const periodDays = daysInclusive(from, to);
   const prevRange = previousPeriodRange(from, to);
-  const currentKpis = computePeriodKpiSnapshot(rows, from, to);
-  const previousKpis = computePeriodKpiSnapshot(rows, prevRange.from, prevRange.to);
+  const currentKpis = computePeriodKpiSnapshot(rows, from, to, parkingLedgerByBookingId);
+  const previousKpis = computePeriodKpiSnapshot(
+    rows,
+    prevRange.from,
+    prevRange.to,
+    parkingLedgerByBookingId
+  );
 
   let prevCheckInsInPeriod = 0;
   for (const row of rows) {
