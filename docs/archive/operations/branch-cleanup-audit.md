@@ -301,3 +301,31 @@ git diff --name-status $(git merge-base develop <branch>)..<branch> | awk '$1=="
 
 The `branch-lifecycle` skill (`.agent/skills/branch-lifecycle/`) wraps this into a repeatable
 checklist and defines when a branch must be deleted.
+
+## 2026-11-11 parking module cleanup
+
+The parking module branches were landed and cleaned in one pass. Every deleted branch was merged
+into `develop` first (`git merge-base --is-ancestor <branch> develop` or `git cherry develop
+<branch>` with no `+` lines), and the worktree was clean before removal.
+
+| Branch                                | Tip SHA     | Checks                                          | Action                           |
+| ------------------------------------- | ----------- | ----------------------------------------------- | -------------------------------- |
+| `feat/parking-final-cleanup`          | `4fc093d91` | merged via #360; worktree clean                 | Worktree removed, branch deleted |
+| `feat/parking-telegram-alerts`        | `d3f49e881` | merged via #394; worktree clean                 | Worktree removed, branch deleted |
+| `docs/parking-completion-final`       | `4fab5251f` | merged via #395                                 | Deleted local + remote           |
+| `test/parking-host-mobile-smoke`      | `26e85f173` | merged via #396                                 | Deleted local + remote           |
+| `fix/parking-assistant-conflict-copy` | `b4e691fbc` | merged via #398                                 | Deleted local + remote           |
+| `feat/parking-production-completion`  | `7034da787` | already contained in `develop`; remote was gone | Deleted local                    |
+| `feat/parking-e2e-flows`              | `d9ee05935` | merged via #323; remote deleted                 | Local branch already gone        |
+| `release/2026-11-11-parking`          | `a58fa5742` | merged via #389; production build Ready         | Worktree removed, branch deleted |
+| `release/2026-11-11-lock`             | `925a997fa` | merged via #403; build-time lock only           | Worktree removed, branch deleted |
+| `feat/parking-commission`             | `466e27e83` | merged via #391                                 | Worktree removed, branch deleted |
+| `release/2026-11-11-final`            | `d22a20d61` | merged via #406                                 | Worktree removed, branch deleted |
+| `release/2026-11-11-commission`       | `365011e90` | merged via #408                                 | Worktree removed, branch deleted |
+
+Production state:
+
+- Backend: the `develop` CD deploy after #391 succeeded, so the parking functions and migrations
+  (`20261327000000`, `20261328000000`, `20261329000000`) are live.
+- UI: the production Vercel build from the #408 release is Ready and aliased to `kamespace.com`.
+  The temporary build-rate limit cleared before that release; later builds no longer need a retry.

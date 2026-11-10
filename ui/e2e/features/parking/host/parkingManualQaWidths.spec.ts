@@ -14,7 +14,12 @@ const WIDTHS = [
 ] as const;
 
 const PAGES = [
-  { name: 'bookings', path: parkingFlowPaths.hostBookings, heading: 'Bookings', ready: 'text=Needs action' },
+  {
+    name: 'bookings',
+    path: parkingFlowPaths.hostBookings,
+    heading: 'Bookings',
+    ready: 'text=Needs action',
+  },
   {
     name: 'booking detail',
     path: parkingFlowPaths.hostBookingDetail,

@@ -7,6 +7,8 @@ import { GuestEmbedPreviewEffect } from '@/features/guest/components/GuestEmbedP
 import { SavedPropertiesSync } from '@/features/guest/marketing/properties/components/SavedPropertiesSync';
 import { ModeSwitchTransitionProvider } from '@/features/guest/marketing/shared/context/ModeSwitchTransitionContext';
 
+import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner';
+import { LegalSheetProvider } from '@/components/legal/LegalSheetProvider';
 import { PlatformMaintenanceBanner } from '@/components/platform/PlatformMaintenanceBanner';
 import { PwaProvider } from '@/components/pwa/PwaProvider';
 import { PwaQueryPersistence } from '@/components/pwa/PwaQueryPersistence';
@@ -61,13 +63,16 @@ function App() {
         <GuestAuthProvider>
           {/* Global so the curtain survives AdminLayout ↔ MarketingLayoutShell remounts. */}
           <ModeSwitchTransitionProvider>
-            <GuestEmbedPreviewEffect />
-            <SavedPropertiesSync />
-            <PwaProvider />
-            <PlatformMaintenanceBanner />
-            <Suspense fallback={<PageLoadingFallback />}>
-              <AppRoutes />
-            </Suspense>
+            <LegalSheetProvider>
+              <GuestEmbedPreviewEffect />
+              <SavedPropertiesSync />
+              <PwaProvider />
+              <PlatformMaintenanceBanner />
+              <CookieConsentBanner />
+              <Suspense fallback={<PageLoadingFallback />}>
+                <AppRoutes />
+              </Suspense>
+            </LegalSheetProvider>
           </ModeSwitchTransitionProvider>
         </GuestAuthProvider>
       </TooltipProvider>

@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { captureAppEvent } from '@/lib/posthog/capture';
-import { isPostHogEnabled, posthog } from '@/lib/posthog/client';
+import { isPostHogActive, posthog } from '@/lib/posthog/client';
 import { setAnalyticsSignedIn } from '@/lib/posthog/context';
 import { isInternalUser } from '@/lib/posthog/internalUsers';
 import { supabase } from '@/lib/supabase/client';
@@ -31,7 +31,7 @@ export function PostHogIdentitySync() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    if (!isPostHogEnabled) return;
+    if (!isPostHogActive()) return;
 
     const identifySessionUser = (
       user: { id: string; email?: string | null } | null | undefined

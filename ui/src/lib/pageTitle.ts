@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
 
 import { PLATFORM_APP_NAME } from '@/lib/platformBranding';
-import { matchStaticRoute } from '@/lib/seo/publicRoutes';
-import { buildPageTitle } from '@/lib/seo/seoMeta';
+import { buildPageTitle } from '@/lib/seo/seoPrimitives';
 
 export { APP_TITLE, PLATFORM_APP_NAME, appPageTitle } from '@/lib/platformBranding';
 
@@ -16,15 +15,8 @@ export function publicPageTitle(pageName: string): string {
   return buildPageTitle(pageName, PLATFORM_APP_NAME);
 }
 
-/** Registry title for a static public route, e.g. `/about`. */
-export function publicRouteTitle(pathname: string): string | undefined {
-  return matchStaticRoute(pathname)?.title;
-}
-
-/** Sets `document.title` from the route registry. No-op for unregistered paths. */
-export function usePublicRouteTitle(pathname: string): void {
-  usePageTitle(publicRouteTitle(pathname));
-}
+// Route-registry helpers live in `@/lib/seo/routeTitle` so the registry stays out of the
+// entry bundle that every page loads.
 
 /**
  * Sets `document.title` when the page renders.

@@ -15,7 +15,7 @@ test.describe('parking pricing edit @ci', () => {
 
     await page.goto(parkingFlowPaths.hostPricing);
     await expect(page.getByRole('heading', { name: 'Pricing' })).toBeVisible();
-    await expect(page.getByText(/Requests go to up to 3 eligible slots/i)).toBeVisible();
+    await expect(page.getByText(/Guests pay the platform rate:/i)).toBeVisible();
 
     const weekday = page.getByLabel('Weekday / night');
     await weekday.fill('275');

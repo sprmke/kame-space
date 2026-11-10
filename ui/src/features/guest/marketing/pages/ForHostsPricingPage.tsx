@@ -19,9 +19,8 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { usePublicRouteTitle } from '@/lib/pageTitle';
+import { usePublicStaticRouteSeo } from '@/lib/seo/routeTitle';
 import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
-import { usePageMeta } from '@/lib/seo/usePageMeta';
 import { cn } from '@/lib/utils';
 
 function PublicPricingSkeleton() {
@@ -38,8 +37,7 @@ function PublicPricingSkeleton() {
 }
 
 export function ForHostsPricingPage() {
-  usePublicRouteTitle('/for-hosts/pricing');
-  usePageMeta({});
+  usePublicStaticRouteSeo('/for-hosts/pricing');
   const navigate = useNavigate();
   const { data: plans = [], isLoading, isError, refetch } = usePublicPricingPlans();
 

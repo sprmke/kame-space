@@ -20,6 +20,7 @@ import {
   PARKING_REGISTRATION_STEP_COUNT,
 } from '@/features/guest/marketing/parkings/lib/parkingRegistrationSteps';
 
+import { ParkingRequestLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { bottomTabBarOffsetClassName } from '@/components/mobile/BottomTabBar';
 import {
   PARKING_REQUEST_FORM_STEPS,
@@ -87,6 +88,8 @@ interface ParkingRegistrationFormProps {
   draftKey?: string;
   /** Reports unsaved edits so a host modal can guard its own close. */
   onDirtyChange?: (isDirty: boolean) => void;
+  /** Guest-facing agreement line above Submit. Off for host-entered requests. */
+  showLegalNotice?: boolean;
 }
 
 function clearLinkedFields(form: ReturnType<typeof useForm<ParkingRegistrationValues>>) {
@@ -127,6 +130,7 @@ export function ParkingRegistrationForm({
   preferredLinkStayId = null,
   onSubmit,
   mobileVariant = 'modal',
+  showLegalNotice = true,
   draftKey,
   onDirtyChange,
 }: ParkingRegistrationFormProps) {
@@ -174,7 +178,9 @@ export function ParkingRegistrationForm({
     values: watchedValues as Partial<ParkingRegistrationValues>,
     enabled: Boolean(draftKey) && mobileVariant === 'page' && !isSubmitting,
     onRestore: (values, savedAt) => {
-      const hasContent = Object.values(values).some((value) => typeof value === 'string' && value.trim());
+      const hasContent = Object.values(values).some(
+        (value) => typeof value === 'string' && value.trim()
+      );
       if (!hasContent) return;
       const when = new Date(savedAt).toLocaleString();
       toast('Continue where you left off?', {
@@ -362,6 +368,7 @@ export function ParkingRegistrationForm({
                 onBack={handleConfirmBack}
                 onEditDetails={handleEditDetails}
                 onSubmit={() => void handleFinalSubmit()}
+                legalNotice={showLegalNotice ? <ParkingRequestLegalNotice /> : null}
               />
             </motion.div>
           ) : null}
@@ -703,6 +710,10 @@ export function ParkingRegistrationForm({
                   )}
                 </motion.div>
               </AnimatePresence>
+
+              {showLegalNotice && currentStep === PARKING_REGISTRATION_STEP_COUNT ? (
+                <ParkingRequestLegalNotice className="pb-3" />
+              ) : null}
 
               <GuestFormStepNavigation
                 bare

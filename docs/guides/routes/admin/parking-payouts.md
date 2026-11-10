@@ -27,19 +27,22 @@ Route: `/admin/parking/payouts`
 
 Two things on one page, per Phase 4 of the parking marketplace build:
 
-1. **Commission & guest rate config** (`platform_parking_settings` singleton) — replaces the
-   interim flat stubs (₱400/₱400, 10%) the match engine and payment flow launched with. This is
-   also the price cap: a host priced at or above the guest rate for any night is excluded from
-   the match pool entirely. Includes a second, independently configurable commission rate
-   (default 5%) for bookings made through a host's Phase 8 direct-booking link.
+1. **Commission, guest rate & processor fee config** (`platform_parking_settings` singleton) —
+   replaces the interim flat stubs (₱400/₱400, 10%) the match engine and payment flow launched
+   with. This is also the price cap: a host priced at or above the guest rate for any night is
+   excluded from the match pool entirely. Includes a second, independently configurable
+   commission rate (default 5%) for bookings made through a host's Phase 8 direct-booking link,
+   plus an **estimated processor fee** (`payment_fee_pct` + `payment_fee_fixed`, default
+   3.125% + ₱15) used to show the platform's real net margin.
 2. **Payout ledger** — paid, refund-review, refunded and needs-review parking rows, with manual
    **mark disbursed**, **record clawback** and **record refund** actions. Filters: Paid,
-   Refund review, Needs review, Refunded, All. `record_refund` is a bookkeeping action only
-   (issue the money in the PayMongo dashboard); it moves the row to `refunded`. A host cancel
-   after payment already moved it to `refund_review`, which blocks `mark_disbursed` until the
-   refund is recorded. There is no
-   automated payout yet — PayMongo Platforms split-payout requires a business application
-   Kame Space hasn't made; this is the day-one manual path until that ships.
+   Refund review, Needs review, Refunded, All. Each row shows the host payout **and** the platform
+   net (guest charge minus host payout minus processor fee). `record_refund` is a bookkeeping
+   action only (issue the money in the PayMongo dashboard); it moves the row to `refunded`. A host
+   cancel after payment already moved it to `refund_review`, which blocks `mark_disbursed` until
+   the refund is recorded. There is no automated payout yet — PayMongo Platforms split-payout
+   requires a business application Kame Space hasn't made; this is the day-one manual path until
+   that ships.
 
 **Access:** `RequireSuperAdmin`.
 
@@ -59,10 +62,18 @@ Two things on one page, per Phase 4 of the parking marketplace build:
   (0–1). Independent of the standard rate — changing one does not move the other.
 - **Guest rate — weekday / weekend (₱/night)** — what riders are charged per night, and also the
   price cap hosts are matched against.
+- **Processor fee (%)** and **Processor fee fixed (₱)** — an editable estimate of what the
+  payment provider keeps from the guest charge (default 3.125% + ₱15, matching a typical
+  PayMongo local-card rate). Used only to estimate platform net margin, never to compute the
+  host payout. Adjust it if PayMongo's schedule or the negotiated rate changes.
+- **Per-night example** — a live preview under the fields. Enter a host rate and it shows guest
+  pays, host gross, commission, host receives, processor fee, and platform net, plus the
+  direct-link platform net. Nothing here is saved; it only previews the current form values.
 - **Save** — PUT `platform-parking-settings`. Changes apply only to bookings **created after**
   saving — an already-paid or in-flight `parking_payment_transactions` row keeps the values that
   were resolved and snapshotted onto it at checkout-creation time, never recomputed
-  retroactively.
+  retroactively. That includes `payment_fee_amount` and `platform_net_total`, so a later fee
+  change never rewrites historical margin.
 - The same live values are what a host sees as their rate cap on the parking pricing page
   (piggybacked onto the `parking-pricing` GET response, since hosts can't call this
   super-admin-gated endpoint directly).
@@ -73,8 +84,12 @@ Two things on one page, per Phase 4 of the parking marketplace build:
 ### Payout ledger
 
 - Lists paid transactions (most recent first): guest, stay dates/nights, listing, org, host
-  gross/commission/net payout, disbursement status. A row's commission line shows "Direct link"
-  when that booking came through a Phase 8 direct-booking link (reduced commission applied).
+  gross/commission/net payout, guest charge, estimated processor fee, platform net, disbursement
+  status. A row's commission line shows "Direct link" when that booking came through a Phase 8
+  direct-booking link (reduced commission applied).
+- **Totals strip** above the table sums guest charges, host payouts, processor fees and platform
+  net for the rows in the current filter. Refunded rows stay in the sums of whatever filter is
+  active; read the filter before treating a total as revenue.
 - **Mark disbursed** — records `disbursed_at`/`disbursed_by` and an optional reference (e.g. a
   bank transfer or GCash reference number). Confirms the payout was made manually outside the
   platform — this button does not move money.
@@ -87,12 +102,12 @@ Two things on one page, per Phase 4 of the parking marketplace build:
 
 ## API
 
-| Method | Edge function               | Notes                                                                                                                   |
-| ------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| GET    | `platform-parking-settings` | Returns the singleton settings row                                                                                      |
-| PUT    | `platform-parking-settings` | Partial update of `commissionPct`/`directCommissionPct`/`guestRateWeekday`/`guestRateWeekend`/`supportEscalationPhone`  |
-| GET    | `parking-payouts`           | Lists `status = 'paid'` transactions, most recent first                                                                 |
-| PATCH  | `parking-payouts`           | `{action: 'mark_disbursed', transactionId, reference?}` or `{action: 'record_clawback', transactionId, amount, reason}` |
+| Method | Edge function               | Notes                                                                                                                                                    |
+| ------ | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `platform-parking-settings` | Returns the singleton settings row                                                                                                                       |
+| PUT    | `platform-parking-settings` | Partial update of `commissionPct`/`directCommissionPct`/`guestRateWeekday`/`guestRateWeekend`/`paymentFeePct`/`paymentFeeFixed`/`supportEscalationPhone` |
+| GET    | `parking-payouts`           | Lists `status = 'paid'` transactions, most recent first. Each row includes `paymentFeeAmount` and `platformNetTotal`.                                    |
+| PATCH  | `parking-payouts`           | `{action: 'mark_disbursed', transactionId, reference?}` or `{action: 'record_clawback', transactionId, amount, reason}`                                  |
 
 ---
 
@@ -100,16 +115,17 @@ Two things on one page, per Phase 4 of the parking marketplace build:
 
 ## Implementation map
 
-| Layer                                     | Path                                                                                                                           |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Page                                      | `ui/src/features/dashboard/super-admin/pages/SuperAdminParkingPayoutsPage.tsx`                                                 |
-| Hooks                                     | `ui/src/features/dashboard/super-admin/hooks/usePlatformParkingSettings.ts`                                                    |
-| Edge                                      | `supabase/functions/platform-parking-settings/index.ts`, `supabase/functions/parking-payouts/index.ts`                         |
-| Resolver (server-side reads)              | `supabase/functions/_shared/parkingPlatformSettings.ts`                                                                        |
-| Payment amount math (per-night proration) | `supabase/functions/_shared/parkingPaymentOrchestrator.ts`                                                                     |
-| Match-engine price cap                    | `supabase/functions/_shared/parkingBroadcastRanking.ts`                                                                        |
-| Host-facing cap/commission                | `supabase/functions/_shared/parkingPricing.ts`, `ui/src/features/dashboard/parking/components/ParkingPricingRatesFormCard.tsx` |
-| Direct-link channel resolution (Phase 8)  | `supabase/functions/_shared/parkingDirectLink.ts`                                                                              |
+| Layer                                                     | Path                                                                                                                             |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Page                                                      | `ui/src/features/dashboard/super-admin/pages/SuperAdminParkingPayoutsPage.tsx`                                                   |
+| Hooks                                                     | `ui/src/features/dashboard/super-admin/hooks/usePlatformParkingSettings.ts`                                                      |
+| Edge                                                      | `supabase/functions/platform-parking-settings/index.ts`, `supabase/functions/parking-payouts/index.ts`                           |
+| Resolver (server-side reads)                              | `supabase/functions/_shared/parkingPlatformSettings.ts`                                                                          |
+| Payment amount math (per-night proration)                 | `supabase/functions/_shared/parkingPaymentOrchestrator.ts`                                                                       |
+| Settlement math (commission, processor fee, platform net) | `supabase/functions/_shared/parkingSettlement.ts` (+ UI display mirror `ui/src/features/dashboard/parking/lib/parkingPayout.ts`) |
+| Match-engine price cap                                    | `supabase/functions/_shared/parkingBroadcastRanking.ts`                                                                          |
+| Host-facing cap/commission                                | `supabase/functions/_shared/parkingPricing.ts`, `ui/src/features/dashboard/parking/components/ParkingPricingRatesFormCard.tsx`   |
+| Direct-link channel resolution (Phase 8)                  | `supabase/functions/_shared/parkingDirectLink.ts`                                                                                |
 
 ---
 
@@ -149,4 +165,5 @@ etc.), not an in-app payout notification.
       code work)
 - [ ] Host KYC onboarding for automated payout
 - [ ] Volume eligibility threshold for automated payout
-- [ ] Real PayMongo fee schedule (currently a flat commission %, not PayMongo's actual rails fee)
+- [ ] Reconcile the processor-fee estimate against the actual PayMongo fee per payout (current
+      value is a configurable estimate, not a per-transaction reconciliation)

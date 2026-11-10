@@ -9,6 +9,9 @@ export type ParkingPricingDto = ParkingPricingDefaults & {
   /** Live super-admin-configured guest rate cap (Phase 4) — see parkingPricingDefaults.ts. */
   guestRateCapWeekday: number;
   guestRateCapWeekend: number;
+  /** Same values, named for the host-facing "guests pay" line. */
+  guestRateWeekday: number;
+  guestRateWeekend: number;
   commissionPct: number;
   /** Phase 8 — direct-booking link commission + link-building fields. */
   directCommissionPct: number;

@@ -2,7 +2,7 @@
 title: 'Full-app test architecture: page-mirrored suites, access matrix, enforced coverage'
 status: planned
 tags: [planning, testing, vitest, playwright, deno, pgtap, ci-cd, rbac, plans, governance]
-updated: 2026-11-10
+updated: 2026-11-11
 stage: in-progress
 kind: plan
 ---
@@ -14,12 +14,12 @@ kind: plan
 Branch `test/full-app-test-architecture`. Phases land in separate PRs; this section tracks
 what is actually shipped, not what is planned.
 
-| Phase  | State       | Evidence                                                                                                                                                                                                                                                                                          |
-| ------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0      | **shipped** | `e2e-ci` job in `ci.yml` (4 shards, required by `quality`); 17 orphan specs tagged; `check:e2e-lane-tags`; `check:flaky-quarantine`; `Asia/Manila` on Vitest, Deno and Playwright; deploy gate split from the PR suite (39.3 → 10.4 min) and skips Supabase when no function or migration changed |
-| 1      | **partly**  | `dom` Vitest project (happy-dom + Testing Library, `*.test.tsx`); handler seam in `serveEdge` (`EDGE_HANDLER_TEST`); first HTTP handler test; backend tests for cancellation money, settings write authorization and plan upgrade hooks; personas, `mockTenant`, `edgeMocks` still to do          |
-| 2      | **partly**  | `check:unit-test-quality` (385 → **383** export-only baseline, shrink-only), `check:edge-test-coverage` (353 uncovered functions baselined), `check:guide-spec-refs` (42/110 specs claimed by a guide), Vitest coverage floor. `check:test-coverage` per-section manifests and per-tier globs remain |
-| 3 to 9 | not started |                                                                                                                                                                                                                                                                                                   |
+| Phase  | State       | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------ | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0      | **shipped** | `e2e-ci` job in `ci.yml` (4 shards, required by `quality`); 17 orphan specs tagged; `check:e2e-lane-tags`; `check:flaky-quarantine`; `Asia/Manila` on Vitest, Deno and Playwright; deploy gate split from the PR suite (39.3 → 10.4 min) and skips Supabase when no function or migration changed                                                                                                                          |
+| 1      | **partly**  | `dom` Vitest project (happy-dom + Testing Library, `*.test.tsx`); handler seam in `serveEdge` (`EDGE_HANDLER_TEST`); first HTTP handler tests; backend tests for cancellation money, settings write authorization and plan upgrade hooks; the auth storage key now has one definition in `ui/e2e/shared/ids.ts` with `check:e2e-auth-key` (7 harnesses used to retype it); personas, `mockTenant`, `edgeMocks` still to do |
+| 2      | **partly**  | `check:unit-test-quality` (385 → **383** export-only baseline, shrink-only), `check:edge-test-coverage` (353 uncovered functions baselined), `check:guide-spec-refs` (42/110 specs claimed by a guide), Vitest coverage floor. `check:test-coverage` per-section manifests and per-tier globs remain                                                                                                                       |
+| 3 to 9 | not started |                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 First full `@ci` run on this branch: **338 passed, 8 failed, 3.5 min**. Triage:
 

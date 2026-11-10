@@ -6,14 +6,13 @@
 import { useEffect } from 'react';
 
 import { absoluteCanonicalUrl, siteOrigin } from '@/lib/seo/canonicalOrigin';
-import { matchStaticRoute } from '@/lib/seo/publicRoutes';
 import {
   DEFAULT_DESCRIPTION,
   DEFAULT_SOCIAL_IMAGE,
   SITE_NAME,
   serializeJsonLd,
   truncateDescription,
-} from '@/lib/seo/seoMeta';
+} from '@/lib/seo/seoPrimitives';
 
 export type PageMetaInput = {
   /** Plain description; truncated to ~160 characters. Omit for the route's registry default. */
@@ -86,12 +85,10 @@ export function usePageMeta(input: PageMetaInput, enabled = true): void {
 
     const path = canonicalPath ?? window.location.pathname;
     const canonical = absoluteCanonicalUrl(path);
-    const route = matchStaticRoute(path);
-    const text = truncateDescription(
-      description?.trim() || route?.description || DEFAULT_DESCRIPTION
-    );
-    const ogTitle = title ?? route?.title ?? document.title ?? SITE_NAME;
-    const shouldNoindex = noindex ?? (route ? !route.indexable : false);
+    // Static pages pass their registry description; anything else falls back to the site one.
+    const text = truncateDescription(description?.trim() || DEFAULT_DESCRIPTION);
+    const ogTitle = title ?? document.title ?? SITE_NAME;
+    const shouldNoindex = noindex ?? false;
 
     upsertMeta('name', 'description', text);
     upsertMeta('property', 'og:site_name', SITE_NAME);

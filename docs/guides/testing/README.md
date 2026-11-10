@@ -107,6 +107,8 @@ ui/e2e/features/<domain>/
 docs/guides/testing/
 ```
 
+`ui/e2e/shared/ids.ts` owns the stable E2E ids **and** `SUPABASE_AUTH_STORAGE_KEY`. Import it, never retype the key: it is derived from the Supabase project ref, so a literal breaks the moment the project moves, and the failure shows up as a signed-out page somewhere else. `bun run check:e2e-auth-key` fails on any `sb-<ref>-auth-token` literal outside that file.
+
 ## Playwright tags
 
 Vitest runs two projects:

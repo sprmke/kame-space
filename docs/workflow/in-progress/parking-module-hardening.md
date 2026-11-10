@@ -56,7 +56,7 @@ Follow-up slice (2026-11-09):
 
 - **H-11** `ParkingSettingsCard.tsx` is now 133 lines: controller in `parking/hooks/useParkingSettingsController.ts` and sections in `components/ParkingSettingsSections.tsx`.
 - **H-9** org-wide and scoped booking lists include pre-claim broadcast requests (`20261324000000_list_bookings_preclaim.sql` plus the PostgREST fallback).
-- **M-11** host in-app notices for guest cancel, payment-window expiry, and endorsement send failure. New types: `parking_request_cancelled`, `parking_payment_expired`, `parking_endorsement_failed`.
+- **M-11** host in-app and Telegram notices for guest cancel, payment-window expiry, and endorsement send failure. New types: `parking_request_cancelled`, `parking_payment_expired`, `parking_endorsement_failed`; per-parking templates/toggles default on.
 - **E-11/E-12** org parkings hub and super-admin payouts specs added.
 - **Manual QA** width sweep at 375 / 768 / 1280 for Bookings, booking detail, Pricing, Finance and Settings, now asserting loaded content rather than just the page shell.
 - **Mobile QA fix** the pricing calendar kept square cells from its 56px minimum height and the nowrap direct-link URL widened the right column, so 375px clipped the weekend columns. Compact card padding + 2px week gaps keep all seven days on screen at ~45px cells, and the right column now shrinks. A Playwright test asserts the last day cell stays inside the 375px viewport.
@@ -64,6 +64,9 @@ Follow-up slice (2026-11-09):
 - **M-8/M-9 UI** parking settings now returns archive impact counts. The archive confirm lists pending offers and upcoming bookings; delete is disabled once the slot has booking history or pending offers, and the copy names finance removal.
 - **H-7 finance** the parking dashboard now reads `parking_payment_transactions.host_net_total` for net profit and pipeline instead of the property booking formula, so the marketplace commission is not counted as host revenue. Verified against local seed data (₱630 net, not ₱700 guest charge).
 - **Payment terminal states** a duplicate provider webhook can no longer flip `refund_review`/`refunded` back to `paid`; manual refunds are capped at the guest charge.
+- **H-3/H-4/H-5/H-8** decline now confirms before writing; the flow stepper stays visible through `READY_FOR_CHECKIN`; phone status actions use the shared bottom action bar; the host New booking modal states the auto-claim and guest-payment behavior.
+- **M-11 Telegram** guest cancellation, payment-window expiry, and endorsement failure now send Telegram as well as in-app, using per-parking templates and toggles that default on (`20261328000000_parking_telegram_alert_templates.sql`).
+- **M-3 decision closed** Payment Links remain because PayMongo Checkout Sessions in this account do not expose a custom `expires_at`; the ledger invalidation + webhook guard remains the TTL authority.
 - **Docs/rules cleanup** removed stale references to the deleted `submit-pay-parking`, `parking-broadcast-email` and `create-parking-booking` endpoints from active guides and rules.
 
 **C-4 confirmed:** no repository callers for `submit-pay-parking`, `parking-broadcast-email` or `create-parking-booking`, and none are deployed in production. Their dirs, config blocks and guards are gone.
@@ -280,7 +283,7 @@ The readiness audit already says this must exist before real money flows.
 
 - [ ] Before releasing, check the pending txn's PayMongo state. If paid, fulfill. If processing, extend by a short grace (for example 10 min, once). Reuse the `getPaymongoProviderPaymentState` pattern from `orgPaymentReconcile.ts`.
 - [ ] Add a parking reconcile sweep (same cron tick) for `pending` txns older than 15 min whose provider state is `paid`, to cover missed webhooks.
-- [ ] Use Checkout Sessions with an `expires_at` that matches the window (finishes P0-2's last bullet).
+- [x] **Decision:** keep Payment Links. PayMongo Checkout Sessions do not expose a custom `expires_at` in this account, so switching would not shorten the payable window and would change the webhook shape. The ledger invalidation + webhook guard remains the TTL authority.
 
 ### M-4 · Guest cancel is two writes; host and cron can see a half state · **Likely**
 
@@ -552,8 +555,8 @@ These are implemented with the recommended default unless the product owner over
 1. **Host-created bookings already paid offline (cash or bank transfer).** Default: add a "Paid outside Kame Space" option for hosts with `bookings:edit`. It records a ₱0 `provider: 'offline'` ledger row, no platform fee, and reuses the complimentary fulfillment path (confirmation + endorsement + property gate, no PayMongo). Do not send the guest a pay link. Keep online-only as the visible default.
 2. **Refund policy when the host cancels after payment.** Default: full refund to the guest, recorded manually in `parking-payouts` (`record_refund`), host payout blocked until recorded. The existing "non-refundable" copy applies to guest-initiated cancellation, not host cancellation. If product disagrees, change the copy and the action label, not the ledger.
 3. **Guest-facing price (G-1).** Default: guests always see and pay the **platform** guest rate. Cards, detail, form summary, status and checkout all use it. Host rate is a payout input only. Weekend nights are called out when the rate differs.
-4. **M-3 Checkout Sessions.** Payment Links remain in this slice. The ledger invalidation, webhook guard and provider-state check cover the payable-after-release risk without changing the webhook shape. Revisit Checkout Sessions when server-side link expiry is worth that migration.
-5. **M-11 Telegram fan-out.** Host alerts for cancellation, payment expiry and endorsement failure ship in-app. Telegram needs new per-parking templates and toggles, so it stays a follow-up rather than a hidden untemplated message.
+4. **M-3 Checkout Sessions.** Payment Links remain. PayMongo's Checkout Session resource in this account does not expose a custom `expires_at`, so switching would not shorten the payable window and would change the webhook shape for no TTL gain. The ledger invalidation, webhook guard, and provider-state check remain the TTL authority.
+5. **M-11 Telegram fan-out.** Host alerts for cancellation, payment expiry and endorsement failure ship in Telegram and in-app, with per-parking templates and toggles that default on.
 
 ---
 

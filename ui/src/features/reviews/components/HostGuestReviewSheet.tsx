@@ -28,6 +28,7 @@ import {
 
 import { AdminDialogShell } from '@/components/AdminDialogShell';
 import { UnsavedChangesDialog } from '@/components/forms/UnsavedChangesDialog';
+import { ReviewLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -297,6 +298,7 @@ export function HostGuestReviewSheet({ open, onOpenChange, bookingId, guestName,
               }
             />
           </div>
+          <ReviewLegalNotice />
         </div>
       </AdminDialogShell>
       <UnsavedChangesDialog {...dialogProps} />

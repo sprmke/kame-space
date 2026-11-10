@@ -62,23 +62,26 @@ export function legalPageCopy(productName: string): {
 } {
   const name = productName.trim();
   return {
+    // Wording mirrors ui/src/lib/legal/{terms,privacy,cookies}Content.ts exactly. Those
+    // modules import platform branding, so the middleware bundle cannot import them; these
+    // strings are the snapshot's copy of the same text.
     terms: {
       heading: 'Terms of Service',
       intro: name
-        ? `These terms govern your use of ${name} as a guest, host, organization member, or visitor of our public site.`
-        : 'These terms govern your use of the platform as a guest, host, organization member, or visitor of our public site.',
+        ? `These terms govern your use of ${name} as a guest, host, team member, or visitor.`
+        : 'These terms govern your use of the platform as a guest, host, team member, or visitor.',
     },
     privacy: {
       heading: 'Privacy Policy',
       intro: name
-        ? `How ${name} collects, uses, and shares personal information for guests, hosts, and team members.`
-        : 'How we collect, use, and share personal information for guests, hosts, and team members.',
+        ? `How ${name} collects, uses, and shares personal information about guests, hosts, and team members.`
+        : 'How we collect, use, and share personal information about guests, hosts, and team members.',
     },
     cookies: {
       heading: 'Cookie Policy',
       intro: name
-        ? `How ${name} uses cookies and similar browser storage on the marketing site, guest flows, and dashboards.`
-        : 'How we use cookies and similar browser storage on the marketing site, guest flows, and dashboards.',
+        ? `How ${name} uses cookies and browser storage on the public site, guest flows, and dashboards.`
+        : 'How we use cookies and browser storage on the public site, guest flows, and dashboards.',
     },
   };
 }

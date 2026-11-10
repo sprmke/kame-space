@@ -20,10 +20,9 @@ import { MarketingPublicPageHero } from '@/features/guest/marketing/shared/compo
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { usePublicRouteTitle } from '@/lib/pageTitle';
+import { usePublicStaticRouteSeo } from '@/lib/seo/routeTitle';
 import { PLATFORM_CONTACT_EMAIL } from '@/lib/platformBranding';
 import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
-import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 const PREVIEW_LIMIT = 8;
 
@@ -132,8 +131,7 @@ function SupportFaqSection({
 }
 
 export function SupportPage() {
-  usePublicRouteTitle('/support');
-  usePageMeta({});
+  usePublicStaticRouteSeo('/support');
   const { data, isPending } = usePublicSupportFaqs();
 
   const guestFaqs = (data?.faqs ?? []).filter(isGuestFaq);

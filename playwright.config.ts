@@ -35,6 +35,9 @@ export default defineConfig({
   outputDir: 'test-results/playwright',
   use: {
     baseURL: BASE_URL,
+    // Returning users have already answered the cookie banner. Seed the choice so
+    // first-visit consent never covers a button under test.
+    storageState: './ui/e2e/shared/consentStorageState.json',
     // Deterministic clock and locale. Every user-visible time is Asia/Manila, and
     // date-boundary bugs (UTC midnight vs Manila) are a recurring class here.
     timezoneId: 'Asia/Manila',

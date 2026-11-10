@@ -12,9 +12,11 @@ import { createServiceClient, type ParkingRow } from './orgAuth.ts';
 import { amountBucketPhp } from './analyticsBuckets.ts';
 import { capturePostHogEvent } from './posthog.ts';
 import { createNotification } from './notificationService.ts';
+import { sendParkingTelegramNotice } from './telegramParking.ts';
 import { createPaymongoPaymentLink, phpToCentavos } from './paymongoClient.ts';
 import { loadParkingPricing } from './parkingPricing.ts';
 import { resolveParkingPlatformSettings } from './parkingPlatformSettings.ts';
+import { computeParkingSettlement } from './parkingSettlement.ts';
 import type { ParkingBookingChannel } from './parkingDirectLink.ts';
 import { sendParkingConfirmedEmail } from './parkingBroadcastEmail.ts';
 import { sendParkingEndorsementEmail } from './parkingEndorsementEmail.ts';
@@ -76,6 +78,10 @@ export type ParkingPaymentAmounts = {
   commissionPct: number;
   commissionAmount: number;
   hostNetTotal: number;
+  /** Estimated processor cut of the guest charge. 0 for offline/complimentary bookings. */
+  paymentFeeAmount: number;
+  /** guestChargeTotal − hostNetTotal − paymentFeeAmount. */
+  platformNetTotal: number;
 };
 
 /**
@@ -124,16 +130,23 @@ export async function computeParkingPaymentAmounts(
     bookingChannel === 'direct_link'
       ? platformSettings.directCommissionPct
       : platformSettings.commissionPct;
-  const commissionAmount = round2(hostGrossTotal * commissionPct);
-  const hostNetTotal = round2(hostGrossTotal - commissionAmount);
+  const settlement = computeParkingSettlement({
+    guestChargeTotal,
+    hostGrossTotal,
+    commissionPct,
+    paymentFeePct: platformSettings.paymentFeePct,
+    paymentFeeFixed: platformSettings.paymentFeeFixed,
+  });
 
   return {
     nights,
     guestChargeTotal,
     hostGrossTotal,
     commissionPct,
-    commissionAmount,
-    hostNetTotal,
+    commissionAmount: settlement.commissionAmount,
+    hostNetTotal: settlement.hostNetTotal,
+    paymentFeeAmount: settlement.paymentFeeAmount,
+    platformNetTotal: settlement.platformNetTotal,
   };
 }
 
@@ -218,6 +231,8 @@ export async function createParkingPaymentTransaction(
       host_gross_total: amounts.hostGrossTotal,
       commission_pct: amounts.commissionPct,
       host_net_total: amounts.hostNetTotal,
+      payment_fee_amount: amounts.paymentFeeAmount,
+      platform_net_total: amounts.platformNetTotal,
       nights: amounts.nights,
       booking_channel: bookingChannel,
       status: 'pending',
@@ -242,6 +257,9 @@ export async function createParkingPaymentTransaction(
   }
 
   try {
+    // M-3 decision: stay on Payment Links. PayMongo Checkout Sessions in this account do not
+    // expose a custom `expires_at`, so switching would not shorten the payable window and would
+    // change the webhook shape. The ledger invalidation + webhook guard is the TTL authority.
     const link = await createPaymongoPaymentLink({
       amountCentavos: phpToCentavos(amounts.guestChargeTotal),
       description: `Parking reservation - ${String(parking.name)}`,
@@ -369,6 +387,8 @@ export async function fulfillComplimentaryOwnerParking(bookingId: string): Promi
       host_gross_total: 0,
       commission_pct: amounts.commissionPct,
       host_net_total: 0,
+      payment_fee_amount: 0,
+      platform_net_total: 0,
       nights: amounts.nights,
       booking_channel: bookingChannel,
       provider: 'complimentary',
@@ -501,6 +521,8 @@ export async function fulfillOfflineParkingPayment(bookingId: string): Promise<v
       host_gross_total: 0,
       commission_pct: 0,
       host_net_total: 0,
+      payment_fee_amount: 0,
+      platform_net_total: 0,
       nights,
       booking_channel: bookingChannel,
       provider: 'offline',
@@ -578,6 +600,10 @@ export async function markParkingPaymentFailed(
  * time this runs — a thrown error here must not leave the transaction stuck `pending` forever;
  * mark it `failed` with the real reason so it surfaces for manual reconciliation instead.
  */
+export function isTerminalParkingPaymentStatus(status: string): boolean {
+  return status === 'paid' || status === 'refund_review' || status === 'refunded';
+}
+
 export async function fulfillParkingPayment(input: {
   transactionId: string;
   providerReference?: string | null;
@@ -595,10 +621,9 @@ export async function fulfillParkingPayment(input: {
   if (txnError) throw new Error(txnError.message);
   if (!txnData) throw new Error('Parking payment transaction not found');
   const txn = txnData as unknown as ParkingPaymentTransactionRow;
-  if (txn.status === 'paid') return;
   // A refund is a terminal money state. A duplicate provider webhook must never flip a
   // refund_review/refunded row back to paid and make the payout eligible again.
-  if (txn.status === 'refund_review' || txn.status === 'refunded') return;
+  if (isTerminalParkingPaymentStatus(txn.status)) return;
 
   const bookingId = String(txn.booking_id);
   const paidAt = input.paidAt ?? new Date().toISOString();
@@ -763,6 +788,17 @@ export async function fulfillParkingPayment(input: {
               body: `Add the PMO email for ${String(parkingRow.residence_name ?? 'this development')} and resend the endorsement.`,
               bookingId,
               dedupeKey: `parking-endorsement-failed:${bookingId}`,
+            });
+            const slotLabel =
+              [parkingRow.slot_label, parkingRow.tower].filter(Boolean).join(' · ') ||
+              parkingRow.name;
+            await sendParkingTelegramNotice({
+              parkingId,
+              key: 'endorsement_failed',
+              values: {
+                slot_label: slotLabel,
+                residence_name: String(parkingRow.residence_name ?? 'this development'),
+              },
             });
           } catch (notifyErr) {
             console.error(

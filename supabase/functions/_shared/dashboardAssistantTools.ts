@@ -70,6 +70,7 @@ import {
   declineParkingBooking,
   ParkingBroadcastActionError,
 } from './parkingBroadcastActions.ts';
+import { parkingBroadcastActionMessage } from './parkingActionMessages.ts';
 import { verifyBookingBelongsToParking } from './parkingScope.ts';
 import {
   availableTransitions as parkingAvailableTransitions,
@@ -3933,7 +3934,9 @@ export async function executeConfirmedAction(
         data: { booking: claimed },
       };
     } catch (err) {
-      if (err instanceof ParkingBroadcastActionError) return { ok: false, error: err.message };
+      if (err instanceof ParkingBroadcastActionError) {
+        return { ok: false, error: parkingBroadcastActionMessage(err.message) };
+      }
       throw err;
     }
   }
@@ -3957,7 +3960,9 @@ export async function executeConfirmedAction(
       const result = await declineParkingBooking(parkingId, bookingId);
       return { ok: true, riskTier: 'tier2_confirmed', auditBookingId: bookingId, data: result };
     } catch (err) {
-      if (err instanceof ParkingBroadcastActionError) return { ok: false, error: err.message };
+      if (err instanceof ParkingBroadcastActionError) {
+        return { ok: false, error: parkingBroadcastActionMessage(err.message) };
+      }
       throw err;
     }
   }

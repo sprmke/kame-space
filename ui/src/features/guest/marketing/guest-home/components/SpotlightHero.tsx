@@ -13,22 +13,31 @@ import { usePrefersReducedMotion } from '@/hooks/useMediaQuery';
 import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
 
 /**
- * Full-bleed theme art. AVIF is roughly a third of the JPEG and two thirds of the WebP,
- * WebP covers older browsers, and the JPEG stays as the last fallback so an old WebView
- * still gets a hero. Derived files come from `bun run images:optimize`.
+ * Full-bleed theme art.
+ *
+ * The hero is the LCP element on `/`, so the width matters: pre-rendered variants let the
+ * browser pick by viewport (27 KB at 480w instead of the full render). AVIF is roughly half
+ * the WebP at the same width and is offered first; WebP covers browsers without AVIF, and the
+ * JPEG is the last fallback for old WebViews. Regenerate with
+ * `node scripts/media/generate-hero-variants.mjs`.
  */
+const HERO_WIDTHS = [480, 800, 1200] as const;
+const HERO_SIZES = '(min-width: 1280px) 1280px, 100vw';
+
 function HeroArt({ src, priority }: { src: string; priority?: boolean }) {
   const shared = {
     alt: '',
     width: HERO_IMAGE_WIDTH,
     height: HERO_IMAGE_HEIGHT,
-    sizes: '(min-width: 1280px) 1280px, 100vw',
+    sizes: HERO_SIZES,
     className: 'absolute inset-0 h-full w-full object-cover object-[50%_45%]',
   };
+  const webpSrcSet = HERO_WIDTHS.map((width) => `${src}-${width}.webp ${width}w`).join(', ');
+  const avifSrcSet = HERO_WIDTHS.map((width) => `${src}-${width}.avif ${width}w`).join(', ');
   return (
     <picture>
-      <source srcSet={`${src}.avif`} type="image/avif" />
-      <source srcSet={`${src}.webp`} type="image/webp" />
+      <source srcSet={avifSrcSet} sizes={HERO_SIZES} type="image/avif" />
+      <source srcSet={webpSrcSet} sizes={HERO_SIZES} type="image/webp" />
       <MarketingImage {...shared} src={`${src}.jpg`} priority={priority} />
     </picture>
   );

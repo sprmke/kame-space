@@ -13,6 +13,7 @@ import {
 } from '../_shared/httpResponse.ts';
 import { serveSuperAdmin } from '../_shared/serveEdge.ts';
 import { logSuperAdminAction } from '../_shared/superAdminAudit.ts';
+import { parkingRefundAmountError } from '../_shared/parkingPayoutRules.ts';
 import { requireSuperAdminStepUp } from '../_shared/superAdminVerification.ts';
 import { logActivity } from '../_shared/activityLog.ts';
 
@@ -45,6 +46,8 @@ function serializeRow(row: Record<string, unknown>) {
     commissionPct: Number(row.commission_pct ?? 0),
     bookingChannel: (row.booking_channel as string | undefined) ?? 'standard',
     hostNetTotal: Number(row.host_net_total ?? 0),
+    paymentFeeAmount: Number(row.payment_fee_amount ?? 0),
+    platformNetTotal: Number(row.platform_net_total ?? 0),
     status: row.status as string,
     paidAt: (row.paid_at as string | undefined) ?? null,
     disbursedAt: (row.disbursed_at as string | undefined) ?? null,
@@ -189,9 +192,8 @@ serveSuperAdmin('parking-payouts', async (req, admin) => {
         return jsonError(req, 'Refundable transaction not found', 404);
       }
       const guestCharge = Number(refundable.guest_charge_total ?? 0);
-      if (amount > guestCharge + 0.005) {
-        return jsonError(req, 'amount cannot exceed the guest charge');
-      }
+      const amountError = parkingRefundAmountError(amount, guestCharge);
+      if (amountError) return jsonError(req, amountError);
 
       const nowIso = new Date().toISOString();
       const { data, error } = await supabase

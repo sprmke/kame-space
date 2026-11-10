@@ -11,13 +11,11 @@ import { scrollToSection } from '@/features/guest/marketing/for-hosts/lib/scroll
 import { AbstractBackground } from '@/features/guest/marketing/shared/components/AbstractBackground';
 
 import { Button } from '@/components/ui/button';
-import { usePublicRouteTitle } from '@/lib/pageTitle';
+import { usePublicStaticRouteSeo } from '@/lib/seo/routeTitle';
 import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
-import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 export function ForHostsPage() {
-  usePublicRouteTitle('/for-hosts');
-  usePageMeta({});
+  usePublicStaticRouteSeo('/for-hosts');
   const reduceMotion = useReducedMotion();
 
   return (

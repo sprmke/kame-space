@@ -559,6 +559,11 @@ export function AddEntityDialog({
                   className="bg-muted/40 text-muted-foreground h-10 cursor-default"
                 />
               </div>
+
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                A platform fee applies to each booking. You can see your payout per night on Pricing
+                after the listing is created.
+              </p>
             </>
           )}
         </div>

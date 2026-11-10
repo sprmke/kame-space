@@ -22,10 +22,9 @@ import type { SupportTicketCategory } from '@/features/dashboard/help-support/li
 import { MANAGED_PLAN_INQUIRY_SUBJECT } from '@/features/dashboard/plans/lib/planPresentation';
 
 import { Button } from '@/components/ui/button';
-import { usePublicRouteTitle } from '@/lib/pageTitle';
+import { usePublicStaticRouteSeo } from '@/lib/seo/routeTitle';
 import { PLATFORM_CONTACT_EMAIL } from '@/lib/platformBranding';
 import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
-import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 const GUEST_TICKET_SCOPE = {
   channel: 'guest' as const,
@@ -45,8 +44,7 @@ function resolveDefaultSubject(searchParams: URLSearchParams): string | undefine
 }
 
 export function ContactPage() {
-  usePublicRouteTitle('/contact');
-  usePageMeta({});
+  usePublicStaticRouteSeo('/contact');
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { status } = useGuestSession();

@@ -8,6 +8,7 @@ import {
   goldenPlanId,
   goldenSoldPlanDtos,
 } from '../../../../src/features/dashboard/plans/lib/planTierGolden';
+import { SUPABASE_AUTH_STORAGE_KEY } from '../../../shared/ids';
 
 import type { Page, Route } from '@playwright/test';
 
@@ -21,8 +22,6 @@ export const PLAN_STARTER = goldenPlanId('starter');
 export const PLAN_GROWTH = goldenPlanId('growth');
 export const PLAN_PRO = goldenPlanId('pro');
 export const PLAN_MANAGED = goldenPlanId('managed');
-
-const SUPABASE_AUTH_STORAGE_KEY = 'sb-127-auth-token';
 
 /** All features off. Entitlement mocks that should not unlock anything spread this. */
 export function emptyPlanFeatures() {

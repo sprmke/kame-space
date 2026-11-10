@@ -81,7 +81,7 @@ if (unlisted.length > 0) {
   console.error(
     `\nimages:budget ${checkMode ? 'FAILED' : 'report'} — ${unlisted.length} file(s) over ${LIMIT_BYTES / 1024} KB with no allowlist reason.`
   );
-  console.error('Shrink them with `bun run images:optimize`, or add a reason to ALLOWLIST.');
+  console.error('Shrink them with `node scripts/media/generate-hero-variants.mjs` (hero) or a one-off sharp pass, or add a reason to ALLOWLIST.');
   if (checkMode) process.exit(1);
 } else {
   console.log(`\nimages:budget OK — no unlisted public raster over ${LIMIT_BYTES / 1024} KB.`);

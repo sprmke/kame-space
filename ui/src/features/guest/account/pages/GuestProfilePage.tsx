@@ -1,3 +1,4 @@
+import { GuestPrivacyCard } from '@/features/guest/account/components/GuestPrivacyCard';
 import { GuestProfileForm } from '@/features/guest/account/components/GuestProfileForm';
 import { GuestIdentityCard } from '@/features/verification/components/GuestIdentityCard';
 
@@ -9,6 +10,7 @@ export function GuestProfilePage() {
     <div className="space-y-4">
       <GuestProfileForm />
       <GuestIdentityCard />
+      <GuestPrivacyCard />
     </div>
   );
 }

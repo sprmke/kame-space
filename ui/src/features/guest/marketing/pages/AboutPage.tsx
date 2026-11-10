@@ -17,10 +17,9 @@ import { MarketingPublicPageHero } from '@/features/guest/marketing/shared/compo
 import { MarketingPublicSectionHeading } from '@/features/guest/marketing/shared/components/MarketingPublicSectionHeading';
 
 import { Button } from '@/components/ui/button';
-import { usePublicRouteTitle } from '@/lib/pageTitle';
+import { usePublicStaticRouteSeo } from '@/lib/seo/routeTitle';
 import { PLATFORM_APP_NAME, PLATFORM_CONTACT_EMAIL } from '@/lib/platformBranding';
 import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
-import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 const capabilities = [
   {
@@ -56,8 +55,7 @@ const capabilities = [
 ] as const;
 
 export function AboutPage() {
-  usePublicRouteTitle('/about');
-  usePageMeta({});
+  usePublicStaticRouteSeo('/about');
   return (
     <div className="bg-background min-h-screen">
       <MarketingPublicPageHero

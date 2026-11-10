@@ -6,6 +6,7 @@
   "imports": {
     "dayjs": "npm:dayjs@1.11.10",
     "papaparse": "npm:papaparse@5.4.1",
-    "zod": "npm:zod@3.23.8"
+    "zod": "npm:zod@3.23.8",
+    "https://esm.sh/tslib@2.8.1/denonext/tslib.mjs": "npm:tslib@2.8.1"
   }
 }
