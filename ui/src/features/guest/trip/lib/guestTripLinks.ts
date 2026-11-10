@@ -42,6 +42,9 @@ export function guestTripEditBookingPath(trip: GuestTrip): string {
   return guestFormPath(trip.property.slug, new URLSearchParams({ bookingId: trip.bookingId }));
 }
 
+export { guestJourneyChatPath, guestJourneyLinks } from '@/features/guest/trip/lib/guestJourneyLinks';
+export type { GuestJourneyLinks } from '@/features/guest/trip/lib/guestJourneyLinks';
+
 /** Listing `mapsUrl`, else coordinates, else the address as a Google Maps search. */
 export function guestTripDirectionsUrl(input: {
   mapsUrl?: string | null;

@@ -7,6 +7,8 @@
 
 export type GuestTripTone = 'neutral' | 'info' | 'success' | 'warning' | 'muted';
 
+import { guestJourneyStatusWord } from '@/features/guest/trip/lib/guestJourneyCopy';
+
 const CONFIRMED_STATUSES = new Set([
   'PENDING_DOCUMENTS',
   'PENDING_GAF',
@@ -392,17 +394,14 @@ export function guestTripListGroup(input: {
   return input.checkOutYmd < input.todayYmd ? 'past' : 'upcoming';
 }
 
-/** Short pill label for list rows (account Trips tab). */
+/**
+ * Short pill label for list rows (account Trips tab).
+ *
+ * Shares the guest vocabulary with the emails and the chat card, so the trip page, the
+ * account list and every email say the same word for the same status.
+ */
 export function guestTripStatusLabel(status: string): string {
-  const s = status.trim();
-  if (s === 'CANCELLED') return 'Cancelled';
-  if (s === 'PENDING_REVIEW') return 'Requested';
-  if (CONFIRMED_STATUSES.has(s)) return 'Confirmed';
-  if (s === 'READY_FOR_CHECKIN') return 'Ready';
-  if (s === 'READY_FOR_CHECKOUT') return 'Checked out';
-  if (s === 'PENDING_SD_REFUND') return 'Refund in progress';
-  if (s === 'COMPLETED') return 'Completed';
-  return 'Booked';
+  return guestJourneyStatusWord(status);
 }
 
 export function guestTripStatusTone(status: string): GuestTripTone {

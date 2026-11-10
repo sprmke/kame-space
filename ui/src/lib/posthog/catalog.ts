@@ -78,6 +78,8 @@ export const APP_ANALYTICS_EVENTS = [
   'review_draft_ai_used',
   'trip_hub_opened',
   'trip_hub_section_opened',
+  'guest_trip_viewed',
+  'guest_next_action_clicked',
   'meta_inbox_connected',
   'meta_inbox_disconnected',
   'marketing_caption_generated',

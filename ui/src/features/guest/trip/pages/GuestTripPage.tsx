@@ -293,7 +293,8 @@ function GuestTripContent({
     if (reportedTripRef.current === trip.bookingId) return;
     reportedTripRef.current = trip.bookingId;
     captureAppEvent('trip_hub_opened', { trip_stage: tripHubStage(timing) });
-  }, [timing, trip.bookingId]);
+    captureAppEvent('guest_trip_viewed', { phase, source: 'trip_page' });
+  }, [phase, timing, trip.bookingId]);
 
   const address = property?.address?.trim() || property?.location || '';
   const placeLabel = [property?.city, property?.state].filter(Boolean).join(', ') || address;
