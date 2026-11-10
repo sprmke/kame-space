@@ -1,7 +1,7 @@
 ---
 title: 'Guest Inbox: complete, real-time Facebook and Instagram sync'
 status: planned
-stage: planned
+stage: in-progress
 kind: plan
 tags:
   [
@@ -651,19 +651,20 @@ Choices made while executing. Each one is reversible except where noted.
 
 ## Edge cases
 
-| Case                                                         | Handling                                                                                                                                                      |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Meta delivers the same event twice                           | Message insert is unique on `external_message_id`; the second delivery inserts nothing and fires no side effect (E5).                                         |
-| Meta delivers events out of order                            | `inbox_bump_conversation` moves `last_message_at`, `subject_preview` and `reply_status` forward only, so an older event cannot rewind a thread.               |
-| A guest message arrives with no `entry.id` match             | No connection resolves, the event is recorded as skipped, and nothing is written. No orphan thread is created.                                                |
-| The Page access token is invalid (code 190)                  | The send surfaces "Reconnect Facebook", and the connection row is set to `status = 'error'` so the Channels card shows it (1.9).                              |
-| Business AI owns the chat (code 10, subcode 2018300)         | The send explains that the host must take over in Business Suite, and it is not reported as a missing permission (F24).                                       |
-| A guest reads the host's message                             | `read_at` moves on the outbound rows and `guest_last_read_at` moves on the conversation. The host's unread badge is untouched (F15).                          |
-| The host opens a Meta thread                                 | Edit and Unsend are hidden in the UI and rejected by the server, because Meta has no API for either (F21).                                                    |
-| An Instagram Business Suite reply arrives                    | Direction is resolved against the account's own ids (`meta_page_id`, `meta_ig_user_id`, `external_account_id`), so it is outbound, not a guest message (F12). |
-| The Graph `paging.next` host is not Meta                     | The cursor is only read from a `graph.facebook.com` URL; anything else is dropped rather than fetched.                                                        |
-| The client posts a `nextUrl`                                 | The server ignores it. The cursor lives on the connection row, so a stale PWA bundle cannot steer the server (F25).                                           |
-| The org has a property-scoped Page as well as an org default | The scoped helper resolves the org default, so the backfill no longer crashes on a multi-row `maybeSingle` (F16).                                             |
+| Case                                                         | Handling                                                                                                                                                                  |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Meta delivers the same event twice                           | Message insert is unique on `external_message_id`; the second delivery inserts nothing and fires no side effect (E5).                                                     |
+| The process dies between storing the message and notifying   | The message is kept but the notification is lost, because side effects run only for a newly stored message. Phase 2's outbox carries a status column and closes this gap. |
+| Meta delivers events out of order                            | `inbox_bump_conversation` moves `last_message_at`, `subject_preview` and `reply_status` forward only, so an older event cannot rewind a thread.                           |
+| A guest message arrives with no `entry.id` match             | No connection resolves, the event is recorded as skipped, and nothing is written. No orphan thread is created.                                                            |
+| The Page access token is invalid (code 190)                  | The send surfaces "Reconnect Facebook", and the connection row is set to `status = 'error'` so the Channels card shows it (1.9).                                          |
+| Business AI owns the chat (code 10, subcode 2018300)         | The send explains that the host must take over in Business Suite, and it is not reported as a missing permission (F24).                                                   |
+| A guest reads the host's message                             | `read_at` moves on the outbound rows and `guest_last_read_at` moves on the conversation. The host's unread badge is untouched (F15).                                      |
+| The host opens a Meta thread                                 | Edit and Unsend are hidden in the UI and rejected by the server, because Meta has no API for either (F21).                                                                |
+| An Instagram Business Suite reply arrives                    | Direction is resolved against the account's own ids (`meta_page_id`, `meta_ig_user_id`, `external_account_id`), so it is outbound, not a guest message (F12).             |
+| The Graph `paging.next` host is not Meta                     | The cursor is only read from a `graph.facebook.com` URL; anything else is dropped rather than fetched.                                                                    |
+| The client posts a `nextUrl`                                 | The server ignores it. The cursor lives on the connection row, so a stale PWA bundle cannot steer the server (F25).                                                       |
+| The org has a property-scoped Page as well as an org default | The scoped helper resolves the org default, so the backfill no longer crashes on a multi-row `maybeSingle` (F16).                                                         |
 
 ## Relationship to existing work
 

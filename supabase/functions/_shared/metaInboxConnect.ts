@@ -47,6 +47,7 @@ async function resetBackfillForFacebookRow(facebookConnectionId: string): Promis
     .update({
       meta_backfill_done: false,
       meta_backfill_phase: 'messenger',
+      meta_backfill_cursor: null,
       meta_backfill_next_url: null,
       last_sync_at: null,
       updated_at: now,

@@ -11,24 +11,37 @@ import {
 } from './metaInboxGraph.ts';
 import { metaMessagingWindowExpiry } from './metaTimestamp.ts';
 import { socialInboxDb } from './socialInboxDb.ts';
-import { buildDmThreadId, clearMetaBackfillState, getFacebookConnectionForOrg, getMetaBackfillState, insertMessageIfNew, markMetaBackfillFullyComplete, markMetaInitialSyncComplete, migrateLegacyDmThreadId, metaBackfillHasMore, setMetaBackfillState, upsertConversation } from './socialInboxService.ts';
+import {
+  buildDmThreadId,
+  clearMetaBackfillState,
+  getFacebookConnectionForOrg,
+  getMetaBackfillState,
+  insertMessageIfNew,
+  markMetaBackfillFullyComplete,
+  markMetaInitialSyncComplete,
+  metaSelfAccountIds,
+  migrateLegacyDmThreadId,
+  metaBackfillHasMore,
+  setMetaBackfillState,
+  updateConversationAfterMessage,
+  upsertConversation,
+} from './socialInboxService.ts';
 import type {
   ConversationType,
-  ReplyStatus,
   SocialChannelConnectionRow,
   SocialPlatform,
 } from './socialInboxTypes.ts';
 
 type MetaBackfillMessage = {
-  from?: { id: string };
+  from?: { id?: string };
   created_time?: string;
 };
 
-/** Pending when the latest message is from the guest; replied when the page spoke last. */
+/** Pending when the latest message is from the guest; replied when the account spoke last. */
 export function deriveReplyStatusFromMetaMessages(
   messages: MetaBackfillMessage[],
-  pageId: string
-): ReplyStatus {
+  selfIds: Set<string>
+): 'pending' | 'replied' | 'none' {
   if (messages.length === 0) return 'none';
 
   let latest = messages[0];
@@ -39,30 +52,20 @@ export function deriveReplyStatusFromMetaMessages(
     }
   }
 
-  return latest?.from?.id === pageId ? 'replied' : 'pending';
+  return latest?.from?.id && selfIds.has(latest.from.id) ? 'replied' : 'pending';
 }
 
 export function latestInboundMessageAt(
   messages: MetaBackfillMessage[],
-  pageId: string
+  selfIds: Set<string>
 ): string | null {
   let latest: string | null = null;
   for (const msg of messages) {
-    if (msg.from?.id === pageId || !msg.created_time) continue;
+    if (!msg.created_time) continue;
+    if (msg.from?.id && selfIds.has(msg.from.id)) continue;
     if (!latest || msg.created_time > latest) latest = msg.created_time;
   }
   return latest;
-}
-
-function selfAccountIds(connection: SocialChannelConnectionRow, pageId: string): Set<string> {
-  return new Set(
-    [
-      pageId,
-      connection.meta_page_id,
-      connection.meta_ig_user_id,
-      connection.external_account_id,
-    ].filter((id): id is string => Boolean(id?.trim()))
-  );
 }
 
 function participantFromConversation(
@@ -93,7 +96,10 @@ export async function syncMetaConversationToDb(opts: {
   const { orgId, connection, platform, conv, pageId } = opts;
   const conversationType = opts.conversationType ?? 'dm';
   const metadataOnly = opts.metadataOnly === true;
-  const participant = participantFromConversation(conv, selfAccountIds(connection, pageId));
+  // Instagram messages carry the Instagram business account id, not the Facebook Page id.
+  // Comparing against the Page id alone filed imported host replies as guest messages.
+  const selfIds = metaSelfAccountIds(connection, pageId);
+  const participant = participantFromConversation(conv, selfIds);
   const messages = conv.messages?.data ?? [];
   const latest = messages.reduce<(typeof messages)[number] | undefined>((acc, msg) => {
     if (!msg.created_time) return acc ?? msg;
@@ -102,8 +108,8 @@ export async function syncMetaConversationToDb(opts: {
   }, messages[0]);
   const preview = latest?.message?.trim() || '(attachment)';
   const lastAt = latest?.created_time ?? conv.updated_time ?? new Date().toISOString();
-  const lastInboundAt = latestInboundMessageAt(messages, pageId);
-  const replyStatus = deriveReplyStatusFromMetaMessages(messages, pageId);
+  const lastInboundAt = latestInboundMessageAt(messages, selfIds);
+  const latestIsOutbound = Boolean(latest?.from?.id && selfIds.has(latest.from.id));
 
   const externalThreadId =
     conversationType === 'dm' ? buildDmThreadId(platform, participant.id) : conv.id;
@@ -112,26 +118,26 @@ export async function syncMetaConversationToDb(opts: {
     await migrateLegacyDmThreadId(orgId, platform, participant.id, externalThreadId, conv.id);
   }
 
-  const row = await upsertConversation({
-    organization_id: orgId,
-    connection_id: connection.id,
-    platform,
-    external_thread_id: externalThreadId,
-    conversation_type: conversationType,
-    external_participant_id: participant.id,
-    participant_name: participant.name,
-    subject_preview: preview.slice(0, 500),
-    last_message_at: lastAt,
-    last_inbound_at: lastInboundAt,
-    unread_count: 0,
-    reply_status: replyStatus,
-    messaging_window_expires_at: lastInboundAt ? metaMessagingWindowExpiry(lastInboundAt) : null,
-  });
+  const row = await upsertConversation(
+    {
+      organization_id: orgId,
+      connection_id: connection.id,
+      platform,
+      external_thread_id: externalThreadId,
+      conversation_type: conversationType,
+      external_participant_id: participant.id,
+      participant_name: participant.name,
+    },
+    // The summary is owned by `inbox_bump_conversation`. The timestamp is written on create
+    // so a freshly imported old thread is not dated "now", and never on update, so a late
+    // event cannot rewind the thread.
+    { insertOnly: { last_message_at: lastAt } }
+  );
 
   const messagesToStore = metadataOnly ? (latest ? [latest] : []) : [...messages].reverse();
 
   for (const msg of messagesToStore) {
-    const isOutbound = msg.from?.id === pageId;
+    const isOutbound = Boolean(msg.from?.id && selfIds.has(msg.from.id));
     try {
       await insertMessageIfNew({
         organization_id: orgId,
@@ -148,6 +154,16 @@ export async function syncMetaConversationToDb(opts: {
     } catch (e) {
       console.warn('[syncMetaConversationToDb] skip message:', (e as Error).message);
     }
+  }
+
+  if (messages.length) {
+    await updateConversationAfterMessage(row.id, {
+      direction: latestIsOutbound ? 'outbound' : 'inbound',
+      subject_preview: preview.slice(0, 500),
+      last_message_at: lastAt,
+      last_inbound_at: lastInboundAt,
+      messaging_window_expires_at: lastInboundAt ? metaMessagingWindowExpiry(lastInboundAt) : null,
+    });
   }
 
   return row.id;
@@ -171,7 +187,7 @@ async function instagramConnectionForPage(
 }
 
 function syncAbortedResult(): MetaBackfillChunkResult {
-  return { done: true, phase: 'complete', nextUrl: null, syncedInChunk: 0, metaHasMore: false };
+  return { done: true, phase: 'complete', syncedInChunk: 0, metaHasMore: false };
 }
 
 async function syncConversationSafe(opts: {
@@ -195,20 +211,20 @@ export type MetaBackfillChunkPhase = 'messenger' | 'instagram';
 
 export type MetaBackfillChunkState = {
   phase: MetaBackfillChunkPhase;
-  nextUrl: string | null;
+  /** Omit to continue from the cursor stored on the connection row. */
+  nextCursor?: string | null;
 };
 
 export type MetaBackfillChunkResult = {
   done: boolean;
   phase: MetaBackfillChunkPhase | 'complete';
-  nextUrl: string | null;
   syncedInChunk: number;
   metaHasMore: boolean;
 };
 
 async function persistBackfillProgress(
   orgId: string,
-  state: { phase: 'messenger' | 'instagram' | null; nextUrl: string | null }
+  state: { phase: 'messenger' | 'instagram' | null; nextCursor: string | null }
 ): Promise<void> {
   if (state.phase) {
     await setMetaBackfillState(orgId, state);
@@ -251,7 +267,7 @@ export async function backfillOrgMetaInboxChunk(
 
   const stored = await getMetaBackfillState(orgId);
   const phase = state?.phase ?? stored.phase;
-  const nextUrl = state?.nextUrl !== undefined ? state.nextUrl : stored.nextUrl;
+  const nextCursor = state?.nextCursor !== undefined ? state.nextCursor : stored.nextCursor;
   const pageId = connection.meta_page_id ?? connection.external_account_id;
   const token = await getPageAccessToken(connection);
   let syncedInChunk = 0;
@@ -259,10 +275,10 @@ export async function backfillOrgMetaInboxChunk(
   const graphOpts = { light: opts?.light === true };
   const metadataOnly = opts?.light === true;
 
-  if (phase === 'messenger' && !nextUrl) {
+  if (phase === 'messenger' && !nextCursor) {
     await clearMetaSyncError(orgId);
     if (!connection.meta_backfill_phase) {
-      await setMetaBackfillState(orgId, { phase: 'messenger', nextUrl: null });
+      await setMetaBackfillState(orgId, { phase: 'messenger', nextCursor: null });
     }
   }
 
@@ -270,18 +286,12 @@ export async function backfillOrgMetaInboxChunk(
     if (phase === 'instagram') {
       const igConnection = await instagramConnectionForPage(orgId, pageId);
       if (!igConnection) {
-        await persistBackfillProgress(orgId, { phase: null, nextUrl: null });
+        await persistBackfillProgress(orgId, { phase: null, nextCursor: null });
         await markMetaBackfillFullyComplete(orgId, null);
-        return {
-          done: true,
-          phase: 'complete',
-          nextUrl: null,
-          syncedInChunk: 0,
-          metaHasMore: false,
-        };
+        return { done: true, phase: 'complete', syncedInChunk: 0, metaHasMore: false };
       }
 
-      const page = await fetchMetaConversationsPage(pageId, token, 'instagram', nextUrl, graphOpts);
+      const page = await fetchMetaConversationsPage(pageId, token, 'instagram', nextCursor, graphOpts);
       const freshIg = await instagramConnectionForPage(orgId, pageId);
       if (!freshIg) return syncAbortedResult();
 
@@ -300,24 +310,23 @@ export async function backfillOrgMetaInboxChunk(
         }
       }
 
-      if (page.nextUrl) {
-        await persistBackfillProgress(orgId, { phase: 'instagram', nextUrl: page.nextUrl });
+      if (page.nextCursor) {
+        await persistBackfillProgress(orgId, { phase: 'instagram', nextCursor: page.nextCursor });
         if (!hadInitialSync) await markMetaInitialSyncComplete(orgId);
         return {
           done: false,
           phase: 'instagram',
-          nextUrl: page.nextUrl,
           syncedInChunk,
           metaHasMore: true,
         };
       }
 
-      await persistBackfillProgress(orgId, { phase: null, nextUrl: null });
+      await persistBackfillProgress(orgId, { phase: null, nextCursor: null });
       await markMetaBackfillFullyComplete(orgId, freshIg);
-      return { done: true, phase: 'complete', nextUrl: null, syncedInChunk, metaHasMore: false };
+      return { done: true, phase: 'complete', syncedInChunk, metaHasMore: false };
     }
 
-    const page = await fetchMetaConversationsPage(pageId, token, 'messenger', nextUrl, graphOpts);
+    const page = await fetchMetaConversationsPage(pageId, token, 'messenger', nextCursor, graphOpts);
     const freshFacebook = await getFacebookConnectionForOrg(orgId);
     if (!freshFacebook) return syncAbortedResult();
 
@@ -336,13 +345,12 @@ export async function backfillOrgMetaInboxChunk(
       }
     }
 
-    if (page.nextUrl) {
-      await persistBackfillProgress(orgId, { phase: 'messenger', nextUrl: page.nextUrl });
+    if (page.nextCursor) {
+      await persistBackfillProgress(orgId, { phase: 'messenger', nextCursor: page.nextCursor });
       if (!hadInitialSync) await markMetaInitialSyncComplete(orgId);
       return {
         done: false,
         phase: 'messenger',
-        nextUrl: page.nextUrl,
         syncedInChunk,
         metaHasMore: true,
       };
@@ -350,20 +358,19 @@ export async function backfillOrgMetaInboxChunk(
 
     const igConnection = await instagramConnectionForPage(orgId, pageId);
     if (igConnection) {
-      await persistBackfillProgress(orgId, { phase: 'instagram', nextUrl: null });
+      await persistBackfillProgress(orgId, { phase: 'instagram', nextCursor: null });
       if (!hadInitialSync) await markMetaInitialSyncComplete(orgId);
       return {
         done: false,
         phase: 'instagram',
-        nextUrl: null,
         syncedInChunk,
         metaHasMore: true,
       };
     }
 
-    await persistBackfillProgress(orgId, { phase: null, nextUrl: null });
+    await persistBackfillProgress(orgId, { phase: null, nextCursor: null });
     await markMetaBackfillFullyComplete(orgId, null);
-    return { done: true, phase: 'complete', nextUrl: null, syncedInChunk, metaHasMore: false };
+    return { done: true, phase: 'complete', syncedInChunk, metaHasMore: false };
   } catch (e) {
     const msg = (e as Error).message ?? '';
     if (msg.includes('social_conversations_connection_id_fkey')) {
@@ -380,7 +387,6 @@ export async function backfillOrgMetaInboxChunk(
     return {
       done: false,
       phase,
-      nextUrl,
       syncedInChunk,
       metaHasMore: metaBackfillHasMore(fresh),
     };
@@ -393,7 +399,7 @@ export async function finalizeMetaInboxSync(orgId: string): Promise<void> {
   const pageId = connection?.meta_page_id ?? connection?.external_account_id ?? null;
   const igConnection = pageId ? await instagramConnectionForPage(orgId, pageId) : null;
   await clearMetaSyncError(orgId);
-  await persistBackfillProgress(orgId, { phase: null, nextUrl: null });
+  await persistBackfillProgress(orgId, { phase: null, nextCursor: null });
   await markMetaBackfillFullyComplete(orgId, igConnection);
 }
 
@@ -403,7 +409,7 @@ export async function backfillOrgMetaInbox(
   opts?: { maxPages?: number }
 ): Promise<void> {
   try {
-    let state: MetaBackfillChunkState = { phase: 'messenger', nextUrl: null };
+    let state: MetaBackfillChunkState = { phase: 'messenger', nextCursor: null };
     let pagesFetched = 0;
     const maxPages = opts?.maxPages ?? Number.POSITIVE_INFINITY;
 
@@ -411,7 +417,7 @@ export async function backfillOrgMetaInbox(
       const result = await backfillOrgMetaInboxChunk(orgId, state);
       pagesFetched += 1;
       if (result.done) return;
-      state = { phase: result.phase as MetaBackfillChunkPhase, nextUrl: result.nextUrl };
+      state = { phase: result.phase as MetaBackfillChunkPhase, nextCursor: null };
     }
 
     await finalizeMetaInboxSync(orgId);

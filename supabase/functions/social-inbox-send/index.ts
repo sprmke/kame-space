@@ -7,12 +7,14 @@ import {
   isWithinMessagingWindowFromInbound,
 } from '../_shared/socialInboxAiService.ts';
 import { friendlyMetaSendError } from '../_shared/metaInboxSendErrors.ts';
+import { isInvalidMetaTokenError } from '../_shared/metaInboxGraphError.ts';
 import { getPageAccessToken, sendMetaMessage } from '../_shared/metaInboxGraph.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
 import {
   conversationAllowedInScope,
   getConversationById,
   insertMessageIfNew,
+  markMetaConnectionTokenInvalid,
   updateConversationAfterMessage,
 } from '../_shared/socialInboxService.ts';
 import { resolveMetaReplyTarget, resolveReplyTarget } from '../_shared/chatMessageLifecycle.ts';
@@ -178,9 +180,9 @@ serveAuthenticated(
         ...replyFields,
       });
       await updateConversationAfterMessage(conv.id, {
+        direction: 'outbound',
         subject_preview: preview,
         last_message_at: now,
-        reply_status: 'replied',
         unread_delta: 0,
         guest_unread_delta: 1,
         aiHandoff: { clear_ai_handoff: true },
@@ -277,13 +279,18 @@ serveAuthenticated(
         return jsonError(req, 'This conversation type is no longer supported', 400);
       }
     } catch (e) {
-      return jsonError(req, friendlyMetaSendError((e as Error).message), 502);
+      // An invalid Page token is a connection problem, not a send problem. Flag the
+      // connection so the Channels card shows it instead of the host retrying forever.
+      if (isInvalidMetaTokenError(e)) {
+        await markMetaConnectionTokenInvalid(connection);
+      }
+      return jsonError(req, friendlyMetaSendError(e), 502);
     }
 
     await updateConversationAfterMessage(conv.id, {
+      direction: 'outbound',
       subject_preview: (template ? template.source.name : text).slice(0, 500),
       last_message_at: now,
-      reply_status: 'replied',
       unread_delta: 0,
       aiHandoff: { clear_ai_handoff: true },
     });

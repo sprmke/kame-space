@@ -1,16 +1,22 @@
 /**
  * Meta inbox conversation backfill — one Graph page per request.
+ *
+ * The request never carries a Graph URL and the response never returns one. A Graph paging
+ * URL carries the Page access token, so the server keeps the opaque cursor on the
+ * connection row and builds every URL itself.
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { jsonError, jsonSuccess, readJsonBody } from '../_shared/httpResponse.ts';
 import { resolveInboxAccess } from '../_shared/inboxAccess.ts';
-import { createServiceClient, verifyAuthenticatedUser } from '../_shared/orgAuth.ts';
+import { verifyAuthenticatedUser } from '../_shared/orgAuth.ts';
 import { resolveSupabaseServiceRoleKey } from '../_shared/supabaseRuntimeEnv.ts';
 import type { SocialChannelConnectionRow } from '../_shared/socialInboxTypes.ts';
 import { isFeatureAvailable } from '../_shared/featureAvailability.ts';
 import { captureSentryException } from '../_shared/sentry.ts';
+import { identityFromRequest, rateLimitGate } from '../_shared/rateLimit.ts';
+import { getOrgDefaultFacebookConnection } from '../_shared/metaInboxScope.ts';
 
 function isServiceRoleRequest(req: Request): boolean {
   const auth = req.headers.get('Authorization') ?? '';
@@ -19,17 +25,16 @@ function isServiceRoleRequest(req: Request): boolean {
   return !!key && token === key;
 }
 
-async function facebookConnectionForOrg(orgId: string): Promise<SocialChannelConnectionRow | null> {
-  const sb = createServiceClient();
-  const { data, error } = await sb
-    .from('social_channel_connections')
-    .select('*')
-    .eq('organization_id', orgId)
-    .eq('platform', 'facebook')
-    .eq('status', 'connected')
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  return (data as SocialChannelConnectionRow | null) ?? null;
+/**
+ * The org-default Facebook connection for this org.
+ *
+ * The old lookup filtered on org and platform only, so it matched a property or parking
+ * override row too, and `maybeSingle` errored as soon as an org had one.
+ */
+async function facebookConnectionForOrg(
+  orgId: string
+): Promise<SocialChannelConnectionRow | null> {
+  return getOrgDefaultFacebookConnection(orgId);
 }
 
 serve(async (req) => {
@@ -42,7 +47,6 @@ serve(async (req) => {
 
   let orgId: string;
   let phase: 'messenger' | 'instagram' = 'messenger';
-  let nextUrl: string | null = null;
   let finalize = false;
   let light = false;
 
@@ -65,10 +69,20 @@ serve(async (req) => {
     if (rawPhase === 'instagram' || rawPhase === 'messenger') {
       phase = rawPhase;
     }
-    const rawNext = body.nextUrl;
-    nextUrl = typeof rawNext === 'string' && rawNext.trim() ? rawNext.trim() : null;
   } catch {
     return jsonError(req, 'Unauthorized', 401);
+  }
+
+  // The light path pages the whole Page history one conversation at a time. A member with
+  // `inbox:view` could use it to walk the account, so it gets its own budget.
+  if (light) {
+    const limited = await rateLimitGate(req, {
+      scope: 'meta-inbox-backfill-light',
+      identity: identityFromRequest(req),
+      limit: 30,
+      windowSec: 60,
+    });
+    if (limited) return limited;
   }
 
   const facebook = await facebookConnectionForOrg(orgId);
@@ -80,7 +94,6 @@ serve(async (req) => {
     return jsonSuccess(req, {
       done: true,
       phase: 'complete',
-      nextUrl: null,
       syncedInChunk: 0,
       metaHasMore: false,
       metaSyncPaused: true,
@@ -95,19 +108,11 @@ serve(async (req) => {
       return jsonSuccess(req, {
         done: true,
         phase: 'complete',
-        nextUrl: null,
         syncedInChunk: 0,
         metaHasMore: false,
       });
     }
-    const result = await backfillOrgMetaInboxChunk(
-      orgId,
-      {
-        phase,
-        nextUrl,
-      },
-      { light }
-    );
+    const result = await backfillOrgMetaInboxChunk(orgId, { phase }, { light });
     return jsonSuccess(req, result);
   } catch (e) {
     console.error('[meta-inbox-backfill]', e);

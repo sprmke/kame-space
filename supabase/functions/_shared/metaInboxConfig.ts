@@ -2,7 +2,12 @@
 
 import { publicApiBaseUrl } from './publicApiBaseUrl.ts';
 
-export const META_GRAPH_VERSION = 'v21.0';
+/**
+ * Graph API version. Meta's version table lists v21.0 expiring on 2027-01-21, and v26.0
+ * (released 2026-07-29) as current. Bump here only, and build every URL from this
+ * constant so the OAuth dialog cannot drift away from the API calls again.
+ */
+export const META_GRAPH_VERSION = 'v26.0';
 
 export const META_GRAPH_BASE = `https://graph.facebook.com/${META_GRAPH_VERSION}`;
 

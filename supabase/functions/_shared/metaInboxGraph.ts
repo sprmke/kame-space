@@ -7,6 +7,7 @@ import type { FeatureAvailabilityKey } from './featureAvailabilityCatalog.ts';
 import { encryptMetaInboxToken } from './metaInboxCrypto.ts';
 import {
   META_GRAPH_BASE,
+  META_GRAPH_VERSION,
   getMetaOAuthScopes,
   META_WEBHOOK_SUBSCRIBED_FIELDS,
   getMetaAppCredentials,
@@ -19,8 +20,15 @@ import {
   parseMetaGraphJson,
   subscribeMetaPageWebhooks,
 } from './metaInboxGraphHttp.ts';
+import {
+  isMetaRateLimitError,
+  metaGraphErrorFromResponse,
+  MetaGraphError,
+} from './metaInboxGraphError.ts';
+import { buildMetaConversationsUrl, extractMetaPagingCursor } from './metaInboxGraphPaging.ts';
 
 export { getPageAccessToken, parseMetaGraphJson, subscribeMetaPageWebhooks };
+export { buildMetaConversationsUrl, extractMetaPagingCursor };
 
 export type MetaPageAccount = {
   id: string;
@@ -379,6 +387,13 @@ function shouldRetryMetaPostStatus(status: number): boolean {
   return status === 429 || status >= 500;
 }
 
+/**
+ * Send to Graph and return the parsed body.
+ *
+ * A 5xx is not retried any more: Meta may already have accepted the message, so a retry can
+ * double-send. Only a network failure before a response, and an explicit rate limit, are
+ * safe to repeat.
+ */
 async function postMetaJsonWithRetry(
   url: URL,
   body: Record<string, unknown>,
@@ -404,60 +419,40 @@ async function postMetaJsonWithRetry(
     const json = (await res.json()) as Record<string, unknown>;
     if (res.ok) return json;
 
-    const message =
-      (json.error as { message?: string } | undefined)?.message ??
-      `${errorFallback} (${res.status})`;
-    if (!shouldRetryMetaPostStatus(res.status)) {
-      throw new Error(message);
+    const graphError = metaGraphErrorFromResponse(json, res.status, `${errorFallback} (${res.status})`);
+    if (!shouldRetryMetaPostStatus(res.status) && !isMetaRateLimitError(graphError)) {
+      throw graphError;
     }
-    lastError = new Error(message);
+    lastError = graphError;
 
     if (attempt < 2) {
       await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
     }
   }
 
-  throw lastError ?? new Error(errorFallback);
-}
-
-const META_MESSAGE_FIELDS =
-  'id,message,created_time,from,attachments{type,mime_type,name,image_data,video_data,file_url,payload}';
-
-export function buildMetaConversationsUrl(
-  pageId: string,
-  pageAccessToken: string,
-  platform: 'messenger' | 'instagram',
-  opts?: { light?: boolean }
-): string {
-  const url = new URL(`${META_GRAPH_BASE}/${pageId}/conversations`);
-  url.searchParams.set('platform', platform);
-  const msgLimit = opts?.light ? 3 : 10;
-  const fields = `id,updated_time,participants{id,name,username},messages.limit(${msgLimit}){${META_MESSAGE_FIELDS}}`;
-  url.searchParams.set('fields', fields);
-  url.searchParams.set('limit', opts?.light ? '25' : '50');
-  url.searchParams.set('access_token', pageAccessToken);
-  return url.toString();
+  throw lastError ?? new MetaGraphError(errorFallback);
 }
 
 export async function fetchMetaConversationsPage(
   pageId: string,
   pageAccessToken: string,
   platform: 'messenger' | 'instagram',
-  nextUrl?: string | null,
+  after?: string | null,
   opts?: { light?: boolean }
-): Promise<{ conversations: MetaConversationItem[]; nextUrl: string | null }> {
-  const url = nextUrl ?? buildMetaConversationsUrl(pageId, pageAccessToken, platform, opts);
+): Promise<{ conversations: MetaConversationItem[]; nextCursor: string | null }> {
+  const url = buildMetaConversationsUrl(pageId, pageAccessToken, platform, {
+    ...opts,
+    after: after ?? null,
+  });
   const res = await fetch(url);
   const json = await parseMetaGraphJson(res);
   if (!res.ok) {
-    const msg =
-      (json.error as { message?: string } | undefined)?.message ?? `Meta API error (${res.status})`;
-    throw new Error(msg);
+    throw metaGraphErrorFromResponse(json, res.status, `Meta API error (${res.status})`);
   }
   const paging = json.paging as { next?: string } | undefined;
   return {
     conversations: (json.data ?? []) as MetaConversationItem[],
-    nextUrl: paging?.next ?? null,
+    nextCursor: extractMetaPagingCursor(paging?.next),
   };
 }
 
@@ -470,14 +465,14 @@ export async function backfillMetaConversations(
   const all: MetaConversationItem[] = [];
   const maxPages = opts?.maxPages ?? Number.POSITIVE_INFINITY;
   let pagesFetched = 0;
-  let nextUrl: string | null = null;
+  let cursor: string | null = null;
 
   do {
-    const page = await fetchMetaConversationsPage(pageId, pageAccessToken, platform, nextUrl);
+    const page = await fetchMetaConversationsPage(pageId, pageAccessToken, platform, cursor);
     all.push(...page.conversations);
     pagesFetched += 1;
-    nextUrl = pagesFetched < maxPages ? page.nextUrl : null;
-  } while (nextUrl);
+    cursor = pagesFetched < maxPages ? page.nextCursor : null;
+  } while (cursor);
 
   return all;
 }
@@ -505,7 +500,7 @@ export async function verifyMetaWebhookSignatureAsync(
 export function buildMetaOAuthUrl(state: string): string {
   const { appId } = getMetaAppCredentials();
   const redirectUri = metaInboxOAuthRedirectUri();
-  const url = new URL(`https://www.facebook.com/v21.0/dialog/oauth`);
+  const url = new URL(`https://www.facebook.com/${META_GRAPH_VERSION}/dialog/oauth`);
   url.searchParams.set('client_id', appId);
   url.searchParams.set('redirect_uri', redirectUri);
   url.searchParams.set('state', state);
