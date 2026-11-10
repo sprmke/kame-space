@@ -133,6 +133,18 @@ export function IdentityVerificationFlow({
     onComplete(result);
   }, [completed, mode, onComplete, polling.data]);
 
+  /**
+   * Desktop recovery path: the inline camera or the face check failed, so mint a handoff
+   * session and let the phone do it. Mirrors the same flow the "Verify on your phone"
+   * button starts; the abandoned session is cancelled best-effort.
+   */
+  const switchToHandoff = useCallback(async () => {
+    const previous = session;
+    setSession(null);
+    await start('handoff');
+    if (previous) void cancelIdentitySession(previous.sessionId).catch(() => {});
+  }, [session, start]);
+
   const cancel = useCallback(() => {
     if (session) void cancelIdentitySession(session.sessionId).catch(() => {});
     onCancel?.();
@@ -156,6 +168,7 @@ export function IdentityVerificationFlow({
           onComplete={setCompleted}
           onCancel={cancel}
           onDocumentCaptured={onDocumentCaptured}
+          onUsePhone={finePointer ? switchToHandoff : undefined}
           className={className}
         />
       </Suspense>

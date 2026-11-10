@@ -90,6 +90,11 @@ poll identity-session-get ────▶ status                          scan �
 ◀── status completed + verdict
 ```
 
+**The handoff is reachable from failure, not only from the start.** On a fine pointer the flow
+opens on _Verify on your phone_ / _Use this device_. If the device route then fails (no camera,
+MediaPipe blocked), the capture and liveness steps both offer **Use my phone instead**, which
+cancels the inline session best-effort and mints a handoff session in place.
+
 **Polling is the contract.** Realtime `postgres_changes` honours RLS and these tables have no
 anon read policy, so a subscription would silently never fire in production. The desktop polls
 every 2s, backing off to 5s after 30s.

@@ -79,6 +79,22 @@ export async function installGuestFormMocks(page: Page, options: GuestFormMockOp
       body: { success: true, data: { hasIdentity: false, verification: null } },
     },
     {
+      name: 'identity-session-create',
+      method: 'POST',
+      body: {
+        success: true,
+        data: {
+          sessionId: 'guest-identity-e2e',
+          token: 'guest-identity-token',
+          expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+          verifyUrl: 'http://127.0.0.1:4184/verify/guest-identity-token',
+          qrPayload: 'http://127.0.0.1:4184/verify/guest-identity-token',
+          subjectKind: 'guest',
+          guestSlot: 1,
+        },
+      },
+    },
+    {
       name: 'submit-form',
       method: 'POST',
       body: { success: true, bookingId: 'guest-form-e2e-booking-001' },

@@ -206,6 +206,7 @@ action with a fallback.
   `identity-verification-mine`, restricted to slot 1: additional guests are different people
   and are never given the booker's identity.
 - **Choose another way** returns from the uploader to the two options while nothing is chosen.
+- **Desktop recovery:** on a fine pointer the "Verify with camera" flow starts with _Verify on your phone_ (QR + copy link) and _Use this device_. If the host picks this device and the camera or the face check cannot run, both failure states offer **Use my phone instead**, which mints a handoff session there and then. Nobody has to close the form and start over.
 - A completed verification stores its id on `primaryIdentityVerificationId` /
   `guest2IdentityVerificationId` … `guest5IdentityVerificationId`.
 - At submit, `DatabaseService.processFormData` validates the verdict belongs to this booking's
