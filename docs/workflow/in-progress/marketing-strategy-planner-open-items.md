@@ -97,21 +97,35 @@ Tick a box when it is addressed. If an answer changes a shipped default, the pla
 
 ---
 
-## 5. Remaining deep work (no decision needed, just time)
+## 5. Remaining work (no decision needed, just time)
 
-- [ ] **Prepare my week batch (P2.4).** Per-item handoff shipped; the batch button that creates
-      drafts for a whole range, and the photo ranking behind it, are still open.
+- [ ] **Photo ranking (P2.3).** The design and video editors already seed the property gallery
+      through the design binding, so a separate ranking has no consumer yet. It belongs with a
+      photo picker in the item sheet.
 
-- [ ] **Nav badge.** The Marketing nav item has no badge slot in its shape yet; adding one touches
-      the sidebar and bottom-nav chrome on every page, so it waits for a nav pass.
+- [ ] **Nav badge (P3.7).** The Marketing nav item has no badge slot, and the badge needs a due
+      count. Putting that query in `AdminLayout` would fire an extra edge call on every admin page
+      for every host, so it should land with a shared nav-count provider instead.
 
-- [ ] **Carousel and Reels in the publish dialog.** Needs the P0.2 spike to confirm the endpoints.
+- [ ] **Autopilot (P6.1, P6.2, P6.3).** P6.2 is effectively shipped as **Prepare week** (the host
+      starts it). P6.1 needs a settings column (`auto_plan_mode`) and a weekly credit cap, so it
+      waits for the migration to apply against a running local database. P6.3 is the scope
+      decision in §2.
 
-- [ ] **Insight snapshots cron.** The mapper (`_shared/marketingInsights.ts`) is done and tested;
-      the cron that calls Meta waits on the insight scopes.
+- [ ] **Assistant write tools (P6.4).** The read tool `get_marketing_plan` shipped. A write tool
+      needs a new parity entry plus a risk-classifier tier, which changes the assistant's guard
+      contract; worth doing with the assistant owner in the loop.
 
-- [ ] **Learned posting windows.** Needs 12 published posts with insights per property, so it is
-      gated on real data, not code.
+- [ ] **Org portfolio (P6.5).** A new org-level endpoint and section ranking listings by open
+      nights times ADR. Nothing blocks it except the build itself.
+
+- [ ] **Carousel and Reels in the publish dialog (P3.3).** Needs the P0.2 spike.
+
+- [ ] **Insight snapshots cron (P5.3).** The mapper is done and tested; the cron waits on the
+      insight scopes.
+
+- [ ] **Learned windows are live, but dormant.** They need 12 published posts with insights per
+      property, which needs P5.3 first.
 
 ## 6. Known repo state, not caused by this branch
 
