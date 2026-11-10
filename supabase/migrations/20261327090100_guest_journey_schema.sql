@@ -44,16 +44,13 @@ ALTER TABLE public.guest_submissions
 COMMENT ON COLUMN public.guest_submissions.guest_essentials_override IS
   'Per-booking essential overrides, e.g. {"doorCode": "4821"} for a rotating lock. Merged over property_guest_essentials when the trip payload is built.';
 
--- Send-once email idempotency (request received on submit, pre-arrival reminder cron).
+-- Send-once record for the "Request received" guest email. Also answers "did the guest get
+-- their receipt?" for support. The pre-arrival reminder column lands with its cron.
 ALTER TABLE public.guest_submissions
   ADD COLUMN IF NOT EXISTS request_received_emailed_at TIMESTAMPTZ;
-ALTER TABLE public.guest_submissions
-  ADD COLUMN IF NOT EXISTS pre_arrival_emailed_at TIMESTAMPTZ;
 
 COMMENT ON COLUMN public.guest_submissions.request_received_emailed_at IS
-  'When the "Request received" guest email was sent. Makes a retried submit idempotent.';
-COMMENT ON COLUMN public.guest_submissions.pre_arrival_emailed_at IS
-  'When the pre-arrival reminder email was sent. Idempotency key for the reminder cron.';
+  'When the "Request received" guest email was sent. Skips a duplicate send and answers support questions.';
 
 -- Guest-visible custom templates (plan D8).
 ALTER TABLE public.property_template_contents

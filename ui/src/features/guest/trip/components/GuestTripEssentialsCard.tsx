@@ -58,21 +58,21 @@ function SecretRow({
   /** Set while the value is withheld. */
   revealAt: string | null;
 }) {
-  if (!value) {
-    return (
-      <div className="flex min-h-[52px] items-center justify-between gap-3 py-2 text-sm">
-        <span className="text-muted-foreground">{label}</span>
-        {revealAt ? <HiddenUntil revealAt={revealAt} /> : <span className="text-muted-foreground">Ask your host</span>}
-      </div>
-    );
-  }
   return (
     <div className="flex min-h-[52px] items-center justify-between gap-3 py-2 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="flex min-w-0 items-center gap-1">
-        <span className="text-foreground truncate font-semibold tabular-nums">{value}</span>
-        <CopyButton value={value} label={label} />
-      </span>
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="flex min-w-0 items-center gap-1">
+        {value ? (
+          <>
+            <span className="text-foreground truncate font-semibold tabular-nums">{value}</span>
+            <CopyButton value={value} label={label} />
+          </>
+        ) : revealAt ? (
+          <HiddenUntil revealAt={revealAt} />
+        ) : (
+          <span className="text-muted-foreground">Ask your host</span>
+        )}
+      </dd>
     </div>
   );
 }
@@ -107,11 +107,13 @@ export function GuestTripEssentialsCard({ essentials }: { essentials: GuestTripE
           </div>
         ) : null}
 
-        <SecretRow
-          label="Door code"
-          value={essentials.doorCode}
-          revealAt={essentials.revealAt}
-        />
+        {essentials.hasDoorCode ? (
+          <SecretRow
+            label="Door code"
+            value={essentials.doorCode}
+            revealAt={essentials.revealAt}
+          />
+        ) : null}
 
         {essentials.unitFloor ? (
           <div className="flex min-h-[52px] items-center justify-between gap-3 py-2 text-sm">

@@ -499,6 +499,18 @@ serve(async (req) => {
             '[submit-form] Guest booking request receipt ok, Resend id:',
             (receiptResult as { id?: string })?.id ?? JSON.stringify(receiptResult)
           );
+          // Record the send so support can answer "did the guest get their receipt?"
+          // without reading Resend logs. Non-fatal.
+          const { error: stampError } = await createServiceClient()
+            .from('guest_submissions')
+            .update({ request_received_emailed_at: new Date().toISOString() })
+            .eq('id', String(submissionData.id));
+          if (stampError) {
+            console.error(
+              '[submit-form] receipt timestamp write failed (non-fatal):',
+              stampError.message
+            );
+          }
         } catch (receiptErr) {
           console.error('[submit-form] Guest booking request receipt failed (non-fatal):', receiptErr);
         }

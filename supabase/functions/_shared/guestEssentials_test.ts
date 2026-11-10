@@ -64,6 +64,8 @@ Deno.test('buildGuestEssentialsDto - hides the secrets before the reveal time', 
   assertEquals(dto?.wifiPassword, null);
   assertEquals(dto?.doorCode, null);
   assertEquals(dto?.revealAt, '2026-12-09T06:00:00.000Z');
+  // The page can still say "a code exists, it unlocks at ..." without the value.
+  assertEquals(dto?.hasDoorCode, true);
   // Non-secret fields stay visible so the guest can still plan.
   assertEquals(dto?.wifiName, 'Kame_2604');
   assertEquals(dto?.unitFloor, 'Monaco 2604 · 26th floor');
@@ -125,4 +127,14 @@ Deno.test('parseEssentialsOverride - ignores non-string and blank values', () =>
   assertEquals(parseEssentialsOverride(null), {});
   assertEquals(parseEssentialsOverride('nope'), {});
   assertEquals(parseEssentialsOverride([1, 2]), {});
+});
+
+Deno.test('buildGuestEssentialsDto - reports no door code when the property has none', () => {
+  const dto = buildGuestEssentialsDto({
+    row: { wifi_name: 'Kame_2604', reveal_lead_hours: 24 },
+    checkInDate: CHECK_IN_DATE,
+    checkInTime: CHECK_IN_TIME,
+    now: new Date('2026-12-01T00:00:00.000Z'),
+  });
+  assertEquals(dto?.hasDoorCode, false);
 });

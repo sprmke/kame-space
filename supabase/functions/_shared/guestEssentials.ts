@@ -20,6 +20,11 @@ export type GuestEssentialsDto = {
   doorCode: string | null;
   unitFloor: string | null;
   parkingSlotNote: string | null;
+  /**
+   * Whether a door code exists at all. The value itself stays hidden until the reveal, so
+   * without this the page cannot tell "no code for this property" apart from "not yet".
+   */
+  hasDoorCode: boolean;
   emergencyContactName: string | null;
   emergencyContactPhone: string | null;
   buildingSecurityPhone: string | null;
@@ -155,6 +160,7 @@ export function buildGuestEssentialsDto(input: {
     doorCode: revealed ? rawDoorCode : null,
     unitFloor,
     parkingSlotNote,
+    hasDoorCode: Boolean(rawDoorCode),
     emergencyContactName,
     emergencyContactPhone,
     buildingSecurityPhone,

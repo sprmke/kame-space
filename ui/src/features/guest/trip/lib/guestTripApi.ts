@@ -169,6 +169,8 @@ export type GuestTripEssentials = {
   doorCode: string | null;
   unitFloor: string | null;
   parkingSlotNote: string | null;
+  /** Whether a door code exists at all; its value stays hidden until `revealAt`. */
+  hasDoorCode: boolean;
   emergencyContactName: string | null;
   emergencyContactPhone: string | null;
   buildingSecurityPhone: string | null;
