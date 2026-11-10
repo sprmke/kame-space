@@ -25,7 +25,7 @@ Deep links:
 | This device | ⏳       | Documented | PWA OS-push opt-in + offline-changes queue  |
 | Activity    | ✓        | Documented | In-app bell feed (org-wide, paginated)      |
 | Chat        | ✓        | Documented | Inbound guest web chat Telegram alerts      |
-| Parking     | ✓        | Documented | Ops alerts (reservation, check-in, payment) |
+| Parking     | ✓        | Documented | Ops alerts (request, check-in, payment, cancel, expiry, endorsement) |
 | Finance     | ✓        | Documented | Due-date reminders for parking transactions |
 
 ---
@@ -83,7 +83,7 @@ Deep links: `?module=finance` scrolls to the Finance section.
 
 Parking **Notifications** has two tabs: **Activity** for what already happened, and **Telegram** for where alerts are delivered. Four cards at the top show unread counts and how many Telegram modules are on and connected; tapping one opens its tab. The **Activity** feed covers your whole organization, same as the bell.
 
-Parking **Notifications** configures Telegram alerts for this slot. The **Chat** section sends a Telegram alert on every inbound guest web chat message. The **Parking** section covers reservation-style alerts (new request, check-in reminder, payment received) once those flows are fully live. The **Finance** section sends due-date reminders for expense lines you track on parking finance. Each section needs a Telegram bot token and chat ID, plus a test send to confirm delivery.
+Parking **Notifications** configures Telegram alerts for this slot. The **Chat** section sends a Telegram alert on every inbound guest web chat message. The **Parking** section covers new requests, check-in reminders, payments received, guest cancellations, expired payment windows, and failed PMO endorsements. The **Finance** section sends due-date reminders for expense lines you track on parking finance. Each section needs a Telegram bot token and chat ID, plus a test send to confirm delivery.
 
 **Common host questions**
 
@@ -92,7 +92,7 @@ Parking **Notifications** configures Telegram alerts for this slot. The **Chat**
 - Q: Do I need a separate Telegram bot for chat, parking, and finance alerts?
   A: No, one shared token is enough for all three. Use separate **Chat IDs** if you want chat alerts, parking ops alerts, and finance reminders posted to different groups, or override the bot token per module if you ever need to split them further.
 - Q: Why aren’t I getting parking reservation alerts yet?
-  A: Reservation Telegram templates are wired for this slot, but some reservation events depend on the parking booking flow shipping. Finance due-date reminders work today when finance Telegram is enabled and transactions have due dates.
+  A: Check that **Telegram delivery** is on, the **Parking** section is enabled, and the specific alert toggle is on. Each of the six parking alerts has its own switch, so one can be off without stopping the others.
 - Q: How do I jump straight to finance reminders?
   A: Open notifications with the finance module selected in the URL, or scroll to the **Finance** card on this page.
 - Q: Can I test a notification section before turning it on?
@@ -129,7 +129,9 @@ DB: `telegram_chat_settings.parking_id` (one row per parking slot). Seeded on fi
 
 POST actions: `verify_parking_telegram_env`, `send_draft_preview`, `render_draft_preview`
 
-DB: `telegram_parking_settings` (one row per parking slot). Seeded on first GET.
+Templates/toggles: reservation request, check-in reminder, payment received, guest cancelled, payment window expired, endorsement failed. Each toggle defaults on; the master **Telegram delivery** switch and the Parking section enable switch still gate all sends.
+
+DB: `telegram_parking_settings` (one row per parking slot). Seeded on first GET. New alert columns added by `20261328000000_parking_telegram_alert_templates.sql`.
 
 ---
 

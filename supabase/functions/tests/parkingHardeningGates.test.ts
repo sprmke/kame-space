@@ -77,8 +77,7 @@ Deno.test('payment fulfillment guards dead checkout rows before confirming', asy
   assert(src.includes('slotMismatch'));
   assert(src.includes('expirePendingParkingTransactions'));
   assert(src.includes("txn.status === 'expired'"));
-  assert(src.includes("txn.status === 'refund_review'"));
-  assert(src.includes("txn.status === 'refunded'"));
+  assert(src.includes('isTerminalParkingPaymentStatus(txn.status)'));
 });
 
 Deno.test('payment analytics cannot abort fulfillment', async () => {
@@ -141,8 +140,12 @@ Deno.test('guest cancellation and endorsement failure produce host notifications
   const cancel = await source('_shared/parkingCancellation.ts');
   assert(cancel.includes("type: 'parking_request_cancelled'"));
   assert(cancel.includes('notifyHostsOfCancellation'));
+  assert(cancel.includes("key: 'request_cancelled'"));
   const pay = await source('_shared/parkingPaymentOrchestrator.ts');
   assert(pay.includes("type: 'parking_endorsement_failed'"));
+  assert(pay.includes("key: 'endorsement_failed'"));
+  const expire = await source('_shared/parkingBroadcastExpireCron.ts');
+  assert(expire.includes("key: 'payment_expired'"));
 });
 
 Deno.test(
@@ -153,7 +156,9 @@ Deno.test(
     assert(src.includes("status: 'refunded'"));
     assert(src.includes("'parking.refund_recorded'"));
     assert(src.includes(".eq('status', 'paid')"));
-    assert(src.includes('amount cannot exceed the guest charge'));
+    assert(src.includes('parkingRefundAmountError'));
+    const rules = await source('_shared/parkingPayoutRules.ts');
+    assert(rules.includes('amount cannot exceed the guest charge'));
   }
 );
 

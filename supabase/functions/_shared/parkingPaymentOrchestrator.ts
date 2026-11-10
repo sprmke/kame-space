@@ -12,6 +12,7 @@ import { createServiceClient, type ParkingRow } from './orgAuth.ts';
 import { amountBucketPhp } from './analyticsBuckets.ts';
 import { capturePostHogEvent } from './posthog.ts';
 import { createNotification } from './notificationService.ts';
+import { sendParkingTelegramNotice } from './telegramParking.ts';
 import { createPaymongoPaymentLink, phpToCentavos } from './paymongoClient.ts';
 import { loadParkingPricing } from './parkingPricing.ts';
 import { resolveParkingPlatformSettings } from './parkingPlatformSettings.ts';
@@ -242,6 +243,9 @@ export async function createParkingPaymentTransaction(
   }
 
   try {
+    // M-3 decision: stay on Payment Links. PayMongo Checkout Sessions in this account do not
+    // expose a custom `expires_at`, so switching would not shorten the payable window and would
+    // change the webhook shape. The ledger invalidation + webhook guard is the TTL authority.
     const link = await createPaymongoPaymentLink({
       amountCentavos: phpToCentavos(amounts.guestChargeTotal),
       description: `Parking reservation - ${String(parking.name)}`,
@@ -578,6 +582,10 @@ export async function markParkingPaymentFailed(
  * time this runs — a thrown error here must not leave the transaction stuck `pending` forever;
  * mark it `failed` with the real reason so it surfaces for manual reconciliation instead.
  */
+export function isTerminalParkingPaymentStatus(status: string): boolean {
+  return status === 'paid' || status === 'refund_review' || status === 'refunded';
+}
+
 export async function fulfillParkingPayment(input: {
   transactionId: string;
   providerReference?: string | null;
@@ -595,10 +603,9 @@ export async function fulfillParkingPayment(input: {
   if (txnError) throw new Error(txnError.message);
   if (!txnData) throw new Error('Parking payment transaction not found');
   const txn = txnData as unknown as ParkingPaymentTransactionRow;
-  if (txn.status === 'paid') return;
   // A refund is a terminal money state. A duplicate provider webhook must never flip a
   // refund_review/refunded row back to paid and make the payout eligible again.
-  if (txn.status === 'refund_review' || txn.status === 'refunded') return;
+  if (isTerminalParkingPaymentStatus(txn.status)) return;
 
   const bookingId = String(txn.booking_id);
   const paidAt = input.paidAt ?? new Date().toISOString();
@@ -763,6 +770,17 @@ export async function fulfillParkingPayment(input: {
               body: `Add the PMO email for ${String(parkingRow.residence_name ?? 'this development')} and resend the endorsement.`,
               bookingId,
               dedupeKey: `parking-endorsement-failed:${bookingId}`,
+            });
+            const slotLabel =
+              [parkingRow.slot_label, parkingRow.tower].filter(Boolean).join(' · ') ||
+              parkingRow.name;
+            await sendParkingTelegramNotice({
+              parkingId,
+              key: 'endorsement_failed',
+              values: {
+                slot_label: slotLabel,
+                residence_name: String(parkingRow.residence_name ?? 'this development'),
+              },
             });
           } catch (notifyErr) {
             console.error(
