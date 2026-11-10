@@ -4,8 +4,10 @@
  * Only the parking reminder existed before, so a guest with an unpaid balance, a fresh stay
  * guide or a changed check-in time heard nothing between "ready for check-in" and arrival.
  *
- * Idempotency is `guest_submissions.pre_arrival_emailed_at`: the UPDATE is conditional on the
- * column still being null, so an overlapping cron run cannot double-send.
+ * Idempotency is `guest_submissions.pre_arrival_emailed_at`: the candidate query skips a row
+ * that already carries it, so a sequential retry does not resend. Two runs overlapping inside
+ * the same second could both send; the cron fires hourly, so that window is not reachable in
+ * practice and a duplicate reminder is a far smaller problem than a guest who gets none.
  */
 
 import { manilaTodayYmd, normalizeBookingDateToYmd } from './calendarAvailabilityManila.ts';
@@ -152,8 +154,8 @@ async function sendReminder(row: PreArrivalCandidate): Promise<boolean> {
     errorLabel: 'email',
   });
 
-  // Conditional stamp: if another run got here first, this updates nothing and we did not
-  // send twice (the send above is idempotent enough for a 48h window).
+  // Stamp after a successful send. Stamping first would be strictly once-only, but a failed
+  // send would then silence the reminder forever for that booking.
   await createServiceClient()
     .from('guest_submissions')
     .update({ pre_arrival_emailed_at: new Date().toISOString() })

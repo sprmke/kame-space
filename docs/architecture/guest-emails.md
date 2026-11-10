@@ -48,8 +48,11 @@ table. **New booking alert** goes to the team, not the guest.
 6. **Suppression wins.** `email_suppressions` (bounce / complaint) is checked before every guest
    send. A per-property automation toggle can turn a type off; `emailNewBookingRequest` is the
    ops alert and stays free.
-7. **Send-once.** `guest_submissions.request_received_emailed_at` records the request email;
-   `pre_arrival_emailed_at` does the same for the reminder, so a cron retry cannot double-send.
+7. **Send-once.** `guest_submissions.request_received_emailed_at` records when the request
+   email went out, so support can answer "did the guest get a receipt?". The reminder's
+   `pre_arrival_emailed_at` is the idempotency key: the candidate query skips a stamped row,
+   so a sequential retry does not resend. The stamp is written after the send, so a failed
+   send is retried on the next hourly run rather than being lost.
 8. **No secrets.** Wi-Fi passwords and door codes are never emailed unless a host deliberately
    places `{{wifi_password}}`-style text in their own template. The default bodies never do.
 
