@@ -105,6 +105,20 @@ export type AnalyticsBundle = {
   publicPage: AnalyticsPublicPage;
   playbook: AnalyticsPlaybookArticle[];
   benchmark: PlatformBenchmark;
+  /** Planner tracked visits and attributed requests. Null when the caller cannot read them. */
+  marketing?: MarketingResults | null;
+};
+
+export type MarketingChannelResult = {
+  channel: string;
+  visits: number;
+  requests: number;
+};
+
+export type MarketingResults = {
+  trackedVisits: number;
+  attributedRequests: number;
+  channels: MarketingChannelResult[];
 };
 
 export type AnalyticsPlaybookArticle = {

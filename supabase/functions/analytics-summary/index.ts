@@ -11,6 +11,7 @@ import { computeAnalyticsBundle, computePlatformBenchmark } from '../_shared/ana
 import { manilaTodayIso } from '../_shared/bookingsListSort.ts';
 import { matchPlaybookArticles } from '../_shared/hostPlaybook.ts';
 import { jsonError, jsonSuccess } from '../_shared/httpResponse.ts';
+import { computeMarketingResults } from '../_shared/marketingResults.ts';
 import { readPropertyIdFromUrl, resolveScopedPropertyAccess } from '../_shared/propertyScope.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 
@@ -64,5 +65,13 @@ serveAuthenticated('analytics-summary', async (req) => {
     adrPercentile: null,
   }));
 
-  return jsonSuccess(req, { tier: 'full' as const, ...bundle, playbook, benchmark });
+  // Marketing results ride along only when the caller can see marketing at all; the numbers
+  // are directional (first-touch, campaign-code based) and the card says so.
+  const marketing = await computeMarketingResults({
+    propertyId: property.id,
+    from,
+    to,
+  }).catch(() => null);
+
+  return jsonSuccess(req, { tier: 'full' as const, ...bundle, playbook, benchmark, marketing });
 });
