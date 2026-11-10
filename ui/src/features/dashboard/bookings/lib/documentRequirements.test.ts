@@ -51,3 +51,41 @@ describe('requirementNeedsApprovedPdf', () => {
     expect(typeof requirementNeedsApprovedPdf).toBe('function');
   });
 });
+
+describe('document requirements v2 (client mirror)', () => {
+  it('upgrades an Azure v1 row and keeps the approved-file rule', () => {
+    const [gaf] = mergeDocumentRequirements([
+      {
+        id: 'gaf',
+        label: 'GAF Request',
+        order: 1,
+        pdfTemplateId: 'gaf',
+        approvalSource: 'email-listener',
+        triggerCondition: 'always',
+        calendarIcon: null,
+      },
+    ]);
+
+    expect(gaf?.legacyKind).toBe('gaf');
+    expect(gaf?.approval.requiresApprovedFile).toBe(true);
+    expect(gaf?.labels.approved).toBe('Approved GAF');
+    expect(requirementNeedsApprovedPdf(gaf!)).toBe(true);
+  });
+
+  it('never classifies a step from its label', () => {
+    const [carpet] = mergeDocumentRequirements([
+      {
+        id: 'carpet',
+        label: 'Carpet inspection',
+        order: 1,
+        pdfTemplateId: null,
+        approvalSource: 'manual',
+        triggerCondition: 'always',
+        calendarIcon: null,
+      },
+    ]);
+
+    expect(requirementDocKind(carpet)).toBe('other');
+    expect(requirementNeedsApprovedPdf(carpet!)).toBe(false);
+  });
+});

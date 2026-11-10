@@ -1,6 +1,9 @@
 import { assert, assertEquals, assertThrows } from 'https://deno.land/std@0.208.0/assert/mod.ts';
 
-import type { DocumentRequirement } from './documentRequirements.ts';
+import {
+  buildDocumentRequirement,
+  type DocumentRequirement,
+} from './documentRequirements.ts';
 import { __workflowOrchestratorTesting } from './workflowOrchestrator.ts';
 
 const {
@@ -24,7 +27,7 @@ Deno.test('flag - defaults true when dev control omitted', () => {
 
 Deno.test('resolveDocTarget - maps legacy PENDING_GAF to gaf requirement id', () => {
   const requirements: DocumentRequirement[] = [
-    {
+    buildDocumentRequirement({
       id: 'gaf',
       label: 'GAF',
       order: 1,
@@ -32,7 +35,7 @@ Deno.test('resolveDocTarget - maps legacy PENDING_GAF to gaf requirement id', ()
       approvalSource: 'email-listener',
       triggerCondition: 'always',
       calendarIcon: null,
-    },
+    }),
   ];
   const resolved = resolveDocTarget('PENDING_GAF', requirements);
   assert(resolved);
@@ -42,7 +45,7 @@ Deno.test('resolveDocTarget - maps legacy PENDING_GAF to gaf requirement id', ()
 
 Deno.test('resolveLegacyCompletionId - falls back when requirement renamed', () => {
   const requirements: DocumentRequirement[] = [
-    {
+    buildDocumentRequirement({
       id: 'custom-gaf',
       label: 'GAF',
       order: 1,
@@ -50,7 +53,7 @@ Deno.test('resolveLegacyCompletionId - falls back when requirement renamed', () 
       approvalSource: 'email-listener',
       triggerCondition: 'always',
       calendarIcon: null,
-    },
+    }),
   ];
   assertEquals(resolveLegacyCompletionId('PENDING_GAF', requirements), 'custom-gaf');
 });

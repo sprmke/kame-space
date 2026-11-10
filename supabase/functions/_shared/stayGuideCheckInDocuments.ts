@@ -26,11 +26,8 @@ export type StayGuideCheckInDocumentDto = {
 };
 
 function guestFacingRequirementLabel(req: DocumentRequirement): string {
-  const kind = requirementDocKind(req);
-  if (kind === 'gaf') return 'Approved GAF';
-  if (kind === 'pet') return 'Approved pet form';
-  const trimmed = req.label.replace(/\s*request\s*$/i, '').trim();
-  return trimmed || req.label;
+  // The parser derives the v1 strings for Azure, so this is a relabel hook, not a change.
+  return req.labels.approved;
 }
 
 function normalizeDocUrl(raw: string | null | undefined): string | null {

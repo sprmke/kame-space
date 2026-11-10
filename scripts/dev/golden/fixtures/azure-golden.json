@@ -107,21 +107,55 @@
     "residenceDefault": [
       {
         "id": "gaf",
-        "label": "GAF Request",
         "order": 1,
-        "pdfTemplateId": "gaf",
-        "approvalSource": "email-listener",
+        "active": true,
+        "blocksCheckIn": true,
         "triggerCondition": "always",
-        "calendarIcon": null
+        "labels": {
+          "step": "GAF Request",
+          "short": "GAF",
+          "guest": "Guest Advise Form",
+          "approved": "Approved GAF"
+        },
+        "output": {
+          "type": "generated_pdf",
+          "pdfTemplateId": "gaf"
+        },
+        "approval": {
+          "source": "email-listener",
+          "requiresApprovedFile": true
+        },
+        "calendarIcon": null,
+        "legacyKind": "gaf",
+        "label": "GAF Request",
+        "pdfTemplateId": "gaf",
+        "approvalSource": "email-listener"
       },
       {
         "id": "pet",
-        "label": "Pet Approval",
         "order": 2,
-        "pdfTemplateId": "pet",
-        "approvalSource": "email-listener",
+        "active": true,
+        "blocksCheckIn": true,
         "triggerCondition": "has_pets",
-        "calendarIcon": "🐶"
+        "labels": {
+          "step": "Pet Approval",
+          "short": "Pet",
+          "guest": "Pet registration form",
+          "approved": "Approved pet form"
+        },
+        "output": {
+          "type": "generated_pdf",
+          "pdfTemplateId": "pet"
+        },
+        "approval": {
+          "source": "email-listener",
+          "requiresApprovedFile": true
+        },
+        "calendarIcon": "🐶",
+        "legacyKind": "pet",
+        "label": "Pet Approval",
+        "pdfTemplateId": "pet",
+        "approvalSource": "email-listener"
       }
     ],
     "applies": [

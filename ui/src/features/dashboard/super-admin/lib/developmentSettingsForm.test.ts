@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { buildDocumentRequirement } from '@/features/dashboard/bookings/lib/documentRequirements';
 import {
   developmentProfileDraftFromDevelopment,
   developmentProfileDraftIsDirty,
@@ -155,7 +156,7 @@ describe('structure draft', () => {
     const draft = developmentProfileDraftFromDevelopment(development({}));
     draft.pmoEmail = '';
     draft.documentRequirements = [
-      {
+      buildDocumentRequirement({
         id: 'gaf',
         label: 'GAF Request',
         order: 1,
@@ -163,7 +164,7 @@ describe('structure draft', () => {
         approvalSource: 'email-listener',
         triggerCondition: 'always',
         calendarIcon: null,
-      },
+      }),
     ];
 
     expect(validateDevelopmentProfileDraft(draft)).toBe(

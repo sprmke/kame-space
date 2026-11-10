@@ -1,8 +1,9 @@
-import type {
-  DocumentApprovalSource,
-  DocumentRequirement,
-  DocumentTriggerCondition,
-  RequestPdfTemplateId,
+import {
+  buildDocumentRequirement,
+  type DocumentApprovalSource,
+  type DocumentRequirement,
+  type DocumentTriggerCondition,
+  type RequestPdfTemplateId,
 } from '@/features/dashboard/bookings/lib/documentRequirements';
 
 export const DOCUMENT_TRIGGER_CONDITIONS: DocumentTriggerCondition[] = [
@@ -79,15 +80,16 @@ function nextRequirementId(existing: DocumentRequirement[]): string {
 }
 
 export function createDocumentRequirement(existing: DocumentRequirement[]): DocumentRequirement {
-  return {
+  const order = existing.length + 1;
+  return buildDocumentRequirement({
     id: nextRequirementId(existing),
     label: '',
-    order: existing.length + 1,
+    order,
     pdfTemplateId: null,
     approvalSource: 'manual',
     triggerCondition: 'always',
     calendarIcon: null,
-  };
+  });
 }
 
 export function addDocumentRequirement(list: DocumentRequirement[]): DocumentRequirement[] {
