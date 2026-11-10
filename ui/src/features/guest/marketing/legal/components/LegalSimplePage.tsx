@@ -1,53 +1,53 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
+
+import { useLocation } from 'react-router-dom';
 
 import { MarketingPublicPageContent } from '@/features/guest/marketing/shared/components/MarketingPublicPageContent';
 import { MarketingPublicPageHero } from '@/features/guest/marketing/shared/components/MarketingPublicPageHero';
 
-interface LegalSection {
-  title: string;
-  paragraphs: string[];
-}
+import { LegalDocumentBody } from '@/components/legal/LegalDocumentBody';
+import type { LegalDocument } from '@/lib/legal/legalMeta';
 
 interface LegalSimplePageProps {
+  document: LegalDocument;
   eyebrow?: string;
-  title: string;
-  description: ReactNode;
-  sections: LegalSection[];
   blobPosition?: 'left' | 'right';
+  /** Extra content after the policy sections, e.g. the Cookie Policy's preferences control. */
+  afterContent?: ReactNode;
 }
 
 export function LegalSimplePage({
+  document: policy,
   eyebrow = 'Legal',
-  title,
-  description,
-  sections,
   blobPosition = 'left',
+  afterContent,
 }: LegalSimplePageProps) {
+  const { hash } = useLocation();
+
+  // React Router does not scroll to `#section` on its own (deep links from in-app notices).
+  useEffect(() => {
+    if (!hash) return;
+    const frame = window.requestAnimationFrame(() => {
+      window.document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView({
+        block: 'start',
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [hash]);
+
   return (
     <div className="bg-background min-h-screen">
       <MarketingPublicPageHero
         eyebrow={eyebrow}
-        title={title}
-        description={description}
+        title={policy.title}
+        description={policy.description}
         blobPosition={blobPosition}
         narrow
       />
 
       <MarketingPublicPageContent narrow>
-        <div className="divide-border divide-y">
-          {sections.map((section) => (
-            <section key={section.title} className="py-6 first:pt-0 md:py-10 md:first:pb-10">
-              <h2 className="text-foreground text-lg font-semibold tracking-tight md:text-2xl">
-                {section.title}
-              </h2>
-              <div className="text-muted-foreground mt-2.5 space-y-3 text-[15px] leading-relaxed md:mt-4 md:space-y-4 md:text-base">
-                {section.paragraphs.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+        <LegalDocumentBody sections={policy.sections} />
+        {afterContent}
       </MarketingPublicPageContent>
     </div>
   );

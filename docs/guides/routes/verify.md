@@ -2,7 +2,7 @@
 title: 'Verify your ID (phone handoff) — operator guide'
 status: active
 tags: [guides, routes, identity, verification]
-updated: 2026-11-07
+updated: 2026-11-09
 ---
 
 # Verify your ID (phone handoff) — operator guide
@@ -39,6 +39,8 @@ The page holds no personal data in the URL. The token is an HMAC capability stri
 value is never persisted server-side, only its SHA-256.
 
 ---
+
+> **Legal notice:** The consent step links to the identity section of the Privacy Policy. The consent checkbox is unchanged. Pattern and full list: [legal.md](legal.md#in-app-notices).
 
 ## Host-facing knowledge
 

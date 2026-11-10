@@ -4,6 +4,7 @@
  */
 
 import { resolveAppSettings } from './appSettings.ts';
+import { buildEmailLegalFooterHtml } from './emailLegalFooter.ts';
 import {
   escapeHtml,
   loadEmailTemplate,
@@ -51,7 +52,6 @@ export async function renderBrandedEmailShell(input: {
   const brandName = resolvePublicBrandName(input.brandName) || PLATFORM_BRAND_NAME || 'Property';
   const emailHeaderLogo = await emailHeaderLogoHtml(input.propertyId, brandName);
   const shell = await loadEmailTemplate('fragments/configurable-template-send');
-  const legalFooter = brandName ? `© ${brandName}. All rights reserved.` : '© All rights reserved.';
 
   return replacePlaceholders(
     shell,
@@ -63,7 +63,7 @@ export async function renderBrandedEmailShell(input: {
         emailTitle: escapeHtml(input.emailTitle.trim() || 'Email'),
         dateLineBlock: input.dateLineBlock ?? '',
         bodyContent: input.bodyHtml,
-        legalFooter: escapeHtml(legalFooter),
+        legalFooter: buildEmailLegalFooterHtml(brandName),
       },
       input.brandColor
     )

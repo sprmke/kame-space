@@ -2,7 +2,7 @@
 title: 'Guest trip page (one booking) — operator guide'
 status: active
 tags: [guides, routes, guest, booking]
-updated: 2026-10-04
+updated: 2026-11-09
 ---
 
 # Guest trip page — operator guide
@@ -34,6 +34,8 @@ It renders inside the property operational shell (`MainLayout`, Property / Calen
 bottom tabs on phone) like `/success`, `/sd-form` and `/guest-review`.
 
 ---
+
+> **Legal notice:** Cancellation refund details show the same refund privacy line above Save, unless cash pickup is chosen. Pattern and full list: [legal.md](legal.md#in-app-notices).
 
 ## Host-facing knowledge
 

@@ -8,6 +8,7 @@ import { PublicPagePlanAccessOverlay } from '@/features/guest/lib/PublicPagePlan
 import { useShowcaseData } from '@/features/guest/marketing/showcase/hooks/useShowcaseData';
 import { getShowcaseTemplate } from '@/features/guest/marketing/showcase/templates/registry';
 
+import { ShowcaseLegalFooterLink } from '@/components/legal/ShowcaseLegalFooterLink';
 import { PublicFullBleedPageSkeleton } from '@/components/skeletons/GuestPageSkeletons';
 import { usePageTitle } from '@/lib/pageTitle';
 
@@ -64,6 +65,7 @@ export function PropertyShowcasePage() {
   return (
     <Suspense fallback={<PublicFullBleedPageSkeleton label="Loading showcase" />}>
       <Template data={data} />
+      {!isEditorPreview ? <ShowcaseLegalFooterLink /> : null}
     </Suspense>
   );
 }

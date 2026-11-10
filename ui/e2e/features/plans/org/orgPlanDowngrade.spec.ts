@@ -15,7 +15,7 @@ test.describe('@ci org plan downgrade flow', () => {
 
     await expect(page.getByRole('button', { name: 'Confirm downgrade' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue to payment' })).toHaveCount(0);
-    await expect(page.getByText(/not refunded/i)).toBeVisible();
+    await expect(page.locator('#plan-review-description')).toContainText(/not refunded/i);
 
     await page.getByRole('button', { name: 'Confirm downgrade' }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);

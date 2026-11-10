@@ -31,6 +31,7 @@ import { TierBadgeAnchor } from '@/features/dashboard/plans/components/TierBadge
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 
+import { MarketingAiLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { ListRowsSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -399,6 +400,7 @@ export function PublishDialog({ open, onOpenChange, media }: Props) {
                   className="min-h-[88px]"
                 />
               </div>
+              <MarketingAiLegalNotice />
             </div>
           )}
         </div>
