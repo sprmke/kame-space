@@ -72,7 +72,7 @@ Server-side `DevControlFlags` in `_shared/workflowOrchestrator.ts` are also used
 
 ## 6. Server contract
 
-- All admin edge functions (`list-bookings`, `transition-booking`, `upload-booking-asset`, `send-sd-refund-form-email`, `parking-broadcast-email`, `cancel-booking`, …) set **`verify_jwt = false`** in `supabase/config.toml` **and** must call `verifyAdminJwt(req)` as the first line of the handler.
+- All admin edge functions (`list-bookings`, `transition-booking`, `upload-booking-asset`, `send-sd-refund-form-email`, `cancel-booking`, …) set **`verify_jwt = false`** in `supabase/config.toml` **and** must call `verifyAdminJwt(req)` as the first line of the handler.
 - **Parking has two helpers, not one.** Host surfaces (settings, pricing, uploads, Telegram, notifications, finance reads, claim/decline/transition) use `resolveScopedParkingTeamAccess(req, '<parking leaf>')`, which resolves the parking and calls `verifyParkingTeamAccess`. `resolveScopedParkingAccess` (org permission) is only for org-level delete/archive, and those also reject `accessKind === 'member'` so a parking team member cannot remove the listing. Do not gate a host settings surface on `org.parkings:*`.
   - **Why `false` in config.toml:** Kong's `verify_jwt = true` gate uses the legacy HS256 JWT secret and rejects newer ES256 auth tokens issued by Supabase local dev (≥ 1.x). Our `verifyAdminJwt` calls `supabase.auth.getUser(jwt)` which handles both algorithms correctly **and** also enforces the `ADMIN_ALLOWED_EMAILS` allow-list — making it a strictly stronger gate than Kong's check.
   - **The function body check IS the security boundary** — never skip `verifyAdminJwt(req)` on the assumption that Kong already validated the token.
