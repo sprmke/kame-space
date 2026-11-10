@@ -77,6 +77,8 @@ Deno.test('payment fulfillment guards dead checkout rows before confirming', asy
   assert(src.includes('slotMismatch'));
   assert(src.includes('expirePendingParkingTransactions'));
   assert(src.includes("txn.status === 'expired'"));
+  assert(src.includes("txn.status === 'refund_review'"));
+  assert(src.includes("txn.status === 'refunded'"));
 });
 
 Deno.test('payment analytics cannot abort fulfillment', async () => {
@@ -151,6 +153,7 @@ Deno.test(
     assert(src.includes("status: 'refunded'"));
     assert(src.includes("'parking.refund_recorded'"));
     assert(src.includes(".eq('status', 'paid')"));
+    assert(src.includes('amount cannot exceed the guest charge'));
   }
 );
 
@@ -191,4 +194,12 @@ Deno.test('the latest public listing refresh uses the platform guest rate', asyn
     !latest.src.includes('FROM public.parking_settings'),
     `${latest.file} must not write the host rate into the public index`
   );
+});
+
+Deno.test('parking dashboard net uses the marketplace host net', async () => {
+  const src = await source('_shared/dashboardService.ts');
+  assert(src.includes("from('parking_payment_transactions')"));
+  assert(src.includes('hostNetTotal'));
+  assert(src.includes("bookingKind === 'parking'"));
+  assert(src.includes('parkingLedger?.hostNetTotal ?? 0'));
 });
