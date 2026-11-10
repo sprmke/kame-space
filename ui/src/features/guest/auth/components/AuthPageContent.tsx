@@ -8,6 +8,7 @@ import type { AuthPageConfig } from '@/features/guest/auth/config/auth-page-conf
 import { classifyAuthFailure } from '@/features/guest/auth/lib/authFailureReason';
 
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { SignInLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { useCaptchaToken } from '@/components/security/useCaptchaToken';
 import { Button } from '@/components/ui/button';
 import { SpinnerIcon } from '@/components/ui/icons';
@@ -263,6 +264,9 @@ export function AuthPageContent({ config, actions }: AuthPageContentProps) {
           </Link>
         </p>
       ) : null}
+
+      {/* Fine print last, under the primary prompt, so it never competes with it. */}
+      {step === 'email' ? <SignInLegalNotice className="mt-6" /> : null}
     </div>
   );
 }

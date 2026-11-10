@@ -17,6 +17,7 @@ test.describe('@ci parking host-assisted booking', () => {
     await page.goto(parkingFlowPaths.hostBookings);
     await page.getByRole('button', { name: 'New booking' }).click();
     await expect(page.getByRole('heading', { name: 'New booking' })).toBeVisible();
+    await expect(page.getByText(/online bookings confirm after the guest pays/i)).toBeVisible();
 
     await fillGuestParkingRegistrationForm(page, {
       guestName: 'Alex Rivera',

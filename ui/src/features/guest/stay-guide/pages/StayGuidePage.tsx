@@ -11,6 +11,7 @@ import {
 } from '@/features/guest/stay-guide/hooks/useGuestStayGuide';
 import { mapStayGuideData } from '@/features/guest/stay-guide/lib/mapStayGuideData';
 
+import { ShowcaseLegalFooterLink } from '@/components/legal/ShowcaseLegalFooterLink';
 import { PublicFullBleedPageSkeleton } from '@/components/skeletons/GuestPageSkeletons';
 import { propertyPublicPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { captureAppEvent } from '@/lib/posthog/capture';
@@ -117,6 +118,7 @@ export function StayGuidePage() {
   return (
     <Suspense fallback={<StayGuideLoading />}>
       <Template data={showcaseData} />
+      {!isEditorPreview ? <ShowcaseLegalFooterLink /> : null}
     </Suspense>
   );
 }

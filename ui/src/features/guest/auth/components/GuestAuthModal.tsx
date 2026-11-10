@@ -7,6 +7,7 @@ import { useGuestAuthActions } from '@/features/guest/auth/hooks/useGuestAuthAct
 
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { KameSpaceBrandIcon } from '@/components/branding/KameSpaceBrandIcon';
+import { SignInLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { useCaptchaToken } from '@/components/security/useCaptchaToken';
 import { Button } from '@/components/ui/button';
 import { SpinnerIcon } from '@/components/ui/icons';
@@ -233,6 +234,7 @@ export function GuestAuthModal({
                 disabled={busy}
                 loading={isSigningInWithGoogle}
               />
+              <SignInLegalNotice className="pt-2" />
             </>
           ) : (
             <button

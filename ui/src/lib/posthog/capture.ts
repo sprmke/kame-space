@@ -1,6 +1,6 @@
 import { shouldCaptureProductEvents } from '@/lib/posthog/analyticsMode';
 import type { AppAnalyticsEventName } from '@/lib/posthog/catalog';
-import { isPostHogEnabled, posthog } from '@/lib/posthog/client';
+import { isPostHogActive, posthog } from '@/lib/posthog/client';
 import { buildSharedAnalyticsProperties } from '@/lib/posthog/context';
 import { sanitizeAnalyticsProperties } from '@/lib/posthog/sanitize';
 
@@ -11,7 +11,7 @@ export function captureAppEvent(
   event: AppAnalyticsEventName,
   properties?: Record<string, unknown>
 ): void {
-  if (!isPostHogEnabled || !shouldCaptureProductEvents()) return;
+  if (!isPostHogActive() || !shouldCaptureProductEvents()) return;
 
   try {
     const shared = buildSharedAnalyticsProperties();
@@ -21,4 +21,3 @@ export function captureAppEvent(
     // telemetry must never break UX
   }
 }
-

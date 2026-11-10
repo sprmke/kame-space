@@ -21,6 +21,8 @@ Property-scoped **Marketing Content Studio**: pick a **theme** (colors, fonts, b
 
 Saved marketing designs are bulk-copyable via org **Properties → Copy settings** (publication history is not).
 
+> **Legal notice:** The Publish dialog shows "AI drafts can be wrong. Review before you publish." next to the caption field (links Terms#ai). Pattern and full list: [legal.md](../../legal.md#in-app-notices).
+
 ---
 
 ## Host-facing knowledge

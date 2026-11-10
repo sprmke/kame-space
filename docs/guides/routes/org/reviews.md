@@ -41,6 +41,8 @@ Page order is the standard admin list: **KPI cards → tabs → toolbar → tabl
 
 ---
 
+> **Legal notice:** The host review of a guest ends with a review-rules line linking to the Terms. Pattern and full list: [legal.md](../legal.md#in-app-notices).
+
 ## Host-facing knowledge
 
 This page is a portfolio view of guest reviews. You see how each property is rated, who still needs a review after checkout, and recent published guest comments. Open a property to reply or review a guest.
