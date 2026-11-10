@@ -6,6 +6,7 @@ import { createClient } from './supabaseJs.ts';
 
 import { resolveAppSettings } from './appSettings.ts';
 import { loadAuthUserProfile } from './authUserProfile.ts';
+import { mintGuestBookingAccessToken } from './guestBookingAccessToken.ts';
 import { linkGuestBookingsByEmail } from './guestProfileService.ts';
 import type { AuthenticatedUser } from './orgAuth.ts';
 import { manilaTodayYmd, normalizeBookingDateToYmd } from './calendarAvailabilityManila.ts';
@@ -348,6 +349,16 @@ export type GuestStayGuideDto = {
   templateKey: string;
   /** Section visibility/order/style — defaults when no host config row exists. */
   sectionConfig: StayGuideConfig;
+  /**
+   * Trip page for this booking, with a fresh guest access token appended.
+   *
+   * The stay guide token already proves the holder may see this booking, so the guide can
+   * hand off to the trip page without asking the guest to sign in again (plan 4.5).
+   * `null` for the admin preview, which has no real booking.
+   */
+  tripPath: string | null;
+  /** Host thread for this booking, so "Message host" opens the conversation directly. */
+  chatPath: string | null;
 };
 
 async function resolveSectionHtml(
@@ -695,7 +706,42 @@ async function buildGuestStayGuidePayload(
     todayManila: manilaTodayYmd(),
     templateKey,
     sectionConfig,
+    ...(await buildStayGuideBookingPaths(property.slug, booking)),
   };
+}
+
+/**
+ * Trip page and host thread links for the guest reading their stay guide.
+ *
+ * The guide token is proof the holder may see this booking, so a fresh trip access token
+ * lets the return bar open the trip without a second sign-in. The chat link carries the
+ * booking id, so "Message host" opens the thread instead of a date picker.
+ *
+ * A missing booking id (the admin preview) yields `null` for both and the bar hides.
+ */
+async function buildStayGuideBookingPaths(
+  propertySlug: string,
+  booking: GuestSubmission
+): Promise<{ tripPath: string | null; chatPath: string | null }> {
+  const bookingId = String(booking.id ?? '').trim();
+  const slug = propertySlug.trim();
+  if (!bookingId || !slug) return { tripPath: null, chatPath: null };
+
+  // Relative app paths, so build the queries directly:
+  // `appendGuestBookingAccessQuery` expects an absolute URL.
+  const base = `/properties/${encodeURIComponent(slug)}`;
+  const chatParams = new URLSearchParams({ bookingId });
+  const chatPath = `${base}/messages?${chatParams.toString()}`;
+
+  try {
+    const accessToken = await mintGuestBookingAccessToken(bookingId);
+    const tripParams = new URLSearchParams({ bookingId, access: accessToken });
+    return { tripPath: `${base}/trip?${tripParams.toString()}`, chatPath };
+  } catch (err) {
+    console.error('[guestStayGuide] trip access token failed (non-fatal):', err);
+    // The trip link still works for a signed-in guest, so keep it without the token.
+    return { tripPath: `${base}/trip?${chatParams.toString()}`, chatPath };
+  }
 }
 
 /** Admin preview — real property + templates, sample guest booking placeholders. */

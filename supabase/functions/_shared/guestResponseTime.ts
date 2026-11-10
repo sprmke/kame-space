@@ -30,6 +30,8 @@ export async function resolvePropertyMedianFirstResponseHours(
     .not('status_updated_at', 'is', null)
     .neq('status', 'PENDING_REVIEW')
     .neq('status', 'CANCELLED')
+    // Recency matters: a property that got fast a year ago should not quote that number.
+    .order('created_at', { ascending: false })
     .limit(100);
 
   if (error || !data || data.length < MIN_RESPONSE_SAMPLES) return null;

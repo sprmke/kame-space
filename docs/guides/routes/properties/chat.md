@@ -63,11 +63,12 @@ Guests message you from a property listing before they book. They start in a cha
 
 **Route:** `/properties/:propertySlug/messages?checkInDate=YYYY-MM-DD&checkOutDate=YYYY-MM-DD`
 
-| Guard         | Action                                             |
-| ------------- | -------------------------------------------------- |
-| Invalid dates | Redirect to property with `?pickDates=contactHost` |
-| Not signed in | **`GuestAuthModal`**; resume to messages URL       |
-| Signed in     | **`guest-web-chat-start`** + thread UI             |
+| Guard                        | Action                                                                                              |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- |
+| Invalid dates                | Redirect to property with `?pickDates=contactHost`                                                  |
+| Booked guest (`?bookingId=`) | Stay dates come from the booking; no date picker, and the thread is linked to the booking (plan E9) |
+| Not signed in                | **`GuestAuthModal`**; resume to messages URL                                                        |
+| Signed in                    | **`guest-web-chat-start`** + thread UI                                                              |
 
 Use for deep links, **Open full chat**, and future guest Messages hub — not first-time Contact host entry.
 
@@ -85,7 +86,7 @@ Use for deep links, **Open full chat**, and future guest Messages hub — not fi
 | `inquiry`     | Dates set, no messages yet    | Availability for dates, total for stay, early check-in        |
 | `ongoing`     | Any message in thread         | WiFi password, parking on arrival, unit access, late checkout |
 
-Same interactive cards as the host assistant (`ChatSuggestionList`); no Questions/Actions toggle. Tapping sends the prompt as the first message. Starters hide as soon as any message exists. `/account/stays` does not show them (`faqSuggestions={false}`).
+Same interactive cards as the host assistant (`ChatSuggestionList`); no Questions/Actions toggle. Tapping sends the prompt as the first message. Starters hide as soon as any message exists. `/account/messages` does not show them (`faqSuggestions={false}`).
 
 **Realtime:** Supabase channel on **`social_messages`** (guest RLS).
 

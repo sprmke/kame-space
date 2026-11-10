@@ -94,6 +94,8 @@ export type GuestChatStartResult = {
 export type GuestChatResumeResult = {
   hasMessages: boolean;
   conversationId: string | null;
+  /** Booking this thread is about, when the guest has one at this property. */
+  bookingId: string | null;
   inquiryCheckIn: string | null;
   inquiryCheckOut: string | null;
   replyStatus: ChatReplyStatus | null;
@@ -176,6 +178,8 @@ export async function startGuestWebChat(input: {
   parkingSlug?: string;
   checkInDate: string;
   checkOutDate: string;
+  /** Booking the guest is asking about; the dates then come from the booking. */
+  bookingId?: string;
 }): Promise<GuestChatStartResult> {
   const payload = await guestEdgePost('guest-web-chat-start', input);
   return payload as unknown as GuestChatStartResult;

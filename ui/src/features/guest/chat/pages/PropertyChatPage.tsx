@@ -27,6 +27,18 @@ import { useChatThreadSearch } from '@/lib/chat/useChatThreadSearch';
 import { cn } from '@/lib/utils';
 import { parseGuestInquiryDateRange } from '@/utils/format/dates';
 
+const BOOKING_ID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * A `?bookingId=` deep link. A malformed value is ignored rather than sent to the server,
+ * so a hand-edited URL falls back to the normal inquiry flow instead of an error state.
+ */
+function parseBookingId(searchParams: URLSearchParams): string {
+  const raw = searchParams.get('bookingId')?.trim() ?? '';
+  return BOOKING_ID_RE.test(raw) ? raw : '';
+}
+
 function parseInquiryDates(searchParams: URLSearchParams): {
   checkInDate: string;
   checkOutDate: string;
@@ -43,25 +55,36 @@ export function PropertyChatPage() {
   const [searchParams] = useSearchParams();
   const { status, requireGuestAuth } = useGuestAuth();
 
+  // A booked guest opens chat from their trip with `?bookingId=`. The stay dates come
+  // from the booking server-side, so they are never asked to pick dates again
+  // (plan E9, finding A1).
+  const bookingId = useMemo(() => parseBookingId(searchParams), [searchParams]);
   const dates = useMemo(() => parseInquiryDates(searchParams), [searchParams]);
   const propertyPath = guestPropertyPath(propertySlug);
   const embedPreview = isGuestEmbedPreview(searchParams);
+  const hasBooking = Boolean(bookingId);
+  const hasTarget = hasBooking || Boolean(dates);
 
   useEffect(() => {
-    if (embedPreview || status !== 'anonymous' || !dates) return;
+    if (embedPreview || status !== 'anonymous' || !hasTarget) return;
     requireGuestAuth(() => undefined, {
       resume: {
         type: 'navigate',
         to: `${propertyPath}/messages?${searchParams.toString()}`,
       },
     });
-  }, [embedPreview, status, dates, requireGuestAuth, propertyPath, searchParams]);
+  }, [embedPreview, status, hasTarget, requireGuestAuth, propertyPath, searchParams]);
 
-  if (!dates) {
+  // Neither a booking nor dates: this is a first inquiry, so ask for dates.
+  if (!hasTarget) {
     return <Navigate to={guestPropertyPickDatesPath(propertySlug, 'contactHost')} replace />;
   }
 
   if (embedPreview) {
+    // The dashboard embed preview is always date-driven; a booking id there means nothing.
+    if (!dates) {
+      return <Navigate to={guestPropertyPickDatesPath(propertySlug, 'contactHost')} replace />;
+    }
     return (
       <PropertyChatEmbedPreview checkInDate={dates.checkInDate} checkOutDate={dates.checkOutDate} />
     );
@@ -79,8 +102,9 @@ export function PropertyChatPage() {
   return (
     <PropertyChatContent
       propertySlug={propertySlug}
-      checkInDate={dates.checkInDate}
-      checkOutDate={dates.checkOutDate}
+      bookingId={hasBooking ? bookingId : null}
+      checkInDate={dates?.checkInDate ?? ''}
+      checkOutDate={dates?.checkOutDate ?? ''}
       propertyPath={propertyPath}
     />
   );
@@ -88,17 +112,21 @@ export function PropertyChatPage() {
 
 function PropertyChatContent({
   propertySlug,
+  bookingId,
   checkInDate,
   checkOutDate,
   propertyPath,
 }: {
   propertySlug: string;
+  /** Booking the guest is asking about; the dates come from it server-side. */
+  bookingId: string | null;
   checkInDate: string;
   checkOutDate: string;
   propertyPath: string;
 }) {
   const startQuery = useGuestChatStart({
     propertySlug,
+    bookingId: bookingId ?? undefined,
     checkInDate,
     checkOutDate,
     enabled: true,

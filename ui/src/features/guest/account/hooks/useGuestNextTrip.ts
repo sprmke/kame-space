@@ -86,3 +86,33 @@ export function useGuestNextTrip(): GuestNextTrip | null {
   const trips = useMemo(() => data ?? [], [data]);
   return useMemo(() => pickGuestNextTrip(trips), [trips]);
 }
+
+/**
+ * The signed-in guest's trip at one property, if they have one.
+ *
+ * Used by the listing banner so a guest who already booked sees their trip instead of
+ * only a Reserve button (plan 2.6, finding A5).
+ */
+export function useGuestTripAtProperty(propertySlug: string | null | undefined) {
+  const { data } = useGuestTrips();
+  const trips = useMemo(() => data ?? [], [data]);
+  const slug = (propertySlug ?? '').trim();
+  return useMemo(() => {
+    if (!slug) return null;
+    const match = trips.find(
+      (trip) =>
+        trip.kind === 'property' &&
+        trip.propertySlug === slug &&
+        trip.status !== 'CANCELLED' &&
+        trip.checkOutDate >= getManilaYmdToday()
+    );
+    if (!match) return null;
+    return {
+      bookingId: match.id,
+      propertySlug: match.propertySlug,
+      checkInDate: match.checkInDate,
+      checkOutDate: match.checkOutDate,
+      path: match.propertySlug ? guestTripPath(match.propertySlug, match.id) : null,
+    };
+  }, [trips, slug]);
+}

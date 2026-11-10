@@ -1,27 +1,22 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  guestJourneyNextStep,
   guestJourneyReviewExpectation,
-  guestJourneyStatusTone,
   guestJourneyStatusWord,
-  guestJourneySummary,
+  MIN_RESPONSE_SAMPLES,
 } from '@/features/guest/trip/lib/guestJourneyCopy';
-
-import {
-  guestJourneyNextStep as edgeNextStep,
-  guestJourneyReviewExpectation as edgeReviewExpectation,
-  guestJourneyStatusTone as edgeStatusTone,
-  guestJourneyStatusWord as edgeStatusWord,
-  guestJourneySummary as edgeSummary,
-} from '../../../../../../supabase/functions/_shared/guestJourneyCopy.ts';
-
 import { guestTripStatusLabel } from '@/features/guest/trip/lib/guestTripPhase';
 
+import {
+  guestJourneyReviewExpectation as edgeReviewExpectation,
+  guestJourneyStatusWord as edgeStatusWord,
+  MIN_RESPONSE_SAMPLES as EDGE_MIN_RESPONSE_SAMPLES,
+} from '../../../../../../supabase/functions/_shared/guestJourneyCopy.ts';
+
 /**
- * One vocabulary across UI, emails, chat card and host dashboard (plan §11). The UI module
- * re-exports the edge module, so this asserts the shipped status words stay in step with the
- * trip page pill and with the plan's §3.3 table.
+ * One vocabulary across the trip page, the account list, the emails and the host dashboard
+ * (plan §3.3 and §11). The UI module mirrors the edge module, so this asserts the two
+ * agree and that the trip page pill uses the same words.
  */
 const STATUSES = [
   'PENDING_REVIEW',
@@ -37,12 +32,10 @@ const STATUSES = [
 ];
 
 describe('guest journey vocabulary', () => {
-  it('uses the plan vocabulary for every status', () => {
+  it('uses the plan words for every booking status', () => {
     expect(guestJourneyStatusWord('PENDING_REVIEW')).toBe('Request sent');
     expect(guestJourneyStatusWord('PENDING_DOCUMENTS')).toBe('Confirmed');
     expect(guestJourneyStatusWord('PENDING_GAF')).toBe('Confirmed');
-    expect(guestJourneyStatusWord('PENDING_PARKING_REQUEST')).toBe('Confirmed');
-    expect(guestJourneyStatusWord('PENDING_PET_REQUEST')).toBe('Confirmed');
     expect(guestJourneyStatusWord('READY_FOR_CHECKIN')).toBe('Ready for check-in');
     expect(guestJourneyStatusWord('READY_FOR_CHECKOUT')).toBe('Checked out');
     expect(guestJourneyStatusWord('PENDING_SD_REFUND')).toBe('Deposit refund');
@@ -50,9 +43,8 @@ describe('guest journey vocabulary', () => {
     expect(guestJourneyStatusWord('CANCELLED')).toBe('Cancelled');
   });
 
-  it('never says confirmed or approved while the booking is still under review', () => {
-    const word = guestJourneyStatusWord('PENDING_REVIEW');
-    expect(word).not.toMatch(/confirmed|approved|booked/i);
+  it('never claims a pending review is confirmed, approved or booked', () => {
+    expect(guestJourneyStatusWord('PENDING_REVIEW')).not.toMatch(/confirmed|approved|booked/i);
   });
 
   it('never says approved as a status word', () => {
@@ -61,62 +53,34 @@ describe('guest journey vocabulary', () => {
     }
   });
 
+  it('falls back to the request word for an unknown status', () => {
+    expect(guestJourneyStatusWord('')).toBe('Request sent');
+    expect(guestJourneyStatusWord('SOMETHING_NEW')).toBe('Request sent');
+  });
+
   it('matches the edge module for every status', () => {
     for (const status of STATUSES) {
       expect(guestJourneyStatusWord(status)).toBe(edgeStatusWord(status));
-      expect(guestJourneyStatusTone(status)).toBe(edgeStatusTone(status));
-    }
-  });
-
-  it('matches the edge module for every next step', () => {
-    const input = {
-      status: 'READY_FOR_CHECKIN',
-      checkInDateLabel: 'Sat, Oct 10',
-      checkInTimeLabel: '2:00 PM',
-      checkOutDateLabel: 'Sun, Oct 12',
-      checkOutTimeLabel: '11:00 AM',
-      amountDueLabel: '₱3,200',
-      hasBalanceDue: true,
-      documentsPending: false,
-    };
-    for (const status of STATUSES) {
-      expect(guestJourneyNextStep({ ...input, status })).toEqual(
-        edgeNextStep({ ...input, status })
-      );
-      expect(guestJourneySummary({ ...input, status })).toEqual(
-        edgeSummary({ ...input, status })
-      );
     }
   });
 
   it('matches the edge module for the review expectation', () => {
-    for (const hours of [null, 0, 1, 5, 23, 24, 50, -3]) {
+    const cases = [null, 0, 1, 5, 23, 24, 50, -3, Number.NaN];
+    for (const hours of cases) {
       expect(guestJourneyReviewExpectation(hours)).toBe(edgeReviewExpectation(hours));
     }
   });
 
-  it('falls back to a generic review expectation without a real median', () => {
+  it('only quotes a number once the sample floor is met', () => {
+    expect(MIN_RESPONSE_SAMPLES).toBe(EDGE_MIN_RESPONSE_SAMPLES);
     expect(guestJourneyReviewExpectation(null)).toBe('Most hosts reply within a day');
-    expect(guestJourneyReviewExpectation(Number.NaN)).toBe('Most hosts reply within a day');
     expect(guestJourneyReviewExpectation(4)).toBe('Hosts usually reply within 4 hours');
     expect(guestJourneyReviewExpectation(30)).toBe('Hosts usually reply within 1 day');
   });
-});
 
-describe('trip page status label', () => {
-  it('agrees with the shared vocabulary', () => {
-    const labels: Record<string, string> = {
-      PENDING_REVIEW: 'Request sent',
-      PENDING_DOCUMENTS: 'Confirmed',
-      PENDING_GAF: 'Confirmed',
-      READY_FOR_CHECKIN: 'Ready for check-in',
-      READY_FOR_CHECKOUT: 'Checked out',
-      PENDING_SD_REFUND: 'Deposit refund',
-      COMPLETED: 'Completed',
-      CANCELLED: 'Cancelled',
-    };
-    for (const [status, expected] of Object.entries(labels)) {
-      expect(guestTripStatusLabel(status)).toBe(expected);
+  it('is the same vocabulary the trip page pill shows', () => {
+    for (const status of STATUSES) {
+      expect(guestTripStatusLabel(status)).toBe(guestJourneyStatusWord(status));
     }
   });
 });

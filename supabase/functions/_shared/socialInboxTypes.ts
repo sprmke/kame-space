@@ -60,6 +60,8 @@ export type SocialConversationRow = {
   connection_status?: ConnectionStatus | null;
   inquiry_check_in?: string | null;
   inquiry_check_out?: string | null;
+  /** Booking this web chat thread is about (plan D9). NULL for Meta threads. */
+  booking_id?: string | null;
   guest_last_read_at?: string | null;
   host_last_read_at?: string | null;
   guest_unread_count?: number;

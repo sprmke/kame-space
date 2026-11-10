@@ -94,6 +94,13 @@ export type GuestStayGuideDto = {
   templateKey: string;
   /** v2 page config (palette / typography / motion + flat sections[]). v1 rows upgrade on read. */
   sectionConfig?: StayGuideConfigV2;
+  /**
+   * Trip page for this booking with a fresh access token. Server-added so the return bar
+   * works from the check-in email; absent on older responses and on the admin preview.
+   */
+  tripPath?: string | null;
+  /** Host thread for this booking, so "Message host" opens the conversation directly. */
+  chatPath?: string | null;
 };
 
 type ApiSuccess<T> = { success: true; data: T };

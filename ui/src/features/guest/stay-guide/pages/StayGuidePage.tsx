@@ -10,6 +10,7 @@ import {
   useGuestStayGuidePreview,
 } from '@/features/guest/stay-guide/hooks/useGuestStayGuide';
 import { mapStayGuideData } from '@/features/guest/stay-guide/lib/mapStayGuideData';
+import { GuestTripReturnBar } from '@/features/guest/trip/components/GuestTripReturnBar';
 
 import { ShowcaseLegalFooterLink } from '@/components/legal/ShowcaseLegalFooterLink';
 import { PublicFullBleedPageSkeleton } from '@/components/skeletons/GuestPageSkeletons';
@@ -114,11 +115,20 @@ export function StayGuidePage() {
 
   const entry = getShowcaseTemplate(showcaseData.templateKey);
   const Template = entry.component;
+  // A guest who arrived from the check-in email needs a way back to the booking and to
+  // their host (plan 4.4, findings A7 and D2). Hidden in preview and embed.
+  const tripPath = data.tripPath ?? null;
+  const showReturnBar = !isPreview && !isEmbed && Boolean(tripPath);
 
   return (
-    <Suspense fallback={<StayGuideLoading />}>
-      <Template data={showcaseData} />
-      {!isEditorPreview ? <ShowcaseLegalFooterLink /> : null}
-    </Suspense>
+    <>
+      <Suspense fallback={<StayGuideLoading />}>
+        <Template data={showcaseData} />
+        {!isEditorPreview ? <ShowcaseLegalFooterLink /> : null}
+      </Suspense>
+      {showReturnBar ? (
+        <GuestTripReturnBar tripPath={tripPath} chatPath={data.chatPath ?? null} />
+      ) : null}
+    </>
   );
 }
