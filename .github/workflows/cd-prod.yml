@@ -155,7 +155,17 @@ jobs:
             exit 0
           fi
 
-          changed_functions=$(git diff --name-only FETCH_HEAD "$GITHUB_SHA" -- supabase/functions)
+          # Deno test files are never bundled into a deployed function, so a change that only
+          # touches them needs no deploy. Filtering them out first is what keeps a test-only
+          # merge from redeploying all 345 functions.
+          changed_functions=$(git diff --name-only FETCH_HEAD "$GITHUB_SHA" -- supabase/functions \
+            | grep -vE '(_test\.ts|\.test\.ts)$' || true)
+
+          if [[ -z "$changed_functions" ]]; then
+            echo "functions=none" >> "$GITHUB_OUTPUT"
+            echo "Only edge test files changed; functions deploy skipped."
+            exit 0
+          fi
 
           if echo "$changed_functions" \
             | grep -qE '^supabase/functions/(_shared/|deno\.json|import_map\.json|\.npmrc)'; then
