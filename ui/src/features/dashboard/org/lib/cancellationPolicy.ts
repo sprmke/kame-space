@@ -346,6 +346,31 @@ export function cancellationPolicyHash(policy: CancellationPolicy | null): strin
   return hash.toString(16).padStart(16, '0');
 }
 
+
+/**
+ * True when the policy the guest displayed is no longer the one on file.
+ *
+ * Empty or whitespace-only values mean the client did not send a version or
+ * hash (older client, or a property whose policy predates versioning). They
+ * must never count as a mismatch: a missing version id is not evidence that
+ * the policy changed.
+ */
+export function isCancellationPolicyStale(input: {
+  clientVersionId?: string | null;
+  clientHash?: string | null;
+  currentPolicy: CancellationPolicy | null;
+  currentVersionId: string | null;
+}): boolean {
+  const clientVersionId = input.clientVersionId?.trim() || null;
+  const currentVersionId = input.currentVersionId?.trim() || null;
+  if (clientVersionId && clientVersionId !== currentVersionId) return true;
+
+  const clientHash = input.clientHash?.trim() || null;
+  if (clientHash && clientHash !== cancellationPolicyHash(input.currentPolicy)) return true;
+
+  return false;
+}
+
 function daysLabel(days: number): string {
   if (days === 0) return 'on check-in day';
   return days === 1 ? '1 day' : `${days} days`;

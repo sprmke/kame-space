@@ -281,6 +281,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
   const [currentStep, setCurrentStep] = useState<GuestFormStepId>(1);
   const [submitReady, setSubmitReady] = useState(false);
   const [cancellationAccepted, setCancellationAccepted] = useState(false);
+  const [policyChangedNotice, setPolicyChangedNotice] = useState(false);
   const stepPanelRef = useRef<HTMLDivElement>(null);
   const pendingSubmitAfterAuthRef = useRef(false);
   const guestFormStartedRef = useRef(false);
@@ -1005,11 +1006,15 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
       formData.append('bookingSource', bookingSource);
 
       if (!bookingId && !isCompletionMode && publicProperty) {
-        formData.append(
-          'cancellationPolicyVersionId',
-          publicProperty.cancellationPolicyVersionId ?? ''
-        );
-        formData.append('cancellationPolicyHash', publicProperty.cancellationPolicyHash ?? '');
+        if (publicProperty.cancellationPolicyVersionId) {
+          formData.append(
+            'cancellationPolicyVersionId',
+            publicProperty.cancellationPolicyVersionId
+          );
+        }
+        if (publicProperty.cancellationPolicyHash) {
+          formData.append('cancellationPolicyHash', publicProperty.cancellationPolicyHash);
+        }
         formData.append('cancellationPolicyAccepted', String(cancellationAccepted));
       }
 
@@ -1153,11 +1158,12 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
         }
         if (errorData.error === 'policy_changed') {
           setCancellationAccepted(false);
+          setPolicyChangedNotice(true);
           await refetchPublicProperty();
-          toast.error(
-            'The host updated the cancellation policy. Review it and tick the box again.'
-          );
-          throw new Error('The cancellation policy changed. Review the new terms and try again.');
+          toast.message('Cancellation policy updated', {
+            description: 'Review the new terms and tick the box again.',
+          });
+          return;
         }
         throw new Error(
           errorData.error ||
@@ -2868,8 +2874,12 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                 policy={publicProperty.cancellationPolicy}
                 checkInDate={watchedValues.checkInDate ?? ''}
                 accepted={cancellationAccepted}
-                onAcceptedChange={setCancellationAccepted}
+                onAcceptedChange={(accepted) => {
+                  setCancellationAccepted(accepted);
+                  if (accepted) setPolicyChangedNotice(false);
+                }}
                 showAgreement={!publicProperty.cancellationPolicy.unset}
+                showPolicyChangedNotice={policyChangedNotice}
               />
             ) : null}
 
