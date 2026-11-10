@@ -78,6 +78,8 @@ run_step "assert image optimizer stays lazy (plan §10.6)" \
   node scripts/media/assert-lazy-optimizer.mjs
 run_step "bundle budgets + chunk-graph leak check (production-readiness doc 00/01)" \
   bun run check:budgets
+run_step "landing chunk is module-preloaded (app-speed 2.1)" \
+  bun run check:landing-preload
 run_step "no public source maps (production-readiness doc 02)" \
   node scripts/performance/assert-no-sourcemaps.mjs
 run_step "no render-blocking scripts in index.html (production-readiness doc 04)" \
