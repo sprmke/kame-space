@@ -7,7 +7,13 @@
  * returned.
  */
 
-import { serializeOrganization } from './orgAuth.ts';
+import {
+  type AuthenticatedUser,
+  isPlatformAdmin,
+  isSuperAdminEmail,
+  serializeOrganization,
+} from './orgAuth.ts';
+import type { SupabaseClient } from './supabaseJs.ts';
 
 /** Row shape returned by `list_user_organizations` and the platform-admin variant. */
 export type OrgAccessRow = {
@@ -35,4 +41,29 @@ export function toOrganizationPayload(rows: OrgAccessRow[]) {
     accessKind: row.access_kind,
     planLimited: row.plan_limited === true,
   }));
+}
+
+/** Load and map the caller's organizations. One RPC, shared by the handler and the bootstrap. */
+export async function loadOrganizationsPayload(
+  supabase: SupabaseClient,
+  user: AuthenticatedUser
+): Promise<{ isSuperAdmin: boolean; organizations: ReturnType<typeof toOrganizationPayload> }> {
+  const superAdmin = isSuperAdminEmail(user.email);
+
+  const { data, error } = superAdmin
+    ? await supabase.rpc('list_all_organizations_for_platform_admin')
+    : await supabase.rpc('list_user_organizations', {
+        p_user_id: user.id,
+        p_platform_admin: isPlatformAdmin(user.email),
+      });
+
+  if (error) {
+    console.error('[list-organizations]', error.message);
+    throw new Error('Failed to list organizations');
+  }
+
+  return {
+    isSuperAdmin: superAdmin,
+    organizations: toOrganizationPayload((data ?? []) as OrgAccessRow[]),
+  };
 }

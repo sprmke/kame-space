@@ -4,7 +4,7 @@ status: planned
 stage: in-progress
 kind: plan
 tags: [performance, pwa, supabase, edge-functions, lighthouse, production-readiness, caching]
-updated: 2026-11-09
+updated: 2026-11-10
 readiness: unverified
 launch_gate: A
 launch_blocker: true
@@ -577,7 +577,7 @@ rows, and the served HTML contains no test-property data. Reference:
 | 0     | partial (0.1, 0.2, DB capture shipped)                  | `bootMarks.ts` + 10 Vitest, `serverTiming.ts` + 10 Deno, `bootMarks.spec.ts` 3 E2E. Baseline captured: `perf-2026-11-08-before.md` + `2026-11-08-pg-stat-before.json`, via the new `perf:pg-stat:snapshot` (no `psql` needed). Lighthouse and authenticated edge latency still open.                                    |
 | 1     | partial (RC-6, RC-8, RC-9, RC-10, RC-11, RC-16 decided) | RC-6 and RC-16 confirmed with numbers, RC-9 and RC-8 partly rejected, RC-10 rejected, RC-11 confirmed and fixed. Remaining RCs need a hosted HAR trace.                                                                                                                                                                 |
 | 2     | 2.3 blocked, 2.5 already present                        | Deferring telemetry contradicts 0.1 (see note). `MarketingImage` + `responsiveImage.ts` already ship `srcset`, `sizes` and `fetchPriority` on the LCP image. Bundle unchanged: 246.4 / 633.2 KiB.                                                                                                                       |
-| 3     | partial (3.3, 3.4, 3.5)                                 | Page chunk starts with the shell, gate queries persist across reloads, notification preview and announcement dot deferred. **3.1/3.2 (bootstrap endpoint + TenantGate) remain**: highest value, highest risk, needs a role-parity suite.                                                                                |
+| 3     | partial (3.1 safe form, 3.3, 3.4, 3.5)                  | `get-session-context` bootstraps the shell in one call (3.015 s to 1.006 s). Page chunk starts with the shell, gate queries persist, shell extras deferred. **3.2 TenantGate and 3.6 other shells remain.**                                                                                                             |
 | 4     | 4.1 rejected                                            | `x-region: ap-southeast-1` measured 34% slower than default routing (0.376 s vs 0.28 s warm). Not shipping a pessimization. 4.2 (local JWT verification) is D-2 and stays open.                                                                                                                                         |
 | 5     | not started                                             | Needs D-1 and `kamewave` to test the Vercel proxy.                                                                                                                                                                                                                                                                      |
 | 6     | analysed, no fix yet                                    | Top statements captured (`perf-2026-11-08-before.md`). RC-16 confirmed at 85% Realtime. 6.1 to 6.5 need a decision on whether to move Realtime to Broadcast, which is a behaviour change and not a query fix.                                                                                                           |
@@ -630,3 +630,5 @@ document, and why.
 `SUPABASE_ACCESS_TOKEN` + `SUPABASE_PROJECT_REF` (0.3, 6, 10), a read-only production host
 account or a demo org (host Lighthouse/boot runs), a PostHog personal API key and project id
 (10.5), and `kamewave` for the production deploy, the stats reset and the Vercel proxy test.
+
+**3.1 shipped in its safe form (2026-11-10).** `get-session-context` returns the same payloads from the same shared loaders in one request, and the client seeds the existing query keys. The guards are untouched: a failed bootstrap seeds nothing and they fetch for themselves, so the behaviour degrades to the old path rather than locking anyone out. Four calls in 3.015 s became one in 1.006 s, about -67% serially and -47% against the browser's two parallel pairs. **3.2 (the `TenantGate` rewrite) stays open** because it changes the control flow of every dashboard route and needs a role-parity suite.
