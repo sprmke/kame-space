@@ -17,6 +17,7 @@ import { SectionNavIssueDot } from '@/features/dashboard/org/components/property
 import { GetVerifiedSidebarCta } from '@/features/dashboard/org/components/verification/GetVerifiedModal';
 import { OrgPlanSidebarEntry } from '@/features/dashboard/plans/components/OrgPlanSidebarEntry';
 
+import { LegalFooterLinks } from '@/components/legal/LegalFooterLinks';
 import { scrollAdminViewToTop } from '@/components/navigation/ScrollToTop';
 import { InstallAppEntry } from '@/components/pwa/InstallAppEntry';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -223,6 +224,7 @@ export function AdminMoreSheet({
               <LogOut className="size-3.5 shrink-0" aria-hidden />
               Sign out
             </button>
+            <LegalFooterLinks includeCookies={false} />
           </div>
         </div>
       </BottomSheetContent>

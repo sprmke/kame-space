@@ -2,7 +2,7 @@
 title: 'Guest account — operator guide'
 status: active
 tags: [guides, routes, account]
-updated: 2026-09-11
+updated: 2026-11-09
 ---
 
 # Guest account — operator guide
@@ -41,6 +41,8 @@ Signed-in guests see a **rounded avatar** in the marketing nav (explore pages on
 Stays, Favorites, and Tickets each have their own dedicated guide — see [stays.md](./stays.md), [favorites.md](./favorites.md), [tickets.md](./tickets.md). This guide covers the account shell (nav + sidebar) and the Profile page in full detail.
 
 ---
+
+> **Legal notice:** A **Privacy and data** card under Identity links to the Privacy Policy and Terms and opens an email to request a copy or deletion of data. Pattern and full list: [legal.md](../legal.md#in-app-notices).
 
 ## Host-facing knowledge
 

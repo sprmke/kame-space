@@ -1,0 +1,13 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://127.0.0.1:4173",
+      "localStorage": [{ "name": "kh-cookie-consent", "value": "declined" }]
+    },
+    {
+      "origin": "http://127.0.0.1:4174",
+      "localStorage": [{ "name": "kh-cookie-consent", "value": "declined" }]
+    }
+  ]
+}
