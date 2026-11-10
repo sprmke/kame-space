@@ -166,11 +166,45 @@ run_db_push() {
 }
 
 run_functions_deploy() {
+  # `DEPLOY_FUNCTIONS` narrows the deploy to the functions whose files changed since the
+  # last deploy. Deploying all 345 took ~19 minutes even when none of them changed.
+  #   unset / all -> deploy everything (the safe default)
+  #   none        -> nothing to do
+  #   "a b c"     -> deploy only those function directories
+  local selection="${DEPLOY_FUNCTIONS:-all}"
+
+  if [[ "$selection" == "none" ]]; then
+    echo "→ supabase functions deploy: no function changes, skipping"
+    return 0
+  fi
+
   assert_functions_match_db_schema
   sync_release_secret
-  echo "→ supabase functions deploy"
-  # Non-interactive CI: the hosted CLI now requires an explicit yes.
-  "${SUPABASE[@]}" functions deploy --yes
+
+  if [[ "$selection" == "all" ]]; then
+    echo "→ supabase functions deploy (all)"
+    # Non-interactive CI: the hosted CLI now requires an explicit yes.
+    "${SUPABASE[@]}" functions deploy --yes
+    return 0
+  fi
+
+  local -a names=()
+  local name
+  for name in $selection; do
+    if [[ -d "$ROOT/supabase/functions/$name" ]]; then
+      names+=("$name")
+    else
+      echo "⚠️  skipping $name: no such function directory" >&2
+    fi
+  done
+
+  if (( ${#names[@]} == 0 )); then
+    echo "→ supabase functions deploy: nothing left to deploy"
+    return 0
+  fi
+
+  echo "→ supabase functions deploy ${names[*]}"
+  "${SUPABASE[@]}" functions deploy --yes "${names[@]}"
 }
 
 # Stamps every function with the commit it was built from, so a Sentry issue can be tied to

@@ -2,7 +2,7 @@
 title: 'Full-app test architecture: page-mirrored suites, access matrix, enforced coverage'
 status: planned
 tags: [planning, testing, vitest, playwright, deno, pgtap, ci-cd, rbac, plans, governance]
-updated: 2026-11-09
+updated: 2026-11-10
 stage: in-progress
 kind: plan
 ---
@@ -105,6 +105,20 @@ Supabase deploy, the schema diff and the backup when `supabase/functions` and
 older, so its changes stay in the diff, and `workflow_dispatch` has `force_deploy` to
 override. Smoke and migration parity still run either way, so a skipped deploy still proves
 production is healthy.
+
+The deploy now narrows the function set as well. `cd-prod` computes the changed paths since
+the last successful deploy and passes them to `deploy-supabase.sh` as `DEPLOY_FUNCTIONS`:
+
+| Situation                                                        | Functions deployed |
+| ---------------------------------------------------------------- | ------------------ |
+| Only migrations changed                                          | none               |
+| Only edge test files changed                                     | none               |
+| `_shared/**`, `deno.json`, `import_map.json` or `.npmrc` changed | all 345            |
+| Specific function directories changed                            | only those         |
+| Anything unparseable                                             | all (safe default) |
+
+`_shared` is the important case: it is bundled into every function at deploy time, so a
+narrowed deploy there would ship stale code to 344 functions.
 
 Rejected on purpose: `--only-changed` selection. Playwright's flag matches changed _spec_
 files, not changed source, so a source change would select nothing. Source-to-spec selection
