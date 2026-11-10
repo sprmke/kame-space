@@ -249,7 +249,6 @@
     "ui/src/features/dashboard/team/lib/opsPermissionExpansion.ts",
     "ui/src/features/dashboard/team/lib/orgLegacyPermissionExpansion.ts",
     "ui/src/features/dashboard/team/lib/orgMemberRoleDisplay.ts",
-    "ui/src/features/dashboard/team/lib/orgPermissions.ts",
     "ui/src/features/dashboard/team/lib/orgRoleListingScope.ts",
     "ui/src/features/dashboard/team/lib/orgTeamConstants.ts",
     "ui/src/features/dashboard/team/lib/orgTeamRoles.ts",
