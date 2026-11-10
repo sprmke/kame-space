@@ -80,11 +80,6 @@ export async function handleMetaMessagingWebhook(
   const text = event.message?.text?.trim() ?? '';
   const preview = text || '(attachment)';
 
-  const threadId = buildDmThreadId(platform, guestId ?? 'unknown');
-  if (guestId) {
-    await migrateLegacyDmThreadId(orgId, platform, guestId, threadId);
-  }
-
   // A message with no resolvable participant cannot be filed anywhere. Record it so Meta
   // stops retrying, and move on rather than creating a `facebook:` thread.
   if (!guestId?.trim()) {
@@ -92,6 +87,9 @@ export async function handleMetaMessagingWebhook(
     await recordWebhookEvent(eventId);
     return { ...EMPTY_RESULT, organizationId: orgId };
   }
+
+  const threadId = buildDmThreadId(platform, guestId);
+  await migrateLegacyDmThreadId(orgId, platform, guestId, threadId);
 
   const existing = await getConversationByExternalThread(orgId, platform, threadId);
   const identityPatch: {
@@ -105,12 +103,7 @@ export async function handleMetaMessagingWebhook(
   if (!existing?.participant_name?.trim() && webhookName && !isFromPage) {
     identityPatch.participant_name = webhookName;
   }
-  if (
-    !existing?.participant_name?.trim() &&
-    !identityPatch.participant_name &&
-    guestId &&
-    guestId !== 'unknown'
-  ) {
+  if (!existing?.participant_name?.trim() && !identityPatch.participant_name) {
     try {
       const token = await getPageAccessToken(connection);
       const profile = await fetchMetaMessengerParticipantProfile(guestId, token, platform);
@@ -128,7 +121,7 @@ export async function handleMetaMessagingWebhook(
       platform,
       external_thread_id: threadId,
       conversation_type: 'dm',
-      external_participant_id: guestId ?? null,
+      external_participant_id: guestId,
       ...identityPatch,
     },
     // The summary is owned by `inbox_bump_conversation`. Set the timestamp on create so a
