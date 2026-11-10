@@ -35,14 +35,16 @@ Configure one parking slot: cover photo, dimensions and check-in times, amenitie
 
 ## Host-facing knowledge
 
-Parking **Settings** is where you set up a single slot before guests can book it: photos, map location, size and clearance, amenities, brand color, and which emails send automatically. Guests pay through PayMongo at checkout, so you do not enter payment details here. Parking type, residence, tower, level, and slot number are set once when the slot is created and can't be changed here - delete and recreate the slot if any of those are wrong. Telegram and other integrations link out to **Notifications** for credentials. Most sections save independently, and deleting a slot is permanent, so that option lives in the danger zone at the bottom.
+Parking **Settings** is where you set up a single slot before guests can book it: photos, map location, size and clearance, amenities, brand color, and which emails send automatically. Guests pay through PayMongo at checkout, so you do not enter payment details here. Parking type, residence, tower, level, and slot number are set once when the slot is created and can't be changed here. If one is wrong and the slot has no bookings, delete and recreate it. Once it has booking history, archive it and create a new slot instead. Telegram and other integrations link out to **Notifications** for credentials. Most sections save independently, and deleting a slot is permanent, so that option lives in the danger zone at the bottom.
 
 **Common host questions**
 
 - Q: What do guests actually see from here?
   A: Basic info, photos, location, and amenities flow to your public parking page. Keep the cover photo and description accurate before sharing the link. Guests pay through PayMongo at checkout, so there are no payment details to fill in here.
 - Q: Can I change the tower, level, or slot number after creating the slot?
-  A: No. Those, along with parking type and residence, are locked once the slot is created since guests, bookings, and the public link are all tied to them. If one is wrong, delete the slot and create a new one.
+  A: No. Those, along with parking type and residence, are locked once the slot is created since guests, bookings, and the public link are all tied to them. If one is wrong, delete the slot while it has no bookings, or archive it and create a new one.
+- Q: Why is Delete parking disabled?
+  A: A slot with booking history or pending offers can't be deleted. Archive it to hide it from guests. Existing bookings stay, and finance entries are not removed.
 - Q: Do I have to fill out every section before anything saves?
   A: No. **Save Changes** only saves the sections you've edited that pass validation, so you can finish photos today and automations later. Incomplete required areas still show a warning dot until you get to them.
 - Q: Where do I turn the automatic emails or auto-accept on and off?
@@ -126,9 +128,9 @@ Parking type, residence, tower, level, and slot number can only be set when the 
 - Amenities → `PATCH update-parking` (`settings.enabledParkingAmenities`, `settings.customParkingAmenities`, `settings.features`)
 - Location → `PATCH update-parking` (location fields in `parkings.settings`)
 - Automations → `PATCH parking-settings?parking_id=` `{ automationToggles: { emailParkingReservationRequest, emailParkingGuestConfirmed, emailParkingNoHostAvailable, autoAcceptTopMatch } }`
-- Integrations status → `GET parking-settings?parking_id=` (`parkingIntegrations`, `platformSecrets`); Telegram credentials saved from **Notifications** modules
-- Archive / restore → `PATCH update-parking` `{ parkingId, status: 'INACTIVE' | 'ACTIVE' }` — hides/shows public listing (`list-public-parkings` / `get-public-parking` return **ACTIVE** only). Archiving declines that slot's pending broadcast offers; confirmed bookings are kept.
-- Delete → `DELETE delete-parking` — returns `409 has_bookings` when the slot has any booking history or pending offer. Show Archive instead.
+- Integrations status → `GET parking-settings?parking_id=` (`parkingIntegrations`, `platformSecrets`, `archiveImpact`); Telegram credentials saved from **Notifications** modules
+- Archive / restore → `PATCH update-parking` `{ parkingId, status: 'INACTIVE' | 'ACTIVE' }` — hides/shows public listing (`list-public-parkings` / `get-public-parking` return **ACTIVE** only). The confirm lists pending offers that will be declined and upcoming bookings that stay; archiving declines that slot's pending broadcast offers and keeps confirmed bookings.
+- Delete → `DELETE delete-parking` — returns `409 has_bookings` when the slot has any booking history or pending offer. The button is disabled in that state and points to Archive. The confirm also names finance entries; deleting the slot removes them.
 
 Since parking type, residence, tower, level, and slot number can't change in Settings, the slug is fixed at creation and Settings never navigates to a new URL.
 
@@ -142,6 +144,7 @@ Since parking type, residence, tower, level, and slot number can't change in Set
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | Page                       | `ui/src/features/dashboard/parking/pages/ParkingSettingsPage.tsx`                                                               |
 | Card                       | `ui/src/features/dashboard/parking/components/ParkingSettingsCard.tsx`                                                          |
+| Sections                   | `ui/src/features/dashboard/parking/components/ParkingSettingsSections.tsx`                                                      |
 | Dense settings CTAs        | `settings-action` / `settings-field-label` in `ui/src/index.css` (Danger Zone, Features Add, shared with org/property)          |
 | Field label + help         | `ui/src/components/forms/FieldLabel.tsx`                                                                                        |
 | Details section            | `ui/src/features/dashboard/parking/components/ParkingDetailsSection.tsx`                                                        |

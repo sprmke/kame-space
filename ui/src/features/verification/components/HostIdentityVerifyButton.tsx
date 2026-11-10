@@ -12,7 +12,7 @@ import type { IdentitySubmitResponse } from '../lib/identityApi';
 type HostIdentityVerifyButtonProps = {
   /** Omitted during registration, before the organization exists. */
   organizationId?: string;
-  onDocumentCaptured: (file: File) => void;
+  onDocumentCaptured?: (file: File) => void;
   onVerified?: (result: IdentitySubmitResponse) => void;
   disabled?: boolean;
 };

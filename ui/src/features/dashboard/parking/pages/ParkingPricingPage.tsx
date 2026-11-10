@@ -398,7 +398,7 @@ export function ParkingPricingPage() {
             getPriceForDate={getPriceForDate}
           />
 
-          <div className="space-y-3 lg:sticky lg:top-5">
+          <div className="min-w-0 space-y-3 lg:sticky lg:top-5">
             <ParkingPricingRatesFormCard
               weekdayRate={weekdayRate}
               weekendRate={weekendRate}

@@ -8,7 +8,7 @@
  * the caller should be blocked, or `null` when they pass.
  *
  * Works from both `servePublic` handlers and the raw-`serve()` ones
- * (`submit-form`, `submit-sd-form`, `submit-pay-parking`) whose catch blocks do
+ * (`submit-form`, `submit-sd-form`) whose catch blocks do
  * not special-case thrown `Response`s — every handler just does:
  *
  *   const blocked = await antiSpamGate(req, body, { scope: 'submit-form', rateLimit: { limit: 20, windowSec: 60 } });

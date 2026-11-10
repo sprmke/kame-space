@@ -14,6 +14,8 @@ import {
 type LivenessCheckStepProps = {
   onComplete: (result: LivenessResult) => void;
   onSkip: () => void;
+  /** Desktop only: hand this check to the host's phone instead of giving up on it. */
+  onUsePhone?: () => void;
 };
 
 /**
@@ -21,7 +23,7 @@ type LivenessCheckStepProps = {
  * escape hatch. A guest who cannot complete a visual challenge still finishes the capture;
  * the verdict simply cannot reach `verified` without it.
  */
-export function LivenessCheckStep({ onComplete, onSkip }: LivenessCheckStepProps) {
+export function LivenessCheckStep({ onComplete, onSkip, onUsePhone }: LivenessCheckStepProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const reportedRef = useRef(false);
   const liveness = useLivenessChallenges(videoRef);
@@ -74,7 +76,12 @@ export function LivenessCheckStep({ onComplete, onSkip }: LivenessCheckStepProps
       {unavailable ? (
         <div className="space-y-3 text-center">
           <p className="text-sm">We could not run the face check on this device.</p>
-          <Button type="button" className="w-full" onClick={onSkip}>
+          {onUsePhone ? (
+            <Button type="button" className="w-full" onClick={onUsePhone}>
+              Use my phone instead
+            </Button>
+          ) : null}
+          <Button type="button" variant={onUsePhone ? 'outline' : 'default'} className="w-full" onClick={onSkip}>
             Continue
           </Button>
         </div>
