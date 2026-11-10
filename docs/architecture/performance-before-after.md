@@ -172,7 +172,32 @@ latency pass. Recorded here so it is not lost.
 
 ---
 
-## 5. Public site
+## 5. Landing chunk preloaded
+
+**Date:** 2026-11-10. `ui/vite-plugins/preloadLandingChunk.ts`. Phase 2.1.
+
+Vite preloads the entry's static imports. A lazy route chunk is fetched only when the router
+reaches the route, which is after the entry has parsed and executed. On `/` that is a
+guaranteed extra round trip before the hero can paint.
+
+A build plugin now reads the manifest after the bundle is written and adds one
+`modulepreload` for the landing chunk. It fails silently by design, so
+`check:landing-preload` turns a silent loss into a CI failure, and also checks the preloaded
+file exists.
+
+| Metric                               | Before                   | After                      |
+| ------------------------------------ | ------------------------ | -------------------------- |
+| `modulepreload` tags in `index.html` | 8                        | **9**                      |
+| Landing chunk request starts         | after the entry executes | **with the entry**         |
+| Landing chunk size                   | n/a                      | 9.8 KiB gzip               |
+| Initial chunks (budget)              | 633-634 KiB              | **643.9 KiB** (budget 660) |
+
+The win is the round trip, not the bytes. It does not change the byte budget materially and
+it does not change rendering order.
+
+---
+
+## 6. Public site
 
 **Date:** 2026-11-09. Measured, no change shipped in this window.
 
@@ -194,7 +219,7 @@ Public edge handlers, warm:
 
 ---
 
-## 6. Database
+## 7. Database
 
 **Date:** 2026-11-08. `pg_stat_statements`, 96 days since reset (no reset performed).
 
@@ -211,7 +236,7 @@ No index can help; cache is already perfect. The 85% is background Postgres Chan
 
 ---
 
-## 7. Dashboard cold open (lab)
+## 8. Dashboard cold open (lab)
 
 **Date:** 2026-11-08. Local build, mocked edge calls, Phases 0.1 marks. Directional only:
 mocks answer instantly, so this cannot show a network saving.
@@ -227,7 +252,7 @@ spent waiting on promises, not parsing. ~220 ms of it is the deliberate anti-fla
 
 ---
 
-## 8. Bundle
+## 9. Bundle
 
 **Date:** 2026-11-08.
 
@@ -240,7 +265,7 @@ spent waiting on promises, not parsing. ~220 ms of it is the deliberate anti-fla
 
 ---
 
-## 9. Rejected, with numbers
+## 10. Rejected, with numbers
 
 | Change                                             | Result                                             |
 | -------------------------------------------------- | -------------------------------------------------- |
