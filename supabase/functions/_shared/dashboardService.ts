@@ -348,7 +348,7 @@ function bookingRateLodgingInRange(
   return roundMoney(perNight * nightsInRange);
 }
 
-type ParkingLedgerTotals = {
+export type ParkingLedgerTotals = {
   status: string;
   guestChargeTotal: number;
   hostNetTotal: number;
@@ -360,6 +360,29 @@ function parkingLedgerTotals(row: Record<string, unknown>): ParkingLedgerTotals 
     guestChargeTotal: roundMoney(Number(row.guest_charge_total ?? 0)),
     hostNetTotal: roundMoney(Number(row.host_net_total ?? 0)),
   };
+}
+
+/**
+ * One ledger total per booking. A paid row always wins over a pending row; a newer row wins
+ * otherwise. Expired/cancelled/refunded rows are ignored because the booking is terminal or
+ * cancelled and must not contribute host revenue.
+ */
+export function buildParkingLedgerTotalsByBooking(
+  rows: readonly Record<string, unknown>[]
+): Map<string, ParkingLedgerTotals> {
+  const byBooking = new Map<string, ParkingLedgerTotals>();
+  for (const row of rows) {
+    const status = String(row.status ?? '');
+    if (status !== 'pending' && status !== 'paid') continue;
+    const bookingId = String(row.booking_id ?? '').trim();
+    if (!bookingId) continue;
+    const totals = parkingLedgerTotals(row);
+    const existing = byBooking.get(bookingId);
+    if (!existing || (totals.status === 'paid' && existing.status !== 'paid')) {
+      byBooking.set(bookingId, totals);
+    }
+  }
+  return byBooking;
 }
 
 function hostNetForDashboardKpi(row: Record<string, unknown>, _status: string): number {
@@ -693,14 +716,10 @@ export async function computeDashboardStats(
     if (ledgerError) {
       throw new Error(`dashboard parking ledger query failed: ${ledgerError.message}`);
     }
-    for (const row of ledgerRows ?? []) {
-      const bookingId = String(row.booking_id ?? '').trim();
-      if (!bookingId) continue;
-      const totals = parkingLedgerTotals(row as Record<string, unknown>);
-      const existing = parkingLedgerByBookingId.get(bookingId);
-      if (!existing || (totals.status === 'paid' && existing.status !== 'paid')) {
-        parkingLedgerByBookingId.set(bookingId, totals);
-      }
+    for (const [bookingId, totals] of buildParkingLedgerTotalsByBooking(
+      (ledgerRows ?? []) as Record<string, unknown>[]
+    )) {
+      parkingLedgerByBookingId.set(bookingId, totals);
     }
   }
 

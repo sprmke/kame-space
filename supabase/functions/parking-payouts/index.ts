@@ -13,6 +13,7 @@ import {
 } from '../_shared/httpResponse.ts';
 import { serveSuperAdmin } from '../_shared/serveEdge.ts';
 import { logSuperAdminAction } from '../_shared/superAdminAudit.ts';
+import { parkingRefundAmountError } from '../_shared/parkingPayoutRules.ts';
 import { requireSuperAdminStepUp } from '../_shared/superAdminVerification.ts';
 import { logActivity } from '../_shared/activityLog.ts';
 
@@ -189,9 +190,8 @@ serveSuperAdmin('parking-payouts', async (req, admin) => {
         return jsonError(req, 'Refundable transaction not found', 404);
       }
       const guestCharge = Number(refundable.guest_charge_total ?? 0);
-      if (amount > guestCharge + 0.005) {
-        return jsonError(req, 'amount cannot exceed the guest charge');
-      }
+      const amountError = parkingRefundAmountError(amount, guestCharge);
+      if (amountError) return jsonError(req, amountError);
 
       const nowIso = new Date().toISOString();
       const { data, error } = await supabase
