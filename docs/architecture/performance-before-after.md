@@ -60,7 +60,51 @@ JWT verification), which is still open.
 
 ---
 
-## 3. Authenticated wrapper cost
+## 3. One bootstrap call for the admin shell
+
+**Date:** 2026-11-10. `get-session-context`. Phase 3.1, in its safest form.
+
+A cold dashboard open made four to six authenticated calls before it could paint: session,
+then organizations and properties, then property-access and entitlements (both blocked on the
+property id), then the page. Each call also paid auth and a rate-limit write.
+
+`get-session-context` returns the same payloads, from the same shared loaders, in one request,
+and the client seeds the existing query keys from it. **The guards are unchanged.** If the call
+fails, nothing is seeded and the guards fetch for themselves, exactly as before, so an outage
+degrades to the old behaviour instead of locking anyone out.
+
+Measured from Manila against production, warm, medians:
+
+| Path                                         | Time        |
+| -------------------------------------------- | ----------- |
+| The four calls it replaces, serial sum       | **3.015 s** |
+| `get-session-context`, serial reads          | 1.395 s     |
+| `get-session-context`, reads run in parallel | **1.006 s** |
+
+**-67% against the serial sum.** In the browser the baseline is not fully serial (organizations
+and properties already ran in parallel, then access and entitlements), so the like-for-like
+figure is roughly 1.9 s to 1.0 s, about **-47%**. The bigger point is four fewer round trips,
+four fewer rate-limit writes, and one loading state instead of four.
+
+`Server-Timing` on the single call: `auth` 0 ms after the first in a burst, `ratelimit` ~120 ms,
+`handler` **484-674 ms** for all four payloads together (it was ~972 ms before the reads were
+parallelised).
+
+Payload parity checked against production: organizations 1, properties 1 with stats,
+`propertyAccess.accessKind = owner` with 95 permissions, entitlements `planName = Free` with 40
+keys. No token and a bad token both return `401`.
+
+### Why this is not the full 3.2
+
+3.2 collapses the six guards into one `TenantGate`. That changes the authorisation control
+flow of every dashboard route and needs a role-parity suite across owner, org admin, property
+member, plan-limited, revoked, suspended, super-admin and wrong tenant. Seeding the existing
+keys buys most of the round-trip saving with none of that risk, so the gate rewrite stays open
+as its own decision.
+
+---
+
+## 4. Authenticated wrapper cost
 
 **Date:** 2026-11-09. Measured, not yet reduced.
 
@@ -128,7 +172,7 @@ latency pass. Recorded here so it is not lost.
 
 ---
 
-## 4. Public site
+## 5. Public site
 
 **Date:** 2026-11-09. Measured, no change shipped in this window.
 
@@ -150,7 +194,7 @@ Public edge handlers, warm:
 
 ---
 
-## 5. Database
+## 6. Database
 
 **Date:** 2026-11-08. `pg_stat_statements`, 96 days since reset (no reset performed).
 
@@ -167,7 +211,7 @@ No index can help; cache is already perfect. The 85% is background Postgres Chan
 
 ---
 
-## 6. Dashboard cold open (lab)
+## 7. Dashboard cold open (lab)
 
 **Date:** 2026-11-08. Local build, mocked edge calls, Phases 0.1 marks. Directional only:
 mocks answer instantly, so this cannot show a network saving.
@@ -183,7 +227,7 @@ spent waiting on promises, not parsing. ~220 ms of it is the deliberate anti-fla
 
 ---
 
-## 7. Bundle
+## 8. Bundle
 
 **Date:** 2026-11-08.
 
@@ -196,7 +240,7 @@ spent waiting on promises, not parsing. ~220 ms of it is the deliberate anti-fla
 
 ---
 
-## 8. Rejected, with numbers
+## 9. Rejected, with numbers
 
 | Change                                             | Result                                             |
 | -------------------------------------------------- | -------------------------------------------------- |
