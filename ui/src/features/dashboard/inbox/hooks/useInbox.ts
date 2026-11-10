@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
 import {
   useInfiniteQuery,
@@ -58,9 +57,7 @@ import {
   mockSendReply,
   resetInboxMockStore,
 } from '@/features/dashboard/inbox/lib/inboxMockStore';
-import {
-  inboxFiltersBlockMetaScrollSync,
-} from '@/features/dashboard/inbox/lib/inboxThreadPagination';
+import { inboxFiltersBlockMetaScrollSync } from '@/features/dashboard/inbox/lib/inboxThreadPagination';
 import type {
   ChatTemplateListItem,
   InboxConversation,
@@ -85,6 +82,7 @@ export const INBOX_CONNECTIONS_KEY = 'inbox-connections';
 export const INBOX_TEMPLATES_KEY = 'inbox-templates';
 export const INBOX_CHAT_TEMPLATES_KEY = 'inbox-chat-templates';
 export const INBOX_SETTINGS_KEY = 'inbox-settings';
+export const INBOX_SYNC_STATUS_KEY = 'inbox-sync-status';
 export const META_OAUTH_PAGES_KEY = 'meta-oauth-pages';
 
 type InboxThreadsPage = {
@@ -247,6 +245,80 @@ export function useMetaInboxSync(
   }, [metaSyncInProgress, qc]);
 
   return { active: metaSyncInProgress && syncEnabled };
+}
+
+/** Browser reachability, without a dependency. */
+function useBrowserOnline(): boolean {
+  return useSyncExternalStore(
+    (onChange) => {
+      window.addEventListener('online', onChange);
+      window.addEventListener('offline', onChange);
+      return () => {
+        window.removeEventListener('online', onChange);
+        window.removeEventListener('offline', onChange);
+      };
+    },
+    () => (typeof navigator === 'undefined' ? true : navigator.onLine),
+    () => true
+  );
+}
+
+export type MetaInboxSyncStatusData = {
+  connected: boolean;
+  status: string;
+  importComplete: boolean;
+  importRunning: boolean;
+  conversationsImported: number;
+  lastCheckedAt: string | null;
+  consecutiveFailures: number;
+  lastErrorCode: string | null;
+  syncPaused: boolean;
+};
+
+/**
+ * Server-side sync status for the header pill.
+ *
+ * Polled once a minute while the tab is visible. The server owns the schedule, so this is a
+ * read, not a nudge.
+ */
+export function useMetaInboxSyncStatus(
+  orgSlug: string | null,
+  orgId: string | null,
+  scope?: InboxApiScope | null,
+  enabled = true
+) {
+  const query = useQuery({
+    queryKey: [INBOX_SYNC_STATUS_KEY, orgSlug, orgId, ...inboxScopeKey(scope), mockMode],
+    queryFn: async (): Promise<MetaInboxSyncStatusData | null> => {
+      if (mockMode) return null;
+      const payload = (await requestMetaInboxSync(
+        orgSlug,
+        orgId,
+        'status',
+        scope
+      )) as unknown as MetaInboxSyncStatusData & { connected?: boolean };
+      if (!payload || typeof payload !== 'object') return null;
+      return {
+        connected: payload.connected !== false,
+        status: String(payload.status ?? 'unknown'),
+        importComplete: Boolean(payload.importComplete),
+        importRunning: Boolean(payload.importRunning),
+        conversationsImported: Number(payload.conversationsImported ?? 0),
+        lastCheckedAt: (payload.lastCheckedAt as string | null) ?? null,
+        consecutiveFailures: Number(payload.consecutiveFailures ?? 0),
+        lastErrorCode: (payload.lastErrorCode as string | null) ?? null,
+        syncPaused: Boolean(payload.syncPaused),
+      };
+    },
+    enabled: enabled && !mockMode && !!(orgSlug || orgId),
+    refetchInterval: (q) => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return false;
+      return q.state.data?.connected === false ? 30_000 : 60_000;
+    },
+    refetchOnWindowFocus: true,
+  });
+
+  return { data: query.data ?? null, online: useBrowserOnline() };
 }
 
 export function useInboxMutations(
@@ -679,30 +751,27 @@ type InboxBroadcastSignal = {
 function mergeThreadRowsIntoCache(qc: QueryClient, rows: InboxConversation[]) {
   if (!rows.length) return;
   const byId = new Map(rows.map((row) => [row.id, row]));
-  qc.setQueriesData<InfiniteData<InboxThreadsPage>>(
-    { queryKey: [INBOX_THREADS_KEY] },
-    (old) => {
-      if (!old?.pages?.length) return old;
-      const seen = new Set<string>();
-      const pages = old.pages.map((page) => ({
-        ...page,
-        conversations: page.conversations.map((conversation) => {
-          seen.add(conversation.id);
-          return byId.get(conversation.id) ?? conversation;
-        }),
-      }));
-      const fresh = rows.filter((row) => !seen.has(row.id) && !row.id.startsWith('mock-'));
-      if (fresh.length) {
-        pages[0] = {
-          ...pages[0]!,
-          conversations: [...fresh, ...pages[0]!.conversations].sort((a, b) =>
-            (b.last_message_at ?? '').localeCompare(a.last_message_at ?? '')
-          ),
-        };
-      }
-      return { ...old, pages };
+  qc.setQueriesData<InfiniteData<InboxThreadsPage>>({ queryKey: [INBOX_THREADS_KEY] }, (old) => {
+    if (!old?.pages?.length) return old;
+    const seen = new Set<string>();
+    const pages = old.pages.map((page) => ({
+      ...page,
+      conversations: page.conversations.map((conversation) => {
+        seen.add(conversation.id);
+        return byId.get(conversation.id) ?? conversation;
+      }),
+    }));
+    const fresh = rows.filter((row) => !seen.has(row.id) && !row.id.startsWith('mock-'));
+    if (fresh.length) {
+      pages[0] = {
+        ...pages[0]!,
+        conversations: [...fresh, ...pages[0]!.conversations].sort((a, b) =>
+          (b.last_message_at ?? '').localeCompare(a.last_message_at ?? '')
+        ),
+      };
     }
-  );
+    return { ...old, pages };
+  });
 }
 
 /** Patch changed messages in the open thread, keeping send order. */
@@ -802,18 +871,10 @@ export function useInboxRealtime(
         }
 
         const openId = openConversationIdRef.current;
-        const openChanged = Boolean(
-          openId && delta.conversations.some((row) => row.id === openId)
-        );
+        const openChanged = Boolean(openId && delta.conversations.some((row) => row.id === openId));
         if (openId && openChanged) {
           const msgKey = inboxMessagesQueryKey(openId, currentScope());
-          const messages = await fetchInboxMessageDelta(
-            null,
-            orgId,
-            openId,
-            since,
-            currentScope()
-          );
+          const messages = await fetchInboxMessageDelta(null, orgId, openId, since, currentScope());
           if (!mergeMessageRowsIntoCache(qc, msgKey, messages.messages)) {
             void qc.invalidateQueries({ queryKey: msgKey });
           }

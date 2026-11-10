@@ -178,6 +178,8 @@ type Props = {
   onUploadAttachment?: (file: File) => Promise<InboxChatAttachment>;
   onEdit?: (messageId: string, text: string) => Promise<void>;
   onUnsend?: (messageId: string) => Promise<void>;
+  /** Re-send a message Meta rejected. Sent as a new message, never a silent retry. */
+  onRetrySend?: (message: InboxMessage) => Promise<void>;
   onSuggest: () => Promise<{ suggestion: string; flagged: boolean }>;
   sending: boolean;
   uploadingAttachment?: boolean;
@@ -206,6 +208,7 @@ export function InboxConversationView({
   onUploadAttachment,
   onEdit,
   onUnsend,
+  onRetrySend,
   guestRequests = [],
   onResolveGuestRequest,
   resolvingGuestRequest = false,
@@ -802,6 +805,23 @@ export function InboxConversationView({
                 </Button>
               </div>
             )}
+            {/* Meta will not return anything older than the newest 20 messages, so the
+                thread says so rather than looking truncated for no reason. */}
+            {conversation.history_gap_at ? (
+              <div className="text-muted-foreground flex items-center gap-2 text-xs">
+                <span className="bg-border h-px flex-1" aria-hidden />
+                <span>Some messages may be missing here</span>
+                <span className="bg-border h-px flex-1" aria-hidden />
+              </div>
+            ) : null}
+            {/* Another app owns the chat, so a send here will be rejected until the host
+                takes it over. Say that where the host meets it. */}
+            {conversation.thread_owner && conversation.thread_owner !== 'kame' && !isWeb ? (
+              <div className="rounded-lg border border-amber-600/25 bg-amber-500/10 px-3 py-2 text-xs text-amber-800">
+                Another app is answering this chat in Meta. Take it over in Business Suite before
+                replying here.
+              </div>
+            ) : null}
             {guestRequests.length > 0 && onResolveGuestRequest ? (
               <div className="space-y-2">
                 {guestRequests.map((request) => (
@@ -928,6 +948,8 @@ export function InboxConversationView({
                     />
                   ) : null;
 
+                  const sendFailed = outbound && !isUnsent && msg.delivery_status === 'failed';
+
                   return (
                     <div
                       className={cn(
@@ -936,6 +958,31 @@ export function InboxConversationView({
                       )}
                     >
                       {bubble}
+                      {/* Meta may have accepted a failed send, so it is never retried
+                          automatically. The host decides, and the message is re-sent as a
+                          new one. */}
+                      {sendFailed ? (
+                        <div className="text-destructive flex items-center gap-2 text-xs">
+                          <span>Not sent</span>
+                          {onRetrySend && msg.body_text?.trim() ? (
+                            <button
+                              type="button"
+                              className="underline underline-offset-2"
+                              onClick={() => void onRetrySend(msg)}
+                            >
+                              Retry
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : null}
+                      {outbound && !isUnsent && msg.sender_app === 'other' ? (
+                        <span className="text-muted-foreground text-xs">Sent from Meta</span>
+                      ) : null}
+                      {!outbound && msg.message_kind === 'postback' ? (
+                        <span className="text-muted-foreground text-xs">
+                          Started the conversation
+                        </span>
+                      ) : null}
                       {hasMedia ? (
                         <div
                           className={cn(
@@ -981,7 +1028,7 @@ export function InboxConversationView({
                 }}
               />
             ) : (
-              <div className="flex flex-1 flex-col items-center justify-center py-8 sm:py-12 text-center">
+              <div className="flex flex-1 flex-col items-center justify-center py-8 text-center sm:py-12">
                 <MessageSquare className="text-muted-foreground/50 mb-3 size-8" aria-hidden />
                 <p className="text-muted-foreground text-sm">No messages yet</p>
               </div>

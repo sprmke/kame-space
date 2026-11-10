@@ -78,7 +78,6 @@ function inboxScopeBody(scope?: InboxApiScope | null): Record<string, string> {
 
 export const INBOX_THREAD_PAGE_SIZE = 40;
 
-
 export async function fetchInboxConnections(
   orgSlug: string | null,
   orgId: string | null,

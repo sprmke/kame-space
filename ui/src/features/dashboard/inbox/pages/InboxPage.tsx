@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useSearchParams } from 'react-router-dom';
 
@@ -6,12 +6,15 @@ import { toast } from 'sonner';
 
 import { useAdminLayoutFillMain } from '@/features/dashboard/bookings/lib/adminLayoutFillMain';
 import { InboxConversationView } from '@/features/dashboard/inbox/components/InboxConversationView';
+import { InboxHowItWorksSheet } from '@/features/dashboard/inbox/components/InboxHowItWorksSheet';
+import { InboxImportBanner } from '@/features/dashboard/inbox/components/InboxImportBanner';
 import {
   InboxManageModals,
   InboxManageToolbar,
   type InboxManageModal,
 } from '@/features/dashboard/inbox/components/InboxManageModals';
 import { InboxPlatformTabs } from '@/features/dashboard/inbox/components/InboxPlatformTabs';
+import { InboxSyncStatusPill } from '@/features/dashboard/inbox/components/InboxSyncStatusPill';
 import { InboxThreadList } from '@/features/dashboard/inbox/components/InboxThreadList';
 import {
   MetaInboxOperationModal,
@@ -28,9 +31,12 @@ import {
   useInboxTemplates,
   useInboxThreads,
   useMetaInboxSync,
+  useMetaInboxSyncStatus,
   useMetaOAuthPagePicker,
 } from '@/features/dashboard/inbox/hooks/useInbox';
+import { requestMetaInboxSync } from '@/features/dashboard/inbox/lib/inboxApi';
 import type { InboxApiScope } from '@/features/dashboard/inbox/lib/inboxApi';
+import { deriveInboxSyncStatus } from '@/features/dashboard/inbox/lib/inboxSyncStatus';
 import { metaInboxOAuthErrorMessage } from '@/features/dashboard/inbox/lib/metaInboxOAuthErrors';
 import type {
   InboxConversation,
@@ -131,6 +137,7 @@ export function InboxPage({
 
   useInboxRealtime(orgId, selectedId, scope);
 
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
   const {
     data: connectionsData,
     isLoading: connectionsLoading,
@@ -138,6 +145,52 @@ export function InboxPage({
   } = useInboxConnections(orgSlug, orgId, scope);
   const metaSyncInProgress = connectionsData?.metaSyncInProgress ?? false;
   const metaSyncError = connectionsData?.metaSyncError ?? null;
+  const syncStatusQuery = useMetaInboxSyncStatus(
+    orgSlug,
+    orgId,
+    scope,
+    metaSyncAvailability.available
+  );
+  const syncStatus = useMemo(
+    () =>
+      deriveInboxSyncStatus({
+        connected:
+          syncStatusQuery.data?.connected ??
+          Boolean(
+            connectionsData?.connections?.some(
+              (row) => row.status === 'connected' || row.status === 'disconnected'
+            )
+          ),
+        syncPaused: !metaSyncAvailability.available || Boolean(syncStatusQuery.data?.syncPaused),
+        importComplete: syncStatusQuery.data?.importComplete ?? true,
+        importRunning: syncStatusQuery.data?.importRunning ?? false,
+        conversationsImported: syncStatusQuery.data?.conversationsImported ?? 0,
+        lastCheckedAt: syncStatusQuery.data?.lastCheckedAt ?? null,
+        consecutiveFailures: syncStatusQuery.data?.consecutiveFailures ?? 0,
+        lastErrorCode: syncStatusQuery.data?.lastErrorCode ?? null,
+        browserOnline: syncStatusQuery.online,
+      }),
+    [syncStatusQuery.data, syncStatusQuery.online, connectionsData, metaSyncAvailability.available]
+  );
+
+  const handleSyncAction = useCallback(
+    (action: 'fix-connection' | 'reconnect' | 'check-now' | null) => {
+      if (!action) return;
+      if (action === 'reconnect') {
+        handleConnectMeta();
+        return;
+      }
+      if (action === 'fix-connection') {
+        resubscribeMeta.mutate();
+        return;
+      }
+      void requestMetaInboxSync(orgSlug, orgId, 'check_now', scope).catch(() => undefined);
+    },
+    // `handleConnectMeta`, `resubscribeMeta` and the sync helper are stable enough here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [orgSlug, orgId, scope?.propertyId, scope?.parkingId]
+  );
+
   useMetaInboxSync(orgSlug, orgId, metaSyncInProgress, scope, metaSyncAvailability.available);
   const {
     data: threadsData,
@@ -329,27 +382,41 @@ export function InboxPage({
       subtitle="View and reply to guest messages from connected channels."
       titleId="inbox-heading"
       heroTrailing={
-        <InboxManageToolbar
-          canManage={canManage}
-          canManageChannels={allowChannels}
-          canManageQuickReplies={allowQuickReplies}
-          canManageAutomation={allowAutomation}
-          showChannelsTab={showChannelsTab}
-          showSettingsManageTabs={showSettingsManageTabs}
-          onOpen={setManageModal}
-          variant="hero"
-        />
+        <div className="flex items-center gap-2">
+          <InboxSyncStatusPill
+            status={syncStatus}
+            onAction={handleSyncAction}
+            onHowItWorks={() => setHowItWorksOpen(true)}
+          />
+          <InboxManageToolbar
+            canManage={canManage}
+            canManageChannels={allowChannels}
+            canManageQuickReplies={allowQuickReplies}
+            canManageAutomation={allowAutomation}
+            showChannelsTab={showChannelsTab}
+            showSettingsManageTabs={showSettingsManageTabs}
+            onOpen={setManageModal}
+            variant="hero"
+          />
+        </div>
       }
       desktopActions={
-        <InboxManageToolbar
-          canManage={canManage}
-          canManageChannels={allowChannels}
-          canManageQuickReplies={allowQuickReplies}
-          canManageAutomation={allowAutomation}
-          showChannelsTab={showChannelsTab}
-          showSettingsManageTabs={showSettingsManageTabs}
-          onOpen={setManageModal}
-        />
+        <div className="flex items-center gap-2">
+          <InboxSyncStatusPill
+            status={syncStatus}
+            onAction={handleSyncAction}
+            onHowItWorks={() => setHowItWorksOpen(true)}
+          />
+          <InboxManageToolbar
+            canManage={canManage}
+            canManageChannels={allowChannels}
+            canManageQuickReplies={allowQuickReplies}
+            canManageAutomation={allowAutomation}
+            showChannelsTab={showChannelsTab}
+            showSettingsManageTabs={showSettingsManageTabs}
+            onOpen={setManageModal}
+          />
+        </div>
       }
       className="flex min-h-0 flex-1 flex-col"
     >
@@ -405,6 +472,9 @@ export function InboxPage({
                 mobileShowConversation ? '@2xl:flex hidden' : 'flex'
               )}
             >
+              {metaSyncInProgress && conversations.length > 0 ? (
+                <InboxImportBanner loadedCount={conversations.length} className="mx-3 mb-2" />
+              ) : null}
               <InboxThreadList
                 conversations={conversations}
                 isLoading={(threadsLoading || metaSyncInProgress) && conversations.length === 0}
@@ -511,17 +581,25 @@ export function InboxPage({
                 uploadingAttachment={uploadAttachment.isPending}
                 editing={editMessage.isPending}
                 unsending={unsendMessage.isPending}
+                onRetrySend={async (message) => {
+                  await sendReply.mutateAsync({
+                    conversationId: message.conversation_id,
+                    text: message.body_text ?? '',
+                  });
+                }}
                 suggesting={aiSuggest.isPending}
               />
             </div>
           </div>
 
           <MetaInboxOperationModal
-            open={metaOperation !== null}
-            operation={metaOperation ?? 'sync'}
+            open={metaOperation !== null && metaOperation !== 'sync'}
+            operation={metaOperation === 'sync' ? 'connect' : (metaOperation ?? 'connect')}
             loadedCount={conversations.length}
           />
         </div>
+
+        <InboxHowItWorksSheet open={howItWorksOpen} onOpenChange={setHowItWorksOpen} />
 
         <InboxManageModals
           open={manageModal}
