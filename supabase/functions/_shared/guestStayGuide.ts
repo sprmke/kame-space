@@ -94,10 +94,21 @@ function addDaysYmd(ymd: string, deltaDays: number): string {
   return dt.toISOString().slice(0, 10);
 }
 
-/** Manila midnight on check-in day through end of day after check-out. */
+/**
+ * The stay guide is readable from the moment the token is issued through the day after
+ * check-out.
+ *
+ * It used to open at Manila midnight on check-in day, so a guest approved five days early
+ * tapped the button in their ready-for-check-in email and got "This stay guide isn't
+ * available" (plan D1). Access is not the secret boundary: Wi-Fi and door code have their
+ * own reveal time (see `guestEssentials.ts`).
+ *
+ * `validUntil` keeps the one-day grace so a guest can still read it on the way home.
+ */
 export function computeStayGuideValidityWindow(
   checkInDate: string,
-  checkOutDate: string
+  checkOutDate: string,
+  now: Date = new Date()
 ): { validFrom: string; validUntil: string } | null {
   const checkInYmd = normalizeBookingDateToYmd(checkInDate);
   const checkOutYmd = normalizeBookingDateToYmd(checkOutDate);
@@ -105,7 +116,7 @@ export function computeStayGuideValidityWindow(
 
   const graceEndYmd = addDaysYmd(checkOutYmd, 1);
   return {
-    validFrom: `${checkInYmd}T00:00:00+08:00`,
+    validFrom: now.toISOString(),
     validUntil: `${graceEndYmd}T23:59:59+08:00`,
   };
 }

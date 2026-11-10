@@ -2,7 +2,7 @@
 title: 'Guest stay guide (token-gated brochure)'
 status: active
 tags: [guides, routes]
-updated: 2026-08-29
+updated: 2026-11-10
 ---
 
 # Guest stay guide (token-gated brochure)
@@ -46,7 +46,8 @@ hide the ones you don't need, and set colours / fonts / motion - the same contro
 - Q: When does the guest get the link? A: When the booking reaches ready-for-check-in
   (in that email, and from the booking in your dashboard).
 - Q: Can anyone open it? A: No. Each link uses a unique token tied to that booking and only
-  works during the stay window.
+  works from the moment it is sent through the day after check-out. Wi-Fi and door code stay
+  hidden until their own reveal time, so the link can go out early without handing out the code.
 - Q: How do I change the wording? A: **Public Pages → Stay Guide → Edit → Section details** -
   expand a chapter to edit its text and section image (also editable under **Templates**).
 - Q: How do I change how it looks? A: Same editor - **Template**, **Sections** (reorder /
@@ -66,11 +67,17 @@ hide the ones you don't need, and set colours / fonts / motion - the same contro
 | Rule        | Detail                                                                                                           |
 | ----------- | ---------------------------------------------------------------------------------------------------------------- |
 | **Token**   | Opaque `stay_guide_token` on `guest_submissions`; issued when booking reaches **`READY_FOR_CHECKIN`**            |
-| **Window**  | **Asia/Manila** check-in day `00:00` through end of day **after** check-out (`23:59:59+08:00`)                   |
+| **Window**  | From the moment the token is issued through end of day **after** check-out (`23:59:59+08:00`, Asia/Manila)       |
 | **Status**  | `READY_FOR_CHECKIN`, `READY_FOR_CHECKOUT`, `PENDING_SD_REFUND`, or `COMPLETED` (not `CANCELLED` or pre-ready)    |
 | **Slug**    | API accepts optional `?property=`; must match booking property when provided                                     |
 | **Listing** | A valid token keeps the guide working even when the property is not `ACTIVE` (paused, archived, contract-locked) |
 | **Title**   | `{Property Name} - Stay Guide` via `usePageTitle` / `ShowcaseShell`                                              |
+
+**Why the window opens at issue, not on check-in day.** It used to open at Manila midnight on
+check-in day, while the ready-for-check-in email goes out as soon as the booking reaches that
+status. A guest approved early tapped the button and saw "This stay guide isn't available"
+(guest journey plan, finding D1). The link now opens when it is sent. Secrets are gated
+separately by `property_guest_essentials.reveal_lead_hours`.
 
 Expired or invalid token → generic unavailable message (no leak of booking existence).
 Property without `propertyShowcase` → **403** with a host-contact message
