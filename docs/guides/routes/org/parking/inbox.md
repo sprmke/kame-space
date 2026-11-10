@@ -60,6 +60,8 @@ Parking **Guest Inbox** is for website chat with parking guests; Facebook and In
 - **Quick replies:** stored in `social_reply_templates` with `parking_id` set to this parking's id. First load auto-seeds `_shared/inboxDefaultQuickReplies.ts#INBOX_DEFAULT_PARKING_QUICK_REPLIES` (availability, rates, vehicle details, entry/exit, location, payment, extend booking, lost ticket/access code, cancellation, follow-up) if the list is empty.
 - **Automation:** stored in `social_inbox_settings` with `parking_id` set to this parking's id — a separate row from the org/property default (`parking_id IS NULL`). AI auto-reply runs on inbound parking web chat when enabled.
 - Failed thread loads show a retryable load error instead of the generic empty state.
+- **Catch-up:** the thread list refetches when the tab regains focus and when the browser comes back online. A member whose role has no org-wide live updates sees the list refresh about once a minute while the tab is visible.
+- **Edit and Unsend stay available** on website chat threads. They are hidden and rejected on Facebook and Instagram threads only, because Meta has no API for either.
 - List / thread layout follows the inbox card width, same as [Property Inbox](../property/inbox.md) (one pane below 42rem, side-by-side above).
 - Query/body: `parking_id`; auth via `verifyParkingTeamAccess` + `inbox:*`.
 
