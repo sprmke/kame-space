@@ -252,7 +252,8 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
     category: 'email',
     previewTemplateSlug: 'ready-for-checkin',
     defaultContent: `<p>Dear <strong>{{guest_facebook_name}}</strong>,</p>
-<p>Your Guest Advise Form (GAF) has been approved and your booking is now confirmed. We look forward to hosting you.</p>
+<p>Your check-in details are ready. We look forward to hosting you.</p>
+<p>{{trip_cta_section}}</p>
 <p>{{ready_for_checkin_booking_summary_section}}</p>
 <p>{{payment_breakdown_section}}</p>
 <p>{{gcash_payment_section}}</p>
@@ -270,7 +271,8 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
     defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
 <p>Thank you for staying with us! We hope you had a wonderful stay! Please follow the check-out instructions below. After that, please open and fill out the SD refund form so that we can process your refund.</p>
 <p>{{sd_refund_checklist_section}}</p>
-<p>{{sd_refund_details_section}}</p>`,
+<p>{{sd_refund_details_section}}</p>
+<p>{{trip_cta_section}}</p>`,
   },
   {
     key: 'email-booking-cancelled-guest',
@@ -282,6 +284,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
 <p>This is for your stay at <strong>{{tower_and_unit_number}}</strong> from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong>.</p>
 <p>{{cancellation_detail_section}}</p>
 <p>You can see the latest status any time from your trip page.</p>
+<p>{{trip_cta_section}}</p>
 <p>{{email_signature_section}}</p>`,
   },
   {
@@ -302,6 +305,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
     defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
 <p><strong>{{cancellation_request_title}}</strong></p>
 <p>{{cancellation_detail_section}}</p>
+<p>{{trip_cta_section}}</p>
 <p>{{email_signature_section}}</p>`,
   },
   {
@@ -312,6 +316,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
     defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
 <p>Your refund has been sent.</p>
 <p>{{cancellation_detail_section}}</p>
+<p>{{trip_cta_section}}</p>
 <p>{{email_signature_section}}</p>`,
   },
 ];

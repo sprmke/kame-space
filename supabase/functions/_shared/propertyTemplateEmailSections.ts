@@ -35,6 +35,7 @@ export const EMAIL_DYNAMIC_SECTION_KEYS = [
   'email_signature_section',
   'booking_acknowledgement_flow_section',
   'booking_request_received_flow_section',
+  'trip_cta_section',
   'ready_for_checkin_booking_summary_section',
   'ready_for_checkin_contact_section',
   'stay_guide_cta_section',
@@ -80,11 +81,16 @@ export const DYNAMIC_SECTIONS_BY_TEMPLATE: Record<string, EmailDynamicSectionKey
     'booking_acknowledgement_flow_section',
     'email_signature_section',
   ],
+  // The flow section already renders the trip button.
   'email-booking-request-received': [
     'booking_request_received_flow_section',
     'email_signature_section',
   ],
+  'email-booking-cancelled-guest': ['trip_cta_section', 'email_signature_section'],
+  'email-cancellation-request-guest': ['trip_cta_section', 'email_signature_section'],
+  'email-refund-sent-guest': ['trip_cta_section', 'email_signature_section'],
   'email-ready-for-checkin': [
+    'trip_cta_section',
     'ready_for_checkin_booking_summary_section',
     'payment_breakdown_section',
     'gcash_payment_section',
@@ -93,7 +99,11 @@ export const DYNAMIC_SECTIONS_BY_TEMPLATE: Record<string, EmailDynamicSectionKey
     'stay_guide_cta_section',
     'email_signature_section',
   ],
-  'email-sd-refund-form-request': ['sd_refund_checklist_section', 'sd_refund_details_section'],
+  'email-sd-refund-form-request': [
+    'sd_refund_checklist_section',
+    'sd_refund_details_section',
+    'trip_cta_section',
+  ],
 };
 
 function notifyDetailTableStyle(): string {
@@ -383,30 +393,65 @@ export function buildBookingAcknowledgementFlowSectionHtml(input: {
   parkingUrl?: string | null;
   /** Guest trip page (booking details, documents, chat). Button omitted when empty. */
   tripUrl?: string | null;
+  /**
+   * Documents this booking actually needs, in guest words ("Guest Advice Form (GAF)",
+   * "Pet Approval"). Empty or absent means the property needs none, and the steps drop the
+   * building-admin sentence entirely (plan 6.2, finding F1).
+   */
+  requiredDocuments?: readonly string[];
 }): string {
   const unit = escapeHtml(input.unitLabel);
   const checkIn = escapeHtml(input.checkIn);
   const checkOut = escapeHtml(input.checkOut);
   const socialMentions = buildSocialContactMentionsHtml(input.contact, input.brandColor);
-  const summary = `<table role="presentation" class="summary-surface" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:separate;border-spacing:0;background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;margin:0 0 4px 0;"><tr><td class="summary-inner" style="padding:18px 20px;"><p style="margin:0;font-size:16px;line-height:1.65;color:#333333;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">Your booking request for <strong style="color:#111827;font-weight:700;">${unit} from ${checkIn} to ${checkOut}</strong> has been approved.</p></td></tr></table>`;
-  const step1 = buildAcknowledgementStepCard(
-    1,
-    'We have forwarded your Guest Advise Form (GAF) to the building administration for approval.',
-    input.brandColor
+  const summary = `<table role="presentation" class="summary-surface" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:separate;border-spacing:0;background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;margin:0 0 4px 0;"><tr><td class="summary-inner" style="padding:18px 20px;"><p style="margin:0;font-size:16px;line-height:1.65;color:#333333;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">Your booking request for <strong style="color:#111827;font-weight:700;">${unit} from ${checkIn} to ${checkOut}</strong> is confirmed.</p></td></tr></table>`;
+
+  const documents = (input.requiredDocuments ?? [])
+    .map((label) => label.trim())
+    .filter(Boolean);
+  const documentList = documents.length
+    ? documents.map((label) => `<strong style="color:#111827;font-weight:700;">${escapeHtml(label)}</strong>`).join(', ')
+    : '';
+
+  const steps: string[] = [];
+  if (documents.length > 0) {
+    steps.push(
+      buildAcknowledgementStepCard(
+        1,
+        `We have sent your ${documentList} to the ${unit === '' ? 'building' : 'building administration'} for approval.`,
+        input.brandColor
+      )
+    );
+    steps.push(
+      buildAcknowledgementStepCard(
+        2,
+        `Approval typically takes a <strong style="color:#111827;font-weight:700;">few hours up to two (2) business days</strong>. If you haven't heard from us by your check-in date, reply to this email or ${socialMentions} so we can follow up.`,
+        input.brandColor
+      )
+    );
+  } else {
+    steps.push(
+      buildAcknowledgementStepCard(
+        1,
+        `Your host is getting your arrival ready. Reply to this email or ${socialMentions} if anything changes.`,
+        input.brandColor
+      )
+    );
+  }
+  steps.push(
+    buildAcknowledgementStepCard(
+      steps.length + 1,
+      documents.length > 0
+        ? 'Once approved, we will send your <strong>check-in details email</strong> with everything you need for arrival.'
+        : 'We will send your <strong>check-in details email</strong> with everything you need for arrival.',
+      input.brandColor
+    )
   );
-  const step2 = buildAcknowledgementStepCard(
-    2,
-    `Approval typically takes a <strong style="color:#111827;font-weight:700;">few hours up to two (2) business days</strong>. If you haven't heard from us until your check-in date, please reply to this email or ${socialMentions} so we can follow up promptly.`,
-    input.brandColor
-  );
-  const step3 = buildAcknowledgementStepCard(
-    3,
-    'Once your GAF is approved, we will send you a <strong>Booking Confirmation email</strong> with all the details you need for your arrival.',
-    input.brandColor
-  );
+
+  const stepCards = steps.join(stepRowGap());
   const parkingCallout = buildParkingSelfServeCalloutHtml(input.parkingUrl);
   const tripCta = buildGuestTripCtaHtml(input.tripUrl, input.brandColor);
-  return `${summary}${notifySectionTitle("What's next", input.brandColor)}${step1}${stepRowGap()}${step2}${stepRowGap()}${step3}${parkingCallout}${tripCta}`;
+  return `${summary}${notifySectionTitle("What's next", input.brandColor)}${stepCards}${parkingCallout}${tripCta}`;
 }
 
 /**
@@ -1050,6 +1095,12 @@ export function buildSampleDynamicSections(input: {
             contact: sampleContact,
             tripUrl: `${input.settings.publicGuestAppOrigin}/properties/sample-unit/trip?bookingId=sample`,
           });
+        break;
+      case 'trip_cta_section':
+        out.trip_cta_section = buildGuestTripCtaHtml(
+          `${input.settings.publicGuestAppOrigin}/properties/sample-unit/trip?bookingId=sample`,
+          brandColor
+        );
         break;
       case 'ready_for_checkin_booking_summary_section':
         out.ready_for_checkin_booking_summary_section =

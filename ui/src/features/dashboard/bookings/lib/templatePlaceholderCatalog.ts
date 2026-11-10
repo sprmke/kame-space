@@ -77,6 +77,7 @@ const PROPERTY_SECTION_KEYS = [
   'email_signature_section',
   'booking_acknowledgement_flow_section',
   'booking_request_received_flow_section',
+  'trip_cta_section',
   'ready_for_checkin_booking_summary_section',
   'ready_for_checkin_contact_section',
   'stay_guide_cta_section',
@@ -187,6 +188,7 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
     PROPERTY_GUEST_CONTACT_KEYS,
     PROPERTY_GUEST_LINK_KEYS,
     [
+      'trip_cta_section',
       'ready_for_checkin_booking_summary_section',
       'document_reminders_section',
       'payment_breakdown_section',
@@ -200,7 +202,28 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
     PROPERTY_EMAIL_WITH_PAYMENT,
     PROPERTY_GUEST_CONTACT_KEYS,
     PROPERTY_GUEST_LINK_KEYS,
-    ['sd_refund_checklist_section', 'sd_refund_details_section']
+    ['sd_refund_checklist_section', 'sd_refund_details_section', 'trip_cta_section']
+  ),
+  'email-booking-cancelled-guest': uniqueKeys(
+    PROPERTY_EMAIL_CORE,
+    PROPERTY_BOOKING_META_KEYS,
+    PROPERTY_GUEST_CONTACT_KEYS,
+    PROPERTY_GUEST_LINK_KEYS,
+    ['cancellation_detail_section', 'trip_cta_section', 'email_signature_section']
+  ),
+  'email-cancellation-request-guest': uniqueKeys(
+    PROPERTY_EMAIL_CORE,
+    PROPERTY_BOOKING_META_KEYS,
+    PROPERTY_GUEST_CONTACT_KEYS,
+    PROPERTY_GUEST_LINK_KEYS,
+    ['cancellation_detail_section', 'trip_cta_section', 'email_signature_section']
+  ),
+  'email-refund-sent-guest': uniqueKeys(
+    PROPERTY_EMAIL_CORE,
+    PROPERTY_BOOKING_META_KEYS,
+    PROPERTY_GUEST_CONTACT_KEYS,
+    PROPERTY_GUEST_LINK_KEYS,
+    ['cancellation_detail_section', 'trip_cta_section', 'email_signature_section']
   ),
 };
 

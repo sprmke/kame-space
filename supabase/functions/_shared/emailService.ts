@@ -31,6 +31,8 @@ import {
 import { formatDateForEmail } from './utils.ts';
 import { guestJourneyReviewExpectation } from './guestJourneyCopy.ts';
 import { resolvePropertyMedianFirstResponseHours } from './guestResponseTime.ts';
+import { resolveDocumentRequirements } from './documentRequirements.ts';
+import { buildStayGuideCheckInDocuments } from './stayGuideCheckInDocuments.ts';
 import { resolveAppSettings } from './appSettings.ts';
 import { buildGuestFacingPlaceholderVars, loadGuestFacingContactInfo } from './guestContactInfo.ts';
 import {
@@ -818,6 +820,27 @@ export async function sendBookingRequestReceived(booking: GuestSubmission) {
 }
 
 /**
+ * Guest-facing labels for the documents this booking still needs.
+ *
+ * Reuses the requirement resolver so the email says the same thing the trip page checklist
+ * does, and an empty list means the property needs no paperwork.
+ */
+async function loadRequiredDocumentLabels(
+  propertyId: string | null | undefined,
+  booking: GuestSubmission
+): Promise<string[]> {
+  const id = String(propertyId ?? '').trim();
+  if (!id) return [];
+  try {
+    const requirements = await resolveDocumentRequirements(id);
+    return buildStayGuideCheckInDocuments(booking, requirements).map((doc) => doc.label);
+  } catch (err) {
+    console.error('[emailService] required document labels failed (non-fatal):', err);
+    return [];
+  }
+}
+
+/**
  * Booking acknowledgement — sent to the **guest** when moving PENDING_REVIEW → PENDING_GAF.
  * Confirms we received the form and are processing their GAF.
  */
@@ -864,6 +887,9 @@ export async function sendBookingAcknowledgement(booking: GuestSubmission) {
           contact: guestContact,
           parkingUrl,
           tripUrl: guestLinkExtras.trip_url,
+          // Only the documents this booking actually needs (plan 6.2). A property without
+          // the GAF requirement no longer gets GAF wording.
+          requiredDocuments: await loadRequiredDocumentLabels(propertyId, booking),
         }),
         email_signature_section: buildEmailSignatureSectionHtml(settings.gafUnitOwner, unitLabel),
       },
