@@ -64,6 +64,9 @@ Follow-up slice (2026-11-09):
 - **M-8/M-9 UI** parking settings now returns archive impact counts. The archive confirm lists pending offers and upcoming bookings; delete is disabled once the slot has booking history or pending offers, and the copy names finance removal.
 - **H-7 finance** the parking dashboard now reads `parking_payment_transactions.host_net_total` for net profit and pipeline instead of the property booking formula, so the marketplace commission is not counted as host revenue. Verified against local seed data (₱630 net, not ₱700 guest charge).
 - **Payment terminal states** a duplicate provider webhook can no longer flip `refund_review`/`refunded` back to `paid`; manual refunds are capped at the guest charge.
+- **H-3/H-4/H-5/H-8** decline now confirms before writing; the flow stepper stays visible through `READY_FOR_CHECKIN`; phone status actions use the shared bottom action bar; the host New booking modal states the auto-claim and guest-payment behavior.
+- **M-11 Telegram** guest cancellation, payment-window expiry, and endorsement failure now send Telegram as well as in-app, using per-parking templates and toggles that default on (`20261328000000_parking_telegram_alert_templates.sql`).
+- **M-3 decision closed** Payment Links remain because PayMongo Checkout Sessions in this account do not expose a custom `expires_at`; the ledger invalidation + webhook guard remains the TTL authority.
 - **Docs/rules cleanup** removed stale references to the deleted `submit-pay-parking`, `parking-broadcast-email` and `create-parking-booking` endpoints from active guides and rules.
 
 **C-4 confirmed:** no repository callers for `submit-pay-parking`, `parking-broadcast-email` or `create-parking-booking`, and none are deployed in production. Their dirs, config blocks and guards are gone.
@@ -280,7 +283,7 @@ The readiness audit already says this must exist before real money flows.
 
 - [ ] Before releasing, check the pending txn's PayMongo state. If paid, fulfill. If processing, extend by a short grace (for example 10 min, once). Reuse the `getPaymongoProviderPaymentState` pattern from `orgPaymentReconcile.ts`.
 - [ ] Add a parking reconcile sweep (same cron tick) for `pending` txns older than 15 min whose provider state is `paid`, to cover missed webhooks.
-- [ ] Use Checkout Sessions with an `expires_at` that matches the window (finishes P0-2's last bullet).
+- [x] **Decision:** keep Payment Links. PayMongo Checkout Sessions do not expose a custom `expires_at` in this account, so switching would not shorten the payable window and would change the webhook shape. The ledger invalidation + webhook guard remains the TTL authority.
 
 ### M-4 · Guest cancel is two writes; host and cron can see a half state · **Likely**
 
