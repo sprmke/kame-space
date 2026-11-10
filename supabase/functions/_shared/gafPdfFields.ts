@@ -196,6 +196,30 @@ export const AZURE_PET_PDF_FIELD_MAP: PdfFieldMapDefinition = {
   petVaccinationDate: 'pet.vaccinationDate',
 };
 
+/** True when a stored string is one of {@link PDF_DATA_KEYS}. */
+export function isPdfDataKey(value: unknown): value is PdfDataKey {
+  return typeof value === 'string' && (PDF_DATA_KEYS as readonly string[]).includes(value);
+}
+
+/**
+ * Fill a residence's stored map (`Record<pdfFieldName, unknown>` from JSONB).
+ *
+ * Unknown keys are skipped instead of throwing, so a hand-edited row can never break a
+ * generation run: the field is simply left blank.
+ */
+export function resolveStoredPdfFieldValues(
+  map: Record<string, unknown>,
+  fd: GuestFormData
+): PdfFieldMap {
+  const values: PdfFieldMap = {};
+  for (const [fieldName, dataKey] of Object.entries(map)) {
+    const trimmed = fieldName.trim();
+    if (!trimmed) continue;
+    values[trimmed] = isPdfDataKey(dataKey) ? pdfDataValue(dataKey, fd) : undefined;
+  }
+  return values;
+}
+
 /** Fill any template by its map. */
 export function resolvePdfFieldValues(
   map: PdfFieldMapDefinition,

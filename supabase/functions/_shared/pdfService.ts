@@ -4,7 +4,18 @@ import { GuestFormData } from './types.ts';
 import { applyGafDefaultsToFormData, resolveAppSettings } from './appSettings.ts';
 import { applyGafOwnerSignatureBlock } from './gafPdfSignature.ts';
 import { applyPetOwnerSignatureBlock } from './petPdfSignature.ts';
-import { buildGafPdfFieldMap, buildPetPdfFieldMap } from './gafPdfFields.ts';
+import {
+  buildGafPdfFieldMap,
+  buildPetPdfFieldMap,
+  resolveStoredPdfFieldValues,
+} from './gafPdfFields.ts';
+import { fillPdfTemplateBytes } from './pdfTemplateFill.ts';
+
+/** A residence PDF template definition (`developments.settings.approvals.pdfTemplates`). */
+export type PdfTemplateSpec = {
+  storagePath: string;
+  fieldMap: Record<string, unknown>;
+};
 
 async function getTemplateBytes(
   templateName: string = 'guest-form-template.pdf'
@@ -26,6 +37,27 @@ async function getTemplateBytes(
   }
 
   return new Uint8Array(await templateData.arrayBuffer());
+}
+
+/**
+ * Fill a residence's own building PDF by its stored map.
+ *
+ * No signature block and no Azure defaults: whatever the map says is what the form gets, and
+ * a field the PDF does not have is reported instead of failing the booking.
+ */
+export async function generatePDFFromTemplate(
+  formData: GuestFormData,
+  spec: PdfTemplateSpec,
+  propertyId?: string | null
+): Promise<Uint8Array> {
+  const templateBytes = await getTemplateBytes(spec.storagePath);
+  const fd = await applyGafDefaultsToFormData(formData, propertyId);
+  const values = resolveStoredPdfFieldValues(spec.fieldMap, fd);
+  const { bytes, warnings } = await fillPdfTemplateBytes(templateBytes, values);
+  for (const warning of warnings.slice(0, 10)) {
+    console.warn(`[pdfService] template field "${warning.field}" not filled: ${warning.reason}`);
+  }
+  return bytes;
 }
 
 export async function generatePDF(

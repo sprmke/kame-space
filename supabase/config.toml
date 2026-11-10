@@ -1113,6 +1113,9 @@ verify_jwt = false
 [functions.update-development]
 verify_jwt = false
 
+[functions.upload-development-pdf-template]
+verify_jwt = false
+
 [functions.delete-development]
 verify_jwt = false
 

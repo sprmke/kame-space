@@ -108,6 +108,8 @@ Each row: **label**, **trigger** (Always required / Guest has pets / Guest needs
 
 A row is never classified as the GAF or pet document from its label or from a shared template: only the historical ids `gaf` / `pet` (`legacyKind`) drive the `gaf_*` / `pet_*` columns and the approved-file requirement. A "Carpet inspection" step stays a checklist step even if its label contains "pet".
 
+**PDF templates** (`approvals.pdfTemplates`): `POST upload-development-pdf-template` stores a fillable PDF and returns its AcroForm field names. Each field is mapped to a `PDF_DATA_KEYS` value (`property.unitOwner`, `stay.checkInDate`, `vehicle.slot`, …); a residence template fills by that map, and a field the PDF does not have is logged and left blank rather than failing the send. Uploads are immutable: replacing a template creates a new path, so a booking that already generated its PDF never changes underneath. Azure's two templates are unchanged by this path.
+
 Save path: batched **Save Changes** → **`PATCH update-development`** with `documentRequirements`. The handler rejects the payload if any row is missing `id`, `label`, `order`, `triggerCondition`, or `approvalSource` rather than silently dropping it.
 
 Removing a step is blocked while a non-terminal booking's `document_requirements_snapshot` still lists it: the request fails with 409 and the count, and the editor should retire the step (**Active** off) instead. Bookings snapshot their steps when they first enter `PENDING_DOCUMENTS`, so a save never changes what an in-flight booking is waiting for.
