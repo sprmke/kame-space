@@ -87,7 +87,7 @@ Deno.test('hasOrgPermission accepts a leaf granted through a legacy id', () => {
 });
 
 Deno.test('a legacy coarse requirement is satisfied by ANY one of its leaves', () => {
-  // Known over-grant, tracked in the issue linked below. `hasOrgPermission` expands the
+  // Known over-grant, issue #366. `hasOrgPermission` expands the
   // required legacy id and uses `.some()`, so holding one leaf passes a coarse check.
   // `org-access` computes `canManageTeam` from `org:team:manage`, so a member with only
   // `org.team.invitations:edit` is told they can manage the team.
