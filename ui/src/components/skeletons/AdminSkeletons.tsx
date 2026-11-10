@@ -1749,6 +1749,7 @@ export {
   MarketingEditorSkeleton,
   MarketingLibraryBodySkeleton,
   MarketingLibraryGridSkeleton,
+  MarketingPlannerSkeleton,
   MarketingPublishHistorySkeleton,
   MarketingStudioSkeleton,
   MarketingTemplateBrowserSkeleton,

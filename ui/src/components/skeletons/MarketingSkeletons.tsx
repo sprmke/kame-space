@@ -106,6 +106,33 @@ function MarketingLibraryToolbarSkeleton({
 }
 
 /**
+ * Plan tab body: summary line plus agenda rows. Chips, the tab row and the page title stay
+ * mounted and real; only the async values and rows are skeletonized.
+ */
+export function MarketingPlannerSkeleton() {
+  return (
+    <div className="space-y-4" role="status" aria-busy="true" aria-label="Loading your plan">
+      <div className="rounded-xl border border-border/70 bg-muted/30 p-4">
+        <Skeleton className="h-4 w-4/5" />
+        <Skeleton className="mt-2 h-4 w-2/5" />
+      </div>
+      {Array.from({ length: 2 }).map((_, group) => (
+        <div key={group} className="space-y-2" aria-hidden>
+          <Skeleton className="h-3 w-24" />
+          {Array.from({ length: 2 }).map((_, row) => (
+            <div key={row} className="rounded-xl border border-border/70 p-4">
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="mt-2 h-4 w-3/5" />
+              <Skeleton className="mt-2 h-3 w-4/5" />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
  * Library body (Posts / Videos / Calendar): toolbar + saved-design tile grid. This is
  * the default first-load state for a tab.
  */

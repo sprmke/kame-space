@@ -591,6 +591,108 @@ export async function refreshPlanBrief(input: {
   return data as PlannerItemRow;
 }
 
+export type PlannerAssetKind = 'template' | 'ai_session' | 'media';
+
+/**
+ * Attach the asset an editor just produced and move the item to `ready`. This is the other
+ * half of the handoff: the planner hands the host a seeded draft, and the saved draft comes
+ * back here so the item stops asking to be made.
+ */
+export async function attachPlanAsset(input: {
+  propertyId: string;
+  organizationId: string;
+  actor: ActorContext;
+  itemId: string;
+  assetKind: PlannerAssetKind;
+  assetId: string;
+  assetVersionId?: string | null;
+}): Promise<PlannerItemRow> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from('marketing_plan_items')
+    .update({
+      asset_kind: input.assetKind,
+      asset_id: input.assetId,
+      asset_version_id: input.assetVersionId ?? null,
+      status: 'ready',
+      status_reason: null,
+    })
+    .eq('id', input.itemId)
+    .eq('property_id', input.propertyId)
+    .is('deleted_at', null)
+    .select('*')
+    .maybeSingle();
+  if (error) throw new Error(`Could not attach the asset: ${error.message}`);
+  if (!data) throw new Error('Item not found');
+  return data as PlannerItemRow;
+}
+
+export type PrepareWeekResult = {
+  queued: Array<{
+    itemId: string;
+    title: string;
+    format: string;
+    opportunityType: string | null;
+  }>;
+  skipped: number;
+};
+
+/**
+ * Start the week: move every unbuilt item in the range to `preparing` and return the work
+ * list. The host still finishes each draft, because the editors are human canvases; this
+ * only records where they are.
+ */
+export async function prepareWeek(input: {
+  propertyId: string;
+  organizationId: string;
+  actor: ActorContext;
+  from: string;
+  to: string;
+  limit?: number;
+}): Promise<PrepareWeekResult> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from('marketing_plan_items')
+    .select('id, title, format, opportunity_type, status, asset_id')
+    .eq('property_id', input.propertyId)
+    .is('deleted_at', null)
+    .gte('scheduled_for', `${input.from}T00:00:00+08:00`)
+    .lte('scheduled_for', `${input.to}T23:59:59+08:00`)
+    .in('status', ['planned', 'suggested', 'stale'])
+    .order('scheduled_for', { ascending: true })
+    .limit(input.limit ?? 20);
+  if (error) throw new Error(`Could not load the plan: ${error.message}`);
+
+  const queue = (data ?? []).filter((row) => !row.asset_id);
+  if (queue.length === 0) return { queued: [], skipped: 0 };
+
+  const ids = queue.map((row) => String(row.id));
+  const { error: updateError } = await supabase
+    .from('marketing_plan_items')
+    .update({ status: 'preparing' })
+    .in('id', ids)
+    .eq('property_id', input.propertyId);
+  if (updateError) throw new Error(`Could not start preparing: ${updateError.message}`);
+
+  await logActivity({
+    action: 'marketing.prepare_week_started',
+    organizationId: input.organizationId,
+    propertyId: input.propertyId,
+    actor: input.actor,
+    metadata: { count: ids.length, from: input.from, to: input.to },
+  });
+
+  return {
+    queued: queue.map((row) => ({
+      itemId: String(row.id),
+      title: String(row.title ?? ''),
+      format: String(row.format ?? 'post'),
+      opportunityType: row.opportunity_type ? String(row.opportunity_type) : null,
+    })),
+    skipped: 0,
+  };
+}
+
 export type NewPlanItemInput = {
   title: string;
   format: 'post' | 'carousel' | 'story' | 'reel' | 'calendar';

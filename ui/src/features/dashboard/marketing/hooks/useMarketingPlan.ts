@@ -6,6 +6,7 @@ import { captureAppEvent } from '@/lib/posthog/capture';
 import {
   fetchMarketingPlan,
   fetchPlannerSettings,
+  prepareWeekBatch,
   generateMarketingPlan,
   markPlannerItemPosted,
   refreshPlannerBrief,
@@ -105,6 +106,29 @@ export function usePlanItemActions() {
   });
 
   return { skip, markPosted, update };
+}
+
+export function usePrepareWeek() {
+  const propertyId = usePropertyIdParam();
+  const invalidate = usePlanInvalidation();
+  return useMutation({
+    mutationFn: (input: { from: string; to: string; limit?: number }) =>
+      prepareWeekBatch(propertyId, input),
+    onSuccess: (result) => {
+      invalidate();
+      captureAppEvent('plan_generated', {
+        mode: 'prepare',
+        created: result.queued.length,
+        skipped: result.skipped,
+      });
+      toast.success(
+        result.queued.length > 0
+          ? `${result.queued.length} items ready to prepare`
+          : 'Nothing to prepare in that range'
+      );
+    },
+    onError: (error: Error) => toast.error(error.message || 'Could not start preparing'),
+  });
 }
 
 export function useRefreshPlanBrief() {

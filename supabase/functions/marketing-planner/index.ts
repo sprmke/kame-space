@@ -21,6 +21,7 @@ import {
 import { jsonError, jsonSuccess, jsonUpgradeHook, readJsonBody } from '../_shared/httpResponse.ts';
 import {
   addPlanItem,
+  attachPlanAsset,
   generatePlan,
   getPlannerSettings,
   isPlannerRange,
@@ -28,6 +29,7 @@ import {
   listPlanItems,
   markPlanItemPosted,
   refreshPlanBrief,
+  prepareWeek,
   resolvePlannerRange,
   savePlannerSettings,
   skipPlanItem,
@@ -89,6 +91,21 @@ const addItemSchema = z.object({
   scheduledFor: z.string().datetime({ offset: true }),
   manualTargets: z.array(z.string().trim().min(1).max(80)).max(10).optional(),
   brief: z.record(z.unknown()).optional(),
+});
+
+const attachSchema = z.object({
+  action: z.literal('attach_asset'),
+  itemId: z.string().uuid(),
+  assetKind: z.enum(['template', 'ai_session', 'media']),
+  assetId: z.string().uuid(),
+  assetVersionId: z.string().uuid().optional(),
+});
+
+const prepareSchema = z.object({
+  action: z.literal('prepare_batch'),
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  limit: z.number().int().min(1).max(20).optional(),
 });
 
 const settingsSchema = z.object({
@@ -227,6 +244,37 @@ serveAuthenticated('marketing-planner', async (req) => {
           reason: parsed.data.reason,
         });
         return jsonSuccess(req, { item });
+      }
+
+      if (action === 'attach_asset') {
+        const parsed = attachSchema.safeParse(body);
+        if (!parsed.success) return jsonError(req, 'Invalid attach_asset body', 400);
+        const actor = buildActorContext('dashboard', { propertyAccess: scoped }, req);
+        const item = await attachPlanAsset({
+          propertyId,
+          organizationId: scoped.org.id,
+          actor,
+          itemId: parsed.data.itemId,
+          assetKind: parsed.data.assetKind,
+          assetId: parsed.data.assetId,
+          assetVersionId: parsed.data.assetVersionId ?? null,
+        });
+        return jsonSuccess(req, { item });
+      }
+
+      if (action === 'prepare_batch') {
+        const parsed = prepareSchema.safeParse(body);
+        if (!parsed.success) return jsonError(req, 'Invalid prepare_batch body', 400);
+        const actor = buildActorContext('dashboard', { propertyAccess: scoped }, req);
+        const result = await prepareWeek({
+          propertyId,
+          organizationId: scoped.org.id,
+          actor,
+          from: parsed.data.from,
+          to: parsed.data.to,
+          limit: parsed.data.limit,
+        });
+        return jsonSuccess(req, result);
       }
 
       if (action === 'refresh_brief') {

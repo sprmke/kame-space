@@ -25,12 +25,23 @@ type Props = {
   day: string;
   today: string;
   onOpen: (item: PlannerItemDto) => void;
+  /** Opens the editor for an item that already has a draft in progress. */
+  onOpenEditor?: (item: PlannerItemDto) => void;
   onSkip: (item: PlannerItemDto) => void;
   onMarkPosted: (item: PlannerItemDto) => void;
   readOnly?: boolean;
 };
 
-export function PlanItemCard({ item, day, today, onOpen, onSkip, onMarkPosted, readOnly }: Props) {
+export function PlanItemCard({
+  item,
+  day,
+  today,
+  onOpen,
+  onOpenEditor,
+  onSkip,
+  onMarkPosted,
+  readOnly,
+}: Props) {
   const view = planItemStatusView(item.status);
   const time = formatItemTime(item.scheduledFor);
   const manual = isManualChannel(item.channelKind);
@@ -69,7 +80,12 @@ export function PlanItemCard({ item, day, today, onOpen, onSkip, onMarkPosted, r
         {!readOnly ? (
           <div className="flex flex-wrap items-center gap-2 pt-1">
             {view.actionLabel ? (
-              <Button size="sm" onClick={() => onOpen(item)}>
+              <Button
+                size="sm"
+                onClick={() =>
+                  view.action === 'review' && onOpenEditor ? onOpenEditor(item) : onOpen(item)
+                }
+              >
                 {view.actionLabel}
               </Button>
             ) : null}

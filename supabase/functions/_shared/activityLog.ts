@@ -1134,6 +1134,16 @@ export const ACTIVITY_ACTION_CATALOG = {
       )}` +
       (num(c.metadata, 'count') ? ` (${num(c.metadata, 'count')} items)` : ''),
   },
+  'marketing.prepare_week_started': {
+    category: 'marketing',
+    severity: 'info',
+    targetType: 'marketing_plan',
+    summary: (c) =>
+      `${c.actorName} started preparing ${num(c.metadata, 'count') ?? 'the'} marketing items for ${label(
+        c,
+        'a listing'
+      )}`,
+  },
   'marketing.opportunity_created': {
     category: 'marketing',
     severity: 'info',

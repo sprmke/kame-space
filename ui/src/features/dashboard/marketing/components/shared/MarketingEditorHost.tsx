@@ -28,6 +28,8 @@ import {
   takePendingPlannerDraft,
   type PlannerHandoffPayload,
 } from '@/features/dashboard/marketing/lib/planner/plannerHandoff';
+import { attachPlannerAsset } from '@/features/dashboard/marketing/lib/planner/plannerApi';
+import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
 
 import { MarketingEditorSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { Button } from '@/components/ui/button';
@@ -79,6 +81,7 @@ export function MarketingEditorHost({ contentType, children }: Props) {
   const location = useLocation();
   const createdIdsRef = useRef(new Set<string>());
   const { canDeleteTemplate } = useMarketingPermissions();
+  const propertyId = usePropertyIdParam();
   const restore = useRestoreMarketingItems();
 
   const savedId = item.mode === 'saved' ? item.id : null;
@@ -142,13 +145,24 @@ export function MarketingEditorHost({ contentType, children }: Props) {
       onCreated: (created) => {
         createdIdsRef.current.add(created.id);
         replaceDraftWithItem(created.id);
+        // The other half of the planner handoff: a draft made from a plan item comes back
+        // to it, so the item stops asking to be made. One attach per seed.
+        const seed = plannerSeedRef.current;
+        if (seed) {
+          plannerSeedRef.current = null;
+          void attachPlannerAsset(propertyId, {
+            itemId: seed.itemId,
+            assetKind: 'template',
+            assetId: created.id,
+          }).catch(() => undefined);
+        }
       },
       openItem: (id, options) => openItem(id, { replace: options?.replace }),
       startDraft: (from, options) =>
         startDraft(from, { size: options?.size ?? null, replace: options?.replace }),
       backLabel: MARKETING_STUDIO_TAB_LABELS[tab],
     }),
-    [closeItem, replaceDraftWithItem, openItem, startDraft, tab]
+    [closeItem, replaceDraftWithItem, openItem, startDraft, tab, propertyId]
   );
 
   const noun = CONTENT_NOUN[contentType].one;

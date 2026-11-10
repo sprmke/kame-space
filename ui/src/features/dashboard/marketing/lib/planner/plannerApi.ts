@@ -212,6 +212,38 @@ export async function skipPlannerItem(
   await parseEdgeJsonOrQuota(res);
 }
 
+export type PlannerAssetKind = 'template' | 'ai_session' | 'media';
+
+export async function attachPlannerAsset(
+  propertyId: string | null,
+  input: { itemId: string; assetKind: PlannerAssetKind; assetId: string }
+): Promise<void> {
+  const res = await authorizedFetch('marketing-planner', propertyId, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'attach_asset', ...input }),
+  });
+  await parseEdgeJsonOrQuota(res);
+}
+
+export type PrepareWeekQueueItem = {
+  itemId: string;
+  title: string;
+  format: string;
+  opportunityType: string | null;
+};
+
+export async function prepareWeekBatch(
+  propertyId: string | null,
+  input: { from: string; to: string; limit?: number }
+): Promise<{ queued: PrepareWeekQueueItem[]; skipped: number }> {
+  const res = await authorizedFetch('marketing-planner', propertyId, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'prepare_batch', ...input }),
+  });
+  const data = await parseEdgeJsonOrQuota<{ queued?: PrepareWeekQueueItem[]; skipped?: number }>(res);
+  return { queued: data.queued ?? [], skipped: data.skipped ?? 0 };
+}
+
 export type RefreshInstruction = 'shorter' | 'playful' | 'taglish';
 
 export async function refreshPlannerBrief(

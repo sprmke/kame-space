@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { MarketingPlannerSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { captureAppEvent } from '@/lib/posthog/capture';
 import { useMarketingTheme } from '@/features/dashboard/marketing/components/themes/MarketingThemeProvider';
 import {
@@ -15,6 +15,7 @@ import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate'
 import { PlanItemCard } from '@/features/dashboard/marketing/components/planner/PlanItemCard';
 import { PlanItemSheet } from '@/features/dashboard/marketing/components/planner/PlanItemSheet';
 import { PlannerSetupWizard } from '@/features/dashboard/marketing/components/planner/PlannerSetupWizard';
+import { PrepareWeekDialog } from '@/features/dashboard/marketing/components/planner/PrepareWeekDialog';
 import { ShareItYourselfSheet } from '@/features/dashboard/marketing/components/planner/ShareItYourselfSheet';
 import type { PlannerItemDto } from '@/features/dashboard/marketing/lib/planner/plannerApi';
 import {
@@ -29,6 +30,7 @@ import {
   useMarketingPlan,
   usePlanItemActions,
   usePlannerSettings,
+  usePrepareWeek,
   useRefreshPlanBrief,
   useSavePlannerSettings,
 } from '@/features/dashboard/marketing/hooks/useMarketingPlan';
@@ -59,6 +61,8 @@ export function PlannerHome() {
   const settings = usePlannerSettings();
   const saveSettings = useSavePlannerSettings();
   const [setupOpen, setSetupOpen] = useState(false);
+  const [prepareOpen, setPrepareOpen] = useState(false);
+  const prepareWeek = usePrepareWeek();
   const [shareItem, setShareItem] = useState<PlannerItemDto | null>(null);
   const viewed = useRef(false);
   const [openItem, setOpenItem] = useState<PlannerItemDto | null>(null);
@@ -136,6 +140,14 @@ export function PlannerHome() {
           </Button>
           <Button
             size="sm"
+            variant="outline"
+            onClick={() => setPrepareOpen(true)}
+            disabled={!allowed}
+          >
+            Prepare week
+          </Button>
+          <Button
+            size="sm"
             disabled={!allowed || generate.isPending}
             onClick={() => generate.mutate()}
           >
@@ -155,14 +167,9 @@ export function PlannerHome() {
         </Card>
       ) : null}
 
-      {isLoading ? (
-        <Card>
-          <CardContent className="space-y-2 p-4">
-            <Skeleton className="h-4 w-4/5" />
-            <Skeleton className="h-4 w-3/5" />
-          </CardContent>
-        </Card>
-      ) : data?.summary ? (
+      {isLoading ? <MarketingPlannerSkeleton /> : null}
+
+      {!isLoading && data?.summary ? (
         <Card className="border-border/70 bg-muted/30">
           <CardContent className="p-4 text-sm">{data.summary}</CardContent>
         </Card>
@@ -199,6 +206,7 @@ export function PlannerHome() {
                 readOnly={!allowed}
                 onOpen={handleOpen}
                 onSkip={(target) => skip.mutate({ itemId: target.id, reason: 'Not this week' })}
+                onOpenEditor={allowed ? handleOpenEditor : undefined}
                 onMarkPosted={(target) => setShareItem(target)}
               />
             ))}
@@ -221,6 +229,21 @@ export function PlannerHome() {
           </ul>
         </section>
       ) : null}
+
+      <PrepareWeekDialog
+        open={prepareOpen}
+        onOpenChange={setPrepareOpen}
+        range={range}
+        today={today}
+        itemCount={items.filter((item) => !['preparing', 'ready', 'published', 'posted_manually'].includes(item.status)).length}
+        isPreparing={prepareWeek.isPending}
+        onConfirm={(window) =>
+          prepareWeek.mutateAsync(window).then(
+            () => true,
+            () => false
+          )
+        }
+      />
 
       <PlannerSetupWizard
         open={setupOpen}

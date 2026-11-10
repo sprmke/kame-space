@@ -160,3 +160,10 @@ first data load. Both use the same page chrome, so nothing jumps when the chunk 
 - 375 / 768 / 1024px: skeleton aligns with loaded UI; no horizontal scroll.
 - Slow 3G: lazy routes show route skeleton, not `AppLoader`, once inside admin/marketing shell.
 - No hero / header jump when the route chunk resolves.
+
+## Marketing Plan tab
+
+`MarketingPlannerSkeleton` (in `MarketingSkeletons.tsx`, re-exported from `AdminSkeletons`) covers
+the Plan tab's async region: one summary line and two agenda groups. The range chips, the tab row
+and the page title stay mounted and interactive, so switching range while loading does not blank
+the tab.

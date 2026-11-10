@@ -113,13 +113,25 @@ async function runWeeklyPlans(
     if (existing && existing.length > 0) continue;
 
     try {
-      await generatePlan({
+      const result = await generatePlan({
         propertyId: String(row.property_id),
         organizationId: String(row.organization_id),
         actor: buildActorContext('cron', { cron: LOG }),
         trigger: 'weekly_cron',
       });
       created += 1;
+      // Only tell the host when the run actually added something.
+      if (result.created > 0) {
+        await createOrCoalesceNotification({
+          organizationId: String(row.organization_id),
+          propertyId: String(row.property_id),
+          type: 'marketing_plan_ready',
+          title: 'Your plan for this week is ready',
+          body: `${result.created} ${result.created === 1 ? 'item' : 'items'} planned.`,
+          dedupeKey: `marketing_plan_ready:${today}`,
+          metadata: { planId: String(result.plan.id), count: result.created },
+        });
+      }
     } catch (error) {
       console.error('[marketing-planner-cron] weekly plan failed:', error);
     }

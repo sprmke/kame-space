@@ -37,8 +37,8 @@ const VIEWS: Record<PlanItemStatus, PlanItemStatusView> = {
   planned: { label: 'To do', action: 'create', actionLabel: 'Create', tone: 'neutral' },
   preparing: {
     label: 'Preparing',
-    action: 'none',
-    actionLabel: null,
+    action: 'review',
+    actionLabel: 'Continue',
     tone: 'neutral',
   },
   ready: { label: 'Ready', action: 'review', actionLabel: 'Review', tone: 'positive' },
