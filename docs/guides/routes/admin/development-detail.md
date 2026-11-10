@@ -110,6 +110,8 @@ A row is never classified as the GAF or pet document from its label or from a sh
 
 Save path: batched **Save Changes** → **`PATCH update-development`** with `documentRequirements`. The handler rejects the payload if any row is missing `id`, `label`, `order`, `triggerCondition`, or `approvalSource` rather than silently dropping it.
 
+Removing a step is blocked while a non-terminal booking's `document_requirements_snapshot` still lists it: the request fails with 409 and the count, and the editor should retire the step (**Active** off) instead. Bookings snapshot their steps when they first enter `PENDING_DOCUMENTS`, so a save never changes what an in-flight booking is waiting for.
+
 Edge resolution for bookings: `documentRequirements.ts#resolveDocumentRequirements` (property override column deprecated; development default → **empty list**). An unconfigured development has **no** building approval steps; it never inherits another building's GAF and pet steps. A development read error **throws** so a live transition fails and retries instead of skipping documents. Existing developments were seeded with today's list by migration `20261324010300_seed_document_requirements_for_existing_developments.sql`; a new development starts empty.
 
 ---

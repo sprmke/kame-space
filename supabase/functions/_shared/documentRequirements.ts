@@ -474,6 +474,21 @@ async function loadDevelopmentDocumentRequirements(
 }
 
 /**
+ * Ids the stored list has and the new list does not.
+ *
+ * Removing a step is only safe when no booking snapshotted it; the editor offers "retire"
+ * (`active: false`) instead. See `update-development`.
+ */
+export function removedRequirementIds(
+  previousRaw: unknown,
+  next: DocumentRequirement[]
+): string[] {
+  const previous = mergeDocumentRequirements(previousRaw);
+  const kept = new Set(next.map((requirement) => requirement.id));
+  return previous.map((requirement) => requirement.id).filter((id) => !kept.has(id));
+}
+
+/**
  * Residence default — ignores the per-property override.
  *
  * No list means no building approval steps. A read error throws so a transition fails and

@@ -8,6 +8,7 @@ import {
   requirementDocKind,
   requirementMatchesPdfTemplate,
   requirementNeedsApprovedPdf,
+  removedRequirementIds,
 } from './documentRequirements.ts';
 
 const AZURE_LIST = [
@@ -184,4 +185,22 @@ Deno.test('buildDocumentRequirement: the editor factory produces the derived fie
   assertEquals(draft.legacyKind, null);
   assertEquals(draft.approval.requiresApprovedFile, false);
   assertEquals(draft.output, { type: 'none' });
+});
+
+Deno.test('removedRequirementIds: reports only the ids the new list drops', () => {
+  const previous = [...AZURE_LIST, CARPET_STEP];
+  const next = mergeDocumentRequirements(AZURE_LIST);
+
+  assertEquals(removedRequirementIds(previous, next), ['carpet']);
+});
+
+Deno.test('removedRequirementIds: retiring keeps the id, so nothing is blocked', () => {
+  const previous = [...AZURE_LIST, CARPET_STEP];
+  const next = mergeDocumentRequirements([...AZURE_LIST, { ...CARPET_STEP, active: false }]);
+
+  assertEquals(removedRequirementIds(previous, next), []);
+});
+
+Deno.test('removedRequirementIds: an empty previous list has nothing to remove', () => {
+  assertEquals(removedRequirementIds(undefined, mergeDocumentRequirements(AZURE_LIST)), []);
 });

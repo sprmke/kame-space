@@ -16,7 +16,11 @@ import {
 } from '../_shared/httpResponse.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 import { validateOptionalEmail } from '../_shared/appSettings.ts';
-import { parseDocumentRequirements } from '../_shared/documentRequirements.ts';
+import {
+  mergeDocumentRequirements,
+  parseDocumentRequirements,
+  removedRequirementIds,
+} from '../_shared/documentRequirements.ts';
 import {
   normalizeResidenceStructure,
   validateResidenceStructure,
@@ -34,6 +38,44 @@ import {
   stampHostAnnouncementsForSave,
   validateHostAnnouncements,
 } from '../_shared/hostAnnouncements.ts';
+
+
+/** Non-terminal bookings whose approval-step snapshot still lists one of `removedIds`. */
+async function countSnapshotsReferencing(
+  supabase: ReturnType<typeof createServiceClient>,
+  developmentId: string,
+  removedIds: string[]
+): Promise<number> {
+  const { data: properties, error: propertyError } = await supabase
+    .from('properties')
+    .select('id')
+    .eq('development_id', developmentId)
+    .limit(500);
+  if (propertyError) {
+    throw new Error(`Could not check bookings for this development: ${propertyError.message}`);
+  }
+  const propertyIds = (properties ?? []).map((row) => (row as { id: string }).id);
+  if (propertyIds.length === 0) return 0;
+
+  const { data: bookings, error: bookingError } = await supabase
+    .from('guest_submissions')
+    .select('document_requirements_snapshot')
+    .in('property_id', propertyIds)
+    .not('document_requirements_snapshot', 'is', null)
+    .not('status', 'in', '(COMPLETED,CANCELLED)')
+    .limit(500);
+  if (bookingError) {
+    throw new Error(`Could not check bookings for this development: ${bookingError.message}`);
+  }
+
+  return (bookings ?? []).filter((row) => {
+    const snapshot = (row as { document_requirements_snapshot: unknown })
+      .document_requirements_snapshot;
+    return mergeDocumentRequirements(snapshot).some((requirement) =>
+      removedIds.includes(requirement.id)
+    );
+  }).length;
+}
 
 const DEVELOPMENT_TYPES = new Set([
   'CONDOMINIUM',
@@ -328,6 +370,28 @@ serveAuthenticated('update-development', async (req) => {
         req,
         'Each document requirement needs an id, label, order, trigger, and approval source'
       );
+    }
+    const existingRequirements = (objectOrEmpty(settingsPatch.workflowDefaults) as Record<
+      string,
+      unknown
+    >).documentRequirements;
+    const removedIds = removedRequirementIds(existingRequirements, parsed);
+    if (removedIds.length > 0) {
+      // A booking that already started with a step must keep it; retire it instead.
+      let inFlight = 0;
+      try {
+        inFlight = await countSnapshotsReferencing(supabase, developmentId, removedIds);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Could not check bookings';
+        return jsonError(req, message, 500);
+      }
+      if (inFlight > 0) {
+        return jsonError(
+          req,
+          `${inFlight} booking${inFlight === 1 ? '' : 's'} already started with a step you removed. Set it to inactive instead.`,
+          409
+        );
+      }
     }
     settingsPatch.workflowDefaults = {
       ...objectOrEmpty(settingsPatch.workflowDefaults),
