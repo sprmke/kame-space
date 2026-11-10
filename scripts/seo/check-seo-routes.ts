@@ -51,7 +51,11 @@ const expectedRobots = buildRobotsTxt(
   PRODUCTION_SITE_ORIGIN,
   DEFAULT_INDEXABLE_HOSTS,
   PRODUCTION_SITE_ORIGIN
-).trim();
+)
+  .split('\n')
+  .filter((line) => !line.trim().startsWith('#'))
+  .join('\n')
+  .trim();
 if (robotsFile !== expectedRobots) {
   fail(
     'ui/public/robots.txt is out of date. Run `bun run seo:generate-robots` and commit the result.'

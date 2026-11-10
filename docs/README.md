@@ -55,6 +55,7 @@ See epics #101–#119 in historical [`archive/todos/BACKLOG_DRAFT.md`](./archive
 | [`architecture/pwa.md`](./architecture/pwa.md)                                           | PWA — service worker, Web Push, offline read + outbox, kill-switch                        |
 | [`architecture/unsaved-changes.md`](./architecture/unsaved-changes.md)                   | Unsaved-changes guard — leave / close confirmation for every editable form                |
 | [`architecture/seo.md`](./architecture/seo.md)                                           | SEO + AI search visibility — route registry, crawler snapshot, canonical, robots, sitemap |
+| [`archive/operations/seo-runbook.md`](./archive/operations/seo-runbook.md)               | Monthly SEO checklist, console setup, IndexNow, what to do when indexing breaks           |
 | [`architecture/contextual-help.md`](./architecture/contextual-help.md)                   | Contextual help — InfoHint, How it works panels, intro cards, copy registry               |
 
 ## Guides (live — per-route behavior)

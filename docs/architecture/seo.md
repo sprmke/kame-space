@@ -95,12 +95,27 @@ is missing from `STATIC_SITEMAP_PATHS`, when an indexable route is blocked by ro
   root becomes a sitemap index of `?part=N` files.
 - `<loc>` uses `PUBLIC_GUEST_APP_ORIGIN` (server) which defaults to the same apex.
 
+## AI discovery files
+
+| File                            | Source                                | Notes                                                                                                                             |
+| ------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `/llms.txt`                     | `ui/src/lib/seo/llmsTxt.ts`           | H1, summary, then links per section. Built from the registry plus top places from the public place-group index. Nothing invented. |
+| `/llms-full.txt`                | same module                           | The map plus one line per ACTIVE listing, capped at 2,000.                                                                        |
+| `/{INDEXNOW_KEY}.txt`           | middleware                            | Key file for Bing and Yandex.                                                                                                     |
+| `indexnow-submit` edge function | `supabase/functions/indexnow-submit/` | Batch-submits the sitemap URL list. Cron-only, `X-Indexnow-Cron-Secret`. Fails open.                                              |
+
+Both `llms` files are PII-free by construction: `isPublicSafe` rejects emails, phone numbers
+and street addresses, and the same guard is asserted in `llmsTxt.test.ts`. A non-indexable host
+gets a three-line file that points at production.
+
 ## Verification
 
 ```bash
 bun run check:seo-routes                         # registry vs router vs sitemap vs robots.txt
 bun run seo:audit -- --origin https://kamespace.com --limit 100
 bun run seo:audit -- --origin https://<preview>.vercel.app --fail-on-error
+bun run images:budget                        # public raster budget
+bun run images:optimize -- --check           # AVIF/WebP siblings up to date
 bun run test                                     # seoMeta, publicRoutes, siteOrigin, snapshot, middleware
 ```
 

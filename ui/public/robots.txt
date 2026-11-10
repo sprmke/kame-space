@@ -613,3 +613,4 @@ Disallow: /*/trip?
 Disallow: /*?*swLat=
 
 Sitemap: https://kamespace.com/sitemap.xml
+# LLM map: https://kamespace.com/llms.txt

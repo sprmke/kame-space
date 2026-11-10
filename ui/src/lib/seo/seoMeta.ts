@@ -771,6 +771,8 @@ export function buildRobotsTxt(
     ...robotsGroup('*'),
     ...AI_CRAWLER_USER_AGENTS.flatMap((agent) => robotsGroup(agent)),
     `Sitemap: ${siteOrigin.replace(/\/+$/, '')}/sitemap.xml`,
+    // llms.txt is a map for AI answer engines; the comment keeps it discoverable.
+    `# LLM map: ${siteOrigin.replace(/\/+$/, '')}/llms.txt`,
     '',
   ];
   return lines.join('\n');

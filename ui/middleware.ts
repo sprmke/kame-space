@@ -20,6 +20,8 @@ export const config = {
   matcher: [
     '/robots.txt',
     '/sitemap.xml',
+    '/llms.txt',
+    '/llms-full.txt',
     '/((?!assets/|brand/|icons/|favicon|fonts/|images/|marketing/|avatars/|templates/|splash/|worklets/|ingest/|sw\\.js|manifest\\.webmanifest|pwa-version\\.json|offline\\.html|robots\\.txt|sitemap\\.xml).*)',
   ],
 };
@@ -42,6 +44,7 @@ export default async function middleware(request: Request): Promise<Response> {
       siteName: process.env.VITE_PLATFORM_APP_NAME?.trim() || 'Kame Space',
       siteOrigin: resolveSiteOrigin(process.env.VITE_CANONICAL_APP_ORIGIN),
       imageTransforms: process.env.VITE_SUPABASE_IMAGE_TRANSFORMS === 'true',
+      indexNowKey: process.env.INDEXNOW_KEY?.trim() || null,
       supportEmail: process.env.VITE_PLATFORM_CONTACT_EMAIL?.trim() || null,
       socialLinks: [
         process.env.VITE_PLATFORM_SOCIAL_FACEBOOK,

@@ -54,6 +54,12 @@ import {
 } from './seoMeta';
 import { canonicalUrlFor, PRODUCTION_SITE_ORIGIN } from './siteOrigin';
 import {
+  buildLlmsFullTxt,
+  buildLlmsTxt,
+  buildLlmsTxtUnavailable,
+  type LlmsListing,
+} from './llmsTxt';
+import {
   injectSnapshotIntoHtml,
   renderSnapshotHtml,
   type SnapshotImage,
@@ -74,6 +80,10 @@ export type SeoMiddlewareDeps = {
   supportEmail?: string | null;
   /** Public social profiles for `Organization.sameAs`. */
   socialLinks?: readonly string[];
+  /** `INDEXNOW_KEY` — served at `/{key}.txt` for Bing and Yandex. */
+  indexNowKey?: string | null;
+  /** One-paragraph site summary for `llms.txt`. */
+  summary?: string | null;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   /** Hosts allowed in robots.txt; others get `Disallow: /`. Defaults to the production hosts. */
@@ -757,6 +767,79 @@ async function loadDevelopmentSubPage(
   };
 }
 
+// --- llms.txt ----------------------------------------------------------------------------
+
+const LLMS_SUMMARY =
+  'Book condos, homes and parking across the Philippines. Browse by place, check dates and reserve online with the host.';
+
+/** Top places per family, from the same index the list pages read. Best effort. */
+async function llmsPlaces(deps: SeoMiddlewareDeps): Promise<
+  Array<{ label: string; path: string; count?: number }>
+> {
+  const families: Array<[RouteFamily, string]> = [
+    ['property', 'properties'],
+    ['parking', 'parkings'],
+    ['development', 'developments'],
+  ];
+  const places: Array<{ label: string; path: string; count?: number }> = [];
+
+  for (const [family, routeFamily] of families) {
+    try {
+      const body = await getJson(
+        `${apiBase(deps)}/list-public-place-groups?family=${routeFamily}&groupLimit=8&previewSize=1`,
+        deps
+      );
+      for (const group of records(body?.data)) {
+        const slug = str(group.placeSlug) ?? str(group.slug);
+        const label = str(group.placeLabel) ?? str(group.label);
+        if (!slug || !label) continue;
+        const total = num(group.total) ?? undefined;
+        places.push({
+          label: `${label} ${family === 'parking' ? 'parking' : family === 'development' ? 'developments' : 'stays'}`,
+          path: `${FAMILY_LIST_PATHS[family]}/in/${slug}`,
+          count: total,
+        });
+      }
+    } catch {
+      // A missing family is not a reason to fail the whole file.
+    }
+  }
+
+  return places;
+}
+
+/** Every ACTIVE listing the sitemap knows, capped for `llms-full.txt`. */
+async function llmsListings(deps: SeoMiddlewareDeps): Promise<LlmsListing[]> {
+  const families: Array<[RouteFamily, string]> = [
+    ['property', 'list-public-properties'],
+    ['parking', 'list-public-parkings'],
+    ['development', 'list-public-developments'],
+  ];
+  const listings: LlmsListing[] = [];
+
+  for (const [family, endpoint] of families) {
+    try {
+      const body = await getJson(`${apiBase(deps)}/${endpoint}?pageSize=48`, deps);
+      for (const card of records(body?.data)) {
+        const name = str(card.name);
+        const slug = str(card.slug);
+        if (!name || !slug) continue;
+        listings.push({
+          name,
+          path: `${FAMILY_LIST_PATHS[family]}/${slug}`,
+          kind: family,
+          place: str(card.locationLabel) ?? str(card.city),
+          priceFrom: num(card.price),
+        });
+      }
+    } catch {
+      // Ignore a family that failed; the file still lists the rest.
+    }
+  }
+
+  return listings;
+}
+
 // --- structured data ---------------------------------------------------------------------
 
 /** Site-wide entities every snapshot page carries. */
@@ -934,10 +1017,10 @@ export async function handleSeoRequest(
       // Production hosts are always indexable; `SEO_INDEXABLE_HOSTS` can only add.
       // A stale Vercel env (e.g. one that predates the kamespace rebrand) must never
       // de-index the live domain.
-      const indexableHosts = deps.indexableHosts?.length
+      const hostsForRobots = deps.indexableHosts?.length
         ? [...new Set([...DEFAULT_INDEXABLE_HOSTS, ...deps.indexableHosts])]
         : undefined;
-      return new Response(buildRobotsTxt(url.origin, indexableHosts, siteOrigin), {
+      return new Response(buildRobotsTxt(url.origin, hostsForRobots, siteOrigin), {
         headers: {
           'content-type': 'text/plain; charset=utf-8',
           'cache-control': 'public, max-age=3600, s-maxage=86400',
@@ -956,6 +1039,40 @@ export async function handleSeoRequest(
         headers: {
           'content-type': 'application/xml; charset=utf-8',
           'cache-control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
+        },
+      });
+    }
+
+    const indexableHosts = deps.indexableHosts?.length
+      ? [...new Set([...DEFAULT_INDEXABLE_HOSTS, ...deps.indexableHosts])]
+      : DEFAULT_INDEXABLE_HOSTS;
+    const hostIsIndexable = indexableHosts.includes(url.hostname);
+
+    if (url.pathname === '/llms.txt' || url.pathname === '/llms-full.txt') {
+      const headers = {
+        'content-type': 'text/plain; charset=utf-8',
+        'cache-control': 'public, max-age=1800, s-maxage=3600, stale-while-revalidate=86400',
+      };
+      if (!hostIsIndexable) {
+        return new Response(buildLlmsTxtUnavailable(deps.siteName), { headers });
+      }
+      const full = url.pathname === '/llms-full.txt';
+      const input = {
+        siteOrigin,
+        siteName: deps.siteName,
+        summary: deps.summary?.trim() || LLMS_SUMMARY,
+        places: await llmsPlaces(deps),
+        listings: full ? await llmsListings(deps) : undefined,
+      };
+      const body = full ? buildLlmsFullTxt(input) : buildLlmsTxt(input);
+      return new Response(body, { headers });
+    }
+
+    if (deps.indexNowKey && url.pathname === `/${deps.indexNowKey}.txt`) {
+      return new Response(`${deps.indexNowKey}\n`, {
+        headers: {
+          'content-type': 'text/plain; charset=utf-8',
+          'cache-control': 'public, max-age=86400',
         },
       });
     }

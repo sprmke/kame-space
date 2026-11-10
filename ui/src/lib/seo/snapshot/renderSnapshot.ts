@@ -70,7 +70,9 @@ function renderFooter(origin: string): string {
   const items = SNAPSHOT_FOOTER.map(
     (item) => `<li><a href="${escapeHtml(origin)}${escapeHtml(item.href)}">${escapeHtml(item.label)}</a></li>`
   ).join('');
-  return `<footer><nav aria-label="Footer"><ul>${items}</ul></nav></footer>`;
+  // `llms.txt` is a file, not a page, so it lives outside the human footer list.
+  const llms = `<li><a href="${escapeHtml(origin)}/llms.txt">AI site map</a></li>`;
+  return `<footer><nav aria-label="Footer"><ul>${items}${llms}</ul></nav></footer>`;
 }
 
 function renderBreadcrumbs(origin: string, breadcrumbs: SnapshotBreadcrumb[] | undefined): string {

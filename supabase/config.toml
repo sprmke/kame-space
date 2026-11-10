@@ -445,6 +445,9 @@ verify_jwt = false
 [functions.telegram-staff-cron]
 verify_jwt = false
 
+[functions.indexnow-submit]
+verify_jwt = false
+
 [functions.telegram-staff-settings]
 verify_jwt = false
 

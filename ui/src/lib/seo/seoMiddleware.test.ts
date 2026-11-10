@@ -67,6 +67,57 @@ describe('handleSeoRequest', () => {
     expect(await handleSeoRequest(req('/sitemap.xml', BROWSER), deps(fetchFail), shell)).toBeNull();
   });
 
+  it('serves llms.txt with the map and llms-full.txt with listings', async () => {
+    const fetchImpl = vi.fn().mockImplementation((url: string) =>
+      Promise.resolve(
+        String(url).includes('place-groups')
+          ? jsonResponse({
+              data: [{ placeSlug: 'makati', placeLabel: 'Makati', total: 7 }],
+            })
+          : jsonResponse({
+              data: [
+                {
+                  slug: 'monaco-2604',
+                  name: 'Monaco 2604',
+                  locationLabel: 'San Fernando',
+                  price: 2500,
+                },
+              ],
+            })
+      )
+    );
+
+    const map = await handleSeoRequest(req('/llms.txt', BROWSER), deps(fetchImpl), shell);
+    const mapText = await map!.text();
+    expect(mapText).toContain('# Old Brand');
+    expect(mapText).toContain('https://kamespace.com/properties');
+    expect(mapText).toContain('/properties/in/makati');
+
+    const full = await handleSeoRequest(req('/llms-full.txt', BROWSER), deps(fetchImpl), shell);
+    const fullText = await full!.text();
+    expect(fullText).toContain('## All Stay listings');
+    expect(fullText).toContain('Monaco 2604');
+  });
+
+  it('serves a minimal llms.txt on a host that must not be crawled', async () => {
+    const res = await handleSeoRequest(
+      new Request('https://preview-abc.vercel.app/llms.txt', {
+        headers: { 'user-agent': BROWSER },
+      }),
+      deps(vi.fn()),
+      shell
+    );
+    expect(await res!.text()).toContain('not public');
+  });
+
+  it('serves the IndexNow key file when configured', async () => {
+    const res = await handleSeoRequest(req('/abc123.txt', BROWSER), {
+      ...deps(vi.fn()),
+      indexNowKey: 'abc123',
+    }, shell);
+    expect(await res!.text()).toBe('abc123\n');
+  });
+
   it('301s a mixed-case path to lowercase for every user agent', async () => {
     for (const ua of [BROWSER, BOT]) {
       const res = await handleSeoRequest(req('/Properties/Monaco-2604', ua), deps(vi.fn()), shell);
