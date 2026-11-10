@@ -1415,7 +1415,7 @@ Open your profile and choose Request a copy or deletion of your data, or email u
 - audience: public
 - source: docs/guides/routes/legal.md
 
-On your first visit you can choose Accept or Necessary only. Analytics cookies never load until you choose Accept, and required cookies like sign-in and form protection work either way. Open the Cookie Policy page and use Change cookie choice to switch at any time.
+On your first visit you can choose Allow analytics or Necessary only. Analytics cookies never load until you choose Allow analytics, and required cookies like sign-in and form protection work either way. Open the Cookie Policy page and use the Cookie settings card to switch at any time.
 
 ### Is my plan renewed automatically, and do I get money back when I downgrade?
 
