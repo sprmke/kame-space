@@ -22,6 +22,7 @@ import {
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -110,7 +111,7 @@ function DocumentRequirementEditRow({
           </Label>
           <Input
             id={`${rowId}-label`}
-            value={requirement.label}
+            value={requirement.labels.step || requirement.label}
             disabled={disabled}
             placeholder="e.g. GAF Approval"
             onChange={(event) => onChange({ label: event.target.value })}
@@ -216,6 +217,41 @@ function DocumentRequirementEditRow({
               ))}
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor={`${rowId}-approved`} className="text-muted-foreground text-xs">
+            Guest-facing name
+          </Label>
+          <Input
+            id={`${rowId}-approved`}
+            value={requirement.labels.approved}
+            disabled={disabled}
+            placeholder="e.g. Approved GAF"
+            onChange={(event) =>
+              onChange({ labels: { ...requirement.labels, approved: event.target.value } })
+            }
+            className="h-10"
+          />
+        </div>
+        <div className="flex items-start justify-between gap-3 pt-1">
+          <div className="min-w-0">
+            <Label htmlFor={`${rowId}-active`} className="text-sm font-medium">
+              Active
+            </Label>
+            <p className="text-muted-foreground text-xs leading-snug">
+              Retire a step instead of removing it, so bookings that already have it keep it.
+            </p>
+          </div>
+          <Switch
+            id={`${rowId}-active`}
+            checked={requirement.active}
+            disabled={disabled}
+            onCheckedChange={(checked) => onChange({ active: checked })}
+            aria-label="Active"
+          />
         </div>
       </div>
     </div>

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildDocumentRequirement } from '@/features/dashboard/bookings/lib/documentRequirements';
+import {
+  buildDocumentRequirement,
+  mergeDocumentRequirements,
+} from '@/features/dashboard/bookings/lib/documentRequirements';
+import { updateDocumentRequirement } from '@/features/dashboard/org/lib/propertyDocumentRequirements';
 import {
   developmentProfileDraftFromDevelopment,
   developmentProfileDraftIsDirty,
@@ -170,5 +174,79 @@ describe('structure draft', () => {
     expect(validateDevelopmentProfileDraft(draft)).toBe(
       'PMO email is required for email approval steps'
     );
+  });
+});
+
+describe('approval steps round-trip through the editor', () => {
+  const settings = {
+    workflowDefaults: {
+      documentRequirements: [
+        {
+          id: 'gaf',
+          label: 'GAF Request',
+          order: 1,
+          pdfTemplateId: 'gaf',
+          approvalSource: 'email-listener',
+          triggerCondition: 'always',
+          calendarIcon: null,
+        },
+        {
+          id: 'carpet',
+          label: 'Carpet inspection',
+          order: 2,
+          pdfTemplateId: null,
+          approvalSource: 'manual',
+          triggerCondition: 'always',
+          calendarIcon: null,
+        },
+      ],
+    },
+  };
+
+  it('keeps an edited step label after saving and re-reading the row', () => {
+    const draft = developmentProfileDraftFromDevelopment(development(settings));
+    draft.documentRequirements = updateDocumentRequirement(draft.documentRequirements, 0, {
+      label: 'Visitor pass',
+    });
+
+    const saved = buildDevelopmentUpdatePayload(draft).documentRequirements;
+    const reloaded = mergeDocumentRequirements(saved);
+    expect(reloaded[0]?.labels.step).toBe('Visitor pass');
+    expect(reloaded[0]?.label).toBe('Visitor pass');
+    // Azure identity survives an unrelated rename.
+    expect(reloaded[0]?.legacyKind).toBe('gaf');
+  });
+
+  it('keeps a guest-facing name and the retired flag', () => {
+    const draft = developmentProfileDraftFromDevelopment(development(settings));
+    draft.documentRequirements = updateDocumentRequirement(draft.documentRequirements, 1, {
+      labels: {
+        ...draft.documentRequirements[1]!.labels,
+        approved: 'Approved carpet slip',
+      },
+      active: false,
+    });
+
+    const saved = buildDevelopmentUpdatePayload(draft).documentRequirements;
+    const reloaded = mergeDocumentRequirements(saved);
+
+    expect(reloaded[1]?.labels.approved).toBe('Approved carpet slip');
+    expect(reloaded[1]?.active).toBe(false);
+  });
+
+  it('a retired email step no longer requires a PMO email', () => {
+    const draft = developmentProfileDraftFromDevelopment(development(settings));
+    draft.pmoEmail = '';
+    draft.documentRequirements = updateDocumentRequirement(draft.documentRequirements, 0, {
+      approvalSource: 'none',
+    });
+
+    expect(validateDevelopmentProfileDraft(draft)).toBeNull();
+
+    draft.documentRequirements = updateDocumentRequirement(draft.documentRequirements, 0, {
+      approvalSource: 'email-listener',
+      active: false,
+    });
+    expect(validateDevelopmentProfileDraft(draft)).toBeNull();
   });
 });

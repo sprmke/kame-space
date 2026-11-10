@@ -216,7 +216,7 @@ export function validateDevelopmentProfileDraft(draft: DevelopmentProfileDraft):
 
   // F14: the PMO address is only needed when a step actually emails the building admin.
   const emailsBuildingAdmin = draft.documentRequirements.some(
-    (requirement) => requirement.approvalSource === 'email-listener'
+    (requirement) => requirement.active && requirement.approvalSource === 'email-listener'
   );
   const email = draft.pmoEmail.trim();
   if (emailsBuildingAdmin && !email) return 'PMO email is required for email approval steps';

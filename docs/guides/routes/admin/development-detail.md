@@ -97,9 +97,16 @@ Ordered checklist of documents required before a booking reaches **Ready for che
 | ------------- | ------------------------------------------------------------- | --------------------------------------------------------------- |
 | Document list | `developments.settings.workflowDefaults.documentRequirements` | JSON array; empty list → bookings skip `PENDING_DOCUMENTS` (D2) |
 
-Each row: **label**, **trigger** (Always required / Guest has pets / Guest needs parking), **approval source** (Manual / Email listener), **PDF template** (None / GAF request form / Pet request form).
+Each row: **label**, **trigger** (Always required / Guest has pets / Guest needs parking), **approval source** (Manual / Email listener), **PDF template** (None / GAF request form / Pet request form), **guest-facing name**, and an **Active** toggle.
 
-**PDF template** is what binds a row to the request pipeline: `requirementMatchesPdfTemplate` matches on `pdfTemplateId` **or** the literal row id (`gaf` / `pet`). A row left on **None** is tracked as a checklist step only — the orchestrator generates no request PDF and sends no request email for it. Re-adding a deleted GAF/pet row creates it with id `custom-N` and no template, so the template must be set explicitly or the request stops firing.
+- **Label** is what the host booking rail shows. Renaming keeps the row's identity: `id` is what bookings record, so a rename never detaches a live booking (`labels.step` and the legacy `label` alias are written together).
+- **Guest-facing name** is what the stay guide calls the document once approved ("Approved GAF"). Blank or retired rows are never shown.
+- **Active** off retires the step: it stays in the list so bookings that already have it keep it, but it stops applying to new bookings. A retired email step also stops demanding a PMO email, and a retired row does not need a label to save.
+- Steps stored as v2 (`labels`, `output`, `approval`, `active`, `legacyKind`) and old v1 rows both load; the parser upgrades v1 in memory, so saving a development rewrites its list in the v2 shape.
+
+**PDF template** is what binds a row to the request pipeline: `requirementMatchesPdfTemplate` matches on the row's `output.pdfTemplateId` **or** the historical `gaf` / `pet` id. A row left on **None** is tracked as a checklist step only — the orchestrator generates no request PDF and sends no request email for it. Re-adding a deleted GAF/pet row creates it with id `custom-N` and no template, so the template must be set explicitly or the request stops firing.
+
+A row is never classified as the GAF or pet document from its label or from a shared template: only the historical ids `gaf` / `pet` (`legacyKind`) drive the `gaf_*` / `pet_*` columns and the approved-file requirement. A "Carpet inspection" step stays a checklist step even if its label contains "pet".
 
 Save path: batched **Save Changes** → **`PATCH update-development`** with `documentRequirements`. The handler rejects the payload if any row is missing `id`, `label`, `order`, `triggerCondition`, or `approvalSource` rather than silently dropping it.
 
