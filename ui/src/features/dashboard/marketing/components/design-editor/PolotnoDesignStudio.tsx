@@ -81,6 +81,7 @@ import {
   startSizesFor,
 } from '@/features/dashboard/marketing/lib/marketingLibrary';
 import { takePendingMarketingPhoto } from '@/features/dashboard/marketing/lib/marketingPhotoHandoff';
+import { applyPlannerSeedToDesignBinding } from '@/features/dashboard/marketing/lib/planner/plannerHandoff';
 import {
   holdMarketingRenders,
   releaseMarketingRenders,
@@ -287,8 +288,12 @@ export function PolotnoDesignStudio({ document, nav, onPublish }: Props) {
       monthShort: previewMonth.toLocaleDateString('en-US', { month: 'long' }),
       openSlots: openSlotDatesForMonth(bookedDates ?? [], previewMonth, 5),
     };
-    return bindingWithReview(base, selectedReview);
-  }, [property.name, publicProperty, bookedDates, previewMonth, selectedReview]);
+    const withPlanner =
+      document.mode === 'draft'
+        ? applyPlannerSeedToDesignBinding(base, document.plannerSeed)
+        : base;
+    return bindingWithReview(withPlanner, selectedReview);
+  }, [property.name, publicProperty, bookedDates, previewMonth, selectedReview, document]);
   bindingRef.current = binding;
 
   const propertyPhotoUrls = useMemo(() => {

@@ -20,9 +20,12 @@ export type PlannerHandoffPayload = {
   hook: string;
   message: string;
   cta: string;
+  /** Promoted nights, YYYY-MM-DD. */
   dates: string[];
   trackedUrl: string | null;
   photoIds: string[];
+  /** Quoted nightly rate, when the item claims one. */
+  rateFrom?: number | null;
 };
 
 /** Format first, then the opportunity type as a tie-break. */
@@ -66,4 +69,56 @@ export function takePendingPlannerDraft(): PlannerHandoffPayload | null {
 /** One-line description an AI Studio draft can start from. */
 export function handoffDescription(payload: PlannerHandoffPayload): string {
   return [payload.hook, payload.message, payload.cta].filter(Boolean).join(' ');
+}
+
+export type PlannerDesignSeed = {
+  propertyName: string;
+  propertyPhoto: string | null;
+  propertyMedia?: Array<{ url: string; type: 'image' | 'video' }>;
+  nightlyRate: string;
+  availabilityText: string;
+  monthLabel: string;
+  monthShort: string;
+  openSlots: Array<{ dateNum: string; dayName: string }>;
+};
+
+function monthName(ymd: string): string {
+  const [year, month] = ymd.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, 15)).toLocaleDateString('en-US', { month: 'long' });
+}
+
+function dayLabel(ymd: string): { dateNum: string; dayName: string } {
+  const [year, month, day] = ymd.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return {
+    dateNum: String(day),
+    dayName: date
+      .toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' })
+      .toUpperCase(),
+  };
+}
+
+/**
+ * Merge a planner item onto a design binding: only the fields the plan is authoritative for
+ * (dates, month, rate). Property facts and photos stay as the binding resolved them.
+ */
+export function applyPlannerSeedToDesignBinding<T extends PlannerDesignSeed>(
+  binding: T,
+  seed: PlannerHandoffPayload | null | undefined
+): T {
+  if (!seed || seed.dates.length === 0) return binding;
+  const first = seed.dates[0];
+  const month = monthName(first);
+  const merged: T = {
+    ...binding,
+    availabilityText:
+      seed.dates.length === 1 ? '1 night available' : `${seed.dates.length} nights available`,
+    monthLabel: `${month} ${first.slice(0, 4)}`,
+    monthShort: month,
+    openSlots: seed.dates.slice(0, 5).map(dayLabel),
+  };
+  if (seed.rateFrom != null && seed.rateFrom > 0) {
+    merged.nightlyRate = `₱${seed.rateFrom.toLocaleString('en-PH')} / night`;
+  }
+  return merged;
 }

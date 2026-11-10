@@ -95,6 +95,7 @@ export function PlannerHome() {
       dates: item.claims.openNights ?? [],
       trackedUrl: item.trackedUrl,
       photoIds: [],
+      rateFrom: item.claims.rateFrom ?? null,
     });
     void navigator.clipboard?.writeText(caption).catch(() => undefined);
     setOpenItem(null);

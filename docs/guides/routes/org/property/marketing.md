@@ -74,8 +74,10 @@ already holds, with no AI required.
   works without any Meta insight scope.
 
 **Open in editor** on an item picks the tab from its format (calendar builder, Videos for a reel,
-Posts, or AI Studio for types that read better as a generated image), stashes the draft and copies
-the caption, so the host pastes instead of retyping.
+Posts, or AI Studio for types that read better as a generated image) and seeds the draft once:
+AI Studio fills the composer, Videos sets the hook, caption and call to action on the beats, Posts
+takes the dates, month and rate, Calendar opens on the promoted month. The caption is also copied
+as a fallback.
 
 **Setup** opens on first visit and from the header. Three steps: goals (up to two), where you post
 (connected Facebook Page and Instagram from Inbox, plus manual places), then time budget and

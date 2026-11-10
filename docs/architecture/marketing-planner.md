@@ -114,6 +114,19 @@ week never rewrites the plan. `bestLearnedWindows` returns null below 12 posts w
 scheduler only substitutes a learned hour when it is outside quiet hours and has not already passed.
 Nothing here can change truth rules, cadence caps or quiet hours.
 
+## Editor handoff
+
+`plannerHandoff` maps an item to an editor and holds a one-shot seed. `MarketingEditorHost` latches
+that seed once per draft key, so the document identity never changes and the canvas never remounts.
+Each editor applies only what it owns:
+
+| Editor    | Seed applied                                                                      |
+| --------- | --------------------------------------------------------------------------------- |
+| AI Studio | Composer text from the hook, caption and call to action                           |
+| Videos    | Storyboard beat copy via `applyPlannerSeedToVideoProject`, trimmed to beat limits |
+| Posts     | Design binding dates, month and rate via `applyPlannerSeedToDesignBinding`        |
+| Calendar  | Preview month from the first promoted date                                        |
+
 ## Freed dates
 
 `_shared/marketingFreedDates.ts` runs from the workflow orchestrator's `CANCELLED` branch, after

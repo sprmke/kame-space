@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyPlannerSeedToDesignBinding,
   handoffDescription,
   resolveHandoffTarget,
   setPendingPlannerDraft,
@@ -70,5 +71,61 @@ describe('handoffDescription', () => {
         photoIds: [],
       })
     ).toBe('Two nights left Book now');
+  });
+});
+
+describe('applyPlannerSeedToDesignBinding', () => {
+  const binding = {
+    propertyName: 'Demo Stay',
+    propertyPhoto: null,
+    nightlyRate: '₱2,799 / night',
+    availabilityText: 'Open all month',
+    monthLabel: 'November 2026',
+    monthShort: 'November',
+    openSlots: [],
+  };
+  const seed = {
+    itemId: 'i',
+    title: 'Open this weekend',
+    hook: 'Two nights left',
+    message: 'Nov 13 and Nov 14 are open.',
+    cta: 'Book now',
+    dates: ['2026-11-13', '2026-11-14'],
+    trackedUrl: null,
+    photoIds: [],
+    rateFrom: 3200,
+  };
+
+  it('takes the dates, month and rate from the plan', () => {
+    const merged = applyPlannerSeedToDesignBinding(binding, seed);
+    expect(merged.availabilityText).toBe('2 nights available');
+    expect(merged.monthLabel).toBe('November 2026');
+    expect(merged.monthShort).toBe('November');
+    expect(merged.nightlyRate).toBe('₱3,200 / night');
+    expect(merged.openSlots).toEqual([
+      { dateNum: '13', dayName: 'FRIDAY' },
+      { dateNum: '14', dayName: 'SATURDAY' },
+    ]);
+  });
+
+  it('keeps the property facts and the photo', () => {
+    const merged = applyPlannerSeedToDesignBinding(
+      { ...binding, propertyPhoto: 'https://example.test/a.jpg' },
+      seed
+    );
+    expect(merged.propertyName).toBe('Demo Stay');
+    expect(merged.propertyPhoto).toBe('https://example.test/a.jpg');
+  });
+
+  it('leaves the binding alone without a seed or without dates', () => {
+    expect(applyPlannerSeedToDesignBinding(binding, null)).toBe(binding);
+    expect(applyPlannerSeedToDesignBinding(binding, { ...seed, dates: [] })).toBe(binding);
+  });
+
+  it('says one night for a single-date item', () => {
+    expect(
+      applyPlannerSeedToDesignBinding(binding, { ...seed, dates: ['2026-12-24'], rateFrom: null })
+        .availabilityText
+    ).toBe('1 night available');
   });
 });
