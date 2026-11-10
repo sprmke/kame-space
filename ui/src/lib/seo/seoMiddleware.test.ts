@@ -5,6 +5,7 @@ import { handleSeoRequest } from '@/lib/seo/seoMiddleware';
 const SHELL =
   '<html><head><title>Old Brand</title></head><body><div id="root"></div></body></html>';
 const BOT = 'facebookexternalhit/1.1';
+const GPT_BOT = 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; GPTBot/1.1';
 const BROWSER = 'Mozilla/5.0 (iPhone) Safari/604.1';
 
 function req(path: string, ua = BOT, method = 'GET') {
@@ -16,6 +17,7 @@ function deps(fetchImpl: typeof fetch) {
     functionsUrl: 'https://abc.supabase.co/functions/v1/',
     anonKey: 'anon',
     siteName: 'Old Brand',
+    siteOrigin: 'https://kamespace.com',
     fetchImpl,
   };
 }
@@ -30,9 +32,9 @@ function jsonResponse(body: unknown, status = 200) {
 const shell = () => Promise.resolve(SHELL);
 
 describe('handleSeoRequest', () => {
-  it('serves robots.txt with the request origin sitemap', async () => {
+  it('serves robots.txt pointing at the canonical sitemap', async () => {
     const res = await handleSeoRequest(req('/robots.txt', BROWSER), deps(vi.fn()), shell);
-    expect(await res!.text()).toContain('Sitemap: https://kamehomes.space/sitemap.xml');
+    expect(await res!.text()).toContain('Sitemap: https://kamespace.com/sitemap.xml');
   });
 
   it('keeps production hosts indexable even when SEO_INDEXABLE_HOSTS omits them', async () => {
@@ -73,7 +75,7 @@ describe('handleSeoRequest', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('injects property meta for crawlers', async () => {
+  it('injects property meta and a content snapshot for crawlers', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(
       jsonResponse({
         success: true,
@@ -92,11 +94,16 @@ describe('handleSeoRequest', () => {
     const res = await handleSeoRequest(req('/properties/monaco-2612/'), deps(fetchImpl), shell);
     const html = await res!.text();
     expect(res!.headers.get('content-type')).toContain('text/html');
+    expect(res!.headers.get('vary')).toContain('user-agent');
     expect(html).toContain('<title>Old Brand - Monaco 2612</title>');
     expect(html).toContain('og:image" content="https://img/a.jpg"');
-    expect(html).toContain('href="https://kamehomes.space/properties/monaco-2612"');
+    expect(html).toContain('href="https://kamespace.com/properties/monaco-2612"');
     expect(html).toContain('"@type":"LodgingBusiness"');
     expect(html).toContain('"reviewCount":8');
+    // The empty SPA shell is replaced with real content.
+    expect(html).not.toContain('<div id="root"></div>');
+    expect(html.match(/<h1>/g)).toHaveLength(1);
+    expect(html).toContain('<h1>Monaco 2612</h1>');
     expect(fetchImpl.mock.calls[0]![0]).toBe(
       'https://abc.supabase.co/functions/v1/get-public-property?property=monaco-2612'
     );
@@ -118,18 +125,87 @@ describe('handleSeoRequest', () => {
     expect(await dev!.text()).toContain('"@type":"Residence"');
   });
 
-  it('fails open on unknown listings, errors, non-GET, and non-detail paths', async () => {
-    const notFound = vi.fn().mockResolvedValue(jsonResponse({ error: 'nope' }, 404));
-    expect(await handleSeoRequest(req('/properties/missing'), deps(notFound), shell)).toBeNull();
+  it('renders a static page snapshot without touching the edge', async () => {
+    const fetchImpl = vi.fn();
+    const res = await handleSeoRequest(req('/about'), deps(fetchImpl), shell);
+    const html = await res!.text();
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(html).toContain('<h1>Philippine stays, one operating system</h1>');
+    expect(html).toContain('href="https://kamespace.com/about"');
+    expect(html).toContain('href="https://kamespace.com/properties"');
+  });
 
+  it('renders a place page snapshot from the public list endpoint', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse({
+        data: [
+          {
+            slug: 'monaco-2604',
+            name: 'Monaco 2604',
+            locationLabel: 'San Fernando, Pampanga',
+            coverImage: 'https://img/a.jpg',
+            price: 2500,
+          },
+        ],
+      })
+    );
+    const res = await handleSeoRequest(req('/properties/in/san-fernando'), deps(fetchImpl), shell);
+    const html = await res!.text();
+    expect(fetchImpl.mock.calls[0]![0]).toContain('list-public-properties?locationSlug=san-fernando');
+    expect(html).toContain('<h1>Homes in San Fernando, Pampanga</h1>');
+    expect(html).toContain('href="https://kamespace.com/properties/monaco-2604"');
+  });
+
+  it('renders a host page snapshot', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse({
+        data: {
+          name: 'Kame Homes',
+          description: null,
+          tagline: 'Stays in Pampanga',
+          logoUrl: 'https://img/logo.png',
+          properties: [{ slug: 'monaco-2604', name: 'Monaco 2604' }],
+          parkings: [{ slug: 'slot-a1', name: 'Slot A1' }],
+        },
+      })
+    );
+    const res = await handleSeoRequest(req('/hosts/kame-homes'), deps(fetchImpl), shell);
+    const html = await res!.text();
+    expect(html).toContain('<h1>Kame Homes</h1>');
+    expect(html).toContain('href="https://kamespace.com/properties/monaco-2604"');
+    expect(html).toContain('href="https://kamespace.com/parkings/slot-a1"');
+  });
+
+  it('answers a real 404 for a slug the catalogue does not have', async () => {
+    const notFound = vi.fn().mockResolvedValue(jsonResponse({ error: 'nope' }, 404));
+    const res = await handleSeoRequest(req('/properties/missing'), deps(notFound), shell);
+    expect(res!.status).toBe(404);
+    const html = await res!.text();
+    expect(html).toContain('content="noindex"');
+    // Still the SPA shell, so a React render can take over.
+    expect(html).toContain('id="root"');
+  });
+
+  it('serves GPTBot the same snapshot as a link-preview bot', async () => {
+    const fetchImpl = vi.fn();
+    const res = await handleSeoRequest(req('/support', GPT_BOT), deps(fetchImpl), shell);
+    expect(await res!.text()).toContain('<h1>Answers for guests and hosts</h1>');
+  });
+
+  it('fails open on errors, non-GET, private routes, and a missing shell', async () => {
     const boom = vi.fn().mockRejectedValue(new Error('network'));
     expect(await handleSeoRequest(req('/properties/x'), deps(boom), shell)).toBeNull();
 
     const ok = vi.fn().mockResolvedValue(jsonResponse({ data: { name: 'x' } }));
     expect(await handleSeoRequest(req('/properties/x', BOT, 'HEAD'), deps(ok), shell)).toBeNull();
-    expect(await handleSeoRequest(req('/properties/in/makati'), deps(ok), shell)).toBeNull();
-    expect(
-      await handleSeoRequest(req('/properties/x'), deps(ok), () => Promise.resolve(null))
-    ).toBeNull();
+    expect(await handleSeoRequest(req('/properties/x'), deps(ok), () => Promise.resolve(null))).toBeNull();
+
+    // Private routes are never snapshotted; the SPA handles them.
+    for (const path of ['/account/profile', '/properties/x/form', '/for-hosts/login', '/search']) {
+      expect(await handleSeoRequest(req(path), deps(ok), shell), path).toBeNull();
+    }
+
+    // Unknown paths fall back to the SPA shell.
+    expect(await handleSeoRequest(req('/definitely-not-a-route'), deps(ok), shell)).toBeNull();
   });
 });

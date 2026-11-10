@@ -138,11 +138,20 @@ describe('helpers', () => {
     expect(serializeJsonLd({ a: '<' })).toBe('{"a":"\\u003c"}');
   });
 
-  it('robots.txt points at the sitemap and blocks private areas', () => {
-    const txt = buildRobotsTxt('https://example.com', ['example.com']);
+  it('robots.txt points at the canonical sitemap and blocks private areas', () => {
+    const txt = buildRobotsTxt('https://example.com', ['example.com'], 'https://example.com');
     expect(txt).toContain('Sitemap: https://example.com/sitemap.xml');
     expect(txt).toContain('Disallow: /org/');
     expect(txt).toContain('Disallow: /account');
+  });
+
+  it('declares the AI crawlers with the same private-path disallows', () => {
+    const txt = buildRobotsTxt('https://kamespace.com');
+    for (const agent of ['GPTBot', 'OAI-SearchBot', 'ClaudeBot', 'PerplexityBot', 'Bingbot']) {
+      expect(txt).toContain(`User-agent: ${agent}`);
+    }
+    expect(txt).toContain('User-agent: *');
+    expect(txt).not.toContain('User-agent: CCBot\nDisallow: /\n');
   });
 });
 
@@ -165,7 +174,8 @@ describe('robots trip pages', () => {
     for (const origin of ['https://kamespace.com', 'https://www.kamespace.com']) {
       const txt = buildRobotsTxt(origin);
       expect(txt).toContain('Allow: /');
-      expect(txt).toContain(`Sitemap: ${origin}/sitemap.xml`);
+      // Every host points at the apex sitemap so ranking signals never split.
+      expect(txt).toContain('Sitemap: https://kamespace.com/sitemap.xml');
     }
   });
 });

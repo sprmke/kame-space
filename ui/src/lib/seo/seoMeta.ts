@@ -1,10 +1,18 @@
 /**
  * SEO metadata shared by the SPA (`usePageMeta`) and the Vercel middleware that serves
- * crawler-ready HTML for listing pages (`ui/middleware.ts`).
+ * crawler-ready HTML (`ui/middleware.ts`).
  *
  * Pure and dependency-free (no `@/` imports): the middleware bundle resolves it by
  * relative path.
  */
+
+import {
+  AI_CRAWLER_USER_AGENTS,
+  ROBOTS_DISALLOW,
+} from './publicRoutes';
+import { PRODUCTION_SITE_ORIGIN } from './siteOrigin';
+
+export { ROBOTS_DISALLOW };
 
 export const SITE_NAME = 'Kame Space';
 export const DEFAULT_SOCIAL_IMAGE = '/brand/kame-space-social-f5.png';
@@ -210,37 +218,11 @@ export function injectMetaIntoHtml(html: string, meta: SeoMeta): string {
   return withoutDefaults.replace('</head>', `    ${renderMetaTags(meta)}\n  </head>`);
 }
 
-/** Private / transactional areas kept out of search engines. */
-export const ROBOTS_DISALLOW = [
-  '/org/',
-  '/orgs',
-  '/admin',
-  '/account',
-  '/sign-in',
-  '/accept-invite',
-  '/onboarding',
-  '/form',
-  '/sd-form',
-  '/success',
-  '/messages',
-  '/trips',
-  '/stays',
-  '/favorites',
-  '/wishlist',
-  '/profile',
-  '/search',
-  '/explore-preview',
-  '/for-hosts/preview',
-  '/for-hosts/v2',
-  '/for-hosts/v3',
-  '/parkings/requests/',
-  '/*/form',
-  // Trip pages always carry ?bookingId=; the trailing ? keeps listings like /properties/trip-house indexable.
-  '/*/trip?',
-  '/*?*swLat=',
-] as const;
-
-/** Hosts that may be indexed. Anything else (dev, Vercel previews) gets `Disallow: /`. */
+/**
+ * Hosts that may be indexed. Anything else (dev, Vercel previews) gets `Disallow: /`.
+ * Canonical tags still point at the apex for every one of these, so they cannot split
+ * ranking signals.
+ */
 export const DEFAULT_INDEXABLE_HOSTS: readonly string[] = [
   // Current production domain (kamespace rebrand). Without these the production
   // build served `Disallow: /` and Lighthouse SEO capped at 69.
@@ -253,19 +235,31 @@ export const DEFAULT_INDEXABLE_HOSTS: readonly string[] = [
   'www.kamehomes.space',
 ];
 
+function robotsGroup(userAgent: string): string[] {
+  return [`User-agent: ${userAgent}`, 'Allow: /', ...ROBOTS_DISALLOW.map((path) => `Disallow: ${path}`), ''];
+}
+
+/**
+ * robots.txt body.
+ *
+ * `origin` is the request origin and only decides whether the deployment may be crawled at
+ * all. The `Sitemap:` line always uses the canonical origin so `www.`, `app.` and the legacy
+ * domain all point crawlers at the same file.
+ */
 export function buildRobotsTxt(
   origin: string,
-  indexableHosts: readonly string[] = DEFAULT_INDEXABLE_HOSTS
+  indexableHosts: readonly string[] = DEFAULT_INDEXABLE_HOSTS,
+  siteOrigin: string = PRODUCTION_SITE_ORIGIN
 ): string {
   if (!indexableHosts.includes(new URL(origin).hostname)) {
     return ['User-agent: *', 'Disallow: /', ''].join('\n');
   }
-  return [
-    'User-agent: *',
-    'Allow: /',
-    ...ROBOTS_DISALLOW.map((path) => `Disallow: ${path}`),
+
+  const lines = [
+    ...robotsGroup('*'),
+    ...AI_CRAWLER_USER_AGENTS.flatMap((agent) => robotsGroup(agent)),
+    `Sitemap: ${siteOrigin.replace(/\/+$/, '')}/sitemap.xml`,
     '',
-    `Sitemap: ${origin}/sitemap.xml`,
-    '',
-  ].join('\n');
+  ];
+  return lines.join('\n');
 }
