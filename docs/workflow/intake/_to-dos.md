@@ -73,6 +73,7 @@ kind: backlog
 - Refine Channel sync modal
 - Inbox refinement
 - Reposition light/dark switch
+- OR generation to guest? Control to automatic send or not
 - Improve paid/pro subscription badge/flow
 - Control for auto transition to ready for check-in status?
 - Refine edit booking detail page
@@ -84,6 +85,8 @@ kind: backlog
 - Super admin -> System health warnings & errors
 - AI usage, estimates, cost and profits? Implement buy more credits
 - Refine super admin pages, sections, etc
+- RAG?
+- Org/Property/parking basic info settings cannot be changed?
 - Make sure updated with new changes and features that we have
   - Subscriptions tier & validation
   - Team access

@@ -2,7 +2,7 @@
 title: 'Parking settings — operator guide'
 status: active
 tags: [guides, routes, org, parking]
-updated: 2026-09-27
+updated: 2026-11-09
 ---
 
 # Parking settings — operator guide
@@ -16,7 +16,7 @@ Route: `/org/:orgSlug/parking/:parkingSlug/settings`
 | Section           | E2E save  | Validation | Docs | Notes                                                                                                                          |
 | ----------------- | --------- | ---------- | ---- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Basic Information | Done      | Done       | Done | Parking type/residence/tower/level/slot are read-only                                                                          |
-| Photos            | Done      | Done       | Done | Single cover photo required                                                                                                    |
+| Photos            | Done      | Done       | Done | Up to 3 photos; one starred cover, at least 1 required                                                                         |
 | Parking Details   | Done      | Done       | Done | Check-in/out required; dimensions optional                                                                                     |
 | Amenities         | Done      | Done       | Done | At least 1 amenity required; count summary + **Manage** modal                                                                  |
 | Location          | Done      | Done       | Done | Address + map pin required                                                                                                     |
@@ -29,7 +29,7 @@ Route: `/org/:orgSlug/parking/:parkingSlug/settings`
 
 **Permissions:** parking team `settings:view` to open; `settings:edit` to save sections and upload media. Archiving/restoring also requires the org-level `org.parkings:manage` permission and cannot be done by a parking member. Delete is org-level and is blocked once the slot has any booking history.
 
-Configure one parking slot: cover photo, dimensions and check-in times, amenities, location, automation emails, integrations status, and delete. Guests pay through PayMongo, so there is no payment method section. Saves update the public listing guests see at `/parkings/:slug` and the admin sidebar for this slot. Aligned with [Property Settings](../property/settings.md): required fields, save-blocking validation, and section red-dot tracking follow the same pattern. Field helpers use a **?** beside the label (`FieldLabel` / `SettingsField` `help`) — not muted text under the control.
+Configure one parking slot: up to 3 photos, dimensions and check-in times, amenities, location, automation emails, integrations status, and delete. Guests pay through PayMongo, so there is no payment method section. Saves update the public listing guests see at `/parkings/:slug` and the admin sidebar for this slot. Aligned with [Property Settings](../property/settings.md): required fields, save-blocking validation, and section red-dot tracking follow the same pattern. Field helpers use a **?** beside the label (`FieldLabel` / `SettingsField` `help`) — not muted text under the control.
 
 ---
 
@@ -40,7 +40,9 @@ Parking **Settings** is where you set up a single slot before guests can book it
 **Common host questions**
 
 - Q: What do guests actually see from here?
-  A: Basic info, photos, location, and amenities flow to your public parking page. Keep the cover photo and description accurate before sharing the link. Guests pay through PayMongo at checkout, so there are no payment details to fill in here.
+  A: Basic info, photos, location, and amenities flow to your public parking page. Keep the photos and description accurate before sharing the link. Guests pay through PayMongo at checkout, so there are no payment details to fill in here.
+- Q: How many photos can I add, and which one shows first?
+  A: Up to 3. The starred photo is the cover and shows first on your public parking page. Drag the photos to change their order.
 - Q: Can I change the tower, level, or slot number after creating the slot?
   A: No. Those, along with parking type and residence, are locked once the slot is created since guests, bookings, and the public link are all tied to them. If one is wrong, delete the slot and create a new one.
 - Q: Do I have to fill out every section before anything saves?
@@ -65,7 +67,7 @@ Parking **Settings** is where you set up a single slot before guests can book it
 | Rule                                                     | Required? |
 | -------------------------------------------------------- | --------- |
 | Basic info (parking type, residence, tower, level, slot) | Yes       |
-| Photos (cover image)                                     | Yes       |
+| Photos (at least 1)                                      | Yes       |
 | Parking details (check-in / check-out)                   | Yes       |
 | Amenities (at least 1 selected)                          | Yes       |
 | Location (address + map pin)                             | Yes       |
@@ -82,7 +84,7 @@ Logic: `ui/src/features/dashboard/parking/lib/parkingSettingsCompletion.ts`, `ui
 | Section         | Storage                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Basic info      | `parkings` columns + `parkings.settings` — `brandColor`, `description`; `residence_name`, `parking_type`, `tower`, `level`, `slot_label` (**read-only**, set at creation)                                                                                                                                                                                                                                                                                                                               |
-| Photos          | `parkings.settings.coverImage` + `coverImageStoragePath` via **`upload-parking-media`** (single image max)                                                                                                                                                                                                                                                                                                                                                                                              |
+| Photos          | `parkings.settings.media` (order + cover) via **`upload-parking-media`** (3 images max); `settings.images` and `settings.coverImage` / `coverImageStoragePath` stay in sync for the public API                                                                                                                                                                                                                                                                                                          |
 | Parking details | `parkings.settings` — optional `spaceLengthM`, `spaceWidthM`, `heightClearanceM`; `checkInTime`, `checkOutTime` (defaults `14:00`, `12:00`) via **`ParkingDetailsSection`**                                                                                                                                                                                                                                                                                                                             |
 | Amenities       | `parkings.settings.enabledParkingAmenities`, `customParkingAmenities`, resolved `features[]` (public listing) via **`PATCH update-parking`**. Compact count summary + **Manage** modal (`ParkingFeaturesSection`); the Setup Guide step passes `embedded` for the inline editor.                                                                                                                                                                                                                        |
 | Location        | `parkings.settings` — `address`, `city`, `province`, `country`, `zipCode`, `latitude`, `longitude`, `mapsUrl`, `placeId` (same shape as property; **`PropertyLocationPicker`**)                                                                                                                                                                                                                                                                                                                         |
@@ -121,7 +123,7 @@ Parking type, residence, tower, level, and slot number can only be set when the 
 **Save Changes** saves only dirty sections that pass validation — the same section-scoped behavior as Property Settings. If required fields are still incomplete, **Save Changes** stays visible but is **disabled** (tooltip names the first issue); clicking while enabled with incomplete fields still scrolls to the first incomplete section and toasts the issue.
 
 - Basic (brand color, description only — identity fields are read-only) → `PATCH update-parking`
-- Photos → `POST` / `DELETE` **`upload-parking-media?parking_id=`** (auto-saved on upload/remove)
+- Photos → `POST` / `DELETE` **`upload-parking-media?parking_id=`** (auto-saved on upload/remove); reorder or set the cover via `PATCH update-parking` with the media patch
 - Parking details → `PATCH update-parking` (`settings.spaceLengthM`, `settings.spaceWidthM`, `settings.heightClearanceM`, `settings.checkInTime`, `settings.checkOutTime`)
 - Amenities → `PATCH update-parking` (`settings.enabledParkingAmenities`, `settings.customParkingAmenities`, `settings.features`)
 - Location → `PATCH update-parking` (location fields in `parkings.settings`)
@@ -149,6 +151,7 @@ Since parking type, residence, tower, level, and slot number can't change in Set
 | Automations section        | `ui/src/features/dashboard/parking/components/ParkingAutomationsSection.tsx` (summary + **Manage**; `embedded` for Setup Guide) |
 | Automation toggle rows     | `ui/src/features/dashboard/parking/components/ParkingEmailAutomationSection.tsx`, `ParkingBookingAutomationSection.tsx`         |
 | Form draft                 | `ui/src/features/dashboard/parking/lib/parkingSettingsForm.ts`                                                                  |
+| Photos gallery             | `ui/src/features/dashboard/parking/components/ParkingMediaUpload.tsx`, `ui/src/features/dashboard/parking/lib/parkingMedia.ts`  |
 | Completion / validation    | `ui/src/features/dashboard/parking/lib/parkingSettingsCompletion.ts`                                                            |
 | Field error resolver       | `ui/src/features/dashboard/parking/lib/parkingSettingsFieldError.ts`                                                            |
 | Completion hooks           | `ui/src/features/dashboard/parking/hooks/useParkingSettingsCompletion.ts`                                                       |
@@ -166,8 +169,8 @@ The same sections can be completed inside the post-onboarding [Setup Guide](../s
 
 ## Testing
 
-| Layer | Path / spec                                                                                            | Manual        |
-| ----- | ------------------------------------------------------------------------------------------------------ | ------------- |
-| Unit  | `parkingStatusMachine_test.ts`, `parkingSettingsSavePlan.test.ts`, `parkingSettingsCompletion.test.ts` | —             |
-| E2E   | [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs                           | PayMongo live |
-| N/A   | Parking host dashboard shell load                                                                      | —             |
+| Layer | Path / spec                                                                                                                    | Manual        |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| Unit  | `parkingStatusMachine_test.ts`, `parkingSettingsSavePlan.test.ts`, `parkingSettingsCompletion.test.ts`, `parkingMedia.test.ts` | —             |
+| E2E   | [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs                                                   | PayMongo live |
+| N/A   | Parking host dashboard shell load                                                                                              | —             |

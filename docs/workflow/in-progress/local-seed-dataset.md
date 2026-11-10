@@ -11,6 +11,31 @@ kind: plan
 
 > **Implementation status (2026-11-08):** core scope shipped in `scripts/dev/seed/` — identity, subscription, settings, team, bookings (property + parking), finance, maintenance, pricing, marketing, reviews, inbox, public pages, support, notifications, activity, analytics, AI, super admin, guest portal, verification, plus `seed:local` / `seed:refresh` / `seed:verify` / `seed:verify-ui` / `seed:attach-admin` / `seed:search-fixtures` / `seed:plan` / `seed:feature-flags` / `seed:integrations` and `check:seed-identity`. A clean `bun run db:reset` produces 1 org / 1 property / 1 parking, passes `99-verify`, and the UI walk passes all 196 route loads at 375 and 1280 with no hard failures. Operator guide: [`../guides/testing/local-seed-data.md`](../guides/testing/local-seed-data.md). Fixes found by the walk: org Reviews boot error (`resolvePropertyIdsWithPermissionForOrgUser` missing), `/pricing/calendar` legacy redirect, and a `<div>` inside `<p>` hydration error on `/admin/rate-limits`.
 
+## Completion audit (2026-11-09)
+
+| Requirement | Status | Evidence |
+| --- | --- | --- |
+| One canonical org / property / parking / development | Done | `db:reset` → 1 / 1 / 1 / 1; `99-verify` passes |
+| Business plan so every module is available | Done | `org_subscriptions` → `pro` / active |
+| Every property workflow status | Done | 60 property bookings, 11/11 statuses |
+| Every parking workflow status | Done | 14 parking bookings, 8/8 statuses |
+| Team / RBAC at org, property, parking | Done | members, invites, custom roles seeded |
+| Finance, maintenance, pricing, marketing, inbox, reviews, pages, support, notifications, activity, analytics, AI, guest portal | Done | each table populated; `99-verify` enforces |
+| Super admin: approvals, reports, audit, AI usage, announcements, health | Done | recommended-listing pending, 3 reports, 20 audit rows, 25 job heartbeats, 10 probe rows |
+| Guest portal end to end | Done | 12 `/account/*` routes walked; trips, vouchers, saved, requests, reviews |
+| `seed:verify` | Done | passes after every reset |
+| UI walk at 375 / 1280 | Done | 196 loads, 0 hard failures |
+| Optional plan / feature-flag / integration scripts | Done | `seed:plan`, `seed:feature-flags`, `seed:integrations` |
+| Docs and command index | Done | `docs/guides/testing/local-seed-data.md`, `scripts/README.md` |
+| **Multiple listings by default** | **Not done by design** | Default is one property + one parking (locked decision). Opt in with `seed:search-fixtures` (4 + 4 + 3) or `seed:mock-listings` (320) |
+| **Local health page green** | **Not possible locally** | Jobs show `unknown` because `pg_cron` / Vault are hosted-only; the 24 Vault parity errors are local env gaps, not seed data |
+| **`seed:verify` in `ci:quality`** | **Not done, intentional** | It needs a live local DB. `check:seed-identity` is the CI-safe half and is wired in |
+| **Dedicated `develop` PR + branch cleanup** | **Not done** | Work is split between commits on `feat/parking-module-hardening` and uncommitted files in the main worktree |
+| Retire `seed-ai-qa.sql` / `seed-agent-e2e.sql` | **Not done** | Left as optional manual seeds |
+| Import batch history | Not seeded | Import is a modal on Bookings; one `IMPORTED` booking row exists, no batch history |
+
+**Parity caveat:** the seed proves the schema and UI render with representative data. It cannot prove every action end to end, and external integrations stay inert until their keys exist. Production parity still comes from migrations plus the automated test suites.
+
 Plan to replace the current pile of overlapping local seeds (`supabase/seed.sql` + 10 `scripts/dev/seed-*.sql` files) with **one canonical local dataset** that exercises every supported module at every level: org, property, parking, super admin, public, and guest portal.
 
 ## 1. Goal

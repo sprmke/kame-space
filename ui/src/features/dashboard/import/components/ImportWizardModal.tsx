@@ -38,11 +38,11 @@ import {
 } from '@/features/dashboard/import/hooks/useImportBatchRows';
 import { useImportPreview } from '@/features/dashboard/import/hooks/useImportPreview';
 import { useSaveImportMapping } from '@/features/dashboard/import/hooks/useSaveImportMapping';
-import { downloadImportCsvTemplate } from '@/features/dashboard/import/lib/importCsvTemplate';
 import {
   importSourceForFile,
   rowCountBucket,
 } from '@/features/dashboard/import/lib/importAnalytics';
+import { downloadImportCsvTemplate } from '@/features/dashboard/import/lib/importCsvTemplate';
 import {
   labelForImportTarget,
   REQUIRED_TARGET_FIELDS,
@@ -57,9 +57,10 @@ import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
 import { TierBadgeAnchor } from '@/features/dashboard/plans/components/TierBadge';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
-import { captureAppEvent } from '@/lib/posthog/capture';
 
 import { UnsavedChangesDialog } from '@/components/forms/UnsavedChangesDialog';
+import { DataImportLegalNotice } from '@/components/legal/LegalNoticePresets';
+import { ImportCommitStepSkeleton } from '@/components/skeletons/ImportWizardSkeleton';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,7 +71,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ImportCommitStepSkeleton } from '@/components/skeletons/ImportWizardSkeleton';
 import { Button } from '@/components/ui/button';
 import {
   ResponsiveModal,
@@ -88,6 +88,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useGuardedClose } from '@/hooks/useGuardedClose';
+import { captureAppEvent } from '@/lib/posthog/capture';
 import { cn } from '@/lib/utils';
 import { formatMoney } from '@/utils/format/currency';
 
@@ -135,16 +136,21 @@ type UploadStepProps = {
 };
 
 function UploadStep({ parseResult, onParsed, onReplace, isBusy }: UploadStepProps) {
-  return parseResult ? (
-    <ImportFileBar
-      fileName={parseResult.fileName}
-      rowCount={parseResult.rowCount}
-      columnCount={parseResult.headers.length}
-      onReplace={onReplace}
-      replaceDisabled={isBusy}
-    />
-  ) : (
-    <ImportFileDropzone onParsed={onParsed} disabled={isBusy} />
+  return (
+    <div className="space-y-3">
+      {parseResult ? (
+        <ImportFileBar
+          fileName={parseResult.fileName}
+          rowCount={parseResult.rowCount}
+          columnCount={parseResult.headers.length}
+          onReplace={onReplace}
+          replaceDisabled={isBusy}
+        />
+      ) : (
+        <ImportFileDropzone onParsed={onParsed} disabled={isBusy} />
+      )}
+      <DataImportLegalNotice />
+    </div>
   );
 }
 
@@ -326,7 +332,7 @@ function AutoMapStep({
               />
             ))
           ) : (
-            <div className="border-border/70 flex flex-col items-center gap-2 rounded-xl border py-8 sm:py-12 text-center">
+            <div className="border-border/70 flex flex-col items-center gap-2 rounded-xl border py-8 text-center sm:py-12">
               <CheckCircle2 className="text-primary size-6" aria-hidden />
               <p className="text-foreground text-sm font-medium">No columns need input</p>
             </div>
@@ -350,7 +356,7 @@ function AutoMapStep({
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground border-border/70 rounded-xl border py-8 sm:py-12 text-center text-sm">
+            <p className="text-muted-foreground border-border/70 rounded-xl border py-8 text-center text-sm sm:py-12">
               No automatic matches.
             </p>
           )}

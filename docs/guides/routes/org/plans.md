@@ -2,7 +2,7 @@
 title: 'Plans & Billing — operator guide'
 status: active
 tags: [guides, routes, org]
-updated: 2026-09-27
+updated: 2026-11-09
 ---
 
 # Plans & Billing — operator guide
@@ -130,6 +130,8 @@ Full design/rationale: [`docs/workflow/done/org-level-billing-migration.md`](../
 | N/A   | —                                                                                                            | Real PayMongo webhook    |
 
 ---
+
+> **Legal notice:** `PlanReviewDialog` ends with a billing line: checkout (PayMongo, monthly payment link, no cash refund for unused time) or downgrade (applies now, no refund), linking to Billing terms. Pattern and full list: [legal.md](../legal.md#in-app-notices).
 
 ## Host-facing knowledge
 

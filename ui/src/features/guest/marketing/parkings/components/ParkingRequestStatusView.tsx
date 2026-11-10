@@ -13,6 +13,7 @@ import { useCreateParkingPaymentCheckout } from '@/features/guest/marketing/park
 import type { ParkingBookingStatusValue } from '@/features/guest/marketing/parkings/hooks/useParkingBookingStatus';
 import { useRequestParkingEndorsement } from '@/features/guest/marketing/parkings/hooks/useRequestParkingEndorsement';
 
+import { ParkingPaymentLegalNotice } from '@/components/legal/LegalNoticePresets';
 import {
   PARKING_STATUS_FLOW_STEPS,
   ParkingFlowStepper,
@@ -387,9 +388,7 @@ export function ParkingRequestStatusView({ bookingId, data, countdown, isRefetch
         </DetailsFold>
       ) : null}
 
-      {isPayment ? (
-        <p className="text-muted-foreground text-xs">Non-refundable once paid.</p>
-      ) : null}
+      {isPayment ? <ParkingPaymentLegalNotice align="start" /> : null}
 
       {showSupport ? (
         <p className="text-muted-foreground text-xs">

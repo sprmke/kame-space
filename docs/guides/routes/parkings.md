@@ -2,7 +2,7 @@
 title: 'Parkings (guest marketing) — operator guide'
 status: active
 tags: [guides, routes, parking]
-updated: 2026-08-27
+updated: 2026-11-09
 ---
 
 # Parkings (guest marketing) — operator guide
@@ -40,6 +40,8 @@ Browse parking slots across developments. **`ParkingsListPage`** uses **`list-pu
 Main nav: **Parkings** → `/parkings` (replaces legacy **About** link).
 
 ---
+
+> **Legal notice:** Request form (last step and linked-stay confirm) shows the parking agreement line above Submit request; hidden in the host New booking modal. Pay now shows the PayMongo and non-refundable line with a Parking terms link. Pattern and full list: [legal.md](legal.md#in-app-notices).
 
 ## Host-facing knowledge
 
@@ -100,7 +102,7 @@ Route is registered at the marketing shell level (no dynamic slug conflict).
 
 **`ParkingDetailPage`** — same shell as **`PropertyDetailPage`**: full-width **`ListingGallery`** (Share; single-photo uses the same tall panoramic layout), then **`lg:grid-cols-3`** with overview + amenities left and **`BookingCard`** sticky right.
 
-- Gallery: **`ListingGallery`** (shared with property via **`PropertyGallery`** wrapper)
+- Gallery: **`ListingGallery`** (shared with property via **`PropertyGallery`** wrapper). Hosts can upload up to 3 photos in parking Settings; the starred photo is the cover and renders first, the rest follow gallery order. A single photo keeps the tall panoramic layout.
 - Overview: **`ParkingOverview`** — parking type badge, title, **`ListingPlaceMeta`** (development · tower · level), inline dimension + check-in/out row (length / width / clearance · in/out times), **`ListingHostCard`** (**Contact Host** opens guest web chat sheet), description (**About this parking**). Brand color tints accents via **`ParkingPublicBrandShell`**. Pricing lives in **`BookingCard`** only.
 - Features: **`PropertyAmenities`** when `features[]` is non-empty
 - Location: **`PropertyLocation`** when `parkings.settings` has address or map pin (`get-public-parking` returns `address`, `city`, `province`, `country`, `latitude`, `longitude`, `placeId`)

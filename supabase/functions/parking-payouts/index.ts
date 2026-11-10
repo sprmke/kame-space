@@ -45,6 +45,8 @@ function serializeRow(row: Record<string, unknown>) {
     commissionPct: Number(row.commission_pct ?? 0),
     bookingChannel: (row.booking_channel as string | undefined) ?? 'standard',
     hostNetTotal: Number(row.host_net_total ?? 0),
+    paymentFeeAmount: Number(row.payment_fee_amount ?? 0),
+    platformNetTotal: Number(row.platform_net_total ?? 0),
     status: row.status as string,
     paidAt: (row.paid_at as string | undefined) ?? null,
     disbursedAt: (row.disbursed_at as string | undefined) ?? null,

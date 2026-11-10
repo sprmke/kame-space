@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 
 import { fetchGuestBookingDocument } from '@/features/guest/booking-documents/lib/api';
 
+import { LegalFooterLinks } from '@/components/legal/LegalFooterLinks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { captureAppEvent } from '@/lib/posthog/capture';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,7 @@ function BookingDocumentUnavailable({ message }: { message: string }) {
         )}
       >
         <p className="text-foreground text-base font-medium">{message}</p>
+        <LegalFooterLinks className="mt-4" />
       </div>
     </div>
   );

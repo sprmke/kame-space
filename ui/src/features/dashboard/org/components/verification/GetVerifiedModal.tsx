@@ -65,6 +65,7 @@ import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate'
 import { useHostRewardOffer } from '@/features/dashboard/setup-guide/hooks/useHostRewardOffer';
 
 import { UnsavedChangesDialog } from '@/components/forms/UnsavedChangesDialog';
+import { HostVerificationLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { Button } from '@/components/ui/button';
 import {
   ResponsiveModal,
@@ -911,6 +912,9 @@ export function GetVerifiedModal({
           onBusinessPermitChange={setSlot(setBusinessPermit)}
         />
       )}
+      {showHostSubmit || (stepIndex === 1 && verifiedEditable) ? (
+        <HostVerificationLegalNotice className="pt-1" />
+      ) : null}
     </>
   );
 

@@ -102,6 +102,10 @@ import {
 } from '@/features/dashboard/pricing/lib/pricingCompute';
 
 import { GuestFormBrandHeader } from '@/components/branding/GuestFormBrandHeader';
+import {
+  BookingSubmitLegalNotice,
+  StayPaymentLegalNotice,
+} from '@/components/legal/LegalNoticePresets';
 import { bottomTabBarOffsetClassName } from '@/components/mobile/BottomTabBar';
 import { useAntiSpamSubmit } from '@/components/security/useAntiSpamSubmit';
 import { GuestFormPageSkeleton } from '@/components/skeletons/GuestPageSkeletons';
@@ -2742,6 +2746,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                         </FormItem>
                       )}
                     />
+                    {!skipAuthGate ? <StayPaymentLegalNotice /> : null}
                   </div>
                 )}
 
@@ -2871,6 +2876,14 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                 onAcceptedChange={setCancellationAccepted}
                 showAgreement={!publicProperty.cancellationPolicy.unset}
               />
+            ) : null}
+
+            {/* Host-entered bookings (admin New booking) skip the guest-facing agreement line. */}
+            {!bookingId &&
+            !isCompletionMode &&
+            !skipAuthGate &&
+            currentStep === guestFormStepCount ? (
+              <BookingSubmitLegalNotice />
             ) : null}
 
             {antiSpam.render}

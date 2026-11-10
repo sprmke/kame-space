@@ -47,6 +47,7 @@ Dashboard paths:
 | `bun run seed:feature-flags apply` / `remove` | Demo feature-availability overrides.                                                 |
 | `bun run seed:integrations`                   | Reports which external integrations can run and enables the safe switches.           |
 | `bun run check:seed-identity`                 | Fails on retired `monaco-2612` / `org/kame-home` references.                         |
+| `bun run dev:check`                           | Verifies auth, edge functions, DB, canonical seed, super-admin account, and UI are all running. |
 | `bun run seed:mock-listings`                  | Optional 320-listing performance dataset. Never runs on reset.                       |
 
 Every command is local-only. None of them touch a hosted Supabase project.
@@ -162,5 +163,7 @@ Live local harnesses (`assistantLiveLocalHarness.ts`, `parkingLiveLocalHarness.t
 | `99-verify` fails with extra properties | An old database still has fixtures. Run `bun run seed:refresh` or `bun run db:reset`. |
 | `seed:local` fails on `db query -f`     | Each seed file must stay a single statement (one `DO $$ … $$`).                       |
 | 502 on `/functions/v1/*` after reset    | Kong holds a stale runtime IP. `bun run stop:supabase` then `./dev.sh`.               |
+| Signed in with Google but the app acts signed out | `supabase start` alone does not run the edge functions. Run `bun run dev:api` or restart with `./dev.sh`, then `bun run dev:check`. |
+| Stale fake session from E2E | Clear `sb-127-auth-token` and `kame:e2e-admin-session` from localStorage, then sign in again. |
 | Sign-in works but the org is missing    | Run `bun run seed:attach-admin` after the first Google sign-in.                       |
 | Typeahead has no **See all**            | Expected with one property. Run `bun run seed:search-fixtures`.                       |

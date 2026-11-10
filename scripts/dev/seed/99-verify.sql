@@ -28,7 +28,7 @@ DECLARE
     'property_page_views','property_analytics_reviews',
     'ai_platform_org_settings','ai_platform_org_credit_wallet','ai_platform_usage_daily',
     'ai_dashboard_assistant_conversations','ai_voice_receptionist_org_settings',
-    'ops_reports','super_admin_audit_events',
+    'ops_reports','super_admin_audit_events','system_job_heartbeats','system_health_probe_results',
     'guest_profiles','guest_saved_properties','guest_requests'
   ];
   v_table text;
@@ -44,6 +44,14 @@ BEGIN
   END IF;
   IF NOT EXISTS (SELECT 1 FROM public.properties WHERE id = v_prop AND slug = 'kame-home') THEN
     v_errors := array_append(v_errors, 'kame-home property missing');
+  END IF;
+
+  SELECT count(*) INTO v_n FROM public.developments WHERE status = 'ACTIVE';
+  IF v_n <> 1 THEN
+    v_errors := array_append(v_errors, format('expected 1 ACTIVE development, found %s', v_n));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.developments WHERE slug = 'azure-north-residences') THEN
+    v_errors := array_append(v_errors, 'azure-north-residences development missing');
   END IF;
 
   SELECT count(*) INTO v_n FROM public.parkings WHERE status = 'ACTIVE';

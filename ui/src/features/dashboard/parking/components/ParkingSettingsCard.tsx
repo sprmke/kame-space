@@ -66,13 +66,18 @@ import {
   parkingFeaturesDraftIsDirty,
   parkingFeaturesSettingsPatch,
 } from '@/features/dashboard/parking/lib/parkingFeaturesConstants';
+import {
+  parkingMediaCoverImage,
+  parkingMediaFromSettings,
+  parkingMediaSettingsPatch,
+  type ParkingMediaItem,
+} from '@/features/dashboard/parking/lib/parkingMedia';
 import { type ParkingSettingsSectionId } from '@/features/dashboard/parking/lib/parkingSettingsCompletion';
 import {
   parkingSettingsSectionBanner,
   resolveParkingSettingsFieldError,
 } from '@/features/dashboard/parking/lib/parkingSettingsFieldError';
 import {
-  parkingCoverImageFromSettings,
   parkingDetailsDraftFromSettings,
   parkingDetailsDraftIsDirty,
   parkingDetailsSettingsPatch,
@@ -139,8 +144,8 @@ export function useParkingSettingsController() {
     parkingProfileDraftFromParking(parking, inheritedBrandColor)
   );
   const [profileDraft, setProfileDraft] = useState(profileBaseline);
-  const [coverImage, setCoverImage] = useState(() =>
-    parkingCoverImageFromSettings(parking.settings)
+  const [media, setMedia] = useState<ParkingMediaItem[]>(() =>
+    parkingMediaFromSettings(parking.settings)
   );
   const [featuresBaseline, setFeaturesBaseline] = useState(() =>
     parkingFeaturesDraftFromSettings(parking.settings)
@@ -205,8 +210,7 @@ export function useParkingSettingsController() {
     const next = parkingProfileDraftFromParking(parking, inheritedBrandColor);
     setProfileDraft(next);
     setProfileBaseline(next);
-    const nextCover = parkingCoverImageFromSettings(parking.settings);
-    setCoverImage(nextCover);
+    setMedia(parkingMediaFromSettings(parking.settings));
   }, [
     parking.id,
     parking.updatedAt,
@@ -263,6 +267,16 @@ export function useParkingSettingsController() {
   const detailsDirty = parkingDetailsDraftIsDirty(detailsDraft, detailsBaseline);
   detailsDirtyRef.current = detailsDirty;
   const isDirty = profileDirty || automationDirty || featuresDirty || locationDirty || detailsDirty;
+
+  const coverImage = parkingMediaCoverImage(media);
+
+  const persistMediaOrder = async (next: ParkingMediaItem[]) => {
+    const result = await updateParking.mutateAsync({
+      parkingId: parking.id,
+      settings: parkingMediaSettingsPatch(next),
+    });
+    setMedia(parkingMediaFromSettings(result.parking.settings));
+  };
 
   const isArchived = parking.status === 'INACTIVE';
 
@@ -501,8 +515,9 @@ export function useParkingSettingsController() {
     setProfileBaseline,
     profileDraft,
     setProfileDraft,
-    coverImage,
-    setCoverImage,
+    media,
+    setMedia,
+    persistMediaOrder,
     featuresBaseline,
     setFeaturesBaseline,
     featuresDraft,
@@ -576,8 +591,9 @@ export function ParkingSettingsCard() {
     updateParking,
     deleteParking,
     profileDraft,
-    coverImage,
-    setCoverImage,
+    media,
+    setMedia,
+    persistMediaOrder,
     featuresDraft,
     setFeaturesDraft,
     newCustomFeatureInput,
@@ -830,7 +846,7 @@ export function ParkingSettingsCard() {
               id="media"
               title="Photos"
               icon={ImageIcon}
-              description="Cover photo for the public listing."
+              description="Up to 3 photos for the public listing."
             >
               {parkingSettingsSectionBanner('media', draftCompletion.sectionMessages) ? (
                 <PropertySettingsSectionAlert
@@ -838,8 +854,9 @@ export function ParkingSettingsCard() {
                 />
               ) : null}
               <ParkingMediaUpload
-                coverImage={coverImage}
-                onCoverChange={setCoverImage}
+                items={media}
+                onChange={setMedia}
+                onPersistOrder={persistMediaOrder}
                 disabled={busy}
               />
             </AdminSection>

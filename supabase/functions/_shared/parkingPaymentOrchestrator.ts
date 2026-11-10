@@ -15,6 +15,7 @@ import { createNotification } from './notificationService.ts';
 import { createPaymongoPaymentLink, phpToCentavos } from './paymongoClient.ts';
 import { loadParkingPricing } from './parkingPricing.ts';
 import { resolveParkingPlatformSettings } from './parkingPlatformSettings.ts';
+import { computeParkingSettlement } from './parkingSettlement.ts';
 import type { ParkingBookingChannel } from './parkingDirectLink.ts';
 import { sendParkingConfirmedEmail } from './parkingBroadcastEmail.ts';
 import { sendParkingEndorsementEmail } from './parkingEndorsementEmail.ts';
@@ -76,6 +77,10 @@ export type ParkingPaymentAmounts = {
   commissionPct: number;
   commissionAmount: number;
   hostNetTotal: number;
+  /** Estimated processor cut of the guest charge. 0 for offline/complimentary bookings. */
+  paymentFeeAmount: number;
+  /** guestChargeTotal − hostNetTotal − paymentFeeAmount. */
+  platformNetTotal: number;
 };
 
 /**
@@ -124,16 +129,23 @@ export async function computeParkingPaymentAmounts(
     bookingChannel === 'direct_link'
       ? platformSettings.directCommissionPct
       : platformSettings.commissionPct;
-  const commissionAmount = round2(hostGrossTotal * commissionPct);
-  const hostNetTotal = round2(hostGrossTotal - commissionAmount);
+  const settlement = computeParkingSettlement({
+    guestChargeTotal,
+    hostGrossTotal,
+    commissionPct,
+    paymentFeePct: platformSettings.paymentFeePct,
+    paymentFeeFixed: platformSettings.paymentFeeFixed,
+  });
 
   return {
     nights,
     guestChargeTotal,
     hostGrossTotal,
     commissionPct,
-    commissionAmount,
-    hostNetTotal,
+    commissionAmount: settlement.commissionAmount,
+    hostNetTotal: settlement.hostNetTotal,
+    paymentFeeAmount: settlement.paymentFeeAmount,
+    platformNetTotal: settlement.platformNetTotal,
   };
 }
 
@@ -218,6 +230,8 @@ export async function createParkingPaymentTransaction(
       host_gross_total: amounts.hostGrossTotal,
       commission_pct: amounts.commissionPct,
       host_net_total: amounts.hostNetTotal,
+      payment_fee_amount: amounts.paymentFeeAmount,
+      platform_net_total: amounts.platformNetTotal,
       nights: amounts.nights,
       booking_channel: bookingChannel,
       status: 'pending',
@@ -369,6 +383,8 @@ export async function fulfillComplimentaryOwnerParking(bookingId: string): Promi
       host_gross_total: 0,
       commission_pct: amounts.commissionPct,
       host_net_total: 0,
+      payment_fee_amount: 0,
+      platform_net_total: 0,
       nights: amounts.nights,
       booking_channel: bookingChannel,
       provider: 'complimentary',
@@ -501,6 +517,8 @@ export async function fulfillOfflineParkingPayment(bookingId: string): Promise<v
       host_gross_total: 0,
       commission_pct: 0,
       host_net_total: 0,
+      payment_fee_amount: 0,
+      platform_net_total: 0,
       nights,
       booking_channel: bookingChannel,
       provider: 'offline',

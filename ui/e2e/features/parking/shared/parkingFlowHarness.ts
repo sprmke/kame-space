@@ -622,16 +622,18 @@ function parkingList() {
 
 function parkingPricingPayload() {
   return {
-    weekdayNightlyRate: 1200,
-    weekendNightlyRate: 1350,
+    weekdayNightlyRate: 300,
+    weekendNightlyRate: 350,
     dateOverrides: {},
     currency: 'PHP',
     guestRateCapWeekday: 400,
-    guestRateCapWeekend: 450,
-    commissionPct: 0.2,
+    guestRateCapWeekend: 400,
+    guestRateWeekday: 400,
+    guestRateWeekend: 400,
+    commissionPct: 0.1,
     directBookingToken: DIRECT_LINK_TOKEN,
     directBookingSlug: 'slot-12a',
-    directCommissionPct: 0.1,
+    directCommissionPct: 0.05,
   };
 }
 

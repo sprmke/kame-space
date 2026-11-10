@@ -2,7 +2,7 @@
 title: 'Curated support FAQs'
 status: active
 tags: [guides, support, faqs, help-center]
-updated: 2026-11-08
+updated: 2026-11-09
 ---
 
 # Curated support FAQs
@@ -228,7 +228,16 @@ No. These are standalone parking listings such as tower slots or motorcycle bays
 - source: docs/guides/routes/org/parking/settings.md
 - order: 30
 
-Basic info, photos, location, and amenities flow to your public parking page. Keep the cover photo and description accurate before sharing the link. Guests pay through PayMongo at checkout, so there are no payment details to fill in.
+Basic info, photos, location, and amenities flow to your public parking page. Keep the photos and description accurate before sharing the link. Guests pay through PayMongo at checkout, so there are no payment details to fill in.
+
+### How many photos can I add to a parking listing?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/org/parking/settings.md
+- order: 31
+
+Up to 3. The starred photo is the cover and shows first on your public parking page. Drag the photos to change their order.
 
 ### Why is there no Payment section on parking settings?
 
@@ -1279,9 +1288,33 @@ Archive when you want to stop taking new bookings but keep the history. Delete i
 
 - category: Parking
 - audience: host
-- source: docs/guides/routes/parkings.md
+- source: docs/guides/routes/org/parking/pricing.md
 
-Guests always see and pay the platform guest rate. Your nightly rate is what your payout is calculated from, after commission. The guest rate is also the price cap, so a slot priced above it is not matched.
+Guests always see and pay the platform guest rate. Your nightly rate is what your payout is calculated from. We take the platform fee from your rate, and the rest is yours. The guest rate is also the price cap, so a slot priced above it is not matched.
+
+### How much does Kame Space take from a parking booking?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/org/parking/pricing.md
+
+A fixed percentage of your nightly rate, not the guest price. Pricing shows the exact split: guests pay, the platform fee, and what you receive. At 10% on a ₱300 rate, the fee is ₱30 and you receive ₱270 per night.
+
+### How do I get a lower fee on a parking booking?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/org/parking/pricing.md
+
+Share your direct booking link from Pricing. Bookings through that link use a lower platform fee because you brought the guest in. The card shows the per-night difference using your current rate. Guests still sign in before booking.
+
+### When do I get paid for a parking booking?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/org/parking/finance.md
+
+Payouts are sent manually by the Kame Space team after the guest's payment is confirmed. You are paid your rate minus the platform fee. Parking Finance shows each booking's guest price, gross, fee, net and payout status.
 
 ### Can I record a parking booking the guest already paid in cash?
 
@@ -1342,3 +1375,43 @@ Seven days by default. After that only the result and the guest's name stay with
 - source: docs/guides/routes/app.md
 
 Browsers, home-screen shortcuts and messaging apps can keep older icons or link previews for a while. Reopen the website to load the latest version. If an iPhone home-screen shortcut still has the old icon, you may need to remove that shortcut and add it again. Your account and bookings are unchanged.
+
+### Where can I read the Terms and Privacy Policy?
+
+- category: Account & Security
+- audience: public
+- source: docs/guides/routes/legal.md
+
+They are linked in the site footer, the More menu on phone, and your account menu. When you sign in, book, pay, or share documents, a short line near the button links to the part that applies. Tapping it opens the policy without leaving the page, so nothing you typed is lost.
+
+### How do I get a copy of my data or ask to delete it?
+
+- category: Account & Security
+- audience: public
+- source: docs/guides/routes/legal.md
+
+Open your profile and choose Request a copy or deletion of your data, or email us from the address on your account. We may ask you to confirm it is you and aim to reply within 15 days. Some records, such as payment history, are kept when the law requires it.
+
+### What does the cookie banner do, and can I change my choice later?
+
+- category: Account & Security
+- audience: public
+- source: docs/guides/routes/legal.md
+
+On your first visit you can choose Accept or Necessary only. Analytics cookies never load until you choose Accept, and required cookies like sign-in and form protection work either way. Open the Cookie Policy page and use Change cookie choice to switch at any time.
+
+### Is my plan renewed automatically, and do I get money back when I downgrade?
+
+- category: Plans & Billing
+- audience: host
+- source: docs/guides/routes/org/plans.md
+
+Plans are not charged automatically. Each month you get a payment link through PayMongo. Upgrading credits the unused time on your current plan. Downgrading applies right away, and unused time is never refunded in cash.
+
+### Are chat replies from the host or from AI?
+
+- category: Guest Portal
+- audience: guest
+- source: docs/guides/routes/legal.md
+
+Some hosts use an AI assistant to answer common questions quickly. Ask for the host in the chat if you need a person. How we handle messages is explained in the Privacy Policy.

@@ -287,8 +287,9 @@ function ParkingSectionsInner({
   const {
     settings,
     settingsLoading,
-    coverImage,
-    setCoverImage,
+    media,
+    setMedia,
+    persistMediaOrder,
     featuresDraft,
     setFeaturesDraft,
     newCustomFeatureInput,
@@ -378,8 +379,9 @@ function ParkingSectionsInner({
       {mode === 'photo' ? (
         <>
           <ParkingMediaUpload
-            coverImage={coverImage}
-            onCoverChange={setCoverImage}
+            items={media}
+            onChange={setMedia}
+            onPersistOrder={persistMediaOrder}
             disabled={busy}
           />
           <ParkingFeaturesSection

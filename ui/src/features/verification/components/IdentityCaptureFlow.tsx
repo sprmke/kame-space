@@ -2,6 +2,8 @@ import { useCallback, useRef, useState } from 'react';
 
 import { AlertCircle, CheckCircle2, Loader2, ShieldCheck } from 'lucide-react';
 
+import { LegalLink } from '@/components/legal/LegalLink';
+import { LegalNotice } from '@/components/legal/LegalNotice';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
@@ -62,7 +64,17 @@ export function IdentityCaptureFlow({
 
   const totalSteps = method === 'document' ? 4 : 3;
   const stepIndex =
-    step === 'consent' ? 0 : step === 'method' ? 1 : step === 'qr' ? 2 : step === 'front' ? 2 : step === 'back' ? 3 : 4;
+    step === 'consent'
+      ? 0
+      : step === 'method'
+        ? 1
+        : step === 'qr'
+          ? 2
+          : step === 'front'
+            ? 2
+            : step === 'back'
+              ? 3
+              : 4;
 
   const submit = useCallback(
     async (livenessResult: LivenessResult | null, selfie: File | null) => {
@@ -108,16 +120,7 @@ export function IdentityCaptureFlow({
         setStep('liveness');
       }
     },
-    [
-      backFile,
-      frontFile,
-      method,
-      onComplete,
-      qrPayload,
-      quality?.score,
-      subjectKind,
-      token,
-    ]
+    [backFile, frontFile, method, onComplete, qrPayload, quality?.score, subjectKind, token]
   );
 
   const finishLiveness = (livenessResult: LivenessResult) => {
@@ -156,6 +159,10 @@ export function IdentityCaptureFlow({
             <li>The host sees that you are verified, not your ID number.</li>
           </ul>
 
+          <LegalNotice>
+            How we handle ID checks: <LegalLink doc="privacy" section="identity" />
+          </LegalNotice>
+
           <label className="flex items-start gap-3 text-sm">
             <Checkbox
               checked={consent}
@@ -171,7 +178,12 @@ export function IdentityCaptureFlow({
                 Cancel
               </Button>
             )}
-            <Button type="button" className="flex-1" disabled={!consent} onClick={() => setStep('method')}>
+            <Button
+              type="button"
+              className="flex-1"
+              disabled={!consent}
+              onClick={() => setStep('method')}
+            >
               Continue
             </Button>
           </div>
@@ -190,10 +202,12 @@ export function IdentityCaptureFlow({
                   setMethod(option.value);
                   setStep(option.value === 'philsys_qr' ? 'qr' : 'front');
                 }}
-                className="hover:bg-muted focus-visible:ring-ring flex min-h-[52px] flex-col items-start rounded-xl border px-4 py-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className="hover:bg-muted focus-visible:ring-ring flex min-h-[52px] flex-col items-start rounded-xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2"
               >
                 <span className="text-sm font-medium">{option.label}</span>
-                {option.hint && <span className="text-muted-foreground text-xs">{option.hint}</span>}
+                {option.hint && (
+                  <span className="text-muted-foreground text-xs">{option.hint}</span>
+                )}
               </button>
             ))}
           </div>
@@ -215,7 +229,12 @@ export function IdentityCaptureFlow({
               setStep(method === 'document' ? 'back' : 'liveness');
             }}
           />
-          <Button type="button" variant="ghost" className="w-full" onClick={() => setStep('method')}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
+            onClick={() => setStep('method')}
+          >
             Back
           </Button>
         </div>
@@ -237,7 +256,11 @@ export function IdentityCaptureFlow({
             }}
           />
           <div className="flex gap-2">
-            <Button type="button" variant="ghost" onClick={() => setStep(qrPayload ? 'qr' : 'method')}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setStep(qrPayload ? 'qr' : 'method')}
+            >
               Back
             </Button>
             <Button
@@ -272,7 +295,12 @@ export function IdentityCaptureFlow({
               Continue
             </Button>
           </div>
-          <Button type="button" variant="ghost" className="w-full" onClick={() => setStep('liveness')}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
+            onClick={() => setStep('liveness')}
+          >
             Skip this side
           </Button>
         </div>
@@ -303,7 +331,9 @@ export function IdentityCaptureFlow({
           <CheckCircle2 className="h-8 w-8 text-emerald-500" aria-hidden />
           <p className="text-base font-semibold">Done</p>
           <VerificationResultBadge verdict={result.verdict} flags={result.flags} />
-          {result.maskedName && <p className="text-muted-foreground text-sm">{result.maskedName}</p>}
+          {result.maskedName && (
+            <p className="text-muted-foreground text-sm">{result.maskedName}</p>
+          )}
           <p className="text-muted-foreground text-xs">You can close this page.</p>
         </div>
       )}

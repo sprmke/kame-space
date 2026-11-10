@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { format, eachDayOfInterval, isSameDay, isBefore, startOfToday } from 'date-fns';
 
+import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
 import { ParkingDirectLinkCard } from '@/features/dashboard/parking/components/ParkingDirectLinkCard';
 import { ParkingPricingRatesFormCard } from '@/features/dashboard/parking/components/ParkingPricingRatesFormCard';
 import { ParkingPricingStatsRow } from '@/features/dashboard/parking/components/ParkingPricingStatsRow';
@@ -13,6 +14,8 @@ import { resolveParkingNightlyRateForDate } from '@/features/dashboard/parking/l
 import {
   DEFAULT_PARKING_WEEKDAY_NIGHTLY_RATE,
   DEFAULT_PARKING_WEEKEND_NIGHTLY_RATE,
+  STUB_GUEST_PARKING_RATE_WEEKDAY,
+  STUB_GUEST_PARKING_RATE_WEEKEND,
   parkingPricingDefaultsFromDto,
 } from '@/features/dashboard/parking/lib/parkingPricingDefaults';
 import {
@@ -26,25 +29,36 @@ import {
 import { PricingCalendarGrid } from '@/features/dashboard/pricing/components/PricingCalendarGrid';
 import { PricingDateModal } from '@/features/dashboard/pricing/components/PricingDateModal';
 import { PricingSaveDialog } from '@/features/dashboard/pricing/components/PricingSaveDialog';
+import { pricingCalendarFormGridClassName } from '@/features/dashboard/pricing/lib/pricingCalendarLayout';
 import {
   contiguousDateRanges,
   dateKey,
 } from '@/features/dashboard/pricing/lib/pricingCalendarUtils';
 import { mergeDateRateOverrides } from '@/features/dashboard/pricing/lib/pricingCalendarUtils';
-import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
-import { pricingCalendarFormGridClassName } from '@/features/dashboard/pricing/lib/pricingCalendarLayout';
+import { PARKING_PAYOUTS_HOW_IT_WORKS } from '@/features/dashboard/pricing/lib/pricingHelpCopy';
 import { useParkingPermissions } from '@/features/dashboard/team/hooks/useParkingPermissions';
 import { hasParkingPermission } from '@/features/dashboard/team/lib/parkingPermissions';
 
+import { HowItWorksButton } from '@/components/help/HowItWorksButton';
+import { NoticeCallout } from '@/components/help/NoticeCallout';
 import { FloatingPanel } from '@/components/mobile/FloatingPanel';
 import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
 import { PricingPageBodySkeleton } from '@/components/skeletons/PricingSkeleton';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { formatMoneyCompact } from '@/utils/format/currency';
 
 export function ParkingPricingPage() {
   const compactChrome = useDashboardCompactChrome();
   const { data: parkingAccess } = useParkingPermissions();
   const canEdit = hasParkingPermission(parkingAccess?.permissions, 'pricing:edit');
+
+  const titleHint = (
+    <HowItWorksButton
+      {...PARKING_PAYOUTS_HOW_IT_WORKS}
+      label="How payouts work"
+      className="size-8 text-current opacity-80 hover:bg-transparent hover:text-current hover:opacity-100"
+    />
+  );
 
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const { data: pricingData, isLoading, isError, error } = useParkingPricing(currentMonth);
@@ -341,6 +355,7 @@ export function ParkingPricingPage() {
         title="Pricing"
         subtitle="Manage pricing and availability."
         titleId="parking-pricing-heading"
+        titleHint={titleHint}
       >
         <PricingPageBodySkeleton statsCount={3} showDirectLinkCard />
       </AdminMobilePage>
@@ -353,6 +368,7 @@ export function ParkingPricingPage() {
         title="Pricing"
         subtitle="Manage pricing and availability."
         titleId="parking-pricing-heading"
+        titleHint={titleHint}
       >
         <FloatingPanel
           padding="lg"
@@ -364,19 +380,22 @@ export function ParkingPricingPage() {
     );
   }
 
+  const guestRateWeekday = pricingData?.guestRateWeekday ?? STUB_GUEST_PARKING_RATE_WEEKDAY;
+  const guestRateWeekend = pricingData?.guestRateWeekend ?? STUB_GUEST_PARKING_RATE_WEEKEND;
+
   return (
     <>
       <AdminMobilePage
         title="Pricing"
         subtitle="Manage pricing and availability."
         titleId="parking-pricing-heading"
+        titleHint={titleHint}
       >
-        <FloatingPanel padding="md">
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            Requests go to up to 3 eligible slots at a time, cheapest first. The first host to
-            accept wins. Slots priced above the guest rate are not matched.
-          </p>
-        </FloatingPanel>
+        <NoticeCallout tone="info">
+          Guests pay the platform rate: {formatMoneyCompact(guestRateWeekday)} weekday,{' '}
+          {formatMoneyCompact(guestRateWeekend)} weekend. Your rate sets your payout. Listings
+          priced above the platform rate are not matched.
+        </NoticeCallout>
 
         <ParkingPricingStatsRow
           weekdayRate={weekdayRate}
@@ -402,6 +421,8 @@ export function ParkingPricingPage() {
             <ParkingPricingRatesFormCard
               weekdayRate={weekdayRate}
               weekendRate={weekendRate}
+              guestRateWeekday={guestRateWeekday}
+              guestRateWeekend={guestRateWeekend}
               guestRateCapWeekday={pricingData?.guestRateCapWeekday}
               guestRateCapWeekend={pricingData?.guestRateCapWeekend}
               commissionPct={pricingData?.commissionPct}
@@ -423,6 +444,7 @@ export function ParkingPricingPage() {
               token={pricingData?.directBookingToken}
               commissionPct={pricingData?.commissionPct}
               directCommissionPct={pricingData?.directCommissionPct}
+              weekdayRate={weekdayRate}
             />
           </div>
         </div>

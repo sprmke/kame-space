@@ -65,14 +65,16 @@ import {
   type WrittenReviewItem,
 } from '@/features/reviews/lib/propertyReviewsApi';
 import { ReviewPropertyScopeProvider } from '@/features/reviews/lib/reviewPropertyScope';
+import { resolveReviewsListLoadState } from '@/features/reviews/lib/reviewsListLoadState';
 import { REVIEW_WINDOW_DAYS } from '@/features/reviews/lib/reviewWindow';
 
 import { FloatingToolbar } from '@/components/mobile/FloatingPanel';
 import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
 import { MobileHeroActionButton } from '@/components/mobile/MobileHeroActionButton';
 import {
-  FinanceStaysCardGridSkeleton,
-  FinanceStaysTableSkeleton,
+  ReviewsCardGridSkeleton,
+  ReviewsEmptySkeleton,
+  ReviewsTableSkeleton,
 } from '@/components/skeletons/AdminSkeletons';
 import { SlidingTabs, SlidingTabsList, SlidingTabsTrigger } from '@/components/ui/sliding-tabs';
 import { useAdminMobileCardViewGuard } from '@/hooks/useAdminMobileCardViewGuard';
@@ -235,6 +237,32 @@ export function ReviewsListPage({ scope }: Props) {
 
   const showListingInFeed = isOrg && listingRows.length > 1 && query.properties.length !== 1;
 
+  const loadState = resolveReviewsListLoadState({
+    tab,
+    dataTab: reviews.data?.tab,
+    isLoading: reviews.isLoading,
+    isFetching: reviews.isFetching,
+    hasActiveQuery,
+    summary,
+    listingCount: listingRows.length,
+  });
+
+  const emptySkeletonIcon =
+    tab === 'properties'
+      ? Building2
+      : tab === 'to_write'
+        ? PencilLine
+        : tab === 'written'
+          ? UserCheck
+          : Quote;
+
+  const listSkeleton = () =>
+    showTable ? (
+      <ReviewsTableSkeleton tab={tab} showProperty={showListingInFeed} />
+    ) : (
+      <ReviewsCardGridSkeleton />
+    );
+
   const showListingReviews = (row: OrgPropertyReviewRow) =>
     setTab('received', { properties: [row.propertyId] });
   const showListingToWrite = (row: OrgPropertyReviewRow) =>
@@ -318,8 +346,12 @@ export function ReviewsListPage({ scope }: Props) {
   };
 
   const body = () => {
-    if (reviews.isLoading) {
-      return showTable ? <FinanceStaysTableSkeleton /> : <FinanceStaysCardGridSkeleton />;
+    if (loadState !== 'ready') {
+      return loadState === 'empty-skeleton' ? (
+        <ReviewsEmptySkeleton icon={emptySkeletonIcon} />
+      ) : (
+        listSkeleton()
+      );
     }
     if (reviews.isError) {
       return <ReviewsLoadError onRetry={() => void reviews.refetch()} />;
@@ -425,7 +457,7 @@ export function ReviewsListPage({ scope }: Props) {
         {body()}
       </div>
 
-      {tab !== 'properties' && pageCount > 1 ? (
+      {tab !== 'properties' && pageCount > 1 && loadState === 'ready' ? (
         <AdminListPagination
           ariaLabel="Reviews pagination"
           page={query.page}

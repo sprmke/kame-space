@@ -7,6 +7,7 @@ import { FloatingBottomOverlay } from '@/components/pwa/FloatingBottomOverlay';
 import { InstallGuideSheet } from '@/components/pwa/InstallGuideSheet';
 import type { InstallOfferState } from '@/components/pwa/useInstallOffer';
 import { Button } from '@/components/ui/button';
+import { useCookieConsentChoice } from '@/hooks/useCookieConsentChoice';
 import { PLATFORM_APP_NAME } from '@/lib/platformBranding';
 import { promptInstall } from '@/lib/pwa/installPrompt';
 import { installGuideFor, type PlatformInfo } from '@/lib/pwa/platform';
@@ -27,6 +28,7 @@ export function InstallOfferSheet({ offer, platform }: InstallOfferSheetProps) {
   const { decision, visible, dismiss, dismissForever, complete } = offer;
   const claim = usePwaSurfaceStore((s) => s.claim);
   const release = usePwaSurfaceStore((s) => s.release);
+  const consent = useCookieConsentChoice();
   const [guideOpen, setGuideOpen] = useState(false);
   const [installing, setInstalling] = useState(false);
 
@@ -34,15 +36,19 @@ export function InstallOfferSheet({ offer, platform }: InstallOfferSheetProps) {
   const placement = decision.show ? decision.placement : null;
 
   useEffect(() => {
-    if (!visible || !variant || !placement) return;
+    // Cookie consent is a one-time legal prompt; the install chip waits so the two
+    // bottom surfaces never stack on a first visit.
+    if (!visible || !variant || !placement || consent === null) return;
     claim('install');
     pwaTelemetry('install-prompt-shown', { variant, placement });
     return () => release('install');
-  }, [visible, variant, placement, claim, release]);
+  }, [visible, variant, placement, consent, claim, release]);
 
   // `inline` placement is rendered by the page that owns it, never as a floating
   // surface.
-  if (!visible || !decision.show || decision.placement === 'inline') return null;
+  if (!visible || !decision.show || decision.placement === 'inline' || consent === null) {
+    return null;
+  }
 
   const guide = installGuideFor(platform);
   const nativeVariant = decision.variant === 'native';

@@ -2,7 +2,7 @@
 title: 'Guest Form — operator guide'
 status: active
 tags: [guides, routes]
-updated: 2026-08-30
+updated: 2026-11-09
 ---
 
 # Guest Form — operator guide
@@ -34,6 +34,8 @@ The guest booking form, scoped to **`/properties/:propertySlug/form`**. Full-pag
 Legacy **`/form?property=<slug>`** redirects to the scoped route. Deprecated query keys (`dev`, `testing`, submit-form control flags, `from`) are stripped on load; `from=airbnb` migrates to `?source=airbnb`.
 
 ---
+
+> **Legal notice:** Last step shows the booking agreement line above Submit (house rules, Terms, Privacy Policy); the payment step shows a payment-terms line under the receipt. Both are hidden for host-entered bookings. Pattern and full list: [legal.md](legal.md#in-app-notices).
 
 ## Host-facing knowledge
 

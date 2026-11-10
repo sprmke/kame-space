@@ -2,7 +2,7 @@
 title: 'Tasks To Plan'
 status: active
 tags: [planning, intake, backlog]
-updated: 2026-11-07
+updated: 2026-11-09
 stage: intake
 kind: backlog
 ---
@@ -959,6 +959,14 @@ Example:
 📋 Dashboard mobile native v2 (ground-up phone redesign)
 
 → **Planned:** [`../planned/dashboard-mobile-native-v2.md`](../planned/dashboard-mobile-native-v2.md) — Rebuild every dashboard screen's phone layout (max-lg) so it looks and behaves like a native iOS/Android app, matching the product shots in marketing/social/src/features/Screens.tsx. Desktop (lg+) keeps its current layout and behavior....
+
+===
+
+📋 Guest Inbox: make Facebook and Instagram chats complete, real-time, and cost-safe
+
+Facebook and Instagram chats in the Guest Inbox are not usable compared with Meta Business Suite: some chats are missing, conversations are incomplete, and new messages are delayed or never show. Review the whole inbox flow, rework how we load and sync Meta conversations if needed, make sure all previous and new messages stay in sync in real time, explain the inbox's purpose, limits, and how it works to hosts instead of looking broken, and keep Supabase cost, crons, and big events optimized as more hosts join.
+
+→ **Planned:** [`../planned/guest-inbox-meta-sync-overhaul.md`](../planned/guest-inbox-meta-sync-overhaul.md) - 33 findings with code links (including a P0 Page token leak), verified Meta platform rules, outbox webhook pipeline, server-owned import and reconciliation, private Broadcast realtime with catch-up, host status and limits UI, cost model and guardrails. Phases 0 to 8.
 
 ===
 

@@ -97,7 +97,7 @@ To clear a stuck SW: DevTools → Application → Service Workers → Unregister
 - **Memory** (`ui/src/lib/pwa/installMemory.ts`, `gfm:install:memory`) is **device-scoped on purpose**: it survives sign-out so a later cold launch goes to host login instead of the public marketplace, and it is therefore _not_ part of `purgeOfflineState`.
 - **Permanent entry**: `InstallAppEntry` in the admin More sheet, the marketing More sheet/footer, and Help & Support (`AppInfoCard`, which also shows the build id and a "Check for updates" action).
 - **First standalone launch**: one-time welcome sheet. On iOS the installed app has separate storage from Safari, so it explains the sign-in and offers notifications behind a real user gesture.
-- **One surface at a time**: `ui/src/lib/pwa/pwaSurfaceStore.ts` arbitrates kill notice > forced update > offline strip > update prompt > push ask > install offer.
+- **One surface at a time**: `ui/src/lib/pwa/pwaSurfaceStore.ts` arbitrates kill notice > forced update > offline strip > update prompt > push ask > install offer. The install offer also waits while the analytics-cookie choice is `null`, so it never stacks with `CookieConsentBanner` on a first visit.
 
 ### First launch
 

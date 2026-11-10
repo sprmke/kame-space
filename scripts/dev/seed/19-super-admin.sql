@@ -174,6 +174,70 @@ BEGIN
       updated_at = now()
   WHERE id = 1;
 
+  ---------------------------------------------------------------------------
+  -- System health: one heartbeat per cron job + cached credential probes
+  ---------------------------------------------------------------------------
+  INSERT INTO public.system_job_heartbeats (
+    job_name, last_started_at, last_finished_at, last_success_at, last_failure_at,
+    last_status, last_error, last_duration_ms, consecutive_failures,
+    total_runs, total_failures, updated_at
+  )
+  SELECT
+    job,
+    now() - interval '10 minutes',
+    now() - interval '9 minutes',
+    CASE WHEN job = 'calendar-sync-cron' THEN now() - interval '2 hours' ELSE now() - interval '9 minutes' END,
+    CASE WHEN job = 'calendar-sync-cron' THEN now() - interval '9 minutes' END,
+    CASE WHEN job = 'calendar-sync-cron' THEN 'error' ELSE 'ok' END,
+    CASE WHEN job = 'calendar-sync-cron' THEN 'Airbnb feed returned HTTP 502' END,
+    1200 + (row_number() OVER () * 37)::int,
+    CASE WHEN job = 'calendar-sync-cron' THEN 2 ELSE 0 END,
+    240, CASE WHEN job = 'calendar-sync-cron' THEN 3 ELSE 0 END,
+    now()
+  FROM unnest(ARRAY[
+    'sd-refund-cron','telegram-marketing-cron','telegram-staff-cron','telegram-admin-cron',
+    'telegram-finance-cron','telegram-maintenance-cron','expire-parking-broadcasts',
+    'send-parking-reminders','complete-parking-bookings','contract-expiry-cron',
+    'dashboard-assistant-expire-pending-actions','meta-inbox-webhook-healthcheck',
+    'platform-billing-cron','calendar-sync-cron','smart-pricing-cron','superhost-assessment-cron',
+    'analytics-ai-review-cron','property-page-views-prune-cron','activity-log-retention-cron',
+    'marketing-generation-sweeper','query-cache-sweep-cron','voice-receptionist-reaper',
+    'voice-receptionist-canary','review-lifecycle-cron','ops-report-cron'
+  ]) AS job
+  ON CONFLICT (job_name) DO UPDATE SET
+    last_started_at = EXCLUDED.last_started_at,
+    last_finished_at = EXCLUDED.last_finished_at,
+    last_success_at = EXCLUDED.last_success_at,
+    last_failure_at = EXCLUDED.last_failure_at,
+    last_status = EXCLUDED.last_status,
+    last_error = EXCLUDED.last_error,
+    last_duration_ms = EXCLUDED.last_duration_ms,
+    consecutive_failures = EXCLUDED.consecutive_failures,
+    total_runs = EXCLUDED.total_runs,
+    total_failures = EXCLUDED.total_failures,
+    updated_at = now();
+
+  INSERT INTO public.system_health_probe_results (
+    probe_id, status, detail, latency_ms, meta, checked_at
+  )
+  VALUES
+    ('resend', 'ok', 'RESEND_API_KEY is configured', 180, '{"seed":true}'::jsonb, now()),
+    ('gemini', 'off', 'GEMINI_API_KEY is not set locally', 0, '{"seed":true}'::jsonb, now()),
+    ('groq', 'off', 'GROQ_API_KEY is not set locally', 0, '{"seed":true}'::jsonb, now()),
+    ('paymongo', 'ok', 'PAYMONGO_SECRET_KEY is configured', 210, '{"seed":true}'::jsonb, now()),
+    ('meta_app', 'off', 'META_APP_ID is not set locally', 0, '{"seed":true}'::jsonb, now()),
+    ('meta_pages', 'off', 'No Meta page token locally', 0, '{"seed":true}'::jsonb, now()),
+    ('telegram', 'off', 'No Telegram bot token locally', 0, '{"seed":true}'::jsonb, now()),
+    ('turnstile', 'off', 'Turnstile is disabled locally', 0, '{"seed":true}'::jsonb, now()),
+    ('jamendo', 'off', 'JAMENDO_CLIENT_ID is not set locally', 0, '{"seed":true}'::jsonb, now()),
+    ('supabase_auth', 'ok', 'Local GoTrue responded', 95, '{"seed":true}'::jsonb, now())
+  ON CONFLICT (probe_id) DO UPDATE SET
+    status = EXCLUDED.status,
+    detail = EXCLUDED.detail,
+    latency_ms = EXCLUDED.latency_ms,
+    meta = EXCLUDED.meta,
+    checked_at = EXCLUDED.checked_at;
+
   RAISE NOTICE 'local seed: super-admin surfaces seeded';
 END $$;
 

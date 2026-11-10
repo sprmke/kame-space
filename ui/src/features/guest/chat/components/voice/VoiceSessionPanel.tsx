@@ -18,6 +18,7 @@ import {
 } from '@/features/guest/chat/lib/voiceSessionView';
 
 import { ChatRichBody } from '@/components/chat/ChatRichBody';
+import { LegalLink } from '@/components/legal/LegalLink';
 import { captureAppEvent } from '@/lib/posthog/capture';
 import { cn } from '@/lib/utils';
 
@@ -248,7 +249,9 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
           />
           <VoiceBoothRing state={voiceViewAvatarState(view)} busy={isBusyVoiceView(view)} />
           <div className="absolute inset-[11px] flex items-center justify-center">
-            <Suspense fallback={<div style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }} aria-hidden />}>
+            <Suspense
+              fallback={<div style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }} aria-hidden />}
+            >
               <ReceptionistAvatar state={voiceViewAvatarState(view)} size={AVATAR_SIZE} />
             </Suspense>
           </div>
@@ -264,12 +267,13 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
                 Uses your microphone and Google Gemini. Audio is not stored. Captions may be stored.
               </p>
             ) : null}
-            <a
-              href="/privacy"
-              className="text-primary inline-flex min-h-[44px] items-center text-sm"
+            <LegalLink
+              doc="privacy"
+              section="voice"
+              className="text-primary inline-flex min-h-[44px] items-center text-sm no-underline"
             >
               Privacy
-            </a>
+            </LegalLink>
           </div>
         ) : null}
 
