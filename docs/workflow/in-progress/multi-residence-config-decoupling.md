@@ -21,7 +21,7 @@ tags:
     super-admin,
     booking-workflow,
   ]
-updated: 2026-11-09
+updated: 2026-11-11
 ---
 
 # Multi-residence support: residence profiles managed from super admin
@@ -598,22 +598,23 @@ Each phase ships independently. Azure snapshots are diffed after every phase. Ne
 
 ### Phase 0: Safety net and foundation (no Azure behavior change)
 
-- [ ] **Azure golden snapshots before any code change** (partial): resolver-level snapshot shipped
-      (`scripts/dev/residence-profile-snapshots.ts` + `scripts/dev/fixtures/residence-profile.snapshot.json`,
-      wired into CI). The full set — `get-guest-payment-info`, `resolve-app-settings`, `search-listings`,
-      guest-form settings, GAF and pet PDF **field values**, GAF / pet / acknowledgement / ready-for-check-in
-      email HTML and subjects, calendar titles, stay-guide documents — still has to land before the Phase 3
-      orchestrator change, because that is the first phase that can alter them.
+- [x] **Azure golden snapshots before any code change**: resolver-level snapshot
+      (`scripts/dev/residence-profile-snapshots.ts` + `scripts/dev/fixtures/residence-profile.snapshot.json`)
+      **and** the full golden set (`scripts/dev/golden/`, wired into `ci:quality` and CI):
+      `get-guest-payment-info`, `resolve-app-settings`, resolved document requirements, guest-form
+      settings, GAF and pet PDF **field values**, GAF / pet / ready-for-check-in email HTML and
+      subjects, calendar titles and stay-guide documents. See §14.1 for the rulings
+      (`search-listings` and the acknowledgement email are out: neither names a building concept).
 - [x] Migration: `development_id` on `properties` + `parkings`, backfill, index, unmatched-row report
-      (`20261324000000_development_identity.sql`, view `development_unmatched_assets`).
-- [x] Migration: scoped tower + unit unique index (F7) — `20261324000100_development_scoped_tower_unit_unique.sql`.
+      (`20261324010000_development_identity.sql`, view `development_unmatched_assets`).
+- [x] Migration: scoped tower + unit unique index (F7) — `20261324010100_development_scoped_tower_unit_unique.sql`.
 - [x] Migration: `guest_submissions.document_requirements_snapshot` (nullable) and `development_settings_history`
-      — `20261324000200_document_requirement_snapshot_and_history.sql`.
+      — `20261324010200_document_requirement_snapshot_and_history.sql`.
 - [x] Fix F2: removed every `|| DEFAULT_RESIDENCE_NAME` / `?? 'Azure North Residences'` fallback in
       `appSettings`, `propertyResidenceDefaults`, `propertyTowerUnit`, `guestFormSettings`, `create-property`
       and `propertySettingsCloneGroups`; blank resolves generic. No Azure change when `residence_name` is set.
 - [x] Fix F1: generic document requirements default becomes `[]` on both sides; existing developments were
-      seeded with today's list by `20261324000300_seed_document_requirements_for_existing_developments.sql`.
+      seeded with today's list by `20261324010300_seed_document_requirements_for_existing_developments.sql`.
       Load error is now distinct from not-found: it throws in the booking path.
 - [x] Build `residenceProfile.ts` (both sides), field policy registry, parsers, `GENERIC_RESIDENCE_PROFILE`.
 - [x] CI drift check for mirrored modules (`bun run check:residence-profile-drift`).
@@ -635,7 +636,7 @@ Each phase ships independently. Azure snapshots are diffed after every phase. Ne
 - [x] Add-listing UI: the New listing dialog loads ACTIVE residences and renders each one's tower list, unit/format rules and parking structure (`useResidenceOptions`, `list-residence-options`). Covered by `@ci` `orgAddListingResidenceRules.spec.ts`.
 - [x] Public read endpoints `list-residence-options` and `get-residence-profile` return the public slice only.
 - [x] Onboarding residence picker; deleted `ORG_DEVELOPMENTS` and `DEFAULT_DEVELOPMENT_NAME`. The wizard loads ACTIVE residences and renders tower, unit and parking rules from the picked one.
-- [x] Public listing pin from the development row (`20261324000600_public_listing_development_pin.sql`): a before-insert/update trigger on `public_listing_search` fills a missing pin from the matching development, plus a backfill. The TS summary mapper prefers the indexed pin.
+- [x] Public listing pin from the development row (`20261324010600_public_listing_development_pin.sql`): a before-insert/update trigger on `public_listing_search` fills a missing pin from the matching development, plus a backfill. The TS summary mapper prefers the indexed pin.
 - [x] Super-admin Structure group (§5.1): labels, required-tower toggle, floors max, tower and parking-tower rows with code/active/levels/type, unit and slot format presets with examples, and custom patterns.
 
 **Gate:** property and parking creation in Test Residence are validated by its own structure; the add-listing dialog and onboarding render it; the search pin comes from the development row (proven with a rolled-back insert); Azure's structure, formats and pin are unchanged.
@@ -795,16 +796,16 @@ Invoke `route-guides` for every route touched, `mobile-responsive` and `unsaved-
 
 Fill in after each phase. A phase is not done until every row is `pass`.
 
-| Phase | Gate                                                         | Result                   | Date       | Notes                                                                             |
-| ----- | ------------------------------------------------------------ | ------------------------ | ---------- | --------------------------------------------------------------------------------- |
-| 0     | Azure snapshots identical, second residence generic          | pass (partial), see note | 2026-11-09 | Unit + Deno + local-DB proof; full email/PDF golden set still owed before Phase 3 |
-| 1     | Test Residence property + parking in search at own pin       | TBD                      |            |                                                                                   |
-| 2     | Test Residence guest form, Azure unchanged                   | TBD                      |            |                                                                                   |
-| 3     | End-to-end Test Residence booking, Azure snapshots identical | TBD                      |            |                                                                                   |
-| 4     | Editor groups, concurrency, history, 375px                   | TBD                      |            |                                                                                   |
-| 5     | Property seed defaults and inherited templates               | TBD                      |            |                                                                                   |
-| 6     | Route sweep table filled                                     | TBD                      |            |                                                                                   |
-| 7     | Orphan modules deleted, snapshots still identical            | TBD                      |            |                                                                                   |
+| Phase | Gate                                                         | Result                   | Date       | Notes                                                                        |
+| ----- | ------------------------------------------------------------ | ------------------------ | ---------- | ---------------------------------------------------------------------------- |
+| 0     | Azure snapshots identical, second residence generic          | pass (partial), see note | 2026-11-09 | Unit + Deno + local-DB proof; **Azure golden set landed 2026-11-11** (§14.1) |
+| 1     | Test Residence property + parking in search at own pin       | TBD                      |            |                                                                              |
+| 2     | Test Residence guest form, Azure unchanged                   | TBD                      |            |                                                                              |
+| 3     | End-to-end Test Residence booking, Azure snapshots identical | TBD                      |            |                                                                              |
+| 4     | Editor groups, concurrency, history, 375px                   | TBD                      |            |                                                                              |
+| 5     | Property seed defaults and inherited templates               | TBD                      |            |                                                                              |
+| 6     | Route sweep table filled                                     | TBD                      |            |                                                                              |
+| 7     | Orphan modules deleted, snapshots still identical            | TBD                      |            |                                                                              |
 
 **Phase 0 gate log (2026-11-09):**
 
@@ -828,6 +829,42 @@ Fill in after each phase. A phase is not done until every row is `pass`.
 Not run here: a production or hosted-dev unmatched-row count. That is a read-only query the
 owner should run before Phase 1.
 
+### 14.1 Azure golden set (2026-11-11)
+
+`scripts/dev/golden/azure-golden.ts` is the Phase 0 snapshot the first pass deferred. It runs
+the **real** edge functions against `scripts/dev/golden/azureScenario.ts` (plain JSON rows,
+no database, no storage, no network) and diffs the result against committed fixtures.
+
+| Covered surface                     | Function under test                                                                 |
+| ----------------------------------- | ----------------------------------------------------------------------------------- |
+| `resolve-app-settings`              | `resolveAppSettingsFromRows` (pure half of `resolveAppSettings`)                    |
+| `get-guest-payment-info`            | `buildGuestPaymentInfoDto` (pure half of `serializeGuestPaymentInfo`)               |
+| Guest-form settings                 | `buildGuestFormSettings` (pure half of `resolveGuestFormSettings`)                  |
+| Resolved document requirements      | `mergeDocumentRequirements`, `requirementApplies`, `requirementDocKind`             |
+| GAF / pet PDF field values          | `buildGafPdfFieldMap` / `buildPetPdfFieldMap` (`_shared/gafPdfFields.ts`)           |
+| GAF / pet / ready-for-check-in HTML | `renderTemplateSendEmailHtml` with the real placeholder and section builders        |
+| Email subjects                      | `buildGafRequestSubject` / `buildPetRequestSubject` / `buildReadyForCheckinSubject` |
+| Calendar and rail titles            | `STATUS_HUMAN_LABEL`, `PIPELINE_ORDER`, requirement labels and `calendarIcon`       |
+| Stay-guide documents                | `buildStayGuideCheckInDocuments` (pending and ready booking)                        |
+
+Fixtures: `scripts/dev/golden/fixtures/azure-golden.json` plus three `.html` files. Commands:
+`bun run golden:azure` (rewrite) and `bun run check:azure-golden` (verify). Wired into
+`ci:quality` and the `static-guards` CI job.
+
+Rulings recorded for a later session:
+
+- **Calendar titles** have no separate event-title builder in the edge code today. The golden
+  captures the status label map plus the per-requirement label and `calendarIcon`, which is
+  what Phase 3 makes configurable (§2 row 11).
+- **Signed guest links** are excluded: the access token embeds `exp = now + TTL`, so a
+  snapshot could never be stable. The ready-for-check-in golden passes stable stand-in URLs.
+- **Payment QR images** come from Storage; the golden covers the copy, not the files.
+- **Property template overrides** are host content, not residence config. The golden renders
+  the built-in bodies.
+- **`search-listings` and the booking-acknowledgement email** are out of this set: neither
+  names a building concept, so Phase 3 cannot change them. The acknowledgement email is a
+  guest-facing generic and `search-listings` reads the pin, which Phase 1 already proved.
+
 ## 15. Work log and remaining items (execute-plan, 2026-11-09)
 
 **Done and tested**
@@ -838,6 +875,7 @@ owner should run before Phase 1.
 | Phase 1 (server)         | `structure` + location migrations, profile-driven tower/unit/parking validation, scoped conflicts, rename cascade, FK delete block, public read endpoints                                                                                                                               | Deno structure tests, `test:edge` 1427, handler tests for both endpoints                    |
 | Phase 1 (add-listing UI) | New listing dialog + property-settings validation read the residence profile                                                                                                                                                                                                            | `@ci` `orgAddListingResidenceRules.spec.ts`                                                 |
 | Phase 2 (server)         | `guestFormSettings` clamps adults/children to the building cap, ANDs pets/parking/decor with the building rule, reads building times, exposes `childMaxAge` / `adultMinAge` / `idRequiredFromAge` / `primaryGuestMinAge`; `assertPropertyGuestPartyRules` takes the residence child age | `test:edge` 1427                                                                            |
+| Resume step 1            | Azure golden set: pure seams extracted from `appSettings` / `guestFormSettings` / `propertyEmailBranding` / `propertyTemplateEmail`, new `gafPdfFields.ts` + `workflowEmailSubjects.ts`, `scripts/dev/golden/` harness and fixtures, wired into `ci:quality` + `static-guards`          | `check:azure-golden`, `test:edge` 1507, `test` 5842, lint 0 errors, migration guards pass   |
 
 **Remaining, with the reason each was not done here**
 
@@ -865,21 +903,28 @@ owner should run before Phase 1.
 
 Work top to bottom. Each row is a separate commit and gate.
 
-| #   | Step                            | Files                                                                                                                                                            | Done when                                                                                                                                                                                   |
-| --- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Azure golden set before Phase 3 | new `scripts/dev/golden/` fixtures + a `--check` script wired into `ci:quality`                                                                                  | `get-guest-payment-info`, `resolve-app-settings`, resolved document requirements, GAF/pet PDF field values, GAF/pet/ready-for-check-in email HTML + subjects and calendar titles diff clean |
-| 2   | Guest form UI rules             | `ui/src/features/guest/form/**` (age inputs, pets/parking/decor visibility), `ui/src/features/guest/form/hooks/useGuestPaymentInfo.ts`                           | the form uses `childMaxAge`, `adultMinAge`, `idRequiredFromAge`, `primaryGuestMinAge` from settings; no global age constant left in the submit path                                         |
-| 3   | Copy registry wiring            | `guestFormBranding.ts`, `GuestForm.tsx`, success page, pay-parking warning, `workflowPlanSkip.ts`, `propertyTemplateEmailSections.ts`, `listingAuthorization.ts` | every key in §4.6 reads `resolveCopy(profile, key)`; Azure copy is seeded into its row first so nothing changes                                                                             |
-| 4   | Phase 3 model                   | `_shared/documentRequirements.ts` + UI mirror, `residenceProfile.ts` approvals slice                                                                             | `DocumentRequirementV2` parsed and validated; `requirementDocKind` label sniffing deleted; orchestration still Azure-identical                                                              |
-| 5   | Phase 3 PDF                     | `pdfService.ts`, `upload-development-pdf-template`, `PDF_DATA_KEYS`, `ui/public/templates` removal                                                               | any residence template fills by map; Azure field values match the golden set                                                                                                                |
-| 6   | Phase 3 orchestrator + snapshot | `workflowOrchestrator.ts`, `guestTrip.ts`, `bookingDetailsPatch.ts`                                                                                              | loops over applicable steps; snapshot written on first `PENDING_DOCUMENTS`; in-flight Azure booking completes                                                                               |
-| 7   | Phase 3 inbound                 | `approvalEmailMatcher.ts`, `approval-email-webhook`                                                                                                              | `approvals+{slug}--{requirementId}@` routes; legacy address + subject still accepted                                                                                                        |
-| 8   | Phase 4 remainder               | development settings card, `create-development`                                                                                                                  | grouped IA, duplicate, type presets, readiness gate, 375px walkthrough                                                                                                                      |
-| 9   | Phase 5 seeds                   | `propertySettingsSeed.ts`, `create-property`, `update-development`                                                                                               | new property starts with residence amenities/rules/templates; residence template edits reach properties that did not override                                                               |
-| 10  | Phase 6 sweep                   | route table in §8                                                                                                                                                | every route has a verdict for (a) hardcoded copy, (b) no-development empty state, (c) 2+ developments, (d) 375px                                                                            |
-| 11  | Phase 7 cleanup                 | delete the maps, drop flat keys, `NOT NULL`, retire PDF copies                                                                                                   | `rg` for the retired helpers is empty and snapshots still diff clean                                                                                                                        |
+| #   | Step                            | Files                                                                                                                                                            | Done when                                                                                                                                                                                                     |
+| --- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Azure golden set before Phase 3 | ✅ landed 2026-11-11 — `scripts/dev/golden/` + `bun run check:azure-golden` (`ci:quality` + `static-guards`)                                                     | `get-guest-payment-info`, `resolve-app-settings`, resolved document requirements, GAF/pet PDF field values, GAF/pet/ready-for-check-in email HTML + subjects, calendar titles, stay-guide docs all diff clean |
+| 2   | Guest form UI rules             | `ui/src/features/guest/form/**` (age inputs, pets/parking/decor visibility), `ui/src/features/guest/form/hooks/useGuestPaymentInfo.ts`                           | the form uses `childMaxAge`, `adultMinAge`, `idRequiredFromAge`, `primaryGuestMinAge` from settings; no global age constant left in the submit path                                                           |
+| 3   | Copy registry wiring            | `guestFormBranding.ts`, `GuestForm.tsx`, success page, pay-parking warning, `workflowPlanSkip.ts`, `propertyTemplateEmailSections.ts`, `listingAuthorization.ts` | every key in §4.6 reads `resolveCopy(profile, key)`; Azure copy is seeded into its row first so nothing changes                                                                                               |
+| 4   | Phase 3 model                   | `_shared/documentRequirements.ts` + UI mirror, `residenceProfile.ts` approvals slice                                                                             | `DocumentRequirementV2` parsed and validated; `requirementDocKind` label sniffing deleted; orchestration still Azure-identical                                                                                |
+| 5   | Phase 3 PDF                     | `pdfService.ts`, `upload-development-pdf-template`, `PDF_DATA_KEYS`, `ui/public/templates` removal                                                               | any residence template fills by map; Azure field values match the golden set                                                                                                                                  |
+| 6   | Phase 3 orchestrator + snapshot | `workflowOrchestrator.ts`, `guestTrip.ts`, `bookingDetailsPatch.ts`                                                                                              | loops over applicable steps; snapshot written on first `PENDING_DOCUMENTS`; in-flight Azure booking completes                                                                                                 |
+| 7   | Phase 3 inbound                 | `approvalEmailMatcher.ts`, `approval-email-webhook`                                                                                                              | `approvals+{slug}--{requirementId}@` routes; legacy address + subject still accepted                                                                                                                          |
+| 8   | Phase 4 remainder               | development settings card, `create-development`                                                                                                                  | grouped IA, duplicate, type presets, readiness gate, 375px walkthrough                                                                                                                                        |
+| 9   | Phase 5 seeds                   | `propertySettingsSeed.ts`, `create-property`, `update-development`                                                                                               | new property starts with residence amenities/rules/templates; residence template edits reach properties that did not override                                                                                 |
+| 10  | Phase 6 sweep                   | route table in §8                                                                                                                                                | every route has a verdict for (a) hardcoded copy, (b) no-development empty state, (c) 2+ developments, (d) 375px                                                                                              |
+| 11  | Phase 7 cleanup                 | delete the maps, drop flat keys, `NOT NULL`, retire PDF copies                                                                                                   | `rg` for the retired helpers is empty and snapshots still diff clean                                                                                                                                          |
 
 Do not start step 4 before step 1 passes. Steps 2 and 3 can ship before Phase 3.
+
+**Migration versions renamed 2026-11-11.** `develop` took `20261324000000` for
+`list_bookings_preclaim`, colliding with this branch's Phase 0 migration. Supabase records only
+the version, so one file would never have run. This branch's seven migrations moved to
+`20261324010000`–`20261324010600` (same content, same order). A local database that applied the
+old versions needs `bun run db:reset && bun run seed:local`, or a `supabase migration repair`
+of the seven old versions; hosted databases never saw them because the branch is deploy-blocked.
 
 ## 16. Merge and deploy guard
 

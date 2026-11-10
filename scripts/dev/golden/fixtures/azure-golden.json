@@ -1,0 +1,329 @@
+{
+  "scenario": "azure-north",
+  "property": {
+    "name": "Monaco 2604",
+    "slug": "monaco-2604",
+    "residenceName": "Azure North Residences",
+    "organizationName": "Kame Homes"
+  },
+  "appSettings": {
+    "emailTo": "stlmonaco.theresortresidences@azurenorth.com.ph",
+    "emailReplyTo": "approvals+monaco-2604@inbound.kamehomes.test",
+    "sdRefundCronEmailLeadMinutes": 120,
+    "sdRefundCronMaxCheckoutAgeDays": 30,
+    "publicGuestAppOrigin": "https://kamehomes.test",
+    "facebookReviewsUrl": "https://www.facebook.com",
+    "airbnbUrl": "",
+    "emailLogoUrl": "https://kamespace.com/images/logo.png",
+    "brandColor": "#24a88e",
+    "defaultParkingRateGuest": 400,
+    "gcashName": "Maria Santos",
+    "gcashNumber": "0917 123 4567",
+    "gcashQrImageUrl": "",
+    "paymentProvider": "GCash",
+    "paymentMethods": [
+      {
+        "id": "gcash-primary",
+        "provider": "GCash",
+        "accountName": "Maria Santos",
+        "accountNumber": "0917 123 4567",
+        "qrImageUrl": null,
+        "isPrimary": true
+      }
+    ],
+    "gafUnitOwner": "Maria Santos",
+    "gafTowerAndUnitNumber": "Monaco 2604",
+    "gafGuestsOnsiteContactPerson": "Ana Lim",
+    "gafOwnerContactNumber": "+63 917 123 4567",
+    "gafUnitOwnerSignatureUrl": ""
+  },
+  "guestFormSettings": {
+    "allowPets": true,
+    "allowParking": true,
+    "allowSurpriseDecor": true,
+    "checkInTime": "14:00",
+    "checkOutTime": "12:00",
+    "cleaningBufferMinutes": 240,
+    "maxAdults": 4,
+    "maxChildren": 0,
+    "childMaxAge": 3,
+    "adultMinAge": 18,
+    "idRequiredFromAge": 18,
+    "primaryGuestMinAge": 18,
+    "propertyName": "Monaco 2604",
+    "propertyEyebrow": "Monaco 2604 · Azure North Residences",
+    "propertyCoverImageUrl": null,
+    "residenceName": "Azure North Residences",
+    "organizationName": "Kame Space"
+  },
+  "guestPaymentInfo": {
+    "listingState": "live",
+    "acceptingBookings": true,
+    "gcashName": "Maria Santos",
+    "gcashNumber": "0917 123 4567",
+    "gcashQrImageUrl": "",
+    "paymentProvider": "GCash",
+    "paymentMethods": [
+      {
+        "id": "gcash-primary",
+        "provider": "GCash",
+        "accountName": "Maria Santos",
+        "accountNumber": "0917 123 4567",
+        "qrImageUrl": null,
+        "isPrimary": true
+      }
+    ],
+    "gafUnitOwner": "Maria Santos",
+    "gafTowerAndUnitNumber": "Monaco 2604",
+    "gafGuestsOnsiteContactPerson": "Ana Lim",
+    "gafOwnerContactNumber": "+63 917 123 4567",
+    "gafUnitOwnerSignatureUrl": "",
+    "emailLogoUrl": "https://kamespace.com/images/logo.png",
+    "brandColor": "#24a88e",
+    "allowPets": true,
+    "allowParking": true,
+    "allowSurpriseDecor": true,
+    "checkInTime": "14:00",
+    "checkOutTime": "12:00",
+    "cleaningBufferMinutes": 240,
+    "maxAdults": 4,
+    "maxChildren": 0,
+    "propertyName": "Monaco 2604",
+    "propertyEyebrow": "Monaco 2604 · Azure North Residences",
+    "propertyCoverImageUrl": null,
+    "residenceName": "Azure North Residences",
+    "organizationName": "Kame Space",
+    "defaultParkingRateGuest": 400,
+    "petFee": 500,
+    "downPayment": 5000
+  },
+  "documentRequirements": {
+    "residenceDefault": [
+      {
+        "id": "gaf",
+        "label": "GAF Request",
+        "order": 1,
+        "pdfTemplateId": "gaf",
+        "approvalSource": "email-listener",
+        "triggerCondition": "always",
+        "calendarIcon": null
+      },
+      {
+        "id": "pet",
+        "label": "Pet Approval",
+        "order": 2,
+        "pdfTemplateId": "pet",
+        "approvalSource": "email-listener",
+        "triggerCondition": "has_pets",
+        "calendarIcon": "🐶"
+      }
+    ],
+    "applies": [
+      {
+        "requirementId": "gaf",
+        "booking": "no_pets_no_parking",
+        "applies": true
+      },
+      {
+        "requirementId": "gaf",
+        "booking": "pets_no_parking",
+        "applies": true
+      },
+      {
+        "requirementId": "gaf",
+        "booking": "pets_and_parking",
+        "applies": true
+      },
+      {
+        "requirementId": "gaf",
+        "booking": "string_true_flags",
+        "applies": true
+      },
+      {
+        "requirementId": "pet",
+        "booking": "no_pets_no_parking",
+        "applies": false
+      },
+      {
+        "requirementId": "pet",
+        "booking": "pets_no_parking",
+        "applies": true
+      },
+      {
+        "requirementId": "pet",
+        "booking": "pets_and_parking",
+        "applies": true
+      },
+      {
+        "requirementId": "pet",
+        "booking": "string_true_flags",
+        "applies": true
+      }
+    ],
+    "requirementsNeedingApprovedPdf": ["gaf", "pet"],
+    "docKind": [
+      {
+        "id": "gaf",
+        "kind": "gaf"
+      },
+      {
+        "id": "pet",
+        "kind": "pet"
+      }
+    ],
+    "pdfTemplateDemand": [
+      {
+        "booking": "no_pets_no_parking",
+        "gaf": true,
+        "pet": false
+      },
+      {
+        "booking": "pets_no_parking",
+        "gaf": true,
+        "pet": true
+      },
+      {
+        "booking": "pets_and_parking",
+        "gaf": true,
+        "pet": true
+      },
+      {
+        "booking": "string_true_flags",
+        "gaf": true,
+        "pet": true
+      }
+    ]
+  },
+  "pdfFields": {
+    "gaf": {
+      "unitOwner": "Maria Santos",
+      "towerAndUnitNumber": "Monaco 2604",
+      "ownerOnsiteContactPerson": "Ana Lim",
+      "ownerContactNumber": "+63 917 123 4567",
+      "primaryGuestName": "Kyle Santos",
+      "guestEmail": "kyle.santos@example.test",
+      "guestPhoneNumber": "0917 555 0134",
+      "guestAddress": "12 Mabini Street, Makati City",
+      "nationality": "Filipino",
+      "checkInDate": "2027-03-14",
+      "checkOutDate": "2027-03-17",
+      "checkInTime": "14:00",
+      "checkOutTime": "12:00",
+      "numberOfNights": "3",
+      "numberOfAdults": "2",
+      "numberOfChildren": "0",
+      "guest2Name": "Ana Reyes",
+      "carPlateNumber": "ABC 1234",
+      "carBrandModel": "Toyota Vios",
+      "carColor": "Silver",
+      "carparkSlotNumber": "B2-27"
+    },
+    "pet": {
+      "unitOwner": "Maria Santos",
+      "unitNumber": "2604",
+      "unitTower": "Monaco",
+      "checkInDate": "2027-03-14",
+      "petName": "Biscuit",
+      "petType": "Dog",
+      "petAge": "3 years",
+      "petBreed": "Shih Tzu",
+      "petVaccinationDate": "2027-01-20"
+    }
+  },
+  "emailSubjects": {
+    "gaf": {
+      "request": "Monaco 2604 - GAF Request (Mar 14, 2027 to Mar 17, 2027)",
+      "urgent": "🚨 URGENT - Monaco 2604 - GAF Request (Mar 14, 2027 to Mar 17, 2027)",
+      "update": "UPDATED - Monaco 2604 - GAF Request (Mar 14, 2027 to Mar 17, 2027)"
+    },
+    "pet": {
+      "request": "Monaco 2604 - Pet Request (Mar 14, 2027 to Mar 17, 2027)",
+      "urgent": "🚨 URGENT - Monaco 2604 - Pet Request (Mar 14, 2027 to Mar 17, 2027)",
+      "update": "UPDATED - Monaco 2604 - Pet Request (Mar 14, 2027 to Mar 17, 2027)"
+    },
+    "readyForCheckin": "Monaco 2604 - Check-in Details (Mar 14, 2027 to Mar 17, 2027)"
+  },
+  "statusAndStepTitles": {
+    "statusHumanLabel": {
+      "PENDING_REVIEW": "Pending Review",
+      "PENDING_DOCUMENTS": "Pending Documents",
+      "PENDING_GAF": "Pending GAF",
+      "PENDING_PARKING_REQUEST": "Pending Parking Request",
+      "PENDING_PET_REQUEST": "Pending Pet Request",
+      "READY_FOR_CHECKIN": "Ready for Check-in",
+      "READY_FOR_CHECKOUT": "Ready for Check-out",
+      "PENDING_SD_REFUND": "Pending SD Refund",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled",
+      "IMPORTED": "Imported"
+    },
+    "pipelineOrder": [
+      "PENDING_REVIEW",
+      "PENDING_DOCUMENTS",
+      "READY_FOR_CHECKIN",
+      "READY_FOR_CHECKOUT",
+      "PENDING_SD_REFUND",
+      "COMPLETED"
+    ],
+    "stepTitles": [
+      {
+        "id": "gaf",
+        "label": "GAF Request",
+        "calendarIcon": null
+      },
+      {
+        "id": "pet",
+        "label": "Pet Approval",
+        "calendarIcon": "🐶"
+      }
+    ]
+  },
+  "stayGuideDocuments": {
+    "pending": [
+      {
+        "id": "gaf",
+        "label": "Approved GAF",
+        "kind": "gaf",
+        "status": "pending",
+        "url": null
+      },
+      {
+        "id": "pet",
+        "label": "Approved pet form",
+        "kind": "pet",
+        "status": "pending",
+        "url": null
+      },
+      {
+        "id": "parking-endorsement",
+        "label": "Parking endorsement",
+        "kind": "parking",
+        "status": "pending",
+        "url": null
+      }
+    ],
+    "ready": [
+      {
+        "id": "gaf",
+        "label": "Approved GAF",
+        "kind": "gaf",
+        "status": "ready",
+        "url": "https://storage.test/templates/approved-gaf.pdf"
+      },
+      {
+        "id": "pet",
+        "label": "Approved pet form",
+        "kind": "pet",
+        "status": "ready",
+        "url": "https://storage.test/templates/approved-pet.pdf"
+      },
+      {
+        "id": "parking-endorsement",
+        "label": "Parking endorsement",
+        "kind": "parking",
+        "status": "pending",
+        "url": null
+      }
+    ]
+  }
+}

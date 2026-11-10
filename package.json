@@ -93,6 +93,8 @@
     "check:merge-guard": "node scripts/dev/check-merge-guard.mjs",
     "check:residence-profile-drift": "node scripts/dev/check-residence-profile-drift.mjs",
     "check:residence-snapshots": "bun scripts/dev/residence-profile-snapshots.ts --check",
+    "golden:azure": "bash -c 'command -v deno >/dev/null || export PATH=\"$HOME/.deno/bin:$PATH\"; deno run --allow-env --allow-read --allow-write --allow-import --config supabase/functions/deno.json scripts/dev/golden/azure-golden.ts'",
+    "check:azure-golden": "bash -c 'command -v deno >/dev/null || export PATH=\"$HOME/.deno/bin:$PATH\"; deno run --allow-env --allow-read --allow-write --allow-import --config supabase/functions/deno.json scripts/dev/golden/azure-golden.ts --check'",
     "seed:host-announcements": "./scripts/dev/run-with-ui-dev-env.sh ./scripts/dev/bunx --bun supabase@latest db query --local -f scripts/dev/seed-host-announcements.sql",
     "sync:prod-data": "./scripts/data/sync-prod-public-data-to-local.sh",
     "sync:prod-data:restore": "RESTORE_ONLY=1 ./scripts/data/sync-prod-public-data-to-local.sh",

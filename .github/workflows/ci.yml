@@ -43,6 +43,10 @@ jobs:
         with:
           bun-version: latest
 
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+
       - name: Filename conventions
         run: bash scripts/dev/check-ui-filename-conventions.sh
 
@@ -51,6 +55,9 @@ jobs:
 
       - name: Residence profile snapshot (Azure parity)
         run: bun scripts/dev/residence-profile-snapshots.ts --check
+
+      - name: Azure golden set (settings, guest form, PDF fields, emails, titles)
+        run: bun run check:azure-golden
 
       - name: Brand guard (retired product name)
         run: bun scripts/brand/check-brand.ts --check
