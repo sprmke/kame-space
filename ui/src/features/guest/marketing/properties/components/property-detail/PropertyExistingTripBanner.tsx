@@ -38,10 +38,13 @@ export function PropertyExistingTripBanner({
       )}
     >
       <Luggage className="text-primary size-5 shrink-0" aria-hidden />
-      <p className="min-w-0 flex-1 text-sm">
-        <span className="font-semibold">You have a trip here</span>
-        {dates ? <span className="text-muted-foreground"> · {dates}</span> : null}
-      </p>
+      {/* Two lines: a date range kept on one line reads better than breaking at the dash. */}
+      <span className="min-w-0 flex-1">
+        <span className="text-foreground block text-sm font-semibold">You have a trip here</span>
+        {dates ? (
+          <span className="text-muted-foreground block truncate text-xs">{dates}</span>
+        ) : null}
+      </span>
       <Link
         to={path}
         className="text-primary inline-flex min-h-[44px] shrink-0 items-center text-sm font-semibold"

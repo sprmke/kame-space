@@ -300,23 +300,50 @@ export function GuestTripCancellationSection({
   }
 
   const nextDeadline = cancellation.outcome.nextDeadline;
+  // With nothing paid there is nothing to refund, so refund maths is noise. Show the fact and
+  // the action, nothing else. Covers the review wait and a confirmed stay where the guest has
+  // not sent the down payment yet.
+  const nothingPaidYet =
+    trip.status === 'PENDING_REVIEW' || cancellation.outcome.amountPaidPhp <= 0;
 
   return (
     <section className="border-border/70 rounded-2xl border p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold">{policy.title || 'Cancellation policy'}</h2>
-          <p className="text-muted-foreground mt-1 text-sm">{policy.description}</p>
+          <h2 className="text-sm font-semibold">
+            {nothingPaidYet ? 'Need to cancel?' : policy.title || 'Cancellation policy'}
+          </h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {nothingPaidYet
+              ? 'Nothing has been charged yet, so cancelling costs nothing.'
+              : policy.description}
+          </p>
         </div>
       </div>
 
-      {cancellation.nonRefundable ? (
+      {nothingPaidYet ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-3 min-h-[44px]"
+          onClick={() => {
+            setStep('review');
+            setConfirmed(false);
+            setOpen(true);
+          }}
+        >
+          Cancel request
+          <ChevronRight className="ml-1 size-4" aria-hidden />
+        </Button>
+      ) : null}
+
+      {!nothingPaidYet && cancellation.nonRefundable ? (
         <NoticeCallout tone="warning" className="mt-3">
           This booking is non-refundable. You will not get back what you paid.
         </NoticeCallout>
       ) : null}
 
-      {nextDeadline ? (
+      {!nothingPaidYet && nextDeadline ? (
         <div className="bg-muted/40 mt-3 flex items-start gap-2 rounded-xl p-3 text-sm">
           <CalendarClock className="text-muted-foreground mt-0.5 size-4 shrink-0" aria-hidden />
           <span>
@@ -326,7 +353,7 @@ export function GuestTripCancellationSection({
         </div>
       ) : null}
 
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className={nothingPaidYet ? 'hidden' : 'mt-4 flex items-center justify-between gap-3'}>
         <div>
           <p className="text-muted-foreground text-xs">
             {cancellation.canRequest ? 'If your host approves' : 'If you cancel now'}

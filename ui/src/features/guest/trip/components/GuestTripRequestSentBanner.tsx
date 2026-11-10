@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-import { Mail, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 import { guestJourneyReviewExpectation } from '@/features/guest/trip/lib/guestJourneyCopy';
 
@@ -16,22 +16,16 @@ import { cn } from '@/lib/utils';
  */
 export function GuestTripRequestSentBanner({
   guestEmail,
-  propertyName,
   reviewExpectation,
   className,
 }: {
   /** Address the confirmation went to. */
   guestEmail: string | null;
-  propertyName: string;
   /** Pre-formatted, e.g. "Most hosts reply within a day". */
   reviewExpectation?: string | null;
   className?: string;
 }) {
   const [dismissed, setDismissed] = useState(false);
-
-  useEffect(() => {
-    setDismissed(false);
-  }, [propertyName]);
 
   if (dismissed) return null;
 
@@ -47,17 +41,17 @@ export function GuestTripRequestSentBanner({
         className
       )}
     >
+      {/* The Now card directly below already says "Request sent", so this strip carries only
+          what that card cannot: where the receipt went and how long to expect. */}
       <div className="min-w-0 flex-1">
-        <p className="text-foreground font-semibold">Request sent</p>
-        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-          {propertyName} has your booking request. {expectation}.
+        <p className="text-foreground text-sm leading-relaxed">
+          {email ? (
+            <>
+              A receipt is on its way to <span className="font-semibold">{email}</span>.{' '}
+            </>
+          ) : null}
+          {expectation}.
         </p>
-        {email ? (
-          <p className="text-muted-foreground mt-1.5 flex items-center gap-1.5 text-sm">
-            <Mail className="size-4 shrink-0" aria-hidden />
-            We emailed {email}
-          </p>
-        ) : null}
       </div>
       <Button
         variant="ghost"

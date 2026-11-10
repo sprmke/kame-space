@@ -172,10 +172,34 @@ export function buildGuestEssentialsDto(input: {
   };
 }
 
+/**
+ * Statuses where arrival information is the guest's business.
+ *
+ * `PENDING_REVIEW` is excluded on purpose: the host has not accepted the booking yet, so
+ * handing over the unit, Wi-Fi and contacts would be premature (and would still be in the
+ * guest's hands if the host declined).
+ */
+const ESSENTIALS_VISIBLE_STATUSES = new Set([
+  'PENDING_DOCUMENTS',
+  'PENDING_GAF',
+  'PENDING_PARKING_REQUEST',
+  'PENDING_PET_REQUEST',
+  'READY_FOR_CHECKIN',
+  'READY_FOR_CHECKOUT',
+  'PENDING_SD_REFUND',
+  'COMPLETED',
+]);
+
+/** Whether arrival information is the guest's business at this booking status. */
+export function guestEssentialsVisibleAtStatus(status: string): boolean {
+  return ESSENTIALS_VISIBLE_STATUSES.has(String(status ?? '').trim());
+}
+
 /** Loads and gates the essentials for one booking. Returns `null` when the property has none. */
 export async function loadGuestEssentials(input: {
   propertyId: string;
   booking: {
+    status?: unknown;
     check_in_date?: unknown;
     check_in_time?: unknown;
     guest_essentials_override?: unknown;
@@ -184,6 +208,7 @@ export async function loadGuestEssentials(input: {
 }): Promise<GuestEssentialsDto | null> {
   const propertyId = String(input.propertyId ?? '').trim();
   if (!propertyId) return null;
+  if (!guestEssentialsVisibleAtStatus(String(input.booking.status ?? ''))) return null;
 
   const { data, error } = await createServiceClient()
     .from('property_guest_essentials')

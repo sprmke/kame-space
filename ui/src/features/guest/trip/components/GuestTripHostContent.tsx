@@ -39,17 +39,27 @@ export function GuestTripStepsSection({
   /** Check-out steps only matter near the end of the stay. */
   showCheckOut: boolean;
 }) {
-  if (!checkInHtml && !(showCheckOut && checkOutHtml)) return null;
+  const showCheckOutBlock = showCheckOut && Boolean(checkOutHtml);
+  const showCheckInBlock = Boolean(checkInHtml);
+  if (!checkInHtml && !showCheckOutBlock) return null;
+
+  // "Getting in" next to the page's "Getting there" section read as two names for one thing.
+  const title =
+    showCheckInBlock && showCheckOutBlock
+      ? 'Check-in and check-out'
+      : showCheckOutBlock
+        ? 'Check-out steps'
+        : 'Check-in steps';
 
   return (
-    <GuestTripSection id="trip-steps" title="Getting in">
+    <GuestTripSection id="trip-steps" title={title}>
       {checkInHtml ? (
         <div className="space-y-2">
           <p className="text-foreground text-sm font-semibold">Check-in</p>
           <HostHtml html={checkInHtml} />
         </div>
       ) : null}
-      {showCheckOut && checkOutHtml ? (
+      {showCheckOutBlock && checkOutHtml ? (
         <div className="mt-4 space-y-2">
           <p className="text-foreground text-sm font-semibold">Check-out</p>
           <HostHtml html={checkOutHtml} />

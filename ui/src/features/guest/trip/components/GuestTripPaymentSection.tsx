@@ -181,20 +181,26 @@ export function GuestTripPaymentSection({
               ))}
             </ul>
           ) : null}
-          {paymentMethods.length > 0 ? (
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Button
-                type="button"
-                variant="outline"
-                className="min-h-[44px] w-full sm:w-auto"
-                onClick={() => setReceiptOpen(true)}
-              >
-                <Receipt className="size-4" aria-hidden />
-                Send receipt
-              </Button>
-              <p className="text-muted-foreground text-sm">After paying, attach your receipt.</p>
-            </div>
-          ) : (
+          {/* The receipt is offered whenever money is owed. A guest may have paid by a
+              transfer the host described in chat, and sending proof should never require
+              the chat (plan 3.3). */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-[44px] w-full sm:w-auto"
+              onClick={() => setReceiptOpen(true)}
+            >
+              <Receipt className="size-4" aria-hidden />
+              Send receipt
+            </Button>
+            <p className="text-muted-foreground text-sm">
+              {paymentMethods.length > 0
+                ? 'After paying, attach your receipt.'
+                : 'Paid some other way? Attach the proof here.'}
+            </p>
+          </div>
+          {paymentMethods.length === 0 ? (
             <p className="text-muted-foreground text-sm">
               <Link
                 to={guestTripMessageHostPath(trip)}
@@ -204,7 +210,7 @@ export function GuestTripPaymentSection({
               </Link>
               .
             </p>
-          )}
+          ) : null}
         </div>
       ) : null}
 

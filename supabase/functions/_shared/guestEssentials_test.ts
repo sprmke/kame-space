@@ -9,6 +9,7 @@ import {
   parseEssentialsOverride,
   resolveEssentialsRevealAt,
   buildGuestEssentialsHtml,
+  guestEssentialsVisibleAtStatus,
 } from './guestEssentials.ts';
 
 const ROW = {
@@ -173,4 +174,13 @@ Deno.test('buildGuestEssentialsHtml - a withheld secret prints the reveal label,
 
 Deno.test('buildGuestEssentialsHtml - returns null when there is nothing to show', () => {
   assertEquals(buildGuestEssentialsHtml(null, null), null);
+});
+
+Deno.test('guestEssentialsVisibleAtStatus - only after the host has accepted', () => {
+  assertEquals(guestEssentialsVisibleAtStatus('PENDING_REVIEW'), false);
+  assertEquals(guestEssentialsVisibleAtStatus('CANCELLED'), false);
+  assertEquals(guestEssentialsVisibleAtStatus(''), false);
+  assertEquals(guestEssentialsVisibleAtStatus('PENDING_DOCUMENTS'), true);
+  assertEquals(guestEssentialsVisibleAtStatus('READY_FOR_CHECKIN'), true);
+  assertEquals(guestEssentialsVisibleAtStatus('COMPLETED'), true);
 });

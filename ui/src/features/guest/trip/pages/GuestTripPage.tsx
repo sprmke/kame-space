@@ -13,6 +13,7 @@ import {
   Navigation,
   Pencil,
   Phone,
+  XCircle,
 } from 'lucide-react';
 
 import {
@@ -272,8 +273,8 @@ function shortDate(iso: string | null): string | null {
 
 /** Phase decides which shortcuts matter; the primary action is never repeated as a tile. */
 const SHORTCUT_ORDER: Record<GuestTripPhase, string[]> = {
-  // While the host reviews, the guest can edit the request or reach the host directly.
-  requested: ['edit', 'call', 'listing'],
+  // While the host reviews, the guest can edit the request, withdraw it, or reach the host.
+  requested: ['edit', 'cancel', 'call'],
   confirmed: ['calendar', 'directions', 'message', 'call'],
   arriving: ['calendar', 'directions', 'message', 'call'],
   arrival_day: ['guide', 'directions', 'message', 'call'],
@@ -353,8 +354,7 @@ function GuestTripContent({
     cancelledOnLabel: cancelled ? shortDate(trip.statusUpdatedAt) : null,
   });
 
-  const primary = guestTripNextActionLink(
-    guestTripNextAction({
+  const nextActionKind = guestTripNextAction({
       phase,
       amountDue: owes ? amountDue : 0,
       sdFormAvailable: trip.actions.sdFormAvailable,
@@ -362,11 +362,13 @@ function GuestTripContent({
       reviewSubmitted: trip.actions.reviewSubmitted,
       stayGuideAvailable: Boolean(trip.stayGuidePath),
       directionsAvailable: Boolean(directionsUrl),
-      parkingFindAvailable: Boolean(trip.parking.findPath),
-    }),
-    trip,
-    { amountDueLabel, directionsUrl }
-  );
+    parkingFindAvailable: Boolean(trip.parking.findPath),
+  });
+
+  const primary = guestTripNextActionLink(nextActionKind, trip, {
+    amountDueLabel,
+    directionsUrl,
+  });
 
   const timeline = guestTripTimeline({
     phase,
@@ -388,7 +390,9 @@ function GuestTripContent({
     parkingRequested: trip.parking.requested,
     parkingReserved: isGuestTripParkingReserved(trip.parking.linkedStatus),
     parkingHref: trip.parking.findPath,
-  });
+    // The primary button already leads to payment when that is the next step, so the
+    // checklist would repeat it in the same card.
+  }).filter((item) => !(nextActionKind === 'pay' && item.key === 'payment'));
 
   const shortcuts = useMemo(() => {
     const candidates: Record<string, GuestTripShortcut | null> = {
@@ -422,6 +426,9 @@ function GuestTripContent({
         Icon: Home,
         to: guestPropertyPath(trip.property.slug),
       },
+      cancel: trip.actions.canEditBooking
+        ? { key: 'cancel', label: 'Cancel request', Icon: XCircle, to: '#trip-cancellation' }
+        : null,
       calendar:
         timing.kind === 'upcoming'
           ? {
@@ -466,6 +473,11 @@ function GuestTripContent({
 
   return (
     <div className="guest-inner-enter px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+      {/* First view after a submission: the guest needs to know it arrived before anything
+          else, on phone and desktop alike. */}
+      {showWelcome && phase === 'requested' ? (
+        <GuestTripRequestSentBanner className="mb-4" guestEmail={trip.stay.email} />
+      ) : null}
       <div className="lg:grid lg:grid-cols-[minmax(0,23rem)_minmax(0,1fr)] lg:items-start lg:gap-10 xl:gap-14">
         <div className="space-y-4 lg:sticky lg:top-24">
           <GuestTripStayHeader
@@ -498,16 +510,33 @@ function GuestTripContent({
         </div>
 
         <div className="mt-10 space-y-6 lg:mt-0">
-          {showWelcome && phase === 'requested' ? (
-            <GuestTripRequestSentBanner
-              guestEmail={trip.stay.email}
-              propertyName={trip.property.name}
+          {/* Plan order: what is coming, how to get in, then money, then the rest. A guest
+              arriving today must reach the door code without scrolling past payment. */}
+          <GuestTripTimeline items={timeline} />
+
+          {!cancelled && trip.essentials ? (
+            <GuestTripEssentialsCard essentials={trip.essentials} />
+          ) : null}
+
+          {/* Arrival steps wait for the host to accept. Hosts write door codes into this
+              text, and a pending request is not yet a stay (same rule as the essentials). */}
+          {!cancelled && phase !== 'requested' ? (
+            <GuestTripStepsSection
+              checkInHtml={trip.instructions?.checkInHtml ?? null}
+              checkOutHtml={trip.instructions?.checkOutHtml ?? null}
+              showCheckOut={
+                phase === 'staying' || phase === 'checkout_day' || phase === 'checked_out'
+              }
             />
           ) : null}
 
+          {!cancelled ? <GuestTripHostSections sections={trip.hostSections ?? []} /> : null}
+
           <GuestTripPaymentSection trip={trip} phase={phase} paymentMethods={paymentMethods} />
 
-          <GuestTripCancellationSection trip={trip} />
+          <div id="trip-cancellation" className="scroll-mt-24">
+            <GuestTripCancellationSection trip={trip} />
+          </div>
 
           {!cancelled && (active || phase === 'requested') ? (
             <GuestTripArrivalSection
@@ -526,24 +555,6 @@ function GuestTripContent({
               }
             />
           ) : null}
-
-          <GuestTripTimeline items={timeline} />
-
-          {!cancelled && trip.essentials ? (
-            <GuestTripEssentialsCard essentials={trip.essentials} />
-          ) : null}
-
-          {!cancelled ? (
-            <GuestTripStepsSection
-              checkInHtml={trip.instructions?.checkInHtml ?? null}
-              checkOutHtml={trip.instructions?.checkOutHtml ?? null}
-              showCheckOut={
-                phase === 'staying' || phase === 'checkout_day' || phase === 'checked_out'
-              }
-            />
-          ) : null}
-
-          {!cancelled ? <GuestTripHostSections sections={trip.hostSections ?? []} /> : null}
 
           <GuestTripHostRow
             name={hostName}

@@ -109,10 +109,13 @@ Shown on the first view after a submission (`?welcome=1`) while the booking is s
 
 | Field              | Source                                                                                                                        |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| Headline           | Fixed: "Request sent"                                                                                                         |
-| Body               | Property name + the review expectation                                                                                        |
-| "We emailed …"     | `stay.email` from the trip payload                                                                                            |
+| Body               | "A receipt is on its way to {email}. {review expectation}."                                                                   |
+| Email              | `stay.email` from the trip payload                                                                                            |
 | Review expectation | The property's median first-response time when it has at least 5 answered requests, otherwise "Most hosts reply within a day" |
+
+The banner carries only what the Now card below cannot. It used to repeat "Request sent" as a
+second headline directly above the Now card that already says it, which read as a stutter; the
+status word now appears once.
 
 The banner is dismissible. It is a live region, so a screen reader announces it.
 
@@ -125,8 +128,23 @@ stays Pro+; the operational content does not.
 
 ### Section order
 
-`Now card` -> `Timeline` -> `Essentials` -> `Getting in` -> `From your host` -> `Payment` ->
-`Cancellation` -> `Getting there` -> `Host` -> `Details`.
+Phone, top to bottom:
+
+1. **First-view banner** (only after a submission) - where the receipt went and how long a
+   reply usually takes. It is above the grid so it is the first thing on a phone.
+2. Stay header, **Now card** (status, progress, next action), shortcuts.
+3. **What happens next** (dated timeline).
+4. **Essentials**, then **Check-in steps**, then **From your host**.
+5. **Payment**, then **Cancellation**.
+6. **Getting there**, **Host**, **Details**.
+
+Arrival content sits above money on purpose: a guest arriving today must reach the door code
+without scrolling past payment.
+
+**Arrival content waits for acceptance.** Essentials and the check-in steps render only once
+the host has accepted (`PENDING_DOCUMENTS` onward). Hosts write door codes into the instruction
+text, and a pending request is not yet a stay, so both follow the same gate. `PENDING_REVIEW`
+shows the timeline, the next step and cancellation only.
 
 ### Essentials
 
@@ -165,8 +183,13 @@ The plan gate for authoring is `customTemplates`; guest rendering follows `guest
 
 ### Balance receipt
 
-**Send receipt** in Payment opens a bottom sheet, accepts a photo or PDF up to 10 MB and posts
-to `guest-trip-payment-receipt`. It writes `guest_balance_payment_receipt_url` (the column the
+**Send receipt** in Payment is offered whenever the guest owes money, whether or not the host has
+configured payment methods: a guest may have paid by a transfer the host described in chat, and
+sending proof should never require the chat. Without methods the section also shows **Ask your
+host how to pay**.
+
+The button opens a bottom sheet, accepts a photo or PDF up to 10 MB and posts to
+`guest-trip-payment-receipt`. It writes `guest_balance_payment_receipt_url` (the column the
 host dashboard already reads), runs the existing AI receipt check non-blocking, notifies the
 host, and **never changes the booking status**.
 
@@ -174,7 +197,12 @@ host, and **never changes the booking status**.
 
 ## Cancellation
 
-The trip page shows a **Cancellation** card below Payment. It reads the booking's
+The trip page shows a **Cancellation** card below Payment.
+
+**With nothing paid** (always true while the host reviews) the card is a plain "Need to cancel? /
+Nothing has been charged yet, so cancelling costs nothing" with one **Cancel request** button.
+Refund percentages and amounts are noise when there is no money to return, so they appear only
+once the guest has paid something. It reads the booking's
 `cancellation_policy_snapshot` (never the property's live policy), so changing your policy later
 does not change what an existing guest sees.
 

@@ -473,6 +473,16 @@ export function PropertyDetailPage() {
         ) : null}
 
         <div className="@xl:px-6 @5xl:px-8 @xl:py-8 container mx-auto px-4 py-5">
+          {/* Phone and tablet: the booking card column is hidden, so the trip banner needs
+              its own slot or a returning guest never sees it (plan 2.6). */}
+          {existingTrip ? (
+            <PropertyExistingTripBanner
+              className="mb-4 @5xl:hidden"
+              tripPath={existingTrip.path}
+              checkInDate={existingTrip.checkInDate}
+              checkOutDate={existingTrip.checkOutDate}
+            />
+          ) : null}
           <div
             className={cn(
               '@xl:gap-8 grid grid-cols-1 gap-6',
@@ -504,7 +514,7 @@ export function PropertyDetailPage() {
               ) : null}
               {existingTrip ? (
                 <PropertyExistingTripBanner
-                  className="mb-3"
+                  className="mb-3 hidden @5xl:flex"
                   tripPath={existingTrip.path}
                   checkInDate={existingTrip.checkInDate}
                   checkOutDate={existingTrip.checkOutDate}

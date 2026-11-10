@@ -18,9 +18,10 @@ test.describe('@smoke @critical guest trip pending actions', () => {
       `/properties/${GUEST_FORM_PROPERTY_SLUG}/trip?bookingId=${BOOKING_ID}&welcome=1`
     );
 
+    // The Now card states the status; the banner names where the receipt went.
     await expect(page.getByText('Request sent').first()).toBeVisible({ timeout: 20_000 });
-    // The banner names the address the receipt went to.
-    await expect(page.getByText(/We emailed/i)).toBeVisible();
+    await expect(page.getByText(/A receipt is on its way to/i)).toBeVisible();
+    await expect(page.getByText('maria@example.com')).toBeVisible();
     // A pending review is never called confirmed.
     await expect(page.getByText(/Booking Confirmed!/i)).toHaveCount(0);
   });
