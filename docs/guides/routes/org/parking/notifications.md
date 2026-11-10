@@ -2,7 +2,7 @@
 title: 'Parking notifications — operator guide'
 status: active
 tags: [guides, routes, org, parking]
-updated: 2026-11-05
+updated: 2026-11-11
 ---
 
 # Parking notifications — operator guide
@@ -20,13 +20,13 @@ Deep links:
 
 ## Progress overview
 
-| Section     | E2E save | Docs       | Notes                                       |
-| ----------- | -------- | ---------- | ------------------------------------------- |
-| This device | ⏳       | Documented | PWA OS-push opt-in + offline-changes queue  |
-| Activity    | ✓        | Documented | In-app bell feed (org-wide, paginated)      |
-| Chat        | ✓        | Documented | Inbound guest web chat Telegram alerts      |
+| Section     | E2E save | Docs       | Notes                                                                |
+| ----------- | -------- | ---------- | -------------------------------------------------------------------- |
+| This device | ⏳       | Documented | PWA OS-push opt-in + offline-changes queue                           |
+| Activity    | ✓        | Documented | In-app bell feed (org-wide, paginated)                               |
+| Chat        | ✓        | Documented | Inbound guest web chat Telegram alerts                               |
 | Parking     | ✓        | Documented | Ops alerts (request, check-in, payment, cancel, expiry, endorsement) |
-| Finance     | ✓        | Documented | Due-date reminders for parking transactions |
+| Finance     | ✓        | Documented | Due-date reminders for parking transactions                          |
 
 ---
 
