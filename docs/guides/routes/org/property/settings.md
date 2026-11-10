@@ -258,6 +258,61 @@ Compact card on Property Settings: names the first rules plus **Manage** in the 
 
 ---
 
+## Guest experience
+
+The arrival content a guest sees on their trip page and in the stay guide (guest journey plan
+D7). Sits between **Email Automations** and **Activity** in the section rail.
+
+### Readiness card
+
+First thing in the section. Lists the guest-facing inputs and flags what is missing:
+
+| Row                               | Ready when                        | Missing means                           |
+| --------------------------------- | --------------------------------- | --------------------------------------- |
+| Check-in steps                    | the host saved their own copy     | the shipped default is doing the work   |
+| Check-out steps                   | the host saved their own copy     | the shipped default is doing the work   |
+| Essentials                        | any essentials field is filled in | the guest has no Wi-Fi, code or contact |
+| Payment methods                   | at least one method               | the guest cannot pay the balance        |
+| House rules / Cancellation policy | —                                 | opens the editor; no status is claimed  |
+
+Rows a host can read from the page (`missing`) show **Fix** and scroll to the editor. Rows that
+are only links show **Open**. Readiness never nags about default copy — it has nothing to fix.
+
+### Fields
+
+Stored in `property_guest_essentials`, **not** `properties.settings`, because every public
+listing read returns `settings` and a Wi-Fi password must not leak there.
+
+| Group          | Fields                                                   |
+| -------------- | -------------------------------------------------------- |
+| Wi-Fi          | network name, password (secret)                          |
+| Getting in     | door or lock code (secret), unit and floor, parking slot |
+| Contacts       | emergency contact name + phone, building security phone  |
+| Building notes | garbage schedule, quiet hours                            |
+
+**Secrets:** the password and door code render masked with a reveal toggle. They reach a guest
+only from **check-in minus `Reveal codes before check-in` hours** (default 24, 0-720). Before
+then `get-guest-trip` and `get-guest-stay-guide` return `null` for the value and only the
+timestamp, and the guest sees "Available {date, time}".
+
+A **per-booking** code override lives on the booking detail's Guest view card, for rotating
+locks. It wins over the property default and never changes the reveal timing.
+
+### Save path
+
+`PATCH property-guest-essentials` with `{ property_id, essentials }`. Sends only the fields that
+changed, so one edit cannot clear the rest. `templates:standard:edit` is required (the same leaf
+as check-in and check-out instructions). `GET` uses `templates:view`.
+
+**Activity:** `settings.updated` with `area: "guest essentials"` and the **field names only**. A
+`changes` diff would put the Wi-Fi password and door code into the activity feed, which hosts
+and org admins can read.
+
+The section is guarded by `useUnsavedChangesGuard`: leaving with unsaved edits prompts Save /
+Discard / Keep editing.
+
+---
+
 ## Guest Form
 
 Per-property toggles for which sections appear on the public booking form (`/form?property=<slug>`). Stored in **`properties.settings`** (profile save — not `app_settings`).
