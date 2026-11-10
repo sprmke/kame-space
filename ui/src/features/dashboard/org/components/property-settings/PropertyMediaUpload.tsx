@@ -66,7 +66,7 @@ function stopSortablePointer(event: React.PointerEvent | React.MouseEvent) {
   event.stopPropagation();
 }
 
-function MediaCardAction({
+export function MediaCardAction({
   label,
   tone = 'neutral',
   disabled,
@@ -137,7 +137,7 @@ function FilePickerOverlay({
   );
 }
 
-function AddMediaSlot({
+export function AddMediaSlot({
   kind,
   slotKey,
   enabled,
@@ -187,7 +187,7 @@ function AddMediaSlot({
   );
 }
 
-function CoverStarButton({
+export function CoverStarButton({
   isPrimary,
   disabled,
   onSetPrimary,
@@ -247,7 +247,7 @@ function DragReorderHandle({
   );
 }
 
-function SortableImageCard({
+export function SortableImageCard({
   item,
   disabled,
   busy,
