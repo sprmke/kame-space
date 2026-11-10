@@ -4,7 +4,7 @@ title: 'Marketing Planner: AI strategy, schedule and execution for listing promo
 status: planned
 tags:
   [workflow, planned, marketing, ai, publishing, meta, scheduling, analytics, plans-and-permissions]
-updated: 2026-11-09
+updated: 2026-11-10
 kind: plan
 ---
 
@@ -587,7 +587,8 @@ wizard reads real connections from the Inbox connection list, so it stores real 
 - P1.9 shipped: summary, chips, agenda and the Coming up strip. There is no separate Why sheet;
   the why line and claim list sit in the item sheet.
 - P1.12: not verified in a browser at 375 / 768 / 1024.
-- P1.2/P1.3/P1.4: `content_refresh` cannot fire yet (X8), and `freed_dates` is Phase 3 by design.
+- P1.2/P1.3/P1.4: `content_refresh` cannot fire yet (X8). `freed_dates` now ships from the
+  cancellation branch of the workflow orchestrator (Phase 3), not from the signals sweep.
 - P1.6 is done as an availability-only re-check on every plan read, not a background refresh queue.
 - P4.2 shipped the AI path but not the pre-run credit estimate or the per-property rate limit.
 - P0.7 (PostHog events) now ships: `planner_viewed`, `planner_onboarded`, `plan_generated`,
@@ -616,7 +617,9 @@ wizard reads real connections from the Inbox connection list, so it stores real 
 > (P3.5), and the planner cron for weekly rules plans, expiry and reminders (P3.6). Reminders honour
 > each property's `reminders.leadMinutes`, clamped to 5 minutes to 24 hours.
 >
-> Also shipped: the property Dashboard **Marketing today** card (P3.7 first half). Still open from
+> Also shipped: `freed_dates` (a cancellation creates a `freed_dates` item plus a
+> `marketing_opportunity_urgent` notification from the orchestrator, non-fatal and idempotent per
+> check-in date) and the property Dashboard **Marketing today** card (P3.7 first half). Still open from
 > this phase: carousel and Reels in `PublishDialog` (P3.3), the Facebook Reels and stories decision
 > (P3.4, needs the spike), and the due-count badge on the Marketing nav item (P3.7 second half; the
 > nav item shape has no badge slot yet). The Meta publish calls are written against the documented

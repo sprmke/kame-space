@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Marketing Planner — open items I need from the owner'
 status: open
 tags: [workflow, in-progress, marketing, planner, decisions]
-updated: 2026-11-09
+updated: 2026-11-10
 kind: checklist
 ---
 
@@ -105,6 +105,9 @@ Tick a box when it is addressed. If an answer changes a shipped default, the pla
 
 - [ ] **Nav badge.** The Marketing nav item has no badge slot in its shape yet; adding one touches
       the sidebar and bottom-nav chrome on every page, so it waits for a nav pass.
+
+- [ ] **Analytics marketing section (P5.7).** Tracked visits and attributed requests by item and
+      channel, inside Analytics. The data exists; this is a read endpoint plus a section.
 
 - [ ] **Carousel and Reels in the publish dialog.** Needs the P0.2 spike to confirm the endpoints.
 

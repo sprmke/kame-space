@@ -114,6 +114,14 @@ week never rewrites the plan. `bestLearnedWindows` returns null below 12 posts w
 scheduler only substitutes a learned hour when it is outside quiet hours and has not already passed.
 Nothing here can change truth rules, cadence caps or quiet hours.
 
+## Freed dates
+
+`_shared/marketingFreedDates.ts` runs from the workflow orchestrator's `CANCELLED` branch, after
+every other cancellation side effect. It clamps the freed nights to the next 30 days, checks the
+`marketingPlanner` entitlement, writes one `freed_dates` item keyed `freed_dates:<checkIn>` (the
+partial unique index makes a repeat a no-op) and sends `marketing_opportunity_urgent`. It never
+throws: a planner write cannot fail a cancellation.
+
 ## Crons
 
 | Job                                | Schedule     | Does                                                                                     |

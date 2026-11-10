@@ -1134,6 +1134,17 @@ export const ACTIVITY_ACTION_CATALOG = {
       )}` +
       (num(c.metadata, 'count') ? ` (${num(c.metadata, 'count')} items)` : ''),
   },
+  'marketing.opportunity_created': {
+    category: 'marketing',
+    severity: 'info',
+    targetType: 'marketing_plan_item',
+    summary: (c) =>
+      `A ${str(c.metadata, 'type') ?? 'marketing'} opportunity was added for ${label(
+        c,
+        'a listing'
+      )}` +
+      (num(c.metadata, 'count') ? ` (${num(c.metadata, 'count')} nights)` : ''),
+  },
   'marketing.plan_item_scheduled': {
     category: 'marketing',
     severity: 'info',

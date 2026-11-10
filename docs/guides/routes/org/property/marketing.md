@@ -81,6 +81,10 @@ the caption, so the host pastes instead of retyping.
 (connected Facebook Page and Instagram from Inbox, plus manual places), then time budget and
 language. It stores real connection ids; the wizard is guarded against unsaved edits.
 
+**Freed dates:** when a booking is cancelled, the planner adds a `freed_dates` item for those
+nights (within 30 days) and sends an urgent notification. It is idempotent per check-in date and
+never blocks the cancellation.
+
 **Crons:** a quarter-hour sweep builds the weekly plan for opted-in properties, expires items whose
 post-by date passed and sends due reminders. A every-minute sweep publishes scheduled posts, re-checks
 each post's claims first, and holds instead of publishing a stale date or price.

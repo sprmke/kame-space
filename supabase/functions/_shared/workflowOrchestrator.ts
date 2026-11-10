@@ -37,6 +37,8 @@ import {
 import { createNotification } from './notificationService.ts';
 import { bookingNotificationMetadata } from './notificationEnrichment.ts';
 import { resolveOrganizationIdForProperty } from './propertyScope.ts';
+import { normalizeBookingDateToYmd } from './calendarAvailabilityManila.ts';
+import { maybeCreateFreedDatesOpportunity } from './marketingFreedDates.ts';
 import { type ActivityActorType, type ActorContext, logActivity } from './activityLog.ts';
 import { capturePostHogEvent } from './posthog.ts';
 import { purgeCacheByScope } from './queryCache.ts';
@@ -1315,6 +1317,30 @@ export class WorkflowOrchestrator {
           });
         } catch (notifyError) {
           console.error('[orchestrator] Cancellation notification failed (non-fatal):', notifyError);
+        }
+      }
+
+      // ── Marketing planner: a cancellation frees nights worth promoting ──────
+      // Runs after every other cancellation side effect and never throws, so a
+      // planner write can never fail a cancellation.
+      if (flag(devControls, 'saveToDatabase')) {
+        try {
+          const plannerOrgId = await resolveNotificationOrgId();
+          const checkInYmd = normalizeBookingDateToYmd(String(updatedBooking.check_in_date ?? ''));
+          const checkOutYmd = normalizeBookingDateToYmd(
+            String(updatedBooking.check_out_date ?? '')
+          );
+          if (plannerOrgId && checkInYmd && checkOutYmd) {
+            await maybeCreateFreedDatesOpportunity({
+              organizationId: plannerOrgId,
+              propertyId,
+              checkInYmd,
+              checkOutYmd,
+              actor,
+            });
+          }
+        } catch (freedError) {
+          console.error('[orchestrator] Freed-dates opportunity failed (non-fatal):', freedError);
         }
       }
     }
