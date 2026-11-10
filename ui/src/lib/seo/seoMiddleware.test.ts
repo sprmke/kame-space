@@ -160,7 +160,7 @@ describe('handleSeoRequest', () => {
     const fetchImpl = vi.fn().mockResolvedValue(
       jsonResponse({
         data: {
-          name: 'Kame Homes',
+          name: 'Sample Host',
           description: null,
           tagline: 'Stays in Pampanga',
           logoUrl: 'https://img/logo.png',
@@ -169,9 +169,9 @@ describe('handleSeoRequest', () => {
         },
       })
     );
-    const res = await handleSeoRequest(req('/hosts/kame-homes'), deps(fetchImpl), shell);
+    const res = await handleSeoRequest(req('/hosts/sample-host'), deps(fetchImpl), shell);
     const html = await res!.text();
-    expect(html).toContain('<h1>Kame Homes</h1>');
+    expect(html).toContain('<h1>Sample Host</h1>');
     expect(html).toContain('href="https://kamespace.com/properties/monaco-2604"');
     expect(html).toContain('href="https://kamespace.com/parkings/slot-a1"');
   });

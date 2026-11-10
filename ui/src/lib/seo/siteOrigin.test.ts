@@ -75,8 +75,8 @@ describe('canonicalUrlFor', () => {
   });
 
   it('always produces an https apex URL', () => {
-    const url = canonicalUrlFor(PRODUCTION_SITE_ORIGIN, '/hosts/kame-homes');
+    const url = canonicalUrlFor(PRODUCTION_SITE_ORIGIN, '/hosts/sample-host');
     expect(url.startsWith('https://kamespace.com/')).toBe(true);
-    expect(url).toBe('https://kamespace.com/hosts/kame-homes');
+    expect(url).toBe('https://kamespace.com/hosts/sample-host');
   });
 });

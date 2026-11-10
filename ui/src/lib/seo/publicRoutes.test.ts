@@ -77,7 +77,7 @@ describe('robots matcher', () => {
   it('blocks private prefixes and their children', () => {
     expect(isAllowedByRobots('/account')).toBe(false);
     expect(isAllowedByRobots('/account/profile')).toBe(false);
-    expect(isAllowedByRobots('/org/kame-homes/property/x')).toBe(false);
+    expect(isAllowedByRobots('/org/sample-host/property/x')).toBe(false);
     expect(isAllowedByRobots('/ingest/capture')).toBe(false);
   });
 
@@ -109,7 +109,7 @@ describe('robots matcher', () => {
       '/developments',
       '/developments/azure-north',
       '/developments/azure-north/parking',
-      '/hosts/kame-homes',
+      '/hosts/sample-host',
       '/for-hosts',
       '/for-hosts/pricing',
       '/about',
@@ -162,7 +162,7 @@ describe('path matchers', () => {
   });
 
   it('matches host pages only', () => {
-    expect(matchHostPath('/hosts/kame-homes')).toEqual({ orgSlug: 'kame-homes' });
+    expect(matchHostPath('/hosts/sample-host')).toEqual({ orgSlug: 'sample-host' });
     expect(matchHostPath('/hosts')).toBeNull();
   });
 
