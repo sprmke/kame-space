@@ -1,0 +1,454 @@
+{
+  "feed": {
+    "title": "Top Songs",
+    "id": "https://rss.marketingtools.apple.com/api/v2/ph/music/most-played/25/songs.json",
+    "author": { "name": "Apple", "url": "https://www.apple.com/" },
+    "links": [
+      { "self": "https://rss.marketingtools.apple.com/api/v2/ph/music/most-played/25/songs.json" }
+    ],
+    "copyright": "Copyright © 2026 Apple Inc. All rights reserved.",
+    "country": "ph",
+    "icon": "https://www.apple.com/favicon.ico",
+    "updated": "Tue, 10 Nov 2026 07:26:14 +0000",
+    "results": [
+      {
+        "artistName": "Mariah Deborah",
+        "id": "1885647649",
+        "name": "Na Para Bang",
+        "releaseDate": "2026-02-13",
+        "kind": "songs",
+        "artistId": "1525885842",
+        "artistUrl": "https://music.apple.com/ph/artist/mariah-deborah/1525885842",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/11/bc/e3/11bce3fa-1306-a5ef-3e6b-65f188fb4853/824296023419_cover.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "14", "name": "Pop", "url": "https://itunes.apple.com/ph/genre/id14" },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/na-para-bang/1885647647?i=1885647649"
+      },
+      {
+        "artistName": "SHEAN",
+        "id": "6814552255",
+        "name": "Ako ang bagyo",
+        "releaseDate": "2026-10-02",
+        "kind": "songs",
+        "artistId": "6818460867",
+        "artistUrl": "https://music.apple.com/ph/artist/shean/6818460867",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/58/35/ca/5835cacb-befb-95f1-996c-589dd0c7f600/708208081837_cover.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" },
+          { "genreId": "14", "name": "Pop", "url": "https://itunes.apple.com/ph/genre/id14" }
+        ],
+        "url": "https://music.apple.com/ph/album/ako-ang-bagyo/6814552253?i=6814552255"
+      },
+      {
+        "artistName": "ADÉLA",
+        "id": "6792884101",
+        "name": "Ain't In LA",
+        "releaseDate": "2026-07-23",
+        "kind": "songs",
+        "artistId": "1765924916",
+        "artistUrl": "https://music.apple.com/ph/artist/ad%C3%A9la/1765924916",
+        "contentAdvisoryRating": "Explict",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/5d/77/7b/5d777b87-e796-0b3e-cef6-d37d993dd8fe/26UMGIM82371.rgb.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "14", "name": "Pop", "url": "https://itunes.apple.com/ph/genre/id14" },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/aint-in-la/6792883860?i=6792884101"
+      },
+      {
+        "artistName": "ADÉLA",
+        "id": "6792884088",
+        "name": "Nicole Kidman",
+        "releaseDate": "2026-09-04",
+        "kind": "songs",
+        "artistId": "1765924916",
+        "artistUrl": "https://music.apple.com/ph/artist/ad%C3%A9la/1765924916",
+        "contentAdvisoryRating": "Explict",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/5d/77/7b/5d777b87-e796-0b3e-cef6-d37d993dd8fe/26UMGIM82371.rgb.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "14", "name": "Pop", "url": "https://itunes.apple.com/ph/genre/id14" },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/nicole-kidman/6792883860?i=6792884088"
+      },
+      {
+        "artistName": "LANY",
+        "id": "1696166346",
+        "name": "XXL",
+        "releaseDate": "2023-08-04",
+        "kind": "songs",
+        "artistId": "867853783",
+        "artistUrl": "https://music.apple.com/ph/artist/lany/867853783",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/2a/e7/3e/2ae73efe-ae78-583d-4cd6-06374881c39b/23UM1IM11124.rgb.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "14", "name": "Pop", "url": "https://itunes.apple.com/ph/genre/id14" },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/xxl/1696166342?i=1696166346"
+      },
+      {
+        "artistName": "Olivia Rodrigo",
+        "id": "1889992123",
+        "name": "the cure",
+        "releaseDate": "2026-05-22",
+        "kind": "songs",
+        "artistId": "979458609",
+        "artistUrl": "https://music.apple.com/ph/artist/olivia-rodrigo/979458609",
+        "contentAdvisoryRating": "Explict",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1d/1b/f9/1d1bf9b1-44c6-9a6c-6ffb-c158488c06ce/26UMGIM39303.rgb.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "14", "name": "Pop", "url": "https://itunes.apple.com/ph/genre/id14" },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/the-cure/1889992111?i=1889992123"
+      },
+      {
+        "artistName": "Ashe",
+        "id": "6795697687",
+        "name": "Stop The Wedding!",
+        "releaseDate": "2026-08-07",
+        "kind": "songs",
+        "artistId": "1234718215",
+        "artistUrl": "https://music.apple.com/ph/artist/ashe/1234718215",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/b7/55/7a/b7557aef-bb0a-cc57-25bf-979eee194f16/075679571403.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "14", "name": "Pop", "url": "https://itunes.apple.com/ph/genre/id14" },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/stop-the-wedding/6795697684?i=6795697687"
+      },
+      {
+        "artistName": "RAPROJECT SIX",
+        "id": "6815646578",
+        "name": "Baby 123 (feat. MADAM SAUCE)",
+        "releaseDate": "2026-09-22",
+        "kind": "songs",
+        "artistId": "1796678402",
+        "artistUrl": "https://music.apple.com/ph/artist/raproject-six/1796678402",
+        "contentAdvisoryRating": "Explict",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/5e/0c/a2/5e0ca2d2-aaaa-3e57-837b-145a96097e73/885288675238.jpg/100x100bb.jpg",
+        "genres": [
+          {
+            "genreId": "18",
+            "name": "Hip-Hop/Rap",
+            "url": "https://itunes.apple.com/ph/genre/id18"
+          },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/baby-123-feat-madam-sauce/6815646280?i=6815646578"
+      },
+      {
+        "artistName": "RAPROJECT SIX",
+        "id": "6803512101",
+        "name": "Alabang",
+        "releaseDate": "2026-08-16",
+        "kind": "songs",
+        "artistId": "1796678402",
+        "artistUrl": "https://music.apple.com/ph/artist/raproject-six/1796678402",
+        "contentAdvisoryRating": "Explict",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/cb/1f/e7/cb1fe746-2786-8240-aea8-a3d449a5e38d/885288312508.jpg/100x100bb.jpg",
+        "genres": [
+          {
+            "genreId": "18",
+            "name": "Hip-Hop/Rap",
+            "url": "https://itunes.apple.com/ph/genre/id18"
+          },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/alabang/6803512094?i=6803512101"
+      },
+      {
+        "artistName": "LANY",
+        "id": "1828560360",
+        "name": "Stuck",
+        "releaseDate": "2025-10-10",
+        "kind": "songs",
+        "artistId": "867853783",
+        "artistUrl": "https://music.apple.com/ph/artist/lany/867853783",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/56/2f/6b/562f6bb5-b128-a85b-c76f-aa97ec7f2af3/00198704607868_Cover.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "14", "name": "Pop", "url": "https://itunes.apple.com/ph/genre/id14" },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/stuck/1828560356?i=1828560360"
+      },
+      {
+        "artistName": "Esremborak",
+        "id": "6815984097",
+        "name": "Mahal Magmahal",
+        "releaseDate": "2025-01-29",
+        "kind": "songs",
+        "artistId": "1491498554",
+        "artistUrl": "https://music.apple.com/ph/artist/esremborak/1491498554",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/cb/32/2d/cb322d8a-9744-d03e-a3d1-61fc0f92108f/196874828038.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" },
+          {
+            "genreId": "10",
+            "name": "Singer/Songwriter",
+            "url": "https://itunes.apple.com/ph/genre/id10"
+          }
+        ],
+        "url": "https://music.apple.com/ph/album/mahal-magmahal/6815984095?i=6815984097"
+      },
+      {
+        "artistName": "fitterkarma",
+        "id": "1834078412",
+        "name": "Pag-Ibig ay Kanibalismo II",
+        "releaseDate": "2025-02-14",
+        "kind": "songs",
+        "artistId": "1791249609",
+        "artistUrl": "https://music.apple.com/ph/artist/fitterkarma/1791249609",
+        "contentAdvisoryRating": "Explict",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/f3/e2/a6/f3e2a6b6-8458-91da-e386-89cef5a8307f/0.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "21", "name": "Rock", "url": "https://itunes.apple.com/ph/genre/id21" },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" },
+          {
+            "genreId": "20",
+            "name": "Alternative",
+            "url": "https://itunes.apple.com/ph/genre/id20"
+          }
+        ],
+        "url": "https://music.apple.com/ph/album/pag-ibig-ay-kanibalismo-ii/1834078411?i=1834078412"
+      },
+      {
+        "artistName": "GEHLEE",
+        "id": "6824776134",
+        "name": "Closer",
+        "releaseDate": "2026-10-23",
+        "kind": "songs",
+        "artistId": "6787870624",
+        "artistUrl": "https://music.apple.com/ph/artist/gehlee/6787870624",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e4/38/36/e4383691-7a98-ede4-7ebb-f2a3b1969e52/823375548775_Cover.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "14", "name": "Pop", "url": "https://itunes.apple.com/ph/genre/id14" },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/closer/6824776133?i=6824776134"
+      },
+      {
+        "artistName": "LANY",
+        "id": "1696166666",
+        "name": "'Cause You Have To",
+        "releaseDate": "2023-09-29",
+        "kind": "songs",
+        "artistId": "867853783",
+        "artistUrl": "https://music.apple.com/ph/artist/lany/867853783",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/2a/e7/3e/2ae73efe-ae78-583d-4cd6-06374881c39b/23UM1IM11124.rgb.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "14", "name": "Pop", "url": "https://itunes.apple.com/ph/genre/id14" },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/cause-you-have-to/1696166342?i=1696166666"
+      },
+      {
+        "artistName": "RAPROJECT SIX",
+        "id": "1892596108",
+        "name": "Shuloks",
+        "releaseDate": "2026-04-15",
+        "kind": "songs",
+        "artistId": "1796678402",
+        "artistUrl": "https://music.apple.com/ph/artist/raproject-six/1796678402",
+        "contentAdvisoryRating": "Explict",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/d8/8b/7a/d88b7a98-dcb2-3428-7436-cd01a25eea57/820233003407.jpg/100x100bb.jpg",
+        "genres": [
+          {
+            "genreId": "18",
+            "name": "Hip-Hop/Rap",
+            "url": "https://itunes.apple.com/ph/genre/id18"
+          },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/shuloks/1892596054?i=1892596108"
+      },
+      {
+        "artistName": "Cup of Joe",
+        "id": "1766905828",
+        "name": "Multo",
+        "releaseDate": "2024-09-14",
+        "kind": "songs",
+        "artistId": "1470488556",
+        "artistUrl": "https://music.apple.com/ph/artist/cup-of-joe/1470488556",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/0b/e2/18/0be218a4-45ea-5c35-03f2-b0c2026e3504/cover.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" },
+          { "genreId": "14", "name": "Pop", "url": "https://itunes.apple.com/ph/genre/id14" }
+        ],
+        "url": "https://music.apple.com/ph/album/multo/1766905823?i=1766905828"
+      },
+      {
+        "artistName": "LANY",
+        "id": "1440894151",
+        "name": "Super Far",
+        "releaseDate": "2017-06-30",
+        "kind": "songs",
+        "artistId": "867853783",
+        "artistUrl": "https://music.apple.com/ph/artist/lany/867853783",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/9e/1e/b2/9e1eb210-d6d6-efd6-658e-1b59bb78eccf/00602557466126.rgb.jpg/100x100bb.jpg",
+        "genres": [
+          {
+            "genreId": "20",
+            "name": "Alternative",
+            "url": "https://itunes.apple.com/ph/genre/id20"
+          },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/super-far/1440893646?i=1440894151"
+      },
+      {
+        "artistName": "fitterkarma",
+        "id": "1834078450",
+        "name": "Kalapastangan",
+        "releaseDate": "2023-11-24",
+        "kind": "songs",
+        "artistId": "1791249609",
+        "artistUrl": "https://music.apple.com/ph/artist/fitterkarma/1791249609",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/2e/aa/28/2eaa2815-af10-fb22-1800-9313c60014ad/0.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "21", "name": "Rock", "url": "https://itunes.apple.com/ph/genre/id21" },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" },
+          {
+            "genreId": "20",
+            "name": "Alternative",
+            "url": "https://itunes.apple.com/ph/genre/id20"
+          }
+        ],
+        "url": "https://music.apple.com/ph/album/kalapastangan/1834078449?i=1834078450"
+      },
+      {
+        "artistName": "Olivia Rodrigo",
+        "id": "1889992115",
+        "name": "stupid song",
+        "releaseDate": "2026-06-12",
+        "kind": "songs",
+        "artistId": "979458609",
+        "artistUrl": "https://music.apple.com/ph/artist/olivia-rodrigo/979458609",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1d/1b/f9/1d1bf9b1-44c6-9a6c-6ffb-c158488c06ce/26UMGIM39303.rgb.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "14", "name": "Pop", "url": "https://itunes.apple.com/ph/genre/id14" },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/stupid-song/1889992111?i=1889992115"
+      },
+      {
+        "artistName": "LANY",
+        "id": "1435482376",
+        "name": "Thru These Tears",
+        "releaseDate": "2018-07-17",
+        "kind": "songs",
+        "artistId": "867853783",
+        "artistUrl": "https://music.apple.com/ph/artist/lany/867853783",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/b4/35/dc/b435dcd6-1feb-b96f-46ce-9517b06c9e52/00602577021664.rgb.jpg/100x100bb.jpg",
+        "genres": [
+          {
+            "genreId": "20",
+            "name": "Alternative",
+            "url": "https://itunes.apple.com/ph/genre/id20"
+          },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/thru-these-tears/1435482172?i=1435482376"
+      },
+      {
+        "artistName": "HELLMERRY",
+        "id": "6768240467",
+        "name": "Summer Crush",
+        "releaseDate": "2026-05-23",
+        "kind": "songs",
+        "artistId": "1558135583",
+        "artistUrl": "https://music.apple.com/ph/artist/hellmerry/1558135583",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/7f/b2/f9/7fb2f9c9-3823-e174-0cc3-9ebda3a185db/cover.jpg/100x100bb.jpg",
+        "genres": [
+          {
+            "genreId": "18",
+            "name": "Hip-Hop/Rap",
+            "url": "https://itunes.apple.com/ph/genre/id18"
+          },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/summer-crush/6768240465?i=6768240467"
+      },
+      {
+        "artistName": "RAPROJECT SIX",
+        "id": "1865407554",
+        "name": "Eyes Can't Lie",
+        "releaseDate": "2025-07-15",
+        "kind": "songs",
+        "artistId": "1796678402",
+        "artistUrl": "https://music.apple.com/ph/artist/raproject-six/1796678402",
+        "contentAdvisoryRating": "Explict",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6b/4e/72/6b4e720a-edd9-6a25-83d3-4d7df49d6861/859711336010.jpg/100x100bb.jpg",
+        "genres": [
+          {
+            "genreId": "18",
+            "name": "Hip-Hop/Rap",
+            "url": "https://itunes.apple.com/ph/genre/id18"
+          },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/eyes-cant-lie/1865407548?i=1865407554"
+      },
+      {
+        "artistName": "Skusta Clee",
+        "id": "1874403321",
+        "name": "Since Day One (feat. Flow G)",
+        "releaseDate": "2026-02-01",
+        "kind": "songs",
+        "artistId": "1121427478",
+        "artistUrl": "https://music.apple.com/ph/artist/skusta-clee/1121427478",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/4a/50/90/4a50906b-baf0-a852-f341-1a60c998dda9/859730613925_cover.jpg/100x100bb.jpg",
+        "genres": [
+          {
+            "genreId": "15",
+            "name": "R\u0026B/Soul",
+            "url": "https://itunes.apple.com/ph/genre/id15"
+          },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" },
+          { "genreId": "14", "name": "Pop", "url": "https://itunes.apple.com/ph/genre/id14" }
+        ],
+        "url": "https://music.apple.com/ph/album/since-day-one-feat-flow-g/1874402952?i=1874403321"
+      },
+      {
+        "artistName": "nicole",
+        "id": "1821585685",
+        "name": "Panaginip",
+        "releaseDate": "2025-05-10",
+        "kind": "songs",
+        "artistId": "1810299835",
+        "artistUrl": "https://music.apple.com/ph/artist/nicole/1810299835",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6c/58/4e/6c584e9b-7127-2553-bf61-589902ea0fa6/cover.jpg/100x100bb.jpg",
+        "genres": [
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" },
+          {
+            "genreId": "20",
+            "name": "Alternative",
+            "url": "https://itunes.apple.com/ph/genre/id20"
+          }
+        ],
+        "url": "https://music.apple.com/ph/album/panaginip/1821585683?i=1821585685"
+      },
+      {
+        "artistName": "Jin DC",
+        "id": "6807292288",
+        "name": "Totoong tayo",
+        "releaseDate": "2026-05-25",
+        "kind": "songs",
+        "artistId": "1774584994",
+        "artistUrl": "https://music.apple.com/ph/artist/jin-dc/1774584994",
+        "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/31/40/f2/3140f2d7-79f5-ef9a-eb9a-a097b27ad3ef/5063992655325.jpg/100x100bb.jpg",
+        "genres": [
+          {
+            "genreId": "20",
+            "name": "Alternative",
+            "url": "https://itunes.apple.com/ph/genre/id20"
+          },
+          { "genreId": "34", "name": "Music", "url": "https://itunes.apple.com/ph/genre/id34" }
+        ],
+        "url": "https://music.apple.com/ph/album/totoong-tayo/6807292285?i=6807292288"
+      }
+    ]
+  }
+}

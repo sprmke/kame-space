@@ -1434,3 +1434,15 @@ verify_jwt = false
 
 [functions.ops-report-cron]
 verify_jwt = false
+
+[functions.marketing-trends]
+verify_jwt = false
+
+[functions.marketing-trends-cron]
+verify_jwt = false
+
+[functions.marketing-trends-weekly-cron]
+verify_jwt = false
+
+[functions.admin-marketing-trends]
+verify_jwt = false
