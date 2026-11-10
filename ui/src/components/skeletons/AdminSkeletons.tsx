@@ -35,6 +35,12 @@ import {
   Wrench,
 } from 'lucide-react';
 
+import {
+  AdminDataTable,
+  AdminTableHeadRow,
+  AdminTableTh,
+  adminTableCell,
+} from '@/features/dashboard/bookings/components/AdminDataTable';
 import { AdminMetricCardSkeleton } from '@/features/dashboard/bookings/components/AdminMetricCard';
 
 import { AppLoader } from '@/components/branding/AppLoader';
@@ -745,7 +751,7 @@ export function FinanceOperatingTabSkeleton() {
             <span className="shrink-0" style={{ width: 40 }}>
               Date
             </span>
-            <span className="min-w-0 flex-1">Reminder</span>
+            <span className="min-w-0 flex-1">Label</span>
             <span className="hidden shrink-0 md:block" style={{ width: 64 }}>
               Category
             </span>
@@ -1596,10 +1602,276 @@ const REVIEWS_METRICS: Array<{ title: string; icon: LucideIcon }> = [
   { title: 'To write', icon: PencilLine },
 ];
 
+/** Mirrors `ReviewsPageTab` without importing feature types into the skeleton module. */
+export type ReviewsSkeletonTab = 'received' | 'written' | 'to_write' | 'properties';
+
+const REVIEWS_TABLE_MIN_WIDTH: Record<
+  ReviewsSkeletonTab,
+  { withListing: number; withoutListing: number }
+> = {
+  received: { withListing: 800, withoutListing: 680 },
+  written: { withListing: 760, withoutListing: 640 },
+  to_write: { withListing: 680, withoutListing: 560 },
+  properties: { withListing: 720, withoutListing: 720 },
+};
+
+const REVIEWS_TABLE_ROW_COUNT: Record<ReviewsSkeletonTab, number> = {
+  received: 6,
+  written: 6,
+  to_write: 5,
+  properties: 5,
+};
+
+function ReviewsTableHeaderCells({
+  tab,
+  showProperty,
+}: {
+  tab: ReviewsSkeletonTab;
+  showProperty: boolean;
+}) {
+  if (tab === 'properties') {
+    return (
+      <>
+        <AdminTableTh className="pl-4 pr-3 sm:pl-5">Listing</AdminTableTh>
+        <AdminTableTh className="px-3 sm:px-4">Rating</AdminTableTh>
+        <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Reviews</AdminTableTh>
+        <AdminTableTh className="hidden px-3 sm:px-4 lg:table-cell">Responded</AdminTableTh>
+        <AdminTableTh className="px-3 sm:px-4">To write</AdminTableTh>
+        <AdminTableTh className="pl-2 pr-3 sm:pl-3 sm:pr-4">
+          <span className="sr-only">Actions</span>
+        </AdminTableTh>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <AdminTableTh className="pl-4 pr-3 sm:pl-5">Guest</AdminTableTh>
+      {showProperty ? (
+        <AdminTableTh className="hidden px-3 sm:table-cell sm:px-4">Listing</AdminTableTh>
+      ) : null}
+      {tab === 'to_write' ? (
+        <>
+          <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Stay</AdminTableTh>
+          <AdminTableTh className="px-3 sm:px-4">Window</AdminTableTh>
+        </>
+      ) : (
+        <>
+          <AdminTableTh className="px-3 sm:px-4">Rating</AdminTableTh>
+          <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Review</AdminTableTh>
+          <AdminTableTh className="hidden px-3 sm:px-4 lg:table-cell">
+            {tab === 'written' ? 'Host again' : 'Response'}
+          </AdminTableTh>
+          <AdminTableTh className="hidden px-3 sm:px-4 xl:table-cell">
+            {tab === 'written' ? 'Submitted' : 'Stay'}
+          </AdminTableTh>
+        </>
+      )}
+      <AdminTableTh className="pl-2 pr-3 sm:pl-3 sm:pr-4">
+        <span className="sr-only">Actions</span>
+      </AdminTableTh>
+    </>
+  );
+}
+
+function ReviewsTableSkeletonRow({
+  tab,
+  showProperty,
+  index,
+}: {
+  tab: ReviewsSkeletonTab;
+  showProperty: boolean;
+  index: number;
+}) {
+  const rowClassName = index > 0 ? 'border-separator border-t' : undefined;
+
+  if (tab === 'properties') {
+    return (
+      <tr className={rowClassName}>
+        <td className={adminTableCell.status}>
+          <Skeleton className="h-3.5 w-36 max-w-full" />
+        </td>
+        <td className={adminTableCell.body}>
+          <Skeleton className="h-3.5 w-20 rounded" />
+        </td>
+        <td className={cn('hidden md:table-cell', adminTableCell.body)}>
+          <Skeleton className="h-3 w-8" />
+        </td>
+        <td className={cn('hidden lg:table-cell', adminTableCell.body)}>
+          <Skeleton className="h-3 w-10" />
+        </td>
+        <td className={adminTableCell.body}>
+          <Skeleton className="h-5 w-10 rounded-full" />
+        </td>
+        <td className={adminTableCell.action}>
+          <Skeleton className="ml-auto size-8 rounded-lg" />
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <tr className={rowClassName}>
+      <td className={adminTableCell.status}>
+        <div className="flex min-w-[140px] items-center gap-2.5 sm:min-w-[160px] sm:gap-3">
+          <Skeleton className="size-8 shrink-0 rounded-full" />
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Skeleton className="h-3.5 w-28 max-w-full" />
+            <Skeleton className="h-2.5 w-20 max-w-full md:hidden" />
+          </div>
+        </div>
+      </td>
+      {showProperty ? (
+        <td className={cn('hidden sm:table-cell', adminTableCell.body)}>
+          <Skeleton className="h-3.5 w-28 max-w-full" />
+        </td>
+      ) : null}
+      {tab === 'to_write' ? (
+        <>
+          <td className={cn('hidden md:table-cell', adminTableCell.body)}>
+            <Skeleton className="h-3 w-24" />
+          </td>
+          <td className={adminTableCell.body}>
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </td>
+        </>
+      ) : (
+        <>
+          <td className={adminTableCell.body}>
+            <Skeleton className="h-3.5 w-20 rounded" />
+          </td>
+          <td className={cn('hidden md:table-cell', adminTableCell.body)}>
+            <div className="max-w-[340px] space-y-1.5">
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-2/3" />
+            </div>
+          </td>
+          <td className={cn('hidden lg:table-cell', adminTableCell.body)}>
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </td>
+          <td className={cn('hidden xl:table-cell', adminTableCell.body)}>
+            <Skeleton className="h-3 w-24" />
+          </td>
+        </>
+      )}
+      <td className={adminTableCell.action}>
+        <Skeleton className="ml-auto size-8 rounded-lg" />
+      </td>
+    </tr>
+  );
+}
+
+/**
+ * Reviews feed table — real column labels for the active tab, skeleton rows only.
+ * Column order and breakpoints mirror `ReviewsTable` / `OrgPropertyReviewsTable`.
+ */
+export function ReviewsTableSkeleton({
+  tab = 'received',
+  showProperty = false,
+  rows,
+}: {
+  tab?: ReviewsSkeletonTab;
+  showProperty?: boolean;
+  rows?: number;
+} = {}) {
+  const minWidth = showProperty
+    ? REVIEWS_TABLE_MIN_WIDTH[tab].withListing
+    : REVIEWS_TABLE_MIN_WIDTH[tab].withoutListing;
+  const rowCount = rows ?? REVIEWS_TABLE_ROW_COUNT[tab];
+
+  return (
+    <div role="status" aria-busy="true" aria-label="Loading reviews">
+      <AdminDataTable minWidth={minWidth}>
+        <AdminTableHeadRow>
+          <ReviewsTableHeaderCells tab={tab} showProperty={showProperty} />
+        </AdminTableHeadRow>
+        <tbody>
+          {Array.from({ length: rowCount }).map((_, index) => (
+            <ReviewsTableSkeletonRow
+              key={index}
+              tab={tab}
+              showProperty={showProperty}
+              index={index}
+            />
+          ))}
+        </tbody>
+      </AdminDataTable>
+    </div>
+  );
+}
+
+/** Reviews card view — avatar/title header, stars + meta lines, excerpt, footer badge. */
+export function ReviewsCardGridSkeleton({ count = 6 }: { count?: number } = {}) {
+  return (
+    <div
+      role="status"
+      className="native-stagger grid grid-cols-1 items-stretch gap-2 sm:grid-cols-2 sm:gap-3.5 lg:grid-cols-3 xl:grid-cols-4"
+      aria-busy="true"
+      aria-label="Loading reviews"
+    >
+      {Array.from({ length: count }).map((_, index) => (
+        <div
+          key={index}
+          className="surface-card flex min-h-[8.5rem] flex-col gap-2 p-3.5"
+          style={{ opacity: 1 - index * 0.08 }}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <Skeleton className="size-8 shrink-0 rounded-full" />
+              <Skeleton className="h-3.5 w-28 max-w-full" />
+            </div>
+            <Skeleton className="size-7 shrink-0 rounded-full" />
+          </div>
+          <div className="space-y-1.5">
+            <Skeleton className="h-3 w-20 rounded" />
+            <Skeleton className="h-3 w-32 max-w-full" />
+          </div>
+          <div className="space-y-1.5">
+            <Skeleton className="h-2.5 w-full" />
+            <Skeleton className="h-2.5 w-4/5" />
+          </div>
+          <div className="mt-auto pt-1">
+            <Skeleton className="h-5 w-24 rounded-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Quiet placeholder for a tab already known to be empty (e.g. To write = 0) so the
+ * first paint does not imply six table rows. Matches `ReviewsEmptyState` height.
+ */
+export function ReviewsEmptySkeleton({ icon: Icon = Quote }: { icon?: LucideIcon } = {}) {
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label="Loading reviews"
+      className="surface-card flex flex-col items-center justify-center gap-3 px-4 py-10 text-center sm:py-16"
+    >
+      <div className="icon-well-sm inline-flex items-center justify-center" aria-hidden>
+        <Icon className="text-muted-foreground size-5" />
+      </div>
+      <div className="w-full max-w-xs space-y-2">
+        <Skeleton className="mx-auto h-4 w-40 max-w-full" />
+        <Skeleton className="mx-auto h-3 w-56 max-w-full" />
+      </div>
+    </div>
+  );
+}
+
 export function ReviewsPageSkeleton({
   tabs = ['From guests', 'To write', 'About guests'],
+  tab = 'received',
+  view = 'table',
+  showProperty = false,
 }: {
   tabs?: string[];
+  tab?: ReviewsSkeletonTab;
+  view?: 'table' | 'card';
+  showProperty?: boolean;
 } = {}) {
   const tabItems = tabs.map((label) => {
     if (label === 'From guests') return { label, icon: Quote };
@@ -1608,6 +1880,9 @@ export function ReviewsPageSkeleton({
     if (label === 'By property') return { label, icon: Building2 };
     return { label };
   });
+
+  const tableSkeleton = <ReviewsTableSkeleton tab={tab} showProperty={showProperty} />;
+  const cardSkeleton = <ReviewsCardGridSkeleton />;
 
   return (
     <div
@@ -1630,12 +1905,19 @@ export function ReviewsPageSkeleton({
         ))}
       </div>
       <SlidingTabsListSkeleton items={tabItems} />
-      <div className="hidden lg:block" aria-hidden>
-        <FinanceStaysTableSkeleton />
-      </div>
-      <div className="lg:hidden" aria-hidden>
-        <FinanceStaysCardGridSkeleton />
-      </div>
+      <AdminListToolbarSkeleton sort />
+      {view === 'card' ? (
+        cardSkeleton
+      ) : (
+        <>
+          <div className="hidden lg:block" aria-hidden>
+            {tableSkeleton}
+          </div>
+          <div className="lg:hidden" aria-hidden>
+            {cardSkeleton}
+          </div>
+        </>
+      )}
     </div>
   );
 }
