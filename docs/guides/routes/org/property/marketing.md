@@ -152,6 +152,22 @@ Marketing Content Studio is where you create promotional content for this proper
   A: Yes. Collage cells are normal photos on the same canvas; use Elements, Text, or the Logo option exactly as you would on any other post.
 - Q: What does **Blank** do?
   A: Opens an empty page in the size you picked so you can build from scratch.
+- Q: What are the topics under **Trending today**?
+  A: They are what people in the Philippines are reading and searching about today, this week and this month. Every topic comes with three ready-made angles so you do not start from a blank page.
+- Q: Where do the topics come from?
+  A: Public lists: Google Trends for the Philippines, Wikipedia pages people read, the Apple Music Philippines chart, and the Netflix Philippines top 10. Each topic shows where it came from.
+- Q: Why is a topic I saw on TikTok not on the list?
+  A: TikTok, Facebook, Instagram and X do not offer a free public list we can use. The topics we do get usually catch a viral moment a day or so later, when people start searching for it. Staff can add a topic by hand when something important is missed.
+- Q: How do I use a topic?
+  A: Tap the topic, pick one of the three angles, then tap **Make a post**, **Make a photo** or **Make a clip**. Your description is filled in and the trend is attached as a chip you can remove. Nothing is generated, and no credits are used, until you press **Generate**.
+- Q: Do trends cost credits?
+  A: No. Browsing trends and copying the caption idea are free on every plan. Generating from a trend uses the same credits as any other generation.
+- Q: Can I use a celebrity's photo or the show's logo in my post?
+  A: No. You can mention what people are watching, but do not use a real person's photo or likeness, a show or network logo, or wording that sounds like a partnership or an endorsement. The app blocks that wording for you.
+- Q: Why does the heading say **Seasonal ideas** instead of **Trending today**?
+  A: It means there is no fresh list right now, so we are showing Philippine seasonal ideas instead, such as long weekends and the Christmas season.
+- Q: Why did a topic disappear?
+  A: Topics are checked for safety. Anything about a death, a crime, a disaster, politics or gambling is removed, and staff can hide a topic by hand. The list also refreshes every morning.
 
 ## Marketing Content Studio
 
@@ -523,6 +539,94 @@ Property-team RBAC (Phase 7). Route guard: **`marketing:view`**. Org owner, org 
 
 **Plan gating (inner, after permission):** see sections above — `marketingStudio`, `aiMarketingGeneration`, `aiMarketingImageGeneration` (Generate tab images, Pro+), `aiMarketingVideoGeneration` (Generate tab video, Business+), `customTemplates`, and publish limit via `marketingPublishLimitPerGroup`. Permission = visibility; plan = actionability (D16). The Generate tab's **read** paths deliberately carry no plan gate — see the view-past-output note above.
 
+## Trends
+
+> Architecture: [`marketing-trends.md`](../../../../architecture/marketing-trends.md)
+
+A ranked list of what people in the Philippines are talking about **today, this week and this
+month**, rebuilt once a day. It lives inside **AI Studio**, not a separate tab: it exists to feed
+generation, and the Plan tab slot is reserved for the Strategy Planner.
+
+### Where it appears
+
+**1. `Trending today` rail** at the top of the AI Studio create form, above the description
+field. Up to 8 chips, 44 px targets, horizontally scrollable. **See all** opens the sheet. When
+there is no usable list the heading reads **Seasonal ideas** and shows the bundled Philippine
+seasonal ideas instead.
+
+**2. Trends sheet** (`ResponsiveModal`: bottom sheet below `lg`, centred dialog at `lg+`)
+
+```
+Trends in the Philippines                    Updated Nov 10
+[ Today ][ This week ][ This month ]
+[All] [TV & film] [Music] [Sports] [Celebrity] [Holidays] …
+
+1  PBB Collab 3.0
+   Fans are following the new housemates this week.
+   New · 2 days
+2  Alexandra Eala
+   …
+──────────────────────────────────────────────
+Mention the trend, do not use their photos or logos.
+```
+
+Week and month only appear once 3 / 7 published runs exist. A category chip only appears when at
+least one topic in the window has it.
+
+**3. Topic detail** (pushes inside the same sheet)
+
+- Title, summary, momentum, days trending, source labels.
+- **Three angle cards**: post, photo or clip, each with a hook and a **Make a post** / **Make a
+  photo** / **Make a clip** button.
+- **Copy caption idea**: free on every plan.
+
+### Handoff
+
+Tapping an angle sets a one-shot pending trend (`setPendingAiTrend`), starts a new AI Studio
+creation for that output, and the create form picks it up once:
+
+- the description is filled with the angle's prompt,
+- a removable **Trend: PBB Collab 3.0** chip appears above the field,
+- the request carries only `trendTopicKey`, never trend text.
+
+Nothing is generated and nothing is charged until the host presses **Generate**.
+
+**Locked output.** If the plan or the role does not cover that output, the angle button still
+responds: it opens the upgrade prompt, the same path the Generate button takes, so the host is
+never left with a dead control. **Copy caption idea** still works, which is the free path.
+
+### Routes and params
+
+| Param                                 | Meaning                                   |
+| ------------------------------------- | ----------------------------------------- |
+| `?tab=generate&trends=today`          | Open the Trends sheet on the Today window |
+| `?tab=generate&trends=week` / `month` | Open it on another window                 |
+
+`startAiSession` clears the param, so using an angle closes the sheet and lands on the form.
+
+### States
+
+| State                                       | What the host sees                                                          |
+| ------------------------------------------- | --------------------------------------------------------------------------- |
+| Loading                                     | Skeleton heading and three skeleton chips, page chrome mounted              |
+| Fresh list                                  | `Trending today` with the date it was built                                 |
+| List older than 36 h                        | Same list, labelled with its date                                           |
+| No usable list (none, or older than 72 h)   | `Seasonal ideas` with bundled PH ideas                                      |
+| Endpoint error                              | The rail hides itself; the client falls back to seasonal ideas              |
+| `marketing.trends` off for the property     | Rail and sheet hidden, no error message                                     |
+| Empty filter                                | `No sports topics today`                                                    |
+| Trend hidden between opening and generating | The run is refused, the form keeps the text and drops the chip with a toast |
+
+### What the server enforces
+
+- The host sends a topic key. The server loads the topic, so a client cannot inject its own
+  "trend context" into a prompt.
+- A hidden key, or one more than 7 days old, is refused with `trend_unavailable`.
+- Generated poster variants and captions are checked for endorsement wording and for naming a
+  person. A variant that breaks the rule is dropped; a caption is regenerated once.
+- Image and clip prompts for celebrity, TV and music topics add "no recognizable real people, no
+  logos, no brand names".
+
 ## Telegram marketing (legacy module)
 
 | Concern     | Path                                                                              |
@@ -623,6 +727,7 @@ See [notifications.md](./notifications.md) for the unified page layout and save 
 | Library → Editor, save model, Recently deleted, AI Studio outputs       | Code-complete; unit + Deno + e2e + local API/browser verified; migration not yet on hosted dev                                                                                                                |
 | AI Studio conversations (versions, refine, shared toolbar, start row)   | Code-complete; unit + Deno + e2e + local API/browser verified; migrations not yet on hosted dev                                                                                                               |
 | AI Studio examples gallery (post/photo/clip, detail, Use this example)  | Posts: code-complete, live-rendered, unit + Deno + e2e verified. Photo/clip: catalog + UI code-complete but gated off (`READY_SAMPLE_IDS` empty) until the one-time AI asset pass runs with a paid Gemini key |
+| Trends (rail, sheet, topic detail, angle handoff, caption copy)         | Code-complete; Deno unit + Vitest + local rendering; cron and publish RPC verified on a local stack                                                                                                           |
 
 ---
 
@@ -641,5 +746,7 @@ See [notifications.md](./notifications.md) for the unified page layout and save 
 | Unit  | `lib/collage/collageDocument.test.ts`, `coverCrop.test.ts` — layout registry (cap 9, tiles with no gaps/overlap), frame geometry, relayout photo-order preservation, style application                                                                                                                                                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                           |
 | Edge  | `supabase/functions/_shared/marketingUploadStorage_test.ts` — storage path safety, image-vs-video mime sniffing; `marketingVideoPromptBuilder_test.ts` (guardrail tail always present, start frame sent to the rewrite, fail-open), `marketingVideoGenerationAi_test.ts` (Veo request body), `mp4Probe_test.ts` (output validation)                                                                                                                                                                                                                       | —                                                                                                                                                                                                                                                                                           |
 | E2E   | `ui/e2e/features/marketing/marketingCollage.spec.ts` (`@ci`) — Start-from switching, layout pick turns the canvas into a collage, Blank clears the canvas, 390px bottom sheet with no horizontal overflow                                                                                                                                                                                                                                                                                                                                                 | Fill all with real property photos (no gallery fixtures in the mocked harness), drag-to-reorder cells, native crop-mode handles, real upload round-trip                                                                                                                                     |
+| Unit  | `lib/trends/evergreenIdeas.test.ts` (client mirror matches the server copy, every month), `lib/trends/trendHandoff.test.ts` (one-shot handoff)                                                                                                                                                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                           |
+| Edge  | `_shared/marketingTrends/{normalize,score,windows,safetyDenylist,brandGuard,response,pipeline,marketingTrendsClassify}_test.ts` (merging, cross-source bonus, momentum, pins, hide-at-read, stale/evergreen, validator), `sources/sources_test.ts` (real fixtures for RSS, Apple and the Netflix TSV)                                                                                                                                                                                                                                                     | Live source drift; a real 33 MB Netflix download                                                                                                                                                                                                                                            |
 | N/A   | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Real Veo video generation (async, minutes, real cost). Request shape and constraints were checked against the live API with invalid-on-purpose calls (free); a full paid render has not run yet because the local keys have no Veo quota, closed-tab sweeper finalize, double-finalize race |
 | N/A   | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Meta OAuth manual                                                                                                                                                                                                                                                                           |

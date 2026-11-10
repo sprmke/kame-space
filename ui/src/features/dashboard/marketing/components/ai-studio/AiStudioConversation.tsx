@@ -269,40 +269,52 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
     if (trendsWindow) setTrendsOpen(true);
   }, [trendsWindow]);
 
-  const openTrends = useCallback((topicKey?: string | null) => {
-    setTrendsTopicKey(topicKey ?? null);
-    setTrendsOpen(true);
-    captureAppEvent('trends_opened', { window: trendsWindow ?? 'today', source: 'rail' });
-  }, [trendsWindow]);
+  const openTrends = useCallback(
+    (topicKey?: string | null) => {
+      setTrendsTopicKey(topicKey ?? null);
+      setTrendsOpen(true);
+      captureAppEvent('trends_opened', { window: trendsWindow ?? 'today', source: 'rail' });
+    },
+    [trendsWindow]
+  );
+
+  /**
+   * A locked output is one the plan or the role does not cover. The angle button
+   * still responds: it opens the upgrade prompt, the same path the Generate
+   * button takes, instead of leaving the host with a dead control.
+   */
+  const isTrendOutputLocked = useCallback(
+    (output: TrendOutput) => {
+      if (output === 'post') return !access.post || !planAllowed.post;
+      if (output === 'image') return !access.image || !planAllowed.image;
+      return !access.video || !planAllowed.video;
+    },
+    [access, planAllowed]
+  );
 
   /** The host picked an angle: start a new creation with the topic already applied. */
   const useTrendAngle = useCallback(
     (angle: TrendAngle, topic: TrendTopic) => {
+      const locked = isTrendOutputLocked(angle.output);
+      captureAppEvent('trend_angle_used', {
+        topic_key: topic.topicKey,
+        output: angle.output,
+        action: locked ? 'locked' : 'make',
+      });
+      if (locked) {
+        openUpgradeModal(OUTPUT_FEATURE[angle.output]);
+        return;
+      }
       setPendingAiTrend({
         topicKey: topic.topicKey,
         title: topic.title,
         angle,
         output: angle.output,
       });
-      captureAppEvent('trend_angle_used', {
-        topic_key: topic.topicKey,
-        output: angle.output,
-        action: 'make',
-      });
       setTrendsOpen(false);
       startAiSession(angle.output);
     },
-    [startAiSession]
-  );
-
-  /** The host may start this output (permission + plan). */
-  const canStartTrendOutput = useCallback(
-    (output: TrendOutput) => {
-      if (output === 'post') return access.post && planAllowed.post;
-      if (output === 'image') return access.image && planAllowed.image;
-      return access.video && planAllowed.video;
-    },
-    [access, planAllowed]
+    [isTrendOutputLocked, openUpgradeModal, startAiSession]
   );
 
   const generate = useGenerateMarketingMedia();
@@ -786,7 +798,7 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
             initialWindow={trendsWindow ?? undefined}
             initialTopicKey={trendsTopicKey}
             onUseAngle={useTrendAngle}
-            canGenerate={canStartTrendOutput}
+            isLocked={isTrendOutputLocked}
           />
         </Suspense>
       </div>

@@ -19,11 +19,15 @@ const OUTPUT_LABEL: Record<TrendOutput, string> = {
 type Props = {
   angle: TrendAngle;
   onUse: (angle: TrendAngle) => void;
-  disabled?: boolean;
+  /**
+   * The plan or the role does not cover this output. The button stays pressable
+   * so the host gets the upgrade prompt instead of a dead control.
+   */
+  locked?: boolean;
 };
 
 /** One angle: what the host could make, and the button that starts it. */
-export function TrendAngleCard({ angle, onUse, disabled }: Props) {
+export function TrendAngleCard({ angle, onUse, locked }: Props) {
   const Icon = OUTPUT_ICON[angle.output] ?? FileText;
   return (
     <li className="border-border bg-card rounded-xl border p-3">
@@ -39,9 +43,8 @@ export function TrendAngleCard({ angle, onUse, disabled }: Props) {
       <Button
         type="button"
         size="sm"
-        variant="outline"
+        variant={locked ? 'ghost' : 'outline'}
         className="mt-2.5 h-9 w-full"
-        disabled={disabled}
         onClick={() => onUse(angle)}
       >
         {OUTPUT_LABEL[angle.output]}

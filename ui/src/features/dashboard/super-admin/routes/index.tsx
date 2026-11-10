@@ -12,6 +12,7 @@ import {
   SuperAdminAuditRouteSkeleton,
   SuperAdminDevelopmentDetailRouteSkeleton,
   SuperAdminHealthRouteSkeleton,
+  SuperAdminMarketingTrendsRouteSkeleton,
   SuperAdminHostShellRouteSkeleton,
   SuperAdminListRouteSkeleton,
   SuperAdminOpsReportDetailRouteSkeleton,
@@ -73,6 +74,11 @@ const SuperAdminDevelopmentsPage = lazy(() =>
 const SuperAdminHealthPage = lazy(() =>
   import('@/features/dashboard/super-admin/pages/SuperAdminHealthPage').then((m) => ({
     default: m.SuperAdminHealthPage,
+  }))
+);
+const SuperAdminMarketingTrendsPage = lazy(() =>
+  import('@/features/dashboard/super-admin/pages/SuperAdminMarketingTrendsPage').then((m) => ({
+    default: m.SuperAdminMarketingTrendsPage,
   }))
 );
 const SuperAdminOpsReportsPage = lazy(() =>
@@ -295,6 +301,13 @@ export const superAdminRoutes: ReactNode = (
     <Route
       path="health/:section"
       element={superAdminRoute(<SuperAdminHealthPage />, <SuperAdminHealthRouteSkeleton />)}
+    />
+    <Route
+      path="marketing-trends"
+      element={superAdminRoute(
+        <SuperAdminMarketingTrendsPage />,
+        <SuperAdminMarketingTrendsRouteSkeleton />
+      )}
     />
     <Route
       path="ops-reports"

@@ -11,6 +11,13 @@ One canonical dataset for local development: **one organization, one property, o
 
 Files live in [`scripts/dev/seed/`](../../../scripts/dev/seed/) and load automatically on `bun run db:reset` via `supabase/config.toml` `[db.seed]`.
 
+## Marketing Trends
+
+`22-marketing-trends.sql` publishes one run for today with six `today` topics and the same six in
+the `week` window, plus a source-health map that shows Netflix as stale. The rail, the sheet and
+`/admin/marketing-trends` all render without waiting for the cron. `99-verify.sql` asserts the
+published run exists for today, has at least five topics, and has a non-empty week window.
+
 ## Canonical identity
 
 | Entity       | Value                                                                                                    |

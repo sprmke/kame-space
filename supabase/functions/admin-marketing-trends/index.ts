@@ -12,7 +12,7 @@
  */
 
 import { createServiceClient } from '../_shared/orgAuth.ts';
-import { jsonError, jsonSuccess, readJsonBody } from '../_shared/httpResponse.ts';
+import { jsonError, jsonResponse, jsonSuccess, readJsonBody } from '../_shared/httpResponse.ts';
 import { serveSuperAdmin } from '../_shared/serveEdge.ts';
 import { logSuperAdminAction } from '../_shared/superAdminAudit.ts';
 import { capturePostHogEvent } from '../_shared/posthog.ts';
@@ -68,6 +68,7 @@ serveSuperAdmin('admin-marketing-trends', async (req, user) => {
           .eq('run_id', latestRunId.id)
           .eq('window', 'today')
           .order('rank', { ascending: true })
+          .limit(50)
       : { data: [] as unknown[] };
 
     const { data: overrides } = await supabase
@@ -215,7 +216,21 @@ serveSuperAdmin('admin-marketing-trends', async (req, user) => {
     });
 
     if (result.status !== 'published') {
-      return jsonError(req, result.error ?? 'The run did not publish.', 502);
+      // The operator needs to know which source failed, not just that the run did.
+      return jsonResponse(
+        req,
+        {
+          success: false,
+          error: result.error ?? 'The run did not publish.',
+          data: {
+            runId: result.runId,
+            runDate: result.runDate,
+            status: result.status,
+            sources: result.sourceStats,
+          },
+        },
+        502
+      );
     }
     return jsonSuccess(req, {
       ok: true,

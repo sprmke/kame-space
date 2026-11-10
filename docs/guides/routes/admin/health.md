@@ -28,7 +28,15 @@ Unknown sections (`/admin/health/foo`) redirect to `/admin/health`.
 | Configuration | pending | n/a        | Spec | Tab only. Checks are not wired yet. |
 | Integrations  | pending | n/a        | Spec | Tab only. Checks are not wired yet. |
 | Jobs          | pending | n/a        | Spec | Tab only. Checks are not wired yet. |
-| Usage         | pending | n/a        | Spec | Tab only. Checks are not wired yet. |
+
+**Marketing trends list.** The Jobs tab carries a `Marketing trends list` row beyond the heartbeat
+checks. The job registry already warns when `marketing-trends-cron` stops running; this row covers
+the other failure, where the cron runs but nothing gets published so hosts silently fall back to
+seasonal ideas. It reads the latest `published` `marketing_trend_runs` row: `ok` under 36 h,
+`warn` past 36 h, `error` past 72 h (at which point the client shows evergreen), and `warn` when
+no list has ever published. Fix link goes to `/admin/marketing-trends`.
+
+| Usage | pending | n/a | Spec | Tab only. Checks are not wired yet. |
 
 ---
 

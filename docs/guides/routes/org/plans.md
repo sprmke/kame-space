@@ -131,6 +131,10 @@ Full design/rationale: [`docs/workflow/done/org-level-billing-migration.md`](../
 
 ---
 
+## Marketing Trends (no plan change)
+
+Marketing **Trends** (the `Trending today` rail and the Trends sheet in AI Studio, plus **Copy caption idea**) is available on every plan that includes Content Studio. It adds no card bullet, no Compare row and no new gate, so the tier matrix and the review dialog are unchanged. Generating from a trend uses the existing AI generation gates. See [`org/property/marketing.md`](property/marketing.md) §Trends.
+
 ## Host-facing knowledge
 
 Plans & Billing is where the organization owner picks the tier and pays for it. Billing is per property but managed once for the whole organization, and the plan card in the sidebar shows what the current tier includes.

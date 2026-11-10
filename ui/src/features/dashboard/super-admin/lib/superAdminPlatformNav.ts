@@ -18,6 +18,7 @@ import {
   Settings,
   Sparkles,
   ToggleRight,
+  TrendingUp,
   Users,
   Wallet,
 } from 'lucide-react';
@@ -78,6 +79,7 @@ export const SUPER_ADMIN_NAV_GROUPS: SuperAdminPlatformNavGroup[] = [
     label: 'Platform',
     items: [
       { label: 'System health', href: superAdminPaths.health, Icon: Activity },
+      { label: 'Marketing trends', href: superAdminPaths.marketingTrends, Icon: TrendingUp },
       { label: 'Operations reports', href: superAdminPaths.opsReports, Icon: FileText },
       { label: 'AI', href: superAdminPaths.ai, Icon: Sparkles },
       { label: 'Rate limits', href: superAdminPaths.rateLimits, Icon: Gauge },

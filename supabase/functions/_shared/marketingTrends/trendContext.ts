@@ -38,22 +38,25 @@ export async function loadTrendContext(
   const key = (topicKey ?? '').trim();
   if (!key) return { ok: false, reason: 'no_key' };
 
-  // A hide applies at read time, so it also applies here.
-  const { data: hidden } = await supabase
-    .from('marketing_trend_overrides')
-    .select('topic_key')
-    .eq('topic_key', key)
-    .eq('action', 'hide')
-    .gt('expires_at', new Date().toISOString());
-  if (hidden && hidden.length > 0) return { ok: false, reason: 'hidden' };
+  // A hide applies at read time, so it also applies here. Both reads are one
+  // round trip each and independent, so they run together.
+  const [hiddenResult, runsResult] = await Promise.all([
+    supabase
+      .from('marketing_trend_overrides')
+      .select('topic_key')
+      .eq('topic_key', key)
+      .eq('action', 'hide')
+      .gt('expires_at', new Date().toISOString()),
+    supabase
+      .from('marketing_trend_runs')
+      .select('id, run_date')
+      .eq('status', 'published')
+      .order('run_date', { ascending: false })
+      .limit(1),
+  ]);
+  if (hiddenResult.data && hiddenResult.data.length > 0) return { ok: false, reason: 'hidden' };
 
-  const { data: runs } = await supabase
-    .from('marketing_trend_runs')
-    .select('id, run_date')
-    .eq('status', 'published')
-    .order('run_date', { ascending: false })
-    .limit(1);
-  const run = runs?.[0] as { id: string; run_date: string } | undefined;
+  const run = runsResult.data?.[0] as { id: string; run_date: string } | undefined;
   if (!run) return { ok: false, reason: 'not_found' };
 
   const ageDays = Math.round(

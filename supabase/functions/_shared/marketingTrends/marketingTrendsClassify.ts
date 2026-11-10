@@ -129,14 +129,20 @@ function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback
 export function shapeTrendClassifyOutput(
   raw: unknown,
   candidateKeys: readonly string[]
-): { topics: TrendClassifiedTopic[]; blocked: number; merged: number; dropped: number } {
+): {
+  topics: TrendClassifiedTopic[];
+  /** Duplicates the model spotted: `from` folds into `into`. */
+  merges: Array<{ from: string; into: string }>;
+  blocked: number;
+  dropped: number;
+} {
   const parsed = TrendClassifyResponse.safeParse(raw);
   const rows = parsed.success ? parsed.data.topics : [];
   const known = new Set(candidateKeys);
 
   const topics: TrendClassifiedTopic[] = [];
+  const merges: Array<{ from: string; into: string }> = [];
   let blocked = 0;
-  let merged = 0;
   let dropped = 0;
 
   for (const row of rows) {
@@ -147,7 +153,9 @@ export function shapeTrendClassifyOutput(
     }
     const mergeInto = typeof row.mergeInto === 'string' ? row.mergeInto.trim() : '';
     if (mergeInto && mergeInto !== key && known.has(mergeInto)) {
-      merged += 1;
+      // The caller folds this candidate's source evidence into the target, so a
+      // duplicate still counts toward the cross-source bonus.
+      merges.push({ from: key, into: mergeInto });
       continue;
     }
 
@@ -200,7 +208,7 @@ export function shapeTrendClassifyOutput(
     });
   }
 
-  return { topics, blocked, merged, dropped };
+  return { topics, merges, blocked, dropped };
 }
 
 const ALLOWED_FORMATS = [
@@ -261,8 +269,9 @@ export function toClassifyInputs(
 
 export type TrendClassifyResult = {
   topics: TrendClassifiedTopic[];
+  /** Duplicates the model spotted: `from` folds into `into`. */
+  merges: Array<{ from: string; into: string }>;
   blocked: number;
-  merged: number;
   dropped: number;
   provider: string | null;
   model: string | null;

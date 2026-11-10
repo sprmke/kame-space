@@ -40,8 +40,8 @@ type Props = {
   /** Topic to open straight away (a chip tap). */
   initialTopicKey?: string | null;
   onUseAngle: (angle: TrendAngle, topic: TrendTopic) => void;
-  /** Whether the host may start this output (permission + plan). */
-  canGenerate: (output: TrendOutput) => boolean;
+  /** Whether the plan or role does not cover this output. */
+  isLocked: (output: TrendOutput) => boolean;
 };
 
 /** "Updated today 5:30 AM" or "Updated Nov 8". */
@@ -67,7 +67,7 @@ export function TrendsSheet({
   initialWindow,
   initialTopicKey,
   onUseAngle,
-  canGenerate,
+  isLocked,
 }: Props) {
   const [window, setWindow] = useState<TrendWindow>(initialWindow ?? 'today');
   const [category, setCategory] = useState<TrendCategory | null>(null);
@@ -123,7 +123,7 @@ export function TrendsSheet({
           {selected ? (
             <TrendTopicDetail
               topic={selected}
-              canGenerate={canGenerate}
+              isLocked={isLocked}
               onBack={() => setOpenKey(null)}
               onUseAngle={(angle) => onUseAngle(angle, selected)}
             />

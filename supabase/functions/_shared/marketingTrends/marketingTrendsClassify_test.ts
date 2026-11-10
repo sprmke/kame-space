@@ -75,7 +75,7 @@ Deno.test('the denylist runs over the model text too', () => {
   assertEquals(result.blocked, 1);
 });
 
-Deno.test('a merge is counted and the merged topic is not published twice', () => {
+Deno.test('a merge is reported and the merged topic is not published twice', () => {
   const result = shapeTrendClassifyOutput(
     {
       topics: [
@@ -85,8 +85,24 @@ Deno.test('a merge is counted and the merged topic is not published twice', () =
     },
     KEYS
   );
-  assertEquals(result.merged, 1);
+  assertEquals(result.merges, [
+    { from: 'alexandra-eala', into: 'pinoy-big-brother-collab-3-0' },
+  ]);
   assertEquals(result.topics.length, 1);
+});
+
+Deno.test('a merge into an unknown key is ignored, not swallowed', () => {
+  const result = shapeTrendClassifyOutput(
+    {
+      topics: [
+        topic({ key: 'alexandra-eala', mergeInto: 'not-a-candidate' }),
+        topic(),
+      ],
+    },
+    KEYS
+  );
+  assertEquals(result.merges.length, 0);
+  assertEquals(result.topics.length, 2);
 });
 
 Deno.test('stay fit 0 is never published', () => {

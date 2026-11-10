@@ -1114,6 +1114,17 @@ export function SuperAdminHealthRouteSkeleton() {
   );
 }
 
+export function SuperAdminMarketingTrendsRouteSkeleton() {
+  return (
+    <SuperAdminPageShell
+      title="Marketing trends"
+      subtitle="The daily list of what people in the Philippines are talking about. A hide reaches hosts within five minutes."
+      actions={1}
+      body={<SuperAdminCardListBodySkeleton />}
+    />
+  );
+}
+
 export function SuperAdminAiRouteSkeleton() {
   return (
     <SuperAdminPageShell

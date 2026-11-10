@@ -19,7 +19,7 @@ type Props = {
   topic: TrendTopic;
   onUseAngle: (angle: TrendAngle) => void;
   onBack: () => void;
-  canGenerate: (output: TrendOutput) => boolean;
+  isLocked: (output: TrendOutput) => boolean;
 };
 
 const SOURCE_LABELS: Record<TrendSourceEvidence['source'], string> = {
@@ -61,7 +61,7 @@ async function copyToClipboard(text: string): Promise<boolean> {
  * One topic inside the Trends sheet: the summary, where it came from, the
  * three angles, and a free caption to copy.
  */
-export function TrendTopicDetail({ topic, onUseAngle, onBack, canGenerate }: Props) {
+export function TrendTopicDetail({ topic, onUseAngle, onBack, isLocked }: Props) {
   const [copying, setCopying] = useState(false);
 
   const copyCaption = async () => {
@@ -100,7 +100,7 @@ export function TrendTopicDetail({ topic, onUseAngle, onBack, canGenerate }: Pro
             key={`${angle.title}-${angle.output}`}
             angle={angle}
             onUse={onUseAngle}
-            disabled={!canGenerate(angle.output)}
+            locked={isLocked(angle.output)}
           />
         ))}
       </ul>

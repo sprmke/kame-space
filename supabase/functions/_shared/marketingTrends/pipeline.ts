@@ -4,26 +4,33 @@
  * The same function backs the cron and a super admin's "Run now" button, so the
  * two can never drift apart.
  *
- *   fetch → normalize → pre-filter → score → classify (AI) → publish
+ *   fetch → normalize → pre-filter → score → classify (AI) → rank → publish
  *
  * The rules that matter:
- *  - One source failing never fails the run. At least one source with five
+ *  - One source failing never fails the run. At least one source with enough
  *    candidates is enough to publish.
  *  - No AI review, no new list. If the classify step fails, the run is marked
- *    failed and hosts keep seeing the last published list.
+ *    failed and hosts keep the last published list.
  *  - A hide applies at read time too, so it lands within five minutes without a
  *    rerun.
+ *  - Momentum compares today's position with yesterday's published position. It
+ *    is not derived from the order the sources happened to return.
  *
  * Plan §4.1 and §4.5.
  */
 
 import { manilaTodayYmd } from '../calendarAvailabilityManila.ts';
 import type { SupabaseClient } from '../supabaseJs.ts';
-import { finalScore, distinctSourceCount } from './score.ts';
+import {
+  STAY_FIT_MULTIPLIER,
+  baseScore,
+  distinctSourceCount,
+  finalScore,
+} from './score.ts';
 import { isStoplistedTitle, normalizeRawTitle, titlesOverlap, type NormalizedTitle } from './normalize.ts';
 import { NEWS_DERIVED_SOURCES } from './stoplists.ts';
 import { findUnsafeTerm } from './safetyDenylist.ts';
-import { runTrendClassify, MIN_SAFE_TOPICS } from './marketingTrendsClassify.ts';
+import { MIN_SAFE_TOPICS, runTrendClassify, type TrendClassifyResult } from './marketingTrendsClassify.ts';
 import { enabledDailySources, SOURCE_LABELS } from './sources/index.ts';
 import type {
   TrendCandidate,
@@ -34,27 +41,28 @@ import type {
   TrendSourceResult,
 } from './types.ts';
 
-/** The whole daily run has this budget. Sources fetch in parallel, so it is generous. */
-export const TIME_BUDGET_MS = 55_000;
-
 /** A source needs at least this many candidates to count toward the run. */
 export const MIN_CANDIDATES_PER_SOURCE = 5;
 
 /** How old a cached weekly source may be before it is ignored. */
 export const MAX_CACHED_SOURCE_AGE_DAYS = 14;
 
+/** Topics kept in the daily list. */
+export const MAX_TOPICS = 25;
+
 export type TrendSourceStat = {
   ok: boolean;
   count: number;
   ms: number;
   error: string | null;
+  /** True when the source answered from a cache that is older than it should be. */
   stale?: boolean;
 };
 
 export type TrendRunResult = {
   runId: string;
   runDate: string;
-  status: 'published' | 'failed' | 'skipped';
+  status: 'published' | 'failed';
   topicCount: number;
   candidateCount: number;
   sourceStats: Record<string, TrendSourceStat>;
@@ -69,17 +77,14 @@ export type TrendRunOptions = {
   runDate?: string;
 };
 
-/** Yesterday's Manila date. Wikimedia lags by a day or two. */
-export function manilaYesterdayYmd(runDate: string): string {
-  const date = new Date(`${runDate}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() - 1);
-  return date.toISOString().slice(0, 10);
-}
+/** A cached source result, with the staleness carried as data rather than in the message. */
+type CachedSourceResult = TrendSourceResult & { stale: boolean };
 
 /** Normalize, stoplist and merge the raw items of every source into candidates. */
-export function buildCandidates(
-  results: readonly TrendSourceResult[]
-): { candidates: TrendCandidate[]; dropped: number } {
+export function buildCandidates(results: readonly TrendSourceResult[]): {
+  candidates: TrendCandidate[];
+  dropped: number;
+} {
   const candidates: TrendCandidate[] = [];
   const normalizedByKey = new Map<string, NormalizedTitle>();
   let dropped = 0;
@@ -98,6 +103,7 @@ export function buildCandidates(
         dropped += 1;
         continue;
       }
+
       const evidence: TrendSourceEvidence = {
         source: result.source,
         rank: item.rank,
@@ -105,13 +111,16 @@ export function buildCandidates(
         views: item.views ?? null,
         newsHeadlines: item.newsHeadlines ?? [],
       };
-      const existingKey = candidates.find((candidate) =>
+
+      const existing = candidates.find((candidate) =>
         titlesOverlap(normalizedByKey.get(candidate.key)!, normalized)
-      )?.key;
-      if (existingKey) {
-        const existing = candidates.find((candidate) => candidate.key === existingKey)!;
-        existing.sources.push(evidence);
-        // Keep the cleaner title: a title with words beats a single keyword.
+      );
+      if (existing) {
+        const alreadySeen = existing.sources.some((entry) => entry.source === evidence.source);
+        // The cross-source bonus counts sources, not rows, so one source cannot
+        // contribute twice.
+        if (!alreadySeen) existing.sources.push(evidence);
+        // Keep the fuller title: a title with words reads better than one keyword.
         if (normalized.display.split(' ').length > existing.title.split(' ').length) {
           existing.title = normalized.display;
         }
@@ -133,41 +142,71 @@ export function buildCandidates(
   return { candidates, dropped };
 }
 
-/** Read the weekly Netflix cache. Older than 14 days, it is ignored. */
+/**
+ * Fold the AI's duplicate merges into the candidates that survived, so the
+ * evidence of a merged duplicate still counts toward the cross-source bonus.
+ * Returns the number of merges actually applied.
+ */
+export function applyClassifyMerges(
+  candidates: TrendCandidate[],
+  merges: readonly { from: string; into: string }[]
+): number {
+  const byKey = new Map(candidates.map((candidate) => [candidate.key, candidate]));
+  let applied = 0;
+
+  for (const merge of merges) {
+    if (merge.from === merge.into) continue;
+    const target = byKey.get(merge.into);
+    const source = byKey.get(merge.from);
+    if (!target || !source) continue;
+
+    for (const evidence of source.sources) {
+      if (target.sources.some((entry) => entry.source === evidence.source)) continue;
+      target.sources.push(evidence);
+    }
+    target.sourceCount = distinctSourceCount(target.sources);
+    applied += 1;
+  }
+
+  return applied;
+}
+
+/** Read the weekly Netflix cache. Older than two weeks, it is ignored. */
 async function readCachedSource(
   supabase: SupabaseClient,
   source: TrendSourceId,
   runDate: string
-): Promise<TrendSourceResult> {
+): Promise<CachedSourceResult> {
+  const empty = (error: string, stale = false): CachedSourceResult => ({
+    source,
+    ok: false,
+    items: [],
+    ms: 0,
+    error,
+    stale,
+  });
+
   const { data, error } = await supabase
     .from('marketing_trend_source_cache')
     .select('items, period_start, fetched_at, error')
     .eq('source', source)
     .order('period_start', { ascending: false })
     .limit(1);
-  if (error) {
-    return { source, ok: false, items: [], ms: 0, error: error.message };
-  }
+  if (error) return empty(error.message);
+
   const row = data?.[0] as
     | { items?: unknown; period_start?: string; fetched_at?: string; error?: string | null }
     | undefined;
-  if (!row?.period_start) {
-    return { source, ok: false, items: [], ms: 0, error: 'no cached rows' };
-  }
+  if (!row?.period_start) return empty('no cached rows');
+
   const ageDays = Math.round(
     (Date.parse(`${runDate}T00:00:00Z`) - Date.parse(`${row.period_start}T00:00:00Z`)) / 86_400_000
   );
-  const rawItems = Array.isArray(row.items) ? (row.items as TrendSourceItem[]) : [];
-  if (ageDays > MAX_CACHED_SOURCE_AGE_DAYS) {
-    return { source, ok: false, items: [], ms: 0, error: 'cached rows are stale' };
-  }
-  return {
-    source,
-    ok: rawItems.length > 0,
-    items: rawItems,
-    ms: 0,
-    error: rawItems.length > 0 ? null : 'cached rows are empty',
-  };
+  if (ageDays > MAX_CACHED_SOURCE_AGE_DAYS) return empty('cached rows are stale', true);
+
+  const items = Array.isArray(row.items) ? (row.items as TrendSourceItem[]) : [];
+  if (!items.length) return empty('cached rows are empty');
+  return { source, ok: true, items, ms: 0, error: null, stale: false };
 }
 
 /** Super-admin topics added by hand. They go through the same classify pass. */
@@ -193,25 +232,28 @@ async function readManualTopics(
   return { source: 'editor', ok: items.length > 0, items, ms: 0, error: null };
 }
 
-/** The previous published list, used for momentum and days trending. */
+/** Yesterday's published position, used for momentum and days trending. */
 async function readPreviousRun(
   supabase: SupabaseClient,
   runDate: string
 ): Promise<Map<string, { rank: number; firstSeen: string | null }>> {
-  const { data } = await supabase
+  const { data: runs } = await supabase
     .from('marketing_trend_runs')
     .select('id')
     .eq('status', 'published')
     .lt('run_date', runDate)
     .order('run_date', { ascending: false })
     .limit(1);
-  const runId = (data?.[0] as { id?: string } | undefined)?.id;
+  const runId = (runs?.[0] as { id?: string } | undefined)?.id;
   if (!runId) return new Map();
+
   const { data: topics } = await supabase
     .from('marketing_trend_topics')
     .select('topic_key, rank, first_seen')
     .eq('run_id', runId)
-    .eq('window', 'today');
+    .eq('window', 'today')
+    .limit(50);
+
   const map = new Map<string, { rank: number; firstSeen: string | null }>();
   for (const row of topics ?? []) {
     const item = row as { topic_key: string; rank: number; first_seen: string | null };
@@ -230,22 +272,126 @@ export async function readOverrides(
   const { data } = await supabase
     .from('marketing_trend_overrides')
     .select('topic_key, action, expires_at')
-    .gt('expires_at', now.toISOString());
+    .gt('expires_at', now.toISOString())
+    // Same reasoning as the read endpoint: an admin-curated table with one row per topic.
+    .limit(500);
   const hidden = new Set<string>();
   const pinned = new Set<string>();
   for (const row of data ?? []) {
     const item = row as { topic_key: string; action: string };
     if (item.action === 'hide') hidden.add(item.topic_key);
-    if (item.action === 'pin') pinned.add(item.topic_key);
+    else if (item.action === 'pin') pinned.add(item.topic_key);
   }
   return { hidden, pinned };
+}
+
+/** One row of the array handed to the publish RPC. */
+export type PublishTopic = {
+  topic_key: string;
+  title: string;
+  summary: string;
+  category: string;
+  stay_fit: number;
+  score: number;
+  momentum: TrendMomentum;
+  days_trending: number;
+  first_seen: string;
+  sources: TrendSourceEvidence[];
+  angles: unknown;
+  caption_idea: string;
+  hashtags: string[];
+  brand_guard: string[];
+  pinned: boolean;
+  manual: boolean;
+};
+
+/**
+ * Rank today's topics.
+ *
+ * Momentum needs a position, and the position needs a score, so this runs in two
+ * passes: rank by the score without momentum, read momentum off that position
+ * against yesterday, then apply the momentum multiplier. The final order is the
+ * order the stored scores describe, which is what the publish RPC re-sorts by.
+ */
+export function rankTodayTopics(input: {
+  topics: readonly TrendClassifyResult['topics'][number][];
+  candidates: readonly TrendCandidate[];
+  previous: ReadonlyMap<string, { rank: number; firstSeen: string | null }>;
+  overrides: TrendOverrides;
+  runDate: string;
+}): PublishTopic[] {
+  const { topics, candidates, previous, overrides, runDate } = input;
+  const byKey = new Map(candidates.map((candidate) => [candidate.key, candidate]));
+  const runMs = Date.parse(`${runDate}T00:00:00Z`);
+
+  // Pass 1: score without momentum, so every topic has a position to compare.
+  const provisional = topics.map((topic) => {
+    const candidate = byKey.get(topic.key);
+    const sources = candidate?.sources ?? [];
+    const stayFitMultiplier = STAY_FIT_MULTIPLIER[topic.stayFit] ?? 0;
+    const previousEntry = previous.get(topic.key);
+    const firstSeen = previousEntry?.firstSeen ?? runDate;
+    const daysTrending = Number.isNaN(Date.parse(`${firstSeen}T00:00:00Z`))
+      ? 1
+      : Math.max(1, Math.round((runMs - Date.parse(`${firstSeen}T00:00:00Z`)) / 86_400_000) + 1);
+    return {
+      topic,
+      candidate,
+      sources,
+      stayFitMultiplier,
+      previousEntry,
+      firstSeen,
+      daysTrending,
+      preMomentumScore: baseScore(sources) * stayFitMultiplier,
+    };
+  });
+
+  const provisionalRank = new Map<string, number>();
+  [...provisional]
+    .sort((a, b) => b.preMomentumScore - a.preMomentumScore || a.topic.key.localeCompare(b.topic.key))
+    .forEach((row, index) => provisionalRank.set(row.topic.key, index + 1));
+
+  // Pass 2: momentum from yesterday's position, then the real score.
+  const ranked = provisional.map((row) => {
+    const rank = provisionalRank.get(row.topic.key) ?? Number.MAX_SAFE_INTEGER;
+    const momentum: TrendMomentum = !row.previousEntry
+      ? 'new'
+      : rank < row.previousEntry.rank
+        ? 'rising'
+        : 'steady';
+
+    return {
+      topic_key: row.topic.key,
+      title: row.topic.title,
+      summary: row.topic.summary,
+      category: row.topic.category,
+      stay_fit: row.topic.stayFit,
+      score: finalScore({ sources: row.sources, momentum, stayFit: row.topic.stayFit }),
+      momentum,
+      days_trending: row.daysTrending,
+      first_seen: row.firstSeen,
+      sources: row.sources,
+      angles: row.topic.angles,
+      caption_idea: row.topic.captionIdea,
+      hashtags: row.topic.hashtags,
+      brand_guard: row.topic.brandGuard,
+      pinned: overrides.pinned.has(row.topic.key),
+      manual: row.sources.some((entry) => entry.source === 'editor'),
+    } satisfies PublishTopic;
+  });
+
+  return ranked
+    .sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      return b.score - a.score || a.topic_key.localeCompare(b.topic_key);
+    })
+    .slice(0, MAX_TOPICS);
 }
 
 /** Run the whole pipeline once. */
 export async function runTrendsPipeline(options: TrendRunOptions): Promise<TrendRunResult> {
   const { supabase, trigger, triggeredBy } = options;
   const runDate = options.runDate ?? manilaTodayYmd();
-  const startedAt = new Date();
 
   const { data: runRow, error: runError } = await supabase
     .from('marketing_trend_runs')
@@ -254,7 +400,6 @@ export async function runTrendsPipeline(options: TrendRunOptions): Promise<Trend
       status: 'running',
       trigger,
       triggered_by: triggeredBy ?? null,
-      started_at: startedAt.toISOString(),
     })
     .select('id')
     .single();
@@ -270,10 +415,11 @@ export async function runTrendsPipeline(options: TrendRunOptions): Promise<Trend
     };
   }
   const runId = (runRow as { id: string }).id;
-
   const sourceStats: Record<string, TrendSourceStat> = {};
+
+  /** One place that closes a failed run: the ledger row and the return value agree. */
   const failRun = async (error: string, candidateCount = 0): Promise<TrendRunResult> => {
-    await supabase
+    const { error: updateError } = await supabase
       .from('marketing_trend_runs')
       .update({
         status: 'failed',
@@ -283,6 +429,9 @@ export async function runTrendsPipeline(options: TrendRunOptions): Promise<Trend
         finished_at: new Date().toISOString(),
       })
       .eq('id', runId);
+    if (updateError) {
+      console.error('[marketing-trends] could not close the run row:', updateError.message);
+    }
     return {
       runId,
       runDate,
@@ -297,9 +446,7 @@ export async function runTrendsPipeline(options: TrendRunOptions): Promise<Trend
   try {
     // ── 1. Fetch ──────────────────────────────────────────────────────────
     const daily = enabledDailySources();
-    const settled = await Promise.allSettled(
-      daily.map((adapter) => adapter.fetch(runDate))
-    );
+    const settled = await Promise.allSettled(daily.map((adapter) => adapter.fetch(runDate)));
 
     const results: TrendSourceResult[] = [];
     settled.forEach((entry, index) => {
@@ -326,100 +473,59 @@ export async function runTrendsPipeline(options: TrendRunOptions): Promise<Trend
       count: netflix.items.length,
       ms: 0,
       error: netflix.error,
-      ...(netflix.error === 'cached rows are stale' ? { stale: true } : {}),
+      ...(netflix.stale ? { stale: true } : {}),
     };
     if (netflix.ok) results.push(netflix);
 
     const manual = await readManualTopics(supabase, runDate);
     if (manual.ok) results.push(manual);
 
-    const usable = results.filter(
+    const usableSources = results.filter(
       (result) => result.ok && result.items.length >= MIN_CANDIDATES_PER_SOURCE
     );
-    if (!usable.length) {
-      return failRun('no source returned enough candidates');
+    if (!usableSources.length) {
+      return await failRun('no source returned enough candidates');
     }
 
     // ── 2 and 3. Normalize, stoplist, pre-filter, merge ───────────────────
     const { candidates } = buildCandidates(results);
     if (candidates.length < MIN_SAFE_TOPICS) {
-      return failRun('not enough candidates after normalization', candidates.length);
+      return await failRun('not enough candidates after normalization', candidates.length);
     }
 
-    // ── 4 and 5. Score and classify ───────────────────────────────────────
-    const previous = await readPreviousRun(supabase, runDate);
-    const overrides = await readOverrides(supabase);
+    const [previous, overrides] = await Promise.all([
+      readPreviousRun(supabase, runDate),
+      readOverrides(supabase),
+    ]);
 
-    let classified;
+    // ── 4 and 5. Classify ─────────────────────────────────────────────────
+    let classified: TrendClassifyResult;
     try {
       classified = await runTrendClassify(candidates, SOURCE_LABELS);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      await supabase
-        .from('marketing_trend_runs')
-        .update({
-          ai_error: message,
-          candidate_count: candidates.length,
-          source_stats: sourceStats,
-          finished_at: new Date().toISOString(),
-        })
-        .eq('id', runId);
-      return failRun(`classify failed: ${message}`, candidates.length);
+      return await failRun(`classify failed: ${message}`, candidates.length);
     }
 
-    const topics = classified.topics.filter((topic) => !overrides.hidden.has(topic.key));
-    if (topics.length < MIN_SAFE_TOPICS) {
-      return failRun(
-        `only ${topics.length} safe topics (minimum ${MIN_SAFE_TOPICS})`,
+    // A duplicate the AI spotted still counts for the cross-source bonus.
+    applyClassifyMerges(candidates, classified.merges);
+
+    const safeTopics = classified.topics.filter((topic) => !overrides.hidden.has(topic.key));
+    if (safeTopics.length < MIN_SAFE_TOPICS) {
+      return await failRun(
+        `only ${safeTopics.length} safe topics (minimum ${MIN_SAFE_TOPICS})`,
         candidates.length
       );
     }
 
     // ── 6. Rank ───────────────────────────────────────────────────────────
-    const today = topics
-      .map((topic) => {
-        const candidate = candidates.find((entry) => entry.key === topic.key);
-        const sources = candidate?.sources ?? [];
-        const previousEntry = previous.get(topic.key);
-        const firstSeen = previousEntry?.firstSeen ?? runDate;
-        const daysTrending = Math.max(
-          1,
-          Math.round(
-            (Date.parse(`${runDate}T00:00:00Z`) - Date.parse(`${firstSeen}T00:00:00Z`)) /
-              86_400_000
-          ) + 1
-        );
-        const currentRank = candidates.findIndex((entry) => entry.key === topic.key) + 1;
-        const momentum: TrendMomentum = !previousEntry
-          ? 'new'
-          : previousEntry.rank > currentRank
-            ? 'rising'
-            : 'steady';
-        const score = finalScore({ sources, momentum, stayFit: topic.stayFit });
-        return {
-          topic_key: topic.key,
-          title: topic.title,
-          summary: topic.summary,
-          category: topic.category,
-          stay_fit: topic.stayFit,
-          score,
-          momentum,
-          days_trending: daysTrending,
-          first_seen: firstSeen,
-          sources,
-          angles: topic.angles,
-          caption_idea: topic.captionIdea,
-          hashtags: topic.hashtags,
-          brand_guard: topic.brandGuard,
-          pinned: overrides.pinned.has(topic.key),
-          manual: candidate?.sources.some((entry) => entry.source === 'editor') ?? false,
-        };
-      })
-      .sort((a, b) => {
-        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-        return b.score - a.score;
-      })
-      .slice(0, 25);
+    const today = rankTodayTopics({
+      topics: safeTopics,
+      candidates,
+      previous,
+      overrides,
+      runDate,
+    });
 
     // ── 7. Publish ────────────────────────────────────────────────────────
     const { data: publishResult, error: publishError } = await supabase.rpc(
@@ -427,14 +533,15 @@ export async function runTrendsPipeline(options: TrendRunOptions): Promise<Trend
       { p_run_id: runId, p_run_date: runDate, p_today: today }
     );
     if (publishError) {
-      return failRun(`publish failed: ${publishError.message}`, candidates.length);
+      return await failRun(`publish failed: ${publishError.message}`, candidates.length);
     }
     const published = publishResult as { ok?: boolean; error?: string } | null;
     if (!published?.ok) {
-      return failRun(published?.error ?? 'publish was refused', candidates.length);
+      return await failRun(published?.error ?? 'publish was refused', candidates.length);
     }
 
-    await supabase
+    // The RPC marked the run published; this fills in what the AI cost and saw.
+    const { error: metricsError } = await supabase
       .from('marketing_trend_runs')
       .update({
         ai_provider: classified.provider,
@@ -447,6 +554,10 @@ export async function runTrendsPipeline(options: TrendRunOptions): Promise<Trend
         source_stats: sourceStats,
       })
       .eq('id', runId);
+    if (metricsError) {
+      // The list is live; losing the cost columns must not turn a shipped run red.
+      console.error('[marketing-trends] could not record run metrics:', metricsError.message);
+    }
 
     return {
       runId,
@@ -459,6 +570,6 @@ export async function runTrendsPipeline(options: TrendRunOptions): Promise<Trend
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return failRun(message);
+    return await failRun(message);
   }
 }
