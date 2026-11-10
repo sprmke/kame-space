@@ -14,6 +14,8 @@ type PropertyGuestLimitReminderProps = {
   partySize?: number;
   /** Residence occupancy rule for the "age N or below" hint. */
   childMaxAge?: number;
+  /** Residence copy override; when set it replaces the generated message. */
+  message?: string;
   className?: string;
 };
 
@@ -21,10 +23,12 @@ export function PropertyGuestLimitReminder({
   capacity,
   partySize = 0,
   childMaxAge = DEFAULT_GUEST_AGE_RULES.childMaxAge,
+  message: messageOverride,
   className,
 }: PropertyGuestLimitReminderProps) {
   const rules: GuestAgeRules = { ...DEFAULT_GUEST_AGE_RULES, childMaxAge };
-  const message = buildGuestLimitMessage(capacity, partySize, undefined, rules);
+  const generated = buildGuestLimitMessage(capacity, partySize, undefined, rules);
+  const message = messageOverride?.trim() || generated;
 
   return (
     <div

@@ -99,7 +99,9 @@
     "organizationName": "Kame Space",
     "defaultParkingRateGuest": 400,
     "petFee": 500,
-    "downPayment": 5000
+    "downPayment": 5000,
+    "copy": {},
+    "terms": {}
   },
   "documentRequirements": {
     "residenceDefault": [

@@ -66,6 +66,7 @@ import {
   formatPetPolicyTitle,
   formatResidenceShortName,
   pickGuestBrandHeaderProps,
+  resolveGuestCopy,
 } from '@/features/guest/form/lib/guestFormBranding';
 import {
   clampGuestFormStep,
@@ -355,6 +356,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
         childMaxAge: guestPaymentInfo.childMaxAge,
       },
       residenceName: guestPaymentInfo.residenceName,
+      copy: guestPaymentInfo.copy,
       bookedDates,
       cleaningBufferMinutes: guestPaymentInfo.cleaningBufferMinutes,
       currentBookingId,
@@ -371,18 +373,40 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
       guestPaymentInfo.primaryGuestMinAge,
       guestPaymentInfo.childMaxAge,
       guestPaymentInfo.residenceName,
+      guestPaymentInfo.copy,
       bookedDates,
       guestPaymentInfo.cleaningBufferMinutes,
       currentBookingId,
     ]
   );
 
-  const parkingNoPaidDescription = formatNoPaidParkingDescription(guestPaymentInfo.residenceName);
-  const parkingPaidDescription = formatPaidParkingDescription(guestPaymentInfo.residenceName);
-  const petPolicyTitle = formatPetPolicyTitle(guestPaymentInfo.residenceName);
+  const parkingNoPaidDescription = resolveGuestCopy(
+    guestPaymentInfo,
+    'guestForm.parking.noPaidDescription',
+    formatNoPaidParkingDescription(guestPaymentInfo.residenceName)
+  );
+  const parkingPaidDescription = resolveGuestCopy(
+    guestPaymentInfo,
+    'guestForm.parking.paidDescription',
+    formatPaidParkingDescription(guestPaymentInfo.residenceName)
+  );
+  const petPolicyTitle = resolveGuestCopy(
+    guestPaymentInfo,
+    'guestForm.pets.policyTitle',
+    formatPetPolicyTitle(guestPaymentInfo.residenceName)
+  );
   const petPolicyResidence =
     formatResidenceShortName(guestPaymentInfo.residenceName) || 'The building';
-  const gafEmailHint = formatGafEmailHint(guestPaymentInfo.residenceName);
+  const petPolicyBody = resolveGuestCopy(
+    guestPaymentInfo,
+    'guestForm.pets.policyBody',
+    `${petPolicyResidence} requires complete pet details and vaccination records for PMO approval.`
+  );
+  const gafEmailHint = resolveGuestCopy(
+    guestPaymentInfo,
+    'guestForm.contact.emailHint',
+    formatGafEmailHint(guestPaymentInfo.residenceName)
+  );
   const petFeeLine = formatPetFeeLine(guestPaymentInfo.petFee);
   const brandHeader = pickGuestBrandHeaderProps(guestPaymentInfo);
 
@@ -1938,6 +1962,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                       seedKey={guestSectionSeedKey}
                       guestCapacity={guestCapacity}
                       ageRules={visibilityFlags.ageRules}
+                      copy={guestPaymentInfo.copy}
                       propertySlug={propertySlug}
                       onValidIdPreviewChange={(field, preview) =>
                         setValidIdPreviews((prev) => ({ ...prev, [field]: preview }))
@@ -2401,10 +2426,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                             <li>
                               Use the service elevator only. Keep pets leashed outside the unit.
                             </li>
-                            <li>
-                              {petPolicyResidence} requires complete pet details and vaccination
-                              records for PMO approval.
-                            </li>
+                            <li>{petPolicyBody}</li>
                             <li>
                               No pets allowed in: Main Lobby, Viewing Deck, Common/Amenity Areas,
                               Roof Deck

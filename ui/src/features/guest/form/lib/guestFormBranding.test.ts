@@ -12,6 +12,7 @@ import {
   formatParkingStepHint,
   formatGuestSuccessAdministration,
   formatPayParkingLastMinuteWarning,
+  resolveGuestCopy,
   formatGuestContactHelp,
   formatGuestMessengerReturn,
   formatGuestCopyPasteHint,
@@ -140,5 +141,36 @@ describe('pickGuestOperationalHeaderProps', () => {
 describe('PLATFORM_BRAND_NAME', () => {
   it('is defined', () => {
     expect(PLATFORM_BRAND_NAME).toBeDefined();
+  });
+});
+
+describe('resolveGuestCopy', () => {
+  it('falls back to the built-in copy when the residence sets nothing', () => {
+    expect(resolveGuestCopy({ copy: {} }, 'guestForm.pets.policyTitle', 'Built-in title')).toBe(
+      'Built-in title'
+    );
+    expect(resolveGuestCopy(undefined, 'guestForm.pets.policyTitle', 'Built-in title')).toBe(
+      'Built-in title'
+    );
+  });
+
+  it('prefers the residence override, trimmed', () => {
+    expect(
+      resolveGuestCopy(
+        { copy: { 'guestForm.pets.policyTitle': '  HOA pet rules  ' } },
+        'guestForm.pets.policyTitle',
+        'Built-in title'
+      )
+    ).toBe('HOA pet rules');
+  });
+
+  it('ignores a blank stored value instead of rendering an empty string', () => {
+    expect(
+      resolveGuestCopy(
+        { copy: { 'guestForm.pets.policyTitle': '   ' } },
+        'guestForm.pets.policyTitle',
+        'Built-in title'
+      )
+    ).toBe('Built-in title');
   });
 });

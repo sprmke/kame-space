@@ -21,6 +21,7 @@ import {
   type PropertyGuestCapacity,
   DEFAULT_PROPERTY_GUEST_CAPACITY,
 } from '@/features/guest/form/lib/guestCounts';
+import type { GuestResidenceCopy } from '@/features/guest/form/lib/guestFormBranding';
 import type { GuestFormData } from '@/features/guest/form/schemas/guestFormSchema';
 
 import { Button } from '@/components/ui/button';
@@ -100,6 +101,8 @@ type GuestFormGuestsSectionProps = {
   guestCapacity?: PropertyGuestCapacity;
   /** Residence age rules from `get-guest-payment-info`; platform defaults when absent. */
   ageRules?: GuestAgeRules;
+  /** Residence copy overrides (guest limit message). */
+  copy?: Partial<GuestResidenceCopy>;
   /** Resolves the property for the identity session (public guest endpoint). */
   propertySlug?: string;
 };
@@ -128,6 +131,7 @@ export function GuestFormGuestsSection({
   seedKey,
   guestCapacity = DEFAULT_PROPERTY_GUEST_CAPACITY,
   ageRules = DEFAULT_GUEST_AGE_RULES,
+  copy,
   propertySlug = '',
 }: GuestFormGuestsSectionProps) {
   const guestEmailForIdentity = String(form.watch('guestEmail') ?? '');
@@ -362,6 +366,7 @@ export function GuestFormGuestsSection({
           capacity={guestCapacity}
           partySize={partySize}
           childMaxAge={ageRules.childMaxAge}
+          message={copy?.['guestForm.guests.limitMessage']}
         />
       )}
 

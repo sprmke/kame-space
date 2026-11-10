@@ -15,6 +15,7 @@ import {
   formatGuestMessengerReturn,
   formatGuestSuccessAdministration,
   pickGuestBrandHeaderProps,
+  resolveGuestCopy,
 } from '@/features/guest/form/lib/guestFormBranding';
 import { useGuestPropertySlug } from '@/features/guest/hooks/useGuestPropertySlug';
 import {
@@ -59,7 +60,11 @@ export function GuestFormSuccess() {
   const { data: guestBrand = DEFAULT_GUEST_PAYMENT_INFO } = useGuestPaymentInfo();
   const brandHeader = pickGuestBrandHeaderProps(guestBrand);
   const organizationName = guestBrand.organizationName?.trim() || 'us';
-  const administrationLabel = formatGuestSuccessAdministration(guestBrand.residenceName);
+  const administrationLabel = resolveGuestCopy(
+    guestBrand,
+    'success.administrationLabel',
+    formatGuestSuccessAdministration(guestBrand.residenceName)
+  );
   const bookingSource = bookingSourceFromUrlSearchParams(searchParams);
   const isAirbnb = bookingSource === 'Airbnb';
   const isFacebook = bookingSource === 'Facebook';

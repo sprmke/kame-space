@@ -106,6 +106,10 @@ export type GuestPaymentInfoDto = {
   petFee: number;
   /** Flat per-booking down payment (`app_settings.default_down_payment`). */
   downPayment: number;
+  /** Residence copy overrides for the guest-facing keys (§4.6). Only keys the row sets. */
+  copy: Partial<Record<ResidenceCopyKey, string>>;
+  /** Residence term overrides (building admin, checkpoint). Only keys the row sets. */
+  terms: Partial<Record<ResidenceTermKey, string>>;
   /** Listing lifecycle state — drives the guest "not taking bookings" screen. */
   listingState: 'pending_verification' | 'live' | 'paused' | 'suspended' | 'archived';
   acceptingBookings: boolean;
@@ -142,6 +146,11 @@ import { getEmailAutomationDefaults } from './propertyEmailAutomationDefaults.ts
 import { DEFAULT_RESIDENCE_NAME } from './propertyResidenceDefaults.ts';
 import { loadDevelopmentPmoEmailByName } from './developmentSerialize.ts';
 import { resolveGuestFormSettings, type GuestFormSettings } from './guestFormSettings.ts';
+import {
+  loadResidenceProfileForProperty,
+  type ResidenceCopyKey,
+  type ResidenceTermKey,
+} from './residenceProfile.ts';
 import { getDefaultPropertyId } from './propertyScope.ts';
 import { loadPropertyPricing } from './propertyPricing.ts';
 import {
@@ -570,6 +579,8 @@ export function buildGuestPaymentInfoDto(input: {
   downPayment: number;
   status: string | null;
   inactiveReason: string | null;
+  copy?: Partial<Record<ResidenceCopyKey, string>>;
+  terms?: Partial<Record<ResidenceTermKey, string>>;
 }): GuestPaymentInfoDto {
   const s = input.settings;
   const guestForm = input.guestForm;
@@ -613,6 +624,8 @@ export function buildGuestPaymentInfoDto(input: {
     defaultParkingRateGuest: s.defaultParkingRateGuest,
     petFee: input.petFee,
     downPayment: input.downPayment,
+    copy: input.copy ?? {},
+    terms: input.terms ?? {},
   };
 }
 
@@ -620,7 +633,7 @@ export async function serializeGuestPaymentInfo(
   propertyId?: string | null
 ): Promise<GuestPaymentInfoDto> {
   const resolvedPropertyId = propertyId ?? (await getDefaultPropertyId());
-  const [s, guestForm, pricing, lifecycleRow] = await Promise.all([
+  const [s, guestForm, pricing, lifecycleRow, profile] = await Promise.all([
     resolveAppSettings(resolvedPropertyId),
     resolveGuestFormSettings(resolvedPropertyId),
     loadPropertyPricing(resolvedPropertyId),
@@ -629,6 +642,8 @@ export async function serializeGuestPaymentInfo(
       .select('status, inactive_reason')
       .eq('id', resolvedPropertyId)
       .maybeSingle(),
+    // Guest-facing copy and terms ride along so the anon form makes no extra request (§4.7).
+    loadResidenceProfileForProperty(createServiceClient(), resolvedPropertyId, { strict: false }),
   ]);
 
   return buildGuestPaymentInfoDto({
@@ -638,6 +653,8 @@ export async function serializeGuestPaymentInfo(
     downPayment: pricing.downPayment,
     status: (lifecycleRow.data?.status as string | null) ?? null,
     inactiveReason: (lifecycleRow.data?.inactive_reason as string | null) ?? null,
+    copy: profile.copy,
+    terms: profile.terms,
   });
 }
 

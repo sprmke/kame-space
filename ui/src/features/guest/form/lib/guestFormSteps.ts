@@ -1,6 +1,10 @@
 import { CalendarDays, Car, FileText, PawPrint, User } from 'lucide-react';
 
-import { formatParkingStepHint } from '@/features/guest/form/lib/guestFormBranding';
+import {
+  formatParkingStepHint,
+  resolveGuestCopy,
+  type GuestResidenceCopy,
+} from '@/features/guest/form/lib/guestFormBranding';
 import type { GuestFormData } from '@/features/guest/form/schemas/guestFormSchema';
 import {
   createGuestFormSchema,
@@ -21,6 +25,8 @@ export type GuestFormStepConfig = {
 
 export type GuestFormVisibilityFlags = GuestFormSchemaOptions & {
   residenceName: string | null;
+  /** Residence copy overrides for the guest-facing strings. */
+  copy?: Partial<GuestResidenceCopy>;
 };
 
 const ALL_GUEST_FORM_STEPS: GuestFormStepConfig[] = [
@@ -68,7 +74,14 @@ function buildVisibleSteps(flags: GuestFormVisibilityFlags): GuestFormStepConfig
 export function getGuestFormSteps(flags: GuestFormVisibilityFlags): GuestFormStepConfig[] {
   return buildVisibleSteps(flags).map((step) =>
     step.id === 3 && flags.residenceName
-      ? { ...step, hint: formatParkingStepHint(flags.residenceName) }
+      ? {
+          ...step,
+          hint: resolveGuestCopy(
+            flags,
+            'guestForm.parking.stepHint',
+            formatParkingStepHint(flags.residenceName)
+          ),
+        }
       : step
   );
 }
