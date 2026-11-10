@@ -833,13 +833,18 @@ export function InboxConversationView({
                           end: threadSearch.activeMatch.end,
                         }
                       : null;
+                  // Meta has no API to edit or unsend a Page message. Offering either
+                  // would change only the copy in Kame while the guest keeps seeing the
+                  // original, so it is hidden on Facebook and Instagram threads.
                   const showEdit =
+                    isWeb &&
                     !isUnsent &&
                     outbound &&
                     canHostEditMessage(msg, messages) &&
                     !!onEdit &&
                     !metaReplyPaused;
                   const showUnsend =
+                    isWeb &&
                     !isUnsent &&
                     outbound &&
                     canHostUnsendMessage(msg, messages) &&

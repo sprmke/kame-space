@@ -225,17 +225,21 @@ export type MetaBackfillChunkPhase = 'messenger' | 'instagram';
 export type MetaBackfillChunkResult = {
   done: boolean;
   phase: MetaBackfillChunkPhase | 'complete';
-  nextUrl: string | null;
   syncedInChunk: number;
   metaHasMore: boolean;
 };
 
+/**
+ * Ask the server for the next page of the Meta conversation import.
+ *
+ * The request never carries a Graph URL and the response never returns one. The server
+ * keeps the paging cursor on the connection row and builds every Graph URL itself.
+ */
 export async function runMetaInboxBackfillChunk(
   orgSlug: string | null,
   orgId: string | null,
   state?: {
     phase?: MetaBackfillChunkPhase;
-    nextUrl?: string | null;
     finalize?: boolean;
     light?: boolean;
   },
@@ -250,7 +254,6 @@ export async function runMetaInboxBackfillChunk(
     },
     body: JSON.stringify({
       phase: state?.phase ?? 'messenger',
-      nextUrl: state?.nextUrl ?? null,
       finalize: state?.finalize === true,
       light: state?.light === true,
       ...inboxScopeBody(scope),
@@ -264,7 +267,6 @@ export async function runMetaInboxBackfillChunk(
       payload.phase === 'instagram' || payload.phase === 'messenger' || payload.phase === 'complete'
         ? (payload.phase as MetaBackfillChunkResult['phase'])
         : 'complete',
-    nextUrl: typeof payload.nextUrl === 'string' ? payload.nextUrl : null,
     syncedInChunk: typeof payload.syncedInChunk === 'number' ? payload.syncedInChunk : 0,
     metaHasMore: !!payload.metaHasMore,
   };
@@ -284,6 +286,8 @@ export async function fetchInboxThreads(
   conversations: InboxConversation[];
   nextCursor: string | null;
   metaHasMore: boolean;
+  /** False when the caller has no org-wide inbox Realtime and the list must poll. */
+  realtimeSupported: boolean;
 }> {
   const jwt = await getJwt();
   const params = new URLSearchParams();
@@ -303,6 +307,7 @@ export async function fetchInboxThreads(
     conversations: (payload.conversations as InboxConversation[] | undefined) ?? [],
     nextCursor: (payload.nextCursor as string | null | undefined) ?? null,
     metaHasMore: !!payload.metaHasMore,
+    realtimeSupported: payload.realtimeSupported !== false,
   };
 }
 

@@ -3,7 +3,7 @@
  * Optional property_id / parking_id scopes web + effective Meta threads.
  */
 
-import { resolveInboxAccess } from '../_shared/inboxAccess.ts';
+import { hasOrgInboxRealtimeAccess, resolveInboxAccess } from '../_shared/inboxAccess.ts';
 import { resolveMetaConnectionIdsForScope } from '../_shared/metaInboxScope.ts';
 import {
   attachConversationConnectionStatus,
@@ -45,7 +45,7 @@ function parseFilter(url: URL): InboxThreadFilter {
   };
 }
 
-serveAuthenticated('social-inbox-threads', async (req) => {
+serveAuthenticated('social-inbox-threads', async (req, user) => {
   if (req.method !== 'GET') {
     return jsonError(req, 'Method not allowed', 405);
   }
@@ -68,11 +68,19 @@ serveAuthenticated('social-inbox-threads', async (req) => {
   );
   const metaSyncAvailable = await isFeatureAvailable('inbox.meta.sync');
   const metaHasMore = metaSyncAvailable ? await resolveMetaHasMore(ctx.orgId) : false;
+  // Property-level members have `inbox:view` but no org-wide Realtime. The client polls
+  // instead, so their inbox still updates.
+  const realtimeSupported = await hasOrgInboxRealtimeAccess(
+    ctx.orgId,
+    user.id,
+    ctx.org.owner_id
+  );
 
   return jsonSuccess(req, {
     conversations,
     nextCursor: listResult.nextCursor,
     metaHasMore,
+    realtimeSupported,
     ...(metaSyncAvailable ? {} : { metaSyncPaused: true }),
   });
 });

@@ -38,6 +38,14 @@ async function metaReplyFeatureBlock(
   return featureUnavailableResponse(req, 'inbox.meta.reply', { user });
 }
 
+/**
+ * Meta has no API to edit or unsend a Page message. Changing the copy in Kame would
+ * leave the guest reading the original, so both are rejected on Meta threads.
+ */
+function metaBlocksEditOrUnsend(conv: SocialConversationRow): boolean {
+  return conv.platform === 'facebook' || conv.platform === 'instagram';
+}
+
 serveAuthenticated('social-inbox-messages', async (req, user) => {
   const url = new URL(req.url);
   const conversationId = url.searchParams.get('conversation_id')?.trim();
@@ -91,6 +99,9 @@ serveAuthenticated('social-inbox-messages', async (req, user) => {
     if (action === 'unsend') {
       const blocked = await metaReplyFeatureBlock(req, conv, user);
       if (blocked) return blocked;
+      if (metaBlocksEditOrUnsend(conv)) {
+        return jsonError(req, 'Messages sent to Facebook or Instagram cannot be unsent.', 400);
+      }
       const messageId = String(body.messageId ?? body.message_id ?? '').trim();
       if (!messageId) {
         return jsonError(req, 'messageId required', 400);
@@ -148,6 +159,9 @@ serveAuthenticated('social-inbox-messages', async (req, user) => {
   if (req.method === 'PATCH') {
     const blocked = await metaReplyFeatureBlock(req, conv, user);
     if (blocked) return blocked;
+    if (metaBlocksEditOrUnsend(conv)) {
+      return jsonError(req, 'Messages sent to Facebook or Instagram cannot be edited.', 400);
+    }
     const messageId = String(body.messageId ?? body.message_id ?? '').trim();
     const text = String(body.text ?? '').trim();
     if (!messageId || !text) {

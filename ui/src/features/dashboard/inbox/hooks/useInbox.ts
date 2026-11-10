@@ -95,6 +95,11 @@ type InboxThreadsPage = {
   /** True when this page ran a Meta backfill chunk before listing. */
   syncedFromMeta?: boolean;
   syncedInChunk?: number;
+  /**
+   * False when the caller has no org-wide inbox Realtime, so the list has to poll to stay
+   * live. Removed once the inbox moves to Broadcast plus a delta fetch.
+   */
+  realtimeSupported?: boolean;
 };
 
 function buildMetaSyncPageParam(
@@ -106,6 +111,13 @@ function buildMetaSyncPageParam(
 }
 
 const REALTIME_INVALIDATE_MS = 400;
+
+/**
+ * Poll interval for a caller without org-wide inbox Realtime.
+ *
+ * Removed once the inbox moves to Broadcast plus a delta fetch.
+ */
+const INBOX_FALLBACK_POLL_MS = 60_000;
 
 function emptyInboxThreadsData(): InfiniteData<InboxThreadsPage> {
   return {
@@ -571,7 +583,18 @@ export function useInboxThreads(
       return undefined;
     },
     enabled: mockMode || !!(orgSlug || orgId),
-    refetchInterval: false,
+    // The app-wide default is off, but the inbox is the surface where a stale list is
+    // most visible: coming back to the tab should show what arrived while it was away.
+    refetchOnWindowFocus: true,
+    refetchInterval: (query) => {
+      if (mockMode) return false;
+      const firstPage = query.state.data?.pages?.[0];
+      // A property-level member has `inbox:view` but no org-wide Realtime, so their list
+      // polls instead. Phase 4 replaces this with Broadcast plus a delta fetch.
+      if (firstPage?.realtimeSupported !== false) return false;
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return false;
+      return INBOX_FALLBACK_POLL_MS;
+    },
     retry: 1,
   });
 
@@ -659,6 +682,7 @@ export function useInboxMessages(
     getNextPageParam: (last) =>
       last.hasMore && last.messages.length > 0 ? last.messages[0]?.sent_at : undefined,
     enabled: (mockMode || !!(orgSlug || orgId)) && !!conversationId,
+    refetchOnWindowFocus: true,
   });
 
   const refreshMessages = useCallback(() => {
@@ -734,6 +758,8 @@ function useInboxConversationReadRealtime(
 
     let cancelled = false;
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let wasSubscribed = false;
+    let hadError = false;
 
     void (async () => {
       const { data } = await supabase.auth.getSession();
@@ -775,7 +801,20 @@ function useInboxConversationReadRealtime(
             markDirectionMessagesReadInCache(qc, msgKey, 'outbound', readAt);
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            hadError = true;
+            return;
+          }
+          if (status !== 'SUBSCRIBED') return;
+          // A re-subscribe means the socket was down. Messages sent in the meantime were
+          // never delivered, so pull the open thread once.
+          if (hadError || wasSubscribed) {
+            void onGuestMessageReceivedRef.current?.();
+          }
+          hadError = false;
+          wasSubscribed = true;
+        });
     })();
 
     return () => {
@@ -792,6 +831,8 @@ export function useInboxRealtime(orgId: string | null) {
 
     let cancelled = false;
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let wasSubscribed = false;
+    let hadError = false;
 
     void (async () => {
       const { data } = await supabase.auth.getSession();
@@ -854,7 +895,18 @@ export function useInboxRealtime(orgId: string | null) {
           },
           () => scheduleThreadsInvalidate(qc)
         )
-        .subscribe();
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            hadError = true;
+            return;
+          }
+          if (status !== 'SUBSCRIBED') return;
+          // A re-subscribe means the socket was down. Whatever arrived in the meantime was
+          // never delivered, so pull the list once instead of waiting for the next change.
+          if (hadError || wasSubscribed) scheduleThreadsInvalidate(qc);
+          hadError = false;
+          wasSubscribed = true;
+        });
 
       if (cancelled && channel) {
         void supabase.removeChannel(channel);
