@@ -735,6 +735,45 @@ Edge functions use `servePublic` / `serveAdmin` / `serveCronPost`; email-sending
 | 7 — Host coordination         | ✅      | Guest view card, per-booking door code override, guest-experience readiness card, essentials editor, **Show to guests** + phase picker, stay guide editor preview with sample essentials. **7.5 first-trip-view notification deferred:** it needs trip-view tracking, which nothing else uses yet, for a notification that is off by default.                                                                                                                     |
 | 8 — Hardening and QA          | ✅      | New Playwright specs (`tripPendingActions`, `stayGuideEssentials`, `accountLanding`), manual script `docs/guides/testing/guest-journey-manual.md`, route guides, support FAQs.                                                                                                                                                                                                                                                                                    |
 
+### Findings coverage (§1.2)
+
+| Finding                                      | Where it landed                                                                 |
+| -------------------------------------------- | ------------------------------------------------------------------------------- |
+| A1 Messages tab demanded dates               | Phase 2.4 / 2.5                                                                 |
+| A2 Trips + Messages missing from nav         | Phase 2.1                                                                       |
+| A3 Account opened on Profile                 | Phase 2.2                                                                       |
+| A4 "Stays" meant messages                    | Phase 2.2                                                                       |
+| A5 Listing did not know your trip            | Phase 2.6 (banner shows on phone and desktop)                                   |
+| A6 Three shells                              | Phase 2.3 booking-scoped tab set; the stay guide keeps its own chrome by design |
+| A7 Dead ends                                 | Return bar, chat chip, guide unavailable state links to trips                   |
+| A8 Three booking entry points                | Kept, with the 2.9 decision above                                               |
+| B1 "Booking Confirmed!" while pending        | Phase 1.1 / 1.3                                                                 |
+| B2 Legacy Messenger / GAF copy               | Phase 1.3 / 1.6                                                                 |
+| B3 Success page duplicated the trip          | Phase 1.3 (pure redirect)                                                       |
+| B4 No guest email on submit                  | Phase 1.5                                                                       |
+| B5 No review expectation                     | Phase 1.2 / D11                                                                 |
+| C1 No timeline                               | Phase 3.2                                                                       |
+| C2 Receipt only through chat                 | Phase 3.3                                                                       |
+| C3 Arrival steps only in the stay guide      | Phase 3.5                                                                       |
+| C4 No structured essentials                  | Phase 3.4                                                                       |
+| C5 Host templates never reached guests       | Phase 3.6                                                                       |
+| D1 Stay guide link dead until check-in day   | Phase 4.1                                                                       |
+| D2 No route back from the guide              | Phase 4.4                                                                       |
+| D3 Plan gate left lower tiers with nothing   | E1                                                                              |
+| E1 Threads not linked to bookings            | Phase 5.1 / 5.2                                                                 |
+| E2 Hub pushed pre-booking links              | Phase 5.3                                                                       |
+| E3 AI "View stay" opened the inbox           | Phase 5.4                                                                       |
+| E4 Host reply email opened the generic inbox | Phase 5.5                                                                       |
+| E5 Chat header had no booking context        | Phase 5.3                                                                       |
+| F1 Azure-specific acknowledgement            | Phase 6.2                                                                       |
+| F2 Three words for one milestone             | Phase 6.4                                                                       |
+| F3 Trip link opt-in                          | Phase 6.3                                                                       |
+| F4 No pre-arrival reminder                   | Phase 6.5                                                                       |
+| F5 No guest push                             | Deferred, §9                                                                    |
+| G1 Host could not see the guest's journey    | Phase 7.1                                                                       |
+| G2 No content readiness check                | Phase 7.2                                                                       |
+| G3 Inbox Insert had no trip link             | Phase 5.6                                                                       |
+
 **Known follow-ups, deliberately not in this change**
 
 - Guest web push (E11): needs a new `notifications.type` and guest recipient resolution.
