@@ -213,7 +213,7 @@ export function ParkingBasicInformationSection({ controller }: { controller: Set
 }
 
 export function ParkingPhotosSection({ controller }: { controller: SettingsController }) {
-  const { coverImage, setCoverImage, busy, draftCompletion } = controller;
+  const { media, setMedia, persistMediaOrder, busy, draftCompletion } = controller;
   const banner = parkingSettingsSectionBanner('media', draftCompletion.sectionMessages);
 
   return (
@@ -221,10 +221,15 @@ export function ParkingPhotosSection({ controller }: { controller: SettingsContr
       id="media"
       title="Photos"
       icon={ImageIcon}
-      description="Cover photo for the public listing."
+      description="Up to 3 photos for the public listing."
     >
       {banner ? <PropertySettingsSectionAlert message={banner} /> : null}
-      <ParkingMediaUpload coverImage={coverImage} onCoverChange={setCoverImage} disabled={busy} />
+      <ParkingMediaUpload
+        items={media}
+        onChange={setMedia}
+        onPersistOrder={persistMediaOrder}
+        disabled={busy}
+      />
     </AdminSection>
   );
 }
