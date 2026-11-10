@@ -192,7 +192,7 @@ sub-pages missing, no `lastmod` on static and place pages, no image entries, ori
 the canonical apex.
 
 - [x] SEO-1.0 Dynamic `/sitemap.xml` via middleware proxy to `public-sitemap`.
-- [ ] SEO-1.1 Derive `STATIC_SITEMAP_PATHS` from the D2 registry; `check:seo-routes` fails CI on drift.
+- [x] SEO-1.1 Derive `STATIC_SITEMAP_PATHS` from the D2 registry; `check:seo-routes` fails CI on drift.
 - [ ] SEO-1.2 Add `/hosts/:orgSlug` for orgs with at least one ACTIVE public listing (read from `public_listing_search` org column or a join; exclude unverified orgs).
 - [ ] SEO-1.3 Decide and add development sub-pages `/developments/:slug/properties` and `/developments/:slug/parking` (include only when the list is non-empty; they already set their own canonical).
 - [ ] SEO-1.4 Decide showcase (`/properties/:slug/showcase`) and stay guide: include only if their content is distinct from the detail page; otherwise canonical to the detail page and exclude (see SEO-4.7).
@@ -210,12 +210,12 @@ Current: shipped (dynamic, host-gated). Gaps: F5 drift and missing private paths
 uses request origin, no explicit AI crawler groups.
 
 - [x] SEO-2.0 Dynamic robots with `Disallow: /` on non-indexable hosts.
-- [ ] SEO-2.1 Add missing disallows: `/for-guests/`, `/for-hosts/login`, `/for-hosts/register`, `/guest-review`, `/vouchers`, `/tickets`, `/bookings/`, `/parking/` (booking-id route, not `/parkings`), `/*/document`, `/ingest/`, `/account/`. Verify each path against the router before adding, so no public route is blocked.
-- [ ] SEO-2.2 Generate `ui/public/robots.txt` from `ROBOTS_DISALLOW` at build (small Vite plugin or prebuild script) so the fallback cannot drift. `check:seo-routes` covers it too.
-- [ ] SEO-2.3 `Sitemap:` line uses the canonical origin (D3).
-- [ ] SEO-2.4 Explicit AI crawler groups per D4, each with the same disallows.
+- [x] SEO-2.1 Add missing disallows: `/for-guests/`, `/for-hosts/login`, `/for-hosts/register`, `/guest-review`, `/vouchers`, `/tickets`, `/bookings/`, `/parking/` (booking-id route, not `/parkings`), `/*/document`, `/ingest/`, `/account/`. Verify each path against the router before adding, so no public route is blocked.
+- [x] SEO-2.2 Generate `ui/public/robots.txt` from `ROBOTS_DISALLOW` at build (small Vite plugin or prebuild script) so the fallback cannot drift. `check:seo-routes` covers it too.
+- [x] SEO-2.3 `Sitemap:` line uses the canonical origin (D3).
+- [x] SEO-2.4 Explicit AI crawler groups per D4, each with the same disallows.
 - [ ] SEO-2.5 Confirm `/assets/`, fonts, `/brand/`, `/marketing/`, `/images/` are crawlable (Google needs JS and CSS to render).
-- [ ] SEO-2.6 Vitest: every registry route with `indexable: true` is allowed by the generated robots; every `indexable: false` route is disallowed or `noindex`.
+- [x] SEO-2.6 Vitest: every registry route with `indexable: true` is allowed by the generated robots; every `indexable: false` route is disallowed or `noindex`.
 - [ ] SEO-2.7 Test in Search Console robots.txt report after deploy.
 
 ### Item 3. Remove noindex tags (and add them where they belong)
@@ -223,11 +223,11 @@ uses request origin, no explicit AI crawler groups.
 Current: `index.html` has no robots meta (good). Only `/search` and trip pages set `noindex`.
 Gaps: no protection on preview deploys beyond robots, private shells have no `noindex`, soft 404s.
 
-- [ ] SEO-3.1 Audit: Vitest asserts no registry route with `indexable: true` ever passes `noindex`, and the shipped `index.html` has no robots meta on production builds.
-- [ ] SEO-3.2 Non-production hosts: emit `X-Robots-Tag: noindex, nofollow` from the middleware for every matched path on non-indexable hosts, and a build-time `<meta name="robots" content="noindex">` in `index.html` when `VITE_NODE_ENV` is not production (Vite `transformIndexHtml`). `Disallow` alone does not de-index URLs Google already knows.
+- [x] SEO-3.1 Audit: Vitest asserts no registry route with `indexable: true` ever passes `noindex`, and the shipped `index.html` has no robots meta on production builds.
+- [x] SEO-3.2 Non-production hosts: emit `X-Robots-Tag: noindex, nofollow` from the middleware for every matched path on non-indexable hosts, and a build-time `<meta name="robots" content="noindex">` in `index.html` when `VITE_NODE_ENV` is not production (Vite `transformIndexHtml`). `Disallow` alone does not de-index URLs Google already knows.
 - [ ] SEO-3.3 `noindex` in the dashboard shell, guest account shell and auth pages via a `usePageMeta({ noindex: true })` default in those layouts.
-- [ ] SEO-3.4 `noindex` + real 404 status for dead listings and unknown routes (see SEO-12.2).
-- [ ] SEO-3.5 Preview pages (`/v2`, `/for-hosts/v2`, `/for-hosts/v3`, `/explore-preview`): `noindex` meta in addition to robots, or remove the routes if obsolete.
+- [x] SEO-3.4 `noindex` + real 404 status for dead listings and unknown routes (see SEO-12.2).
+- [x] SEO-3.5 Preview pages (`/v2`, `/for-hosts/v2`, `/for-hosts/v3`, `/explore-preview`): `noindex` meta in addition to robots, or remove the routes if obsolete.
 - [ ] SEO-3.6 After deploy, review Search Console "Excluded by noindex tag" and "Blocked by robots.txt" for anything public.
 
 ### Item 4. Add canonical tags
@@ -235,12 +235,12 @@ Gaps: no protection on preview deploys beyond robots, private shells have no `no
 Current: listing detail, list and place pages set canonical. Gaps: F2, F3, F4, trailing slash
 and query-string policy.
 
-- [ ] SEO-4.1 Canonical on every public page via registry defaults (About, Contact, Cookies, Privacy, Terms, Support, Services, For Hosts, Pricing, Host page, Showcase, Stay guide, NotFound none).
-- [ ] SEO-4.2 Fix `usePageMeta` cleanup: restore canonical, `og:url`, `og:title`, `twitter:title` to the route default on unmount (or own every tag and reset all of them).
-- [ ] SEO-4.3 Canonical origin from `VITE_PUBLIC_SITE_ORIGIN` in `usePageMeta`, `renderMetaTags`, JSON-LD (D3).
-- [ ] SEO-4.4 Static `<link rel="canonical" href="https://kamespace.com/">` in `index.html` replaced by the middleware snapshot per route; remove the hardcoded `og:url` homepage value for non-home routes (snapshot sets it).
-- [ ] SEO-4.5 Trailing slash policy: set `"trailingSlash": false` in `ui/vercel.json` so `/properties/` 308s to `/properties`. Confirm the PWA scope and SW routes still match.
-- [ ] SEO-4.6 Query strings: filters, sort, map bounds, `?property=` and UTM params never appear in canonicals. Paginated list pages: canonical to themselves with `?page=N` only if pagination is URL-driven; otherwise canonical to page 1.
+- [x] SEO-4.1 Canonical on every public page via registry defaults (About, Contact, Cookies, Privacy, Terms, Support, Services, For Hosts, Pricing, Host page, Showcase, Stay guide, NotFound none).
+- [x] SEO-4.2 Fix `usePageMeta` cleanup: restore canonical, `og:url`, `og:title`, `twitter:title` to the route default on unmount (or own every tag and reset all of them).
+- [x] SEO-4.3 Canonical origin from `VITE_PUBLIC_SITE_ORIGIN` in `usePageMeta`, `renderMetaTags`, JSON-LD (D3).
+- [x] SEO-4.4 Static `<link rel="canonical" href="https://kamespace.com/">` in `index.html` replaced by the middleware snapshot per route; remove the hardcoded `og:url` homepage value for non-home routes (snapshot sets it).
+- [x] SEO-4.5 Trailing slash policy: set `"trailingSlash": false` in `ui/vercel.json` so `/properties/` 308s to `/properties`. Confirm the PWA scope and SW routes still match.
+- [x] SEO-4.6 Query strings: filters, sort, map bounds, `?property=` and UTM params never appear in canonicals. Paginated list pages: canonical to themselves with `?page=N` only if pagination is URL-driven; otherwise canonical to page 1.
 - [ ] SEO-4.7 Showcase and stay guide canonical decision (self vs detail), applied with SEO-1.4.
 - [ ] SEO-4.8 Lowercase redirect: middleware 301s `/Properties/Foo` to `/properties/foo` on listing routes.
 - [ ] SEO-4.9 `www.` and `app.` hosts 301 to apex for public routes (Vercel domain config + `vercel.json` host redirects), per D3.
@@ -340,9 +340,9 @@ links in crawler HTML (F1), no breadcrumbs, possible JS-only navigation.
 Current: F6, F7, no link checker.
 
 - [ ] SEO-12.1 Move client-only redirects to server 301s in `ui/vercel.json`: `/for-hosts/preview`, `/developments/:slug/parking/category`, `/developments/:slug/parking/list`, `/sign-in`, account aliases (`messages`, `wishlist`, `settings`). Keep the client `<Navigate>` as fallback.
-- [ ] SEO-12.2 Real 404s: middleware returns status 404 with the SPA shell plus `noindex` when a listing, place, development or host slug does not resolve (for all UAs on those paths; humans still get the NotFound page from React). Unknown top-level routes: add a narrow matcher or `vercel.json` rule only if it does not break the SPA fallback; otherwise rely on `noindex` in `NotFoundPage`.
-- [ ] SEO-12.3 `NotFoundPage` sets `noindex`.
-- [ ] SEO-12.4 New `scripts/seo/crawl-audit.mjs` (`bun run seo:audit -- --origin <url>`): reads the sitemap, fetches each URL with a crawler UA and a browser UA, follows internal links one level, and reports status codes, redirect chains, missing/duplicate titles and descriptions, canonical mismatch, `noindex` on sitemap URLs, images without alt, broken images (Storage 404), JSON-LD parse errors, and orphans. Output Markdown + JSON to `docs/workflow/in-progress/seo-evidence/`.
+- [x] SEO-12.2 Real 404s: middleware returns status 404 with the SPA shell plus `noindex` when a listing, place, development or host slug does not resolve (for all UAs on those paths; humans still get the NotFound page from React). Unknown top-level routes: add a narrow matcher or `vercel.json` rule only if it does not break the SPA fallback; otherwise rely on `noindex` in `NotFoundPage`.
+- [x] SEO-12.3 `NotFoundPage` sets `noindex`.
+- [x] SEO-12.4 New `scripts/seo/crawl-audit.mjs` (`bun run seo:audit -- --origin <url>`): reads the sitemap, fetches each URL with a crawler UA and a browser UA, follows internal links one level, and reports status codes, redirect chains, missing/duplicate titles and descriptions, canonical mismatch, `noindex` on sitemap URLs, images without alt, broken images (Storage 404), JSON-LD parse errors, and orphans. Output Markdown + JSON to `docs/workflow/in-progress/seo-evidence/`.
 - [ ] SEO-12.5 External link check (report only, never fails CI): host-provided URLs (Facebook, Instagram, maps), footer socials, email template links.
 - [ ] SEO-12.6 Stored media URLs: report `settings.media[].url` and cover image URLs that 404 in Storage (deleted files still referenced).
 - [ ] SEO-12.7 Schedule `seo:audit` weekly against production in `web-probe.yml` (or a new workflow) and on PRs that touch `ui/src/routes`, `features/guest/**/routes`, `lib/seo`, `middleware.ts`, `public-sitemap`, against the preview URL.
@@ -442,12 +442,12 @@ Current: none.
 
 ## 4. Foundation tasks (Phase 1, shared by many items)
 
-- [ ] SEO-0.1 Public route registry `ui/src/lib/seo/publicRoutes.ts` (D2) covering every guest route from `features/guest/*/routes/index.tsx`, each marked `indexable` or not with a reason.
-- [ ] SEO-0.2 `VITE_PUBLIC_SITE_ORIGIN` env + helper (D3); register in env docs and `.env.example` files.
-- [ ] SEO-0.3 Move static page copy (About, Services, For Hosts, Pricing intro, Support intro, legal page summaries) into `content.ts` modules shared by the React page and the snapshot renderer, without changing what renders.
-- [ ] SEO-0.4 Crawler snapshot renderer (D1): `ui/src/lib/seo/snapshot/*.ts`, pure functions returning escaped HTML for `#root` (one `<h1>`, summary, facts list, image `<img>` with alt, links, breadcrumbs) plus head tags. No `@/` imports (middleware bundle).
-- [ ] SEO-0.5 Extend `ui/middleware.ts` matcher to all indexable registry routes plus `/llms.txt`, `/llms-full.txt`, IndexNow key file. Keep the "non-crawler returns `next()` immediately" fast path except for 301/404 handling (SEO-12.2, SEO-17.3).
-- [ ] SEO-0.6 `check:seo-routes` script: registry vs router paths (every guest route classified), vs `STATIC_SITEMAP_PATHS`, vs `public/robots.txt`. Add to `ci:quality` and CI.
+- [x] SEO-0.1 Public route registry `ui/src/lib/seo/publicRoutes.ts` (D2) covering every guest route from `features/guest/*/routes/index.tsx`, each marked `indexable` or not with a reason.
+- [x] SEO-0.2 `VITE_PUBLIC_SITE_ORIGIN` env + helper (D3); register in env docs and `.env.example` files.
+- [x] SEO-0.3 Move static page copy (About, Services, For Hosts, Pricing intro, Support intro, legal page summaries) into `content.ts` modules shared by the React page and the snapshot renderer, without changing what renders.
+- [x] SEO-0.4 Crawler snapshot renderer (D1): `ui/src/lib/seo/snapshot/*.ts`, pure functions returning escaped HTML for `#root` (one `<h1>`, summary, facts list, image `<img>` with alt, links, breadcrumbs) plus head tags. No `@/` imports (middleware bundle).
+- [x] SEO-0.5 Extend `ui/middleware.ts` matcher to all indexable registry routes plus `/llms.txt`, `/llms-full.txt`, IndexNow key file. Keep the "non-crawler returns `next()` immediately" fast path except for 301/404 handling (SEO-12.2, SEO-17.3).
+- [x] SEO-0.6 `check:seo-routes` script: registry vs router paths (every guest route classified), vs `STATIC_SITEMAP_PATHS`, vs `public/robots.txt`. Add to `ci:quality` and CI.
 - [ ] SEO-0.7 Measure Vercel middleware invocations and latency after widening the matcher; set an alert if p95 adds more than 150 ms for crawler requests.
 
 ---
@@ -528,3 +528,35 @@ must be covered (see SEO-9.3, item 17, SEO-6.6).
 | AI alt text cost or bad output                               | AI limits apply, host can edit, deterministic fallback, backfill dry run first.          |
 | HSTS preload locks a subdomain out                           | SEO-16.4 checks all subdomains before submission.                                        |
 | `app.kamespace.com` redirect breaks the host dashboard entry | D3: confirm its role first; redirect public routes only.                                 |
+
+---
+
+## Verification results
+
+Run on `feat/seo-foundation` (2026-11-11), worktree `.worktrees/seo-foundation`.
+
+| Gate                                                             | Result                                                                                                                                                                     |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run type-check`                                             | pass (app, PWA project, middleware project)                                                                                                                                |
+| `bun run lint`                                                   | 0 errors                                                                                                                                                                   |
+| `bun run test`                                                   | 5913 pass, 0 fail (incl. new `publicRoutes`, `siteOrigin`, `renderSnapshot`, `seoMiddleware`, `seoMeta` suites)                                                            |
+| `bun run build`                                                  | pass; `ui/dist/index.html` has no robots meta (SEO-3.1)                                                                                                                    |
+| `bun run check:seo-routes`                                       | OK — 69 routes classified, 12 static sitemap paths, robots.txt in sync                                                                                                     |
+| `bun run check:support-content`                                  | OK — 151 curated FAQs                                                                                                                                                      |
+| `bun run check:ai-knowledge-coverage`                            | OK — 79 guides meet their Q&A minimum                                                                                                                                      |
+| `bun run check:ai-tooling-sync`                                  | OK                                                                                                                                                                         |
+| Middleware smoke against the real built shell                    | `/about` as GPTBot: 200, 1 `<h1>`, canonical `https://kamespace.com/about`, snapshot injected, `#root` replaced                                                            |
+| `bun run seo:audit -- --origin https://kamespace.com --limit 12` | Baseline captured in `seo-evidence/`: 17 sitemap URLs, every page `h1-count 0`, `canonical-missing`, duplicate title/description. This is the F1/F2 gap the branch closes. |
+| `deno test _shared/publicSitemap_test.ts`                        | 4 pass. Full `bun run test:edge` fails locally on `npm:dayjs@1.11.10` resolution (installed 1.11.23), a pre-existing worktree environment issue unrelated to this change.  |
+
+### Left for later PRs
+
+Phase 3 onwards (titles and descriptions copy pass, schema enrichment, alt text, slugs and
+redirects, image compression, CWV, consoles, `llms.txt`) plus the post-deploy items below.
+
+Post-deploy checks that need production access, in order:
+
+1. `bun run seo:audit -- --origin https://kamespace.com --fail-on-error` after the Vercel
+   preview promotes.
+2. Search Console URL Inspection live test on `/`, one listing, one place page.
+3. Confirm middleware latency (SEO-0.7) in the Vercel dashboard.

@@ -905,6 +905,15 @@ Stay guide, security-deposit refund, and guest review links are per booking. Cal
 
 Yes. On the Calendar card choose Copy link, select the check-in and check-out dates, then Copy link. The guest opens the calendar with that range selected. You can also copy the calendar without dates.
 
+### Why doesn't my listing show up on Google or in an AI answer?
+
+- category: Public Pages
+- audience: host
+- source: docs/guides/routes/properties.md
+- order: 70
+
+A new listing can take a few weeks to be discovered, and search engines decide the order. To give it the best chance, publish it, keep the name, photos and description filled in, and use the listing's own public link when you share it. Only published listings are offered to search engines. If the listing is still missing after a month, ask support to check the public page.
+
 ### How do I block dates for a property?
 
 - category: Pricing & Availability
