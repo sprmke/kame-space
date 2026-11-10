@@ -177,6 +177,22 @@ function daysInMonth(y: number, m: number): number {
   return new Date(y, m, 0).getDate();
 }
 
+/**
+ * Step whole months, then clamp to the series day.
+ *
+ * Mirrors `_shared/financeRecurrence.ts#addRecurrenceInterval`. Clamping *after*
+ * `setMonth` rolls the date over first: 31 Mar + 1 month became 31 May, so every
+ * month shorter than the series day (Apr, Jun, Sep, Nov) was skipped entirely and
+ * a monthly series produced 8 entries a year instead of 12.
+ */
+function stepMonthsClamped(iso: string, months: number, anchorDay: number): string {
+  const { y, m } = parseIso(iso);
+  const total = y * 12 + (m - 1) + months;
+  const ty = Math.floor(total / 12);
+  const tm = (total % 12) + 1;
+  return formatIso(ty, tm, Math.min(anchorDay, daysInMonth(ty, tm)));
+}
+
 function twiceMonthlySlots(
   primaryDay: number,
   y: number,
@@ -226,6 +242,7 @@ function addInterval(
   primaryDay?: number
 ): string {
   const { y, m, d } = parseIso(iso);
+  const anchorDay = primaryDay ?? d;
   const date = new Date(y, m - 1, d);
   switch (interval) {
     case 'daily':
@@ -234,39 +251,18 @@ function addInterval(
     case 'weekly':
       date.setDate(date.getDate() + 7);
       break;
-    case 'monthly': {
-      const day = date.getDate();
-      date.setMonth(date.getMonth() + 1);
-      const last = daysInMonth(date.getFullYear(), date.getMonth() + 1);
-      date.setDate(Math.min(day, last));
-      break;
-    }
+    case 'monthly':
+      return stepMonthsClamped(iso, 1, anchorDay);
     case 'twice_monthly':
-      return addTwiceMonthly(iso, primaryDay ?? d);
-    case 'every_2_months': {
-      const day = date.getDate();
-      date.setMonth(date.getMonth() + 2);
-      const last = daysInMonth(date.getFullYear(), date.getMonth() + 1);
-      date.setDate(Math.min(day, last));
-      break;
-    }
-    case 'quarterly': {
-      const day = date.getDate();
-      date.setMonth(date.getMonth() + 3);
-      const last = daysInMonth(date.getFullYear(), date.getMonth() + 1);
-      date.setDate(Math.min(day, last));
-      break;
-    }
-    case 'every_6_months': {
-      const day = date.getDate();
-      date.setMonth(date.getMonth() + 6);
-      const last = daysInMonth(date.getFullYear(), date.getMonth() + 1);
-      date.setDate(Math.min(day, last));
-      break;
-    }
+      return addTwiceMonthly(iso, anchorDay);
+    case 'every_2_months':
+      return stepMonthsClamped(iso, 2, anchorDay);
+    case 'quarterly':
+      return stepMonthsClamped(iso, 3, anchorDay);
+    case 'every_6_months':
+      return stepMonthsClamped(iso, 6, anchorDay);
     case 'yearly':
-      date.setFullYear(date.getFullYear() + 1);
-      break;
+      return stepMonthsClamped(iso, 12, anchorDay);
   }
   return formatIso(date.getFullYear(), date.getMonth() + 1, date.getDate());
 }
@@ -277,6 +273,7 @@ function subtractInterval(
   primaryDay?: number
 ): string {
   const { y, m, d } = parseIso(iso);
+  const anchorDay = primaryDay ?? d;
   const date = new Date(y, m - 1, d);
   switch (interval) {
     case 'daily':
@@ -285,39 +282,18 @@ function subtractInterval(
     case 'weekly':
       date.setDate(date.getDate() - 7);
       break;
-    case 'monthly': {
-      const day = date.getDate();
-      date.setMonth(date.getMonth() - 1);
-      const last = daysInMonth(date.getFullYear(), date.getMonth() + 1);
-      date.setDate(Math.min(day, last));
-      break;
-    }
+    case 'monthly':
+      return stepMonthsClamped(iso, -1, anchorDay);
     case 'twice_monthly':
-      return subtractTwiceMonthly(iso, primaryDay ?? d);
-    case 'every_2_months': {
-      const day = date.getDate();
-      date.setMonth(date.getMonth() - 2);
-      const last = daysInMonth(date.getFullYear(), date.getMonth() + 1);
-      date.setDate(Math.min(day, last));
-      break;
-    }
-    case 'quarterly': {
-      const day = date.getDate();
-      date.setMonth(date.getMonth() - 3);
-      const last = daysInMonth(date.getFullYear(), date.getMonth() + 1);
-      date.setDate(Math.min(day, last));
-      break;
-    }
-    case 'every_6_months': {
-      const day = date.getDate();
-      date.setMonth(date.getMonth() - 6);
-      const last = daysInMonth(date.getFullYear(), date.getMonth() + 1);
-      date.setDate(Math.min(day, last));
-      break;
-    }
+      return subtractTwiceMonthly(iso, anchorDay);
+    case 'every_2_months':
+      return stepMonthsClamped(iso, -2, anchorDay);
+    case 'quarterly':
+      return stepMonthsClamped(iso, -3, anchorDay);
+    case 'every_6_months':
+      return stepMonthsClamped(iso, -6, anchorDay);
     case 'yearly':
-      date.setFullYear(date.getFullYear() - 1);
-      break;
+      return stepMonthsClamped(iso, -12, anchorDay);
   }
   return formatIso(date.getFullYear(), date.getMonth() + 1, date.getDate());
 }

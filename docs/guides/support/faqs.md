@@ -572,6 +572,15 @@ No. That ledger is for the parking slot's own operating transactions. Guest stay
 
 Yes. When you edit or delete a recurring transaction, you choose whether the change applies to that occurrence, that one and all future ones, or the whole series.
 
+### My expense repeats on the 31st. What happens in February?
+
+- category: Billing & Finance
+- audience: host
+- source: docs/guides/routes/org/property/finance.md
+- order: 45
+
+It moves to the last day of that month, so February is the 28th (the 29th in a leap year) and April is the 30th. The series still produces one entry every month, and it returns to the 31st in a month that has one.
+
 ### Do the finance charts follow the date range I pick?
 
 - category: Billing & Finance
