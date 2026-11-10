@@ -101,6 +101,10 @@ export type GuestStayGuideDto = {
   tripPath?: string | null;
   /** Host thread for this booking, so "Message host" opens the conversation directly. */
   chatPath?: string | null;
+  /** Wi-Fi, door code and contacts as an HTML block. Secrets are reveal-gated server-side. */
+  essentialsHtml?: string | null;
+  /** Guest-visible custom templates for this stay. */
+  hostSections?: Array<{ id: string; name: string; html: string }>;
 };
 
 type ApiSuccess<T> = { success: true; data: T };

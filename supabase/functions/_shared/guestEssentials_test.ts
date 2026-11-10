@@ -8,6 +8,7 @@ import {
   buildGuestEssentialsDto,
   parseEssentialsOverride,
   resolveEssentialsRevealAt,
+  buildGuestEssentialsHtml,
 } from './guestEssentials.ts';
 
 const ROW = {
@@ -137,4 +138,39 @@ Deno.test('buildGuestEssentialsDto - reports no door code when the property has 
     now: new Date('2026-12-01T00:00:00.000Z'),
   });
   assertEquals(dto?.hasDoorCode, false);
+});
+
+Deno.test('buildGuestEssentialsHtml - escapes host values', () => {
+  const dto = buildGuestEssentialsDto({
+    row: {
+      wifi_name: 'Kame <2604>',
+      wifi_password: 'pw&"1"',
+      door_code: '4821',
+      reveal_lead_hours: 24,
+    },
+    checkInDate: CHECK_IN_DATE,
+    checkInTime: CHECK_IN_TIME,
+    now: new Date('2026-12-09T06:00:00.000Z'),
+  });
+  const html = buildGuestEssentialsHtml(dto, null) ?? '';
+  assertEquals(html.includes('Kame &lt;2604&gt;'), true);
+  assertEquals(html.includes('pw&amp;&quot;1&quot;'), true);
+  assertEquals(html.includes('Kame <2604>'), false);
+});
+
+Deno.test('buildGuestEssentialsHtml - a withheld secret prints the reveal label, not the value', () => {
+  const dto = buildGuestEssentialsDto({
+    row: { wifi_name: 'Kame', wifi_password: 'secret', door_code: '4821', reveal_lead_hours: 24 },
+    checkInDate: CHECK_IN_DATE,
+    checkInTime: CHECK_IN_TIME,
+    now: new Date('2026-12-01T00:00:00.000Z'),
+  });
+  const html = buildGuestEssentialsHtml(dto, 'Available Dec 9, 2:00 PM') ?? '';
+  assertEquals(html.includes('secret'), false);
+  assertEquals(html.includes('4821'), false);
+  assertEquals(html.includes('Available Dec 9, 2:00 PM'), true);
+});
+
+Deno.test('buildGuestEssentialsHtml - returns null when there is nothing to show', () => {
+  assertEquals(buildGuestEssentialsHtml(null, null), null);
 });

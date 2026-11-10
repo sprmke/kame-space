@@ -7,6 +7,8 @@ import { createClient } from './supabaseJs.ts';
 import { resolveAppSettings } from './appSettings.ts';
 import { loadAuthUserProfile } from './authUserProfile.ts';
 import { mintGuestBookingAccessToken } from './guestBookingAccessToken.ts';
+import { buildGuestEssentialsHtml, loadGuestEssentials } from './guestEssentials.ts';
+import { guestTripStage, loadGuestTripContent } from './guestTripContent.ts';
 import { linkGuestBookingsByEmail } from './guestProfileService.ts';
 import type { AuthenticatedUser } from './orgAuth.ts';
 import { manilaTodayYmd, normalizeBookingDateToYmd } from './calendarAvailabilityManila.ts';
@@ -370,6 +372,13 @@ export type GuestStayGuideDto = {
   tripPath: string | null;
   /** Host thread for this booking, so "Message host" opens the conversation directly. */
   chatPath: string | null;
+  /**
+   * Wi-Fi, door code, unit, parking and contacts as an HTML block for the "Getting In"
+   * chapter. Reveal-gated server-side, same rule as the trip page (plan D7).
+   */
+  essentialsHtml: string | null;
+  /** Guest-visible custom templates for this stay, rendered as chapters (plan D8). */
+  hostSections: Array<{ id: string; name: string; html: string }>;
 };
 
 async function resolveSectionHtml(
@@ -672,6 +681,24 @@ async function buildGuestStayGuidePayload(
     previewSamples: Boolean(options?.previewCheckInDocuments),
   });
 
+  // Arrival essentials and guest-visible host templates, gated exactly like the trip page:
+  // secrets follow the reveal time, templates follow the trip stage.
+  const nowYmd = manilaTodayYmd();
+  const checkInYmd = normalizeBookingDateToYmd(String(booking.check_in_date ?? '')) ?? '';
+  const checkOutYmd = normalizeBookingDateToYmd(String(booking.check_out_date ?? '')) ?? '';
+  const stage = guestTripStage(
+    String(booking.status ?? ''),
+    checkInYmd <= nowYmd && nowYmd < checkOutYmd
+  );
+
+  const [essentials, tripContent] = await Promise.all([
+    loadGuestEssentials({ propertyId, booking }),
+    loadGuestTripContent({ propertyId, booking, publicOrigin, stage }),
+  ]);
+
+  const revealLabel =
+    essentials?.revealAt != null ? formatRevealLabel(essentials.revealAt) : null;
+
   return {
     property: {
       slug: property.slug,
@@ -717,8 +744,28 @@ async function buildGuestStayGuidePayload(
     todayManila: manilaTodayYmd(),
     templateKey,
     sectionConfig,
+    essentialsHtml: buildGuestEssentialsHtml(essentials, revealLabel),
+    hostSections: tripContent.hostSections.map((section) => ({
+      id: section.id,
+      name: section.name,
+      html: section.html,
+    })),
     ...(await buildStayGuideBookingPaths(property.slug, booking)),
   };
+}
+
+/** "Available Dec 9, 2:00 PM" in Manila, for a withheld secret. */
+function formatRevealLabel(iso: string): string | null {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  const formatted = new Intl.DateTimeFormat('en-PH', {
+    timeZone: 'Asia/Manila',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
+  return `Available ${formatted}`;
 }
 
 /**

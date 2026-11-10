@@ -207,3 +207,58 @@ export async function loadGuestEssentials(input: {
     now: input.now ?? new Date(),
   });
 }
+
+/**
+ * Renders the essentials as a small HTML block for the stay guide template engine.
+ *
+ * The guide renders chapter bodies as HTML, so the escaping happens here rather than in the
+ * browser. Values are already reveal-gated by `buildGuestEssentialsDto`: a withheld secret
+ * prints "Available {date, time}", never the value.
+ */
+export function buildGuestEssentialsHtml(
+  dto: GuestEssentialsDto | null,
+  revealLabel: string | null
+): string | null {
+  if (!dto || !dto.hasAny) return null;
+
+  const rows: string[] = [];
+  const row = (label: string, value: string) =>
+    `<tr><th align="left" style="padding:6px 12px 6px 0;color:#667085;font-weight:500;vertical-align:top;">${escapeHtml(label)}</th><td style="padding:6px 0;color:#101828;">${escapeHtml(value)}</td></tr>`;
+
+  if (dto.wifiName) rows.push(row('Wi-Fi', dto.wifiName));
+  if (dto.wifiPassword) {
+    rows.push(row('Wi-Fi password', dto.wifiPassword));
+  } else if (dto.wifiName) {
+    rows.push(row('Wi-Fi password', revealLabel ?? 'Ask your host'));
+  }
+  if (dto.hasDoorCode) {
+    rows.push(row('Door code', dto.doorCode ?? revealLabel ?? 'Ask your host'));
+  }
+  if (dto.unitFloor) rows.push(row('Unit', dto.unitFloor));
+  if (dto.parkingSlotNote) rows.push(row('Parking', dto.parkingSlotNote));
+  if (dto.garbageSchedule) rows.push(row('Garbage', dto.garbageSchedule));
+  if (dto.quietHours) rows.push(row('Quiet hours', dto.quietHours));
+  if (dto.emergencyContactPhone) {
+    rows.push(
+      row(
+        dto.emergencyContactName || 'Emergency contact',
+        dto.emergencyContactPhone
+      )
+    );
+  }
+  if (dto.buildingSecurityPhone) {
+    rows.push(row('Building security', dto.buildingSecurityPhone));
+  }
+
+  if (rows.length === 0) return null;
+  return `<table role="presentation" style="width:100%;border-collapse:collapse;font-size:15px;line-height:1.6;">${rows.join('')}</table>`;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}

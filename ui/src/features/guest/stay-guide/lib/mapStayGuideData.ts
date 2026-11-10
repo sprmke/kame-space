@@ -105,7 +105,7 @@ function chapterBlocks(
   chapterId: StayGuideChapterSectionId
 ): StayGuideChapterBlock[] {
   const keys = CHAPTER_TEMPLATE_KEYS[chapterId];
-  return keys
+  const blocks = keys
     .map((key) => dto.sections.find((section) => section.key === key))
     .filter((section): section is GuestStayGuideDto['sections'][number] => Boolean(section))
     .map((section) => ({
@@ -114,6 +114,32 @@ function chapterBlocks(
       html: section.html ?? '',
       imageUrl: section.imageUrl ?? null,
     }));
+
+  // "Getting In" opens with the essentials: on arrival, the door code matters more than
+  // the prose below it (plan 4.2).
+  if (chapterId === 'getting-in' && dto.essentialsHtml?.trim()) {
+    blocks.unshift({
+      key: 'essentials',
+      heading: 'Essentials',
+      html: dto.essentialsHtml,
+      imageUrl: null,
+    });
+  }
+
+  // Guest-visible host templates join "Make Yourself at Home" (plan 4.3 / D8).
+  if (chapterId === 'make-yourself-at-home') {
+    for (const section of dto.hostSections ?? []) {
+      if (!section.html.trim()) continue;
+      blocks.push({
+        key: section.id,
+        heading: section.name,
+        html: section.html,
+        imageUrl: null,
+      });
+    }
+  }
+
+  return blocks;
 }
 
 function hasRealChapterContent(blocks: StayGuideChapterBlock[]): boolean {
