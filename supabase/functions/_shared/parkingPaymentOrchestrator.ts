@@ -596,6 +596,9 @@ export async function fulfillParkingPayment(input: {
   if (!txnData) throw new Error('Parking payment transaction not found');
   const txn = txnData as unknown as ParkingPaymentTransactionRow;
   if (txn.status === 'paid') return;
+  // A refund is a terminal money state. A duplicate provider webhook must never flip a
+  // refund_review/refunded row back to paid and make the payout eligible again.
+  if (txn.status === 'refund_review' || txn.status === 'refunded') return;
 
   const bookingId = String(txn.booking_id);
   const paidAt = input.paidAt ?? new Date().toISOString();

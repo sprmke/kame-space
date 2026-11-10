@@ -13,7 +13,7 @@ Route: `/org/:orgSlug/parking/:parkingSlug`
 
 ## Overview
 
-Parking-scoped home. **UI mirrors** the property dashboard (`DashboardPage`): on **phone/tablet** the shared **brand hero** shell (`AdminMobilePage`) with date range in an overlapping toolbar and **View Parking** as a hero icon; desktop keeps the compact header + date filter + View Parking. KPI stat cards, finance chart + transactions-due card + mini calendar (same short fixed-height occupancy overlay as property). Metrics load live via **`dashboard-stats?parking_id=`** for this slot (bookings scoped to `guest_submissions.parking_id`).
+Parking-scoped home. **UI mirrors** the property dashboard (`DashboardPage`): on **phone/tablet** the shared **brand hero** shell (`AdminMobilePage`) with date range in an overlapping toolbar and **View Parking** as a hero icon; desktop keeps the compact header + date filter + View Parking. KPI stat cards, finance chart + transactions-due card + mini calendar (same short fixed-height occupancy overlay as property). Metrics load live via **`dashboard-stats?parking_id=`** for this slot (bookings scoped to `guest_submissions.parking_id`; net profit reads the marketplace ledger’s `host_net_total`).
 
 ---
 
@@ -33,6 +33,8 @@ This dashboard is the home screen for one parking slot. It's the same layout you
   A: Yes. **View Parking** opens the public listing in a new tab so you can check what guests see.
 - Q: Does the date range change every card and chart?
   A: Yes. The selected range applies to the KPIs and the calendar section, so you can compare a quiet week with a busy month.
+- Q: Does Total Revenue include the marketplace commission?
+  A: No. It shows your host net after commission, using the same payment ledger as Finance. The guest charge is higher than your payout.
 
 ---
 

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 
 import { Loader2, Smartphone } from 'lucide-react';
 
@@ -133,15 +133,22 @@ export function IdentityVerificationFlow({
     onComplete(result);
   }, [completed, mode, onComplete, polling.data]);
 
+  /**
+   * Desktop recovery path: the inline camera or the face check failed, so mint a handoff
+   * session and let the phone do it. Mirrors the same flow the "Verify on your phone"
+   * button starts; the abandoned session is cancelled best-effort.
+   */
+  const switchToHandoff = useCallback(async () => {
+    const previous = session;
+    setSession(null);
+    await start('handoff');
+    if (previous) void cancelIdentitySession(previous.sessionId).catch(() => {});
+  }, [session, start]);
+
   const cancel = useCallback(() => {
     if (session) void cancelIdentitySession(session.sessionId).catch(() => {});
     onCancel?.();
   }, [onCancel, session]);
-
-  const heading = useMemo(
-    () => (subjectKind === 'org_owner' ? 'Verify your identity' : 'Verify your ID'),
-    [subjectKind]
-  );
 
   if (completed) {
     return null;
@@ -156,6 +163,7 @@ export function IdentityVerificationFlow({
           onComplete={setCompleted}
           onCancel={cancel}
           onDocumentCaptured={onDocumentCaptured}
+          onUsePhone={finePointer ? switchToHandoff : undefined}
           className={className}
         />
       </Suspense>
@@ -165,9 +173,6 @@ export function IdentityVerificationFlow({
   if (mode === 'handoff' && session) {
     return (
       <div className={cn('space-y-4', className)}>
-        <div className="text-center">
-          <p className="text-sm font-semibold">{heading}</p>
-        </div>
         <CrossDeviceHandoffPanel
           verifyUrl={session.verifyUrl}
           expiresAt={session.expiresAt}
@@ -201,12 +206,9 @@ export function IdentityVerificationFlow({
 
   return (
     <div className={cn('space-y-4', className)}>
-      <div className="space-y-1 text-center">
-        <p className="text-base font-semibold">{heading}</p>
-        <p className="text-muted-foreground text-sm">
-          {finePointer ? 'Use your phone camera for a clear capture.' : 'Use your camera.'}
-        </p>
-      </div>
+      <p className="text-muted-foreground text-center text-sm">
+        {finePointer ? 'Use your phone camera for a clear capture.' : 'Use your camera.'}
+      </p>
 
       {createSession.isError && (
         <p className="text-destructive text-center text-sm">

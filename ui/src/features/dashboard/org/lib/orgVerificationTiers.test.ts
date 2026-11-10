@@ -114,3 +114,41 @@ describe('canSubmitHostTier', () => {
     expect(typeof canSubmitHostTier).toBe('function');
   });
 });
+
+describe('tier 2 live identity check', () => {
+  it('marks the identity item complete and relabels it when the live check replaced the selfie', () => {
+    const detail = readOrgVerificationDetail(null);
+    const item = buildVerifiedTierChecklist(detail, { liveIdentity: true }).find(
+      (entry) => entry.id === 'selfie'
+    );
+    expect(item).toMatchObject({ label: 'Identity check', complete: true });
+  });
+
+  it('keeps the selfie label for legacy rows that uploaded a photo', () => {
+    const base = readOrgVerificationDetail(null);
+    const detail = {
+      ...base,
+      assets: { ...base.assets, selfieWithIdPath: 'org/o/selfie_with_id/x.jpg' },
+    };
+    const item = buildVerifiedTierChecklist(detail).find((entry) => entry.id === 'selfie');
+    expect(item?.complete).toBe(true);
+    expect(item?.label).not.toBe('Identity check');
+  });
+
+  it('reads the stored live marker from org settings', () => {
+    const detail = readOrgVerificationDetail({
+      verification: { liveIdentityVerifiedAt: '2026-11-09T00:00:00.000Z' },
+    });
+    expect(detail.liveIdentityVerifiedAt).toBe('2026-11-09T00:00:00.000Z');
+    const item = buildVerifiedTierChecklist(detail, { liveIdentity: true }).find(
+      (entry) => entry.id === 'selfie'
+    );
+    expect(item?.complete).toBe(true);
+  });
+
+  it('treats a live check as satisfying the tier 2 submit gate', () => {
+    const detail = readOrgVerificationDetail(null);
+    expect(canSubmitVerifiedTier(detail, { selfie: true })).toBe(true);
+    expect(canSubmitVerifiedTier(detail, { selfie: false })).toBe(false);
+  });
+});

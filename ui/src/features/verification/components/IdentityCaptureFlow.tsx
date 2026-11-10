@@ -34,6 +34,8 @@ type IdentityCaptureFlowProps = {
    * upload still expects a file. Booking flows ignore it.
    */
   onDocumentCaptured?: (file: File) => void;
+  /** Desktop only: abandon this device and continue on the host's phone. */
+  onUsePhone?: () => void;
   className?: string;
 };
 
@@ -47,6 +49,7 @@ export function IdentityCaptureFlow({
   onComplete,
   onCancel,
   onDocumentCaptured,
+  onUsePhone,
   className,
 }: IdentityCaptureFlowProps) {
   const [step, setStep] = useState<Step>('consent');
@@ -235,6 +238,7 @@ export function IdentityCaptureFlow({
               setQuality(null);
               onDocumentCaptured?.(file);
             }}
+            onUsePhone={onUsePhone}
           />
           <div className="flex gap-2">
             <Button type="button" variant="ghost" onClick={() => setStep(qrPayload ? 'qr' : 'method')}>
@@ -258,6 +262,7 @@ export function IdentityCaptureFlow({
             side="back"
             onCaptured={(file) => setBackFile(file)}
             onUseUpload={(file) => setBackFile(file)}
+            onUsePhone={onUsePhone}
           />
           <div className="flex gap-2">
             <Button type="button" variant="ghost" onClick={() => setStep('front')}>
@@ -286,7 +291,11 @@ export function IdentityCaptureFlow({
               <span>{error}</span>
             </div>
           )}
-          <LivenessCheckStep onComplete={finishLiveness} onSkip={skipLiveness} />
+          <LivenessCheckStep
+            onComplete={finishLiveness}
+            onSkip={skipLiveness}
+            onUsePhone={onUsePhone}
+          />
         </div>
       )}
 

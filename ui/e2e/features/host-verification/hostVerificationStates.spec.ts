@@ -13,6 +13,10 @@ import {
  * all-`none` case is onboarding-only by design and is covered there.
  */
 test.describe('@ci host Get Verified states', () => {
+  // The dashboard chunk is lazy and cold on a fresh dev server; these specs walk three
+  // modals and two network round-trips each.
+  test.describe.configure({ timeout: 90_000 });
+
   test('pending review renders read-only with no submit', async ({ page }) => {
     const state = createHostVerificationState({ baseStatus: 'pending' });
     await installHostVerificationMocks(page, state);
@@ -58,7 +62,7 @@ test.describe('@ci host Get Verified states', () => {
     // Only the requested document is asked for.
     await page.locator('#onboarding-valid-id').setInputFiles(E2E_IMAGE_FILE);
     const resubmit = page.getByRole('button', { name: 'Resubmit' });
-    await expect(resubmit).toBeEnabled({ timeout: 20_000 });
+    await expect(resubmit).toBeEnabled({ timeout: 30_000 });
 
     // Picking a file can race the dialog's dismiss handling; keep editing if it prompts.
     const guard = page.getByRole('alertdialog', { name: /Save your changes\?/i });
@@ -68,7 +72,7 @@ test.describe('@ci host Get Verified states', () => {
       await expect(guard).toHaveCount(0);
       // Dismissing can clear the slot; re-pick so the submit has the requested document.
       await page.locator('#onboarding-valid-id').setInputFiles(E2E_IMAGE_FILE);
-      await expect(resubmit).toBeEnabled({ timeout: 20_000 });
+      await expect(resubmit).toBeEnabled({ timeout: 30_000 });
     }
 
     const submitResponse = page.waitForResponse(
@@ -105,7 +109,7 @@ test.describe('@ci host Get Verified states', () => {
     await expect(page.getByRole('button', { name: /Submit for review/i })).toHaveCount(0);
   });
 
-  test('tier 2 requires a selfie and warns before losing it', async ({ page }) => {
+  test('tier 2 uses a live identity check instead of a selfie upload', async ({ page }) => {
     const state = createHostVerificationState({
       baseStatus: 'approved',
       enhancedStatus: 'none',
@@ -119,27 +123,22 @@ test.describe('@ci host Get Verified states', () => {
     await page.goto('/org/test-host-org/activity');
     const cta = page.getByRole('button', { name: /Get Recommended badge/i });
     await expect(cta).toBeVisible({ timeout: 30_000 });
-    await cta.evaluate((element) => (element as HTMLElement).click());
+    // The org sidebar re-renders while the page settles; dispatch avoids a detachment race.
+    await cta.dispatchEvent('click');
 
-    await expect(page.getByRole('dialog', { name: 'Get Recommended' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Identity check' })).toBeVisible({
       timeout: 20_000,
     });
-    await expect(page.getByText(/The selfie with your ID is required/i)).toBeVisible();
 
+    // The static selfie-with-ID upload is gone; the camera check replaces it.
+    await expect(page.locator('#enhanced-selfie')).toHaveCount(0);
     const submit = page.getByRole('button', { name: /Submit for review/i });
     await expect(submit).toBeDisabled();
 
-    await page.locator('#enhanced-selfie').setInputFiles(E2E_IMAGE_FILE);
-    await expect(submit).toBeEnabled({ timeout: 20_000 });
-
-    // Closing with an unsubmitted file must prompt, not silently discard.
-    await page.keyboard.press('Escape');
-    await expect(page.getByText(/Save your changes\?|Discard your changes\?/i)).toBeVisible({
-      timeout: 10_000,
-    });
-    // The prompt itself is the contract: editing a slot and closing must not silently
-    // discard. (Radix keeps the alert open until the host chooses.)
-    await expect(page.getByRole('alertdialog', { name: /Save your changes\?/i })).toBeVisible();
-    await expect(page.getByText(/You have unsaved changes/i)).toBeVisible();
+    // The capture itself is covered end to end by the onboarding spec; here the contract is
+    // that Tier 2 no longer offers a selfie upload and waits on the live check.
+    await expect(page.getByRole('button', { name: /Verify with camera/i })).toBeVisible();
+    await expect(page.getByText(/Replaces the photo of you holding your ID/i)).toBeVisible();
   });
+
 });

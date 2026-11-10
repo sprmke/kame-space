@@ -601,6 +601,14 @@ serve(async (req) => {
     console.error('Error processing form submission:', error);
 
     if (error instanceof PolicyChangedError) {
+      // Distinct outcome so a spike is alertable. A policy edit mid-form is
+      // normal; a spike means the version/hash check is blocking guests.
+      await capturePostHogEvent('guest_form_rejected', {
+        logPrefix: 'submit-form',
+        request: req,
+        system: true,
+        properties: { reason: 'policy_changed' },
+      });
       return new Response(
         JSON.stringify({
           success: false,

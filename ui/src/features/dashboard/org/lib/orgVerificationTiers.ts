@@ -56,6 +56,8 @@ export type OrgVerificationDetail = {
   enhancedRejectionKind: OrgVerificationRejectionKind | null;
   /** When kind=changes, which docs must be re-uploaded. Empty = show all (legacy). */
   baseChangesRequestedDocs: OrgVerificationChangeDocId[];
+  /** ISO timestamp when the live identity check replaced the Tier 2 selfie. */
+  liveIdentityVerifiedAt: string | null;
   assets: OrgVerificationAssets;
   propertyLifecycle: ContractLegLifecycle;
   parkingLifecycle: ContractLegLifecycle;
@@ -200,6 +202,7 @@ export function readOrgVerificationDetail(
       baseRejectionKind: null,
       enhancedRejectionKind: null,
       baseChangesRequestedDocs: [],
+      liveIdentityVerifiedAt: null,
       assets: { ...EMPTY_ASSETS, pmoEmailPaths: [] },
       propertyLifecycle: emptyContractLegLifecycle(),
       parkingLifecycle: emptyContractLegLifecycle(),
@@ -250,6 +253,7 @@ export function readOrgVerificationDetail(
       baseStatus === 'rejected' && asRejectionKind(v.baseRejectionKind) === 'changes'
         ? asChangesRequestedDocs(v.baseChangesRequestedDocs)
         : [],
+    liveIdentityVerifiedAt: asPath(v.liveIdentityVerifiedAt),
     assets: {
       validIdPath: asPath(assetsRaw.validIdPath),
       socialProofPath: asPath(assetsRaw.socialProofPath),
@@ -290,13 +294,16 @@ export function buildHostTierChecklist(detail: OrgVerificationDetail): Verificat
 }
 
 export function buildVerifiedTierChecklist(
-  detail: OrgVerificationDetail
+  detail: OrgVerificationDetail,
+  options?: { liveIdentity?: boolean }
 ): VerificationChecklistItem[] {
   const items: VerificationChecklistItem[] = [
     {
       id: 'selfie',
-      label: VERIFICATION_TIER2_DOC_LABELS.selfie,
-      complete: Boolean(detail.assets.selfieWithIdPath),
+      // The static selfie was replaced by the live identity check; legacy rows keep the old
+      // label so a reviewer is never told a selfie exists when it does not.
+      label: options?.liveIdentity ? 'Identity check' : VERIFICATION_TIER2_DOC_LABELS.selfie,
+      complete: Boolean(detail.assets.selfieWithIdPath) || Boolean(options?.liveIdentity),
     },
     {
       id: 'platform-admin',
