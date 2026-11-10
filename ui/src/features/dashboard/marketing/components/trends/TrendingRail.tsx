@@ -1,5 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
-
 import { ChevronRight } from 'lucide-react';
 
 import { useMarketingTrends } from '@/features/dashboard/marketing/hooks/useMarketingTrends';
@@ -30,35 +28,16 @@ const CHIP_CLASS =
 /**
  * "Trending today" rail at the top of the AI Studio create form.
  *
- * The list is fetched only once the rail is in the viewport and the create form is
- * mounted, so opening Marketing on another tab never asks for it. When there is no
- * usable list the rail shows the bundled seasonal ideas and says so.
+ * The mount is the gate: this component only exists inside the create form, so
+ * opening Marketing on another tab never asks for the list. An earlier version also
+ * waited for an IntersectionObserver hit, which added no benefit (the rail is above
+ * the fold whenever the form is open) and one silent failure mode: if the observer
+ * never fired, the list never loaded.
+ *
+ * When there is no usable list the rail shows the bundled seasonal ideas and says so.
  */
 export function TrendingRail({ onOpenTopic, onSeeAll }: Props) {
-  // A stable wrapper: the observer attaches once, to a node that never unmounts,
-  // so switching between skeleton and content cannot strand the gate.
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const [inView, setInView] = useState(false);
-
-  useEffect(() => {
-    const node = wrapperRef.current;
-    if (!node || typeof IntersectionObserver === 'undefined') {
-      setInView(true);
-      return;
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((entry) => entry.isIntersecting)) return;
-        setInView(true);
-        observer.disconnect();
-      },
-      { rootMargin: '120px' }
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  const query = useMarketingTrends('today', inView);
+  const query = useMarketingTrends('today');
   const payload = query.data;
 
   // The super admin turned Trends off for this property: the rail is not rendered
@@ -79,7 +58,7 @@ export function TrendingRail({ onOpenTopic, onSeeAll }: Props) {
         }));
 
   return (
-    <div ref={wrapperRef}>
+    <div>
       {query.isLoading && chips.length === 0 ? (
         <div className="space-y-2" aria-hidden>
           <Skeleton className="h-4 w-28" />

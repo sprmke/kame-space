@@ -62,8 +62,8 @@ import {
   readTrendsWindow,
   TRENDS_PARAM,
 } from '@/features/dashboard/marketing/lib/marketingStudioRoute';
-import { setPendingAiTrend } from '@/features/dashboard/marketing/lib/trends/trendHandoff';
 import type {
+  PendingAiTrend,
   TrendAngle,
   TrendOutput,
   TrendTopic,
@@ -267,6 +267,7 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
   const trendsWindow = readTrendsWindow(searchParams);
   const [trendsOpen, setTrendsOpen] = useState(false);
   const [trendsTopicKey, setTrendsTopicKey] = useState<string | null>(null);
+  const [pendingTrend, setPendingTrend] = useState<PendingAiTrend | null>(null);
 
   /**
    * The deep link (`?trends=today`) is a history entry of its own, so the sheet is
@@ -330,7 +331,7 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
         openUpgradeModal(OUTPUT_FEATURE[angle.output]);
         return;
       }
-      setPendingAiTrend({
+      setPendingTrend({
         topicKey: topic.topicKey,
         title: topic.title,
         angle,
@@ -815,6 +816,8 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
                 />
               </Suspense>
             }
+            trend={pendingTrend}
+            onTrendApplied={() => setPendingTrend(null)}
           />
         </div>
         <Suspense fallback={null}>

@@ -1,7 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { mockFeatureAvailability } from '../../shared/featureAvailabilityMocks';
-import { mockEdgeFunctions } from '../../shared/interceptEdge';
 import {
   installPropertyTeamRbacMocks,
   teamRbacPaths,
@@ -107,6 +105,27 @@ function trendsBody(over: Record<string, unknown> = {}) {
   };
 }
 
+/**
+ * Mock only the trends endpoint.
+ *
+ * A catch-all edge-function handler would swallow the RBAC harness's own mocks, because
+ * `route.continue()` goes to the network rather than to the next handler. The harness
+ * already answers unknown endpoints, so this narrow route is all the spec needs.
+ */
+async function mockTrends(page: Page, body: unknown) {
+  // A predicate, not a glob: the harness also registers a catch-all route, and a
+  // predicate leaves no doubt about which handler claims this endpoint.
+  await page.route(
+    (url) => url.pathname.endsWith('/functions/v1/marketing-trends'),
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      })
+  );
+}
+
 /** Anything that would spend a credit. Must stay empty unless the test presses Generate. */
 function watchGenerateCalls(page: Page): string[] {
   const calls: string[] = [];
@@ -125,7 +144,7 @@ test.describe('@ci marketing trends', () => {
   test('the rail shows today’s topics and opens the sheet', async ({ page }) => {
     const generateCalls = watchGenerateCalls(page);
     await installPropertyTeamRbacMocks(page, 'full_access');
-    await mockEdgeFunctions(page, [{ name: 'marketing-trends', method: 'GET', body: trendsBody() }]);
+    await mockTrends(page, trendsBody());
     await openCreateForm(page);
 
     await expect(page.getByText('Trending today')).toBeVisible({ timeout: 20_000 });
@@ -146,22 +165,17 @@ test.describe('@ci marketing trends', () => {
 
   test('a category filter narrows the list and an empty result says so', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
-    await mockEdgeFunctions(page, [
-      {
-        name: 'marketing-trends',
-        method: 'GET',
-        body: trendsBody({ topics: [TOPICS[0]] }),
-      },
-    ]);
+    await mockTrends(page, trendsBody({ topics: [TOPICS[0]] }));
     await openCreateForm(page);
 
     await page.getByRole('button', { name: 'See all' }).click();
     const sheet = page.getByRole('dialog', { name: 'Trends in the Philippines' });
     await expect(sheet).toBeVisible();
 
-    // Only categories present in the window are offered.
-    await expect(sheet.getByRole('button', { name: 'Music' })).toHaveCount(0);
-    await expect(sheet.getByRole('button', { name: 'TV & film' })).toBeVisible();
+    // One topic means one category, and a filter with a single option filters nothing,
+    // so the row is not rendered at all.
+    await expect(sheet.getByRole('button', { name: 'TV & film' })).toHaveCount(0);
+    await expect(sheet.getByRole('button', { name: 'All' })).toHaveCount(0);
   });
 
   test('using an angle fills the form with the trend attached and generates nothing', async ({
@@ -169,7 +183,7 @@ test.describe('@ci marketing trends', () => {
   }) => {
     const generateCalls = watchGenerateCalls(page);
     await installPropertyTeamRbacMocks(page, 'full_access');
-    await mockEdgeFunctions(page, [{ name: 'marketing-trends', method: 'GET', body: trendsBody() }]);
+    await mockTrends(page, trendsBody());
     await openCreateForm(page);
 
     await page.getByRole('button', { name: /PBB Collab 3\.0/ }).click();
@@ -195,8 +209,12 @@ test.describe('@ci marketing trends', () => {
 
   test('copying a caption idea works without the AI plan', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await installPropertyTeamRbacMocks(page, 'read_only');
-    await mockEdgeFunctions(page, [{ name: 'marketing-trends', method: 'GET', body: trendsBody() }]);
+    // Full access, but the plan has no AI generation. That is the case the free path
+    // exists for: the host can still read trends and copy a caption.
+    await installPropertyTeamRbacMocks(page, 'full_access', {
+      aiMarketingGenerationAllowed: false,
+    });
+    await mockTrends(page, trendsBody());
     await openCreateForm(page);
 
     await page.getByRole('button', { name: /PBB Collab 3\.0/ }).click();
@@ -211,13 +229,7 @@ test.describe('@ci marketing trends', () => {
 
   test('falls back to seasonal ideas when the list is empty', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
-    await mockEdgeFunctions(page, [
-      {
-        name: 'marketing-trends',
-        method: 'GET',
-        body: trendsBody({ fallback: 'evergreen', topics: [], runDate: null }),
-      },
-    ]);
+    await mockTrends(page, trendsBody({ fallback: 'evergreen', topics: [], runDate: null }));
     await openCreateForm(page);
 
     await expect(page.getByText('Seasonal ideas')).toBeVisible({ timeout: 20_000 });
@@ -226,9 +238,7 @@ test.describe('@ci marketing trends', () => {
 
   test('hides the rail when the super admin turned trends off', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
-    await mockEdgeFunctions(page, [
-      { name: 'marketing-trends', method: 'GET', body: { success: true, data: { disabled: true } } },
-    ]);
+    await mockTrends(page, { success: true, data: { disabled: true } });
     await openCreateForm(page);
 
     await expect(page.getByLabel('What is the post about?')).toBeVisible({ timeout: 20_000 });
@@ -237,9 +247,10 @@ test.describe('@ci marketing trends', () => {
   });
 
   test('hides the rail when the marketing.trends leaf is off', async ({ page }) => {
-    await installPropertyTeamRbacMocks(page, 'full_access');
-    await mockFeatureAvailability(page, ['marketing.trends']);
-    await mockEdgeFunctions(page, [{ name: 'marketing-trends', method: 'GET', body: trendsBody() }]);
+    await installPropertyTeamRbacMocks(page, 'full_access', {
+      featureAvailabilityOff: ['marketing.trends'],
+    });
+    await mockTrends(page, trendsBody());
     await openCreateForm(page);
 
     await expect(page.getByLabel('What is the post about?')).toBeVisible({ timeout: 20_000 });
@@ -249,7 +260,7 @@ test.describe('@ci marketing trends', () => {
   test('the sheet is a bottom sheet on a phone and does not overflow', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await installPropertyTeamRbacMocks(page, 'full_access');
-    await mockEdgeFunctions(page, [{ name: 'marketing-trends', method: 'GET', body: trendsBody() }]);
+    await mockTrends(page, trendsBody());
     await openCreateForm(page);
 
     await page.getByRole('button', { name: /PBB Collab 3\.0/ }).click();

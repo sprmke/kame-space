@@ -604,6 +604,10 @@ never left with a dead control. **Copy caption idea** still works, which is the 
 
 `startAiSession` clears the param, so using an angle closes the sheet and lands on the form.
 
+The sheet is open _because_ the URL says so, which is what makes the phone back gesture close the
+sheet instead of leaving the studio. Closing it with the X clears the param (replace), so the
+back button then goes wherever the host came from.
+
 ### States
 
 | State                                       | What the host sees                                                          |

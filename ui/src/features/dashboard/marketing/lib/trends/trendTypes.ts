@@ -126,6 +126,18 @@ export type MarketingTrendsResponse = {
   topics: TrendTopic[];
 };
 
+/** A trend an angle was picked from, ready to be applied to the create form. */
+export type PendingAiTrend = {
+  /** The topic key the server uses to load the topic. */
+  topicKey: string;
+  /** The topic title, shown on the chip. */
+  title: string;
+  /** The angle the host picked. */
+  angle: TrendAngle;
+  /** The output the angle asks for. */
+  output: TrendOutput;
+};
+
 /** A seasonal idea shown when there is no trend list. */
 export type EvergreenTrendIdea = {
   key: string;
