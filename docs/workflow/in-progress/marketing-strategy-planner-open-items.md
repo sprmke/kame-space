@@ -99,9 +99,8 @@ Tick a box when it is addressed. If an answer changes a shipped default, the pla
 
 ## 5. Remaining deep work (no decision needed, just time)
 
-- [ ] **Prepare handoffs into the four editors.** Create on an item should open a filled design,
-      video, calendar or AI Studio draft and attach the result back. This is the one deep item left.
-      **Meanwhile:** the item sheet edits the draft in place, and Share it yourself works today.
+- [ ] **Prepare my week batch (P2.4).** Per-item handoff shipped; the batch button that creates
+      drafts for a whole range, and the photo ranking behind it, are still open.
 
 - [ ] **Nav badge.** The Marketing nav item has no badge slot in its shape yet; adding one touches
       the sidebar and bottom-nav chrome on every page, so it waits for a nav pass.
@@ -118,7 +117,7 @@ Tick a box when it is addressed. If an answer changes a shipped default, the pla
 
 - [ ] **Local Supabase was stopped** during the last pass, so `check:plan-catalog` could not run at
       the very end. It passed earlier in the same session against the same migration. `bun run
-  start:supabase` brings it back.
+start:supabase` brings it back.
 
 - [ ] **Two pre-existing `@ci` failures.** `orgPlanCheckout.spec.ts` ("successful return confirms
       payment", "celebration modal compare plans") fail on `origin/develop` too; verified by running
