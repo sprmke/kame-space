@@ -34,6 +34,7 @@ import {
   ReviewsPageSkeleton,
   SectionContentSkeleton,
   TeamPageSkeleton,
+  type ReviewsSkeletonTab,
 } from '@/components/skeletons/AdminSkeletons';
 import {
   OrgAnalyticsSkeleton,
@@ -92,6 +93,13 @@ import {
 import { SlidingTabsListSkeleton } from '@/components/skeletons/SlidingTabsListSkeleton';
 import { cn } from '@/lib/utils';
 
+/** Reviews `?tab=` → skeleton variant. `properties` is org-only. */
+function reviewsSkeletonTab(raw: string | null, allowProperties: boolean): ReviewsSkeletonTab {
+  if (allowProperties && raw === 'properties') return 'properties';
+  if (raw === 'written' || raw === 'to_write') return raw;
+  return 'received';
+}
+
 /** `BookingDateRangeFilter` in the hero overlap (phone). */
 function DateFilterOverlapSkeleton() {
   return (
@@ -148,7 +156,14 @@ function BookingsListBodySkeleton({ view }: { view: string | null }) {
       ) : view === 'card' ? (
         <BookingsCardGridSkeleton />
       ) : view === 'kanban' ? (
-        <BookingsKanbanSkeleton />
+        <>
+          <div className="hidden md:block">
+            <BookingsKanbanSkeleton />
+          </div>
+          <div className="md:hidden">
+            <BookingsCardGridSkeleton />
+          </div>
+        </>
       ) : (
         <>
           <div className="hidden lg:block">
@@ -312,13 +327,21 @@ export function OrgPlansRouteSkeleton() {
 }
 
 export function OrgReviewsRouteSkeleton() {
+  const [searchParams] = useSearchParams();
+  const tab = reviewsSkeletonTab(searchParams.get('tab'), true);
+  const view = searchParams.get('view') === 'card' ? 'card' : 'table';
+
   return (
     <AdminMobilePage
       title="Reviews"
       subtitle="Read and answer guest reviews across every listing."
       titleId="reviews-heading"
     >
-      <ReviewsPageSkeleton tabs={['From guests', 'To write', 'About guests', 'By property']} />
+      <ReviewsPageSkeleton
+        tabs={['From guests', 'To write', 'About guests', 'By property']}
+        tab={tab}
+        view={view}
+      />
     </AdminMobilePage>
   );
 }
@@ -642,6 +665,10 @@ export function PropertyTeamRouteSkeleton() {
 }
 
 export function PropertyReviewsRouteSkeleton() {
+  const [searchParams] = useSearchParams();
+  const tab = reviewsSkeletonTab(searchParams.get('tab'), false);
+  const view = searchParams.get('view') === 'card' ? 'card' : 'table';
+
   return (
     <AdminMobilePage
       title="Reviews"
@@ -650,7 +677,7 @@ export function PropertyReviewsRouteSkeleton() {
       desktopActions={<Skeleton className="h-11 w-full rounded-lg sm:w-28" />}
       desktopActionsClassName="w-full sm:w-auto"
     >
-      <ReviewsPageSkeleton />
+      <ReviewsPageSkeleton tab={tab} view={view} />
     </AdminMobilePage>
   );
 }

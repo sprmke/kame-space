@@ -501,6 +501,11 @@ Both Telegram and email host notifications deep-link straight to
 bare bookings list. Telegram has no button/CTA affordance, so the link is appended as plain text
 after the templated message body (not part of the user-editable template).
 
+Telegram templates/toggles cover reservation request, check-in reminder, payment received,
+guest cancelled, payment window expired, and endorsement failed. New alerts go through
+`sendParkingTelegramNotice()` in `telegramParking.ts`, which never throws; a Telegram outage must
+not fail the booking, payment, or cancellation path.
+
 ## Host dashboard
 
 `ParkingBookingDetailPage.tsx` shows Accept/Decline only when

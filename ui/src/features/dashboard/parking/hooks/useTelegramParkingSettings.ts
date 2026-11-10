@@ -13,9 +13,15 @@ export type TelegramParkingSettingsDto = {
   reservationRequestTemplate: string;
   checkInReminderTemplate: string;
   paymentReceivedTemplate: string;
+  requestCancelledTemplate: string;
+  paymentExpiredTemplate: string;
+  endorsementFailedTemplate: string;
   notifyOnReservationRequest: boolean;
   notifyOnCheckInReminder: boolean;
   notifyOnPaymentReceived: boolean;
+  notifyOnRequestCancelled: boolean;
+  notifyOnPaymentExpired: boolean;
+  notifyOnEndorsementFailed: boolean;
   placeholdersReference: string[];
   credentials?: PropertyTelegramCredentialsStatus;
   updatedAt: string | null;
@@ -28,9 +34,15 @@ type TelegramParkingSettingsPatch = Partial<
     | 'reservationRequestTemplate'
     | 'checkInReminderTemplate'
     | 'paymentReceivedTemplate'
+    | 'requestCancelledTemplate'
+    | 'paymentExpiredTemplate'
+    | 'endorsementFailedTemplate'
     | 'notifyOnReservationRequest'
     | 'notifyOnCheckInReminder'
     | 'notifyOnPaymentReceived'
+    | 'notifyOnRequestCancelled'
+    | 'notifyOnPaymentExpired'
+    | 'notifyOnEndorsementFailed'
   >
 > & {
   botToken?: string | null;

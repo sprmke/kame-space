@@ -2,7 +2,7 @@
 title: 'Curated support FAQs'
 status: active
 tags: [guides, support, faqs, help-center]
-updated: 2026-11-08
+updated: 2026-11-11
 ---
 
 # Curated support FAQs
@@ -228,7 +228,16 @@ No. These are standalone parking listings such as tower slots or motorcycle bays
 - source: docs/guides/routes/org/parking/settings.md
 - order: 30
 
-Basic info, photos, location, and amenities flow to your public parking page. Keep the cover photo and description accurate before sharing the link. Guests pay through PayMongo at checkout, so there are no payment details to fill in.
+Basic info, photos, location, and amenities flow to your public parking page. Keep the photos and description accurate before sharing the link. Guests pay through PayMongo at checkout, so there are no payment details to fill in.
+
+### How many photos can I add to a parking listing?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/org/parking/settings.md
+- order: 31
+
+Up to 3. The starred photo is the cover and shows first on your public parking page. Drag the photos to change their order.
 
 ### Why is there no Payment section on parking settings?
 

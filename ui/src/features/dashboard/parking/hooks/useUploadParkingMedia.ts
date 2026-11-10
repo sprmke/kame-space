@@ -5,13 +5,16 @@ import {
   scopedParkingFunctionsBaseUrl,
   useParkingIdParam,
 } from '@/features/dashboard/org/lib/adminParkingScope';
+import {
+  normalizeParkingMediaDraft,
+  type ParkingMediaItem,
+} from '@/features/dashboard/parking/lib/parkingMedia';
 
 import { prepareUpload } from '@/lib/media/prepareUpload';
 import { supabase } from '@/lib/supabase/client';
 
-type ParkingCoverResult = {
-  coverImage: string | null;
-  coverImageStoragePath: string | null;
+type ParkingMediaResult = {
+  media: ParkingMediaItem[];
 };
 
 async function getAdminJwt(): Promise<string> {
@@ -21,12 +24,28 @@ async function getAdminJwt(): Promise<string> {
   return token;
 }
 
+async function parseMediaResponse(res: Response): Promise<ParkingMediaResult> {
+  const json = (await res.json()) as {
+    success?: boolean;
+    error?: string;
+    data?: { media?: ParkingMediaItem[] };
+  };
+  if (!res.ok || !json.success || !json.data) {
+    throw new Error(json.error ?? `HTTP ${res.status}`);
+  }
+  return { media: normalizeParkingMediaDraft(json.data.media ?? []) };
+}
+
+function invalidateParkingMedia(qc: ReturnType<typeof useQueryClient>) {
+  void qc.invalidateQueries({ queryKey: PARKINGS_QUERY_KEY });
+}
+
 export function useUploadParkingMedia() {
   const qc = useQueryClient();
   const parkingId = useParkingIdParam();
 
   const upload = useMutation({
-    mutationFn: async (rawFile: File): Promise<ParkingCoverResult> => {
+    mutationFn: async (rawFile: File): Promise<ParkingMediaResult> => {
       const prepared = await prepareUpload(rawFile, {
         imagePreset: 'PHOTO_MASTER',
         surface: 'parking-media',
@@ -45,42 +64,29 @@ export function useUploadParkingMedia() {
         body,
       });
 
-      const json = (await res.json()) as {
-        success?: boolean;
-        error?: string;
-        data?: ParkingCoverResult;
-      };
-      if (!res.ok || !json.success || !json.data) {
-        throw new Error(json.error ?? `HTTP ${res.status}`);
-      }
-      return json.data;
+      return parseMediaResponse(res);
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: PARKINGS_QUERY_KEY });
-    },
+    onSuccess: () => invalidateParkingMedia(qc),
   });
 
   const remove = useMutation({
-    mutationFn: async (): Promise<ParkingCoverResult> => {
+    mutationFn: async (payload: {
+      mediaId?: string;
+      storagePath?: string;
+    }): Promise<ParkingMediaResult> => {
       const jwt = await getAdminJwt();
       const res = await fetch(scopedParkingFunctionsBaseUrl('/upload-parking-media', parkingId), {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${jwt}` },
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
 
-      const json = (await res.json()) as {
-        success?: boolean;
-        error?: string;
-        data?: ParkingCoverResult;
-      };
-      if (!res.ok || !json.success || !json.data) {
-        throw new Error(json.error ?? `HTTP ${res.status}`);
-      }
-      return json.data;
+      return parseMediaResponse(res);
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: PARKINGS_QUERY_KEY });
-    },
+    onSuccess: () => invalidateParkingMedia(qc),
   });
 
   return { upload, remove };

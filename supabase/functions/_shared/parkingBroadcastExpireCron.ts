@@ -15,6 +15,7 @@ import { sendParkingNoHostAvailableEmail } from './parkingBroadcastEmail.ts';
 import { parkingAutomationEnabled } from './parkingAutomationToggles.ts';
 import { fulfillParkingPayment, releaseParkingClaim } from './parkingPaymentOrchestrator.ts';
 import { getPaymongoProviderPaymentState } from './paymongoClient.ts';
+import { sendParkingTelegramNotice } from './telegramParking.ts';
 import { buildActorContext } from './activityLog.ts';
 import { logParkingStatusChange } from './parkingActivity.ts';
 import { createNotification } from './notificationService.ts';
@@ -245,7 +246,9 @@ export async function runExpireParkingPayments(): Promise<Record<string, unknown
 
   const { data: expiredPayments, error } = await supabase
     .from('guest_submissions')
-    .select('id, parking_id, primary_guest_name, guest_facebook_name')
+    .select(
+      'id, parking_id, primary_guest_name, guest_facebook_name, parking_check_in_date, check_in_date'
+    )
     .eq('status', 'PENDING_PAYMENT')
     .lt('parking_payment_expires_at', nowIso);
 
@@ -293,13 +296,15 @@ export async function runExpireParkingPayments(): Promise<Record<string, unknown
         try {
           const { data: parking } = await supabase
             .from('parkings')
-            .select('organization_id')
+            .select('organization_id, name, tower, slot_label')
             .eq('id', parkingId)
             .maybeSingle();
           if (parking?.organization_id) {
             const guestName =
               String(booking.primary_guest_name ?? booking.guest_facebook_name ?? '').trim() ||
               'The guest';
+            const slotLabel =
+              [parking.slot_label, parking.tower].filter(Boolean).join(' · ') || parking.name;
             await createNotification({
               organizationId: String(parking.organization_id),
               parkingId,
@@ -308,6 +313,17 @@ export async function runExpireParkingPayments(): Promise<Record<string, unknown
               body: `${guestName}'s payment window expired. The request is searching again.`,
               bookingId,
               dedupeKey: `parking-payment-expired:${bookingId}:${parkingId}`,
+            });
+            await sendParkingTelegramNotice({
+              parkingId,
+              key: 'payment_expired',
+              values: {
+                slot_label: slotLabel,
+                guest_name: guestName,
+                check_in_date: String(
+                  booking.parking_check_in_date ?? booking.check_in_date ?? ''
+                ),
+              },
             });
           }
         } catch (notifyErr) {

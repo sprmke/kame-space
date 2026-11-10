@@ -69,7 +69,7 @@ export function computeParkingSettingsCompletion(
 
   // ── Media ──
   if (!coverImage.trim()) {
-    addSectionIssue('media', 'Add a cover photo. Guests rely on photos when choosing a slot.');
+    addSectionIssue('media', 'Add at least one photo. Guests rely on photos when choosing a slot.');
   }
 
   // ── Details ──
