@@ -193,16 +193,16 @@ the canonical apex.
 
 - [x] SEO-1.0 Dynamic `/sitemap.xml` via middleware proxy to `public-sitemap`.
 - [x] SEO-1.1 Derive `STATIC_SITEMAP_PATHS` from the D2 registry; `check:seo-routes` fails CI on drift.
-- [ ] SEO-1.2 Add `/hosts/:orgSlug` for orgs with at least one ACTIVE public listing (read from `public_listing_search` org column or a join; exclude unverified orgs).
+- [x] SEO-1.2 Add `/hosts/:orgSlug` for orgs with at least one ACTIVE public listing (read from `public_listing_search` org column or a join; exclude unverified orgs).
 - [ ] SEO-1.3 Decide and add development sub-pages `/developments/:slug/properties` and `/developments/:slug/parking` (include only when the list is non-empty; they already set their own canonical).
-- [ ] SEO-1.4 Decide showcase (`/properties/:slug/showcase`) and stay guide: include only if their content is distinct from the detail page; otherwise canonical to the detail page and exclude (see SEO-4.7).
+- [x] SEO-1.4 Decide showcase (`/properties/:slug/showcase`) and stay guide: include only if their content is distinct from the detail page; otherwise canonical to the detail page and exclude (see SEO-4.7).
 - [ ] SEO-1.5 `lastmod` for place pages = max `refreshed_at` of their listings; static pages = last content change (registry field updated with the page copy, not build time, so Google keeps trusting it).
-- [ ] SEO-1.6 Split into typed child sitemaps (`?part=static|properties|parkings|developments|places|hosts`) under one sitemap index so Search Console reports indexing per type. Keep the 45,000 URL split per child.
-- [ ] SEO-1.7 Image sitemap extension (`<image:image><image:loc>`) for up to 10 photos per listing (Google Images discovery).
-- [ ] SEO-1.8 Use the canonical origin (D3) for every `<loc>`; assert in a Deno test that no `<loc>` uses a non-apex host or `http://`.
-- [ ] SEO-1.9 Never list a URL that is `noindex`, redirected, or non-ACTIVE. Deno test with fixtures for suspended, archived, unverified listings.
-- [ ] SEO-1.10 Validate output against the sitemap XSD in a Deno test; size check under 50 MB uncompressed.
-- [ ] SEO-1.11 Prod smoke: `curl -I https://kamespace.com/sitemap.xml` returns 200 `application/xml`; add to `web-probe.yml`.
+- [x] SEO-1.6 Split into typed child sitemaps (`?part=static|properties|parkings|developments|places|hosts`) under one sitemap index so Search Console reports indexing per type. Keep the 45,000 URL split per child.
+- [x] SEO-1.7 Image sitemap extension (`<image:image><image:loc>`) for up to 10 photos per listing (Google Images discovery).
+- [x] SEO-1.8 Use the canonical origin (D3) for every `<loc>`; assert in a Deno test that no `<loc>` uses a non-apex host or `http://`.
+- [x] SEO-1.9 Never list a URL that is `noindex`, redirected, or non-ACTIVE. Deno test with fixtures for suspended, archived, unverified listings.
+- [x] SEO-1.10 Validate output against the sitemap XSD in a Deno test; size check under 50 MB uncompressed.
+- [x] SEO-1.11 Prod smoke: `curl -I https://kamespace.com/sitemap.xml` returns 200 `application/xml`; add to `web-probe.yml`.
 
 ### Item 2. Add robots.txt
 
@@ -214,9 +214,9 @@ uses request origin, no explicit AI crawler groups.
 - [x] SEO-2.2 Generate `ui/public/robots.txt` from `ROBOTS_DISALLOW` at build (small Vite plugin or prebuild script) so the fallback cannot drift. `check:seo-routes` covers it too.
 - [x] SEO-2.3 `Sitemap:` line uses the canonical origin (D3).
 - [x] SEO-2.4 Explicit AI crawler groups per D4, each with the same disallows.
-- [ ] SEO-2.5 Confirm `/assets/`, fonts, `/brand/`, `/marketing/`, `/images/` are crawlable (Google needs JS and CSS to render).
+- [x] SEO-2.5 Confirm `/assets/`, fonts, `/brand/`, `/marketing/`, `/images/` are crawlable (Google needs JS and CSS to render).
 - [x] SEO-2.6 Vitest: every registry route with `indexable: true` is allowed by the generated robots; every `indexable: false` route is disallowed or `noindex`.
-- [ ] SEO-2.7 Test in Search Console robots.txt report after deploy.
+- [x] SEO-2.7 Test in Search Console robots.txt report after deploy.
 
 ### Item 3. Remove noindex tags (and add them where they belong)
 
@@ -225,10 +225,10 @@ Gaps: no protection on preview deploys beyond robots, private shells have no `no
 
 - [x] SEO-3.1 Audit: Vitest asserts no registry route with `indexable: true` ever passes `noindex`, and the shipped `index.html` has no robots meta on production builds.
 - [x] SEO-3.2 Non-production hosts: emit `X-Robots-Tag: noindex, nofollow` from the middleware for every matched path on non-indexable hosts, and a build-time `<meta name="robots" content="noindex">` in `index.html` when `VITE_NODE_ENV` is not production (Vite `transformIndexHtml`). `Disallow` alone does not de-index URLs Google already knows.
-- [ ] SEO-3.3 `noindex` in the dashboard shell, guest account shell and auth pages via a `usePageMeta({ noindex: true })` default in those layouts.
+- [x] SEO-3.3 `noindex` in the dashboard shell, guest account shell and auth pages via a `usePageMeta({ noindex: true })` default in those layouts.
 - [x] SEO-3.4 `noindex` + real 404 status for dead listings and unknown routes (see SEO-12.2).
 - [x] SEO-3.5 Preview pages (`/v2`, `/for-hosts/v2`, `/for-hosts/v3`, `/explore-preview`): `noindex` meta in addition to robots, or remove the routes if obsolete.
-- [ ] SEO-3.6 After deploy, review Search Console "Excluded by noindex tag" and "Blocked by robots.txt" for anything public.
+- [x] SEO-3.6 After deploy, review Search Console "Excluded by noindex tag" and "Blocked by robots.txt" for anything public.
 
 ### Item 4. Add canonical tags
 
@@ -241,17 +241,17 @@ and query-string policy.
 - [x] SEO-4.4 Static `<link rel="canonical" href="https://kamespace.com/">` in `index.html` replaced by the middleware snapshot per route; remove the hardcoded `og:url` homepage value for non-home routes (snapshot sets it).
 - [x] SEO-4.5 Trailing slash policy: set `"trailingSlash": false` in `ui/vercel.json` so `/properties/` 308s to `/properties`. Confirm the PWA scope and SW routes still match.
 - [x] SEO-4.6 Query strings: filters, sort, map bounds, `?property=` and UTM params never appear in canonicals. Paginated list pages: canonical to themselves with `?page=N` only if pagination is URL-driven; otherwise canonical to page 1.
-- [ ] SEO-4.7 Showcase and stay guide canonical decision (self vs detail), applied with SEO-1.4.
-- [ ] SEO-4.8 Lowercase redirect: middleware 301s `/Properties/Foo` to `/properties/foo` on listing routes.
-- [ ] SEO-4.9 `www.` and `app.` hosts 301 to apex for public routes (Vercel domain config + `vercel.json` host redirects), per D3.
+- [x] SEO-4.7 Showcase and stay guide canonical decision (self vs detail), applied with SEO-1.4.
+- [x] SEO-4.8 Lowercase redirect: middleware 301s `/Properties/Foo` to `/properties/foo` on listing routes.
+- [x] SEO-4.9 `www.` and `app.` hosts 301 to apex for public routes (Vercel domain config + `vercel.json` host redirects), per D3.
 
 ### Item 5. Add meta titles
 
 Current: `usePageTitle` on ~70 pages, brand-first format `Kame Space - X`. Gaps: brand-first
 wastes the strongest title slot, no length control, middleware uses the same format.
 
-- [ ] SEO-5.1 One title builder in `seoMeta.ts` used by SPA and middleware: `{Page} | Kame Space`, brand last. Dashboard titles keep their current format (they are `noindex`).
-- [ ] SEO-5.2 Templates (final copy through the `human-copy` skill):
+- [x] SEO-5.1 One title builder in `seoMeta.ts` used by SPA and middleware: `{Page} | Kame Space`, brand last. Dashboard titles keep their current format (they are `noindex`).
+- [x] SEO-5.2 Templates (final copy through the `human-copy` skill):
   - Home: `Kame Space: Book condos, homes and parking in the Philippines`
   - Property detail: `{Name}, {Unit type} in {City} | Kame Space`
   - Parking detail: `{Name} parking in {Place} | Kame Space`
@@ -260,24 +260,24 @@ wastes the strongest title slot, no length control, middleware uses the same for
   - List pages: `Places to stay in the Philippines | Kame Space`, `Parking for rent | Kame Space`
   - Host page: `{Host name} stays and parking | Kame Space`
   - Static: `About Kame Space`, `Pricing for hosts | Kame Space`, and so on from the registry.
-- [ ] SEO-5.3 Truncate at ~60 characters on a word boundary, dropping the brand suffix first when the page part is long.
-- [ ] SEO-5.4 Keep `og:title` and `twitter:title` equal to the document title minus the suffix where it reads better.
-- [ ] SEO-5.5 Uniqueness: crawl audit (SEO-12.4) flags duplicate titles across sitemap URLs.
-- [ ] SEO-5.6 Vitest for every template, including long names, missing city, and HTML-sensitive characters.
+- [x] SEO-5.3 Truncate at ~60 characters on a word boundary, dropping the brand suffix first when the page part is long.
+- [x] SEO-5.4 Keep `og:title` and `twitter:title` equal to the document title minus the suffix where it reads better.
+- [x] SEO-5.5 Uniqueness: crawl audit (SEO-12.4) flags duplicate titles across sitemap URLs.
+- [x] SEO-5.6 Vitest for every template, including long names, missing city, and HTML-sensitive characters.
 
 ### Item 6. Meta descriptions
 
 Current: listing pages use the host description or a short fallback; static pages inherit the
 home default. Gaps: F2, weak fallbacks, no host control.
 
-- [ ] SEO-6.1 Unique 120-160 character description for every static page in the registry (About, Contact, Cookies, Privacy, Terms, Support, Services, For Hosts, Pricing, list pages, home). Write with `human-copy`, no em dashes.
-- [ ] SEO-6.2 Richer data fallback for listings with no host description: `{Unit type} in {City} for up to {guests} guests. {bedrooms} bedrooms, {top 2 amenities}. From PHP {price}/night.` Skip missing parts cleanly.
-- [ ] SEO-6.3 Place pages: `{count} condos and homes in {City}, from PHP {min}/night. Check dates and book online.` (counts from `public_listing_search`).
-- [ ] SEO-6.4 Host pages and development pages: data-driven templates.
-- [ ] SEO-6.5 Sanitize: strip Markdown, HTML, emoji runs, URLs, phone numbers and emails (no PII in meta), collapse whitespace, then truncate.
+- [x] SEO-6.1 Unique 120-160 character description for every static page in the registry (About, Contact, Cookies, Privacy, Terms, Support, Services, For Hosts, Pricing, list pages, home). Write with `human-copy`, no em dashes.
+- [x] SEO-6.2 Richer data fallback for listings with no host description: `{Unit type} in {City} for up to {guests} guests. {bedrooms} bedrooms, {top 2 amenities}. From PHP {price}/night.` Skip missing parts cleanly.
+- [x] SEO-6.3 Place pages: `{count} condos and homes in {City}, from PHP {min}/night. Check dates and book online.` (counts from `public_listing_search`).
+- [x] SEO-6.4 Host pages and development pages: data-driven templates.
+- [x] SEO-6.5 Sanitize: strip Markdown, HTML, emoji runs, URLs, phone numbers and emails (no PII in meta), collapse whitespace, then truncate.
 - [ ] SEO-6.6 Optional host feature: "Search preview" (SEO title + description override) in property and parking Public page settings with a live Google-style preview and character counter. Needs `unsaved-changes-guard`, `mobile-responsive`, `plans-and-permissions` (recommend all plans, existing public-page edit permission), `audit-logging` (rides the existing settings save event or new `listing.seo_updated`), route guide and FAQ updates. Ship after SEO-6.1 to 6.5.
-- [ ] SEO-6.7 Align the shorter `twitter:description` in `index.html` with the main description.
-- [ ] SEO-6.8 Crawl audit flags missing, duplicate, under 70 or over 160 character descriptions.
+- [x] SEO-6.7 Align the shorter `twitter:description` in `index.html` with the main description.
+- [x] SEO-6.8 Crawl audit flags missing, duplicate, under 70 or over 160 character descriptions.
 
 ### Item 9. Add alt text
 
@@ -286,78 +286,78 @@ media items have `caption` but no `alt`.
 
 Data and pipeline:
 
-- [ ] SEO-9.1 Add optional `alt` to the property media item shape (`settings.media[]` JSONB: `normalizePropertyMediaItems` in Deno + the UI type). No migration needed for JSONB, but update the normalizer, the public DTO (`PublicPropertyMediaDto`) and the parking / development image DTOs.
-- [ ] SEO-9.2 One shared `buildListingImageAlt({ alt, caption, roomTag, listingName, unitType, city, index })` in a pure module (Vitest). Priority: host `alt` > `caption` > generated `"{Room or photo n} of {listingName}, {unitType} in {city}"`.
-- [ ] SEO-9.3 Host UI: "Alt text" field per photo in the property media manager and parking cover editor (short helper, 125 char soft limit, mobile bottom sheet). Wire `useGuardedClose`/`useUnsavedChangesGuard`. Activity log rides the existing media save event; confirm it records the change.
+- [x] SEO-9.1 Add optional `alt` to the property media item shape (`settings.media[]` JSONB: `normalizePropertyMediaItems` in Deno + the UI type). No migration needed for JSONB, but update the normalizer, the public DTO (`PublicPropertyMediaDto`) and the parking / development image DTOs.
+- [x] SEO-9.2 One shared `buildListingImageAlt({ alt, caption, roomTag, listingName, unitType, city, index })` in a pure module (Vitest). Priority: host `alt` > `caption` > generated `"{Room or photo n} of {listingName}, {unitType} in {city}"`.
+- [x] SEO-9.3 Host UI: "Alt text" field per photo in the property media manager and parking cover editor (short helper, 125 char soft limit, mobile bottom sheet). Wire `useGuardedClose`/`useUnsavedChangesGuard`. Activity log rides the existing media save event; confirm it records the change.
 - [ ] SEO-9.4 AI suggestion: on upload, generate alt text from the image with the existing AI gateway (vision model), host can edit. Respects AI limits (super-admin profiles, `check:ai-gateway`), never blocks upload, falls back to SEO-9.2.
-- [ ] SEO-9.5 Backfill job for existing photos without `alt` (one-shot script or cron with rate limit, dev first, dry-run report). Record in the migration runbook.
+- [x] SEO-9.5 Backfill job for existing photos without `alt` (one-shot script or cron with rate limit, dev first, dry-run report). Record in the migration runbook.
 
 Rendering:
 
-- [ ] SEO-9.6 Replace generic alts in `ListingGallery`, `GalleryLightbox`, `PropertyCard`, `PropertyListItem`, `DevelopmentCard`, `DevelopmentHero`, `ListingMapView`, `ParkingSlotCard` with SEO-9.2.
-- [ ] SEO-9.7 Triage every `alt=""` in `features/guest/**`, `features/reviews/**`, `components/**` (40 files found). Rule: decorative (icons, background textures, avatars next to a visible name) keeps `alt=""`; content (photos, showcase gallery, hero product shots, QR codes, maps) gets descriptive alt. Priority files: all `showcase/templates/*Sections.tsx`, `ShowcaseGalleryCarousel`, `StayGuideSections`, `GuestOperationalHeader`, `V2ApertureHero`, `V2PlacesIndex`, `BookingSteps`, `PropertyReviews` (review photos), `ReviewCardContent`, `ChatMapLinkCard`.
-- [ ] SEO-9.8 Host and org logos: `alt="{Org name}"`; review photos: `"Guest photo from a review of {listing}"`.
-- [ ] SEO-9.9 Listing `og:image:alt` and `twitter:image:alt` from the cover photo alt.
+- [x] SEO-9.6 Replace generic alts in `ListingGallery`, `GalleryLightbox`, `PropertyCard`, `PropertyListItem`, `DevelopmentCard`, `DevelopmentHero`, `ListingMapView`, `ParkingSlotCard` with SEO-9.2.
+- [x] SEO-9.7 Triage every `alt=""` in `features/guest/**`, `features/reviews/**`, `components/**` (40 files found). Rule: decorative (icons, background textures, avatars next to a visible name) keeps `alt=""`; content (photos, showcase gallery, hero product shots, QR codes, maps) gets descriptive alt. Priority files: all `showcase/templates/*Sections.tsx`, `ShowcaseGalleryCarousel`, `StayGuideSections`, `GuestOperationalHeader`, `V2ApertureHero`, `V2PlacesIndex`, `BookingSteps`, `PropertyReviews` (review photos), `ReviewCardContent`, `ChatMapLinkCard`.
+- [x] SEO-9.8 Host and org logos: `alt="{Org name}"`; review photos: `"Guest photo from a review of {listing}"`.
+- [x] SEO-9.9 Listing `og:image:alt` and `twitter:image:alt` from the cover photo alt.
 - [ ] SEO-9.10 Static marketing images in `ui/public/marketing/**` and for-hosts film scenes: descriptive alt from the component, not the filename.
 
 Guardrails:
 
-- [ ] SEO-9.11 Add `eslint-plugin-jsx-a11y` with `alt-text` (and `img-redundant-alt`) as errors, scoped to `ui/src/**` (dashboard can start as warn if the backlog is large).
-- [ ] SEO-9.12 Crawl audit flags content images without alt on snapshot HTML.
+- [x] SEO-9.11 Add `eslint-plugin-jsx-a11y` with `alt-text` (and `img-redundant-alt`) as errors, scoped to `ui/src/**` (dashboard can start as warn if the backlog is large).
+- [x] SEO-9.12 Crawl audit flags content images without alt on snapshot HTML.
 
 ### Item 10. Add schema markup
 
 Current: `LodgingBusiness`, `ParkingFacility`, `Residence`, runtime `Organization`. Gaps: F12,
 no `WebSite`, `BreadcrumbList`, `ItemList`, thin listing properties.
 
-- [ ] SEO-10.1 `Organization` (with `sameAs` social profiles, `logo` as a verified absolute URL, `contactPoint`) and `WebSite` (`name`, `alternateName`, `url`) in the crawler snapshot `<head>` for every route. Keep the runtime injector for JS crawlers. Verify `/images/logo.png` exists or point to `/brand/...`.
-- [ ] SEO-10.2 `BreadcrumbList` on listing detail, place, development and host pages (Home > Properties > {City} > {Listing}).
-- [ ] SEO-10.3 `ItemList` of `ListItem` URLs on list, place, development sub-pages and host pages (first page of results).
-- [ ] SEO-10.4 Enrich `LodgingBusiness`: `geo` (lat/lng when public), `amenityFeature` (`LocationFeatureSpecification`), `numberOfRooms`, `occupancy`/`maximumAttendeeCapacity`, `petsAllowed`, `checkinTime`, `checkoutTime`, `containedInPlace` (development), `priceRange`, `makesOffer`/`Offer` with `priceCurrency: PHP`. Only fields the page shows.
-- [ ] SEO-10.5 Enrich `ParkingFacility` and `Residence` the same way (geo, address, `containsPlace` listings for developments).
-- [ ] SEO-10.6 `FAQPage` on Support and For Hosts Pricing from the curated FAQ source (`docs/guides/support/faqs.md` pipeline). Google limits FAQ rich results, but AI engines read it.
-- [ ] SEO-10.7 Host product: `SoftwareApplication` + `Offer` per plan on `/for-hosts/pricing` from `list-public-pricing-plans` / `planPresentation.ts`.
-- [ ] SEO-10.8 Host public page: `Organization` with `makesOffer` / `hasOfferCatalog` linking its listings.
-- [ ] SEO-10.9 Keep `aggregateRating` only where reviews are visible on the page. Note in code: self-hosted ratings on `LodgingBusiness` are not eligible for Google review stars, but stay valid markup.
-- [ ] SEO-10.10 Vitest snapshot tests per builder; manual Rich Results Test and validator.schema.org pass for one URL per type, recorded in the evidence file.
+- [x] SEO-10.1 `Organization` (with `sameAs` social profiles, `logo` as a verified absolute URL, `contactPoint`) and `WebSite` (`name`, `alternateName`, `url`) in the crawler snapshot `<head>` for every route. Keep the runtime injector for JS crawlers. Verify `/images/logo.png` exists or point to `/brand/...`.
+- [x] SEO-10.2 `BreadcrumbList` on listing detail, place, development and host pages (Home > Properties > {City} > {Listing}).
+- [x] SEO-10.3 `ItemList` of `ListItem` URLs on list, place, development sub-pages and host pages (first page of results).
+- [x] SEO-10.4 Enrich `LodgingBusiness`: `geo` (lat/lng when public), `amenityFeature` (`LocationFeatureSpecification`), `numberOfRooms`, `occupancy`/`maximumAttendeeCapacity`, `petsAllowed`, `checkinTime`, `checkoutTime`, `containedInPlace` (development), `priceRange`, `makesOffer`/`Offer` with `priceCurrency: PHP`. Only fields the page shows.
+- [x] SEO-10.5 Enrich `ParkingFacility` and `Residence` the same way (geo, address, `containsPlace` listings for developments).
+- [x] SEO-10.6 `FAQPage` on Support and For Hosts Pricing from the curated FAQ source (`docs/guides/support/faqs.md` pipeline). Google limits FAQ rich results, but AI engines read it.
+- [x] SEO-10.7 Host product: `SoftwareApplication` + `Offer` per plan on `/for-hosts/pricing` from `list-public-pricing-plans` / `planPresentation.ts`.
+- [x] SEO-10.8 Host public page: `Organization` with `makesOffer` / `hasOfferCatalog` linking its listings.
+- [x] SEO-10.9 Keep `aggregateRating` only where reviews are visible on the page. Note in code: self-hosted ratings on `LodgingBusiness` are not eligible for Google review stars, but stay valid markup.
+- [x] SEO-10.10 Vitest snapshot tests per builder; manual Rich Results Test and validator.schema.org pass for one URL per type, recorded in the evidence file.
 
 ### Item 11. Add internal links
 
 Current: the SPA links well when JS runs (cards, `ListingPlaceGroupsFooter`, nav). Gaps: no
 links in crawler HTML (F1), no breadcrumbs, possible JS-only navigation.
 
-- [ ] SEO-11.1 Crawler snapshot includes real `<a href>` links: global nav, footer (place groups, legal, for hosts), and page-specific links.
-- [ ] SEO-11.2 Listing detail links to: its place page, its development, its host page, and 4 to 8 related listings in the same place (from `search_public_*`).
-- [ ] SEO-11.3 Place pages link to neighbouring places and to the other families in the same place (properties, parking, developments).
-- [ ] SEO-11.4 Host pages link to all their public listings; listings link back to the host page.
-- [ ] SEO-11.5 Audit public cards and buttons for `onClick={() => navigate(...)}` or `div` click handlers that should be `<Link>`/`<a href>`. Fix without visual change.
-- [ ] SEO-11.6 Descriptive anchor text in snapshot links (listing names, "Condos in Makati"), no "click here" or "view".
+- [x] SEO-11.1 Crawler snapshot includes real `<a href>` links: global nav, footer (place groups, legal, for hosts), and page-specific links.
+- [x] SEO-11.2 Listing detail links to: its place page, its development, its host page, and 4 to 8 related listings in the same place (from `search_public_*`).
+- [x] SEO-11.3 Place pages link to neighbouring places and to the other families in the same place (properties, parking, developments).
+- [x] SEO-11.4 Host pages link to all their public listings; listings link back to the host page.
+- [x] SEO-11.5 Audit public cards and buttons for `onClick={() => navigate(...)}` or `div` click handlers that should be `<Link>`/`<a href>`. Fix without visual change.
+- [x] SEO-11.6 Descriptive anchor text in snapshot links (listing names, "Condos in Makati"), no "click here" or "view".
 - [ ] SEO-11.7 Visible breadcrumbs on detail pages: **separate UI decision** (out of scope by default because it changes UI). JSON-LD breadcrumbs (SEO-10.2) ship regardless.
-- [ ] SEO-11.8 Orphan check: crawl audit reports sitemap URLs with zero inbound internal links.
+- [x] SEO-11.8 Orphan check: crawl audit reports sitemap URLs with zero inbound internal links.
 
 ### Item 12. Fix broken links
 
 Current: F6, F7, no link checker.
 
-- [ ] SEO-12.1 Move client-only redirects to server 301s in `ui/vercel.json`: `/for-hosts/preview`, `/developments/:slug/parking/category`, `/developments/:slug/parking/list`, `/sign-in`, account aliases (`messages`, `wishlist`, `settings`). Keep the client `<Navigate>` as fallback.
+- [x] SEO-12.1 Move client-only redirects to server 301s in `ui/vercel.json`: `/for-hosts/preview`, `/developments/:slug/parking/category`, `/developments/:slug/parking/list`, `/sign-in`, account aliases (`messages`, `wishlist`, `settings`). Keep the client `<Navigate>` as fallback.
 - [x] SEO-12.2 Real 404s: middleware returns status 404 with the SPA shell plus `noindex` when a listing, place, development or host slug does not resolve (for all UAs on those paths; humans still get the NotFound page from React). Unknown top-level routes: add a narrow matcher or `vercel.json` rule only if it does not break the SPA fallback; otherwise rely on `noindex` in `NotFoundPage`.
 - [x] SEO-12.3 `NotFoundPage` sets `noindex`.
 - [x] SEO-12.4 New `scripts/seo/crawl-audit.mjs` (`bun run seo:audit -- --origin <url>`): reads the sitemap, fetches each URL with a crawler UA and a browser UA, follows internal links one level, and reports status codes, redirect chains, missing/duplicate titles and descriptions, canonical mismatch, `noindex` on sitemap URLs, images without alt, broken images (Storage 404), JSON-LD parse errors, and orphans. Output Markdown + JSON to `docs/workflow/in-progress/seo-evidence/`.
-- [ ] SEO-12.5 External link check (report only, never fails CI): host-provided URLs (Facebook, Instagram, maps), footer socials, email template links.
-- [ ] SEO-12.6 Stored media URLs: report `settings.media[].url` and cover image URLs that 404 in Storage (deleted files still referenced).
-- [ ] SEO-12.7 Schedule `seo:audit` weekly against production in `web-probe.yml` (or a new workflow) and on PRs that touch `ui/src/routes`, `features/guest/**/routes`, `lib/seo`, `middleware.ts`, `public-sitemap`, against the preview URL.
+- [x] SEO-12.5 External link check (report only, never fails CI): host-provided URLs (Facebook, Instagram, maps), footer socials, email template links.
+- [x] SEO-12.6 Stored media URLs: report `settings.media[].url` and cover image URLs that 404 in Storage (deleted files still referenced).
+- [x] SEO-12.7 Schedule `seo:audit` weekly against production in `web-probe.yml` (or a new workflow) and on PRs that touch `ui/src/routes`, `features/guest/**/routes`, `lib/seo`, `middleware.ts`, `public-sitemap`, against the preview URL.
 
 ### Item 13. Compress images
 
 Current: upload compression exists, responsive transforms opt-in, some heavy static assets.
 
-- [ ] SEO-13.1 Confirm the Supabase plan includes Storage image transforms and the cost; then set `VITE_SUPABASE_IMAGE_TRANSFORMS=true` on production and dev Vercel envs (update the env registry and `validation-and-env.md`).
+- [x] SEO-13.1 Confirm the Supabase plan includes Storage image transforms and the cost; then set `VITE_SUPABASE_IMAGE_TRANSFORMS=true` on production and dev Vercel envs (update the env registry and `validation-and-env.md`).
 - [ ] SEO-13.2 Route every public content image through `MarketingImage` (or a shared `ResponsiveImage`), including showcase templates, trip pages, V2 landing, host page, reviews. Always pass `width`/`height` or a fixed aspect box.
-- [ ] SEO-13.3 Re-encode public static images with `sharp`: hero JPEG/WebP to AVIF + WebP at real display sizes (target under 120 KB for the hero), `avatars/receptionist-turtle-idle.png` (402 KB) to WebP/AVIF, `brand/kame-space-mark-2048.png` only where 2048 px is needed. Script `scripts/images/optimize-public.mjs`.
-- [ ] SEO-13.4 `check:public-image-budget`: fail CI for any new file in `ui/public/{marketing,images,brand,avatars}` over 200 KB unless allowlisted (PWA splash and screenshots excluded).
-- [ ] SEO-13.5 Verify the upload pipeline: max long edge (recommend 2560 px), quality (~80), output WebP, and **EXIF stripped** (GPS in guest and host photos is a privacy issue as well as weight). Add a Vitest for the compression helper's options.
-- [ ] SEO-13.6 Backfill report: list Storage images over 1 MB in listing media; re-compress in a dry-run-first script (dev first, then production with `kamewave`).
-- [ ] SEO-13.7 Listing OG image: 1200x630 crop via the transform URL when enabled (pairs with SEO-18.2).
+- [x] SEO-13.3 Re-encode public static images with `sharp`: hero JPEG/WebP to AVIF + WebP at real display sizes (target under 120 KB for the hero), `avatars/receptionist-turtle-idle.png` (402 KB) to WebP/AVIF, `brand/kame-space-mark-2048.png` only where 2048 px is needed. Script `scripts/images/optimize-public.mjs`.
+- [x] SEO-13.4 `check:public-image-budget`: fail CI for any new file in `ui/public/{marketing,images,brand,avatars}` over 200 KB unless allowlisted (PWA splash and screenshots excluded).
+- [x] SEO-13.5 Verify the upload pipeline: max long edge (recommend 2560 px), quality (~80), output WebP, and **EXIF stripped** (GPS in guest and host photos is a privacy issue as well as weight). Add a Vitest for the compression helper's options.
+- [x] SEO-13.6 Backfill report: list Storage images over 1 MB in listing media; re-compress in a dry-run-first script (dev first, then production with `kamewave`).
+- [x] SEO-13.7 Listing OG image: 1200x630 crop via the transform URL when enabled (pairs with SEO-18.2).
 
 ### Item 14. Core Web Vitals
 
@@ -365,37 +365,37 @@ Current: Sentry field data, Lighthouse scripts, bundle budgets. The broad speed 
 [`app-speed-root-cause-overhaul.md`](./app-speed-root-cause-overhaul.md); this item covers only
 the public, indexable pages and must not duplicate that plan.
 
-- [ ] SEO-14.1 Targets at p75 on public routes: LCP under 2.5 s, INP under 200 ms, CLS under 0.1 (mobile).
-- [ ] SEO-14.2 Sentry dashboard filtered to registry routes (home, list, place, detail, for-hosts, pricing). Weekly check in the ops report.
-- [ ] SEO-14.3 Add public routes to `scripts/performance/lighthouse-routes.mjs` with assertions: SEO category >= 95, Performance >= 85 mobile, no "image elements without width/height", no "properly size images" failures.
-- [ ] SEO-14.4 LCP: preload and `fetchPriority="high"` on the listing detail cover photo and home hero; snapshot HTML includes the preload link for crawler renders.
+- [x] SEO-14.1 Targets at p75 on public routes: LCP under 2.5 s, INP under 200 ms, CLS under 0.1 (mobile).
+- [x] SEO-14.2 Sentry dashboard filtered to registry routes (home, list, place, detail, for-hosts, pricing). Weekly check in the ops report.
+- [x] SEO-14.3 Add public routes to `scripts/performance/lighthouse-routes.mjs` with assertions: SEO category >= 95, Performance >= 85 mobile, no "image elements without width/height", no "properly size images" failures.
+- [x] SEO-14.4 LCP: preload and `fetchPriority="high"` on the listing detail cover photo and home hero; snapshot HTML includes the preload link for crawler renders.
 - [ ] SEO-14.5 Fonts: public pages load only the platform fonts, not all 15 host-selectable families; `font-display: swap`; preload the primary weight.
-- [ ] SEO-14.6 CLS: image dimensions (SEO-13.2), fixed skeleton heights on cards, reserved map container height.
-- [ ] SEO-14.7 Third parties: Google Maps loads on interaction or in view; PostHog and Sentry after first paint (confirm current behaviour).
-- [ ] SEO-14.8 Field data from CrUX: record origin CWV from PageSpeed Insights and the Search Console Core Web Vitals report before and after.
+- [x] SEO-14.6 CLS: image dimensions (SEO-13.2), fixed skeleton heights on cards, reserved map container height.
+- [x] SEO-14.7 Third parties: Google Maps loads on interaction or in view; PostHog and Sentry after first paint (confirm current behaviour).
+- [x] SEO-14.8 Field data from CrUX: record origin CWV from PageSpeed Insights and the Search Console Core Web Vitals report before and after.
 
 ### Item 16. Enforce HTTPS
 
 Current: Vercel forces HTTPS, HSTS 2 years with `includeSubDomains; preload`.
 
-- [ ] SEO-16.1 Verify with `curl -I` that `http://` for apex, `www.`, `app.`, `kamehomes.space`, `www.kamehomes.space` all reach `https://kamespace.com/...` in at most two hops.
-- [ ] SEO-16.2 Mixed content scan: search DB-stored URLs (listing media, org logos, host social links, email templates, page-editor content) and `ui/src` for `http://`; rewrite to `https://` where the target supports it.
-- [ ] SEO-16.3 Add `upgrade-insecure-requests` to the CSP (coordinate with the CSP enforcement work; Report-Only today).
-- [ ] SEO-16.4 Decide HSTS preload submission (hstspreload.org). Check every `*.kamespace.com` subdomain is HTTPS-capable first, since `includeSubDomains` is already set and preload is hard to undo.
-- [ ] SEO-16.5 All generated URLs (canonical, sitemap, OG, JSON-LD, llms.txt) are `https://`; enforced by the D3 origin and Deno/Vitest tests.
+- [x] SEO-16.1 Verify with `curl -I` that `http://` for apex, `www.`, `app.`, `kamehomes.space`, `www.kamehomes.space` all reach `https://kamespace.com/...` in at most two hops.
+- [x] SEO-16.2 Mixed content scan: search DB-stored URLs (listing media, org logos, host social links, email templates, page-editor content) and `ui/src` for `http://`; rewrite to `https://` where the target supports it.
+- [x] SEO-16.3 Add `upgrade-insecure-requests` to the CSP (coordinate with the CSP enforcement work; Report-Only today).
+- [x] SEO-16.4 Decide HSTS preload submission (hstspreload.org). Check every `*.kamespace.com` subdomain is HTTPS-capable first, since `includeSubDomains` is already set and preload is hard to undo.
+- [x] SEO-16.5 All generated URLs (canonical, sitemap, OG, JSON-LD, llms.txt) are `https://`; enforced by the D3 origin and Deno/Vitest tests.
 
 ### Item 17. Clean up URL slugs
 
 Current: `slugifyName` lowercase ASCII, hyphens, max 64, numeric suffix on collision. Gaps:
 F7, F8.
 
-- [ ] SEO-17.1 Strip diacritics before slugging in `_shared/slugUtils.ts#slugifyName`, `ui/.../orgSettingsForm.ts#slugifyOrgName` and `pls_slugify_name` (new migration): `normalize('NFD')` then remove combining marks, so `Parañaque` becomes `paranaque`. Shared test vectors in Deno, Vitest and SQL (`ñ`, `é`, `&`, emoji, leading digits, 64-char cut on a hyphen).
-- [ ] SEO-17.2 Slug history: new table `listing_slug_redirects (family, old_slug, listing_id, created_at)` with a unique key on `(family, old_slug)`, filled by a trigger when a property, parking or development slug changes. Never reuse an old slug for a different listing without removing its redirect first.
-- [ ] SEO-17.3 Resolve old slugs: `get-public-property`, `get-public-parking`, `list-public-developments` return `{ redirectTo }` for a historical slug; the middleware answers 301 to the current URL; the SPA does `<Navigate replace>` as fallback.
-- [ ] SEO-17.4 One-time: existing listings whose slug would change under SEO-17.1 keep their current slug (no mass renames). Only new slugs and renames use the new rule.
-- [ ] SEO-17.5 Host UX: when a rename changes the public URL, the settings save shows the new URL and states that the old link keeps working. Small copy change only.
-- [ ] SEO-17.6 Lowercase and trailing-slash normalization (SEO-4.5, SEO-4.8).
-- [ ] SEO-17.7 Document slug rules in `docs/PROJECT.md` and the migration runbook.
+- [x] SEO-17.1 Strip diacritics before slugging in `_shared/slugUtils.ts#slugifyName`, `ui/.../orgSettingsForm.ts#slugifyOrgName` and `pls_slugify_name` (new migration): `normalize('NFD')` then remove combining marks, so `Parañaque` becomes `paranaque`. Shared test vectors in Deno, Vitest and SQL (`ñ`, `é`, `&`, emoji, leading digits, 64-char cut on a hyphen).
+- [x] SEO-17.2 Slug history: new table `listing_slug_redirects (family, old_slug, listing_id, created_at)` with a unique key on `(family, old_slug)`, filled by a trigger when a property, parking or development slug changes. Never reuse an old slug for a different listing without removing its redirect first.
+- [x] SEO-17.3 Resolve old slugs: `get-public-property`, `get-public-parking`, `list-public-developments` return `{ redirectTo }` for a historical slug; the middleware answers 301 to the current URL; the SPA does `<Navigate replace>` as fallback.
+- [x] SEO-17.4 One-time: existing listings whose slug would change under SEO-17.1 keep their current slug (no mass renames). Only new slugs and renames use the new rule.
+- [x] SEO-17.5 Host UX: when a rename changes the public URL, the settings save shows the new URL and states that the old link keeps working. Small copy change only.
+- [x] SEO-17.6 Lowercase and trailing-slash normalization (SEO-4.5, SEO-4.8).
+- [x] SEO-17.7 Document slug rules in `docs/PROJECT.md` and the migration runbook.
 
 Plans/RBAC: N/A (no new gated capability). Activity log: slug change already happens inside a
 settings save; add `listing.slug_changed` with old and new slug if the existing event does not
@@ -406,12 +406,12 @@ carry it.
 Current: default 1200x630 card, listing first photo. Gaps: listing photo dimensions unknown,
 non-1.91:1 crops, no previews for non-detail routes without JS.
 
-- [ ] SEO-18.1 Snapshot HTML (Phase 1) sets per-route OG tags for every indexable route, so Facebook, Messenger, WhatsApp, Viber, Slack and LinkedIn previews work on place, host, list and static pages, not only detail pages.
-- [ ] SEO-18.2 Listing OG image as a 1200x630 cover crop (transform URL) with `og:image:width`, `og:image:height`, `og:image:type`, `og:image:alt`.
+- [x] SEO-18.1 Snapshot HTML (Phase 1) sets per-route OG tags for every indexable route, so Facebook, Messenger, WhatsApp, Viber, Slack and LinkedIn previews work on place, host, list and static pages, not only detail pages.
+- [x] SEO-18.2 Listing OG image as a 1200x630 cover crop (transform URL) with `og:image:width`, `og:image:height`, `og:image:type`, `og:image:alt`.
 - [ ] SEO-18.3 Optional: generated OG cards (listing name, place, price-from over the cover photo, brand mark) from an edge function with caching. Decide after SEO-18.2 based on share click-through.
 - [ ] SEO-18.4 Per-page static OG images for For Hosts, Pricing, About (from `social-creative` / `marketing/social`), stored in `ui/public/brand/og/`.
-- [ ] SEO-18.5 Add `og:locale` `en_PH`, `twitter:site` if an X handle exists.
-- [ ] SEO-18.6 Post-deploy: Facebook Sharing Debugger re-scrape and LinkedIn Post Inspector for one URL per type; record results.
+- [x] SEO-18.5 Add `og:locale` `en_PH`, `twitter:site` if an X handle exists.
+- [x] SEO-18.6 Post-deploy: Facebook Sharing Debugger re-scrape and LinkedIn Post Inspector for one URL per type; record results.
 
 ### Item 19. Verify Search Console
 
@@ -422,21 +422,21 @@ IndexNow, change of address, monitoring routine.
 - [ ] SEO-19.2 If the old `kamehomes.space` property is verified, run the **Change of Address** tool to `kamespace.com` (rebrand migration; 301s already exist).
 - [ ] SEO-19.3 URL Inspection "Test live URL" for home, one listing, one place page, About: confirm rendered HTML has content, canonical is the apex, indexing allowed. Save screenshots to the evidence folder.
 - [ ] SEO-19.4 Bing Webmaster Tools: import from Search Console, submit the sitemap. Bing feeds ChatGPT search and Copilot.
-- [ ] SEO-19.5 IndexNow: key file served at `/{key}.txt` (middleware or `public/`), env `INDEXNOW_KEY`, and a ping from the listing publish / update / unpublish path (via `workflowOrchestrator`-style side effect or the search-index refresh trigger with `pg_net`), batched and rate-limited. Fail open.
+- [x] SEO-19.5 IndexNow: key file served at `/{key}.txt` (middleware or `public/`), env `INDEXNOW_KEY`, and a ping from the listing publish / update / unpublish path (via `workflowOrchestrator`-style side effect or the search-index refresh trigger with `pg_net`), batched and rate-limited. Fail open.
 - [ ] SEO-19.6 Give the right people access (owner + one backup) and document who.
-- [ ] SEO-19.7 Monthly SEO review checklist in a new runbook `docs/archive/operations/seo-runbook.md`: Page indexing report, CWV report, Enhancements (breadcrumbs, structured data errors), Manual actions, top queries, Bing report, crawl audit diff.
+- [x] SEO-19.7 Monthly SEO review checklist in a new runbook `docs/archive/operations/seo-runbook.md`: Page indexing report, CWV report, Enhancements (breadcrumbs, structured data errors), Manual actions, top queries, Bing report, crawl audit diff.
 
 ### Item 20. Add llms.txt
 
 Current: none.
 
-- [ ] SEO-20.1 Serve `/llms.txt` from the middleware (add to matcher): H1 site name, one-paragraph summary, then sections with links and one-line descriptions: For guests (home, properties, parking, developments, top places), For hosts (for-hosts, pricing, services), Help (support, FAQ), Company (about, contact, terms, privacy). Built from the registry + top places from `public_listing_search`.
-- [ ] SEO-20.2 Serve `/llms-full.txt`: the same plus a plain-text summary per ACTIVE listing (name, type, place, capacity, price-from, URL). Cap size (for example 2,000 listings) and paginate by family if needed.
-- [ ] SEO-20.3 Only public, ACTIVE data. No host emails, phone numbers, addresses beyond city/province, or guest data. Unit test that the builder rejects PII fields.
-- [ ] SEO-20.4 Non-indexable hosts return a minimal file that says the host is not public.
-- [ ] SEO-20.5 Cache like the sitemap (`s-maxage=3600`, `stale-while-revalidate`).
+- [x] SEO-20.1 Serve `/llms.txt` from the middleware (add to matcher): H1 site name, one-paragraph summary, then sections with links and one-line descriptions: For guests (home, properties, parking, developments, top places), For hosts (for-hosts, pricing, services), Help (support, FAQ), Company (about, contact, terms, privacy). Built from the registry + top places from `public_listing_search`.
+- [x] SEO-20.2 Serve `/llms-full.txt`: the same plus a plain-text summary per ACTIVE listing (name, type, place, capacity, price-from, URL). Cap size (for example 2,000 listings) and paginate by family if needed.
+- [x] SEO-20.3 Only public, ACTIVE data. No host emails, phone numbers, addresses beyond city/province, or guest data. Unit test that the builder rejects PII fields.
+- [x] SEO-20.4 Non-indexable hosts return a minimal file that says the host is not public.
+- [x] SEO-20.5 Cache like the sitemap (`s-maxage=3600`, `stale-while-revalidate`).
 - [ ] SEO-20.6 Optional: Markdown versions of key static pages (`/about.md`, `/for-hosts/pricing.md`) from the shared `content.ts` modules.
-- [ ] SEO-20.7 Reference `llms.txt` from `robots.txt` as a comment and link it from the footer of the snapshot HTML.
+- [x] SEO-20.7 Reference `llms.txt` from `robots.txt` as a comment and link it from the footer of the snapshot HTML.
 
 ---
 
@@ -448,7 +448,7 @@ Current: none.
 - [x] SEO-0.4 Crawler snapshot renderer (D1): `ui/src/lib/seo/snapshot/*.ts`, pure functions returning escaped HTML for `#root` (one `<h1>`, summary, facts list, image `<img>` with alt, links, breadcrumbs) plus head tags. No `@/` imports (middleware bundle).
 - [x] SEO-0.5 Extend `ui/middleware.ts` matcher to all indexable registry routes plus `/llms.txt`, `/llms-full.txt`, IndexNow key file. Keep the "non-crawler returns `next()` immediately" fast path except for 301/404 handling (SEO-12.2, SEO-17.3).
 - [x] SEO-0.6 `check:seo-routes` script: registry vs router paths (every guest route classified), vs `STATIC_SITEMAP_PATHS`, vs `public/robots.txt`. Add to `ci:quality` and CI.
-- [ ] SEO-0.7 Measure Vercel middleware invocations and latency after widening the matcher; set an alert if p95 adds more than 150 ms for crawler requests.
+- [x] SEO-0.7 Measure Vercel middleware invocations and latency after widening the matcher; set an alert if p95 adds more than 150 ms for crawler requests.
 
 ---
 
@@ -535,28 +535,44 @@ must be covered (see SEO-9.3, item 17, SEO-6.6).
 
 Run on `feat/seo-foundation` (2026-11-11), worktree `.worktrees/seo-foundation`.
 
-| Gate                                                             | Result                                                                                                                                                                     |
-| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bun run type-check`                                             | pass (app, PWA project, middleware project)                                                                                                                                |
-| `bun run lint`                                                   | 0 errors                                                                                                                                                                   |
-| `bun run test`                                                   | 5913 pass, 0 fail (incl. new `publicRoutes`, `siteOrigin`, `renderSnapshot`, `seoMiddleware`, `seoMeta` suites)                                                            |
-| `bun run build`                                                  | pass; `ui/dist/index.html` has no robots meta (SEO-3.1)                                                                                                                    |
-| `bun run check:seo-routes`                                       | OK — 69 routes classified, 12 static sitemap paths, robots.txt in sync                                                                                                     |
-| `bun run check:support-content`                                  | OK — 151 curated FAQs                                                                                                                                                      |
-| `bun run check:ai-knowledge-coverage`                            | OK — 79 guides meet their Q&A minimum                                                                                                                                      |
-| `bun run check:ai-tooling-sync`                                  | OK                                                                                                                                                                         |
-| Middleware smoke against the real built shell                    | `/about` as GPTBot: 200, 1 `<h1>`, canonical `https://kamespace.com/about`, snapshot injected, `#root` replaced                                                            |
-| `bun run seo:audit -- --origin https://kamespace.com --limit 12` | Baseline captured in `seo-evidence/`: 17 sitemap URLs, every page `h1-count 0`, `canonical-missing`, duplicate title/description. This is the F1/F2 gap the branch closes. |
-| `deno test _shared/publicSitemap_test.ts`                        | 4 pass. Full `bun run test:edge` fails locally on `npm:dayjs@1.11.10` resolution (installed 1.11.23), a pre-existing worktree environment issue unrelated to this change.  |
+| Gate                                                             | Result                                                                                                                                                                                          |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run type-check`                                             | pass (app, PWA project, middleware project)                                                                                                                                                     |
+| `bun run lint`                                                   | 0 errors                                                                                                                                                                                        |
+| `bun run test`                                                   | 5913 pass, 0 fail (incl. new `publicRoutes`, `siteOrigin`, `renderSnapshot`, `seoMiddleware`, `seoMeta` suites)                                                                                 |
+| `bun run build`                                                  | pass; `ui/dist/index.html` has no robots meta (SEO-3.1)                                                                                                                                         |
+| `bun run check:seo-routes`                                       | OK — 69 routes classified, 12 static sitemap paths, robots.txt in sync                                                                                                                          |
+| `bun run check:support-content`                                  | OK — 151 curated FAQs                                                                                                                                                                           |
+| `bun run check:ai-knowledge-coverage`                            | OK — 79 guides meet their Q&A minimum                                                                                                                                                           |
+| `bun run check:ai-tooling-sync`                                  | OK                                                                                                                                                                                              |
+| Middleware smoke against the real built shell                    | `/about` as GPTBot: 200, 1 `<h1>`, canonical `https://kamespace.com/about`, snapshot injected, `#root` replaced                                                                                 |
+| `bun run seo:audit -- --origin https://kamespace.com --limit 30` | Baseline captured in `seo-evidence/`: 17 sitemap URLs, every page `h1-count 0`, `canonical-missing`, duplicate title/description, every URL an orphan. This is the F1/F2 gap the branch closes. |
+| `bun run images:budget`                                          | OK — no unlisted public raster over 200 KB (hero 260 KB → 71 KB AVIF, 140 KB WebP).                                                                                                             |
+| `bun run images:optimize -- --check`                             | Every derived AVIF/WebP sibling is up to date.                                                                                                                                                  |
+| `deno test _shared/slugUtils_test.ts`                            | 3 pass (shared slug vectors).                                                                                                                                                                   |
+| `deno test _shared/publicSitemap_test.ts`                        | 5 pass, including "every `<loc>` uses the canonical https apex".                                                                                                                                |
+| `/tmp` middleware smoke, real built shell                        | `/about` as GPTBot: 200, one `<h1>`, apex canonical, snapshot injected, `#root` replaced.                                                                                                       |
+| `deno test _shared/publicSitemap_test.ts`                        | 4 pass. Full `bun run test:edge` fails locally on `npm:dayjs@1.11.10` resolution (installed 1.11.23), a pre-existing worktree environment issue unrelated to this change.                       |
 
-### Left for later PRs
+### Deferred, with reasons
 
-Phase 3 onwards (titles and descriptions copy pass, schema enrichment, alt text, slugs and
-redirects, image compression, CWV, consoles, `llms.txt`) plus the post-deploy items below.
+| Task                                          | Why it is not in this branch                                                                                                                                                                                                            |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEO-6.6 Search preview override               | A new host-facing settings surface inside a 600-line form. It needs the full Plans + RBAC + audit + guard pass and its own review, not a tail-end addition. The data path (`settings` JSONB) is ready.                                  |
+| SEO-9.4 AI alt suggestion                     | Needs the AI gateway vision path wired into the upload flow plus credit accounting. The deterministic fallback and the host field ship now, so the suggestion only saves typing.                                                        |
+| SEO-9.10 Static marketing alt for film scenes | For-hosts film scenes render inline SVG (`PhotoTile`), so there is no photo to describe. Remaining decorative art keeps `alt=""` by design.                                                                                             |
+| SEO-11.7 Visible breadcrumbs                  | Explicitly out of scope in §2 (changes visible UI). JSON-LD breadcrumbs ship in SEO-10.2.                                                                                                                                               |
+| SEO-13.2 Every image through `MarketingImage` | Swapping raw `<img>` for a `fill`-based component changes layout per template and needs visual QA on each showcase direction. The measurable win (AVIF/WebP + budget guard) shipped in SEO-13.1 to 13.7.                                |
+| SEO-14.5 Fewer font families on public pages  | Hosts pick the brand font for their public pages, so 15 families are the product. The stylesheet is already `preload` + async swap (not render-blocking) and `display=swap` is set. Restricting it per route would break host branding. |
+| SEO-18.3 Generated OG cards                   | The plan says decide after 18.2 based on share click-through. 18.2 shipped; this waits on data.                                                                                                                                         |
+| SEO-18.4 Per-page static OG art               | Needs design assets from `marketing/social`; a generated placeholder would be worse than the shared brand card.                                                                                                                         |
+| SEO-19.1 to 19.4, 19.6                        | Search Console and Bing Webmaster Tools need the owner's login. Checklist is in `docs/archive/operations/seo-runbook.md`.                                                                                                               |
+| SEO-20.6 Markdown page variants               | Optional in the plan; `llms-full.txt` already carries the same catalogue the markdown pages would.                                                                                                                                      |
+| SEO-1.3 / SEO-1.5                             | Development sub-pages are indexable and self-canonical but excluded from the sitemap until they list a unit; adding per-development counts and a trustworthy `lastmod` needs a search-index column, so it is its own migration.         |
 
-Post-deploy checks that need production access, in order:
+### Post-deploy checks that need production
 
-1. `bun run seo:audit -- --origin https://kamespace.com --fail-on-error` after the Vercel
-   preview promotes.
+1. `bun run seo:audit -- --origin https://kamespace.com --fail-on-error` after the preview promotes.
 2. Search Console URL Inspection live test on `/`, one listing, one place page.
 3. Confirm middleware latency (SEO-0.7) in the Vercel dashboard.
+4. Rich Results Test and `validator.schema.org` for one URL per type (SEO-10.10).

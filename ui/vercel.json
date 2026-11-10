@@ -16,6 +16,41 @@
       "permanent": true
     },
     {
+      "source": "/for-hosts/preview",
+      "destination": "/for-hosts/v2",
+      "permanent": true
+    },
+    {
+      "source": "/developments/:slug/parking/category",
+      "destination": "/developments/:slug/parking",
+      "permanent": true
+    },
+    {
+      "source": "/developments/:slug/parking/list",
+      "destination": "/developments/:slug/parking",
+      "permanent": true
+    },
+    {
+      "source": "/sign-in",
+      "destination": "/for-hosts/login",
+      "permanent": true
+    },
+    {
+      "source": "/account/messages",
+      "destination": "/account/stays",
+      "permanent": true
+    },
+    {
+      "source": "/account/wishlist",
+      "destination": "/account/favorites",
+      "permanent": true
+    },
+    {
+      "source": "/account/settings",
+      "destination": "/account/profile",
+      "permanent": true
+    },
+    {
       "source": "/form",
       "has": [
         {

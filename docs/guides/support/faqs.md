@@ -905,6 +905,15 @@ Stay guide, security-deposit refund, and guest review links are per booking. Cal
 
 Yes. On the Calendar card choose Copy link, select the check-in and check-out dates, then Copy link. The guest opens the calendar with that range selected. You can also copy the calendar without dates.
 
+### What is alt text and do I need it?
+
+- category: Public Pages
+- audience: host
+- source: docs/guides/routes/org/property/settings.md
+- order: 65
+
+Alt text describes a photo for guests who use a screen reader, and search engines read it too. Open Property Settings, Photos and Videos, then the pencil on a photo to write one short line such as "Studio with a balcony facing the pool". It is optional. If you leave it empty, we use the photo caption, then a description built from the listing name, unit type and city.
+
 ### Why doesn't my listing show up on Google or in an AI answer?
 
 - category: Public Pages
