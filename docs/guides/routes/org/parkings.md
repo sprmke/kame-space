@@ -52,7 +52,7 @@ This is your parking inventory hub, showing every slot your organization offers,
 
 ## Save path
 
-- **Add parking** → `POST create-parking` → seeds parking settings → backfills empty/invalid **`properties.settings.preferredOwnerParkingId`** to the earliest ACTIVE org listing → redirects to parking settings
+- **Add parking** → `POST create-parking` → seeds parking settings → backfills empty/invalid **`properties.settings.preferredOwnerParkingId`** to the earliest ACTIVE org listing → redirects to parking settings. The New listing dialog states that a platform fee applies per booking and points to Pricing for the payout split.
 
 ---
 
