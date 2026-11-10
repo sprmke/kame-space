@@ -1,8 +1,8 @@
 ---
 stage: in-progress
 title: 'Marketing Trends: daily ranked Philippine trending topics that hosts turn into posts'
-status: planned
-tags: [workflow, planned, marketing, ai, cron, trends, plans-and-permissions, super-admin]
+status: in-progress
+tags: [workflow, in-progress, marketing, ai, cron, trends, plans-and-permissions, super-admin]
 updated: 2026-11-10
 kind: plan
 readiness: audited
