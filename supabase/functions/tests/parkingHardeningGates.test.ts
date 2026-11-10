@@ -10,6 +10,20 @@ async function source(path: string): Promise<string> {
   return await Deno.readTextFile(new URL(`../${path}`, import.meta.url));
 }
 
+async function latestMigrationDefining(signature: string): Promise<{ file: string; src: string }> {
+  const dir = new URL('../../migrations/', import.meta.url);
+  const names: string[] = [];
+  for await (const entry of Deno.readDir(dir)) {
+    if (entry.isFile && entry.name.endsWith('.sql')) names.push(entry.name);
+  }
+  names.sort();
+  for (let i = names.length - 1; i >= 0; i -= 1) {
+    const src = await Deno.readTextFile(new URL(names[i]!, dir));
+    if (src.includes(signature)) return { file: names[i]!, src };
+  }
+  throw new Error(`No migration defines ${signature}`);
+}
+
 function countOccurrences(haystack: string, needle: string): number {
   return haystack.split(needle).length - 1;
 }
@@ -163,4 +177,18 @@ Deno.test('host cancel requires a reason and moves paid rows to refund review', 
   assert(src.includes("status: 'refund_review'"));
   assert(src.includes('sendParkingHostCancelledEmail'));
   assert(src.includes("action: 'parking.cancelled_by_host'"));
+});
+
+Deno.test('the latest public listing refresh uses the platform guest rate', async () => {
+  const latest = await latestMigrationDefining(
+    'CREATE OR REPLACE FUNCTION public.pls_refresh_parking'
+  );
+  assert(
+    latest.src.includes('FROM public.platform_parking_settings'),
+    `${latest.file} must read the platform guest rate`
+  );
+  assert(
+    !latest.src.includes('FROM public.parking_settings'),
+    `${latest.file} must not write the host rate into the public index`
+  );
 });

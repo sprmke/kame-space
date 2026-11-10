@@ -60,6 +60,9 @@ Follow-up slice (2026-11-09):
 - **E-11/E-12** org parkings hub and super-admin payouts specs added.
 - **Manual QA** width sweep at 375 / 768 / 1280 for Bookings, booking detail, Pricing, Finance and Settings, now asserting loaded content rather than just the page shell.
 - **Mobile QA fix** the pricing calendar kept square cells from its 56px minimum height and the nowrap direct-link URL widened the right column, so 375px clipped the weekend columns. Compact card padding + 2px week gaps keep all seven days on screen at ~45px cells, and the right column now shrinks. A Playwright test asserts the last day cell stays inside the 375px viewport.
+- **Final review fix** the later public-listing migration had redefined `pls_refresh_parking()` with the host rate, reverting G-1. Migration `20261327000000_parking_guest_rate_index_fix.sql` restores the platform guest rate, re-backfills the index, and a Deno test guards the last definition.
+- **M-8/M-9 UI** parking settings now returns archive impact counts. The archive confirm lists pending offers and upcoming bookings; delete is disabled once the slot has booking history or pending offers, and the copy names finance removal.
+- **Docs/rules cleanup** removed stale references to the deleted `submit-pay-parking`, `parking-broadcast-email` and `create-parking-booking` endpoints from active guides and rules.
 
 **C-4 confirmed:** no repository callers for `submit-pay-parking`, `parking-broadcast-email` or `create-parking-booking`, and none are deployed in production. Their dirs, config blocks and guards are gone.
 
@@ -547,6 +550,8 @@ These are implemented with the recommended default unless the product owner over
 1. **Host-created bookings already paid offline (cash or bank transfer).** Default: add a "Paid outside Kame Space" option for hosts with `bookings:edit`. It records a ₱0 `provider: 'offline'` ledger row, no platform fee, and reuses the complimentary fulfillment path (confirmation + endorsement + property gate, no PayMongo). Do not send the guest a pay link. Keep online-only as the visible default.
 2. **Refund policy when the host cancels after payment.** Default: full refund to the guest, recorded manually in `parking-payouts` (`record_refund`), host payout blocked until recorded. The existing "non-refundable" copy applies to guest-initiated cancellation, not host cancellation. If product disagrees, change the copy and the action label, not the ledger.
 3. **Guest-facing price (G-1).** Default: guests always see and pay the **platform** guest rate. Cards, detail, form summary, status and checkout all use it. Host rate is a payout input only. Weekend nights are called out when the rate differs.
+4. **M-3 Checkout Sessions.** Payment Links remain in this slice. The ledger invalidation, webhook guard and provider-state check cover the payable-after-release risk without changing the webhook shape. Revisit Checkout Sessions when server-side link expiry is worth that migration.
+5. **M-11 Telegram fan-out.** Host alerts for cancellation, payment expiry and endorsement failure ship in-app. Telegram needs new per-parking templates and toggles, so it stays a follow-up rather than a hidden untemplated message.
 
 ---
 

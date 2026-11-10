@@ -142,6 +142,12 @@ export type ParkingFlowState = {
   claimFailsAlreadyClaimed: boolean;
   /** Guest taps Pay now after the payment window closed; checkout returns 409. */
   paymentWindowExpiredOnCheckout: boolean;
+  /** Archive/delete warnings from parking-settings. */
+  archiveImpact?: {
+    pendingOffers: number;
+    upcomingBookings: number;
+    bookingHistory: number;
+  };
 };
 
 const MOCK_HOST_CONTACT = {
@@ -909,6 +915,11 @@ export async function installParkingFlowMocks(page: Page, state: ParkingFlowStat
               autoAcceptTopMatch: false,
             },
             updatedAt: '2026-08-01T00:00:00.000Z',
+            archiveImpact: state.archiveImpact ?? {
+              pendingOffers: 0,
+              upcomingBookings: 0,
+              bookingHistory: 0,
+            },
             parkingIntegrations: {
               telegram: {
                 marketing: telegramStatus,

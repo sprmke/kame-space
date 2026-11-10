@@ -41,11 +41,7 @@ function parkingTypeLabel(value: string): string {
   return PARKING_TYPES.find((type) => type.value === value)?.label ?? value;
 }
 
-export function ParkingBasicInformationSection({
-  controller,
-}: {
-  controller: SettingsController;
-}) {
+export function ParkingBasicInformationSection({ controller }: { controller: SettingsController }) {
   const {
     parking,
     inheritedBrandColor,
@@ -253,28 +249,18 @@ export function ParkingAmenitiesSection({ controller }: { controller: SettingsCo
       disabled={controller.busy}
       newCustomInput={controller.newCustomFeatureInput}
       onNewCustomInputChange={controller.setNewCustomFeatureInput}
-      banner={parkingSettingsSectionBanner(
-        'features',
-        controller.draftCompletion.sectionMessages
-      )}
+      banner={parkingSettingsSectionBanner('features', controller.draftCompletion.sectionMessages)}
     />
   );
 }
 
 export function ParkingLocationSection({ controller }: { controller: SettingsController }) {
   return (
-    <AdminSection
-      id="location"
-      title="Location"
-      icon={MapPin}
-      description="Address and map pin."
-    >
+    <AdminSection id="location" title="Location" icon={MapPin} description="Address and map pin.">
       <PropertyLocationPicker
         disabled={controller.busy}
         value={controller.locationDraft}
-        onChange={(patch) =>
-          controller.setLocationDraft((current) => ({ ...current, ...patch }))
-        }
+        onChange={(patch) => controller.setLocationDraft((current) => ({ ...current, ...patch }))}
         addressError={controller.resolveFieldError('property-address')}
         mapError={controller.resolveFieldError('property-location-map')}
         onFieldInteract={controller.markFieldInteracted}
@@ -283,11 +269,7 @@ export function ParkingLocationSection({ controller }: { controller: SettingsCon
   );
 }
 
-export function ParkingAutomationsSectionBlock({
-  controller,
-}: {
-  controller: SettingsController;
-}) {
+export function ParkingAutomationsSectionBlock({ controller }: { controller: SettingsController }) {
   return (
     <ParkingAutomationsSection
       value={controller.automationDraft}
@@ -340,6 +322,7 @@ export function ParkingActivitySection() {
 export function ParkingDangerZoneSection({ controller }: { controller: SettingsController }) {
   const {
     parking,
+    settings,
     displayName,
     isArchived,
     busy,
@@ -355,6 +338,11 @@ export function ParkingDangerZoneSection({ controller }: { controller: SettingsC
     handleRestore,
     handleDelete,
   } = controller;
+  const pendingOffers = settings?.archiveImpact?.pendingOffers ?? 0;
+  const upcomingBookings = settings?.archiveImpact?.upcomingBookings ?? 0;
+  const deleteBlocked = (settings?.archiveImpact?.bookingHistory ?? 0) > 0 || pendingOffers > 0;
+  const pendingOfferLabel = pendingOffers === 1 ? 'offer' : 'offers';
+  const upcomingBookingLabel = upcomingBookings === 1 ? 'booking' : 'bookings';
 
   return (
     <AdminSection
@@ -405,14 +393,20 @@ export function ParkingDangerZoneSection({ controller }: { controller: SettingsC
           <div className="space-y-0.5">
             <p className="text-destructive text-xs font-semibold sm:text-sm">Delete parking</p>
             <p className="text-card-description">
-              Permanently removes this parking slot and its settings. This cannot be undone.
+              Permanently removes this parking slot, its settings, and its finance entries. This
+              cannot be undone.
             </p>
+            {deleteBlocked ? (
+              <p className="text-muted-foreground text-xs">
+                Parking with booking history or pending offers can't be deleted. Archive it instead.
+              </p>
+            ) : null}
           </div>
           <Button
             type="button"
             variant="destructive"
             size="sm"
-            disabled={busy || deleteParking.isPending}
+            disabled={busy || deleteParking.isPending || deleteBlocked}
             className="settings-action w-full sm:w-auto"
             onClick={() => setDeleteOpen(true)}
           >
@@ -428,6 +422,12 @@ export function ParkingDangerZoneSection({ controller }: { controller: SettingsC
             <ResponsiveModalDescription>
               This parking slot will be marked Inactive and hidden from the public listing. You can
               restore it anytime from this section.
+              {pendingOffers > 0
+                ? ` ${pendingOffers} pending ${pendingOfferLabel} will be declined.`
+                : ''}
+              {upcomingBookings > 0
+                ? ` ${upcomingBookings} upcoming ${upcomingBookingLabel} will stay in place.`
+                : ''}
             </ResponsiveModalDescription>
           </ResponsiveModalHeader>
           <ResponsiveModalFooter className="flex-col gap-2 sm:flex-row">
@@ -487,7 +487,8 @@ export function ParkingDangerZoneSection({ controller }: { controller: SettingsC
           <ResponsiveModalHeader>
             <ResponsiveModalTitle>Delete {displayName || parking.name}?</ResponsiveModalTitle>
             <ResponsiveModalDescription>
-              This parking slot and its settings will be permanently removed. This cannot be undone.
+              This parking slot, its settings, and its finance entries will be permanently removed.
+              This cannot be undone.
             </ResponsiveModalDescription>
           </ResponsiveModalHeader>
           <ResponsiveModalFooter className="flex-col gap-2 sm:flex-row">
