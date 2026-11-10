@@ -109,6 +109,48 @@ docs/guides/testing/
 
 `ui/e2e/shared/ids.ts` owns the stable E2E ids **and** `SUPABASE_AUTH_STORAGE_KEY`. Import it, never retype the key: it is derived from the Supabase project ref, so a literal breaks the moment the project moves, and the failure shows up as a signed-out page somewhere else. `bun run check:e2e-auth-key` fails on any `sb-<ref>-auth-token` literal outside that file.
 
+### Page coverage manifests
+
+A page is **adopted** by adding `ui/e2e/pages/<guide path>/<page>.coverage.ts` with `definePageCoverage`. The manifest mirrors the route guide: every behavioural `##` section is either claimed by a spec or marked `na` with a reason.
+
+```ts
+export default definePageCoverage({
+  guide: 'docs/guides/routes/org/property/finance.md',
+  routes: ['/org/:orgSlug/property/:propertySlug/finance'],
+  archetype: 'DW',
+  levels: ['property'],
+  sections: {
+    'Summary cards & charts':
+      'ui/e2e/features/dashboard/dashboardModulesSmoke.spec.ts#<test title>',
+  },
+  na: {},
+  gates: ['financeReporting'],
+  permissions: ['finance:view', 'finance:edit'],
+  edgeFunctions: ['finance-summary', 'finance-line-items', 'finance-export'],
+  activity: ['finance.line_item.created'],
+  unit: ['ui/src/features/dashboard/finance/lib/financeSummaryStats.test.ts'],
+});
+```
+
+| Rule                   | Fails when                                                   |
+| ---------------------- | ------------------------------------------------------------ |
+| Section has a decision | a guide `##` heading is neither claimed, `na`, nor baselined |
+| Claim is real          | the spec path, or the unit suite, does not exist             |
+| Claim is current       | the heading no longer exists in the guide                    |
+| Baseline shrinks       | an entry is now claimed or gone (re-run with `--write`)      |
+| One owner per guide    | two manifests claim the same guide                           |
+
+Boilerplate headings (`Overview`, `Host-facing knowledge`, `API reference`, `Implementation map`, `Testing`, `Related docs`, `Progress overview`) are ignored.
+
+The `definePageCoverage` helper lives in `ui/e2e/shared/pageCoverage/`, not `coverage/`: `.gitignore` has `**/coverage` for coverage reports, so that directory name is silently untracked.
+
+`bun run check:test-coverage` reports progress as `N/107 guides adopted · sections claimed · na · baselined`. Unadopted guides are counted, not failed, so adoption is one page at a time. Gaps inside an adopted guide go into `ui/e2e/coverage-baseline.json`, which is shrink-only:
+
+```bash
+bun scripts/dev/check-test-coverage.ts            # check
+bun scripts/dev/check-test-coverage.ts --write    # rewrite the baseline after claiming a section
+```
+
 ## Playwright tags
 
 Vitest runs two projects:
