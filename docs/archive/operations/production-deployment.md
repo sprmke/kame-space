@@ -315,6 +315,11 @@ bun run deploy:supabase -- --include-all
 bun run deploy:supabase:db
 bun run deploy:supabase:functions
 
+# Deploy only some functions (CI does this automatically; useful manually after one change):
+DEPLOY_FUNCTIONS="list-properties property-access" bun run deploy:supabase:functions
+# DEPLOY_FUNCTIONS=none skips the function step; unset or `all` deploys every function.
+# `_shared/**` is bundled into every function, so a shared change always needs `all`.
+
 # Backups & rollback
 bun run backup:supabase:prod
 bun run rollback:supabase:prod   # requires kamewave

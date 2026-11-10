@@ -8,9 +8,9 @@ import { jsonSuccess, requireHttpMethod } from '../_shared/httpResponse.ts';
 import { resolvePropertyAccessContext } from '../_shared/propertyScope.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 
-serveAuthenticated('property-access', async (req) => {
+serveAuthenticated('property-access', async (req, user) => {
   requireHttpMethod(req, 'GET');
-  const ctx = await resolvePropertyAccessContext(req);
+  const ctx = await resolvePropertyAccessContext(req, null, user);
 
   return jsonSuccess(req, {
     accessKind: ctx.accessKind,

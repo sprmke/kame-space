@@ -1,0 +1,34 @@
+---
+description: >-
+  How to keep edge latency from regressing. Two verifications per request, no per-request
+  database writes, one round trip for boot-path handlers, and a measured before/after.
+alwaysApply: true
+---
+
+# Edge latency — keep it low
+
+Measured baseline and history: **`docs/architecture/performance-before-after.md`**. Read it
+before changing anything on the dashboard boot path.
+
+## Rules
+
+| Rule                                                                                                                                                                                                             | Why                                                                                                                           | Check                                                                                                        |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Verify the JWT once per request.** Pass the wrapper's `user` into `verifyPropertyAccess` / `verifyOrgListAccess` / `resolveScopedPropertyAccess` instead of letting them call `verifyAuthenticatedUser` again. | A second `auth.getUser` is a ~90 ms network round trip. Measured 84-121 ms.                                                   | `auth;dur` in `Server-Timing` stays ~0 on every call after the first in a burst.                             |
+| **Boot-path handlers get one round trip.** If a handler issues two or more sequential PostgREST reads for data no permission rule depends on, move the _fetches_ into a single SQL function.                     | `list-organizations` was seven reads at 488 ms; `verifyPropertyAccess` was four at ~390 ms. Both are now ~128 ms and ~125 ms. | `handler;dur` under ~150 ms for boot-path endpoints.                                                         |
+| **Move fetches, never decisions.** Keep authorisation branches in TypeScript, in the same order.                                                                                                                 | A reordered branch is an auth bug; a changed fetch is a failed lookup.                                                        | Parity check the endpoint against production after deploy: owner `200`, wrong tenant `403`, bad token `401`. |
+| **No database write per request.** Rate limiting is a write. Do not add another one to the wrapper path.                                                                                                         | It cost 120-280 ms per authenticated call.                                                                                    | `ratelimit;dur` / `handler;dur` in `Server-Timing`.                                                          |
+| **Measure, then change.** Read `Server-Timing` before and after, and record both in `performance-before-after.md`.                                                                                               | Three plausible-sounding changes in this plan were already done, already absent, or actively slower.                          | A PR that claims a speed-up without two numbers is not done.                                                 |
+
+## Traps that have already cost time
+
+- **`ui/node_modules/.vite` goes stale** if the tree was stashed while a dev server was running.
+  The server keeps serving a stale module graph and a before/after comparison silently compares
+  the wrong code. Clear it before any measurement, and confirm the served module actually
+  contains the change.
+- **The mocked E2E harness answers every edge call instantly**, so it cannot show a network
+  saving at all. Use it for correctness, production `Server-Timing` for latency.
+- **Full-suite Playwright runs flake** on a busy machine (different spec each run, all passing in
+  isolation). Re-run the failing spec alone before assuming a regression.
+- **Public visibility keys off `ACTIVE`.** Do not add per-endpoint `is_test` filters; keep the
+  test tenant non-ACTIVE instead. See `docs/architecture/test-tenant.md`.

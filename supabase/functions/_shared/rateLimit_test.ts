@@ -10,10 +10,12 @@ import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts';
 
 import {
   checkRateLimit,
+  checkRateLimitInMemory,
   identityFromRequest,
   isIdentityBlocked,
   rateLimitGate,
   resetBlockedIdentitiesCacheForTests,
+  resetInMemoryRateLimitForTests,
 } from './rateLimit.ts';
 
 const realFetch = globalThis.fetch;
@@ -91,3 +93,76 @@ Deno.test(
     }
   }
 );
+
+// ─── In-isolate counter (the log-only path) ──────────────────────────────────────────
+
+Deno.test('checkRateLimitInMemory: counts up and blocks exactly at the limit', () => {
+  resetInMemoryRateLimitForTests();
+  const options = { scope: 'wrapper-default:test', identity: 'u:a', limit: 3, windowSec: 60 };
+
+  const counts = [1, 2, 3, 4].map(() => checkRateLimitInMemory(options));
+
+  assertEquals(
+    counts.map((decision) => decision.count),
+    [1, 2, 3, 4]
+  );
+  assertEquals(
+    counts.map((decision) => decision.allowed),
+    [true, true, true, false]
+  );
+  assertEquals(counts[0].limit, 3);
+  assertEquals(counts[0].retryAfterSec > 0, true);
+});
+
+Deno.test('checkRateLimitInMemory: identities and scopes never share a bucket', () => {
+  resetInMemoryRateLimitForTests();
+  const base = { limit: 10, windowSec: 60 };
+
+  checkRateLimitInMemory({ ...base, scope: 's1', identity: 'u:a' });
+  checkRateLimitInMemory({ ...base, scope: 's1', identity: 'u:a' });
+  const otherIdentity = checkRateLimitInMemory({ ...base, scope: 's1', identity: 'u:b' });
+  const otherScope = checkRateLimitInMemory({ ...base, scope: 's2', identity: 'u:a' });
+
+  assertEquals(otherIdentity.count, 1);
+  assertEquals(otherScope.count, 1);
+});
+
+Deno.test('checkRateLimitInMemory: a new window resets the count', () => {
+  resetInMemoryRateLimitForTests();
+  const options = { scope: 'wrapper-default:test', identity: 'u:a', limit: 1, windowSec: 1 };
+  const realNow = Date.now;
+  try {
+    Date.now = () => 1_000_000;
+    assertEquals(checkRateLimitInMemory(options).count, 1);
+    assertEquals(checkRateLimitInMemory(options).allowed, false);
+
+    // One window later the bucket is fresh again.
+    Date.now = () => 1_001_500;
+    const next = checkRateLimitInMemory(options);
+    assertEquals(next.count, 1);
+    assertEquals(next.allowed, true);
+  } finally {
+    Date.now = realNow;
+  }
+});
+
+Deno.test('checkRateLimitInMemory: never throws and never needs the network', () => {
+  resetInMemoryRateLimitForTests();
+  let called = false;
+  globalThis.fetch = () => {
+    called = true;
+    return Promise.reject(new Error('network should not be used'));
+  };
+  try {
+    const decision = checkRateLimitInMemory({
+      scope: 'wrapper-default:test',
+      identity: 'u:a',
+      limit: 5,
+      windowSec: 60,
+    });
+    assertEquals(decision.count, 1);
+    assertEquals(called, false, 'the log-only path must not touch the network');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

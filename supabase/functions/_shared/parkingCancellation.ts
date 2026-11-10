@@ -12,6 +12,7 @@ import {
   ParkingGuestOwnershipError,
 } from './parkingGuestOwnership.ts';
 import { expirePendingParkingTransactions } from './parkingPaymentOrchestrator.ts';
+import { createNotification } from './notificationService.ts';
 
 export class ParkingCancellationError extends Error {
   status: number;
@@ -51,6 +52,13 @@ export async function cancelParkingBooking(
   const nowIso = new Date().toISOString();
 
   if (booking.status === 'PENDING_HOST_ACCEPTANCE') {
+    const { data: pendingOffers } = await supabase
+      .from('parking_booking_broadcasts')
+      .select('parking_id')
+      .eq('booking_id', bookingId)
+      .eq('response', 'pending')
+      .limit(10);
+
     const { data: cancelled, error } = await supabase
       .from('guest_submissions')
       .update({ status: 'CANCELLED', status_updated_at: nowIso, updated_at: nowIso })
@@ -77,6 +85,13 @@ export async function cancelParkingBooking(
       }),
       metadata: { initiated_by: 'guest' },
     });
+
+    await notifyHostsOfCancellation(
+      supabase,
+      bookingId,
+      [...new Set((pendingOffers ?? []).map((row) => String(row.parking_id)))],
+      String(booking.primary_guest_name ?? booking.guest_facebook_name ?? 'The guest')
+    );
 
     return { cancelled: true };
   }
@@ -120,8 +135,49 @@ export async function cancelParkingBooking(
       metadata: { initiated_by: 'guest' },
     });
 
+    await notifyHostsOfCancellation(
+      supabase,
+      bookingId,
+      booking.parking_id ? [String(booking.parking_id)] : [],
+      String(booking.primary_guest_name ?? booking.guest_facebook_name ?? 'The guest')
+    );
+
     return { cancelled: true };
   }
 
   throw new ParkingCancellationError('This request can no longer be cancelled', 409);
+}
+
+/** In-app notice to each host whose offer/claim was dropped, never one per team member. */
+async function notifyHostsOfCancellation(
+  supabase: ReturnType<typeof createServiceClient>,
+  bookingId: string,
+  parkingIds: string[],
+  guestName: string
+): Promise<void> {
+  if (parkingIds.length === 0) return;
+  const { data: parkings } = await supabase
+    .from('parkings')
+    .select('id, organization_id')
+    .in('id', parkingIds)
+    .limit(20);
+
+  for (const parking of parkings ?? []) {
+    try {
+      await createNotification({
+        organizationId: String(parking.organization_id),
+        parkingId: String(parking.id),
+        type: 'parking_request_cancelled',
+        title: 'Guest cancelled a request',
+        body: `${guestName} cancelled the parking request.`,
+        bookingId,
+        dedupeKey: `parking-request-cancelled:${bookingId}:${parking.id}`,
+      });
+    } catch (err) {
+      console.error(
+        '[parkingCancellation] host notification failed:',
+        err instanceof Error ? err.message : err
+      );
+    }
+  }
 }

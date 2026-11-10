@@ -52,7 +52,15 @@ Second slice (2026-11-08):
 - **C-10** legacy `ParkingRequestForm` remains for historical unlinked rows; the booking detail panel already renders the linked marketplace match instead when available.
 - Tests: +2 Deno suites, +4 Playwright specs; parking suite 25 passed, 12 skipped (side-by-side/live), mobile smoke 3 passed, moved property spec 8 passed. The three migrations applied cleanly to the local Supabase stack. Build is blocked only by an unrelated `VoiceSessionPanel` shell chunk from concurrent voice work, not by parking.
 
-Still open: H-11 (split the 1,087-line `ParkingSettingsCard`), the remaining guest status polish (G-3/G-6/G-7 are already largely covered by existing states and the direct-link card), E-11/E-12 dedicated specs for the org parkings hub and super-admin payouts, C-4 soak confirmation, and the production-readiness/support follow-through. The manual QA matrix has not been run because it needs the local stack.
+Follow-up slice (2026-11-09):
+
+- **H-11** controller extracted from `ParkingSettingsCard.tsx` into `parking/hooks/useParkingSettingsController.ts`; the component dropped from 1,087 to 599 lines. Section-level components remain a later refactor.
+- **H-9** org-wide and scoped booking lists include pre-claim broadcast requests (`20261324000000_list_bookings_preclaim.sql` plus the PostgREST fallback).
+- **M-11** host in-app notices for guest cancel, payment-window expiry, and endorsement send failure. New types: `parking_request_cancelled`, `parking_payment_expired`, `parking_endorsement_failed`.
+- **E-11/E-12** org parkings hub and super-admin payouts specs added.
+- **Manual QA** width sweep at 375 / 768 / 1280 for Bookings, booking detail, Pricing, Finance and Settings.
+
+Still open: section-level component split inside `ParkingSettingsCard`, the full human manual QA walk (the automated sweep covers overflow only), C-4 soak confirmation, and the production-readiness/support follow-through.
 
 ## How this audit was done
 

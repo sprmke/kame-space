@@ -29,6 +29,13 @@ const BASELINE_PATH = path.join(ROOT, 'scripts/dev/e2e-lane-baseline.json');
 
 const LANES = ['@smoke', '@ci', '@pwa', '@live', '@demo'];
 
+/**
+ * `@critical` is a modifier, not a lane: it marks the money, tenancy and workflow
+ * journeys that must also run before a production deploy (`test:e2e:critical`).
+ * A critical spec still needs exactly one lane tag.
+ */
+const CRITICAL = '@critical';
+
 async function walk(dir, out = []) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
@@ -47,6 +54,7 @@ async function main() {
 
   const problems = [];
   const waits = {};
+  let criticalSpecs = 0;
 
   for (const file of files) {
     const source = await readFile(file, 'utf8');
@@ -57,6 +65,12 @@ async function main() {
       problems.push(`${name}: no lane tag (add one of ${LANES.join(', ')})`);
     } else if (lanes.length > 1) {
       problems.push(`${name}: ${lanes.join(' + ')} (a spec belongs to exactly one lane)`);
+    }
+
+    if (source.includes(CRITICAL)) criticalSpecs += 1;
+
+    if (source.includes(CRITICAL) && lanes.length !== 1) {
+      problems.push(`${name}: ${CRITICAL} needs exactly one lane tag, found ${lanes.length}`);
     }
 
     if (/\btest\s*\.\s*only\s*\(|\bdescribe\s*\.\s*only\s*\(/.test(source)) {
@@ -90,7 +104,7 @@ async function main() {
     console.log(JSON.stringify({ specs: files.length, problems, waitForTimeout: waits }, null, 2));
   } else {
     console.log(
-      `e2e lane guard: ${files.length} specs, one lane tag each, ` +
+      `e2e lane guard: ${files.length} specs, one lane tag each, ${criticalSpecs} critical, ` +
         `${Object.values(waits).reduce((total, count) => total + count, 0)} baselined waitForTimeout call(s).`
     );
   }

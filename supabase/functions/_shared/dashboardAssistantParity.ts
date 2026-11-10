@@ -163,6 +163,8 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'list-developments': read,
   'list-help-center-articles': tool('search_help_center'),
   'list-help-center-faqs': tool('search_help_center'),
+  // Session bootstrap: the shell's first read. Assistant-invisible, read-only.
+  'get-session-context': read,
   'list-host-announcements': read,
   'list-host-organizations': read,
   'list-host-properties': read,

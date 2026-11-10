@@ -44,6 +44,19 @@ duplicate tag, a committed `.only`, or a new `waitForTimeout`.
 | `@live`  | never PR (nightly / manual)        |
 | `@demo`  | never CI                           |
 
+## Gates: what runs when
+
+| Gate                       | Runs                                                                                         | Budget   |
+| -------------------------- | -------------------------------------------------------------------------------------------- | -------- |
+| `bun run test:fast`        | filenames, lane tags, types, lint, unit (node + dom)                                         | ~2.5 min |
+| PR `ci.yml`                | guards, lint, types, unit + coverage floor, edge, build, `@smoke` 3 viewports, `@ci` sharded | ~10 min  |
+| Deploy `ci-deploy-gate.sh` | guards, lint, types, unit + coverage, edge, build, `@critical` desktop                       | ~9 min   |
+| `bun run ci:quality`       | everything, including the full `@ci` suite                                                   | ~40 min  |
+
+`@critical` is a modifier on top of a lane tag, not a lane: it marks the money, tenancy,
+workflow and access journeys that must also pass before a production deploy. Add it when an
+acceptance line lands on money, booking status, cancellation, parking payment or RBAC.
+
 ## Same-change requirement
 
 | Change                             | Test                                                                     |

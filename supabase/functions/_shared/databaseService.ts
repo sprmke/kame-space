@@ -388,9 +388,7 @@ export class DatabaseService {
        * unexpired, and be for this slot. Anything else falls through to the normal file
        * requirement so a stolen id cannot be attached to someone else's booking.
        */
-      const identityEmailHash = guestEmail?.trim()
-        ? await hashIdentityEmail(guestEmail)
-        : null;
+      const identityEmailHash = guestEmail?.trim() ? await hashIdentityEmail(guestEmail) : null;
       const identityColumns: Record<string, string> = {};
       let usedLiveIdentity = false;
 
@@ -443,8 +441,7 @@ export class DatabaseService {
           .is('booking_id', null);
 
         const mime = blob.type || 'image/jpeg';
-        const extension =
-          mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
+        const extension = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
         const bytes = new Uint8Array(await blob.arrayBuffer());
         return {
           id: row.id,
@@ -474,16 +471,14 @@ export class DatabaseService {
         if (liveIdentity) {
           usedLiveIdentity = true;
           identityColumns[
-            slot === 1 ? 'primary_identity_verification_id' : `guest${slot}_identity_verification_id`
+            slot === 1
+              ? 'primary_identity_verification_id'
+              : `guest${slot}_identity_verification_id`
           ] = liveIdentity.id;
           if (!saveImagesToStorage) return 'dev-mode-skipped';
           const prefixedFileName =
             (formData.get(fileNameField) as string) || liveIdentity.file.name;
-          return await UploadService.uploadValidId(
-            liveIdentity.file,
-            prefixedFileName,
-            propertyId
-          );
+          return await UploadService.uploadValidId(liveIdentity.file, prefixedFileName, propertyId);
         }
 
         if (existingBooking) {
@@ -894,6 +889,20 @@ export class DatabaseService {
         baseRequests.push(
           this.supabase.from('guest_submissions').select('*').in('parking_id', scopedParkingIds)
         );
+        // Pre-claim requests for an assigned parking (parking_id is null until a host wins).
+        const { data: scopedBroadcasts } = await this.supabase
+          .from('parking_booking_broadcasts')
+          .select('booking_id')
+          .in('parking_id', scopedParkingIds)
+          .eq('response', 'pending');
+        const scopedBroadcastIds = [
+          ...new Set((scopedBroadcasts ?? []).map((row) => String(row.booking_id))),
+        ];
+        if (scopedBroadcastIds.length > 0) {
+          baseRequests.push(
+            this.supabase.from('guest_submissions').select('*').in('id', scopedBroadcastIds)
+          );
+        }
       }
     } else if (orgId) {
       const wantProperty = bookingKind !== 'parking';
@@ -913,6 +922,14 @@ export class DatabaseService {
             // Disambiguate from guest_submissions.parking_pinned_id → parkings (broadcast flow).
             .select('*, parkings!guest_submissions_parking_id_fkey!inner(organization_id)')
             .eq('parkings.organization_id', orgId)
+        );
+        // Pre-claim org-wide requests are scoped by organization but have no parking_id yet.
+        baseRequests.push(
+          this.supabase
+            .from('guest_submissions')
+            .select('*')
+            .eq('parking_request_organization_id', orgId)
+            .eq('status', 'PENDING_HOST_ACCEPTANCE')
         );
       }
     }

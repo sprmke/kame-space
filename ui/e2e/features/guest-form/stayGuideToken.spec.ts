@@ -4,7 +4,7 @@ import { mockEdgeFunctions } from '../../shared/interceptEdge';
 
 const PROPERTY_SLUG = 'solea-mactan';
 
-test.describe('@ci stay guide token smoke', () => {
+test.describe('@ci @critical stay guide token smoke', () => {
   test('invalid token shows unavailable message', async ({ page }) => {
     await mockEdgeFunctions(page, [
       {

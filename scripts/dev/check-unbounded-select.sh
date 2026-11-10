@@ -206,7 +206,11 @@ ALLOWLIST=(
   'list-organizations/index.ts'
   'list-parkings/index.ts'
   'list-platform-properties/index.ts'
-  'list-properties/index.ts'
+  # Properties for one organization. Bounded by how many listings a single org has, which
+  # the product caps well below any pagination need; moved here from
+  # `list-properties/index.ts` when the payload loader was extracted for the session
+  # bootstrap, so this entry replaces that one.
+  '_shared/listProperties.ts'
   'list-public-developments/index.ts'
   'list-public-parkings/index.ts'
   'list-public-place-groups/index.ts'

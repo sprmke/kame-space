@@ -180,7 +180,13 @@
     "test:e2e:host-verification:headed": "playwright test ui/e2e/features/host-verification --project=chromium --grep-invert \"side by side\" --headed",
     "test:e2e:host-verification:side-by-side": "playwright test ui/e2e/features/host-verification/flows/hostRegistrationReviewTwoWindows.spec.ts --project=chromium-side-by-side",
     "test:e2e:host-verification:side-by-side:slow": "PLAYWRIGHT_SLOW_MO=700 PLAYWRIGHT_DEMO_PAUSE_MS=1800 playwright test ui/e2e/features/host-verification/flows/hostRegistrationReviewTwoWindows.spec.ts --project=chromium-side-by-side",
-    "test:e2e:host-verification:side-by-side:video": "PLAYWRIGHT_RECORD_VIDEO=1 PLAYWRIGHT_SLOW_MO=700 PLAYWRIGHT_DEMO_PAUSE_MS=1800 playwright test ui/e2e/features/host-verification/flows/hostRegistrationReviewTwoWindows.spec.ts --project=chromium-side-by-side"
+    "test:e2e:host-verification:side-by-side:video": "PLAYWRIGHT_RECORD_VIDEO=1 PLAYWRIGHT_SLOW_MO=700 PLAYWRIGHT_DEMO_PAUSE_MS=1800 playwright test ui/e2e/features/host-verification/flows/hostRegistrationReviewTwoWindows.spec.ts --project=chromium-side-by-side",
+    "test:e2e:critical": "playwright test --project=chromium-ci --grep @critical",
+    "ci:deploy": "./scripts/dev/ci-deploy-gate.sh",
+    "test:fast": "bun run check:filenames && node scripts/dev/check-e2e-lane-tags.mjs && bun run type-check && bun run lint && bun run test",
+    "test:dom": "cd ui && bun run test:dom",
+    "check:guide-spec-refs": "node scripts/dev/check-guide-spec-refs.mjs",
+    "check:migration-collisions": "bash scripts/dev/check-migration-version-collisions.sh"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",

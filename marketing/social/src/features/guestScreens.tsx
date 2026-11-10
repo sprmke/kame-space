@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 
 import { CalendarDays, MapPin, Phone as PhoneIcon, Sparkles, Users } from 'lucide-react';
 
-import { Diamond } from '../primitives';
+import { KameSpaceMark } from '../primitives';
 import { c } from '../theme';
 import {
   Body,
@@ -46,13 +46,11 @@ export function ReceptionistScreen(a: ScreenAnim) {
           style={{
             width: 76,
             height: 76,
-            borderRadius: 26,
-            background: c.brand,
             display: 'inline-grid',
             placeItems: 'center',
           }}
         >
-          <Diamond size={26} color={c.white} />
+          <KameSpaceMark size={76} />
         </span>
         <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', marginTop: 14 }}>
           Kame receptionist

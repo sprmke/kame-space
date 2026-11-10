@@ -1,1 +1,1 @@
-export { useParkingSettingsController } from '@/features/dashboard/parking/components/ParkingSettingsCard';
+export { useParkingSettingsController } from '@/features/dashboard/parking/hooks/useParkingSettingsController';
