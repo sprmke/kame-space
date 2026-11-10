@@ -31,7 +31,7 @@ export type TrendTopicRow = {
   score: number;
   momentum: string;
   days_trending: number;
-  sources: Array<{ source: string; rank: number }>;
+  sources: Array<{ source: string; rank?: number }>;
   angles: Array<{ title: string; hook: string }>;
   caption_idea: string;
   hashtags: string[];

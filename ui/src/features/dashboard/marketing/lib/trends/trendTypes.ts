@@ -76,12 +76,9 @@ export const TREND_MOMENTUM_LABELS: Record<TrendMomentum, string> = {
 
 export type TrendOutput = 'post' | 'image' | 'video';
 
+/** What the host read endpoint sends: the label, and nothing else. */
 export type TrendSourceEvidence = {
   source: TrendSourceId;
-  rank: number;
-  traffic?: string | null;
-  views?: number | null;
-  newsHeadlines?: string[];
 };
 
 export type TrendAngle = {

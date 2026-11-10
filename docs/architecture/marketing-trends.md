@@ -94,6 +94,8 @@ safety pass, the run is marked `failed` and hosts keep seeing the last published
   never ships.
 - **Windows:** this week and this month are decayed sums (`0.85^age` / `0.93^age`) over the last
   7 / 30 published runs, computed inside the publish RPC so a host read is one indexed query.
+- **Retention:** the publish RPC deletes any run older than 35 days, published or not. Nothing
+  reads past 30 days, and leaving published rows behind would grow the table forever.
 
 Momentum needs a position and the position needs a score, so `rankTodayTopics` runs in two
 passes: rank without momentum, read momentum off that position against yesterday, then apply the
@@ -144,9 +146,24 @@ Details: [`data-model.md`](./data-model.md).
 - `marketing.trends` feature-availability leaf is the super-admin kill switch. When it is off the
   endpoint answers `{ disabled: true }` and the rail hides itself rather than showing an error.
 - A hide applies at read time, so it reaches hosts in under a minute (per-isolate memo, 60 s TTL).
+- The DTO carries only what the rail, the sheet and the detail view render. `score`, `stay_fit`,
+  `first_seen`, the hashtags, the guard rules and the full source evidence stay in Postgres and
+  are read by the admin endpoint instead. A full 25-topic window measures about **37 KB raw** and
+  about **9 KB gzipped** mid-flight; see the payload note below.
 - No usable list (none yet, or older than 72 h): `fallback: 'evergreen'` and the client shows the
   bundled seasonal ideas. The read rules live in `_shared/marketingTrends/response.ts` and are
   unit-tested without a database.
+
+## Payload size
+
+A full 25-topic window is roughly **37 KB of JSON, about 9 KB gzipped** in practice. The plan's
+original "~15 KB / ≤ 20 KB" budget was written before the shape existed and assumed a row without
+the three angles; a row with three angle prompts is about 1.5 KB. The intent (no performance cost)
+is met by four things together: the rail and sheet are separate lazy chunks, the list is fetched
+only when the sheet opens or the rail scrolls into view, the client holds it for 30 minutes, and
+the endpoint memoises for 60 seconds per isolate. Trimming further would mean dropping the angle
+prompts from the list and paying a round trip every time a host opens a topic, which is a worse
+trade on a phone.
 
 ## Adding a source
 

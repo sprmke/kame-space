@@ -33,8 +33,10 @@ Unknown sections (`/admin/health/foo`) redirect to `/admin/health`.
 checks. The job registry already warns when `marketing-trends-cron` stops running; this row covers
 the other failure, where the cron runs but nothing gets published so hosts silently fall back to
 seasonal ideas. It reads the latest `published` `marketing_trend_runs` row: `ok` under 36 h,
-`warn` past 36 h, `error` past 72 h (at which point the client shows evergreen), and `warn` when
-no list has ever published. Fix link goes to `/admin/marketing-trends`.
+`warn` past 36 h, `error` past 72 h (at which point the client shows evergreen), `warn` when the
+newest attempt failed, and `warn` when no list has ever published. The row lists each source with
+its item count or its failure reason, so a broken feed is named rather than guessed at. Fix link
+goes to `/admin/marketing-trends`.
 
 | Usage | pending | n/a | Spec | Tab only. Checks are not wired yet. |
 

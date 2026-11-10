@@ -12,7 +12,7 @@ import type {
   TrendAngle,
   TrendCategory,
   TrendMomentum,
-  TrendSourceEvidence,
+  TrendSourceId,
   TrendTopic,
   TrendWindow,
 } from './types.ts';
@@ -24,27 +24,21 @@ export const EXPIRED_AFTER_HOURS = 72;
 
 /** One row of `marketing_trend_topics`, as Postgres returns it. */
 export type TrendTopicRow = {
-  id: string;
-  run_id: string;
-  run_date: string;
-  window: TrendWindow;
-  rank: number;
   topic_key: string;
+  rank: number;
   title: string;
   summary: string;
   category: TrendCategory;
-  stay_fit: number;
-  score: number | string;
   momentum: TrendMomentum;
   days_trending: number;
-  first_seen: string | null;
-  sources: TrendSourceEvidence[] | null;
+  sources: Array<{ source: TrendSourceId }> | null;
   angles: TrendAngle[] | null;
   caption_idea: string | null;
-  hashtags: string[] | null;
-  brand_guard: string[] | null;
   pinned: boolean;
-  manual: boolean;
+  // Kept because the select includes them for the memo key and window checks.
+  window?: TrendWindow;
+  run_id?: string;
+  run_date?: string;
 };
 
 /** One row of `marketing_trend_runs`. */
@@ -55,30 +49,28 @@ export type TrendRunRow = {
   finished_at: string | null;
 };
 
-/** Map a database row to the DTO the client reads. */
+/**
+ * Map a database row to the DTO the client reads.
+ *
+ * The source evidence is trimmed to the label the UI renders. Rank, traffic, views
+ * and the related headlines are only ever read by the classify step and the admin
+ * page, and shipping them to every host costs about 400 bytes per topic.
+ */
 export function toTrendTopic(row: TrendTopicRow): TrendTopic {
   return {
-    id: row.id,
-    runId: row.run_id,
-    runDate: row.run_date,
-    window: row.window,
-    rank: row.rank,
     topicKey: row.topic_key,
+    rank: row.rank,
     title: row.title,
     summary: row.summary,
     category: row.category,
-    stayFit: row.stay_fit,
-    score: Number(row.score),
     momentum: row.momentum,
     daysTrending: row.days_trending,
-    firstSeen: row.first_seen ?? row.run_date,
-    sources: Array.isArray(row.sources) ? row.sources : [],
+    sources: Array.isArray(row.sources)
+      ? row.sources.map((entry) => ({ source: entry.source }))
+      : [],
     angles: Array.isArray(row.angles) ? row.angles : [],
     captionIdea: row.caption_idea ?? '',
-    hashtags: Array.isArray(row.hashtags) ? row.hashtags : [],
-    brandGuard: Array.isArray(row.brand_guard) ? row.brand_guard : [],
     pinned: Boolean(row.pinned),
-    manual: Boolean(row.manual),
   };
 }
 

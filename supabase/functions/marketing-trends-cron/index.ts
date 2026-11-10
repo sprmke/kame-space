@@ -13,6 +13,7 @@
 
 import { verifyCronSecret } from '../_shared/cronSecretGate.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
+import { captureSentryException } from '../_shared/sentry.ts';
 import { serveCronPost } from '../_shared/serveEdge.ts';
 import { capturePostHogEvent } from '../_shared/posthog.ts';
 import { runTrendsPipeline } from '../_shared/marketingTrends/pipeline.ts';
@@ -40,10 +41,24 @@ serveCronPost('marketing-trends-cron', cronSecretOk, async () => {
   });
 
   if (result.status !== 'published') {
-    // The run ledger keeps the failure; the Sentry event comes from serveCronPost
-    // when the handler throws. A failed run is not a crash: hosts keep the last
-    // published list, so the run returns normally with the failure recorded.
+    // A run that cannot publish is not a crash, so `serveCronPost` never sees it.
+    // It is still the failure that matters: hosts silently keep the last list and
+    // then fall back to seasonal ideas. Report it explicitly, with the source
+    // breakdown, so the alert names the source that broke rather than the cron.
     console.error('[marketing-trends-cron] run did not publish:', result.error);
+    // `serveCronPost` calls the run callback without the request, so the event is
+    // attributed by tag and fingerprint rather than by URL.
+    await captureSentryException(new Error(`marketing trends run failed: ${result.error}`), {
+      logPrefix: 'cron:marketing-trends-cron',
+      tags: { cron: 'marketing-trends-cron', run_status: result.status },
+      fingerprint: ['cron', 'marketing-trends-cron'],
+      extra: {
+        runId: result.runId,
+        runDate: result.runDate,
+        candidateCount: result.candidateCount,
+        sources: result.sourceStats,
+      },
+    });
   }
 
   return {

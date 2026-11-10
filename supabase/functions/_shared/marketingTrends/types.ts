@@ -132,6 +132,11 @@ export type TrendCandidate = {
   sources: TrendSourceEvidence[];
   /** Distinct source count (the cross-source bonus uses this, not the evidence length). */
   sourceCount: number;
+  /**
+   * Other keys this topic has also been seen under. Momentum and days trending
+   * resolve through these, so a respelling across days does not reset the streak.
+   */
+  aliases?: string[];
 };
 
 /** One angle the host can turn into a post. */
@@ -163,29 +168,28 @@ export type TrendClassifiedTopic = {
   brandGuard: string[];
 };
 
-/** A published topic row. Mirrors `marketing_trend_topics`. */
+/**
+ * A published topic, as the host read endpoint sends it.
+ *
+ * Deliberately narrower than the row: only the fields the rail, the sheet and the
+ * detail view render. `score`, `stay_fit`, `first_seen`, the hashtags, the guard
+ * rules and the full source evidence stay in Postgres (the admin page reads them
+ * from its own endpoint). Trimming unused fields roughly halves the payload.
+ */
 export type TrendTopic = {
-  id: string;
-  runId: string;
-  runDate: string;
-  window: TrendWindow;
-  rank: number;
+  /** Stable key. Doubles as the React key. */
   topicKey: string;
+  rank: number;
   title: string;
   summary: string;
   category: TrendCategory;
-  stayFit: number;
-  score: number;
   momentum: TrendMomentum;
   daysTrending: number;
-  firstSeen: string;
-  sources: TrendSourceEvidence[];
+  /** Only the label the host UI renders. Evidence stays in the table. */
+  sources: Array<{ source: TrendSourceId }>;
   angles: TrendAngle[];
   captionIdea: string;
-  hashtags: string[];
-  brandGuard: string[];
   pinned: boolean;
-  manual: boolean;
 };
 
 /** The host read endpoint payload. */

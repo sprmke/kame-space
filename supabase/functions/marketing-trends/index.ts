@@ -28,8 +28,9 @@ import {
 } from '../_shared/marketingTrends/response.ts';
 import type { MarketingTrendsResponse, TrendWindow } from '../_shared/marketingTrends/types.ts';
 
+// Only what the DTO carries. Reading the rest would be bytes the endpoint never sends.
 const TOPIC_COLUMNS =
-  'id, run_id, run_date, window, rank, topic_key, title, summary, category, stay_fit, score, momentum, days_trending, first_seen, sources, angles, caption_idea, hashtags, brand_guard, pinned, manual';
+  'topic_key, rank, title, summary, category, momentum, days_trending, sources, angles, caption_idea, pinned, window, run_id, run_date';
 
 /**
  * The payload is the same platform-wide list for every host, so an isolate can

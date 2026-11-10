@@ -203,7 +203,7 @@ type Envelope = {
     stale?: boolean;
     fallback?: string | null;
     windowsAvailable?: string[];
-    topics?: Array<{ topicKey: string; pinned: boolean; score: number }>;
+    topics?: Array<{ topicKey: string; pinned: boolean; rank: number }>;
   };
 };
 
@@ -252,8 +252,9 @@ Deno.test('a fresh list comes back with its date and the windows it can offer', 
   assertEquals(data.runDate, '2026-11-10');
   assertEquals(data.topics?.length, 1);
   assertEquals(data.topics?.[0]?.topicKey, 'pinoy-big-brother-collab-3-0');
-  // The score must be a number on the wire, not a numeric string from Postgres.
-  assertEquals(typeof data.topics?.[0]?.score, 'number');
+  // Only the fields the UI renders travel: no score, stayFit or raw evidence.
+  assertEquals(typeof data.topics?.[0]?.rank, 'number');
+  assertEquals('score' in (data.topics?.[0] ?? {}), false);
   // Three published runs is the minimum for the week window.
   assertEquals(data.windowsAvailable, ['today', 'week']);
   // The list is property-scoped, so it must never be shared-cached.

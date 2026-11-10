@@ -406,7 +406,10 @@ async function handleImageGeneration(req: Request, ctx: GenerationRequestContext
     // regardless; this column is for host-facing transparency, not generation.
     enhancedPrompt: enhancement.enhanced ? enhancement.prompt : null,
     promptEnhanced: enhancement.enhanced,
-    generationOptions: sampleId ? { sampleId } : {},
+    generationOptions: {
+      ...(sampleId ? { sampleId } : {}),
+      ...(trendContext ? { trendTopicKey: trendContext.topicKey } : {}),
+    },
     model: options.config.model,
     qualityTier: options.tier,
     aspectRatio: options.aspectRatio,

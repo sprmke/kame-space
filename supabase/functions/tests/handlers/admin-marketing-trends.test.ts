@@ -13,6 +13,8 @@ Deno.env.set('EDGE_HANDLER_TEST', '1');
 Deno.env.set('SUPABASE_URL', FUNCTIONS_URL);
 Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role-key');
 Deno.env.set('SUPER_ADMIN_EMAILS', 'boss@example.test');
+// Mutations here need the sudo token every sensitive console action needs.
+Deno.env.set('SUPER_ADMIN_VERIFICATION_SECRET', 'test-sudo-secret');
 
 const EMAILS: Record<string, string> = {
   'boss-token': 'boss@example.test',
@@ -70,6 +72,12 @@ globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
 
 await import('../../admin-marketing-trends/index.ts');
 const { getMountedEdgeHandler } = await import('../../_shared/serveEdge.ts');
+const { signSudoToken, SUPER_ADMIN_OTP_HEADER, SUPER_ADMIN_OTP_REQUIRED_CODE } = await import(
+  '../../_shared/superAdminVerification.ts'
+);
+
+/** The sudo token a super admin would already have entered in the console. */
+const sudoToken = (await signSudoToken('user-1')).token;
 
 const handler = getMountedEdgeHandler('admin-marketing-trends');
 assert(handler, 'the wrapper must mount a handler in test mode');
@@ -78,12 +86,16 @@ function request(options: {
   token?: string;
   method?: string;
   body?: unknown;
+  /** Set false to exercise the step-up gate itself. */
+  withSudo?: boolean;
 }): Request {
+  const stepUp = (options.method ?? 'GET') !== 'GET' && options.withSudo !== false;
   return new Request(`${FUNCTIONS_URL}/admin-marketing-trends`, {
     method: options.method ?? 'GET',
     headers: {
       'content-type': 'application/json',
       ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
+      ...(stepUp ? { [SUPER_ADMIN_OTP_HEADER]: sudoToken } : {}),
     },
     ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
   });
@@ -130,6 +142,31 @@ Deno.test('GET returns the run ledger, the published list, overrides and manual 
   const data = body.data as { runs?: unknown[]; latestRunId?: string | null };
   assertEquals(data.runs?.length, 1);
   assertEquals(data.latestRunId, 'run-1');
+});
+
+Deno.test('a mutation without the sudo token is refused before it changes anything', async () => {
+  resetScenario();
+  const response = await handler!(
+    request({
+      token: 'boss-token',
+      method: 'POST',
+      body: { action: 'hide', topicKey: 'pbb' },
+      withSudo: false,
+    })
+  );
+  assertEquals(response.status, 401);
+
+  const body = (await response.json()) as { code?: string };
+  assertEquals(body.code, SUPER_ADMIN_OTP_REQUIRED_CODE);
+  // Nothing was written: the gate runs before the action switch.
+  assertEquals(scenario.inserts.length, 0);
+});
+
+Deno.test('reading the ledger does not need the sudo token', async () => {
+  resetScenario();
+  // GET with no step-up header at all.
+  const response = await handler!(request({ token: 'boss-token' }));
+  assertEquals(response.status, 200);
 });
 
 Deno.test('hide writes an override and an audit row', async () => {

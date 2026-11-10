@@ -58,7 +58,10 @@ import {
 import { useMarketingPermissions } from '@/features/dashboard/marketing/hooks/useMarketingPermissions';
 import { setPendingAiStartPhoto } from '@/features/dashboard/marketing/lib/aiStudioHandoff';
 import { findSample } from '@/features/dashboard/marketing/lib/aiStudioSamples';
-import { readTrendsWindow } from '@/features/dashboard/marketing/lib/marketingStudioRoute';
+import {
+  readTrendsWindow,
+  TRENDS_PARAM,
+} from '@/features/dashboard/marketing/lib/marketingStudioRoute';
 import { setPendingAiTrend } from '@/features/dashboard/marketing/lib/trends/trendHandoff';
 import type {
   TrendAngle,
@@ -260,20 +263,42 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
   const [refineCamera, setRefineCamera] = useState<VideoCameraMoveId | null>(null);
 
   // ── Marketing Trends ─────────────────────────────────────────────────────
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const trendsWindow = readTrendsWindow(searchParams);
   const [trendsOpen, setTrendsOpen] = useState(false);
   const [trendsTopicKey, setTrendsTopicKey] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (trendsWindow) setTrendsOpen(true);
-  }, [trendsWindow]);
+  /**
+   * The deep link (`?trends=today`) is a history entry of its own, so the sheet is
+   * open *because* the URL says so. That is what makes the back button close it
+   * instead of leaving the studio. A rail tap opens it from local state instead.
+   */
+  const trendsVisible = trendsOpen || trendsWindow !== null;
+
+  const closeTrends = useCallback(
+    (next: boolean) => {
+      setTrendsOpen(next);
+      if (next || !trendsWindow) return;
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          params.delete(TRENDS_PARAM);
+          return params;
+        },
+        { replace: true }
+      );
+    },
+    [trendsWindow, setSearchParams]
+  );
 
   const openTrends = useCallback(
     (topicKey?: string | null) => {
       setTrendsTopicKey(topicKey ?? null);
       setTrendsOpen(true);
-      captureAppEvent('trends_opened', { window: trendsWindow ?? 'today', source: 'rail' });
+      captureAppEvent('trends_opened', {
+        window: trendsWindow ?? 'today',
+        source: trendsWindow ? 'deeplink' : 'rail',
+      });
     },
     [trendsWindow]
   );
@@ -311,10 +336,10 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
         angle,
         output: angle.output,
       });
-      setTrendsOpen(false);
+      closeTrends(false);
       startAiSession(angle.output);
     },
-    [isTrendOutputLocked, openUpgradeModal, startAiSession]
+    [closeTrends, isTrendOutputLocked, openUpgradeModal, startAiSession]
   );
 
   const generate = useGenerateMarketingMedia();
@@ -379,6 +404,7 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
     captureAppEvent('ai_studio_generate_started', {
       output: request.output,
       sample_id: request.sampleId,
+      trend_topic_key: request.trendTopicKey,
     });
     if (request.output === 'post') {
       const turn: AiPendingTurn = {
@@ -793,8 +819,8 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
         </div>
         <Suspense fallback={null}>
           <TrendsSheet
-            open={trendsOpen}
-            onOpenChange={setTrendsOpen}
+            open={trendsVisible}
+            onOpenChange={closeTrends}
             initialWindow={trendsWindow ?? undefined}
             initialTopicKey={trendsTopicKey}
             onUseAngle={useTrendAngle}

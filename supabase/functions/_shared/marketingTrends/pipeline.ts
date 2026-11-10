@@ -51,6 +51,11 @@ export const MAX_CACHED_SOURCE_AGE_DAYS = 14;
 /** Topics kept in the daily list. */
 export const MAX_TOPICS = 25;
 
+/** Days of history the evergreen check looks at. */
+export const EVERGREEN_WINDOW_DAYS = 30;
+/** A key that shows up on this many of those days is always trending, so it says nothing. */
+export const EVERGREEN_MIN_DAYS = 25;
+
 export type TrendSourceStat = {
   ok: boolean;
   count: number;
@@ -166,6 +171,13 @@ export function applyClassifyMerges(
       target.sources.push(evidence);
     }
     target.sourceCount = distinctSourceCount(target.sources);
+
+    // Remember the merged spelling so tomorrow's list can still match this topic.
+    const aliases = new Set(target.aliases ?? []);
+    aliases.add(source.key);
+    for (const inherited of source.aliases ?? []) aliases.add(inherited);
+    aliases.delete(target.key);
+    target.aliases = [...aliases];
     applied += 1;
   }
 
@@ -233,34 +245,188 @@ async function readManualTopics(
   return { source: 'editor', ok: items.length > 0, items, ms: 0, error: null };
 }
 
-/** Yesterday's published position, used for momentum and days trending. */
-async function readPreviousRun(
+/**
+ * What the last month of published lists tells this run.
+ *
+ * Three things come out of one pass over the same rows:
+ *
+ *  - `previous`: yesterday's position, so momentum and days trending survive.
+ *  - `aliasMap`: every spelling seen in the window, mapped to the key it settled on,
+ *    so a topic respelled between days is still the same topic.
+ *  - `evergreen`: keys that appeared on almost every day of the window. They are
+ *    always trending, so they say nothing about today.
+ *
+ * One query for the runs and one for their topics, both bounded by the window.
+ */
+export type TrendHistory = {
+  previous: Map<string, { rank: number; firstSeen: string | null }>;
+  aliasMap: Map<string, string>;
+  evergreen: Set<string>;
+  /** How many published days the window actually covered. */
+  windowDays: number;
+};
+
+const EMPTY_HISTORY: TrendHistory = {
+  previous: new Map(),
+  aliasMap: new Map(),
+  evergreen: new Set(),
+  windowDays: 0,
+};
+
+type HistoryTopicRow = {
+  run_id: string;
+  topic_key: string;
+  rank: number;
+  first_seen: string | null;
+  aliases: string[] | null;
+};
+
+export async function readHistory(
   supabase: SupabaseClient,
   runDate: string
-): Promise<Map<string, { rank: number; firstSeen: string | null }>> {
+): Promise<TrendHistory> {
   const { data: runs } = await supabase
     .from('marketing_trend_runs')
-    .select('id')
+    .select('id, run_date')
     .eq('status', 'published')
     .lt('run_date', runDate)
     .order('run_date', { ascending: false })
-    .limit(1);
-  const runId = (runs?.[0] as { id?: string } | undefined)?.id;
-  if (!runId) return new Map();
+    .limit(EVERGREEN_WINDOW_DAYS);
+
+  const runRows = (runs ?? []) as Array<{ id: string; run_date: string }>;
+  if (!runRows.length) return EMPTY_HISTORY;
+
+  // Newest run first, so the first write to a map wins.
+  const orderByRunId = new Map(runRows.map((row, index) => [row.id, index]));
 
   const { data: topics } = await supabase
     .from('marketing_trend_topics')
-    .select('topic_key, rank, first_seen')
-    .eq('run_id', runId)
+    .select('run_id, topic_key, rank, first_seen, aliases')
+    .in(
+      'run_id',
+      runRows.map((row) => row.id)
+    )
     .eq('window', 'today')
-    .limit(50);
+    // One row per topic per run, and runs are distinct days, so a row count is a day count.
+    .limit(EVERGREEN_WINDOW_DAYS * MAX_TOPICS + 50);
 
-  const map = new Map<string, { rank: number; firstSeen: string | null }>();
-  for (const row of topics ?? []) {
-    const item = row as { topic_key: string; rank: number; first_seen: string | null };
-    map.set(item.topic_key, { rank: item.rank, firstSeen: item.first_seen });
+  const rows = ((topics ?? []) as HistoryTopicRow[]).sort(
+    (a, b) => (orderByRunId.get(a.run_id) ?? 0) - (orderByRunId.get(b.run_id) ?? 0)
+  );
+
+  const newestRunId = runRows[0]!.id;
+  const previous = new Map<string, { rank: number; firstSeen: string | null }>();
+  const aliasMap = new Map<string, string>();
+  const daysByKey = new Map<string, Set<string>>();
+  const runDateById = new Map(runRows.map((row) => [row.id, row.run_date]));
+
+  for (const row of rows) {
+    // Aliases settle on the newest canonical key, so an older spelling never wins.
+    for (const alias of row.aliases ?? []) {
+      if (!alias || alias === row.topic_key) continue;
+      if (!aliasMap.has(alias)) aliasMap.set(alias, row.topic_key);
+    }
+
+    if (row.run_id === newestRunId) {
+      const entry = { rank: row.rank, firstSeen: row.first_seen };
+      if (!previous.has(row.topic_key)) previous.set(row.topic_key, entry);
+      for (const alias of row.aliases ?? []) {
+        if (!previous.has(alias)) previous.set(alias, entry);
+      }
+    }
+
+    const canonical = aliasMap.get(row.topic_key) ?? row.topic_key;
+    const seenOn = daysByKey.get(canonical) ?? new Set<string>();
+    const day = runDateById.get(row.run_id);
+    if (day) seenOn.add(day);
+    daysByKey.set(canonical, seenOn);
   }
-  return map;
+
+  // Only trust the pattern once there is a month behind it.
+  const evergreen =
+    runRows.length >= EVERGREEN_WINDOW_DAYS
+      ? new Set(
+          [...daysByKey.entries()]
+            .filter(([, days]) => days.size >= EVERGREEN_MIN_DAYS)
+            .map(([key]) => key)
+        )
+      : new Set<string>();
+
+  return { previous, aliasMap, evergreen, windowDays: runRows.length };
+}
+
+/**
+ * Rewrite the candidates through the persisted alias map.
+ *
+ * Without this, "X" one day and "Y" (the key X was merged into) the next are two
+ * different topics: the streak resets and the week window counts them apart.
+ *
+ * Two cases, and both matter:
+ *  - the canonical key is also a candidate today, so the alias folds into it;
+ *  - the canonical key is not here at all, so the alias is *renamed* to it. This is
+ *    the common case: the feed used one spelling yesterday and a shorter one today.
+ *
+ * Chains (a → b → c) resolve, and a cycle stops instead of looping.
+ */
+export function applyAliasMap(
+  candidates: TrendCandidate[],
+  aliasMap: ReadonlyMap<string, string>
+): number {
+  if (!aliasMap.size) return 0;
+
+  const byKey = new Map(candidates.map((candidate) => [candidate.key, candidate]));
+  let changed = 0;
+
+  const resolve = (key: string): string => {
+    const seen = new Set<string>([key]);
+    let current = key;
+    for (;;) {
+      const next = aliasMap.get(current);
+      if (!next || next === current || seen.has(next)) return current;
+      seen.add(next);
+      current = next;
+    }
+  };
+
+  for (const candidate of [...candidates]) {
+    if (!byKey.has(candidate.key)) continue;
+    const canonical = resolve(candidate.key);
+    if (canonical === candidate.key) continue;
+
+    const target = byKey.get(canonical);
+    if (target) {
+      // Both spellings are in today's feed: fold the evidence into the canonical one.
+      for (const evidence of candidate.sources) {
+        if (target.sources.some((entry) => entry.source === evidence.source)) continue;
+        target.sources.push(evidence);
+      }
+      target.sourceCount = distinctSourceCount(target.sources);
+
+      const aliases = new Set(target.aliases ?? []);
+      aliases.add(candidate.key);
+      for (const inherited of candidate.aliases ?? []) aliases.add(inherited);
+      aliases.delete(target.key);
+      target.aliases = [...aliases];
+
+      byKey.delete(candidate.key);
+      candidates.splice(candidates.indexOf(candidate), 1);
+      changed += 1;
+      continue;
+    }
+
+    // Only today's spelling is here: keep the key the topic settled on.
+    const previousKey = candidate.key;
+    const aliases = new Set(candidate.aliases ?? []);
+    aliases.add(previousKey);
+    aliases.delete(canonical);
+    candidate.key = canonical;
+    candidate.aliases = [...aliases];
+    byKey.delete(previousKey);
+    byKey.set(canonical, candidate);
+    changed += 1;
+  }
+
+  return changed;
 }
 
 /** The active overrides: hidden keys and pinned keys. */
@@ -298,6 +464,7 @@ export type PublishTopic = {
   days_trending: number;
   first_seen: string;
   sources: TrendSourceEvidence[];
+  aliases: string[];
   angles: unknown;
   caption_idea: string;
   hashtags: string[];
@@ -372,6 +539,7 @@ export function rankTodayTopics(input: {
       days_trending: row.daysTrending,
       first_seen: row.firstSeen,
       sources: row.sources,
+      aliases: row.candidate?.aliases ?? [],
       angles: row.topic.angles,
       caption_idea: row.topic.captionIdea,
       hashtags: row.topic.hashtags,
@@ -489,15 +657,22 @@ export async function runTrendsPipeline(options: TrendRunOptions): Promise<Trend
     }
 
     // ── 2 and 3. Normalize, stoplist, pre-filter, merge ───────────────────
-    const { candidates } = buildCandidates(results);
+    const built = buildCandidates(results);
+    const [history, overrides] = await Promise.all([
+      readHistory(supabase, runDate),
+      readOverrides(supabase),
+    ]);
+
+    // A respelling seen before collapses onto the key it settled on, so momentum holds.
+    applyAliasMap(built.candidates, history.aliasMap);
+
+    // A topic that trends every single day is noise; drop it before the model sees it.
+    const candidates = built.candidates.filter(
+      (candidate) => !history.evergreen.has(candidate.key)
+    );
     if (candidates.length < MIN_SAFE_TOPICS) {
       return await failRun('not enough candidates after normalization', candidates.length);
     }
-
-    const [previous, overrides] = await Promise.all([
-      readPreviousRun(supabase, runDate),
-      readOverrides(supabase),
-    ]);
 
     // ── 4 and 5. Classify ─────────────────────────────────────────────────
     let classified: TrendClassifyResult;
@@ -523,7 +698,7 @@ export async function runTrendsPipeline(options: TrendRunOptions): Promise<Trend
     const today = rankTodayTopics({
       topics: safeTopics,
       candidates,
-      previous,
+      previous: history.previous,
       overrides,
       runDate,
     });

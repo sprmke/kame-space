@@ -203,7 +203,7 @@ export function TrendsSheet({
               ) : (
                 <ul className="space-y-2">
                   {filtered.map((topic) => (
-                    <li key={topic.id}>
+                    <li key={topic.topicKey}>
                       <button
                         type="button"
                         onClick={() => openTopic(topic)}

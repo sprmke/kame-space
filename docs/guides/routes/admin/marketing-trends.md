@@ -40,6 +40,11 @@ either hidden or pinned, not both. The page hides the Pin button while a topic i
 **Run now is rate limited** to one manual run every ten minutes. A second press inside that window
 returns 429 with the reason.
 
+**Step-up verification.** Every action on this page changes what all hosts see, so each one needs
+the same extra email code the other sensitive console actions need. Reading the run ledger does
+not. The console prompts for the code the first time and replays it for the rest of the sudo
+window.
+
 **A failed run does not clear the list.** Hosts keep seeing the last published list. The run row
 says `failed`, the failing sources are listed, and `ai_error` carries the reason.
 
@@ -58,6 +63,9 @@ Each run stores `source_stats`, for example:
 
 `stale: true` on Netflix means the weekly download has not refreshed in more than 14 days, so the
 daily run ignored it. That is not a run failure: the list publishes with one source fewer.
+
+The same breakdown appears on `/admin/health` as one row per source under **Marketing trends
+list**, so a broken feed is named there too.
 
 ## Plan and permission notes
 

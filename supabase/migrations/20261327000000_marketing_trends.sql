@@ -79,6 +79,9 @@ CREATE TABLE IF NOT EXISTS public.marketing_trend_topics (
   days_trending SMALLINT NOT NULL DEFAULT 1,
   first_seen DATE,
   sources JSONB NOT NULL DEFAULT '[]'::jsonb,
+  -- Other keys this same topic appeared under on other days. Momentum and days
+  -- trending resolve through these, so a respelling does not reset the streak.
+  aliases TEXT[] NOT NULL DEFAULT '{}'::text[],
   angles JSONB NOT NULL DEFAULT '[]'::jsonb,
   caption_idea TEXT NOT NULL DEFAULT '',
   hashtags TEXT[] NOT NULL DEFAULT '{}'::text[],
@@ -93,6 +96,8 @@ COMMENT ON COLUMN public.marketing_trend_topics.topic_key IS
   'Stable key across days (pinoy-big-brother-collab-3-0). Momentum and overrides use it.';
 COMMENT ON COLUMN public.marketing_trend_topics.sources IS
   'Per-source evidence: [{ source, rank, traffic, views, newsHeadlines }]. No third-party URLs except the Wikipedia article.';
+COMMENT ON COLUMN public.marketing_trend_topics.aliases IS
+  'Earlier topic keys the AI merged into this one, used to match yesterday''s position.';
 COMMENT ON COLUMN public.marketing_trend_topics.angles IS
   'Three angles: [{ title, hook, output, goal, format, prompt }].';
 COMMENT ON COLUMN public.marketing_trend_topics.brand_guard IS
@@ -218,7 +223,7 @@ BEGIN
 
   INSERT INTO public.marketing_trend_topics (
     run_id, run_date, "window", rank, topic_key, title, summary, category, stay_fit,
-    score, momentum, days_trending, first_seen, sources, angles, caption_idea,
+    score, momentum, days_trending, first_seen, sources, aliases, angles, caption_idea,
     hashtags, brand_guard, pinned, manual
   )
   SELECT
@@ -236,6 +241,10 @@ BEGIN
     coalesce((elem ->> 'days_trending')::int, 1),
     nullif(elem ->> 'first_seen', '')::date,
     coalesce(elem -> 'sources', '[]'::jsonb),
+    coalesce(
+      ARRAY(SELECT jsonb_array_elements_text(coalesce(elem -> 'aliases', '[]'::jsonb))),
+      '{}'::text[]
+    ),
     coalesce(elem -> 'angles', '[]'::jsonb),
     left(coalesce(elem ->> 'caption_idea', ''), 400),
     coalesce(
@@ -272,7 +281,7 @@ BEGIN
   ), meta AS (
     SELECT DISTINCT ON (t.topic_key)
            t.topic_key, t.title, t.summary, t.category, t.stay_fit, t.momentum,
-           t.days_trending, t.first_seen, t.sources, t.angles, t.caption_idea,
+           t.days_trending, t.first_seen, t.sources, t.aliases, t.angles, t.caption_idea,
            t.hashtags, t.brand_guard, t.pinned, t.manual, r.run_date
       FROM public.marketing_trend_topics t
       JOIN public.marketing_trend_runs r ON r.id = t.run_id
@@ -283,15 +292,15 @@ BEGIN
   )
   INSERT INTO public.marketing_trend_topics (
     run_id, run_date, "window", rank, topic_key, title, summary, category, stay_fit,
-    score, momentum, days_trending, first_seen, sources, angles, caption_idea,
+    score, momentum, days_trending, first_seen, sources, aliases, angles, caption_idea,
     hashtags, brand_guard, pinned, manual
   )
   SELECT
     p_run_id, p_run_date, 'week',
     (row_number() OVER (ORDER BY w.window_score DESC, w.topic_key))::int,
     w.topic_key, m.title, m.summary, m.category, m.stay_fit,
-    w.window_score, m.momentum, m.days_trending, m.first_seen, m.sources, m.angles,
-    m.caption_idea, m.hashtags, m.brand_guard, m.pinned, m.manual
+    w.window_score, m.momentum, m.days_trending, m.first_seen, m.sources, m.aliases,
+    m.angles, m.caption_idea, m.hashtags, m.brand_guard, m.pinned, m.manual
     FROM weekly w
     JOIN meta m ON m.topic_key = w.topic_key
    ORDER BY w.window_score DESC, w.topic_key
@@ -316,7 +325,7 @@ BEGIN
   ), meta AS (
     SELECT DISTINCT ON (t.topic_key)
            t.topic_key, t.title, t.summary, t.category, t.stay_fit, t.momentum,
-           t.days_trending, t.first_seen, t.sources, t.angles, t.caption_idea,
+           t.days_trending, t.first_seen, t.sources, t.aliases, t.angles, t.caption_idea,
            t.hashtags, t.brand_guard, t.pinned, t.manual, r.run_date
       FROM public.marketing_trend_topics t
       JOIN public.marketing_trend_runs r ON r.id = t.run_id
@@ -327,15 +336,15 @@ BEGIN
   )
   INSERT INTO public.marketing_trend_topics (
     run_id, run_date, "window", rank, topic_key, title, summary, category, stay_fit,
-    score, momentum, days_trending, first_seen, sources, angles, caption_idea,
+    score, momentum, days_trending, first_seen, sources, aliases, angles, caption_idea,
     hashtags, brand_guard, pinned, manual
   )
   SELECT
     p_run_id, p_run_date, 'month',
     (row_number() OVER (ORDER BY mo.window_score DESC, mo.topic_key))::int,
     mo.topic_key, m.title, m.summary, m.category, m.stay_fit,
-    mo.window_score, m.momentum, m.days_trending, m.first_seen, m.sources, m.angles,
-    m.caption_idea, m.hashtags, m.brand_guard, m.pinned, m.manual
+    mo.window_score, m.momentum, m.days_trending, m.first_seen, m.sources, m.aliases,
+    m.angles, m.caption_idea, m.hashtags, m.brand_guard, m.pinned, m.manual
     FROM monthly mo
     JOIN meta m ON m.topic_key = mo.topic_key
    ORDER BY mo.window_score DESC, mo.topic_key
@@ -347,10 +356,11 @@ BEGIN
      SET status = 'published', topic_count = v_today_count, finished_at = NOW()
    WHERE id = p_run_id;
 
-  -- Keep 35 days of history.
+  -- Keep 35 days of history, whatever the run's status. The week and month windows
+  -- look back 30 days, so nothing reads a run this old, and leaving published rows
+  -- behind would grow the table forever. Topics cascade.
   DELETE FROM public.marketing_trend_runs
-   WHERE run_date < p_run_date - INTERVAL '35 days'
-     AND status <> 'published';
+   WHERE run_date < p_run_date - INTERVAL '35 days';
   DELETE FROM public.marketing_trend_source_cache
    WHERE period_start < p_run_date - INTERVAL '35 days';
 

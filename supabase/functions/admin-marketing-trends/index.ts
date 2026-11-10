@@ -15,6 +15,7 @@ import { createServiceClient } from '../_shared/orgAuth.ts';
 import { jsonError, jsonResponse, jsonSuccess, readJsonBody } from '../_shared/httpResponse.ts';
 import { serveSuperAdmin } from '../_shared/serveEdge.ts';
 import { logSuperAdminAction } from '../_shared/superAdminAudit.ts';
+import { requireSuperAdminStepUp } from '../_shared/superAdminVerification.ts';
 import { capturePostHogEvent } from '../_shared/posthog.ts';
 import { runTrendsPipeline } from '../_shared/marketingTrends/pipeline.ts';
 import { manilaTodayYmd } from '../_shared/calendarAvailabilityManila.ts';
@@ -42,6 +43,12 @@ function isCategory(value: unknown): value is TrendCategory {
 }
 
 serveSuperAdmin('admin-marketing-trends', async (req, user) => {
+  // Hiding, pinning, adding a topic and running the job all change what every host
+  // sees, so they need the same extra verification as the other sensitive console
+  // actions. Reading the ledger does not.
+  const stepUp = await requireSuperAdminStepUp(req, user, 'marketing_trends');
+  if (stepUp) return stepUp;
+
   const supabase = createServiceClient();
 
   if (req.method === 'GET') {

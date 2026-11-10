@@ -27,7 +27,6 @@ function run(over: Partial<TrendRunRow> = {}): TrendRunRow {
 
 function topic(over: Partial<TrendTopicRow> = {}): TrendTopicRow {
   return {
-    id: 'topic-1',
     run_id: 'run-1',
     run_date: '2026-11-10',
     window: 'today',
@@ -36,18 +35,12 @@ function topic(over: Partial<TrendTopicRow> = {}): TrendTopicRow {
     title: 'PBB Collab 3.0',
     summary: 'Fans are following the new housemates.',
     category: 'tv_film',
-    stay_fit: 3,
-    score: '2.1843',
     momentum: 'new',
     days_trending: 1,
-    first_seen: '2026-11-10',
-    sources: [{ source: 'google_trends', rank: 2 }],
+    sources: [{ source: 'google_trends' }],
     angles: [],
     caption_idea: 'Tonight is a staycation kind of night.',
-    hashtags: ['#Staycation'],
-    brand_guard: ['no_likeness'],
     pinned: false,
-    manual: false,
     ...over,
   };
 }
@@ -106,7 +99,7 @@ Deno.test('a list older than the expiry threshold falls back to evergreen', () =
 
 Deno.test('a hidden topic never reaches the host', () => {
   const payload = shape({
-    rows: [topic({ id: 'a', topic_key: 'hidden-one' }), topic({ id: 'b', topic_key: 'kept-one' })],
+    rows: [topic({ topic_key: 'hidden-one' }), topic({ topic_key: 'kept-one' })],
     hidden: ['hidden-one'],
   });
   assertEquals(payload.topics.length, 1);
@@ -122,8 +115,8 @@ Deno.test('hiding every topic falls back to evergreen', () => {
 Deno.test('a pinned topic leads the list', () => {
   const payload = shape({
     rows: [
-      topic({ id: 'a', topic_key: 'first', rank: 1 }),
-      topic({ id: 'b', topic_key: 'second', rank: 2 }),
+      topic({ topic_key: 'first', rank: 1 }),
+      topic({ topic_key: 'second', rank: 2 }),
     ],
     pinned: ['second'],
   });
@@ -144,7 +137,20 @@ Deno.test('finish time is preferred, start time is the fallback', () => {
   assertEquals(payload.publishedAt, '2026-11-10T05:31:00.000Z');
 });
 
-Deno.test('the numeric score is a number on the DTO', () => {
+Deno.test('the DTO carries only the fields the host UI renders', () => {
   const payload = shape({});
-  assert(typeof payload.topics[0]?.score === 'number');
+  const keys = Object.keys(payload.topics[0] ?? {}).sort();
+  assertEquals(keys, [
+    'angles',
+    'captionIdea',
+    'category',
+    'daysTrending',
+    'momentum',
+    'pinned',
+    'rank',
+    'sources',
+    'summary',
+    'title',
+    'topicKey',
+  ]);
 });
