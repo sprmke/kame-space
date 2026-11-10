@@ -8,6 +8,7 @@
 import { expect, type Page, type Route } from '@playwright/test';
 
 import { VOUCHER_E2E_BOOKING_ID } from './voucherRevealHarness';
+import { SUPABASE_AUTH_STORAGE_KEY } from '../../../shared/ids';
 import {
   applyTeamMemberSessionStorage,
   installPropertyTeamRbacMocks,
@@ -39,7 +40,6 @@ export const VOUCHER_GUEST_USER_ID = 'user-e2e-voucher-guest-001';
 export const VOUCHER_GUEST_EMAIL = 'maria@example.com';
 
 const GUEST_SESSION_KEY = 'kame:e2e-guest-session';
-const SUPABASE_AUTH_STORAGE_KEY = 'sb-127-auth-token';
 
 function e2eSupabaseGuestAuthSession() {
   const nowSeconds = Math.floor(Date.now() / 1000);

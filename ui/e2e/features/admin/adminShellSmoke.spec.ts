@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { seedSupabaseAuthSession } from '../../shared/authSeam';
+import { SUPABASE_AUTH_STORAGE_KEY } from '../../shared/ids';
 import { mockEdgeFunctions } from '../../shared/interceptEdge';
 import {
   expectNoPageHorizontalOverflow,
@@ -70,7 +71,7 @@ test.describe('@smoke super admin shell', () => {
       const session = JSON.parse(raw) as { user?: { email?: string } };
       if (session.user) session.user.email = 'not-super-admin@example.com';
       window.localStorage.setItem(key, JSON.stringify(session));
-    }, 'sb-127-auth-token');
+    }, SUPABASE_AUTH_STORAGE_KEY);
     await mockEdgeFunctions(page, [
       {
         name: 'list-organizations',
