@@ -31,7 +31,6 @@ import {
   type TrendCategory,
   type TrendClassifiedTopic,
   type TrendOutput,
-  type TrendSourceEvidence,
 } from './types.ts';
 import { guardRulesForCategory, type BrandGuardRule } from './brandGuard.ts';
 
@@ -320,5 +319,3 @@ export async function runTrendClassify(
     error: null,
   };
 }
-
-export type { TrendSourceEvidence };

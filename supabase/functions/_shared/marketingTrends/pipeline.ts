@@ -34,6 +34,7 @@ import { MIN_SAFE_TOPICS, runTrendClassify, type TrendClassifyResult } from './m
 import { enabledDailySources, SOURCE_LABELS } from './sources/index.ts';
 import type {
   TrendCandidate,
+  TrendClassifiedTopic,
   TrendMomentum,
   TrendSourceEvidence,
   TrendSourceId,
@@ -314,7 +315,7 @@ export type PublishTopic = {
  * order the stored scores describe, which is what the publish RPC re-sorts by.
  */
 export function rankTodayTopics(input: {
-  topics: readonly TrendClassifyResult['topics'][number][];
+  topics: readonly TrendClassifiedTopic[];
   candidates: readonly TrendCandidate[];
   previous: ReadonlyMap<string, { rank: number; firstSeen: string | null }>;
   overrides: TrendOverrides;

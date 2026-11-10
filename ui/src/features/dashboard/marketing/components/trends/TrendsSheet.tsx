@@ -76,7 +76,9 @@ export function TrendsSheet({
   useEffect(() => {
     if (!open) return;
     if (initialWindow) setWindow(initialWindow);
-    if (initialTopicKey) setOpenKey(initialTopicKey);
+    // "See all" opens with no topic, so the list is what the host gets. Opening a chip
+    // passes a key and goes straight to that topic.
+    setOpenKey(initialTopicKey ?? null);
   }, [open, initialWindow, initialTopicKey]);
 
   const query = useMarketingTrends(window, open);
