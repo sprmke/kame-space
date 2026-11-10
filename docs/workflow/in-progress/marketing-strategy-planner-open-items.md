@@ -129,13 +129,16 @@ Tick a box when it is addressed. If an answer changes a shipped default, the pla
 
 ## 6. Known repo state, not caused by this branch
 
-- [ ] **Local Supabase was stopped** during the last pass, so `check:plan-catalog` could not run at
-      the very end. It passed earlier in the same session against the same migration. `bun run
-start:supabase` brings it back.
+- [ ] **Local migration history is polluted.** The shared local database records versions from
+      another branch (`20261324000100`..`20261324000500`, `20261326120000`) that do not exist in this
+      branch's `supabase/migrations`, so `bun run db:migrate` refuses with
+      `MigrationMissingLocalError`. `bun run check:plan-catalog` still passes, so the planner
+      migration is applied. Fix that history deliberately, not as a side effect of this branch.
 
-- [ ] **Two pre-existing `@ci` failures.** `orgPlanCheckout.spec.ts` ("successful return confirms
-      payment", "celebration modal compare plans") fail on `origin/develop` too; verified by running
-      them in a clean worktree at `origin/develop`. Not fixed here.
+- [ ] **Two `@ci` failures seen on the old base.** `orgPlanCheckout.spec.ts` ("successful return
+      confirms payment", "celebration modal compare plans") failed on the previous `develop` base
+      too, verified by running them in a clean worktree. Re-check them on the rebuilt `develop`
+      before blaming this branch.
 
 - [ ] **Develop CI is red** for `build-and-budgets`, `lint-and-types`, `static-guards` and others as
       of run 42567363673. Unrelated to the planner.
