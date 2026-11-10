@@ -134,7 +134,10 @@ ALLOWLIST=(
   'list-org-listing-verifications/index.ts'
   'list-organizations/index.ts'
   'list-parkings/index.ts'
-  'list-properties/index.ts'
+  # Properties for one organization; `*` is deliberate because every column is serialized
+  # to the client. Moved here from `list-properties/index.ts` when the loader was extracted
+  # for the session bootstrap.
+  '_shared/listProperties.ts'
   'list-support-tickets/index.ts'
   'marketing-templates/index.ts'
   'meta-inbox-backfill/index.ts'

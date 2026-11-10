@@ -2,7 +2,7 @@
 title: 'Full-app test architecture: page-mirrored suites, access matrix, enforced coverage'
 status: planned
 tags: [planning, testing, vitest, playwright, deno, pgtap, ci-cd, rbac, plans, governance]
-updated: 2026-11-09
+updated: 2026-11-10
 stage: in-progress
 kind: plan
 ---
@@ -14,12 +14,12 @@ kind: plan
 Branch `test/full-app-test-architecture`. Phases land in separate PRs; this section tracks
 what is actually shipped, not what is planned.
 
-| Phase  | State       | Evidence                                                                                                                                                                                                                        |
-| ------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0      | **shipped** | `e2e-ci` job in `ci.yml` (4 shards, required by `quality`); `test:e2e:ci` in `ci-quality-gate.sh`; 17 orphan specs tagged; `check:e2e-lane-tags`; `check:flaky-quarantine`; Vitest pinned to `TZ=Asia/Manila` with a guard test |
-| 1      | **partly**  | `dom` Vitest project shipped (`vitest.dom.config.ts`, happy-dom + Testing Library, `*.test.tsx`), first hook tests green; personas, `mockTenant`, `edgeMocks`, handler spike still to do                                        |
-| 2      | partly      | lane + quarantine guards exist; `check:test-coverage`, `check:unit-test-quality`, `check:edge-test-coverage` still to build                                                                                                     |
-| 3 to 9 | not started |                                                                                                                                                                                                                                 |
+| Phase  | State       | Evidence                                                                                                                                                                                                                                                                                          |
+| ------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0      | **shipped** | `e2e-ci` job in `ci.yml` (4 shards, required by `quality`); 17 orphan specs tagged; `check:e2e-lane-tags`; `check:flaky-quarantine`; `Asia/Manila` on Vitest, Deno and Playwright; deploy gate split from the PR suite (39.3 → 10.4 min) and skips Supabase when no function or migration changed |
+| 1      | **partly**  | `dom` Vitest project (happy-dom + Testing Library, `*.test.tsx`); handler seam in `serveEdge` (`EDGE_HANDLER_TEST`); first HTTP handler test; backend tests for cancellation money, settings write authorization and plan upgrade hooks; personas, `mockTenant`, `edgeMocks` still to do          |
+| 2      | **partly**  | `check:unit-test-quality` (393 export-only baseline, shrink-only), `check:edge-test-coverage` (344 uncovered functions baselined), `check:guide-spec-refs` (42/110 specs claimed by a guide), Vitest coverage floor. `check:test-coverage` per-section manifests and per-tier globs remain        |
+| 3 to 9 | not started |                                                                                                                                                                                                                                                                                                   |
 
 First full `@ci` run on this branch: **338 passed, 8 failed, 3.5 min**. Triage:
 
@@ -96,6 +96,29 @@ transitions, parking link/request, SD form, stay-guide token access, auth redire
 read-only, plan gates, feature kill switches and public route health. 97 tests, 1.2 min,
 desktop only. `check:e2e-lane-tags` enforces one lane per spec and that `@critical` is not used
 as a lane.
+
+Following the same measurement, the deploy job was the new long pole: 21 min, of which
+**19 min was `supabase functions deploy` pushing all 345 functions on a merge that touched
+none**. `cd-prod` now resolves the last _successful_ deploy via the Actions API and skips the
+Supabase deploy, the schema diff and the backup when `supabase/functions` and
+`supabase/migrations` are unchanged since then. A failed or partial run leaves the marker
+older, so its changes stay in the diff, and `workflow_dispatch` has `force_deploy` to
+override. Smoke and migration parity still run either way, so a skipped deploy still proves
+production is healthy.
+
+The deploy now narrows the function set as well. `cd-prod` computes the changed paths since
+the last successful deploy and passes them to `deploy-supabase.sh` as `DEPLOY_FUNCTIONS`:
+
+| Situation                                                        | Functions deployed |
+| ---------------------------------------------------------------- | ------------------ |
+| Only migrations changed                                          | none               |
+| Only edge test files changed                                     | none               |
+| `_shared/**`, `deno.json`, `import_map.json` or `.npmrc` changed | all 345            |
+| Specific function directories changed                            | only those         |
+| Anything unparseable                                             | all (safe default) |
+
+`_shared` is the important case: it is bundled into every function at deploy time, so a
+narrowed deploy there would ship stale code to 344 functions.
 
 Rejected on purpose: `--only-changed` selection. Playwright's flag matches changed _spec_
 files, not changed source, so a source change would select nothing. Source-to-spec selection

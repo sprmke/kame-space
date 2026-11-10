@@ -29,6 +29,11 @@ on:
         required: false
         default: 'false'
         type: boolean
+      force_deploy:
+        description: 'Deploy even when no supabase/functions or supabase/migrations file changed'
+        required: false
+        default: 'false'
+        type: boolean
 
 concurrency:
   group: supabase-deploy
@@ -71,6 +76,10 @@ jobs:
     needs: quality
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
+      # Read the previous successful run to find the last deployed commit.
+      actions: read
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
@@ -89,13 +98,108 @@ jobs:
         run: |
           ./scripts/dev/bunx --bun supabase@latest link --project-ref "$SUPABASE_PROJECT_REF"
 
+      # The deploy used to push all 345 edge functions on every merge, 19 minutes for a
+      # push that touched no function (run 42562585557). Compare against the last
+      # *successful* deploy instead: a failed or partial run leaves the marker older, so
+      # its changes are still in the diff and nothing can be skipped by accident.
+      - name: Detect backend changes since the last successful deploy
+        id: backend
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Safe default first: GitHub keeps the LAST value written, so `false` is only ever
+          # published after the diff has actually been proven empty. Any unexpected failure
+          # in this step therefore deploys rather than skipping. `set -e` is deliberately off
+          # for the same reason.
+          set -uo pipefail
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+          if [[ "${{ github.event.inputs.force_deploy }}" == "true" ]]; then
+            echo "Manual dispatch asked for a full deploy."
+            exit 0
+          fi
+
+          prev=$(gh api \
+            "repos/${{ github.repository }}/actions/workflows/cd-prod.yml/runs?branch=develop&status=success&per_page=10" \
+            --jq '[.workflow_runs[] | select(.head_sha != "'"$GITHUB_SHA"'")][0].head_sha // ""' 2>/dev/null || echo "")
+
+          if [[ -z "$prev" ]]; then
+            echo "No previous successful deploy found; deploying everything."
+            exit 0
+          fi
+
+          if ! git fetch --no-tags --depth=1 origin "$prev" 2>/dev/null; then
+            echo "Could not fetch the previous deploy commit $prev; deploying everything."
+            exit 0
+          fi
+
+          # Safe default: deploy every function. Narrowed below only when provably safe.
+          echo "functions=all" >> "$GITHUB_OUTPUT"
+
+          if git diff --quiet FETCH_HEAD "$GITHUB_SHA" -- supabase/functions supabase/migrations; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "functions=none" >> "$GITHUB_OUTPUT"
+            echo "No function or migration changes since $prev."
+            exit 0
+          fi
+
+          echo "Backend changes since $prev:"
+          git diff --name-only FETCH_HEAD "$GITHUB_SHA" -- supabase/functions supabase/migrations | sed 's/^/  /'
+
+          # Deploying all 345 functions took ~19 minutes per deploy. Narrow it to the changed
+          # directories, but deploy everything whenever shared code moved: `_shared/**` is
+          # bundled into every function at deploy time, so a change there can affect all.
+          if git diff --quiet FETCH_HEAD "$GITHUB_SHA" -- supabase/functions; then
+            echo "functions=none" >> "$GITHUB_OUTPUT"
+            echo "Only migrations changed; functions deploy skipped."
+            exit 0
+          fi
+
+          # Deno test files are never bundled into a deployed function, so a change that only
+          # touches them needs no deploy. Filtering them out first is what keeps a test-only
+          # merge from redeploying all 345 functions.
+          changed_functions=$(git diff --name-only FETCH_HEAD "$GITHUB_SHA" -- supabase/functions \
+            | grep -vE '(_test\.ts|\.test\.ts)$' || true)
+
+          if [[ -z "$changed_functions" ]]; then
+            echo "functions=none" >> "$GITHUB_OUTPUT"
+            echo "Only edge test files changed; functions deploy skipped."
+            exit 0
+          fi
+
+          if echo "$changed_functions" \
+            | grep -qE '^supabase/functions/(_shared/|deno\.json|import_map\.json|\.npmrc)'; then
+            echo "functions=all" >> "$GITHUB_OUTPUT"
+            echo "Shared edge code changed; deploying every function."
+            exit 0
+          fi
+
+          names=$(echo "$changed_functions" \
+            | awk -F/ 'NF >= 3 && $3 != "tests" && $3 !~ /\./ { print $3 }' \
+            | sort -u | tr '\n' ' ' | sed 's/ *$//')
+
+          if [[ -z "$names" ]]; then
+            if ! echo "$changed_functions" | grep -qvE '^supabase/functions/tests/'; then
+              echo "functions=none" >> "$GITHUB_OUTPUT"
+              echo "Only edge test files changed; functions deploy skipped."
+            else
+              echo "functions=all" >> "$GITHUB_OUTPUT"
+              echo "Could not narrow the function list; deploying everything."
+            fi
+          else
+            echo "functions=$names" >> "$GITHUB_OUTPUT"
+            echo "Deploying only: $names"
+          fi
+
       - name: Capture pre-deploy schema diff
+        if: steps.backend.outputs.changed == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: ./scripts/dev/bunx --bun supabase@latest db diff --linked > pre-deploy-schema-diff.sql
 
       - name: Upload schema diff
+        if: steps.backend.outputs.changed == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: pre-deploy-schema-diff-${{ github.sha }}
@@ -103,8 +207,10 @@ jobs:
           retention-days: 30
 
       - name: Deploy Supabase
+        if: steps.backend.outputs.changed == 'true'
         env:
           CI: '1'
+          DEPLOY_FUNCTIONS: ${{ steps.backend.outputs.functions }}
           DEPLOY_CONFIRM: prod
           INCLUDE_ALL: ${{ github.event.inputs.include_all }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -121,7 +227,7 @@ jobs:
           fi
 
       - name: Upload pre-deploy backup
-        if: always()
+        if: always() && steps.backend.outputs.changed == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: pre-deploy-backup-${{ github.sha }}

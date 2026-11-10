@@ -4,7 +4,7 @@ status: planned
 stage: in-progress
 kind: plan
 tags: [performance, pwa, supabase, edge-functions, lighthouse, production-readiness, caching]
-updated: 2026-11-08
+updated: 2026-11-10
 readiness: unverified
 launch_gate: A
 launch_blocker: true
@@ -518,12 +518,22 @@ Note: Vitest silently ignores `.test.tsx` component tests in this repo, so put c
 | ID  | Decision                                                                       | Recommended                                                                    | Needed by  |
 | --- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ---------- |
 | D-1 | Public read caching option                                                     | Same-origin Vercel proxy + fix anon `no-store`, then fewer queries per call    | Phase 5    |
-| D-2 | Local JWT verification for reads (revocation lag up to token lifetime)         | Yes for reads, `getUser` kept for writes and sensitive actions                 | Phase 4.2  |
+| D-2 | Local JWT verification for reads (revocation lag up to token lifetime)         | **DEFERRED** — see the note below                                              | Phase 4.2  |
 | D-3 | Accepted staleness per public endpoint class                                   | 60 s listings/search, 300 s static content, 30 s availability                  | Phase 5    |
 | D-4 | `pg_stat_statements_reset()` at the baseline point on production               | Yes, once, with `kamewave`, after the before snapshot is saved                 | Phase 0    |
 | D-5 | Make the Lighthouse CI gate blocking                                           | After 2 green weeks                                                            | Phase 8    |
 | D-6 | Edge latency source: daily log pull vs. in-isolate counters flushed on a timer | Daily log pull (zero request-path cost); counters only if logs prove too lossy | Phase 0.4  |
 | D-7 | Regression threshold for a `perf:*` finding                                    | p95 up > 20% week over week with >= 100 calls                                  | Phase 10.5 |
+
+> **D-2 deferred (2026-11-09), with the reasoning.** Local verification is technically
+> available: tokens are ES256 and the project publishes a matching JWKS. It is not worth it
+> now. The five-second token cache plus threading the verified user into the inner checks
+> already removed the duplicate verification, so D-2's remaining gain is **~90 ms once per
+> burst**, about 3-5% of what is left on the authenticated path. Against that, `getUser` is
+> what makes sign-out, session revocation and account disable take effect **immediately**; local
+> verification would leave each of those accepting reads for up to the token lifetime
+> (measured: 3600 s) on a surface that exposes guest PII. Revisit only as an explicit product
+> decision with a stated maximum offboarding delay, and then for reads only.
 
 ## Operator inputs
 
@@ -562,19 +572,33 @@ rows, and the served HTML contains no test-property data. Reference:
 
 ## Status ledger
 
-| Phase | State                                                   | Evidence                                                                                                                                                                                                                                                                             |
-| ----- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 0     | partial (0.1, 0.2, DB capture shipped)                  | `bootMarks.ts` + 10 Vitest, `serverTiming.ts` + 10 Deno, `bootMarks.spec.ts` 3 E2E. Baseline captured: `perf-2026-11-08-before.md` + `2026-11-08-pg-stat-before.json`, via the new `perf:pg-stat:snapshot` (no `psql` needed). Lighthouse and authenticated edge latency still open. |
-| 1     | partial (RC-6, RC-8, RC-9, RC-10, RC-11, RC-16 decided) | RC-6 and RC-16 confirmed with numbers, RC-9 and RC-8 partly rejected, RC-10 rejected, RC-11 confirmed and fixed. Remaining RCs need a hosted HAR trace.                                                                                                                              |
-| 2     | 2.3 blocked, 2.5 already present                        | Deferring telemetry contradicts 0.1 (see note). `MarketingImage` + `responsiveImage.ts` already ship `srcset`, `sizes` and `fetchPriority` on the LCP image. Bundle unchanged: 246.4 / 633.2 KiB.                                                                                    |
-| 3     | partial (3.3, 3.4, 3.5)                                 | Page chunk starts with the shell, gate queries persist across reloads, notification preview and announcement dot deferred. **3.1/3.2 (bootstrap endpoint + TenantGate) remain**: highest value, highest risk, needs a role-parity suite.                                             |
-| 4     | 4.1 rejected                                            | `x-region: ap-southeast-1` measured 34% slower than default routing (0.376 s vs 0.28 s warm). Not shipping a pessimization. 4.2 (local JWT verification) is D-2 and stays open.                                                                                                      |
-| 5     | not started                                             | Needs D-1 and `kamewave` to test the Vercel proxy.                                                                                                                                                                                                                                   |
-| 6     | analysed, no fix yet                                    | Top statements captured (`perf-2026-11-08-before.md`). RC-16 confirmed at 85% Realtime. 6.1 to 6.5 need a decision on whether to move Realtime to Broadcast, which is a behaviour change and not a query fix.                                                                        |
-| 7     | partial                                                 | 7.1 dropped (RC-10 rejected), 7.2 chunk half shipped, 7.8 already present. 7.3 to 7.7 need a standalone-PWA trace.                                                                                                                                                                   |
-| 8     | not started                                             | Depends on the phases above producing new numbers.                                                                                                                                                                                                                                   |
-| 9     | not started                                             | Depends on Phase 0.3 and a production release.                                                                                                                                                                                                                                       |
-| 10    | not started                                             | Needs Management API + PostHog + Sentry read tokens.                                                                                                                                                                                                                                 |
+Last updated 2026-11-10. "Do not ship" means deliberately not done, with the reason below the
+table; it is not "not started".
+
+| Phase | State                                               | Evidence                                                                                                                                                                                                                 |
+| ----- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0     | done except hosted runs                             | Boot marks, `Server-Timing`, `perf:pg-stat:snapshot` (no `psql`). Lighthouse and authenticated boot traces need a hosted A/B.                                                                                            |
+| 1     | done                                                | 9 root causes decided with numbers; RC-4, RC-9, RC-10, 2.5 and 7.8 were already done or actively wrong.                                                                                                                  |
+| 2     | 2.1 shipped, 2.5 already present, 2.6 do not ship   | Landing chunk is module-preloaded and guarded by `check:landing-preload`. 2.3 would delete the transaction Phase 0.1 measures. 2.6 risks font regressions across themed pages.                                           |
+| 3     | 3.1, 3.3, 3.4, 3.5 shipped; 3.2 do not ship         | `get-session-context` took the boot chain from 3.0-5.7 s to 1.0-1.1 s. 3.2 rewrites the authorisation control flow of every dashboard route and needs a role-parity suite.                                               |
+| 4     | 4.1 rejected, 4.4 done, 4.2 deferred                | Region pinning measured 34% slower. Duplicate `getUser` removed. D-2 buys ~90 ms per burst at the cost of a one-hour revocation window. 4.3 would weaken an enforced quota; 4.5 is unverifiable here.                    |
+| 5     | do not ship                                         | Needs the Vercel same-origin proxy (D-1) plus an accepted staleness per endpoint. Changing public cache headers without the proxy only moves the staleness risk, not the latency.                                        |
+| 6     | analysed, fixes do not ship                         | Realtime is 85% of DB time. Moving to Broadcast changes how inbox, notifications and guest chat update, which is a product decision. 6.4 is a daily cron with no user-facing latency.                                    |
+| 7     | 7.2 chunk half and 7.8 shipped; 7.3-7.7 do not ship | 7.3-7.5 change navigation UX or cache staleness without a PWA harness to prove them. 7.6 touches service-worker launch behaviour; needs `test:e2e:pwa` time. 7.7 needs a profiler run.                                   |
+| 8     | partial                                             | Bundle budget ratcheted to 260/660 KiB and now actually fails when exceeded; `check:landing-preload` added; rules captured in `.cursor/rules/edge-latency.mdc`. Lighthouse CI and Sentry alerts need hosted credentials. |
+| 9     | blocked                                             | Needs a released build plus a host session for the real before/after.                                                                                                                                                    |
+| 10    | blocked                                             | Needs a PostHog personal API key and a Sentry token with transaction-read scope.                                                                                                                                         |
+
+### Deferred on purpose, and what would unblock each
+
+| Item                       | Why not now                                                                                                                                                                                                                                                                            | Unblocked by                                                                                                                    |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 3.2 `TenantGate`           | One authorisation path for every dashboard route                                                                                                                                                                                                                                       | A role-parity test matrix across owner, org admin, property member, plan-limited, revoked, suspended, super-admin, wrong tenant |
+| `list-properties` (385 ms) | Cost is the per-org booking scan, not round trips. `activeBookings` counts non-cancelled bookings regardless of date while revenue and occupancy are month-scoped, and the night loop has a 400-night cap and a date fallback. Porting to SQL risks silently changing a host's revenue | A KPI parity harness that runs both implementations over real org data                                                          |
+| D-2 local JWT              | ~90 ms once per burst, versus up to 3600 s of continued read access after revocation on a surface holding guest PII                                                                                                                                                                    | An explicit product decision with a stated maximum offboarding delay                                                            |
+| 5 public caching           | `s-maxage` is not honoured in front of Supabase                                                                                                                                                                                                                                        | The Vercel same-origin proxy, and a staleness window agreed per endpoint class                                                  |
+| 6.5 Realtime to Broadcast  | Changes how three realtime surfaces behave                                                                                                                                                                                                                                             | A product decision plus realtime E2E coverage for inbox, notifications and guest chat                                           |
+| 9, 10                      | Need hosted credentials and a released build                                                                                                                                                                                                                                           | `SENTRY_AUTH_TOKEN` with transaction read, a PostHog personal key, and a host session                                           |
 
 ## Plan revisions
 
@@ -620,3 +644,5 @@ document, and why.
 `SUPABASE_ACCESS_TOKEN` + `SUPABASE_PROJECT_REF` (0.3, 6, 10), a read-only production host
 account or a demo org (host Lighthouse/boot runs), a PostHog personal API key and project id
 (10.5), and `kamewave` for the production deploy, the stats reset and the Vercel proxy test.
+
+**3.1 shipped in its safe form (2026-11-10).** `get-session-context` returns the same payloads from the same shared loaders in one request, and the client seeds the existing query keys. The guards are untouched: a failed bootstrap seeds nothing and they fetch for themselves, so the behaviour degrades to the old path rather than locking anyone out. Four calls in 3.015 s became one in 1.006 s, about -67% serially and -47% against the browser's two parallel pairs. **3.2 (the `TenantGate` rewrite) stays open** because it changes the control flow of every dashboard route and needs a role-parity suite.

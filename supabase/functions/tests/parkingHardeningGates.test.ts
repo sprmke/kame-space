@@ -10,6 +10,20 @@ async function source(path: string): Promise<string> {
   return await Deno.readTextFile(new URL(`../${path}`, import.meta.url));
 }
 
+async function latestMigrationDefining(signature: string): Promise<{ file: string; src: string }> {
+  const dir = new URL('../../migrations/', import.meta.url);
+  const names: string[] = [];
+  for await (const entry of Deno.readDir(dir)) {
+    if (entry.isFile && entry.name.endsWith('.sql')) names.push(entry.name);
+  }
+  names.sort();
+  for (let i = names.length - 1; i >= 0; i -= 1) {
+    const src = await Deno.readTextFile(new URL(names[i]!, dir));
+    if (src.includes(signature)) return { file: names[i]!, src };
+  }
+  throw new Error(`No migration defines ${signature}`);
+}
+
 function countOccurrences(haystack: string, needle: string): number {
   return haystack.split(needle).length - 1;
 }
@@ -63,6 +77,8 @@ Deno.test('payment fulfillment guards dead checkout rows before confirming', asy
   assert(src.includes('slotMismatch'));
   assert(src.includes('expirePendingParkingTransactions'));
   assert(src.includes("txn.status === 'expired'"));
+  assert(src.includes("txn.status === 'refund_review'"));
+  assert(src.includes("txn.status === 'refunded'"));
 });
 
 Deno.test('payment analytics cannot abort fulfillment', async () => {
@@ -105,13 +121,41 @@ Deno.test('every parking admin route is permission-wrapped', async () => {
   assertEquals(routeCount, guardedCount);
 });
 
-Deno.test('payouts expose a manual refund path and block disbursement after host cancel', async () => {
-  const src = await source('parking-payouts/index.ts');
-  assert(src.includes("action === 'record_refund'"));
-  assert(src.includes("status: 'refunded'"));
-  assert(src.includes("'parking.refund_recorded'"));
-  assert(src.includes(".eq('status', 'paid')"));
+Deno.test('org-wide booking lists include pre-claim parking requests', async () => {
+  const sql = await source('../../supabase/migrations/20261324000000_list_bookings_preclaim.sql');
+  assert(sql.includes('gs.parking_request_organization_id = p_org_id'));
+  assert(sql.includes("b.response = 'pending'"));
+  assert(sql.includes('s.parking_request_organization_id IS NOT NULL'));
+  const svc = await source('_shared/databaseService.ts');
+  assert(svc.includes("eq('parking_request_organization_id', orgId)"));
+  assert(svc.includes("from('parking_booking_broadcasts')"));
 });
+
+Deno.test('paying host is notified when the payment window expires', async () => {
+  const src = await source('_shared/parkingBroadcastExpireCron.ts');
+  assert(src.includes("type: 'parking_payment_expired'"));
+  assert(src.includes('payment window expired'));
+});
+
+Deno.test('guest cancellation and endorsement failure produce host notifications', async () => {
+  const cancel = await source('_shared/parkingCancellation.ts');
+  assert(cancel.includes("type: 'parking_request_cancelled'"));
+  assert(cancel.includes('notifyHostsOfCancellation'));
+  const pay = await source('_shared/parkingPaymentOrchestrator.ts');
+  assert(pay.includes("type: 'parking_endorsement_failed'"));
+});
+
+Deno.test(
+  'payouts expose a manual refund path and block disbursement after host cancel',
+  async () => {
+    const src = await source('parking-payouts/index.ts');
+    assert(src.includes("action === 'record_refund'"));
+    assert(src.includes("status: 'refunded'"));
+    assert(src.includes("'parking.refund_recorded'"));
+    assert(src.includes(".eq('status', 'paid')"));
+    assert(src.includes('amount cannot exceed the guest charge'));
+  }
+);
 
 Deno.test('host parking payment + endorsement reads are parking-team gated', async () => {
   const payments = await source('parking-payments/index.ts');
@@ -136,4 +180,26 @@ Deno.test('host cancel requires a reason and moves paid rows to refund review', 
   assert(src.includes("status: 'refund_review'"));
   assert(src.includes('sendParkingHostCancelledEmail'));
   assert(src.includes("action: 'parking.cancelled_by_host'"));
+});
+
+Deno.test('the latest public listing refresh uses the platform guest rate', async () => {
+  const latest = await latestMigrationDefining(
+    'CREATE OR REPLACE FUNCTION public.pls_refresh_parking'
+  );
+  assert(
+    latest.src.includes('FROM public.platform_parking_settings'),
+    `${latest.file} must read the platform guest rate`
+  );
+  assert(
+    !latest.src.includes('FROM public.parking_settings'),
+    `${latest.file} must not write the host rate into the public index`
+  );
+});
+
+Deno.test('parking dashboard net uses the marketplace host net', async () => {
+  const src = await source('_shared/dashboardService.ts');
+  assert(src.includes("from('parking_payment_transactions')"));
+  assert(src.includes('hostNetTotal'));
+  assert(src.includes("bookingKind === 'parking'"));
+  assert(src.includes('parkingLedger?.hostNetTotal ?? 0'));
 });

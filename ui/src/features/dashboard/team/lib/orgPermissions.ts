@@ -32,13 +32,19 @@ function expandGranted(permissions: readonly string[] | undefined): string[] {
   return expandLegacyOrgPermissionIds(permissions ?? []);
 }
 
+/**
+ * A coarse legacy requirement means every leaf it expands to, not any one of them.
+ * Mirrors `_shared/orgTeamPermissions.ts#hasOrgPermission`; a dropped-to-nothing expansion
+ * grants nothing.
+ */
 export function hasOrgPermission(
   permissions: readonly string[] | undefined,
   required: string
 ): boolean {
   const granted = expandGranted(permissions);
   const requiredExpanded = expandLegacyOrgPermissionIds([required]);
-  return requiredExpanded.some((id) => granted.includes(id));
+  if (requiredExpanded.length === 0) return false;
+  return requiredExpanded.every((id) => granted.includes(id));
 }
 
 /** Minimum view permission per org sidebar nav label. */

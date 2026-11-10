@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Parking module hardening: end-to-end audit, fixes, and test coverage'
 status: in-progress
 tags: [workflow, planned, parking, payments, rbac, e2e, production-readiness]
-updated: 2026-11-08
+updated: 2026-11-11
 kind: plan
 supersedes:
   - parking-e2e-later-phases.md
@@ -52,7 +52,25 @@ Second slice (2026-11-08):
 - **C-10** legacy `ParkingRequestForm` remains for historical unlinked rows; the booking detail panel already renders the linked marketplace match instead when available.
 - Tests: +2 Deno suites, +4 Playwright specs; parking suite 25 passed, 12 skipped (side-by-side/live), mobile smoke 3 passed, moved property spec 8 passed. The three migrations applied cleanly to the local Supabase stack. Build is blocked only by an unrelated `VoiceSessionPanel` shell chunk from concurrent voice work, not by parking.
 
-Still open: H-11 (split the 1,087-line `ParkingSettingsCard`), the remaining guest status polish (G-3/G-6/G-7 are already largely covered by existing states and the direct-link card), E-11/E-12 dedicated specs for the org parkings hub and super-admin payouts, C-4 soak confirmation, and the production-readiness/support follow-through. The manual QA matrix has not been run because it needs the local stack.
+Follow-up slice (2026-11-09):
+
+- **H-11** `ParkingSettingsCard.tsx` is now 133 lines: controller in `parking/hooks/useParkingSettingsController.ts` and sections in `components/ParkingSettingsSections.tsx`.
+- **H-9** org-wide and scoped booking lists include pre-claim broadcast requests (`20261324000000_list_bookings_preclaim.sql` plus the PostgREST fallback).
+- **M-11** host in-app notices for guest cancel, payment-window expiry, and endorsement send failure. New types: `parking_request_cancelled`, `parking_payment_expired`, `parking_endorsement_failed`.
+- **E-11/E-12** org parkings hub and super-admin payouts specs added.
+- **Manual QA** width sweep at 375 / 768 / 1280 for Bookings, booking detail, Pricing, Finance and Settings, now asserting loaded content rather than just the page shell.
+- **Mobile QA fix** the pricing calendar kept square cells from its 56px minimum height and the nowrap direct-link URL widened the right column, so 375px clipped the weekend columns. Compact card padding + 2px week gaps keep all seven days on screen at ~45px cells, and the right column now shrinks. A Playwright test asserts the last day cell stays inside the 375px viewport.
+- **Final review fix** the later public-listing migration had redefined `pls_refresh_parking()` with the host rate, reverting G-1. Migration `20261327000000_parking_guest_rate_index_fix.sql` restores the platform guest rate, re-backfills the index, and a Deno test guards the last definition.
+- **M-8/M-9 UI** parking settings now returns archive impact counts. The archive confirm lists pending offers and upcoming bookings; delete is disabled once the slot has booking history or pending offers, and the copy names finance removal.
+- **H-7 finance** the parking dashboard now reads `parking_payment_transactions.host_net_total` for net profit and pipeline instead of the property booking formula, so the marketplace commission is not counted as host revenue. Verified against local seed data (₱630 net, not ₱700 guest charge).
+- **Payment terminal states** a duplicate provider webhook can no longer flip `refund_review`/`refunded` back to `paid`; manual refunds are capped at the guest charge.
+- **Docs/rules cleanup** removed stale references to the deleted `submit-pay-parking`, `parking-broadcast-email` and `create-parking-booking` endpoints from active guides and rules.
+
+**C-4 confirmed:** no repository callers for `submit-pay-parking`, `parking-broadcast-email` or `create-parking-booking`, and none are deployed in production. Their dirs, config blocks and guards are gone.
+
+Manual QA: the automated parking suite covers the lifecycle and interaction paths, and a dedicated width sweep covers Bookings, booking detail, Pricing, Finance and Settings at 375 / 768 / 1280. A human visual pass is optional before release.
+
+Only production deploy of this branch remains.
 
 ## How this audit was done
 
@@ -534,6 +552,8 @@ These are implemented with the recommended default unless the product owner over
 1. **Host-created bookings already paid offline (cash or bank transfer).** Default: add a "Paid outside Kame Space" option for hosts with `bookings:edit`. It records a ₱0 `provider: 'offline'` ledger row, no platform fee, and reuses the complimentary fulfillment path (confirmation + endorsement + property gate, no PayMongo). Do not send the guest a pay link. Keep online-only as the visible default.
 2. **Refund policy when the host cancels after payment.** Default: full refund to the guest, recorded manually in `parking-payouts` (`record_refund`), host payout blocked until recorded. The existing "non-refundable" copy applies to guest-initiated cancellation, not host cancellation. If product disagrees, change the copy and the action label, not the ledger.
 3. **Guest-facing price (G-1).** Default: guests always see and pay the **platform** guest rate. Cards, detail, form summary, status and checkout all use it. Host rate is a payout input only. Weekend nights are called out when the rate differs.
+4. **M-3 Checkout Sessions.** Payment Links remain in this slice. The ledger invalidation, webhook guard and provider-state check cover the payable-after-release risk without changing the webhook shape. Revisit Checkout Sessions when server-side link expiry is worth that migration.
+5. **M-11 Telegram fan-out.** Host alerts for cancellation, payment expiry and endorsement failure ship in-app. Telegram needs new per-parking templates and toggles, so it stays a follow-up rather than a hidden untemplated message.
 
 ---
 

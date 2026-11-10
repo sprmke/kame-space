@@ -27,8 +27,12 @@ function gzipBytes(publicPath) {
 const entryGzipBytes = gzipBytes(entryMatch[1]);
 const initialGzipBytes = [...assetPaths].reduce((total, path) => total + gzipBytes(path), 0);
 
-const entryBudgetBytes = 500 * 1024;
-const initialBudgetBytes = 1200 * 1024;
+// Ratcheted to the measured build on 2026-11-09 (entry 246.4 KiB, initial 633.2 KiB) with
+// about 5% headroom. The previous 500 / 1200 KiB ceilings passed at roughly 2x the real size,
+// which meant the gate could not detect a regression at all. When a change legitimately needs
+// more, raise these deliberately in the same PR and say why.
+const entryBudgetBytes = 260 * 1024;
+const initialBudgetBytes = 660 * 1024;
 const formatKiB = (bytes) => `${(bytes / 1024).toFixed(1)} KiB`;
 
 console.log(

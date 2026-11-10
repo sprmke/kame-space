@@ -411,9 +411,9 @@ transactionId, amount, reason}` — mirrors `org-subscriptions-admin`'s GET/PATC
   CTA URL uses `resolveGuestParkingCtaAbsoluteUrl` (own-default when available).
 - **Legacy broadcast retirement**: `sendParkingBroadcast()` and the per-property **Parking owners**
   setting are removed. `workflowOrchestrator.ts` no longer accepts
-  `sendParkingBroadcastEmail`, and `submit-pay-parking` is a **410 stub**. Host **Find parking**
-  no longer opens the vehicle form. The property **Parking rate** stays as manual-parking pricing
-  only.
+  `sendParkingBroadcastEmail`. The `submit-pay-parking` and `parking-broadcast-email` endpoints
+  are deleted, not stubs. Host **Find parking** no longer opens the vehicle form. The property
+  **Parking rate** stays as manual-parking pricing only.
 - **Complimentary own parking** requires `allowParking === true` **and**
   `complimentaryOwnerParking === true` (`readComplimentaryOwnerParking`). A stale saved `true`
   is inert while parking is off, and the own-slot CTA falls back to the marketplace URL.

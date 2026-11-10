@@ -1342,3 +1342,11 @@ Seven days by default. After that only the result and the guest's name stay with
 - source: docs/guides/routes/app.md
 
 Browsers, home-screen shortcuts and messaging apps can keep older icons or link previews for a while. Reopen the website to load the latest version. If an iPhone home-screen shortcut still has the old icon, you may need to remove that shortcut and add it again. Your account and bookings are unchanged.
+
+### Will I be notified if a guest cancels their parking request?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/org/parking/bookings.md
+
+Yes. You get an in-app notification when a guest cancels while the request is still searching or after you accepted but before payment. You also get one when a guest's payment window expires.

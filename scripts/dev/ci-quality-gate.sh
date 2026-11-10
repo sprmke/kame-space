@@ -61,6 +61,8 @@ run_step "playwright lane tags (one tag per spec)" node scripts/dev/check-e2e-la
 run_step "flaky quarantine discipline" node scripts/dev/check-flaky-quarantine.mjs
 run_step "unit test quality (no new export-only tests)" node scripts/dev/check-unit-test-quality.mjs
 run_step "edge handler coverage ratchet" node scripts/dev/check-edge-test-coverage.mjs
+run_step "route guides point at real specs" node scripts/dev/check-guide-spec-refs.mjs
+run_step "migration versions do not collide" bash scripts/dev/check-migration-version-collisions.sh
 run_step "vercel cache/security headers" bash scripts/dev/check-vercel-headers.sh
 run_step "CSP theme script hash (production-readiness doc 22)" bash scripts/dev/check-csp-theme-hash.sh
 run_step "storage upload cacheControl" node scripts/dev/check-storage-cache-control.mjs
@@ -76,6 +78,8 @@ run_step "assert image optimizer stays lazy (plan §10.6)" \
   node scripts/media/assert-lazy-optimizer.mjs
 run_step "bundle budgets + chunk-graph leak check (production-readiness doc 00/01)" \
   bun run check:budgets
+run_step "landing chunk is module-preloaded (app-speed 2.1)" \
+  bun run check:landing-preload
 run_step "no public source maps (production-readiness doc 02)" \
   node scripts/performance/assert-no-sourcemaps.mjs
 run_step "no render-blocking scripts in index.html (production-readiness doc 04)" \

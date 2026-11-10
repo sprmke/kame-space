@@ -92,6 +92,12 @@ jobs:
       - name: Edge handler coverage ratchet (no new untested function)
         run: node scripts/dev/check-edge-test-coverage.mjs
 
+      - name: Route guides point at real specs
+        run: node scripts/dev/check-guide-spec-refs.mjs
+
+      - name: Migration versions do not collide with the base branch
+        run: bash scripts/dev/check-migration-version-collisions.sh
+
       - name: Tracked secret pattern scan (production-readiness doc 26)
         run: bash scripts/dev/check-tracked-secrets.sh
 

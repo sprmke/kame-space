@@ -11,14 +11,19 @@ import { jsonError, jsonSuccess } from '../_shared/httpResponse.ts';
 import { readPropertyIdFromUrl, resolveScopedPropertyAccess } from '../_shared/propertyScope.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 
-serveAuthenticated('property-entitlements', async (req) => {
+serveAuthenticated('property-entitlements', async (req, user) => {
   if (req.method !== 'GET') {
     return jsonError(req, 'Method not allowed', 405);
   }
 
   const url = new URL(req.url);
   const propertyIdFromQuery = readPropertyIdFromUrl(url);
-  const { property } = await resolveScopedPropertyAccess(req, 'settings:view', propertyIdFromQuery);
+  const { property } = await resolveScopedPropertyAccess(
+    req,
+    'settings:view',
+    propertyIdFromQuery,
+    user
+  );
   const propertyId = property.id as string;
 
   const entitlements = await resolvePropertyEntitlements(propertyId);

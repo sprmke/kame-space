@@ -130,6 +130,71 @@ export function resetBlockedIdentitiesCacheForTests(): void {
   blockedCache = null;
 }
 
+/**
+ * Per-isolate fixed-window counter, for the **log-only** path.
+ *
+ * The authenticated wrapper used to call `bump_rate_limit` on every request even when
+ * enforcement ships off, which made it a database write per request purely to produce a
+ * log line. Measured in production on 2026-11-09 that write cost **120 to 280 ms** per
+ * call, on a request whose handler itself took under 1 ms.
+ *
+ * This counter has the same fixed-window semantics, so the number it reports is
+ * comparable, but it lives in the isolate: no network, no write. Its count is per isolate
+ * rather than global, which is acceptable for a log and **not** acceptable for enforcement,
+ * so `serveEdge` only uses this when `authenticated_rate_limit_enforce` is off.
+ */
+type WindowedCount = { windowStart: number; count: number };
+const inMemoryCounters = new Map<string, WindowedCount>();
+const IN_MEMORY_MAX_ENTRIES = 10_000;
+let inMemorySweptAt = 0;
+
+/** Test seam. */
+export function resetInMemoryRateLimitForTests(): void {
+  inMemoryCounters.clear();
+  inMemorySweptAt = 0;
+}
+
+function sweepInMemory(now: number): void {
+  if (now - inMemorySweptAt < 60_000) return;
+  inMemorySweptAt = now;
+  for (const [key, value] of inMemoryCounters) {
+    if (now - value.windowStart > 60 * 60_000) inMemoryCounters.delete(key);
+  }
+}
+
+/**
+ * Fixed-window count with no I/O. Same decision shape as `checkRateLimit` so a caller can
+ * swap between them without branching on the result.
+ */
+export function checkRateLimitInMemory(options: RateLimitOptions): RateLimitDecision {
+  const { scope, identity, limit, windowSec } = options;
+  const now = Date.now();
+  const windowMs = windowSec * 1000;
+  const windowStart = Math.floor(now / windowMs) * windowMs;
+
+  sweepInMemory(now);
+
+  // A pathological identity set must not grow the map without bound; dropping the oldest
+  // entries only loses log fidelity for a burst, never correctness, because this path never
+  // enforces.
+  if (inMemoryCounters.size >= IN_MEMORY_MAX_ENTRIES) {
+    const firstKey = inMemoryCounters.keys().next().value;
+    if (firstKey !== undefined) inMemoryCounters.delete(firstKey);
+  }
+
+  const key = `${scope}\u0000${identity}`;
+  const existing = inMemoryCounters.get(key);
+  const count = existing && existing.windowStart === windowStart ? existing.count + 1 : 1;
+  inMemoryCounters.set(key, { windowStart, count });
+
+  return {
+    allowed: count <= limit,
+    count,
+    limit,
+    retryAfterSec: retryAfterSec(windowSec, now),
+  };
+}
+
 async function maybeSweep(supabase: ReturnType<typeof createServiceClient>): Promise<void> {
   const now = Date.now();
   if (now - sweptAt < SWEEP_MIN_INTERVAL_MS) return;
