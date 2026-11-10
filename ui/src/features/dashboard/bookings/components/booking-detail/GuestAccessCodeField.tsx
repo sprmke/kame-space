@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { BOOKING_QUERY_KEY } from '@/features/dashboard/bookings/hooks/useBooking';
 import { callUpdateBookingDetails } from '@/features/dashboard/bookings/lib/updateBookingDetailsApi';
 import type { BookingRow } from '@/features/dashboard/bookings/lib/types';
 import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
@@ -45,7 +46,7 @@ export function GuestAccessCodeField({ booking }: { booking: BookingRow }) {
       }),
     onSuccess: () => {
       toast.success('Door code saved');
-      void queryClient.invalidateQueries({ queryKey: ['booking', booking.id] });
+      void queryClient.invalidateQueries({ queryKey: BOOKING_QUERY_KEY(booking.id) });
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : 'Could not save the door code');
