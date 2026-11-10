@@ -78,7 +78,6 @@ function inboxScopeBody(scope?: InboxApiScope | null): Record<string, string> {
 
 export const INBOX_THREAD_PAGE_SIZE = 40;
 
-export type InboxThreadsPageParam = string | { mode: 'sync'; cursor: string | null } | null;
 
 export async function fetchInboxConnections(
   orgSlug: string | null,
@@ -273,6 +272,28 @@ export async function runMetaInboxBackfillChunk(
     syncedInChunk: typeof payload.syncedInChunk === 'number' ? payload.syncedInChunk : 0,
     metaHasMore: !!payload.metaHasMore,
   };
+}
+
+/**
+ * Nudge the server-side Meta sync.
+ *
+ * The browser no longer runs the import: the cursor and the schedule live on the server, so
+ * this only says "a host is looking at this inbox" or "load one more page of older chats".
+ */
+export async function requestMetaInboxSync(
+  orgSlug: string | null,
+  orgId: string | null,
+  action: 'status' | 'check_now' | 'load_older',
+  scope?: InboxApiScope | null
+): Promise<Record<string, unknown>> {
+  const jwt = await getJwt();
+  const res = await fetch(orgUrl('/meta-inbox-sync', orgSlug, orgId), {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...inboxScopeBody(scope) }),
+  });
+  const json = (await res.json()) as EdgeJson;
+  return unwrapEdgePayload(json, res.status);
 }
 
 export async function fetchInboxThreads(

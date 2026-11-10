@@ -34,9 +34,8 @@ import {
   unsendInboxMessage,
   startMetaInboxOAuth,
   suggestInboxAiReply,
-  runMetaInboxBackfillChunk,
+  requestMetaInboxSync,
   type InboxApiScope,
-  type InboxThreadsPageParam,
 } from '@/features/dashboard/inbox/lib/inboxApi';
 import { uploadInboxChatAttachment } from '@/features/dashboard/inbox/lib/inboxChatAttachment';
 import { handleFeatureUnavailableMutationError } from '@/lib/featureAvailability/featureUnavailableError';
@@ -60,7 +59,6 @@ import {
 } from '@/features/dashboard/inbox/lib/inboxMockStore';
 import {
   inboxFiltersBlockMetaScrollSync,
-  inboxPageExhaustedInDb,
 } from '@/features/dashboard/inbox/lib/inboxThreadPagination';
 import type {
   ChatTemplateListItem,
@@ -92,23 +90,12 @@ type InboxThreadsPage = {
   conversations: InboxConversation[];
   nextCursor: string | null;
   metaHasMore: boolean;
-  /** True when this page ran a Meta backfill chunk before listing. */
-  syncedFromMeta?: boolean;
-  syncedInChunk?: number;
   /**
    * False when the caller has no org-wide inbox Realtime, so the list has to poll to stay
    * live. Removed once the inbox moves to Broadcast plus a delta fetch.
    */
   realtimeSupported?: boolean;
 };
-
-function buildMetaSyncPageParam(
-  pages: InboxThreadsPage[] | undefined
-): Extract<InboxThreadsPageParam, { mode: 'sync'; cursor: string | null }> {
-  const all = (pages ?? []).flatMap((page) => page.conversations);
-  const tail = all[all.length - 1];
-  return { mode: 'sync', cursor: tail?.last_message_at ?? null };
-}
 
 const REALTIME_INVALIDATE_MS = 400;
 
@@ -225,50 +212,47 @@ export function useInboxConnections(
 
 const metaSyncAbortByOrg = new Map<string, AbortController>();
 
-/** First Meta page only after connect — further pages load on scroll. */
+/**
+ * Ask the server to sync this inbox.
+ *
+ * The import used to run in the browser, one chunk per scroll, so closing the tab stopped
+ * it. The cursor and schedule are server state now: this only nudges a check when the inbox
+ * opens or regains focus, and keeps the connection status fresh while an import runs.
+ */
 export function useMetaInboxSync(
   orgSlug: string | null,
   orgId: string | null,
   metaSyncInProgress: boolean,
   scope?: InboxApiScope | null,
-  /** When false, skip backfill polling (feature availability `inbox.meta.sync` off). */
+  /** When false, skip syncing (feature availability `inbox.meta.sync` off). */
   syncEnabled = true
 ): { active: boolean } {
   const qc = useQueryClient();
 
   useEffect(() => {
-    if (mockMode || !orgId || !orgSlug || !metaSyncInProgress || !syncEnabled) return;
+    if (mockMode || !orgId || !orgSlug || !syncEnabled) return;
+    void requestMetaInboxSync(orgSlug, orgId, 'check_now', scope).catch(() => undefined);
+  }, [orgId, orgSlug, scope?.propertyId, scope?.parkingId, syncEnabled]);
 
-    metaSyncAbortByOrg.get(orgId)?.abort();
-    const abort = new AbortController();
-    metaSyncAbortByOrg.set(orgId, abort);
-
-    void (async () => {
-      try {
-        if (abort.signal.aborted) return;
-        await runMetaInboxBackfillChunk(orgSlug, orgId, undefined, scope);
-      } catch {
-        await runMetaInboxBackfillChunk(orgSlug, orgId, { finalize: true }, scope).catch(
-          () => undefined
-        );
-      } finally {
-        if (metaSyncAbortByOrg.get(orgId) === abort) {
-          metaSyncAbortByOrg.delete(orgId);
-        }
-        if (!abort.signal.aborted) {
-          void qc.invalidateQueries({ queryKey: [INBOX_CONNECTIONS_KEY] });
-          void qc.invalidateQueries({ queryKey: [INBOX_THREADS_KEY] });
-        }
-      }
-    })();
-
-    return () => {
-      abort.abort();
-      if (metaSyncAbortByOrg.get(orgId) === abort) {
-        metaSyncAbortByOrg.delete(orgId);
-      }
+  useEffect(() => {
+    if (mockMode || !orgId || !orgSlug || !syncEnabled) return;
+    const onFocus = () => {
+      if (document.visibilityState !== 'visible') return;
+      void requestMetaInboxSync(orgSlug, orgId, 'check_now', scope).catch(() => undefined);
     };
-  }, [metaSyncInProgress, orgId, orgSlug, qc, scope?.propertyId, scope?.parkingId, syncEnabled]);
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [orgId, orgSlug, scope?.propertyId, scope?.parkingId, syncEnabled]);
+
+  // While the server reports an import in progress, refresh the connection counters.
+  useEffect(() => {
+    if (mockMode || !metaSyncInProgress) return;
+    const timer = setInterval(() => {
+      void qc.invalidateQueries({ queryKey: [INBOX_CONNECTIONS_KEY] });
+      void qc.invalidateQueries({ queryKey: [INBOX_THREADS_KEY] });
+    }, 5_000);
+    return () => clearInterval(timer);
+  }, [metaSyncInProgress, qc]);
 
   return { active: metaSyncInProgress && syncEnabled };
 }
@@ -545,42 +529,18 @@ export function useInboxThreads(
         return mockFetchThreads(filters);
       }
 
-      const isSyncPage = pageParam && typeof pageParam === 'object' && pageParam.mode === 'sync';
-
-      let metaHasMore = false;
-      let syncedInChunk = 0;
-      if (isSyncPage) {
-        const backfill = await runMetaInboxBackfillChunk(orgSlug, orgId, { light: true }, scope);
-        metaHasMore = backfill.metaHasMore;
-        syncedInChunk = backfill.syncedInChunk;
-        void qc.invalidateQueries({ queryKey: [INBOX_CONNECTIONS_KEY] });
-      }
-
+      // The server owns the Meta import, so a page is only ever a read of threads we have.
       const list = await fetchInboxThreads(
         orgSlug,
         orgId,
-        {
-          ...filters,
-          cursor: isSyncPage ? pageParam.cursor : typeof pageParam === 'string' ? pageParam : null,
-        },
+        { ...filters, cursor: typeof pageParam === 'string' ? pageParam : null },
         scope
       );
-
-      return {
-        ...list,
-        metaHasMore: isSyncPage ? metaHasMore : list.metaHasMore,
-        syncedFromMeta: Boolean(isSyncPage),
-        syncedInChunk: isSyncPage ? syncedInChunk : undefined,
-      };
+      return list;
     },
-    initialPageParam: null as InboxThreadsPageParam,
-    getNextPageParam: (last): InboxThreadsPageParam | undefined => {
-      if (last.nextCursor) return last.nextCursor;
-      if (!last.metaHasMore) return undefined;
-      if (inboxPageExhaustedInDb(last.conversations.length) && !last.syncedFromMeta) {
-        return undefined;
-      }
-      return undefined;
+    initialPageParam: null as string | null,
+    getNextPageParam: (last): string | undefined => {
+      return last.nextCursor ?? undefined;
     },
     enabled: mockMode || !!(orgSlug || orgId),
     // The app-wide default is off, but the inbox is the surface where a stale list is
@@ -612,30 +572,11 @@ export function useInboxThreads(
     if (!canLoadOlderFromMeta || loadingOlderFromMeta) return;
     setLoadingOlderFromMeta(true);
     try {
-      const syncPage = buildMetaSyncPageParam(query.data?.pages);
-      const backfill = await runMetaInboxBackfillChunk(orgSlug, orgId, { light: true }, scope);
+      // One more page of older chats, imported on the server. The list is refetched rather
+      // than patched, because the import may have created threads above the current page.
+      await requestMetaInboxSync(orgSlug, orgId, 'load_older', scope);
       void qc.invalidateQueries({ queryKey: [INBOX_CONNECTIONS_KEY] });
-      const list = await fetchInboxThreads(
-        orgSlug,
-        orgId,
-        { ...filters, cursor: syncPage.cursor },
-        scope
-      );
-      qc.setQueryData<InfiniteData<InboxThreadsPage>>(queryKey, (current) => {
-        if (!current) return current;
-        return {
-          pages: [
-            ...current.pages,
-            {
-              ...list,
-              metaHasMore: backfill.metaHasMore,
-              syncedFromMeta: true,
-              syncedInChunk: backfill.syncedInChunk,
-            },
-          ],
-          pageParams: [...current.pageParams, syncPage],
-        };
-      });
+      void qc.invalidateQueries({ queryKey: [INBOX_THREADS_KEY] });
     } finally {
       setLoadingOlderFromMeta(false);
     }

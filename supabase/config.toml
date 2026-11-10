@@ -979,6 +979,9 @@ verify_jwt = false
 [functions.meta-inbox-worker]
 verify_jwt = false
 
+[functions.meta-inbox-sync]
+verify_jwt = false
+
 [functions.social-inbox-threads]
 verify_jwt = false
 
