@@ -557,6 +557,122 @@ export async function insertMessageIfNew(
   return data as SocialMessageRow;
 }
 
+/** Outbound Meta send that is written before the network call. */
+export type OutboundMetaSendRow = {
+  organizationId: string;
+  conversationId: string;
+  clientMessageId: string;
+  bodyText: string;
+  sentAt: string;
+  sentByUserId: string | null;
+  isAiGenerated: boolean;
+  messageTag: 'human_agent' | null;
+  replyToMessageId?: string | null;
+  replyPreviewText?: string | null;
+  templateSnapshot?: unknown | null;
+};
+
+/** Synthetic id used until Meta returns the real message id. Never collides with a mid. */
+export function pendingMetaExternalId(clientMessageId: string): string {
+  return `kame:${clientMessageId}`;
+}
+
+/**
+ * Write the outbound row before calling the Send API.
+ *
+ * The thread shows the message immediately, and a crash after Meta accepted it leaves a row
+ * to reconcile instead of a message the host cannot see. `client_message_id` is unique, so a
+ * retried send cannot insert twice.
+ */
+export async function beginOutboundMetaSend(row: OutboundMetaSendRow): Promise<void> {
+  const sb = socialInboxDb();
+  const { error } = await sb.from('social_messages').insert({
+    organization_id: row.organizationId,
+    conversation_id: row.conversationId,
+    direction: 'outbound',
+    external_message_id: pendingMetaExternalId(row.clientMessageId),
+    client_message_id: row.clientMessageId,
+    body_text: row.bodyText || null,
+    attachments: [],
+    sent_at: row.sentAt,
+    delivery_status: 'sending',
+    sent_by_user_id: row.sentByUserId,
+    is_ai_generated: row.isAiGenerated,
+    message_tag: row.messageTag,
+    reply_to_message_id: row.replyToMessageId ?? null,
+    reply_preview_text: row.replyPreviewText ?? null,
+    template_snapshot: row.templateSnapshot ?? null,
+    message_kind: 'text',
+    source: 'kame_send',
+    sender_app: 'kame',
+    routing: 'messaging',
+  });
+  // 23505 means this composer submit was already recorded. Not an error.
+  if (error && error.code !== '23505') throw new Error(error.message);
+}
+
+/**
+ * Attach Meta's message id to the row that was written before the send.
+ *
+ * If Meta's echo landed first it already stored this mid, so the metadata is merged onto the
+ * echo row and the placeholder is dropped. Either order ends with one row.
+ */
+export async function completeOutboundMetaSend(
+  row: OutboundMetaSendRow,
+  externalMessageId: string
+): Promise<void> {
+  const sb = socialInboxDb();
+  const { error } = await sb
+    .from('social_messages')
+    .update({ external_message_id: externalMessageId, delivery_status: 'sent' })
+    .eq('client_message_id', row.clientMessageId);
+  if (!error) return;
+  if (error.code !== '23505') throw new Error(error.message);
+
+  const { error: mergeError } = await sb.rpc('inbox_apply_meta_message', {
+    p: {
+      organization_id: row.organizationId,
+      connection_id: null,
+      platform: 'facebook',
+      external_thread_id: null,
+      direction: 'outbound',
+      external_message_id: externalMessageId,
+      sent_at: row.sentAt,
+      body_text: row.bodyText || null,
+      sent_by_user_id: row.sentByUserId,
+      is_ai_generated: String(row.isAiGenerated),
+      message_tag: row.messageTag,
+      reply_to_message_id: row.replyToMessageId ?? null,
+      reply_preview_text: row.replyPreviewText ?? null,
+      template_snapshot: row.templateSnapshot ?? null,
+      source: 'kame_send',
+      sender_app: 'kame',
+    },
+  });
+  // The merge is best effort: the echo row already holds the message.
+  if (mergeError) console.warn('[completeOutboundMetaSend] merge:', mergeError.message);
+
+  const { error: deleteError } = await sb
+    .from('social_messages')
+    .delete()
+    .eq('client_message_id', row.clientMessageId)
+    .like('external_message_id', 'kame:%');
+  if (deleteError) console.warn('[completeOutboundMetaSend] placeholder cleanup:', deleteError.message);
+}
+
+/** Mark a send that Meta did not accept. The thread shows "Not sent" with a Retry action. */
+export async function failOutboundMetaSend(
+  clientMessageId: string,
+  errorCode: string | null
+): Promise<void> {
+  const sb = socialInboxDb();
+  const { error } = await sb
+    .from('social_messages')
+    .update({ delivery_status: 'failed', send_error_code: errorCode })
+    .eq('client_message_id', clientMessageId);
+  if (error) console.warn('[failOutboundMetaSend]', error.message);
+}
+
 /**
  * Flag a Meta connection whose Page token Meta no longer accepts.
  *

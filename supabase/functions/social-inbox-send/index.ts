@@ -7,11 +7,14 @@ import {
   isWithinMessagingWindowFromInbound,
 } from '../_shared/socialInboxAiService.ts';
 import { friendlyMetaSendError } from '../_shared/metaInboxSendErrors.ts';
-import { isInvalidMetaTokenError } from '../_shared/metaInboxGraphError.ts';
+import { isInvalidMetaTokenError, isMetaGraphError } from '../_shared/metaInboxGraphError.ts';
 import { getPageAccessToken, sendMetaMessage } from '../_shared/metaInboxGraph.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
 import {
+  beginOutboundMetaSend,
+  completeOutboundMetaSend,
   conversationAllowedInScope,
+  failOutboundMetaSend,
   getConversationById,
   insertMessageIfNew,
   markMetaConnectionTokenInvalid,
@@ -231,61 +234,78 @@ serveAuthenticated(
     const metaPageId: string = conn.meta_page_id;
     const token = await getPageAccessToken(connection);
 
+    if (conv.conversation_type !== 'dm') {
+      return jsonError(req, 'This conversation type is no longer supported', 400);
+    }
+
+    const withinStandardWindow = isWithinMessagingWindowFromInbound(conv.last_inbound_at);
+    const withinHumanAgentWindow = isWithinHumanAgentWindowFromInbound(conv.last_inbound_at);
+    if (!withinStandardWindow && !(useHumanAgentTag && withinHumanAgentWindow)) {
+      return jsonError(req, 'Reply window closed - guest must message again', 400);
+    }
+
+    let replyFields: { reply_to_message_id?: string | null; reply_preview_text?: string | null } = {};
+    let replyToMid: string | undefined;
+    if (replyToMessageId) {
+      const resolved = await resolveMetaReplyTarget(conv.id, replyToMessageId);
+      replyFields = {
+        reply_to_message_id: resolved.reply_to_message_id,
+        reply_preview_text: resolved.reply_preview_text,
+      };
+      replyToMid = resolved.replyToMid;
+    }
+
+    // Written before the network call: the thread shows the message at once, and a send
+    // that Meta accepted but we never confirmed is still a row the host can act on.
+    const clientMessageId = String(body.clientMessageId ?? '').trim() || crypto.randomUUID();
+    const sendRow = {
+      organizationId: ctx.org.id,
+      conversationId: conv.id,
+      clientMessageId,
+      bodyText: text,
+      sentAt: now,
+      sentByUserId: user.id,
+      isAiGenerated: false,
+      messageTag: (!withinStandardWindow && useHumanAgentTag ? 'human_agent' : null) as
+        | 'human_agent'
+        | null,
+      replyToMessageId: replyFields.reply_to_message_id ?? null,
+      replyPreviewText: replyFields.reply_preview_text ?? null,
+      templateSnapshot: template?.snapshot ?? null,
+    };
+
     try {
-      if (conv.conversation_type === 'dm') {
-        const withinStandardWindow = isWithinMessagingWindowFromInbound(conv.last_inbound_at);
-        const withinHumanAgentWindow = isWithinHumanAgentWindowFromInbound(conv.last_inbound_at);
-        if (!withinStandardWindow && !(useHumanAgentTag && withinHumanAgentWindow)) {
-          return jsonError(req, 'Reply window closed - guest must message again', 400);
-        }
+      await beginOutboundMetaSend(sendRow);
+    } catch (e) {
+      return jsonError(req, (e as Error).message, 500);
+    }
 
-        let replyFields: { reply_to_message_id?: string; reply_preview_text?: string } = {};
-        let replyToMid: string | undefined;
-        if (replyToMessageId) {
-          const resolved = await resolveMetaReplyTarget(conv.id, replyToMessageId);
-          replyFields = {
-            reply_to_message_id: resolved.reply_to_message_id,
-            reply_preview_text: resolved.reply_preview_text,
-          };
-          replyToMid = resolved.replyToMid;
-        }
-
-        const result = await sendMetaMessage({
-          pageId: metaPageId,
-          pageAccessToken: token,
-          recipientId: conv.external_participant_id ?? '',
-          text,
-          platform: conv.platform,
-          replyToMid,
-          tag: !withinStandardWindow && useHumanAgentTag ? 'HUMAN_AGENT' : undefined,
-        });
-        if (!result.ok) {
-          return jsonError(req, result.message, 503);
-        }
-        await insertMessageIfNew({
-          organization_id: ctx.org.id,
-          conversation_id: conv.id,
-          direction: 'outbound',
-          external_message_id: result.message_id,
-          body_text: text,
-          attachments: [],
-          sent_at: now,
-          delivery_status: 'sent',
-          message_tag: !withinStandardWindow && useHumanAgentTag ? 'human_agent' : null,
-          sent_by_user_id: user.id,
-          is_ai_generated: false,
-          ...replyFields,
-        });
-        if (template) await logChatTemplateSent(templatePropertyId!, template);
-      } else {
-        return jsonError(req, 'This conversation type is no longer supported', 400);
+    try {
+      const result = await sendMetaMessage({
+        pageId: metaPageId,
+        pageAccessToken: token,
+        recipientId: conv.external_participant_id ?? '',
+        text,
+        platform: conv.platform,
+        replyToMid,
+        tag: !withinStandardWindow && useHumanAgentTag ? 'HUMAN_AGENT' : undefined,
+      });
+      if (!result.ok) {
+        await failOutboundMetaSend(clientMessageId, 'feature_unavailable');
+        return jsonError(req, result.message, 503);
       }
+      await completeOutboundMetaSend(sendRow, result.message_id);
+      if (template) await logChatTemplateSent(templatePropertyId!, template);
     } catch (e) {
       // An invalid Page token is a connection problem, not a send problem. Flag the
       // connection so the Channels card shows it instead of the host retrying forever.
       if (isInvalidMetaTokenError(e)) {
         await markMetaConnectionTokenInvalid(connection);
       }
+      await failOutboundMetaSend(
+        clientMessageId,
+        isMetaGraphError(e) ? String(e.code ?? 'unknown') : null
+      );
       return jsonError(req, friendlyMetaSendError(e), 502);
     }
 

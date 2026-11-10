@@ -976,6 +976,9 @@ verify_jwt = false
 [functions.meta-inbox-webhook-healthcheck]
 verify_jwt = false
 
+[functions.meta-inbox-worker]
+verify_jwt = false
+
 [functions.social-inbox-threads]
 verify_jwt = false
 
