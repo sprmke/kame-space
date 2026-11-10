@@ -8,19 +8,19 @@ import {
   platformLegalIntro,
   platformLegalSubject,
 } from '@/lib/platformBranding';
+import { legalPageCopy } from '@/lib/seo/content/staticPageCopy';
+import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 const legalSubject = platformLegalSubject();
 
 export function TermsPage() {
   usePageTitle(publicPageTitle('Terms'));
+  usePageMeta({});
+  const legalCopy = legalPageCopy(PLATFORM_APP_NAME);
   return (
     <LegalSimplePage
-      title="Terms of Service"
-      description={
-        PLATFORM_APP_NAME
-          ? `These terms govern your use of ${PLATFORM_APP_NAME} as a guest, host, organization member, or visitor of our public site.`
-          : 'These terms govern your use of the platform as a guest, host, organization member, or visitor of our public site.'
-      }
+      title={legalCopy.terms.heading}
+      description={legalCopy.terms.intro}
       sections={[
         {
           title: 'Who we are',

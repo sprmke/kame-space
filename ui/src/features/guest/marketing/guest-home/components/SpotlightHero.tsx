@@ -10,6 +10,7 @@ import { ListingHeroSearch } from '@/features/guest/marketing/shared/components/
 import { MarketingImage } from '@/features/guest/marketing/shared/components/MarketingImage';
 
 import { usePrefersReducedMotion } from '@/hooks/useMediaQuery';
+import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
 
 /**
  * Full-bleed theme art. WebP is a third smaller than the JPEG and every browser that matters
@@ -69,10 +70,10 @@ export function SpotlightHero() {
           className="relative z-10 p-5 pt-24 sm:p-8 lg:p-12"
         >
           <h1 className="public-display hero-copy max-w-[16ch] text-balance font-semibold text-white">
-            Condo stays, booked straight from the host
+            {STATIC_PAGE_COPY.home.heading}
           </h1>
           <p className="public-lead hero-copy mt-3 max-w-[34ch] text-pretty text-white/95">
-            Find a stay, a residence, or a parking slot close to it.
+            {STATIC_PAGE_COPY.home.intro}
           </p>
           <div className="mt-6 lg:mt-8">
             <ListingHeroSearch className="mx-0 lg:mx-0" />

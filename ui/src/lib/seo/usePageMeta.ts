@@ -1,10 +1,11 @@
 /**
  * test: N/A — React hook that writes `<head>` tags inside an effect (no return value to
- * assert in the Node test environment). The pure formatting lives in `seoMeta.ts`, which
- * has colocated Vitest coverage.
+ * assert in the Node test environment). The pure formatting lives in `seoMeta.ts` and
+ * `siteOrigin.ts`, which have colocated Vitest coverage.
  */
 import { useEffect } from 'react';
 
+import { matchStaticRoute } from '@/lib/seo/publicRoutes';
 import {
   DEFAULT_DESCRIPTION,
   DEFAULT_SOCIAL_IMAGE,
@@ -12,9 +13,10 @@ import {
   serializeJsonLd,
   truncateDescription,
 } from '@/lib/seo/seoMeta';
+import { canonicalUrlFor, resolveSiteOrigin } from '@/lib/seo/siteOrigin';
 
 export type PageMetaInput = {
-  /** Plain description; truncated to ~160 characters. Omit for the site default. */
+  /** Plain description; truncated to ~160 characters. Omit for the route's registry default. */
   description?: string | null;
   /** Path for the canonical URL (query string dropped). Defaults to the current path. */
   canonicalPath?: string;
@@ -28,14 +30,24 @@ export type PageMetaInput = {
 
 const MARKER = 'data-seo';
 
+const OWNED_SELECTORS = [
+  'meta[name="description"]',
+  'meta[property^="og:"]',
+  'meta[name^="twitter:"]',
+  'meta[name="robots"]',
+  'link[rel="canonical"]',
+  'script[type="application/ld+json"]',
+] as const;
+
 function upsertMeta(attr: 'name' | 'property', key: string, content: string): void {
   let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
   if (!el) {
     el = document.createElement('meta');
     el.setAttribute(attr, key);
-    el.setAttribute(MARKER, '');
     document.head.appendChild(el);
   }
+  // Always mark, including shell tags from index.html, so cleanup can find them.
+  el.setAttribute(MARKER, '');
   el.setAttribute('content', content);
 }
 
@@ -43,9 +55,13 @@ function removeOwned(selector: string): void {
   document.head.querySelectorAll(`${selector}[${MARKER}]`).forEach((el) => el.remove());
 }
 
-function absoluteUrl(value: string): string {
+function canonicalOrigin(): string {
+  return resolveSiteOrigin(import.meta.env.VITE_CANONICAL_APP_ORIGIN);
+}
+
+function absoluteAsset(value: string): string {
   try {
-    return new URL(value, window.location.origin).toString();
+    return new URL(value, canonicalOrigin()).toString();
   } catch {
     return value;
   }
@@ -53,8 +69,15 @@ function absoluteUrl(value: string): string {
 
 /**
  * Description, canonical, Open Graph / Twitter, robots, and JSON-LD for public pages.
- * Crawlers that do not run JS get the same tags from the Vercel middleware for listing
- * detail pages; this hook keeps in-app navigation and JS-rendering crawlers in sync.
+ *
+ * Crawlers that do not run JS get the same tags from the Vercel middleware; this hook keeps
+ * in-app navigation, JS-rendering crawlers and the browser tab in sync.
+ *
+ * Canonical and `og:url` always use `VITE_CANONICAL_APP_ORIGIN` (apex by default) so previews,
+ * `www.` and the legacy domain never self-canonicalize.
+ *
+ * On unmount every owned tag is removed. The next route re-applies its own, or its registry
+ * default, so a listing's canonical can never leak onto `/about`.
  */
 export function usePageMeta(input: PageMetaInput, enabled = true): void {
   const { description, canonicalPath, image, title, jsonLd, noindex } = input;
@@ -63,10 +86,14 @@ export function usePageMeta(input: PageMetaInput, enabled = true): void {
   useEffect(() => {
     if (!enabled || typeof document === 'undefined') return;
 
-    const text = truncateDescription(description?.trim() || DEFAULT_DESCRIPTION);
     const path = canonicalPath ?? window.location.pathname;
-    const canonical = absoluteUrl(path.split('?')[0] ?? path);
-    const ogTitle = title ?? document.title ?? SITE_NAME;
+    const canonical = canonicalUrlFor(canonicalOrigin(), path);
+    const route = matchStaticRoute(path);
+    const text = truncateDescription(
+      description?.trim() || route?.description || DEFAULT_DESCRIPTION
+    );
+    const ogTitle = title ?? route?.title ?? document.title ?? SITE_NAME;
+    const shouldNoindex = noindex ?? (route ? !route.indexable : false);
 
     upsertMeta('name', 'description', text);
     upsertMeta('property', 'og:site_name', SITE_NAME);
@@ -77,8 +104,11 @@ export function usePageMeta(input: PageMetaInput, enabled = true): void {
     upsertMeta('name', 'twitter:card', 'summary_large_image');
     upsertMeta('name', 'twitter:title', ogTitle);
     upsertMeta('name', 'twitter:description', text);
-    upsertMeta('property', 'og:image', absoluteUrl(image || DEFAULT_SOCIAL_IMAGE));
-    upsertMeta('name', 'twitter:image', absoluteUrl(image || DEFAULT_SOCIAL_IMAGE));
+
+    const socialImage = absoluteAsset(image || DEFAULT_SOCIAL_IMAGE);
+    upsertMeta('property', 'og:image', socialImage);
+    upsertMeta('name', 'twitter:image', socialImage);
+
     // Static shell dimensions describe the default card, never an arbitrary listing photo.
     for (const key of ['og:image:width', 'og:image:height', 'og:image:alt']) {
       document.head.querySelector(`meta[property="${key}"]`)?.remove();
@@ -95,12 +125,12 @@ export function usePageMeta(input: PageMetaInput, enabled = true): void {
     if (!link) {
       link = document.createElement('link');
       link.rel = 'canonical';
-      link.setAttribute(MARKER, '');
       document.head.appendChild(link);
     }
+    link.setAttribute(MARKER, '');
     link.href = canonical;
 
-    if (noindex) upsertMeta('name', 'robots', 'noindex');
+    if (shouldNoindex) upsertMeta('name', 'robots', 'noindex');
     else removeOwned('meta[name="robots"]');
 
     removeOwned('script[type="application/ld+json"]');
@@ -113,15 +143,7 @@ export function usePageMeta(input: PageMetaInput, enabled = true): void {
     }
 
     return () => {
-      removeOwned('script[type="application/ld+json"]');
-      removeOwned('meta[name="robots"]');
-      upsertMeta('property', 'og:image', absoluteUrl(DEFAULT_SOCIAL_IMAGE));
-      upsertMeta('name', 'twitter:image', absoluteUrl(DEFAULT_SOCIAL_IMAGE));
-      upsertMeta('property', 'og:image:width', '1200');
-      upsertMeta('property', 'og:image:height', '630');
-      upsertMeta('property', 'og:image:alt', 'KameSpace');
-      upsertMeta('name', 'twitter:image:alt', 'KameSpace');
-      upsertMeta('name', 'description', DEFAULT_DESCRIPTION);
+      for (const selector of OWNED_SELECTORS) removeOwned(selector);
     };
   }, [enabled, description, canonicalPath, image, title, jsonLdText, noindex]);
 }

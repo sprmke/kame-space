@@ -2,19 +2,19 @@ import { LegalSimplePage } from '@/features/guest/marketing/legal/components/Leg
 
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { PLATFORM_APP_NAME, PLATFORM_CONTACT_EMAIL, platformFormerNameNote } from '@/lib/platformBranding';
+import { legalPageCopy } from '@/lib/seo/content/staticPageCopy';
+import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 const platformScopeLabel = PLATFORM_APP_NAME ? `${PLATFORM_APP_NAME} ` : '';
 
 export function PrivacyPage() {
   usePageTitle(publicPageTitle('Privacy'));
+  usePageMeta({});
+  const legalCopy = legalPageCopy(PLATFORM_APP_NAME);
   return (
     <LegalSimplePage
-      title="Privacy Policy"
-      description={
-        PLATFORM_APP_NAME
-          ? `How ${PLATFORM_APP_NAME} collects, uses, and shares personal information for guests, hosts, and team members.`
-          : 'How we collect, use, and share personal information for guests, hosts, and team members.'
-      }
+      title={legalCopy.privacy.heading}
+      description={legalCopy.privacy.intro}
       sections={[
         {
           title: 'Scope',

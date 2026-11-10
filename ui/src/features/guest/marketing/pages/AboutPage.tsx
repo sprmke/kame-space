@@ -19,6 +19,8 @@ import { MarketingPublicSectionHeading } from '@/features/guest/marketing/shared
 import { Button } from '@/components/ui/button';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { PLATFORM_APP_NAME, PLATFORM_CONTACT_EMAIL } from '@/lib/platformBranding';
+import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
+import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 const capabilities = [
   {
@@ -55,12 +57,13 @@ const capabilities = [
 
 export function AboutPage() {
   usePageTitle(publicPageTitle('About'));
+  usePageMeta({});
   return (
     <div className="bg-background min-h-screen">
       <MarketingPublicPageHero
         eyebrow="About"
-        title="Philippine stays, one operating system"
-        description="Connect guest booking, host operations, messaging, marketing, finance, and parking so every stay has a clear path from calendar to check-out."
+        title={STATIC_PAGE_COPY.about.heading}
+        description={STATIC_PAGE_COPY.about.intro}
         blobPosition="right"
       >
         <div className="flex flex-wrap items-center justify-center gap-2.5 md:gap-3">

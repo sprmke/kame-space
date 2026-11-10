@@ -2,7 +2,19 @@
   "framework": "vite",
   "installCommand": "cd .. && rm -rf node_modules ui/node_modules && bun install && node ./scripts/dev/dedupe-react-types.mjs",
   "buildCommand": "bun run build",
+  "trailingSlash": false,
   "redirects": [
+    {
+      "source": "/((?!sw\\.js$|pwa-version\\.json$|manifest\\.webmanifest$|retirement-sw\\.js$|precache-tiers\\.json$).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.kamespace.com"
+        }
+      ],
+      "destination": "https://kamespace.com/$1",
+      "permanent": true
+    },
     {
       "source": "/form",
       "has": [

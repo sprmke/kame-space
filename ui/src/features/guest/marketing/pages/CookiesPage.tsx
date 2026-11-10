@@ -2,17 +2,17 @@ import { LegalSimplePage } from '@/features/guest/marketing/legal/components/Leg
 
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { PLATFORM_APP_NAME, PLATFORM_CONTACT_EMAIL } from '@/lib/platformBranding';
+import { legalPageCopy } from '@/lib/seo/content/staticPageCopy';
+import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 export function CookiesPage() {
   usePageTitle(publicPageTitle('Cookies'));
+  usePageMeta({});
+  const legalCopy = legalPageCopy(PLATFORM_APP_NAME);
   return (
     <LegalSimplePage
-      title="Cookie Policy"
-      description={
-        PLATFORM_APP_NAME
-          ? `How ${PLATFORM_APP_NAME} uses cookies and similar browser storage on the marketing site, guest flows, and dashboards.`
-          : 'How we use cookies and similar browser storage on the marketing site, guest flows, and dashboards.'
-      }
+      title={legalCopy.cookies.heading}
+      description={legalCopy.cookies.intro}
       sections={[
         {
           title: 'Overview',

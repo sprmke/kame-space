@@ -20,6 +20,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
+import { usePageMeta } from '@/lib/seo/usePageMeta';
 import { cn } from '@/lib/utils';
 
 function PublicPricingSkeleton() {
@@ -37,6 +39,7 @@ function PublicPricingSkeleton() {
 
 export function ForHostsPricingPage() {
   usePageTitle(publicPageTitle('Pricing'));
+  usePageMeta({});
   const navigate = useNavigate();
   const { data: plans = [], isLoading, isError, refetch } = usePublicPricingPlans();
 
@@ -59,8 +62,8 @@ export function ForHostsPricingPage() {
     <div className="bg-background min-h-screen w-full max-w-[100vw] overflow-x-hidden">
       <MarketingPublicPageHero
         eyebrow="For Hosts"
-        title="Plans that grow with you"
-        description="Start free on one listing. Upgrade when you need automation, marketing, AI, or hands-off hosting."
+        title={STATIC_PAGE_COPY.forHostsPricing.heading}
+        description={STATIC_PAGE_COPY.forHostsPricing.intro}
         blobPosition="right"
       />
 

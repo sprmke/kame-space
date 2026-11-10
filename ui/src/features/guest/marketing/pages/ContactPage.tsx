@@ -24,6 +24,8 @@ import { MANAGED_PLAN_INQUIRY_SUBJECT } from '@/features/dashboard/plans/lib/pla
 import { Button } from '@/components/ui/button';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { PLATFORM_CONTACT_EMAIL } from '@/lib/platformBranding';
+import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
+import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 const GUEST_TICKET_SCOPE = {
   channel: 'guest' as const,
@@ -44,6 +46,7 @@ function resolveDefaultSubject(searchParams: URLSearchParams): string | undefine
 
 export function ContactPage() {
   usePageTitle(publicPageTitle('Contact'));
+  usePageMeta({});
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { status } = useGuestSession();
@@ -116,8 +119,8 @@ export function ContactPage() {
     <div className="bg-background min-h-screen">
       <MarketingPublicPageHero
         eyebrow="Contact"
-        title="Send us a message"
-        description="Pick what your message is about. Sign in with your explore account to open a ticket."
+        title={STATIC_PAGE_COPY.contact.heading}
+        description={STATIC_PAGE_COPY.contact.intro}
         blobPosition="right"
         narrow
       />

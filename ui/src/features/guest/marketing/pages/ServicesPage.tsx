@@ -12,6 +12,7 @@ import {
 import { ListingHeroSearch } from '@/features/guest/marketing/shared/components/ListingHeroSearch';
 
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePageMeta } from '@/lib/seo/usePageMeta';
 import { cn } from '@/lib/utils';
 
 const servicePreviews = [
@@ -46,6 +47,7 @@ const servicePreviews = [
 
 export function ServicesPage() {
   usePageTitle(publicPageTitle('Services'));
+  usePageMeta({});
   const reduceMotion = useReducedMotion();
 
   return (
