@@ -20,7 +20,7 @@ import { MarketingPublicPageHero } from '@/features/guest/marketing/shared/compo
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePublicRouteTitle } from '@/lib/pageTitle';
 import { PLATFORM_CONTACT_EMAIL } from '@/lib/platformBranding';
 import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
@@ -132,7 +132,7 @@ function SupportFaqSection({
 }
 
 export function SupportPage() {
-  usePageTitle(publicPageTitle('Support'));
+  usePublicRouteTitle('/support');
   usePageMeta({});
   const { data, isPending } = usePublicSupportFaqs();
 

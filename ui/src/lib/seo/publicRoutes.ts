@@ -43,7 +43,10 @@ export type PublicRouteEntry = {
   inSitemap: boolean;
   canonical: CanonicalPolicy;
   snapshot: SnapshotKind;
-  /** Static page title (the page component may override for dynamic routes). */
+  /**
+   * Final `<title>` for a static route. Always the complete string (brand included), so the
+   * page and the crawler HTML emit the same value. Dynamic routes build theirs from data.
+   */
   title?: string;
   /** Static meta description, 120-160 characters. Dynamic routes build theirs. */
   description?: string;
@@ -70,7 +73,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
-    title: 'Places to stay in the Philippines',
+    title: 'Places to stay in the Philippines | Kame Space',
     description:
       'Browse condos, houses and apartments across the Philippines. Filter by city, dates and guest count, then book with the host.',
   },
@@ -98,7 +101,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
-    title: 'Parking for rent in the Philippines',
+    title: 'Parking for rent in the Philippines | Kame Space',
     description:
       'Find parking slots near condos, offices and malls across the Philippines. Check availability and reserve online.',
   },
@@ -143,7 +146,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
-    title: 'Condos and parking by development',
+    title: 'Condos and parking by development | Kame Space',
     description:
       'Browse condominium developments across the Philippines and see the units and parking slots available in each one.',
   },
@@ -196,7 +199,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
-    title: 'Run your rentals from one dashboard',
+    title: 'Run your rentals from one dashboard | Kame Space',
     description:
       'Bookings, guest messages, documents, finance and marketing in one host dashboard built for Philippine rentals.',
   },
@@ -207,7 +210,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
-    title: 'Host plans and pricing',
+    title: 'Host plans and pricing | Kame Space',
     description:
       'Start free on one listing. Upgrade for automation, marketing, AI and hands-off hosting. Compare host plans and what each one unlocks.',
   },
@@ -240,7 +243,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
-    title: 'Support and answers',
+    title: 'Support and answers | Kame Space',
     description:
       'Short answers for guests and hosts on bookings, payments, documents, check-in and account access. Find the answer, then contact us.',
   },
@@ -251,7 +254,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
-    title: 'Terms of Service',
+    title: 'Terms of Service | Kame Space',
     description:
       'The terms that govern use of Kame Space as a guest, host, organization member or visitor of the public site.',
   },
@@ -262,7 +265,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
-    title: 'Privacy Policy',
+    title: 'Privacy Policy | Kame Space',
     description:
       'What Kame Space collects from guests and hosts, how it is used to run a booking, and how to ask for a copy or deletion.',
   },
@@ -273,7 +276,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
-    title: 'Cookie Policy',
+    title: 'Cookie Policy | Kame Space',
     description:
       'Which cookies Kame Space sets, what each one is for, and how to change your choice in the browser or in the app.',
   },

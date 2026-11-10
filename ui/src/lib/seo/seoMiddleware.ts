@@ -22,15 +22,26 @@ import {
 } from './publicRoutes';
 import {
   buildDevelopmentJsonLd,
+  buildPageTitle,
   buildParkingJsonLd,
   buildPropertyJsonLd,
   buildRobotsTxt,
   DEFAULT_DESCRIPTION,
   DEFAULT_INDEXABLE_HOSTS,
   DEFAULT_SOCIAL_IMAGE,
+  developmentTitle,
+  hostDescription,
+  hostTitle,
   injectMetaIntoHtml,
   isCrawlerUserAgent,
+  listingDescription,
   matchListingDetailPath,
+  minNightlyRate,
+  parkingTitle,
+  placeDescription,
+  placeTitle,
+  propertyTitle,
+  socialImageMeta,
   type ListingFamily,
   type SeoMeta,
 } from './seoMeta';
@@ -50,6 +61,8 @@ export type SeoMiddlewareDeps = {
   siteName: string;
   /** Canonical origin for every absolute URL. Defaults to the production apex. */
   siteOrigin?: string;
+  /** `VITE_SUPABASE_IMAGE_TRANSFORMS` — build 1200x630 Storage share crops. */
+  imageTransforms?: boolean;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   /** Hosts allowed in robots.txt; others get `Disallow: /`. Defaults to the production hosts. */
@@ -160,7 +173,8 @@ function buildStaticRoute(
 
   return {
     meta: {
-      title: entry.title ? title(deps.siteName, entry.title) : title(deps.siteName, heading),
+      // Registry titles are the complete string, brand included.
+      title: entry.title ?? buildPageTitle(heading, deps.siteName),
       description: entry.description ?? intro,
       canonicalUrl,
     },
@@ -203,9 +217,18 @@ async function loadListingRoute(
     const location = str(data.locationLabel);
     const pricing = (data.pricing ?? {}) as Json;
     const price = num(pricing.weekdayNightlyRate);
-    const description =
-      str(data.description) ??
-      (location ? `${name} in ${location}. Check dates and book online.` : DEFAULT_DESCRIPTION);
+    const city = str(data.city);
+    const description = listingDescription({
+      name,
+      unitType: str(data.type),
+      city,
+      guests: num(data.maxGuests),
+      bedrooms: num(data.bedrooms),
+      amenities: strings(data.amenities),
+      priceFrom: price,
+      hostDescription: str(data.description),
+    });
+    const share = socialImageMeta(images[0] ?? str(data.coverImage), Boolean(deps.imageTransforms));
 
     const facts: Array<{ label: string; value: string }> = [];
     if (location) facts.push({ label: 'Location', value: location });
@@ -226,10 +249,16 @@ async function loadListingRoute(
 
     return {
       meta: {
-        title: title(deps.siteName, name),
+        title: buildPageTitle(
+          propertyTitle({ name, unitType: str(data.type), city }),
+          deps.siteName
+        ),
         description,
         canonicalUrl,
-        image: images[0] ?? null,
+        image: share.image,
+        imageWidth: share.imageWidth,
+        imageHeight: share.imageHeight,
+        imageAlt: name,
         jsonLd: buildPropertyJsonLd({
           name,
           url: canonicalUrl,
@@ -268,9 +297,13 @@ async function loadListingRoute(
     if (!data || !name) return null;
     const place = str(data.residenceName) ?? str(data.city);
     const rate = num(data.ratePerNight);
-    const description =
-      str(data.description) ??
-      (place ? `Parking at ${place}. Check dates and reserve online.` : DEFAULT_DESCRIPTION);
+    const description = listingDescription({
+      name,
+      city: str(data.city),
+      priceFrom: rate,
+      hostDescription: str(data.description),
+    });
+    const share = socialImageMeta(str(data.coverImage), Boolean(deps.imageTransforms));
 
     const facts: Array<{ label: string; value: string }> = [];
     if (place) facts.push({ label: 'Location', value: place });
@@ -278,10 +311,13 @@ async function loadListingRoute(
 
     return {
       meta: {
-        title: title(deps.siteName, name),
+        title: buildPageTitle(parkingTitle({ name, place }), deps.siteName),
         description,
         canonicalUrl,
-        image: str(data.coverImage),
+        image: share.image,
+        imageWidth: share.imageWidth,
+        imageHeight: share.imageHeight,
+        imageAlt: name,
         jsonLd: buildParkingJsonLd({
           name,
           url: canonicalUrl,
@@ -316,9 +352,13 @@ async function loadListingRoute(
   const name = str(data?.name);
   if (!data || !name) return null;
   const location = str(data.locationLabel) ?? str(data.location) ?? str(data.city);
-  const description =
-    str(data.description) ??
-    (location ? `${name} in ${location}. Browse homes and parking.` : DEFAULT_DESCRIPTION);
+  const city = str(data.city);
+  const description = listingDescription({
+    name,
+    city: city ?? location,
+    hostDescription: str(data.description),
+  });
+  const share = socialImageMeta(str(data.coverImage), Boolean(deps.imageTransforms));
 
   const facts: Array<{ label: string; value: string }> = [];
   if (location) facts.push({ label: 'Location', value: location });
@@ -326,10 +366,13 @@ async function loadListingRoute(
 
   return {
     meta: {
-      title: title(deps.siteName, name),
+      title: buildPageTitle(developmentTitle({ name, city: city ?? location }), deps.siteName),
       description,
       canonicalUrl,
-      image: str(data.coverImage),
+      image: share.image,
+      imageWidth: share.imageWidth,
+      imageHeight: share.imageHeight,
+      imageAlt: name,
       jsonLd: buildDevelopmentJsonLd({
         name,
         url: canonicalUrl,
@@ -386,19 +429,23 @@ async function loadPlaceRoute(
   if (cards.length === 0) return null;
 
   const label = str(cards[0]?.locationLabel) ?? placeLabel(place);
-  const heading = `${PLACE_LABEL[family]} in ${label}`;
-  const prices = cards.map((card) => num(card.price)).filter((value): value is number => value != null);
-  const from = prices.length > 0 ? Math.min(...prices) : null;
-  const description = from
-    ? `${cards.length} ${heading.toLowerCase()} from PHP ${Math.round(from)}. Check dates and book online.`
-    : `${cards.length} ${heading.toLowerCase()}. Check dates and book online.`;
+  const heading = placeTitle(family, label);
+  const description = placeDescription({
+    family,
+    place: label,
+    count: cards.length,
+    priceFrom: minNightlyRate(cards),
+  });
+  const share = socialImageMeta(str(cards[0]?.coverImage), Boolean(deps.imageTransforms));
 
   return {
     meta: {
-      title: title(deps.siteName, heading),
+      title: buildPageTitle(heading, deps.siteName),
       description,
       canonicalUrl,
-      image: str(cards[0]?.coverImage),
+      image: share.image,
+      imageWidth: share.imageWidth,
+      imageHeight: share.imageHeight,
     },
     snapshot: {
       id: `${family}-place`,
@@ -430,13 +477,16 @@ async function loadHostRoute(
   const name = str(data?.name);
   if (!data || !name) return null;
 
-  const description =
-    str(data.description) ??
-    str(data.tagline) ??
-    `${name} lists stays and parking on ${deps.siteName}.`;
-
   const propertyCards = records(data.properties);
   const parkingCards = records(data.parkings);
+  const description = hostDescription({
+    name,
+    stays: propertyCards.length,
+    parking: parkingCards.length,
+    tagline: str(data.tagline),
+    description: str(data.description),
+  });
+  const share = socialImageMeta(str(data.logoUrl), Boolean(deps.imageTransforms));
 
   const links: SnapshotLink[] = [
     ...listingLinks(propertyCards, 'property'),
@@ -446,10 +496,13 @@ async function loadHostRoute(
 
   return {
     meta: {
-      title: title(deps.siteName, `${name} stays and parking`),
+      title: buildPageTitle(hostTitle(name), deps.siteName),
       description,
       canonicalUrl,
-      image: str(data.logoUrl),
+      image: share.image,
+      imageWidth: share.imageWidth,
+      imageHeight: share.imageHeight,
+      imageAlt: `${name} logo`,
     },
     snapshot: {
       id: 'host-public',
@@ -482,18 +535,22 @@ async function loadDevelopmentSubPage(
   const name = str(data?.name);
   if (!data || !name) return null;
 
-  const heading = segment === 'properties' ? `${name} homes` : `${name} parking`;
+  const heading = segment === 'properties' ? `Homes at ${name}` : `Parking at ${name}`;
   const description =
     segment === 'properties'
-      ? `Homes available at ${name}. Check dates and book online.`
+      ? `Homes for rent at ${name}. Check dates and book online.`
       : `Parking slots at ${name}. Check availability and reserve online.`;
+  const share = socialImageMeta(str(data.coverImage), Boolean(deps.imageTransforms));
 
   return {
     meta: {
-      title: title(deps.siteName, heading),
+      title: buildPageTitle(heading, deps.siteName),
       description,
       canonicalUrl,
-      image: str(data.coverImage),
+      image: share.image,
+      imageWidth: share.imageWidth,
+      imageHeight: share.imageHeight,
+      imageAlt: name,
     },
     snapshot: {
       id: `development-${segment}`,

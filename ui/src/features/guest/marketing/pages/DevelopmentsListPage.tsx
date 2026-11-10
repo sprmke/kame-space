@@ -48,7 +48,7 @@ import {
   ListingMapSkeleton,
 } from '@/components/skeletons/ListingGridSkeleton';
 import { Button } from '@/components/ui/button';
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePublicRouteTitle } from '@/lib/pageTitle';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 function parseViewMode(raw: string | null): DevelopmentViewMode {
@@ -81,7 +81,7 @@ function isDefaultGroupedBrowse(
 }
 
 export function DevelopmentsListPage() {
-  usePageTitle(publicPageTitle('Developments'));
+  usePublicRouteTitle('/developments');
   usePageMeta({
     canonicalPath: '/developments',
     description: 'Explore residential developments and the homes and parking available in each.',

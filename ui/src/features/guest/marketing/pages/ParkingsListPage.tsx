@@ -37,7 +37,7 @@ import {
 
 import { ListingLocationRowsSkeleton } from '@/components/skeletons/ListingGridSkeleton';
 import { Button } from '@/components/ui/button';
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePublicRouteTitle } from '@/lib/pageTitle';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 function isDefaultGroupedBrowse(query: ParkingsListingQuery): boolean {
@@ -63,7 +63,7 @@ function isDefaultGroupedBrowse(query: ParkingsListingQuery): boolean {
 }
 
 export function ParkingsListPage() {
-  usePageTitle(publicPageTitle('Parkings'));
+  usePublicRouteTitle('/parkings');
   usePageMeta({
     canonicalPath: '/parkings',
     description: 'Find and reserve parking by the night near condos and developments.',

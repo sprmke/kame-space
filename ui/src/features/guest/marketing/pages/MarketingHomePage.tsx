@@ -25,7 +25,7 @@ import { DEFAULT_PROPERTIES_QUERY } from '@/features/guest/marketing/properties/
 import { usePublicPlaceGroups } from '@/features/guest/marketing/shared/hooks/usePublicPlaceGroups';
 
 import { useRouteContentReady } from '@/hooks/useRouteContentReady';
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePublicRouteTitle } from '@/lib/pageTitle';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 const PREVIEW_SIZE = 8;
@@ -43,7 +43,7 @@ export function MarketingHomePage() {
   const developments = usePublicDevelopments(DEVELOPMENTS_QUERY);
   const places = usePublicPlaceGroups<unknown>('properties', true, 12, 1);
 
-  usePageTitle(publicPageTitle('Home'));
+  usePublicRouteTitle('/');
   usePageMeta({ canonicalPath: '/' });
 
   const [searchParams] = useSearchParams();

@@ -41,6 +41,7 @@ export default async function middleware(request: Request): Promise<Response> {
       anonKey,
       siteName: process.env.VITE_PLATFORM_APP_NAME?.trim() || 'Kame Space',
       siteOrigin: resolveSiteOrigin(process.env.VITE_CANONICAL_APP_ORIGIN),
+      imageTransforms: process.env.VITE_SUPABASE_IMAGE_TRANSFORMS === 'true',
       // Empty or unset keeps the production defaults in seoMeta.ts.
       indexableHosts: indexableHosts.length > 0 ? indexableHosts : undefined,
     },

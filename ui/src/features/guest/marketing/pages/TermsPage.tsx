@@ -1,6 +1,6 @@
 import { LegalSimplePage } from '@/features/guest/marketing/legal/components/LegalSimplePage';
 
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePublicRouteTitle } from '@/lib/pageTitle';
 import {
   PLATFORM_APP_NAME,
   PLATFORM_CONTACT_EMAIL,
@@ -14,7 +14,7 @@ import { usePageMeta } from '@/lib/seo/usePageMeta';
 const legalSubject = platformLegalSubject();
 
 export function TermsPage() {
-  usePageTitle(publicPageTitle('Terms'));
+  usePublicRouteTitle('/terms');
   usePageMeta({});
   const legalCopy = legalPageCopy(PLATFORM_APP_NAME);
   return (

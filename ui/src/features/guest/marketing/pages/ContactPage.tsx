@@ -22,7 +22,7 @@ import type { SupportTicketCategory } from '@/features/dashboard/help-support/li
 import { MANAGED_PLAN_INQUIRY_SUBJECT } from '@/features/dashboard/plans/lib/planPresentation';
 
 import { Button } from '@/components/ui/button';
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePublicRouteTitle } from '@/lib/pageTitle';
 import { PLATFORM_CONTACT_EMAIL } from '@/lib/platformBranding';
 import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
@@ -45,7 +45,7 @@ function resolveDefaultSubject(searchParams: URLSearchParams): string | undefine
 }
 
 export function ContactPage() {
-  usePageTitle(publicPageTitle('Contact'));
+  usePublicRouteTitle('/contact');
   usePageMeta({});
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();

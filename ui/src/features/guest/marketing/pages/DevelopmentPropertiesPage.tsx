@@ -38,6 +38,7 @@ import { useListingUrlQuery } from '@/features/guest/marketing/shared/hooks/useL
 import { PublicListingBrowseSkeleton } from '@/components/skeletons/GuestMarketingSkeleton';
 import { Button } from '@/components/ui/button';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { buildPageTitle } from '@/lib/seo/seoMeta';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 export function DevelopmentPropertiesPage() {
@@ -67,10 +68,16 @@ export function DevelopmentPropertiesPage() {
 
   const propertiesResult = usePublicProperties(listingQuery, Boolean(slug));
   const hasParking = useDevelopmentHasParking(slug);
-  usePageTitle(publicPageTitle(development?.name ? `Homes in ${development.name}` : 'Homes'));
+  const homesTitle = development
+    ? buildPageTitle(`Homes at ${development.name}`)
+    : publicPageTitle('Homes');
+  usePageTitle(homesTitle);
   usePageMeta(
     {
-      description: development ? `Homes for rent in ${development.name}.` : null,
+      title: homesTitle,
+      description: development
+        ? `Homes for rent at ${development.name}. Check dates and book online.`
+        : null,
       canonicalPath: `/developments/${slug}/properties`,
     },
     Boolean(development)

@@ -1,6 +1,6 @@
 import { LegalSimplePage } from '@/features/guest/marketing/legal/components/LegalSimplePage';
 
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePublicRouteTitle } from '@/lib/pageTitle';
 import { PLATFORM_APP_NAME, PLATFORM_CONTACT_EMAIL, platformFormerNameNote } from '@/lib/platformBranding';
 import { legalPageCopy } from '@/lib/seo/content/staticPageCopy';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
@@ -8,7 +8,7 @@ import { usePageMeta } from '@/lib/seo/usePageMeta';
 const platformScopeLabel = PLATFORM_APP_NAME ? `${PLATFORM_APP_NAME} ` : '';
 
 export function PrivacyPage() {
-  usePageTitle(publicPageTitle('Privacy'));
+  usePublicRouteTitle('/privacy');
   usePageMeta({});
   const legalCopy = legalPageCopy(PLATFORM_APP_NAME);
   return (

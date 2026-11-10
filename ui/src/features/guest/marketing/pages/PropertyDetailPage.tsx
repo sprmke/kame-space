@@ -47,7 +47,13 @@ import { Button } from '@/components/ui/button';
 import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { captureAppEvent } from '@/lib/posthog/capture';
-import { buildPropertyJsonLd } from '@/lib/seo/seoMeta';
+import { absoluteCanonicalUrl } from '@/lib/seo/canonicalOrigin';
+import {
+  buildPageTitle,
+  buildPropertyJsonLd,
+  listingDescription,
+  propertyTitle,
+} from '@/lib/seo/seoMeta';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 import { cn } from '@/lib/utils';
 import { parseGuestInquiryDateRange, formatDateToYYYYMMDD } from '@/utils/format/dates';
@@ -80,22 +86,41 @@ export function PropertyDetailPage() {
         .map(toPropertyCard),
     [similarResult.data?.data, propertySlug, propertyData?.id]
   );
-  usePageTitle(publicPageTitle(propertyData?.name ? `${propertyData.name}` : 'Property'));
+  const propertyPageTitle = propertyData
+    ? buildPageTitle(
+        propertyTitle({
+          name: propertyData.name,
+          unitType: propertyData.type,
+          city: propertyData.city,
+        })
+      )
+    : publicPageTitle('Property');
+  usePageTitle(propertyPageTitle);
+
+  const propertyDescription = propertyData
+    ? listingDescription({
+        name: propertyData.name,
+        unitType: propertyData.type,
+        city: propertyData.city,
+        guests: propertyData.guests,
+        bedrooms: propertyData.bedrooms,
+        amenities: propertyData.amenities,
+        priceFrom: propertyData.pricing.baseRate,
+        hostDescription: propertyData.description,
+      })
+    : undefined;
+
   const propertyCanonicalPath = `/properties/${propertyData?.slug ?? propertySlug}`;
   usePageMeta(
     {
-      title: propertyData?.name,
-      description:
-        propertyData?.description ||
-        (propertyData
-          ? `${propertyData.name} in ${propertyData.location}. Check dates and book online.`
-          : null),
+      title: propertyPageTitle,
+      description: propertyDescription ?? null,
       canonicalPath: propertyCanonicalPath,
       image: propertyData?.images[0] ?? null,
       jsonLd: propertyData
         ? buildPropertyJsonLd({
             name: propertyData.name,
-            url: `${window.location.origin}${propertyCanonicalPath}`,
+            url: absoluteCanonicalUrl(propertyCanonicalPath),
             description: propertyData.description,
             images: propertyData.images,
             address: {

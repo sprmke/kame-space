@@ -95,7 +95,7 @@ describe('handleSeoRequest', () => {
     const html = await res!.text();
     expect(res!.headers.get('content-type')).toContain('text/html');
     expect(res!.headers.get('vary')).toContain('user-agent');
-    expect(html).toContain('<title>Old Brand - Monaco 2612</title>');
+    expect(html).toContain('<title>Monaco 2612 in San Fernando | Old Brand</title>');
     expect(html).toContain('og:image" content="https://img/a.jpg"');
     expect(html).toContain('href="https://kamespace.com/properties/monaco-2612"');
     expect(html).toContain('"@type":"LodgingBusiness"');
@@ -116,7 +116,9 @@ describe('handleSeoRequest', () => {
         jsonResponse({ data: { name: 'Slot A1', residenceName: 'Azure North', ratePerNight: 300 } })
       );
     const parking = await handleSeoRequest(req('/parkings/slot-a1'), deps(parkingFetch), shell);
-    expect(await parking!.text()).toContain('Parking at Azure North');
+    const parkingHtml = await parking!.text();
+    expect(parkingHtml).toContain('<title>Slot A1 parking in Azure North | Old Brand</title>');
+    expect(parkingHtml).toContain('<h1>Slot A1</h1>');
 
     const devFetch = vi
       .fn()
@@ -152,7 +154,7 @@ describe('handleSeoRequest', () => {
     const res = await handleSeoRequest(req('/properties/in/san-fernando'), deps(fetchImpl), shell);
     const html = await res!.text();
     expect(fetchImpl.mock.calls[0]![0]).toContain('list-public-properties?locationSlug=san-fernando');
-    expect(html).toContain('<h1>Homes in San Fernando, Pampanga</h1>');
+    expect(html).toContain('<h1>Condos and homes for rent in San Fernando, Pampanga</h1>');
     expect(html).toContain('href="https://kamespace.com/properties/monaco-2604"');
   });
 

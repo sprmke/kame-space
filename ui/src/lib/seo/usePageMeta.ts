@@ -5,6 +5,7 @@
  */
 import { useEffect } from 'react';
 
+import { absoluteCanonicalUrl, siteOrigin } from '@/lib/seo/canonicalOrigin';
 import { matchStaticRoute } from '@/lib/seo/publicRoutes';
 import {
   DEFAULT_DESCRIPTION,
@@ -13,7 +14,6 @@ import {
   serializeJsonLd,
   truncateDescription,
 } from '@/lib/seo/seoMeta';
-import { canonicalUrlFor, resolveSiteOrigin } from '@/lib/seo/siteOrigin';
 
 export type PageMetaInput = {
   /** Plain description; truncated to ~160 characters. Omit for the route's registry default. */
@@ -22,6 +22,8 @@ export type PageMetaInput = {
   canonicalPath?: string;
   /** Absolute or root-relative image for link previews. */
   image?: string | null;
+  /** Alt text for the share image; falls back to the site name. */
+  imageAlt?: string | null;
   /** Title for og:title / twitter:title (document.title stays with usePageTitle). */
   title?: string;
   jsonLd?: Record<string, unknown> | null;
@@ -55,13 +57,9 @@ function removeOwned(selector: string): void {
   document.head.querySelectorAll(`${selector}[${MARKER}]`).forEach((el) => el.remove());
 }
 
-function canonicalOrigin(): string {
-  return resolveSiteOrigin(import.meta.env.VITE_CANONICAL_APP_ORIGIN);
-}
-
 function absoluteAsset(value: string): string {
   try {
-    return new URL(value, canonicalOrigin()).toString();
+    return new URL(value, siteOrigin()).toString();
   } catch {
     return value;
   }
@@ -80,14 +78,14 @@ function absoluteAsset(value: string): string {
  * default, so a listing's canonical can never leak onto `/about`.
  */
 export function usePageMeta(input: PageMetaInput, enabled = true): void {
-  const { description, canonicalPath, image, title, jsonLd, noindex } = input;
+  const { description, canonicalPath, image, imageAlt, title, jsonLd, noindex } = input;
   const jsonLdText = jsonLd ? serializeJsonLd(jsonLd) : null;
 
   useEffect(() => {
     if (!enabled || typeof document === 'undefined') return;
 
     const path = canonicalPath ?? window.location.pathname;
-    const canonical = canonicalUrlFor(canonicalOrigin(), path);
+    const canonical = absoluteCanonicalUrl(path);
     const route = matchStaticRoute(path);
     const text = truncateDescription(
       description?.trim() || route?.description || DEFAULT_DESCRIPTION
@@ -117,9 +115,10 @@ export function usePageMeta(input: PageMetaInput, enabled = true): void {
     if (!image) {
       upsertMeta('property', 'og:image:width', '1200');
       upsertMeta('property', 'og:image:height', '630');
-      upsertMeta('property', 'og:image:alt', 'KameSpace');
-      upsertMeta('name', 'twitter:image:alt', 'KameSpace');
     }
+    const alt = imageAlt?.trim() || SITE_NAME;
+    upsertMeta('property', 'og:image:alt', alt);
+    upsertMeta('name', 'twitter:image:alt', alt);
 
     let link = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!link) {
@@ -145,5 +144,5 @@ export function usePageMeta(input: PageMetaInput, enabled = true): void {
     return () => {
       for (const selector of OWNED_SELECTORS) removeOwned(selector);
     };
-  }, [enabled, description, canonicalPath, image, title, jsonLdText, noindex]);
+  }, [enabled, description, canonicalPath, image, imageAlt, title, jsonLdText, noindex]);
 }
