@@ -124,6 +124,26 @@ describe('injectMetaIntoHtml', () => {
     expect(content.length).toBeLessThanOrEqual(160);
   });
 
+  it('preloads the cover photo as the LCP image', () => {
+    const html = injectMetaIntoHtml(shell, {
+      title: 't',
+      description: 'd',
+      canonicalUrl: 'https://kamespace.com/properties/a',
+      image: 'https://img.example.com/a.jpg',
+    });
+    expect(html).toContain('<link rel="preload" as="image" href="https://img.example.com/a.jpg"');
+    expect(html).toContain('fetchpriority="high"');
+  });
+
+  it('does not preload the default brand card', () => {
+    const html = injectMetaIntoHtml(shell, {
+      title: 't',
+      description: 'd',
+      canonicalUrl: 'https://kamespace.com/',
+    });
+    expect(html).not.toContain('rel="preload"');
+  });
+
   it('returns the input when there is no head', () => {
     expect(
       injectMetaIntoHtml('<p>x</p>', { title: 't', description: 'd', canonicalUrl: 'u' })

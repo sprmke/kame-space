@@ -703,6 +703,13 @@ export function renderMetaTags(input: SeoMeta): string {
     tags.push(`<meta property="og:image:height" content="${height}" />`);
     tags.push(`<meta property="og:image:type" content="${imageType(width, height)}" />`);
   }
+  // The cover photo is the LCP element on a listing page. Preloading it removes one
+  // render-blocking round trip for JS crawlers and for the first paint after hydration.
+  if (input.image) {
+    tags.push(
+      `<link rel="preload" as="image" href="${escapeHtml(image)}" fetchpriority="high" />`
+    );
+  }
   if (input.noindex) tags.push('<meta name="robots" content="noindex" />');
   if (input.jsonLd) {
     tags.push(`<script type="application/ld+json">${serializeJsonLdGraph(input.jsonLd)}</script>`);

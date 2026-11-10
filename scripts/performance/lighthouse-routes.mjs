@@ -37,6 +37,12 @@ const labelArg = args.find((a) => a.startsWith('--label='));
 const runsArg = args.find((a) => a.startsWith('--runs='));
 const label = labelArg ? labelArg.slice('--label='.length) : null;
 const runs = runsArg ? Math.max(1, Number(runsArg.split('=')[1]) || 1) : 1;
+// SEO-14.3: public routes must clear these floors. Pass `--assert` to enforce them.
+const assertMode = args.includes('--assert');
+const seoFloorArg = args.find((a) => a.startsWith('--assert-seo='));
+const perfFloorArg = args.find((a) => a.startsWith('--assert-perf='));
+const SEO_FLOOR = seoFloorArg ? Number(seoFloorArg.split('=')[1]) : 95;
+const PERF_FLOOR = perfFloorArg ? Number(perfFloorArg.split('=')[1]) : 85;
 const externalBaseUrl = baseUrlArg ? baseUrlArg.slice('--base-url='.length) : null;
 
 // The route list from plan doc 00, Phase 0.2 — paths verified against the real
@@ -65,6 +71,12 @@ const ROUTES = [
     name: 'Admin finance (needs auth session + real slugs)',
   },
   { path: '/for-hosts/pricing', persona: 'host', name: 'Plans/pricing page' },
+  // Public, indexable routes (SEO item 14). These must also clear the SEO category floor.
+  { path: '/about', persona: 'guest-anon', name: 'About (indexable)', seo: true },
+  { path: '/support', persona: 'guest-anon', name: 'Support (indexable)', seo: true },
+  { path: '/for-hosts', persona: 'guest-anon', name: 'For hosts (indexable)', seo: true },
+  { path: '/developments', persona: 'guest-anon', name: 'Developments list (indexable)', seo: true },
+  { path: '/parkings', persona: 'guest-anon', name: 'Parkings list (indexable)', seo: true },
   {
     path: '/admin',
     persona: 'super-admin',
@@ -87,6 +99,7 @@ function median(sortedNums) {
 function medianMetrics(samples) {
   const keys = [
     'performanceScore',
+    'seoScore',
     'lcpMs',
     'clsScore',
     'tbtMs',
@@ -164,6 +177,9 @@ async function runLighthouse(url, chromePort) {
   return {
     performanceScore:
       lhr.categories.performance?.score != null ? lhr.categories.performance.score * 100 : null,
+    seoScore: lhr.categories.seo?.score != null ? lhr.categories.seo.score * 100 : null,
+    a11yScore:
+      lhr.categories.accessibility?.score != null ? lhr.categories.accessibility.score * 100 : null,
     lcpMs: audits['largest-contentful-paint']?.numericValue ?? null,
     clsScore: audits['cumulative-layout-shift']?.numericValue ?? null,
     tbtMs: audits['total-blocking-time']?.numericValue ?? null,
@@ -321,6 +337,34 @@ async function main() {
   const failedRoutes = results.filter((r) => r.error);
   if (failedRoutes.length > 0) {
     console.error(`\n${failedRoutes.length} route(s) failed to audit — see JSON for details.`);
+  }
+
+  if (assertMode) {
+    const breaches = [];
+    for (const route of results) {
+      const seo = route.metrics?.seoScore;
+      const perf = route.metrics?.performanceScore;
+      if (route.seo && seo != null && seo < SEO_FLOOR) {
+        breaches.push(`${route.path} SEO ${seo.toFixed(0)} < ${SEO_FLOOR}`);
+      }
+      if (route.seo && perf != null && perf < PERF_FLOOR) {
+        breaches.push(`${route.path} performance ${perf.toFixed(0)} < ${PERF_FLOOR}`);
+      }
+      if (route.seo && route.metrics?.lcpMs != null && route.metrics.lcpMs > 2500) {
+        breaches.push(`${route.path} LCP ${Math.round(route.metrics.lcpMs)}ms > 2500ms`);
+      }
+      if (route.seo && route.metrics?.clsScore != null && route.metrics.clsScore > 0.1) {
+        breaches.push(`${route.path} CLS ${route.metrics.clsScore.toFixed(3)} > 0.1`);
+      }
+    }
+    if (breaches.length > 0) {
+      console.error(`\nSEO/performance floors breached (${breaches.length}):`);
+      for (const breach of breaches) console.error(`  - ${breach}`);
+      process.exit(1);
+    }
+    console.log(
+      `\nPublic route floors OK — SEO >= ${SEO_FLOOR}, performance >= ${PERF_FLOOR}, LCP <= 2500ms, CLS <= 0.1.`
+    );
   }
 }
 
