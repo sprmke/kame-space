@@ -348,6 +348,12 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
       allowSurpriseDecor: guestPaymentInfo.allowSurpriseDecor,
       maxAdults: guestPaymentInfo.maxAdults,
       maxChildren: guestPaymentInfo.maxChildren,
+      ageRules: {
+        adultMinAge: guestPaymentInfo.adultMinAge,
+        idRequiredFromAge: guestPaymentInfo.idRequiredFromAge,
+        primaryGuestMinAge: guestPaymentInfo.primaryGuestMinAge,
+        childMaxAge: guestPaymentInfo.childMaxAge,
+      },
       residenceName: guestPaymentInfo.residenceName,
       bookedDates,
       cleaningBufferMinutes: guestPaymentInfo.cleaningBufferMinutes,
@@ -360,6 +366,10 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
       guestPaymentInfo.allowSurpriseDecor,
       guestPaymentInfo.maxAdults,
       guestPaymentInfo.maxChildren,
+      guestPaymentInfo.adultMinAge,
+      guestPaymentInfo.idRequiredFromAge,
+      guestPaymentInfo.primaryGuestMinAge,
+      guestPaymentInfo.childMaxAge,
       guestPaymentInfo.residenceName,
       bookedDates,
       guestPaymentInfo.cleaningBufferMinutes,
@@ -700,6 +710,27 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
     }
     if (gafOwnerContactNumber) form.setValue('ownerContactNumber', gafOwnerContactNumber);
   }, [bookingId, guestPaymentInfo, guestPaymentInfoFetched, guestPaymentInfoPlaceholder, form]);
+
+  /**
+   * A residence may require an older primary guest than the platform default. Bumping the
+   * pre-filled age keeps an untouched field from failing validation on first submit.
+   */
+  const primaryAgeRaisedRef = useRef(false);
+  useEffect(() => {
+    if (primaryAgeRaisedRef.current) return;
+    if (!guestPaymentInfoFetched || guestPaymentInfoPlaceholder) return;
+    primaryAgeRaisedRef.current = true;
+    const min = guestPaymentInfo.primaryGuestMinAge;
+    const current = Number(form.getValues('primaryGuestAge'));
+    if (Number.isFinite(current) && current < min) {
+      form.setValue('primaryGuestAge', min);
+    }
+  }, [
+    guestPaymentInfoFetched,
+    guestPaymentInfoPlaceholder,
+    guestPaymentInfo.primaryGuestMinAge,
+    form,
+  ]);
 
   const fetchFormData = async () => {
     if (!bookingId) return;
@@ -1409,13 +1440,16 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
 
   // Keep adults/children counts in sync with per-guest ages for downstream consumers.
   useEffect(() => {
-    const counts = computeGuestCountsByAge([
-      { age: form.getValues('primaryGuestAge') },
-      { age: form.getValues('guest2Age') },
-      { age: form.getValues('guest3Age') },
-      { age: form.getValues('guest4Age') },
-      { age: form.getValues('guest5Age') },
-    ]);
+    const counts = computeGuestCountsByAge(
+      [
+        { age: form.getValues('primaryGuestAge') },
+        { age: form.getValues('guest2Age') },
+        { age: form.getValues('guest3Age') },
+        { age: form.getValues('guest4Age') },
+        { age: form.getValues('guest5Age') },
+      ],
+      visibilityFlags.ageRules
+    );
     form.setValue('numberOfAdults', Math.max(counts.adults, 1));
     form.setValue('numberOfChildren', counts.children);
   }, [
@@ -1430,6 +1464,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
     guestAgeWatch?.[8],
     guestAgeWatch?.[9],
     form,
+    visibilityFlags.ageRules,
   ]);
 
   // Pre-fill primary guest name from the contact name until the guest edits it separately.
@@ -1902,6 +1937,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                       validIdImageErrors={validIdImageErrors}
                       seedKey={guestSectionSeedKey}
                       guestCapacity={guestCapacity}
+                      ageRules={visibilityFlags.ageRules}
                       propertySlug={propertySlug}
                       onValidIdPreviewChange={(field, preview) =>
                         setValidIdPreviews((prev) => ({ ...prev, [field]: preview }))

@@ -7,7 +7,7 @@ import { PropertyGuestLimitReminder } from '@/features/guest/form/components/Pro
 import {
   computeOccupancyGuestCountsByAge,
   shouldShowGuestLimitMessage,
-  FIFTH_PARTY_GUEST_MAX_AGE,
+  DEFAULT_GUEST_AGE_RULES,
   formatGuestAgeInputValue,
   getActivePartySize,
   getDefaultAgeForGuestFormPartyGuest,
@@ -17,6 +17,7 @@ import {
   MAX_GUESTS,
   parseGuestAgeInputChange,
   requiresValidId,
+  type GuestAgeRules,
   type PropertyGuestCapacity,
   DEFAULT_PROPERTY_GUEST_CAPACITY,
 } from '@/features/guest/form/lib/guestCounts';
@@ -97,6 +98,8 @@ type GuestFormGuestsSectionProps = {
   /** Bumps when an existing booking is loaded so visible guest slots expand. */
   seedKey?: string | number;
   guestCapacity?: PropertyGuestCapacity;
+  /** Residence age rules from `get-guest-payment-info`; platform defaults when absent. */
+  ageRules?: GuestAgeRules;
   /** Resolves the property for the identity session (public guest endpoint). */
   propertySlug?: string;
 };
@@ -124,6 +127,7 @@ export function GuestFormGuestsSection({
   onValidIdImageErrorChange,
   seedKey,
   guestCapacity = DEFAULT_PROPERTY_GUEST_CAPACITY,
+  ageRules = DEFAULT_GUEST_AGE_RULES,
   propertySlug = '',
 }: GuestFormGuestsSectionProps) {
   const guestEmailForIdentity = String(form.watch('guestEmail') ?? '');
@@ -191,7 +195,8 @@ export function GuestFormGuestsSection({
   const occupancyAgeCounts = computeOccupancyGuestCountsByAge(
     visiblePartyGuests.map(({ name, age }) => ({
       age: name?.trim() || age != null ? age : undefined,
-    }))
+    })),
+    ageRules
   );
 
   const showGuestLimitInfo = shouldShowGuestLimitMessage(
@@ -225,7 +230,7 @@ export function GuestFormGuestsSection({
           const previewKey = slot.validIdField;
           const nameValue = form.watch(slot.nameField);
           const guestName = typeof nameValue === 'string' ? nameValue.trim() : '';
-          const showValidId = age != null && !Number.isNaN(age) && requiresValidId(age);
+          const showValidId = age != null && !Number.isNaN(age) && requiresValidId(age, ageRules);
           const ageRequired = isPrimary || guestName.length > 0;
           const isLastVisible = slot.index === visibleCount;
           const partyLabel = guestPartyPositionLabel(partyPosition);
@@ -305,9 +310,9 @@ export function GuestFormGuestsSection({
                             if (
                               isOverflowPartyGuest &&
                               next != null &&
-                              next > FIFTH_PARTY_GUEST_MAX_AGE
+                              next > ageRules.childMaxAge
                             ) {
-                              next = FIFTH_PARTY_GUEST_MAX_AGE;
+                              next = ageRules.childMaxAge;
                             }
                             field.onChange(next);
                           }}
@@ -353,7 +358,11 @@ export function GuestFormGuestsSection({
       </div>
 
       {showGuestLimitInfo && (
-        <PropertyGuestLimitReminder capacity={guestCapacity} partySize={partySize} />
+        <PropertyGuestLimitReminder
+          capacity={guestCapacity}
+          partySize={partySize}
+          childMaxAge={ageRules.childMaxAge}
+        />
       )}
 
       {visibleCount < maxVisibleGuests && (
@@ -368,7 +377,7 @@ export function GuestFormGuestsSection({
               if (form.getValues(slot.ageField) == null) {
                 form.setValue(
                   slot.ageField,
-                  getDefaultAgeForGuestFormPartyGuest(slot.index, next, guestCapacity)
+                  getDefaultAgeForGuestFormPartyGuest(slot.index, next, guestCapacity, ageRules)
                 );
               }
               return next;

@@ -9,13 +9,12 @@ import {
   buildGuestLimitMessage,
   computeGuestCounts,
   computeGuestCountsByAge,
-  FIFTH_PARTY_GUEST_MAX_AGE,
+  DEFAULT_GUEST_AGE_RULES,
   MAX_GUESTS,
   getActivePartySize,
   preprocessGuestAgeInput,
-  PRIMARY_GUEST_MIN_AGE,
   requiresValidId,
-  VALID_ID_MIN_AGE,
+  type GuestAgeRules,
 } from '@/features/guest/form/lib/guestCounts';
 import {
   GUEST_FORM_DEFAULT_CHECK_IN_TIME,
@@ -40,10 +39,16 @@ const guestAgeNumberSchema = z
   .min(0, 'Age cannot be negative')
   .max(120, 'Please enter a realistic age');
 
-const primaryGuestAgeSchema = z.preprocess(
-  preprocessGuestAgeInput,
-  guestAgeNumberSchema.min(PRIMARY_GUEST_MIN_AGE, 'Primary guest must be 18 years or older')
-);
+/** Primary guest minimum age comes from the residence (`occupancy.primaryGuestMinAge`). */
+function primaryGuestAgeSchemaFor(rules: GuestAgeRules) {
+  return z.preprocess(
+    preprocessGuestAgeInput,
+    guestAgeNumberSchema.min(
+      rules.primaryGuestMinAge,
+      `Primary guest must be ${rules.primaryGuestMinAge} years or older`
+    )
+  );
+}
 
 const optionalGuestAgeSchema = z.preprocess(
   preprocessGuestAgeInput,
@@ -65,6 +70,8 @@ export type GuestFormSchemaOptions = {
   allowSurpriseDecor: boolean;
   maxAdults: number;
   maxChildren: number;
+  /** Residence age rules; platform defaults when a caller has no residence loaded. */
+  ageRules?: GuestAgeRules;
   /** Other properties' bookings, for cleaning-buffer conflicts on same-day turnovers. */
   bookedDates?: BookedDateRange[];
   /** Required minutes between a checkout and the next check-in on a same-day turnover (min 1 hour). */
@@ -75,8 +82,9 @@ export type GuestFormSchemaOptions = {
 
 function buildGuestFormSchema(options: GuestFormSchemaOptions) {
   const { isAirbnb, allowParking, allowPets, allowSurpriseDecor, maxAdults, maxChildren } = options;
+  const ageRules = options.ageRules ?? DEFAULT_GUEST_AGE_RULES;
   const guestCapacity = { maxAdults, maxChildren };
-  const adultLimitMessage = buildGuestLimitMessage(guestCapacity, MAX_GUESTS);
+  const adultLimitMessage = buildGuestLimitMessage(guestCapacity, MAX_GUESTS, MAX_GUESTS, ageRules);
   const guestFacebookNameMessage = isAirbnb
     ? 'Your Airbnb name is required'
     : 'Your name is required';
@@ -89,7 +97,7 @@ function buildGuestFormSchema(options: GuestFormSchemaOptions) {
         .string()
         .min(1, 'Primary guest name is required')
         .refine((val) => validateName(val), 'Please enter the complete name of the primary guest'),
-      primaryGuestAge: primaryGuestAgeSchema,
+      primaryGuestAge: primaryGuestAgeSchemaFor(ageRules),
       guestEmail: z.string().email('Please enter a valid email address'),
       guestPhoneNumber: requiredPhilippineMobilePhoneZodSchema(),
       guestAddress: z
@@ -258,7 +266,8 @@ function buildGuestFormSchema(options: GuestFormSchemaOptions) {
       const azureAgeCounts = computeGuestCountsByAge(
         guestSlots.map(({ name, age }) => ({
           age: name?.trim() || age != null ? age : undefined,
-        }))
+        })),
+        ageRules
       );
 
       if (counts.adults + counts.children > MAX_GUESTS) {
@@ -280,10 +289,10 @@ function buildGuestFormSchema(options: GuestFormSchemaOptions) {
       const partySize = getActivePartySize(guestSlots.map(({ name, age }) => ({ name, age })));
       if (partySize === MAX_GUESTS) {
         const fifthPerson = guestSlots[MAX_GUESTS - 1];
-        if (fifthPerson.age != null && fifthPerson.age > FIFTH_PARTY_GUEST_MAX_AGE) {
+        if (fifthPerson.age != null && fifthPerson.age > ageRules.childMaxAge) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: `The 5th guest must be ${FIFTH_PARTY_GUEST_MAX_AGE} years old or younger`,
+            message: `The 5th guest must be ${ageRules.childMaxAge} years old or younger`,
             path: [PARTY_AGE_FIELD_BY_POSITION[MAX_GUESTS - 1]],
           });
         }
@@ -321,14 +330,14 @@ function buildGuestFormSchema(options: GuestFormSchemaOptions) {
         const age = guest.age;
         if (age == null) return;
 
-        if (requiresValidId(age) && !guest.validId && !guest.identityId) {
+        if (requiresValidId(age, ageRules) && !guest.validId && !guest.identityId) {
           const field =
             guest.prefix === 'primary'
               ? 'validId'
               : (`${guest.prefix}ValidId` as keyof typeof data);
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: `Valid ID is required for guests aged ${VALID_ID_MIN_AGE} and above`,
+            message: `Valid ID is required for guests aged ${ageRules.idRequiredFromAge} and above`,
             path: [field],
           });
         }

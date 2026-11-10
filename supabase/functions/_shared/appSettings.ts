@@ -92,6 +92,11 @@ export type GuestPaymentInfoDto = {
   cleaningBufferMinutes: number;
   maxAdults: number;
   maxChildren: number;
+  /** Building occupancy rules, resolved from the residence profile. */
+  childMaxAge: number;
+  adultMinAge: number;
+  idRequiredFromAge: number;
+  primaryGuestMinAge: number;
   propertyName: string;
   propertyEyebrow: string;
   propertyCoverImageUrl: string | null;
@@ -596,6 +601,10 @@ export function buildGuestPaymentInfoDto(input: {
     cleaningBufferMinutes: guestForm.cleaningBufferMinutes,
     maxAdults: guestForm.maxAdults,
     maxChildren: guestForm.maxChildren,
+    childMaxAge: guestForm.childMaxAge,
+    adultMinAge: guestForm.adultMinAge,
+    idRequiredFromAge: guestForm.idRequiredFromAge,
+    primaryGuestMinAge: guestForm.primaryGuestMinAge,
     propertyName: guestForm.propertyName,
     propertyEyebrow: guestForm.propertyEyebrow,
     propertyCoverImageUrl: guestForm.propertyCoverImageUrl,

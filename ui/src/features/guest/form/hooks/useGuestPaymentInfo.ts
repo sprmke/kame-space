@@ -40,6 +40,11 @@ export type GuestPaymentInfo = {
   cleaningBufferMinutes: number;
   maxAdults: number;
   maxChildren: number;
+  /** Building occupancy rules, resolved from the residence profile. */
+  childMaxAge: number;
+  adultMinAge: number;
+  idRequiredFromAge: number;
+  primaryGuestMinAge: number;
   propertyName: string;
   propertyEyebrow: string;
   propertyCoverImageUrl: string | null;
@@ -74,6 +79,10 @@ export const DEFAULT_GUEST_PAYMENT_INFO: GuestPaymentInfo = {
   cleaningBufferMinutes: DEFAULT_CLEANING_BUFFER_MINUTES,
   maxAdults: 4,
   maxChildren: 1,
+  childMaxAge: 3,
+  adultMinAge: 18,
+  idRequiredFromAge: 18,
+  primaryGuestMinAge: 18,
   propertyName: '',
   propertyEyebrow: '',
   propertyCoverImageUrl: null,

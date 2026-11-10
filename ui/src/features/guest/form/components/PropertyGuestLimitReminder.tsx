@@ -2,6 +2,8 @@ import { Info } from 'lucide-react';
 
 import {
   buildGuestLimitMessage,
+  DEFAULT_GUEST_AGE_RULES,
+  type GuestAgeRules,
   type PropertyGuestCapacity,
 } from '@/features/guest/form/lib/guestCounts';
 
@@ -10,15 +12,19 @@ import { cn } from '@/lib/utils';
 type PropertyGuestLimitReminderProps = {
   capacity: PropertyGuestCapacity;
   partySize?: number;
+  /** Residence occupancy rule for the "age N or below" hint. */
+  childMaxAge?: number;
   className?: string;
 };
 
 export function PropertyGuestLimitReminder({
   capacity,
   partySize = 0,
+  childMaxAge = DEFAULT_GUEST_AGE_RULES.childMaxAge,
   className,
 }: PropertyGuestLimitReminderProps) {
-  const message = buildGuestLimitMessage(capacity, partySize);
+  const rules: GuestAgeRules = { ...DEFAULT_GUEST_AGE_RULES, childMaxAge };
+  const message = buildGuestLimitMessage(capacity, partySize, undefined, rules);
 
   return (
     <div
