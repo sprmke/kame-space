@@ -68,15 +68,14 @@ export function allowedNumbers(claims: PlannerClaims): Set<number> {
     allowed.add(1);
   }
   if (claims.rateFrom != null) {
-    allowed.add(Math.round(claims.rateFrom));
-    allowed.add(Math.round(claims.rateFrom / 1000));
-    allowed.add(Math.round(claims.rateFrom / 100) / 10);
+    allowed.add(claims.rateFrom);
+    allowed.add(claims.rateFrom / 1000);
   }
   if (claims.rating) {
-    allowed.add(Math.round(claims.rating.count));
-    allowed.add(Math.round(claims.rating.avg * 10));
-    allowed.add(Math.round(claims.rating.avg));
-    allowed.add(Math.floor(claims.rating.avg));
+    allowed.add(claims.rating.count);
+    allowed.add(claims.rating.avg);
+    allowed.add(claims.rating.avg * 10);
+    // "out of 5" and "5 stars" are legitimate rating phrasing.
     allowed.add(5);
     allowed.add(10);
   }
@@ -103,8 +102,32 @@ function numbersIn(text: string): string[] {
   return text.match(/\d[\d,]*(?:\.\d+)?/g) ?? [];
 }
 
-function normaliseNumber(raw: string): number {
-  return Math.round(Number(raw.replace(/,/g, '')));
+function parseNumber(raw: string): number {
+  return Number(raw.replace(/,/g, ''));
+}
+
+const EPSILON = 1e-9;
+
+function isAllowedNumber(value: number, allowed: ReadonlySet<number>): boolean {
+  if (allowed.has(value)) return true;
+  for (const candidate of allowed) {
+    if (Math.abs(candidate - value) < EPSILON) return true;
+  }
+  return false;
+}
+
+/** "5 nights" / "3 dates" must match the night counts the item actually claims. */
+function nightCountViolations(text: string, claims: PlannerClaims): string[] {
+  const out: string[] = [];
+  const allowedCounts = new Set<number>([(claims.openNights ?? []).length]);
+  if (claims.nightsLeftInMonth != null) allowedCounts.add(claims.nightsLeftInMonth);
+  for (const match of text.matchAll(/(\d[\d,]*)\s*(?:nights?|dates?|slots?)\b/gi)) {
+    const value = parseNumber(match[1]);
+    if (!Number.isFinite(value)) continue;
+    if (allowedCounts.has(value)) continue;
+    out.push(match[1]);
+  }
+  return out;
 }
 
 function monthsIn(text: string): { month: number; label: string }[] {
@@ -133,10 +156,14 @@ export function guardPlanCopy(text: string, claims: PlannerClaims): GuardViolati
   const violations: GuardViolation[] = [];
   const allowed = allowedNumbers(claims);
   for (const raw of numbersIn(trimmed)) {
-    const value = normaliseNumber(raw);
+    const value = parseNumber(raw);
     if (!Number.isFinite(value)) continue;
-    if (allowed.has(value)) continue;
+    if (isAllowedNumber(value, allowed)) continue;
     violations.push({ kind: 'number', value: raw, reason: 'number is not in the claims' });
+  }
+
+  for (const raw of nightCountViolations(trimmed, claims)) {
+    violations.push({ kind: 'number', value: raw, reason: 'night count is not in the claims' });
   }
 
   const allowedMonthSet = allowedMonths(claims);

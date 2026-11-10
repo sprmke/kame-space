@@ -650,16 +650,17 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 
 ### Phase 4: AI strategist (M/L)
 
-> Prompt, guard, `mode: ai`, fail-open and `refresh_brief` shipped. The eval suite (P4.6), the
-> Prepare-my-week AI copy (P4.5) and the pre-run credit estimate are open, and the credit price is
-> pending (open items §2).
+> Prompt, guard, `mode: ai`, fail-open, `refresh_brief` and the offline eval suite shipped
+> (`tests/marketingPlanBriefEval.test.ts`, which caught two real guard gaps: rounded numbers and a
+> blanket "5" allowance). The pre-run credit estimate, the per-property rate limit and the
+> Prepare-my-week AI copy (P4.5) are open, and the credit price is pending (open items §2).
 
 - [x] **P4.1** `marketing_plan_brief` prompt module, schema, `marketingPlanBriefAi.ts`, `marketingPlanGuard.ts`.
 - [x] **P4.2** (partial) `generate` mode `ai`: rules skeleton → AI briefs → guard → persist; fail-open to rules copy; credits shown before running; rate limits.
 - [x] **P4.3** `refresh_brief` for one item ("make it shorter", "more playful", "Taglish") with the same guard.
 - [x] **P4.4** AI summary card copy and "Why" explanation in plain words (aggregates only).
 - [ ] **P4.5** Prepare my week uses AI captions and hooks for template items when entitled.
-- [ ] **P4.6** Eval suite `marketing_plan` (offline in CI, live manual) with fixtures for underbooked, fully booked, long weekend, thin history, Taglish.
+- [x] **P4.6** Eval suite `marketing_plan` (offline in CI, live manual) with fixtures for underbooked, fully booked, long weekend, thin history, Taglish.
 
 **Exit:** Business properties get AI briefs that pass the guard at 90%+ on the live suite; AI outages never break a plan.
 
