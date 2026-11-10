@@ -1,7 +1,15 @@
-/** URL-friendly slug from display name. */
+/**
+ * URL-friendly slug from a display name.
+ *
+ * Diacritics are stripped (`Parañaque` → `paranaque`) so Philippine place names keep their
+ * keyword instead of turning into `para-aque`. Mirrors `pls_slugify_name` in SQL and
+ * `slugifyOrgName` in the UI; the three are asserted against the same vectors.
+ */
 export function slugifyName(input: string): string {
   return (
     input
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')

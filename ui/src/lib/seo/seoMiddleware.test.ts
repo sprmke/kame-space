@@ -67,6 +67,16 @@ describe('handleSeoRequest', () => {
     expect(await handleSeoRequest(req('/sitemap.xml', BROWSER), deps(fetchFail), shell)).toBeNull();
   });
 
+  it('301s a mixed-case path to lowercase for every user agent', async () => {
+    for (const ua of [BROWSER, BOT]) {
+      const res = await handleSeoRequest(req('/Properties/Monaco-2604', ua), deps(vi.fn()), shell);
+      expect(res!.status).toBe(301);
+      expect(res!.headers.get('location')).toBe(
+        'https://kamespace.com/properties/monaco-2604'
+      );
+    }
+  });
+
   it('passes browsers through untouched', async () => {
     const fetchImpl = vi.fn();
     expect(
@@ -176,6 +186,24 @@ describe('handleSeoRequest', () => {
     expect(html).toContain('<h1>Sample Host</h1>');
     expect(html).toContain('href="https://kamespace.com/properties/monaco-2604"');
     expect(html).toContain('href="https://kamespace.com/parkings/slot-a1"');
+  });
+
+  it('301s a historical slug to the current URL', async () => {
+    const fetchImpl = vi
+      .fn()
+      // First call: the listing lookup, which 404s because the slug was renamed.
+      .mockResolvedValueOnce(jsonResponse({ error: 'not found' }, 404))
+      // Second call: the redirect probe, which answers 301 with a Location.
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 301,
+          headers: { location: '/properties/monaco-2604-renamed' },
+        })
+      );
+
+    const res = await handleSeoRequest(req('/properties/old-name'), deps(fetchImpl), shell);
+    expect(res!.status).toBe(301);
+    expect(res!.headers.get('location')).toBe('https://kamespace.com/properties/monaco-2604-renamed');
   });
 
   it('answers a real 404 for a slug the catalogue does not have', async () => {

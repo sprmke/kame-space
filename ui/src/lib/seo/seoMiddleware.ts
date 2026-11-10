@@ -134,6 +134,34 @@ const RELATED_ENDPOINT: Record<RouteFamily, string> = {
 };
 
 /**
+ * Ask the edge whether a slug is a historical one. The public handlers answer a renamed
+ * listing with a 301 and a `Location`, so this reads that header instead of parsing data.
+ */
+async function probeSlugRedirect(url: string, deps: SeoMiddlewareDeps): Promise<string | null> {
+  try {
+    const doFetch = deps.fetchImpl ?? fetch;
+    const res = await doFetch(url, {
+      headers: { apikey: deps.anonKey, Authorization: `Bearer ${deps.anonKey}` },
+      redirect: 'manual',
+      signal: AbortSignal.timeout(deps.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+    });
+    if (res.status < 300 || res.status >= 400) return null;
+    return res.headers.get('location');
+  } catch {
+    return null;
+  }
+}
+
+/** Endpoint that knows how to answer a 301 for each family. */
+function detailEndpoint(family: ListingFamily, slug: string, deps: SeoMiddlewareDeps): string {
+  const base = apiBase(deps);
+  const encoded = encodeURIComponent(slug);
+  if (family === 'property') return `${base}/get-public-property?property=${encoded}`;
+  if (family === 'parking') return `${base}/get-public-parking?parking=${encoded}`;
+  return `${base}/list-public-developments?slug=${encoded}&pageSize=1`;
+}
+
+/**
  * Other listings in the same city, for internal links in the crawler HTML. Best effort: an
  * empty list on any error, so a snapshot never fails because of an optional sidebar.
  */
@@ -844,6 +872,7 @@ function hostOfferCatalog(
 
 type Resolved =
   | { kind: 'page'; meta: SeoMeta; snapshot: SnapshotPage }
+  | { kind: 'redirect'; to: string }
   | { kind: 'missing' }
   | null;
 
@@ -853,7 +882,9 @@ async function resolveRoute(pathname: string, deps: SeoMiddlewareDeps): Promise<
   const listing = matchListingDetailPath(pathname);
   if (listing) {
     const resolved = await loadListingRoute(listing.family, listing.slug, canonicalUrl, deps);
-    return resolved ? { kind: 'page', ...resolved } : { kind: 'missing' };
+    if (resolved) return { kind: 'page', ...resolved };
+    const to = await probeSlugRedirect(detailEndpoint(listing.family, listing.slug, deps), deps);
+    return to ? { kind: 'redirect', to } : { kind: 'missing' };
   }
 
   const place = matchPlacePath(pathname);
@@ -929,6 +960,16 @@ export async function handleSeoRequest(
       });
     }
 
+    // Every public route is lowercase. A mixed-case link (a paste from a doc, a hand-typed
+    // URL) would otherwise render the SPA 404 for a page that exists.
+    const lowerPath = url.pathname.toLowerCase();
+    if (lowerPath !== url.pathname) {
+      return new Response(null, {
+        status: 301,
+        headers: { location: `${siteOrigin}${lowerPath}${url.search}` },
+      });
+    }
+
     if (request.method !== 'GET' || !isCrawlerUserAgent(request.headers.get('user-agent'))) {
       return null;
     }
@@ -944,6 +985,13 @@ export async function handleSeoRequest(
       'cache-control': 'public, max-age=0, s-maxage=600, stale-while-revalidate=3600',
       vary: 'user-agent',
     };
+
+    if (resolved.kind === 'redirect') {
+      const location = /^https?:\/\//i.test(resolved.to)
+        ? resolved.to
+        : `${siteOrigin}${resolved.to}`;
+      return new Response(null, { status: 301, headers: { ...headers, location } });
+    }
 
     if (resolved.kind === 'missing') {
       // A crawler asked for a slug the catalogue does not have. Answer with a real 404 so

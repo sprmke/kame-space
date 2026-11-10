@@ -331,6 +331,21 @@ Activity log: N/A (read-only public endpoints; index triggers are derived data).
 
 ---
 
+## URL slugs and rename redirects
+
+Public listing URLs are derived from the display name: `properties.slug`, `parkings.slug`, `developments.slug`.
+
+| Concern             | Detail                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Rule**            | `slugifyName` (`_shared/slugUtils.ts`), `slugifyOrgName` (`orgSettingsForm.ts`) and SQL `pls_slugify_name` apply the same steps: NFD normalize, drop combining marks, lowercase, non-alphanumerics to `-`, trim dashes, max 64 characters, `item` when empty. `Parañaque` becomes `paranaque`, not `para-aque`. The three are asserted against one shared vector list. |
+| **Rename**          | A trigger on `properties` / `parkings` / `developments` writes the previous slug to `listing_slug_redirects` `(family, old_slug, listing_id)`. Reclaiming a slug for the same listing clears the stale row.                                                                                                                                                            |
+| **Resolution**      | `get-public-property`, `get-public-parking` and `list-public-developments?slug=` answer a historical slug with **301 + `Location`**. The Vercel middleware turns that into a canonical 301 for crawlers; browsers follow the redirect and render the current listing.                                                                                                  |
+| **Mixed case**      | The middleware 301s `/Properties/Foo` to `/properties/foo` for every user agent.                                                                                                                                                                                                                                                                                       |
+| **No mass renames** | Existing slugs were not rewritten when the diacritic rule landed. Only new listings and future renames use it.                                                                                                                                                                                                                                                         |
+| **Host copy**       | Property Settings shows the slug read-only with "Renaming the property changes this link. Old links keep working."                                                                                                                                                                                                                                                     |
+
+Migration: `20261328000000_seo_slug_diacritics_and_redirects.sql`. Runbook: [`archive/operations/migration-runbook.md`](archive/operations/migration-runbook.md).
+
 ## Operational guest branding (public property flows)
 
 Property-scoped operational routes (`/properties/:propertySlug/calendar`, `/form`, `/success`, `/sd-form`, `/guest-review`, `/parking/:bookingId`, stay-guide, property chat) share **`MainLayout`** chrome: org **brand-color header band**, **`GuestOperationalHeader`**, dynamic **`GuestFormBrandHeader`**, and residence-aware footer.
