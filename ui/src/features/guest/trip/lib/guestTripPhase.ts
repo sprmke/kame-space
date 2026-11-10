@@ -457,3 +457,93 @@ export function tripHubStage(timing: GuestTripTiming): TripHubStage {
   if (timing.kind === 'past') return 'past';
   return 'in_stay';
 }
+
+// ---------------------------------------------------------------------------------------------
+// Timeline
+// ---------------------------------------------------------------------------------------------
+
+export type GuestTripTimelineItem = {
+  key: 'review' | 'documents' | 'balance' | 'check_in' | 'check_out' | 'refund';
+  label: string;
+  /** Pre-formatted date, or null when the moment has no fixed date yet. */
+  dateLabel: string | null;
+  done: boolean;
+};
+
+/**
+ * The dated moments still ahead of the guest, in the order they happen.
+ *
+ * The progress bar says where the booking is; this says what is coming and when. Only
+ * moments that still matter are returned, so the list stays short on every plan.
+ */
+export function guestTripTimeline(input: {
+  phase: GuestTripPhase;
+  checkInDateLabel: string;
+  checkOutDateLabel: string;
+  amountDue: number;
+  amountDueLabel: string | null;
+  documentsPending: boolean;
+  documentsTotal: number;
+  refundLabel: string | null;
+}): GuestTripTimelineItem[] {
+  const items: GuestTripTimelineItem[] = [];
+  const { phase } = input;
+
+  if (phase === 'requested') {
+    items.push({ key: 'review', label: 'Your host reviews the request', dateLabel: null, done: false });
+    items.push({
+      key: 'check_in',
+      label: 'Check-in',
+      dateLabel: input.checkInDateLabel,
+      done: false,
+    });
+    return items;
+  }
+
+  if (phase === 'cancelled') return [];
+
+  if (
+    (phase === 'confirmed' || phase === 'arriving' || phase === 'arrival_day') &&
+    input.documentsTotal > 0
+  ) {
+    items.push({
+      key: 'documents',
+      label: 'Check-in documents',
+      dateLabel: null,
+      done: !input.documentsPending,
+    });
+  }
+
+  if (isGuestTripActive(phase) && input.amountDue > 0) {
+    items.push({
+      key: 'balance',
+      label: 'Balance due',
+      dateLabel: input.amountDueLabel,
+      done: false,
+    });
+  }
+
+  if (phase === 'confirmed' || phase === 'arriving') {
+    items.push({ key: 'check_in', label: 'Check-in', dateLabel: input.checkInDateLabel, done: false });
+  }
+
+  if (phase === 'arrival_day' || phase === 'staying') {
+    items.push({
+      key: 'check_out',
+      label: 'Check-out',
+      dateLabel: input.checkOutDateLabel,
+      done: false,
+    });
+  }
+
+  if (phase === 'checked_out' || phase === 'refund_pending' || phase === 'completed') {
+    items.push({
+      key: 'refund',
+      label: 'Deposit refund',
+      dateLabel: input.refundLabel,
+      done: phase === 'completed',
+    });
+  }
+
+  return items;
+}

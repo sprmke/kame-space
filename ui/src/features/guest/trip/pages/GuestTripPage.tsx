@@ -35,6 +35,11 @@ import type { ResolvedPropertyDetail } from '@/features/guest/marketing/properti
 import { GuestTripArrivalSection } from '@/features/guest/trip/components/GuestTripArrivalSection';
 import { GuestTripCancellationSection } from '@/features/guest/trip/components/GuestTripCancellationSection';
 import { GuestTripDetailsSection } from '@/features/guest/trip/components/GuestTripDetailsSection';
+import { GuestTripEssentialsCard } from '@/features/guest/trip/components/GuestTripEssentialsCard';
+import {
+  GuestTripHostSections,
+  GuestTripStepsSection,
+} from '@/features/guest/trip/components/GuestTripHostContent';
 import { GuestTripHostRow } from '@/features/guest/trip/components/GuestTripHostRow';
 import { GuestTripNowCard } from '@/features/guest/trip/components/GuestTripNowCard';
 import { GuestTripPaymentSection } from '@/features/guest/trip/components/GuestTripPaymentSection';
@@ -45,6 +50,7 @@ import {
   type GuestTripShortcut,
 } from '@/features/guest/trip/components/GuestTripShortcuts';
 import { GuestTripStayHeader } from '@/features/guest/trip/components/GuestTripStayHeader';
+import { GuestTripTimeline } from '@/features/guest/trip/components/GuestTripTimeline';
 import {
   fetchGuestTrip,
   GUEST_TRIP_QUERY_KEY,
@@ -67,6 +73,7 @@ import {
   guestTripNextAction,
   guestTripPhase,
   guestTripProgress,
+  guestTripTimeline,
   tripHubStage,
   guestTripTiming,
   isGuestTripActive,
@@ -361,6 +368,17 @@ function GuestTripContent({
     { amountDueLabel, directionsUrl }
   );
 
+  const timeline = guestTripTimeline({
+    phase,
+    checkInDateLabel,
+    checkOutDateLabel,
+    amountDue: owes ? amountDue : 0,
+    amountDueLabel,
+    documentsPending: documents.some((doc) => doc.status === 'pending'),
+    documentsTotal: documents.length,
+    refundLabel: trip.refund.amount != null ? formatMoney(trip.refund.amount) : null,
+  });
+
   const checklist = guestTripChecklist({
     phase,
     ratesConfirmed: trip.payment.ratesConfirmed,
@@ -508,6 +526,24 @@ function GuestTripContent({
               }
             />
           ) : null}
+
+          <GuestTripTimeline items={timeline} />
+
+          {!cancelled && trip.essentials ? (
+            <GuestTripEssentialsCard essentials={trip.essentials} />
+          ) : null}
+
+          {!cancelled ? (
+            <GuestTripStepsSection
+              checkInHtml={trip.instructions?.checkInHtml ?? null}
+              checkOutHtml={trip.instructions?.checkOutHtml ?? null}
+              showCheckOut={
+                phase === 'staying' || phase === 'checkout_day' || phase === 'checked_out'
+              }
+            />
+          ) : null}
+
+          {!cancelled ? <GuestTripHostSections sections={trip.hostSections ?? []} /> : null}
 
           <GuestTripHostRow
             name={hostName}

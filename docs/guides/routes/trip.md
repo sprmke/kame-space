@@ -19,7 +19,11 @@ submission redirects here with `&welcome=1`)
 | Access gate         | —        | —          | Documented | Token or signed-in owner; never bare booking id |
 | Request sent banner | ✅       | —          | Documented | First view after a submission (`?welcome=1`)    |
 | Hero + progress     | —        | —          | Documented | Status, timing, 5-step progress, next action    |
-| Stay / docs / pay   | —        | —          | Documented | Read-only                                       |
+| Timeline            | —        | —          | Documented | Dated upcoming moments, phase-filtered          |
+| Essentials          | —        | —          | Documented | Wi-Fi, door code, unit, contacts; secrets gated |
+| Getting in          | —        | —          | Documented | Inline check-in / check-out steps, every plan   |
+| From your host      | —        | —          | Documented | Guest-visible custom templates, collapsed       |
+| Stay / docs / pay   | ✅       | —          | Documented | Receipt upload lives in Payment                 |
 | Host / cancellation | —        | —          | Documented | Contact + listing cancellation policy           |
 | Entry points        | —        | —          | Documented | Submission, Trips tab, emails, SD form, review  |
 
@@ -111,6 +115,60 @@ Shown on the first view after a submission (`?welcome=1`) while the booking is s
 | Review expectation | The property's median first-response time when it has at least 5 answered requests, otherwise "Most hosts reply within a day" |
 
 The banner is dismissible. It is a live region, so a screen reader announces it.
+
+---
+
+## Arrival content
+
+Everything a guest needs on the day, on every plan (plan D6). The designed Stay Guide brochure
+stays Pro+; the operational content does not.
+
+### Section order
+
+`Now card` -> `Timeline` -> `Essentials` -> `Getting in` -> `From your host` -> `Payment` ->
+`Cancellation` -> `Getting there` -> `Host` -> `Details`.
+
+### Essentials
+
+Structured fields the host fills in Property Settings -> Guest experience, stored in
+`property_guest_essentials` and never in `properties.settings` (a public listing read returns
+`settings`, so a Wi-Fi password there would leak).
+
+| Field                   | Reveal               |
+| ----------------------- | -------------------- |
+| Wi-Fi name              | Always               |
+| Wi-Fi password          | From `revealAt`      |
+| Door code               | From `revealAt`      |
+| Unit / floor            | Always               |
+| Parking slot note       | Always               |
+| Emergency contact       | Always (tap to call) |
+| Building security phone | Always (tap to call) |
+| Garbage / quiet hours   | Always               |
+
+`revealAt` is the property's check-in moment minus `reveal_lead_hours` (default 24, clamped
+0-720). Before then the server sends `null` for the secrets and only the timestamp, and the page
+renders "Available {date, time}". A per-booking override
+(`guest_submissions.guest_essentials_override`) wins over the property default, for a rotating
+lock code.
+
+### Getting in
+
+`check-in-instructions` and `check-out-instructions` rendered inline, with the same placeholder
+pipeline as email. Check-out only appears from the stay onwards. A property with no template
+content shows nothing.
+
+### From your host
+
+Custom templates marked **Show to guests** in the Templates workbench, filtered by
+`guest_phase` (`before / arrival / stay / checkout / after / always`). Collapsed by default.
+The plan gate for authoring is `customTemplates`; guest rendering follows `guestArrivalContent`.
+
+### Balance receipt
+
+**Send receipt** in Payment opens a bottom sheet, accepts a photo or PDF up to 10 MB and posts
+to `guest-trip-payment-receipt`. It writes `guest_balance_payment_receipt_url` (the column the
+host dashboard already reads), runs the existing AI receipt check non-blocking, notifies the
+host, and **never changes the booking status**.
 
 ---
 
@@ -270,15 +328,19 @@ idempotent document share token / stay guide token self-heal and owner linking).
 | Payload       | `supabase/functions/_shared/guestTrip.ts`                                                                                                                                                                                                                            |
 | Access rules  | `supabase/functions/_shared/guestTripAccess.ts` (+ `_test.ts`)                                                                                                                                                                                                       |
 | Email link    | `guestTripPath` in `_shared/publicGuestPaths.ts`, `guestBookingEmailLinks.ts`, `buildGuestTripCtaHtml`                                                                                                                                                               |
+| Essentials    | `_shared/guestEssentials.ts` (+ `_test.ts`) — reveal gating and per-booking override                                                                                                                                                                                 |
+| Host content  | `_shared/guestTripContent.ts` (+ `_test.ts`) — instructions and guest-visible templates, stage filter                                                                                                                                                                |
+| Receipt       | `supabase/functions/guest-trip-payment-receipt/index.ts`; `ui/src/features/guest/trip/components/GuestTripReceiptSheet.tsx`                                                                                                                                          |
+| Timeline      | `guestTripTimeline` in `guestTripPhase.ts` (+ `.test.ts`); `ui/src/features/guest/trip/components/GuestTripTimeline.tsx`                                                                                                                                             |
 
 ---
 
 ## Testing
 
-| Layer | Path / spec                                                                                                                                                                                                                   | Manual                                   |
-| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| Unit  | `guestTripPhase.test.ts` (phase, progress, headline, next action, checklist), `guestTripCalendar.test.ts`, `guestTripLinks.test.ts`, `guestTripAccess_test.ts`, `bookingDetailActions.test.ts`, `parseChatRichBlocks.test.ts` | —                                        |
-| E2E   | N/A yet                                                                                                                                                                                                                       | Open from success page, email, Trips tab |
+| Layer | Path / spec                                                                                                                                                                                                                             | Manual                                   |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Unit  | `guestTripPhase.test.ts` (phase, progress, headline, next action, checklist, timeline), `guestTripCalendar.test.ts`, `guestTripLinks.test.ts`, `guestTripAccess_test.ts`, `bookingDetailActions.test.ts`, `parseChatRichBlocks.test.ts` | —                                        |
+| E2E   | N/A yet                                                                                                                                                                                                                                 | Open from success page, email, Trips tab |
 
 ---
 

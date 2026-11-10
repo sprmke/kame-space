@@ -1,10 +1,13 @@
+import { useState } from 'react';
+
 import { Link } from 'react-router-dom';
 
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 
 import type { GuestPaymentMethod } from '@/features/guest/form/hooks/useGuestPaymentInfo';
 import { guestSdFormPath } from '@/features/guest/lib/guestPublicPaths';
+import { GuestTripReceiptSheet } from '@/features/guest/trip/components/GuestTripReceiptSheet';
 import { GuestTripRow, GuestTripSection } from '@/features/guest/trip/components/GuestTripSection';
 import type { GuestTrip } from '@/features/guest/trip/lib/guestTripApi';
 import { guestTripMessageHostPath } from '@/features/guest/trip/lib/guestTripLinks';
@@ -97,6 +100,8 @@ export function GuestTripPaymentSection({
   paymentMethods: GuestPaymentMethod[];
 }) {
   const { payment } = trip;
+  // Hooks first: the receipt sheet state must exist on every render path.
+  const [receiptOpen, setReceiptOpen] = useState(false);
   // Rates are set by the host during review; nothing meaningful to show yet.
   if (phase === 'requested' || !payment.ratesConfirmed) return null;
 
@@ -176,20 +181,39 @@ export function GuestTripPaymentSection({
               ))}
             </ul>
           ) : null}
-          <p className="text-muted-foreground text-sm">
-            {paymentMethods.length > 0 ? 'After paying, ' : ''}
-            <Link
-              to={guestTripMessageHostPath(trip)}
-              className="text-foreground font-semibold underline underline-offset-4"
-            >
-              {paymentMethods.length > 0
-                ? 'send your receipt to your host'
-                : 'Ask your host how to pay'}
-            </Link>
-            .
-          </p>
+          {paymentMethods.length > 0 ? (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-[44px] w-full sm:w-auto"
+                onClick={() => setReceiptOpen(true)}
+              >
+                <Receipt className="size-4" aria-hidden />
+                Send receipt
+              </Button>
+              <p className="text-muted-foreground text-sm">After paying, attach your receipt.</p>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              <Link
+                to={guestTripMessageHostPath(trip)}
+                className="text-foreground font-semibold underline underline-offset-4"
+              >
+                Ask your host how to pay
+              </Link>
+              .
+            </p>
+          )}
         </div>
       ) : null}
+
+      <GuestTripReceiptSheet
+        open={receiptOpen}
+        onOpenChange={setReceiptOpen}
+        bookingId={trip.bookingId}
+        amountDueLabel={owes ? formatMoney(amountDue) : null}
+      />
 
       {trip.actions.sdFormAvailable ? (
         <Button asChild variant="outline" className="mt-4 w-full sm:w-auto">

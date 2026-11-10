@@ -106,6 +106,9 @@ export function guestTripMock(overrides: Partial<GuestTrip> = {}): GuestTrip {
       hostText: null,
     },
     stayGuidePath: null,
+    essentials: null,
+    instructions: { checkInHtml: null, checkOutHtml: null },
+    hostSections: [],
     voucher: null,
     contact: {
       name: 'On-site Contact',

@@ -80,6 +80,7 @@ export const APP_ANALYTICS_EVENTS = [
   'trip_hub_section_opened',
   'guest_trip_viewed',
   'guest_next_action_clicked',
+  'guest_receipt_uploaded',
   'meta_inbox_connected',
   'meta_inbox_disconnected',
   'marketing_caption_generated',

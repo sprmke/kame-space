@@ -1040,6 +1040,9 @@ verify_jwt = false
 [functions.get-guest-trip]
 verify_jwt = false
 
+[functions.guest-trip-payment-receipt]
+verify_jwt = false
+
 [functions.list-guest-vouchers]
 verify_jwt = false
 
