@@ -14,106 +14,127 @@ import {
 import { verifyMetaWebhookSignatureAsync } from '../_shared/metaInboxGraph.ts';
 import { handleEdgeError, jsonError } from '../_shared/httpResponse.ts';
 import { identityFromRequest, rateLimitGate } from '../_shared/rateLimit.ts';
-import { buildDmThreadId, getConnectionForMetaWebhook } from '../_shared/socialInboxService.ts';
+import { captureSentryException } from '../_shared/sentry.ts';
+import { withEdgeErrorCapture } from '../_shared/serveEdge.ts';
+import { buildDmThreadId } from '../_shared/socialInboxService.ts';
+import { platformFromMetaObject } from '../_shared/metaInboxEvents.ts';
 
-serve(async (req) => {
+const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders(req) });
   }
 
-  try {
-    const url = new URL(req.url);
+  const url = new URL(req.url);
 
-    if (req.method === 'GET') {
-      const mode = url.searchParams.get('hub.mode');
-      const token = url.searchParams.get('hub.verify_token');
-      const challenge = url.searchParams.get('hub.challenge');
-      if (mode === 'subscribe' && token === metaWebhookVerifyToken() && challenge) {
-        return new Response(challenge, {
-          status: 200,
-          headers: { 'Content-Type': 'text/plain' },
-        });
-      }
-      return new Response('Forbidden', { status: 403 });
-    }
-
-    if (req.method !== 'POST') {
-      return jsonError(req, 'Method not allowed', 405);
-    }
-
-    const rawBody = await req.text();
-    const signature = req.headers.get('X-Hub-Signature-256');
-    const valid = await verifyMetaWebhookSignatureAsync(rawBody, signature);
-    if (!valid) {
-      const limited = await rateLimitGate(req, {
-        scope: 'meta-inbox-webhook-bad-signature',
-        identity: identityFromRequest(req),
-        limit: 30,
-        windowSec: 60,
+  if (req.method === 'GET') {
+    const mode = url.searchParams.get('hub.mode');
+    const token = url.searchParams.get('hub.verify_token');
+    const challenge = url.searchParams.get('hub.challenge');
+    if (mode === 'subscribe' && token === metaWebhookVerifyToken() && challenge) {
+      return new Response(challenge, {
+        status: 200,
+        headers: { 'Content-Type': 'text/plain' },
       });
-      if (limited) return limited;
-      return jsonError(req, 'Invalid signature', 403);
     }
+    return new Response('Forbidden', { status: 403 });
+  }
 
-    let payload: {
-      object?: string;
-      entry?: Array<{
-        id: string;
-        messaging?: unknown[];
-        changes?: unknown[];
-      }>;
-    };
-    try {
-      payload = JSON.parse(rawBody);
-    } catch {
-      return jsonError(req, 'Invalid JSON', 400);
-    }
+  if (req.method !== 'POST') {
+    return jsonError(req, 'Method not allowed', 405);
+  }
 
-    for (const entry of payload.entry ?? []) {
-      const pageOrIgId = entry.id;
+  const rawBody = await req.text();
+  const signature = req.headers.get('X-Hub-Signature-256');
+  const valid = await verifyMetaWebhookSignatureAsync(rawBody, signature);
+  if (!valid) {
+    const limited = await rateLimitGate(req, {
+      scope: 'meta-inbox-webhook-bad-signature',
+      identity: identityFromRequest(req),
+      limit: 30,
+      windowSec: 60,
+    });
+    if (limited) return limited;
+    return jsonError(req, 'Invalid signature', 403);
+  }
 
-      for (const messaging of (entry.messaging ?? []) as Record<string, unknown>[]) {
-        const recipientId = (messaging.recipient as { id?: string })?.id;
-        const platform =
-          payload.object === 'instagram' || recipientId?.startsWith('17')
-            ? ('instagram' as const)
-            : ('facebook' as const);
+  let payload: {
+    object?: string;
+    entry?: Array<{
+      id: string;
+      messaging?: unknown[];
+      changes?: unknown[];
+    }>;
+  };
+  try {
+    payload = JSON.parse(rawBody);
+  } catch {
+    return jsonError(req, 'Invalid JSON', 400);
+  }
 
-        if (messaging.read) {
-          const senderId = (messaging.sender as { id?: string })?.id ?? '';
-          await handleMetaReadReceipt(pageOrIgId, senderId, platform);
-          continue;
-        }
-
-        if (messaging.message) {
-          await handleMetaMessagingWebhook(pageOrIgId, messaging as never, platform);
-          const guestId = (messaging.sender as { id?: string })?.id;
-          if (guestId && !(messaging.message as { is_echo?: boolean }).is_echo) {
-            const conn = await getConnectionForMetaWebhook(pageOrIgId, platform);
-            const inboundMid = (messaging.message as { mid?: string }).mid;
-            if (conn && inboundMid) {
-              // After the 200 — Meta expects a fast ack; the AI call must not hold it open.
-              await runAfterResponse('meta-inbox-webhook auto-reply', () =>
-                maybeAutoReplyToInboundDm(
-                  conn.organization_id,
-                  buildDmThreadId(platform, guestId),
-                  platform,
-                  inboundMid
-                )
-              );
-            }
-          }
-        }
-      }
-
-      void entry.changes;
-    }
-
+  const platform = platformFromMetaObject(payload.object);
+  if (!platform) {
+    // Not a messaging object. Acknowledge so Meta does not retry, and record nothing.
+    console.warn('[meta-inbox-webhook] unsupported object:', payload.object ?? '(none)');
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
-  } catch (error) {
-    return await handleEdgeError(req, error, '[meta-inbox-webhook]');
   }
-});
+
+  for (const entry of payload.entry ?? []) {
+    const pageOrIgId = entry.id;
+
+    for (const raw of (entry.messaging ?? []) as Record<string, unknown>[]) {
+      // One bad event must not fail the batch. Meta retries the whole batch otherwise, and
+      // a single poison event would keep the healthy ones from ever landing.
+      try {
+        await processMetaMessagingEvent(pageOrIgId, raw, platform);
+      } catch (error) {
+        console.error('[meta-inbox-webhook] event failed:', error);
+        await captureSentryException(error, {
+          logPrefix: 'meta-inbox-webhook',
+          url: req.url,
+          method: req.method,
+          tags: { provider: 'meta', platform },
+          fingerprint: ['meta-inbox-webhook', platform],
+        });
+      }
+    }
+
+    void entry.changes;
+  }
+
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+  });
+};
+
+async function processMetaMessagingEvent(
+  pageOrIgId: string,
+  messaging: Record<string, unknown>,
+  platform: 'facebook' | 'instagram'
+): Promise<void> {
+  if (messaging.read) {
+    const senderId = (messaging.sender as { id?: string })?.id ?? '';
+    const watermark = typeof messaging.watermark === 'number' ? messaging.watermark : undefined;
+    await handleMetaReadReceipt(pageOrIgId, senderId, platform, watermark);
+    return;
+  }
+
+  if (!messaging.message) return;
+
+  const result = await handleMetaMessagingWebhook(pageOrIgId, messaging as never, platform);
+  if (!result.inserted || result.isOutbound || !result.guestId || !result.organizationId) return;
+
+  const inboundMid = (messaging.message as { mid?: string }).mid ?? '';
+  const orgId = result.organizationId;
+  const guestId = result.guestId;
+
+  // After the 200 — Meta expects a fast ack; the AI call must not hold it open.
+  await runAfterResponse('meta-inbox-webhook auto-reply', () =>
+    maybeAutoReplyToInboundDm(orgId, buildDmThreadId(platform, guestId), platform, inboundMid)
+  );
+}
+
+serve(withEdgeErrorCapture('meta-inbox-webhook', handler));

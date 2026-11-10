@@ -18,12 +18,16 @@ import {
   getConnectionForMetaWebhook,
   getConversationByExternalThread,
   insertMessageIfNew,
+  metaSelfAccountIds,
   migrateLegacyDmThreadId,
   recordWebhookEvent,
   updateConversationAfterMessage,
   upsertConversation,
 } from './socialInboxService.ts';
-import type { SocialConversationRow, SocialPlatform } from './socialInboxTypes.ts';
+import type { SocialConversationRow } from './socialInboxTypes.ts';
+
+/** Meta messaging platforms. The webhook object decides which one an event belongs to. */
+export type MetaMessagingPlatform = 'facebook' | 'instagram';
 
 type MetaMessagingEvent = {
   sender?: { id: string; username?: string; name?: string };
@@ -37,22 +41,40 @@ type MetaMessagingEvent = {
   };
 };
 
+/** What the webhook handler did with one event. */
+export type MetaWebhookMessageResult = {
+  /** True when the message row was created, not a redelivery. */
+  inserted: boolean;
+  organizationId: string | null;
+  guestId: string | null;
+  isOutbound: boolean;
+};
+
+const EMPTY_RESULT: MetaWebhookMessageResult = {
+  inserted: false,
+  organizationId: null,
+  guestId: null,
+  isOutbound: false,
+};
+
 export async function handleMetaMessagingWebhook(
   pageId: string,
   event: MetaMessagingEvent,
-  platform: SocialPlatform
-): Promise<void> {
+  platform: MetaMessagingPlatform
+): Promise<MetaWebhookMessageResult> {
   const eventId = event.message?.mid;
-  if (!eventId) return;
-  if (!(await recordWebhookEvent(eventId))) return;
+  if (!eventId) return EMPTY_RESULT;
 
   const connection = await getConnectionForMetaWebhook(pageId, platform);
-  if (!connection?.encrypted_access_token) return;
+  if (!connection?.encrypted_access_token) return EMPTY_RESULT;
 
   const orgId = connection.organization_id;
-  const isEcho = event.message?.is_echo === true;
   const senderId = event.sender?.id ?? '';
-  const isFromPage = isEcho || senderId === pageId;
+  // Direction comes from the account's own ids. An Instagram reply sent from the Instagram
+  // app carries the Instagram business account id, not the Facebook Page id, so comparing
+  // against the Page id alone filed those replies as guest messages.
+  const selfIds = metaSelfAccountIds(connection, pageId);
+  const isFromPage = event.message?.is_echo === true || selfIds.has(senderId);
   const guestId = isFromPage ? event.recipient?.id : senderId;
   const sentAt = event.timestamp
     ? normalizeMetaWebhookTimestamp(event.timestamp)
@@ -93,23 +115,22 @@ export async function handleMetaMessagingWebhook(
     }
   }
 
-  const conv = await upsertConversation({
-    organization_id: orgId,
-    connection_id: connection.id,
-    platform,
-    external_thread_id: threadId,
-    conversation_type: 'dm',
-    external_participant_id: guestId ?? null,
-    subject_preview: preview.slice(0, 500),
-    last_message_at: sentAt,
-    last_inbound_at: isFromPage ? undefined : sentAt,
-    unread_count: 0,
-    reply_status: isFromPage ? 'replied' : 'pending',
-    messaging_window_expires_at: isFromPage ? undefined : metaMessagingWindowExpiry(sentAt),
-    ...identityPatch,
-  });
+  const conv = await upsertConversation(
+    {
+      organization_id: orgId,
+      connection_id: connection.id,
+      platform,
+      external_thread_id: threadId,
+      conversation_type: 'dm',
+      external_participant_id: guestId ?? null,
+      ...identityPatch,
+    },
+    // The summary is owned by `inbox_bump_conversation`. Set the timestamp on create so a
+    // late event cannot rewind the thread, and never on update.
+    { insertOnly: { last_message_at: sentAt } }
+  );
 
-  await insertMessageIfNew({
+  const inserted = await insertMessageIfNew({
     organization_id: orgId,
     conversation_id: conv.id,
     direction: isFromPage ? 'outbound' : 'inbound',
@@ -123,60 +144,116 @@ export async function handleMetaMessagingWebhook(
   });
 
   await updateConversationAfterMessage(conv.id, {
+    direction: isFromPage ? 'outbound' : 'inbound',
     subject_preview: preview.slice(0, 500),
     last_message_at: sentAt,
-    last_inbound_at: isFromPage ? undefined : sentAt,
-    unread_delta: isFromPage ? 0 : 1,
-    reply_status: isFromPage ? 'replied' : 'pending',
-    messaging_window_expires_at: isFromPage ? undefined : metaMessagingWindowExpiry(sentAt),
+    last_inbound_at: isFromPage ? null : sentAt,
+    messaging_window_expires_at: isFromPage ? null : metaMessagingWindowExpiry(sentAt),
+    // Only a newly stored inbound message moves the badge, and only if the host has not
+    // already read past it.
+    unread_delta: inserted && !isFromPage ? 1 : 0,
   });
 
-  if (!isFromPage) {
-    try {
-      const { notifyTelegramChatInbound } = await import('./telegramChat.ts');
-      await notifyTelegramChatInbound({
-        conversation: conv,
-        text: text || null,
-        attachments: [],
-        sentAt,
-      });
-    } catch (e) {
-      console.warn('[handleMetaMessagingWebhook] telegram notify:', e);
-    }
-    try {
-      const participantLabel = inboxNotificationParticipantLabel(
-        conv.participant_name,
-        conv.conversation_type
-      );
-      await createOrCoalesceNotification({
-        organizationId: orgId,
-        propertyId: conv.property_id ?? null,
-        parkingId: conv.parking_id ?? null,
-        type: 'inbox_new_message',
-        title: participantLabel,
-        body: preview.slice(0, 200),
-        conversationId: conv.id,
-        metadata: inboxNotificationMetadata(conv),
-        dedupeKey: `${conv.id}:inbox_new_message`,
-      });
-    } catch (e) {
-      console.warn('[handleMetaMessagingWebhook] notification create:', e);
-    }
+  // Side effects run only for a newly stored message. A redelivered Meta event inserts
+  // nothing, so it never notifies twice.
+  if (inserted && !isFromPage) {
+    await notifyInboundGuestMessage({
+      conv,
+      text,
+      preview,
+      sentAt,
+    });
+  }
+
+  // The dedupe row is written after the message landed. Marking first meant a later failure
+  // made Meta's retry look like a duplicate, and the message was lost for good.
+  await recordWebhookEvent(eventId);
+
+  return {
+    inserted: Boolean(inserted),
+    organizationId: orgId,
+    guestId: guestId ?? null,
+    isOutbound: isFromPage,
+  };
+}
+
+async function notifyInboundGuestMessage(opts: {
+  conv: SocialConversationRow;
+  text: string;
+  preview: string;
+  sentAt: string;
+}): Promise<void> {
+  try {
+    const { notifyTelegramChatInbound } = await import('./telegramChat.ts');
+    await notifyTelegramChatInbound({
+      conversation: opts.conv,
+      text: opts.text || null,
+      attachments: [],
+      sentAt: opts.sentAt,
+    });
+  } catch (e) {
+    console.warn('[handleMetaMessagingWebhook] telegram notify:', e);
+  }
+  try {
+    const participantLabel = inboxNotificationParticipantLabel(
+      opts.conv.participant_name,
+      opts.conv.conversation_type
+    );
+    await createOrCoalesceNotification({
+      organizationId: opts.conv.organization_id,
+      propertyId: opts.conv.property_id ?? null,
+      parkingId: opts.conv.parking_id ?? null,
+      type: 'inbox_new_message',
+      title: participantLabel,
+      body: opts.preview.slice(0, 200),
+      conversationId: opts.conv.id,
+      metadata: inboxNotificationMetadata(opts.conv),
+      dedupeKey: `${opts.conv.id}:inbox_new_message`,
+    });
+  } catch (e) {
+    console.warn('[handleMetaMessagingWebhook] notification create:', e);
   }
 }
 
+/**
+ * A guest read the host's messages.
+ *
+ * The read watermark is the guest's read state, not the host's. It marks the host's
+ * outbound messages as read and moves `guest_last_read_at`. It never clears the host's
+ * unread badge, which counts what the host has not read yet.
+ */
 export async function handleMetaReadReceipt(
   pageId: string,
   senderId: string,
-  platform: SocialPlatform
+  platform: MetaMessagingPlatform,
+  watermark?: number
 ): Promise<void> {
   const connection = await getConnectionForMetaWebhook(pageId, platform);
   if (!connection) return;
   const threadId = buildDmThreadId(platform, senderId);
   const sb = (await import('./socialInboxService.ts')).socialInboxDb();
+  const readAt = watermark
+    ? normalizeMetaWebhookTimestamp(watermark)
+    : new Date().toISOString();
+
+  const conv = await getConversationByExternalThread(
+    connection.organization_id,
+    platform,
+    threadId
+  );
+  if (!conv) return;
+
+  await sb
+    .from('social_messages')
+    .update({ read_at: readAt, delivery_status: 'read' })
+    .eq('conversation_id', conv.id)
+    .eq('direction', 'outbound')
+    .is('read_at', null)
+    .is('deleted_at', null)
+    .lte('sent_at', readAt);
+
   await sb
     .from('social_conversations')
-    .update({ unread_count: 0, updated_at: new Date().toISOString() })
-    .eq('organization_id', connection.organization_id)
-    .eq('external_thread_id', threadId);
+    .update({ guest_last_read_at: readAt, updated_at: new Date().toISOString() })
+    .eq('id', conv.id);
 }
