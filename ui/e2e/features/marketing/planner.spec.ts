@@ -85,6 +85,14 @@ const SETTINGS_PAYLOAD = {
  * shadow it (`continue()` skips later handlers), so this one falls back for every other
  * function and only answers `marketing-planner`.
  */
+/** The analytics consent card sits above the page and swallows clicks until answered. */
+async function dismissCookieConsent(page: Page) {
+  const necessaryOnly = page.getByRole('button', { name: 'Necessary only' });
+  if (await necessaryOnly.isVisible().catch(() => false)) {
+    await necessaryOnly.click();
+  }
+}
+
 async function mockPlanner(page: Page) {
   await page.route('**/functions/v1/**', async (route) => {
     const url = new URL(route.request().url());
@@ -106,6 +114,7 @@ test.describe('@ci marketing planner', () => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await mockPlanner(page);
     await page.goto(teamRbacPaths.marketingWorkspace);
+    await dismissCookieConsent(page);
 
     await expect(page.getByRole('tab', { name: /^Plan/ })).toHaveAttribute(
       'aria-selected',
@@ -122,6 +131,7 @@ test.describe('@ci marketing planner', () => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await mockPlanner(page);
     await page.goto(teamRbacPaths.marketingWorkspace);
+    await dismissCookieConsent(page);
 
     await page.getByRole('button', { name: 'Week', exact: true }).click();
     await expect(page).toHaveURL(/range=7d/);
@@ -131,6 +141,7 @@ test.describe('@ci marketing planner', () => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await mockPlanner(page);
     await page.goto(teamRbacPaths.marketingWorkspace);
+    await dismissCookieConsent(page);
 
     await page.getByRole('button', { name: 'Create' }).first().click();
     await expect(page.getByText('what this says')).toBeVisible();
@@ -145,6 +156,7 @@ test.describe('@ci marketing planner', () => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await mockPlanner(page);
     await page.goto(teamRbacPaths.marketingWorkspace);
+    await dismissCookieConsent(page);
 
     await page.getByRole('button', { name: 'Prepare week' }).click();
     const dialog = page.getByRole('dialog');
@@ -158,6 +170,7 @@ test.describe('@ci marketing planner', () => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await mockPlanner(page);
     await page.goto(teamRbacPaths.marketingWorkspace);
+    await dismissCookieConsent(page);
 
     await page.getByRole('button', { name: 'Plan setup' }).click();
     const dialog = page.getByRole('dialog');
@@ -170,6 +183,7 @@ test.describe('@ci marketing planner', () => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await mockPlanner(page);
     await page.goto(teamRbacPaths.marketingWorkspace);
+    await dismissCookieConsent(page);
 
     await page.getByRole('button', { name: 'I posted it' }).first().click();
     const dialog = page.getByRole('dialog');
@@ -182,6 +196,7 @@ test.describe('@ci marketing planner', () => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await mockPlanner(page);
     await page.goto(teamRbacPaths.marketingWorkspace);
+    await dismissCookieConsent(page);
 
     await page.getByRole('tab', { name: /^AI Studio/ }).click();
     await expect(page.getByRole('heading', { name: 'What do you want to make?' })).toBeVisible();
