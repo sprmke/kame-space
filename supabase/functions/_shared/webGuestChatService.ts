@@ -113,6 +113,8 @@ export type WebChatStartResult = {
   stayGuideUrl: string | null;
   /** Relative `/properties/:slug/trip?bookingId=` for the guest's current/next stay here. */
   tripPath: string | null;
+  /** Booking status when the thread is linked to one, so the header can say "Confirmed". */
+  bookingStatus: string | null;
 };
 
 export type WebChatResumeResult = {
@@ -399,6 +401,7 @@ export async function startGuestWebChat(
       voiceReceptionistEnabled: await isVoiceReceptionistAvailableForProperty(property.id),
       stayGuideUrl,
       tripPath,
+      bookingStatus: linkedBooking?.status ?? null,
     };
   }
 
@@ -449,6 +452,8 @@ export async function startGuestWebChat(
       name: parking.name,
     },
     host,
+    // A parking thread is never linked to a property booking.
+    bookingStatus: null,
     inquiryCheckIn: dates.checkIn,
     inquiryCheckOut: dates.checkOut,
     replyStatus: (conversation.reply_status as WebChatStartResult['replyStatus']) ?? 'none',

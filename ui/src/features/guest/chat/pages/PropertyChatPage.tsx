@@ -5,6 +5,7 @@ import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 
 import { useGuestAuth } from '@/features/guest/auth/context/GuestAuthContext';
+import { GuestChatBookingChip } from '@/features/guest/chat/components/GuestChatBookingChip';
 import {
   GuestChatHeaderBar,
   GuestChatSearchPanelRow,
@@ -242,6 +243,16 @@ function PropertyChatContent({
               avatar={hostAvatarNode}
               title={hostLabel}
               subtitle={propertyName}
+              bookingChip={
+                startQuery.data?.tripPath ? (
+                  <GuestChatBookingChip
+                    tripPath={startQuery.data.tripPath}
+                    checkInDate={startQuery.data.inquiryCheckIn}
+                    checkOutDate={startQuery.data.inquiryCheckOut}
+                    status={startQuery.data.bookingStatus ?? null}
+                  />
+                ) : null
+              }
               replyStatus={replyStatus}
               threadSearch={threadSearch}
               searchEnabled={!!conversationId && !isLoading && messages.length > 0}

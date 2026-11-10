@@ -85,6 +85,8 @@ export type GuestChatStartResult = {
   inquiryCheckIn: string;
   inquiryCheckOut: string;
   replyStatus: ChatReplyStatus;
+  /** Booking status when the thread is linked to one, so the header can say "Confirmed". */
+  bookingStatus?: string | null;
   voiceReceptionistEnabled: boolean;
   stayGuideUrl: string | null;
   /** Relative trip page path for the guest's current/next stay here. */
