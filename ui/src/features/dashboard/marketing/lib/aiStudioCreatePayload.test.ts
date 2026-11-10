@@ -74,6 +74,7 @@ describe('buildAiCreateRequest', () => {
       prompt: 'Sunset over the pool',
       preferredArchetype: 'sky-headline',
       sampleId: 'sample-1',
+      trendTopicKey: null,
     });
   });
 

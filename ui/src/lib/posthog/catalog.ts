@@ -153,6 +153,11 @@ export const APP_ANALYTICS_EVENTS = [
   'pwa_kill_switch',
   'pwa_launch_fallback',
   'media_optimized',
+  // Marketing trends
+  'marketing_trends_run',
+  'trends_opened',
+  'trend_topic_opened',
+  'trend_angle_used',
 ] as const;
 
 export type AppAnalyticsEventName = (typeof APP_ANALYTICS_EVENTS)[number];

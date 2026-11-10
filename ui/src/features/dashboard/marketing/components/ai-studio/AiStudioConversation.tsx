@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { useSearchParams } from 'react-router-dom';
 
 import {
   ChevronLeft,
@@ -56,6 +58,13 @@ import {
 import { useMarketingPermissions } from '@/features/dashboard/marketing/hooks/useMarketingPermissions';
 import { setPendingAiStartPhoto } from '@/features/dashboard/marketing/lib/aiStudioHandoff';
 import { findSample } from '@/features/dashboard/marketing/lib/aiStudioSamples';
+import { readTrendsWindow } from '@/features/dashboard/marketing/lib/marketingStudioRoute';
+import { setPendingAiTrend } from '@/features/dashboard/marketing/lib/trends/trendHandoff';
+import type {
+  TrendAngle,
+  TrendOutput,
+  TrendTopic,
+} from '@/features/dashboard/marketing/lib/trends/trendTypes';
 import {
   AI_OUTPUT_LABEL,
   buildAiTurns,
@@ -142,6 +151,21 @@ const POST_ASPECT: Record<string, string> = {
   'instagram-story': '9 / 16',
   'facebook-post': '40 / 21',
 };
+
+/**
+ * Marketing Trends. Both are lazy: the rail and the sheet are a separate chunk
+ * that only loads when a host opens Trends.
+ */
+const TrendingRail = lazy(() =>
+  import('@/features/dashboard/marketing/components/trends/TrendingRail').then((m) => ({
+    default: m.TrendingRail,
+  }))
+);
+const TrendsSheet = lazy(() =>
+  import('@/features/dashboard/marketing/components/trends/TrendsSheet').then((m) => ({
+    default: m.TrendsSheet,
+  }))
+);
 
 function ratioToAspect(ratio: string): string {
   const [w, h] = ratio.split(':');
@@ -234,6 +258,52 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
   const [confirmDelete, setConfirmDelete] = useState<AiVersion | null>(null);
   const [refineAspect, setRefineAspect] = useState<string | null>(null);
   const [refineCamera, setRefineCamera] = useState<VideoCameraMoveId | null>(null);
+
+  // ── Marketing Trends ─────────────────────────────────────────────────────
+  const [searchParams] = useSearchParams();
+  const trendsWindow = readTrendsWindow(searchParams);
+  const [trendsOpen, setTrendsOpen] = useState(false);
+  const [trendsTopicKey, setTrendsTopicKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (trendsWindow) setTrendsOpen(true);
+  }, [trendsWindow]);
+
+  const openTrends = useCallback((topicKey?: string | null) => {
+    setTrendsTopicKey(topicKey ?? null);
+    setTrendsOpen(true);
+    captureAppEvent('trends_opened', { window: trendsWindow ?? 'today', source: 'rail' });
+  }, [trendsWindow]);
+
+  /** The host picked an angle: start a new creation with the topic already applied. */
+  const useTrendAngle = useCallback(
+    (angle: TrendAngle, topic: TrendTopic) => {
+      setPendingAiTrend({
+        topicKey: topic.topicKey,
+        title: topic.title,
+        angle,
+        output: angle.output,
+      });
+      captureAppEvent('trend_angle_used', {
+        topic_key: topic.topicKey,
+        output: angle.output,
+        action: 'make',
+      });
+      setTrendsOpen(false);
+      startAiSession(angle.output);
+    },
+    [startAiSession]
+  );
+
+  /** The host may start this output (permission + plan). */
+  const canStartTrendOutput = useCallback(
+    (output: TrendOutput) => {
+      if (output === 'post') return access.post && planAllowed.post;
+      if (output === 'image') return access.image && planAllowed.image;
+      return access.video && planAllowed.video;
+    },
+    [access, planAllowed]
+  );
 
   const generate = useGenerateMarketingMedia();
   const savePosts = useSavePostVersions();
@@ -334,6 +404,7 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
           sessionId: null,
           prompt: request.prompt || null,
           themeKey: engine.themeKey,
+          trendTopicKey: request.trendTopicKey,
           versions: rendered.map((post) => ({
             spec: post.spec as unknown as Record<string, unknown>,
             goal: request.goal,
@@ -369,6 +440,7 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
       const { job } = await generate.mutateAsync({
         ...request.payload,
         ...(active ? { themeKey: active.key } : {}),
+        ...(request.trendTopicKey ? { trendTopicKey: request.trendTopicKey } : {}),
       });
       setPending((current) => current.map((turn) => ({ ...turn, awaitId: job.id })));
       if (job.sessionId) openCreated(job.sessionId);
@@ -697,8 +769,26 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
             }
             onClearSample={() => startAiSession(newOutput, { replace: true })}
             access={access}
+            trendsRail={
+              <Suspense fallback={null}>
+                <TrendingRail
+                  onOpenTopic={(topicKey) => openTrends(topicKey)}
+                  onSeeAll={() => openTrends(null)}
+                />
+              </Suspense>
+            }
           />
         </div>
+        <Suspense fallback={null}>
+          <TrendsSheet
+            open={trendsOpen}
+            onOpenChange={setTrendsOpen}
+            initialWindow={trendsWindow ?? undefined}
+            initialTopicKey={trendsTopicKey}
+            onUseAngle={useTrendAngle}
+            canGenerate={canStartTrendOutput}
+          />
+        </Suspense>
       </div>
     );
   }
