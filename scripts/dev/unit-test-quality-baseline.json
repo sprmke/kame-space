@@ -65,7 +65,6 @@
     "ui/src/features/dashboard/finance/lib/financeLedger.ts",
     "ui/src/features/dashboard/finance/lib/financePeriod.ts",
     "ui/src/features/dashboard/finance/lib/financeReminderTemplate.ts",
-    "ui/src/features/dashboard/finance/lib/recurrence.ts",
     "ui/src/features/dashboard/help-support/lib/helpContentDisplay.ts",
     "ui/src/features/dashboard/help-support/lib/helpSupportPaths.ts",
     "ui/src/features/dashboard/help-support/lib/supportTicketSchema.ts",
