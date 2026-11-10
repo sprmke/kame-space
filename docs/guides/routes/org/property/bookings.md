@@ -89,6 +89,8 @@ Submission goes through the same `submit-form` edge function and side effects (e
 
 **Entry:** **Import** button in the page header (desktop) or hero icon (mobile). Opens `ImportWizardModal` — no route change. Target property is fixed from the current page context (no property picker).
 
+> **Legal notice:** The Upload step shows "Only import guest data you are allowed to use for running your stays" (links Terms#host-data). Pattern and full list: [legal.md](../../legal.md#in-app-notices).
+
 **Steps:**
 
 1. **Upload** — CSV or Excel (`.csv`, `.xlsx`, `.xls`), max 2,000 rows / 15 MB. Calls `import-parse-file` (CSV via PapaParse; Excel via SheetJS, **first worksheet only**). File is held in storage until commit or cancel. **Continue** stays disabled until the file parses successfully; no toast on success. **Back** from later steps returns here with the same file — use **Replace** to pick a different file.

@@ -12,6 +12,7 @@ import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeMo
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 
 import { FeatureAvailabilityButton } from '@/components/feature-availability/FeatureAvailabilityButton';
+import { MetaConnectLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { Button } from '@/components/ui/button';
 import {
   ResponsiveModal,
@@ -254,6 +255,9 @@ export function InboxChannelsTab({
                     ? 'Connect Facebook Messenger and Instagram DMs'
                     : 'Facebook Messenger + Instagram DMs'}
                 </p>
+                {metaState === 'disconnected' ? (
+                  <MetaConnectLegalNotice className="mt-1.5" />
+                ) : null}
               </div>
             </div>
 

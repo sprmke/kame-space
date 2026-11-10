@@ -2,7 +2,7 @@
 title: 'Guest Messages — redirect'
 status: active
 tags: [guides, routes, account]
-updated: 2026-08-09
+updated: 2026-11-09
 ---
 
 # Guest Messages — redirect
@@ -10,6 +10,8 @@ updated: 2026-08-09
 Route: `/account/messages` → **`/account/stays`**
 
 The guest account hub formerly labeled **Messages** is now **Stays**. See [stays.md](./stays.md).
+
+> **Legal notice:** Before the first message, the composer shows that replies may come from an AI assistant, with a Privacy Policy link. Pattern and full list: [legal.md](../legal.md#in-app-notices).
 
 ## Host-facing knowledge
 

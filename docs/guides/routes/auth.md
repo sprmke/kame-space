@@ -2,7 +2,7 @@
 title: 'Guest & host auth — operator guide'
 status: active
 tags: [guides, routes, auth]
-updated: 2026-11-08
+updated: 2026-11-09
 ---
 
 # Guest & host auth — operator guide
@@ -110,6 +110,8 @@ Guards send unauthenticated hosts to **`hostLoginPath(currentPath)`**.
 There is no password anywhere in this flow. What used to be `/for-hosts/forgot-password`, `/for-hosts/reset-password`, and `/for-hosts/verify-email` no longer exist — those pages only ever supported a password flow that was never real, and passwords aren't part of the model at all now (email OTP already proves email ownership per code entry, the same guarantee a password reset link would give).
 
 ---
+
+> **Legal notice:** Sign-in pages end with the shared sign-in legal line (Terms and Privacy Policy, balanced two lines) under the switch prompt; the guest auth modal shows it under Google. Email step only. Pattern and full list: [legal.md](legal.md#in-app-notices).
 
 ## Host-facing knowledge
 

@@ -43,6 +43,7 @@ import { normalizeVoucherRevealStyle } from '@/features/guest/sd-form/lib/vouche
 import { GuestTripBackLink } from '@/features/guest/trip/components/GuestTripBackLink';
 
 import { GuestFormBrandHeader } from '@/components/branding/GuestFormBrandHeader';
+import { RefundDetailsLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { bottomTabBarOffsetClassName } from '@/components/mobile/BottomTabBar';
 import { ContextualActionBar } from '@/components/mobile/ContextualActionBar';
 import { useAntiSpamSubmit } from '@/components/security/useAntiSpamSubmit';
@@ -717,6 +718,8 @@ function StepTwo({
           </p>
         </div>
       )}
+
+      {method !== 'cash' ? <RefundDetailsLegalNotice /> : null}
 
       <SdRefundStepTwoActions
         isSubmitting={isSubmitting}

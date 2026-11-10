@@ -2,6 +2,7 @@ import posthog from 'posthog-js';
 
 import { shouldAutocapture } from '@/lib/posthog/analyticsMode';
 import { postHogBeforeSend } from '@/lib/posthog/beforeSend';
+import { COOKIE_CONSENT_CHANGED_EVENT, getCookieConsent } from '@/lib/posthog/cookieConsent';
 import {
   detectAnalyticsEnvironment,
   detectAppTrack,
@@ -28,7 +29,13 @@ const sessionReplayEnabled =
   (import.meta.env.VITE_POSTHOG_SESSION_REPLAY as string | undefined)?.trim().toLowerCase() ===
   'true';
 
-if (isPostHogEnabled) {
+let hasStartedPostHog = false;
+
+// Cookie Policy owner decision D1: PostHog never loads until the cookie banner
+// records an "accepted" choice, so no analytics cookie or request happens first.
+function startPostHog(): void {
+  if (hasStartedPostHog || !isPostHogEnabled) return;
+  hasStartedPostHog = true;
   posthog.init(apiKey!, {
     api_host: apiHost,
     defaults: '2026-05-30',
@@ -58,6 +65,21 @@ if (isPostHogEnabled) {
       });
     },
   });
+}
+
+function startPostHogIfConsented(): void {
+  if (getCookieConsent() === 'accepted') startPostHog();
+}
+
+startPostHogIfConsented();
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, startPostHogIfConsented);
+}
+
+/** Configured AND actually running. Capture/identify/group call sites gate on this, not `isPostHogEnabled`. */
+export function isPostHogActive(): boolean {
+  return hasStartedPostHog;
 }
 
 // Singleton. Do not call posthog.init() elsewhere — import this module instead.

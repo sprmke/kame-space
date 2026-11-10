@@ -5,6 +5,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 
 import { GuestOperationalHeader } from '@/features/guest/property/components/GuestOperationalHeader';
 
+import { LegalFooterLinks } from '@/components/legal/LegalFooterLinks';
 import { BottomBarSlotProvider } from '@/components/mobile/BottomBarSlot';
 import {
   BottomTabBar,
@@ -121,6 +122,7 @@ export function MainLayout({
         )}
       >
         <p>{footerText}</p>
+        <LegalFooterLinks className="mt-1" />
       </footer>
     </main>
   );
