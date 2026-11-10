@@ -721,6 +721,9 @@ verify_jwt = false
 [functions.list-organizations]
 verify_jwt = false
 
+[functions.get-session-context]
+verify_jwt = false
+
 [functions.update-organization]
 verify_jwt = false
 

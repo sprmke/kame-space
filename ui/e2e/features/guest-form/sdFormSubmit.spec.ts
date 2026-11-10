@@ -4,7 +4,7 @@ import { mockEdgeFunctions } from '../../shared/interceptEdge';
 
 const BOOKING_ID = 'sd-form-e2e-booking-001';
 
-test.describe('@ci sd form submit smoke', () => {
+test.describe('@ci @critical sd form submit smoke', () => {
   test('READY_FOR_CHECKOUT guest can load SD refund form', async ({ page }) => {
     await mockEdgeFunctions(page, [
       {

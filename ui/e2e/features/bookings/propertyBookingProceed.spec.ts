@@ -15,7 +15,7 @@ import {
   propertyBookingParkingPaths,
 } from '../parking/shared/propertyBookingParkingHarness';
 
-test.describe('@smoke property booking workflow proceed', () => {
+test.describe('@smoke @critical property booking workflow proceed', () => {
   test('host can open booking detail in pending review', async ({ page }) => {
     const parkingState = createParkingFlowState();
     const propertyState = createPropertyBookingParkingState({ linked: false });

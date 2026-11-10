@@ -22,6 +22,7 @@ import {
   Fit,
   Footer,
   Frame,
+  KameSpaceMark,
   Kicker,
   SITE,
   Sub,
@@ -733,7 +734,7 @@ function WordmarkOn() {
         color: c.white,
       }}
     >
-      <Diamond size={17} color={c.mint} />
+      <KameSpaceMark size={24} />
       Kame Space
     </div>
   );
@@ -886,7 +887,7 @@ function Panorama() {
             color: c.white,
           }}
         >
-          <Diamond size={18} color={c.mint} /> Kame Space
+          <KameSpaceMark size={26} mono /> Kame Space
         </div>
       </Box>
       <Box x={84} y={250}>

@@ -42,8 +42,10 @@ run_step "support content parser tests" bun run test:support-content
 run_step "migration versions" bash scripts/dev/check-migration-versions.sh
 run_step "migration security" bash scripts/dev/check-migration-security.sh
 run_step "local seed identity" node scripts/dev/check-seed-identity.mjs
-run_step "unit tests (Vitest)" bun run test
-run_step "unit coverage floor (lib + utils)" bun run test:coverage:lib
+# `test:coverage:lib` runs the whole unit suite (node project) and enforces the floor, so a
+# separate `bun run test` here was a duplicate pass. The dom project is not covered by v8.
+run_step "unit tests + coverage floor (Vitest)" bun run test:coverage:lib
+run_step "dom tests (component/hook)" bun run test:dom
 run_step "edge type check (Deno)" bun run check:edge-types
 run_step "edge unit tests (Deno _shared)" bun run test:edge
 run_step "servePublic rate-limit coverage" bash scripts/dev/check-serve-public-rate-limit.sh
@@ -59,6 +61,8 @@ run_step "playwright lane tags (one tag per spec)" node scripts/dev/check-e2e-la
 run_step "flaky quarantine discipline" node scripts/dev/check-flaky-quarantine.mjs
 run_step "unit test quality (no new export-only tests)" node scripts/dev/check-unit-test-quality.mjs
 run_step "edge handler coverage ratchet" node scripts/dev/check-edge-test-coverage.mjs
+run_step "route guides point at real specs" node scripts/dev/check-guide-spec-refs.mjs
+run_step "migration versions do not collide" bash scripts/dev/check-migration-version-collisions.sh
 run_step "vercel cache/security headers" bash scripts/dev/check-vercel-headers.sh
 run_step "CSP theme script hash (production-readiness doc 22)" bash scripts/dev/check-csp-theme-hash.sh
 run_step "storage upload cacheControl" node scripts/dev/check-storage-cache-control.mjs

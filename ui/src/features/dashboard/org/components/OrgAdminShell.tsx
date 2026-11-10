@@ -2,6 +2,7 @@ import { AdminLayoutOutlet } from '@/features/dashboard/bookings/components/Admi
 import { RequireAdmin } from '@/features/dashboard/bookings/components/RequireAdmin';
 import { OrgPlanLimitedGate } from '@/features/dashboard/org/components/OrgPlanLimitedGate';
 import { RequireOrgNotHardRejected } from '@/features/dashboard/org/components/RequireOrgNotHardRejected';
+import { SessionBootstrapGate } from '@/features/dashboard/org/components/SessionBootstrapGate';
 
 import { useAdminRouteChunkPrefetch } from '@/hooks/useAdminRouteChunkPrefetch';
 
@@ -12,11 +13,13 @@ export function OrgAdminShell() {
 
   return (
     <RequireAdmin>
-      <RequireOrgNotHardRejected>
-        <OrgPlanLimitedGate>
-          <AdminLayoutOutlet />
-        </OrgPlanLimitedGate>
-      </RequireOrgNotHardRejected>
+      <SessionBootstrapGate>
+        <RequireOrgNotHardRejected>
+          <OrgPlanLimitedGate>
+            <AdminLayoutOutlet />
+          </OrgPlanLimitedGate>
+        </RequireOrgNotHardRejected>
+      </SessionBootstrapGate>
     </RequireAdmin>
   );
 }

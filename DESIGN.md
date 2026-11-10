@@ -112,7 +112,7 @@ Guest heroes may use larger tracking-tight headlines; admin stays tighter and qu
 - **Contact placeholders:** every name, email, and phone input uses `FORM_PLACEHOLDERS` (`ui/src/lib/constants/formPlaceholders.ts`): `Ex. Juan Dela Cruz`, `juan.delacruz@gmail.com`, `0917 123 4567`. Never a literal; `formPlaceholders.test.ts` fails on hardcoded ones. Organisation mailboxes (support, team, documents) keep the `@yourcompany.com` pattern.
 - **Cards:** Use only when they contain interaction or a clear grouped control. Prefer flat sections on marketing heroes.
 - **Feedback:** Sonner toasts; inline errors only on failure/validation.
-- **Brand mark:** teal gradient tile (`--primary` → 80% over the page surface) with a white Plus Jakarta Sans Bold **K**, corner radius 30%. Vector sources live in `ui/public/brand/`: `kame-space-mark.svg` (rounded), `kame-space-tile.svg` (full-bleed), `kame-space-mark-mono.svg` (silhouette). Never hand-edit the rasters; regenerate with `node scripts/pwa/generate-icons.mjs`. Google OAuth branding upload is `ui/public/brand/kame-space-mark-120.png`.
+- **Brand mark:** four-piece F5 shell inside a teal rounded container (`#2DAA97`, white and mint pieces). Vector sources live in `ui/public/brand/`: `kame-space-mark.svg` (rounded), `kame-space-tile.svg` (full-bleed), `kame-space-mark-mono.svg` (silhouette), plus `kame-space-lockup-light.svg` and `kame-space-lockup-dark.svg` for the wordmark. Never hand-edit the rasters; regenerate with `node scripts/pwa/generate-icons.mjs`. Google OAuth branding upload is `ui/public/brand/kame-space-mark-120.png`. Social creative renders the same paths from `marketing/social/src/primitives.tsx`.
 
 ## 5. Layout Principles
 

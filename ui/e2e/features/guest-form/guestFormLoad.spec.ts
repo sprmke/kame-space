@@ -7,7 +7,7 @@ import {
   expectNoUnnamedInteractiveControls,
 } from '../../shared/layoutAssertions';
 
-test.describe('@smoke guest form load', () => {
+test.describe('@smoke @critical guest form load', () => {
   test('renders booking form for property-scoped URL', async ({ page }) => {
     await seedSupabaseAuthSession(page, 'guest');
     await installGuestFormMocks(page);

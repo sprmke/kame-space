@@ -4,6 +4,7 @@ import { PropertyPlanLimitedGate } from '@/features/dashboard/org/components/Pro
 import { PropertySettingsIssuesSync } from '@/features/dashboard/org/components/PropertySettingsIssuesSync';
 import { RequireOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { RequireOrgNotHardRejected } from '@/features/dashboard/org/components/RequireOrgNotHardRejected';
+import { SessionBootstrapGate } from '@/features/dashboard/org/components/SessionBootstrapGate';
 
 import { useAdminRouteChunkPrefetch } from '@/hooks/useAdminRouteChunkPrefetch';
 
@@ -14,14 +15,16 @@ export function PropertyAdminShell() {
 
   return (
     <RequireAdmin>
-      <RequireOrgNotHardRejected>
-        <RequireOrgContext>
-          <PropertySettingsIssuesSync />
-          <PropertyPlanLimitedGate>
-            <AdminLayoutOutlet />
-          </PropertyPlanLimitedGate>
-        </RequireOrgContext>
-      </RequireOrgNotHardRejected>
+      <SessionBootstrapGate>
+        <RequireOrgNotHardRejected>
+          <RequireOrgContext>
+            <PropertySettingsIssuesSync />
+            <PropertyPlanLimitedGate>
+              <AdminLayoutOutlet />
+            </PropertyPlanLimitedGate>
+          </RequireOrgContext>
+        </RequireOrgNotHardRejected>
+      </SessionBootstrapGate>
     </RequireAdmin>
   );
 }
