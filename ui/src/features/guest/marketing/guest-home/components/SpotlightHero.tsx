@@ -12,20 +12,31 @@ import { MarketingImage } from '@/features/guest/marketing/shared/components/Mar
 import { usePrefersReducedMotion } from '@/hooks/useMediaQuery';
 
 /**
- * Full-bleed theme art. WebP is a third smaller than the JPEG and every browser that matters
- * supports it, but the JPEG stays as the fallback so an old WebView still gets a hero.
+ * Full-bleed theme art.
+ *
+ * The hero is the LCP element on `/`, so the width matters: the source render is 1672px and
+ * 246 KB, which every phone used to download in full. Pre-rendered width variants let the
+ * browser pick by viewport, which is 27 KB at 480w instead of 246 KB.
+ *
+ * The `<source>` carries the descriptors because a `<picture>` source decides the candidate
+ * set; the JPEG fallback stays for WebViews without WebP and is served only there.
+ * Regenerate the variants with `node scripts/media/generate-hero-variants.mjs`.
  */
+const HERO_WIDTHS = [480, 800, 1200] as const;
+const HERO_SIZES = '(min-width: 1280px) 1280px, 100vw';
+
 function HeroArt({ src, priority }: { src: string; priority?: boolean }) {
   const shared = {
     alt: '',
     width: HERO_IMAGE_WIDTH,
     height: HERO_IMAGE_HEIGHT,
-    sizes: '(min-width: 1280px) 1280px, 100vw',
+    sizes: HERO_SIZES,
     className: 'absolute inset-0 h-full w-full object-cover object-[50%_45%]',
   };
+  const webpSrcSet = HERO_WIDTHS.map((width) => `${src}-${width}.webp ${width}w`).join(', ');
   return (
     <picture>
-      <source srcSet={`${src}.webp`} type="image/webp" />
+      <source srcSet={webpSrcSet} sizes={HERO_SIZES} type="image/webp" />
       <MarketingImage {...shared} src={`${src}.jpg`} priority={priority} />
     </picture>
   );
