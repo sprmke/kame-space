@@ -1,5 +1,7 @@
 import { mockEdgeFunctions } from '../../../shared/interceptEdge';
 
+import { guestTripMock } from './guestTripMock';
+
 import type { Page } from '@playwright/test';
 
 function manilaTodayYmd(): string {
@@ -166,6 +168,14 @@ export async function installGuestFormMocks(page: Page, options: GuestFormMockOp
       name: 'submit-form',
       method: 'POST',
       body: { success: true, bookingId: 'guest-form-e2e-booking-001' },
+    },
+    {
+      name: 'get-guest-trip',
+      body: { success: true, data: guestTripMock() },
+    },
+    {
+      name: 'get-public-property',
+      body: { success: true, data: null },
     },
   ]);
 }

@@ -74,7 +74,7 @@ function PaymentMethodRow({ method }: { method: GuestPaymentMethod }) {
 function depositStatus(trip: GuestTrip, phase: GuestTripPhase): string | null {
   if (trip.payment.isAirbnb || !positive(trip.payment.securityDeposit)) return null;
   if (trip.refund.amount != null) return `Refunded ${formatMoney(trip.refund.amount)}`;
-  if (phase === 'refund_pending') return 'Refund in progress';
+  if (phase === 'refund_pending') return 'Deposit refund';
   if (phase === 'checked_out') {
     return trip.actions.sdFormAvailable ? 'Send your refund details' : 'Refund pending';
   }

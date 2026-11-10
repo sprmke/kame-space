@@ -8,6 +8,7 @@ import type { GuestFormData, GuestSubmission } from './types.ts';
 import {
   buildBookingLinkCtaHtml,
   buildBookingAcknowledgementFlowSectionHtml,
+  buildBookingRequestReceivedFlowSectionHtml,
   buildDocumentRemindersSectionFromBooking,
   buildDownpaymentReceiptAiSectionFromBooking,
   buildEmailSignatureSectionHtml,
@@ -28,6 +29,8 @@ import {
   computeReadyForCheckinTotalDue,
 } from './propertyTemplateEmailSections.ts';
 import { formatDateForEmail } from './utils.ts';
+import { guestJourneyReviewExpectation } from './guestJourneyCopy.ts';
+import { resolvePropertyMedianFirstResponseHours } from './guestResponseTime.ts';
 import { resolveAppSettings } from './appSettings.ts';
 import { buildGuestFacingPlaceholderVars, loadGuestFacingContactInfo } from './guestContactInfo.ts';
 import {
@@ -746,6 +749,72 @@ export async function sendNewBookingRequestNotify(booking: GuestSubmission) {
     '| to: EMAIL_REPLY_TO from property app_settings (check spam / Resend dashboard if inbox empty)'
   );
   return body;
+}
+
+/**
+ * Booking request received — sent to the **guest** right after they submit, while the
+ * booking is still `PENDING_REVIEW`.
+ *
+ * Not a workflow transition (no status change), so it does not go through
+ * `workflowOrchestrator`. It reuses `emailService` and the per-property template
+ * `email-booking-request-received`; the host can turn it off in Notifications.
+ */
+export async function sendBookingRequestReceived(booking: GuestSubmission) {
+  console.log('Sending booking request received email to guest...');
+
+  if (await isEmailSuppressed(booking.guest_email)) {
+    console.warn('[emailService] Skipping booking request received - guest email is suppressed');
+    return { skipped: true, reason: 'suppressed' };
+  }
+
+  const propertyId = resolveEmailPropertyId(booking);
+  const { EMAIL_REPLY_TO, settings } = await getResendCredentials(propertyId);
+  const { branding, unitLabel, displayCheckInDate, displayCheckOutDate } =
+    await loadBookingEmailDisplayContext(propertyId, booking);
+
+  const guestName = String(booking.guest_facebook_name ?? '').trim() || 'Guest';
+  const guestContact = await loadGuestFacingContactInfo(propertyId, settings);
+  const guestLinkExtras = await loadGuestBookingEmailLinkExtras(booking, settings);
+
+  const html = await renderPropertyTemplateSendEmail({
+    propertyId,
+    templateKey: 'email-booking-request-received',
+    emailTitle: `Request received, ${guestName}`,
+    placeholderVars: buildBookingPlaceholderVars(
+      booking,
+      settings,
+      {
+        ...guestLinkExtras,
+        ...buildGuestFacingPlaceholderVars(guestContact),
+        booking_request_received_flow_section: buildBookingRequestReceivedFlowSectionHtml({
+          brandColor: settings.brandColor,
+          reviewExpectation: guestJourneyReviewExpectation(
+            await resolvePropertyMedianFirstResponseHours(propertyId)
+          ),
+          contact: guestContact,
+          tripUrl: guestLinkExtras.trip_url,
+        }),
+        email_signature_section: buildEmailSignatureSectionHtml(settings.gafUnitOwner, unitLabel),
+      },
+      branding
+    ),
+    branding,
+  });
+
+  const sent = await sendResendEmail({
+    from: formatResendFromAddress(
+      `${unitLabel} - ${branding.organizationName}`,
+      branding.fromEmail
+    ),
+    to: [booking.guest_email],
+    reply_to: EMAIL_REPLY_TO,
+    subject: `${unitLabel} - Booking Request Received ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    html,
+    errorLabel: 'email',
+  });
+
+  console.log('Booking request received email sent successfully');
+  return sent;
 }
 
 /**

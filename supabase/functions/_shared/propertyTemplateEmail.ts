@@ -40,6 +40,7 @@ export const PROPERTY_EMAIL_TEMPLATE_KEYS = [
   'email-pet-request',
   'email-parking-request',
   'email-new-booking-request',
+  'email-booking-request-received',
   'email-booking-acknowledgement',
   'email-ready-for-checkin',
   'email-sd-refund-form-request',

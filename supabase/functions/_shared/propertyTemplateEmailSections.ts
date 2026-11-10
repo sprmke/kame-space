@@ -34,6 +34,7 @@ export const EMAIL_DYNAMIC_SECTION_KEYS = [
   'parking_reply_callout_section',
   'email_signature_section',
   'booking_acknowledgement_flow_section',
+  'booking_request_received_flow_section',
   'ready_for_checkin_booking_summary_section',
   'ready_for_checkin_contact_section',
   'stay_guide_cta_section',
@@ -77,6 +78,10 @@ export const DYNAMIC_SECTIONS_BY_TEMPLATE: Record<string, EmailDynamicSectionKey
   ],
   'email-booking-acknowledgement': [
     'booking_acknowledgement_flow_section',
+    'email_signature_section',
+  ],
+  'email-booking-request-received': [
+    'booking_request_received_flow_section',
     'email_signature_section',
   ],
   'email-ready-for-checkin': [
@@ -336,6 +341,36 @@ function buildAcknowledgementStepCard(
 
 function stepRowGap(): string {
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td style="height:12px;line-height:12px;font-size:0;">&nbsp;</td></tr></table>`;
+}
+
+/**
+ * "Request received" flow section — sent right after a guest submits, while the booking is
+ * still `PENDING_REVIEW`. Deliberately does not say "confirmed" and does not mention GAF:
+ * the host may not require any document (plan D10, finding B4).
+ */
+export function buildBookingRequestReceivedFlowSectionHtml(input: {
+  brandColor: string;
+  /** How long a host usually takes to answer, e.g. "Most hosts reply within a day". */
+  reviewExpectation: string;
+  /** Guest trip page. Button omitted when empty. */
+  tripUrl?: string | null;
+  /** Guest-facing contact mentions, so the guest can reply while waiting. */
+  contact: GuestFacingContactInfo;
+}): string {
+  const socialMentions = buildSocialContactMentionsHtml(input.contact, input.brandColor);
+  const expectation = escapeHtml(input.reviewExpectation);
+  const step1 = buildAcknowledgementStepCard(
+    1,
+    `Your host is reviewing your request. ${expectation}.`,
+    input.brandColor
+  );
+  const step2 = buildAcknowledgementStepCard(
+    2,
+    `We will email you as soon as it is confirmed. You can reply to this email or ${socialMentions} if you need to update anything.`,
+    input.brandColor
+  );
+  const tripCta = buildGuestTripCtaHtml(input.tripUrl, input.brandColor);
+  return `${notifySectionTitle("What's next", input.brandColor)}${step1}${stepRowGap()}${step2}${tripCta}`;
 }
 
 export function buildBookingAcknowledgementFlowSectionHtml(input: {
@@ -1006,6 +1041,15 @@ export function buildSampleDynamicSections(input: {
           parkingUrl: 'https://example.com/parkings',
           tripUrl: `${input.settings.publicGuestAppOrigin}/properties/sample-unit/trip?bookingId=sample`,
         });
+        break;
+      case 'booking_request_received_flow_section':
+        out.booking_request_received_flow_section =
+          buildBookingRequestReceivedFlowSectionHtml({
+            brandColor,
+            reviewExpectation: 'Most hosts reply within a day',
+            contact: sampleContact,
+            tripUrl: `${input.settings.publicGuestAppOrigin}/properties/sample-unit/trip?bookingId=sample`,
+          });
         break;
       case 'ready_for_checkin_booking_summary_section':
         out.ready_for_checkin_booking_summary_section =

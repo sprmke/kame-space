@@ -76,6 +76,7 @@ const PROPERTY_SECTION_KEYS = [
   'parking_reply_callout_section',
   'email_signature_section',
   'booking_acknowledgement_flow_section',
+  'booking_request_received_flow_section',
   'ready_for_checkin_booking_summary_section',
   'ready_for_checkin_contact_section',
   'stay_guide_cta_section',
@@ -173,6 +174,13 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
     PROPERTY_GUEST_CONTACT_KEYS,
     PROPERTY_GUEST_LINK_KEYS,
     ['booking_acknowledgement_flow_section', 'email_signature_section']
+  ),
+  'email-booking-request-received': uniqueKeys(
+    PROPERTY_EMAIL_CORE,
+    PROPERTY_BOOKING_META_KEYS,
+    PROPERTY_GUEST_CONTACT_KEYS,
+    PROPERTY_GUEST_LINK_KEYS,
+    ['booking_request_received_flow_section', 'email_signature_section']
   ),
   'email-ready-for-checkin': uniqueKeys(
     PROPERTY_EMAIL_WITH_PAYMENT,

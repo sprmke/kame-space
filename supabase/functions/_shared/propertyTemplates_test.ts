@@ -23,6 +23,7 @@ Deno.test('live email templates are still listed', () => {
     'email-gaf-request',
     'email-pet-request',
     'email-new-booking-request',
+    'email-booking-request-received',
     'email-booking-acknowledgement',
     'email-ready-for-checkin',
     'email-sd-refund-form-request',

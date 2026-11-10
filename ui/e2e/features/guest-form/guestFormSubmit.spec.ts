@@ -8,7 +8,7 @@ import { seedSupabaseAuthSession } from '../../shared/authSeam';
 const VALID_ID_FIXTURE = path.join(process.cwd(), 'ui/public/icons/pwa-192.png');
 
 test.describe('@smoke @critical guest form submit', () => {
-  test('Airbnb guest can submit mocked form and reach success', async ({ page }) => {
+  test('Airbnb guest can submit mocked form and land on the trip page', async ({ page }) => {
     test.setTimeout(60_000);
 
     await seedSupabaseAuthSession(page, 'guest');
@@ -46,6 +46,11 @@ test.describe('@smoke @critical guest form submit', () => {
     const submit = page.getByRole('button', { name: 'Submit guest form' });
     await expect(submit).toBeEnabled({ timeout: 10_000 });
     await submit.click();
-    await expect(page.getByText('Booking Confirmed!')).toBeVisible({ timeout: 30_000 });
+
+    // The guest lands on their trip page, which says the request was sent — never
+    // "confirmed", because the booking is still under review (plan D1, finding B1).
+    await expect(page).toHaveURL(/\/properties\/solea-mactan\/trip\?/, { timeout: 30_000 });
+    await expect(page.getByText('Request sent').first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText('Booking Confirmed!')).toHaveCount(0);
   });
 });

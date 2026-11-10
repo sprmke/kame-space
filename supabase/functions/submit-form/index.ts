@@ -2,7 +2,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { minutesBetweenTimes } from '../_shared/cleaningBuffer.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { DatabaseService } from '../_shared/databaseService.ts';
-import { sendNewBookingRequestNotify } from '../_shared/emailService.ts';
+import { sendBookingRequestReceived, sendNewBookingRequestNotify } from '../_shared/emailService.ts';
 import { resolveGuestFormSettings } from '../_shared/guestFormSettings.ts';
 import { propertyAutomationEnabled } from '../_shared/propertyAutomationToggles.ts';
 import { notifyTelegramNewBookingRequest } from '../_shared/telegramMarketing.ts';
@@ -482,6 +482,29 @@ serve(async (req) => {
     }
 
     if (isNewGuestSubmission && isSaveToDatabaseEnabled && submissionData?.id) {
+      // Guest receipt for the request (plan D10). Not a workflow transition — no status
+      // change, so it does not go through the orchestrator. Only for genuine new
+      // submissions: an edit or a no-op re-submit must not send a second receipt.
+      const guestReceiptAllowed = await propertyAutomationEnabled(
+        propertyId,
+        'emailBookingRequestReceived'
+      );
+      if (guestReceiptAllowed) {
+        try {
+          const receiptResult = await sendBookingRequestReceived({
+            ...notifyBooking,
+            property_id: notifyBooking.property_id ?? propertyId,
+          });
+          console.log(
+            '[submit-form] Guest booking request receipt ok, Resend id:',
+            (receiptResult as { id?: string })?.id ?? JSON.stringify(receiptResult)
+          );
+        } catch (receiptErr) {
+          console.error('[submit-form] Guest booking request receipt failed (non-fatal):', receiptErr);
+        }
+      } else {
+        console.log('[submit-form] Guest booking request receipt skipped (org automation off)');
+      }
       try {
         await notifyTelegramNewBookingRequest({ propertyId });
       } catch (tgErr) {

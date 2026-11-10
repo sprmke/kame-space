@@ -5,6 +5,8 @@ import {
   guestFormPath,
   guestPropertyPath,
   guestSuccessPath,
+  guestTripPath,
+  guestTripWelcomePath,
 } from '@/features/guest/lib/guestPublicPaths';
 
 describe('guestPublicPaths', () => {
@@ -17,5 +19,17 @@ describe('guestPublicPaths', () => {
 
   it('returns /properties when slug empty', () => {
     expect(guestPropertyPath('')).toBe('/properties');
+  });
+
+  it('builds the trip path with the booking id', () => {
+    expect(guestTripPath('solea-mactan', 'booking-1')).toBe(
+      '/properties/solea-mactan/trip?bookingId=booking-1'
+    );
+  });
+
+  it('marks the first trip view after a submission', () => {
+    expect(guestTripWelcomePath('solea-mactan', 'booking-1')).toBe(
+      '/properties/solea-mactan/trip?bookingId=booking-1&welcome=1'
+    );
   });
 });

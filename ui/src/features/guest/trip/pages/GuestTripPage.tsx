@@ -38,6 +38,7 @@ import { GuestTripDetailsSection } from '@/features/guest/trip/components/GuestT
 import { GuestTripHostRow } from '@/features/guest/trip/components/GuestTripHostRow';
 import { GuestTripNowCard } from '@/features/guest/trip/components/GuestTripNowCard';
 import { GuestTripPaymentSection } from '@/features/guest/trip/components/GuestTripPaymentSection';
+import { GuestTripRequestSentBanner } from '@/features/guest/trip/components/GuestTripRequestSentBanner';
 import { GuestTripReviewCard } from '@/features/guest/trip/components/GuestTripReviewCard';
 import {
   GuestTripShortcuts,
@@ -153,6 +154,8 @@ export function GuestTripPage() {
   const { status: authStatus, email, requireGuestAuth } = useGuestAuth();
   const bookingId = (searchParams.get('bookingId') ?? '').trim();
   const accessParam = searchParams.get('access')?.trim() ?? '';
+  // `?welcome=1` marks the first view right after a submission (plan D1).
+  const welcome = searchParams.get('welcome') === '1';
   usePageMeta({ noindex: true });
 
   // Email links carry `?access=`: keep it in this tab's session and drop it from the URL.
@@ -240,6 +243,7 @@ export function GuestTripPage() {
       trip={tripQuery.data}
       property={propertyQuery.data ?? null}
       paymentMethods={paymentInfo?.paymentMethods ?? []}
+      showWelcome={welcome}
     />
   );
 }
@@ -261,6 +265,7 @@ function shortDate(iso: string | null): string | null {
 
 /** Phase decides which shortcuts matter; the primary action is never repeated as a tile. */
 const SHORTCUT_ORDER: Record<GuestTripPhase, string[]> = {
+  // While the host reviews, the guest can edit the request or reach the host directly.
   requested: ['edit', 'call', 'listing'],
   confirmed: ['calendar', 'directions', 'message', 'call'],
   arriving: ['calendar', 'directions', 'message', 'call'],
@@ -278,10 +283,13 @@ function GuestTripContent({
   trip,
   property,
   paymentMethods,
+  showWelcome,
 }: {
   trip: GuestTrip;
   property: ResolvedPropertyDetail | null;
   paymentMethods: GuestPaymentMethod[];
+  /** First view right after a submission: show the "Request sent" banner. */
+  showWelcome: boolean;
 }) {
   const today = getManilaYmdToday();
   const timing = guestTripTiming(trip.stay.checkInDate, trip.stay.checkOutDate, today);
@@ -382,7 +390,13 @@ function GuestTripContent({
         ? { key: 'guide', label: 'Stay guide', Icon: BookOpen, to: trip.stayGuidePath }
         : null,
       edit: trip.actions.canEditBooking
-        ? { key: 'edit', label: 'Edit booking', Icon: Pencil, to: guestTripEditBookingPath(trip) }
+        ? {
+            key: 'edit',
+            // While the host reviews, the guest is editing their request, not a confirmed stay.
+            label: phase === 'requested' ? 'Edit request' : 'Edit booking',
+            Icon: Pencil,
+            to: guestTripEditBookingPath(trip),
+          }
         : null,
       listing: {
         key: 'listing',
@@ -466,6 +480,13 @@ function GuestTripContent({
         </div>
 
         <div className="mt-10 space-y-6 lg:mt-0">
+          {showWelcome && phase === 'requested' ? (
+            <GuestTripRequestSentBanner
+              guestEmail={trip.stay.email}
+              propertyName={trip.property.name}
+            />
+          ) : null}
+
           <GuestTripPaymentSection trip={trip} phase={phase} paymentMethods={paymentMethods} />
 
           <GuestTripCancellationSection trip={trip} />

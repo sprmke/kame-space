@@ -112,7 +112,7 @@ export function isGuestTripActive(phase: GuestTripPhase): boolean {
 // ---------------------------------------------------------------------------------------------
 
 export const GUEST_TRIP_STEPS = [
-  'Requested',
+  'Request sent',
   'Confirmed',
   'Check-in',
   'Stay',
@@ -245,7 +245,7 @@ export function guestTripHeadline(input: GuestTripHeadlineInput): GuestTripHeadl
       };
     case 'refund_pending':
       return {
-        kicker: 'Refund in progress',
+        kicker: 'Deposit refund',
         title: 'Your host is processing your deposit refund',
         body: null,
         tone: 'info',

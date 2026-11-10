@@ -1,29 +1,18 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 
-import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { Users, User, PawPrint, Mail, Phone, Info, Car } from 'lucide-react';
+import { Users, User, Mail, Phone, Info } from 'lucide-react';
 
 import {
   DEFAULT_GUEST_PAYMENT_INFO,
   useGuestPaymentInfo,
 } from '@/features/guest/form/hooks/useGuestPaymentInfo';
 import { bookingSourceFromUrlSearchParams } from '@/features/guest/form/lib/bookingSourceFromSearchParams';
-import {
-  formatGuestMessengerReturn,
-  formatGuestSuccessAdministration,
-  pickGuestBrandHeaderProps,
-} from '@/features/guest/form/lib/guestFormBranding';
+import { pickGuestBrandHeaderProps } from '@/features/guest/form/lib/guestFormBranding';
 import { useGuestPropertySlug } from '@/features/guest/hooks/useGuestPropertySlug';
-import {
-  guestCalendarPath,
-  guestParkingFindPath,
-  guestParkingOwnDefaultPath,
-  guestTripPath,
-} from '@/features/guest/lib/guestPublicPaths';
-import { fetchPayParking } from '@/features/guest/pay-parking/lib/api';
+import { guestCalendarPath, guestTripPath } from '@/features/guest/lib/guestPublicPaths';
 import { GuestStayDateRangeDisplay } from '@/features/guest/property/components/GuestStayDateRangeDisplay';
 
 import { GuestFormBrandHeader } from '@/components/branding/GuestFormBrandHeader';
@@ -49,53 +38,39 @@ interface BookingData {
   guestPhoneNumber: string;
 }
 
+/**
+ * Legacy confirmation page.
+ *
+ * A new submission lands on the trip page instead (plan D1) — the trip page is the single
+ * home for a booking and never says "confirmed" before the host proceeds. This route stays
+ * for old links: it redirects to the trip when the booking is known, and otherwise shows a
+ * minimal "Request sent" card with a way to sign in and see the trip.
+ */
 export function GuestFormSuccess() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const propertySlug = useGuestPropertySlug();
-  const bookingId = searchParams.get('bookingId');
+  const bookingId = searchParams.get('bookingId')?.trim() ?? '';
   const bookingData = location.state?.bookingData as BookingData | undefined;
   const { data: guestBrand = DEFAULT_GUEST_PAYMENT_INFO } = useGuestPaymentInfo();
   const brandHeader = pickGuestBrandHeaderProps(guestBrand);
   const organizationName = guestBrand.organizationName?.trim() || 'us';
-  const administrationLabel = formatGuestSuccessAdministration(guestBrand.residenceName);
   const bookingSource = bookingSourceFromUrlSearchParams(searchParams);
   const isAirbnb = bookingSource === 'Airbnb';
   const isFacebook = bookingSource === 'Facebook';
-  const messengerReturn = formatGuestMessengerReturn(isAirbnb, isFacebook);
 
-  const parkingFindQuery = useQuery({
-    queryKey: ['guest-success-parking-find', bookingId],
-    queryFn: () => fetchPayParking(bookingId as string),
-    enabled: Boolean(bookingId && bookingData?.needParking),
-    staleTime: 60_000,
-    retry: false,
-  });
-
-  const parkingFindPath = useMemo(() => {
-    if (!bookingId) return '/parkings';
-    const data = parkingFindQuery.data;
-    const ownSlug = data?.owner_default_parking_slug?.trim();
-    if (ownSlug) {
-      return guestParkingOwnDefaultPath({
-        parkingSlug: ownSlug,
-        bookingId,
-        checkInDate: data?.owner_default_check_in,
-        checkOutDate: data?.owner_default_check_out,
-      });
-    }
-    return guestParkingFindPath({
-      bookingId,
-      locationSlug: data?.city_location_slug,
-    });
-  }, [bookingId, parkingFindQuery.data]);
-
-  // Redirect to root if no booking ID
+  // A known booking goes straight to its trip page.
   useEffect(() => {
-    if (!bookingId) {
-      navigate(propertySlug ? guestCalendarPath(propertySlug) : '/properties', { replace: true });
-    }
+    if (!bookingId) return;
+    if (!propertySlug) return;
+    navigate(guestTripPath(propertySlug, bookingId), { replace: true });
+  }, [bookingId, navigate, propertySlug]);
+
+  // No booking id at all: send the guest back to browse.
+  useEffect(() => {
+    if (bookingId) return;
+    navigate(propertySlug ? guestCalendarPath(propertySlug) : '/properties', { replace: true });
   }, [bookingId, navigate, propertySlug]);
 
   // Calculate number of nights
@@ -125,7 +100,7 @@ export function GuestFormSuccess() {
   return (
     <div className="guest-inner-enter public-section-y relative flex flex-col items-center justify-center px-5 text-center">
       <div className="w-full max-w-xl space-y-6 md:space-y-8">
-        <GuestFormBrandHeader {...brandHeader} title="Booking Confirmed!" />
+        <GuestFormBrandHeader {...brandHeader} title="Request sent" />
         <p className="text-muted-foreground public-lead">
           Thank you for booking with <strong className="text-primary">{organizationName}</strong>!
         </p>
@@ -241,48 +216,6 @@ export function GuestFormSuccess() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Parking interest (Phase 7) - self-serve marketplace, not part of this total */}
-                  {bookingData.needParking && (
-                    <div className="border-t pt-5">
-                      <div className="border-primary/20 bg-primary/5 flex items-start gap-4 rounded-lg border p-4">
-                        <div className="bg-primary/10 rounded-lg p-2">
-                          <Car className="text-primary h-5 w-5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-foreground mb-1 text-sm font-bold">Need parking?</p>
-                          <p className="text-muted-foreground text-sm">
-                            Reserve and pay for a spot separately, once you're signed in as a guest.
-                          </p>
-                          <Link
-                            to={parkingFindPath}
-                            className="text-primary mt-2 inline-block text-sm font-semibold underline underline-offset-2"
-                          >
-                            Find parking near your stay
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Pet Information */}
-                  {bookingData.hasPets && bookingData.petName && (
-                    <div className="border-t pt-5">
-                      <div className="flex items-start gap-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/20">
-                        <div className="rounded-lg bg-amber-100 p-2 dark:bg-amber-900/40">
-                          <PawPrint className="h-5 w-5 text-amber-700 dark:text-amber-500" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="mb-1 text-xs font-medium uppercase text-amber-700 dark:text-amber-500">
-                            Bringing Pet
-                          </p>
-                          <p className="text-base font-bold text-amber-900 dark:text-amber-400">
-                            {bookingData.petName}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -300,14 +233,16 @@ export function GuestFormSuccess() {
             </div>
             <div className="text-foreground dark:text-foreground space-y-2 text-sm leading-relaxed">
               <p>
-                We will now review your booking request. Please wait for our booking acknowledgment
-                email. Once confirmed, we will forward your Guest Advice Form (GAF) to the{' '}
-                {administrationLabel} for approval.
+                Your host is reviewing this booking request. We will email you once it is
+                confirmed.
               </p>
-              <p>
-                <span className="font-semibold">{messengerReturn}</span> to review our policies and
-                important reminders, or if you need to update your booking details.
-              </p>
+              {isAirbnb ? (
+                <p>Keep your conversation on Airbnb open for any questions.</p>
+              ) : isFacebook ? (
+                <p>Keep your conversation on Facebook open for any questions.</p>
+              ) : (
+                <p>Message your host from the booking page for any questions.</p>
+              )}
               <p className="pt-1 font-medium">See you soon!</p>
             </div>
           </div>

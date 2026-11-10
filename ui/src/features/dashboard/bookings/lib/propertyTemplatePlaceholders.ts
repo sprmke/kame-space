@@ -51,6 +51,7 @@ export const PROPERTY_TEMPLATE_PLACEHOLDERS_REFERENCE: readonly string[] = [
   '{{parking_reply_callout_section}}: parking reply-with-rate callout',
   '{{email_signature_section}}: Best regards sign-off (unit owner from settings)',
   '{{booking_acknowledgement_flow_section}}: summary + What’s next steps',
+  '{{booking_request_received_flow_section}}: What’s next steps (booking request email)',
   '{{ready_for_checkin_booking_summary_section}}: booking summary table',
   '{{ready_for_checkin_contact_section}}: contact us block (property/org social + contact)',
   '{{new_booking_detail_tables}}: stay/guest/notable detail tables (new booking email)',

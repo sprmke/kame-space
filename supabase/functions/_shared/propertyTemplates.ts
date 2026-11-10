@@ -18,6 +18,7 @@ export type PropertyTemplateKey =
   | 'email-gaf-request'
   | 'email-pet-request'
   | 'email-new-booking-request'
+  | 'email-booking-request-received'
   | 'email-booking-acknowledgement'
   | 'email-ready-for-checkin'
   | 'email-sd-refund-form-request'
@@ -195,6 +196,17 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
 <p>{{new_booking_detail_tables}}</p>
 <p>{{downpayment_receipt_ai_section}}</p>
 <p>{{booking_link_cta}}</p>`,
+  },
+  {
+    key: 'email-booking-request-received',
+    label: 'Booking Request Received',
+    description: 'Guest email right after a booking request is submitted.',
+    category: 'email',
+    defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
+<p>We received your booking request for <strong>{{property_name}}</strong> from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong>.</p>
+<p>Your host is reviewing it now. We will email you as soon as it is confirmed.</p>
+<p>{{booking_request_received_flow_section}}</p>
+<p>{{email_signature_section}}</p>`,
   },
   {
     key: 'email-booking-acknowledgement',
