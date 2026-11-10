@@ -6,6 +6,7 @@
     "jsr:@std/internal@^1.0.12": "1.0.14",
     "npm:dayjs@1.11.10": "1.11.10",
     "npm:papaparse@5.4.1": "5.4.1",
+    "npm:tslib@2.8.1": "2.8.1",
     "npm:zod@3.23.8": "3.23.8"
   },
   "jsr": {
@@ -25,6 +26,9 @@
     },
     "papaparse@5.4.1": {
       "integrity": "sha512-HipMsgJkZu8br23pW15uvo6sib6wne/4woLZPlFf3rpDyMe9ywEXUsuD7+6K9PRkJlVT51j/sCOYDKGGS3ZJrw=="
+    },
+    "tslib@2.8.1": {
+      "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="
     },
     "zod@3.23.8": {
       "integrity": "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g=="
@@ -328,6 +332,7 @@
     "dependencies": [
       "npm:dayjs@1.11.10",
       "npm:papaparse@5.4.1",
+      "npm:tslib@2.8.1",
       "npm:zod@3.23.8"
     ]
   }
