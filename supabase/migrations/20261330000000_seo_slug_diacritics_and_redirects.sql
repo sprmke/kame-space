@@ -144,3 +144,10 @@ $$;
 
 COMMENT ON FUNCTION public.resolve_listing_slug_redirect(text, text) IS
   'Current slug for a renamed listing, or no row when the slug is not a known redirect.';
+
+-- Both functions are SECURITY DEFINER: the trigger writes slug history regardless of the
+-- caller's grants, and the resolver reads a service-role-only table. Nothing but the edge
+-- functions may call them.
+REVOKE ALL ON FUNCTION public.record_listing_slug_change() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.resolve_listing_slug_redirect(text, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.resolve_listing_slug_redirect(text, text) TO service_role;

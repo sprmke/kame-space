@@ -345,7 +345,7 @@ Public listing URLs are derived from the display name: `properties.slug`, `parki
 | **No mass renames** | Existing slugs were not rewritten when the diacritic rule landed. Only new listings and future renames use it.                                                                                                                                                                                                                                                         |
 | **Host copy**       | Property Settings shows the slug read-only with "Renaming the property changes this link. Old links keep working."                                                                                                                                                                                                                                                     |
 
-Migration: `20261328000000_seo_slug_diacritics_and_redirects.sql`. Runbook: [`archive/operations/migration-runbook.md`](archive/operations/migration-runbook.md).
+Migration: `20261330000000_seo_slug_diacritics_and_redirects.sql`. Runbook: [`archive/operations/migration-runbook.md`](archive/operations/migration-runbook.md).
 
 ## Operational guest branding (public property flows)
 

@@ -857,14 +857,12 @@ function siteJsonLdNodes(deps: SeoMiddlewareDeps, siteOrigin: string) {
       name: deps.siteName,
       url: `${siteOrigin}/`,
       logo,
-      alternateName: 'Kame Homes',
       sameAs: deps.socialLinks ?? [],
       email: deps.supportEmail ?? null,
     }),
     buildWebSiteJsonLd({
       name: deps.siteName,
       url: `${siteOrigin}/`,
-      alternateName: 'Kame Homes',
     }),
   ];
 }

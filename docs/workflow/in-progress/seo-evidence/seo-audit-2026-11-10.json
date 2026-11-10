@@ -91,7 +91,7 @@
     {
       "level": "warning",
       "code": "orphan",
-      "message": "/properties/kame-home has no inbound internal link in the audited set"
+      "message": "/properties/<listing> has no inbound internal link in the audited set"
     },
     {
       "level": "warning",
@@ -566,7 +566,7 @@
       ]
     },
     {
-      "url": "https://kamespace.com/properties/kame-home",
+      "url": "https://kamespace.com/properties/<listing>",
       "status": 200,
       "redirectTo": null,
       "title": "Kame Space",

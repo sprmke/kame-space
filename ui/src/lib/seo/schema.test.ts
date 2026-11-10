@@ -47,10 +47,10 @@ describe('buildWebSiteJsonLd', () => {
     const site = buildWebSiteJsonLd({
       name: 'Kame Space',
       url: 'https://kamespace.com/',
-      alternateName: 'Kame Homes',
+      alternateName: 'Former Name',
     });
     expect(site['@type']).toBe('WebSite');
-    expect(site.alternateName).toBe('Kame Homes');
+    expect(site.alternateName).toBe('Former Name');
   });
 });
 

@@ -865,7 +865,7 @@ Replaces `public.list_bookings_page` so org-wide and scoped-assigned booking lis
 
 Verify with an org that has a pending parking request: open the org Bookings list and confirm it appears before a host accepts.
 
-### SEO slug diacritics and rename redirects (`20261328000000_seo_slug_diacritics_and_redirects.sql`)
+### SEO slug diacritics and rename redirects (`20261330000000_seo_slug_diacritics_and_redirects.sql`)
 
 1. **`pls_slugify_name`** — now normalizes to NFD and drops combining marks before slugging, so `Parañaque` becomes `paranaque` instead of `para-aque`. Safe to re-run. It does **not** rewrite existing rows; run `SELECT public.pls_refresh_all_listing_search()` (or wait for the next trigger) only if you want place groupings to pick up the new rule for new listings.
 2. **`listing_slug_redirects`** — new table keyed by `(family, old_slug)` with `listing_id`. RLS on, no policies: service-role reads through edge functions only.
