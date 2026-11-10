@@ -279,6 +279,60 @@ plausible-sounding changes that either did nothing or made the app slower.
 
 ---
 
+## 11. Authenticated dashboard boot, first real measurement
+
+**Date:** 2026-11-11. Production, signed in as the probe account, 390x844, 4x CPU throttle.
+Median of three warm runs, read from the Phase 0.1 boot marks.
+
+| Metric                                              | Value       |
+| --------------------------------------------------- | ----------- |
+| First render                                        | 134 ms      |
+| Full-screen loader visible                          | **1754 ms** |
+| Content ready (`route:content`)                     | **4201 ms** |
+| **Authenticated edge calls for one dashboard load** | **24**      |
+
+The 24 calls, in order: `get-public-platform-status`, `get-session-context`, `app-settings`,
+`org-settings`, `org-plan`, `list-parkings`, `notifications-list`, `org-access`,
+`get-feature-availability`, `property-lifecycle`, `dashboard-assistant-settings`,
+`user-ui-preferences`, `guest-profile`, `list-host-announcements`, `dashboard-stats`,
+`property-team-members`, `property-team-invitations`, `property-team-custom-roles`,
+`maintenance-summary`, `maintenance-items`, `finance-line-items`, `finance-bookings`,
+`list-bookings`.
+
+This is the number the plan has been missing. It also corrects an earlier estimate in this
+document: the boot path is not four to six calls, it is twenty-four. Even after the per-call
+work above, each one still pays a rate-limit write and a cold-start risk, so **call count is
+now the dominant remaining cost**, not any single handler.
+
+Two calls stand out as avoidable on an admin page: `guest-profile` and
+`get-public-platform-status`.
+
+## 12. Home hero payload
+
+**Date:** 2026-11-11. The hero is the LCP element on `/`.
+
+Lighthouse on production showed Perf 46-63 with **LCP 6.8-11.1 s but TBT 47-668 ms**, so the
+public site is payload-bound, not JavaScript-bound. The hero was a 1672x941 render shipped as a
+246 KiB WebP with no `srcset`, and both theme layers loaded in full.
+
+Measured on a 412px viewport, 4x CPU, throttled 4G:
+
+| Metric         | Before                             | After (merged, awaiting deploy)                |
+| -------------- | ---------------------------------- | ---------------------------------------------- |
+| LCP            | 7972-8432 ms                       | pending                                        |
+| Hero bytes     | **461 KiB** (day 246 + night 225)  | ~55 KiB expected (480w picks 27 KiB per layer) |
+| Candidate used | `hero-day.webp`, `hero-night.webp` | `hero-day-480.webp`                            |
+
+The 480w variant exists and is 27 KiB; the 800w is 71 KiB and 1200w is 146 KiB. Regeneration:
+`node scripts/media/generate-hero-variants.mjs`. A unit test pins the files the component
+points at.
+
+**Not live yet.** The Vercel check on the release returned "Deployment rate limited, retry in 24
+hours", so production was still serving the pre-hero build when this was written. The code is
+on `main`.
+
+---
+
 ## Release state
 
 **2026-11-10.** PR #371 synced `main` to `develop`'s tree and shipped the UI side.
