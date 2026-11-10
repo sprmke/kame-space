@@ -4,6 +4,7 @@
  */
 
 import { createClient } from './supabaseJs.ts';
+import { loadResidenceProfileForProperty } from './residenceProfile.ts';
 import { PROPERTY_TEMPLATE_PLACEHOLDERS_REFERENCE } from './propertyTemplatePlaceholders.ts';
 import { normalizeBlockLevelPlaceholdersInHtml } from './normalizeBlockLevelPlaceholders.ts';
 import { normalizeEmailCalloutPlaceholders } from './normalizeEmailCalloutPlaceholders.ts';
@@ -500,6 +501,18 @@ export async function resolvePropertyTemplateContent(
         updatedAt: data.updated_at ? String(data.updated_at) : null,
       };
     }
+
+    // Residence default (§4.1 "building default"): reaches every property that has not
+    // overridden this template. Azure has no `templateDefaults`, so its copy is unchanged.
+    const residenceContent = await loadResidenceTemplateDefault(propertyId, templateKey);
+    if (residenceContent) {
+      return {
+        content: normalizeStoredTemplateContent(residenceContent, templateKey),
+        label: builtin.label,
+        sectionImageUrl: null,
+        updatedAt: null,
+      };
+    }
   }
 
   return {
@@ -508,6 +521,26 @@ export async function resolvePropertyTemplateContent(
     sectionImageUrl: null,
     updatedAt: null,
   };
+}
+
+/**
+ * Residence-level template body, if this property's building sets one. Reads fail soft: a
+ * missing residence means "no override", never a broken email.
+ */
+async function loadResidenceTemplateDefault(
+  propertyId: string,
+  templateKey: string
+): Promise<string | null> {
+  try {
+    const profile = await loadResidenceProfileForProperty(supabaseAdmin(), propertyId, {
+      strict: false,
+    });
+    const content = profile.templateDefaults[templateKey]?.content;
+    return typeof content === 'string' && content.trim() ? content : null;
+  } catch (error) {
+    console.warn('[propertyTemplates] residence template default load failed:', error);
+    return null;
+  }
 }
 
 export { MAX_CUSTOM_TEMPLATES };
