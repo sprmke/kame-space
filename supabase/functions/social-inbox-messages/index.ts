@@ -24,9 +24,10 @@ import {
   listMessages,
   markConversationRead,
 } from '../_shared/socialInboxService.ts';
+import { createServiceClient } from '../_shared/orgAuth.ts';
 import { jsonError, jsonSuccess, readJsonBody } from '../_shared/httpResponse.ts';
 import { featureUnavailableResponse } from '../_shared/featureAvailability.ts';
-import type { SocialConversationRow } from '../_shared/socialInboxTypes.ts';
+import type { SocialConversationRow, SocialMessageRow } from '../_shared/socialInboxTypes.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 
 async function metaReplyFeatureBlock(
@@ -81,15 +82,39 @@ serveAuthenticated('social-inbox-messages', async (req, user) => {
   }
 
   if (req.method === 'GET') {
+    // Delta mode: only messages inserted or updated since the cursor. A read receipt, an
+    // edit or a reaction is a delta, so the thread is patched instead of refetched.
+    const after = url.searchParams.get('after') ?? undefined;
+    if (after) {
+      const since = new Date(after);
+      if (Number.isNaN(since.getTime())) {
+        return jsonError(req, 'after must be an ISO timestamp', 400);
+      }
+      const sb = createServiceClient();
+      const { data, error } = await sb.rpc('inbox_changed_messages', {
+        p_organization_id: ctx.orgId,
+        p_conversation_id: conversationId,
+        p_since: since.toISOString(),
+        p_limit: 200,
+      });
+      if (error) return jsonError(req, error.message, 500);
+      return jsonSuccess(req, {
+        messages: (data ?? []) as SocialMessageRow[],
+        serverTime: new Date().toISOString(),
+        delta: true,
+      });
+    }
+
     const before = url.searchParams.get('before') ?? undefined;
     const namedConv = await fillMissingMetaParticipantIdentity(conv);
     const { messages, hasMore } = await listMessages(ctx.orgId, conversationId, { before });
-    const enriched = await enrichConversationMessageAttachments(namedConv, messages);
+    // GET never calls Graph. Attachment URLs that have expired are refreshed by the
+    // explicit `refresh_media` action when an image fails to load.
     const [conversation] = await attachConversationConnectionStatus([namedConv]);
     const guestRequests = await listGuestRequestsForConversation(conversationId);
     return jsonSuccess(req, {
       conversation: conversation ?? namedConv,
-      messages: enriched,
+      messages,
       hasMore,
       guestRequests,
     });
@@ -150,6 +175,24 @@ serveAuthenticated('social-inbox-messages', async (req, user) => {
         metadata: { status },
       });
       return jsonSuccess(req, { request: resolved });
+    }
+
+    if (action === 'refresh_media') {
+      const messageId = String(body.messageId ?? body.message_id ?? '').trim();
+      if (!messageId) return jsonError(req, 'messageId required', 400);
+      const { data: message } = await createServiceClient()
+        .from('social_messages')
+        .select('*')
+        .eq('organization_id', ctx.orgId)
+        .eq('conversation_id', conversationId)
+        .eq('id', messageId)
+        .maybeSingle();
+      if (!message) return jsonError(req, 'Message not found', 404);
+      const [refreshed] = await enrichConversationMessageAttachments(
+        conv,
+        [message as SocialMessageRow]
+      );
+      return jsonSuccess(req, { message: refreshed ?? message });
     }
 
     await markConversationRead(ctx.orgId, conversationId);

@@ -129,7 +129,7 @@ export function InboxPage({
   const metaConnectAvailability = useFeatureAvailability('inbox.meta.connect');
   const metaSyncAvailability = useFeatureAvailability('inbox.meta.sync');
 
-  useInboxRealtime(orgId);
+  useInboxRealtime(orgId, selectedId, scope);
 
   const {
     data: connectionsData,

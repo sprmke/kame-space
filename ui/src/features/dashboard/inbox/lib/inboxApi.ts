@@ -296,6 +296,56 @@ export async function requestMetaInboxSync(
   return unwrapEdgePayload(json, res.status);
 }
 
+/**
+ * Threads that changed since the cursor.
+ *
+ * Returns ids-and-content rows for the threads in the caller's scope, plus `serverTime` so
+ * the next call can move the cursor forward without trusting the client clock.
+ */
+export async function fetchInboxThreadDelta(
+  orgSlug: string | null,
+  orgId: string | null,
+  since: string,
+  scope?: InboxApiScope | null
+): Promise<{ conversations: InboxConversation[]; serverTime: string }> {
+  const jwt = await getJwt();
+  const params = new URLSearchParams({ changed_since: since });
+  const base = withInboxScope(orgUrl('/social-inbox-threads', orgSlug, orgId), scope);
+  const res = await fetch(`${base}&${params.toString()}`, {
+    headers: { Authorization: `Bearer ${jwt}` },
+  });
+  const json = (await res.json()) as EdgeJson;
+  const payload = unwrapEdgePayload(json, res.status);
+  return {
+    conversations: (payload.conversations as InboxConversation[] | undefined) ?? [],
+    serverTime:
+      typeof payload.serverTime === 'string' ? payload.serverTime : new Date().toISOString(),
+  };
+}
+
+/** Messages inserted or updated since the cursor, for one open thread. */
+export async function fetchInboxMessageDelta(
+  orgSlug: string | null,
+  orgId: string | null,
+  conversationId: string,
+  since: string,
+  scope?: InboxApiScope | null
+): Promise<{ messages: InboxMessage[]; serverTime: string }> {
+  const jwt = await getJwt();
+  const base = withInboxScope(orgUrl('/social-inbox-messages', orgSlug, orgId), scope);
+  const params = new URLSearchParams({ conversation_id: conversationId, after: since });
+  const res = await fetch(`${base}&${params.toString()}`, {
+    headers: { Authorization: `Bearer ${jwt}` },
+  });
+  const json = (await res.json()) as EdgeJson;
+  const payload = unwrapEdgePayload(json, res.status);
+  return {
+    messages: (payload.messages as InboxMessage[] | undefined) ?? [],
+    serverTime:
+      typeof payload.serverTime === 'string' ? payload.serverTime : new Date().toISOString(),
+  };
+}
+
 export async function fetchInboxThreads(
   orgSlug: string | null,
   orgId: string | null,
