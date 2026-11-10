@@ -19,11 +19,9 @@ import { validateAvailabilityClaims } from '../_shared/marketingClaims.ts';
 import {
   decidePublishAction,
   nextAttemptIso,
+  publishTypeFor,
 } from '../_shared/marketingPublishScheduler.ts';
-import {
-  publishMarketingPost,
-  type MetaPublishType,
-} from '../_shared/marketingPublishAction.ts';
+import { publishMarketingPost } from '../_shared/marketingPublishAction.ts';
 import { createOrCoalesceNotification } from '../_shared/notificationService.ts';
 import { serveCronPost } from '../_shared/serveEdge.ts';
 
@@ -53,22 +51,13 @@ type PlanItemClaimsRow = {
   tracked_url: string | null;
 };
 
-/** Map a stored publication row onto the publish seam's type union. */
-export function publishTypeFor(row: {
-  platform: string;
-  publish_type: string;
-}): MetaPublishType {
-  if (row.platform === 'instagram') {
-    if (row.publish_type === 'story') return 'instagram_story';
-    if (row.publish_type === 'reel') return 'instagram_reel';
-    return 'instagram_post';
-  }
-  return 'facebook_post';
-}
-
 serveCronPost(
   LOG,
-  (req) => verifyCronSecret(req, { envKey: 'MARKETING_PUBLISH_CRON_SECRET' }),
+  (req) =>
+    verifyCronSecret(req, {
+      envKey: 'MARKETING_PUBLISH_CRON_SECRET',
+      headerName: 'x-marketing-publish-cron-secret',
+    }),
   async () => {
     const sb = createServiceClient();
     const startedAt = Date.now();

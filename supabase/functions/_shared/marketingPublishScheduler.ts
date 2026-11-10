@@ -85,3 +85,19 @@ export function isItemDueForReminder(input: {
   if (scheduled < now) return false;
   return scheduled - now <= input.leadMinutes * 60_000;
 }
+
+export type MetaPublishType =
+  | 'facebook_post'
+  | 'instagram_post'
+  | 'instagram_story'
+  | 'instagram_reel';
+
+/** Map a stored publication row onto the publish seam's type union. */
+export function publishTypeFor(row: { platform: string; publish_type: string }): MetaPublishType {
+  if (row.platform === 'instagram') {
+    if (row.publish_type === 'story') return 'instagram_story';
+    if (row.publish_type === 'reel') return 'instagram_reel';
+    return 'instagram_post';
+  }
+  return 'facebook_post';
+}

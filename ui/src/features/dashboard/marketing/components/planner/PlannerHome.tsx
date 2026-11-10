@@ -136,7 +136,7 @@ export function PlannerHome() {
             onClick={() => setSetupOpen(true)}
             disabled={!allowed}
           >
-            Setup
+            Plan setup
           </Button>
           <Button
             size="sm"

@@ -6,6 +6,7 @@ import {
   isDue,
   isItemDueForReminder,
   nextAttemptIso,
+  publishTypeFor,
   reminderLeadMinutes,
 } from './marketingPublishScheduler.ts';
 
@@ -113,4 +114,12 @@ Deno.test('isItemDueForReminder: only open items inside the lead window', () => 
     }),
     false
   );
+});
+
+Deno.test('publishTypeFor: maps platform and post type onto the publish union', () => {
+  assertEquals(publishTypeFor({ platform: 'facebook', publish_type: 'post' }), 'facebook_post');
+  assertEquals(publishTypeFor({ platform: 'facebook', publish_type: 'story' }), 'facebook_post');
+  assertEquals(publishTypeFor({ platform: 'instagram', publish_type: 'post' }), 'instagram_post');
+  assertEquals(publishTypeFor({ platform: 'instagram', publish_type: 'story' }), 'instagram_story');
+  assertEquals(publishTypeFor({ platform: 'instagram', publish_type: 'reel' }), 'instagram_reel');
 });

@@ -38,6 +38,17 @@ const PLAN_ITEM = {
   results: { trackedVisits: 12 },
 };
 
+const MANUAL_ITEM = {
+  ...PLAN_ITEM,
+  id: '33333333-3333-4333-8333-333333333333',
+  opportunity_key: 'gap_nights:2026-11-17',
+  title: 'One night open',
+  channel_kind: 'facebook_group',
+  manual_targets: ['Tagaytay Rentals'],
+  format: 'story',
+  results: { trackedVisits: 0 },
+};
+
 const PLAN_PAYLOAD = {
   range: '7d',
   from: '2026-11-09',
@@ -53,7 +64,7 @@ const PLAN_PAYLOAD = {
     created_at: '2026-11-09T08:00:00+08:00',
     superseded_at: null,
   },
-  items: [PLAN_ITEM],
+  items: [PLAN_ITEM, MANUAL_ITEM],
   upcoming: [],
   summary: 'Two nights are still open this weekend.',
 };
@@ -128,6 +139,43 @@ test.describe('@ci marketing planner', () => {
     await expect(page.getByLabel('First line')).toHaveValue('Two nights left this weekend');
     await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled();
     await page.getByRole('button', { name: 'Cancel' }).click();
+  });
+
+  test('prepare week opens a confirm and states how many items need work', async ({ page }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access');
+    await mockPlanner(page);
+    await page.goto(teamRbacPaths.marketingWorkspace);
+
+    await page.getByRole('button', { name: 'Prepare week' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText(/items need a design, video or calendar/)).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Start' })).toBeEnabled();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toBeHidden();
+  });
+
+  test('setup opens from the header and saves through the wizard', async ({ page }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access');
+    await mockPlanner(page);
+    await page.goto(teamRbacPaths.marketingWorkspace);
+
+    await page.getByRole('button', { name: 'Plan setup' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText('What matters most right now?')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toBeHidden();
+  });
+
+  test('share it yourself opens with the caption and the host places', async ({ page }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access');
+    await mockPlanner(page);
+    await page.goto(teamRbacPaths.marketingWorkspace);
+
+    await page.getByRole('button', { name: 'I posted it' }).first().click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText('Tagaytay Rentals')).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Copy caption' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'I posted it' })).toBeVisible();
   });
 
   test('switching to AI Studio keeps the planner reachable', async ({ page }) => {

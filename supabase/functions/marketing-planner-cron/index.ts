@@ -65,7 +65,11 @@ export function isWeeklyPlanDue(input: {
 
 serveCronPost(
   LOG,
-  (req) => verifyCronSecret(req, { envKey: 'MARKETING_PLANNER_CRON_SECRET' }),
+  (req) =>
+    verifyCronSecret(req, {
+      envKey: 'MARKETING_PLANNER_CRON_SECRET',
+      headerName: 'x-marketing-planner-cron-secret',
+    }),
   async () => {
     const sb = createServiceClient();
     const startedAt = Date.now();

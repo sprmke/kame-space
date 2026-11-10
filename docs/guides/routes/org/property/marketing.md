@@ -81,7 +81,7 @@ AI Studio fills the composer, Videos sets the hook, caption and call to action o
 takes the dates, month and rate, Calendar opens on the promoted month. The caption is also copied
 as a fallback.
 
-**Setup** opens on first visit and from the header. Three steps: goals (up to two), where you post
+**Plan setup** opens on first visit and from the header. Three steps: goals (up to two), where you post
 (connected Facebook Page and Instagram from Inbox, plus manual places), then time budget and
 language, and, when the host has the AI planner, whether the weekly plan is rules only or AI
 written (20 credits a week). It stores real connection ids; the wizard is guarded against unsaved

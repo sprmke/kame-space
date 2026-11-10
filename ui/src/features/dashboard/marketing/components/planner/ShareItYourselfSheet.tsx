@@ -137,9 +137,11 @@ export function ShareItYourselfSheet({ open, onOpenChange, item, onPosted, isPos
         </div>
 
         <ResponsiveModalFooter className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => void share()}>
-            {plan === 'copy-only' ? 'Copy caption' : 'Share'}
-          </Button>
+          {plan === 'copy-only' ? null : (
+            <Button size="sm" variant="outline" onClick={() => void share()}>
+              Share
+            </Button>
+          )}
           <Button size="sm" onClick={finish} disabled={isPosting}>
             I posted it
           </Button>
