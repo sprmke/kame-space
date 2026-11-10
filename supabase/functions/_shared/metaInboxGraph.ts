@@ -292,6 +292,8 @@ export async function sendMetaMessage(opts: {
   platform: SocialPlatform;
   replyToMid?: string;
   tag?: 'HUMAN_AGENT';
+  /** Send API attachment. The URL must be reachable by Meta when it fetches it. */
+  attachment?: { type: 'image' | 'file'; url: string } | null;
   /** Defaults to `inbox.meta.reply`. Auto-reply passes `inbox.meta.auto_reply`. */
   availabilityKey?: FeatureAvailabilityKey;
 }): Promise<MetaMessageSendResult> {
@@ -310,7 +312,9 @@ export async function sendMetaMessage(opts: {
 
   const body: Record<string, unknown> = {
     recipient: { id: opts.recipientId },
-    message: { text: opts.text },
+    message: opts.attachment
+      ? { attachment: { type: opts.attachment.type, payload: { url: opts.attachment.url } } }
+      : { text: opts.text },
     messaging_type: opts.tag ? 'MESSAGE_TAG' : 'RESPONSE',
   };
   if (opts.tag) {
@@ -344,6 +348,41 @@ export async function fetchMetaMessageAttachments(
   }
   const attachments = json.attachments as { data?: unknown[] } | undefined;
   return attachments?.data ?? [];
+}
+
+/**
+ * Mark a Meta chat as seen, the way Business Suite does when a host reads it.
+ *
+ * Best effort: a failure here must never block the host from reading the thread.
+ */
+export async function markMetaSeen(opts: {
+  accountId: string;
+  pageAccessToken: string;
+  recipientId: string;
+}): Promise<boolean> {
+  const url = new URL(`${META_GRAPH_BASE}/${opts.accountId}/messages`);
+  url.searchParams.set('access_token', opts.pageAccessToken);
+  try {
+    const res = await fetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipient: { id: opts.recipientId },
+        sender_action: 'mark_seen',
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Mime type Meta accepts for a Send API attachment. */
+export function metaAttachmentType(mimeType: string | null | undefined): 'image' | 'file' | null {
+  const mime = (mimeType ?? '').toLowerCase();
+  if (mime.startsWith('image/')) return 'image';
+  if (mime === 'application/pdf') return 'file';
+  return null;
 }
 
 export type MetaConversationItem = {

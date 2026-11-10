@@ -842,6 +842,15 @@ export function InboxConversationView({
                 renderMessage={(msg) => {
                   const outbound = msg.direction === 'outbound';
                   const isUnsent = isChatMessageUnsent(msg);
+                  // Meta message kinds that have no readable text of their own.
+                  const kindLabel =
+                    msg.message_kind === 'story_reply'
+                      ? 'Replied to a story'
+                      : msg.message_kind === 'share'
+                        ? 'Shared a post'
+                        : msg.message_kind === 'unsupported'
+                          ? 'This message only opens in Meta'
+                          : null;
                   const attachments = isUnsent ? [] : inboxAttachmentPreviews(msg.attachments);
                   const hasText = !!msg.body_text?.trim();
                   const hasMedia = attachments.length > 0;
@@ -930,7 +939,7 @@ export function InboxConversationView({
                           ? unsentMessageLabel(outbound)
                           : hasText
                             ? msg.body_text
-                            : '(attachment)'
+                            : (kindLabel ?? '(attachment)')
                       }
                       outbound={outbound}
                       unsent={isUnsent}

@@ -55,7 +55,7 @@ async function resetBackfillForFacebookRow(facebookConnectionId: string): Promis
     .eq('id', facebookConnectionId);
 }
 
-/** Persist Page + IG connection only — backfill runs via `meta-inbox-backfill`. */
+/** Persist Page + IG connection only. The import runs from `meta-inbox-worker`. */
 export async function connectMetaInboxPage(
   orgId: string,
   page: MetaPageAccount,

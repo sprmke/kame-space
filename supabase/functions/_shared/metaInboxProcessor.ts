@@ -190,10 +190,38 @@ export async function applyMetaEvent(
       const sender = asString(asRecord(event.payload.sender).id);
       const watermark = asRecord(asRecord(event.payload.read).watermark);
       if (!sender) return { status: 'skipped', result: { reason: 'no_sender' } };
+      const selfIdsForRead = metaSelfAccountIds(connection, event.entryId);
+      const guestIdForRead = selfIdsForRead.has(sender)
+        ? asString(asRecord(event.payload.recipient).id)
+        : sender;
+
+      // A read receipt whose sender is the account itself means the host read the thread in
+      // Business Suite or another app. Clear the host badge, so it does not stay lit for a
+      // conversation that was already dealt with.
+      if (selfIdsForRead.has(sender)) {
+        const { data: conv } = await sb
+          .from('social_conversations')
+          .select('id')
+          .eq('organization_id', orgId)
+          .eq('platform', platform)
+          .eq('external_thread_id', buildDmThreadId(platform, guestIdForRead))
+          .maybeSingle();
+        const conversationId = (conv as { id?: string } | null)?.id;
+        if (conversationId) {
+          const { error: hostReadError } = await sb.rpc('inbox_mark_host_read', {
+            p_organization_id: orgId,
+            p_conversation_id: conversationId,
+            p_read_at: event.eventTime,
+          });
+          if (hostReadError) throw new Error(hostReadError.message);
+        }
+        return { status: 'skipped', result: { reason: 'host_read_elsewhere' } };
+      }
+
       const { error } = await sb.rpc('inbox_apply_meta_read', {
         p_organization_id: orgId,
         p_platform: platform,
-        p_external_thread_id: buildDmThreadId(platform, sender),
+        p_external_thread_id: buildDmThreadId(platform, guestIdForRead),
         p_read_at:
           typeof watermark === 'number'
             ? new Date(watermark < 1e12 ? watermark * 1000 : watermark).toISOString()
@@ -266,15 +294,56 @@ export async function applyMetaEvent(
       return applyMetaMessageEvent(event, connection, opts);
     }
 
+    case 'referral': {
+      // Where the guest came from: an ad, an m.me link, or a post. Stored on the thread for
+      // attribution; nothing in the thread renders it yet.
+      const sender = asString(asRecord(event.payload.sender).id);
+      const selfIds = metaSelfAccountIds(connection, event.entryId);
+      const guestId = selfIds.has(sender) ? asString(asRecord(event.payload.recipient).id) : sender;
+      if (!guestId) return { status: 'skipped', result: { reason: 'no_participant' } };
+      const { error } = await sb.rpc('inbox_apply_meta_referral', {
+        p_organization_id: orgId,
+        p_platform: platform,
+        p_external_thread_id: buildDmThreadId(platform, guestId),
+        p_referral: (event.payload.referral as Record<string, unknown>) ?? null,
+      });
+      if (error) throw new Error(error.message);
+      return { status: 'done' };
+    }
+
     case 'delivery':
     case 'handover':
-    case 'referral':
       // Subscribed for completeness. Nothing in the thread renders these yet.
       return { status: 'skipped', result: { reason: `ignored_${event.eventType}` } };
 
     default:
       return { status: 'skipped', result: { reason: 'unhandled_type' } };
   }
+}
+
+/**
+ * Which display kind a Meta message is.
+ *
+ * Story replies, shared posts and stickers arrive as attachments with a Meta type, not as
+ * text. Naming them lets the thread show a card instead of a bare "(attachment)".
+ */
+function messageKindFor(
+  message: Record<string, unknown>,
+  isPostback: boolean,
+  eventType: string
+): 'text' | 'postback' | 'unsupported' | 'story_reply' | 'share' {
+  if (isPostback) return 'postback';
+  if (eventType === 'unsupported') return 'unsupported';
+
+  const attachments = Array.isArray(message.attachments) ? message.attachments : [];
+  const types = attachments
+    .map((item) => asString(asRecord(item).type))
+    .filter(Boolean);
+  if (types.includes('story_mention')) return 'story_reply';
+  if (types.includes('share')) return 'share';
+  // A message with a body is still readable text even when Meta also marks it unsupported.
+  if (types.includes('fallback') && !asString(message.text)) return 'unsupported';
+  return 'text';
 }
 
 async function applyMetaMessageEvent(
@@ -336,7 +405,7 @@ async function applyMetaMessageEvent(
       body_text: bodyText || null,
       attachments: Array.isArray(message.attachments) ? message.attachments : [],
       sent_at: event.eventTime,
-      message_kind: isPostback ? 'postback' : event.eventType === 'unsupported' ? 'unsupported' : 'text',
+      message_kind: messageKindFor(message, isPostback, event.eventType),
       source: opts.source ?? 'webhook',
       sender_app: isFromPage ? (isEcho ? 'kame' : 'other') : null,
       routing: event.channel,

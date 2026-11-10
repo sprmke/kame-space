@@ -218,61 +218,6 @@ export async function completeMetaOAuthPage(
   return { pageName: typeof payload.pageName === 'string' ? payload.pageName : '' };
 }
 
-export type MetaBackfillChunkPhase = 'messenger' | 'instagram';
-
-export type MetaBackfillChunkResult = {
-  done: boolean;
-  phase: MetaBackfillChunkPhase | 'complete';
-  syncedInChunk: number;
-  metaHasMore: boolean;
-};
-
-/**
- * Ask the server for the next page of the Meta conversation import.
- *
- * The request never carries a Graph URL and the response never returns one. The server
- * keeps the paging cursor on the connection row and builds every Graph URL itself.
- */
-export async function runMetaInboxBackfillChunk(
-  orgSlug: string | null,
-  orgId: string | null,
-  state?: {
-    phase?: MetaBackfillChunkPhase;
-    finalize?: boolean;
-    light?: boolean;
-  },
-  scope?: InboxApiScope | null
-): Promise<MetaBackfillChunkResult> {
-  const jwt = await getJwt();
-  const res = await fetch(orgUrl('/meta-inbox-backfill', orgSlug, orgId), {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${jwt}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      // `phase` is only sent when the caller wants to force one. Leaving it out lets the
-      // server continue the import from the phase it stored on the connection, so a
-      // scroll-sync after the Messenger pass keeps going through Instagram.
-      ...(state?.phase ? { phase: state.phase } : {}),
-      finalize: state?.finalize === true,
-      light: state?.light === true,
-      ...inboxScopeBody(scope),
-    }),
-  });
-  const json = (await res.json()) as EdgeJson;
-  const payload = unwrapEdgePayload(json, res.status);
-  return {
-    done: !!payload.done,
-    phase:
-      payload.phase === 'instagram' || payload.phase === 'messenger' || payload.phase === 'complete'
-        ? (payload.phase as MetaBackfillChunkResult['phase'])
-        : 'complete',
-    syncedInChunk: typeof payload.syncedInChunk === 'number' ? payload.syncedInChunk : 0,
-    metaHasMore: !!payload.metaHasMore,
-  };
-}
-
 /**
  * Nudge the server-side Meta sync.
  *

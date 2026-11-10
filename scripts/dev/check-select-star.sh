@@ -147,7 +147,6 @@ ALLOWLIST=(
   '_shared/listProperties.ts'
   'list-support-tickets/index.ts'
   'marketing-templates/index.ts'
-  'meta-inbox-backfill/index.ts'
   'org-subscriptions-admin/index.ts'
   'parking-settings/index.ts'
   'platform-parking-settings/index.ts'

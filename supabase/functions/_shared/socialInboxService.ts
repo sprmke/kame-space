@@ -766,19 +766,6 @@ export async function getFacebookConnectionForOrg(
   return getOrgDefaultFacebookConnection(orgId);
 }
 
-export function metaBackfillHasMore(connection: SocialChannelConnectionRow | null): boolean {
-  if (!connection || connection.status !== 'connected') return false;
-  if (connection.meta_backfill_done) return false;
-  if (
-    connection.meta_backfill_phase === 'messenger' ||
-    connection.meta_backfill_phase === 'instagram'
-  ) {
-    return true;
-  }
-  if (connection.meta_backfill_cursor) return true;
-  return false;
-}
-
 export async function countOrgMetaConversations(orgId: string): Promise<number> {
   const sb = socialInboxDb();
   const { count, error } = await sb
@@ -791,19 +778,23 @@ export async function countOrgMetaConversations(orgId: string): Promise<number> 
 }
 
 /** True when more Graph pages should be synced (scroll / search). */
+/**
+ * True while the server still has older Meta chats to import for this org.
+ *
+ * The import is server state now (`meta_sync_state`), so this is a read of its completion,
+ * not a heuristic over the local thread count.
+ */
 export async function resolveMetaHasMore(orgId: string): Promise<boolean> {
-  const connection = await getFacebookConnectionForOrg(orgId);
-  if (!connection || connection.status !== 'connected') return false;
-  if (metaBackfillHasMore(connection)) return true;
-
-  const localCount = await countOrgMetaConversations(orgId);
-  // Large local cache — legacy full sync; paginate from DB only.
-  if (localCount > 80) return false;
-
-  // Interrupted backfill (initial page landed but cursor was not persisted).
-  if (localCount > 0 && connection.last_sync_at) return true;
-
-  return false;
+  const sb = socialInboxDb();
+  const { data } = await sb
+    .from('meta_sync_state')
+    .select('import_completed_at, connection_id')
+    .eq('organization_id', orgId)
+    .limit(1)
+    .maybeSingle();
+  const row = data as { import_completed_at?: string | null } | null;
+  if (!row) return false;
+  return !row.import_completed_at;
 }
 
 /**
@@ -918,17 +909,6 @@ export async function markMetaBackfillFullyComplete(
 
 export async function clearMetaBackfillState(orgId: string): Promise<void> {
   await setMetaBackfillState(orgId, { phase: null, nextCursor: null });
-}
-
-export async function recordWebhookEvent(externalEventId: string): Promise<boolean> {
-  const sb = socialInboxDb();
-  const { error } = await sb.from('social_webhook_events').insert({
-    external_event_id: externalEventId,
-    platform: 'meta',
-  });
-  if (error?.code === '23505') return false;
-  if (error) throw new Error(error.message);
-  return true;
 }
 
 export async function searchInboxConversations(

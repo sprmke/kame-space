@@ -296,6 +296,23 @@ serveAuthenticated(
       }
       await completeOutboundMetaSend(sendRow, result.message_id);
       if (template) await logChatTemplateSent(templatePropertyId!, template);
+
+      // Meta sends one attachment per message. Each one is its own Send API call, and its
+      // echo creates its own row, so the thread shows them the same way Messenger does.
+      if (attachments.length > 0) {
+        for (const attachment of attachments) {
+          // The upload already normalized the kind; Meta only needs image or file.
+          const type = attachment.kind === 'file' ? 'file' : 'image';
+          await sendMetaMessage({
+            pageId: metaPageId,
+            pageAccessToken: token,
+            recipientId: conv.external_participant_id ?? '',
+            text: '',
+            platform: conv.platform,
+            attachment: { type, url: attachment.url },
+          });
+        }
+      }
     } catch (e) {
       // An invalid Page token is a connection problem, not a send problem. Flag the
       // connection so the Channels card shows it instead of the host retrying forever.

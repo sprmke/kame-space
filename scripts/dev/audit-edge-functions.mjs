@@ -71,7 +71,6 @@ const RAW_SERVE_ALLOWLIST = new Set([
   'calendar-sync-cron',
   'sd-refund-cron',
   'superhost-assessment-cron',
-  'meta-inbox-backfill',
   'meta-inbox-webhook',
   'upload-app-settings-asset',
   'upload-org-settings-asset',

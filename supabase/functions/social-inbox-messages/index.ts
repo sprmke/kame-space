@@ -25,9 +25,14 @@ import {
   markConversationRead,
 } from '../_shared/socialInboxService.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
+import { getPageAccessToken, markMetaSeen } from '../_shared/metaInboxGraph.ts';
 import { jsonError, jsonSuccess, readJsonBody } from '../_shared/httpResponse.ts';
 import { featureUnavailableResponse } from '../_shared/featureAvailability.ts';
-import type { SocialConversationRow, SocialMessageRow } from '../_shared/socialInboxTypes.ts';
+import type {
+  SocialChannelConnectionRow,
+  SocialConversationRow,
+  SocialMessageRow,
+} from '../_shared/socialInboxTypes.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 
 async function metaReplyFeatureBlock(
@@ -45,6 +50,39 @@ async function metaReplyFeatureBlock(
  */
 function metaBlocksEditOrUnsend(conv: SocialConversationRow): boolean {
   return conv.platform === 'facebook' || conv.platform === 'instagram';
+}
+
+/**
+ * Mirror "host opened this thread" onto Meta, when the org allows it.
+ *
+ * Instagram answers to the linked Page's id for `mark_seen`, same as a send.
+ */
+async function markMetaThreadSeen(conv: SocialConversationRow): Promise<void> {
+  const sb = createServiceClient();
+  const { data: conn } = await sb
+    .from('social_channel_connections')
+    .select('*')
+    .eq('id', conv.connection_id)
+    .maybeSingle();
+  if (!conn?.meta_page_id || !conn.encrypted_access_token) return;
+
+  const { data: settings } = await sb
+    .from('social_inbox_settings')
+    .select('mark_seen_on_open, parking_id')
+    .eq('organization_id', conv.organization_id)
+    .order('parking_id', { ascending: true, nullsFirst: true })
+    .limit(1)
+    .maybeSingle();
+  if (settings && (settings as { mark_seen_on_open?: boolean }).mark_seen_on_open === false) {
+    return;
+  }
+
+  const token = await getPageAccessToken(conn as SocialChannelConnectionRow);
+  await markMetaSeen({
+    accountId: conn.meta_page_id,
+    pageAccessToken: token,
+    recipientId: conv.external_participant_id ?? '',
+  });
 }
 
 serveAuthenticated('social-inbox-messages', async (req, user) => {
@@ -196,6 +234,15 @@ serveAuthenticated('social-inbox-messages', async (req, user) => {
     }
 
     await markConversationRead(ctx.orgId, conversationId);
+
+    // Tell Meta the chat was seen, the way Business Suite does, so the guest is not left on
+    // unread. Best effort: a failure here must not stop the host reading the thread.
+    if (conv.platform === 'facebook' || conv.platform === 'instagram') {
+      void markMetaThreadSeen(conv).catch((error) => {
+        console.warn('[social-inbox-messages] mark_seen:', (error as Error).message);
+      });
+    }
+
     return jsonSuccess(req, { read: true });
   }
 
