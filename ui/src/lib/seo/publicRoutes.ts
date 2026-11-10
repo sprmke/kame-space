@@ -296,7 +296,8 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: false,
     canonical: 'none',
     snapshot: 'none',
-    note: 'Placeholder "Coming Soon" page. Index it once services ship.',
+    title: 'Services | Kame Space',
+    note: 'Placeholder "Coming Soon" page, noindex until the catalog ships.',
   },
   {
     id: 'for-hosts-preview',

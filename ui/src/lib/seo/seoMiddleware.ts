@@ -128,6 +128,12 @@ function title(siteName: string, page: string): string {
   return siteName ? `${siteName} - ${page}` : page;
 }
 
+/** `Places to stay | Kame Space` → `Places to stay`, so an `<h1>` stays brand-free. */
+function stripBrandSuffix(value: string, siteName: string): string {
+  const suffix = ` | ${siteName}`;
+  return value.endsWith(suffix) ? value.slice(0, -suffix.length).trim() : value;
+}
+
 /** `makati-city` → `Makati City`. Used only when no edge payload carries a readable label. */
 function placeLabel(slug: string): string {
   return slug
@@ -247,8 +253,9 @@ function buildStaticRoute(
 ): { meta: SeoMeta; snapshot: SnapshotPage } {
   const copy = staticCopy(entry, deps.siteName);
   // List pages carry no `<h1>` in the SPA yet, so the snapshot heading comes from the
-  // registry title. Everything else reuses the page's own hero copy.
-  const heading = copy?.heading ?? entry.title ?? deps.siteName;
+  // registry title, minus the brand suffix (an `<h1>` never carries it). Everything else
+  // reuses the page's own hero copy.
+  const heading = copy?.heading ?? stripBrandSuffix(entry.title ?? deps.siteName, deps.siteName);
   const accent = copy?.headingAccent;
   const intro = copy?.intro ?? entry.description ?? DEFAULT_DESCRIPTION;
 
@@ -575,7 +582,8 @@ async function neighbouringPlaces(
   deps: SeoMiddlewareDeps,
   family: RouteFamily,
   place: string,
-  label: string
+  /** Family noun used in the anchor text, e.g. `Homes`. */
+  familyLabel: string
 ): Promise<SnapshotLink[]> {
   try {
     const routeFamily = `${FAMILY_LIST_PATHS[family].replace(/^\//, '')}`;
@@ -583,13 +591,13 @@ async function neighbouringPlaces(
       `${apiBase(deps)}/list-public-place-groups?family=${routeFamily}&groupLimit=12&previewSize=1`,
       deps
     );
-    const groups = records(body?.data);
+    const groups = records(body?.groups);
     return groups
       .map((group) => {
-        const slug = str(group.placeSlug) ?? str(group.slug);
-        const name = str(group.placeLabel) ?? str(group.label);
+        const slug = str(group.locationSlug);
+        const name = str(group.place);
         if (!slug || !name || slug === place) return null;
-        return { href: `${FAMILY_LIST_PATHS[family]}/in/${slug}`, label: `${label} in ${name}` };
+        return { href: `${FAMILY_LIST_PATHS[family]}/in/${slug}`, label: `${familyLabel} in ${name}` };
       })
       .filter((link): link is SnapshotLink => link !== null)
       .slice(0, 6);
@@ -630,7 +638,7 @@ async function loadPlaceRoute(
       label: `${PLACE_LABEL[otherFamily]} in ${label}`,
     });
   }
-  links.push(...(await neighbouringPlaces(deps, family, place, label)));
+  links.push(...(await neighbouringPlaces(deps, family, place, PLACE_LABEL[family])));
 
   return {
     meta: {
@@ -789,15 +797,14 @@ async function llmsPlaces(deps: SeoMiddlewareDeps): Promise<
         `${apiBase(deps)}/list-public-place-groups?family=${routeFamily}&groupLimit=8&previewSize=1`,
         deps
       );
-      for (const group of records(body?.data)) {
-        const slug = str(group.placeSlug) ?? str(group.slug);
-        const label = str(group.placeLabel) ?? str(group.label);
-        if (!slug || !label) continue;
-        const total = num(group.total) ?? undefined;
+      for (const group of records(body?.groups)) {
+        const slug = str(group.locationSlug);
+        const place = str(group.place);
+        if (!slug || !place) continue;
         places.push({
-          label: `${label} ${family === 'parking' ? 'parking' : family === 'development' ? 'developments' : 'stays'}`,
+          label: `${place} ${family === 'parking' ? 'parking' : family === 'development' ? 'developments' : 'stays'}`,
           path: `${FAMILY_LIST_PATHS[family]}/in/${slug}`,
-          count: total,
+          count: num(group.total) ?? undefined,
         });
       }
     } catch {

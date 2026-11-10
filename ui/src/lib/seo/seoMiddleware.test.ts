@@ -72,7 +72,8 @@ describe('handleSeoRequest', () => {
       Promise.resolve(
         String(url).includes('place-groups')
           ? jsonResponse({
-              data: [{ placeSlug: 'makati', placeLabel: 'Makati', total: 7 }],
+              // Real envelope from list-public-place-groups.
+              groups: [{ place: 'Makati', locationSlug: 'makati', title: 'Homes in Makati', total: 7 }],
             })
           : jsonResponse({
               data: [
@@ -91,7 +92,7 @@ describe('handleSeoRequest', () => {
     const mapText = await map!.text();
     expect(mapText).toContain('# Old Brand');
     expect(mapText).toContain('https://kamespace.com/properties');
-    expect(mapText).toContain('/properties/in/makati');
+    expect(mapText).toContain('- [Makati stays](https://kamespace.com/properties/in/makati): 7 listings');
 
     const full = await handleSeoRequest(req('/llms-full.txt', BROWSER), deps(fetchImpl), shell);
     const fullText = await full!.text();
@@ -217,6 +218,39 @@ describe('handleSeoRequest', () => {
     expect(fetchImpl.mock.calls[0]![0]).toContain('list-public-properties?locationSlug=san-fernando');
     expect(html).toContain('<h1>Condos and homes for rent in San Fernando, Pampanga</h1>');
     expect(html).toContain('href="https://kamespace.com/properties/monaco-2604"');
+  });
+
+  it('links sideways to neighbouring places on a place page', async () => {
+    const fetchImpl = vi.fn().mockImplementation((url: string) => {
+      if (String(url).includes('place-groups')) {
+        return Promise.resolve(
+          jsonResponse({
+            groups: [
+              { place: 'San Fernando', locationSlug: 'san-fernando', total: 4 },
+              { place: 'Angeles', locationSlug: 'angeles', total: 2 },
+            ],
+          })
+        );
+      }
+      return Promise.resolve(
+        jsonResponse({
+          data: [
+            {
+              slug: 'monaco-2604',
+              name: 'Monaco 2604',
+              locationLabel: 'San Fernando',
+              price: 2500,
+            },
+          ],
+        })
+      );
+    });
+
+    const res = await handleSeoRequest(req('/properties/in/san-fernando'), deps(fetchImpl), shell);
+    const html = await res!.text();
+    // The neighbour is linked as a stay list in that place.
+    expect(html).toContain('href="https://kamespace.com/properties/in/angeles"');
+    expect(html).toContain('>Homes in Angeles<');
   });
 
   it('renders a host page snapshot', async () => {
