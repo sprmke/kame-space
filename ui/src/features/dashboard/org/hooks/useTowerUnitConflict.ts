@@ -3,11 +3,6 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { callEdgeFunction } from '@/features/dashboard/org/lib/edgeClient';
-import { DEFAULT_RESIDENCE_NAME } from '@/features/dashboard/org/lib/propertyDisplay';
-import {
-  isPropertyTowerForResidence,
-  isValidUnitNumber,
-} from '@/features/dashboard/org/lib/propertyTowerUnit';
 import type { PropertyTowerUnitConflict } from '@/features/dashboard/org/lib/propertyTowerUnitConflict';
 import type { Property } from '@/features/dashboard/org/types';
 
@@ -50,11 +45,13 @@ export function useTowerUnitConflict(
   message: string | null;
 } {
   const profile = residence?.profile ?? null;
+  // No profile yet means no residence rules yet. Falling back to one building's tower list
+  // is the silent-Azure-fallback bug (F2), so the check simply stays idle until it loads.
   const ready = profile
     ? validateTowerForProfile(profile, tower).ok &&
       unitNumber.trim().length > 0 &&
       unitNumberError(profile, unitNumber) === null
-    : isPropertyTowerForResidence(tower, DEFAULT_RESIDENCE_NAME) && isValidUnitNumber(unitNumber);
+    : false;
 
   const developmentId = residence?.developmentId ?? profile?.developmentId ?? null;
   const residenceName = residence?.residenceName ?? profile?.developmentName ?? null;

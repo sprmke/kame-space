@@ -1,4 +1,3 @@
-import { DEFAULT_RESIDENCE_NAME } from '@/features/dashboard/org/lib/propertyDisplay';
 import type { PropertyProfileDraft } from '@/features/dashboard/org/lib/propertySettingsForm';
 
 export type NumericRange = {
@@ -17,16 +16,6 @@ export type ResidencePropertyDefaults = {
   checkOutTime: string;
 };
 
-const AZURE_NORTH_DEFAULTS: ResidencePropertyDefaults = {
-  bedrooms: { min: 1, max: 2, default: 1 },
-  bathrooms: { min: 1, max: 1, default: 1 },
-  floors: { min: 1, max: 29, default: 1 },
-  maxAdults: { min: 1, max: 6, default: 4 },
-  maxChildren: { min: 0, max: 4, default: 0 },
-  checkInTime: '14:00',
-  checkOutTime: '12:00',
-};
-
 const GENERIC_DEFAULTS: ResidencePropertyDefaults = {
   bedrooms: { min: 0, max: 20, default: 1 },
   bathrooms: { min: 0, max: 20, default: 1 },
@@ -37,13 +26,14 @@ const GENERIC_DEFAULTS: ResidencePropertyDefaults = {
   checkOutTime: '12:00',
 };
 
-const DEFAULTS_BY_RESIDENCE: Record<string, ResidencePropertyDefaults> = {
-  [DEFAULT_RESIDENCE_NAME]: AZURE_NORTH_DEFAULTS,
-};
-
-export function getResidencePropertyDefaults(residenceName: string): ResidencePropertyDefaults {
-  const normalized = residenceName.trim();
-  return DEFAULTS_BY_RESIDENCE[normalized] ?? GENERIC_DEFAULTS;
+/**
+ * Ranges come from the residence profile on the server; this client cache only bounds the
+ * numeric inputs before the profile arrives. It is deliberately residence-agnostic: matching
+ * a display name to one building's limits is what F2 was (a blank residence silently
+ * borrowing Azure North's rules).
+ */
+export function getResidencePropertyDefaults(_residenceName?: string): ResidencePropertyDefaults {
+  return GENERIC_DEFAULTS;
 }
 
 export function clampToRange(value: number, range: NumericRange): number {
@@ -90,9 +80,7 @@ export function validatePropertyDetailsForResidence(
     'residenceName' | 'bedrooms' | 'bathrooms' | 'floors' | 'maxAdults' | 'maxChildren'
   >
 ): string | null {
-  const defaults = getResidencePropertyDefaults(
-    draft.residenceName.trim() || DEFAULT_RESIDENCE_NAME
-  );
+  const defaults = getResidencePropertyDefaults(draft.residenceName);
   return (
     validateNumericField(draft.bedrooms, defaults.bedrooms, 'Bedrooms') ??
     validateNumericField(draft.bathrooms, defaults.bathrooms, 'Bathrooms') ??
