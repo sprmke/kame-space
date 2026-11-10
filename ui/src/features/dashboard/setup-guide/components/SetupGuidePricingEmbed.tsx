@@ -315,6 +315,8 @@ export function SetupGuideParkingPricingEmbed({ parkingId }: { parkingId: string
     <ParkingPricingRatesFormCard
       weekdayRate={weekdayRate}
       weekendRate={weekendRate}
+      guestRateWeekday={pricingData?.guestRateWeekday}
+      guestRateWeekend={pricingData?.guestRateWeekend}
       guestRateCapWeekday={pricingData?.guestRateCapWeekday}
       guestRateCapWeekend={pricingData?.guestRateCapWeekend}
       commissionPct={pricingData?.commissionPct}

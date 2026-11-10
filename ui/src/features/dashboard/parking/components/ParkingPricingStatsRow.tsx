@@ -22,7 +22,7 @@ export function ParkingPricingStatsRow({ weekdayRate, weekendRate, customDatesCo
       className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-3 lg:gap-4"
     >
       <AdminMetricCard
-        title="Base Rate"
+        title="Your base rate"
         value={formatMoneyCompact(weekdayRate)}
         icon={DollarSign}
       />

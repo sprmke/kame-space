@@ -7,6 +7,7 @@ import path from 'node:path';
 
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
+import { SUPABASE_AUTH_STORAGE_KEY } from '../../../shared/ids';
 import {
   installLocalParkingHostSession,
   signInLocalParkingHost,
@@ -227,7 +228,7 @@ export async function installAssistantLiveHostSession(page: Page, request: APIRe
       window.localStorage.setItem('kame-last-tenant-kind', 'property');
     },
     {
-      authStorageKey: 'sb-127-auth-token',
+      authStorageKey: SUPABASE_AUTH_STORAGE_KEY,
       e2eStorageKey: 'kame:e2e-admin-session',
       authSession: session,
       orgSlug: ASSISTANT_LIVE_ORG_SLUG,
