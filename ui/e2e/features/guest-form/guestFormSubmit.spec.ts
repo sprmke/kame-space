@@ -30,6 +30,8 @@ test.describe('@smoke @critical guest form submit', () => {
       .filter({ has: page.getByRole('heading', { name: 'Primary Guest *' }) })
       .getByLabel('Age *')
       .fill('25');
+    // Dev builds auto-fill a sample ID, so this suite exercises the uploader state. The
+    // method chooser (camera vs upload) only renders when no ID is attached yet.
     await page
       .locator('section')
       .filter({ has: page.getByRole('heading', { name: 'Primary Guest *' }) })
