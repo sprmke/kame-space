@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 
-import { ExternalLink, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+import { ArrowUpRight, X } from 'lucide-react';
 
 import { LegalDocumentBody } from '@/components/legal/LegalDocumentBody';
 import { Button } from '@/components/ui/button';
@@ -80,16 +82,15 @@ export function LegalDocumentSheet({ doc, section, open, onOpenChange }: LegalDo
               Updated {LEGAL_LAST_UPDATED}
             </ResponsiveModalDescription>
           </div>
-          <a
-            href={legalHref(doc, section)}
-            target="_blank"
-            rel="noopener"
-            aria-label="Open full page in a new tab"
+          <Link
+            to={legalHref(doc, section)}
+            aria-label="Open full page"
             title="Open full page"
             className={HEADER_ACTION_CLASS}
+            onClick={() => onOpenChange(false)}
           >
-            <ExternalLink className="size-4" aria-hidden />
-          </a>
+            <ArrowUpRight className="size-4" aria-hidden />
+          </Link>
           <ResponsiveModalClose
             className="text-muted-foreground ring-offset-background hover:bg-muted focus-visible:ring-ring flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl opacity-80 transition-all hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none"
             aria-label="Close"
