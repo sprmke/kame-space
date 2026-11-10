@@ -179,6 +179,15 @@ Deno.test('offline host booking records a zero ledger row and fulfills', async (
   assert(offline.includes('fulfillParkingPayment'));
 });
 
+Deno.test('parking assistant claim/decline tools map conflicts to host copy', async () => {
+  const src = await source('_shared/dashboardAssistantTools.ts');
+  assert(src.includes('parkingBroadcastActionMessage'));
+  assert(src.includes("case 'slot_unavailable'") === false);
+  const messages = await source('_shared/parkingActionMessages.ts');
+  assert(messages.includes('This slot is already booked for these dates.'));
+  assert(messages.includes('This offer expired. Open the next request instead.'));
+});
+
 Deno.test('host cancel requires a reason and moves paid rows to refund review', async () => {
   const src = await source('transition-parking-booking/index.ts');
   assert(src.includes('A cancellation reason is required after payment'));
