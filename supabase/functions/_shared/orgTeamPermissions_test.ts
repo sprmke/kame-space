@@ -86,14 +86,47 @@ Deno.test('hasOrgPermission accepts a leaf granted through a legacy id', () => {
   assertEquals(hasOrgPermission(['org:team:invite'], 'org.team.invitations:add'), true);
 });
 
-Deno.test('a legacy coarse requirement is satisfied by ANY one of its leaves', () => {
-  // Known over-grant, issue #366. `hasOrgPermission` expands the
-  // required legacy id and uses `.some()`, so holding one leaf passes a coarse check.
-  // `org-access` computes `canManageTeam` from `org:team:manage`, so a member with only
-  // `org.team.invitations:edit` is told they can manage the team.
-  // Pinned as-is because tightening it changes live RBAC, which is not a test change.
-  assertEquals(hasOrgPermission(['org.settings.basic:edit'], 'org:settings:edit'), true);
-  assertEquals(hasOrgPermission(['org.team.invitations:edit'], 'org:team:manage'), true);
+Deno.test('a legacy coarse requirement needs every leaf it expands to', () => {
+  // Fixed in #366. This used to accept any one leaf, so `invitations:edit` alone passed
+  // `org:team:manage` and `org-access` reported canManageTeam to a member who could not
+  // manage members.
+  assertEquals(hasOrgPermission(['org.team.invitations:edit'], 'org:team:manage'), false);
+  assertEquals(hasOrgPermission(['org.settings.socials:edit'], 'org:settings:edit'), false);
+
+  assertEquals(
+    hasOrgPermission(
+      [
+        'org.team.invitations:edit',
+        'org.team.invitations:delete',
+        'org.team.members:edit',
+        'org.team.members:delete',
+      ],
+      'org:team:manage'
+    ),
+    true
+  );
+
+  assertEquals(
+    hasOrgPermission(
+      [
+        'org.settings.basic:edit',
+        'org.settings.socials:edit',
+        'org.settings.aiPlatform:edit',
+        'org.settings.aiAssistant:edit',
+      ],
+      'org:settings:edit'
+    ),
+    true
+  );
+
+  // A granted coarse id expands fully, so it still satisfies its own requirement.
+  assertEquals(hasOrgPermission(['org:team:manage'], 'org:team:manage'), true);
+});
+
+Deno.test('a legacy id that expands to nothing grants nothing', () => {
+  assertEquals(hasOrgPermission(['org:delete'], 'org:delete'), false);
+  assertEquals(hasOrgPermission(['org:import:manage'], 'org:import:manage'), false);
+  assertEquals(hasOrgPermission([], 'org:delete'), false);
 });
 
 Deno.test('hasOrgPermission rejects a missing or unknown requirement', () => {

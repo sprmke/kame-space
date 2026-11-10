@@ -254,6 +254,29 @@ plausible-sounding changes that either did nothing or made the app slower.
 
 ---
 
+## Release state
+
+**2026-11-10.** PR #371 synced `main` to `develop`'s tree and shipped the UI side.
+
+`main` and `develop` share **no commits** (`git merge-base` is empty). Releases on this repo are
+squashed, so ancestry never carries over and a `develop` to `main` PR is a tree sync by design,
+not a merge. That is worth knowing before panicking at a 3412-commit divergence: compare trees,
+not commit counts.
+
+Verified after the release:
+
+| Check                               | Result                                                                                    |
+| ----------------------------------- | ----------------------------------------------------------------------------------------- |
+| `SessionBootstrapGate` chunk served | yes, and it contains the `get-session-context` call                                       |
+| `get-session-context` live          | `401` without a token, `200` with one                                                     |
+| Public routes                       | `/`, `/properties`, `/for-hosts`, `/for-hosts/pricing`, `/support`, `/parkings` all `200` |
+| Public landing, 3 cold runs         | **332 ms to content, root loader 0 of 3**, identical to before the release                |
+
+The backend half was already live before the release, because edge functions deploy from
+`develop` on every push. The release is what makes the browser use them.
+
+---
+
 ## How to reproduce
 
 ```bash
