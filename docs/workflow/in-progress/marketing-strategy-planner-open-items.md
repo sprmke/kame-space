@@ -106,9 +106,6 @@ Tick a box when it is addressed. If an answer changes a shipped default, the pla
 - [ ] **Nav badge.** The Marketing nav item has no badge slot in its shape yet; adding one touches
       the sidebar and bottom-nav chrome on every page, so it waits for a nav pass.
 
-- [ ] **Analytics marketing section (P5.7).** Tracked visits and attributed requests by item and
-      channel, inside Analytics. The data exists; this is a read endpoint plus a section.
-
 - [ ] **Carousel and Reels in the publish dialog.** Needs the P0.2 spike to confirm the endpoints.
 
 - [ ] **Insight snapshots cron.** The mapper (`_shared/marketingInsights.ts`) is done and tested;
@@ -118,6 +115,10 @@ Tick a box when it is addressed. If an answer changes a shipped default, the pla
       gated on real data, not code.
 
 ## 6. Known repo state, not caused by this branch
+
+- [ ] **Local Supabase was stopped** during the last pass, so `check:plan-catalog` could not run at
+      the very end. It passed earlier in the same session against the same migration. `bun run
+  start:supabase` brings it back.
 
 - [ ] **Two pre-existing `@ci` failures.** `orgPlanCheckout.spec.ts` ("successful return confirms
       payment", "celebration modal compare plans") fail on `origin/develop` too; verified by running
