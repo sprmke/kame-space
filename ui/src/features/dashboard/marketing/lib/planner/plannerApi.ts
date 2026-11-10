@@ -82,7 +82,8 @@ function numberOrNull(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function mapItem(row: RawItem): PlannerItemDto {
+/** Row -> DTO. Exported for the mapping test; the endpoint shape is the only input. */
+export function mapPlannerItem(row: RawItem): PlannerItemDto {
   return {
     id: str(row.id),
     shortCode: str(row.short_code),
@@ -165,8 +166,8 @@ export async function fetchMarketingPlan(
     from: data.from,
     to: data.to,
     plan: mapPlan(data.plan),
-    items: (data.items ?? []).map(mapItem),
-    upcoming: (data.upcoming ?? []).map(mapItem),
+    items: (data.items ?? []).map(mapPlannerItem),
+    upcoming: (data.upcoming ?? []).map(mapPlannerItem),
     summary: data.summary ?? null,
   };
 }
@@ -256,7 +257,7 @@ export async function refreshPlannerBrief(
     body: JSON.stringify({ action: 'refresh_brief', itemId, instruction }),
   });
   const data = await parseEdgeJsonOrQuota<{ item: RawItem }>(res);
-  return mapItem(data.item);
+  return mapPlannerItem(data.item);
 }
 
 export async function markPlannerItemPosted(

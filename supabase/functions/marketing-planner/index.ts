@@ -11,9 +11,18 @@
  * the showcase and hit the upgrade path on the action.
  */
 
-import { z } from 'zod';
-
 import { buildActorContext } from '../_shared/activityLog.ts';
+import {
+  addItemSchema,
+  attachSchema,
+  generateSchema,
+  postedSchema,
+  prepareSchema,
+  refreshSchema,
+  settingsSchema,
+  skipSchema,
+  updateSchema,
+} from '../_shared/marketingPlannerSchemas.ts';
 import {
   assertFeatureAvailable,
   catchFeatureUnavailableError,
@@ -40,92 +49,6 @@ import { PlanFeatureRequiredError } from '../_shared/planEntitlements.ts';
 import { requirePropertyPermissionAndFeature } from '../_shared/orgAuth.ts';
 import { resolveScopedPropertyAccess } from '../_shared/propertyScope.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
-
-const generateSchema = z.object({
-  action: z.literal('generate'),
-  mode: z.enum(['rules', 'ai']).default('rules'),
-});
-
-const updateSchema = z.object({
-  action: z.literal('update_item'),
-  itemId: z.string().uuid(),
-  scheduledFor: z.string().datetime({ offset: true }).optional(),
-  format: z.enum(['post', 'carousel', 'story', 'reel', 'calendar']).optional(),
-  title: z.string().trim().min(1).max(120).optional(),
-  brief: z.record(z.unknown()).optional(),
-});
-
-const skipSchema = z.object({
-  action: z.literal('skip'),
-  itemId: z.string().uuid(),
-  reason: z.string().trim().min(1).max(200),
-});
-
-const refreshSchema = z.object({
-  action: z.literal('refresh_brief'),
-  itemId: z.string().uuid(),
-  instruction: z.enum(['shorter', 'playful', 'taglish']).default('shorter'),
-});
-
-const postedSchema = z.object({
-  action: z.literal('mark_posted'),
-  itemId: z.string().uuid(),
-  postedUrl: z.string().url().max(500).optional(),
-});
-
-const addItemSchema = z.object({
-  action: z.literal('add_item'),
-  title: z.string().trim().min(1).max(120),
-  format: z.enum(['post', 'carousel', 'story', 'reel', 'calendar']),
-  channelKind: z.enum([
-    'facebook_page',
-    'instagram',
-    'facebook_group',
-    'tiktok',
-    'messenger',
-    'viber',
-    'whatsapp',
-    'google_business',
-    'other',
-  ]),
-  scheduledFor: z.string().datetime({ offset: true }),
-  manualTargets: z.array(z.string().trim().min(1).max(80)).max(10).optional(),
-  brief: z.record(z.unknown()).optional(),
-});
-
-const attachSchema = z.object({
-  action: z.literal('attach_asset'),
-  itemId: z.string().uuid(),
-  assetKind: z.enum(['template', 'ai_session', 'media']),
-  assetId: z.string().uuid(),
-  assetVersionId: z.string().uuid().optional(),
-});
-
-const prepareSchema = z.object({
-  action: z.literal('prepare_batch'),
-  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  limit: z.number().int().min(1).max(20).optional(),
-});
-
-const settingsSchema = z.object({
-  goals: z
-    .array(
-      z.enum(['fill_open_nights', 'weekends', 'direct_bookings', 'longer_stays', 'brand'])
-    )
-    .max(2)
-    .optional(),
-  cadencePreset: z.enum(['light', 'steady', 'active', 'custom']).optional(),
-  channels: z.array(z.record(z.unknown())).max(20).optional(),
-  language: z.enum(['en', 'fil', 'taglish']).optional(),
-  tone: z.enum(['warm', 'playful', 'premium']).optional(),
-  approvalMode: z.enum(['ask', 'auto_publish_connected']).optional(),
-  autoPlan: z.boolean().optional(),
-  autoPlanMode: z.enum(['rules', 'ai']).optional(),
-  weeklyAiCreditCap: z.number().int().min(0).max(1000).optional(),
-  planWeekday: z.number().int().min(0).max(6).optional(),
-  planTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
-});
 
 serveAuthenticated('marketing-planner', async (req) => {
   const url = new URL(req.url);
