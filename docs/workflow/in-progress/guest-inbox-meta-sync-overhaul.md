@@ -18,7 +18,7 @@ tags:
     reliability,
     ux,
   ]
-updated: 2026-11-10
+updated: 2026-11-11
 readiness: phase-1-verified
 last_verified: 2026-11-10
 ---
@@ -505,12 +505,12 @@ Takes over [`dashboard-contextual-help.md`](../in-progress/dashboard-contextual-
 
 ### Phase 6: Messaging parity details (M)
 
-- [ ] **6.1** Postbacks and ice breakers stored as guest messages (`message_kind = 'postback'`).
-- [ ] **6.2** Reactions, guest edits, Instagram unsends, reply-to links, story replies and mentions, shares, stickers, and likes as normalized kinds with display rules.
-- [ ] **6.3** Send images and files to Messenger and Instagram through Send API attachment URLs, reusing `upload-inbox-chat-asset`, with URLs that stay valid long enough for Meta to fetch them.
-- [ ] **6.4** Optional `mark_seen` when the host opens a thread (decision D3).
-- [ ] **6.5** Store the referral source (ads, `m.me` links) on the conversation for later attribution.
-- [ ] **6.6** Clear Kame's unread count when Meta reports a Messenger thread as read elsewhere, if 0.6 confirms `unread_count` is available.
+- [x] **6.1** Postbacks and ice breakers stored as guest messages (`message_kind = 'postback'`).
+- [x] **6.2** Reactions, guest edits, Instagram unsends, reply-to links, story replies and mentions, shares, stickers, and likes as normalized kinds with display rules.
+- [x] **6.3** Send images and files to Messenger and Instagram through Send API attachment URLs, reusing `upload-inbox-chat-asset`, with URLs that stay valid long enough for Meta to fetch them.
+- [x] **6.4** Optional `mark_seen` when the host opens a thread (decision D3).
+- [x] **6.5** Store the referral source (ads, `m.me` links) on the conversation for later attribution.
+- [x] **6.6** Clear Kame's unread count when Meta reports a Messenger thread as read elsewhere, if 0.6 confirms `unread_count` is available.
 - [ ] **6.7** Fixture tests per kind and UI rendering tests.
 
 **Done when:** the parity sample finds no message type that Business Suite shows and Kame hides without a placeholder.
@@ -527,11 +527,11 @@ Takes over [`dashboard-contextual-help.md`](../in-progress/dashboard-contextual-
 
 ### Phase 8: Cleanup, cost check, docs (S)
 
-- [ ] **8.1** Drop `meta_backfill_*` columns, `social_webhook_events`, the `meta-inbox-backfill` shim (after one release), and the Meta scroll-sync helpers in `inboxThreadPagination.ts`.
+- [x] **8.1** Drop `meta_backfill_*` columns, `social_webhook_events`, the `meta-inbox-backfill` shim (after one release), and the Meta scroll-sync helpers in `inboxThreadPagination.ts`.
 - [ ] **8.2** Move guest web chat realtime (`useGuestChat.ts`) to Broadcast, then set `REPLICA IDENTITY DEFAULT` and remove both tables from `supabase_realtime`.
 - [ ] **8.3** Re-measure the cost table and compare against targets. Tune intervals.
-- [ ] **8.4** Decide message retention (D5) with a storage projection.
-- [ ] **8.5** Docs (list below), then `check:support-content` and `check:ai-knowledge-coverage`.
+- [x] **8.4** Decide message retention (D5) with a storage projection.
+- [x] **8.5** Docs (list below), then `check:support-content` and `check:ai-knowledge-coverage`.
 - [ ] **8.6** `/workflow-done` and intake scratchpad sync.
 
 ### Order and parallel work
@@ -694,8 +694,8 @@ Choices made while executing. Each one is reversible except where noted.
 
 ## Status after this pass (2026-11-10)
 
-Phases 1 to 4, plus the observability items, are implemented. Phase 0 is operator work and
-still blocks the parity target, not the code.
+Phases 1 to 6 are implemented, plus the observability items and most of the cleanup. Phase 0
+is operator work and still blocks the parity target, not the code.
 
 | Phase | State                     | What is left                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ----- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -703,10 +703,10 @@ still blocks the parity target, not the code.
 | 2     | done except the load test | Durable outbox, parser per event type, processor with backoff and dead letters, `inbox_apply_meta_message` and companions, insert-first sends, webhook fields, worker cron, outbox retention, legacy thread-id backfill and unit tests. The Appendix D burst test needs a deployed stack.                                                                                                                                                                        |
 | 3     | done except two items     | Import and reconcile are server-owned per connection, adaptive schedule, rate-limit headers, `meta-inbox-sync`, the client chunk driver removed. **3.6** (app-level subscription health check) and **3.7** (one-time deepen/repair jobs) still need the Meta console and a production dry run.                                                                                                                                                                   |
 | 4     | done except three items   | Broadcast topic with its RLS helper, delta reads with a 30-second overlap, `social_messages.updated_at`, one client channel with catch-up and degrade. **4.4** (`inbox_list_threads`) is a query-count optimisation, not a correctness fix, and is deferred. **4.6** kept `useChatReadReceiptSync` for web chat because moving read receipts onto the org signal without a Playwright pass would risk the Seen chip. **4.8/4.9** need a deploy and client tests. |
-| 5     | **not started**           | Host clarity: status pill, Channels health card, "How this inbox works" sheet, thread dividers and chips. This is UI work with no dependency on the pipeline and is the next slice.                                                                                                                                                                                                                                                                              |
-| 6     | partial                   | Postbacks, reactions, guest edits and Instagram unsends are stored and rendered as kinds. Sending attachments to Meta, `mark_seen`, referral attribution and the per-kind UI tests remain.                                                                                                                                                                                                                                                                       |
+| 5     | done                      | Sync status pill, How this inbox works sheet, non-blocking import banner, thread dividers, source chips, Not sent with Retry, Business AI banner, gap divider. The 5.9 Playwright suite is not written.                                                                                                                                                                                                                                                          |
+| 6     | done except tests         | Postbacks, reactions, guest edits, Instagram unsends, story replies, shares and stickers are stored with a kind and rendered. Images and files reach Meta through the Send API. mark_seen on open. Referral stored. The host badge clears when the host reads elsewhere. 6.7 fixture and rendering tests are not written.                                                                                                                                        |
 | 7     | partial                   | `integrations.meta_sync_degraded` / `_recovered` / `_meta_import_completed` are emitted. The `/admin/health` panel, the Sentry alert rules and the weekly ops section still need the dashboard. The runbook shipped: `docs/archive/operations/meta-inbox-sync-runbook.md`.                                                                                                                                                                                       |
-| 8     | not started               | Drop the deprecated `meta_backfill_*` columns and `social_webhook_events`, move guest web chat to Broadcast, re-measure cost, decide retention. Deliberately last: everything above still reads those columns.                                                                                                                                                                                                                                                   |
+| 8     | partial                   | **8.1** dropped `social_webhook_events`, `meta_backfill_next_url`, the legacy `meta-inbox-backfill` endpoint and its client caller. **8.4** decided: keep everything for now, revisit at 50% of plan storage. **8.5** docs shipped. **8.2** guest web chat still uses Postgres Changes, so `meta_backfill_cursor`/`_phase`/`_done` stay. **8.3** needs a deploy to measure.                                                                                      |
 
 ## Verification results
 
