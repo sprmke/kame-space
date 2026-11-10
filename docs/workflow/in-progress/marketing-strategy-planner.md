@@ -700,7 +700,7 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 - [ ] **P6.2** Auto-prepare drafts on plan creation (template items only by default; AI Studio items need a per-week credit cap set by the host).
 - [ ] **P6.3** `approval_mode = auto_publish_connected`: items in `ready` publish at their slot after claim check; a daily digest lists what went out. Off by default; feature availability key `marketing.planner.autopublish`.
 - [x] **P6.4** Dashboard assistant tools: `get_marketing_plan`, `add_marketing_plan_item`, `mark_marketing_item_posted`, `generate_marketing_plan` (Tier per risk classifier; writes need confirmation).
-- [ ] **P6.5** Org portfolio view: which listings need promotion most this week (rank by open nights × ADR), one tap into each property's plan.
+- [x] **P6.5** Org portfolio view: which listings need promotion most this week (rank by open nights × ADR), one tap into each property's plan.
 - [ ] **P6.6** TikTok: evaluate Content Posting API **upload to inbox (draft)** for reels; keep Share it yourself as the default until the audit question is settled.
 - [ ] **P6.7** Analytics AI review deep link: improvements like "Promote open weeknights" link to `?tab=plan`; host playbook articles for marketing tactics.
 
