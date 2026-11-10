@@ -813,13 +813,46 @@ export async function loadGuestStayGuidePreview(
     String(booking.check_out_date ?? '')
   );
   const validUntil = window?.validUntil ?? `${addDaysYmd(manilaTodayYmd(), 30)}T23:59:59+08:00`;
-  return buildGuestStayGuidePayload(propertyId, booking, validUntil, {
+  const payload = await buildGuestStayGuidePayload(propertyId, booking, validUntil, {
     includeAllStandardSections: true,
     expectedPropertySlug,
     previewCheckInDocuments: true,
     allowInactive: true,
   });
+  if (!payload) return payload;
+
+  // The editor preview shows sample essentials in the locked state: it demonstrates the
+  // reveal rule, and it never puts the property's real door code on screen for a
+  // screenshot (plan 7.6).
+  return {
+    ...payload,
+    essentialsHtml: buildGuestEssentialsHtml(SAMPLE_ESSENTIALS, 'Available 9 Dec, 2:00 PM'),
+    hostSections: [
+      {
+        id: 'sample-from-host',
+        name: 'Sample guide from your host',
+        html: '<p>Appliance guide, local recommendations and pool rules appear here when you mark a custom template <strong>Show to guests</strong>.</p>',
+      },
+    ],
+  };
 }
+
+/** Preview-only essentials. Never real values. */
+const SAMPLE_ESSENTIALS = {
+  wifiName: 'Kame_2604',
+  wifiPassword: null,
+  doorCode: null,
+  unitFloor: 'Monaco 2604, 26th floor',
+  parkingSlotNote: 'Level 2, slot 27',
+  emergencyContactName: 'Ana',
+  emergencyContactPhone: '0917 123 4567',
+  buildingSecurityPhone: '0917 765 4321',
+  garbageSchedule: 'Daily, 7:00 PM',
+  quietHours: '10:00 PM to 7:00 AM',
+  revealAt: '2026-12-09T06:00:00.000Z',
+  hasDoorCode: true,
+  hasAny: true,
+};
 
 /** `loadGuestStayGuideByToken` result when the property's plan does not include the stay guide. */
 export const STAY_GUIDE_PLAN_ACCESS_DENIED = 'plan_access_denied' as const;

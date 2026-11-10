@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { GuestExperienceReadinessCard } from '@/features/dashboard/guest-experience/components/GuestExperienceReadinessCard';
+import { GUEST_ESSENTIALS_QUERY_KEY, useGuestEssentialsQuery } from '@/features/dashboard/guest-experience/hooks/useGuestEssentials';
 import {
   EMPTY_GUEST_ESSENTIALS,
-  fetchGuestEssentials,
   saveGuestEssentials,
   type GuestEssentialsDraft,
 } from '@/features/dashboard/guest-experience/lib/guestEssentialsApi';
@@ -23,9 +24,6 @@ import { hasPropertyPermission } from '@/features/dashboard/team/lib/propertyPer
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
-
-const ESSENTIALS_QUERY_KEY = (propertyId: string) =>
-  ['property-guest-essentials', propertyId] as const;
 
 /** Secret field with a reveal toggle. Masked by default: a host may be screen-sharing. */
 function SecretInput({
@@ -89,12 +87,7 @@ export function PropertyGuestExperienceSection({
   const { data: access } = usePropertyPermissions();
   const canEdit = hasPropertyPermission(access?.permissions, 'templates.standard:edit');
 
-  const essentialsQuery = useQuery({
-    queryKey: ESSENTIALS_QUERY_KEY(propertyId),
-    queryFn: () => fetchGuestEssentials(propertyId),
-    staleTime: 60_000,
-    enabled: Boolean(propertyId),
-  });
+  const essentialsQuery = useGuestEssentialsQuery();
 
   const [draft, setDraft] = useState<GuestEssentialsDraft>(EMPTY_GUEST_ESSENTIALS);
   const [baseline, setBaseline] = useState<GuestEssentialsDraft>(EMPTY_GUEST_ESSENTIALS);
@@ -119,7 +112,7 @@ export function PropertyGuestExperienceSection({
       const saved = await saveGuestEssentials(propertyId, draft, changed);
       setDraft(saved);
       setBaseline(saved);
-      queryClient.setQueryData(ESSENTIALS_QUERY_KEY(propertyId), saved);
+      queryClient.setQueryData(GUEST_ESSENTIALS_QUERY_KEY(propertyId), saved);
       toast.success('Saved');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not save');
@@ -136,6 +129,8 @@ export function PropertyGuestExperienceSection({
 
   return (
     <div className="space-y-6">
+      <GuestExperienceReadinessCard />
+
       {ESSENTIALS_GROUPS.map((group) => (
         <div key={group.id} className="space-y-3">
           <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-wider">

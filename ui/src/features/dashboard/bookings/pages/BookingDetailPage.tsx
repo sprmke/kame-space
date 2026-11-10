@@ -26,6 +26,7 @@ import { EntityActivityHistory } from '@/features/dashboard/activity/components/
 import { BookingAiAssistantAuditCard } from '@/features/dashboard/ai-assistant/components/BookingAiAssistantAuditCard';
 import { BookingDetailAssetPreviewModal } from '@/features/dashboard/bookings/components/booking-detail/BookingDetailAssetPreviewModal';
 import { BookingDetailHeader } from '@/features/dashboard/bookings/components/booking-detail/BookingDetailHeader';
+import { GuestViewCard } from '@/features/dashboard/bookings/components/booking-detail/GuestViewCard';
 import {
   BookingDetailTabs,
   type BookingViewTab,
@@ -538,6 +539,7 @@ export function BookingDetailPage() {
                       ) : null}
                       {viewTab === 'overview' && (
                         <div className="space-y-4">
+                          <GuestViewCard booking={booking} />
                           <StayDetailsPanel booking={booking} />
                           <BookingCancellationCard
                             booking={booking as unknown as Record<string, unknown>}
