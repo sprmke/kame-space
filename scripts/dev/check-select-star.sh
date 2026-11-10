@@ -36,6 +36,13 @@ cd "$ROOT"
 # narrow or the row is single-record — a list endpoint over a wide/growing table
 # should select explicit columns instead of being added here.
 ALLOWLIST=(
+  # Added 2026-11-10: single-row reads on the Meta inbox pipeline. Every one is a
+  # `.maybeSingle()` for one connection, one conversation, one sync-state row or one
+  # message, and the full row is what the caller needs (token, watermark, attachments).
+  'meta-inbox-sync/index.ts'
+  '_shared/metaInboxSync.ts'
+  '_shared/metaInboxProcessor.ts'
+  'social-inbox-messages/index.ts'
   # Added 2026-10-19: insert/update-returning single rows (`.single()`/`.maybeSingle()`)
   # on narrow tables; marketing_themes list is capped at 40 per property and every
   # column is serialized; system_health_probe_results holds one row per probe id.
