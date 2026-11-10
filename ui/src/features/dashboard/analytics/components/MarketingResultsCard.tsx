@@ -1,3 +1,5 @@
+import { Link, useParams } from 'react-router-dom';
+
 import { Megaphone } from 'lucide-react';
 
 import type { MarketingResults } from '@/features/dashboard/analytics/lib/types';
@@ -16,6 +18,7 @@ type Props = {
  * planner's tracked links. First-touch and campaign-code based, so it reads "at least".
  */
 export function MarketingResultsCard({ marketing, className }: Props) {
+  const { orgSlug, propertySlug } = useParams<{ orgSlug: string; propertySlug: string }>();
   const hasData = marketing.trackedVisits > 0 || marketing.attributedRequests > 0;
 
   return (
@@ -60,6 +63,14 @@ export function MarketingResultsCard({ marketing, className }: Props) {
           No tracked planner visits in this period.
         </p>
       )}
+      {orgSlug && propertySlug ? (
+        <Link
+          to={`/org/${orgSlug}/property/${propertySlug}/marketing?tab=plan`}
+          className="text-caption text-primary underline-offset-2 hover:underline"
+        >
+          Open plan
+        </Link>
+      ) : null}
     </section>
   );
 }

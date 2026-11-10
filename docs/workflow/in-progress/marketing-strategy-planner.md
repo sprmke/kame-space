@@ -559,11 +559,11 @@ token measurement) are open; they need the dev app and a pricing decision.
 
 Engine (Deno, pure, tested):
 
-- [ ] **P1.1** `marketingSignalsData.ts`: one loader that reuses `computeAnalyticsBundle` (cached per property per Manila day), night-level availability with min stay and cleaning buffer, upcoming events, review candidates, live rates, asset inventory and last-posted dates.
+- [ ] **P1.1** (partial) `marketingSignalsData.ts`: one loader that reuses `computeAnalyticsBundle` (cached per property per Manila day), night-level availability with min stay and cleaning buffer, upcoming events, review candidates, live rates, asset inventory and last-posted dates.
 - [x] **P1.2** `marketingSignals.ts`: every opportunity in §4.3 except `freed_dates` (Phase 3) and learned weights (Phase 5). Fixture suite: empty calendar, fully booked, scattered gaps, thin history (`sufficiency.enough = false`), long weekend in range, Manila midnight boundaries, DST-free but UTC-offset edge cases.
 - [x] **P1.3** `marketingScheduler.ts`: cadence caps, pillar mix, per-day max, quiet hours, default windows, post-by rules, dedupe by `opportunity_key`, never schedule in the past, keep host-edited items untouched on regenerate.
 - [x] **P1.4** `marketingClaims.ts`: build and validate claims (open nights, nights left, rate, rating, review id).
-- [ ] **P1.5** `marketingPlanner.ts` service + `marketing-planner` edge function (GET range, settings, `generate` mode `rules`, `add_item`, `update_item`, `skip`, `mark_posted`). Zod bodies, RBAC, plan gates, feature availability, activity log.
+- [x] **P1.5** `marketingPlanner.ts` service + `marketing-planner` edge function (GET range, settings, `generate` mode `rules`, `add_item`, `update_item`, `skip`, `mark_posted`). Zod bodies, RBAC, plan gates, feature availability, activity log.
 - [x] **P1.6** Debounced refresh on booking create, cancel and date block (marks `stale` with reason).
 
 UI:
@@ -659,7 +659,7 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 - [x] **P4.2** (partial) `generate` mode `ai`: rules skeleton → AI briefs → guard → persist; fail-open to rules copy; credits shown before running; rate limits.
 - [x] **P4.3** `refresh_brief` for one item ("make it shorter", "more playful", "Taglish") with the same guard.
 - [x] **P4.4** AI summary card copy and "Why" explanation in plain words (aggregates only).
-- [ ] **P4.5** Prepare my week uses AI captions and hooks for template items when entitled.
+- [x] **P4.5** Prepare my week seeds AI copy when the plan was generated in AI mode and hooks for template items when entitled.
 - [x] **P4.6** Eval suite `marketing_plan` (offline in CI, live manual) with fixtures for underbooked, fully booked, long weekend, thin history, Taglish.
 
 **Exit:** Business properties get AI briefs that pass the guard at 90%+ on the live suite; AI outages never break a plan.
@@ -697,14 +697,21 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 > Not started.
 
 - [x] **P6.1** Weekly AI auto-plan for opted-in Business properties (cron, cost-batched).
-- [ ] **P6.2** Auto-prepare drafts on plan creation (template items only by default; AI Studio items need a per-week credit cap set by the host).
+- [ ] **P6.2** (partial) Auto-prepare drafts on plan creation (template items only by default; AI Studio items need a per-week credit cap set by the host).
 - [ ] **P6.3** `approval_mode = auto_publish_connected`: items in `ready` publish at their slot after claim check; a daily digest lists what went out. Off by default; feature availability key `marketing.planner.autopublish`.
 - [x] **P6.4** Dashboard assistant tools: `get_marketing_plan`, `add_marketing_plan_item`, `mark_marketing_item_posted`, `generate_marketing_plan` (Tier per risk classifier; writes need confirmation).
 - [x] **P6.5** Org portfolio view: which listings need promotion most this week (rank by open nights × ADR), one tap into each property's plan.
 - [ ] **P6.6** TikTok: evaluate Content Posting API **upload to inbox (draft)** for reels; keep Share it yourself as the default until the audit question is settled.
-- [ ] **P6.7** Analytics AI review deep link: improvements like "Promote open weeknights" link to `?tab=plan`; host playbook articles for marketing tactics.
+- [x] **P6.7** (partial) Analytics links into the plan from the Marketing results card. The AI review suggestion deep link and marketing playbook articles are still open.
 
 ---
+
+### Deliberate v1 exclusions
+
+- **P2.3 photo picking** is not built: the design and video bindings already rotate gallery media
+  per item, so a separate ranking has no consumer until the item sheet grows a photo picker.
+- **P6.2 auto-prepare** is replaced by **Prepare week**, which the host starts. Auto-preparing on
+  every plan generation would create blank drafts nobody asked for.
 
 ## 6.1 Verification results (2026-11-09)
 
