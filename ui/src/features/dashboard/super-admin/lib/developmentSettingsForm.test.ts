@@ -257,6 +257,8 @@ describe('pdf templates round-trip through the editor', () => {
     name: 'Move-in permit',
     storagePath: 'developments/dev-1/pdf-templates/1-move-in.pdf',
     fieldMap: { unitOwner: 'property.unitOwner', mystery: 'not.a.key' },
+    signatureField: null,
+    signatureNameField: null,
     version: 1,
   };
 
