@@ -1,9 +1,10 @@
 /**
  * Map Meta Graph send errors to operator-friendly messages.
  *
- * The copy is derived from the Graph error code and subcode, not from the message text.
- * Meta describes the same failure differently on different surfaces, and substring matching
- * reported "missing Meta permission" for a chat that Meta Business AI owns.
+ * Copy comes from the Graph code and subcode where they are unambiguous, with the message
+ * text as the tie-breaker for overloaded codes. Meta returns code 10 for both "no
+ * permission" and "Business AI owns this chat", and also for "outside the allowed window",
+ * which is why substring matching alone mislabelled two of those three.
  */
 
 import {
@@ -30,9 +31,16 @@ const BUSINESS_AI_COPY =
   'Meta Business AI is answering this chat. Take over in Business Suite to reply here.';
 
 function friendlyFromCode(error: MetaGraphError): string {
+  // Business AI first: its subcode is the only reliable way to tell a routing conflict from
+  // a real permission problem, because both arrive as code 10.
   if (isBusinessAiOwnedError(error)) return BUSINESS_AI_COPY;
   if (isInvalidMetaTokenError(error)) return TOKEN_COPY;
+
+  // A closed window also arrives as code 10, so the message text is authoritative here.
+  // Checking the code first would report a routine 24-hour expiry as a missing permission.
+  if (/outside (the|of) allowed window|messaging window/i.test(error.message)) return WINDOW_COPY;
   if (error.code === META_ERROR_OUTSIDE_WINDOW) return WINDOW_COPY;
+
   if (isMetaRateLimitError(error) || error.code === META_ERROR_RATE_LIMIT) return RATE_LIMIT_COPY;
   if (error.code === META_ERROR_PERSON_UNAVAILABLE) return UNAVAILABLE_COPY;
   if (error.code === 100 && /recipient/i.test(error.message)) return RECIPIENT_COPY;
@@ -55,7 +63,7 @@ export function friendlyMetaSendError(error: unknown): string {
   if (code !== null) return friendlyFromCode(new MetaGraphError(raw, { code }));
 
   // Text fallback. Meta omits the code from some messages.
-  if (/outside the allowed window|messaging window/i.test(raw)) return WINDOW_COPY;
+  if (/outside (the|of) allowed window|messaging window/i.test(raw)) return WINDOW_COPY;
   if (/access token|session has expired/i.test(raw)) return TOKEN_COPY;
   if (/rate limit/i.test(raw)) return RATE_LIMIT_COPY;
   if (/\(#551\)|person is not available/i.test(raw)) return UNAVAILABLE_COPY;

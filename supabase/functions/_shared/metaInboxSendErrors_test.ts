@@ -67,3 +67,16 @@ Deno.test('friendlyMetaSendError: an unavailable recipient is not a permission p
 Deno.test('friendlyMetaSendError: unknown errors pass through unchanged', () => {
   assertEquals(friendlyMetaSendError('Something else'), 'Something else');
 });
+
+Deno.test('friendlyMetaSendError: a code 10 closed window is not a permission error', () => {
+  // Meta returns code 10 for a closed messaging window as well as for a missing
+  // permission, so the text has to decide.
+  assertEquals(
+    friendlyMetaSendError(new MetaGraphError('(#10) This message is sent outside of allowed window', { code: 10 })),
+    'Messaging window expired - guest must message again before you can reply.'
+  );
+  assertEquals(
+    friendlyMetaSendError('(#10) This message is sent outside of allowed window'),
+    'Messaging window expired - guest must message again before you can reply.'
+  );
+});

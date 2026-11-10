@@ -690,15 +690,26 @@ export async function resolveMetaHasMore(orgId: string): Promise<boolean> {
   return false;
 }
 
-export async function getMetaBackfillState(
-  orgId: string
-): Promise<{ phase: 'messenger' | 'instagram'; nextCursor: string | null }> {
-  const connection = await getFacebookConnectionForOrg(orgId);
+/**
+ * Import state from a connection row that is already loaded.
+ *
+ * The chunk caller fetches the connection for the token, so reading the phase and cursor
+ * from that row saves the second lookup `getMetaBackfillState` used to cost.
+ */
+export function metaBackfillStateFromConnection(
+  connection: SocialChannelConnectionRow | null
+): { phase: 'messenger' | 'instagram'; nextCursor: string | null } {
   const phase = connection?.meta_backfill_phase;
   if (phase === 'messenger' || phase === 'instagram') {
     return { phase, nextCursor: connection?.meta_backfill_cursor ?? null };
   }
   return { phase: 'messenger', nextCursor: null };
+}
+
+export async function getMetaBackfillState(
+  orgId: string
+): Promise<{ phase: 'messenger' | 'instagram'; nextCursor: string | null }> {
+  return metaBackfillStateFromConnection(await getFacebookConnectionForOrg(orgId));
 }
 
 /**

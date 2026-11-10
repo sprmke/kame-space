@@ -253,7 +253,10 @@ export async function runMetaInboxBackfillChunk(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      phase: state?.phase ?? 'messenger',
+      // `phase` is only sent when the caller wants to force one. Leaving it out lets the
+      // server continue the import from the phase it stored on the connection, so a
+      // scroll-sync after the Messenger pass keeps going through Instagram.
+      ...(state?.phase ? { phase: state.phase } : {}),
       finalize: state?.finalize === true,
       light: state?.light === true,
       ...inboxScopeBody(scope),

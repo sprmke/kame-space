@@ -13,6 +13,7 @@ import {
   inboxNotificationParticipantLabel,
 } from './notificationService.ts';
 import { inboxNotificationMetadata } from './notificationEnrichment.ts';
+import type { MetaMessagingPlatform } from './metaInboxEvents.ts';
 import {
   buildDmThreadId,
   getConnectionForMetaWebhook,
@@ -25,9 +26,6 @@ import {
   upsertConversation,
 } from './socialInboxService.ts';
 import type { SocialConversationRow } from './socialInboxTypes.ts';
-
-/** Meta messaging platforms. The webhook object decides which one an event belongs to. */
-export type MetaMessagingPlatform = 'facebook' | 'instagram';
 
 type MetaMessagingEvent = {
   sender?: { id: string; username?: string; name?: string };
@@ -85,6 +83,14 @@ export async function handleMetaMessagingWebhook(
   const threadId = buildDmThreadId(platform, guestId ?? 'unknown');
   if (guestId) {
     await migrateLegacyDmThreadId(orgId, platform, guestId, threadId);
+  }
+
+  // A message with no resolvable participant cannot be filed anywhere. Record it so Meta
+  // stops retrying, and move on rather than creating a `facebook:` thread.
+  if (!guestId?.trim()) {
+    console.warn('[handleMetaMessagingWebhook] event with no participant id, dropped');
+    await recordWebhookEvent(eventId);
+    return { ...EMPTY_RESULT, organizationId: orgId };
   }
 
   const existing = await getConversationByExternalThread(orgId, platform, threadId);
@@ -147,7 +153,6 @@ export async function handleMetaMessagingWebhook(
     direction: isFromPage ? 'outbound' : 'inbound',
     subject_preview: preview.slice(0, 500),
     last_message_at: sentAt,
-    last_inbound_at: isFromPage ? null : sentAt,
     messaging_window_expires_at: isFromPage ? null : metaMessagingWindowExpiry(sentAt),
     // Only a newly stored inbound message moves the badge, and only if the host has not
     // already read past it.
@@ -219,7 +224,7 @@ async function notifyInboundGuestMessage(opts: {
  * A guest read the host's messages.
  *
  * The read watermark is the guest's read state, not the host's. It marks the host's
- * outbound messages as read and moves `guest_last_read_at`. It never clears the host's
+ * outbound messages read and moves `guest_last_read_at`. It never clears the host's
  * unread badge, which counts what the host has not read yet.
  */
 export async function handleMetaReadReceipt(
@@ -230,30 +235,16 @@ export async function handleMetaReadReceipt(
 ): Promise<void> {
   const connection = await getConnectionForMetaWebhook(pageId, platform);
   if (!connection) return;
-  const threadId = buildDmThreadId(platform, senderId);
-  const sb = (await import('./socialInboxService.ts')).socialInboxDb();
+
   const readAt = watermark
     ? normalizeMetaWebhookTimestamp(watermark)
     : new Date().toISOString();
-
-  const conv = await getConversationByExternalThread(
-    connection.organization_id,
-    platform,
-    threadId
-  );
-  if (!conv) return;
-
-  await sb
-    .from('social_messages')
-    .update({ read_at: readAt, delivery_status: 'read' })
-    .eq('conversation_id', conv.id)
-    .eq('direction', 'outbound')
-    .is('read_at', null)
-    .is('deleted_at', null)
-    .lte('sent_at', readAt);
-
-  await sb
-    .from('social_conversations')
-    .update({ guest_last_read_at: readAt, updated_at: new Date().toISOString() })
-    .eq('id', conv.id);
+  const sb = (await import('./socialInboxService.ts')).socialInboxDb();
+  const { error } = await sb.rpc('inbox_apply_meta_read', {
+    p_organization_id: connection.organization_id,
+    p_platform: platform,
+    p_external_thread_id: buildDmThreadId(platform, senderId),
+    p_read_at: readAt,
+  });
+  if (error) throw new Error(error.message);
 }

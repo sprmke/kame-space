@@ -383,16 +383,11 @@ function hexToBytes(hex: string): Uint8Array {
   return bytes;
 }
 
-function shouldRetryMetaPostStatus(status: number): boolean {
-  return status === 429 || status >= 500;
-}
-
 /**
  * Send to Graph and return the parsed body.
  *
- * A 5xx is not retried any more: Meta may already have accepted the message, so a retry can
- * double-send. Only a network failure before a response, and an explicit rate limit, are
- * safe to repeat.
+ * Only a network failure before a response, and an explicit rate limit, are retried. A 5xx
+ * is not: Meta may already have accepted the message, so retrying it can double-send.
  */
 async function postMetaJsonWithRetry(
   url: URL,
@@ -420,7 +415,7 @@ async function postMetaJsonWithRetry(
     if (res.ok) return json;
 
     const graphError = metaGraphErrorFromResponse(json, res.status, `${errorFallback} (${res.status})`);
-    if (!shouldRetryMetaPostStatus(res.status) && !isMetaRateLimitError(graphError)) {
+    if (!isMetaRateLimitError(graphError)) {
       throw graphError;
     }
     lastError = graphError;

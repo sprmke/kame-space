@@ -15,10 +15,10 @@ import {
   buildDmThreadId,
   clearMetaBackfillState,
   getFacebookConnectionForOrg,
-  getMetaBackfillState,
   insertMessageIfNew,
   markMetaBackfillFullyComplete,
   markMetaInitialSyncComplete,
+  metaBackfillStateFromConnection,
   metaSelfAccountIds,
   migrateLegacyDmThreadId,
   metaBackfillHasMore,
@@ -109,7 +109,7 @@ export async function syncMetaConversationToDb(opts: {
   const preview = latest?.message?.trim() || '(attachment)';
   const lastAt = latest?.created_time ?? conv.updated_time ?? new Date().toISOString();
   const lastInboundAt = latestInboundMessageAt(messages, selfIds);
-  const latestIsOutbound = Boolean(latest?.from?.id && selfIds.has(latest.from.id));
+  const latestIsOutbound = deriveReplyStatusFromMetaMessages(messages, selfIds) === 'replied';
 
   const externalThreadId =
     conversationType === 'dm' ? buildDmThreadId(platform, participant.id) : conv.id;
@@ -136,10 +136,11 @@ export async function syncMetaConversationToDb(opts: {
 
   const messagesToStore = metadataOnly ? (latest ? [latest] : []) : [...messages].reverse();
 
+  let storedSomethingNew = false;
   for (const msg of messagesToStore) {
     const isOutbound = Boolean(msg.from?.id && selfIds.has(msg.from.id));
     try {
-      await insertMessageIfNew({
+      const stored = await insertMessageIfNew({
         organization_id: orgId,
         conversation_id: row.id,
         direction: isOutbound ? 'outbound' : 'inbound',
@@ -151,12 +152,15 @@ export async function syncMetaConversationToDb(opts: {
         sent_by_user_id: null,
         is_ai_generated: false,
       });
+      if (stored) storedSomethingNew = true;
     } catch (e) {
       console.warn('[syncMetaConversationToDb] skip message:', (e as Error).message);
     }
   }
 
-  if (messages.length) {
+  // Re-importing a thread that is already stored cannot change its summary, so the extra
+  // round trip is skipped. A scroll-sync page of 25 known threads now costs no summary write.
+  if (storedSomethingNew) {
     await updateConversationAfterMessage(row.id, {
       direction: latestIsOutbound ? 'outbound' : 'inbound',
       subject_preview: preview.slice(0, 500),
@@ -265,7 +269,8 @@ export async function backfillOrgMetaInboxChunk(
   const connection = await getFacebookConnectionForOrg(orgId);
   if (!connection) return syncAbortedResult();
 
-  const stored = await getMetaBackfillState(orgId);
+  // The connection row is already loaded for its token, so read the import state from it.
+  const stored = metaBackfillStateFromConnection(connection);
   const phase = state?.phase ?? stored.phase;
   const nextCursor = state?.nextCursor !== undefined ? state.nextCursor : stored.nextCursor;
   const pageId = connection.meta_page_id ?? connection.external_account_id;
@@ -417,7 +422,8 @@ export async function backfillOrgMetaInbox(
       const result = await backfillOrgMetaInboxChunk(orgId, state);
       pagesFetched += 1;
       if (result.done) return;
-      state = { phase: result.phase as MetaBackfillChunkPhase, nextCursor: null };
+      // Omit the cursor so the next chunk continues from the stored one instead of page one.
+      state = { phase: result.phase as MetaBackfillChunkPhase };
     }
 
     await finalizeMetaInboxSync(orgId);

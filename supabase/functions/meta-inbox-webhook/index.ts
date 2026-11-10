@@ -12,12 +12,16 @@ import {
   handleMetaReadReceipt,
 } from '../_shared/metaInboxWebhookHandler.ts';
 import { verifyMetaWebhookSignatureAsync } from '../_shared/metaInboxGraph.ts';
-import { handleEdgeError, jsonError } from '../_shared/httpResponse.ts';
+import { jsonError } from '../_shared/httpResponse.ts';
 import { identityFromRequest, rateLimitGate } from '../_shared/rateLimit.ts';
 import { captureSentryException } from '../_shared/sentry.ts';
 import { withEdgeErrorCapture } from '../_shared/serveEdge.ts';
 import { buildDmThreadId } from '../_shared/socialInboxService.ts';
-import { platformFromMetaObject } from '../_shared/metaInboxEvents.ts';
+import {
+  isTransientMetaWebhookError,
+  platformFromMetaObject,
+  type MetaMessagingPlatform,
+} from '../_shared/metaInboxEvents.ts';
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
@@ -81,6 +85,8 @@ const handler = async (req: Request): Promise<Response> => {
     });
   }
 
+  let infrastructureFailed = false;
+
   for (const entry of payload.entry ?? []) {
     const pageOrIgId = entry.id;
 
@@ -90,6 +96,9 @@ const handler = async (req: Request): Promise<Response> => {
       try {
         await processMetaMessagingEvent(pageOrIgId, raw, platform);
       } catch (error) {
+        // A database or network failure is not a bad event. Every write on this path is
+        // idempotent, so let Meta retry the batch instead of acknowledging lost messages.
+        if (isTransientMetaWebhookError(error)) infrastructureFailed = true;
         console.error('[meta-inbox-webhook] event failed:', error);
         await captureSentryException(error, {
           logPrefix: 'meta-inbox-webhook',
@@ -104,6 +113,10 @@ const handler = async (req: Request): Promise<Response> => {
     void entry.changes;
   }
 
+  if (infrastructureFailed) {
+    return jsonError(req, 'Temporary failure, retry', 500);
+  }
+
   return new Response(JSON.stringify({ success: true }), {
     status: 200,
     headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
@@ -113,7 +126,7 @@ const handler = async (req: Request): Promise<Response> => {
 async function processMetaMessagingEvent(
   pageOrIgId: string,
   messaging: Record<string, unknown>,
-  platform: 'facebook' | 'instagram'
+  platform: MetaMessagingPlatform
 ): Promise<void> {
   if (messaging.read) {
     const senderId = (messaging.sender as { id?: string })?.id ?? '';

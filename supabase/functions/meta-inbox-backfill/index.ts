@@ -12,7 +12,6 @@ import { jsonError, jsonSuccess, readJsonBody } from '../_shared/httpResponse.ts
 import { resolveInboxAccess } from '../_shared/inboxAccess.ts';
 import { verifyAuthenticatedUser } from '../_shared/orgAuth.ts';
 import { resolveSupabaseServiceRoleKey } from '../_shared/supabaseRuntimeEnv.ts';
-import type { SocialChannelConnectionRow } from '../_shared/socialInboxTypes.ts';
 import { isFeatureAvailable } from '../_shared/featureAvailability.ts';
 import { captureSentryException } from '../_shared/sentry.ts';
 import { identityFromRequest, rateLimitGate } from '../_shared/rateLimit.ts';
@@ -25,18 +24,6 @@ function isServiceRoleRequest(req: Request): boolean {
   return !!key && token === key;
 }
 
-/**
- * The org-default Facebook connection for this org.
- *
- * The old lookup filtered on org and platform only, so it matched a property or parking
- * override row too, and `maybeSingle` errored as soon as an org had one.
- */
-async function facebookConnectionForOrg(
-  orgId: string
-): Promise<SocialChannelConnectionRow | null> {
-  return getOrgDefaultFacebookConnection(orgId);
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders(req) });
@@ -46,7 +33,7 @@ serve(async (req) => {
   }
 
   let orgId: string;
-  let phase: 'messenger' | 'instagram' = 'messenger';
+  let phase: 'messenger' | 'instagram' | undefined;
   let finalize = false;
   let light = false;
 
@@ -65,7 +52,7 @@ serve(async (req) => {
       orgId = ctx.orgId;
     }
 
-    const rawPhase = String(body.phase ?? 'messenger').trim();
+    const rawPhase = String(body.phase ?? '').trim();
     if (rawPhase === 'instagram' || rawPhase === 'messenger') {
       phase = rawPhase;
     }
@@ -85,7 +72,10 @@ serve(async (req) => {
     if (limited) return limited;
   }
 
-  const facebook = await facebookConnectionForOrg(orgId);
+  // The org-default Page, not any connected row. The old lookup filtered on org and
+  // platform only, so it matched a property or parking override row too, and `maybeSingle`
+  // errored as soon as an org had one.
+  const facebook = await getOrgDefaultFacebookConnection(orgId);
   if (!facebook) {
     return jsonError(req, 'No Meta connection', 404);
   }
@@ -112,7 +102,12 @@ serve(async (req) => {
         metaHasMore: false,
       });
     }
-    const result = await backfillOrgMetaInboxChunk(orgId, { phase }, { light });
+    // No explicit phase means "continue from the stored import state".
+    const result = await backfillOrgMetaInboxChunk(
+      orgId,
+      phase ? { phase } : undefined,
+      { light }
+    );
     return jsonSuccess(req, result);
   } catch (e) {
     console.error('[meta-inbox-backfill]', e);

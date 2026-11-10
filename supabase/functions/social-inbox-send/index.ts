@@ -227,6 +227,8 @@ serveAuthenticated(
     }
 
     const connection = conn as SocialChannelConnectionRow;
+    // Narrowed above. Passed explicitly because the cast to the row type drops the guard.
+    const metaPageId: string = conn.meta_page_id;
     const token = await getPageAccessToken(connection);
 
     try {
@@ -249,7 +251,7 @@ serveAuthenticated(
         }
 
         const result = await sendMetaMessage({
-          pageId: connection.meta_page_id,
+          pageId: metaPageId,
           pageAccessToken: token,
           recipientId: conv.external_participant_id ?? '',
           text,
