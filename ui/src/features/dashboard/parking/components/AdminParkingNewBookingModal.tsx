@@ -204,6 +204,7 @@ export function AdminParkingNewBookingModal({
                 towerLabel={towerLabel}
                 onSubmit={handleSubmit}
                 onDirtyChange={setFormDirty}
+                showLegalNotice={false}
               />
             </>
           ) : null}

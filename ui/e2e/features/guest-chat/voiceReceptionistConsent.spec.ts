@@ -280,7 +280,12 @@ test.describe('@smoke voice receptionist consent', () => {
       timeout: 15_000,
     });
     await expect(page.getByText(/Uses your microphone and Google Gemini/)).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Privacy' })).toBeVisible();
+    await expect(
+      page
+        .getByRole('heading', { name: 'AI voice receptionist' })
+        .locator('..')
+        .getByRole('link', { name: 'Privacy' }),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Start call' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'End call' })).toHaveCount(0);
     const startCallBox = await page.getByRole('button', { name: 'Start call' }).boundingBox();

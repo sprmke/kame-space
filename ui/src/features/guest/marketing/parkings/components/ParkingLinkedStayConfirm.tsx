@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { Pencil } from 'lucide-react';
 
 import type { LinkableParkingBooking } from '@/features/guest/marketing/parkings/hooks/useLinkableParkingBookings';
@@ -24,6 +26,8 @@ type Props = {
   onBack: () => void;
   onEditDetails: () => void;
   onSubmit: () => void;
+  /** Agreement line shown above the action row. */
+  legalNotice?: ReactNode;
 };
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
@@ -43,6 +47,7 @@ export function ParkingLinkedStayConfirm({
   onBack,
   onEditDetails,
   onSubmit,
+  legalNotice,
 }: Props) {
   const values = form.watch();
   const stayName = booking.propertyName?.trim() || 'Your stay';
@@ -115,6 +120,8 @@ export function ParkingLinkedStayConfirm({
           </div>
         ) : null}
       </div>
+
+      {legalNotice}
 
       <div className="flex items-center justify-between gap-3 pt-1">
         <Button

@@ -132,6 +132,7 @@ import { PageTransition } from '@/components/mobile/PageTransition';
 import { AiAssistantPanelSkeleton } from '@/components/skeletons/AiAssistantSkeleton';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { FeatureAvailabilityBanner } from '@/components/feature-availability/FeatureAvailabilityBanner';
+import { LegalFooterLinks } from '@/components/legal/LegalFooterLinks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SlidingActivePill } from '@/components/ui/SlidingActivePill';
 import { useAfterFirstPaint } from '@/hooks/useAfterFirstPaint';
@@ -1370,6 +1371,11 @@ function AdminProfileFooter({
                   Sign out
                 </button>
               </div>
+
+              <LegalFooterLinks
+                includeCookies={false}
+                className="border-border/50 border-t px-3 py-1"
+              />
             </div>
           )}
 

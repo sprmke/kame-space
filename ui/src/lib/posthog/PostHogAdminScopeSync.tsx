@@ -6,7 +6,7 @@ import { useOptionalOrgContext } from '@/features/dashboard/org/components/Requi
 import { useOptionalParkingContext } from '@/features/dashboard/org/components/RequireParkingContext';
 import { useOrganizations } from '@/features/dashboard/org/hooks/useOrganizations';
 
-import { isPostHogEnabled, posthog } from '@/lib/posthog/client';
+import { isPostHogActive, posthog } from '@/lib/posthog/client';
 import { PostHogContextSync } from '@/lib/posthog/PostHogContextSync';
 import { setSentryTenantScope } from '@/lib/sentry/scope';
 
@@ -31,7 +31,7 @@ export function PostHogAdminScopeSync() {
   const orgSlug = tenant?.orgSlug ?? parkingTenant?.orgSlug ?? routeOrgSlug;
 
   useEffect(() => {
-    if (!isPostHogEnabled) return;
+    if (!isPostHogActive()) return;
     if (orgId) {
       posthog.group('organization', orgId, {
         ...(orgSlug ? { slug: orgSlug } : {}),

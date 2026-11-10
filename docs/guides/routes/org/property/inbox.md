@@ -31,6 +31,8 @@ Property operators open Guest Inbox scoped to this property. **Web** threads are
 
 **Manage** (Channels / Quick replies / Automation) lives on the property inbox. There is no org-level Inbox route anymore (`/org/:orgSlug/inbox` redirects to Properties). Quick replies and automation data remain **organization-scoped** (shared across properties); Channels connect/disconnect is scoped as described below.
 
+> **Legal notice:** The Channels tab shows a short line under the Meta row while disconnected ("Connecting lets us read and reply to this Page's messages on your behalf", linking Privacy#sharing). It hides once connected. Pattern and full list: [legal.md](../../legal.md#in-app-notices).
+
 ## Host-facing knowledge
 
 This is where you read and reply to guest messages for this property: website chat plus Facebook and Instagram when connected. Use **Manage** to connect Meta, save quick replies, and turn on AI automation. Web chat threads belong to this property only; social messages use your connected Facebook Page (this property’s own connection, or the shared organization Page).
