@@ -46,6 +46,8 @@ type PageAudit = {
   textLength: number;
   imagesWithoutAlt: number;
   jsonLdErrors: string[];
+  /** Same-origin links found in the crawler HTML. */
+  outbound: string[];
   findings: Finding[];
 };
 
@@ -142,6 +144,23 @@ function imagesWithoutAlt(html: string): number {
   return images.filter((tag) => !/\salt\s*=\s*("[^"]*"|'[^']*')/i.test(tag)).length;
 }
 
+function internalLinks(html: string, origin: string): string[] {
+  const hrefs = [...html.matchAll(/<a\b[^>]*href="([^"]+)"/gi)].map((match) => decode(match[1]!.trim()));
+  const links = new Set<string>();
+  for (const href of hrefs) {
+    if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) continue;
+    try {
+      const url = new URL(href, origin);
+      if (url.origin !== origin) continue;
+      const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '') : url.pathname;
+      links.add(`${origin}${path}`);
+    } catch {
+      // Ignore malformed hrefs; a separate finding would be noise.
+    }
+  }
+  return [...links];
+}
+
 function jsonLdErrors(html: string): string[] {
   const errors: string[] = [];
   const blocks = html.match(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi) ?? [];
@@ -185,6 +204,7 @@ async function auditPage(url: string): Promise<PageAudit> {
   const textLength = visibleTextLength(html);
   const missingAlt = imagesWithoutAlt(html);
   const ldErrors = jsonLdErrors(html);
+  const outbound = internalLinks(html, origin);
 
   if (status !== 200) {
     findings.push({ level: 'error', code: 'status', message: `HTTP ${status}` });
@@ -276,6 +296,7 @@ async function auditPage(url: string): Promise<PageAudit> {
     textLength,
     imagesWithoutAlt: missingAlt,
     jsonLdErrors: ldErrors,
+    outbound,
     findings,
   };
 }
@@ -301,6 +322,27 @@ function duplicateFindings(pages: PageAudit[]): Finding[] {
           .join(', ')})`,
       });
     }
+  }
+  return findings;
+}
+
+/** Sitemap URLs with no inbound link from any other audited page. */
+function orphanFindings(pages: PageAudit[]): Finding[] {
+  const inbound = new Map<string, number>();
+  for (const page of pages) {
+    for (const target of page.outbound) {
+      inbound.set(target, (inbound.get(target) ?? 0) + 1);
+    }
+  }
+  const findings: Finding[] = [];
+  for (const page of pages) {
+    const key = page.url.length > 1 ? page.url.replace(/\/+$/, '') : page.url;
+    if ((inbound.get(key) ?? 0) > 0) continue;
+    findings.push({
+      level: 'warning',
+      code: 'orphan',
+      message: `${new URL(page.url).pathname} has no inbound internal link in the audited set`,
+    });
   }
   return findings;
 }
@@ -372,6 +414,7 @@ async function main() {
         textLength: 0,
         imagesWithoutAlt: 0,
         jsonLdErrors: [],
+        outbound: [],
         findings: [
           {
             level: 'error',
@@ -384,6 +427,7 @@ async function main() {
   }
 
   global.push(...duplicateFindings(pages));
+  global.push(...orphanFindings(pages));
 
   mkdirSync(outDir, { recursive: true });
   const stamp = new Date().toISOString().slice(0, 10);

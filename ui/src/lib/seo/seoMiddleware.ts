@@ -21,11 +21,18 @@ import {
   type RouteFamily,
 } from './publicRoutes';
 import {
+  buildBreadcrumbJsonLd,
   buildDevelopmentJsonLd,
+  buildFaqJsonLd,
+  buildItemListJsonLd,
+  buildOrganizationJsonLd,
   buildPageTitle,
   buildParkingJsonLd,
   buildPropertyJsonLd,
   buildRobotsTxt,
+  buildSoftwareApplicationJsonLd,
+  buildWebSiteJsonLd,
+  combineJsonLd,
   DEFAULT_DESCRIPTION,
   DEFAULT_INDEXABLE_HOSTS,
   DEFAULT_SOCIAL_IMAGE,
@@ -63,6 +70,10 @@ export type SeoMiddlewareDeps = {
   siteOrigin?: string;
   /** `VITE_SUPABASE_IMAGE_TRANSFORMS` — build 1200x630 Storage share crops. */
   imageTransforms?: boolean;
+  /** Contact email for the Organization `contactPoint`. */
+  supportEmail?: string | null;
+  /** Public social profiles for `Organization.sameAs`. */
+  socialLinks?: readonly string[];
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   /** Hosts allowed in robots.txt; others get `Disallow: /`. Defaults to the production hosts. */
@@ -114,6 +125,38 @@ function placeLabel(slug: string): string {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
+}
+
+const RELATED_ENDPOINT: Record<RouteFamily, string> = {
+  property: 'list-public-properties',
+  parking: 'list-public-parkings',
+  development: 'list-public-developments',
+};
+
+/**
+ * Other listings in the same city, for internal links in the crawler HTML. Best effort: an
+ * empty list on any error, so a snapshot never fails because of an optional sidebar.
+ */
+async function relatedListings(
+  deps: SeoMiddlewareDeps,
+  family: RouteFamily,
+  city: string | null,
+  excludeSlug: string
+): Promise<SnapshotLink[]> {
+  const place = city?.trim();
+  if (!place) return [];
+  try {
+    const body = await getJson(
+      `${apiBase(deps)}/${RELATED_ENDPOINT[family]}?where=${encodeURIComponent(place)}&pageSize=8`,
+      deps
+    );
+    return listingLinks(
+      records(body?.data).filter((card) => str(card.slug) !== excludeSlug),
+      family
+    ).slice(0, 6);
+  } catch {
+    return [];
+  }
 }
 
 function listingLinks(cards: Json[], family: RouteFamily): SnapshotLink[] {
@@ -237,15 +280,30 @@ async function loadListingRoute(
     if (price) facts.push({ label: 'From', value: `PHP ${Math.round(price)} / night` });
 
     const links: SnapshotLink[] = [{ href: FAMILY_LIST_PATHS.property, label: 'All stays' }];
-    const developmentSlug = str(data.developmentSlug) ?? str(data.residenceSlug);
+    const development = (data.development ?? null) as Json | null;
+    const developmentSlug = str(development?.slug) ?? str(data.developmentSlug);
+    const developmentName = str(development?.name) ?? str(data.residenceName);
     if (developmentSlug) {
       links.push({
         href: `${FAMILY_LIST_PATHS.development}/${developmentSlug}`,
-        label: str(data.residenceName) ?? 'Development',
+        label: developmentName ?? 'Development',
       });
     }
-    const hostSlug = str(data.hostSlug) ?? str(data.orgSlug);
-    if (hostSlug) links.push({ href: `/hosts/${hostSlug}`, label: 'Host profile' });
+    const host = (data.host ?? null) as Json | null;
+    const hostSlug = str(host?.organizationSlug) ?? str(data.hostSlug) ?? str(data.orgSlug);
+    if (hostSlug) {
+      links.push({
+        href: `/hosts/${hostSlug}`,
+        label: str(host?.organizationName) ?? 'Host profile',
+      });
+    }
+    if (location) {
+      links.push({ href: `${FAMILY_LIST_PATHS.property}?where=${encodeURIComponent(location)}`, label: `Stays in ${location}` });
+    }
+    // Related stays in the same city, so a crawler has a path deeper into the catalogue.
+    for (const related of await relatedListings(deps, 'property', city, slug)) {
+      links.push({ href: related.href, label: related.label });
+    }
 
     return {
       meta: {
@@ -265,13 +323,23 @@ async function loadListingRoute(
           description: str(data.description),
           images,
           address: {
-            city: str(data.city),
+            city,
             province: str(data.province),
             country: str(data.country),
           },
           rating: num(data.rating),
           reviewCount: num(data.reviewCount) ?? 0,
           priceFrom: price,
+          geo: { latitude: num(data.latitude), longitude: num(data.longitude) },
+          amenities: strings(data.amenities),
+          guests: num(data.maxGuests),
+          bedrooms: num(data.bedrooms),
+          checkinTime: str(data.checkInTime),
+          checkoutTime: str(data.checkOutTime),
+          containedInName: developmentName,
+          containedInUrl: developmentSlug
+            ? `${FAMILY_LIST_PATHS.development}/${developmentSlug}`
+            : null,
         }),
       },
       snapshot: {
@@ -309,6 +377,30 @@ async function loadListingRoute(
     if (place) facts.push({ label: 'Location', value: place });
     if (rate) facts.push({ label: 'From', value: `PHP ${Math.round(rate)} / night` });
 
+    const parkingLinks: SnapshotLink[] = [
+      { href: FAMILY_LIST_PATHS.parking, label: 'All parking' },
+    ];
+    const parkingDevelopment = (data.development ?? null) as Json | null;
+    const parkingDevelopmentSlug = str(parkingDevelopment?.slug) ?? str(data.developmentSlug);
+    if (parkingDevelopmentSlug) {
+      parkingLinks.push({
+        href: `${FAMILY_LIST_PATHS.development}/${parkingDevelopmentSlug}/parking`,
+        label: `${str(parkingDevelopment?.name) ?? str(data.residenceName) ?? 'Development'} parking`,
+      });
+    }
+    const parkingHost = (data.host ?? null) as Json | null;
+    const parkingHostSlug =
+      str(parkingHost?.organizationSlug) ?? str(data.hostSlug) ?? str(data.orgSlug);
+    if (parkingHostSlug) {
+      parkingLinks.push({
+        href: `/hosts/${parkingHostSlug}`,
+        label: str(parkingHost?.organizationName) ?? 'Host profile',
+      });
+    }
+    for (const related of await relatedListings(deps, 'parking', str(data.city), slug)) {
+      parkingLinks.push({ href: related.href, label: related.label });
+    }
+
     return {
       meta: {
         title: buildPageTitle(parkingTitle({ name, place }), deps.siteName),
@@ -322,13 +414,18 @@ async function loadListingRoute(
           name,
           url: canonicalUrl,
           description: str(data.description),
-          image: str(data.coverImage),
+          image: share.image,
           address: {
             city: str(data.city),
             province: str(data.province),
             country: str(data.country),
           },
           priceFrom: rate,
+          geo: { latitude: num(data.latitude), longitude: num(data.longitude) },
+          containedInName: str(parkingDevelopment?.name) ?? str(data.residenceName),
+          containedInUrl: parkingDevelopmentSlug
+            ? `${FAMILY_LIST_PATHS.development}/${parkingDevelopmentSlug}`
+            : null,
         }),
       },
       snapshot: {
@@ -337,7 +434,7 @@ async function loadListingRoute(
         intro: description,
         facts,
         images: str(data.coverImage) ? [{ src: str(data.coverImage)!, alt: name }] : [],
-        links: [{ href: FAMILY_LIST_PATHS.parking, label: 'All parking' }],
+        links: parkingLinks,
         breadcrumbs: [
           { name: 'Home', path: '/' },
           { name: 'Parking', path: FAMILY_LIST_PATHS.parking },
@@ -364,6 +461,19 @@ async function loadListingRoute(
   if (location) facts.push({ label: 'Location', value: location });
   if (num(data.price)) facts.push({ label: 'From', value: `PHP ${Math.round(num(data.price)!)}` });
 
+  // Homes inside this development, so crawlers can reach the units from the parent page.
+  const unitLinks = await (async (): Promise<SnapshotLink[]> => {
+    try {
+      const unitsBody = await getJson(
+        `${apiBase(deps)}/list-public-properties?development=${encodeURIComponent(name)}&pageSize=8`,
+        deps
+      );
+      return listingLinks(records(unitsBody?.data), 'property');
+    } catch {
+      return [];
+    }
+  })();
+
   return {
     meta: {
       title: buildPageTitle(developmentTitle({ name, city: city ?? location }), deps.siteName),
@@ -377,8 +487,11 @@ async function loadListingRoute(
         name,
         url: canonicalUrl,
         description: str(data.description),
-        image: str(data.coverImage),
-        city: str(data.city),
+        image: share.image,
+        city: city ?? location,
+        province: str(data.province),
+        geo: { latitude: num(data.latitude), longitude: num(data.longitude) },
+        units: unitLinks.map((link) => ({ name: link.label, url: link.href })),
       }),
     },
     snapshot: {
@@ -391,6 +504,7 @@ async function loadListingRoute(
         { href: FAMILY_LIST_PATHS.development, label: 'All developments' },
         { href: `${FAMILY_LIST_PATHS.development}/${slug}/properties`, label: `${name} homes` },
         { href: `${FAMILY_LIST_PATHS.development}/${slug}/parking`, label: `${name} parking` },
+        ...unitLinks,
       ],
       breadcrumbs: [
         { name: 'Home', path: '/' },
@@ -415,6 +529,37 @@ const PLACE_LABEL: Record<RouteFamily, string> = {
   development: 'Developments',
 };
 
+/**
+ * Other places in the same family, from the same place-group index the list pages use.
+ * Best effort: an empty list on any error.
+ */
+async function neighbouringPlaces(
+  deps: SeoMiddlewareDeps,
+  family: RouteFamily,
+  place: string,
+  label: string
+): Promise<SnapshotLink[]> {
+  try {
+    const routeFamily = `${FAMILY_LIST_PATHS[family].replace(/^\//, '')}`;
+    const body = await getJson(
+      `${apiBase(deps)}/list-public-place-groups?family=${routeFamily}&groupLimit=12&previewSize=1`,
+      deps
+    );
+    const groups = records(body?.data);
+    return groups
+      .map((group) => {
+        const slug = str(group.placeSlug) ?? str(group.slug);
+        const name = str(group.placeLabel) ?? str(group.label);
+        if (!slug || !name || slug === place) return null;
+        return { href: `${FAMILY_LIST_PATHS[family]}/in/${slug}`, label: `${label} in ${name}` };
+      })
+      .filter((link): link is SnapshotLink => link !== null)
+      .slice(0, 6);
+  } catch {
+    return [];
+  }
+}
+
 async function loadPlaceRoute(
   family: RouteFamily,
   place: string,
@@ -438,6 +583,17 @@ async function loadPlaceRoute(
   });
   const share = socialImageMeta(str(cards[0]?.coverImage), Boolean(deps.imageTransforms));
 
+  // Sideways links: the other families in this place, then neighbouring places.
+  const links: SnapshotLink[] = listingLinks(cards, family);
+  for (const otherFamily of ['property', 'parking', 'development'] as const) {
+    if (otherFamily === family) continue;
+    links.push({
+      href: `/${FAMILY_LIST_PATHS[otherFamily].replace(/^\//, '')}/in/${place}`,
+      label: `${PLACE_LABEL[otherFamily]} in ${label}`,
+    });
+  }
+  links.push(...(await neighbouringPlaces(deps, family, place, label)));
+
   return {
     meta: {
       title: buildPageTitle(heading, deps.siteName),
@@ -452,7 +608,7 @@ async function loadPlaceRoute(
       heading,
       intro: description,
       images: listingImages(cards),
-      links: listingLinks(cards, family),
+      links,
       breadcrumbs: [
         { name: 'Home', path: '/' },
         { name: PLACE_LABEL[family], path: FAMILY_LIST_PATHS[family] },
@@ -569,6 +725,117 @@ async function loadDevelopmentSubPage(
         { name: 'Developments', path: FAMILY_LIST_PATHS.development },
         { name, path: `${FAMILY_LIST_PATHS.development}/${slug}` },
       ],
+    },
+  };
+}
+
+// --- structured data ---------------------------------------------------------------------
+
+/** Site-wide entities every snapshot page carries. */
+function siteJsonLdNodes(deps: SeoMiddlewareDeps, siteOrigin: string) {
+  const logo = `${siteOrigin}/brand/kame-space-mark-120.png`;
+  return [
+    buildOrganizationJsonLd({
+      name: deps.siteName,
+      url: `${siteOrigin}/`,
+      logo,
+      alternateName: 'Kame Homes',
+      sameAs: deps.socialLinks ?? [],
+      email: deps.supportEmail ?? null,
+    }),
+    buildWebSiteJsonLd({
+      name: deps.siteName,
+      url: `${siteOrigin}/`,
+      alternateName: 'Kame Homes',
+    }),
+  ];
+}
+
+function breadcrumbNodes(
+  snapshot: SnapshotPage,
+  siteOrigin: string,
+  canonicalUrl: string
+): Record<string, unknown> | null {
+  const crumbs = snapshot.breadcrumbs;
+  if (!crumbs?.length) return null;
+  return buildBreadcrumbJsonLd(
+    crumbs.map((crumb) => ({
+      name: crumb.name,
+      // The trailing crumb is the current page, so it takes the canonical URL.
+      url: crumb.path ? `${siteOrigin}${crumb.path}` : canonicalUrl,
+    }))
+  );
+}
+
+/** Items for an ItemList from the snapshot's own links, minus navigation links. */
+function itemListNodes(snapshot: SnapshotPage): Record<string, unknown> | null {
+  const links = snapshot.links ?? [];
+  if (links.length === 0) return null;
+  return buildItemListJsonLd({
+    name: snapshot.heading,
+    items: links.map((link) => ({ name: link.label, url: link.href })),
+  });
+}
+
+/** FAQPage for /support, from the same published FAQs the page renders. */
+async function supportFaqNodes(deps: SeoMiddlewareDeps): Promise<Record<string, unknown> | null> {
+  try {
+    const body = await getJson(`${apiBase(deps)}/list-public-support-faqs`, deps);
+    const rows = records(body?.data);
+    return buildFaqJsonLd(
+      rows
+        .map((row) => ({ question: str(row.question) ?? '', answer: str(row.answer) ?? '' }))
+        .filter((row) => row.question && row.answer)
+    );
+  } catch {
+    return null;
+  }
+}
+
+/** SoftwareApplication + one Offer per published plan for /for-hosts/pricing. */
+async function pricingNodes(deps: SeoMiddlewareDeps): Promise<Record<string, unknown> | null> {
+  try {
+    const body = await getJson(`${apiBase(deps)}/list-public-pricing-plans`, deps);
+    const rows = records(body?.data);
+    if (rows.length === 0) return null;
+    return buildSoftwareApplicationJsonLd({
+      name: `${deps.siteName} for hosts`,
+      offers: rows.map((row) => ({
+        name: str(row.name) ?? '',
+        description: str(row.tagline),
+        price: num(row.pricePhp),
+        currency: 'PHP',
+      })),
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** `Organization` for a host page, with the listings it offers. */
+function hostOfferCatalog(
+  snapshot: SnapshotPage,
+  siteOrigin: string,
+  canonicalUrl: string
+): Record<string, unknown> | null {
+  const links = snapshot.links ?? [];
+  if (links.length === 0) return null;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: snapshot.heading,
+    url: canonicalUrl,
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: `${snapshot.heading} listings`,
+      itemListElement: links.slice(0, 24).map((link) => ({
+        '@type': 'Offer',
+        itemOffered: {
+          '@type': 'Accommodation',
+          name: link.label,
+          url: `${siteOrigin}${link.href}`,
+        },
+      })),
     },
   };
 }
@@ -690,7 +957,39 @@ export async function handleSeoRequest(
       return new Response(html, { status: 404, headers });
     }
 
-    const withMeta = injectMetaIntoHtml(shell, resolved.meta);
+    const canonicalUrl = canonicalUrlFor(siteOrigin, url.pathname);
+    const extra: Array<Record<string, unknown> | null> = [
+      ...siteJsonLdNodes(deps, siteOrigin),
+      breadcrumbNodes(resolved.snapshot, siteOrigin, canonicalUrl),
+    ];
+
+    switch (resolved.snapshot.id) {
+      case 'support':
+        extra.push(await supportFaqNodes(deps));
+        break;
+      case 'for-hosts-pricing':
+        extra.push(await pricingNodes(deps));
+        break;
+      case 'host-public':
+        extra.push(hostOfferCatalog(resolved.snapshot, siteOrigin, canonicalUrl));
+        break;
+      default:
+        if (resolved.snapshot.id.endsWith('-place') || resolved.snapshot.id.startsWith('development-')) {
+          extra.push(itemListNodes(resolved.snapshot));
+        }
+        break;
+    }
+
+    const jsonLd = combineJsonLd([
+      ...extra,
+      ...(Array.isArray(resolved.meta.jsonLd)
+        ? (resolved.meta.jsonLd as ReadonlyArray<Record<string, unknown>>)
+        : resolved.meta.jsonLd
+          ? [resolved.meta.jsonLd as Record<string, unknown>]
+          : []),
+    ]);
+
+    const withMeta = injectMetaIntoHtml(shell, { ...resolved.meta, jsonLd });
     const html = injectSnapshotIntoHtml(
       withMeta,
       renderSnapshotHtml(resolved.snapshot, siteOrigin)

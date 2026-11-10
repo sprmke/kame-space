@@ -42,6 +42,12 @@ export default async function middleware(request: Request): Promise<Response> {
       siteName: process.env.VITE_PLATFORM_APP_NAME?.trim() || 'Kame Space',
       siteOrigin: resolveSiteOrigin(process.env.VITE_CANONICAL_APP_ORIGIN),
       imageTransforms: process.env.VITE_SUPABASE_IMAGE_TRANSFORMS === 'true',
+      supportEmail: process.env.VITE_PLATFORM_CONTACT_EMAIL?.trim() || null,
+      socialLinks: [
+        process.env.VITE_PLATFORM_SOCIAL_FACEBOOK,
+        process.env.VITE_PLATFORM_SOCIAL_INSTAGRAM,
+        process.env.VITE_PLATFORM_SOCIAL_TWITTER,
+      ].filter((href): href is string => Boolean(href && href.trim())),
       // Empty or unset keeps the production defaults in seoMeta.ts.
       indexableHosts: indexableHosts.length > 0 ? indexableHosts : undefined,
     },

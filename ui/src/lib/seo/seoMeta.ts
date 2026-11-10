@@ -33,7 +33,8 @@ export type SeoMeta = {
   imageWidth?: number | null;
   imageHeight?: number | null;
   type?: 'website' | 'article';
-  jsonLd?: Record<string, unknown> | null;
+  /** One entity, or several rendered as a single `@graph`. */
+  jsonLd?: Record<string, unknown> | ReadonlyArray<Record<string, unknown>> | null;
   noindex?: boolean;
 };
 
@@ -299,6 +300,27 @@ export function serializeJsonLd(value: Record<string, unknown>): string {
   return JSON.stringify(value).replace(/</g, '\\u003c');
 }
 
+/** Merge several entities into one `@graph` document. */
+export function combineJsonLd(
+  nodes: ReadonlyArray<Record<string, unknown> | null | undefined>
+): Record<string, unknown> | null {
+  const entities = nodes.filter((node): node is Record<string, unknown> => Boolean(node));
+  if (entities.length === 0) return null;
+  if (entities.length === 1) return entities[0]!;
+  return { '@context': 'https://schema.org', '@graph': entities };
+}
+
+/** Serialize one entity or a graph. */
+export function serializeJsonLdGraph(
+  value: Record<string, unknown> | ReadonlyArray<Record<string, unknown>>
+): string {
+  if (Array.isArray(value)) {
+    const combined = combineJsonLd(value as ReadonlyArray<Record<string, unknown>>);
+    return serializeJsonLd(combined ?? {});
+  }
+  return serializeJsonLd(value as Record<string, unknown>);
+}
+
 export type ListingFamily = 'property' | 'parking' | 'development';
 
 const DETAIL_PATTERNS: Array<[ListingFamily, RegExp]> = [
@@ -325,6 +347,148 @@ export function isCrawlerUserAgent(userAgent: string | null | undefined): boolea
   return Boolean(userAgent && CRAWLER_PATTERN.test(userAgent));
 }
 
+/** Site-wide Organization entity for the crawler snapshot and the runtime injector. */
+export function buildOrganizationJsonLd(input: {
+  name: string;
+  url: string;
+  logo: string;
+  alternateName?: string | null;
+  sameAs?: readonly string[];
+  email?: string | null;
+  telephone?: string | null;
+}): Record<string, unknown> {
+  const sameAs = (input.sameAs ?? []).filter((href) => /^https?:\/\//.test(href));
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: input.name,
+    ...(input.alternateName ? { alternateName: input.alternateName } : {}),
+    url: input.url,
+    logo: input.logo,
+    ...(sameAs.length > 0 ? { sameAs } : {}),
+    ...(input.email || input.telephone
+      ? {
+          contactPoint: {
+            '@type': 'ContactPoint',
+            contactType: 'customer support',
+            ...(input.email ? { email: input.email } : {}),
+            ...(input.telephone ? { telephone: input.telephone } : {}),
+            areaServed: 'PH',
+            availableLanguage: ['en', 'fil'],
+          },
+        }
+      : {}),
+  };
+}
+
+/** Site-wide WebSite entity. */
+export function buildWebSiteJsonLd(input: {
+  name: string;
+  url: string;
+  alternateName?: string | null;
+}): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: input.name,
+    ...(input.alternateName ? { alternateName: input.alternateName } : {}),
+    url: input.url,
+  };
+}
+
+export type BreadcrumbInput = { name: string; url: string };
+
+export function buildBreadcrumbJsonLd(crumbs: readonly BreadcrumbInput[]): Record<string, unknown> | null {
+  const items = crumbs.filter((crumb) => crumb.name.trim() && crumb.url.trim());
+  if (items.length < 2) return null;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name.trim(),
+      item: crumb.url.trim(),
+    })),
+  };
+}
+
+export function buildItemListJsonLd(input: {
+  name: string;
+  items: ReadonlyArray<{ name: string; url: string; image?: string | null }>;
+}): Record<string, unknown> | null {
+  const items = input.items.filter((item) => item.name.trim() && item.url.trim()).slice(0, 24);
+  if (items.length === 0) return null;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: input.name,
+    numberOfItems: items.length,
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name.trim(),
+      url: item.url.trim(),
+      ...(item.image ? { image: item.image } : {}),
+    })),
+  };
+}
+
+export function buildFaqJsonLd(
+  faqs: ReadonlyArray<{ question: string; answer: string }>
+): Record<string, unknown> | null {
+  const usable = faqs
+    .map((faq) => ({ question: sanitizeMetaText(faq.question), answer: sanitizeMetaText(faq.answer) }))
+    .filter((faq) => faq.question && faq.answer)
+    .slice(0, 20);
+  if (usable.length === 0) return null;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: usable.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+    })),
+  };
+}
+
+export type PlanOfferInput = {
+  name: string;
+  description?: string | null;
+  price?: number | null;
+  currency?: string | null;
+  url?: string | null;
+};
+
+/** `SoftwareApplication` with one `Offer` per published plan. */
+export function buildSoftwareApplicationJsonLd(input: {
+  name: string;
+  applicationCategory?: string;
+  offers: readonly PlanOfferInput[];
+}): Record<string, unknown> {
+  const offers = input.offers
+    .filter((offer) => offer.name.trim())
+    .map((offer) => ({
+      '@type': 'Offer',
+      name: offer.name.trim(),
+      ...(offer.description ? { description: truncateDescription(offer.description, 200) } : {}),
+      ...(offer.price != null && offer.price >= 0
+        ? { price: String(offer.price), priceCurrency: (offer.currency ?? 'PHP').toUpperCase() }
+        : {}),
+      ...(offer.url ? { url: offer.url } : {}),
+    }));
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: input.name,
+    applicationCategory: input.applicationCategory ?? 'BusinessApplication',
+    operatingSystem: 'Web',
+    ...(offers.length > 0 ? { offers } : {}),
+  };
+}
+
 type Address = { city?: string | null; province?: string | null; country?: string | null };
 
 function postalAddress(address: Address): Record<string, unknown> | undefined {
@@ -338,6 +502,36 @@ function postalAddress(address: Address): Record<string, unknown> | undefined {
   };
 }
 
+export type GeoInput = { latitude?: number | null; longitude?: number | null };
+
+function geoJsonLd(geo: GeoInput | undefined): Record<string, unknown> | undefined {
+  if (geo?.latitude == null || geo.longitude == null) return undefined;
+  return {
+    '@type': 'GeoCoordinates',
+    latitude: geo.latitude,
+    longitude: geo.longitude,
+  };
+}
+
+function amenityJsonLd(amenities: readonly string[] | undefined): Record<string, unknown>[] {
+  return (amenities ?? [])
+    .map((name) => sanitizeMetaText(name))
+    .filter(Boolean)
+    .slice(0, 12)
+    .map((name) => ({ '@type': 'LocationFeatureSpecification', name, value: true }));
+}
+
+function nightOffer(priceFrom: number | null | undefined, url: string) {
+  if (priceFrom == null || priceFrom <= 0) return undefined;
+  return {
+    '@type': 'Offer',
+    price: String(Math.round(priceFrom)),
+    priceCurrency: 'PHP',
+    url,
+    availability: 'https://schema.org/InStock',
+  };
+}
+
 export function buildPropertyJsonLd(input: {
   name: string;
   url: string;
@@ -347,7 +541,17 @@ export function buildPropertyJsonLd(input: {
   rating?: number | null;
   reviewCount?: number;
   priceFrom?: number | null;
+  geo?: GeoInput;
+  amenities?: readonly string[];
+  guests?: number | null;
+  bedrooms?: number | null;
+  petsAllowed?: boolean | null;
+  checkinTime?: string | null;
+  checkoutTime?: string | null;
+  containedInName?: string | null;
+  containedInUrl?: string | null;
 }): Record<string, unknown> {
+  const offer = nightOffer(input.priceFrom, input.url);
   return {
     '@context': 'https://schema.org',
     '@type': 'LodgingBusiness',
@@ -356,6 +560,24 @@ export function buildPropertyJsonLd(input: {
     ...(input.description ? { description: truncateDescription(input.description, 500) } : {}),
     ...(input.images.length > 0 ? { image: input.images.slice(0, 5) } : {}),
     ...(postalAddress(input.address) ? { address: postalAddress(input.address) } : {}),
+    ...(geoJsonLd(input.geo) ? { geo: geoJsonLd(input.geo) } : {}),
+    ...(amenityJsonLd(input.amenities).length > 0
+      ? { amenityFeature: amenityJsonLd(input.amenities) }
+      : {}),
+    ...(input.bedrooms && input.bedrooms > 0 ? { numberOfRooms: input.bedrooms } : {}),
+    ...(input.guests && input.guests > 0 ? { occupancy: { '@type': 'QuantitativeValue', maxValue: input.guests } } : {}),
+    ...(input.petsAllowed != null ? { petsAllowed: input.petsAllowed } : {}),
+    ...(input.checkinTime ? { checkinTime: input.checkinTime } : {}),
+    ...(input.checkoutTime ? { checkoutTime: input.checkoutTime } : {}),
+    ...(input.containedInName
+      ? {
+          containedInPlace: {
+            '@type': 'Place',
+            name: input.containedInName,
+            ...(input.containedInUrl ? { url: input.containedInUrl } : {}),
+          },
+        }
+      : {}),
     ...(input.rating != null && (input.reviewCount ?? 0) > 0
       ? {
           aggregateRating: {
@@ -369,6 +591,7 @@ export function buildPropertyJsonLd(input: {
     ...(input.priceFrom != null
       ? { priceRange: `From PHP ${Math.round(input.priceFrom)} / night` }
       : {}),
+    ...(offer ? { makesOffer: offer } : {}),
   };
 }
 
@@ -377,20 +600,37 @@ export function buildParkingJsonLd(input: {
   url: string;
   description?: string | null;
   image?: string | null;
+  images?: readonly string[];
   address: Address;
   priceFrom?: number | null;
+  geo?: GeoInput;
+  containedInName?: string | null;
+  containedInUrl?: string | null;
 }): Record<string, unknown> {
+  const images = [...new Set([...(input.images ?? []), ...(input.image ? [input.image] : [])])];
+  const offer = nightOffer(input.priceFrom, input.url);
   return {
     '@context': 'https://schema.org',
     '@type': 'ParkingFacility',
     name: input.name,
     url: input.url,
     ...(input.description ? { description: truncateDescription(input.description, 500) } : {}),
-    ...(input.image ? { image: input.image } : {}),
+    ...(images.length > 0 ? { image: images.slice(0, 5) } : {}),
     ...(postalAddress(input.address) ? { address: postalAddress(input.address) } : {}),
+    ...(geoJsonLd(input.geo) ? { geo: geoJsonLd(input.geo) } : {}),
+    ...(input.containedInName
+      ? {
+          containedInPlace: {
+            '@type': 'Place',
+            name: input.containedInName,
+            ...(input.containedInUrl ? { url: input.containedInUrl } : {}),
+          },
+        }
+      : {}),
     ...(input.priceFrom != null
       ? { priceRange: `From PHP ${Math.round(input.priceFrom)} / night` }
       : {}),
+    ...(offer ? { makesOffer: offer } : {}),
   };
 }
 
@@ -399,16 +639,32 @@ export function buildDevelopmentJsonLd(input: {
   url: string;
   description?: string | null;
   image?: string | null;
+  images?: readonly string[];
   city?: string | null;
+  province?: string | null;
+  geo?: GeoInput;
+  units?: ReadonlyArray<{ name: string; url: string }>;
 }): Record<string, unknown> {
+  const images = [...new Set([...(input.images ?? []), ...(input.image ? [input.image] : [])])];
+  const units = (input.units ?? []).filter((unit) => unit.name && unit.url).slice(0, 24);
   return {
     '@context': 'https://schema.org',
     '@type': 'Residence',
     name: input.name,
     url: input.url,
     ...(input.description ? { description: truncateDescription(input.description, 500) } : {}),
-    ...(input.image ? { image: input.image } : {}),
-    ...(input.city ? { address: postalAddress({ city: input.city }) } : {}),
+    ...(images.length > 0 ? { image: images.slice(0, 5) } : {}),
+    ...(input.city ? { address: postalAddress({ city: input.city, province: input.province }) } : {}),
+    ...(geoJsonLd(input.geo) ? { geo: geoJsonLd(input.geo) } : {}),
+    ...(units.length > 0
+      ? {
+          containsPlace: units.map((unit) => ({
+            '@type': 'Accommodation',
+            name: unit.name,
+            url: unit.url,
+          })),
+        }
+      : {}),
   };
 }
 
@@ -449,7 +705,7 @@ export function renderMetaTags(input: SeoMeta): string {
   }
   if (input.noindex) tags.push('<meta name="robots" content="noindex" />');
   if (input.jsonLd) {
-    tags.push(`<script type="application/ld+json">${serializeJsonLd(input.jsonLd)}</script>`);
+    tags.push(`<script type="application/ld+json">${serializeJsonLdGraph(input.jsonLd)}</script>`);
   }
   return tags.join('\n    ');
 }
