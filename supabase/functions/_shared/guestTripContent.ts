@@ -19,12 +19,13 @@ import {
   prepareConfigurableEmailBodyHtml,
 } from './propertyTemplateEmail.ts';
 import { loadPropertyEmailBranding } from './propertyEmailBranding.ts';
-import { resolvePropertyTemplateContent } from './propertyTemplates.ts';
+import {
+  isGuestTemplatePhase,
+  resolvePropertyTemplateContent,
+  type GuestTemplatePhase,
+} from './propertyTemplates.ts';
 import { resolvePropertySlugById } from './propertyScope.ts';
 import type { GuestSubmission } from './types.ts';
-
-/** Which trip moment a guest-visible template belongs to. */
-export type GuestTemplatePhase = 'before' | 'arrival' | 'stay' | 'checkout' | 'after' | 'always';
 
 /** Coarse stage the host writes for. */
 export type GuestTripStage = 'before' | 'arrival' | 'stay' | 'checkout' | 'after';
@@ -51,19 +52,6 @@ type TemplateRow = {
   content: string;
   guest_phase: string | null;
 };
-
-const PHASES: readonly GuestTemplatePhase[] = [
-  'before',
-  'arrival',
-  'stay',
-  'checkout',
-  'after',
-  'always',
-];
-
-function isGuestTemplatePhase(value: unknown): value is GuestTemplatePhase {
-  return typeof value === 'string' && (PHASES as readonly string[]).includes(value);
-}
 
 /**
  * Maps the booking status to the coarse stage a host writes for.

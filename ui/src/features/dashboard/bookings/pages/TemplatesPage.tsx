@@ -16,6 +16,7 @@ import { TemplateWorkbench } from '@/features/dashboard/bookings/components/prop
 import {
   usePropertyTemplateMutations,
   usePropertyTemplates,
+  type GuestTemplatePhase,
   type PropertyTemplateCategory,
   type PropertyTemplateDto,
 } from '@/features/dashboard/bookings/hooks/usePropertyTemplates';
@@ -197,7 +198,12 @@ export function TemplatesPage() {
 
   const handleSave = async (
     templateKey: string,
-    input: { content: string; sectionImageUrl?: string | null }
+    input: {
+      content: string;
+      sectionImageUrl?: string | null;
+      guestVisible?: boolean;
+      guestPhase?: GuestTemplatePhase;
+    }
   ) => {
     await requestVerifiedWrite(async (settingsVerificationToken) => {
       await saveTemplate.mutateAsync({

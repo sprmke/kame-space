@@ -10,6 +10,25 @@ import { normalizeEmailCalloutPlaceholders } from './normalizeEmailCalloutPlaceh
 
 export type PropertyTemplateCategory = 'standard' | 'email' | 'custom';
 
+/**
+ * Which trip moment a guest-visible custom template belongs to (guest journey plan D8).
+ * `always` shows at every stage.
+ */
+export const GUEST_TEMPLATE_PHASES = [
+  'before',
+  'arrival',
+  'stay',
+  'checkout',
+  'after',
+  'always',
+] as const;
+
+export type GuestTemplatePhase = (typeof GUEST_TEMPLATE_PHASES)[number];
+
+export function isGuestTemplatePhase(value: unknown): value is GuestTemplatePhase {
+  return typeof value === 'string' && (GUEST_TEMPLATE_PHASES as readonly string[]).includes(value);
+}
+
 export type PropertyTemplateKey =
   | 'house-rules'
   | 'check-in-instructions'
@@ -46,6 +65,10 @@ export type PropertyTemplateRow = {
   content: string;
   section_image_url: string | null;
   folder_id: string | null;
+  /** Custom templates only: render this template on the guest trip page and stay guide. */
+  guest_visible?: boolean | null;
+  /** Custom templates only: which trip stage shows it. Null means `always`. */
+  guest_phase?: string | null;
   updated_at: string;
 };
 
@@ -78,6 +101,10 @@ export type PropertyTemplateDto = {
   sectionImageUrl: string | null;
   /** Custom templates only: the host folder holding this template, or null when ungrouped. */
   folderId: string | null;
+  /** Custom templates only: whether guests see it on the trip page and in the stay guide. */
+  guestVisible: boolean;
+  /** Custom templates only: the trip stage that shows it. `always` when unset. */
+  guestPhase: GuestTemplatePhase;
   updatedAt: string | null;
 };
 
@@ -386,6 +413,10 @@ export async function upsertPropertyTemplateRow(input: {
   sectionImageUrl?: string | null;
   /** Custom templates only; built-ins always live in their fixed section. */
   folderId?: string | null;
+  /** Custom templates only: render it for guests. Built-ins are never guest-visible here. */
+  guestVisible?: boolean;
+  /** Custom templates only: the trip stage that shows it. */
+  guestPhase?: GuestTemplatePhase;
 }): Promise<PropertyTemplateRow> {
   const patch: Record<string, unknown> = {
     property_id: input.propertyId,
@@ -407,6 +438,14 @@ export async function upsertPropertyTemplateRow(input: {
   }
   if (input.folderId !== undefined) {
     patch.folder_id = input.category === 'custom' ? input.folderId : null;
+  }
+  // Guest visibility only means anything for a custom template: built-ins already reach the
+  // guest through the trip page's own sections.
+  if (input.guestVisible !== undefined) {
+    patch.guest_visible = input.category === 'custom' ? input.guestVisible : false;
+  }
+  if (input.guestPhase !== undefined) {
+    patch.guest_phase = input.category === 'custom' ? input.guestPhase : null;
   }
 
   const { data, error } = await supabaseAdmin()
@@ -540,6 +579,8 @@ function rowToDto(
     previewTemplateSlug: builtin?.previewTemplateSlug ?? null,
     sectionImageUrl: String(row.section_image_url ?? '').trim() || null,
     folderId: row.category === 'custom' ? (row.folder_id ?? null) : null,
+    guestVisible: row.category === 'custom' ? row.guest_visible === true : false,
+    guestPhase: isGuestTemplatePhase(row.guest_phase) ? row.guest_phase : 'always',
     updatedAt: row.updated_at,
   };
 }
@@ -556,6 +597,8 @@ function builtinToDto(builtin: PropertyTemplateDefinition): PropertyTemplateDto 
     previewTemplateSlug: builtin.previewTemplateSlug ?? null,
     sectionImageUrl: null,
     folderId: null,
+    guestVisible: false,
+    guestPhase: 'always',
     updatedAt: null,
   };
 }
@@ -738,6 +781,8 @@ export async function updateCustomTemplateRow(input: {
   name?: string;
   category?: PropertyTemplateCategory;
   folderId?: string | null;
+  guestVisible?: boolean;
+  guestPhase?: GuestTemplatePhase;
 }): Promise<PropertyTemplateRow | null> {
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (input.name !== undefined) patch.name = input.name.trim();
@@ -750,6 +795,12 @@ export async function updateCustomTemplateRow(input: {
     }
   } else if (input.folderId !== undefined) {
     patch.folder_id = input.folderId;
+  }
+  if (input.guestVisible !== undefined) {
+    patch.guest_visible = input.guestVisible;
+  }
+  if (input.guestPhase !== undefined) {
+    patch.guest_phase = input.guestPhase;
   }
 
   const { data, error } = await supabaseAdmin()

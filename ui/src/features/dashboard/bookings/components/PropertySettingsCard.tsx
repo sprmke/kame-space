@@ -12,6 +12,7 @@ import {
   Home,
   Image as ImageIcon,
   Info,
+  KeyRound,
   ListChecks,
   Mail,
   MapPin,
@@ -25,6 +26,7 @@ import {
 import { toast } from 'sonner';
 
 import { ActivitySettingsSection } from '@/features/dashboard/activity/components/ActivitySettingsSection';
+import { PropertyGuestExperienceSection } from '@/features/dashboard/guest-experience/components/PropertyGuestExperienceSection';
 import {
   AdminSection,
   AdminSectionNavLayout,
@@ -125,6 +127,7 @@ const SETTINGS_SECTIONS: AdminSectionNavItem[] = [
   { id: 'guest-rewards', label: 'Reviews & vouchers', icon: Gift },
   { id: 'payment', label: 'Payment', icon: Wallet },
   { id: 'building-forms', label: 'Building Forms', icon: ClipboardList },
+  { id: 'guest-experience', label: 'Guest experience', icon: KeyRound },
   { id: 'email-automations', label: 'Email Automations', icon: Mail },
   { id: 'integrations', label: 'Integrations', icon: Globe },
   { id: 'activity', label: 'Activity', icon: ScrollText },
@@ -1130,6 +1133,10 @@ export function PropertySettingsCard() {
             onSaveReview={(reviewId) => void handleSaveExternalReview(reviewId)}
             savingReviewId={savingReviewId}
           />
+
+          <AdminSection id="guest-experience" title="Guest experience" icon={KeyRound}>
+            <PropertyGuestExperienceSection propertyId={property.id} disabled={busy} />
+          </AdminSection>
 
           <PropertyOperationalSettingsSections
             data={appSettings}
