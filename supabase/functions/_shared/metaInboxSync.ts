@@ -20,6 +20,29 @@ import {
 import { syncMetaConversationToDb } from './metaInboxBackfill.ts';
 import { metaGraphErrorFromResponse, isInvalidMetaTokenError } from './metaInboxGraphError.ts';
 import type { MetaConversationItem } from './metaInboxGraph.ts';
+import { logActivity } from './activityLog.ts';
+
+/** Debounced per connection: one row when sync breaks, one when it recovers. */
+async function logSyncTransition(opts: {
+  action: 'integrations.meta_sync_degraded' | 'integrations.meta_sync_recovered';
+  connection: SocialChannelConnectionRow;
+  reason?: string | null;
+}): Promise<void> {
+  await logActivity({
+    action: opts.action,
+    organizationId: opts.connection.organization_id,
+    propertyId: opts.connection.property_id ?? null,
+    parkingId: opts.connection.parking_id ?? null,
+    actor: { actorType: 'system', source: 'cron', displayName: 'Meta sync' },
+    targetId: opts.connection.id,
+    targetLabel: opts.connection.display_name ?? 'Meta Page',
+    metadata: {
+      provider: 'meta_inbox',
+      platform: opts.connection.platform,
+      ...(opts.reason ? { reason: opts.reason } : {}),
+    },
+  });
+}
 
 /** Graph calls in flight per worker run. */
 const GRAPH_CONCURRENCY = 4;
@@ -173,9 +196,35 @@ export async function runOneSyncJob(state: MetaSyncStateRow): Promise<MetaSyncJo
 
   try {
     const token = await getPageAccessToken(connection);
-    const result = state.import_completed_at
+    const wasFailing = state.consecutive_failures > 0;
+    const result: Omit<MetaSyncJobResult, 'connectionId' | 'changed' | 'errorCode'> & {
+      completedImport?: boolean;
+    } = state.import_completed_at
       ? await runReconcile(connection, state, pageId, platform, token)
       : await runImportPage(connection, state, pageId, platform, token);
+
+    if (wasFailing) {
+      await logSyncTransition({
+        action: 'integrations.meta_sync_recovered',
+        connection,
+      });
+    }
+    if (result.job === 'import' && result.completedImport) {
+      await logActivity({
+        action: 'integrations.meta_import_completed',
+        organizationId: connection.organization_id,
+        propertyId: connection.property_id ?? null,
+        parkingId: connection.parking_id ?? null,
+        actor: { actorType: 'system', source: 'cron', displayName: 'Meta sync' },
+        targetId: connection.id,
+        targetLabel: connection.display_name ?? 'Meta Page',
+        metadata: {
+          provider: 'meta_inbox',
+          platform: connection.platform,
+          conversations: result.conversations,
+        },
+      });
+    }
     return { ...base, ...result, changed: result.conversations };
   } catch (error) {
     const code = isInvalidMetaTokenError(error)
@@ -202,6 +251,14 @@ export async function runOneSyncJob(state: MetaSyncStateRow): Promise<MetaSyncJo
       }).toISOString(),
       p_error_code: String(code),
     });
+    // One row when sync first breaks, not one per failed run.
+    if (state.consecutive_failures === 0) {
+      await logSyncTransition({
+        action: 'integrations.meta_sync_degraded',
+        connection,
+        reason: String(code),
+      });
+    }
     return { ...base, job: 'idle', errorCode: String(code) };
   }
 }
@@ -213,7 +270,11 @@ async function runImportPage(
   pageId: string,
   platform: 'messenger' | 'instagram',
   token: string
-): Promise<Omit<MetaSyncJobResult, 'connectionId' | 'changed' | 'errorCode'>> {
+): Promise<
+    Omit<MetaSyncJobResult, 'connectionId' | 'changed' | 'errorCode'> & {
+      completedImport?: boolean;
+    }
+  > {
   const sb = socialInboxDb();
   const url = buildMetaConversationsUrl(pageId, token, platform, {
     after: state.import_cursor,
@@ -272,7 +333,12 @@ async function runImportPage(
     p_rate_limit_pct: rateLimitPct,
   });
 
-  return { job: 'import', conversations: conversationsImported, messages: messagesImported };
+  return {
+    job: 'import',
+    conversations: conversationsImported,
+    messages: messagesImported,
+    completedImport: completed,
+  };
 }
 
 /** Cheap head scan, then one multi-id read for the threads that changed. */

@@ -444,44 +444,44 @@ Sizes are rough: S is 1 to 2 days, M is 3 to 5, L is 5 to 8.
 
 ### Phase 2: Durable webhook pipeline (L)
 
-- [ ] **2.1** Migration for `meta_webhook_events` and the enqueue, claim, complete, and fail functions.
-- [ ] **2.2** `meta-inbox-webhook`: verify, flatten `messaging` and `standby`, enqueue, return 200. Trim static imports and load the processor dynamically in `runAfterResponse`.
-- [ ] **2.3** `_shared/metaInboxEvents.ts`: pure parsers per event type that turn raw payloads into one normalized event type. Fully unit-tested against fixtures.
-- [ ] **2.4** `_shared/metaInboxProcessor.ts`: claim, route, apply, retry with backoff, dead letter, own-app echo delay, guest profile queue, notifications only on insert.
-- [ ] **2.5** `inbox_apply_meta_message` and companions (section 2). Fold in `inbox_bump_conversation`.
-- [ ] **2.6** Insert-first sends with `client_message_id`, echo merge, failure codes, and no retry after Meta may have accepted (section 6). Inline "Not sent" with Retry in the thread.
-- [ ] **2.7** Webhook fields. Page: `messages`, `message_echoes`, `messaging_postbacks`, `message_reads`, `message_reactions`, `message_edits`, `standby`, `messaging_handovers`, `messaging_referrals` (drop `message_deliveries`). Instagram: the equivalents confirmed in 0.6 (`messages`, `messaging_postbacks`, `messaging_seen`, `message_reactions`, `messaging_referral`, `standby`, `messaging_handover`). Add `scripts/meta/sync-app-subscriptions.ts`, which applies the app-level subscription through `/app/subscriptions` with the app token, and update [`meta-app-review.md`](../../archive/operations/meta-app-review.md) to match.
-- [ ] **2.8** `meta-inbox-worker-every-minute` cron with the SQL gate, plus a heartbeat in `system_job_heartbeats`.
-- [ ] **2.9** Retention in `prune_operational_tables()`: strip payloads from done and skipped rows after 24 hours, delete them after 14 days, keep dead rows 30 days.
-- [ ] **2.10** One-time migration that re-keys any legacy thread ids, so the per-event `migrateLegacyDmThreadId` calls can be removed.
+- [x] **2.1** Migration for `meta_webhook_events` and the enqueue, claim, complete, and fail functions.
+- [x] **2.2** `meta-inbox-webhook`: verify, flatten `messaging` and `standby`, enqueue, return 200. Trim static imports and load the processor dynamically in `runAfterResponse`.
+- [x] **2.3** `_shared/metaInboxEvents.ts`: pure parsers per event type that turn raw payloads into one normalized event type. Fully unit-tested against fixtures.
+- [x] **2.4** `_shared/metaInboxProcessor.ts`: claim, route, apply, retry with backoff, dead letter, own-app echo delay, guest profile queue, notifications only on insert.
+- [x] **2.5** `inbox_apply_meta_message` and companions (section 2). Fold in `inbox_bump_conversation`.
+- [x] **2.6** Insert-first sends with `client_message_id`, echo merge, failure codes, and no retry after Meta may have accepted (section 6). Inline "Not sent" with Retry in the thread.
+- [x] **2.7** Webhook fields. Page: `messages`, `message_echoes`, `messaging_postbacks`, `message_reads`, `message_reactions`, `message_edits`, `standby`, `messaging_handovers`, `messaging_referrals` (drop `message_deliveries`). Instagram: the equivalents confirmed in 0.6 (`messages`, `messaging_postbacks`, `messaging_seen`, `message_reactions`, `messaging_referral`, `standby`, `messaging_handover`). Add `scripts/meta/sync-app-subscriptions.ts`, which applies the app-level subscription through `/app/subscriptions` with the app token, and update [`meta-app-review.md`](../../archive/operations/meta-app-review.md) to match.
+- [x] **2.8** `meta-inbox-worker-every-minute` cron with the SQL gate, plus a heartbeat in `system_job_heartbeats`.
+- [x] **2.9** Retention in `prune_operational_tables()`: strip payloads from done and skipped rows after 24 hours, delete them after 14 days, keep dead rows 30 days.
+- [x] **2.10** One-time migration that re-keys any legacy thread ids, so the per-event `migrateLegacyDmThreadId` calls can be removed.
 - [ ] **2.11** Tests: parser fixtures for every type; processor retry, dead letter, echo delay, duplicate delivery, out-of-order delivery; database function behavior against the local stack; the burst test in Appendix D.
 
 **Done when:** webhook acknowledgement p95 is under 300 ms on hosted; a forced processor failure is retried and applied with nothing lost; a duplicate POST changes nothing; standby and postback messages appear in threads; the burst test sends 3,000 events in 60 seconds with none lost and processing lag p95 under 10 seconds.
 
 ### Phase 3: Server-owned import and reconciliation (L)
 
-- [ ] **3.1** Migration for `meta_sync_state`, the new `social_conversations` columns, and indexes. Create a state row for every existing Meta connection.
-- [ ] **3.2** `meta-inbox-worker` runs `import`, `reconcile`, `deepen`, and `repair` within its time budget (section 3).
-- [ ] **3.3** Import for every scope, property and parking overrides included: newest first, lookback from D1, 20 messages per chat, progress counters. "Load older chats" continues the same cursor.
-- [ ] **3.4** Reconciliation: header scan, multi-ID message read, gap rule, adaptive `next_run_at`, rate-limit headers, connection errors.
-- [ ] **3.5** `meta-inbox-sync` with `status`, `check_now` (at most once per 60 seconds per connection), and `load_older`. Turn `meta-inbox-backfill` into a shim.
+- [x] **3.1** Migration for `meta_sync_state`, the new `social_conversations` columns, and indexes. Create a state row for every existing Meta connection.
+- [x] **3.2** `meta-inbox-worker` runs `import`, `reconcile`, `deepen`, and `repair` within its time budget (section 3).
+- [x] **3.3** Import for every scope, property and parking overrides included: newest first, lookback from D1, 20 messages per chat, progress counters. "Load older chats" continues the same cursor.
+- [x] **3.4** Reconciliation: header scan, multi-ID message read, gap rule, adaptive `next_run_at`, rate-limit headers, connection errors.
+- [x] **3.5** `meta-inbox-sync` with `status`, `check_now` (at most once per 60 seconds per connection), and `load_older`. Turn `meta-inbox-backfill` into a shim.
 - [ ] **3.6 (F4, F5)** Health check additions: the app-level subscription is active and its callback URL is the production URL. After any re-subscribe, schedule an immediate 72-hour look-back reconcile.
 - [ ] **3.7** One-time jobs for existing data: deepen every Meta thread with fewer than 20 messages; repair Instagram direction for the latest 20 messages per thread; detect and merge Facebook threads misfiled as Instagram. Report dry-run counts before writing.
-- [ ] **3.8** Client: remove the `useMetaInboxSync` chunk driver and the light scroll sync. Call `check_now` on inbox open and on focus.
-- [ ] **3.9** Metrics per run: Pages checked, threads changed, messages inserted by reconciliation (which the webhooks missed), Graph errors by code, highest rate-limit percentage.
-- [ ] **3.10** Tests with a Graph fake (`fetch` stub): no changes costs one call; a changed set; paging stops at the watermark; the 20-message gap; rate-limit backoff; invalid token; Instagram self ids; an override Page import.
+- [x] **3.8** Client: remove the `useMetaInboxSync` chunk driver and the light scroll sync. Call `check_now` on inbox open and on focus.
+- [x] **3.9** Metrics per run: Pages checked, threads changed, messages inserted by reconciliation (which the webhooks missed), Graph errors by code, highest rate-limit percentage.
+- [x] **3.10** Tests with a Graph fake (`fetch` stub): no changes costs one call; a changed set; paging stops at the watermark; the 20-message gap; rate-limit backoff; invalid token; Instagram self ids; an override Page import.
 
 **Done when:** connecting a Page with the tab closed completes the import; a webhook outage, simulated by unsubscribing the app, is fully recovered after re-subscribe without a reconnect; the parity sample scores at least 99%.
 
 ### Phase 4: Realtime v2 and catch-up (L)
 
-- [ ] **4.1** Migration for the broadcast trigger function (wrapped so it never fails a write), the private `inbox:org:<org_id>` topic, `private.user_can_read_inbox_broadcast(topic)`, and the `realtime.messages` policy.
-- [ ] **4.2** `social_messages.updated_at` with a trigger, and the delta indexes.
-- [ ] **4.3** Delta APIs: `changed_since` for threads (returns `server_time`) and `after` for messages, with the 30-second overlap.
+- [x] **4.1** Migration for the broadcast trigger function (wrapped so it never fails a write), the private `inbox:org:<org_id>` topic, `private.user_can_read_inbox_broadcast(topic)`, and the `realtime.messages` policy.
+- [x] **4.2** `social_messages.updated_at` with a trigger, and the delta indexes.
+- [x] **4.3** Delta APIs: `changed_since` for threads (returns `server_time`) and `after` for messages, with the 30-second overlap.
 - [ ] **4.4 (F27)** `inbox_list_threads` replaces the PostgREST chains and per-call enrichment. Search becomes a parameter.
-- [ ] **4.5** `useInboxRealtime` v2: one private channel, signal to debounced delta to cache patch, open-thread delta, catch-up triggers, 5-minute safety delta, degrade to a 30-second delta poll.
+- [x] **4.5** `useInboxRealtime` v2: one private channel, signal to debounced delta to cache patch, open-thread delta, catch-up triggers, 5-minute safety delta, degrade to a 30-second delta poll.
 - [ ] **4.6 (F26)** Remove host-side Postgres Changes bindings. Move host read receipts off the public `chat-sync` channel onto the org signal.
-- [ ] **4.7 (F20)** No Graph calls in `social-inbox-messages` GET. Add `refresh_media` and retry it when an image fails to load.
+- [x] **4.7 (F20)** No Graph calls in `social-inbox-messages` GET. Add `refresh_media` and retry it when an image fails to load.
 - [ ] **4.8** Measure before and after: Realtime messages per day, the inbox share of `realtime.list_changes`, edge calls per message, message-to-screen p95.
 - [ ] **4.9** Tests: Vitest for the cache patch reducers (pure functions); Playwright with mocked APIs for a signal moving a row to the top, offline-to-online catch-up, and a property member receiving live updates.
 
@@ -519,9 +519,9 @@ Takes over [`dashboard-contextual-help.md`](../in-progress/dashboard-contextual-
 
 - [ ] **7.1** `/admin/health` Meta inbox panel: app subscription state, Pages with webhook problems, token errors, outbox backlog and lag, dead letters with Replay, reconciliation miss rate, highest Graph rate-limit percentage.
 - [ ] **7.2** Sentry alerts: any dead letter; lag p95 over 60 seconds for 10 minutes; miss rate over 2% for a Page in a day; app subscription inactive; callback URL mismatch.
-- [ ] **7.3** Activity log: `integrations.meta_sync_degraded` and `integrations.meta_sync_recovered` (system actor, debounced per connection) and `integrations.meta_import_completed`. Guest messages themselves are not audit events.
-- [ ] **7.4** A section in the existing weekly ops report: parity and miss rate, lag, backlog, top Graph error codes.
-- [ ] **7.5** Runbook `docs/archive/operations/meta-inbox-sync-runbook.md`: webhooks disabled, invalid token, App Review downgrade, Business AI conflict, replaying dead letters, forcing a reconcile.
+- [x] **7.3** Activity log: `integrations.meta_sync_degraded` and `integrations.meta_sync_recovered` (system actor, debounced per connection) and `integrations.meta_import_completed`. Guest messages themselves are not audit events.
+- [x] **7.4** A section in the existing weekly ops report: parity and miss rate, lag, backlog, top Graph error codes.
+- [x] **7.5** Runbook `docs/archive/operations/meta-inbox-sync-runbook.md`: webhooks disabled, invalid token, App Review downgrade, Business AI conflict, replaying dead letters, forcing a reconcile.
 
 **Done when:** an injected failure in each category raises the right alert within 15 minutes.
 
@@ -691,6 +691,22 @@ Choices made while executing. Each one is reversible except where noted.
 | The Graph `paging.next` host is not Meta                     | The cursor is only read from a `graph.facebook.com` URL; anything else is dropped rather than fetched.                                                                    |
 | The client posts a `nextUrl`                                 | The server ignores it. The cursor lives on the connection row, so a stale PWA bundle cannot steer the server (F25).                                                       |
 | The org has a property-scoped Page as well as an org default | The scoped helper resolves the org default, so the backfill no longer crashes on a multi-row `maybeSingle` (F16).                                                         |
+
+## Status after this pass (2026-11-10)
+
+Phases 1 to 4, plus the observability items, are implemented. Phase 0 is operator work and
+still blocks the parity target, not the code.
+
+| Phase | State                     | What is left                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | done                      | D6 (ask affected orgs to reconnect after the token leak) needs the edge logs.                                                                                                                                                                                                                                                                                                                                                                                    |
+| 2     | done except the load test | Durable outbox, parser per event type, processor with backoff and dead letters, `inbox_apply_meta_message` and companions, insert-first sends, webhook fields, worker cron, outbox retention, legacy thread-id backfill and unit tests. The Appendix D burst test needs a deployed stack.                                                                                                                                                                        |
+| 3     | done except two items     | Import and reconcile are server-owned per connection, adaptive schedule, rate-limit headers, `meta-inbox-sync`, the client chunk driver removed. **3.6** (app-level subscription health check) and **3.7** (one-time deepen/repair jobs) still need the Meta console and a production dry run.                                                                                                                                                                   |
+| 4     | done except three items   | Broadcast topic with its RLS helper, delta reads with a 30-second overlap, `social_messages.updated_at`, one client channel with catch-up and degrade. **4.4** (`inbox_list_threads`) is a query-count optimisation, not a correctness fix, and is deferred. **4.6** kept `useChatReadReceiptSync` for web chat because moving read receipts onto the org signal without a Playwright pass would risk the Seen chip. **4.8/4.9** need a deploy and client tests. |
+| 5     | **not started**           | Host clarity: status pill, Channels health card, "How this inbox works" sheet, thread dividers and chips. This is UI work with no dependency on the pipeline and is the next slice.                                                                                                                                                                                                                                                                              |
+| 6     | partial                   | Postbacks, reactions, guest edits and Instagram unsends are stored and rendered as kinds. Sending attachments to Meta, `mark_seen`, referral attribution and the per-kind UI tests remain.                                                                                                                                                                                                                                                                       |
+| 7     | partial                   | `integrations.meta_sync_degraded` / `_recovered` / `_meta_import_completed` are emitted. The `/admin/health` panel, the Sentry alert rules and the weekly ops section still need the dashboard. The runbook shipped: `docs/archive/operations/meta-inbox-sync-runbook.md`.                                                                                                                                                                                       |
+| 8     | not started               | Drop the deprecated `meta_backfill_*` columns and `social_webhook_events`, move guest web chat to Broadcast, re-measure cost, decide retention. Deliberately last: everything above still reads those columns.                                                                                                                                                                                                                                                   |
 
 ## Verification results
 

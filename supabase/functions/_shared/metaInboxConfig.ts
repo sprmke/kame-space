@@ -52,13 +52,25 @@ export function getMetaOAuthScopes(): string {
   return [...scopes].join(',');
 }
 
-/** Page-level subscribed_apps fields for Messenger/Instagram DM delivery. */
+/**
+ * Page-level `subscribed_apps` fields for Messenger and Instagram DM delivery.
+ *
+ * `message_deliveries` is deliberately absent: it is roughly a quarter of the webhook volume
+ * for nothing we render. `standby` is what arrives when Meta Business AI or another routing
+ * app owns a chat, and `messaging_handovers` / `messaging_referrals` let a host see who took
+ * the thread over and where the guest came from.
+ */
 export const META_WEBHOOK_SUBSCRIBED_FIELDS = [
   'messages',
-  'messaging_postbacks',
-  'message_deliveries',
-  'message_reads',
   'message_echoes',
+  'messaging_postbacks',
+  'message_reads',
+  'message_reactions',
+  'message_edits',
+  'messaging_seen',
+  'standby',
+  'messaging_handovers',
+  'messaging_referrals',
 ].join(',');
 
 export function getMetaAppCredentials(): { appId: string; appSecret: string } {
