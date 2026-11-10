@@ -12,7 +12,6 @@ DO $$
 DECLARE
   v_run_date date := (now() AT TIME ZONE 'Asia/Manila')::date;
   v_run_id uuid := '5eedc001-0000-4000-8000-000000000001';
-  v_now_iso text := to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"');
 BEGIN
   DELETE FROM public.marketing_trend_topics WHERE run_id = v_run_id;
   DELETE FROM public.marketing_trend_runs WHERE id = v_run_id;
@@ -36,12 +35,12 @@ BEGIN
     'gemini-3.1-flash-lite',
     34,
     6,
-    v_now_iso,
-    v_now_iso
+    now(),
+    now()
   );
 
   INSERT INTO public.marketing_trend_topics (
-    id, run_id, run_date, window, rank, topic_key, title, summary, category,
+    id, run_id, run_date, "window", rank, topic_key, title, summary, category,
     stay_fit, score, momentum, days_trending, first_seen, sources, angles,
     caption_idea, hashtags, brand_guard, pinned, manual
   ) VALUES
@@ -137,16 +136,16 @@ BEGIN
 
   -- The week window reuses the same topics, scored by their run.
   INSERT INTO public.marketing_trend_topics (
-    id, run_id, run_date, window, rank, topic_key, title, summary, category,
+    id, run_id, run_date, "window", rank, topic_key, title, summary, category,
     stay_fit, score, momentum, days_trending, first_seen, sources, angles,
     caption_idea, hashtags, brand_guard, pinned, manual
   )
   SELECT
-    '5eedc003-0000-4000-8000-' || lpad((row_number() OVER (ORDER BY t.score DESC))::text, 12, '0'),
+    ('5eedc003-0000-4000-8000-' || lpad((row_number() OVER (ORDER BY t.score DESC))::text, 12, '0'))::uuid,
     v_run_id, v_run_date, 'week', (row_number() OVER (ORDER BY t.score DESC))::int,
     t.topic_key, t.title, t.summary, t.category, t.stay_fit, t.score, t.momentum,
     t.days_trending, t.first_seen, t.sources, t.angles, t.caption_idea, t.hashtags,
     t.brand_guard, t.pinned, t.manual
   FROM public.marketing_trend_topics t
-  WHERE t.run_id = v_run_id AND t.window = 'today';
+  WHERE t.run_id = v_run_id AND t."window" = 'today';
 END $$;

@@ -110,14 +110,14 @@ BEGIN
   SELECT count(*) INTO v_n
   FROM public.marketing_trend_topics t
   JOIN public.marketing_trend_runs r ON r.id = t.run_id
-  WHERE r.status = 'published' AND t.window = 'today';
+  WHERE r.status = 'published' AND t."window" = 'today';
   IF v_n < 5 THEN
     v_errors := array_append(v_errors, format('marketing trends today list has %s topics (5+)', v_n));
   END IF;
   IF NOT EXISTS (
     SELECT 1 FROM public.marketing_trend_topics t
     JOIN public.marketing_trend_runs r ON r.id = t.run_id
-    WHERE r.status = 'published' AND t.window = 'week'
+    WHERE r.status = 'published' AND t."window" = 'week'
   ) THEN
     v_errors := array_append(v_errors, 'marketing trends week window is empty');
   END IF;

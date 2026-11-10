@@ -58,8 +58,8 @@ CREATE TABLE IF NOT EXISTS public.marketing_trend_topics (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   run_id UUID NOT NULL REFERENCES public.marketing_trend_runs (id) ON DELETE CASCADE,
   run_date DATE NOT NULL,
-  window TEXT NOT NULL,
-  CONSTRAINT marketing_trend_topics_window_check CHECK (window IN ('today', 'week', 'month')),
+  "window" TEXT NOT NULL,
+  CONSTRAINT marketing_trend_topics_window_check CHECK ("window" IN ('today', 'week', 'month')),
   rank SMALLINT NOT NULL,
   topic_key TEXT NOT NULL,
   title TEXT NOT NULL,
@@ -99,7 +99,7 @@ COMMENT ON COLUMN public.marketing_trend_topics.brand_guard IS
   'Guard rules injected into the generation prompt: no_likeness, no_logo, no_endorsement.';
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_marketing_trend_topics_run_window_rank
-  ON public.marketing_trend_topics (run_id, window, rank);
+  ON public.marketing_trend_topics (run_id, "window", rank);
 CREATE INDEX IF NOT EXISTS idx_marketing_trend_topics_key
   ON public.marketing_trend_topics (topic_key);
 
@@ -217,7 +217,7 @@ BEGIN
   DELETE FROM public.marketing_trend_topics WHERE run_id = p_run_id;
 
   INSERT INTO public.marketing_trend_topics (
-    run_id, run_date, window, rank, topic_key, title, summary, category, stay_fit,
+    run_id, run_date, "window", rank, topic_key, title, summary, category, stay_fit,
     score, momentum, days_trending, first_seen, sources, angles, caption_idea,
     hashtags, brand_guard, pinned, manual
   )
@@ -259,7 +259,7 @@ BEGIN
     SELECT t.topic_key, t.score::numeric AS score, (p_run_date - r.run_date) AS age_days
       FROM public.marketing_trend_topics t
       JOIN public.marketing_trend_runs r ON r.id = t.run_id
-     WHERE t.window = 'today'
+     WHERE t."window" = 'today'
        AND r.run_date <= p_run_date
        AND r.run_date > p_run_date - INTERVAL '30 days'
        AND (r.status = 'published' OR r.id = p_run_id)
@@ -276,13 +276,13 @@ BEGIN
            t.hashtags, t.brand_guard, t.pinned, t.manual, r.run_date
       FROM public.marketing_trend_topics t
       JOIN public.marketing_trend_runs r ON r.id = t.run_id
-     WHERE t.window = 'today'
+     WHERE t."window" = 'today'
        AND r.run_date <= p_run_date
        AND (r.status = 'published' OR r.id = p_run_id)
      ORDER BY t.topic_key, r.run_date DESC
   )
   INSERT INTO public.marketing_trend_topics (
-    run_id, run_date, window, rank, topic_key, title, summary, category, stay_fit,
+    run_id, run_date, "window", rank, topic_key, title, summary, category, stay_fit,
     score, momentum, days_trending, first_seen, sources, angles, caption_idea,
     hashtags, brand_guard, pinned, manual
   )
@@ -303,7 +303,7 @@ BEGIN
     SELECT t.topic_key, t.score::numeric AS score, (p_run_date - r.run_date) AS age_days
       FROM public.marketing_trend_topics t
       JOIN public.marketing_trend_runs r ON r.id = t.run_id
-     WHERE t.window = 'today'
+     WHERE t."window" = 'today'
        AND r.run_date <= p_run_date
        AND r.run_date > p_run_date - INTERVAL '30 days'
        AND (r.status = 'published' OR r.id = p_run_id)
@@ -320,13 +320,13 @@ BEGIN
            t.hashtags, t.brand_guard, t.pinned, t.manual, r.run_date
       FROM public.marketing_trend_topics t
       JOIN public.marketing_trend_runs r ON r.id = t.run_id
-     WHERE t.window = 'today'
+     WHERE t."window" = 'today'
        AND r.run_date <= p_run_date
        AND (r.status = 'published' OR r.id = p_run_id)
      ORDER BY t.topic_key, r.run_date DESC
   )
   INSERT INTO public.marketing_trend_topics (
-    run_id, run_date, window, rank, topic_key, title, summary, category, stay_fit,
+    run_id, run_date, "window", rank, topic_key, title, summary, category, stay_fit,
     score, momentum, days_trending, first_seen, sources, angles, caption_idea,
     hashtags, brand_guard, pinned, manual
   )
@@ -335,7 +335,7 @@ BEGIN
     (row_number() OVER (ORDER BY mo.window_score DESC, mo.topic_key))::int,
     mo.topic_key, m.title, m.summary, m.category, m.stay_fit,
     mo.window_score, m.momentum, m.days_trending, m.first_seen, m.sources, m.angles,
-    mo.caption_idea, mo.hashtags, mo.brand_guard, mo.pinned, mo.manual
+    m.caption_idea, m.hashtags, m.brand_guard, m.pinned, m.manual
     FROM monthly mo
     JOIN meta m ON m.topic_key = mo.topic_key
    ORDER BY mo.window_score DESC, mo.topic_key
