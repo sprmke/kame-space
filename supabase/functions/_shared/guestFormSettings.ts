@@ -8,7 +8,10 @@ import { createServiceClient } from './orgAuth.ts';
 import { resolvePublicBrandName } from './platformBrand.ts';
 import { normalizePropertyMediaItems } from './propertyMedia.ts';
 import { getResidencePropertyDefaults } from './propertyResidenceDefaults.ts';
-import { loadResidenceProfileForResidence } from './residenceProfile.ts';
+import {
+  loadResidenceProfileForResidence,
+  type ResidenceProfile,
+} from './residenceProfile.ts';
 
 export type GuestFormSettings = {
   allowPets: boolean;
@@ -90,22 +93,26 @@ function buildPropertyEyebrow(
   return unit || residence || propertyName.trim();
 }
 
-/** Reads properties.settings guest-form keys; missing booleans default true. */
-export async function resolveGuestFormSettings(
-  propertyId: string,
-  options: { strictResidence?: boolean } = {}
-): Promise<GuestFormSettings> {
-  const { data, error } = await createServiceClient()
-    .from('properties')
-    .select('name, tower_and_unit, residence_name, development_id, settings, organization_id')
-    .eq('id', propertyId)
-    .maybeSingle();
+/** Columns `resolveGuestFormSettings` reads — the shape `buildGuestFormSettings` accepts. */
+export type GuestFormSettingsSource = {
+  name: string | null;
+  tower_and_unit: string | null;
+  residence_name: string | null;
+  development_id: string | null;
+  settings: unknown;
+  organization_id: string | null;
+};
 
-  if (error) {
-    console.warn('[guestFormSettings] property load failed:', error.message);
-    return { ...DEFAULT_GUEST_FORM_SETTINGS };
-  }
-
+/**
+ * Pure half of {@link resolveGuestFormSettings}: property row + residence profile in,
+ * resolved guest-form settings out. The golden set snapshots it without a database.
+ */
+export function buildGuestFormSettings(input: {
+  property: GuestFormSettingsSource | null;
+  organizationName: string;
+  profile: ResidenceProfile;
+}): GuestFormSettings {
+  const data = input.property;
   const settings =
     data?.settings && typeof data.settings === 'object' && !Array.isArray(data.settings)
       ? (data.settings as Record<string, unknown>)
@@ -113,16 +120,7 @@ export async function resolveGuestFormSettings(
 
   const residenceName = typeof data?.residence_name === 'string' ? data.residence_name.trim() : '';
   const residenceDefaults = getResidencePropertyDefaults(residenceName);
-  const profile = await loadResidenceProfileForResidence(
-    createServiceClient(),
-    {
-      developmentId: (data as { development_id?: string | null } | null)?.development_id ?? null,
-      residenceName,
-    },
-    // Booking submission fails closed: a residence read error must not fall back to
-    // generic rules that would allow pets or parking the building forbids.
-    { strict: options.strictResidence ?? false }
-  );
+  const profile = input.profile;
 
   const propertyName = String(data?.name ?? '').trim();
   const towerAndUnit = String(data?.tower_and_unit ?? '').trim() || null;
@@ -132,19 +130,7 @@ export async function resolveGuestFormSettings(
     media.find((item) => item.isPrimary && item.type === 'image') ??
     media.find((item) => item.type === 'image');
 
-  let organizationName = '';
-  const organizationId = data?.organization_id as string | undefined;
-  if (organizationId) {
-    const { data: org, error: orgError } = await createServiceClient()
-      .from('organizations')
-      .select('name')
-      .eq('id', organizationId)
-      .maybeSingle();
-    if (orgError) {
-      console.warn('[guestFormSettings] org load failed:', orgError.message);
-    }
-    organizationName = String(org?.name ?? '').trim();
-  }
+  const organizationName = String(input.organizationName ?? '').trim();
 
   const propertyMaxAdults = readSettingsNumber(
     settings,
@@ -172,10 +158,7 @@ export async function resolveGuestFormSettings(
         ? value
         : DEFAULT_CLEANING_BUFFER_MINUTES;
     })(),
-    maxAdults: Math.max(
-      1,
-      Math.min(propertyMaxAdults, profile.occupancy.maxAdultsCap)
-    ),
+    maxAdults: Math.max(1, Math.min(propertyMaxAdults, profile.occupancy.maxAdultsCap)),
     maxChildren: Math.max(0, Math.min(propertyMaxChildren, profile.occupancy.maxChildrenCap)),
     childMaxAge: profile.occupancy.childMaxAge,
     adultMinAge: profile.occupancy.adultMinAge,
@@ -187,4 +170,53 @@ export async function resolveGuestFormSettings(
     residenceName: residenceName || null,
     organizationName: resolvePublicBrandName(organizationName) || propertyName || 'Host',
   };
+}
+
+/** Reads properties.settings guest-form keys; missing booleans default true. */
+export async function resolveGuestFormSettings(
+  propertyId: string,
+  options: { strictResidence?: boolean } = {}
+): Promise<GuestFormSettings> {
+  const { data, error } = await createServiceClient()
+    .from('properties')
+    .select('name, tower_and_unit, residence_name, development_id, settings, organization_id')
+    .eq('id', propertyId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('[guestFormSettings] property load failed:', error.message);
+    return { ...DEFAULT_GUEST_FORM_SETTINGS };
+  }
+
+  const residenceName = typeof data?.residence_name === 'string' ? data.residence_name.trim() : '';
+  const profile = await loadResidenceProfileForResidence(
+    createServiceClient(),
+    {
+      developmentId: (data as { development_id?: string | null } | null)?.development_id ?? null,
+      residenceName,
+    },
+    // Booking submission fails closed: a residence read error must not fall back to
+    // generic rules that would allow pets or parking the building forbids.
+    { strict: options.strictResidence ?? false }
+  );
+
+  let organizationName = '';
+  const organizationId = data?.organization_id as string | undefined;
+  if (organizationId) {
+    const { data: org, error: orgError } = await createServiceClient()
+      .from('organizations')
+      .select('name')
+      .eq('id', organizationId)
+      .maybeSingle();
+    if (orgError) {
+      console.warn('[guestFormSettings] org load failed:', orgError.message);
+    }
+    organizationName = String(org?.name ?? '').trim();
+  }
+
+  return buildGuestFormSettings({
+    property: (data as GuestFormSettingsSource | null) ?? null,
+    organizationName,
+    profile,
+  });
 }

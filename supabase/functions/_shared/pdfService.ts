@@ -2,13 +2,9 @@ import { PDFDocument } from 'https://esm.sh/pdf-lib@1.17.1';
 import { createClient } from './supabaseJs.ts';
 import { GuestFormData } from './types.ts';
 import { applyGafDefaultsToFormData, resolveAppSettings } from './appSettings.ts';
-import {
-  applyGafOwnerSignatureBlock,
-  GAF_PDF_FIELD_CARPARK_SLOT_NUMBER,
-} from './gafPdfSignature.ts';
+import { applyGafOwnerSignatureBlock } from './gafPdfSignature.ts';
 import { applyPetOwnerSignatureBlock } from './petPdfSignature.ts';
-import { extractTowerAndUnit } from './petPdfDefaults.ts';
-import { formatGafGuestDisplayName } from './gafGuestDisplay.ts';
+import { buildGafPdfFieldMap, buildPetPdfFieldMap } from './gafPdfFields.ts';
 
 async function getTemplateBytes(
   templateName: string = 'guest-form-template.pdf'
@@ -45,43 +41,7 @@ export async function generatePDF(
     const fd = await applyGafDefaultsToFormData(formData, propertyId);
     const appSettings = await resolveAppSettings(propertyId);
 
-    const fieldMappings: Record<string, string | undefined> = {
-      // Unit and Owner Information
-      unitOwner: fd.unitOwner,
-      towerAndUnitNumber: fd.towerAndUnitNumber,
-      ownerOnsiteContactPerson: fd.ownerOnsiteContactPerson,
-      ownerContactNumber: fd.ownerContactNumber,
-
-      // Primary Guest Information
-      primaryGuestName: formatGafGuestDisplayName(fd.primaryGuestName, fd.primaryGuestAge),
-      guestEmail: fd.guestEmail,
-      guestPhoneNumber: fd.guestPhoneNumber,
-      guestAddress: fd.guestAddress,
-      nationality: fd.nationality,
-
-      // Check-in/out Information
-      checkInDate: fd.checkInDate,
-      checkOutDate: fd.checkOutDate,
-      checkInTime: fd.checkInTime,
-      checkOutTime: fd.checkOutTime,
-      numberOfNights: String(fd.numberOfNights),
-
-      // Guest Count
-      numberOfAdults: String(fd.numberOfAdults),
-      numberOfChildren: String(fd.numberOfChildren),
-
-      // Additional Guests
-      guest2Name: formatGafGuestDisplayName(fd.guest2Name, fd.guest2Age),
-      guest3Name: formatGafGuestDisplayName(fd.guest3Name, fd.guest3Age),
-      guest4Name: formatGafGuestDisplayName(fd.guest4Name, fd.guest4Age),
-      guest5Name: formatGafGuestDisplayName(fd.guest5Name, fd.guest5Age),
-
-      // Parking Information
-      carPlateNumber: fd.carPlateNumber,
-      carBrandModel: fd.carBrandModel,
-      carColor: fd.carColor,
-      [GAF_PDF_FIELD_CARPARK_SLOT_NUMBER]: fd.carparkSlotNumber,
-    };
+    const fieldMappings: Record<string, string | undefined> = buildGafPdfFieldMap(fd);
 
     for (const [fieldName, value] of Object.entries(fieldMappings)) {
       try {
@@ -125,19 +85,7 @@ export async function generatePetPDF(
     const fd = await applyGafDefaultsToFormData(formData, propertyId);
     const appSettings = await resolveAppSettings(propertyId);
 
-    const { tower, unitNumber } = extractTowerAndUnit(fd.towerAndUnitNumber);
-
-    const fieldMappings: Record<string, string | undefined> = {
-      unitOwner: fd.unitOwner,
-      unitNumber: unitNumber,
-      unitTower: tower,
-      checkInDate: fd.checkInDate,
-      petName: fd.petName,
-      petType: fd.petType,
-      petAge: fd.petAge,
-      petBreed: fd.petBreed,
-      petVaccinationDate: fd.petVaccinationDate,
-    };
+    const fieldMappings: Record<string, string | undefined> = buildPetPdfFieldMap(fd);
 
     for (const [fieldName, value] of Object.entries(fieldMappings)) {
       try {

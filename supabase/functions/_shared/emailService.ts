@@ -44,6 +44,13 @@ import {
   sanitizeAttachmentToken,
 } from './propertyEmailBranding.ts';
 import { buildEmailCtaHtml, renderBrandedEmailShell } from './brandedEmailShell.ts';
+import {
+  buildGafRequestSubject,
+  buildPetRequestSubject,
+  buildReadyForCheckinSubject,
+  isUrgentBooking,
+  urgentEmailSubjectPrefix,
+} from './workflowEmailSubjects.ts';
 import { isEmailSuppressed } from './emailSuppression.ts';
 import { PLATFORM_BRAND_NAME } from './platformBrand.ts';
 import { escapeHtml } from './renderEmailHtml.ts';
@@ -238,57 +245,6 @@ type ResendAttachment = {
   content_type?: string;
 };
 
-/**
- * Checks if a booking is urgent (same-day check-in)
- * @param checkInDate - Check-in date in MM-DD-YYYY or YYYY-MM-DD format
- * @returns true if check-in is today (in Philippine timezone UTC+8)
- */
-function isUrgentBooking(checkInDate: string): boolean {
-  try {
-    console.log('🔍 Checking if booking is urgent...');
-
-    // Parse the check-in date (supports both MM-DD-YYYY and YYYY-MM-DD formats)
-    let checkInDateStr = checkInDate;
-
-    // If date is in MM-DD-YYYY format, convert to YYYY-MM-DD
-    if (checkInDate.match(/^\d{2}-\d{2}-\d{4}$/)) {
-      const [month, day, year] = checkInDate.split('-');
-      checkInDateStr = `${year}-${month}-${day}`;
-      console.log('  Converted to YYYY-MM-DD:', checkInDateStr);
-    }
-
-    // Get today's date in Philippine timezone (UTC+8)
-    const philippineTime = new Date(
-      new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' })
-    );
-    const todayStr =
-      philippineTime.getFullYear() +
-      '-' +
-      String(philippineTime.getMonth() + 1).padStart(2, '0') +
-      '-' +
-      String(philippineTime.getDate()).padStart(2, '0');
-
-    console.log("  Today's date (Philippine time):", todayStr);
-    console.log('  Check-in date (normalized):', checkInDateStr);
-    console.log('  Is urgent:', checkInDateStr === todayStr);
-
-    return checkInDateStr === todayStr;
-  } catch (error) {
-    console.error('❌ Error checking if booking is urgent:', error);
-    return false;
-  }
-}
-
-/**
- * Same-day check-in (Asia/Manila) — **subject line** prefix for ops-facing
- * mail (GAF, Pet, Parking broadcast, **New Booking Request** notify to
- * `EMAIL_REPLY_TO`). Guest-facing templates (acknowledgement, check-in details,
- * SD refund form request subject, etc.) do not use this prefix on the subject.
- */
-function urgentEmailSubjectPrefix(isUrgent: boolean): string {
-  return isUrgent ? '🚨 URGENT - ' : '';
-}
-
 function sanitizeAttachmentLabel(value: string): string {
   const cleaned = value
     .trim()
@@ -413,7 +369,6 @@ export async function sendEmail(
   }
 
   const isUrgent = isUrgentBooking(formData.checkInDate);
-  const urgentPrefix = urgentEmailSubjectPrefix(isUrgent);
 
   if (isUrgent) {
     console.log('🚨 URGENT BOOKING DETECTED - Same-day check-in!');
@@ -467,8 +422,6 @@ export async function sendEmail(
     console.log(`  Attachment ${index + 1}: ${att.filename}`);
   });
 
-  const updatePrefix = isUpdate ? 'UPDATED - ' : '';
-
   const propertySlug = propertyId ? await resolvePropertySlugById(propertyId) : null;
   const inboundReplyTo =
     (propertySlug ? buildApprovalInboundAddress(propertySlug) : null) ?? EMAIL_REPLY_TO;
@@ -481,7 +434,13 @@ export async function sendEmail(
     to: [EMAIL_TO],
     reply_to: inboundReplyTo,
     ...(cc ? { cc } : {}),
-    subject: `${urgentPrefix}${updatePrefix}${unitLabel} - GAF Request ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    subject: buildGafRequestSubject({
+      unitLabel,
+      displayCheckInDate,
+      displayCheckOutDate,
+      isUrgent,
+      isUpdate,
+    }),
     html: emailContent,
     ...(attachments.length > 0 ? { attachments } : {}),
     errorLabel: 'email',
@@ -531,7 +490,6 @@ export async function sendPetEmail(
   const fileToken = sanitizeAttachmentToken(unitLabel);
 
   const isUrgent = isUrgentBooking(formData.checkInDate);
-  const urgentPrefix = urgentEmailSubjectPrefix(isUrgent);
 
   if (isUrgent) {
     console.log('🚨 URGENT PET BOOKING DETECTED - Same-day check-in!');
@@ -604,8 +562,6 @@ export async function sendPetEmail(
     console.log(`  Attachment ${index + 1}: ${att.filename} (${att.content.length} chars base64)`);
   });
 
-  const updatePrefix = isUpdate ? 'UPDATED - ' : '';
-
   const petPropertyId = propertyId ?? null;
   const propertySlug = petPropertyId ? await resolvePropertySlugById(petPropertyId) : null;
   const inboundReplyTo =
@@ -617,7 +573,13 @@ export async function sendPetEmail(
     to: [EMAIL_TO],
     reply_to: inboundReplyTo,
     ...(cc ? { cc } : {}),
-    subject: `${urgentPrefix}${updatePrefix}${unitLabel} - Pet Request ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    subject: buildPetRequestSubject({
+      unitLabel,
+      displayCheckInDate,
+      displayCheckOutDate,
+      isUrgent,
+      isUpdate,
+    }),
     html: emailContent,
     attachments: attachments,
     errorLabel: 'email',
@@ -985,7 +947,11 @@ export async function sendReadyForCheckin(booking: GuestSubmission) {
     ),
     to: [booking.guest_email],
     reply_to: EMAIL_REPLY_TO,
-    subject: `${unitLabel} - Check-in Details ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    subject: buildReadyForCheckinSubject({
+      unitLabel,
+      displayCheckInDate,
+      displayCheckOutDate,
+    }),
     html,
     ...(attachments.length > 0 ? { attachments } : {}),
     errorLabel: 'email',

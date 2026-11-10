@@ -3,7 +3,7 @@
  */
 
 import { createClient } from './supabaseJs.ts';
-import { resolveAppSettings } from './appSettings.ts';
+import { resolveAppSettings, type AppSettingsResolved } from './appSettings.ts';
 import { resolvePublicBrandName } from './platformBrand.ts';
 import { getDefaultPropertyId } from './propertyScope.ts';
 
@@ -51,6 +51,33 @@ export function formatEmailDateRange(checkIn: string, checkOut: string): string 
   return `(${checkIn} to ${checkOut})`;
 }
 
+/**
+ * Pure half of {@link loadPropertyEmailBranding}: labels picked from the resolved settings
+ * and the property/organization rows. The golden set snapshots it without a database.
+ */
+export function buildPropertyEmailBranding(input: {
+  settings: AppSettingsResolved;
+  property: { name: string | null; tower_and_unit: string | null } | null;
+  organizationName: string;
+  fromEmail: string;
+}): PropertyEmailBranding {
+  const propertyName = String(input.property?.name ?? '').trim();
+  const organizationName = String(input.organizationName ?? '').trim();
+  const unitLabel =
+    input.settings.gafTowerAndUnitNumber?.trim() ||
+    String(input.property?.tower_and_unit ?? '').trim() ||
+    propertyName ||
+    organizationName ||
+    'Property';
+
+  return {
+    organizationName: resolvePublicBrandName(organizationName) || propertyName || 'Property',
+    propertyName: propertyName || organizationName || 'Property',
+    unitLabel,
+    fromEmail: input.fromEmail,
+  };
+}
+
 export async function loadPropertyEmailBranding(
   propertyId?: string | null
 ): Promise<PropertyEmailBranding> {
@@ -83,25 +110,17 @@ export async function loadPropertyEmailBranding(
     orgName = String(org?.name ?? '').trim();
   }
 
-  const propertyName = String(data?.name ?? '').trim();
-  const unitLabel =
-    settings.gafTowerAndUnitNumber?.trim() ||
-    String(data?.tower_and_unit ?? '').trim() ||
-    propertyName ||
-    orgName ||
-    'Property';
-
   const fromEmail = Deno.env.get('RESEND_FROM_EMAIL')?.trim() || settings.emailReplyTo?.trim();
   if (!fromEmail) {
     throw new Error('Missing RESEND_FROM_EMAIL env or emailReplyTo in property app_settings');
   }
 
-  const branding: PropertyEmailBranding = {
-    organizationName: resolvePublicBrandName(orgName) || propertyName || 'Property',
-    propertyName: propertyName || orgName || 'Property',
-    unitLabel,
+  const branding = buildPropertyEmailBranding({
+    settings,
+    property: (data as { name: string | null; tower_and_unit: string | null } | null) ?? null,
+    organizationName: orgName,
     fromEmail,
-  };
+  });
 
   cache.set(resolvedId, { at: Date.now(), value: branding });
   return branding;
