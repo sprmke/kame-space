@@ -179,6 +179,20 @@ serveSuperAdmin('parking-payouts', async (req, admin) => {
       if (!reference) return jsonError(req, 'reference is required');
       if (!reason) return jsonError(req, 'reason is required');
 
+      const { data: refundable, error: refundableError } = await supabase
+        .from('parking_payment_transactions')
+        .select('id, status, guest_charge_total')
+        .eq('id', transactionId)
+        .maybeSingle();
+      if (refundableError) return jsonError(req, refundableError.message, 500);
+      if (!refundable || (refundable.status !== 'paid' && refundable.status !== 'refund_review')) {
+        return jsonError(req, 'Refundable transaction not found', 404);
+      }
+      const guestCharge = Number(refundable.guest_charge_total ?? 0);
+      if (amount > guestCharge + 0.005) {
+        return jsonError(req, 'amount cannot exceed the guest charge');
+      }
+
       const nowIso = new Date().toISOString();
       const { data, error } = await supabase
         .from('parking_payment_transactions')

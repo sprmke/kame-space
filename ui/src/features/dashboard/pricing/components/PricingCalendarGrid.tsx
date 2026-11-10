@@ -181,7 +181,7 @@ export function PricingCalendarGrid({
   };
 
   return (
-    <section className={cn('surface-card min-w-0', denseCalendar ? 'p-3 sm:p-4' : 'p-4 sm:p-5')}>
+    <section className={cn('surface-card min-w-0', denseCalendar ? 'p-2 sm:p-4' : 'p-4 sm:p-5')}>
       <AdminSurfaceCardHeader
         icon={CalendarDays}
         title={
@@ -421,7 +421,7 @@ function PricingDayCell({
     <button
       type="button"
       className={cn(
-        'border-border bg-card relative flex aspect-square min-w-0 flex-col rounded-lg border text-left transition-colors',
+        'border-border bg-card relative flex min-w-0 flex-col rounded-lg border text-left transition-colors sm:aspect-square',
         denseCalendar
           ? 'min-h-[3rem] p-0.5 sm:min-h-[3.25rem]'
           : 'min-h-[3.5rem] p-1 sm:min-h-[4.5rem] sm:p-2',

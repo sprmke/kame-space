@@ -9,6 +9,7 @@ import {
   buildCancellationPreset,
   cancellationPolicyHash,
   isCancellationPolicyNonRefundable,
+  isCancellationPolicyStale,
   normalizeCancellationPolicy,
   readCancellationPolicySnapshot,
   resolveCancellationPolicyDisplay,
@@ -205,6 +206,83 @@ Deno.test('detects non-refundable presets and custom 0% schedules', () => {
     isCancellationPolicyNonRefundable(
       resolveCancellationPolicyDisplay(buildCancellationPreset('moderate'))
     ),
+    false
+  );
+});
+
+Deno.test('empty client version/hash never counts as a policy change', () => {
+  const policy = buildCancellationPreset('moderate');
+  // Production regression: properties with a pre-versioning policy have no
+  // version id. The form sends '' and the server used to compare '' !== null.
+  assertEquals(
+    isCancellationPolicyStale({
+      clientVersionId: '',
+      clientHash: '',
+      currentPolicy: policy,
+      currentVersionId: null,
+    }),
+    false
+  );
+  assertEquals(
+    isCancellationPolicyStale({
+      clientVersionId: '   ',
+      clientHash: '   ',
+      currentPolicy: policy,
+      currentVersionId: 'v1',
+    }),
+    false
+  );
+  assertEquals(
+    isCancellationPolicyStale({
+      clientVersionId: undefined,
+      clientHash: undefined,
+      currentPolicy: null,
+      currentVersionId: null,
+    }),
+    false
+  );
+});
+
+Deno.test('stale version ids and hashes are flagged', () => {
+  const policy = buildCancellationPreset('moderate');
+  assertEquals(
+    isCancellationPolicyStale({
+      clientVersionId: 'v1',
+      currentPolicy: policy,
+      currentVersionId: null,
+    }),
+    true
+  );
+  assertEquals(
+    isCancellationPolicyStale({
+      clientVersionId: 'v1',
+      currentPolicy: policy,
+      currentVersionId: 'v2',
+    }),
+    true
+  );
+  assertEquals(
+    isCancellationPolicyStale({
+      clientVersionId: 'v1',
+      currentPolicy: policy,
+      currentVersionId: 'v1',
+    }),
+    false
+  );
+  assertEquals(
+    isCancellationPolicyStale({
+      clientHash: 'deadbeef',
+      currentPolicy: policy,
+      currentVersionId: null,
+    }),
+    true
+  );
+  assertEquals(
+    isCancellationPolicyStale({
+      clientHash: cancellationPolicyHash(policy),
+      currentPolicy: policy,
+      currentVersionId: null,
+    }),
     false
   );
 });

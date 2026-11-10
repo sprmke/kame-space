@@ -142,6 +142,12 @@ export type ParkingFlowState = {
   claimFailsAlreadyClaimed: boolean;
   /** Guest taps Pay now after the payment window closed; checkout returns 409. */
   paymentWindowExpiredOnCheckout: boolean;
+  /** Archive/delete warnings from parking-settings. */
+  archiveImpact?: {
+    pendingOffers: number;
+    upcomingBookings: number;
+    bookingHistory: number;
+  };
 };
 
 const MOCK_HOST_CONTACT = {
@@ -884,6 +890,56 @@ export async function installParkingFlowMocks(page: Page, state: ParkingFlowStat
         retryParkingEndorsement(state);
         await fulfillJson(route, { success: true, data: { sent: true } });
         return;
+      case 'parking-settings': {
+        const telegramStatus = {
+          tokenConfigured: false,
+          chatIdConfigured: false,
+          tokenSource: 'none',
+          chatIdSource: 'none',
+          secretsEncryptionConfigured: true,
+        };
+        await fulfillJson(route, {
+          success: true,
+          data: {
+            parkingId: 'parking-e2e-001',
+            paymentProvider: 'paymongo',
+            gcashName: 'Sample Stays PH',
+            gcashNumber: '09171234567',
+            gcashQrImageUrl: null,
+            paymentMethods: [],
+            parkingNotificationTemplates: {},
+            automationToggles: {
+              emailParkingReservationRequest: true,
+              emailParkingGuestConfirmed: true,
+              emailParkingNoHostAvailable: true,
+              autoAcceptTopMatch: false,
+            },
+            updatedAt: '2026-08-01T00:00:00.000Z',
+            archiveImpact: state.archiveImpact ?? {
+              pendingOffers: 0,
+              upcomingBookings: 0,
+              bookingHistory: 0,
+            },
+            parkingIntegrations: {
+              telegram: {
+                marketing: telegramStatus,
+                staff: telegramStatus,
+                admin: telegramStatus,
+                finance: telegramStatus,
+                maintenance: telegramStatus,
+                chat: telegramStatus,
+              },
+            },
+            platformSecrets: {
+              resendApiKeyConfigured: true,
+              secretsEncryptionKeyConfigured: true,
+              geminiApiKeyConfigured: true,
+              groqApiKeyConfigured: false,
+            },
+          },
+        });
+        return;
+      }
       case 'parking-pricing':
         if (route.request().method() === 'GET') {
           await fulfillJson(route, { success: true, data: parkingPricingPayload() });
