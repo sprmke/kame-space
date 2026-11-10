@@ -73,3 +73,8 @@ BEGIN
 END;
 $fn$;
 
+
+-- `CREATE OR REPLACE` keeps the old grants, but the guard requires an explicit statement in
+-- every migration that defines a SECURITY DEFINER function.
+REVOKE ALL ON FUNCTION public.prune_operational_tables() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.prune_operational_tables() TO service_role;
