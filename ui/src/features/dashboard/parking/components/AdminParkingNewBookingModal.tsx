@@ -179,6 +179,10 @@ export function AdminParkingNewBookingModal({
             />
           ) : open ? (
             <>
+              <p className="text-muted-foreground mb-3 text-xs">
+                Creates a request on this slot. Online bookings confirm after the guest pays; your
+                host request is accepted automatically.
+              </p>
               <label className="border-border/60 mb-3 flex items-start gap-2 rounded-lg border p-3">
                 <Checkbox
                   checked={paidOutside}

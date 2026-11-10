@@ -13,6 +13,7 @@ import {
 } from './parkingGuestOwnership.ts';
 import { expirePendingParkingTransactions } from './parkingPaymentOrchestrator.ts';
 import { createNotification } from './notificationService.ts';
+import { sendParkingTelegramNotice } from './telegramParking.ts';
 
 export class ParkingCancellationError extends Error {
   status: number;
@@ -34,7 +35,7 @@ export async function cancelParkingBooking(
     .select(
       `id, status, guest_auth_user_id, parking_broadcast_batch_number, guest_email,
        parking_id, parking_request_organization_id, primary_guest_name, guest_facebook_name,
-       parking_check_in_date`
+       parking_check_in_date, check_in_date`
     )
     .eq('id', bookingId)
     .maybeSingle();
@@ -90,7 +91,8 @@ export async function cancelParkingBooking(
       supabase,
       bookingId,
       [...new Set((pendingOffers ?? []).map((row) => String(row.parking_id)))],
-      String(booking.primary_guest_name ?? booking.guest_facebook_name ?? 'The guest')
+      String(booking.primary_guest_name ?? booking.guest_facebook_name ?? 'The guest'),
+      String(booking.parking_check_in_date ?? booking.check_in_date ?? '')
     );
 
     return { cancelled: true };
@@ -139,7 +141,8 @@ export async function cancelParkingBooking(
       supabase,
       bookingId,
       booking.parking_id ? [String(booking.parking_id)] : [],
-      String(booking.primary_guest_name ?? booking.guest_facebook_name ?? 'The guest')
+      String(booking.primary_guest_name ?? booking.guest_facebook_name ?? 'The guest'),
+      String(booking.parking_check_in_date ?? booking.check_in_date ?? '')
     );
 
     return { cancelled: true };
@@ -153,16 +156,19 @@ async function notifyHostsOfCancellation(
   supabase: ReturnType<typeof createServiceClient>,
   bookingId: string,
   parkingIds: string[],
-  guestName: string
+  guestName: string,
+  checkInDate: string
 ): Promise<void> {
   if (parkingIds.length === 0) return;
   const { data: parkings } = await supabase
     .from('parkings')
-    .select('id, organization_id')
+    .select('id, organization_id, name, tower, slot_label')
     .in('id', parkingIds)
     .limit(20);
 
   for (const parking of parkings ?? []) {
+    const slotLabel =
+      [parking.slot_label, parking.tower].filter(Boolean).join(' · ') || parking.name;
     try {
       await createNotification({
         organizationId: String(parking.organization_id),
@@ -179,5 +185,14 @@ async function notifyHostsOfCancellation(
         err instanceof Error ? err.message : err
       );
     }
+    await sendParkingTelegramNotice({
+      parkingId: String(parking.id),
+      key: 'request_cancelled',
+      values: {
+        slot_label: slotLabel,
+        guest_name: guestName,
+        check_in_date: checkInDate,
+      },
+    });
   }
 }

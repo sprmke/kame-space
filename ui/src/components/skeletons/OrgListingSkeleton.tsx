@@ -20,11 +20,13 @@ type OrgListingSkeletonVariant = 'inventory' | 'analytics';
 
 /** `AdminDataTable` shape: name + subtitle, value columns, trailing action. Desktop only. */
 function OrgListingTableSkeleton({
+  title,
   columns,
   minWidth,
   label,
 }: {
-  columns: number[];
+  title: string;
+  columns: Array<{ width: number; label: string; className?: string }>;
   minWidth: number;
   label: string;
 }) {
@@ -35,14 +37,16 @@ function OrgListingTableSkeleton({
       <div className="overflow-x-auto">
         <div style={{ minWidth }}>
           <div
-            className="border-separator bg-card grid items-center gap-4 border-b py-3 pl-5 pr-4"
+            className="border-separator bg-card text-table-head grid items-center gap-4 border-b py-3 pl-5 pr-4"
             style={{ gridTemplateColumns }}
           >
-            <Skeleton className="h-2.5 w-20 rounded-full" />
-            {columns.map((width, i) => (
-              <Skeleton key={i} className="h-2.5 rounded-full" style={{ width }} />
+            <span className="truncate">{title}</span>
+            {columns.map((column, index) => (
+              <span key={index} className={cn('truncate', column.className)}>
+                {column.label}
+              </span>
             ))}
-            <span />
+            <span className="sr-only">Actions</span>
           </div>
           {Array.from({ length: 6 }).map((_, row) => (
             <div
@@ -57,8 +61,12 @@ function OrgListingTableSkeleton({
                 <Skeleton className="h-3.5 w-40 max-w-full" />
                 <Skeleton className="h-3 w-28 max-w-full" />
               </div>
-              {columns.map((width, i) => (
-                <Skeleton key={i} className="h-3.5" style={{ width: Math.max(width - 8, 24) }} />
+              {columns.map((column, index) => (
+                <Skeleton
+                  key={index}
+                  className={cn('h-3.5', column.className)}
+                  style={{ width: Math.max(column.width - 8, 24) }}
+                />
               ))}
               <Skeleton className="ml-auto size-8 rounded-lg" />
             </div>
@@ -176,15 +184,29 @@ export function OrgListingViewSkeleton({
   view,
   variant = 'inventory',
   label = 'Loading listings',
+  kind = 'properties',
 }: {
   view: OrgListingViewMode;
   variant?: OrgListingSkeletonVariant;
   label?: string;
+  kind?: 'properties' | 'parkings';
 }) {
   if (variant === 'analytics') {
     if (view === 'table') {
       return (
-        <OrgListingTableSkeleton columns={[64, 96, 64, 80, 56, 72]} minWidth={960} label={label} />
+        <OrgListingTableSkeleton
+          title="Listing"
+          columns={[
+            { width: 64, label: 'Type' },
+            { width: 96, label: 'Attention' },
+            { width: 64, label: 'Occupancy' },
+            { width: 80, label: 'Revenue' },
+            { width: 56, label: 'Bookings' },
+            { width: 72, label: 'Outlook' },
+          ]}
+          minWidth={960}
+          label={label}
+        />
       );
     }
     if (view === 'grid') return <OrgAnalyticsGridSkeleton label={label} />;
@@ -192,7 +214,25 @@ export function OrgListingViewSkeleton({
   }
 
   if (view === 'table') {
-    return <OrgListingTableSkeleton columns={[72, 64, 56, 80, 64]} minWidth={720} label={label} />;
+    const isParkings = kind === 'parkings';
+    return (
+      <OrgListingTableSkeleton
+        title={isParkings ? 'Parking' : 'Property'}
+        columns={[
+          { width: 72, label: 'Type', className: 'hidden md:block' },
+          { width: 64, label: 'Status' },
+          {
+            width: 56,
+            label: isParkings ? 'Reservations' : 'Bookings',
+            className: 'hidden sm:block',
+          },
+          { width: 80, label: 'Revenue', className: 'hidden lg:block' },
+          { width: 64, label: 'Occupancy', className: 'hidden lg:block' },
+        ]}
+        minWidth={720}
+        label={label}
+      />
+    );
   }
   if (view === 'grid') return <ListingCardGridSkeleton count={8} label={label} />;
   return <OrgInventoryListSkeleton label={label} />;
@@ -240,7 +280,7 @@ export function OrgListingPageSkeleton({
         ))}
       </div>
       <AdminListToolbarSkeleton />
-      <OrgListingViewSkeleton view={view} label={label} />
+      <OrgListingViewSkeleton view={view} label={label} kind={kind} />
     </div>
   );
 }

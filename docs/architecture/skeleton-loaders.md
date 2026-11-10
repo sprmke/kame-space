@@ -33,26 +33,41 @@ Nested layouts with lazy children keep their own `Suspense` around `<Outlet />` 
 
 ## Module map (eager skeletons)
 
-| File                            | Domains                                                                                                                                       |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AdminSkeletons.tsx`            | Shared admin primitives, list toolbar, bookings, finance, settings nav, listings, org dashboard, plans, team, reviews, guest inbox            |
-| `OrgListingSkeleton.tsx`        | Org Properties / Parkings page body, org listing table / grid / list views (inventory + analytics variants)                                   |
-| `AnalyticsSkeleton.tsx`         | Org + property analytics                                                                                                                      |
-| `AnnouncementsSkeleton.tsx`     | Host announcements list / detail body                                                                                                         |
-| `BookingsExtrasSkeleton.tsx`    | Stage KPI strip, kanban                                                                                                                       |
-| `FinancePageSkeleton.tsx`       | Property/parking Finance and Maintenance data regions (KPIs, cash-flow / breakdown, toolbar, responsive ledger view)                          |
-| `NotificationsSkeleton.tsx`     | Property/parking Notifications hub — four KPI cards, Activity/Telegram tab bar, activity rows                                                 |
-| `MarketingSkeletons.tsx`        | Marketing Studio — library, template browser, AI Studio home + conversation, themes, publish history, and design/video/calendar editor chrome |
-| `PricingSkeleton.tsx`           | Property/parking pricing body — real-month week rows with day + price cells, property fee rows, parking payout lines + direct-link card       |
-| `ParkingSkeleton.tsx`           | Parking dashboard, booking detail                                                                                                             |
-| `GuestMarketingSkeleton.tsx`    | Property detail, development detail, browse grids, account gate, property chat                                                                |
-| `HelpSupportSkeleton.tsx`       | Help & Support page (module nav, intro, FAQs / guides / tickets), documentation topics                                                        |
-| `SuperAdminSkeletons.tsx`       | List/overview/audit bodies, settings cards, card lists, host detail, organization hub                                                         |
-| `AiAssistantSkeleton.tsx`       | AI assistant panel chunk                                                                                                                      |
-| `GuestPageSkeletons.tsx`        | Guest form page                                                                                                                               |
-| `GuestAccountSkeletons.tsx`     | Profile form, voucher wallet rows                                                                                                             |
-| `ImportWizardSkeleton.tsx`      | Import wizard commit step                                                                                                                     |
-| `TemplateWorkbenchSkeleton.tsx` | Property Templates workbench — library rail (search, grouped rows) beside the editor pane; rail only below `lg`                               |
+| File                            | Domains                                                                                                                                                          |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AdminSkeletons.tsx`            | Shared admin primitives, list toolbar, bookings, finance, settings nav, listings, org dashboard, plans, team, reviews (tab-aware table/cards/empty), guest inbox |
+| `OrgListingSkeleton.tsx`        | Org Properties / Parkings page body, org listing table / grid / list views (inventory + analytics variants)                                                      |
+| `AnalyticsSkeleton.tsx`         | Org + property analytics                                                                                                                                         |
+| `AnnouncementsSkeleton.tsx`     | Host announcements list / detail body                                                                                                                            |
+| `BookingsExtrasSkeleton.tsx`    | Stage KPI strip, kanban                                                                                                                                          |
+| `FinancePageSkeleton.tsx`       | Property/parking Finance and Maintenance data regions (KPIs, cash-flow / breakdown, toolbar, responsive ledger view)                                             |
+| `NotificationsSkeleton.tsx`     | Property/parking Notifications hub — four KPI cards, Activity/Telegram tab bar, activity rows                                                                    |
+| `MarketingSkeletons.tsx`        | Marketing Studio — library, template browser, AI Studio home + conversation, themes, publish history, and design/video/calendar editor chrome                    |
+| `PricingSkeleton.tsx`           | Property/parking pricing body — real-month week rows with day + price cells, property fee rows, parking payout lines + direct-link card                          |
+| `ParkingSkeleton.tsx`           | Parking dashboard, booking detail                                                                                                                                |
+| `GuestMarketingSkeleton.tsx`    | Property detail, development detail, browse grids, account gate, property chat                                                                                   |
+| `HelpSupportSkeleton.tsx`       | Help & Support page (module nav, intro, FAQs / guides / tickets), documentation topics                                                                           |
+| `SuperAdminSkeletons.tsx`       | List/overview/audit bodies, settings cards, card lists, host detail, organization hub                                                                            |
+| `AiAssistantSkeleton.tsx`       | AI assistant panel chunk                                                                                                                                         |
+| `GuestPageSkeletons.tsx`        | Guest form page                                                                                                                                                  |
+| `GuestAccountSkeletons.tsx`     | Profile form, voucher wallet rows                                                                                                                                |
+| `ImportWizardSkeleton.tsx`      | Import wizard commit step                                                                                                                                        |
+| `TemplateWorkbenchSkeleton.tsx` | Property Templates workbench — library rail (search, grouped rows) beside the editor pane; rail only below `lg`                                                  |
+
+### Reviews list state
+
+The reviews feed keys its body skeleton to the active state, not one generic table:
+
+| State                            | Skeleton                                                                                                     |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `?tab=received` / `written`      | `ReviewsTableSkeleton` with Guest, Listing (org), Rating, Review, Response/Host again, Stay/Submitted labels |
+| `?tab=to_write`                  | `ReviewsTableSkeleton` with Guest, Listing (org), Stay, Window                                               |
+| `?tab=properties` (org)          | `ReviewsTableSkeleton` with Listing, Rating, Reviews, Responded, To write                                    |
+| `?view=card` / below `lg`        | `ReviewsCardGridSkeleton`                                                                                    |
+| Tab known empty from the summary | `ReviewsEmptySkeleton` (empty-state shape, no implied rows)                                                  |
+
+Switching tabs while the previous response is still cached shows the destination tab's
+skeleton instead of the old tab's rows (`reviews.data.tab !== tab && isFetching`).
 
 ## Static vs async (what gets a skeleton)
 
@@ -78,14 +93,14 @@ first data load. Both use the same page chrome, so nothing jumps when the chunk 
 | ----------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
 | `/org/:orgSlug/dashboard`                 | `OrgDashboardRouteSkeleton`                | `OrgDashboardSkeleton`                                                                                      |
 | `/org/:orgSlug/bookings`                  | `OrgBookingsRouteSkeleton`                 | `BookingsStageSummarySkeleton` + list view                                                                  |
-| `/org/:orgSlug/reviews`                   | `OrgReviewsRouteSkeleton`                  | `ReviewsPageSkeleton`                                                                                       |
+| `/org/:orgSlug/reviews`                   | `OrgReviewsRouteSkeleton` (tab/view-aware) | `ReviewsPageSkeleton` → `ReviewsTableSkeleton` / `ReviewsCardGridSkeleton` / `ReviewsEmptySkeleton`         |
 | `/org/:orgSlug/settings`                  | `OrgSettingsRouteSkeleton`                 | `AppSettingsNavLayoutSkeleton`                                                                              |
 | `/org/:orgSlug/properties` · `parkings`   | `OrgProperties/ParkingsRouteSkeleton`      | `OrgListingPageSkeleton`                                                                                    |
 | `/org/:orgSlug/team`                      | `OrgTeamRouteSkeleton`                     | `TeamPageSkeleton`                                                                                          |
 | `/org/:orgSlug/plans`                     | `OrgPlansRouteSkeleton`                    | `PlansPageSkeleton`                                                                                         |
 | `/org/:orgSlug/analytics`                 | `OrgAnalyticsRouteSkeleton`                | `OrgAnalyticsSkeleton`                                                                                      |
 | property `dashboard`                      | `PropertyDashboardRouteSkeleton`           | `DashboardSkeleton`                                                                                         |
-| property `bookings`                       | `PropertyBookingsRouteSkeleton`            | `BookingsListBodySkeleton` (table / cards / calendar)                                                       |
+| property `bookings`                       | `PropertyBookingsRouteSkeleton`            | `BookingsListBodySkeleton` (table / cards / calendar / kanban, cards below `md`)                            |
 | property `bookings/:bookingId`            | `PropertyBookingDetailRouteSkeleton`       | `BookingDetailPageSkeleton`                                                                                 |
 | property `notifications`                  | `PropertyNotificationsRouteSkeleton`       | `NotificationsPageBodySkeleton`                                                                             |
 | property `templates`                      | `PropertyTemplatesRouteSkeleton`           | `TemplateWorkbenchSkeleton`                                                                                 |
@@ -95,12 +110,12 @@ first data load. Both use the same page chrome, so nothing jumps when the chunk 
 | property `pricing`                        | `PropertyPricingRouteSkeleton`             | `PricingPageBodySkeleton` (4 stats, real month weeks, 5 fee rows)                                           |
 | property `analytics`                      | `PropertyAnalyticsRouteSkeleton`           | `PropertyAnalyticsSkeleton`                                                                                 |
 | property `marketing`                      | `PropertyMarketingRouteSkeleton`           | State-aware: library / template browser / AI home / AI conversation / themes / design·video·calendar editor |
-| property `team` · `reviews`               | `PropertyTeam/ReviewsRouteSkeleton`        | `TeamPageSkeleton` · `ReviewsPageSkeleton`                                                                  |
+| property `team` · `reviews`               | `PropertyTeam/ReviewsRouteSkeleton`        | `TeamPageSkeleton` · `ReviewsPageSkeleton` (tab/view-aware)                                                 |
 | property `inbox`                          | `PropertyInboxRouteSkeleton`               | `InboxPageSkeleton`                                                                                         |
 | property `public-pages`                   | `PropertyCustomPagesRouteSkeleton`         | two sectioned `ListingCardGridSkeleton` blocks                                                              |
 | property `public-pages/:pageId/edit`      | `PropertyPageEditorRouteSkeleton`          | `PageEditorSkeleton`                                                                                        |
 | parking `dashboard`                       | `ParkingDashboardRouteSkeleton`            | `ParkingDashboardSkeleton`                                                                                  |
-| parking `bookings`                        | `ParkingBookingsRouteSkeleton`             | `BookingsListBodySkeleton` (table / cards / calendar)                                                       |
+| parking `bookings`                        | `ParkingBookingsRouteSkeleton`             | `BookingsListBodySkeleton` (table / cards / calendar; kanban URLs normalize to table or cards)              |
 | parking `bookings/:bookingId`             | `ParkingBookingDetailRouteSkeleton`        | `ParkingBookingDetailPageSkeleton`                                                                          |
 | parking `finance`                         | `ParkingFinanceRouteSkeleton`              | `FinancePageBodySkeleton` (view-aware)                                                                      |
 | parking `pricing`                         | `ParkingPricingRouteSkeleton`              | `PricingPageBodySkeleton` (3 stats, payout lines, direct-link card)                                         |

@@ -2,7 +2,7 @@
 title: 'Property Reviews — operator guide'
 status: active
 tags: [guides, routes, org, property, reviews]
-updated: 2026-10-22
+updated: 2026-11-11
 ---
 
 # Property Reviews — operator guide
@@ -158,7 +158,7 @@ Open review windows (not expired, not published) with no host review yet, soones
 
 Reviews the team wrote about guests (submitted or published). Rows show stars, the submitted date and a **Would host again** / **Would not host again** chip; opening one shows the review text, the guest's reply when there is one, and **Open booking**. Rows still waiting are marked **Hidden until publish** with the remaining window.
 
-Loading keeps the page chrome mounted and shows KPI and table or card skeletons; paging keeps the previous page on screen while the next one loads. A failed load shows **Try again**. The guest-review sheet keeps what the host typed when the saved draft refetches in the background.
+Loading keeps the page chrome mounted and shows KPI cards plus the active tab's real column labels with skeleton rows. The list skeleton follows `?view=` and `?tab=`; switching tabs never shows the previous tab's rows. When the summary already says the tab is empty (To write = 0), a quiet empty-state placeholder replaces the row skeleton. Paging keeps the previous page on screen while the next one loads. A failed load shows **Try again**. The guest-review sheet keeps what the host typed when the saved draft refetches in the background.
 
 ---
 
@@ -193,22 +193,22 @@ Guest names live on the stay, not on the review, so a name search first resolves
 
 ## Implementation map
 
-| Concern      | Path                                                                                                                           |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| Page         | `ui/src/features/reviews/pages/PropertyReviewsPage.tsx` → shared `ReviewsListPage.tsx` (`scope="property"`)                    |
-| Loading      | `PropertyReviewsRouteSkeleton` → `ReviewsPageSkeleton` (`AdminSkeletons.tsx`) — summary cards, tab row, responsive review list |
-| KPI cards    | `ui/src/features/reviews/components/ReviewsSummaryCards.tsx`                                                                   |
-| Breakdown    | `ui/src/features/reviews/components/ReviewsRatingSheet.tsx`                                                                    |
-| Toolbar      | `ReviewsToolbar.tsx`, `ReviewsFilters.tsx`, `ReviewsViewToggle.tsx`                                                            |
-| Table / card | `ReviewsTable.tsx`, `ReviewsCardGrid.tsx`, shared `ReviewCardContent.tsx`                                                      |
-| Detail sheet | `ui/src/features/reviews/components/ReviewDetailSheet.tsx`                                                                     |
-| List state   | `ui/src/features/reviews/lib/propertyReviewsApi.ts` (URL ⇄ query ⇄ API params)                                                 |
-| Auto-review  | `ReviewAutomationSheet.tsx` (page header)                                                                                      |
-| Sheets       | `ui/src/features/reviews/components/`                                                                                          |
-| Hooks        | `ui/src/features/reviews/hooks/usePropertyReviews.ts`                                                                          |
-| List service | `supabase/functions/_shared/propertyReviewList.ts`, `reviewListParams.ts` (query vocabulary shared with the org rollup)        |
-| Edge         | `list-property-reviews`, `respond-to-guest-review`, `report-review`, `review-automation-settings`, `draft-review-with-ai`      |
-| Super-admin  | `moderate-review-report`, `list-super-admin-approvals` (reported)                                                              |
+| Concern      | Path                                                                                                                                                                                                       |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page         | `ui/src/features/reviews/pages/PropertyReviewsPage.tsx` → shared `ReviewsListPage.tsx` (`scope="property"`)                                                                                                |
+| Loading      | `PropertyReviewsRouteSkeleton` → `ReviewsPageSkeleton` (`AdminSkeletons.tsx`) — tab/view-aware `ReviewsTableSkeleton` / `ReviewsCardGridSkeleton`, plus `ReviewsEmptySkeleton` when the tab is known empty |
+| KPI cards    | `ui/src/features/reviews/components/ReviewsSummaryCards.tsx`                                                                                                                                               |
+| Breakdown    | `ui/src/features/reviews/components/ReviewsRatingSheet.tsx`                                                                                                                                                |
+| Toolbar      | `ReviewsToolbar.tsx`, `ReviewsFilters.tsx`, `ReviewsViewToggle.tsx`                                                                                                                                        |
+| Table / card | `ReviewsTable.tsx`, `ReviewsCardGrid.tsx`, shared `ReviewCardContent.tsx`                                                                                                                                  |
+| Detail sheet | `ui/src/features/reviews/components/ReviewDetailSheet.tsx`                                                                                                                                                 |
+| List state   | `ui/src/features/reviews/lib/propertyReviewsApi.ts` (URL ⇄ query ⇄ API params)                                                                                                                             |
+| Auto-review  | `ReviewAutomationSheet.tsx` (page header)                                                                                                                                                                  |
+| Sheets       | `ui/src/features/reviews/components/`                                                                                                                                                                      |
+| Hooks        | `ui/src/features/reviews/hooks/usePropertyReviews.ts`                                                                                                                                                      |
+| List service | `supabase/functions/_shared/propertyReviewList.ts`, `reviewListParams.ts` (query vocabulary shared with the org rollup)                                                                                    |
+| Edge         | `list-property-reviews`, `respond-to-guest-review`, `report-review`, `review-automation-settings`, `draft-review-with-ai`                                                                                  |
+| Super-admin  | `moderate-review-report`, `list-super-admin-approvals` (reported)                                                                                                                                          |
 
 ---
 
@@ -216,6 +216,7 @@ Guest names live on the stay, not on the review, so a name search first resolves
 
 | Layer   | Path / spec                                                                                     | Manual                                                    |
 | ------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Unit    | `ui/src/features/reviews/lib/reviewsListLoadState.test.ts` (tab skeleton state)                 | —                                                         |
 | Handler | `supabase/functions/tests/propertyReviews.test.ts`, `reviewReports.test.ts`                     | —                                                         |
 | E2E     | `ui/e2e/features/reviews/hostReviewsPage.spec.ts` (`@ci`)                                       | —                                                         |
 | Live    | `bun run test:reviews:live` (local stack: double-blind, publish, report, moderation, org scope) | [`reviews-manual.md`](../../../testing/reviews-manual.md) |

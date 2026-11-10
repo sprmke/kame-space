@@ -3,6 +3,10 @@ import {
   orgParkingResidenceLine,
 } from '@/features/dashboard/org/lib/orgParkingDisplay';
 import type { Parking } from '@/features/dashboard/org/types';
+import {
+  parkingMediaFromSettings,
+  parkingMediaGalleryUrls,
+} from '@/features/dashboard/parking/lib/parkingMedia';
 
 export type OrgParkingCardModel = {
   title: string;
@@ -14,9 +18,7 @@ export type OrgParkingCardModel = {
 };
 
 export function orgParkingCardModel(parking: Parking): OrgParkingCardModel {
-  const coverImage =
-    typeof parking.settings.coverImage === 'string' ? parking.settings.coverImage.trim() : '';
-  const imageUrls = coverImage ? [coverImage] : [];
+  const imageUrls = parkingMediaGalleryUrls(parkingMediaFromSettings(parking.settings));
 
   return {
     title: parking.name,

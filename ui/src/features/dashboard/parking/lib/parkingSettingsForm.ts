@@ -21,6 +21,10 @@ import {
   resolveParkingSpaceLengthM,
   resolveParkingSpaceWidthM,
 } from '@/features/dashboard/parking/lib/parkingDimensionDefaults';
+import {
+  parkingMediaCoverImage,
+  parkingMediaFromSettings,
+} from '@/features/dashboard/parking/lib/parkingMedia';
 
 import { propertyBrandColorFormValue, propertyBrandColorStoredValue } from '@/lib/theme/brandColor';
 
@@ -120,7 +124,7 @@ export function parkingProfileDraftIsDirty(
 }
 
 export function parkingCoverImageFromSettings(settings: Record<string, unknown>): string {
-  return typeof settings.coverImage === 'string' ? settings.coverImage.trim() : '';
+  return parkingMediaCoverImage(parkingMediaFromSettings(settings));
 }
 
 /** Live slug preview while slot fields change; falls back to saved slug when unchanged. */
