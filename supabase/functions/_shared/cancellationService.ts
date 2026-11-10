@@ -7,7 +7,7 @@
 
 import {
   buildCancellationPolicySnapshot,
-  cancellationPolicyHash,
+  isCancellationPolicyStale,
   readCancellationPolicyFromSettings,
   readCancellationPolicyVersionId,
   isCancellationPolicyNonRefundable,
@@ -144,19 +144,14 @@ export async function captureSnapshotForBooking(input: {
 }): Promise<CancellationPolicySnapshot> {
   const context = await loadPropertyCancellationContext(input.propertyId);
   // Content hash wins: copy-to-properties can change the policy without minting
-  // a new version id, and a stale version id alone would miss that.
+  // a new version id. Empty values mean "not sent" and must never block a guest.
   if (
-    input.clientHash !== undefined &&
-    input.clientHash !== null &&
-    input.clientHash !== '' &&
-    input.clientHash !== cancellationPolicyHash(context.policy)
-  ) {
-    throw new PolicyChangedError();
-  }
-  if (
-    input.clientVersionId !== undefined &&
-    input.clientVersionId !== null &&
-    input.clientVersionId !== context.versionId
+    isCancellationPolicyStale({
+      clientVersionId: input.clientVersionId,
+      clientHash: input.clientHash,
+      currentPolicy: context.policy,
+      currentVersionId: context.versionId,
+    })
   ) {
     throw new PolicyChangedError();
   }
