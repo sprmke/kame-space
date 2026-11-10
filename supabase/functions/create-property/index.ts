@@ -14,7 +14,10 @@ import {
   findPropertyNameConflict,
 } from '../_shared/propertyNameConflict.ts';
 import { getReservedDisplayNameViolation } from '../_shared/reservedDisplayNames.ts';
-import { defaultPropertySettingsForResidence } from '../_shared/propertyResidenceDefaults.ts';
+import {
+  applyResidencePropertySeeds,
+  defaultPropertySettingsForResidence,
+} from '../_shared/propertyResidenceDefaults.ts';
 import {
   loadResidenceProfileForResidence,
   residenceLocationSeed,
@@ -106,7 +109,10 @@ serveAuthenticated('create-property', async (req, user) => {
   }
 
   const slug = await allocatePropertySlug(supabase, name);
-  const defaultSettings = defaultPropertySettingsForResidence(residenceName ?? '');
+  const defaultSettings = applyResidencePropertySeeds(
+    defaultPropertySettingsForResidence(residenceName ?? ''),
+    profile.propertySeeds
+  );
   const locationSeed = residenceLocationSeed(profile);
 
   const { data, error } = await supabase
