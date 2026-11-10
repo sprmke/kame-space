@@ -4,7 +4,7 @@ title: 'Marketing Planner: AI strategy, schedule and execution for listing promo
 status: planned
 tags:
   [workflow, planned, marketing, ai, publishing, meta, scheduling, analytics, plans-and-permissions]
-updated: 2026-11-10
+updated: 2026-11-11
 kind: plan
 ---
 
@@ -708,17 +708,17 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 
 ## 6.1 Verification results (2026-11-09)
 
-| Gate                            | Result                                                        |
-| ------------------------------- | ------------------------------------------------------------- |
-| `bun run db:migrate`            | applied `20261324000000_marketing_planner` on the local stack |
-| `bun run check:plan-catalog`    | pass (6 plans vs golden matrix)                               |
-| `bun run test` (Vitest)         | 5861 passed, 6 skipped                                        |
-| `bun run test:edge` (Deno)      | 1471 passed                                                   |
-| `bun run type-check`            | pass                                                          |
-| `bun run lint`                  | 0 errors (warnings only, all pre-existing)                    |
-| `bun run check:filenames`       | pass                                                          |
-| `bun run build`                 | pass, precache budget OK                                      |
-| `bun run check:support-content` | pass (148 FAQs)                                               |
+| Gate                            | Result                                            |
+| ------------------------------- | ------------------------------------------------- |
+| `bun run db:migrate`            | applied the planner migrations on the local stack |
+| `bun run check:plan-catalog`    | pass (6 plans vs golden matrix)                   |
+| `bun run test` (Vitest)         | 5861 passed, 6 skipped                            |
+| `bun run test:edge` (Deno)      | 1471 passed                                       |
+| `bun run type-check`            | pass                                              |
+| `bun run lint`                  | 0 errors (warnings only, all pre-existing)        |
+| `bun run check:filenames`       | pass                                              |
+| `bun run build`                 | pass, precache budget OK                          |
+| `bun run check:support-content` | pass (148 FAQs)                                   |
 
 Not run: `test:e2e:smoke` (no planner journey spec yet), `check:plan-catalog` against a fresh
 `db:reset` (applied incrementally on the running local stack).

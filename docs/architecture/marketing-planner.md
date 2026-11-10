@@ -54,7 +54,7 @@ same contract as the Smart Pricing engine.
 `scheduled` / `publishing` / `held` / `cancelled` statuses. `guest_submissions.attribution` holds
 first-touch UTM values and a plan item code, with no identifiers.
 
-Migration: `20261324000000_marketing_planner.sql`.
+Migrations: `20261332000000_marketing_planner.sql` (schema), `…100_marketing_planner_cron_schedules.sql`, `…200_marketing_planner_auto_plan_mode.sql`.
 
 ## Truth rules
 
