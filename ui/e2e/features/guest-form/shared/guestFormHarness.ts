@@ -22,10 +22,18 @@ function defaultStayQueryParams(): { checkInDate: string; checkOutDate: string }
 
 export const GUEST_FORM_PROPERTY_SLUG = 'solea-mactan';
 
+export type GuestIdentityMockState = {
+  status: 'pending' | 'completed';
+  verdict: 'verified' | 'partially_verified' | 'unverified';
+  verificationId: string;
+};
+
 type GuestFormMockOptions = {
   allowPets?: boolean;
   allowParking?: boolean;
   bookedDates?: string[];
+  /** When set, the identity session endpoints are driven by this state (phone → desktop). */
+  identity?: GuestIdentityMockState;
 };
 
 export async function installGuestFormMocks(page: Page, options: GuestFormMockOptions = {}) {
@@ -87,12 +95,72 @@ export async function installGuestFormMocks(page: Page, options: GuestFormMockOp
           sessionId: 'guest-identity-e2e',
           token: 'guest-identity-token',
           expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
-          verifyUrl: 'http://127.0.0.1:4184/verify/guest-identity-token',
-          qrPayload: 'http://127.0.0.1:4184/verify/guest-identity-token',
+          verifyUrl: '/verify/guest-identity-token',
+          qrPayload: '/verify/guest-identity-token',
           subjectKind: 'guest',
           guestSlot: 1,
         },
       },
+    },
+    {
+      name: 'identity-session-get',
+      method: 'GET',
+      handler: async (route) => {
+        const identity = options.identity;
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              sessionId: 'guest-identity-e2e',
+              verificationId: identity?.status === 'completed' ? identity.verificationId : null,
+              status: identity?.status ?? 'pending',
+              step: identity?.status === 'completed' ? 'done' : 'captured',
+              expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+              verdict: identity?.status === 'completed' ? identity.verdict : null,
+              flags: [],
+              documentType: identity?.status === 'completed' ? 'philid' : null,
+              maskedName: identity?.status === 'completed' ? 'Maria S.' : null,
+              subjectKind: 'guest',
+              guestSlot: 1,
+              expired: false,
+            },
+          }),
+        });
+      },
+    },
+    {
+      name: 'identity-session-upload',
+      method: 'POST',
+      body: { success: true, data: { path: 'guest/user/session/document_front.jpg', kind: 'document_front' } },
+    },
+    {
+      name: 'identity-session-submit',
+      method: 'POST',
+      handler: async (route) => {
+        const identity = options.identity;
+        if (identity) identity.status = 'completed';
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              sessionId: 'guest-identity-e2e',
+              verificationId: identity?.verificationId ?? 'guest-ver-e2e',
+              status: 'completed',
+              verdict: identity?.verdict ?? 'partially_verified',
+              flags: [],
+              documentType: 'philid',
+              maskedName: 'Maria S.',
+            },
+          }),
+        });
+      },
+    },
+    {
+      name: 'identity-session-cancel',
+      method: 'POST',
+      body: { success: true, data: {} },
     },
     {
       name: 'submit-form',
