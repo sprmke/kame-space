@@ -221,9 +221,12 @@ export function DevelopmentProfileSections({
       </AdminSection>
 
       <DevelopmentDocumentRequirementsSection
+        developmentId={developmentId}
         list={draft.documentRequirements}
+        pdfTemplates={draft.pdfTemplates}
         disabled={disabled}
         onChange={(next) => onChange('documentRequirements', next)}
+        onPdfTemplatesChange={(next) => onChange('pdfTemplates', next)}
       />
 
       <DevelopmentUnitTypesSection

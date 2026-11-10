@@ -21,6 +21,7 @@ import {
   parseDocumentRequirements,
   removedRequirementIds,
 } from '../_shared/documentRequirements.ts';
+import { parseResidencePdfTemplates } from '../_shared/residenceProfile.ts';
 import {
   normalizeResidenceStructure,
   validateResidenceStructure,
@@ -396,6 +397,23 @@ serveAuthenticated('update-development', async (req) => {
     settingsPatch.workflowDefaults = {
       ...objectOrEmpty(settingsPatch.workflowDefaults),
       documentRequirements: parsed,
+    };
+    settingsChanged = true;
+  }
+
+  if (body.pdfTemplates !== undefined) {
+    if (!Array.isArray(body.pdfTemplates)) {
+      return jsonError(req, 'pdfTemplates must be an array');
+    }
+    const parsedTemplates = parseResidencePdfTemplates(body.pdfTemplates) ?? [];
+    // The parser skips a malformed entry, so compare counts and reject instead of
+    // silently dropping a template the super admin still sees.
+    if (parsedTemplates.length !== body.pdfTemplates.length) {
+      return jsonError(req, 'Each PDF template needs an id, name and storage path');
+    }
+    settingsPatch.approvals = {
+      ...objectOrEmpty(settingsPatch.approvals),
+      pdfTemplates: parsedTemplates,
     };
     settingsChanged = true;
   }

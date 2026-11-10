@@ -250,3 +250,39 @@ describe('approval steps round-trip through the editor', () => {
     expect(validateDevelopmentProfileDraft(draft)).toBeNull();
   });
 });
+
+describe('pdf templates round-trip through the editor', () => {
+  const template = {
+    id: 'pdf-1',
+    name: 'Move-in permit',
+    storagePath: 'developments/dev-1/pdf-templates/1-move-in.pdf',
+    fieldMap: { unitOwner: 'property.unitOwner', mystery: 'not.a.key' },
+    version: 1,
+  };
+
+  it('reads stored templates into the draft', () => {
+    const draft = developmentProfileDraftFromDevelopment(
+      development({ approvals: { pdfTemplates: [template] } })
+    );
+
+    expect(draft.pdfTemplates).toHaveLength(1);
+    expect(draft.pdfTemplates[0]?.name).toBe('Move-in permit');
+    expect(draft.pdfTemplates[0]?.fieldMap.unitOwner).toBe('property.unitOwner');
+  });
+
+  it('sends the templates back on save and drops a malformed entry', () => {
+    const draft = developmentProfileDraftFromDevelopment(
+      development({ approvals: { pdfTemplates: [template] } })
+    );
+    draft.pdfTemplates = [...draft.pdfTemplates, { ...template, id: 'pdf-2', name: 'Second' }];
+
+    const payload = buildDevelopmentUpdatePayload(draft);
+    expect(payload.pdfTemplates).toHaveLength(2);
+    expect(payload.pdfTemplates[1]?.name).toBe('Second');
+  });
+
+  it('a development with no templates starts empty', () => {
+    const draft = developmentProfileDraftFromDevelopment(development({}));
+    expect(draft.pdfTemplates).toEqual([]);
+  });
+});

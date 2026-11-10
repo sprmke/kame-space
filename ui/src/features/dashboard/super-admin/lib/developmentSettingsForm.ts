@@ -7,6 +7,7 @@ import {
   mergeDocumentRequirements,
   type DocumentRequirement,
 } from '@/features/dashboard/bookings/lib/documentRequirements';
+import { parseResidencePdfTemplates, type ResidencePdfTemplate } from '@/lib/residence/residenceProfile';
 import {
   mergeUnitTypes,
   validateUnitTypes,
@@ -99,6 +100,7 @@ export type DevelopmentProfileDraft = {
   placeId: string;
   pmoEmail: string;
   documentRequirements: DocumentRequirement[];
+  pdfTemplates: ResidencePdfTemplate[];
   unitTypes: DevelopmentUnitType[];
   poolFee: number | null;
   poolSchedule: string;
@@ -145,6 +147,9 @@ export function developmentProfileDraftFromDevelopment(
     placeId: readString(settings, 'placeId'),
     pmoEmail: readString(settings, 'pmoEmail'),
     documentRequirements: mergeDocumentRequirements(workflowDefaults?.documentRequirements),
+    pdfTemplates: parseResidencePdfTemplates(
+      (settings.approvals as Record<string, unknown> | undefined)?.pdfTemplates
+    ) ?? [],
     unitTypes: mergeUnitTypes(settings.unitTypes, development.name),
     ...mergeDevelopmentPoolSettings(
       development.name,
@@ -200,6 +205,7 @@ export function buildDevelopmentUpdatePayload(draft: DevelopmentProfileDraft) {
     placeId: draft.placeId.trim() || null,
     pmoEmail: draft.pmoEmail.trim() || null,
     documentRequirements: draft.documentRequirements,
+    pdfTemplates: draft.pdfTemplates,
     unitTypes: draft.unitTypes,
     poolFee: draft.poolFee,
     poolSchedule: draft.poolSchedule.trim() || null,

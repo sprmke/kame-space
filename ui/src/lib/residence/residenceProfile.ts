@@ -456,7 +456,7 @@ export function parseResidenceProfile(row: unknown): ResidenceProfile {
     documentRequirements: Array.isArray(workflowRequirements)
       ? (workflowRequirements as DocumentRequirement[])
       : base.approvals.documentRequirements,
-    pdfTemplates: parsePdfTemplates(approvals?.pdfTemplates) ?? base.approvals.pdfTemplates,
+    pdfTemplates: parseResidencePdfTemplates(approvals?.pdfTemplates) ?? base.approvals.pdfTemplates,
   };
 
   base.terms = readTerms(asRecord(settings?.terms));
@@ -524,7 +524,7 @@ function parseParkingSlotFormat(value: unknown): ResidenceParkingSlotFormat | nu
   };
 }
 
-function parsePdfTemplates(value: unknown): ResidencePdfTemplate[] | null {
+export function parseResidencePdfTemplates(value: unknown): ResidencePdfTemplate[] | null {
   if (!Array.isArray(value)) return null;
   const templates: ResidencePdfTemplate[] = [];
   for (const raw of value) {
