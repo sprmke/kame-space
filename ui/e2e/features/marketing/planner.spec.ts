@@ -101,7 +101,7 @@ test.describe('@ci marketing planner', () => {
       'true',
       { timeout: 20_000 }
     );
-    await expect(page.getByRole('button', { name: 'Today' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Today', exact: true })).toBeVisible();
     await expect(page.getByText('Two nights are still open this weekend.').first()).toBeVisible();
     await expect(page.getByText('Open this weekend', { exact: true })).toBeVisible();
     await expect(page.getByText('12 page visits from this link')).toBeVisible();
@@ -112,7 +112,7 @@ test.describe('@ci marketing planner', () => {
     await mockPlanner(page);
     await page.goto(teamRbacPaths.marketingWorkspace);
 
-    await page.getByRole('button', { name: 'Week' }).click();
+    await page.getByRole('button', { name: 'Week', exact: true }).click();
     await expect(page).toHaveURL(/range=7d/);
   });
 

@@ -83,6 +83,10 @@ as a fallback.
 (connected Facebook Page and Instagram from Inbox, plus manual places), then time budget and
 language. It stores real connection ids; the wizard is guarded against unsaved edits.
 
+**Prepare week** moves every unbuilt item in the selected range to Preparing and returns the work
+list. Each saved draft attaches itself back to its item, which moves it to Ready. The button is
+disabled when there is nothing to prepare.
+
 **Freed dates:** when a booking is cancelled, the planner adds a `freed_dates` item for those
 nights (within 30 days) and sends an urgent notification. It is idempotent per check-in date and
 never blocks the cancellation.

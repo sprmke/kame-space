@@ -568,7 +568,7 @@ Engine (Deno, pure, tested):
 
 UI:
 
-- [ ] **P1.7** Plan tab (`?tab=plan`), first in `MarketingStudioModeTabs`, default for properties without a remembered tab; route skeleton per `skeleton-loaders.md`.
+- [x] **P1.7** Plan tab (`?tab=plan`), first in `MarketingStudioModeTabs`, default for properties without a remembered tab; route skeleton per `skeleton-loaders.md`.
 - [x] **P1.8** `PlannerSetupWizard` (3 steps, data-driven preselects, Connect link to Inbox, manual places list) with `useGuardedClose`.
 - [x] **P1.9** `PlannerHome`: summary card + Why sheet, range chips, opportunity chips, agenda grouped by day, Coming up strip, empty and done states.
 - [x] **P1.10** `PlanItemCard` + `PlanItemSheet` (brief from rules copy, truth panel, reschedule, change format, skip with reason, mark posted). Brief edits use `useUnsavedChangesGuard`.
@@ -578,7 +578,9 @@ UI:
 **Status (2026-11-09, second pass):** P1.8 (setup wizard) and P1.9 (Coming up strip) shipped. The
 wizard reads real connections from the Inbox connection list, so it stores real ids.
 
-**Status (first pass):** the engine, a first endpoint, the Plan tab and the tier showcase shipped. Known gaps, deliberately left open rather than half-claimed:
+**Status (first pass):** the engine, a first endpoint, the Plan tab and the tier showcase shipped.
+
+Known gaps, deliberately left open rather than half-claimed:
 
 - P1.1: no per-day memo cache, min stay is fixed at 1 and the cleaning buffer is not applied to opportunity nights yet.
 - P1.5: `add_item` (host-authored items) is not implemented, and the `marketing.planner*` feature-availability keys are deferred (X9).
@@ -604,14 +606,19 @@ wizard reads real connections from the Inbox connection list, so it stores real 
 > Videos sets the hook, caption and call to action on the storyboard beats, Posts takes the dates,
 > month and rate into the design binding, and Calendar opens on the promoted month.
 >
-> Still open in this phase: `Prepare my week` as a batch (P2.4) and using stored thumbnails only
-> (P2.5); photo ranking (P2.3) ships with the batch.
+> **Prepare my week** ships as a work list (P2.4): it moves every unbuilt item in the range to
+> `preparing` and the host continues each one from the card. A saved draft attaches itself back with
+> `attach_asset`, so the item moves to `ready` on its own. There is no canvas batch, because the
+> editors are human canvases, not a renderer.
+>
+> Photo ranking (P2.3) stays open: the design and video editors already seed the property gallery
+> through the binding, so a separate ranking has no consumer yet.
 
 - [x] **P2.1** `plannerHandoff.ts`: map each `opportunity_type` × `format` to a preset or recipe and a binding payload (dates, nights left, rate, review id, photo ids, copy). Reuse the review and AI Studio handoff patterns.
 - [x] **P2.2** Editors accept the planner payload and call `attach_asset` on first save (design, video, calendar, AI session). The item moves to `ready`.
 - [ ] **P2.3** Photo picking: rank listing photos by use count and recency so suggestions vary between items.
-- [ ] **P2.4** `PrepareWeekDialog`: batch-create template drafts for all items in range (free), list AI Studio items with total credits, run on confirm, show progress per item.
-- [ ] **P2.5** Item preview uses stored thumbnails only (no editor engines in the Plan bundle). Check the PWA precache budget in the build.
+- [x] **P2.4** `PrepareWeekDialog`: batch-create template drafts for all items in range (free), list AI Studio items with total credits, run on confirm, show progress per item.
+- [x] **P2.5** Item preview uses stored thumbnails only (no editor engines in the Plan bundle). Check the PWA precache budget in the build.
 
 **Exit:** every catalog opportunity opens a filled, editable draft; batch prepare works for a 7-day plan.
 
