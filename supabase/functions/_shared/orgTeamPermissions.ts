@@ -141,10 +141,19 @@ export function normalizeOrgPermissionIds(ids: unknown): OrgPermissionId[] {
   return expanded.filter((id): id is OrgPermissionId => ORG_PERMISSION_ID_SET.has(id));
 }
 
+/**
+ * A coarse legacy requirement means every leaf it expands to, not any one of them.
+ *
+ * `org:team:manage` covers invitations:edit/delete and members:edit/delete. Accepting any
+ * one of those told a member who could only edit invitations that they can manage the team.
+ * An expansion that produces nothing (`org:delete`, `org:import:manage`) grants nothing:
+ * `.every()` would be vacuously true on an empty list.
+ */
 export function hasOrgPermission(granted: readonly string[], required: string): boolean {
   const normalizedGranted = normalizeOrgPermissionIds(granted);
   const expandedRequired = expandLegacyOrgPermissionIds([required]);
-  return expandedRequired.some((id) => normalizedGranted.includes(id as OrgPermissionId));
+  if (expandedRequired.length === 0) return false;
+  return expandedRequired.every((id) => normalizedGranted.includes(id as OrgPermissionId));
 }
 
 export function effectiveOrgMemberPermissions(row: {
