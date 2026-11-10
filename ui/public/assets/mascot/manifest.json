@@ -5,6 +5,84 @@
   "height": 468,
   "transparent": true,
   "poses": [
+    { "name": "House rules", "file": "template-house-rules.png", "category": "standard-template" },
+    {
+      "name": "Check in instructions",
+      "file": "template-check-in-instructions.png",
+      "category": "standard-template"
+    },
+    {
+      "name": "Check out instructions",
+      "file": "template-check-out-instructions.png",
+      "category": "standard-template"
+    },
+    {
+      "name": "Parking reminders",
+      "file": "template-parking-reminders.png",
+      "category": "standard-template"
+    },
+    {
+      "name": "Custom template",
+      "file": "template-custom-template.png",
+      "category": "template-library"
+    },
+    {
+      "name": "Template folders",
+      "file": "template-template-folders.png",
+      "category": "template-library"
+    },
+    { "name": "GAF request", "file": "template-gaf-request.png", "category": "email-template" },
+    { "name": "Pet request", "file": "template-pet-request.png", "category": "email-template" },
+    {
+      "name": "New booking request",
+      "file": "template-new-booking-request.png",
+      "category": "email-template"
+    },
+    {
+      "name": "Booking acknowledgement",
+      "file": "template-booking-acknowledgement.png",
+      "category": "email-template"
+    },
+    {
+      "name": "Ready for check in",
+      "file": "template-ready-for-check-in.png",
+      "category": "email-template"
+    },
+    {
+      "name": "SD refund form request",
+      "file": "template-sd-refund-form-request.png",
+      "category": "email-template"
+    },
+    {
+      "name": "Booking cancelled guest",
+      "file": "template-booking-cancelled-guest.png",
+      "category": "email-template"
+    },
+    {
+      "name": "Booking cancelled host",
+      "file": "template-booking-cancelled-host.png",
+      "category": "email-template"
+    },
+    {
+      "name": "Cancellation request guest",
+      "file": "template-cancellation-request-guest.png",
+      "category": "email-template"
+    },
+    {
+      "name": "Refund sent guest",
+      "file": "template-refund-sent-guest.png",
+      "category": "email-template"
+    },
+    {
+      "name": "Standard templates",
+      "file": "template-standard-templates.png",
+      "category": "template-library"
+    },
+    {
+      "name": "Email templates",
+      "file": "template-email-templates.png",
+      "category": "template-library"
+    },
     { "name": "Plan free", "file": "plan-free.png", "category": "plans" },
     { "name": "Plan starter", "file": "plan-starter.png", "category": "plans" },
     { "name": "Plan pro", "file": "plan-pro.png", "category": "plans" },
