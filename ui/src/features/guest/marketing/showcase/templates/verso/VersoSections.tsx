@@ -56,6 +56,7 @@ import type {
   ShowcaseResolvedSection,
 } from '@/features/guest/marketing/showcase/types/showcase';
 
+import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 import { cn } from '@/lib/utils';
 
 const DISPLAY = 'font-jost font-medium tracking-[-0.02em]';
@@ -438,7 +439,12 @@ function VersoPinnedGallery({
               style={{ width: '100cqw' }}
             >
               <div className="aspect-[3/4] max-h-[min(72vh,560px)] w-full">
-                <img src={src} alt="" loading="lazy" className="size-full object-cover" />
+                <img
+                  src={src}
+                  alt={buildListingImageAlt({ listingName: data.propertyName, index: i })}
+                  loading="lazy"
+                  className="size-full object-cover"
+                />
               </div>
               <figcaption
                 className={cn(

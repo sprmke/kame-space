@@ -17,6 +17,7 @@ import { validateUploadFile, type UploadLimitKind } from '@/lib/media/uploadLimi
 
 const KIND_FOR_PRESET: Record<OptimizePreset, UploadLimitKind> = {
   PHOTO_MASTER: 'image',
+  LISTING_PHOTO: 'image',
   CONTENT: 'image',
   AVATAR: 'avatar',
   DOCUMENT: 'document',

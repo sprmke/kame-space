@@ -3,11 +3,14 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 import { MarketingImage as Image } from '@/features/guest/marketing/shared/components/MarketingImage';
 
+import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 import { cn } from '@/lib/utils';
 
 type Props = {
   images: string[];
   altPrefix: string;
+  /** Host alt text per photo, same order as `images`. */
+  imageAlts?: Array<string | null | undefined>;
   open: boolean;
   index: number;
   onClose: () => void;
@@ -15,7 +18,15 @@ type Props = {
 };
 
 /** Fullscreen photo viewer with prev/next + filmstrip nav — shared by every image gallery. */
-export function GalleryLightbox({ images, altPrefix, open, index, onClose, onIndexChange }: Props) {
+export function GalleryLightbox({
+  images,
+  altPrefix,
+  imageAlts,
+  open,
+  index,
+  onClose,
+  onIndexChange,
+}: Props) {
   const hasMultiple = images.length > 1;
 
   const nextImage = () => onIndexChange((index + 1) % images.length);
@@ -76,7 +87,7 @@ export function GalleryLightbox({ images, altPrefix, open, index, onClose, onInd
           >
             <Image
               src={images[index] ?? ''}
-              alt={`${altPrefix} - ${index + 1}`}
+              alt={buildListingImageAlt({ alt: imageAlts?.[index], listingName: altPrefix, index })}
               fill
               className="object-contain"
             />

@@ -7,6 +7,7 @@ import { useShowcaseTheme } from '@/features/guest/marketing/showcase/components
 import { useShowcaseEmbla } from '@/features/guest/marketing/showcase/hooks/useShowcaseEmbla';
 import type { ShowcaseVariant } from '@/features/guest/marketing/showcase/lib/showcaseThemeTokens';
 
+import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 import { cn } from '@/lib/utils';
 
 type GalleryChrome = 'full' | 'overlay';
@@ -161,7 +162,7 @@ export function ShowcaseGalleryCarousel({
                 >
                   <img
                     src={src}
-                    alt=""
+                    alt={buildListingImageAlt({ listingName: propertyName, index: i })}
                     loading="lazy"
                     className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
                   />

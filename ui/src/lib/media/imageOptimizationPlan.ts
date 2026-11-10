@@ -9,7 +9,13 @@
 
 import { UPLOAD_MAX_BYTES } from '@/lib/media/uploadLimits';
 
-export type OptimizePreset = 'PHOTO_MASTER' | 'CONTENT' | 'AVATAR' | 'DOCUMENT' | 'NONE';
+export type OptimizePreset =
+  | 'PHOTO_MASTER'
+  | 'LISTING_PHOTO'
+  | 'CONTENT'
+  | 'AVATAR'
+  | 'DOCUMENT'
+  | 'NONE';
 
 export type PlanPassthroughReason =
   'disabled' | 'preset-none' | 'nonimage' | 'animated' | 'skipped';
@@ -55,6 +61,16 @@ export const PRESET_CONFIGS: Record<Exclude<OptimizePreset, 'NONE'>, PresetConfi
     quality: 0.82,
     format: 'webp',
     alreadyGoodBytes: 900 * 1024,
+  },
+  // Public listing galleries. 2560 covers a retina lightbox without shipping a 3840px
+  // master to every guest; quality 0.8 keeps the WebP under ~250 KB for a typical photo.
+  // Canvas re-encoding also drops EXIF, so guest and host GPS never reaches Storage.
+  LISTING_PHOTO: {
+    maxLongEdge: 2560,
+    minLongEdge: 1600,
+    quality: 0.8,
+    format: 'webp',
+    alreadyGoodBytes: 500 * 1024,
   },
   CONTENT: {
     maxLongEdge: 2048,

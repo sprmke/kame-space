@@ -59,6 +59,7 @@ import type {
   ShowcaseResolvedSection,
 } from '@/features/guest/marketing/showcase/types/showcase';
 
+import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 import { cn } from '@/lib/utils';
 
 function ProgressRail({ data }: { data: ShowcaseData }) {
@@ -141,7 +142,7 @@ function AuroraHero({ data, section }: { data: ShowcaseData; section: ShowcaseRe
         >
           <img
             src={section.images[0]}
-            alt=""
+            alt={buildListingImageAlt({ listingName: data.propertyName, index: 0 })}
             className="size-full object-cover"
             loading="eager"
             fetchPriority="high"

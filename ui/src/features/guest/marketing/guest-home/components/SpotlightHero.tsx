@@ -13,8 +13,9 @@ import { usePrefersReducedMotion } from '@/hooks/useMediaQuery';
 import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
 
 /**
- * Full-bleed theme art. WebP is a third smaller than the JPEG and every browser that matters
- * supports it, but the JPEG stays as the fallback so an old WebView still gets a hero.
+ * Full-bleed theme art. AVIF is roughly a third of the JPEG and two thirds of the WebP,
+ * WebP covers older browsers, and the JPEG stays as the last fallback so an old WebView
+ * still gets a hero. Derived files come from `bun run images:optimize`.
  */
 function HeroArt({ src, priority }: { src: string; priority?: boolean }) {
   const shared = {
@@ -26,6 +27,7 @@ function HeroArt({ src, priority }: { src: string; priority?: boolean }) {
   };
   return (
     <picture>
+      <source srcSet={`${src}.avif`} type="image/avif" />
       <source srcSet={`${src}.webp`} type="image/webp" />
       <MarketingImage {...shared} src={`${src}.jpg`} priority={priority} />
     </picture>

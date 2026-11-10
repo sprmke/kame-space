@@ -21,13 +21,13 @@ import {
   minAllowedCheckInTime,
 } from '@/features/guest/calendar/lib/guestCalendarAvailability';
 import { GuestBookingsClosedNotice } from '@/features/guest/form/components/GuestBookingsClosedNotice';
+import { GuestFormCancellationPolicy } from '@/features/guest/form/components/GuestFormCancellationPolicy';
 import { GuestFormGuestsSection } from '@/features/guest/form/components/GuestFormGuestsSection';
 import {
   GuestFormInfoCallout,
   GuestFormOptionCard,
 } from '@/features/guest/form/components/GuestFormOptionCard';
 import { GuestFormPaymentStepContent } from '@/features/guest/form/components/GuestFormPaymentStepContent';
-import { GuestFormCancellationPolicy } from '@/features/guest/form/components/GuestFormCancellationPolicy';
 import { GuestFormStepNavigation } from '@/features/guest/form/components/GuestFormStepNavigation';
 import { GuestFormStepper } from '@/features/guest/form/components/GuestFormStepper';
 import { GuestFormVoucherPicker } from '@/features/guest/form/components/GuestFormVoucherPicker';
@@ -2511,7 +2511,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                                         src={
                                           petImagePreview || (value && URL.createObjectURL(value))
                                         }
-                                        alt="Pet Image Preview"
+                                        alt="Uploaded pet document preview"
                                         className="h-full w-full object-cover"
                                       />
                                       <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
