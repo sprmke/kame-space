@@ -91,7 +91,7 @@ Privacy Policy"), Booking.com (policy link under the final button).
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `LegalLink`          | `<a>` with `doc` (`terms` · `privacy` · `cookies`) and optional `section` anchor. Plain click opens the sheet; modified click navigates normally.   |
 | `LegalNotice`        | The one-line notice. Muted, wraps, centered or start aligned, 44 px tap rows not needed (inline text link with padding); takes children with links. |
-| `LegalDocumentSheet` | `ResponsiveModal` with the policy body, section scroll, "Open full page" footer. Lazy-loaded so the policy text is not in every bundle.             |
+| `LegalDocumentSheet` | `ResponsiveModal` with the policy body, section scroll, inline "Open full page" header action, and one Done action. Lazy-loaded so the policy text is not in every bundle.             |
 | `LegalFooterLinks`   | "Terms · Privacy · Cookies" row for layout footers and account menus.                                                                               |
 | `LegalSheetProvider` | One sheet instance mounted at the app root; `LegalLink` calls `openLegalDocument(doc, section)`.                                                    |
 
@@ -206,7 +206,7 @@ P0 = shipped in this change. P1 = shipped in this change if time allows. P2 = fo
 - **Legal text on host dashboard page bodies.** Hosts accepted the Terms at sign-in; repeating it
   is noise. The account menu covers lookup.
 - ~~Cookie consent banner~~ — shipped 2026-11-09 as owner decision D1 (see §7): PostHog now
-  waits for an explicit Accept before it starts, instead of relying only on disclosure.
+  waits for an explicit Allow analytics before it starts, instead of relying only on disclosure.
 - **Self-serve account deletion.** Separate feature; the Privacy Policy keeps the email route.
 - **Per-property editable legal text.** House rules already cover property terms.
 
@@ -238,6 +238,6 @@ P0 = shipped in this change. P1 = shipped in this change if time allows. P2 = fo
 
 | #   | Decision                                                                 | Resolution                                                                                                                                                                                                                                    |
 | --- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D1  | Cookie consent banner before PostHog loads                               | **Decided 2026-11-09: build it.** `CookieConsentBanner` + `kh-cookie-consent` storage; `posthog.init()` never runs before an explicit Accept. See [legal.md § Cookie consent](../../guides/routes/legal.md#cookie-consent-owner-decision-d1). |
+| D1  | Cookie consent banner before PostHog loads                               | **Decided 2026-11-09: build it.** `CookieConsentBanner` + `kh-cookie-consent` storage; `posthog.init()` never runs before an explicit Allow analytics. See [legal.md § Cookie consent](../../guides/routes/legal.md#cookie-consent-owner-decision-d1). |
 | D2  | Named Data Protection Officer and NPC registration number                | **Decided 2026-11-09: platform email, no registration line.** Already the shipped default in `privacyContent.ts` (no named individual exists to publish; NPC registration is a business/legal filing, not something this change can create).  |
 | D3  | Lawyer review of the rewritten Terms and Privacy before marketing launch | **Still open** — shipped as product copy per the default, since this requires a human lawyer. Carried on [legal.md](../../guides/routes/legal.md) § Pending / follow-ups.                                                                     |
