@@ -1,6 +1,13 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 
-import { buildGafPdfFieldMap, buildPetPdfFieldMap } from './gafPdfFields.ts';
+import {
+  AZURE_GAF_PDF_FIELD_MAP,
+  AZURE_PET_PDF_FIELD_MAP,
+  PDF_DATA_KEYS,
+  buildGafPdfFieldMap,
+  buildPetPdfFieldMap,
+  resolvePdfFieldValues,
+} from './gafPdfFields.ts';
 import type { GuestFormData } from './types.ts';
 
 function form(overrides: Partial<GuestFormData> = {}): GuestFormData {
@@ -81,4 +88,35 @@ Deno.test('pet map: splits on the trailing number, which subdivision labels also
   const map = buildPetPdfFieldMap(form({ towerAndUnitNumber: 'Blk 3 Lot 5' }));
   assertEquals(map.unitTower, 'Blk 3 Lot');
   assertEquals(map.unitNumber, '5');
+});
+
+Deno.test('field maps are data: every key is in PDF_DATA_KEYS and every field resolves', () => {
+  const maps = [AZURE_GAF_PDF_FIELD_MAP, AZURE_PET_PDF_FIELD_MAP];
+  for (const map of maps) {
+    for (const dataKey of Object.values(map)) {
+      assertEquals(PDF_DATA_KEYS.includes(dataKey), true, `unknown data key: ${dataKey}`);
+    }
+  }
+});
+
+Deno.test('resolvePdfFieldValues fills any map, leaving missing values blank', () => {
+  const fd = form({ petName: 'Biscuit' });
+  const values = resolvePdfFieldValues(
+    { petName: 'pet.name', petBreed: 'pet.breed', unitOwner: 'property.unitOwner' },
+    fd
+  );
+
+  assertEquals(values, {
+    petName: 'Biscuit',
+    petBreed: undefined,
+    unitOwner: 'Maria Santos',
+  });
+});
+
+Deno.test('the Azure maps are the single source for the builders', () => {
+  const fd = form();
+  assertEquals(buildGafPdfFieldMap(fd), resolvePdfFieldValues(AZURE_GAF_PDF_FIELD_MAP, fd));
+  assertEquals(buildPetPdfFieldMap(fd), resolvePdfFieldValues(AZURE_PET_PDF_FIELD_MAP, fd));
+  assertEquals(Object.keys(buildGafPdfFieldMap(fd)).length, 24);
+  assertEquals(Object.keys(buildPetPdfFieldMap(fd)).length, 9);
 });
