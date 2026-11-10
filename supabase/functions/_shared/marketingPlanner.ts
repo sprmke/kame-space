@@ -591,6 +591,23 @@ export async function refreshPlanBrief(input: {
   return data as PlannerItemRow;
 }
 
+/** One item, property-scoped. Used by the assistant tool and the sheet. */
+export async function getPlanItem(
+  propertyId: string,
+  itemId: string
+): Promise<PlannerItemRow | null> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from('marketing_plan_items')
+    .select('*')
+    .eq('id', itemId)
+    .eq('property_id', propertyId)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data ?? null) as PlannerItemRow | null;
+}
+
 export type PlannerAssetKind = 'template' | 'ai_session' | 'media';
 
 /**
@@ -598,6 +615,12 @@ export type PlannerAssetKind = 'template' | 'ai_session' | 'media';
  * half of the handoff: the planner hands the host a seeded draft, and the saved draft comes
  * back here so the item stops asking to be made.
  */
+/**
+ * Statuses an attach may move to `ready`. A held, published or skipped item keeps its state:
+ * attaching a draft must never quietly un-hold a post the scheduler paused.
+ */
+const ATTACHABLE_STATUSES = ['suggested', 'planned', 'preparing', 'stale'];
+
 export async function attachPlanAsset(input: {
   propertyId: string;
   organizationId: string;
@@ -619,11 +642,23 @@ export async function attachPlanAsset(input: {
     })
     .eq('id', input.itemId)
     .eq('property_id', input.propertyId)
+    .in('status', ATTACHABLE_STATUSES)
     .is('deleted_at', null)
     .select('*')
     .maybeSingle();
   if (error) throw new Error(`Could not attach the asset: ${error.message}`);
-  if (!data) throw new Error('Item not found');
+  if (!data) {
+    // Either the item is gone or it is in a state that keeps its own status. Return the
+    // current row so the caller can see which; never fail the editor save over it.
+    const { data: existing } = await supabase
+      .from('marketing_plan_items')
+      .select('*')
+      .eq('id', input.itemId)
+      .eq('property_id', input.propertyId)
+      .maybeSingle();
+    if (!existing) throw new Error('Item not found');
+    return existing as PlannerItemRow;
+  }
   return data as PlannerItemRow;
 }
 
@@ -758,6 +793,10 @@ export async function addPlanItem(input: {
 export type PlannerSettingsPatch = {
   goals?: string[];
   cadencePreset?: 'light' | 'steady' | 'active' | 'custom';
+  /** `ai` spends credits on weekly briefs; `rules` is free. Defaults to `rules`. */
+  autoPlanMode?: 'rules' | 'ai';
+  /** Rolling 7-day credit cap for the weekly AI plan. 0 disables it. */
+  weeklyAiCreditCap?: number;
   channels?: unknown[];
   language?: 'en' | 'fil' | 'taglish';
   tone?: 'warm' | 'playful' | 'premium';
@@ -788,6 +827,10 @@ export async function savePlannerSettings(input: {
   const update: Record<string, unknown> = { updated_by: input.actor.userId ?? null };
   if (input.patch.goals) update.goals = input.patch.goals;
   if (input.patch.cadencePreset) update.cadence_preset = input.patch.cadencePreset;
+  if (input.patch.autoPlanMode) update.auto_plan_mode = input.patch.autoPlanMode;
+  if (input.patch.weeklyAiCreditCap != null) {
+    update.weekly_ai_credit_cap = Math.max(0, Math.min(1000, Math.round(input.patch.weeklyAiCreditCap)));
+  }
   if (input.patch.channels) update.channels = input.patch.channels;
   if (input.patch.language) update.language = input.patch.language;
   if (input.patch.tone) update.tone = input.patch.tone;

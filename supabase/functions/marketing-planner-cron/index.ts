@@ -20,6 +20,9 @@ import {
   isItemDueForReminder,
   reminderLeadMinutes,
 } from '../_shared/marketingPublishScheduler.ts';
+import { shouldUseAiPlan } from '../_shared/marketingPlanMode.ts';
+import { isFeatureEnabled } from '../_shared/planFeatures.ts';
+import { resolvePropertyEntitlements } from '../_shared/planEntitlements.ts';
 import { createOrCoalesceNotification } from '../_shared/notificationService.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
 import { serveCronPost } from '../_shared/serveEdge.ts';
@@ -84,7 +87,9 @@ async function runWeeklyPlans(
   const clock = manilaClock(now);
   const { data } = await sb
     .from('marketing_planner_settings')
-    .select('property_id, organization_id, plan_weekday, plan_time, auto_plan')
+    .select(
+      'property_id, organization_id, plan_weekday, plan_time, auto_plan, auto_plan_mode, weekly_ai_credit_cap'
+    )
     .eq('auto_plan', true)
     .limit(200);
 
@@ -113,11 +118,18 @@ async function runWeeklyPlans(
     if (existing && existing.length > 0) continue;
 
     try {
+      const mode = await resolveWeeklyPlanMode(
+        sb,
+        String(row.property_id),
+        row.auto_plan_mode,
+        row.weekly_ai_credit_cap
+      );
       const result = await generatePlan({
         propertyId: String(row.property_id),
         organizationId: String(row.organization_id),
         actor: buildActorContext('cron', { cron: LOG }),
         trigger: 'weekly_cron',
+        mode,
       });
       created += 1;
       // Only tell the host when the run actually added something.
@@ -226,4 +238,42 @@ async function sendDueReminders(
     sent += 1;
   }
   return sent;
+}
+
+/**
+ * `ai` only when the host opted in, the cap is positive, the org still holds the
+ * `aiMarketingPlanner` entitlement, and the rolling 7-day spend is under the cap. Anything
+ * else falls back to the free rules plan rather than spending credits unasked.
+ */
+export async function resolveWeeklyPlanMode(
+  sb: ReturnType<typeof createServiceClient>,
+  propertyId: string,
+  rawMode: unknown,
+  rawCap: unknown
+): Promise<'rules' | 'ai'> {
+  if (rawMode !== 'ai') return 'rules';
+
+  let entitled = false;
+  try {
+    const entitlements = await resolvePropertyEntitlements(propertyId);
+    entitled = isFeatureEnabled(entitlements, 'aiMarketingPlanner');
+  } catch {
+    entitled = false;
+  }
+  if (!entitled) return 'rules';
+
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await sb
+    .from('marketing_plans')
+    .select('credits_consumed')
+    .eq('property_id', propertyId)
+    .gte('created_at', since)
+    .limit(50);
+  const spent = error
+    ? 0
+    : (data ?? []).reduce((sum, row) => sum + (Number(row.credits_consumed) || 0), 0);
+
+  return shouldUseAiPlan({ mode: rawMode, cap: rawCap, spent, entitled })
+    ? 'ai'
+    : 'rules';
 }

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/responsive-modal';
 import { useGuardedClose } from '@/hooks/useGuardedClose';
 import { useInboxConnections } from '@/features/dashboard/inbox/hooks/useInbox';
+import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 import { useOrgSlugParam, useResolvedOrgId, usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
 
 const GOALS = [
@@ -66,6 +67,7 @@ type Props = {
     cadencePreset: string;
     channels: unknown[];
     language: string;
+    autoPlanMode?: 'rules' | 'ai';
   } | null;
   onSave: (patch: Record<string, unknown>) => Promise<boolean> | boolean;
 };
@@ -98,6 +100,8 @@ export function PlannerSetupWizard({ open, onOpenChange, isSaving, initial, onSa
   const [goals, setGoals] = useState<string[]>(initial?.goals ?? []);
   const [cadence, setCadence] = useState<string>(initial?.cadencePreset ?? 'steady');
   const [language, setLanguage] = useState<string>(initial?.language ?? 'en');
+  const [aiPlan, setAiPlan] = useState(initial?.autoPlanMode === 'ai');
+  const aiPlanGate = useFeatureGate('aiMarketingPlanner');
   const [connected, setConnected] = useState<string[]>([]);
   const [manual, setManual] = useState<string[]>([]);
 
@@ -127,6 +131,7 @@ export function PlannerSetupWizard({ open, onOpenChange, isSaving, initial, onSa
     (goals.join(',') !== (initial?.goals ?? []).join(',') ||
       cadence !== (initial?.cadencePreset ?? 'steady') ||
       language !== (initial?.language ?? 'en') ||
+      aiPlan !== (initial?.autoPlanMode === 'ai') ||
       connected.join(',') !== splitChannels(initial?.channels ?? []).connected.join(',') ||
       manual.join(',') !== splitChannels(initial?.channels ?? []).manual.join(','));
 
@@ -150,6 +155,8 @@ export function PlannerSetupWizard({ open, onOpenChange, isSaving, initial, onSa
       cadencePreset: cadence,
       language,
       channels: buildChannels(),
+      autoPlanMode: aiPlan ? 'ai' : 'rules',
+      weeklyAiCreditCap: aiPlan ? 20 : 0,
     };
     return onSave(patch);
   };
@@ -262,6 +269,33 @@ export function PlannerSetupWizard({ open, onOpenChange, isSaving, initial, onSa
                   </label>
                 ))}
               </div>
+              {aiPlanGate.allowed ? (
+                <div className="space-y-2">
+                  <p className="text-caption text-muted-foreground">Weekly plan</p>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="planner-ai-plan"
+                      checked={!aiPlan}
+                      onChange={() => setAiPlan(false)}
+                    />
+                    Rules only
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="planner-ai-plan"
+                      checked={aiPlan}
+                      onChange={() => setAiPlan(true)}
+                    />
+                    <span>
+                      AI written
+                      <span className="text-caption text-muted-foreground"> uses credits</span>
+                    </span>
+                  </label>
+                </div>
+              ) : null}
+
               <div className="space-y-2">
                 <p className="text-caption text-muted-foreground">Language</p>
                 {LANGUAGES.map((option) => (

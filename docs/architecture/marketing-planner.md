@@ -135,6 +135,18 @@ every other cancellation side effect. It clamps the freed nights to the next 30 
 partial unique index makes a repeat a no-op) and sends `marketing_opportunity_urgent`. It never
 throws: a planner write cannot fail a cancellation.
 
+## Weekly AI plan
+
+`resolveWeeklyPlanMode` in `marketing-planner-cron` asks `shouldUseAiPlan` before it spends a
+credit: the host must have chosen `ai`, the weekly cap must be above zero, the org must still hold
+`aiMarketingPlanner`, and the rolling 7-day spend must be under the cap. Otherwise the run is a free
+rules plan. The default is `rules` with a cap of 0.
+
+## Assistant tools
+
+`get_marketing_plan` reads this week's items. `propose_mark_plan_item_posted` records a manual post
+(Tier 1, so it runs without a confirm) and re-checks `marketing.plan:edit` at execute time.
+
 ## Crons
 
 | Job                                | Schedule     | Does                                                                                     |

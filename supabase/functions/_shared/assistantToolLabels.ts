@@ -632,6 +632,11 @@ const TOOL_LABELS: Record<string, { progress: string; done: string; failed: stri
     done: 'Reopened the ticket',
     failed: 'Could not reopen the ticket',
   },
+  propose_mark_plan_item_posted: {
+    progress: 'Marking the plan item as posted…',
+    done: 'Marked as posted',
+    failed: 'Could not mark the plan item posted',
+  },
   propose_mark_notifications_read: {
     progress: 'Marking notifications read…',
     done: 'Marked notifications read',

@@ -41,6 +41,8 @@ export type PlannerSettingsRow = {
   posting_windows: unknown;
   approval_mode: string | null;
   auto_plan: boolean | null;
+  auto_plan_mode: string | null;
+  weekly_ai_credit_cap: number | null;
   plan_weekday: number | null;
   plan_time: string | null;
   reminders: unknown;
@@ -197,7 +199,8 @@ async function loadPlannerSettings(propertyId: string): Promise<PlannerSettingsR
     .from('marketing_planner_settings')
     .select(
       'property_id, organization_id, goals, cadence_preset, cadence, channels, language, tone, ' +
-        'posting_windows, approval_mode, auto_plan, plan_weekday, plan_time, reminders, onboarded_at'
+        'posting_windows, approval_mode, auto_plan, auto_plan_mode, weekly_ai_credit_cap, ' +
+        'plan_weekday, plan_time, reminders, onboarded_at'
     )
     .eq('property_id', propertyId)
     .maybeSingle();

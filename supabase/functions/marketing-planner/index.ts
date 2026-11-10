@@ -121,6 +121,8 @@ const settingsSchema = z.object({
   tone: z.enum(['warm', 'playful', 'premium']).optional(),
   approvalMode: z.enum(['ask', 'auto_publish_connected']).optional(),
   autoPlan: z.boolean().optional(),
+  autoPlanMode: z.enum(['rules', 'ai']).optional(),
+  weeklyAiCreditCap: z.number().int().min(0).max(1000).optional(),
   planWeekday: z.number().int().min(0).max(6).optional(),
   planTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
 });

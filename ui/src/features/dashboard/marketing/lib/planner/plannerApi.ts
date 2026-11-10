@@ -277,6 +277,8 @@ export type PlannerSettingsDto = {
   cadencePreset: string;
   channels: unknown[];
   language: string;
+  autoPlanMode: 'rules' | 'ai';
+  weeklyAiCreditCap: number;
   onboardedAt: string | null;
 };
 
@@ -297,6 +299,8 @@ export async function fetchPlannerSettings(
     cadencePreset: str(row.cadence_preset) || 'steady',
     channels: Array.isArray(row.channels) ? row.channels : [],
     language: str(row.language) || 'en',
+    autoPlanMode: row.auto_plan_mode === 'ai' ? 'ai' : 'rules',
+    weeklyAiCreditCap: Number(row.weekly_ai_credit_cap ?? 0) || 0,
     onboardedAt: nullableStr(row.onboarded_at),
   };
 }
