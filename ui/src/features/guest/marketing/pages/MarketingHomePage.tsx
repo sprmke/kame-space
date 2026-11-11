@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import { Navigate, useSearchParams } from 'react-router-dom';
 
+import { useGuestNextTrip } from '@/features/guest/account/hooks/useGuestNextTrip';
 import { stripLegacyFromQueryParam } from '@/features/guest/form/lib/bookingSourceFromSearchParams';
 import { readGuestPropertySlug } from '@/features/guest/form/lib/guestPropertyScope';
 import { guestCalendarPath } from '@/features/guest/lib/guestPublicPaths';
@@ -14,6 +15,7 @@ import { BookingSteps } from '@/features/guest/marketing/guest-home/components/B
 import { ExploreCatalog } from '@/features/guest/marketing/guest-home/components/ExploreCatalog';
 import { HostBand } from '@/features/guest/marketing/guest-home/components/HostBand';
 import { SpotlightHero } from '@/features/guest/marketing/guest-home/components/SpotlightHero';
+import { UpcomingTripCard } from '@/features/guest/marketing/guest-home/components/UpcomingTripCard';
 import { WhyBookHere } from '@/features/guest/marketing/guest-home/components/WhyBookHere';
 import { usePublicParkings } from '@/features/guest/marketing/parkings/hooks/usePublicParkings';
 import {
@@ -52,6 +54,22 @@ export function MarketingHomePage() {
   // below loads independently and is deliberately not part of this mark.
   useRouteContentReady(!property);
 
+  // A returning guest with a stay within 30 days sees it above the catalogue (plan 2.7).
+  const nextTripRaw = useGuestNextTrip();
+  const nextTrip = useMemo(() => {
+    if (!nextTripRaw || !nextTripRaw.path) return null;
+    if (!nextTripRaw.isCurrent && nextTripRaw.daysUntil > 30) return null;
+    return {
+      bookingId: nextTripRaw.bookingId,
+      propertyName: nextTripRaw.propertyName,
+      imageUrl: nextTripRaw.imageUrl,
+      checkInDate: nextTripRaw.checkInDate,
+      checkOutDate: nextTripRaw.checkOutDate,
+      status: nextTripRaw.status,
+      path: nextTripRaw.path,
+    };
+  }, [nextTripRaw]);
+
   const stayItems = useMemo(() => stays.data?.data ?? [], [stays.data]);
   const residenceItems = useMemo(
     () => (developments.data?.data ?? []).map(toDevelopmentCard),
@@ -73,6 +91,7 @@ export function MarketingHomePage() {
   return (
     <div className="bg-background text-foreground">
       <SpotlightHero />
+      <UpcomingTripCard trip={nextTrip} />
       <ExploreCatalog
         stays={{
           items: stayItems,

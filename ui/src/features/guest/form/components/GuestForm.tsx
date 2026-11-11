@@ -91,7 +91,7 @@ import {
 import {
   guestCalendarPath,
   guestFormPath,
-  guestSuccessPath,
+  guestTripWelcomePath,
 } from '@/features/guest/lib/guestPublicPaths';
 import { usePublicPropertyDetail } from '@/features/guest/marketing/properties/hooks/usePublicPropertyDetail';
 import { GuestStayContextBar } from '@/features/guest/property/components/GuestStayContextBar';
@@ -1201,7 +1201,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
 
       // Check if submission was skipped due to no changes
       if (result.skipped) {
-        console.log('ℹ️ No changes detected, redirecting to success page');
+        console.log('ℹ️ No changes detected, redirecting to the trip page');
         clearGuestFormStartedMarker();
         clearDraft();
 
@@ -1213,13 +1213,10 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
           return;
         }
 
-        // Redirect to success page with booking data
+        // Redirect to the trip page with booking data
         runUnguarded(() =>
           navigate(
-            guestSuccessPath(
-              propertySlug,
-              new URLSearchParams({ bookingId: currentBookingId ?? '' })
-            ),
+            guestTripWelcomePath(propertySlug, currentBookingId ?? ''),
             {
               state: { bookingData },
             }
@@ -1249,17 +1246,11 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
         return;
       }
 
-      // Redirect to success page with bookingId and booking data
+      // Redirect to the trip page with bookingId and booking data
       runUnguarded(() =>
-        navigate(
-          guestSuccessPath(
-            propertySlug,
-            new URLSearchParams({ bookingId: currentBookingId ?? '' })
-          ),
-          {
-            state: { bookingData },
-          }
-        )
+        navigate(guestTripWelcomePath(propertySlug, currentBookingId ?? ''), {
+          state: { bookingData },
+        })
       );
     } catch (error: unknown) {
       console.error('Error submitting form:', {

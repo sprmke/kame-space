@@ -48,6 +48,8 @@ export const CANCELLATION_REASON_CODES = [
   'no_payment',
   'duplicate_or_test',
   'host_unavailable',
+  /** A pending request the host never answered; set by the pending-review-expiry cron. */
+  'request_expired',
   'other',
 ] as const;
 
@@ -738,6 +740,8 @@ export function buildGuestCancellationPayload(input: {
     !str(booking.external_source);
 
   return {
+    /** Why this booking is cancelled, so the trip page can word it ("Request expired"). */
+    reasonCode: str(booking.cancellation_reason_code) || null,
     policy: {
       title: input.snapshot?.rendered.title || display.title,
       description: input.snapshot?.rendered.description || display.description,

@@ -53,6 +53,21 @@ The page auto-refreshes the booking every **60 seconds** while the tab is visibl
 
 Each action declares its `group`; the menu chunks consecutive same-group actions and draws a `DropdownMenuSeparator` (desktop) or a `role="group"` hairline (sheet) between chunks, so "change this booking" and "share with the guest" don't read as one flat list. Rendered as a bottom sheet below `lg` and a dropdown above it; the mobile summary shows the same pair (**Edit booking** + `⋯`) once details are expanded. Workflow Proceed/Cancel stay on the Progress rail; **Copy booking ID** stays in the booking meta card on the **Activity** tab.
 
+**Guest view card** (`GuestViewCard`) — first card on the **Overview** tab, property bookings:
+
+| Field       | Source                                                                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status word | `guestJourneyStatusWord(status)` — the same word the trip page and every email use                                                          |
+| Next action | what the guest is waiting on, in the host's words ("Waiting for your review", "Paying the remaining balance", "Arriving")                   |
+| Still open  | **Balance receipt** when money is owed and `guest_balance_payment_receipt_url` is empty; **Check-in documents** while documents are pending |
+| Open trip   | the trip link with a fresh access key (`useBookingTripLink`)                                                                                |
+
+Read-only and derived from the booking row (`guestViewSnapshot`), so it cannot drift from what
+the guest sees. It also carries the **per-booking door code** for a rotating lock: empty clears
+the override and the property default applies. Saved through
+`update-booking-details` operation `save_guest_access_code` (`bookings.detail.stay:edit`), with
+the unsaved-changes guard. The guest still only sees the code from the reveal time.
+
 **Stay guide** (`useBookingStayGuideLink`): the hook owns eligibility (`isStayGuideEligibleStatus` — RFCI, RFCO, Pending SD Refund, Completed), the shareable URL, and a one-shot `issue-guest-stay-guide-token` backfill for rows that predate auto-issue on transition. It previously held a permanent block in the Progress rail, which spent rail height on every RFCI+ booking for a link that is neither a pipeline stage nor something a host needs on every visit. **Plan:** the stay guide is Pro+ (`propertyShowcase`). Below Pro the hook reports `locked`, skips the token backfill, and the menu shows a single **Stay guide link** row with a Pro pill (`BookingDetailAction.planFeature` → `TierBadge`) that opens the upgrade modal; `issue-guest-stay-guide-token` returns the upgrade envelope; the Ready for check-in confirm drops the "Prepares a stay guide link" bullet; the Ready for check-in email omits the stay guide CTA. The two menu rows appear **only when the URL resolves** — a row that silently does nothing while the token is still minting is worse than no row. Copy confirms with a toast; Open uses `window.open` with `noopener,noreferrer`.
 
 **Parking share link** (`useBookingParkingShareLink` + `useOwnerDefaultParking`): when the org has an **available** own parking for the stay dates, primary open/copy uses `/parkings/:slug/form?linkStay=…&checkInDate=…&checkOutDate=…`. Otherwise stay-scoped marketplace browse (`guestParkingFindPath`). Guest links the stay after sign-in. Rows appear when `need_parking` is true. When own default is active, additional **Open/Copy parking search** rows share the marketplace find URL.

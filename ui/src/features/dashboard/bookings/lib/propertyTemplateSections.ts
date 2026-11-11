@@ -70,6 +70,12 @@ export const EMAIL_TEMPLATE_SECTIONS: PropertyTemplateSectionMeta[] = [
     category: 'email',
   },
   {
+    templateKey: 'email-booking-request-received',
+    label: 'Booking Request Received',
+    icon: Mail,
+    category: 'email',
+  },
+  {
     templateKey: 'email-booking-acknowledgement',
     label: 'Booking Acknowledgement',
     icon: Send,

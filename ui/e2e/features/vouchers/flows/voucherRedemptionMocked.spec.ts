@@ -48,7 +48,8 @@ test.describe('@ci voucher redemption - mocked full journey', () => {
     await continueGuestForm(page);
     await selectVoucherOnForm(page, 'OFF-10');
     await submitGuestForm(page);
-    await expect(page).toHaveURL(/\/success/, { timeout: 20_000 });
+    // A submission lands on the trip page, not the retired /success interstitial.
+    await expect(page).toHaveURL(/\/trip\?bookingId=/, { timeout: 20_000 });
     expect(guest.lastSubmitFields?.appliedVoucherSourceBookingId).toBe(VOUCHER_SOURCE_BOOKING_ID);
     await demoPause(page);
 
@@ -77,10 +78,14 @@ test.describe('@ci voucher redemption - mocked full journey', () => {
     await demoPause(page);
 
     await page.getByRole('button', { name: 'Insert' }).click();
-    await expect(page.getByRole('button', { name: 'Share my dates' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Check availability' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'View listing' })).toBeVisible();
-    await expect(page.getByRole('button', { name: /voucher/i })).toHaveCount(0);
+    // Scope to the panel: the open chat also renders suggestion chips, and one of them says
+    // "Can I use a voucher from a past stay?", which matched an unscoped /voucher/i and made
+    // this spec flap depending on whether the chips had been dismissed yet.
+    const insertPanel = page.getByRole('dialog');
+    await expect(insertPanel.getByRole('button', { name: 'Share my dates' })).toBeVisible();
+    await expect(insertPanel.getByRole('button', { name: 'Check availability' })).toBeVisible();
+    await expect(insertPanel.getByRole('button', { name: 'View listing' })).toBeVisible();
+    await expect(insertPanel.getByRole('button', { name: /voucher/i })).toHaveCount(0);
     await demoPause(page);
   });
 });

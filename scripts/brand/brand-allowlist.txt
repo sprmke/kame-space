@@ -82,6 +82,7 @@ docs/workflow/qa/**  # QA session records
 README.md  # repo folder name in the clone instructions
 docs/guides/routes/org/property/marketing.md  # seed property slug
 docs/guides/routes/properties.md  # example org slug in a URL
+docs/guides/testing/guest-journey-manual.md  # seed org and property slugs
 docs/guides/testing/parking-playwright.md  # seed org slug
 docs/guides/testing/reviews-manual.md  # seed property slug
 docs/workflow/for-testing/**  # test records quoting project names and paths

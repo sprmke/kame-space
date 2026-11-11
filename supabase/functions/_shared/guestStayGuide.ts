@@ -6,6 +6,9 @@ import { createClient } from './supabaseJs.ts';
 
 import { resolveAppSettings } from './appSettings.ts';
 import { loadAuthUserProfile } from './authUserProfile.ts';
+import { mintGuestBookingAccessToken } from './guestBookingAccessToken.ts';
+import { buildGuestEssentialsHtml, loadGuestEssentials } from './guestEssentials.ts';
+import { guestTripStage, loadGuestTripContent } from './guestTripContent.ts';
 import { linkGuestBookingsByEmail } from './guestProfileService.ts';
 import type { AuthenticatedUser } from './orgAuth.ts';
 import { manilaTodayYmd, normalizeBookingDateToYmd } from './calendarAvailabilityManila.ts';
@@ -93,10 +96,21 @@ function addDaysYmd(ymd: string, deltaDays: number): string {
   return dt.toISOString().slice(0, 10);
 }
 
-/** Manila midnight on check-in day through end of day after check-out. */
+/**
+ * The stay guide is readable from the moment the token is issued through the day after
+ * check-out.
+ *
+ * It used to open at Manila midnight on check-in day, so a guest approved five days early
+ * tapped the button in their ready-for-check-in email and got "This stay guide isn't
+ * available" (plan D1). Access is not the secret boundary: Wi-Fi and door code have their
+ * own reveal time (see `guestEssentials.ts`).
+ *
+ * `validUntil` keeps the one-day grace so a guest can still read it on the way home.
+ */
 export function computeStayGuideValidityWindow(
   checkInDate: string,
-  checkOutDate: string
+  checkOutDate: string,
+  now: Date = new Date()
 ): { validFrom: string; validUntil: string } | null {
   const checkInYmd = normalizeBookingDateToYmd(checkInDate);
   const checkOutYmd = normalizeBookingDateToYmd(checkOutDate);
@@ -104,7 +118,7 @@ export function computeStayGuideValidityWindow(
 
   const graceEndYmd = addDaysYmd(checkOutYmd, 1);
   return {
-    validFrom: `${checkInYmd}T00:00:00+08:00`,
+    validFrom: now.toISOString(),
     validUntil: `${graceEndYmd}T23:59:59+08:00`,
   };
 }
@@ -348,6 +362,23 @@ export type GuestStayGuideDto = {
   templateKey: string;
   /** Section visibility/order/style — defaults when no host config row exists. */
   sectionConfig: StayGuideConfig;
+  /**
+   * Trip page for this booking, with a fresh guest access token appended.
+   *
+   * The stay guide token already proves the holder may see this booking, so the guide can
+   * hand off to the trip page without asking the guest to sign in again (plan 4.5).
+   * `null` for the admin preview, which has no real booking.
+   */
+  tripPath: string | null;
+  /** Host thread for this booking, so "Message host" opens the conversation directly. */
+  chatPath: string | null;
+  /**
+   * Wi-Fi, door code, unit, parking and contacts as an HTML block for the "Getting In"
+   * chapter. Reveal-gated server-side, same rule as the trip page (plan D7).
+   */
+  essentialsHtml: string | null;
+  /** Guest-visible custom templates for this stay, rendered as chapters (plan D8). */
+  hostSections: Array<{ id: string; name: string; html: string }>;
 };
 
 async function resolveSectionHtml(
@@ -650,6 +681,24 @@ async function buildGuestStayGuidePayload(
     previewSamples: Boolean(options?.previewCheckInDocuments),
   });
 
+  // Arrival essentials and guest-visible host templates, gated exactly like the trip page:
+  // secrets follow the reveal time, templates follow the trip stage.
+  const nowYmd = manilaTodayYmd();
+  const checkInYmd = normalizeBookingDateToYmd(String(booking.check_in_date ?? '')) ?? '';
+  const checkOutYmd = normalizeBookingDateToYmd(String(booking.check_out_date ?? '')) ?? '';
+  const stage = guestTripStage(
+    String(booking.status ?? ''),
+    checkInYmd <= nowYmd && nowYmd < checkOutYmd
+  );
+
+  const [essentials, tripContent] = await Promise.all([
+    loadGuestEssentials({ propertyId, booking }),
+    loadGuestTripContent({ propertyId, booking, publicOrigin, stage }),
+  ]);
+
+  const revealLabel =
+    essentials?.revealAt != null ? formatRevealLabel(essentials.revealAt) : null;
+
   return {
     property: {
       slug: property.slug,
@@ -695,7 +744,62 @@ async function buildGuestStayGuidePayload(
     todayManila: manilaTodayYmd(),
     templateKey,
     sectionConfig,
+    essentialsHtml: buildGuestEssentialsHtml(essentials, revealLabel),
+    hostSections: tripContent.hostSections.map((section) => ({
+      id: section.id,
+      name: section.name,
+      html: section.html,
+    })),
+    ...(await buildStayGuideBookingPaths(property.slug, booking)),
   };
+}
+
+/** "Available Dec 9, 2:00 PM" in Manila, for a withheld secret. */
+function formatRevealLabel(iso: string): string | null {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  const formatted = new Intl.DateTimeFormat('en-PH', {
+    timeZone: 'Asia/Manila',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
+  return `Available ${formatted}`;
+}
+
+/**
+ * Trip page and host thread links for the guest reading their stay guide.
+ *
+ * The guide token is proof the holder may see this booking, so a fresh trip access token
+ * lets the return bar open the trip without a second sign-in. The chat link carries the
+ * booking id, so "Message host" opens the thread instead of a date picker.
+ *
+ * A missing booking id (the admin preview) yields `null` for both and the bar hides.
+ */
+async function buildStayGuideBookingPaths(
+  propertySlug: string,
+  booking: GuestSubmission
+): Promise<{ tripPath: string | null; chatPath: string | null }> {
+  const bookingId = String(booking.id ?? '').trim();
+  const slug = propertySlug.trim();
+  if (!bookingId || !slug) return { tripPath: null, chatPath: null };
+
+  // Relative app paths, so build the queries directly:
+  // `appendGuestBookingAccessQuery` expects an absolute URL.
+  const base = `/properties/${encodeURIComponent(slug)}`;
+  const chatParams = new URLSearchParams({ bookingId });
+  const chatPath = `${base}/messages?${chatParams.toString()}`;
+
+  try {
+    const accessToken = await mintGuestBookingAccessToken(bookingId);
+    const tripParams = new URLSearchParams({ bookingId, access: accessToken });
+    return { tripPath: `${base}/trip?${tripParams.toString()}`, chatPath };
+  } catch (err) {
+    console.error('[guestStayGuide] trip access token failed (non-fatal):', err);
+    // The trip link still works for a signed-in guest, so keep it without the token.
+    return { tripPath: `${base}/trip?${chatParams.toString()}`, chatPath };
+  }
 }
 
 /** Admin preview — real property + templates, sample guest booking placeholders. */
@@ -709,13 +813,46 @@ export async function loadGuestStayGuidePreview(
     String(booking.check_out_date ?? '')
   );
   const validUntil = window?.validUntil ?? `${addDaysYmd(manilaTodayYmd(), 30)}T23:59:59+08:00`;
-  return buildGuestStayGuidePayload(propertyId, booking, validUntil, {
+  const payload = await buildGuestStayGuidePayload(propertyId, booking, validUntil, {
     includeAllStandardSections: true,
     expectedPropertySlug,
     previewCheckInDocuments: true,
     allowInactive: true,
   });
+  if (!payload) return payload;
+
+  // The editor preview shows sample essentials in the locked state: it demonstrates the
+  // reveal rule, and it never puts the property's real door code on screen for a
+  // screenshot (plan 7.6).
+  return {
+    ...payload,
+    essentialsHtml: buildGuestEssentialsHtml(SAMPLE_ESSENTIALS, 'Available 9 Dec, 2:00 PM'),
+    hostSections: [
+      {
+        id: 'sample-from-host',
+        name: 'Sample guide from your host',
+        html: '<p>Appliance guide, local recommendations and pool rules appear here when you mark a custom template <strong>Show to guests</strong>.</p>',
+      },
+    ],
+  };
 }
+
+/** Preview-only essentials. Never real values. */
+const SAMPLE_ESSENTIALS = {
+  wifiName: 'Kame_2604',
+  wifiPassword: null,
+  doorCode: null,
+  unitFloor: 'Monaco 2604, 26th floor',
+  parkingSlotNote: 'Level 2, slot 27',
+  emergencyContactName: 'Ana',
+  emergencyContactPhone: '0917 123 4567',
+  buildingSecurityPhone: '0917 765 4321',
+  garbageSchedule: 'Daily, 7:00 PM',
+  quietHours: '10:00 PM to 7:00 AM',
+  revealAt: '2026-12-09T06:00:00.000Z',
+  hasDoorCode: true,
+  hasAny: true,
+};
 
 /** `loadGuestStayGuideByToken` result when the property's plan does not include the stay guide. */
 export const STAY_GUIDE_PLAN_ACCESS_DENIED = 'plan_access_denied' as const;

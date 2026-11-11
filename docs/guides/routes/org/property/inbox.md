@@ -92,6 +92,20 @@ This is where you read and reply to guest messages for this property: website ch
 
 Manage chrome is **leaf-split**: Channels / Quick replies / Automation buttons and modal tabs only appear when the matching leaves above are granted (not a single umbrella manage flag).
 
+**Booking match** (`matchBookingForConversation`, `useInboxMatchedBooking`): an explicit
+`social_conversations.booking_id` wins, because the web chat service sets it when a signed-in
+guest opens chat from their trip. Inquiry dates and the guest name stay as the fallback for Meta
+threads and older web threads. When several bookings stay ambiguous the matcher returns nothing
+rather than guessing — a wrong stay would share the wrong stay guide or documents.
+
+**Insert menu** (`InboxInsertMenu`) rows, in order: pinned snippets, snippets (`quickReplies`),
+chat templates, property links, public pages, location, payment methods, **Check-in pack**, then
+the matched booking. For a matched booking the **Trip link** row leads (every plan,
+`issue-guest-trip-link`), followed by Stay guide (Pro+), approved documents, parking, SD refund
+and review. The **Check-in pack** leads with the same trip link and deliberately carries **no
+door code or Wi-Fi password**: a chat message would bypass the reveal time, so those stay on the
+trip page.
+
 ## Behavior
 
 - **Manage actions:** Desktop (`lg+`) shows separate header buttons — **Channels**, **Quick replies**, **Automation** — each opening its modal. Mobile (`max-lg`) groups them in the hero **Inbox actions** menu (bottom sheet).

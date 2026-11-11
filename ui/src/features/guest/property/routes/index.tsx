@@ -2,8 +2,9 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 
 import { Navigate, Route, useLocation, useParams, useSearchParams } from 'react-router-dom';
 
-import { CalendarDays, Home, MessageCircle } from 'lucide-react';
+import { CalendarDays, Home, Luggage, MessageCircle } from 'lucide-react';
 
+import { useGuestTripAtProperty } from '@/features/guest/account/hooks/useGuestNextTrip';
 import { GuestFormSuccess } from '@/features/guest/form/components/GuestFormSuccess';
 import { useGuestPaymentInfo } from '@/features/guest/form/hooks/useGuestPaymentInfo';
 import { stripLegacyFromQueryParam } from '@/features/guest/form/lib/bookingSourceFromSearchParams';
@@ -19,12 +20,14 @@ import {
 import {
   guestCalendarPath,
   guestFormPath,
+  guestMessagesPath,
   guestPayParkingPath,
   guestPropertyPath,
   guestPropertyPickDatesPath,
   guestSdFormPath,
   guestReviewPath,
   guestSuccessPath,
+  guestTripPath,
 } from '@/features/guest/lib/guestPublicPaths';
 import { fetchPayParking } from '@/features/guest/pay-parking/lib/api';
 
@@ -101,9 +104,28 @@ function resolvePropertyTabActiveKey(pathname: string): string | null {
   return 'property';
 }
 
+/**
+ * Property pages that only exist for a booked stay. They use the booking tab set
+ * (plan D4). `/document` is not here: it is rendered outside this layout.
+ */
+function isBookingScopedPath(pathname: string): boolean {
+  return (
+    pathname.endsWith('/trip') ||
+    pathname.endsWith('/sd-form') ||
+    pathname.endsWith('/guest-review')
+  );
+}
+
+function resolveBookingTabActiveKey(pathname: string): string | null {
+  if (pathname.endsWith('/messages')) return 'messages';
+  if (pathname.endsWith('/trip')) return 'trip';
+  return null;
+}
+
 function GuestPublicLayout() {
   const location = useLocation();
   const propertySlug = useGuestPropertySlug();
+  const [searchParams] = useSearchParams();
   const { data: guestBrand } = useGuestPaymentInfo();
   const operationalHeader = pickGuestOperationalHeaderProps(guestBrand);
   const isCalendarRoute = /\/calendar\/?$/.test(location.pathname);
@@ -114,29 +136,55 @@ function GuestPublicLayout() {
   );
   useFavicon(guestBrand?.emailLogoUrl);
 
+  const bookingId = (searchParams.get('bookingId') ?? '').trim();
+  // A booked guest should never be asked to pick dates again just to message their host
+  // (plan 2.4, finding A1). Fall back to the booking the signed-in guest has here.
+  const existingTrip = useGuestTripAtProperty(propertySlug);
+  const activeBookingId = bookingId || existingTrip?.bookingId || '';
+  // A booking-scoped page (trip, deposit refund, review) or a chat thread opened from a
+  // booking uses the booking tab set (plan D4, E10). A pre-booking inquiry keeps the
+  // browse-first set.
+  const isBookingScoped = isBookingScopedPath(location.pathname) || Boolean(activeBookingId);
+
+  const tripPath = activeBookingId
+    ? guestTripPath(propertySlug, activeBookingId)
+    : guestPropertyPath(propertySlug);
+  const chatPath = activeBookingId
+    ? guestMessagesPath(propertySlug, new URLSearchParams({ bookingId: activeBookingId }))
+    : guestPropertyPickDatesPath(propertySlug, 'contactHost');
+
   const bottomTabs = useMemo<BottomTabItem[]>(
-    () => [
-      { key: 'property', label: 'Property', href: guestPropertyPath(propertySlug), Icon: Home },
-      {
-        key: 'calendar',
-        label: 'Calendar',
-        href: guestCalendarPath(propertySlug),
-        Icon: CalendarDays,
-      },
-      {
-        key: 'messages',
-        label: 'Messages',
-        href: guestPropertyPickDatesPath(propertySlug, 'contactHost'),
-        Icon: MessageCircle,
-      },
-    ],
-    [propertySlug]
+    () =>
+      isBookingScoped
+        ? [
+            { key: 'trip', label: 'Trip', href: tripPath, Icon: Luggage },
+            { key: 'messages', label: 'Messages', href: chatPath, Icon: MessageCircle },
+            { key: 'listing', label: 'Listing', href: guestPropertyPath(propertySlug), Icon: Home },
+          ]
+        : [
+            { key: 'property', label: 'Property', href: guestPropertyPath(propertySlug), Icon: Home },
+            {
+              key: 'calendar',
+              label: 'Calendar',
+              href: guestCalendarPath(propertySlug),
+              Icon: CalendarDays,
+            },
+            {
+              key: 'messages',
+              label: 'Messages',
+              href: guestPropertyPickDatesPath(propertySlug, 'contactHost'),
+              Icon: MessageCircle,
+            },
+          ],
+    [isBookingScoped, tripPath, chatPath, propertySlug]
   );
 
   return (
     <MainLayout
       animateOnNavigate
-      contentMaxWidth={isCalendarRoute ? 'max-w-xl' : isTripRoute ? 'max-w-5xl' : 'max-w-3xl'}
+      contentMaxWidth={
+        isCalendarRoute ? 'max-w-xl' : isTripRoute ? 'max-w-5xl' : 'max-w-3xl'
+      }
       brandColor={guestBrand?.brandColor}
       footerLabel={
         guestBrand
@@ -147,7 +195,11 @@ function GuestPublicLayout() {
       propertyImageSrc={operationalHeader.propertyImageSrc}
       propertyName={operationalHeader.propertyName}
       bottomTabs={bottomTabs}
-      bottomTabsActiveKey={resolvePropertyTabActiveKey(location.pathname)}
+      bottomTabsActiveKey={
+        isBookingScoped
+          ? resolveBookingTabActiveKey(location.pathname)
+          : resolvePropertyTabActiveKey(location.pathname)
+      }
     />
   );
 }

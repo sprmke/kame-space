@@ -29,6 +29,22 @@ Internal `code` and current display `name` were swapped once during migration hi
 
 `business_plus` existed only to approximate a volume curve as a separate "many properties" tier — retired (deactivated, not deleted) once every tier got a real curve; Pro's own curve covers what it used to. `commission` was seeded as a parallel pricing model but is **retired from the live product** (inactive catalog row; super-admin + host Plans + public pricing exclude it). `booking_commission_charges` (the commission-model ledger table) was dropped in the org-level billing migration along with the rest of the per-property billing schema — if commission pricing is ever revisited, that table needs re-adding, not resurrecting.
 
+## Guest arrival content (trip page) — deliberately ungated
+
+The guest trip page's **arrival content** is **every plan**: the essentials card (Wi-Fi, door
+code, unit, parking, contacts), the inline check-in and check-out steps, and guest-visible custom
+templates. There is no plan key for it.
+
+Rationale (guest journey plan decisions D6 / E1): arrival steps are operational, not marketing.
+Before this, a Free or Starter guest had no way to know how to get in, because the only arrival
+copy lived in the Stay Guide, which is Pro+ (`propertyShowcase`). The designed Stay Guide brochure
+keeps that gate; the operational content does not.
+
+Authoring is still gated where it already was: creating a custom template needs `customTemplates`,
+so a property below that tier has no guest-visible templates to render. Adding a tier gate later,
+if a plan should lose this, is a new `PlanFeatures` key plus a seed migration — no call site
+changes, because the trip page does not read a feature flag for it.
+
 ## Pending: commission pricing
 
 **Not shipped as a host-facing product, and its ledger table no longer exists** (`booking_commission_charges` was dropped — see above). Reviving this needs the table re-added plus host self-serve, invoicing, and PayMongo collection, none of which existed even before the drop.
