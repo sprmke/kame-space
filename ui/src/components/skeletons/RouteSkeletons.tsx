@@ -500,7 +500,7 @@ export function PropertySettingsRouteSkeleton() {
           'Email Automations',
           'Integrations',
           'Activity',
-          'Danger Zone',
+          'Listing status',
         ]}
       />
     </AdminMobilePage>
