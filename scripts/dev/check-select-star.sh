@@ -49,6 +49,9 @@ ALLOWLIST=(
   # the JSON summary and Markdown body. The list query uses explicit columns.
   'ops-report/index.ts'
   '_shared/opsReportRunner.ts'
+  # Pre-arrival reminder: one booking row per due reminder, read by primary key and passed
+  # whole to the email renderer (dates, guests, contact, payment, parking, pet).
+  '_shared/preArrivalReminderCron.ts'
 
   # Two-way reviews: single-row reads of the full review/window row (status + notes).
   '_shared/guestReviewService.ts'

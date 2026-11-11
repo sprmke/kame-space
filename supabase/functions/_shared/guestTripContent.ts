@@ -125,7 +125,10 @@ export async function loadGuestTripContent(input: {
       .eq('property_id', propertyId)
       .eq('category', 'custom')
       .eq('guest_visible', true)
-      .order('name', { ascending: true }),
+      .order('name', { ascending: true })
+      // A host's guest-visible custom templates are a handful, and this is a public endpoint:
+      // cap it so a runaway authoring loop cannot turn one trip load into an unbounded payload.
+      .limit(50),
   ]);
 
   if (customResult.error) {
