@@ -3,7 +3,9 @@
  * Query: ?parking=<slug>
  */
 
+import { corsHeaders } from '../_shared/cors.ts';
 import { jsonError, jsonSuccess } from '../_shared/httpResponse.ts';
+import { resolveListingSlugRedirect } from '../_shared/listingSlugRedirect.ts';
 import { loadPublicParkingBySlug, readParkingSlugFromUrl } from '../_shared/parkingScope.ts';
 import { publicGetRateLimitGate } from '../_shared/publicEndpointRateLimit.ts';
 import { servePublic } from '../_shared/serveEdge.ts';
@@ -26,6 +28,13 @@ servePublic('get-public-parking', async (req) => {
   const detail = await loadPublicParkingBySlug(slug);
 
   if (!detail) {
+    const redirectTo = await resolveListingSlugRedirect('parking', slug);
+    if (redirectTo) {
+      return new Response(null, {
+        status: 301,
+        headers: { ...corsHeaders(req), Location: redirectTo },
+      });
+    }
     return jsonError(req, 'Parking not found', 404);
   }
 

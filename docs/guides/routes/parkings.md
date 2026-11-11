@@ -191,6 +191,16 @@ Security / access notes:
 
 ---
 
+## SEO
+
+- Registry entries: `parkings` (list), `parkings-place`, `parking-detail`,
+  `parking-form` (noindex), `parking-request-status` (noindex).
+- Canonical: self on the apex origin. The booking form and the per-booking status page are
+  excluded from both the sitemap and robots.
+- Crawler HTML: detail pages get a snapshot with one `<h1>`, the place, the nightly rate, a cover
+  image with alt and a link back to the parking list.
+- Reference: [`architecture/seo.md`](../../architecture/seo.md).
+
 ## Implementation map
 
 | Concern                 | Path                                                                                                                                                                                                                                             |

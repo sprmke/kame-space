@@ -39,6 +39,15 @@ This page previews add-on services (cleaning, maintenance, supplies, and similar
 - Service chips are decorative previews (property manager, agent, marketing, maintenance, food & essentials, supplies, transportation) and are not interactive.
 - Motion respects the user's reduced-motion preference.
 
+## SEO
+
+- Registry entry: `services` is **not indexable** (`indexable: false`) and is out of the sitemap
+  and robots-allowed set. The page still renders; it just carries `noindex`.
+- Why: the page is a "Coming Soon" placeholder. Indexing a page with no offer wastes crawl
+  budget and gives visitors nothing. Flip `indexable: true` and add a registry title and
+  description when the service catalog ships.
+- Reference: [`architecture/seo.md`](../../architecture/seo.md).
+
 ## Implementation map
 
 | Concern        | Path                                                                         |

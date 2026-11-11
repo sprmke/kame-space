@@ -12,6 +12,7 @@ import { useGalleryWindow } from '@/features/guest/marketing/shared/hooks/useGal
 import { cardEntranceDelay } from '@/features/guest/marketing/shared/lib/galleryWindow';
 import { resolveListingImages } from '@/features/guest/marketing/shared/lib/mockListingImages';
 
+import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 import { cn } from '@/lib/utils';
 
 export interface Property {
@@ -158,7 +159,7 @@ export const PropertyCard = memo(function PropertyCard({
                   <Image
                     key={idx}
                     src={image}
-                    alt={`${property.name} - Image ${idx + 1}`}
+                    alt={buildListingImageAlt({ listingName: property.name, index: idx })}
                     fill
                     className={cn(
                       'object-cover transition-all duration-500',

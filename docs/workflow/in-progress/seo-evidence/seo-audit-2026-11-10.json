@@ -1,0 +1,631 @@
+{
+  "origin": "https://kamespace.com",
+  "generatedAt": "2026-11-10T19:15:59.447Z",
+  "sitemapCount": 17,
+  "global": [
+    {
+      "level": "warning",
+      "code": "duplicate-title",
+      "message": "17 pages share Kame Space (https://kamespace.com/, https://kamespace.com/properties, https://kamespace.com/developments)"
+    },
+    {
+      "level": "warning",
+      "code": "duplicate-description",
+      "message": "17 pages share Book condos, homes, and parking across the Philippines. Bro… (https://kamespace.com/, https://kamespace.com/properties, https://kamespace.com/developments)"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/ has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/properties has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/developments has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/parkings has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/for-hosts has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/for-hosts/pricing has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/services has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/about has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/contact has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/support has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/terms has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/privacy has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/cookies has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/developments/azure-north-residences has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/developments/in/san-fernando has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/properties/<listing> has no inbound internal link in the audited set"
+    },
+    {
+      "level": "warning",
+      "code": "orphan",
+      "message": "/properties/in/san-fernando has no inbound internal link in the audited set"
+    }
+  ],
+  "pages": [
+    {
+      "url": "https://kamespace.com/",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/properties",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/developments",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/parkings",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/for-hosts",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/for-hosts/pricing",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/services",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/about",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/contact",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/support",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/terms",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/privacy",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/cookies",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/developments/azure-north-residences",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/developments/in/san-fernando",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/properties/<listing>",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    },
+    {
+      "url": "https://kamespace.com/properties/in/san-fernando",
+      "status": 200,
+      "redirectTo": null,
+      "title": "Kame Space",
+      "description": "Book condos, homes, and parking across the Philippines. Browse by place, check dates, and reserve online.",
+      "canonical": null,
+      "robots": null,
+      "h1Count": 0,
+      "textLength": 898,
+      "imagesWithoutAlt": 0,
+      "jsonLdErrors": [],
+      "outbound": [],
+      "findings": [
+        {
+          "level": "warning",
+          "code": "title-length",
+          "message": "10 chars: Kame Space"
+        },
+        {
+          "level": "error",
+          "code": "canonical-missing",
+          "message": "No canonical link"
+        },
+        {
+          "level": "error",
+          "code": "h1-count",
+          "message": "0 <h1> elements in crawler HTML"
+        }
+      ]
+    }
+  ]
+}

@@ -111,6 +111,18 @@ Not connected to operational **`/bookings/:id/parking`** (admin/guest pay parkin
 
 ---
 
+## SEO
+
+- Registry entries: `developments` (list), `developments-place`, `development-detail`,
+  `development-properties`, `development-parking`. The two sub-pages canonicalize to themselves
+  but stay out of the sitemap until they list at least one unit or slot.
+- Canonical: self on the apex origin.
+- Crawler HTML: development detail gets a snapshot with one `<h1>`, the location, and links to
+  its homes and parking sub-pages.
+- `/developments/:slug/parking/category` and `/parking/list` are redirect aliases and are
+  `noindex`.
+- Reference: [`architecture/seo.md`](../../architecture/seo.md).
+
 ## Implementation map
 
 | Concern    | Path                                                                                              |

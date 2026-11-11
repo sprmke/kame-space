@@ -56,6 +56,7 @@ import type {
   ShowcaseResolvedSection,
 } from '@/features/guest/marketing/showcase/types/showcase';
 
+import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 import { cn } from '@/lib/utils';
 
 function monolithHeadingClass() {
@@ -108,7 +109,7 @@ function SpotlightHero({
       {section.images[0] ? (
         <img
           src={section.images[0]}
-          alt=""
+          alt={buildListingImageAlt({ listingName: data.propertyName, index: 0 })}
           className="absolute inset-0 size-full object-cover opacity-45 transition-[transform,opacity] duration-700 ease-out motion-safe:group-hover:scale-[1.02]"
           loading="eager"
           fetchPriority="high"

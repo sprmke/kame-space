@@ -211,6 +211,14 @@ Both layers must agree on what the guest is looking at. Availability helpers are
 
 ---
 
+## SEO
+
+- Registry entry: `search` is **not indexable**. Faceted result URLs would otherwise swamp the
+  index with near-duplicates.
+- The page already sets `noindex` through `usePageMeta`; the registry keeps that decision in one
+  place and robots disallows `/search`.
+- Reference: [`architecture/seo.md`](../../architecture/seo.md).
+
 ## Implementation map
 
 | Layer         | Path                                                                                                                                 |

@@ -141,6 +141,14 @@ Not shown on dashboard page bodies: hosts accept the Terms at sign-in.
 
 ---
 
+## SEO
+
+- Registry entries: `terms`, `privacy`, `cookies`, all indexable and in the sitemap.
+- Canonical: self on the apex origin.
+- Crawler HTML: static snapshot using `legalPageCopy(PLATFORM_APP_NAME)`, the same strings the
+  pages render, so the product name stays consistent in both.
+- Reference: [`architecture/seo.md`](../../architecture/seo.md).
+
 ## Implementation map
 
 | Concern        | Path                                                                                                                                                                                                                                                                              |

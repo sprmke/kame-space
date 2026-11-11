@@ -8,7 +8,6 @@ import { useGuestAuth } from '@/features/guest/auth/context/GuestAuthContext';
 import { ContactHostSheet } from '@/features/guest/chat/components/ContactHostSheet';
 import { ParkingBookingFormModal } from '@/features/guest/marketing/parkings/components/ParkingBookingFormModal';
 import { ParkingOverview } from '@/features/guest/marketing/parkings/components/ParkingOverview';
-import { GuestPublicBrandShell } from '@/features/guest/marketing/shared/components/GuestPublicBrandShell';
 import { useCaptureParkingLinkStay } from '@/features/guest/marketing/parkings/hooks/useCaptureParkingLinkStay';
 import { useParkingReserve } from '@/features/guest/marketing/parkings/hooks/useParkingReserve';
 import { usePublicParkingDetail } from '@/features/guest/marketing/parkings/hooks/usePublicParkingDetail';
@@ -19,6 +18,7 @@ import {
 } from '@/features/guest/marketing/properties/components/property-detail';
 import { BookingCalendarModal } from '@/features/guest/marketing/properties/components/property-detail/BookingCalendarModal';
 import { usePublicHost } from '@/features/guest/marketing/properties/hooks/usePublicHost';
+import { GuestPublicBrandShell } from '@/features/guest/marketing/shared/components/GuestPublicBrandShell';
 import { ListingGallery } from '@/features/guest/marketing/shared/components/ListingGallery';
 import type { ListingHostInfo } from '@/features/guest/marketing/shared/components/ListingHostCard';
 import { useMarketingBrandColor } from '@/features/guest/marketing/shared/context/ModeSwitchTransitionContext';
@@ -30,7 +30,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { parkingFlowTransition } from '@/lib/parking/parkingFlowMotion';
-import { buildParkingJsonLd } from '@/lib/seo/seoMeta';
+import { absoluteCanonicalUrl } from '@/lib/seo/canonicalOrigin';
+import {
+  buildPageTitle,
+  buildParkingJsonLd,
+  listingDescription,
+  parkingTitle,
+} from '@/lib/seo/seoMeta';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 import { cn } from '@/lib/utils';
 import { formatDateToYYYYMMDD } from '@/utils/format/dates';
@@ -55,22 +61,33 @@ export function ParkingDetailPage() {
   const { parkingSlug = '' } = useParams<{ parkingSlug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data, isLoading, isError } = usePublicParkingDetail(parkingSlug);
-  usePageTitle(publicPageTitle(data?.name ? `${data.name}` : 'Parking'));
+  const parkingPageTitle = data
+    ? buildPageTitle(
+        parkingTitle({ name: data.name, place: data.residenceName ?? data.city })
+      )
+    : publicPageTitle('Parking');
+  usePageTitle(parkingPageTitle);
+
+  const parkingDescription = data
+    ? listingDescription({
+        name: data.name,
+        city: data.city,
+        priceFrom: data.ratePerNight,
+        hostDescription: data.description,
+      })
+    : undefined;
+
   const parkingCanonicalPath = `/parkings/${data?.slug ?? parkingSlug}`;
   usePageMeta(
     {
-      title: data?.name,
-      description:
-        data?.description ||
-        (data?.residenceName
-          ? `Parking at ${data.residenceName}. Check dates and reserve online.`
-          : null),
+      title: parkingPageTitle,
+      description: parkingDescription ?? null,
       canonicalPath: parkingCanonicalPath,
       image: data?.coverImage ?? null,
       jsonLd: data
         ? buildParkingJsonLd({
             name: data.name,
-            url: `${window.location.origin}${parkingCanonicalPath}`,
+            url: absoluteCanonicalUrl(parkingCanonicalPath),
             description: data.description,
             image: data.coverImage,
             address: { city: data.city, province: data.province, country: data.country },

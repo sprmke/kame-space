@@ -120,6 +120,15 @@ Page `ui/src/features/guest/marketing/pages/MarketingHomePage.tsx`; sections und
 
 ---
 
+## SEO
+
+- Registry entry: `home` in `ui/src/lib/seo/publicRoutes.ts` (indexable, in sitemap).
+- Canonical: `https://kamespace.com/` regardless of `www.` or preview host.
+- Crawler HTML: semantic snapshot from `content/staticPageCopy.ts#STATIC_PAGE_COPY.home`, plus a
+  global nav and footer of real links. Browsers never receive it.
+- Home title and description come from the registry; the page only calls `usePageMeta({})`.
+- Reference: [`architecture/seo.md`](../../architecture/seo.md).
+
 ## Implementation map
 
 | Concern  | Path                                                                           |

@@ -1,0 +1,52 @@
+---
+description: >-
+  Every public page must be classified in the SEO route registry. Use when adding or
+  changing a guest route, page meta, robots/sitemap behaviour, or the crawler snapshot.
+alwaysApply: true
+---
+
+# SEO — public route registry (always-on)
+
+**Non-negotiable:** a new or changed **public guest route** is classified in
+`ui/src/lib/seo/publicRoutes.ts` in the same change. `bun run check:seo-routes` fails CI
+otherwise, and it is part of `ci:quality`.
+
+Full reference: **`docs/architecture/seo.md`**. Skill: **`seo`**.
+
+## Every public route needs a registry entry
+
+| Field         | Decide                                                             |
+| ------------- | ------------------------------------------------------------------ |
+| `indexable`   | Should a stranger land here from a search result or an AI answer?  |
+| `inSitemap`   | Static pages only. Dynamic URLs come from `public_listing_search`. |
+| `canonical`   | `self`, `listing` (needs edge data), or `none`.                    |
+| `snapshot`    | `static`, `listing`, `place`, `host`, or `none`.                   |
+| `title`       | Required for `snapshot: 'static'`.                                 |
+| `description` | Required for `snapshot: 'static'`, 120-160 characters.             |
+
+If `indexable: false`, also add a matching prefix to `ROBOTS_DISALLOW`.
+
+## Copy lives in one place
+
+A static page's hero copy belongs in `ui/src/lib/seo/content/staticPageCopy.ts`, imported by
+the page **and** by the snapshot renderer. Never let the crawler HTML say something the page
+does not, and never duplicate the string in the snapshot.
+
+## Canonical origin
+
+Canonical, `og:url`, robots `Sitemap:` and JSON-LD use `https://kamespace.com` through
+`siteOrigin.ts`. Never `window.location.origin`, never the request host, never a preview URL.
+
+## Before claiming done
+
+```bash
+bun run seo:generate-robots    # after touching ROBOTS_DISALLOW
+bun run check:seo-routes
+bun run test                   # seoMeta, publicRoutes, siteOrigin, snapshot, middleware
+bun run seo:audit -- --origin https://<preview-url> --fail-on-error
+```
+
+## Related
+
+- Docs: `docs/architecture/seo.md`, `docs/guides/routes/*.md`
+- Rules: `documentation-maintenance.mdc`, `route-guides.mdc`, `mobile-native-ui.mdc`

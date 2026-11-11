@@ -12,7 +12,6 @@ import {
 } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 
-import { HeroSearch } from '@/features/guest/marketing/shared/components/hero-search/HeroSearch';
 import { apertureBackdrop } from '@/features/guest/marketing/guest-landing-v2/data/landingV2Content';
 import { useV2FeaturedStays } from '@/features/guest/marketing/guest-landing-v2/hooks/useV2FeaturedStays';
 import {
@@ -23,6 +22,7 @@ import {
   riseStagger,
   type ApertureFrame,
 } from '@/features/guest/marketing/guest-landing-v2/lib/apertureMotion';
+import { HeroSearch } from '@/features/guest/marketing/shared/components/hero-search/HeroSearch';
 import { MarketingImage as Image } from '@/features/guest/marketing/shared/components/MarketingImage';
 
 import { cn } from '@/lib/utils';
@@ -205,7 +205,13 @@ function FeaturedStayChip() {
       className="group flex w-full max-w-sm items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-2 pr-4 text-white backdrop-blur-md transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
     >
       <span className="relative size-14 shrink-0 overflow-hidden rounded-xl">
-        <Image src={stay.images[0] ?? ''} alt="" fill sizes="56px" className="object-cover" />
+        <Image
+          src={stay.images[0] ?? ''}
+          alt={`${stay.name} photo`}
+          fill
+          sizes="56px"
+          className="object-cover"
+        />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-semibold">{stay.name}</span>

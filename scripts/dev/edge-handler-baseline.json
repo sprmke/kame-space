@@ -137,6 +137,7 @@
     "import-revert",
     "import-save-mapping",
     "import-update-row",
+    "indexnow-submit",
     "issue-booking-document-share-token",
     "issue-guest-form-completion-token",
     "issue-guest-stay-guide-token",

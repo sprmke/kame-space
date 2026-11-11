@@ -17,7 +17,6 @@ import {
   type ParkingFilterState,
   type ParkingSortKey,
 } from '@/features/guest/marketing/developments/lib/parkingSlotFilters';
-import type { HeroSearchValues } from '@/features/guest/marketing/shared/components/hero-search/HeroSearch';
 import {
   usePrefetchPublicParkings,
   usePublicParkings,
@@ -33,6 +32,7 @@ import {
   writeParkingsQuery,
   type ParkingsListingQuery,
 } from '@/features/guest/marketing/parkings/lib/parkingsQuery';
+import type { HeroSearchValues } from '@/features/guest/marketing/shared/components/hero-search/HeroSearch';
 import { ListingFilteredEmpty } from '@/features/guest/marketing/shared/components/ListingFilteredEmpty';
 import { ListingLoadError } from '@/features/guest/marketing/shared/components/ListingLoadError';
 import { ListingResultsPagination } from '@/features/guest/marketing/shared/components/ListingResultsPagination';
@@ -41,6 +41,7 @@ import { useListingUrlQuery } from '@/features/guest/marketing/shared/hooks/useL
 import { PublicListingBrowseSkeleton } from '@/components/skeletons/GuestMarketingSkeleton';
 import { Button } from '@/components/ui/button';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { buildPageTitle, minNightlyRate, placeDescription } from '@/lib/seo/seoMeta';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 export function DevelopmentParkingListPage() {
@@ -87,11 +88,20 @@ export function DevelopmentParkingListPage() {
   const facets = parkingsResult.data?.facets ?? EMPTY_PARKINGS_FACETS;
   const towerOptions = useMemo(() => facets.towers.map((entry) => entry.tower), [facets.towers]);
   const totalResults = parkingsResult.data?.total ?? 0;
-  usePageTitle(publicPageTitle(development?.name ? `Parking in ${development.name}` : 'Parking'));
+  const developmentParkingTitle = development
+    ? buildPageTitle(`Parking at ${development.name}`)
+    : publicPageTitle('Parking');
+  usePageTitle(developmentParkingTitle);
   usePageMeta(
     {
+      title: developmentParkingTitle,
       description: development
-        ? `Parking slots in ${development.name}. Reserve by the night.`
+        ? placeDescription({
+            family: 'parking',
+            place: development.name,
+            count: totalResults,
+            priceFrom: minNightlyRate(entries),
+          })
         : null,
       canonicalPath: `/developments/${slug}/parking`,
     },

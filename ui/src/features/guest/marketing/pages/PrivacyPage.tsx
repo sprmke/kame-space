@@ -1,9 +1,9 @@
 import { LegalSimplePage } from '@/features/guest/marketing/legal/components/LegalSimplePage';
 
 import { privacyDocument } from '@/lib/legal/privacyContent';
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePublicStaticRouteSeo } from '@/lib/seo/routeTitle';
 
 export function PrivacyPage() {
-  usePageTitle(publicPageTitle('Privacy'));
+  usePublicStaticRouteSeo('/privacy');
   return <LegalSimplePage document={privacyDocument} />;
 }

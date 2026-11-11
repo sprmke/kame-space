@@ -102,12 +102,12 @@ Two things on one page, per Phase 4 of the parking marketplace build:
 
 ## API
 
-| Method | Edge function               | Notes                                                                                                                   |
-| ------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| GET    | `platform-parking-settings` | Returns the singleton settings row                                     |
+| Method | Edge function               | Notes                                                                                                                                                    |
+| ------ | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `platform-parking-settings` | Returns the singleton settings row                                                                                                                       |
 | PUT    | `platform-parking-settings` | Partial update of `commissionPct`/`directCommissionPct`/`guestRateWeekday`/`guestRateWeekend`/`paymentFeePct`/`paymentFeeFixed`/`supportEscalationPhone` |
-| GET    | `parking-payouts`           | Lists `status = 'paid'` transactions, most recent first. Each row includes `paymentFeeAmount` and `platformNetTotal`.      |
-| PATCH  | `parking-payouts`           | `{action: 'mark_disbursed', transactionId, reference?}` or `{action: 'record_clawback', transactionId, amount, reason}` |
+| GET    | `parking-payouts`           | Lists `status = 'paid'` transactions, most recent first. Each row includes `paymentFeeAmount` and `platformNetTotal`.                                    |
+| PATCH  | `parking-payouts`           | `{action: 'mark_disbursed', transactionId, reference?}` or `{action: 'record_clawback', transactionId, amount, reason}`                                  |
 
 ---
 
@@ -115,17 +115,17 @@ Two things on one page, per Phase 4 of the parking marketplace build:
 
 ## Implementation map
 
-| Layer                                     | Path                                                                                                                           |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Page                                      | `ui/src/features/dashboard/super-admin/pages/SuperAdminParkingPayoutsPage.tsx`                                                 |
-| Hooks                                     | `ui/src/features/dashboard/super-admin/hooks/usePlatformParkingSettings.ts`                                                    |
-| Edge                                      | `supabase/functions/platform-parking-settings/index.ts`, `supabase/functions/parking-payouts/index.ts`                         |
-| Resolver (server-side reads)              | `supabase/functions/_shared/parkingPlatformSettings.ts`                                                                        |
-| Payment amount math (per-night proration) | `supabase/functions/_shared/parkingPaymentOrchestrator.ts`                                                                     |
+| Layer                                                     | Path                                                                                                                             |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Page                                                      | `ui/src/features/dashboard/super-admin/pages/SuperAdminParkingPayoutsPage.tsx`                                                   |
+| Hooks                                                     | `ui/src/features/dashboard/super-admin/hooks/usePlatformParkingSettings.ts`                                                      |
+| Edge                                                      | `supabase/functions/platform-parking-settings/index.ts`, `supabase/functions/parking-payouts/index.ts`                           |
+| Resolver (server-side reads)                              | `supabase/functions/_shared/parkingPlatformSettings.ts`                                                                          |
+| Payment amount math (per-night proration)                 | `supabase/functions/_shared/parkingPaymentOrchestrator.ts`                                                                       |
 | Settlement math (commission, processor fee, platform net) | `supabase/functions/_shared/parkingSettlement.ts` (+ UI display mirror `ui/src/features/dashboard/parking/lib/parkingPayout.ts`) |
-| Match-engine price cap                    | `supabase/functions/_shared/parkingBroadcastRanking.ts`                                                                        |
-| Host-facing cap/commission                | `supabase/functions/_shared/parkingPricing.ts`, `ui/src/features/dashboard/parking/components/ParkingPricingRatesFormCard.tsx` |
-| Direct-link channel resolution (Phase 8)  | `supabase/functions/_shared/parkingDirectLink.ts`                                                                              |
+| Match-engine price cap                                    | `supabase/functions/_shared/parkingBroadcastRanking.ts`                                                                          |
+| Host-facing cap/commission                                | `supabase/functions/_shared/parkingPricing.ts`, `ui/src/features/dashboard/parking/components/ParkingPricingRatesFormCard.tsx`   |
+| Direct-link channel resolution (Phase 8)                  | `supabase/functions/_shared/parkingDirectLink.ts`                                                                                |
 
 ---
 

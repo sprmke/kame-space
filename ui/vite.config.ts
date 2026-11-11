@@ -248,6 +248,32 @@ function pwaPrecacheTiersPlugin(): Plugin {
 }
 
 /**
+ * Non-production deploys must not be indexed. `robots.txt` already answers `Disallow: /`
+ * off the production hosts, but that only stops crawlers fetching new URLs; a `noindex`
+ * meta is the only thing that removes URLs Google already knows about.
+ *
+ * Injects into the built/dev shell only. A plain `bun run build` (CI, local preview) and a
+ * Vercel production deploy stay clean, which `seoMeta.test.ts` asserts.
+ */
+function seoIndexingGuardPlugin(): Plugin {
+  return {
+    name: 'gfm-seo-indexing-guard',
+    transformIndexHtml(html) {
+      const deployEnv = process.env.VERCEL_ENV ?? '';
+      const nonProduction =
+        process.env.NODE_ENV !== 'production' ||
+        deployEnv === 'preview' ||
+        deployEnv === 'development';
+      if (!nonProduction) return html;
+      return html.replace(
+        '</head>',
+        '    <meta name="robots" content="noindex, nofollow" />\n  </head>'
+      );
+    },
+  };
+}
+
+/**
  * Shared with the edge `APP_RELEASE` secret and the PostHog `app_release` property, so a
  * Sentry issue, a PostHog event and an edge error from the same deploy all carry the same
  * id. See `vite-plugins/releaseId.ts`.
@@ -282,6 +308,7 @@ export default defineConfig({
     patchOpenPolotnoHighlighter(),
     scopeBlueprintCssPlugin(),
     react(),
+    seoIndexingGuardPlugin(),
     preloadLandingChunk(),
     pwaPrecacheTiersPlugin(),
     ...gfmPwaPlugin(),

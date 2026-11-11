@@ -2,7 +2,54 @@
   "framework": "vite",
   "installCommand": "cd .. && rm -rf node_modules ui/node_modules && bun install && node ./scripts/dev/dedupe-react-types.mjs",
   "buildCommand": "bun run build",
+  "trailingSlash": false,
   "redirects": [
+    {
+      "source": "/((?!sw\\.js$|pwa-version\\.json$|manifest\\.webmanifest$|retirement-sw\\.js$|precache-tiers\\.json$).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.kamespace.com"
+        }
+      ],
+      "destination": "https://kamespace.com/$1",
+      "permanent": true
+    },
+    {
+      "source": "/for-hosts/preview",
+      "destination": "/for-hosts/v2",
+      "permanent": true
+    },
+    {
+      "source": "/developments/:slug/parking/category",
+      "destination": "/developments/:slug/parking",
+      "permanent": true
+    },
+    {
+      "source": "/developments/:slug/parking/list",
+      "destination": "/developments/:slug/parking",
+      "permanent": true
+    },
+    {
+      "source": "/sign-in",
+      "destination": "/for-hosts/login",
+      "permanent": true
+    },
+    {
+      "source": "/account/messages",
+      "destination": "/account/stays",
+      "permanent": true
+    },
+    {
+      "source": "/account/wishlist",
+      "destination": "/account/favorites",
+      "permanent": true
+    },
+    {
+      "source": "/account/settings",
+      "destination": "/account/profile",
+      "permanent": true
+    },
     {
       "source": "/form",
       "has": [
@@ -130,7 +177,7 @@
         },
         {
           "key": "Content-Security-Policy-Report-Only",
-          "value": "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' https://challenges.cloudflare.com https://maps.googleapis.com https://maps.gstatic.com https://us-assets.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://us.i.posthog.com https://us-assets.i.posthog.com https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com wss://generativelanguage.googleapis.com https://maps.googleapis.com https://staticmap.openstreetmap.de https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io; frame-src 'self' https://challenges.cloudflare.com https://www.google.com https://maps.google.com https://www.openstreetmap.org; worker-src 'self' blob:; manifest-src 'self'; media-src 'self' data: blob: https:"
+          "value": "default-src 'self'; upgrade-insecure-requests; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' https://challenges.cloudflare.com https://maps.googleapis.com https://maps.gstatic.com https://us-assets.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://us.i.posthog.com https://us-assets.i.posthog.com https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com wss://generativelanguage.googleapis.com https://maps.googleapis.com https://staticmap.openstreetmap.de https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io; frame-src 'self' https://challenges.cloudflare.com https://www.google.com https://maps.google.com https://www.openstreetmap.org; worker-src 'self' blob:; manifest-src 'self'; media-src 'self' data: blob: https:"
         },
         {
           "key": "X-Frame-Options",

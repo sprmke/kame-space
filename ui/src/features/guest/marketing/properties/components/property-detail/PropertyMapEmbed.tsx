@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { motion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
@@ -141,11 +141,45 @@ export function PropertyMapEmbed({
   className,
 }: PropertyMapEmbedProps) {
   const { resolvedTheme } = useTheme();
-  const { ready, error } = useGoogleMapsLoader();
   const hasCoords = hasPropertyMapCoordinates(latitude, longitude);
   const useInteractiveGoogle = Boolean(getGoogleMapsApiKey()) && hasCoords;
 
+  // The Google Maps bundle is one of the heaviest third parties on the page and the map sits
+  // far below the fold, so it is only requested once the section is near the viewport.
+  const gateRef = useRef<HTMLSpanElement>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    if (!useInteractiveGoogle) return;
+    const node = gateRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') {
+      setInView(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '300px' }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [useInteractiveGoogle]);
+
+  const { ready, error } = useGoogleMapsLoader({ enabled: useInteractiveGoogle && inView });
+
   if (useInteractiveGoogle) {
+    if (!inView) {
+      return (
+        <>
+          <span ref={gateRef} aria-hidden className="absolute inset-0" />
+          <PropertyMapPlaceholder />
+        </>
+      );
+    }
     if (!ready && !error) {
       return <PropertyMapPlaceholder />;
     }

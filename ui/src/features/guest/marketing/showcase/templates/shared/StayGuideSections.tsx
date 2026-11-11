@@ -19,6 +19,7 @@ import type {
 } from '@/features/guest/marketing/showcase/types/showcase';
 import { StayGuideRichContent } from '@/features/guest/stay-guide/components/StayGuideRichContent';
 
+import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 import { cn } from '@/lib/utils';
 import { formatStayBoundaryDateShort, formatTimeToAMPM } from '@/utils/format/dates';
 
@@ -289,6 +290,7 @@ function StayGuideCheckInDocs({
 }
 
 function StayGuideChapter({
+  data,
   section,
   alt,
   headingClassName,
@@ -325,7 +327,7 @@ function StayGuideChapter({
                 {block.imageUrl ? (
                   <img
                     src={block.imageUrl}
-                    alt=""
+                    alt={buildListingImageAlt({ listingName: data.propertyName })}
                     loading="lazy"
                     className="mt-4 w-full rounded-2xl object-cover"
                   />

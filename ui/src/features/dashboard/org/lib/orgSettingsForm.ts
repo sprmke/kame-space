@@ -15,9 +15,15 @@ export function normalizeSlugInput(value: string): string {
 }
 
 /** Mirrors server `slugifyName` for read-only slug preview. */
+/**
+ * URL slug from a display name. Strips diacritics first so `Parañaque` becomes `paranaque`,
+ * matching `slugifyName` on the edge and `pls_slugify_name` in SQL.
+ */
 export function slugifyOrgName(input: string): string {
   return (
     input
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')

@@ -33,6 +33,7 @@ import type {
   ShowcaseResolvedSection,
 } from '@/features/guest/marketing/showcase/types/showcase';
 
+import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 import { cn } from '@/lib/utils';
 
 const DISPLAY = 'font-fraunces tracking-[-0.01em]';
@@ -144,7 +145,7 @@ function HavenHero({ data, section }: { data: ShowcaseData; section: ShowcaseRes
             {image ? (
               <img
                 src={image}
-                alt=""
+                alt={buildListingImageAlt({ listingName: data.propertyName })}
                 loading="eager"
                 fetchPriority="high"
                 decoding="sync"

@@ -18,6 +18,9 @@ type Rule = {
 };
 
 const LEGACY_HOSTS = ['kamehomes.space', 'www.kamehomes.space'];
+/** Non-canonical alias hosts that 301 to the apex. Same rule shape, different intent. */
+const APEX_ALIAS_HOSTS = ['www.kamespace.com'];
+const REDIRECT_HOSTS = [...LEGACY_HOSTS, ...APEX_ALIAS_HOSTS];
 /** Legacy single-unit tenant; guests never had a second property. */
 const LEGACY_PROPERTY_SLUG = 'kame-home';
 const NEW_ORIGIN = 'https://kamespace.com';
@@ -49,12 +52,13 @@ describe('legacy apex redirects', () => {
     for (const rule of redirects) {
       const hosts = (rule.has ?? []).map((has) => has.value);
       for (const value of hosts) {
-        expect(LEGACY_HOSTS).toContain(value);
+        expect(REDIRECT_HOSTS).toContain(value);
       }
     }
   });
 
   it.each(LEGACY_HOSTS)('is permanent (308) for %s', (host) => {
+    // Same guarantee for the www.kamespace.com alias is covered below.
     for (const rule of rulesForHost(host)) {
       expect(rule.permanent).toBe(true);
     }
@@ -94,6 +98,20 @@ describe('legacy apex redirects', () => {
     // every file the browser fetches to update or kill-switch a worker.
     for (const file of ['sw.js', 'pwa-version.json', 'manifest.webmanifest', 'precache-tiers.json']) {
       expect(catchAll.source).toContain(file.replace('.', '\\.'));
+    }
+  });
+});
+
+describe('canonical apex alias', () => {
+  it.each(APEX_ALIAS_HOSTS)('301s %s to the apex and keeps the path', (host) => {
+    const hostRules = rulesForHost(host);
+    expect(hostRules.length).toBe(1);
+    const [rule] = hostRules;
+    expect(rule?.permanent).toBe(true);
+    expect(rule?.destination).toBe(`${NEW_ORIGIN}/$1`);
+    // Service-worker control files must not be redirected away from their origin.
+    for (const file of ['sw.js', 'pwa-version.json', 'manifest.webmanifest']) {
+      expect(rule?.source).toContain(file.replace('.', '\\.'));
     }
   });
 });

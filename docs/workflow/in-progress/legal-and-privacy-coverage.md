@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Legal and privacy coverage: current policies and consistent notices across the app'
 status: in-progress
 tags: [workflow, in-progress, legal, privacy, terms, cookies, payments, consent, ux]
-updated: 2026-11-09
+updated: 2026-11-11
 kind: plan
 ---
 
@@ -87,13 +87,13 @@ Privacy Policy"), Booking.com (policy link under the final button).
 
 ### 2.1 Components (`ui/src/components/legal/`)
 
-| Component            | Role                                                                                                                                                |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `LegalLink`          | `<a>` with `doc` (`terms` · `privacy` · `cookies`) and optional `section` anchor. Plain click opens the sheet; modified click navigates normally.   |
-| `LegalNotice`        | The one-line notice. Muted, wraps, centered or start aligned, 44 px tap rows not needed (inline text link with padding); takes children with links. |
-| `LegalDocumentSheet` | `ResponsiveModal` with the policy body, section scroll, inline "Open full page" header action, and one Done action. Lazy-loaded so the policy text is not in every bundle.             |
-| `LegalFooterLinks`   | "Terms · Privacy · Cookies" row for layout footers and account menus.                                                                               |
-| `LegalSheetProvider` | One sheet instance mounted at the app root; `LegalLink` calls `openLegalDocument(doc, section)`.                                                    |
+| Component            | Role                                                                                                                                                                       |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LegalLink`          | `<a>` with `doc` (`terms` · `privacy` · `cookies`) and optional `section` anchor. Plain click opens the sheet; modified click navigates normally.                          |
+| `LegalNotice`        | The one-line notice. Muted, wraps, centered or start aligned, 44 px tap rows not needed (inline text link with padding); takes children with links.                        |
+| `LegalDocumentSheet` | `ResponsiveModal` with the policy body, section scroll, inline "Open full page" header action, and one Done action. Lazy-loaded so the policy text is not in every bundle. |
+| `LegalFooterLinks`   | "Terms · Privacy · Cookies" row for layout footers and account menus.                                                                                                      |
+| `LegalSheetProvider` | One sheet instance mounted at the app root; `LegalLink` calls `openLegalDocument(doc, section)`.                                                                           |
 
 Content moves from the three page components into `ui/src/lib/legal/` (`termsContent.ts`,
 `privacyContent.ts`, `cookiesContent.ts`, `legalMeta.ts` with the shared last-updated date).
@@ -236,8 +236,8 @@ P0 = shipped in this change. P1 = shipped in this change if time allows. P2 = fo
 
 ## 7. Owner decisions
 
-| #   | Decision                                                                 | Resolution                                                                                                                                                                                                                                    |
-| --- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #   | Decision                                                                 | Resolution                                                                                                                                                                                                                                             |
+| --- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | D1  | Cookie consent banner before PostHog loads                               | **Decided 2026-11-09: build it.** `CookieConsentBanner` + `kh-cookie-consent` storage; `posthog.init()` never runs before an explicit Allow analytics. See [legal.md § Cookie consent](../../guides/routes/legal.md#cookie-consent-owner-decision-d1). |
-| D2  | Named Data Protection Officer and NPC registration number                | **Decided 2026-11-09: platform email, no registration line.** Already the shipped default in `privacyContent.ts` (no named individual exists to publish; NPC registration is a business/legal filing, not something this change can create).  |
-| D3  | Lawyer review of the rewritten Terms and Privacy before marketing launch | **Still open** — shipped as product copy per the default, since this requires a human lawyer. Carried on [legal.md](../../guides/routes/legal.md) § Pending / follow-ups.                                                                     |
+| D2  | Named Data Protection Officer and NPC registration number                | **Decided 2026-11-09: platform email, no registration line.** Already the shipped default in `privacyContent.ts` (no named individual exists to publish; NPC registration is a business/legal filing, not something this change can create).           |
+| D3  | Lawyer review of the rewritten Terms and Privacy before marketing launch | **Still open** — shipped as product copy per the default, since this requires a human lawyer. Carried on [legal.md](../../guides/routes/legal.md) § Pending / follow-ups.                                                                              |

@@ -47,6 +47,8 @@ export type PropertyMediaItem = {
   storagePath?: string;
   type: 'image' | 'video';
   caption?: string;
+  /** Host-written alt text; falls back to the caption, then a generated description. */
+  alt?: string;
   isPrimary?: boolean;
   order: number;
 };
