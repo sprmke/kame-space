@@ -6,6 +6,7 @@ import { isAutoReplyPausedByHandoff } from './aiHandoff.ts';
 import { logActivity, type ActorContext } from './activityLog.ts';
 import { runGuestReceptionistTurn } from './guestReceptionistTurn.ts';
 import { getPageAccessToken, sendMetaMessage } from './metaInboxGraph.ts';
+import { isInvalidMetaTokenError } from './metaInboxGraphError.ts';
 import {
   consumeAutoReplyBudget,
   isAutoReplyEntitled,
@@ -19,12 +20,13 @@ import {
   getConversationByExternalThread,
   insertMessageIfNew,
   listMessages,
+  markMetaConnectionTokenInvalid,
   updateConversationAfterMessage,
 } from './socialInboxService.ts';
 import { isFeatureAvailable } from './featureAvailability.ts';
 import { automationAllowed, loadPropertyLifecycleStates } from './propertyLifecycle.ts';
 import { capturePostHogEvent } from './posthog.ts';
-import type { SocialPlatform } from './socialInboxTypes.ts';
+import type { SocialChannelConnectionRow, SocialPlatform } from './socialInboxTypes.ts';
 
 export async function maybeAutoReplyToInboundDm(
   orgId: string,
@@ -95,14 +97,24 @@ export async function maybeAutoReplyToInboundDm(
   const draft = reply.suggestion;
 
   const token = await getPageAccessToken(connRow as never);
-  const result = await sendMetaMessage({
-    pageId: connRow.meta_page_id as string,
-    pageAccessToken: token,
-    recipientId: conv.external_participant_id ?? '',
-    text: draft,
-    platform,
-    availabilityKey: 'inbox.meta.auto_reply',
-  });
+  let result: Awaited<ReturnType<typeof sendMetaMessage>>;
+  try {
+    result = await sendMetaMessage({
+      pageId: connRow.meta_page_id as string,
+      pageAccessToken: token,
+      recipientId: conv.external_participant_id ?? '',
+      text: draft,
+      platform,
+      availabilityKey: 'inbox.meta.auto_reply',
+    });
+  } catch (e) {
+    // An invalid Page token is a connection problem, not a send problem.
+    if (isInvalidMetaTokenError(e)) {
+      await markMetaConnectionTokenInvalid(connRow as SocialChannelConnectionRow);
+    }
+    console.warn('[metaInboxAutoReply] send failed:', (e as Error).message);
+    return;
+  }
   if (!result.ok) {
     console.log('[metaInboxAutoReply] skipped: feature_unavailable');
     return;
@@ -122,9 +134,9 @@ export async function maybeAutoReplyToInboundDm(
     is_ai_generated: true,
   });
   await updateConversationAfterMessage(conv.id, {
+    direction: 'outbound',
     subject_preview: draft.slice(0, 500),
     last_message_at: now,
-    reply_status: 'replied',
     ...(reply.handoffRequested
       ? {
           aiHandoff: {

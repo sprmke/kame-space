@@ -23,14 +23,14 @@ export function LegalDocumentBody({
           aria-labelledby={`${legalSectionDomId(section.id, idPrefix)}-title`}
           className={cn(
             'scroll-mt-[calc(var(--public-nav-h,4rem)+1rem)]',
-            isSheet ? 'scroll-mt-2 py-4 first:pt-0' : 'py-6 first:pt-0 md:py-10'
+            isSheet ? 'scroll-mt-2 py-3.5 first:pt-0' : 'py-6 first:pt-0 md:py-10'
           )}
         >
           <h2
             id={`${legalSectionDomId(section.id, idPrefix)}-title`}
             className={cn(
               'text-foreground font-semibold tracking-tight',
-              isSheet ? 'text-[15px]' : 'text-lg md:text-2xl'
+              isSheet ? 'text-sm' : 'text-lg md:text-2xl'
             )}
           >
             {section.title}
@@ -39,7 +39,7 @@ export function LegalDocumentBody({
             className={cn(
               'text-muted-foreground leading-relaxed',
               isSheet
-                ? 'mt-1.5 space-y-2.5 text-sm'
+                ? 'mt-1.5 space-y-2 text-sm'
                 : 'mt-2.5 space-y-3 text-[15px] md:mt-4 md:space-y-4 md:text-base'
             )}
           >

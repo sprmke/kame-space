@@ -4,7 +4,7 @@
 
 import { resolveInboxAccess } from '../_shared/inboxAccess.ts';
 import { resolveEffectiveMetaConnection } from '../_shared/metaInboxScope.ts';
-import { metaBackfillHasMore } from '../_shared/socialInboxService.ts';
+import { resolveMetaHasMore } from '../_shared/socialInboxService.ts';
 import { jsonError, jsonSuccess } from '../_shared/httpResponse.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 
@@ -41,7 +41,7 @@ serveAuthenticated('meta-inbox-status', async (req) => {
   // (bad/expired token, etc.) — stop reporting "in progress" so the client stops spinning
   // and prompts reconnect instead of polling forever.
   const metaSyncInProgress = Boolean(facebook && !facebook.last_sync_at && !metaSyncError);
-  const metaHasMore = metaBackfillHasMore(facebook);
+  const metaHasMore = await resolveMetaHasMore(ctx.orgId);
 
   return jsonSuccess(req, {
     connections: serialized,

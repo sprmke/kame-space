@@ -52,6 +52,11 @@ export type InboxConversation = {
   property_slug?: string | null;
   ai_handoff_at?: string | null;
   ai_handoff_reason?: string | null;
+  /** Meta will not return anything older than the newest 20 messages in this thread. */
+  history_gap_at?: string | null;
+  /** Which app owns the chat: us, Meta Business AI, or another app. */
+  thread_owner?: string | null;
+  last_message_direction?: string | null;
 };
 
 export type InboxMessage = {
@@ -69,8 +74,21 @@ export type InboxMessage = {
   deleted_at?: string | null;
   reply_to_message_id?: string | null;
   reply_preview_text?: string | null;
-  message_kind?: 'text' | 'template';
+  message_kind?:
+    | 'text'
+    | 'template'
+    | 'postback'
+    | 'unsupported'
+    | 'story_reply'
+    | 'share'
+    | 'reaction'
+    | 'edit';
   template_snapshot?: unknown | null;
+  /** Which app sent an outbound message. `other` means Business Suite or another app. */
+  sender_app?: 'kame' | 'meta' | 'other' | null;
+  /** Graph error code when a send was rejected. */
+  send_error_code?: string | null;
+  reactions?: Record<string, number> | null;
 };
 
 export type GuestRequestKind = 'booking_inquiry' | 'early_checkin_late_checkout';

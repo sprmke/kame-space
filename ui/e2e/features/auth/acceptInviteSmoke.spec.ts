@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { mockPlatformStatus } from '../../shared/edgeMocks/platformStatus';
 import { mockEdgeFunctions } from '../../shared/interceptEdge';
 
 test.describe('@ci accept invite', () => {
@@ -11,13 +12,18 @@ test.describe('@ci accept invite', () => {
   });
 
   test('expired token preview shows invalid invitation message', async ({ page }) => {
-    await mockEdgeFunctions(page, [
-      {
-        name: 'get-team-invite-preview',
-        status: 404,
-        body: { success: false, error: 'Invitation not found' },
-      },
-    ]);
+    await mockEdgeFunctions(
+      page,
+      [
+        mockPlatformStatus(),
+        {
+          name: 'get-team-invite-preview',
+          status: 404,
+          body: { success: false, error: 'Invitation not found' },
+        },
+      ],
+      { strict: true }
+    );
     await page.goto('/accept-invite?token=expired-e2e-token&scope=property');
     await expect(page.getByText(/invalid|not found/i)).toBeVisible({ timeout: 20_000 });
   });

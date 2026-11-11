@@ -509,6 +509,24 @@ Meta only allows replies within 24 hours of the guest's last message. After that
 
 On the property Inbox under Manage, then Quick replies or Automation. Those settings apply across your organization.
 
+### Why can't I edit or unsend a message I sent on Facebook or Instagram?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/inbox.md
+- order: 25
+
+Meta cannot change or take back a message that was already sent to a guest, so those actions are not offered on Facebook and Instagram threads. Editing the copy here would only change what you see, not what the guest sees. Website chat messages can still be edited and unsent.
+
+### Why does a new message sometimes take a minute to show up?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/inbox.md
+- order: 26
+
+New messages normally appear within seconds. If your role does not include org-wide live updates, the list refreshes about once a minute while the tab is open, and it refreshes straight away when you come back to the tab. Organization owners and organization admins get live updates.
+
 ### Do I need to connect Facebook before I can publish marketing content?
 
 - category: Guest Communication
@@ -1433,7 +1451,7 @@ Open your profile and choose Request a copy or deletion of your data, or email u
 - audience: public
 - source: docs/guides/routes/legal.md
 
-On your first visit you can choose Accept or Necessary only. Analytics cookies never load until you choose Accept, and required cookies like sign-in and form protection work either way. Open the Cookie Policy page and use Change cookie choice to switch at any time.
+On your first visit you can choose Allow analytics or Necessary only. Analytics cookies never load until you choose Allow analytics, and required cookies like sign-in and form protection work either way. Open the Cookie Policy page and use the Cookie settings card to switch at any time.
 
 ### Is my plan renewed automatically, and do I get money back when I downgrade?
 

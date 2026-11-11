@@ -11,19 +11,19 @@ export function CookiePreferencesControl() {
 
   return (
     <div className="border-border mt-8 rounded-xl border p-4">
-      <p className="text-sm font-semibold">Your cookie choice on this device</p>
-      <p className="text-muted-foreground mt-1 text-sm">
+      <p className="text-sm font-semibold">Cookie settings</p>
+      <p className="text-muted-foreground mt-1 text-[13px] leading-relaxed">
         {choice === 'accepted'
-          ? 'You allow analytics cookies.'
+          ? 'Analytics cookies are on.'
           : choice === 'declined'
-            ? 'You allow only required cookies.'
-            : 'You have not made a choice yet. Required cookies keep the app working.'}
+            ? 'Only required cookies are on.'
+            : 'No choice yet. Required cookies keep the app working.'}
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button
           type="button"
           variant={choice === 'accepted' ? 'default' : 'outline'}
-          className="min-h-[44px]"
+          className="min-h-[44px] sm:min-h-9"
           onClick={() => setCookieConsent('accepted')}
         >
           Allow analytics
@@ -31,7 +31,7 @@ export function CookiePreferencesControl() {
         <Button
           type="button"
           variant={choice === 'declined' ? 'default' : 'outline'}
-          className="min-h-[44px]"
+          className="min-h-[44px] sm:min-h-9"
           onClick={() => setCookieConsent('declined')}
         >
           Necessary only

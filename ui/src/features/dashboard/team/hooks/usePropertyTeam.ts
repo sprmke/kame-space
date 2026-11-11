@@ -42,7 +42,7 @@ async function loadPropertyTeam(propertyId: string): Promise<PropertyTeamData> {
   };
 }
 
-export function usePropertyTeam() {
+export function usePropertyTeam(options?: { enabled?: boolean }) {
   const propertyId = usePropertyIdParam();
 
   return useQuery({
@@ -51,7 +51,7 @@ export function usePropertyTeam() {
       if (!propertyId) throw new Error('Property not found');
       return loadPropertyTeam(propertyId);
     },
-    enabled: Boolean(propertyId),
+    enabled: Boolean(propertyId) && (options?.enabled ?? true),
     // Membership/roles change infrequently; mutations already invalidate this exact key.
     staleTime: 60_000,
   });

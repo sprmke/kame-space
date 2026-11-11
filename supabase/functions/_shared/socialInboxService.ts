@@ -7,7 +7,6 @@ import { socialInboxDb, upsertChannelConnection } from './socialInboxDb.ts';
 import type {
   ConversationType,
   InboxThreadFilter,
-  ReplyStatus,
   SocialChannelConnectionRow,
   SocialConversationRow,
   SocialMessageRow,
@@ -247,6 +246,27 @@ export function buildDmThreadId(platform: SocialPlatform, participantId: string)
   return `${platform}:${participantId}`;
 }
 
+/**
+ * The account's own Meta ids.
+ *
+ * A message from any of them is an outbound message. Instagram replies sent from the
+ * Instagram app carry the Instagram business account id, not the Facebook Page id, so
+ * comparing against the Page id alone files them as guest messages.
+ */
+export function metaSelfAccountIds(
+  connection: SocialChannelConnectionRow,
+  pageId?: string | null
+): Set<string> {
+  return new Set(
+    [
+      pageId,
+      connection.meta_page_id,
+      connection.meta_ig_user_id,
+      connection.external_account_id,
+    ].filter((id): id is string => Boolean(id?.trim()))
+  );
+}
+
 export async function findDmConversationByParticipant(
   orgId: string,
   platform: SocialPlatform,
@@ -329,6 +349,14 @@ function buildConversationUpdatePayload(payload: Record<string, unknown>): Recor
   return update;
 }
 
+/**
+ * Insert or update a conversation.
+ *
+ * `opts.insertOnly` fields are written when the row is created and left alone on update.
+ * The summary fields belong there: `last_message_at` is set on create so a freshly
+ * imported old thread is not dated "now", and it is never written on update so a late
+ * event cannot rewind a thread. `inbox_bump_conversation` owns the forward-only rule.
+ */
 export async function upsertConversation(
   fields: Partial<SocialConversationRow> & {
     organization_id: string;
@@ -336,10 +364,12 @@ export async function upsertConversation(
     platform: SocialPlatform;
     external_thread_id: string;
     conversation_type: ConversationType;
-  }
+  },
+  opts?: { insertOnly?: Partial<SocialConversationRow> }
 ): Promise<SocialConversationRow> {
   const sb = socialInboxDb();
   const payload = { ...fields, updated_at: new Date().toISOString() };
+  const insertOnly = opts?.insertOnly ?? {};
 
   for (let attempt = 0; attempt < 4; attempt++) {
     const existing = await getConversationByExternalThread(
@@ -349,6 +379,7 @@ export async function upsertConversation(
     );
     if (existing) {
       const updatePayload = buildConversationUpdatePayload(payload);
+      for (const key of Object.keys(insertOnly)) delete updatePayload[key];
       const { error } = await sb
         .from('social_conversations')
         .update(updatePayload)
@@ -357,7 +388,9 @@ export async function upsertConversation(
       return { ...existing, ...updatePayload } as SocialConversationRow;
     }
 
-    const { error: insertError } = await sb.from('social_conversations').insert(payload);
+    const { error: insertError } = await sb
+      .from('social_conversations')
+      .insert({ ...payload, ...insertOnly });
     if (!insertError) {
       const created = await getConversationByExternalThread(
         fields.organization_id,
@@ -482,6 +515,13 @@ export async function fillMissingMetaParticipantIdentity(
   return { ...conv, ...patch } as SocialConversationRow;
 }
 
+/**
+ * Insert a message unless its Meta message id is already stored.
+ *
+ * Returns the inserted row, or `null` when the message was already there. Callers use that
+ * to fire side effects only for a newly arrived message: a redelivered Meta event must not
+ * notify twice.
+ */
 export async function insertMessageIfNew(
   fields: Omit<SocialMessageRow, 'id' | 'created_at'>
 ): Promise<SocialMessageRow | null> {
@@ -494,11 +534,14 @@ export async function insertMessageIfNew(
   if (readError) throw new Error(readError.message);
   if (existingRows?.[0]) return null;
 
-  const { error } = await sb.from('social_messages').insert(fields);
+  const { data, error } = await sb.from('social_messages').insert(fields).select('*').maybeSingle();
   if (error) {
+    // Another delivery of the same Meta event won the race. The unique index on
+    // external_message_id is the real guard, so a duplicate is not an error.
     if (error.code === '23505') return null;
     throw new Error(error.message);
   }
+  if (!data) return null;
 
   void import('./inboxThreadMetrics.ts')
     .then(({ recordInboxMessageForMetrics }) =>
@@ -511,7 +554,146 @@ export async function insertMessageIfNew(
     )
     .catch((err) => console.warn('[insertMessageIfNew] superhost metrics:', err));
 
-  return null;
+  return data as SocialMessageRow;
+}
+
+/** Outbound Meta send that is written before the network call. */
+export type OutboundMetaSendRow = {
+  organizationId: string;
+  conversationId: string;
+  clientMessageId: string;
+  bodyText: string;
+  sentAt: string;
+  sentByUserId: string | null;
+  isAiGenerated: boolean;
+  messageTag: 'human_agent' | null;
+  replyToMessageId?: string | null;
+  replyPreviewText?: string | null;
+  templateSnapshot?: unknown | null;
+};
+
+/** Synthetic id used until Meta returns the real message id. Never collides with a mid. */
+export function pendingMetaExternalId(clientMessageId: string): string {
+  return `kame:${clientMessageId}`;
+}
+
+/**
+ * Write the outbound row before calling the Send API.
+ *
+ * The thread shows the message immediately, and a crash after Meta accepted it leaves a row
+ * to reconcile instead of a message the host cannot see. `client_message_id` is unique, so a
+ * retried send cannot insert twice.
+ */
+export async function beginOutboundMetaSend(row: OutboundMetaSendRow): Promise<void> {
+  const sb = socialInboxDb();
+  const { error } = await sb.from('social_messages').insert({
+    organization_id: row.organizationId,
+    conversation_id: row.conversationId,
+    direction: 'outbound',
+    external_message_id: pendingMetaExternalId(row.clientMessageId),
+    client_message_id: row.clientMessageId,
+    body_text: row.bodyText || null,
+    attachments: [],
+    sent_at: row.sentAt,
+    delivery_status: 'sending',
+    sent_by_user_id: row.sentByUserId,
+    is_ai_generated: row.isAiGenerated,
+    message_tag: row.messageTag,
+    reply_to_message_id: row.replyToMessageId ?? null,
+    reply_preview_text: row.replyPreviewText ?? null,
+    template_snapshot: row.templateSnapshot ?? null,
+    message_kind: 'text',
+    source: 'kame_send',
+    sender_app: 'kame',
+    routing: 'messaging',
+  });
+  // 23505 means this composer submit was already recorded. Not an error.
+  if (error && error.code !== '23505') throw new Error(error.message);
+}
+
+/**
+ * Attach Meta's message id to the row that was written before the send.
+ *
+ * If Meta's echo landed first it already stored this mid, so the metadata is merged onto the
+ * echo row and the placeholder is dropped. Either order ends with one row.
+ */
+export async function completeOutboundMetaSend(
+  row: OutboundMetaSendRow,
+  externalMessageId: string
+): Promise<void> {
+  const sb = socialInboxDb();
+  const { error } = await sb
+    .from('social_messages')
+    .update({ external_message_id: externalMessageId, delivery_status: 'sent' })
+    .eq('client_message_id', row.clientMessageId);
+  if (!error) return;
+  if (error.code !== '23505') throw new Error(error.message);
+
+  const { error: mergeError } = await sb.rpc('inbox_apply_meta_message', {
+    p: {
+      organization_id: row.organizationId,
+      connection_id: null,
+      platform: 'facebook',
+      external_thread_id: null,
+      direction: 'outbound',
+      external_message_id: externalMessageId,
+      sent_at: row.sentAt,
+      body_text: row.bodyText || null,
+      sent_by_user_id: row.sentByUserId,
+      is_ai_generated: String(row.isAiGenerated),
+      message_tag: row.messageTag,
+      reply_to_message_id: row.replyToMessageId ?? null,
+      reply_preview_text: row.replyPreviewText ?? null,
+      template_snapshot: row.templateSnapshot ?? null,
+      source: 'kame_send',
+      sender_app: 'kame',
+    },
+  });
+  // The merge is best effort: the echo row already holds the message.
+  if (mergeError) console.warn('[completeOutboundMetaSend] merge:', mergeError.message);
+
+  const { error: deleteError } = await sb
+    .from('social_messages')
+    .delete()
+    .eq('client_message_id', row.clientMessageId)
+    .like('external_message_id', 'kame:%');
+  if (deleteError) console.warn('[completeOutboundMetaSend] placeholder cleanup:', deleteError.message);
+}
+
+/** Mark a send that Meta did not accept. The thread shows "Not sent" with a Retry action. */
+export async function failOutboundMetaSend(
+  clientMessageId: string,
+  errorCode: string | null
+): Promise<void> {
+  const sb = socialInboxDb();
+  const { error } = await sb
+    .from('social_messages')
+    .update({ delivery_status: 'failed', send_error_code: errorCode })
+    .eq('client_message_id', clientMessageId);
+  if (error) console.warn('[failOutboundMetaSend]', error.message);
+}
+
+/**
+ * Flag a Meta connection whose Page token Meta no longer accepts.
+ *
+ * The Facebook and Instagram rows for one Page share the same token, so both are flagged.
+ */
+export async function markMetaConnectionTokenInvalid(
+  connection: SocialChannelConnectionRow
+): Promise<void> {
+  if (!connection.meta_page_id) return;
+  const sb = socialInboxDb();
+  const { error } = await sb
+    .from('social_channel_connections')
+    .update({
+      status: 'error',
+      error_message: 'Meta session expired. Reconnect Facebook in Channels.',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('organization_id', connection.organization_id)
+    .eq('meta_page_id', connection.meta_page_id)
+    .in('status', ['connected', 'pending']);
+  if (error) console.warn('[markMetaConnectionTokenInvalid]', error.message);
 }
 
 export async function markConversationRead(orgId: string, conversationId: string): Promise<void> {
@@ -519,56 +701,60 @@ export async function markConversationRead(orgId: string, conversationId: string
   await markHostConversationRead(orgId, conversationId);
 }
 
+/**
+ * Move a conversation's summary forward after a message.
+ *
+ * The summary lives in the `inbox_bump_conversation` database function so it only ever moves
+ * forward: `last_message_at` is the newest message, the preview and reply status belong to
+ * the newest message, and the unread badge is an atomic increment instead of a reset
+ * followed by an add. Meta does not guarantee event order, so an older event arriving late
+ * must not rewind a thread.
+ */
 export async function updateConversationAfterMessage(
   conversationId: string,
   patch: {
+    direction: 'inbound' | 'outbound';
     subject_preview?: string;
     last_message_at: string;
-    last_inbound_at?: string;
-    unread_delta?: number;
-    reply_status?: ReplyStatus;
+    /**
+     * sent_at of the newest inbound message. Only the import knows this from history:
+     * a thread whose newest message is the host's reply still has an open window.
+     */
+    last_inbound_at?: string | null;
     messaging_window_expires_at?: string | null;
     participant_name?: string;
+    /** Host unread increment. Only inbound messages move it. */
+    unread_delta?: number;
+    /** Guest unread increment. */
     guest_unread_delta?: number;
     /** Set/clear the guest-AI handoff state (see aiHandoff.ts). */
     aiHandoff?: AiHandoffPatch;
   }
 ): Promise<void> {
   const sb = socialInboxDb();
-  const update: Record<string, unknown> = {
-    last_message_at: patch.last_message_at,
-    updated_at: new Date().toISOString(),
-    ...(patch.aiHandoff ? aiHandoffColumns(patch.aiHandoff) : {}),
-  };
-  if (patch.subject_preview !== undefined) update.subject_preview = patch.subject_preview;
-  if (patch.last_inbound_at !== undefined) update.last_inbound_at = patch.last_inbound_at;
-  if (patch.reply_status !== undefined) update.reply_status = patch.reply_status;
-  if (patch.messaging_window_expires_at !== undefined) {
-    update.messaging_window_expires_at = patch.messaging_window_expires_at;
-  }
-  if (patch.participant_name !== undefined && patch.participant_name != null) {
-    update.participant_name = patch.participant_name;
-  }
-  if (patch.unread_delta !== undefined) {
-    const { data: current } = await sb
-      .from('social_conversations')
-      .select('unread_count')
-      .eq('id', conversationId)
-      .maybeSingle();
-    update.unread_count = Math.max(0, (Number(current?.unread_count) || 0) + patch.unread_delta);
-  }
-  if (patch.guest_unread_delta !== undefined) {
-    const { data: current } = await sb
-      .from('social_conversations')
-      .select('guest_unread_count')
-      .eq('id', conversationId)
-      .maybeSingle();
-    update.guest_unread_count = Math.max(
-      0,
-      (Number(current?.guest_unread_count) || 0) + patch.guest_unread_delta
-    );
-  }
-  await sb.from('social_conversations').update(update).eq('id', conversationId);
+  const { error } = await sb.rpc('inbox_bump_conversation', {
+    p_conversation_id: conversationId,
+    p_sent_at: patch.last_message_at,
+    p_direction: patch.direction,
+    p_subject_preview: patch.subject_preview ?? null,
+    p_last_inbound_at: patch.last_inbound_at ?? null,
+    p_messaging_window_expires_at: patch.messaging_window_expires_at ?? null,
+    p_unread_delta: patch.unread_delta ?? 0,
+    p_guest_unread_delta: patch.guest_unread_delta ?? 0,
+  });
+  if (error) throw new Error(error.message);
+
+  // The summary function does not own the guest name or the AI handoff state.
+  const extra: Record<string, unknown> = {};
+  if (patch.participant_name) extra.participant_name = patch.participant_name;
+  if (patch.aiHandoff) Object.assign(extra, aiHandoffColumns(patch.aiHandoff));
+  if (!Object.keys(extra).length) return;
+
+  const { error: extraError } = await sb
+    .from('social_conversations')
+    .update({ ...extra, updated_at: new Date().toISOString() })
+    .eq('id', conversationId);
+  if (extraError) throw new Error(extraError.message);
 }
 
 export const INBOX_THREAD_PAGE_SIZE = 40;
@@ -578,19 +764,6 @@ export async function getFacebookConnectionForOrg(
 ): Promise<SocialChannelConnectionRow | null> {
   const { getOrgDefaultFacebookConnection } = await import('./metaInboxScope.ts');
   return getOrgDefaultFacebookConnection(orgId);
-}
-
-export function metaBackfillHasMore(connection: SocialChannelConnectionRow | null): boolean {
-  if (!connection || connection.status !== 'connected') return false;
-  if (connection.meta_backfill_done) return false;
-  if (
-    connection.meta_backfill_phase === 'messenger' ||
-    connection.meta_backfill_phase === 'instagram'
-  ) {
-    return true;
-  }
-  if (connection.meta_backfill_next_url) return true;
-  return false;
 }
 
 export async function countOrgMetaConversations(orgId: string): Promise<number> {
@@ -605,35 +778,56 @@ export async function countOrgMetaConversations(orgId: string): Promise<number> 
 }
 
 /** True when more Graph pages should be synced (scroll / search). */
+/**
+ * True while the server still has older Meta chats to import for this org.
+ *
+ * The import is server state now (`meta_sync_state`), so this is a read of its completion,
+ * not a heuristic over the local thread count.
+ */
 export async function resolveMetaHasMore(orgId: string): Promise<boolean> {
-  const connection = await getFacebookConnectionForOrg(orgId);
-  if (!connection || connection.status !== 'connected') return false;
-  if (metaBackfillHasMore(connection)) return true;
+  const sb = socialInboxDb();
+  const { data } = await sb
+    .from('meta_sync_state')
+    .select('import_completed_at, connection_id')
+    .eq('organization_id', orgId)
+    .limit(1)
+    .maybeSingle();
+  const row = data as { import_completed_at?: string | null } | null;
+  if (!row) return false;
+  return !row.import_completed_at;
+}
 
-  const localCount = await countOrgMetaConversations(orgId);
-  // Large local cache — legacy full sync; paginate from DB only.
-  if (localCount > 80) return false;
-
-  // Interrupted backfill (initial page landed but cursor was not persisted).
-  if (localCount > 0 && connection.last_sync_at) return true;
-
-  return false;
+/**
+ * Import state from a connection row that is already loaded.
+ *
+ * The chunk caller fetches the connection for the token, so reading the phase and cursor
+ * from that row saves the second lookup `getMetaBackfillState` used to cost.
+ */
+export function metaBackfillStateFromConnection(
+  connection: SocialChannelConnectionRow | null
+): { phase: 'messenger' | 'instagram'; nextCursor: string | null } {
+  const phase = connection?.meta_backfill_phase;
+  if (phase === 'messenger' || phase === 'instagram') {
+    return { phase, nextCursor: connection?.meta_backfill_cursor ?? null };
+  }
+  return { phase: 'messenger', nextCursor: null };
 }
 
 export async function getMetaBackfillState(
   orgId: string
-): Promise<{ phase: 'messenger' | 'instagram'; nextUrl: string | null }> {
-  const connection = await getFacebookConnectionForOrg(orgId);
-  const phase = connection?.meta_backfill_phase;
-  if (phase === 'messenger' || phase === 'instagram') {
-    return { phase, nextUrl: connection?.meta_backfill_next_url ?? null };
-  }
-  return { phase: 'messenger', nextUrl: null };
+): Promise<{ phase: 'messenger' | 'instagram'; nextCursor: string | null }> {
+  return metaBackfillStateFromConnection(await getFacebookConnectionForOrg(orgId));
 }
 
+/**
+ * Persist the import cursor.
+ *
+ * Only the opaque Graph `after` cursor is stored. The old column held a full Graph paging
+ * URL, which carries the Page access token, and that URL was handed to the browser.
+ */
 export async function setMetaBackfillState(
   orgId: string,
-  state: { phase: 'messenger' | 'instagram' | null; nextUrl: string | null }
+  state: { phase: 'messenger' | 'instagram' | null; nextCursor: string | null }
 ): Promise<void> {
   const sb = socialInboxDb();
   const now = new Date().toISOString();
@@ -641,7 +835,7 @@ export async function setMetaBackfillState(
     .from('social_channel_connections')
     .update({
       meta_backfill_phase: state.phase,
-      meta_backfill_next_url: state.nextUrl,
+      meta_backfill_cursor: state.nextCursor,
       updated_at: now,
     })
     .eq('organization_id', orgId)
@@ -691,7 +885,7 @@ export async function markMetaBackfillFullyComplete(
 ): Promise<void> {
   const sb = socialInboxDb();
   const now = new Date().toISOString();
-  await setMetaBackfillState(orgId, { phase: null, nextUrl: null });
+  await setMetaBackfillState(orgId, { phase: null, nextCursor: null });
   await sb
     .from('social_channel_connections')
     .update({
@@ -714,18 +908,7 @@ export async function markMetaBackfillFullyComplete(
 }
 
 export async function clearMetaBackfillState(orgId: string): Promise<void> {
-  await setMetaBackfillState(orgId, { phase: null, nextUrl: null });
-}
-
-export async function recordWebhookEvent(externalEventId: string): Promise<boolean> {
-  const sb = socialInboxDb();
-  const { error } = await sb.from('social_webhook_events').insert({
-    external_event_id: externalEventId,
-    platform: 'meta',
-  });
-  if (error?.code === '23505') return false;
-  if (error) throw new Error(error.message);
-  return true;
+  await setMetaBackfillState(orgId, { phase: null, nextCursor: null });
 }
 
 export async function searchInboxConversations(

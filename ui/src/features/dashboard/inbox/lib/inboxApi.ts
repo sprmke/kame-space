@@ -78,8 +78,6 @@ function inboxScopeBody(scope?: InboxApiScope | null): Record<string, string> {
 
 export const INBOX_THREAD_PAGE_SIZE = 40;
 
-export type InboxThreadsPageParam = string | { mode: 'sync'; cursor: string | null } | null;
-
 export async function fetchInboxConnections(
   orgSlug: string | null,
   orgId: string | null,
@@ -220,53 +218,75 @@ export async function completeMetaOAuthPage(
   return { pageName: typeof payload.pageName === 'string' ? payload.pageName : '' };
 }
 
-export type MetaBackfillChunkPhase = 'messenger' | 'instagram';
-
-export type MetaBackfillChunkResult = {
-  done: boolean;
-  phase: MetaBackfillChunkPhase | 'complete';
-  nextUrl: string | null;
-  syncedInChunk: number;
-  metaHasMore: boolean;
-};
-
-export async function runMetaInboxBackfillChunk(
+/**
+ * Nudge the server-side Meta sync.
+ *
+ * The browser no longer runs the import: the cursor and the schedule live on the server, so
+ * this only says "a host is looking at this inbox" or "load one more page of older chats".
+ */
+export async function requestMetaInboxSync(
   orgSlug: string | null,
   orgId: string | null,
-  state?: {
-    phase?: MetaBackfillChunkPhase;
-    nextUrl?: string | null;
-    finalize?: boolean;
-    light?: boolean;
-  },
+  action: 'status' | 'check_now' | 'load_older',
   scope?: InboxApiScope | null
-): Promise<MetaBackfillChunkResult> {
+): Promise<Record<string, unknown>> {
   const jwt = await getJwt();
-  const res = await fetch(orgUrl('/meta-inbox-backfill', orgSlug, orgId), {
+  const res = await fetch(orgUrl('/meta-inbox-sync', orgSlug, orgId), {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${jwt}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      phase: state?.phase ?? 'messenger',
-      nextUrl: state?.nextUrl ?? null,
-      finalize: state?.finalize === true,
-      light: state?.light === true,
-      ...inboxScopeBody(scope),
-    }),
+    headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...inboxScopeBody(scope) }),
+  });
+  const json = (await res.json()) as EdgeJson;
+  return unwrapEdgePayload(json, res.status);
+}
+
+/**
+ * Threads that changed since the cursor.
+ *
+ * Returns ids-and-content rows for the threads in the caller's scope, plus `serverTime` so
+ * the next call can move the cursor forward without trusting the client clock.
+ */
+export async function fetchInboxThreadDelta(
+  orgSlug: string | null,
+  orgId: string | null,
+  since: string,
+  scope?: InboxApiScope | null
+): Promise<{ conversations: InboxConversation[]; serverTime: string }> {
+  const jwt = await getJwt();
+  const params = new URLSearchParams({ changed_since: since });
+  const base = withInboxScope(orgUrl('/social-inbox-threads', orgSlug, orgId), scope);
+  const res = await fetch(`${base}&${params.toString()}`, {
+    headers: { Authorization: `Bearer ${jwt}` },
   });
   const json = (await res.json()) as EdgeJson;
   const payload = unwrapEdgePayload(json, res.status);
   return {
-    done: !!payload.done,
-    phase:
-      payload.phase === 'instagram' || payload.phase === 'messenger' || payload.phase === 'complete'
-        ? (payload.phase as MetaBackfillChunkResult['phase'])
-        : 'complete',
-    nextUrl: typeof payload.nextUrl === 'string' ? payload.nextUrl : null,
-    syncedInChunk: typeof payload.syncedInChunk === 'number' ? payload.syncedInChunk : 0,
-    metaHasMore: !!payload.metaHasMore,
+    conversations: (payload.conversations as InboxConversation[] | undefined) ?? [],
+    serverTime:
+      typeof payload.serverTime === 'string' ? payload.serverTime : new Date().toISOString(),
+  };
+}
+
+/** Messages inserted or updated since the cursor, for one open thread. */
+export async function fetchInboxMessageDelta(
+  orgSlug: string | null,
+  orgId: string | null,
+  conversationId: string,
+  since: string,
+  scope?: InboxApiScope | null
+): Promise<{ messages: InboxMessage[]; serverTime: string }> {
+  const jwt = await getJwt();
+  const base = withInboxScope(orgUrl('/social-inbox-messages', orgSlug, orgId), scope);
+  const params = new URLSearchParams({ conversation_id: conversationId, after: since });
+  const res = await fetch(`${base}&${params.toString()}`, {
+    headers: { Authorization: `Bearer ${jwt}` },
+  });
+  const json = (await res.json()) as EdgeJson;
+  const payload = unwrapEdgePayload(json, res.status);
+  return {
+    messages: (payload.messages as InboxMessage[] | undefined) ?? [],
+    serverTime:
+      typeof payload.serverTime === 'string' ? payload.serverTime : new Date().toISOString(),
   };
 }
 
@@ -284,6 +304,8 @@ export async function fetchInboxThreads(
   conversations: InboxConversation[];
   nextCursor: string | null;
   metaHasMore: boolean;
+  /** False when the caller has no org-wide inbox Realtime and the list must poll. */
+  realtimeSupported: boolean;
 }> {
   const jwt = await getJwt();
   const params = new URLSearchParams();
@@ -303,6 +325,7 @@ export async function fetchInboxThreads(
     conversations: (payload.conversations as InboxConversation[] | undefined) ?? [],
     nextCursor: (payload.nextCursor as string | null | undefined) ?? null,
     metaHasMore: !!payload.metaHasMore,
+    realtimeSupported: payload.realtimeSupported !== false,
   };
 }
 
