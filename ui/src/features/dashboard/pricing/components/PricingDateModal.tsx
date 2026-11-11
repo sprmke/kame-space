@@ -169,7 +169,7 @@ export function PricingDateModal({
           </div>
         ) : null}
 
-        <ResponsiveModalFooter className="border-border/60 bg-muted/20 flex-col gap-2 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <ResponsiveModalFooter className="border-border/60 bg-muted/20 flex-col gap-2 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           {mode === 'blocked' && onUnblock ? (
             <Button
               type="button"

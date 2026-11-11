@@ -48,12 +48,14 @@ See epics #101–#119 in historical [`archive/todos/BACKLOG_DRAFT.md`](./archive
 | [`architecture/deployment.md`](./architecture/deployment.md)                             | Deployment summary (links runbooks in archive)                                            |
 | [`architecture/supabase-capacity.md`](./architecture/supabase-capacity.md)               | Pro-plan limits, measured baseline, capacity estimates, scaling triggers                  |
 | [`architecture/ops-reports.md`](./architecture/ops-reports.md)                           | Weekly operations report: sources, schema, AI handoff, delivery, limits                   |
+| [`architecture/agent-skill-stack.md`](./architecture/agent-skill-stack.md)               | Global skill library shared by Claude Code, Cursor, Codex and OpenCode                    |
 | [`architecture/roadmap.md`](./architecture/roadmap.md)                                   | Roadmap / gaps                                                                            |
 | [`architecture/ai-dashboard-assistant.md`](./architecture/ai-dashboard-assistant.md)     | AI dashboard assistant — full tool catalog, tiers, RBAC, exclusions                       |
 | [`architecture/plans-feature-matrix.md`](./architecture/plans-feature-matrix.md)         | Plan/tier feature × entitlement matrix, client/server gate inventory                      |
 | [`architecture/feature-availability.md`](./architecture/feature-availability.md)         | Super-admin platform feature on/off catalog, server 503 gates, UI hooks                   |
 | [`architecture/pwa.md`](./architecture/pwa.md)                                           | PWA — service worker, Web Push, offline read + outbox, kill-switch                        |
 | [`architecture/unsaved-changes.md`](./architecture/unsaved-changes.md)                   | Unsaved-changes guard — leave / close confirmation for every editable form                |
+| [`architecture/modal-chrome.md`](./architecture/modal-chrome.md)                         | Modal chrome — canonical padding, header, close control for every dialog                  |
 | [`architecture/seo.md`](./architecture/seo.md)                                           | SEO + AI search visibility — route registry, crawler snapshot, canonical, robots, sitemap |
 | [`archive/operations/seo-runbook.md`](./archive/operations/seo-runbook.md)               | Monthly SEO checklist, console setup, IndexNow, what to do when indexing breaks           |
 | [`architecture/contextual-help.md`](./architecture/contextual-help.md)                   | Contextual help — InfoHint, How it works panels, intro cards, copy registry               |

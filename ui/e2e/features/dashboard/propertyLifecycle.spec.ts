@@ -56,6 +56,18 @@ test.describe('@ci property listing status', () => {
     await expect(section.getByRole('button', { name: 'Delete' })).toHaveCount(0);
   });
 
+  test('pause confirm explains the action in plain language', async ({ page }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access');
+    await page.goto(teamRbacPaths.settings);
+    const section = page.locator('#section-danger');
+    await section.getByRole('button', { name: 'Pause' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Pause new bookings?' })).toBeVisible();
+    await expect(page.getByText(/stops taking new bookings/i)).toBeVisible();
+    await expect(page.getByText('Guests who already booked', { exact: false })).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+  });
+
   test('archive is blocked while a stay is open', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await page.route('**/functions/v1/property-lifecycle*', async (route) => {
@@ -96,7 +108,7 @@ test.describe('@ci property listing status', () => {
     const section = page.locator('#section-danger');
     await section.getByRole('button', { name: 'Archive' }).click();
 
-    await expect(page.getByText('Finish or cancel these bookings first.')).toBeVisible();
+    await expect(page.getByText('Finish or cancel 1 open booking first.')).toBeVisible();
     await expect(page.getByText('Maria Santos')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Archive property' })).toBeDisabled();
   });

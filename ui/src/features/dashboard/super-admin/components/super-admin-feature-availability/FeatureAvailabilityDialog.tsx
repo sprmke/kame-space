@@ -205,13 +205,13 @@ export function FeatureAvailabilityDialog({
           className="max-h-[min(90dvh,44rem)] max-w-2xl sm:max-w-2xl"
           sheetLayout="split"
         >
-          <ResponsiveModalHeader className="shrink-0 px-4 sm:px-0">
+          <ResponsiveModalHeader className="shrink-0 px-4 sm:px-5">
             <ResponsiveModalTitle>
               {editingExisting ? `Edit ${entry.label}` : `Turn off ${entry.label}`}
             </ResponsiveModalTitle>
           </ResponsiveModalHeader>
 
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4 sm:px-0">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4 sm:px-5">
             <div className="space-y-1">
               <Label htmlFor="fa-reason">Reason</Label>
               <Select
@@ -336,7 +336,7 @@ export function FeatureAvailabilityDialog({
             </div>
           </div>
 
-          <ResponsiveModalFooter className="shrink-0 gap-2 px-4 sm:px-0">
+          <ResponsiveModalFooter className="shrink-0 gap-2 px-4 sm:px-5">
             <Button type="button" variant="outline" onClick={() => requestClose()}>
               Cancel
             </Button>

@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react';
 
 import {
+  MODAL_BODY_CLASS,
+  MODAL_FOOTER_CLASS,
+  MODAL_HEADER_CLASS,
+} from '@/components/ui/modal-chrome';
+import {
   ResponsiveModal,
   ResponsiveModalContent,
   ResponsiveModalDescription,
@@ -78,7 +83,8 @@ export function AdminDialogShell({
       >
         <ResponsiveModalHeader
           className={cn(
-            'border-border shrink-0 space-y-1 border-b px-5 py-3 text-left sm:px-6 sm:py-4',
+            'space-y-1 text-left',
+            MODAL_HEADER_CLASS,
             headerClassName
           )}
         >
@@ -94,7 +100,8 @@ export function AdminDialogShell({
 
         <div
           className={cn(
-            'min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 [-webkit-overflow-scrolling:touch] sm:px-6',
+            'min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]',
+            MODAL_BODY_CLASS,
             bodyClassName
           )}
         >
@@ -103,7 +110,8 @@ export function AdminDialogShell({
 
         <ResponsiveModalFooter
           className={cn(
-            'border-border shrink-0 gap-2 border-t px-5 py-3.5 pb-[max(env(safe-area-inset-bottom,0px),0.875rem)] sm:flex-row sm:justify-end sm:px-6 sm:py-4',
+            'gap-2',
+            MODAL_FOOTER_CLASS,
             footerClassName
           )}
         >

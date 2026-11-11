@@ -116,11 +116,11 @@ export function AiKillSwitchOverrideDialog({
     <>
       <ResponsiveModal open={open} onOpenChange={guardedOpenChange}>
         <ResponsiveModalContent className="max-w-lg sm:max-w-lg" sheetLayout="split">
-          <ResponsiveModalHeader className="shrink-0 px-4 sm:px-0">
+          <ResponsiveModalHeader className="shrink-0 px-4 sm:px-5">
             <ResponsiveModalTitle>Guardrail overrides for {organizationName}</ResponsiveModalTitle>
           </ResponsiveModalHeader>
 
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4 sm:px-0">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4 sm:px-5">
             <p className="text-muted-foreground text-xs">
               Inherit follows the platform-wide default below. Force on/off always wins for this
               organization, regardless of the platform setting.
@@ -153,7 +153,7 @@ export function AiKillSwitchOverrideDialog({
             ))}
           </div>
 
-          <ResponsiveModalFooter className="shrink-0 px-4 pb-4 sm:px-0 sm:pb-0">
+          <ResponsiveModalFooter className="shrink-0 px-4 pb-4 sm:px-5 sm:pb-0">
             <Button type="button" variant="outline" onClick={requestClose}>
               Cancel
             </Button>

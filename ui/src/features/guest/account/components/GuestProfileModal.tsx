@@ -69,11 +69,11 @@ export function GuestProfileModal({ open, onOpenChange }: GuestProfileModalProps
             'sm:h-[min(90dvh,40rem)] sm:max-h-[min(90dvh,40rem)] sm:w-[min(calc(100vw-1.5rem),28rem)] sm:max-w-[28rem] sm:p-0'
           )}
         >
-          <ResponsiveModalHeader className="border-border shrink-0 space-y-1 border-b px-5 pb-3.5 pr-14 pt-5 text-left sm:px-6">
+          <ResponsiveModalHeader className="border-border shrink-0 space-y-1 border-b px-4 pb-3 pr-14 pt-5 text-left sm:px-5">
             <ResponsiveModalTitle>Profile</ResponsiveModalTitle>
           </ResponsiveModalHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 sm:px-6">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
             <GuestProfileForm
               embedded
               hideFooter
@@ -82,7 +82,7 @@ export function GuestProfileModal({ open, onOpenChange }: GuestProfileModalProps
             />
           </div>
 
-          <ResponsiveModalFooter className="border-border shrink-0 gap-2 border-t px-5 py-3.5 sm:flex-row sm:justify-end sm:px-6">
+          <ResponsiveModalFooter className="border-border shrink-0 gap-2 border-t px-4 py-3 sm:flex-row sm:justify-end sm:px-5">
             <Button
               type="button"
               variant="outline"

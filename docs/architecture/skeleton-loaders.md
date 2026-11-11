@@ -33,26 +33,27 @@ Nested layouts with lazy children keep their own `Suspense` around `<Outlet />` 
 
 ## Module map (eager skeletons)
 
-| File                            | Domains                                                                                                                                                          |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AdminSkeletons.tsx`            | Shared admin primitives, list toolbar, bookings, finance, settings nav, listings, org dashboard, plans, team, reviews (tab-aware table/cards/empty), guest inbox |
-| `OrgListingSkeleton.tsx`        | Org Properties / Parkings page body, org listing table / grid / list views (inventory + analytics variants)                                                      |
-| `AnalyticsSkeleton.tsx`         | Org + property analytics                                                                                                                                         |
-| `AnnouncementsSkeleton.tsx`     | Host announcements list / detail body                                                                                                                            |
-| `BookingsExtrasSkeleton.tsx`    | Stage KPI strip, kanban                                                                                                                                          |
-| `FinancePageSkeleton.tsx`       | Property/parking Finance and Maintenance data regions (KPIs, cash-flow / breakdown, toolbar, responsive ledger view)                                             |
-| `NotificationsSkeleton.tsx`     | Property/parking Notifications hub — four KPI cards, Activity/Telegram tab bar, activity rows                                                                    |
-| `MarketingSkeletons.tsx`        | Marketing Studio — library, template browser, AI Studio home + conversation, themes, publish history, and design/video/calendar editor chrome                    |
-| `PricingSkeleton.tsx`           | Property/parking pricing body — real-month week rows with day + price cells, property fee rows, parking payout lines + direct-link card                          |
-| `ParkingSkeleton.tsx`           | Parking dashboard, booking detail                                                                                                                                |
-| `GuestMarketingSkeleton.tsx`    | Property detail, development detail, browse grids, account gate, property chat                                                                                   |
-| `HelpSupportSkeleton.tsx`       | Help & Support page (module nav, intro, FAQs / guides / tickets), documentation topics                                                                           |
-| `SuperAdminSkeletons.tsx`       | List/overview/audit bodies, settings cards, card lists, host detail, organization hub                                                                            |
-| `AiAssistantSkeleton.tsx`       | AI assistant panel chunk                                                                                                                                         |
-| `GuestPageSkeletons.tsx`        | Guest form page                                                                                                                                                  |
-| `GuestAccountSkeletons.tsx`     | Profile form, voucher wallet rows                                                                                                                                |
-| `ImportWizardSkeleton.tsx`      | Import wizard commit step                                                                                                                                        |
-| `TemplateWorkbenchSkeleton.tsx` | Property Templates workbench — library rail (search, grouped rows) beside the editor pane; rail only below `lg`                                                  |
+| File                                | Domains                                                                                                                                                          |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AdminSkeletons.tsx`                | Shared admin primitives, list toolbar, bookings, finance, settings nav, listings, org dashboard, plans, team, reviews (tab-aware table/cards/empty), guest inbox |
+| `OrgListingSkeleton.tsx`            | Org Properties / Parkings page body, org listing table / grid / list views (inventory + analytics variants)                                                      |
+| `AnalyticsSkeleton.tsx`             | Org + property analytics                                                                                                                                         |
+| `AnnouncementsSkeleton.tsx`         | Host announcements list / detail body                                                                                                                            |
+| `BookingsExtrasSkeleton.tsx`        | Stage KPI strip, kanban                                                                                                                                          |
+| `FinancePageSkeleton.tsx`           | Property/parking Finance and Maintenance data regions (KPIs, cash-flow / breakdown, toolbar, responsive ledger view)                                             |
+| `NotificationsSkeleton.tsx`         | Property/parking Notifications hub — four KPI cards, Activity/Telegram tab bar, activity rows                                                                    |
+| `MarketingSkeletons.tsx`            | Marketing Studio — library, template browser, AI Studio home + conversation, themes, publish history, and design/video/calendar editor chrome                    |
+| `PricingSkeleton.tsx`               | Property/parking pricing body — real-month week rows with day + price cells, property fee rows, parking payout lines + direct-link card                          |
+| `ParkingSkeleton.tsx`               | Parking dashboard, booking detail                                                                                                                                |
+| `GuestMarketingSkeleton.tsx`        | Property detail, development detail, browse grids, account gate, property chat                                                                                   |
+| `HelpSupportSkeleton.tsx`           | Help & Support page (module nav, intro, FAQs / guides / tickets), documentation topics                                                                           |
+| `SuperAdminSkeletons.tsx`           | List/overview/audit bodies, settings cards, card lists, host detail, organization hub                                                                            |
+| `AiAssistantSkeleton.tsx`           | AI assistant panel chunk                                                                                                                                         |
+| `GuestPageSkeletons.tsx`            | Guest form page                                                                                                                                                  |
+| `GuestAccountSkeletons.tsx`         | Profile form, voucher wallet rows                                                                                                                                |
+| `ImportWizardSkeleton.tsx`          | Import wizard commit step                                                                                                                                        |
+| `TemplateWorkbenchSkeleton.tsx`     | Property Templates workbench — library rail (search, grouped rows) beside the editor pane; rail only below `lg`                                                  |
+| `PropertyListingStatusSkeleton.tsx` | Property Settings → Listing status card (badge, actions, optional delete row) and lifecycle confirm sheet bodies while impact loads                              |
 
 ### Reviews list state
 

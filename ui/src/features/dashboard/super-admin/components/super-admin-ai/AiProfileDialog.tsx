@@ -105,13 +105,13 @@ export function AiProfileDialog({ open, onOpenChange, profile }: AiProfileDialog
           className="max-h-[min(90dvh,44rem)] max-w-2xl sm:max-w-2xl"
           sheetLayout="split"
         >
-          <ResponsiveModalHeader className="shrink-0 px-4 sm:px-0">
+          <ResponsiveModalHeader className="shrink-0 px-4 sm:px-5">
             <ResponsiveModalTitle>
               {profile ? `Edit ${profile.name}` : 'New profile'}
             </ResponsiveModalTitle>
           </ResponsiveModalHeader>
 
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4 sm:px-0">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4 sm:px-5">
             {profile ? (
               <p className="text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 text-sm">
                 Applies to {profile.usage.affectedOrganizations}{' '}
@@ -160,7 +160,7 @@ export function AiProfileDialog({ open, onOpenChange, profile }: AiProfileDialog
             />
           </div>
 
-          <ResponsiveModalFooter className="shrink-0 px-4 pb-4 sm:px-0 sm:pb-0">
+          <ResponsiveModalFooter className="shrink-0 px-4 pb-4 sm:px-5 sm:pb-0">
             <Button type="button" variant="outline" onClick={requestClose}>
               Cancel
             </Button>

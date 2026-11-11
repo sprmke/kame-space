@@ -81,7 +81,7 @@ export function WorkflowProgressMapModal({
         sheetLayout="split"
         className="flex max-h-[min(92dvh,48rem)] w-full max-w-[min(calc(100vw-1.5rem),42rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
       >
-        <ResponsiveModalHeader className="border-separator shrink-0 space-y-2 border-b px-4 pb-3 pt-1 sm:px-6 sm:pb-3.5">
+        <ResponsiveModalHeader className="border-separator shrink-0 space-y-2 border-b px-4 pb-3 pt-1 sm:px-5 sm:pb-3.5">
           <div className="flex min-h-9 items-center justify-between gap-3">
             <ResponsiveModalTitle className="min-w-0 truncate text-left">
               Booking Workflow
@@ -101,7 +101,7 @@ export function WorkflowProgressMapModal({
           </div>
           <p className="text-muted-foreground text-xs leading-snug">{planSummary}</p>
         </ResponsiveModalHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-4">
           <BookingStepper
             booking={booking}
             documentRequirements={documentRequirements}

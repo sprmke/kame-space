@@ -211,7 +211,7 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
             if (busy) e.preventDefault();
           }}
         >
-          <div className="border-border/60 shrink-0 space-y-3.5 border-b px-4 pb-3.5 pt-[max(env(safe-area-inset-top,0px),0.875rem)] sm:px-5 sm:pb-4">
+          <div className="border-border/60 shrink-0 space-y-3.5 border-b px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),0.875rem)] sm:px-5 sm:pb-3">
             <ResponsiveModalHeader className="space-y-2.5 pr-0 text-left">
               <ResponsiveModalTitle className="flex flex-wrap items-center gap-2 pr-12 sm:pr-14">
                 <span>{summary?.label ?? anchor.label}</span>
@@ -390,7 +390,7 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
             if (update.isPending) e.preventDefault();
           }}
         >
-          <ResponsiveModalHeader className="border-border shrink-0 space-y-0 border-b px-4 pb-3.5 pt-[max(env(safe-area-inset-top,0px),1rem)] text-left sm:px-5 sm:pt-5">
+          <ResponsiveModalHeader className="border-border shrink-0 space-y-0 border-b px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),1rem)] text-left sm:px-5 sm:pt-5">
             <ResponsiveModalTitle>Edit occurrence</ResponsiveModalTitle>
             {wizard.stepLabels.length > 1 ? (
               <nav aria-label="Transaction steps" className="mt-3">
@@ -412,7 +412,7 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
               />
             </div>
           ) : null}
-          <ResponsiveModalFooter className="border-border shrink-0 border-t px-4 py-3.5 sm:px-5">
+          <ResponsiveModalFooter className="border-border shrink-0 border-t px-4 py-3 sm:px-5">
             <WizardModalActions
               onCancel={requestEditClose}
               onBack={() => formRef.current?.goBack()}

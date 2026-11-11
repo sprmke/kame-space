@@ -163,13 +163,13 @@ export function AdminParkingNewBookingModal({
           'sm:w-[min(90vw,40rem)] sm:max-w-[40rem] sm:p-0'
         )}
       >
-        <ResponsiveModalHeader className="border-border shrink-0 border-b px-5 pb-3 pt-4 text-left sm:px-6">
+        <ResponsiveModalHeader className="border-border shrink-0 border-b px-4 pb-3 pt-4 text-left sm:px-5">
           <ResponsiveModalTitle className="text-foreground text-base font-semibold">
             New booking
           </ResponsiveModalTitle>
         </ResponsiveModalHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 [-webkit-overflow-scrolling:touch] sm:px-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [-webkit-overflow-scrolling:touch] sm:px-5">
           {view === 'success' && result ? (
             <AdminBookingSuccessSummary
               title="Booking created"

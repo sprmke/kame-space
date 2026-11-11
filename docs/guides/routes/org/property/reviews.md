@@ -30,7 +30,7 @@ Route: `/org/:orgSlug/property/:propertySlug/reviews`
 
 Property operators manage stay reviews here: published guest reviews of this listing, reviews they wrote about guests, and guests still waiting for a host review during the 14-day window.
 
-Page order matches every other admin list (Bookings, Finance, Maintenance): **KPI cards → tabs → toolbar → table or cards → pagination**.
+Page order matches every other admin list (Bookings, Finance, Maintenance): **KPI cards → tabs → toolbar → table or cards → pagination**. Every band is spaced by the one page rhythm (`MobilePageStack`: 14 / 16 / 20px at phone / tablet / desktop), so the tab row and the toolbar sit the same distance apart as the toolbar and the table. `FloatingToolbar` only stacks its children on phone/tablet — on desktop a toolbar renders a single row, so it adds no top margin.
 
 This page and the [org rollup](../reviews.md) are the same component — `ReviewsListPage` with `scope="property"` / `scope="org"`, the way Bookings does it. Changes to the tabs, toolbar, tables, cards or detail sheet land on both; keep that in mind when editing either. Auto-review settings are **not** in the page body; they live in a sheet opened from the page header, so the list stays a list.
 

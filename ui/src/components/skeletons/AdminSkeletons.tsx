@@ -141,9 +141,7 @@ export function AppSettingsNavLayoutSkeleton({
             <div key={i} className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2.5">
               <Skeleton className="size-4 shrink-0 rounded" />
               {navLabels?.[i] ? (
-                <span className="text-muted-foreground truncate text-sm font-medium">
-                  {navLabels[i]}
-                </span>
+                <span className="text-foreground truncate text-sm font-medium">{navLabels[i]}</span>
               ) : (
                 <Skeleton className="h-3 max-w-[7rem] flex-1" />
               )}
