@@ -481,7 +481,7 @@ browser-observed request duration, and the improvement is **its position in the 
 handler: measured directly it still costs 2986-3522 ms, because on the single-owner test tenant
 the cost is the seat reconcile rather than the per-member lookups the N+1 fix targets.
 
-### Current state, measured with CDP
+### State at that point, measured with CDP (before the prefetch below)
 
 | Metric                                       | Value                          |
 | -------------------------------------------- | ------------------------------ |
@@ -575,11 +575,34 @@ behind ten chrome calls. Two ways forward, in order of value:
    from four calls to one. Larger, and less valuable now that the two genuinely slow calls are
    fixed.
 
-### Pending measurement
+### Measured after the prefetch, production
 
-The `dashboard-stats` prefetch is merged but not deployed. Re-run `perf:boot-durations` after the
-release and compare two numbers only: where `dashboard-stats` starts relative to `app-settings`,
-and `route:content`.
+Same probe account, same 4x CPU throttle, CDP counting, two independent three-run sets.
+
+| Metric                  | Before  | After            | Change    |
+| ----------------------- | ------- | ---------------- | --------- |
+| `route:content` median  | 5132 ms | **3215-3433 ms** | **-33%**  |
+| `dashboard-stats` start | 2976 ms | **1356 ms**      | **-54%**  |
+| Distinct boot calls     | 24      | 24               | no change |
+
+Raw runs. Set one: 3215, 3888, 3057. Set two: 6954, 3340, 3433. The 6954 is a first-load outlier
+and the conservative figure quoted above is the higher median of the two sets.
+
+The call count did not change, and that is the point: the win is ordering, not volume.
+`dashboard-stats` used to start 320 ms after the chrome burst had taken the connections; it now
+starts 150 ms after the session context returns, ahead of everything else.
+
+```
+ 279 ms  get-session-context starts
+ 878 ms  get-session-context ends
+1356 ms  dashboard-stats starts   <- was 2976
+1945 ms  dashboard-stats ends
+1534 ms  chrome burst starts (app-settings, org-plan, list-parkings, ...)
+3215 ms  route:content
+```
+
+Content now lands about 1.3 s after the stats response, which is React render and paint rather
+than network. The remaining structural option is collapsing the burst; it is worth less now.
 
 The opt-in team query shipped in #422. It did not remove the team calls, and the trace above
 explains why: they come from the setup guide, which only mounts when it is open.
