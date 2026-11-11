@@ -334,6 +334,49 @@ that graph and needs elimination rather than grep. `guest-profile` fires on an a
 because the guest auth provider wraps every route. Both are recorded so the next pass starts from
 evidence.
 
+## 13. Decisions, settled
+
+**Date:** 2026-11-11. Both were open questions in the plan; the owner delegated the call.
+
+### D-2, local JWT verification: **not doing it**
+
+`getUser` costs 84-121 ms, and after the token cache and the verified-user threading it is paid
+**once per burst**, not per call. Against that saving, `getUser` is what makes sign-out, session
+revocation and account disable take effect immediately. Local ES256 verification would leave each
+of those accepting reads for up to the token lifetime, measured at **3600 s**, on a surface that
+returns guest names, contact details and bookings.
+
+Bounded, quantified, and on the wrong side of the trade. Revisit only with a stated maximum
+offboarding delay and reads-only scope.
+
+### Realtime Postgres Changes: **not changing it now**
+
+Realtime `list_changes` is **85.02%** of all database time, 12.88M ms across 1,664,792 calls. It
+is also the largest single number in this document.
+
+It is not, however, user-facing latency today: index and table cache hit rates are both `1.00`
+and the slow handlers in the call timeline are round trips, not query time. Moving to Broadcast
+from Database triggers changes how inbox, notifications and guest chat receive updates, which
+needs its own realtime test pass.
+
+So: measured, prioritised, and deliberately deferred to a focused change rather than folded into
+a latency pass. The number stays here so it is not forgotten.
+
+## 14. Credentials available on this machine
+
+Checked 2026-11-11, read-only.
+
+| Credential                 | Where                            | Status                                                                     |
+| -------------------------- | -------------------------------- | -------------------------------------------------------------------------- |
+| `SENTRY_AUTH_TOKEN`        | `supabase/.env.management.local` | **works**, 2 projects reachable                                            |
+| `POSTHOG_PERSONAL_API_KEY` | `supabase/.env.management.local` | valid but **project-scoped and missing `query:read`**, so HogQL is refused |
+| `SUPABASE_ACCESS_TOKEN`    | `supabase/.env.management.local` | works                                                                      |
+| `VERCEL_TOKEN` (env)       | `supabase/.env.management.local` | invalid; the working credential is the Vercel CLI login                    |
+
+The weekly report's Sentry source is unblocked. Its PostHog source needs a personal API key with
+**`query:read`** (and `project:read`); the existing key cannot run the HogQL queries the report
+depends on.
+
 ## Release state
 
 **2026-11-10.** PR #371 synced `main` to `develop`'s tree and shipped the UI side.
