@@ -13,13 +13,15 @@ Route: `/properties/:propertySlug/success?bookingId=` (legacy `/success?property
 
 ## Progress overview
 
-| Section          | E2E save | Validation | Docs       | Notes                                                           |
-| ---------------- | -------- | ---------- | ---------- | --------------------------------------------------------------- |
-| Redirect         | ✅       | —          | Documented | Redirects to the trip page when the booking is known            |
-| Booking summary  | —        | —          | Documented | Read-only; from `navigate` state                                |
-| Brand header     | ✅       | —          | Documented | `get-guest-payment-info` logo                                   |
-| Guard / redirect | ✅       | —          | Documented | Requires `bookingId`                                            |
-| Mobile shell     | —        | —          | Documented | `MainLayout` bottom tab bar reappears here (no dominant action) |
+| Section            | E2E save | Validation | Docs       | Notes                                                   |
+| ------------------ | -------- | ---------- | ---------- | ------------------------------------------------------- |
+| Redirect           | ✅       | —          | Documented | Forwards to the trip page whenever the booking resolves |
+| Loading skeleton   | ✅       | —          | Documented | Only while a legacy link's property slug is resolved    |
+| Slug resolution    | ✅       | —          | Documented | `resolveBookingPropertySlug` for links with no property |
+| Not-found fallback | ✅       | —          | Documented | "We couldn't open this booking" + Your trips, Browse    |
+
+The page renders **no booking content of its own**. It exists to forward old links, so there is
+nothing to save, validate or lay out beyond the states above.
 
 ---
 
@@ -50,42 +52,41 @@ received, that the host is reviewing it, and how long a wait to expect.
 - Q: What should the guest do after submitting?
   A: Wait for the "Request received" email, then watch for the confirmation email. They can edit
   or cancel the request from the trip page, or message the host.
-- Q: The old confirmation page says "Next Steps" and mentions Messenger or Airbnb.
-  A: Older links still show that page. New submissions do not.
+- Q: A guest opened an old confirmation link and ended up on their trip page.
+  A: That is intended. Old confirmation links forward to the trip page, which is the single place
+  for a booking.
 
 ---
 
 ## Page behavior
 
-### Fields (booking summary card, when `navigate` state is present)
+The component has four states and no other markup.
 
-| Field                          | Source                                                           |
-| ------------------------------ | ---------------------------------------------------------------- |
-| Nights                         | Computed from check-in/check-out                                 |
-| Check-in / check-out date+time | `bookingData.checkInDate/checkOutDate/checkInTime/checkOutTime`  |
-| Guests (adults/children)       | `bookingData.numberOfAdults/numberOfChildren`                    |
-| Guest names                    | `bookingData.primaryGuestName` + `guest2-5Name`                  |
-| Contact                        | `bookingData.guestEmail`, `guestPhoneNumber`                     |
-| Pet                            | `bookingData.hasPets` + `petName` (shown only if bringing a pet) |
+| State                    | When                                                       | Renders                                                                |
+| ------------------------ | ---------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Redirect, property known | `?bookingId=` and the route already carries a property     | `navigate(tripPath, { replace: true })`, nothing painted               |
+| Resolving slug           | `?bookingId=` from a legacy global link, no property scope | `PublicFullBleedPageSkeleton` labelled "Opening your booking"          |
+| Redirect to calendar     | no `?bookingId=`                                           | `navigate(calendarPath, { replace: true })`, or `/properties`          |
+| Not found                | slug resolution failed for the booking id                  | "We couldn't open this booking", **Your trips**, **Browse properties** |
 
 ### Load path
 
 1. **New submissions never come here.** `GuestForm.onSubmit` navigates to
    `guestTripWelcomePath(propertySlug, bookingId)` → `/properties/:slug/trip?bookingId=…&welcome=1`.
-2. **Legacy links:** if `?bookingId=` and the property slug are known, this page redirects to
-   the trip page for that booking.
-3. **No booking id:** redirects to the property's calendar page (or `/properties` if no property
-   scope).
-4. The summary card reads `location.state.bookingData`, which only exists right after a submit.
-   On a direct load the card is omitted; the page still renders the brand header and "Next Steps".
+2. **Legacy links with a property:** redirect straight to the trip page for that booking.
+3. **Legacy global links** (`/success?bookingId=`): resolve the property from the booking, then
+   redirect, or fall back to the not-found state.
+4. **No booking id:** the guest is sent to the calendar for the property, or the listings index.
 
 ### Behavior / edge cases
 
-- **View your booking** opens the [trip page](./trip.md). The access token stored at submit lets
-  anonymous guests in.
-- The "Next Steps" copy tells the guest the host is reviewing the request and points them at the
-  right channel (Airbnb, Facebook, or the trip page's message action) for questions. It never
-  mentions GAF or a building administration, because not every property requires one.
+- Every redirect uses `replace: true`, so Back does not bounce the guest between `/success` and
+  the trip page.
+- The not-found state offers **Your trips** (`/account/trips`) and **Browse properties**, so a
+  guest with a dead link is never stuck.
+- The old summary card, brand header, "Next Steps" copy and the parking CTA are gone. Parking now
+  lives on the trip page as a **Find parking** shortcut while the host reviews (see
+  [trip.md](./trip.md)).
 - The guest still receives one email on submit: **Request received**. Hosts can turn it off in
   Notifications → email automations, and edit its body in the Templates workbench.
 
@@ -93,9 +94,9 @@ received, that the host is reviewing it, and how long a wait to expect.
 
 ## API reference
 
-| Action          | Endpoint                     |
-| --------------- | ---------------------------- |
-| Branding / logo | `GET get-guest-payment-info` |
+| Action                | Endpoint                                             |
+| --------------------- | ---------------------------------------------------- |
+| Resolve property slug | `resolveBookingPropertySlug` (`get-public-property`) |
 
 ---
 
