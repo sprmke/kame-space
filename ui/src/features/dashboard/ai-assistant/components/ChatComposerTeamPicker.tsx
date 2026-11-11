@@ -84,7 +84,7 @@ function OrgTeamPicker(props: ComposerPickerSharedProps) {
 }
 
 function PropertyTeamPicker(props: ComposerPickerSharedProps) {
-  const { data, isLoading } = usePropertyTeam();
+  const { data, isLoading } = usePropertyTeam({ enabled: true });
   const members = (data?.members ?? []).map(toTeamRow);
   return <TeamMemberListPicker {...props} members={members} isLoading={isLoading} />;
 }
