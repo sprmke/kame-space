@@ -72,7 +72,6 @@ function truncateTitle(text: string, max: number): string {
   return `${(lastSpace > max * 0.55 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
 }
 
-
 /** Locale of the public site. Every page is Philippine English. */
 export const OG_LOCALE = 'en_PH';
 

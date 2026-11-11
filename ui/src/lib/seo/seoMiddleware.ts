@@ -103,7 +103,9 @@ function num(value: unknown): number | null {
 }
 
 function records(value: unknown): Json[] {
-  return Array.isArray(value) ? (value.filter((row) => row && typeof row === 'object') as Json[]) : [];
+  return Array.isArray(value)
+    ? (value.filter((row) => row && typeof row === 'object') as Json[])
+    : [];
 }
 
 function strings(value: unknown): string[] {
@@ -343,7 +345,10 @@ async function loadListingRoute(
       });
     }
     if (location) {
-      links.push({ href: `${FAMILY_LIST_PATHS.property}?where=${encodeURIComponent(location)}`, label: `Stays in ${location}` });
+      links.push({
+        href: `${FAMILY_LIST_PATHS.property}?where=${encodeURIComponent(location)}`,
+        label: `Stays in ${location}`,
+      });
     }
     // Related stays in the same city, so a crawler has a path deeper into the catalogue.
     for (const related of await relatedListings(deps, 'property', city, slug)) {
@@ -597,7 +602,10 @@ async function neighbouringPlaces(
         const slug = str(group.locationSlug);
         const name = str(group.place);
         if (!slug || !name || slug === place) return null;
-        return { href: `${FAMILY_LIST_PATHS[family]}/in/${slug}`, label: `${familyLabel} in ${name}` };
+        return {
+          href: `${FAMILY_LIST_PATHS[family]}/in/${slug}`,
+          label: `${familyLabel} in ${name}`,
+        };
       })
       .filter((link): link is SnapshotLink => link !== null)
       .slice(0, 6);
@@ -781,9 +789,9 @@ const LLMS_SUMMARY =
   'Book condos, homes and parking across the Philippines. Browse by place, check dates and reserve online with the host.';
 
 /** Top places per family, from the same index the list pages read. Best effort. */
-async function llmsPlaces(deps: SeoMiddlewareDeps): Promise<
-  Array<{ label: string; path: string; count?: number }>
-> {
+async function llmsPlaces(
+  deps: SeoMiddlewareDeps
+): Promise<Array<{ label: string; path: string; count?: number }>> {
   const families: Array<[RouteFamily, string]> = [
     ['property', 'properties'],
     ['parking', 'parkings'],
@@ -987,7 +995,9 @@ async function resolveRoute(pathname: string, deps: SeoMiddlewareDeps): Promise<
     return resolved ? { kind: 'page', ...resolved } : { kind: 'missing' };
   }
 
-  const developmentSubPage = pathname.match(/^\/developments\/([a-z0-9-]+)\/(properties|parking)\/?$/);
+  const developmentSubPage = pathname.match(
+    /^\/developments\/([a-z0-9-]+)\/(properties|parking)\/?$/
+  );
   if (developmentSubPage?.[1] && developmentSubPage[2]) {
     const resolved = await loadDevelopmentSubPage(
       developmentSubPage[1],
@@ -1144,7 +1154,10 @@ export async function handleSeoRequest(
         extra.push(hostOfferCatalog(resolved.snapshot, siteOrigin, canonicalUrl));
         break;
       default:
-        if (resolved.snapshot.id.endsWith('-place') || resolved.snapshot.id.startsWith('development-')) {
+        if (
+          resolved.snapshot.id.endsWith('-place') ||
+          resolved.snapshot.id.startsWith('development-')
+        ) {
           extra.push(itemListNodes(resolved.snapshot));
         }
         break;

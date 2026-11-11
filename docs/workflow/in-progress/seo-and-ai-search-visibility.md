@@ -500,15 +500,15 @@ and `/llms.txt` serves.
 
 ## 7. Docs, rules and governance (same PRs as the code)
 
-- [ ] `docs/architecture/overview.md` + `docs/PROJECT.md` (public listing search / SEO section): registry, snapshot rendering, canonical origin, llms.txt, IndexNow, slug redirects, new env vars.
-- [ ] New `docs/architecture/seo.md`: how public SEO works end to end and how to add a public route.
-- [ ] `docs/architecture/validation-and-env.md`: `VITE_PUBLIC_SITE_ORIGIN`, `VITE_SUPABASE_IMAGE_TRANSFORMS` (prod on), `INDEXNOW_KEY`.
-- [ ] Route guides (`route-guides` skill): `index-landing.md`, `properties.md`, `parkings.md`, `developments.md`, `legal.md`, for-hosts and host page guides, property / parking settings guides for the alt text field and search preview.
-- [ ] `docs/archive/operations/migration-runbook.md`: slug redirect migration, diacritic slug function, alt text and image backfills.
-- [ ] `docs/archive/operations/seo-runbook.md` (SEO-19.7).
-- [ ] Support content (`support-content` skill): host FAQ "How do guests find my listing on Google and AI search?", "What is alt text and do I need it?", "What happens to my link if I rename my listing?"; run `check:support-content` and `check:ai-knowledge-coverage`.
-- [ ] New always-on rule `.cursor/rules/seo.mdc` + skill `seo` (Claude mirror): every new public route must be added to the registry; `check:seo-routes` enforces it.
-- [ ] `docs/workflow/intake/_to-plan.md` status sync via `workflow-intake-scratchpads` when this starts.
+- [x] `docs/architecture/overview.md` + `docs/PROJECT.md` (public listing search / SEO section): registry, snapshot rendering, canonical origin, llms.txt, IndexNow, slug redirects, new env vars.
+- [x] New `docs/architecture/seo.md`: how public SEO works end to end and how to add a public route.
+- [x] `docs/architecture/validation-and-env.md`: `VITE_CANONICAL_APP_ORIGIN` (reused instead of a new `VITE_PUBLIC_SITE_ORIGIN`, see Decisions 5), `VITE_SUPABASE_IMAGE_TRANSFORMS` (prod on), `INDEXNOW_KEY` + `INDEXNOW_CRON_SECRET` (see the seo runbook).
+- [x] Route guides (`route-guides` skill): `index-landing.md`, `properties.md`, `parkings.md`, `developments.md`, `legal.md`, for-hosts and host page guides, property / parking settings guides for the alt text field and search preview.
+- [x] `docs/archive/operations/migration-runbook.md`: slug redirect migration, diacritic slug function, alt text and image backfills.
+- [x] `docs/archive/operations/seo-runbook.md` (SEO-19.7).
+- [x] Support content (`support-content` skill): host FAQ "How do guests find my listing on Google and AI search?", "What is alt text and do I need it?", "What happens to my link if I rename my listing?"; run `check:support-content` and `check:ai-knowledge-coverage`.
+- [x] New always-on rule `.cursor/rules/seo.mdc` + skill `seo` (Claude mirror): every new public route must be added to the registry; `check:seo-routes` enforces it.
+- [x] `docs/workflow/intake/_to-plan.md` status sync via `workflow-intake-scratchpads` when this starts. No scratchpad entry exists for this plan (`grep -i seo` over `_to-plan.md`, `_to-dos.md`, `_to-prompt.md` is empty), so there is nothing to sync.
 
 Plans/RBAC: N/A for Phases 0-8 (platform-wide, no gated capability). Phase 9 host features:
 decide in that PR (recommend all plans, existing public page edit permission).

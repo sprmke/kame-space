@@ -71,9 +71,7 @@ for (const path of missingInDeno) {
   fail(`Sitemap is missing "${path}" (indexable + inSitemap in the registry).`);
 }
 for (const path of missingInRegistry) {
-  fail(
-    `publicSitemap.ts lists "${path}" but no indexable static route in the registry owns it.`
-  );
+  fail(`publicSitemap.ts lists "${path}" but no indexable static route in the registry owns it.`);
 }
 
 // 3. Indexable routes must be crawlable and described.

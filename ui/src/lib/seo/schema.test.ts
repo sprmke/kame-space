@@ -167,8 +167,12 @@ describe('enriched listing entities', () => {
   });
 
   it('keeps aggregateRating only when reviews exist', () => {
-    expect(buildPropertyJsonLd({ ...base, rating: 4.8, reviewCount: 0 }).aggregateRating).toBeUndefined();
-    expect(buildPropertyJsonLd({ ...base, rating: 4.8, reviewCount: 3 }).aggregateRating).toBeDefined();
+    expect(
+      buildPropertyJsonLd({ ...base, rating: 4.8, reviewCount: 0 }).aggregateRating
+    ).toBeUndefined();
+    expect(
+      buildPropertyJsonLd({ ...base, rating: 4.8, reviewCount: 3 }).aggregateRating
+    ).toBeDefined();
   });
 });
 
@@ -179,11 +183,7 @@ describe('combineJsonLd', () => {
   });
 
   it('wraps several nodes in one @graph', () => {
-    const graph = combineJsonLd([
-      { '@type': 'Organization' },
-      null,
-      { '@type': 'WebSite' },
-    ]);
+    const graph = combineJsonLd([{ '@type': 'Organization' }, null, { '@type': 'WebSite' }]);
     expect((graph?.['@graph'] as unknown[]).length).toBe(2);
   });
 

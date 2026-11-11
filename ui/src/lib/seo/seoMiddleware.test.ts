@@ -73,7 +73,9 @@ describe('handleSeoRequest', () => {
         String(url).includes('place-groups')
           ? jsonResponse({
               // Real envelope from list-public-place-groups.
-              groups: [{ place: 'Makati', locationSlug: 'makati', title: 'Homes in Makati', total: 7 }],
+              groups: [
+                { place: 'Makati', locationSlug: 'makati', title: 'Homes in Makati', total: 7 },
+              ],
             })
           : jsonResponse({
               data: [
@@ -92,7 +94,9 @@ describe('handleSeoRequest', () => {
     const mapText = await map!.text();
     expect(mapText).toContain('# Old Brand');
     expect(mapText).toContain('https://kamespace.com/properties');
-    expect(mapText).toContain('- [Makati stays](https://kamespace.com/properties/in/makati): 7 listings');
+    expect(mapText).toContain(
+      '- [Makati stays](https://kamespace.com/properties/in/makati): 7 listings'
+    );
 
     const full = await handleSeoRequest(req('/llms-full.txt', BROWSER), deps(fetchImpl), shell);
     const fullText = await full!.text();
@@ -112,10 +116,14 @@ describe('handleSeoRequest', () => {
   });
 
   it('serves the IndexNow key file when configured', async () => {
-    const res = await handleSeoRequest(req('/abc123.txt', BROWSER), {
-      ...deps(vi.fn()),
-      indexNowKey: 'abc123',
-    }, shell);
+    const res = await handleSeoRequest(
+      req('/abc123.txt', BROWSER),
+      {
+        ...deps(vi.fn()),
+        indexNowKey: 'abc123',
+      },
+      shell
+    );
     expect(await res!.text()).toBe('abc123\n');
   });
 
@@ -123,9 +131,7 @@ describe('handleSeoRequest', () => {
     for (const ua of [BROWSER, BOT]) {
       const res = await handleSeoRequest(req('/Properties/Monaco-2604', ua), deps(vi.fn()), shell);
       expect(res!.status).toBe(301);
-      expect(res!.headers.get('location')).toBe(
-        'https://kamespace.com/properties/monaco-2604'
-      );
+      expect(res!.headers.get('location')).toBe('https://kamespace.com/properties/monaco-2604');
     }
   });
 
@@ -215,7 +221,9 @@ describe('handleSeoRequest', () => {
     );
     const res = await handleSeoRequest(req('/properties/in/san-fernando'), deps(fetchImpl), shell);
     const html = await res!.text();
-    expect(fetchImpl.mock.calls[0]![0]).toContain('list-public-properties?locationSlug=san-fernando');
+    expect(fetchImpl.mock.calls[0]![0]).toContain(
+      'list-public-properties?locationSlug=san-fernando'
+    );
     expect(html).toContain('<h1>Condos and homes for rent in San Fernando, Pampanga</h1>');
     expect(html).toContain('href="https://kamespace.com/properties/monaco-2604"');
   });
@@ -288,7 +296,9 @@ describe('handleSeoRequest', () => {
 
     const res = await handleSeoRequest(req('/properties/old-name'), deps(fetchImpl), shell);
     expect(res!.status).toBe(301);
-    expect(res!.headers.get('location')).toBe('https://kamespace.com/properties/monaco-2604-renamed');
+    expect(res!.headers.get('location')).toBe(
+      'https://kamespace.com/properties/monaco-2604-renamed'
+    );
   });
 
   it('answers a real 404 for a slug the catalogue does not have', async () => {
@@ -313,7 +323,9 @@ describe('handleSeoRequest', () => {
 
     const ok = vi.fn().mockResolvedValue(jsonResponse({ data: { name: 'x' } }));
     expect(await handleSeoRequest(req('/properties/x', BOT, 'HEAD'), deps(ok), shell)).toBeNull();
-    expect(await handleSeoRequest(req('/properties/x'), deps(ok), () => Promise.resolve(null))).toBeNull();
+    expect(
+      await handleSeoRequest(req('/properties/x'), deps(ok), () => Promise.resolve(null))
+    ).toBeNull();
 
     // Private routes are never snapshotted; the SPA handles them.
     for (const path of ['/account/profile', '/properties/x/form', '/for-hosts/login', '/search']) {

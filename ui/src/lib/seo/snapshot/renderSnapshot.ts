@@ -61,14 +61,16 @@ export const SNAPSHOT_FOOTER: readonly NavItem[] = [
 
 function renderNav(origin: string): string {
   const items = SNAPSHOT_NAV.map(
-    (item) => `<li><a href="${escapeHtml(origin)}${escapeHtml(item.href)}">${escapeHtml(item.label)}</a></li>`
+    (item) =>
+      `<li><a href="${escapeHtml(origin)}${escapeHtml(item.href)}">${escapeHtml(item.label)}</a></li>`
   ).join('');
   return `<header><nav aria-label="Main"><ul>${items}</ul></nav></header>`;
 }
 
 function renderFooter(origin: string): string {
   const items = SNAPSHOT_FOOTER.map(
-    (item) => `<li><a href="${escapeHtml(origin)}${escapeHtml(item.href)}">${escapeHtml(item.label)}</a></li>`
+    (item) =>
+      `<li><a href="${escapeHtml(origin)}${escapeHtml(item.href)}">${escapeHtml(item.label)}</a></li>`
   ).join('');
   // `llms.txt` is a file, not a page, so it lives outside the human footer list.
   const llms = `<li><a href="${escapeHtml(origin)}/llms.txt">AI site map</a></li>`;
@@ -103,9 +105,7 @@ function renderImages(images: SnapshotImage[] | undefined): string {
     .slice(0, 8)
     .map((image) => {
       const size =
-        image.width && image.height
-          ? ` width="${image.width}" height="${image.height}"`
-          : '';
+        image.width && image.height ? ` width="${image.width}" height="${image.height}"` : '';
       return `<figure><img src="${escapeHtml(image.src)}" alt="${escapeHtml(image.alt)}"${size} loading="lazy" decoding="async" /></figure>`;
     })
     .join('');
@@ -128,9 +128,7 @@ function renderLinks(origin: string, links: SnapshotLink[] | undefined): string 
  * crawler follows stays on the apex.
  */
 export function renderSnapshotHtml(page: SnapshotPage, origin: string): string {
-  const intro = page.intro?.trim()
-    ? `<p>${escapeHtml(page.intro.trim())}</p>`
-    : '';
+  const intro = page.intro?.trim() ? `<p>${escapeHtml(page.intro.trim())}</p>` : '';
   return [
     `<div id="root" data-seo-route="${escapeHtml(page.id)}">`,
     renderNav(origin),

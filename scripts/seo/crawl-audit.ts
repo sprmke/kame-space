@@ -145,10 +145,13 @@ function imagesWithoutAlt(html: string): number {
 }
 
 function internalLinks(html: string, origin: string): string[] {
-  const hrefs = [...html.matchAll(/<a\b[^>]*href="([^"]+)"/gi)].map((match) => decode(match[1]!.trim()));
+  const hrefs = [...html.matchAll(/<a\b[^>]*href="([^"]+)"/gi)].map((match) =>
+    decode(match[1]!.trim())
+  );
   const links = new Set<string>();
   for (const href of hrefs) {
-    if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) continue;
+    if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:'))
+      continue;
     try {
       const url = new URL(href, origin);
       if (url.origin !== origin) continue;
@@ -163,7 +166,8 @@ function internalLinks(html: string, origin: string): string[] {
 
 function jsonLdErrors(html: string): string[] {
   const errors: string[] = [];
-  const blocks = html.match(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi) ?? [];
+  const blocks =
+    html.match(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi) ?? [];
   for (const block of blocks) {
     const json = block.replace(/^<script[^>]*>/i, '').replace(/<\/script>$/i, '');
     try {
@@ -355,14 +359,19 @@ function renderMarkdown(pages: PageAudit[], global: Finding[], sitemapCount: num
   lines.push('');
   lines.push(`- Sitemap URLs: ${sitemapCount}`);
   lines.push(`- Audited: ${pages.length}`);
-  lines.push(`- Errors: ${[...global, ...pages.flatMap((p) => p.findings)].filter((f) => f.level === 'error').length}`);
-  lines.push(`- Warnings: ${[...global, ...pages.flatMap((p) => p.findings)].filter((f) => f.level === 'warning').length}`);
+  lines.push(
+    `- Errors: ${[...global, ...pages.flatMap((p) => p.findings)].filter((f) => f.level === 'error').length}`
+  );
+  lines.push(
+    `- Warnings: ${[...global, ...pages.flatMap((p) => p.findings)].filter((f) => f.level === 'warning').length}`
+  );
   lines.push('');
 
   if (global.length > 0) {
     lines.push('## Global');
     lines.push('');
-    for (const finding of global) lines.push(`- **${finding.level}** \`${finding.code}\` ${finding.message}`);
+    for (const finding of global)
+      lines.push(`- **${finding.level}** \`${finding.code}\` ${finding.message}`);
     lines.push('');
   }
 
@@ -382,7 +391,8 @@ function renderMarkdown(pages: PageAudit[], global: Finding[], sitemapCount: num
   for (const page of pages) {
     if (page.findings.length === 0) continue;
     lines.push(`### ${new URL(page.url).pathname}`);
-    for (const finding of page.findings) lines.push(`- **${finding.level}** \`${finding.code}\` ${finding.message}`);
+    for (const finding of page.findings)
+      lines.push(`- **${finding.level}** \`${finding.code}\` ${finding.message}`);
     lines.push('');
   }
   return lines.join('\n');

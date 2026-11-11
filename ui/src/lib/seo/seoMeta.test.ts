@@ -269,9 +269,7 @@ describe('title templates', () => {
     expect(developmentTitle({ name: 'Azure North', city: 'San Fernando' })).toBe(
       'Azure North, San Fernando condos and parking'
     );
-    expect(developmentTitle({ name: 'Azure North' })).toBe(
-      'Azure North condos and parking'
-    );
+    expect(developmentTitle({ name: 'Azure North' })).toBe('Azure North condos and parking');
   });
 
   it('builds place titles per family', () => {
@@ -308,7 +306,8 @@ describe('sanitizeMetaText', () => {
 
 describe('listingDescription', () => {
   it('uses a usable host description as-is', () => {
-    const host = 'A bright studio steps from the mall with fast wifi and a balcony you can work from.';
+    const host =
+      'A bright studio steps from the mall with fast wifi and a balcony you can work from.';
     expect(listingDescription({ name: 'Monaco 2604', hostDescription: host })).toBe(host);
   });
 
@@ -346,9 +345,9 @@ describe('listingDescription', () => {
 
 describe('place and host descriptions', () => {
   it('builds a place description from the count and lowest price', () => {
-    expect(placeDescription({ family: 'property', place: 'Makati', count: 12, priceFrom: 1800 })).toBe(
-      '12 stays in Makati, from PHP 1800 per night. Check dates and book online.'
-    );
+    expect(
+      placeDescription({ family: 'property', place: 'Makati', count: 12, priceFrom: 1800 })
+    ).toBe('12 stays in Makati, from PHP 1800 per night. Check dates and book online.');
     expect(placeDescription({ family: 'parking', place: 'BGC', count: 3 })).toBe(
       '3 parking slots in BGC. Check dates and book online.'
     );

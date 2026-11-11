@@ -97,25 +97,27 @@ function globToRegExp(glob: string, prefix: boolean): RegExp {
   return new RegExp(prefix ? `^${body}` : `^${body}$`);
 }
 
-const DISALLOW_MATCHERS: ReadonlyArray<(target: string) => boolean> = ROBOTS_DISALLOW.map((rule) => {
-  if (rule.endsWith('?')) {
-    // Query-scoped: the path must match exactly AND carry a query string.
-    const pathPattern = globToRegExp(rule.slice(0, -1), false);
-    return (target: string) => {
-      const queryIndex = target.indexOf('?');
-      return queryIndex > 0 && pathPattern.test(target.slice(0, queryIndex));
-    };
+const DISALLOW_MATCHERS: ReadonlyArray<(target: string) => boolean> = ROBOTS_DISALLOW.map(
+  (rule) => {
+    if (rule.endsWith('?')) {
+      // Query-scoped: the path must match exactly AND carry a query string.
+      const pathPattern = globToRegExp(rule.slice(0, -1), false);
+      return (target: string) => {
+        const queryIndex = target.indexOf('?');
+        return queryIndex > 0 && pathPattern.test(target.slice(0, queryIndex));
+      };
+    }
+    if (rule.includes('*')) {
+      const regex = globToRegExp(rule, rule.endsWith('/') || rule.endsWith('='));
+      return (target: string) => regex.test(target);
+    }
+    if (rule.endsWith('/')) {
+      const exact = rule.slice(0, -1);
+      return (target: string) => target === exact || target.startsWith(rule);
+    }
+    return (target: string) => target === rule || target.startsWith(`${rule}/`);
   }
-  if (rule.includes('*')) {
-    const regex = globToRegExp(rule, rule.endsWith('/') || rule.endsWith('='));
-    return (target: string) => regex.test(target);
-  }
-  if (rule.endsWith('/')) {
-    const exact = rule.slice(0, -1);
-    return (target: string) => target === exact || target.startsWith(rule);
-  }
-  return (target: string) => target === rule || target.startsWith(`${rule}/`);
-});
+);
 
 /**
  * Does robots allow a path? Pass the pathname, plus `?search` when the caller has one, so

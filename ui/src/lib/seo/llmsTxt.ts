@@ -42,7 +42,11 @@ export function isPublicSafe(value: string): boolean {
   if (DUPLICATE_EMAIL.test(text)) return false;
   if (PHONE_LIKE.test(text)) return false;
   // Street addresses: a house/unit number followed by a street word.
-  if (/\b\d+\s+[A-Za-z][A-Za-z.'-]*\s+(street|st\.?|avenue|ave\.?|road|rd\.?|lane|drive|dr\.?)\b/i.test(text)) {
+  if (
+    /\b\d+\s+[A-Za-z][A-Za-z.'-]*\s+(street|st\.?|avenue|ave\.?|road|rd\.?|lane|drive|dr\.?)\b/i.test(
+      text
+    )
+  ) {
     return false;
   }
   return true;

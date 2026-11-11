@@ -29,8 +29,7 @@ export const STATIC_PAGE_COPY = {
   },
   contact: {
     heading: 'Send us a message',
-    intro:
-      'Pick what your message is about. Sign in with your explore account to open a ticket.',
+    intro: 'Pick what your message is about. Sign in with your explore account to open a ticket.',
   },
   support: {
     heading: 'Answers for guests and hosts',

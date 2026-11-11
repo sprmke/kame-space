@@ -98,9 +98,9 @@ describe('buildLlmsFullTxt', () => {
 
 describe('renderListingLine', () => {
   it('omits a missing place and price instead of leaving gaps', () => {
-    expect(renderListingLine({ name: 'Slot A1', path: '/parkings/a1', kind: 'parking' }, 'https://x')).toBe(
-      '- [Slot A1](https://x/parkings/a1) (Parking)'
-    );
+    expect(
+      renderListingLine({ name: 'Slot A1', path: '/parkings/a1', kind: 'parking' }, 'https://x')
+    ).toBe('- [Slot A1](https://x/parkings/a1) (Parking)');
   });
 });
 

@@ -13,11 +13,7 @@
 
 export const SITE_ORIGIN_PLACEHOLDER = 'https://kamespace.com';
 
-export {
-  AI_CRAWLER_USER_AGENTS,
-  ROBOTS_DISALLOW,
-  isAllowedByRobots,
-} from './robotsRules';
+export { AI_CRAWLER_USER_AGENTS, ROBOTS_DISALLOW, isAllowedByRobots } from './robotsRules';
 
 export type CanonicalPolicy =
   /** Canonical is the route's own path. */
@@ -714,7 +710,8 @@ export function matchStaticRoute(pathname: string): PublicRouteEntry | null {
   const normalized = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
   return (
     PUBLIC_ROUTES.find(
-      (route) => route.pattern === normalized && !route.pattern.includes(':') && route.pattern !== '*'
+      (route) =>
+        route.pattern === normalized && !route.pattern.includes(':') && route.pattern !== '*'
     ) ?? null
   );
 }
@@ -726,7 +723,7 @@ export function indexableRoutes(): PublicRouteEntry[] {
 
 /** Static sitemap paths the registry owns, in registry order. */
 export function staticSitemapPaths(): string[] {
-  return PUBLIC_ROUTES.filter(
-    (route) => route.inSitemap && route.snapshot === 'static'
-  ).map((route) => route.pattern);
+  return PUBLIC_ROUTES.filter((route) => route.inSitemap && route.snapshot === 'static').map(
+    (route) => route.pattern
+  );
 }

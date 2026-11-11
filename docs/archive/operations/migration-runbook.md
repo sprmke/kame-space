@@ -867,12 +867,33 @@ Verify with an org that has a pending parking request: open the org Bookings lis
 
 ### SEO slug diacritics and rename redirects (`20261330000000_seo_slug_diacritics_and_redirects.sql`)
 
-1. **`pls_slugify_name`** — now normalizes to NFD and drops combining marks before slugging, so `Parañaque` becomes `paranaque` instead of `para-aque`. Safe to re-run. It does **not** rewrite existing rows; run `SELECT public.pls_refresh_all_listing_search()` (or wait for the next trigger) only if you want place groupings to pick up the new rule for new listings.
+1. **`pls_slugify_name`** — now normalizes to NFD and drops combining marks before slugging, so `Parañaque` becomes `paranaque` instead of `para-aque`. Safe to re-run.
+
+   **Read this before deploying.** The function also feeds `public_listing_search.place_slug` through `pls_refresh_property()` / `pls_refresh_parking()` / `pls_refresh_development()`. Nothing is rewritten by the migration, so after deploy each row flips to the new place slug the next time that listing is touched. For a city whose name has a diacritic, that briefly splits its place page between the old and new slug, and the old one starts returning 404 once every listing in it has moved.
+
+   There is **no** bulk-refresh RPC. Pick one of these in the deploy window:
+
+   - **Preferred when no residence name has a diacritic** (the current data): do nothing. Confirm first:
+     ```sql
+     SELECT DISTINCT place_slug FROM public.public_listing_search
+      WHERE place_slug ~ '-(aque|a|e|i|o|u)(-|$)';   -- 0 rows means nothing changes
+     ```
+   - **Preferred when it does**: refresh every row in one transaction so the switch is atomic, then add a redirect for the retired place URL (the middleware 404s a place page with no listings):
+     ```sql
+     -- Fires the refresh triggers for every listing, in one statement.
+     UPDATE public.properties SET updated_at = now();
+     UPDATE public.parkings   SET updated_at = now();
+     UPDATE public.developments SET updated_at = now();
+     ```
+     Then check `SELECT DISTINCT place_slug FROM public.public_listing_search ORDER BY 1;` and re-run `bun run seo:audit` to confirm every place page still resolves.
+
+   Existing **listing** slugs are never rewritten (SEO-17.4), so no listing URL moves because of this migration.
+
 2. **`listing_slug_redirects`** — new table keyed by `(family, old_slug)` with `listing_id`. RLS on, no policies: service-role reads through edge functions only.
 3. **`record_listing_slug_change()`** — trigger on `UPDATE OF slug` for `properties`, `parkings`, `developments`. Writes the previous slug, and clears any stale row that claims the new slug.
 4. **`resolve_listing_slug_redirect(family, slug)`** — read helper used by `get-public-property`, `get-public-parking` and `list-public-developments`.
 
-No existing public URL changes because of this migration. Verify after apply:
+Verify after apply:
 
 ```sql
 SELECT public.pls_slugify_name('Parañaque Café Loft');            -- paranaque-cafe-loft

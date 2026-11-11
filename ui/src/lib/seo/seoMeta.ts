@@ -101,7 +101,10 @@ export type ListingDescriptionInput = {
  * fallback built from the fields the page already shows. Missing parts are skipped, never
  * rendered as gaps or "undefined".
  */
-export function listingDescription(input: ListingDescriptionInput, max = MAX_DESCRIPTION_LENGTH): string {
+export function listingDescription(
+  input: ListingDescriptionInput,
+  max = MAX_DESCRIPTION_LENGTH
+): string {
   const host = sanitizeMetaText(input.hostDescription);
   if (host.length >= 70) return truncateDescription(host, max);
 
@@ -114,7 +117,10 @@ export function listingDescription(input: ListingDescriptionInput, max = MAX_DES
   if (input.bedrooms && input.bedrooms > 0) {
     parts.push(`${input.bedrooms} ${input.bedrooms === 1 ? 'bedroom' : 'bedrooms'}`);
   }
-  const amenities = (input.amenities ?? []).map((item) => sanitizeMetaText(item)).filter(Boolean).slice(0, 2);
+  const amenities = (input.amenities ?? [])
+    .map((item) => sanitizeMetaText(item))
+    .filter(Boolean)
+    .slice(0, 2);
   if (amenities.length > 0) parts.push(amenities.join(' and '));
 
   let text = `${parts.join('. ')}.`;
@@ -228,9 +234,7 @@ export function socialImageMeta(
 ): { image: string | null; imageWidth?: number; imageHeight?: number } {
   const image = buildSocialImage(src, { transforms });
   if (!image) return { image: null };
-  return transforms && image !== src
-    ? { image, imageWidth: 1200, imageHeight: 630 }
-    : { image };
+  return transforms && image !== src ? { image, imageWidth: 1200, imageHeight: 630 } : { image };
 }
 
 /** Merge several entities into one `@graph` document. */
@@ -331,7 +335,9 @@ export function buildWebSiteJsonLd(input: {
 
 export type BreadcrumbInput = { name: string; url: string };
 
-export function buildBreadcrumbJsonLd(crumbs: readonly BreadcrumbInput[]): Record<string, unknown> | null {
+export function buildBreadcrumbJsonLd(
+  crumbs: readonly BreadcrumbInput[]
+): Record<string, unknown> | null {
   const items = crumbs.filter((crumb) => crumb.name.trim() && crumb.url.trim());
   if (items.length < 2) return null;
   return {
@@ -371,7 +377,10 @@ export function buildFaqJsonLd(
   faqs: ReadonlyArray<{ question: string; answer: string }>
 ): Record<string, unknown> | null {
   const usable = faqs
-    .map((faq) => ({ question: sanitizeMetaText(faq.question), answer: sanitizeMetaText(faq.answer) }))
+    .map((faq) => ({
+      question: sanitizeMetaText(faq.question),
+      answer: sanitizeMetaText(faq.answer),
+    }))
     .filter((faq) => faq.question && faq.answer)
     .slice(0, 20);
   if (usable.length === 0) return null;
@@ -498,7 +507,9 @@ export function buildPropertyJsonLd(input: {
       ? { amenityFeature: amenityJsonLd(input.amenities) }
       : {}),
     ...(input.bedrooms && input.bedrooms > 0 ? { numberOfRooms: input.bedrooms } : {}),
-    ...(input.guests && input.guests > 0 ? { occupancy: { '@type': 'QuantitativeValue', maxValue: input.guests } } : {}),
+    ...(input.guests && input.guests > 0
+      ? { occupancy: { '@type': 'QuantitativeValue', maxValue: input.guests } }
+      : {}),
     ...(input.petsAllowed != null ? { petsAllowed: input.petsAllowed } : {}),
     ...(input.checkinTime ? { checkinTime: input.checkinTime } : {}),
     ...(input.checkoutTime ? { checkoutTime: input.checkoutTime } : {}),
@@ -587,7 +598,9 @@ export function buildDevelopmentJsonLd(input: {
     url: input.url,
     ...(input.description ? { description: truncateDescription(input.description, 500) } : {}),
     ...(images.length > 0 ? { image: images.slice(0, 5) } : {}),
-    ...(input.city ? { address: postalAddress({ city: input.city, province: input.province }) } : {}),
+    ...(input.city
+      ? { address: postalAddress({ city: input.city, province: input.province }) }
+      : {}),
     ...(geoJsonLd(input.geo) ? { geo: geoJsonLd(input.geo) } : {}),
     ...(units.length > 0
       ? {
@@ -636,9 +649,7 @@ export function renderMetaTags(input: SeoMeta): string {
   // The cover photo is the LCP element on a listing page. Preloading it removes one
   // render-blocking round trip for JS crawlers and for the first paint after hydration.
   if (input.image) {
-    tags.push(
-      `<link rel="preload" as="image" href="${escapeHtml(image)}" fetchpriority="high" />`
-    );
+    tags.push(`<link rel="preload" as="image" href="${escapeHtml(image)}" fetchpriority="high" />`);
   }
   if (input.noindex) tags.push('<meta name="robots" content="noindex" />');
   if (input.jsonLd) {
@@ -685,7 +696,12 @@ export const DEFAULT_INDEXABLE_HOSTS: readonly string[] = [
 ];
 
 function robotsGroup(userAgent: string): string[] {
-  return [`User-agent: ${userAgent}`, 'Allow: /', ...ROBOTS_DISALLOW.map((path) => `Disallow: ${path}`), ''];
+  return [
+    `User-agent: ${userAgent}`,
+    'Allow: /',
+    ...ROBOTS_DISALLOW.map((path) => `Disallow: ${path}`),
+    '',
+  ];
 }
 
 /**
