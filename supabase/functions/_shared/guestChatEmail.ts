@@ -38,7 +38,7 @@ export async function maybeNotifyGuestOfHostWebReply(opts: {
   const { data: conv, error: convError } = await sb
     .from('social_conversations')
     .select(
-      'guest_user_id, property_id, participant_name, organization_id, guest_last_read_at, last_message_at'
+      'guest_user_id, property_id, participant_name, organization_id, guest_last_read_at, last_message_at, booking_id'
     )
     .eq('id', opts.conversationId)
     .eq('organization_id', opts.orgId)
@@ -52,6 +52,7 @@ export async function maybeNotifyGuestOfHostWebReply(opts: {
   if (!guest.email?.trim()) return;
 
   let propertyName = 'Your stay inquiry';
+  let propertySlug = '';
   const propertyId = conv?.property_id as string | null | undefined;
   if (propertyId) {
     const { data: property } = await sb
@@ -60,6 +61,7 @@ export async function maybeNotifyGuestOfHostWebReply(opts: {
       .eq('id', propertyId)
       .maybeSingle();
     if (property?.name) propertyName = String(property.name);
+    if (property?.slug) propertySlug = String(property.slug);
   }
 
   const { data: orgRow } = await sb
@@ -69,7 +71,14 @@ export async function maybeNotifyGuestOfHostWebReply(opts: {
     .maybeSingle();
 
   const appOrigin = resolvePublicGuestAppOrigin(null);
-  const messagesUrl = `${appOrigin}/account/stays`;
+  // Open the conversation the email is about. A thread linked to a booking deep-links into
+  // the property chat with the booking, so the guest lands in the right thread instead of
+  // hunting for it (plan 5.5, finding E4).
+  const bookingId = (conv?.booking_id as string | null | undefined) ?? null;
+  const messagesUrl =
+    bookingId && propertySlug
+      ? `${appOrigin}/properties/${encodeURIComponent(propertySlug)}/messages?bookingId=${encodeURIComponent(bookingId)}`
+      : `${appOrigin}/account/messages`;
 
   const resendKey = Deno.env.get('RESEND_API_KEY')?.trim();
   const fromEmail = Deno.env.get('RESEND_FROM_EMAIL')?.trim();

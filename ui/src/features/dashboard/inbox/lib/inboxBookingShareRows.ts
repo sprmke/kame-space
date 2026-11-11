@@ -12,6 +12,7 @@ import {
 import { useBookingDocumentShareLink } from '@/features/dashboard/bookings/hooks/useBookingDocumentShareLink';
 import { useBookingParkingShareLink } from '@/features/dashboard/bookings/hooks/useBookingParkingShareLink';
 import { useBookingStayGuideLink } from '@/features/dashboard/bookings/hooks/useBookingStayGuideLink';
+import { useBookingTripLink } from '@/features/dashboard/bookings/hooks/useBookingTripLink';
 import { useOwnerDefaultParking } from '@/features/dashboard/bookings/hooks/useOwnerDefaultParking';
 import { isStayGuideEligibleStatus } from '@/features/dashboard/bookings/lib/bookingStatus';
 import {
@@ -62,6 +63,7 @@ export function useInboxBookingShareRows(
   propertySlug: string,
   selectedBooking: BookingRow | null
 ): InboxShareRow[] {
+  const tripLink = useBookingTripLink(selectedBooking);
   const stayGuideLink = useBookingStayGuideLink(selectedBooking);
   const gafLink = useBookingDocumentShareLink(selectedBooking, 'gaf');
   const petLink = useBookingDocumentShareLink(selectedBooking, 'pet');
@@ -71,6 +73,16 @@ export function useInboxBookingShareRows(
   return useMemo(() => {
     if (!selectedBooking) return [];
     const rows: InboxShareRow[] = [];
+
+    // The trip page is the guest's home for the booking, so it leads. Every plan.
+    if (!selectedBooking.parking_id) {
+      rows.push({
+        key: 'trip',
+        label: 'Trip link',
+        url: tripLink.url,
+        pending: !tripLink.url,
+      });
+    }
 
     // Stay guide is Pro+ (`propertyShowcase`): below Pro the row upsells instead of inserting.
     if (isStayGuideEligibleStatus(selectedBooking.status)) {
@@ -132,6 +144,7 @@ export function useInboxBookingShareRows(
   }, [
     selectedBooking,
     propertySlug,
+    tripLink.url,
     stayGuideLink,
     gafLink,
     petLink,

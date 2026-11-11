@@ -20,8 +20,21 @@ export type PropertyTemplateDto = {
   sectionImageUrl: string | null;
   /** Custom templates only: host folder holding this template, or null when ungrouped. */
   folderId: string | null;
+  /** Custom templates only: guests see it on the trip page and in the stay guide. */
+  guestVisible: boolean;
+  /** Custom templates only: the trip stage that shows it. */
+  guestPhase: GuestTemplatePhase;
   updatedAt: string | null;
 };
+
+/** Mirrors `GUEST_TEMPLATE_PHASES` in `_shared/propertyTemplates.ts`. */
+export type GuestTemplatePhase =
+  | 'before'
+  | 'arrival'
+  | 'stay'
+  | 'checkout'
+  | 'after'
+  | 'always';
 
 export type PropertyTemplateFolderDto = {
   id: string;
@@ -133,6 +146,9 @@ export function usePropertyTemplateMutations() {
       content: string;
       name?: string;
       sectionImageUrl?: string | null;
+      /** Custom templates only: show it to guests, and at which trip stage. */
+      guestVisible?: boolean;
+      guestPhase?: GuestTemplatePhase;
       silent?: boolean;
       publicPagesAutosaveGate?: boolean;
       settingsVerificationToken?: string;
@@ -146,6 +162,8 @@ export function usePropertyTemplateMutations() {
           content: input.content,
           name: input.name,
           sectionImageUrl: input.sectionImageUrl,
+          ...(input.guestVisible === undefined ? {} : { guestVisible: input.guestVisible }),
+          ...(input.guestPhase === undefined ? {} : { guestPhase: input.guestPhase }),
           ...(input.publicPagesAutosaveGate ? { publicPagesAutosaveGate: true } : {}),
           ...(input.settingsVerificationToken
             ? { settingsVerificationToken: input.settingsVerificationToken }

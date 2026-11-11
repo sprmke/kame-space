@@ -4,6 +4,7 @@ import { Navigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { motion, useReducedMotion } from 'framer-motion';
 
+import { useGuestTripAtProperty } from '@/features/guest/account/hooks/useGuestNextTrip';
 import { useGuestAuth } from '@/features/guest/auth/context/GuestAuthContext';
 import { ContactHostSheet } from '@/features/guest/chat/components/ContactHostSheet';
 import {
@@ -25,6 +26,7 @@ import {
   GuestBookingFormModal,
   SimilarProperties,
 } from '@/features/guest/marketing/properties/components/property-detail';
+import { PropertyExistingTripBanner } from '@/features/guest/marketing/properties/components/property-detail/PropertyExistingTripBanner';
 import { usePropertyContactHost } from '@/features/guest/marketing/properties/hooks/usePropertyContactHost';
 import { usePropertyPageViewTracking } from '@/features/guest/marketing/properties/hooks/usePropertyPageViewTracking';
 import { usePropertyReserve } from '@/features/guest/marketing/properties/hooks/usePropertyReserve';
@@ -68,6 +70,9 @@ export function PropertyDetailPage() {
   const forceMobileChrome = previewViewport === 'mobile';
   const isBelowLg = useIsBelowLg();
   const propertySlugForActions = propertySlug || (isEditorPreview ? previewOverride.data.slug : '');
+  // A signed-in guest who already booked this property sees their trip above Reserve
+  // (plan 2.6, finding A5).
+  const existingTrip = useGuestTripAtProperty(isEditorPreview ? null : propertySlugForActions);
   const { data: propertyData, isLoading, isError } = usePublicPropertyDetail(propertySlug);
   const similarResult = usePublicProperties(
     {
@@ -493,6 +498,16 @@ export function PropertyDetailPage() {
         ) : null}
 
         <div className="@xl:px-6 @5xl:px-8 @xl:py-8 container mx-auto px-4 py-5">
+          {/* Phone and tablet: the booking card column is hidden, so the trip banner needs
+              its own slot or a returning guest never sees it (plan 2.6). */}
+          {existingTrip ? (
+            <PropertyExistingTripBanner
+              className="mb-4 @5xl:hidden"
+              tripPath={existingTrip.path}
+              checkInDate={existingTrip.checkInDate}
+              checkOutDate={existingTrip.checkOutDate}
+            />
+          ) : null}
           <div
             className={cn(
               '@xl:gap-8 grid grid-cols-1 gap-6',
@@ -521,6 +536,14 @@ export function PropertyDetailPage() {
                     Contact the host if you want to plan a stay later.
                   </p>
                 </div>
+              ) : null}
+              {existingTrip ? (
+                <PropertyExistingTripBanner
+                  className="mb-3 hidden @5xl:flex"
+                  tripPath={existingTrip.path}
+                  checkInDate={existingTrip.checkInDate}
+                  checkOutDate={existingTrip.checkOutDate}
+                />
               ) : null}
               <BookingCard
                 baseRate={propertyData.pricing.baseRate}

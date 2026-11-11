@@ -28,6 +28,11 @@ type HeaderProps = {
   onStartVoiceSession?: () => void;
   /** e.g. inline dialog close — rendered after the options menu. */
   trailing?: ReactNode;
+  /**
+   * Booking context line, e.g. "Dec 3-5 · Confirmed · View trip". Rendered instead of the
+   * plain subtitle when the thread is linked to a booking (plan 5.3).
+   */
+  bookingChip?: ReactNode;
   className?: string;
 };
 
@@ -103,6 +108,7 @@ export function GuestChatHeaderBar({
   searchEnabled = true,
   onStartVoiceSession,
   trailing,
+  bookingChip,
   className,
 }: HeaderProps) {
   const isMobileLayout = useIsBelowLg();
@@ -133,7 +139,9 @@ export function GuestChatHeaderBar({
       {avatar}
       <div className="min-w-0 flex-1 overflow-hidden">
         <p className="text-foreground truncate text-sm font-semibold leading-tight">{title}</p>
-        {subtitle ? (
+        {bookingChip ? (
+          <div className="truncate text-xs leading-tight">{bookingChip}</div>
+        ) : subtitle ? (
           <p className="text-muted-foreground truncate text-xs leading-tight">{subtitle}</p>
         ) : null}
         {awaitingReply ? <GuestChatAwaitingReplyBadge className="mt-0.5" /> : null}

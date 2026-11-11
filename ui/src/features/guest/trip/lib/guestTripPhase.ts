@@ -7,6 +7,8 @@
 
 export type GuestTripTone = 'neutral' | 'info' | 'success' | 'warning' | 'muted';
 
+import { guestJourneyStatusWord } from '@/features/guest/trip/lib/guestJourneyCopy';
+
 const CONFIRMED_STATUSES = new Set([
   'PENDING_DOCUMENTS',
   'PENDING_GAF',
@@ -110,7 +112,7 @@ export function isGuestTripActive(phase: GuestTripPhase): boolean {
 // ---------------------------------------------------------------------------------------------
 
 export const GUEST_TRIP_STEPS = [
-  'Requested',
+  'Request sent',
   'Confirmed',
   'Check-in',
   'Stay',
@@ -170,6 +172,8 @@ export type GuestTripHeadlineInput = {
   refundLabel: string | null;
   /** Pre-formatted, e.g. "Sep 18". */
   cancelledOnLabel?: string | null;
+  /** `guest_submissions.cancellation_reason_code`, so an expired request says so. */
+  cancellationReasonCode?: string | null;
 };
 
 export function guestTripHeadline(input: GuestTripHeadlineInput): GuestTripHeadline {
@@ -243,7 +247,7 @@ export function guestTripHeadline(input: GuestTripHeadlineInput): GuestTripHeadl
       };
     case 'refund_pending':
       return {
-        kicker: 'Refund in progress',
+        kicker: 'Deposit refund',
         title: 'Your host is processing your deposit refund',
         body: null,
         tone: 'info',
@@ -255,7 +259,18 @@ export function guestTripHeadline(input: GuestTripHeadlineInput): GuestTripHeadl
         body: input.refundLabel ? `Deposit refunded: ${input.refundLabel}` : null,
         tone: 'neutral',
       };
-    case 'cancelled':
+    case 'cancelled': {
+      // The expiry cron cancels on the guest's behalf, so "Cancelled" would read like a decision
+      // they made. Name what happened and point at the exit: the dates are free again.
+      const expired = String(input.cancellationReasonCode ?? '').trim() === 'request_expired';
+      if (expired) {
+        return {
+          kicker: 'Request expired',
+          title: 'Your host did not reply in time',
+          body: 'Nothing was charged, and the dates are free again.',
+          tone: 'muted',
+        };
+      }
       return {
         kicker: 'Cancelled',
         title: input.cancelledOnLabel
@@ -264,6 +279,7 @@ export function guestTripHeadline(input: GuestTripHeadlineInput): GuestTripHeadl
         body: 'Questions about a refund? Message your host.',
         tone: 'muted',
       };
+    }
   }
 }
 
@@ -392,17 +408,14 @@ export function guestTripListGroup(input: {
   return input.checkOutYmd < input.todayYmd ? 'past' : 'upcoming';
 }
 
-/** Short pill label for list rows (account Trips tab). */
+/**
+ * Short pill label for list rows (account Trips tab).
+ *
+ * Shares the guest vocabulary with the emails and the chat card, so the trip page, the
+ * account list and every email say the same word for the same status.
+ */
 export function guestTripStatusLabel(status: string): string {
-  const s = status.trim();
-  if (s === 'CANCELLED') return 'Cancelled';
-  if (s === 'PENDING_REVIEW') return 'Requested';
-  if (CONFIRMED_STATUSES.has(s)) return 'Confirmed';
-  if (s === 'READY_FOR_CHECKIN') return 'Ready';
-  if (s === 'READY_FOR_CHECKOUT') return 'Checked out';
-  if (s === 'PENDING_SD_REFUND') return 'Refund in progress';
-  if (s === 'COMPLETED') return 'Completed';
-  return 'Booked';
+  return guestJourneyStatusWord(status);
 }
 
 export function guestTripStatusTone(status: string): GuestTripTone {
@@ -457,4 +470,94 @@ export function tripHubStage(timing: GuestTripTiming): TripHubStage {
   if (timing.kind === 'upcoming') return 'upcoming';
   if (timing.kind === 'past') return 'past';
   return 'in_stay';
+}
+
+// ---------------------------------------------------------------------------------------------
+// Timeline
+// ---------------------------------------------------------------------------------------------
+
+export type GuestTripTimelineItem = {
+  key: 'review' | 'documents' | 'balance' | 'check_in' | 'check_out' | 'refund';
+  label: string;
+  /** Pre-formatted date, or null when the moment has no fixed date yet. */
+  dateLabel: string | null;
+  done: boolean;
+};
+
+/**
+ * The dated moments still ahead of the guest, in the order they happen.
+ *
+ * The progress bar says where the booking is; this says what is coming and when. Only
+ * moments that still matter are returned, so the list stays short on every plan.
+ */
+export function guestTripTimeline(input: {
+  phase: GuestTripPhase;
+  checkInDateLabel: string;
+  checkOutDateLabel: string;
+  amountDue: number;
+  amountDueLabel: string | null;
+  documentsPending: boolean;
+  documentsTotal: number;
+  refundLabel: string | null;
+}): GuestTripTimelineItem[] {
+  const items: GuestTripTimelineItem[] = [];
+  const { phase } = input;
+
+  if (phase === 'requested') {
+    items.push({ key: 'review', label: 'Your host reviews the request', dateLabel: null, done: false });
+    items.push({
+      key: 'check_in',
+      label: 'Check-in',
+      dateLabel: input.checkInDateLabel,
+      done: false,
+    });
+    return items;
+  }
+
+  if (phase === 'cancelled') return [];
+
+  if (
+    (phase === 'confirmed' || phase === 'arriving' || phase === 'arrival_day') &&
+    input.documentsTotal > 0
+  ) {
+    items.push({
+      key: 'documents',
+      label: 'Check-in documents',
+      dateLabel: null,
+      done: !input.documentsPending,
+    });
+  }
+
+  if (isGuestTripActive(phase) && input.amountDue > 0) {
+    items.push({
+      key: 'balance',
+      label: 'Balance due',
+      dateLabel: input.amountDueLabel,
+      done: false,
+    });
+  }
+
+  if (phase === 'confirmed' || phase === 'arriving') {
+    items.push({ key: 'check_in', label: 'Check-in', dateLabel: input.checkInDateLabel, done: false });
+  }
+
+  if (phase === 'arrival_day' || phase === 'staying') {
+    items.push({
+      key: 'check_out',
+      label: 'Check-out',
+      dateLabel: input.checkOutDateLabel,
+      done: false,
+    });
+  }
+
+  if (phase === 'checked_out' || phase === 'refund_pending' || phase === 'completed') {
+    items.push({
+      key: 'refund',
+      label: 'Deposit refund',
+      dateLabel: input.refundLabel,
+      done: phase === 'completed',
+    });
+  }
+
+  return items;
 }

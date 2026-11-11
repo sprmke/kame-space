@@ -33,7 +33,8 @@ export type NotificationType =
   | 'review_due'
   | 'review_response_received'
   | 'maintenance_guest_reported'
-  | 'guest_request_submitted';
+  | 'guest_request_submitted'
+  | 'booking_receipt_uploaded';
 
 /** Legacy inbox rows stored this generic title before participant names shipped. */
 export const LEGACY_INBOX_NOTIFICATION_TITLE = 'New guest message';

@@ -14,6 +14,7 @@ import {
   getPropertyTemplateRow,
   isBuiltinPropertyTemplateKey,
   isCustomTemplateKey,
+  isGuestTemplatePhase,
   MAX_CUSTOM_TEMPLATES,
   MAX_TEMPLATE_FOLDERS,
   propertyTemplateFolderExists,
@@ -24,6 +25,7 @@ import {
   validateCustomTemplateName,
   validateTemplateContent,
   validateTemplateFolderName,
+  type GuestTemplatePhase,
 } from '../_shared/propertyTemplates.ts';
 import { jsonError, jsonSuccess, readJsonBody } from '../_shared/httpResponse.ts';
 import { catchPlanFeatureError, requirePropertyFeature } from '../_shared/planEntitlements.ts';
@@ -406,6 +408,17 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
       ? (body.sectionImageUrl as string | null)
       : undefined;
 
+  // Guest visibility applies to custom templates only (plan D8). Undefined means "leave it
+  // as it is"; a built-in is always false.
+  const guestVisible = body.guestVisible === undefined ? undefined : body.guestVisible === true;
+  let guestPhase: GuestTemplatePhase | undefined;
+  if (body.guestPhase !== undefined && body.guestPhase !== null) {
+    if (!isGuestTemplatePhase(body.guestPhase)) {
+      return jsonError(req, 'guestPhase must be a known trip stage', 400);
+    }
+    guestPhase = body.guestPhase;
+  }
+
   if (!templateKey) {
     return jsonError(req, 'templateKey is required', 400);
   }
@@ -457,10 +470,15 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
       name: name || undefined,
       content,
       folderId: existingCategory === 'custom' ? (existingRow?.folder_id ?? null) : null,
+      guestVisible,
+      // A visible template with no stage shows at every stage.
+      guestPhase: guestVisible === true && guestPhase === undefined ? 'always' : guestPhase,
     });
     await emitTemplateActivity(req, user, access, 'settings.template_saved', templateKey, {
       category: existingCategory,
       operation: 'edit',
+      ...(guestVisible === undefined ? {} : { guest_visible: guestVisible }),
+      ...(guestPhase === undefined ? {} : { guest_phase: guestPhase }),
     });
     const data = await serializePropertyTemplatesForAdmin(property.id);
     return jsonSuccess(req, data);
