@@ -1,0 +1,8 @@
+{
+  "docs/guides/routes/org/property/finance.md": [
+    "Unified ledger",
+    "Transaction CRUD (`finance_line_items`)",
+    "Export report",
+    "Entry activity history"
+  ]
+}

@@ -15,6 +15,7 @@ import { hasPropertyPermission } from '@/features/dashboard/team/lib/propertyPer
 import { friendlyToastError } from '@/lib/feedback/toastMessages';
 
 import { Button } from '@/components/ui/button';
+import { useAfterFirstPaint } from '@/hooks/useAfterFirstPaint';
 
 const ICONS = {
   paused: PauseCircle,
@@ -31,7 +32,8 @@ export function PropertyLifecycleBanner() {
   const location = useLocation();
   const navigate = useNavigate();
   const { data: access } = usePropertyPermissions();
-  const { data: lifecycle } = usePropertyLifecycle(property.id);
+  const ready = useAfterFirstPaint();
+  const { data: lifecycle } = usePropertyLifecycle(property.id, { enabled: ready });
   const action = usePropertyLifecycleAction(orgSlug);
 
   const state = lifecycle?.state;

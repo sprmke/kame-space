@@ -319,15 +319,13 @@ into `develop` first (`git merge-base --is-ancestor <branch> develop` or `git ch
 | `feat/parking-e2e-flows`              | `d9ee05935` | merged via #323; remote deleted                 | Local branch already gone        |
 | `release/2026-11-11-parking`          | `a58fa5742` | merged via #389; production build Ready         | Worktree removed, branch deleted |
 | `release/2026-11-11-lock`             | `925a997fa` | merged via #403; build-time lock only           | Worktree removed, branch deleted |
-
-Kept on purpose:
-
-- `feat/parking-commission` (`466e27e83`) - open PR #391, unmerged.
+| `feat/parking-commission`             | `466e27e83` | merged via #391                                 | Worktree removed, branch deleted |
+| `release/2026-11-11-final`            | `d22a20d61` | merged via #406                                 | Worktree removed, branch deleted |
+| `release/2026-11-11-commission`       | `365011e90` | merged via #408                                 | Worktree removed, branch deleted |
 
 Production state:
 
-- Backend: the `develop` CD deploy after #397 succeeded, so the parking functions and migrations
-  (`20261327000000`, `20261328000000`) are live.
-- UI: the last successful production Vercel build is the #389 release. Later releases (#390, #399,
-  #403) hit Vercel's account build rate limit (`Deployment rate limited`). The code is on `main`;
-  retry the production build after the 24-hour window or upgrade the Vercel plan.
+- Backend: the `develop` CD deploy after #391 succeeded, so the parking functions and migrations
+  (`20261327000000`, `20261328000000`, `20261329000000`) are live.
+- UI: the production Vercel build from the #408 release is Ready and aliased to `kamespace.com`.
+  The temporary build-rate limit cleared before that release; later builds no longer need a retry.
