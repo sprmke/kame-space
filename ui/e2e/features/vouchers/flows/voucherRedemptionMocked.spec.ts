@@ -48,7 +48,8 @@ test.describe('@ci voucher redemption - mocked full journey', () => {
     await continueGuestForm(page);
     await selectVoucherOnForm(page, 'OFF-10');
     await submitGuestForm(page);
-    await expect(page).toHaveURL(/\/success/, { timeout: 20_000 });
+    // A submission lands on the trip page, not the retired /success interstitial.
+    await expect(page).toHaveURL(/\/trip\?bookingId=/, { timeout: 20_000 });
     expect(guest.lastSubmitFields?.appliedVoucherSourceBookingId).toBe(VOUCHER_SOURCE_BOOKING_ID);
     await demoPause(page);
 

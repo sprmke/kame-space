@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import {
   BookOpen,
   CalendarPlus,
+  Car,
   Home,
   LifeBuoy,
   MessageCircle,
@@ -273,8 +274,10 @@ function shortDate(iso: string | null): string | null {
 
 /** Phase decides which shortcuts matter; the primary action is never repeated as a tile. */
 const SHORTCUT_ORDER: Record<GuestTripPhase, string[]> = {
-  // While the host reviews, the guest can edit the request, withdraw it, or reach the host.
-  requested: ['edit', 'cancel', 'call'],
+  // While the host reviews, the guest can edit the request, withdraw it, reach the host, or
+  // sort out the parking they asked for. Parking used to be offered on the old success page,
+  // so dropping it here would remove the marketplace path for a request that needs it.
+  requested: ['edit', 'cancel', 'call', 'parking'],
   confirmed: ['calendar', 'directions', 'message', 'call'],
   arriving: ['calendar', 'directions', 'message', 'call'],
   arrival_day: ['guide', 'directions', 'message', 'call'],
@@ -428,6 +431,9 @@ function GuestTripContent({
       },
       cancel: trip.actions.canEditBooking
         ? { key: 'cancel', label: 'Cancel request', Icon: XCircle, to: '#trip-cancellation' }
+        : null,
+      parking: trip.parking.findPath
+        ? { key: 'parking', label: 'Find parking', Icon: Car, to: trip.parking.findPath }
         : null,
       calendar:
         timing.kind === 'upcoming'

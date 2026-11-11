@@ -287,10 +287,15 @@ Thumbnail, property name (`h1`, not a link), date range and nights, city.
 
 ### Shortcuts (max 4, phase-picked, never repeat the main button)
 
-Pending: Edit booking, Call host, View listing. Confirmed / arriving: Add to calendar (`.ics`),
-Directions, Message host, Call host. Arrival day / staying / check-out day: Stay guide,
-Directions, Message host, Call host. After the stay and cancelled: none (host row and main
-button cover it).
+Pending: Edit request, Cancel request, Call host, and **Find parking** when the request asked for
+parking. Confirmed / arriving: Add to calendar (`.ics`), Directions, Message host, Call host.
+Arrival day / staying / check-out day: Stay guide, Directions, Message host, Call host. After the
+stay and cancelled: none (host row and main button cover it).
+
+**Find parking** is why the pending row has a fourth tile. The retired `/success` page carried a
+"Need parking?" link for a request that asked for parking; a submission lands here now, so the
+marketplace path lives here instead. It reads `parking.findPath` from the trip payload, which is
+`/parkings?linkStay=<bookingId>` or the org's own default form when one fits.
 
 ### Sections (flat, hairline separated; no nested cards)
 
