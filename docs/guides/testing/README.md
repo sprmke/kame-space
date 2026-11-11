@@ -120,6 +120,21 @@ Two traps, both cost real debugging time:
 
 Run them with `bun run test:edge:handlers`. `check:edge-test-coverage` is shrink-only: adding a handler test fails until its `scripts/dev/edge-handler-baseline.json` entry is deleted.
 
+### Personas and `mockTenant`
+
+```ts
+import { installTenant, mockTenant } from '../shared/tenant';
+
+const tenant = mockTenant({ persona: 'superAdmin', level: 'platform' });
+await installTenant(page, tenant); // seeds the session
+await mockEdgeFunctions(page, [...tenant.mocks, ...pageMocks], { strict: true });
+```
+
+- `ui/e2e/shared/personas.ts` derives every permission list from the real catalogs (`SEEDED_TEMPLATE_PERMISSIONS`, `PARKING_ROLE_PERMISSIONS`, `ORG_ROLE_PERMISSIONS`) and tiers from `planTierGolden`. A renamed leaf flows into the personas that hold it; nothing is retyped.
+- Org `Operations` and `Read Only` are seeded **server-side** templates with no client catalog. Use `orgCustom(leaves)` with the leaves the test needs instead of inventing a list that may disagree with the server.
+- `tenant.mocks` covers only what every signed-in page reads on boot: session, `list-organizations`, `get-public-platform-status`, `get-feature-availability`. Page data endpoints stay in the spec, so strict mode fails loudly rather than rendering from an invented payload.
+- Merge `tenant.mocks` into the spec's own `mockEdgeFunctions` call. Registering them separately would put two handlers on the same URL pattern and let one shadow the other.
+
 ### Typed edge mocks and strict specs
 
 An inline `mockEdgeFunctions(page, [{ name, body }])` drifts silently: nothing ties the body to the edge function, and an endpoint the spec forgot to mock quietly reaches the network.
