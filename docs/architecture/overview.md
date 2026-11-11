@@ -126,6 +126,8 @@ Routes: [`routing.md`](routing.md). Per-page behavior: [`docs/guides/routes/`](.
 
 Specialized UI: **Polotno** + **Remotion** (Marketing Studio), **Google Maps**, Web Worker image compression, pdf-lib. Phone chrome uses shared primitives (`ResponsiveModal`, `BottomTabBar`, `ContextualActionBar`), not a shrunk desktop layout.
 
+Every dialog and bottom sheet shares one chrome — canonical padding, title scale and close control — defined in [`ui/src/components/ui/modal-chrome.ts`](../../ui/src/components/ui/modal-chrome.ts) and specified in [`modal-chrome.md`](modal-chrome.md).
+
 Feedback toasts route through `ui/src/lib/feedback/toastMessages.ts`: raw provider/API copy is sanitized, and an identical error or warning replaces the toast already on screen instead of stacking a duplicate.
 
 **Timezone:** all user-visible times are **Asia/Manila**. Guest date fields in Postgres are often `TEXT` `MM-DD-YYYY`; UI and query params prefer `YYYY-MM-DD`. Normalize with `ui/src/utils/format/dates.ts` and `_shared/utils.ts`.

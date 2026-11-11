@@ -32,6 +32,7 @@ This document is the entry point for the **guest-form-management** architecture 
 | PWA — installable app, service worker, Web Push, offline read + outbox, kill-switch                  | [`docs/architecture/pwa.md`](architecture/pwa.md)                                       |
 | Skeleton loaders — route registry, chrome invariant, module map                                      | [`docs/architecture/skeleton-loaders.md`](architecture/skeleton-loaders.md)             |
 | Unsaved-changes guard — Save & leave / Discard / Keep editing on any dirty form or modal             | [`docs/architecture/unsaved-changes.md`](architecture/unsaved-changes.md)               |
+| Modal chrome — canonical padding, title scale and close control for every dialog                     | [`docs/architecture/modal-chrome.md`](architecture/modal-chrome.md)                     |
 | Contextual help — InfoHint, How it works panels, intro cards, copy registry                          | [`docs/architecture/contextual-help.md`](architecture/contextual-help.md)               |
 | Identity verification — live capture, phone handoff, verdict model, PhilSys QR                       | [`docs/architecture/identity-verification.md`](architecture/identity-verification.md)   |
 | Identity privacy — consent, retention schedule, data-subject rights                                  | [`docs/architecture/data-privacy-identity.md`](architecture/data-privacy-identity.md)   |
