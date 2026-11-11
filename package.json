@@ -30,6 +30,7 @@
     "check:brand:list": "bun scripts/brand/check-brand.ts --list",
     "audit:deps": "bun x knip --no-exit-code",
     "audit:edge-functions": "node scripts/dev/audit-edge-functions.mjs",
+    "check:agent-stack": "bash scripts/dev/check-agent-stack.sh",
     "check:edge-conformance": "node scripts/dev/audit-edge-functions.mjs --check",
     "check:ai-gateway": "node scripts/dev/check-ai-gateway.mjs",
     "check:posthog-analytics-only": "bash scripts/dev/check-posthog-analytics-only.sh",

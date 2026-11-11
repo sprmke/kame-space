@@ -48,6 +48,7 @@ See epics #101–#119 in historical [`archive/todos/BACKLOG_DRAFT.md`](./archive
 | [`architecture/deployment.md`](./architecture/deployment.md)                             | Deployment summary (links runbooks in archive)                                            |
 | [`architecture/supabase-capacity.md`](./architecture/supabase-capacity.md)               | Pro-plan limits, measured baseline, capacity estimates, scaling triggers                  |
 | [`architecture/ops-reports.md`](./architecture/ops-reports.md)                           | Weekly operations report: sources, schema, AI handoff, delivery, limits                   |
+| [`architecture/agent-skill-stack.md`](./architecture/agent-skill-stack.md)               | Global skill library shared by Claude Code, Cursor, Codex and OpenCode                    |
 | [`architecture/roadmap.md`](./architecture/roadmap.md)                                   | Roadmap / gaps                                                                            |
 | [`architecture/ai-dashboard-assistant.md`](./architecture/ai-dashboard-assistant.md)     | AI dashboard assistant — full tool catalog, tiers, RBAC, exclusions                       |
 | [`architecture/plans-feature-matrix.md`](./architecture/plans-feature-matrix.md)         | Plan/tier feature × entitlement matrix, client/server gate inventory                      |
