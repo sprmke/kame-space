@@ -28,6 +28,8 @@ import {
   searchPublicDevelopments,
   type DevelopmentSearchParams,
 } from '../_shared/publicListingSearch.ts';
+import { corsHeaders } from '../_shared/cors.ts';
+import { resolveListingSlugRedirect } from '../_shared/listingSlugRedirect.ts';
 import { servePublic } from '../_shared/serveEdge.ts';
 import { publicGetRateLimitGate } from '../_shared/publicEndpointRateLimit.ts';
 
@@ -58,6 +60,18 @@ servePublic('list-public-developments', async (req) => {
   if (limited) return limited;
 
   const url = new URL(req.url);
+  const requestedSlug = readQueryText(url.searchParams.get('slug')).toLowerCase();
+  if (requestedSlug) {
+    // A renamed development answers with a 301 so an old shared link still resolves.
+    const redirectTo = await resolveListingSlugRedirect('development', requestedSlug);
+    if (redirectTo) {
+      return new Response(null, {
+        status: 301,
+        headers: { ...corsHeaders(req), Location: redirectTo },
+      });
+    }
+  }
+
   const sp = url.searchParams;
   const sortRaw = sp.get('sort');
   const sortExplicit = Boolean(sortRaw && VALID_SORTS.has(sortRaw as SortKey));

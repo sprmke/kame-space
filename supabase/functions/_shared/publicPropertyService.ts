@@ -47,6 +47,8 @@ export type PublicPropertyMediaDto = {
   url: string;
   type: 'image' | 'video';
   caption?: string;
+  /** Host-written alt text; the UI falls back to a generated description when absent. */
+  alt?: string;
   isPrimary?: boolean;
   order: number;
 };
@@ -348,6 +350,7 @@ export async function loadPublicPropertyById(
       url: item.url,
       type: item.type,
       caption: item.caption,
+      alt: item.alt,
       isPrimary: item.isPrimary,
       order: item.order,
     }))

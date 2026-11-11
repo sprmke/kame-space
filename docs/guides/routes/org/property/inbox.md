@@ -47,6 +47,10 @@ This is where you read and reply to guest messages for this property: website ch
   A: On this property Inbox under **Manage** → Quick replies / Automation. Those settings apply across your organization.
 - Q: Why can't I reply to some Facebook or Instagram messages?
   A: Meta only allows replies within 24 hours of the guest's last message. After that window closes, you'll need the guest to message you again before you can respond from here.
+- Q: Why can't I edit or unsend a Facebook or Instagram message?
+  A: Meta has no way to change or take back a message that was already sent to a guest, so we don't offer those actions on Facebook and Instagram threads. Editing the copy here would only change what you see, not what the guest sees. Website chat messages can still be edited and unsent.
+- Q: Why do I sometimes see a message a minute after it was sent?
+  A: New messages normally show up within seconds. If you are on a team member account for this property, live updates are not available to your role, so the list refreshes about once a minute while the tab is open. It also refreshes as soon as you come back to the tab. The organization owner and organization admins get live updates.
 - Q: What is the support follow-up toggle?
   A: If a guest messaged within the last 7 days but the normal 24-hour reply window has already closed, the composer can show a support follow-up toggle. Turn it on only for non-promotional follow-ups; it sends with Meta's `HUMAN_AGENT` tag.
 - Q: Why does an Instagram chat say Guest?
@@ -97,6 +101,9 @@ Manage chrome is **leaf-split**: Channels / Quick replies / Automation buttons a
 - **Thread list:** stay dates + channel pill when relevant; no property-name badge (inbox is already property- or parking-scoped).
 - **First Meta connect** from a property (when no org-default Page exists) writes the **org-default** connection so Marketing Studio and other properties can inherit it.
 - **Webhook health:** connected Meta rows record `webhook_last_verified_at` and retry attempts. After repeated failed checks, Channels shows **Fix connection**, which re-verifies and re-subscribes the messaging webhook fields in place — without disconnecting or wiping history.
+- **Message direction and order (meta sync overhaul, phase 1):** a message from the Page or the Instagram account counts as an outbound message, whichever app the host replied from. A guest read receipt marks the host's own messages as seen and leaves the host's unread badge alone. The thread preview, status and timestamp always follow the newest message, so a message that arrives late never rewinds the thread.
+- **No Edit or Unsend on Meta threads:** Meta has no API to edit or unsend a Page message, so both are hidden on Facebook and Instagram threads and the server rejects the request. Website chat keeps both.
+- **Catch-up:** the thread list refetches when the tab regains focus and when the browser comes back online. A member whose role has no org-wide live updates sees the list refresh about once a minute while the tab is visible. A live channel that re-connects after a drop pulls the list once, since anything sent while it was down was never delivered.
 - **Proactive Meta warnings:** Channels can also surface invalid tokens or soon-expiring tokens before a host hits a send failure. **Reconnect** refreshes the full OAuth grant; **Fix connection** remains the lighter webhook-only repair.
 - Later Connect from a property that already has an org-default writes a **property override** (`property_id` set); does **not** wipe the org default.
 - **Disconnect:** removes the Meta connection and deletes synced Facebook/Instagram conversations from this inbox.

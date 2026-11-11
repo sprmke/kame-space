@@ -107,7 +107,7 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     module: 'inbox',
     surface: 'background + button',
     label: 'Sync from Meta',
-    description: 'meta-inbox-backfill, "Load older from Meta", initial sync after connect',
+    description: 'Meta inbox sync: initial import, reconcile, and Load older from Meta',
     provider: 'Meta',
   },
   {

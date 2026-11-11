@@ -22,6 +22,7 @@ import { useGalleryWindow } from '@/features/guest/marketing/shared/hooks/useGal
 import { cardEntranceDelay } from '@/features/guest/marketing/shared/lib/galleryWindow';
 
 import { Button } from '@/components/ui/button';
+import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 import { cn } from '@/lib/utils';
 
 import type { Property } from './PropertyCard';
@@ -75,7 +76,7 @@ export function PropertyListItem({ property, index = 0 }: PropertyListItemProps)
                   <Image
                     key={idx}
                     src={image}
-                    alt={`${property.name} - Image ${idx + 1}`}
+                    alt={buildListingImageAlt({ listingName: property.name, index: idx })}
                     fill
                     className={cn(
                       'object-cover transition-all duration-500',

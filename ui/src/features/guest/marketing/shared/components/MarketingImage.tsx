@@ -53,9 +53,13 @@ export function MarketingImage({
     onError: useResponsive ? () => setFailedSrc(src) : undefined,
   };
 
+  // `alt` is in `shared`; the a11y rule cannot see through the spread, so it is repeated
+  // explicitly for the linter and kept in one place for behaviour.
   if (fill) {
-    return <img {...shared} className={cn('absolute inset-0 h-full w-full', className)} />;
+    return (
+      <img {...shared} alt={alt} className={cn('absolute inset-0 h-full w-full', className)} />
+    );
   }
 
-  return <img {...shared} width={width} height={height} className={className} />;
+  return <img {...shared} alt={alt} width={width} height={height} className={className} />;
 }

@@ -451,6 +451,70 @@ but enforcement also runs on every plan and subscription change (`subscriptionOr
 deactivates seats. That is a product decision, not a latency one, so it is recorded here rather
 than changed.
 
+### Measured after
+
+Production, 2026-11-11, same probe account and 4x CPU throttle, three runs each.
+
+| Metric                          | Before       | After            | Change                  |
+| ------------------------------- | ------------ | ---------------- | ----------------------- |
+| `route:content` (median)        | 5868 ms      | **4599 ms**      | **-22%**                |
+| `app-settings` handler          | 2456-3719 ms | **1793-1950 ms** | **-30%**                |
+| `property-team-members` handler | 3105-3904 ms | 2986-3522 ms     | unchanged               |
+| Distinct boot calls             | 21           | 20               | `list-bookings` is gone |
+| Sum of call durations           | 38049 ms     | 32793 ms         | -14%                    |
+
+The raw medians are noisy on this machine (before: 7626, 3583, 5868; after: 6105, 4599, 4228), so
+the conservative reading is the direction and the per-call handler times, which were measured
+directly rather than through a browser.
+
+**The team call was not removed by the catalog gating, and the first reading said it was.** One
+run showed `property-team-members` missing from the resource list; that was the entry being
+dropped, not the call being gone. Re-checking the deployed build showed all three
+`property-team-*` calls still firing on `/dashboard`, while **none** of the catalog's other eleven
+queries fired. So the catalog gating worked and a direct `usePropertyTeam()` call was responsible,
+with a default of always on.
+
+`usePropertyTeam` is now opt-in (`propertyTeamQueryEnabled`), and only the two surfaces that list
+the team pass `enabled: true`. That fix is merged to `develop`; it is **not measured in
+production yet**, because the Vercel build quota blocked the release. The numbers above are the
+state before it.
+
+**`app-settings` is 30% faster, not 70%.** The fan-out removed the serial sequencing, but the
+handler still costs about 1.8s. The remaining time is inside `resolveAppSettings`, which runs its
+own two waves, plus the PMO email lookup that derived from the residence name. Flattening that
+needs `serializeAppSettingsForAdmin` to consume `resolveAppSettings`'s intermediates instead of
+calling it, which is a larger refactor than this pass.
+
+**`property-team-members` handler time did not move,** because on the single-owner test tenant the
+cost is the seat reconcile, not the per-member lookups. The N+1 fix matters on real multi-seat
+properties, which the probe account cannot show. Recorded honestly rather than claimed.
+
+### What gates content now
+
+```
+2655 ms   burst starts (org-settings, org-plan, list-parkings, notifications-list, ...)
+2976 ms   dashboard-stats starts  <- 320 ms after the burst got the connections
+4613 ms   dashboard-stats ends
+4599 ms   route:content
+```
+
+Content is gated on `dashboard-stats`, and `dashboard-stats` now starts late because it queues
+behind ten chrome calls. Two ways forward, in order of value:
+
+1. **Start `dashboard-stats` as soon as the session context resolves**, instead of waiting for the
+   page to mount. It is the only call content waits on, so it should not queue at all. This is the
+   cheapest remaining win, roughly 400-600 ms.
+2. **Collapse the burst into `get-session-context`**, the pattern that already took the boot chain
+   from four calls to one. Larger, and less valuable now that the two genuinely slow calls are
+   fixed.
+
+### Pending measurement
+
+The opt-in team query (`propertyTeamQueryEnabled`) is merged but not released. The Vercel free plan
+returned `Deployment rate limited - retry in 24 hours`, so no production build could be made.
+Re-run `perf:boot-durations` once it ships. Expectation: three fewer calls on `/dashboard` and
+`/bookings`, and a `route:content` below 4599 ms.
+
 ## Release state
 
 **2026-11-10.** PR #371 synced `main` to `develop`'s tree and shipped the UI side.

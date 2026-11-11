@@ -38,7 +38,8 @@ import { normalizeCityPlace } from '@/features/guest/marketing/shared/lib/locati
 
 import { ListingGridSkeleton } from '@/components/skeletons/ListingGridSkeleton';
 import { Button } from '@/components/ui/button';
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePageTitle } from '@/lib/pageTitle';
+import { buildPageTitle, minNightlyRate, placeDescription, placeTitle } from '@/lib/seo/seoMeta';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 export function ParkingsLocationPage() {
@@ -80,9 +81,14 @@ export function ParkingsLocationPage() {
   const towerOptions = useMemo(() => facets.towers.map((entry) => entry.tower), [facets.towers]);
   const totalResults = data?.total ?? 0;
   const placeLabel = city ?? humanizeLocationSlug(locationSlug);
-  usePageTitle(publicPageTitle(`Parking in ${placeLabel}`));
+  usePageTitle(buildPageTitle(placeTitle('parking', placeLabel)));
   usePageMeta({
-    description: `Parking slots in ${placeLabel}. Pick dates and reserve by the night.`,
+    description: placeDescription({
+      family: 'parking',
+      place: placeLabel,
+      count: totalResults,
+      priceFrom: minNightlyRate(entries),
+    }),
     canonicalPath: `/parkings/in/${locationSlug}`,
   });
 

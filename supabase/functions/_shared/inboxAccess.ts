@@ -6,7 +6,7 @@
  * Parking stays on coarse inbox:view / inbox:reply / inbox:manage until Phase 9.
  */
 
-import { verifyParkingTeamAccess, verifyPropertyAccess, type OrgRow } from './orgAuth.ts';
+import { createServiceClient, verifyParkingTeamAccess, verifyPropertyAccess, type OrgRow } from './orgAuth.ts';
 import { INBOX_PHASE6_MANAGE_LEAF_IDS } from './accessPermissionExpansion.ts';
 import type { ParkingTeamPermissionId } from './parkingTeamPermissions.ts';
 import { hasPropertyPermission, type TeamPermissionId } from './propertyTeamPermissions.ts';
@@ -85,6 +85,35 @@ function parkingCapability(capability: InboxCapability): 'view' | 'reply' | 'man
   if (capability === 'view') return 'view';
   if (capability === 'reply') return 'reply';
   return 'manage';
+}
+
+/**
+ * True when the caller gets org-wide inbox Realtime.
+ *
+ * Mirrors the `user_can_access_org_inbox` Realtime policy: the org owner or an active org
+ * ADMIN. A property-level member has `inbox:view` but no org-wide realtime, so their
+ * inbox needs a poll to stay live.
+ */
+export async function hasOrgInboxRealtimeAccess(
+  orgId: string,
+  userId: string,
+  orgOwnerId: string
+): Promise<boolean> {
+  if (orgOwnerId === userId) return true;
+  const sb = createServiceClient();
+  const { data, error } = await sb
+    .from('organization_members')
+    .select('id')
+    .eq('organization_id', orgId)
+    .eq('user_id', userId)
+    .eq('role_id', 'ADMIN')
+    .eq('status', 'active')
+    .limit(1);
+  if (error) {
+    console.warn('[inboxAccess] org admin lookup failed:', error.message);
+    return false;
+  }
+  return (data?.length ?? 0) > 0;
 }
 
 function readScopeFromUrl(url: URL): { propertyId: string | null; parkingId: string | null } {

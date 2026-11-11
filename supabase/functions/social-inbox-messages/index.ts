@@ -24,9 +24,15 @@ import {
   listMessages,
   markConversationRead,
 } from '../_shared/socialInboxService.ts';
+import { createServiceClient } from '../_shared/orgAuth.ts';
+import { getPageAccessToken, markMetaSeen } from '../_shared/metaInboxGraph.ts';
 import { jsonError, jsonSuccess, readJsonBody } from '../_shared/httpResponse.ts';
 import { featureUnavailableResponse } from '../_shared/featureAvailability.ts';
-import type { SocialConversationRow } from '../_shared/socialInboxTypes.ts';
+import type {
+  SocialChannelConnectionRow,
+  SocialConversationRow,
+  SocialMessageRow,
+} from '../_shared/socialInboxTypes.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 
 async function metaReplyFeatureBlock(
@@ -36,6 +42,47 @@ async function metaReplyFeatureBlock(
 ): Promise<Response | null> {
   if (conv.platform !== 'facebook' && conv.platform !== 'instagram') return null;
   return featureUnavailableResponse(req, 'inbox.meta.reply', { user });
+}
+
+/**
+ * Meta has no API to edit or unsend a Page message. Changing the copy in Kame would
+ * leave the guest reading the original, so both are rejected on Meta threads.
+ */
+function metaBlocksEditOrUnsend(conv: SocialConversationRow): boolean {
+  return conv.platform === 'facebook' || conv.platform === 'instagram';
+}
+
+/**
+ * Mirror "host opened this thread" onto Meta, when the org allows it.
+ *
+ * Instagram answers to the linked Page's id for `mark_seen`, same as a send.
+ */
+async function markMetaThreadSeen(conv: SocialConversationRow): Promise<void> {
+  const sb = createServiceClient();
+  const { data: conn } = await sb
+    .from('social_channel_connections')
+    .select('*')
+    .eq('id', conv.connection_id)
+    .maybeSingle();
+  if (!conn?.meta_page_id || !conn.encrypted_access_token) return;
+
+  const { data: settings } = await sb
+    .from('social_inbox_settings')
+    .select('mark_seen_on_open, parking_id')
+    .eq('organization_id', conv.organization_id)
+    .order('parking_id', { ascending: true, nullsFirst: true })
+    .limit(1)
+    .maybeSingle();
+  if (settings && (settings as { mark_seen_on_open?: boolean }).mark_seen_on_open === false) {
+    return;
+  }
+
+  const token = await getPageAccessToken(conn as SocialChannelConnectionRow);
+  await markMetaSeen({
+    accountId: conn.meta_page_id,
+    pageAccessToken: token,
+    recipientId: conv.external_participant_id ?? '',
+  });
 }
 
 serveAuthenticated('social-inbox-messages', async (req, user) => {
@@ -73,15 +120,39 @@ serveAuthenticated('social-inbox-messages', async (req, user) => {
   }
 
   if (req.method === 'GET') {
+    // Delta mode: only messages inserted or updated since the cursor. A read receipt, an
+    // edit or a reaction is a delta, so the thread is patched instead of refetched.
+    const after = url.searchParams.get('after') ?? undefined;
+    if (after) {
+      const since = new Date(after);
+      if (Number.isNaN(since.getTime())) {
+        return jsonError(req, 'after must be an ISO timestamp', 400);
+      }
+      const sb = createServiceClient();
+      const { data, error } = await sb.rpc('inbox_changed_messages', {
+        p_organization_id: ctx.orgId,
+        p_conversation_id: conversationId,
+        p_since: since.toISOString(),
+        p_limit: 200,
+      });
+      if (error) return jsonError(req, error.message, 500);
+      return jsonSuccess(req, {
+        messages: (data ?? []) as SocialMessageRow[],
+        serverTime: new Date().toISOString(),
+        delta: true,
+      });
+    }
+
     const before = url.searchParams.get('before') ?? undefined;
     const namedConv = await fillMissingMetaParticipantIdentity(conv);
     const { messages, hasMore } = await listMessages(ctx.orgId, conversationId, { before });
-    const enriched = await enrichConversationMessageAttachments(namedConv, messages);
+    // GET never calls Graph. Attachment URLs that have expired are refreshed by the
+    // explicit `refresh_media` action when an image fails to load.
     const [conversation] = await attachConversationConnectionStatus([namedConv]);
     const guestRequests = await listGuestRequestsForConversation(conversationId);
     return jsonSuccess(req, {
       conversation: conversation ?? namedConv,
-      messages: enriched,
+      messages,
       hasMore,
       guestRequests,
     });
@@ -91,6 +162,9 @@ serveAuthenticated('social-inbox-messages', async (req, user) => {
     if (action === 'unsend') {
       const blocked = await metaReplyFeatureBlock(req, conv, user);
       if (blocked) return blocked;
+      if (metaBlocksEditOrUnsend(conv)) {
+        return jsonError(req, 'Messages sent to Facebook or Instagram cannot be unsent.', 400);
+      }
       const messageId = String(body.messageId ?? body.message_id ?? '').trim();
       if (!messageId) {
         return jsonError(req, 'messageId required', 400);
@@ -141,13 +215,43 @@ serveAuthenticated('social-inbox-messages', async (req, user) => {
       return jsonSuccess(req, { request: resolved });
     }
 
+    if (action === 'refresh_media') {
+      const messageId = String(body.messageId ?? body.message_id ?? '').trim();
+      if (!messageId) return jsonError(req, 'messageId required', 400);
+      const { data: message } = await createServiceClient()
+        .from('social_messages')
+        .select('*')
+        .eq('organization_id', ctx.orgId)
+        .eq('conversation_id', conversationId)
+        .eq('id', messageId)
+        .maybeSingle();
+      if (!message) return jsonError(req, 'Message not found', 404);
+      const [refreshed] = await enrichConversationMessageAttachments(
+        conv,
+        [message as SocialMessageRow]
+      );
+      return jsonSuccess(req, { message: refreshed ?? message });
+    }
+
     await markConversationRead(ctx.orgId, conversationId);
+
+    // Tell Meta the chat was seen, the way Business Suite does, so the guest is not left on
+    // unread. Best effort: a failure here must not stop the host reading the thread.
+    if (conv.platform === 'facebook' || conv.platform === 'instagram') {
+      void markMetaThreadSeen(conv).catch((error) => {
+        console.warn('[social-inbox-messages] mark_seen:', (error as Error).message);
+      });
+    }
+
     return jsonSuccess(req, { read: true });
   }
 
   if (req.method === 'PATCH') {
     const blocked = await metaReplyFeatureBlock(req, conv, user);
     if (blocked) return blocked;
+    if (metaBlocksEditOrUnsend(conv)) {
+      return jsonError(req, 'Messages sent to Facebook or Instagram cannot be edited.', 400);
+    }
     const messageId = String(body.messageId ?? body.message_id ?? '').trim();
     const text = String(body.text ?? '').trim();
     if (!messageId || !text) {

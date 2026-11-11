@@ -22,6 +22,14 @@ const NAMES = ['hero-day', 'hero-night'];
 describe('marketing hero width variants', () => {
   for (const name of NAMES) {
     for (const width of WIDTHS) {
+      it(`${name}-${width}.avif exists and beats the WebP at the same width`, () => {
+        const avif = path.join(HERO_DIR, `${name}-${width}.avif`);
+        const webp = path.join(HERO_DIR, `${name}-${width}.webp`);
+        expect(existsSync(avif), `missing ${avif}`).toBe(true);
+        // AVIF is offered first, so it must actually be the smaller option.
+        expect(statSync(avif).size).toBeLessThan(statSync(webp).size);
+      });
+
       it(`${name}-${width}.webp exists and is smaller than the full render`, () => {
         const variant = path.join(HERO_DIR, `${name}-${width}.webp`);
         const full = path.join(HERO_DIR, `${name}.webp`);

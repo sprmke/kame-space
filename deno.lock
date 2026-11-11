@@ -11550,6 +11550,7 @@
             "npm:dompurify@^3.4.17",
             "npm:embla-carousel-react@^8.6.0",
             "npm:eslint-plugin-import@^2.31.0",
+            "npm:eslint-plugin-jsx-a11y@^6.10.2",
             "npm:eslint-plugin-react-hooks@^4.6.0",
             "npm:eslint-plugin-react-refresh@~0.4.4",
             "npm:eslint-plugin-unicorn@56",

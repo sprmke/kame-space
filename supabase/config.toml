@@ -445,6 +445,9 @@ verify_jwt = false
 [functions.telegram-staff-cron]
 verify_jwt = false
 
+[functions.indexnow-submit]
+verify_jwt = false
+
 [functions.telegram-staff-settings]
 verify_jwt = false
 
@@ -967,13 +970,16 @@ verify_jwt = false
 [functions.meta-inbox-resubscribe]
 verify_jwt = false
 
-[functions.meta-inbox-backfill]
-verify_jwt = false
-
 [functions.meta-inbox-webhook]
 verify_jwt = false
 
 [functions.meta-inbox-webhook-healthcheck]
+verify_jwt = false
+
+[functions.meta-inbox-worker]
+verify_jwt = false
+
+[functions.meta-inbox-sync]
 verify_jwt = false
 
 [functions.social-inbox-threads]

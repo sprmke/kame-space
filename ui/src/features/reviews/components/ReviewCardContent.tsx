@@ -88,7 +88,7 @@ export function ReviewMediaGrid({
             ) : (
               <img
                 src={item.url}
-                alt=""
+                alt={`Attachment ${index + 1} from ${guestName}`}
                 loading="lazy"
                 decoding="async"
                 width={80}

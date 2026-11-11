@@ -103,7 +103,13 @@ export function V2PlacesIndex() {
                   className="focus-visible:ring-ring group flex items-center gap-4 py-4 focus-visible:outline-none focus-visible:ring-2 md:gap-6 md:py-7"
                 >
                   <span className="bg-muted relative size-14 shrink-0 overflow-hidden rounded-xl md:hidden">
-                    <Image src={row.image} alt="" fill sizes="56px" className="object-cover" />
+                    <Image
+                      src={row.image}
+                      alt={`Stays in ${row.place}`}
+                      fill
+                      sizes="56px"
+                      className="object-cover"
+                    />
                   </span>
                   <span className="text-foreground group-hover:text-primary min-w-0 flex-1 truncate text-2xl font-bold tracking-[-0.03em] transition-colors md:text-5xl lg:text-6xl">
                     {row.place}
@@ -143,7 +149,7 @@ export function V2PlacesIndex() {
                       >
                         <Image
                           src={preview.image}
-                          alt=""
+                          alt={`Stays in ${preview.place}`}
                           fill
                           sizes="256px"
                           className="object-cover"

@@ -47,7 +47,7 @@ export function useUploadParkingMedia() {
   const upload = useMutation({
     mutationFn: async (rawFile: File): Promise<ParkingMediaResult> => {
       const prepared = await prepareUpload(rawFile, {
-        imagePreset: 'PHOTO_MASTER',
+        imagePreset: 'LISTING_PHOTO',
         surface: 'parking-media',
       });
       if (prepared.error) throw new Error(prepared.error);

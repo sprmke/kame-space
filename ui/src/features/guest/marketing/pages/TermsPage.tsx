@@ -1,9 +1,9 @@
 import { LegalSimplePage } from '@/features/guest/marketing/legal/components/LegalSimplePage';
 
 import { termsDocument } from '@/lib/legal/termsContent';
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePublicStaticRouteSeo } from '@/lib/seo/routeTitle';
 
 export function TermsPage() {
-  usePageTitle(publicPageTitle('Terms'));
+  usePublicStaticRouteSeo('/terms');
   return <LegalSimplePage document={termsDocument} />;
 }

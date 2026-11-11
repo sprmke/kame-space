@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
 import importPlugin from 'eslint-plugin-import';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import unicorn from 'eslint-plugin-unicorn';
 
@@ -26,6 +27,7 @@ export default [
     plugins: {
       'react-refresh': reactRefresh,
       import: importPlugin,
+      'jsx-a11y': jsxA11y,
     },
     rules: {
       '@typescript-eslint/no-unused-vars': [
@@ -40,6 +42,11 @@ export default [
           fixStyle: 'inline-type-imports',
         },
       ],
+      // Every <img> needs an alt attribute; `alt=""` is the correct value for a
+      // decorative image, so this rule is about presence, not text. Redundant wording
+      // ("photo of ...") is rejected because screen readers already announce the role.
+      'jsx-a11y/alt-text': 'error',
+      'jsx-a11y/img-redundant-alt': 'error',
       'react-hooks/exhaustive-deps': 'warn',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],

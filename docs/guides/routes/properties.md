@@ -181,6 +181,20 @@ Full field map + dashboard gaps: **[[public-property-catalog|Public property cat
 
 ---
 
+## SEO
+
+- Registry entries: `properties` (list), `properties-place` (`/properties/in/:location`),
+  `property-detail` (`/properties/:propertySlug`).
+- Canonical: self, on the apex origin, query string dropped. Detail pages canonicalize
+  themselves only once the edge payload resolves the slug.
+- Sitemap: the list page is static; each ACTIVE listing and each place page is added from
+  `public_listing_search`.
+- Crawler HTML: detail pages get a snapshot with one `<h1>`, price-from, guest and bedroom
+  facts, gallery images with alt, a breadcrumb trail, and links to the place, development and
+  host page. Place pages list the first 12 listings as real links.
+- A slug the catalogue does not have answers crawlers with 404 and `noindex`.
+- Reference: [`architecture/seo.md`](../../architecture/seo.md).
+
 ## Implementation map
 
 | Concern        | Path                                                                                      |

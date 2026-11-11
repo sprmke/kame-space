@@ -134,6 +134,16 @@ This is the marketing page that introduces the platform to property owners befor
 
 ---
 
+## SEO
+
+- Registry entries: `for-hosts` and `for-hosts-pricing`, both indexable and in the sitemap.
+- Canonical: self on the apex origin.
+- Crawler HTML: static snapshot from `content/staticPageCopy.ts`, including the hero copy the
+  page renders. No plan prices are baked into the snapshot (they are live data).
+- Redesign previews (`/for-hosts/v2`, `/for-hosts/v3`, `/for-hosts/preview`) are `noindex` and
+  robots-disallowed.
+- Reference: [`architecture/seo.md`](../../architecture/seo.md).
+
 ## Implementation map
 
 | Concern                | Path                                                                                                                                                                                                                                               |

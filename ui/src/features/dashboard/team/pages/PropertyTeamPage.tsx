@@ -49,7 +49,7 @@ import { SlidingTabs, SlidingTabsList, SlidingTabsTrigger } from '@/components/u
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 export function PropertyTeamPage() {
-  const { data, isLoading, error } = usePropertyTeam();
+  const { data, isLoading, error } = usePropertyTeam({ enabled: true });
   const { data: access } = usePropertyPermissions();
   const canViewTeam = hasPropertyPermission(access?.permissions, 'team:view');
   const canInvite = hasPropertyPermission(access?.permissions, 'team.invitations:add');

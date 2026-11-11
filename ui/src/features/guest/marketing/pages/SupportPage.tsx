@@ -20,8 +20,9 @@ import { MarketingPublicPageHero } from '@/features/guest/marketing/shared/compo
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePublicStaticRouteSeo } from '@/lib/seo/routeTitle';
 import { PLATFORM_CONTACT_EMAIL } from '@/lib/platformBranding';
+import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
 
 const PREVIEW_LIMIT = 8;
 
@@ -130,7 +131,7 @@ function SupportFaqSection({
 }
 
 export function SupportPage() {
-  usePageTitle(publicPageTitle('Support'));
+  usePublicStaticRouteSeo('/support');
   const { data, isPending } = usePublicSupportFaqs();
 
   const guestFaqs = (data?.faqs ?? []).filter(isGuestFaq);
@@ -140,10 +141,10 @@ export function SupportPage() {
     <div className="bg-background min-h-screen">
       <MarketingPublicPageHero
         eyebrow="Support"
-        title="Answers for guests and hosts"
+        title={STATIC_PAGE_COPY.support.heading}
         description={
           <>
-            Short answers for the booking workflow you see in the product. Still stuck?{' '}
+            {STATIC_PAGE_COPY.support.intro} Still stuck?{' '}
             <Link to="/contact" className="text-brand-ink font-medium hover:underline">
               Contact us
             </Link>

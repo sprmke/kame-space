@@ -21,6 +21,12 @@ import {
 import { useMarketingBrandColor } from '@/features/guest/marketing/shared/context/ModeSwitchTransitionContext';
 
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import {
+  buildPageTitle,
+  hostDescription,
+  hostTitle,
+} from '@/lib/seo/seoMeta';
+import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 function HostPublicPageSkeleton() {
   return (
@@ -80,7 +86,26 @@ function defaultListingTab(homesCount: number, parkingsCount: number): HostListi
 export function HostPublicPage() {
   const { orgSlug = '' } = useParams<{ orgSlug: string }>();
   const { data: host, isLoading, isError } = usePublicHost(orgSlug);
-  usePageTitle(publicPageTitle(host?.name ? `${host.name}` : 'Host'));
+  const hostPageTitle = host?.name ? buildPageTitle(hostTitle(host.name)) : publicPageTitle('Host');
+  usePageTitle(hostPageTitle);
+  usePageMeta(
+    {
+      title: hostPageTitle,
+      description: host
+        ? hostDescription({
+            name: host.name,
+            stays: host.properties.length,
+            parking: host.parkings.length,
+            tagline: host.tagline,
+            description: host.description,
+          })
+        : null,
+      canonicalPath: `/hosts/${orgSlug}`,
+      image: host?.logoUrl ?? null,
+      imageAlt: host ? `${host.name} logo` : null,
+    },
+    Boolean(host)
+  );
   const { setBrandColor } = useMarketingBrandColor();
   const [activeTab, setActiveTab] = useState<HostListingTab>('homes');
   const [homesPage, setHomesPage] = useState(1);
