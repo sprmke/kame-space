@@ -378,10 +378,10 @@ idempotent document share token / stay guide token self-heal and owner linking).
 
 ## Testing
 
-| Layer | Path / spec                                                                                                                                                                                                                             | Manual                                   |
-| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| Unit  | `guestTripPhase.test.ts` (phase, progress, headline, next action, checklist, timeline), `guestTripCalendar.test.ts`, `guestTripLinks.test.ts`, `guestTripAccess_test.ts`, `bookingDetailActions.test.ts`, `parseChatRichBlocks.test.ts` | —                                        |
-| E2E   | N/A yet                                                                                                                                                                                                                                 | Open from success page, email, Trips tab |
+| Layer | Path / spec                                                                                                                                                                                                                             | Manual                                               |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Unit  | `guestTripPhase.test.ts` (phase, progress, headline, next action, checklist, timeline), `guestTripCalendar.test.ts`, `guestTripLinks.test.ts`, `guestTripAccess_test.ts`, `bookingDetailActions.test.ts`, `parseChatRichBlocks.test.ts` | —                                                    |
+| E2E   | `guestFormSubmit.spec.ts` (submit lands here), `tripPendingActions.spec.ts` (`@smoke @critical`: pending, cancelled, expired), `stayGuideEssentials.spec.ts`, `accountLanding.spec.ts`                                                  | Open from the email link, Trips tab, or a submission |
 
 ---
 

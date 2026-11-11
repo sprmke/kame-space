@@ -116,7 +116,15 @@ async function expire(row: PendingReviewCandidate): Promise<boolean> {
   return !result.alreadyCancelled;
 }
 
-/** One sweep. Safe to re-run: the chase stamp and the status re-check make it converge. */
+/**
+ * One sweep. Safe to re-run: the chase stamp and the status re-check make it converge.
+ *
+ * Audit trail: expiry goes through `cancelBooking`, so the orchestrator writes one
+ * `booking.cancelled` row per booking with the cron actor, the reason and the dates. That is
+ * richer than a single `system.cron_run` summary, so no extra row is written here; the run
+ * itself is covered by the job heartbeat in `serveCronPost`. The chase changes nothing a host
+ * owns, so it is logged to the console only.
+ */
 export async function runPendingReviewExpirySweep(
   now: Date = new Date()
 ): Promise<PendingReviewSweepResult> {
