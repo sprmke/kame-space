@@ -124,10 +124,12 @@ function ReviewFeedbackTags({ review }: { review: PropertyReviewItem }) {
 function ReviewPhotoGrid({
   urls,
   reviewId,
+  author,
   onPhotoClick,
 }: {
   urls: string[];
   reviewId: string;
+  author: string;
   onPhotoClick: (index: number) => void;
 }) {
   if (urls.length === 0) return null;
@@ -141,7 +143,12 @@ function ReviewPhotoGrid({
           className="border-border bg-muted/30 block size-20 overflow-hidden rounded-lg border sm:size-24"
           aria-label={`View review photo ${mediaIndex + 1}`}
         >
-          <img src={url} alt="" className="size-full object-cover" loading="lazy" />
+          <img
+            src={url}
+            alt={`Guest submission from ${author}`}
+            className="size-full object-cover"
+            loading="lazy"
+          />
         </button>
       ))}
     </div>
@@ -221,6 +228,7 @@ function ReviewDetailDialog({
       <ReviewPhotoGrid
         urls={photos}
         reviewId={review.id}
+        author={review.author}
         onPhotoClick={(index) => onPhotoClick(photos, index)}
       />
     </GuestDialogShell>
@@ -325,7 +333,7 @@ function ReviewPhotoLightbox({
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.98 }}
         src={urls[index]}
-        alt=""
+        alt={`Review attachment ${index + 1}`}
         className="max-h-[min(85dvh,720px)] max-w-[min(92vw,960px)] object-contain"
         onClick={(event) => event.stopPropagation()}
       />
@@ -497,6 +505,7 @@ export function PropertyReviews({
                 <ReviewPhotoGrid
                   urls={photos}
                   reviewId={review.id}
+                  author={review.author}
                   onPhotoClick={(photoIndex) =>
                     setPhotoLightbox({ urls: photos, index: photoIndex })
                   }

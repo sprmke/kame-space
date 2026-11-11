@@ -97,5 +97,15 @@ targets+=(
   resend-parking-endorsement/index.ts
 )
 
+# Guest Inbox / Meta messaging — added after Phase 1 of the meta sync overhaul rewrote the
+# webhook, the import and the send path. Globs, not names, so a new inbox function or shared
+# module is checked automatically and cannot drift out again.
+for handler in *inbox*/index.ts; do
+  [[ -f "$handler" ]] && targets+=("$handler")
+done
+for shared in _shared/metaInbox*.ts _shared/socialInbox*.ts _shared/inboxAccess.ts; do
+  [[ -f "$shared" && "$shared" != *_test.ts ]] && targets+=("$shared")
+done
+
 echo "→ deno check (${#targets[@]} launch and cron edge modules)"
 deno check --allow-import "${targets[@]}"

@@ -43,6 +43,7 @@ import type {
   ShowcaseResolvedSection,
 } from '@/features/guest/marketing/showcase/types/showcase';
 
+import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 import { cn } from '@/lib/utils';
 
 function EditorialHero({
@@ -117,7 +118,7 @@ function EditorialHero({
             {images[0] ? (
               <img
                 src={images[0]}
-                alt=""
+                alt={buildListingImageAlt({ listingName: data.propertyName, index: 0 })}
                 className="size-full object-cover"
                 loading="eager"
                 fetchPriority="high"
@@ -136,7 +137,7 @@ function EditorialHero({
             {images[1] ? (
               <img
                 src={images[1]}
-                alt=""
+                alt={buildListingImageAlt({ listingName: data.propertyName, index: 1 })}
                 className="size-full object-cover"
                 loading="lazy"
                 decoding="async"
@@ -154,7 +155,7 @@ function EditorialHero({
             {images[2] ? (
               <img
                 src={images[2]}
-                alt=""
+                alt={buildListingImageAlt({ listingName: data.propertyName, index: 2 })}
                 className="size-full object-cover"
                 loading="lazy"
                 decoding="async"

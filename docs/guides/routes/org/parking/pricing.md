@@ -13,17 +13,17 @@ Route: `/org/:orgSlug/parking/:parkingSlug/pricing`
 
 ## Progress overview
 
-| Section                       | E2E save | Validation | Docs | Notes                                                                                  |
-| ----------------------------- | -------- | ---------- | ---- | -------------------------------------------------------------------------------------- |
-| Base rates                    | ✅       | ✅         | Done | `parking_settings.weekday_nightly_rate` / weekend                                      |
-| Calendar custom dates         | ✅       | ✅         | Done | `parking_pricing_date_overrides`                                                       |
-| Date blocks                   | ✅       | ✅         | Done | `parking_blocked_dates`; broadcast + calendar UI                                       |
-| Fees                          | —        | —          | N/A  | Not applicable for parking                                                             |
-| Booked nights                 | ✅       | —          | Done | `bookedDateKeys` from claimed parking bookings                                         |
-| Team access                   | —        | —          | Done | Parking team `pricing:view` / `pricing:edit`                                           |
+| Section                       | E2E save | Validation | Docs | Notes                                                                                          |
+| ----------------------------- | -------- | ---------- | ---- | ---------------------------------------------------------------------------------------------- |
+| Base rates                    | ✅       | ✅         | Done | `parking_settings.weekday_nightly_rate` / weekend                                              |
+| Calendar custom dates         | ✅       | ✅         | Done | `parking_pricing_date_overrides`                                                               |
+| Date blocks                   | ✅       | ✅         | Done | `parking_blocked_dates`; broadcast + calendar UI                                               |
+| Fees                          | —        | —          | N/A  | Not applicable for parking                                                                     |
+| Booked nights                 | ✅       | —          | Done | `bookedDateKeys` from claimed parking bookings                                                 |
+| Team access                   | —        | —          | Done | Parking team `pricing:view` / `pricing:edit`                                                   |
 | Payout preview (Phase 3/4)    | —        | —          | Done | Guest rate + platform fee + net payout under each rate field — display only, live commission % |
-| Guest-rate cap (Phase 3/4)    | ✅       | ✅         | Done | Rejected client- and server-side, not silently clamped; cap is live super-admin config |
-| Direct booking link (Phase 8) | —        | —          | Done | Copyable link at a reduced fee, with a per-night comparison using the current rate |
+| Guest-rate cap (Phase 3/4)    | ✅       | ✅         | Done | Rejected client- and server-side, not silently clamped; cap is live super-admin config         |
+| Direct booking link (Phase 8) | —        | —          | Done | Copyable link at a reduced fee, with a per-night comparison using the current rate             |
 
 ---
 

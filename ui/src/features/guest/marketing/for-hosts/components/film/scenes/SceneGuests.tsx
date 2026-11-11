@@ -186,7 +186,7 @@ export function GuestInboxScene() {
 
 /* ---------------- AI voice receptionist ---------------- */
 
-const RECEPTIONIST_AVATAR = '/avatars/receptionist-turtle-idle.png';
+const RECEPTIONIST_AVATAR = '/avatars/receptionist-turtle-idle.webp';
 /** Same talk loop the live receptionist plays while it speaks (see public/avatars/ATTRIBUTION.md). */
 const RECEPTIONIST_TALK = '/avatars/receptionist-turtle-talk.mp4';
 

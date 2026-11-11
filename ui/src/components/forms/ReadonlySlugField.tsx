@@ -16,6 +16,8 @@ type ReadonlySlugFieldProps = {
   disabled?: boolean;
   placeholder?: string;
   className?: string;
+  /** One short line under the field. Keep it to a sentence. */
+  hint?: string;
 };
 
 /** Read-only slug input with a copy control for the full public URL. */
@@ -26,6 +28,7 @@ export function ReadonlySlugField({
   disabled,
   placeholder,
   className,
+  hint,
 }: ReadonlySlugFieldProps) {
   const [copied, setCopied] = useState(false);
 
@@ -42,7 +45,8 @@ export function ReadonlySlugField({
   };
 
   return (
-    <div className={cn('flex min-w-0 items-center gap-2', className)}>
+    <div className={cn('min-w-0', className)}>
+      <div className="flex min-w-0 items-center gap-2">
       <Input
         id={id}
         value={value}
@@ -69,6 +73,8 @@ export function ReadonlySlugField({
           <Copy className="size-4" aria-hidden />
         )}
       </Button>
+      </div>
+      {hint ? <p className="text-muted-foreground mt-1.5 text-xs">{hint}</p> : null}
     </div>
   );
 }

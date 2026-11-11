@@ -169,7 +169,6 @@
     "ui/src/features/dashboard/org/lib/orgPropertyDisplay.ts",
     "ui/src/features/dashboard/org/lib/orgSettingsCompletion.ts",
     "ui/src/features/dashboard/org/lib/orgSettingsFieldError.ts",
-    "ui/src/features/dashboard/org/lib/orgSettingsForm.ts",
     "ui/src/features/dashboard/org/lib/orgSettingsIssuesStore.ts",
     "ui/src/features/dashboard/org/lib/orgSettingsSave.ts",
     "ui/src/features/dashboard/org/lib/orgSettingsValidation.ts",

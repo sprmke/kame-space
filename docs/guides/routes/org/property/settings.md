@@ -234,6 +234,8 @@ Save path: dirty `details` section → `update-property` settings merge (`proper
 
 Listing gallery photos/videos. Storage: `properties.settings.media` via `upload-property-media` / `update-property`. Same fields are editable in **Public Pages → Property → Edit** (live preview). Brand color is under **Basic Information** (`app_settings.brand_color`) and also in the listing editor.
 
+**Alt text.** Each photo has an **Alt text** action in its top-right menu (pencil). It opens a bottom sheet on phone and a dialog on desktop, saving with the rest of the gallery. The value is stored as `media[].alt` and used for the public image `alt` attribute and `og:image:alt`; when empty, the caption is used, then a generated description built from the listing name, unit type and city. Leaving the sheet with unsaved text asks Save / Discard / Keep editing. The save rides the normal property update, so it appears in Activity as a property edit.
+
 Each picked photo is **downscaled + re-encoded to WebP in the browser** (long edge 3840px, quality-first — no visible loss even full-screen on 4K) before upload via `prepareUpload` / `PHOTO_MASTER` preset; the stored file is typically 50–80% smaller. Ceilings: **image 10 MB, video 50 MB** (client rejects over-ceiling with `File must be N MB or smaller`; videos are not transcoded — trim/compress a longer clip first). **SVG is rejected** (public bucket XSS). Architecture: [`storage.md`](../../../architecture/storage.md) §7.1.
 
 ## Description
@@ -497,16 +499,17 @@ Read-only. Summary: "Who did what on this property." **Manage** opens a large mo
 
 ## API reference (this page)
 
-| Action                                                            | Endpoint                                                                               |
-| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Profile + settings                                                | `PATCH update-property`                                                                |
-| Payment + building forms + email automations + workflow documents | `PATCH app-settings?property_id=` (payment fields require `settingsVerificationToken`) |
-| Payment OTP (org owner)                                           | `POST settings-verification?property_id=` (`send_otp`, `verify_otp`)                   |
-| Media upload/delete                                               | `POST` / `DELETE upload-property-media?property_id=`                                   |
-| Payment QR / signature                                            | `POST upload-app-settings-asset?property_id=`                                          |
-| Listing status + impact                                           | `GET property-lifecycle?property_id=&impact=1`                                         |
-| Pause / Resume / Archive / Restore                                | `POST property-lifecycle` `{ property_id, action }`                                    |
-| Delete                                                            | `DELETE delete-property` `{ propertyId, confirmName }`                                 |
+| Action                                                            | Endpoint                                                                                             |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Profile + settings                                                | `PATCH update-property`                                                                              |
+| Payment + building forms + email automations + workflow documents | `PATCH app-settings?property_id=` (payment fields require `settingsVerificationToken`)               |
+| Payment OTP (org owner)                                           | `POST settings-verification?property_id=` (`send_otp`, `verify_otp`)                                 |
+| Media upload/delete                                               | `POST` / `DELETE upload-property-media?property_id=`                                                 |
+| Media alt text                                                    | Saved with `media[].alt` through the same `update-property` call; rendered by `buildListingImageAlt` |
+| Payment QR / signature                                            | `POST upload-app-settings-asset?property_id=`                                                        |
+| Listing status + impact                                           | `GET property-lifecycle?property_id=&impact=1`                                                       |
+| Pause / Resume / Archive / Restore                                | `POST property-lifecycle` `{ property_id, action }`                                                  |
+| Delete                                                            | `DELETE delete-property` `{ propertyId, confirmName }`                                               |
 
 ---
 

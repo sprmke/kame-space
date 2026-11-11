@@ -35,7 +35,7 @@ export function useUploadPropertyMedia() {
       if (!propertyId) throw new Error('Property context is required');
 
       const prepared = await prepareUpload(rawFile, {
-        imagePreset: 'PHOTO_MASTER',
+        imagePreset: 'LISTING_PHOTO',
         surface: 'property-media',
       });
       if (prepared.error) throw new Error(prepared.error);

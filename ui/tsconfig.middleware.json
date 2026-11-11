@@ -11,5 +11,13 @@
     "noUnusedParameters": true,
     "isolatedModules": true
   },
-  "include": ["middleware.ts", "src/lib/seo/seoMeta.ts", "src/lib/seo/seoMiddleware.ts"]
+  "include": [
+    "middleware.ts",
+    "src/lib/seo/seoMeta.ts",
+    "src/lib/seo/seoMiddleware.ts",
+    "src/lib/seo/siteOrigin.ts",
+    "src/lib/seo/publicRoutes.ts",
+    "src/lib/seo/content/staticPageCopy.ts",
+    "src/lib/seo/snapshot/renderSnapshot.ts"
+  ]
 }

@@ -4,10 +4,12 @@ import { ArrowLeft, Compass } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 /** App-wide catch-all — matched when no other route claims the path. */
 export function NotFoundPage() {
   usePageTitle(publicPageTitle('Page not found'));
+  usePageMeta({ description: 'This page does not exist.', noindex: true });
   const navigate = useNavigate();
   const location = useLocation();
   const canGoBack = location.key !== 'default';

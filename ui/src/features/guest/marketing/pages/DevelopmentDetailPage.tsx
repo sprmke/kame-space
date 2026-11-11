@@ -10,29 +10,45 @@ import { ListingLoadError } from '@/features/guest/marketing/shared/components/L
 
 import { DevelopmentDetailPageSkeleton } from '@/components/skeletons/GuestMarketingSkeleton';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
-import { buildDevelopmentJsonLd } from '@/lib/seo/seoMeta';
+import { absoluteCanonicalUrl } from '@/lib/seo/canonicalOrigin';
+import {
+  buildDevelopmentJsonLd,
+  buildPageTitle,
+  developmentTitle,
+  listingDescription,
+} from '@/lib/seo/seoMeta';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 export function DevelopmentDetailPage() {
   const { slug = '' } = useParams<{ slug: string }>();
   const developmentResult = usePublicDevelopment(slug);
   const { data: development, isLoading, isError } = developmentResult;
-  usePageTitle(publicPageTitle(development?.name ? `${development.name}` : 'Development'));
+  const developmentPageTitle = development
+    ? buildPageTitle(
+        developmentTitle({ name: development.name, city: development.city ?? development.location })
+      )
+    : publicPageTitle('Development');
+  usePageTitle(developmentPageTitle);
+
+  const developmentDescription = development
+    ? listingDescription({
+        name: development.name,
+        city: development.city ?? development.location,
+        hostDescription: development.description,
+      })
+    : undefined;
+
   const canonicalPath = `/developments/${development?.slug ?? slug}`;
   usePageMeta(
     {
-      title: development?.name,
-      description:
-        development?.description ||
-        (development
-          ? `${development.name} in ${development.location}. Browse homes and parking.`
-          : null),
+      title: developmentPageTitle,
+      description: developmentDescription ?? null,
       canonicalPath,
       image: development?.coverImage || null,
       jsonLd: development
         ? buildDevelopmentJsonLd({
             name: development.name,
-            url: `${window.location.origin}${canonicalPath}`,
+            url: absoluteCanonicalUrl(canonicalPath),
             description: development.description,
             image: development.coverImage || null,
             city: development.city,

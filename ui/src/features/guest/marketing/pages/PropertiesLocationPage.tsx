@@ -41,7 +41,8 @@ import {
   ListingRowSkeleton,
 } from '@/components/skeletons/ListingGridSkeleton';
 import { Button } from '@/components/ui/button';
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePageTitle } from '@/lib/pageTitle';
+import { buildPageTitle, minNightlyRate, placeDescription, placeTitle } from '@/lib/seo/seoMeta';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 function parseViewMode(raw: string | null): ViewMode {
@@ -90,9 +91,15 @@ export function PropertiesLocationPage() {
             .join(' ')
         : null;
   const totalResults = data?.total ?? 0;
-  usePageTitle(publicPageTitle(`Homes in ${place ?? humanizeLocationSlug(locationSlug)}`));
+  const placeName = place ?? humanizeLocationSlug(locationSlug);
+  usePageTitle(buildPageTitle(placeTitle('property', placeName)));
   usePageMeta({
-    description: `Homes for rent in ${place ?? humanizeLocationSlug(locationSlug)}. Compare prices, check dates, and book online.`,
+    description: placeDescription({
+      family: 'property',
+      place: placeName,
+      count: totalResults,
+      priceFrom: minNightlyRate(properties),
+    }),
     canonicalPath: `/properties/in/${locationSlug}`,
   });
 

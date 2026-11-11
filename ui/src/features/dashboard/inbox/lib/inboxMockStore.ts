@@ -54,8 +54,6 @@ export async function mockFetchThreads(filters: {
     conversations: filterMockConversations(conversations, filters),
     nextCursor: null,
     metaHasMore: false,
-    syncedFromMeta: false,
-    syncedInChunk: undefined,
   };
 }
 

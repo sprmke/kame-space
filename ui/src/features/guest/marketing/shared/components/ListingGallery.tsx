@@ -1,21 +1,22 @@
 import { useState, type ReactNode } from 'react';
 
 import { Grid3X3, Share2 } from 'lucide-react';
-
 import { toast } from 'sonner';
 
 import { GalleryLightbox } from '@/features/guest/marketing/shared/components/GalleryLightbox';
 import { MarketingImage as Image } from '@/features/guest/marketing/shared/components/MarketingImage';
 import { LISTING_PLACEHOLDER_PROPERTY } from '@/features/guest/marketing/shared/lib/mockListingImages';
 
-import { shareContent } from '@/lib/pwa/share';
-
 import { Button } from '@/components/ui/button';
+import { shareContent } from '@/lib/pwa/share';
+import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 import { cn } from '@/lib/utils';
 
 type Props = {
   images: string[];
   listingName: string;
+  /** Host alt text per photo, same order as `images`. Falls back to a generated one. */
+  imageAlts?: Array<string | null | undefined>;
   /** Optional slot rendered next to Share (e.g. property save button). */
   actionSlot?: ReactNode;
   placeholderSrc?: string;
@@ -24,9 +25,12 @@ type Props = {
 export function ListingGallery({
   images,
   listingName,
+  imageAlts,
   actionSlot,
   placeholderSrc = LISTING_PLACEHOLDER_PROPERTY,
 }: Props) {
+  const altFor = (index: number) =>
+    buildListingImageAlt({ alt: imageAlts?.[index], listingName, index });
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -59,7 +63,7 @@ export function ListingGallery({
     >
       <Image
         src={src}
-        alt={`${listingName} - ${index + 1}`}
+        alt={altFor(index)}
         fill
         className="object-cover transition-transform duration-500 group-hover:scale-110"
         sizes={sizes}
@@ -219,6 +223,7 @@ export function ListingGallery({
       <GalleryLightbox
         images={displayImages}
         altPrefix={listingName}
+        imageAlts={imageAlts}
         open={lightboxOpen}
         index={currentIndex}
         onClose={() => setLightboxOpen(false)}

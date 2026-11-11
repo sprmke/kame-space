@@ -509,6 +509,24 @@ Meta only allows replies within 24 hours of the guest's last message. After that
 
 On the property Inbox under Manage, then Quick replies or Automation. Those settings apply across your organization.
 
+### Why can't I edit or unsend a message I sent on Facebook or Instagram?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/inbox.md
+- order: 25
+
+Meta cannot change or take back a message that was already sent to a guest, so those actions are not offered on Facebook and Instagram threads. Editing the copy here would only change what you see, not what the guest sees. Website chat messages can still be edited and unsent.
+
+### Why does a new message sometimes take a minute to show up?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/inbox.md
+- order: 26
+
+New messages normally appear within seconds. If your role does not include org-wide live updates, the list refreshes about once a minute while the tab is open, and it refreshes straight away when you come back to the tab. Organization owners and organization admins get live updates.
+
 ### Do I need to connect Facebook before I can publish marketing content?
 
 - category: Guest Communication
@@ -913,6 +931,24 @@ Stay guide, security-deposit refund, and guest review links are per booking. Cal
 - order: 60
 
 Yes. On the Calendar card choose Copy link, select the check-in and check-out dates, then Copy link. The guest opens the calendar with that range selected. You can also copy the calendar without dates.
+
+### What is alt text and do I need it?
+
+- category: Public Pages
+- audience: host
+- source: docs/guides/routes/org/property/settings.md
+- order: 65
+
+Alt text describes a photo for guests who use a screen reader, and search engines read it too. Open Property Settings, Photos and Videos, then the pencil on a photo to write one short line such as "Studio with a balcony facing the pool". It is optional. If you leave it empty, we use the photo caption, then a description built from the listing name, unit type and city.
+
+### Why doesn't my listing show up on Google or in an AI answer?
+
+- category: Public Pages
+- audience: host
+- source: docs/guides/routes/properties.md
+- order: 70
+
+A new listing can take a few weeks to be discovered, and search engines decide the order. To give it the best chance, publish it, keep the name, photos and description filled in, and use the listing's own public link when you share it. Only published listings are offered to search engines. If the listing is still missing after a month, ask support to check the public page.
 
 ### How do I block dates for a property?
 

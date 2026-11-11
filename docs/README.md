@@ -34,27 +34,29 @@ See epics #101–#119 in historical [`archive/todos/BACKLOG_DRAFT.md`](./archive
 
 ## Architecture (live)
 
-| Doc                                                                                      | Purpose                                                                       |
-| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| [`PROJECT.md`](./PROJECT.md)                                                             | Thin index into `architecture/`                                               |
-| [`architecture/overview.md`](./architecture/overview.md)                                 | **Start here** — full-app diagrams, stack, surfaces, auth, booking, deploy    |
-| [`architecture/routing.md`](./architecture/routing.md)                                   | Routes and user flows                                                         |
-| [`architecture/data-model.md`](./architecture/data-model.md)                             | Postgres schema                                                               |
-| [`architecture/edge-functions.md`](./architecture/edge-functions.md)                     | Edge function inventory                                                       |
-| [`architecture/performance-before-after.md`](./architecture/performance-before-after.md) | **Measured** before/after for every performance change, with method           |
-| [`architecture/integrations.md`](./architecture/integrations.md)                         | Resend, Google, PDF                                                           |
-| [`architecture/validation-and-env.md`](./architecture/validation-and-env.md)             | Validation + env vars                                                         |
-| [`architecture/observability.md`](./architecture/observability.md)                       | Faults vs outcomes — Sentry errors, PostHog analytics, shared ids, scrub list |
-| [`architecture/deployment.md`](./architecture/deployment.md)                             | Deployment summary (links runbooks in archive)                                |
-| [`architecture/supabase-capacity.md`](./architecture/supabase-capacity.md)               | Pro-plan limits, measured baseline, capacity estimates, scaling triggers      |
-| [`architecture/ops-reports.md`](./architecture/ops-reports.md)                           | Weekly operations report: sources, schema, AI handoff, delivery, limits       |
-| [`architecture/roadmap.md`](./architecture/roadmap.md)                                   | Roadmap / gaps                                                                |
-| [`architecture/ai-dashboard-assistant.md`](./architecture/ai-dashboard-assistant.md)     | AI dashboard assistant — full tool catalog, tiers, RBAC, exclusions           |
-| [`architecture/plans-feature-matrix.md`](./architecture/plans-feature-matrix.md)         | Plan/tier feature × entitlement matrix, client/server gate inventory          |
-| [`architecture/feature-availability.md`](./architecture/feature-availability.md)         | Super-admin platform feature on/off catalog, server 503 gates, UI hooks       |
-| [`architecture/pwa.md`](./architecture/pwa.md)                                           | PWA — service worker, Web Push, offline read + outbox, kill-switch            |
-| [`architecture/unsaved-changes.md`](./architecture/unsaved-changes.md)                   | Unsaved-changes guard — leave / close confirmation for every editable form    |
-| [`architecture/contextual-help.md`](./architecture/contextual-help.md)                   | Contextual help — InfoHint, How it works panels, intro cards, copy registry   |
+| Doc                                                                                      | Purpose                                                                                   |
+| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [`PROJECT.md`](./PROJECT.md)                                                             | Thin index into `architecture/`                                                           |
+| [`architecture/overview.md`](./architecture/overview.md)                                 | **Start here** — full-app diagrams, stack, surfaces, auth, booking, deploy                |
+| [`architecture/routing.md`](./architecture/routing.md)                                   | Routes and user flows                                                                     |
+| [`architecture/data-model.md`](./architecture/data-model.md)                             | Postgres schema                                                                           |
+| [`architecture/edge-functions.md`](./architecture/edge-functions.md)                     | Edge function inventory                                                                   |
+| [`architecture/performance-before-after.md`](./architecture/performance-before-after.md) | **Measured** before/after for every performance change, with method                       |
+| [`architecture/integrations.md`](./architecture/integrations.md)                         | Resend, Google, PDF                                                                       |
+| [`architecture/validation-and-env.md`](./architecture/validation-and-env.md)             | Validation + env vars                                                                     |
+| [`architecture/observability.md`](./architecture/observability.md)                       | Faults vs outcomes — Sentry errors, PostHog analytics, shared ids, scrub list             |
+| [`architecture/deployment.md`](./architecture/deployment.md)                             | Deployment summary (links runbooks in archive)                                            |
+| [`architecture/supabase-capacity.md`](./architecture/supabase-capacity.md)               | Pro-plan limits, measured baseline, capacity estimates, scaling triggers                  |
+| [`architecture/ops-reports.md`](./architecture/ops-reports.md)                           | Weekly operations report: sources, schema, AI handoff, delivery, limits                   |
+| [`architecture/roadmap.md`](./architecture/roadmap.md)                                   | Roadmap / gaps                                                                            |
+| [`architecture/ai-dashboard-assistant.md`](./architecture/ai-dashboard-assistant.md)     | AI dashboard assistant — full tool catalog, tiers, RBAC, exclusions                       |
+| [`architecture/plans-feature-matrix.md`](./architecture/plans-feature-matrix.md)         | Plan/tier feature × entitlement matrix, client/server gate inventory                      |
+| [`architecture/feature-availability.md`](./architecture/feature-availability.md)         | Super-admin platform feature on/off catalog, server 503 gates, UI hooks                   |
+| [`architecture/pwa.md`](./architecture/pwa.md)                                           | PWA — service worker, Web Push, offline read + outbox, kill-switch                        |
+| [`architecture/unsaved-changes.md`](./architecture/unsaved-changes.md)                   | Unsaved-changes guard — leave / close confirmation for every editable form                |
+| [`architecture/seo.md`](./architecture/seo.md)                                           | SEO + AI search visibility — route registry, crawler snapshot, canonical, robots, sitemap |
+| [`archive/operations/seo-runbook.md`](./archive/operations/seo-runbook.md)               | Monthly SEO checklist, console setup, IndexNow, what to do when indexing breaks           |
+| [`architecture/contextual-help.md`](./architecture/contextual-help.md)                   | Contextual help — InfoHint, How it works panels, intro cards, copy registry               |
 
 ## Guides (live — per-route behavior)
 

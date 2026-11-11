@@ -6,7 +6,7 @@ Full 9:16 clip. Used by the host tour film (`SceneGuests.tsx`).
 
 - Source art: user-provided cute turtle illustration.
 - Motion: HeyGen full-body portrait clip (720×1280, 9:16), trimmed and spliced (excludes ~2.6–4s goofy eye-roll), audio-stripped.
-- Idle still: `receptionist-turtle-idle.png` (last outro frame — neutral closed-smile pose).
+- Idle still: `receptionist-turtle-idle.webp` (last outro frame — neutral closed-smile pose).
 - Mouth motion follows the HeyGen bake, not live Gemini phonemes.
 
 ## Legacy square video assets

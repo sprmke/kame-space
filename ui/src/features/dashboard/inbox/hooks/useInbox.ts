@@ -1,6 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
-import { toast } from 'sonner';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
 import {
   useInfiniteQuery,
@@ -34,9 +32,10 @@ import {
   unsendInboxMessage,
   startMetaInboxOAuth,
   suggestInboxAiReply,
-  runMetaInboxBackfillChunk,
+  requestMetaInboxSync,
+  fetchInboxThreadDelta,
+  fetchInboxMessageDelta,
   type InboxApiScope,
-  type InboxThreadsPageParam,
 } from '@/features/dashboard/inbox/lib/inboxApi';
 import { uploadInboxChatAttachment } from '@/features/dashboard/inbox/lib/inboxChatAttachment';
 import { handleFeatureUnavailableMutationError } from '@/lib/featureAvailability/featureUnavailableError';
@@ -58,13 +57,11 @@ import {
   mockSendReply,
   resetInboxMockStore,
 } from '@/features/dashboard/inbox/lib/inboxMockStore';
-import {
-  inboxFiltersBlockMetaScrollSync,
-  inboxPageExhaustedInDb,
-} from '@/features/dashboard/inbox/lib/inboxThreadPagination';
+import { inboxFiltersBlockMetaScrollSync } from '@/features/dashboard/inbox/lib/inboxThreadPagination';
 import type {
   ChatTemplateListItem,
   InboxConversation,
+  InboxMessage,
   SaveInboxTemplatePayload,
   ThreadPlatformFilter,
   ThreadStatusFilter,
@@ -73,12 +70,11 @@ import type {
 import {
   markDirectionMessagesDeliveredInCache,
   markDirectionMessagesReadInCache,
-  patchSocialMessageInInfiniteCache,
-  type SocialMessageRealtimeRow,
 } from '@/lib/chat/chatMessageCache';
 import { useChatReadReceiptSync } from '@/lib/chat/useChatReadReceiptSync';
 import { runOfflineMutation } from '@/lib/pwa/offlineMutation';
 import { supabase } from '@/lib/supabase/client';
+import { toast } from 'sonner';
 
 export const INBOX_THREADS_KEY = 'inbox-threads';
 export const INBOX_MESSAGES_KEY = 'inbox-messages';
@@ -86,26 +82,28 @@ export const INBOX_CONNECTIONS_KEY = 'inbox-connections';
 export const INBOX_TEMPLATES_KEY = 'inbox-templates';
 export const INBOX_CHAT_TEMPLATES_KEY = 'inbox-chat-templates';
 export const INBOX_SETTINGS_KEY = 'inbox-settings';
+export const INBOX_SYNC_STATUS_KEY = 'inbox-sync-status';
 export const META_OAUTH_PAGES_KEY = 'meta-oauth-pages';
 
 type InboxThreadsPage = {
   conversations: InboxConversation[];
   nextCursor: string | null;
   metaHasMore: boolean;
-  /** True when this page ran a Meta backfill chunk before listing. */
-  syncedFromMeta?: boolean;
-  syncedInChunk?: number;
+  /**
+   * False when the caller has no org-wide inbox Realtime, so the list has to poll to stay
+   * live. Removed once the inbox moves to Broadcast plus a delta fetch.
+   */
+  realtimeSupported?: boolean;
 };
 
-function buildMetaSyncPageParam(
-  pages: InboxThreadsPage[] | undefined
-): Extract<InboxThreadsPageParam, { mode: 'sync'; cursor: string | null }> {
-  const all = (pages ?? []).flatMap((page) => page.conversations);
-  const tail = all[all.length - 1];
-  return { mode: 'sync', cursor: tail?.last_message_at ?? null };
-}
-
 const REALTIME_INVALIDATE_MS = 400;
+
+/**
+ * Poll interval for a caller without org-wide inbox Realtime.
+ *
+ * Removed once the inbox moves to Broadcast plus a delta fetch.
+ */
+const INBOX_FALLBACK_POLL_MS = 60_000;
 
 function emptyInboxThreadsData(): InfiniteData<InboxThreadsPage> {
   return {
@@ -140,15 +138,6 @@ function scheduleThreadsInvalidate(qc: QueryClient) {
   threadsInvalidateTimer = setTimeout(() => {
     threadsInvalidateTimer = null;
     void qc.invalidateQueries({ queryKey: [INBOX_THREADS_KEY] });
-  }, REALTIME_INVALIDATE_MS);
-}
-
-function scheduleInboxInvalidate(qc: QueryClient) {
-  if (inboxInvalidateTimer) clearTimeout(inboxInvalidateTimer);
-  inboxInvalidateTimer = setTimeout(() => {
-    inboxInvalidateTimer = null;
-    void qc.invalidateQueries({ queryKey: [INBOX_THREADS_KEY] });
-    void qc.invalidateQueries({ queryKey: [INBOX_MESSAGES_KEY] });
   }, REALTIME_INVALIDATE_MS);
 }
 
@@ -213,52 +202,123 @@ export function useInboxConnections(
 
 const metaSyncAbortByOrg = new Map<string, AbortController>();
 
-/** First Meta page only after connect — further pages load on scroll. */
+/**
+ * Ask the server to sync this inbox.
+ *
+ * The import used to run in the browser, one chunk per scroll, so closing the tab stopped
+ * it. The cursor and schedule are server state now: this only nudges a check when the inbox
+ * opens or regains focus, and keeps the connection status fresh while an import runs.
+ */
 export function useMetaInboxSync(
   orgSlug: string | null,
   orgId: string | null,
   metaSyncInProgress: boolean,
   scope?: InboxApiScope | null,
-  /** When false, skip backfill polling (feature availability `inbox.meta.sync` off). */
+  /** When false, skip syncing (feature availability `inbox.meta.sync` off). */
   syncEnabled = true
 ): { active: boolean } {
   const qc = useQueryClient();
 
   useEffect(() => {
-    if (mockMode || !orgId || !orgSlug || !metaSyncInProgress || !syncEnabled) return;
+    if (mockMode || !orgId || !orgSlug || !syncEnabled) return;
+    void requestMetaInboxSync(orgSlug, orgId, 'check_now', scope).catch(() => undefined);
+  }, [orgId, orgSlug, scope?.propertyId, scope?.parkingId, syncEnabled]);
 
-    metaSyncAbortByOrg.get(orgId)?.abort();
-    const abort = new AbortController();
-    metaSyncAbortByOrg.set(orgId, abort);
-
-    void (async () => {
-      try {
-        if (abort.signal.aborted) return;
-        await runMetaInboxBackfillChunk(orgSlug, orgId, undefined, scope);
-      } catch {
-        await runMetaInboxBackfillChunk(orgSlug, orgId, { finalize: true }, scope).catch(
-          () => undefined
-        );
-      } finally {
-        if (metaSyncAbortByOrg.get(orgId) === abort) {
-          metaSyncAbortByOrg.delete(orgId);
-        }
-        if (!abort.signal.aborted) {
-          void qc.invalidateQueries({ queryKey: [INBOX_CONNECTIONS_KEY] });
-          void qc.invalidateQueries({ queryKey: [INBOX_THREADS_KEY] });
-        }
-      }
-    })();
-
-    return () => {
-      abort.abort();
-      if (metaSyncAbortByOrg.get(orgId) === abort) {
-        metaSyncAbortByOrg.delete(orgId);
-      }
+  useEffect(() => {
+    if (mockMode || !orgId || !orgSlug || !syncEnabled) return;
+    const onFocus = () => {
+      if (document.visibilityState !== 'visible') return;
+      void requestMetaInboxSync(orgSlug, orgId, 'check_now', scope).catch(() => undefined);
     };
-  }, [metaSyncInProgress, orgId, orgSlug, qc, scope?.propertyId, scope?.parkingId, syncEnabled]);
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [orgId, orgSlug, scope?.propertyId, scope?.parkingId, syncEnabled]);
+
+  // While the server reports an import in progress, refresh the connection counters.
+  useEffect(() => {
+    if (mockMode || !metaSyncInProgress) return;
+    const timer = setInterval(() => {
+      void qc.invalidateQueries({ queryKey: [INBOX_CONNECTIONS_KEY] });
+      void qc.invalidateQueries({ queryKey: [INBOX_THREADS_KEY] });
+    }, 5_000);
+    return () => clearInterval(timer);
+  }, [metaSyncInProgress, qc]);
 
   return { active: metaSyncInProgress && syncEnabled };
+}
+
+/** Browser reachability, without a dependency. */
+function useBrowserOnline(): boolean {
+  return useSyncExternalStore(
+    (onChange) => {
+      window.addEventListener('online', onChange);
+      window.addEventListener('offline', onChange);
+      return () => {
+        window.removeEventListener('online', onChange);
+        window.removeEventListener('offline', onChange);
+      };
+    },
+    () => (typeof navigator === 'undefined' ? true : navigator.onLine),
+    () => true
+  );
+}
+
+export type MetaInboxSyncStatusData = {
+  connected: boolean;
+  status: string;
+  importComplete: boolean;
+  importRunning: boolean;
+  conversationsImported: number;
+  lastCheckedAt: string | null;
+  consecutiveFailures: number;
+  lastErrorCode: string | null;
+  syncPaused: boolean;
+};
+
+/**
+ * Server-side sync status for the header pill.
+ *
+ * Polled once a minute while the tab is visible. The server owns the schedule, so this is a
+ * read, not a nudge.
+ */
+export function useMetaInboxSyncStatus(
+  orgSlug: string | null,
+  orgId: string | null,
+  scope?: InboxApiScope | null,
+  enabled = true
+) {
+  const query = useQuery({
+    queryKey: [INBOX_SYNC_STATUS_KEY, orgSlug, orgId, ...inboxScopeKey(scope), mockMode],
+    queryFn: async (): Promise<MetaInboxSyncStatusData | null> => {
+      if (mockMode) return null;
+      const payload = (await requestMetaInboxSync(
+        orgSlug,
+        orgId,
+        'status',
+        scope
+      )) as unknown as MetaInboxSyncStatusData & { connected?: boolean };
+      if (!payload || typeof payload !== 'object') return null;
+      return {
+        connected: payload.connected !== false,
+        status: String(payload.status ?? 'unknown'),
+        importComplete: Boolean(payload.importComplete),
+        importRunning: Boolean(payload.importRunning),
+        conversationsImported: Number(payload.conversationsImported ?? 0),
+        lastCheckedAt: (payload.lastCheckedAt as string | null) ?? null,
+        consecutiveFailures: Number(payload.consecutiveFailures ?? 0),
+        lastErrorCode: (payload.lastErrorCode as string | null) ?? null,
+        syncPaused: Boolean(payload.syncPaused),
+      };
+    },
+    enabled: enabled && !mockMode && !!(orgSlug || orgId),
+    refetchInterval: (q) => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return false;
+      return q.state.data?.connected === false ? 30_000 : 60_000;
+    },
+    refetchOnWindowFocus: true,
+  });
+
+  return { data: query.data ?? null, online: useBrowserOnline() };
 }
 
 export function useInboxMutations(
@@ -533,45 +593,32 @@ export function useInboxThreads(
         return mockFetchThreads(filters);
       }
 
-      const isSyncPage = pageParam && typeof pageParam === 'object' && pageParam.mode === 'sync';
-
-      let metaHasMore = false;
-      let syncedInChunk = 0;
-      if (isSyncPage) {
-        const backfill = await runMetaInboxBackfillChunk(orgSlug, orgId, { light: true }, scope);
-        metaHasMore = backfill.metaHasMore;
-        syncedInChunk = backfill.syncedInChunk;
-        void qc.invalidateQueries({ queryKey: [INBOX_CONNECTIONS_KEY] });
-      }
-
+      // The server owns the Meta import, so a page is only ever a read of threads we have.
       const list = await fetchInboxThreads(
         orgSlug,
         orgId,
-        {
-          ...filters,
-          cursor: isSyncPage ? pageParam.cursor : typeof pageParam === 'string' ? pageParam : null,
-        },
+        { ...filters, cursor: typeof pageParam === 'string' ? pageParam : null },
         scope
       );
-
-      return {
-        ...list,
-        metaHasMore: isSyncPage ? metaHasMore : list.metaHasMore,
-        syncedFromMeta: Boolean(isSyncPage),
-        syncedInChunk: isSyncPage ? syncedInChunk : undefined,
-      };
+      return list;
     },
-    initialPageParam: null as InboxThreadsPageParam,
-    getNextPageParam: (last): InboxThreadsPageParam | undefined => {
-      if (last.nextCursor) return last.nextCursor;
-      if (!last.metaHasMore) return undefined;
-      if (inboxPageExhaustedInDb(last.conversations.length) && !last.syncedFromMeta) {
-        return undefined;
-      }
-      return undefined;
+    initialPageParam: null as string | null,
+    getNextPageParam: (last): string | undefined => {
+      return last.nextCursor ?? undefined;
     },
     enabled: mockMode || !!(orgSlug || orgId),
-    refetchInterval: false,
+    // The app-wide default is off, but the inbox is the surface where a stale list is
+    // most visible: coming back to the tab should show what arrived while it was away.
+    refetchOnWindowFocus: true,
+    refetchInterval: (query) => {
+      if (mockMode) return false;
+      const firstPage = query.state.data?.pages?.[0];
+      // A property-level member has `inbox:view` but no org-wide Realtime, so their list
+      // polls instead. Phase 4 replaces this with Broadcast plus a delta fetch.
+      if (firstPage?.realtimeSupported !== false) return false;
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return false;
+      return INBOX_FALLBACK_POLL_MS;
+    },
     retry: 1,
   });
 
@@ -589,30 +636,11 @@ export function useInboxThreads(
     if (!canLoadOlderFromMeta || loadingOlderFromMeta) return;
     setLoadingOlderFromMeta(true);
     try {
-      const syncPage = buildMetaSyncPageParam(query.data?.pages);
-      const backfill = await runMetaInboxBackfillChunk(orgSlug, orgId, { light: true }, scope);
+      // One more page of older chats, imported on the server. The list is refetched rather
+      // than patched, because the import may have created threads above the current page.
+      await requestMetaInboxSync(orgSlug, orgId, 'load_older', scope);
       void qc.invalidateQueries({ queryKey: [INBOX_CONNECTIONS_KEY] });
-      const list = await fetchInboxThreads(
-        orgSlug,
-        orgId,
-        { ...filters, cursor: syncPage.cursor },
-        scope
-      );
-      qc.setQueryData<InfiniteData<InboxThreadsPage>>(queryKey, (current) => {
-        if (!current) return current;
-        return {
-          pages: [
-            ...current.pages,
-            {
-              ...list,
-              metaHasMore: backfill.metaHasMore,
-              syncedFromMeta: true,
-              syncedInChunk: backfill.syncedInChunk,
-            },
-          ],
-          pageParams: [...current.pageParams, syncPage],
-        };
-      });
+      void qc.invalidateQueries({ queryKey: [INBOX_THREADS_KEY] });
     } finally {
       setLoadingOlderFromMeta(false);
     }
@@ -659,12 +687,8 @@ export function useInboxMessages(
     getNextPageParam: (last) =>
       last.hasMore && last.messages.length > 0 ? last.messages[0]?.sent_at : undefined,
     enabled: (mockMode || !!(orgSlug || orgId)) && !!conversationId,
+    refetchOnWindowFocus: true,
   });
-
-  const refreshMessages = useCallback(() => {
-    if (!conversationId || !msgKey) return;
-    void qc.refetchQueries({ queryKey: msgKey });
-  }, [conversationId, msgKey, qc]);
 
   const applyGuestReadToCache = useCallback(
     (readAt: string) => {
@@ -679,21 +703,13 @@ export function useInboxMessages(
     markDirectionMessagesDeliveredInCache(qc, msgKey, 'outbound');
   }, [conversationId, msgKey, qc]);
 
-  const { notifyPeerRead, notifyPeerDelivered } = useChatReadReceiptSync(
+  const { notifyPeerRead } = useChatReadReceiptSync(
     conversationId,
     'host',
     applyGuestReadToCache,
     applyGuestDeliveredToCache,
     !mockMode && !!conversationId
   );
-
-  const onInboundMessage = useCallback(() => {
-    void notifyPeerDelivered();
-    refreshMessages();
-    scheduleThreadsInvalidate(qc);
-  }, [notifyPeerDelivered, refreshMessages, qc]);
-
-  useInboxConversationReadRealtime(orgId, conversationId, msgKey, qc, onInboundMessage);
 
   const filledConversation = query.data?.pages[0]?.conversation;
   useEffect(() => {
@@ -719,142 +735,209 @@ export function useInboxMessages(
   return query;
 }
 
-function useInboxConversationReadRealtime(
-  orgId: string | null,
-  conversationId: string | null,
-  msgKey: readonly unknown[] | null,
-  qc: QueryClient,
-  onGuestMessageReceived?: () => void | Promise<void>
-) {
-  const onGuestMessageReceivedRef = useRef(onGuestMessageReceived);
-  onGuestMessageReceivedRef.current = onGuestMessageReceived;
+/** A signal from the org Broadcast topic. Ids only, never a name or a message body. */
+type InboxBroadcastSignal = {
+  v?: number;
+  kind?: string;
+  conversation_id?: string | null;
+  connection_id?: string | null;
+  platform?: string | null;
+  property_id?: string | null;
+  parking_id?: string | null;
+  at?: string;
+};
 
-  useEffect(() => {
-    if (mockMode || !orgId || !conversationId) return;
-
-    let cancelled = false;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-
-    void (async () => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (!token || cancelled) return;
-
-      await supabase.realtime.setAuth(token);
-
-      channel = supabase
-        .channel(`inbox-conversation-${conversationId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'social_messages',
-            filter: `conversation_id=eq.${conversationId}`,
-          },
-          (payload) => {
-            const row = payload.new as { direction?: string };
-            if (row.direction === 'inbound') {
-              void onGuestMessageReceivedRef.current?.();
-            }
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'social_conversations',
-            filter: `id=eq.${conversationId}`,
-          },
-          (payload) => {
-            const row = payload.new as { guest_last_read_at?: string | null };
-            const prev = payload.old as { guest_last_read_at?: string | null };
-            const readAt = row.guest_last_read_at?.trim();
-            if (!readAt || readAt === prev.guest_last_read_at || !msgKey) return;
-            markDirectionMessagesReadInCache(qc, msgKey, 'outbound', readAt);
-          }
-        )
-        .subscribe();
-    })();
-
-    return () => {
-      cancelled = true;
-      if (channel) void supabase.removeChannel(channel);
-    };
-  }, [conversationId, msgKey, orgId, qc]);
+/** Patch changed thread rows in place, and add a brand new thread at the top. */
+function mergeThreadRowsIntoCache(qc: QueryClient, rows: InboxConversation[]) {
+  if (!rows.length) return;
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  qc.setQueriesData<InfiniteData<InboxThreadsPage>>({ queryKey: [INBOX_THREADS_KEY] }, (old) => {
+    if (!old?.pages?.length) return old;
+    const seen = new Set<string>();
+    const pages = old.pages.map((page) => ({
+      ...page,
+      conversations: page.conversations.map((conversation) => {
+        seen.add(conversation.id);
+        return byId.get(conversation.id) ?? conversation;
+      }),
+    }));
+    const fresh = rows.filter((row) => !seen.has(row.id) && !row.id.startsWith('mock-'));
+    if (fresh.length) {
+      pages[0] = {
+        ...pages[0]!,
+        conversations: [...fresh, ...pages[0]!.conversations].sort((a, b) =>
+          (b.last_message_at ?? '').localeCompare(a.last_message_at ?? '')
+        ),
+      };
+    }
+    return { ...old, pages };
+  });
 }
 
-export function useInboxRealtime(orgId: string | null) {
+/** Patch changed messages in the open thread, keeping send order. */
+function mergeMessageRowsIntoCache(
+  qc: QueryClient,
+  msgKey: readonly unknown[],
+  rows: InboxMessage[]
+) {
+  if (!rows.length) return false;
+  let patched = false;
+  qc.setQueryData<InfiniteData<{ messages: InboxMessage[] }>>(msgKey, (old) => {
+    if (!old?.pages?.length) return old;
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    const pages = old.pages.map((page) => ({
+      ...page,
+      messages: page.messages.map((message) => byId.get(message.id) ?? message),
+    }));
+    const existing = new Set(pages.flatMap((page) => page.messages.map((message) => message.id)));
+    const fresh = rows.filter((row) => !existing.has(row.id));
+    if (fresh.length) {
+      pages[0] = {
+        ...pages[0]!,
+        messages: [...pages[0]!.messages, ...fresh].sort((a, b) =>
+          (a.sent_at ?? '').localeCompare(b.sent_at ?? '')
+        ),
+      };
+    }
+    patched = true;
+    return { ...old, pages };
+  });
+  return patched;
+}
+
+const INBOX_DELTA_DEBOUNCE_MS = 250;
+const INBOX_SAFETY_DELTA_MS = 5 * 60_000;
+const INBOX_DEGRADE_POLL_MS = 30_000;
+const INBOX_CHANNEL_ERROR_WINDOW_MS = 5 * 60_000;
+
+/**
+ * One private Broadcast channel per tab, plus a delta fetch on catch-up.
+ *
+ * Postgres Changes was 84% of database time and only admitted the org owner and org ADMIN
+ * members, so a property-level member watched a frozen list. This subscribes to
+ * `inbox:org:<id>`, patches from a small delta call, and catches up after a drop, a wake or
+ * a reconnect. Three channel errors in five minutes degrade to a 30-second delta poll.
+ */
+export function useInboxRealtime(
+  orgId: string | null,
+  openConversationId?: string | null,
+  scope?: InboxApiScope | null
+) {
   const qc = useQueryClient();
+  const scopePropertyId = scope?.propertyId ?? null;
+  const scopeParkingId = scope?.parkingId ?? null;
+
+  // Refs so the channel subscription is created once per org, not once per open thread.
+  const openConversationIdRef = useRef<string | null>(openConversationId ?? null);
+  openConversationIdRef.current = openConversationId ?? null;
+  const scopeRef = useRef({ propertyId: scopePropertyId, parkingId: scopeParkingId });
+  scopeRef.current = { propertyId: scopePropertyId, parkingId: scopeParkingId };
+
   useEffect(() => {
     if (mockMode || !orgId) return;
 
     let cancelled = false;
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cursor = new Date().toISOString();
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    let safetyTimer: ReturnType<typeof setInterval> | null = null;
+    let degradeTimer: ReturnType<typeof setInterval> | null = null;
+    let errorTimestamps: number[] = [];
+
+    const currentScope = () => scopeRef.current;
+
+    const runDelta = async () => {
+      if (cancelled) return;
+      const since = cursor;
+      try {
+        const delta = await fetchInboxThreadDelta(null, orgId, since, currentScope());
+        cursor = delta.serverTime;
+        mergeThreadRowsIntoCache(qc, delta.conversations);
+
+        // Foreground signal only. The OS notification comes from the push pipeline, so
+        // there is exactly one system notification per message.
+        if (document.visibilityState === 'visible') {
+          const waiting = delta.conversations.find(
+            (row) => row.reply_status === 'pending' && (row.unread_count ?? 0) > 0
+          );
+          if (waiting) {
+            toast.message('New guest message', {
+              description:
+                waiting.subject_preview?.trim().slice(0, 120) ||
+                waiting.participant_name?.trim() ||
+                'New message',
+            });
+          }
+        }
+
+        const openId = openConversationIdRef.current;
+        const openChanged = Boolean(openId && delta.conversations.some((row) => row.id === openId));
+        if (openId && openChanged) {
+          const msgKey = inboxMessagesQueryKey(openId, currentScope());
+          const messages = await fetchInboxMessageDelta(null, orgId, openId, since, currentScope());
+          if (!mergeMessageRowsIntoCache(qc, msgKey, messages.messages)) {
+            void qc.invalidateQueries({ queryKey: msgKey });
+          }
+        }
+      } catch {
+        // A failed delta is retried by the next signal or the safety tick.
+      }
+    };
+
+    const scheduleDelta = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        debounceTimer = null;
+        void runDelta();
+      }, INBOX_DELTA_DEBOUNCE_MS);
+    };
+
+    const startDegradePoll = () => {
+      if (degradeTimer) return;
+      degradeTimer = setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
+        scheduleDelta();
+      }, INBOX_DEGRADE_POLL_MS);
+    };
+
+    const stopDegradePoll = () => {
+      if (!degradeTimer) return;
+      clearInterval(degradeTimer);
+      degradeTimer = null;
+    };
 
     void (async () => {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
       if (!token || cancelled) return;
-
       await supabase.realtime.setAuth(token);
 
       channel = supabase
-        .channel(`inbox-${orgId}`)
-        // One binding for INSERT + UPDATE on social_messages: each
-        // `postgres_changes` binding becomes its own Realtime subscription and
-        // is polled against WAL separately. Branch on eventType instead.
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'social_messages',
-            filter: `organization_id=eq.${orgId}`,
-          },
-          (payload) => {
-            if (payload.eventType === 'INSERT') {
-              scheduleInboxInvalidate(qc);
-              const row = payload.new as { direction?: string; body_text?: string | null };
-              if (row.direction === 'inbound') {
-                // Foreground signal only. The OS notification comes from the push
-                // pipeline (`push-fanout` → service worker), so there is exactly one
-                // system notification per message (P1-6 / 6.6).
-                if (document.visibilityState === 'visible') {
-                  toast.message('New guest message', {
-                    description: row.body_text?.trim().slice(0, 120) || 'New message',
-                  });
-                }
-              }
-              return;
-            }
-            if (payload.eventType !== 'UPDATE') return;
-            const row = payload.new as SocialMessageRealtimeRow;
-            if (!row?.id || !row.conversation_id) {
-              scheduleInboxInvalidate(qc);
-              return;
-            }
-            const patched = patchSocialMessageInInfiniteCache(
-              qc,
-              [INBOX_MESSAGES_KEY, row.conversation_id, mockMode],
-              row
+        .channel(`inbox:org:${orgId}`, { config: { private: true } })
+        .on('broadcast', { event: 'inbox' }, (payload) => {
+          const signal = (payload ?? {}) as InboxBroadcastSignal;
+          // Signals outside this tab's scope are ignored, so a property inbox does not
+          // react to another property's traffic.
+          const { propertyId, parkingId } = currentScope();
+          if (signal.property_id && propertyId && signal.property_id !== propertyId) return;
+          if (signal.parking_id && parkingId && signal.parking_id !== parkingId) return;
+          scheduleDelta();
+        })
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            const now = Date.now();
+            errorTimestamps = [...errorTimestamps, now].filter(
+              (at) => now - at < INBOX_CHANNEL_ERROR_WINDOW_MS
             );
-            if (!patched) scheduleInboxInvalidate(qc);
-            scheduleThreadsInvalidate(qc);
+            if (errorTimestamps.length >= 3) startDegradePoll();
+            return;
           }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'social_conversations',
-            filter: `organization_id=eq.${orgId}`,
-          },
-          () => scheduleThreadsInvalidate(qc)
-        )
-        .subscribe();
+          if (status !== 'SUBSCRIBED') return;
+          stopDegradePoll();
+          errorTimestamps = [];
+          // Whatever arrived while the socket was down was never delivered.
+          void runDelta();
+        });
 
       if (cancelled && channel) {
         void supabase.removeChannel(channel);
@@ -862,14 +945,24 @@ export function useInboxRealtime(orgId: string | null) {
       }
     })();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.access_token || cancelled) return;
-      void supabase.realtime.setAuth(session.access_token);
-    });
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void runDelta();
+    };
+    const onOnline = () => void runDelta();
+
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('online', onOnline);
+    safetyTimer = setInterval(() => {
+      if (document.visibilityState === 'visible') void runDelta();
+    }, INBOX_SAFETY_DELTA_MS);
 
     return () => {
       cancelled = true;
-      authListener.subscription.unsubscribe();
+      if (debounceTimer) clearTimeout(debounceTimer);
+      if (safetyTimer) clearInterval(safetyTimer);
+      if (degradeTimer) clearInterval(degradeTimer);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('online', onOnline);
       if (channel) void supabase.removeChannel(channel);
     };
   }, [orgId, qc]);

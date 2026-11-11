@@ -2,9 +2,9 @@ import { LegalSimplePage } from '@/features/guest/marketing/legal/components/Leg
 
 import { CookiePreferencesControl } from '@/components/legal/CookiePreferencesControl';
 import { cookiesDocument } from '@/lib/legal/cookiesContent';
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePublicStaticRouteSeo } from '@/lib/seo/routeTitle';
 
 export function CookiesPage() {
-  usePageTitle(publicPageTitle('Cookies'));
+  usePublicStaticRouteSeo('/cookies');
   return <LegalSimplePage document={cookiesDocument} afterContent={<CookiePreferencesControl />} />;
 }

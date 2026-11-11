@@ -1,11 +1,22 @@
 import { useEffect } from 'react';
 
-export {
-  APP_TITLE,
-  PLATFORM_APP_NAME,
-  appPageTitle,
-  publicPageTitle,
-} from '@/lib/platformBranding';
+import { PLATFORM_APP_NAME } from '@/lib/platformBranding';
+import { buildPageTitle } from '@/lib/seo/seoPrimitives';
+
+export { APP_TITLE, PLATFORM_APP_NAME, appPageTitle } from '@/lib/platformBranding';
+
+/**
+ * Public marketing tab title, brand last: `{Page} | Kame Space`.
+ *
+ * Dashboard titles keep the existing `Kame Space - {Page}` shape (they are `noindex`), so
+ * this lives here rather than in `appPageTitle`.
+ */
+export function publicPageTitle(pageName: string): string {
+  return buildPageTitle(pageName, PLATFORM_APP_NAME);
+}
+
+// Route-registry helpers live in `@/lib/seo/routeTitle` so the registry stays out of the
+// entry bundle that every page loads.
 
 /**
  * Sets `document.title` when the page renders.

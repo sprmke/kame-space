@@ -51,9 +51,14 @@ export type PropertyMediaRecord = {
   storagePath?: string;
   type: PropertyMediaType;
   caption?: string;
+  /** Host-written alt text for search engines and screen readers. */
+  alt?: string;
   isPrimary?: boolean;
   order: number;
 };
+
+/** Soft cap: long enough for a descriptive sentence, short enough to stay useful. */
+export const MAX_PROPERTY_MEDIA_ALT = 200;
 
 export function classifyPropertyMediaMime(mime: string): PropertyMediaType | null {
   const normalized = mime.trim().toLowerCase();
@@ -99,6 +104,8 @@ export function normalizePropertyMediaItems(raw: unknown): PropertyMediaRecord[]
         ? Math.max(0, Math.round(row.order))
         : parsed.length;
     const caption = typeof row.caption === 'string' ? row.caption.trim().slice(0, 120) : undefined;
+    const alt =
+      typeof row.alt === 'string' ? row.alt.trim().slice(0, MAX_PROPERTY_MEDIA_ALT) : undefined;
     const storagePath = typeof row.storagePath === 'string' ? row.storagePath.trim() : undefined;
 
     parsed.push({
@@ -107,6 +114,7 @@ export function normalizePropertyMediaItems(raw: unknown): PropertyMediaRecord[]
       storagePath: storagePath || undefined,
       type,
       caption: caption || undefined,
+      alt: alt || undefined,
       isPrimary: row.isPrimary === true,
       order,
     });

@@ -978,6 +978,28 @@ export const ACTIVITY_ACTION_CATALOG = {
         'a listing'
       )}`,
   },
+  'integrations.meta_sync_degraded': {
+    category: 'integrations',
+    severity: 'warning',
+    targetType: 'integration',
+    summary: (c) =>
+      `Meta messaging sync stopped working for ${label(c, 'an organization')}` +
+      (str(c.metadata, 'reason') ? ` (${str(c.metadata, 'reason')})` : ''),
+  },
+  'integrations.meta_sync_recovered': {
+    category: 'integrations',
+    severity: 'notice',
+    targetType: 'integration',
+    summary: (c) => `Meta messaging sync recovered for ${label(c, 'an organization')}`,
+  },
+  'integrations.meta_import_completed': {
+    category: 'integrations',
+    severity: 'info',
+    targetType: 'integration',
+    summary: (c) =>
+      `Meta chat history import finished for ${label(c, 'an organization')}` +
+      (str(c.metadata, 'conversations') ? ` (${str(c.metadata, 'conversations')} chats)` : ''),
+  },
   'integrations.config_changed': {
     category: 'integrations',
     severity: 'info',

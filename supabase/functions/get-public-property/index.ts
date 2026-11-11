@@ -9,7 +9,9 @@
  */
 
 import { hasHostPreviewAccess } from '../_shared/hostPreviewAccess.ts';
+import { corsHeaders } from '../_shared/cors.ts';
 import { jsonError, jsonSuccess } from '../_shared/httpResponse.ts';
+import { resolveListingSlugRedirect } from '../_shared/listingSlugRedirect.ts';
 import { loadPublicPropertyById } from '../_shared/publicPropertyService.ts';
 import { publicGetRateLimitGate } from '../_shared/publicEndpointRateLimit.ts';
 import {
@@ -37,6 +39,14 @@ servePublic('get-public-property', async (req) => {
 
   const propertyId = propertyIdParam ?? (await resolvePropertyIdBySlug(slug!));
   if (!propertyId) {
+    // A renamed listing keeps its old link working and answers search engines with a 301.
+    const redirectTo = slug ? await resolveListingSlugRedirect('property', slug) : null;
+    if (redirectTo) {
+      return new Response(null, {
+        status: 301,
+        headers: { ...corsHeaders(req), Location: redirectTo },
+      });
+    }
     return jsonError(req, 'Property not found', 404);
   }
 

@@ -19,6 +19,7 @@ import { ListingHeroSearch } from '@/features/guest/marketing/shared/components/
 import { MarketingImage as Image } from '@/features/guest/marketing/shared/components/MarketingImage';
 
 import { Button } from '@/components/ui/button';
+import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 import { cn } from '@/lib/utils';
 
 import type { Development, DevelopmentType } from '../types';
@@ -57,7 +58,7 @@ export function DevelopmentHero({ development }: DevelopmentHeroProps) {
             <Image
               key={idx}
               src={img}
-              alt={`${development.name} - ${idx + 1}`}
+              alt={buildListingImageAlt({ listingName: development.name, index: idx })}
               fill
               className={cn(
                 'object-cover transition-all duration-700',
