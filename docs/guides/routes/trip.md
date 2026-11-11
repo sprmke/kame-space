@@ -287,15 +287,19 @@ Thumbnail, property name (`h1`, not a link), date range and nights, city.
 
 ### Shortcuts (max 4, phase-picked, never repeat the main button)
 
-Pending: Edit request, Cancel request, Call host, and **Find parking** when the request asked for
-parking. Confirmed / arriving: Add to calendar (`.ics`), Directions, Message host, Call host.
+Pending: Edit request, Call host, **Find parking** when the request asked for parking, View
+listing. Confirmed / arriving: Add to calendar (`.ics`), Directions, Message host, Call host.
 Arrival day / staying / check-out day: Stay guide, Directions, Message host, Call host. After the
 stay and cancelled: none (host row and main button cover it).
 
-**Find parking** is why the pending row has a fourth tile. The retired `/success` page carried a
-"Need parking?" link for a request that asked for parking; a submission lands here now, so the
-marketplace path lives here instead. It reads `parking.findPath` from the trip payload, which is
-`/parkings?linkStay=<bookingId>` or the org's own default form when one fits.
+**Find parking** restores a path the retired `/success` page used to own: it carried a "Need
+parking?" link for a request that asked for parking, and a submission lands here now. It reads
+`parking.findPath` from the trip payload, which is `/parkings?linkStay=<bookingId>` or the org's
+own default form when one fits. The tile is omitted when the guest did not ask for parking.
+
+Withdrawing a request is **not** a tile. The cancellation card below already carries the action
+and explains that nothing has been charged, and two "Cancel request" controls on one screen read
+as a mistake rather than a shortcut.
 
 ### Sections (flat, hairline separated; no nested cards)
 

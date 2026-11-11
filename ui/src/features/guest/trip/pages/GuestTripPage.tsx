@@ -14,7 +14,6 @@ import {
   Navigation,
   Pencil,
   Phone,
-  XCircle,
 } from 'lucide-react';
 
 import {
@@ -274,10 +273,11 @@ function shortDate(iso: string | null): string | null {
 
 /** Phase decides which shortcuts matter; the primary action is never repeated as a tile. */
 const SHORTCUT_ORDER: Record<GuestTripPhase, string[]> = {
-  // While the host reviews, the guest can edit the request, withdraw it, reach the host, or
-  // sort out the parking they asked for. Parking used to be offered on the old success page,
-  // so dropping it here would remove the marketplace path for a request that needs it.
-  requested: ['edit', 'cancel', 'call', 'parking'],
+  // While the host reviews, the guest can edit the request, reach the host, sort out the
+  // parking they asked for, or look at the listing again. Withdrawing the request is not a
+  // tile: the cancellation card below already carries that action and explains the cost, and
+  // two "Cancel request" controls on one screen is a defect, not a shortcut.
+  requested: ['edit', 'call', 'parking', 'listing'],
   confirmed: ['calendar', 'directions', 'message', 'call'],
   arriving: ['calendar', 'directions', 'message', 'call'],
   arrival_day: ['guide', 'directions', 'message', 'call'],
@@ -429,9 +429,6 @@ function GuestTripContent({
         Icon: Home,
         to: guestPropertyPath(trip.property.slug),
       },
-      cancel: trip.actions.canEditBooking
-        ? { key: 'cancel', label: 'Cancel request', Icon: XCircle, to: '#trip-cancellation' }
-        : null,
       parking: trip.parking.findPath
         ? { key: 'parking', label: 'Find parking', Icon: Car, to: trip.parking.findPath }
         : null,
@@ -540,9 +537,7 @@ function GuestTripContent({
 
           <GuestTripPaymentSection trip={trip} phase={phase} paymentMethods={paymentMethods} />
 
-          <div id="trip-cancellation" className="scroll-mt-24">
-            <GuestTripCancellationSection trip={trip} />
-          </div>
+          <GuestTripCancellationSection trip={trip} />
 
           {!cancelled && (active || phase === 'requested') ? (
             <GuestTripArrivalSection
