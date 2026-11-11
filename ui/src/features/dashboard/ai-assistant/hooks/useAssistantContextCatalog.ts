@@ -93,10 +93,19 @@ function take<T>(items: T[], limit = CATALOG_LIMIT): T[] {
   return items.slice(0, limit);
 }
 
-export function useAssistantContextCatalog(): {
+/**
+ * Mention catalog for the composer.
+ *
+ * `enabled: false` holds every request back. The composer mounts this hook while its
+ * popover is closed, which used to fetch the org team, property team, bookings and
+ * finance on every dashboard open for a menu nobody had opened. Callers that mount
+ * only when the picker is visible can leave it at the default.
+ */
+export function useAssistantContextCatalog(options?: { enabled?: boolean }): {
   groups: AssistantCatalogGroup[];
   isLoading: boolean;
 } {
+  const enabled = options?.enabled ?? true;
   const orgSlug = useOrgSlugParam();
   const orgId = useOrgIdParam();
   const propertyId = usePropertyIdParam();
@@ -110,22 +119,23 @@ export function useAssistantContextCatalog(): {
   };
   const bookings = useBookings(bookingQuery, {
     scope: parkingId ? 'parking' : propertyId ? 'property' : 'org',
+    enabled,
   });
   const properties = useProperties(orgSlug ?? undefined);
-  const orgTeam = useOrgTeam(propertyId || parkingId ? null : orgId);
-  const propertyTeam = usePropertyTeam();
+  const orgTeam = useOrgTeam(enabled && !propertyId && !parkingId ? orgId : null);
+  const propertyTeam = usePropertyTeam({ enabled });
   const parkingTeam = useQuery({
     queryKey: [...PARKING_TEAM_QUERY_KEY, parkingId],
     queryFn: () => loadParkingTeam(parkingId!),
-    enabled: Boolean(parkingId),
+    enabled: enabled && Boolean(parkingId),
   });
   const finance = useFinanceLineItems(
     { ...DEFAULT_FINANCE_QUERY, limit: CATALOG_LIMIT },
-    { enabled: Boolean(propertyId || parkingId) }
+    { enabled: enabled && Boolean(propertyId || parkingId) }
   );
   const maintenance = useMaintenanceItems(
     { ...DEFAULT_MAINTENANCE_QUERY, limit: CATALOG_LIMIT },
-    { enabled: Boolean(propertyId) }
+    { enabled: enabled && Boolean(propertyId) }
   );
   const inbox = useInboxThreads(
     orgSlug,
