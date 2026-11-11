@@ -137,6 +137,23 @@ dashboard configuration on those existing issue fingerprints.
 | `META_INBOX_WORKER_SECRET` | Supabase secrets + Vault `meta_inbox_worker_secret` | Cron auth for `meta-inbox-worker` |
 | `META_GRAPH_VERSION`       | `_shared/metaInboxConfig.ts` (not env)              | Single source for every Graph URL |
 
+### Worker secret
+
+`meta-inbox-worker` authenticates its caller in two places, and both must hold the same value:
+
+1. Edge secret `META_INBOX_WORKER_SECRET`
+   (`supabase secrets set META_INBOX_WORKER_SECRET=… --project-ref fworvijbrwpyngycotbz --yes`).
+2. Vault secret `meta_inbox_worker_secret`:
+
+```sql
+select vault.create_secret('<same value>', 'meta_inbox_worker_secret');
+```
+
+The cron command looks the Vault secret up each time it fires, so adding it later takes effect
+on the next minute. No need to re-run `sync_meta_inbox_worker_cron()`. Until both are set the
+worker returns 401 and failed webhook events stay `pending`; the live webhook path is
+unaffected, so the inbox still works.
+
 Cron jobs are created by `20261326120200_meta_inbox_worker_cron.sql`
 (`meta-inbox-worker-every-minute`, `meta-inbox-outbox-retention-hourly`). Re-run
 `select public.sync_meta_inbox_worker_cron();` after adding the Vault secret.
