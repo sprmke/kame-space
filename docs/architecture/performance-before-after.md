@@ -279,6 +279,61 @@ plausible-sounding changes that either did nothing or made the app slower.
 
 ---
 
+## 11. Authenticated dashboard boot (first real measurement)
+
+**Date:** 2026-11-11. Production, signed in as the probe account, 390x844, 4x CPU throttle,
+median of three warm runs, read from the Phase 0.1 boot marks.
+
+| Metric                                          | Value       |
+| ----------------------------------------------- | ----------- |
+| First render                                    | 134 ms      |
+| Full-screen loader visible                      | **1754 ms** |
+| Content ready                                   | **4201 ms** |
+| Authenticated edge calls for one dashboard load | **24**      |
+
+That corrects an earlier estimate in this document: the boot path is not four to six calls, it
+is twenty-four.
+
+### Where those calls sit on the timeline
+
+Each row is the first request for that endpoint, relative to navigation start.
+
+| At          | Phase          | Calls                                                                                                                                                                                                                |
+| ----------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1484 ms     | before content | `get-public-platform-status`                                                                                                                                                                                         |
+| 1819 ms     | before content | `get-session-context`                                                                                                                                                                                                |
+| **3747 ms** | before content | burst of 9: `app-settings`, `org-settings`, `org-plan`, `list-parkings`, `notifications-list`, `org-access`, `get-feature-availability`, `property-lifecycle`, `dashboard-assistant-settings`, `user-ui-preferences` |
+| 3801 ms     | before content | `guest-profile`                                                                                                                                                                                                      |
+| 3962 ms     | before content | `list-host-announcements`                                                                                                                                                                                            |
+| **4298 ms** | before content | `dashboard-stats` plus `property-team-members`, `-invitations`, `-custom-roles`                                                                                                                                      |
+| 6738 ms     | at content     | `maintenance-summary`, `maintenance-items`, `finance-line-items`, `finance-bookings`, `list-bookings`                                                                                                                |
+
+Content was ready at 6749 ms. Three things this shows that guessing had got wrong:
+
+1. The **9-call burst at 3747 ms** is the critical path, not the tail. It starts 1.9 s after the
+   bootstrap resolves (shell-chunk download plus render) and competes for the phone's 4 to 6
+   connections while `dashboard-stats` is in flight.
+2. `notifications-list` and `list-host-announcements` are already gated behind first paint and
+   still land before content, because first paint is at 3747 ms and content at 6749 ms. The gate
+   bought paint time, not content time.
+3. The five calls below land **exactly at** content, which is what the gate is meant to do.
+
+### Five calls moved off the critical path
+
+`maintenance-summary`, `maintenance-items` (the maintenance reminders card) and
+`finance-line-items`, `finance-bookings`, `list-bookings` (the finance calendar section) now gate
+on `useAfterFirstPaint`, the same mechanism already used for the notification preview. The cards
+still render, with their existing skeletons, and the data arrives one idle tick later.
+
+### Still to find
+
+The three `property-team-*` calls fire in the same millisecond as `dashboard-stats`, so they live
+in the dashboard render tree, but no call site on that tree references `usePropertyTeam`. The
+built chunk `usePropertyTeam-*.js` is imported by `AdminLayout`, so the consumer is somewhere in
+that graph and needs elimination rather than grep. `guest-profile` fires on an admin route
+because the guest auth provider wraps every route. Both are recorded so the next pass starts from
+evidence.
+
 ## Release state
 
 **2026-11-10.** PR #371 synced `main` to `develop`'s tree and shipped the UI side.
