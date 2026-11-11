@@ -268,7 +268,7 @@ export function DevelopmentGuestInfoSection({ draft, disabled = false, onChange 
                 Show on the property page
               </Label>
               <p className="text-muted-foreground text-xs leading-snug">
-                Reserved for the public page; it does not read this yet.
+                Guests see the same block on the public property page.
               </p>
             </div>
             <Switch

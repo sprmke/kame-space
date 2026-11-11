@@ -73,6 +73,16 @@ export type PublicPropertyDetailDto = {
     text: string;
     type: 'info' | 'prohibited' | 'allowed';
   }>;
+  /** Building rules and info; null when the residence hides it or has none. */
+  buildingInfo: {
+    requirements: string;
+    guides: Array<{ id: string; title: string; content: string }>;
+    importantInfo: string;
+    rules: Array<{ id: string; text: string; type: 'info' | 'prohibited' | 'allowed' }>;
+    poolFee: number | null;
+    poolSchedule: string;
+    amenities: string[];
+  } | null;
   cancellationPolicy: ResolvedCancellationPolicyDisplay;
   cancellationPolicyVersionId?: string | null;
   cancellationPolicyHash?: string;
@@ -125,6 +135,7 @@ export type PublicReviewSummary = {
 };
 
 export type PublicHouseRule = PublicPropertyDetailDto['houseRules'][number];
+export type PublicBuildingInfo = NonNullable<PublicPropertyDetailDto['buildingInfo']>;
 
 export type PublicPropertySource = 'api' | 'mock';
 
@@ -165,6 +176,8 @@ export type ResolvedPropertyDetail = {
   development?: ResolvedPublicDevelopment | null;
   floors: number;
   houseRules: PublicHouseRule[];
+  /** Building rules and info; null when the residence hides it or has none. */
+  buildingInfo: PublicBuildingInfo | null;
   cancellationPolicy: ResolvedCancellationPolicyDisplay;
   cancellationPolicyVersionId?: string | null;
   cancellationPolicyHash?: string;

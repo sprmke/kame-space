@@ -318,3 +318,50 @@ export function collectDevelopmentPricingValues(development: DevelopmentGuestCon
   if (development.poolFee != null) values.push(development.poolFee);
   return values;
 }
+
+/**
+ * Building info for one surface, resolved from the property's development.
+ *
+ * Reads by `development_id` and falls back to the denormalized name, so a property linked
+ * before the FK existed still resolves. Never throws: a missing development means "no
+ * building block", which is also what a guest-facing page must do on a read error.
+ */
+export async function loadGuestBuildingInfoForProperty(
+  supabase: SupabaseClient,
+  lookup: { developmentId?: string | null; residenceName?: string | null },
+  surface: 'stayGuide' | 'propertyPage'
+): Promise<GuestBuildingInfo | null> {
+  try {
+    const developmentId = lookup.developmentId?.trim() || '';
+    const residenceName = lookup.residenceName?.trim() || '';
+    if (!developmentId && !residenceName) return null;
+
+    const query = supabase
+      .from('developments')
+      .select('name, developer_name, description, location, city, settings')
+      .limit(1);
+
+    const { data: development } = developmentId
+      ? await query.eq('id', developmentId).maybeSingle()
+      : await query.eq('name', residenceName).maybeSingle();
+
+    if (!development) return null;
+
+    return guestBuildingInfoFor(
+      developmentGuestContextFromRow(
+        development as {
+          name: string;
+          developer_name: string | null;
+          description: string | null;
+          location: string | null;
+          city: string | null;
+          settings: Record<string, unknown> | null;
+        }
+      ),
+      surface
+    );
+  } catch (error) {
+    console.warn('[developmentGuestInfo] building info load failed:', error);
+    return null;
+  }
+}

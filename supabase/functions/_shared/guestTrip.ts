@@ -42,8 +42,7 @@ import { computeTotalGuestBalanceFromBooking } from './totalGuestBalance.ts';
 import { createClient } from './supabaseJs.ts';
 import { countStayNights } from './utils.ts';
 import {
-  developmentGuestContextFromRow,
-  guestBuildingInfoFor,
+  loadGuestBuildingInfoForProperty,
   type GuestBuildingInfo,
 } from './developmentGuestInfo.ts';
 import type { GuestSubmission } from './types.ts';
@@ -275,52 +274,32 @@ function guestBalanceAmounts(
 
 /**
  * Building info for the stay guide, already filtered by `guestInfoVisibility.stayGuide`.
- * Fails soft: a missing development means the guest sees no building block, never a broken trip.
+ * Shares the resolver with the public property page so both surfaces agree.
  */
 async function loadTripBuildingInfo(propertyId: string): Promise<GuestBuildingInfo | null> {
-  try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-    const { data: property } = await supabase
-      .from('properties')
-      .select('development_id, residence_name')
-      .eq('id', propertyId)
-      .maybeSingle();
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+  const { data: property } = await supabase
+    .from('properties')
+    .select('development_id, residence_name')
+    .eq('id', propertyId)
+    .maybeSingle();
 
-    const propertyRow = property as
-      | { development_id: string | null; residence_name: string | null }
-      | null;
-    if (!propertyRow) return null;
+  const propertyRow = property as
+    | { development_id: string | null; residence_name: string | null }
+    | null;
+  if (!propertyRow) return null;
 
-    const query = supabase
-      .from('developments')
-      .select('name, developer_name, description, location, city, settings')
-      .limit(1);
-    const { data: development } = propertyRow.development_id
-      ? await query.eq('id', propertyRow.development_id).maybeSingle()
-      : await query.eq('name', String(propertyRow.residence_name ?? '').trim()).maybeSingle();
-
-    if (!development) return null;
-
-    return guestBuildingInfoFor(
-      developmentGuestContextFromRow(
-        development as {
-          name: string;
-          developer_name: string | null;
-          description: string | null;
-          location: string | null;
-          city: string | null;
-          settings: Record<string, unknown> | null;
-        }
-      ),
-      'stayGuide'
-    );
-  } catch (error) {
-    console.warn('[guestTrip] building info load failed:', error);
-    return null;
-  }
+  return loadGuestBuildingInfoForProperty(
+    supabase,
+    {
+      developmentId: propertyRow.development_id,
+      residenceName: propertyRow.residence_name,
+    },
+    'stayGuide'
+  );
 }
 
 export async function buildGuestTripPayload(input: {
