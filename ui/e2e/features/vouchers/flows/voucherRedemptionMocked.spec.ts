@@ -78,10 +78,14 @@ test.describe('@ci voucher redemption - mocked full journey', () => {
     await demoPause(page);
 
     await page.getByRole('button', { name: 'Insert' }).click();
-    await expect(page.getByRole('button', { name: 'Share my dates' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Check availability' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'View listing' })).toBeVisible();
-    await expect(page.getByRole('button', { name: /voucher/i })).toHaveCount(0);
+    // Scope to the panel: the open chat also renders suggestion chips, and one of them says
+    // "Can I use a voucher from a past stay?", which matched an unscoped /voucher/i and made
+    // this spec flap depending on whether the chips had been dismissed yet.
+    const insertPanel = page.getByRole('dialog');
+    await expect(insertPanel.getByRole('button', { name: 'Share my dates' })).toBeVisible();
+    await expect(insertPanel.getByRole('button', { name: 'Check availability' })).toBeVisible();
+    await expect(insertPanel.getByRole('button', { name: 'View listing' })).toBeVisible();
+    await expect(insertPanel.getByRole('button', { name: /voucher/i })).toHaveCount(0);
     await demoPause(page);
   });
 });
