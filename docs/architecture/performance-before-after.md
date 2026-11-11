@@ -451,6 +451,54 @@ but enforcement also runs on every plan and subscription change (`subscriptionOr
 deactivates seats. That is a product decision, not a latency one, so it is recorded here rather
 than changed.
 
+### Measured after
+
+Production, 2026-11-11, same probe account and 4x CPU throttle, three runs each.
+
+| Metric                          | Before       | After            | Change                                               |
+| ------------------------------- | ------------ | ---------------- | ---------------------------------------------------- |
+| `route:content` (median)        | 5868 ms      | **4599 ms**      | **-22%**                                             |
+| `app-settings` handler          | 2456-3719 ms | **1793-1950 ms** | **-30%**                                             |
+| `property-team-members` handler | 3105-3904 ms | 2986-3522 ms     | unchanged, but no longer called on boot              |
+| Distinct boot calls             | 21           | 20               | `property-team-members` and `list-bookings` are gone |
+| Sum of call durations           | 38049 ms     | 32793 ms         | -14%                                                 |
+
+The raw medians are noisy on this machine (before: 7626, 3583, 5868; after: 6105, 4599, 4228), so
+the conservative reading is the direction and the per-call handler times, which were measured
+directly rather than through a browser.
+
+**The team call is gone from the dashboard entirely.** It no longer appears in the timeline at
+all, which is the point: it was never needed there.
+
+**`app-settings` is 30% faster, not 70%.** The fan-out removed the serial sequencing, but the
+handler still costs about 1.8s. The remaining time is inside `resolveAppSettings`, which runs its
+own two waves, plus the PMO email lookup that derived from the residence name. Flattening that
+needs `serializeAppSettingsForAdmin` to consume `resolveAppSettings`'s intermediates instead of
+calling it, which is a larger refactor than this pass.
+
+**`property-team-members` handler time did not move,** because on the single-owner test tenant the
+cost is the seat reconcile, not the per-member lookups. The N+1 fix matters on real multi-seat
+properties, which the probe account cannot show. Recorded honestly rather than claimed.
+
+### What gates content now
+
+```
+2655 ms   burst starts (org-settings, org-plan, list-parkings, notifications-list, ...)
+2976 ms   dashboard-stats starts  <- 320 ms after the burst got the connections
+4613 ms   dashboard-stats ends
+4599 ms   route:content
+```
+
+Content is gated on `dashboard-stats`, and `dashboard-stats` now starts late because it queues
+behind ten chrome calls. Two ways forward, in order of value:
+
+1. **Start `dashboard-stats` as soon as the session context resolves**, instead of waiting for the
+   page to mount. It is the only call content waits on, so it should not queue at all. This is the
+   cheapest remaining win, roughly 400-600 ms.
+2. **Collapse the burst into `get-session-context`**, the pattern that already took the boot chain
+   from four calls to one. Larger, and less valuable now that the two genuinely slow calls are
+   fixed.
+
 ## Release state
 
 **2026-11-10.** PR #371 synced `main` to `develop`'s tree and shipped the UI side.
