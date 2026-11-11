@@ -82,7 +82,7 @@ export function TelegramManageDialog({
           if (nestedOverlayOpen) event.preventDefault();
         }}
       >
-        <ResponsiveModalHeader className="border-border/60 shrink-0 space-y-0 border-b px-4 py-3 sm:px-5 sm:py-4">
+        <ResponsiveModalHeader className="border-border/60 shrink-0 space-y-0 border-b px-4 py-3 sm:px-5 sm:py-3">
           <div className="flex items-start justify-between gap-3 pr-8">
             <ResponsiveModalTitle className="text-base sm:text-lg">{title}</ResponsiveModalTitle>
             {headerAction ? <div className="shrink-0">{headerAction}</div> : null}

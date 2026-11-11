@@ -129,7 +129,7 @@ export function SensitiveSettingsOtpDialog({
         className="flex max-h-[min(90dvh,36rem)] max-w-[min(calc(100vw-1.5rem),32rem)] flex-col gap-0 overflow-hidden p-0 pb-0 pt-0 sm:max-w-lg sm:p-0"
         showCloseButton={false}
       >
-        <ResponsiveModalHeader className="shrink-0 space-y-1 px-5 pb-1 pt-5 text-left sm:px-6">
+        <ResponsiveModalHeader className="shrink-0 space-y-1 px-4 pb-1 pt-5 text-left sm:px-5">
           <ResponsiveModalTitle>{title}</ResponsiveModalTitle>
           <ResponsiveModalDescription className="break-words">
             {otpSent && ownerEmailMasked
@@ -138,7 +138,7 @@ export function SensitiveSettingsOtpDialog({
           </ResponsiveModalDescription>
         </ResponsiveModalHeader>
 
-        <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain px-5 py-4 sm:px-6">
+        <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5">
           {otpSent ? (
             <div className="space-y-3">
               <Label className="sr-only">Verification code</Label>
@@ -168,7 +168,7 @@ export function SensitiveSettingsOtpDialog({
           <p className="text-muted-foreground text-xs leading-relaxed">{resolvedDisclaimer}</p>
         </div>
 
-        <ResponsiveModalFooter className="border-border shrink-0 !flex-row flex-nowrap items-center justify-end gap-2 border-t px-5 py-3 sm:px-6">
+        <ResponsiveModalFooter className="border-border shrink-0 !flex-row flex-nowrap items-center justify-end gap-2 border-t px-4 py-3 sm:px-5">
           <Button
             type="button"
             variant="ghost"

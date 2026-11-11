@@ -357,7 +357,7 @@ export function ChannelSyncDialog({
             if (nestedConfirmOpen) event.preventDefault();
           }}
         >
-          <ResponsiveModalHeader className="border-border/60 shrink-0 space-y-0 border-b px-4 py-3 text-left sm:px-5 sm:py-4">
+          <ResponsiveModalHeader className="border-border/60 shrink-0 space-y-0 border-b px-4 py-3 text-left sm:px-5 sm:py-3">
             <ResponsiveModalTitle className="text-base sm:text-lg">
               Channel sync
             </ResponsiveModalTitle>

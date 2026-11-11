@@ -102,7 +102,15 @@ export function ResponsiveModalContent({
 
   return (
     <DialogContent
-      className={cn(className)}
+      className={cn(
+        /*
+         * A split layout owns its padding in the header / body / footer, exactly
+         * like the bottom sheet. Without this the desktop dialog would add its
+         * own padding on top of the chrome (the "big padding" look).
+         */
+        sheetLayout === 'split' && 'p-0 sm:p-0',
+        className
+      )}
       showCloseButton={showCloseButton}
       overlayClassName={_overlayClassName}
       {...props}

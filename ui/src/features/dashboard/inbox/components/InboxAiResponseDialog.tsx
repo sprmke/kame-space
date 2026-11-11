@@ -76,11 +76,11 @@ export function InboxAiResponseDialog({
           className="z-[103] flex max-h-[min(92dvh,640px)] max-w-[min(calc(100vw-1.5rem),36rem)] flex-col overflow-hidden sm:max-w-[min(90vw,36rem)]"
           overlayClassName="z-[102]"
         >
-          <ResponsiveModalHeader className="shrink-0 max-lg:px-4">
+          <ResponsiveModalHeader className="shrink-0 px-4 sm:px-5">
             <ResponsiveModalTitle>Manage AI response</ResponsiveModalTitle>
           </ResponsiveModalHeader>
 
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain py-1 max-lg:px-4">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain py-1 px-4 sm:px-5">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
                 <FieldLabel
@@ -113,7 +113,7 @@ export function InboxAiResponseDialog({
             </div>
           </div>
 
-          <ResponsiveModalFooter className="shrink-0 gap-2 max-lg:px-4 sm:gap-2">
+          <ResponsiveModalFooter className="shrink-0 gap-2 px-4 sm:px-5 sm:gap-2">
             <Button
               type="button"
               variant="outline"

@@ -31,7 +31,7 @@ The org rollup is the **same page as the property Reviews page**, scoped to ever
 
 It is a working surface, not a read-only rollup: responding, reporting and writing guest reviews all happen here, against each review's own listing, without opening the property page.
 
-Page order is the standard admin list: **KPI cards → tabs → toolbar → table or cards → pagination**.
+Page order is the standard admin list: **KPI cards → tabs → toolbar → table or cards → pagination**. Every band is spaced by the one page rhythm (`MobilePageStack`: 14 / 16 / 20px at phone / tablet / desktop), so the tab row and the toolbar sit the same distance apart as the toolbar and the table. `FloatingToolbar` only stacks its children on phone/tablet — on desktop a toolbar renders a single row, so it adds no top margin.
 
 **Auto-review is property-only.** Its rules are per listing, so the header **Auto-review** action appears on the property page only.
 

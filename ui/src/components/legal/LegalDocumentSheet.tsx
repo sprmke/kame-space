@@ -6,6 +6,7 @@ import { ArrowUpRight, X } from 'lucide-react';
 
 import { LegalDocumentBody } from '@/components/legal/LegalDocumentBody';
 import { Button } from '@/components/ui/button';
+import { MODAL_CLOSE_BUTTON_CLASS } from '@/components/ui/modal-chrome';
 import {
   ResponsiveModal,
   ResponsiveModalClose,
@@ -25,7 +26,7 @@ import {
 const SHEET_ID_PREFIX = 'legal-sheet-';
 
 const HEADER_ACTION_CLASS =
-  'text-muted-foreground ring-offset-background hover:bg-muted focus-visible:ring-ring inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl opacity-80 transition-colors hover:text-foreground hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
+  'text-muted-foreground ring-offset-background hover:bg-muted focus-visible:ring-ring relative inline-flex size-8 shrink-0 items-center justify-center rounded-lg opacity-80 transition-colors hover:text-foreground hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 before:absolute before:-inset-1.5 before:content-[\'\'] lg:before:content-none';
 
 type LegalDocumentSheetProps = {
   doc: LegalDocId;
@@ -73,11 +74,9 @@ export function LegalDocumentSheet({ doc, section, open, onOpenChange }: LegalDo
         className="z-[121] flex max-h-[min(90dvh,44rem)] max-w-[min(calc(100vw-1.5rem),38rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[min(90vw,38rem)]"
         overlayClassName="z-[120]"
       >
-        <div className="border-border flex shrink-0 items-center gap-1 border-b px-5 py-3 sm:px-6">
+        <div className="border-border flex shrink-0 items-center gap-1 border-b px-4 py-3 sm:px-5">
           <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <ResponsiveModalTitle className="text-foreground text-base font-semibold tracking-tight sm:text-base">
-              {policy.title}
-            </ResponsiveModalTitle>
+            <ResponsiveModalTitle>{policy.title}</ResponsiveModalTitle>
             <ResponsiveModalDescription className="text-muted-foreground text-[11px] sm:text-xs">
               Updated {LEGAL_LAST_UPDATED}
             </ResponsiveModalDescription>
@@ -91,17 +90,14 @@ export function LegalDocumentSheet({ doc, section, open, onOpenChange }: LegalDo
           >
             <ArrowUpRight className="size-4" aria-hidden />
           </Link>
-          <ResponsiveModalClose
-            className="text-muted-foreground ring-offset-background hover:bg-muted focus-visible:ring-ring flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl opacity-80 transition-all hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none"
-            aria-label="Close"
-          >
-            <X className="size-5 shrink-0" aria-hidden />
+          <ResponsiveModalClose className={MODAL_CLOSE_BUTTON_CLASS} aria-label="Close">
+            <X className="size-4 shrink-0" aria-hidden />
           </ResponsiveModalClose>
         </div>
 
         <div
           ref={scrollRef}
-          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-3 sm:px-6 sm:py-3.5"
+          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-4"
         >
           <LegalDocumentBody
             sections={policy.sections}
@@ -110,7 +106,7 @@ export function LegalDocumentSheet({ doc, section, open, onOpenChange }: LegalDo
           />
         </div>
 
-        <ResponsiveModalFooter className="border-border shrink-0 border-t px-5 py-3 pb-[max(env(safe-area-inset-bottom,0px),0.75rem)] sm:px-6 sm:py-3">
+        <ResponsiveModalFooter className="border-border shrink-0 border-t px-4 py-3 pb-[max(env(safe-area-inset-bottom,0px),0.75rem)] sm:px-5 sm:py-3">
           <Button
             type="button"
             className="min-h-[44px] w-full sm:min-h-10 sm:w-auto"

@@ -1058,7 +1058,7 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
               <ResponsiveModalHeader className="border-border shrink-0 border-b px-4 py-3 pr-12 sm:px-5">
                 <ResponsiveModalTitle>History</ResponsiveModalTitle>
               </ResponsiveModalHeader>
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
                 {thread}
               </div>
             </ResponsiveModalContent>

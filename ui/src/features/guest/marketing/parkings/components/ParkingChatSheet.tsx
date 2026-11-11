@@ -105,7 +105,7 @@ export function ParkingChatSheet({
         showCloseButton={false}
         className="flex h-[min(90dvh,720px)] max-h-[min(92dvh,720px)] w-full max-w-[min(calc(100vw-1.5rem),32rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg sm:p-0"
       >
-        <ResponsiveModalHeader className="border-border shrink-0 gap-0 space-y-0 border-b px-5 py-4 text-left">
+        <ResponsiveModalHeader className="border-border shrink-0 gap-0 space-y-0 border-b px-4 py-3 text-left">
           <ResponsiveModalTitle className="sr-only">
             {hostName || 'Parking host'}
           </ResponsiveModalTitle>

@@ -236,7 +236,7 @@ export function SetupGuideOverlay() {
                 </ResponsiveModalDescription>
               ) : null}
 
-              <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-3 sm:px-5 sm:py-4">
+              <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5 sm:py-4">
                 <div
                   key={activeStep?.id ?? 'setup'}
                   className="motion-safe:animate-setup-guide-pane"
@@ -249,7 +249,7 @@ export function SetupGuideOverlay() {
                 </div>
               </div>
 
-              <ResponsiveModalFooter className="border-border bg-background shrink-0 gap-2 border-t px-3 py-2.5 sm:px-4">
+              <ResponsiveModalFooter className="border-border bg-background shrink-0 gap-2 border-t px-4 py-3 sm:px-5">
                 {footerSkip && !isLast ? (
                   <Button
                     type="button"

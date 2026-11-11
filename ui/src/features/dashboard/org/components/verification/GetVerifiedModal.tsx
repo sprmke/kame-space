@@ -1028,7 +1028,7 @@ export function GetVerifiedModal({
         >
           <ResponsiveModalHeader
             className={cn(
-              'border-border shrink-0 gap-3 space-y-0 border-b px-4 pb-3 pt-4 text-left sm:px-6 sm:pb-3.5 sm:pt-5',
+              'border-border shrink-0 gap-3 space-y-0 border-b px-4 pb-3 pt-4 text-left sm:px-5 sm:pb-3.5 sm:pt-5',
               blockDismiss && 'pr-4 sm:pr-6'
             )}
           >
@@ -1064,11 +1064,11 @@ export function GetVerifiedModal({
             ) : null}
           </ResponsiveModalHeader>
 
-          <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-3.5 [-webkit-overflow-scrolling:touch] sm:px-6 sm:py-4">
+          <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-4 [-webkit-overflow-scrolling:touch] sm:px-5 sm:py-4">
             {flowBody}
           </div>
 
-          <ResponsiveModalFooter className="border-border shrink-0 gap-2 border-t px-4 py-3 sm:flex-row sm:justify-end sm:px-6 sm:py-4">
+          <ResponsiveModalFooter className="border-border shrink-0 gap-2 border-t px-4 py-3 sm:flex-row sm:justify-end sm:px-5 sm:py-3">
             {!blockDismiss ? (
               <Button
                 type="button"
