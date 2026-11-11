@@ -72,6 +72,7 @@ kind: backlog
 - Improve performance, slow queries, lighthouse, before & after
 - Refine Channel sync modal
 - Inbox refinement
+- Refine email templates, refine flows/events or actions that we need to send email
 - Reposition light/dark switch
 - Improve paid/pro subscription badge/flow
 - Control for auto transition to ready for check-in status?
@@ -80,6 +81,8 @@ kind: backlog
 - Improve backend performance
 - Pricing plans refinement
 - Payment e2e and management from super admin
+- Improve QR design to include our logo?
+- Select turtle character and add it on their templates
 - Super admin - playbook articles?
 - Super admin -> System health warnings & errors
 - AI usage, estimates, cost and profits? Implement buy more credits
