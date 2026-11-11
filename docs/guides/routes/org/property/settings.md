@@ -65,6 +65,8 @@ Property Settings is where you complete operational setup: basic info, capacity,
   A: Restore only appears when the listing is verified and the listing contract is current. A new listing has to be approved first, and an ended contract has to be renewed. The listing status card shows which one applies.
 - Q: Can guests still book a property I paused or archived?
   A: No. A paused listing keeps its public page but shows "Not taking new bookings". An archived, suspended, or unapproved listing is hidden and its direct booking link shows the same closed message. Guests who already have a booking keep their form, trip page, and stay guide.
+- Q: What do I see when I pause or archive?
+  A: A confirm sheet with a short description under the title, not just the property name. Archive may list open bookings that block the action, or a short bullet list of what changes when archive is allowed. Compare options uses the same split sheet with one line per choice.
 - Q: What turns off when I archive?
   A: New bookings, calendar imports, the calendar export link, scheduled social posts, Smart Pricing, Telegram digests, inbox AI replies, and the voice receptionist. Refunds, cancellation refunds, and review requests keep running.
 - Q: Does deleting a property refund my current billing period?
@@ -233,8 +235,6 @@ Save path: dirty `details` section → `update-property` settings merge (`proper
 ## Photos & Videos
 
 Listing gallery photos/videos. Storage: `properties.settings.media` via `upload-property-media` / `update-property`. Same fields are editable in **Public Pages → Property → Edit** (live preview). Brand color is under **Basic Information** (`app_settings.brand_color`) and also in the listing editor.
-
-**Alt text.** Each photo has an **Alt text** action in its top-right menu (pencil). It opens a bottom sheet on phone and a dialog on desktop, saving with the rest of the gallery. The value is stored as `media[].alt` and used for the public image `alt` attribute and `og:image:alt`; when empty, the caption is used, then a generated description built from the listing name, unit type and city. Leaving the sheet with unsaved text asks Save / Discard / Keep editing. The save rides the normal property update, so it appears in Activity as a property edit.
 
 Each picked photo is **downscaled + re-encoded to WebP in the browser** (long edge 3840px, quality-first — no visible loss even full-screen on 4K) before upload via `prepareUpload` / `PHOTO_MASTER` preset; the stored file is typically 50–80% smaller. Ceilings: **image 10 MB, video 50 MB** (client rejects over-ceiling with `File must be N MB or smaller`; videos are not transcoded — trim/compress a longer clip first). **SVG is rejected** (public bucket XSS). Architecture: [`storage.md`](../../../architecture/storage.md) §7.1.
 
@@ -471,12 +471,12 @@ Read-only. Summary: "Who did what on this property." **Manage** opens a large mo
 
 ### Pause / Resume
 
-- Impact sheet → `POST property-lifecycle` (`settings.listingStatus:edit`)
-- Pause is instant and reversible. Resume re-checks the listing authorization, contract lock, and tower/unit peer.
+- Confirm sheet (fixed header and footer, scrollable body on phone) → `POST property-lifecycle` (`settings.listingStatus:edit`)
+- Title asks the action; the description explains what happens to the property by name. Pause is instant and reversible. Resume re-checks the listing authorization, contract lock, and tower/unit peer.
 
 ### Archive
 
-- Impact sheet lists booking blockers, what stops, what keeps working, team access, and the billing line
+- Same split confirm sheet. When archive is allowed, the body is a short outcome list (new bookings off, automations off, current guests keep guides and refunds) plus a billing line when the property is on a paid plan. When open bookings block archive, the body lists those bookings and counts them; confirm stays disabled until they are finished or cancelled.
 - `POST property-lifecycle { action: "archive" }`. Pre-check and a post-write re-check both read open bookings, cancellation requests, and refunds; a booking that lands mid-archive rolls the state back.
 - On success: `status = INACTIVE`, `inactive_reason = archived`, `archived_at`, `archived_by`; iCal feeds disabled, export disabled, scheduled posts marked failed, subscription slot removed.
 
@@ -499,17 +499,16 @@ Read-only. Summary: "Who did what on this property." **Manage** opens a large mo
 
 ## API reference (this page)
 
-| Action                                                            | Endpoint                                                                                             |
-| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Profile + settings                                                | `PATCH update-property`                                                                              |
-| Payment + building forms + email automations + workflow documents | `PATCH app-settings?property_id=` (payment fields require `settingsVerificationToken`)               |
-| Payment OTP (org owner)                                           | `POST settings-verification?property_id=` (`send_otp`, `verify_otp`)                                 |
-| Media upload/delete                                               | `POST` / `DELETE upload-property-media?property_id=`                                                 |
-| Media alt text                                                    | Saved with `media[].alt` through the same `update-property` call; rendered by `buildListingImageAlt` |
-| Payment QR / signature                                            | `POST upload-app-settings-asset?property_id=`                                                        |
-| Listing status + impact                                           | `GET property-lifecycle?property_id=&impact=1`                                                       |
-| Pause / Resume / Archive / Restore                                | `POST property-lifecycle` `{ property_id, action }`                                                  |
-| Delete                                                            | `DELETE delete-property` `{ propertyId, confirmName }`                                               |
+| Action                                                            | Endpoint                                                                               |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Profile + settings                                                | `PATCH update-property`                                                                |
+| Payment + building forms + email automations + workflow documents | `PATCH app-settings?property_id=` (payment fields require `settingsVerificationToken`) |
+| Payment OTP (org owner)                                           | `POST settings-verification?property_id=` (`send_otp`, `verify_otp`)                   |
+| Media upload/delete                                               | `POST` / `DELETE upload-property-media?property_id=`                                   |
+| Payment QR / signature                                            | `POST upload-app-settings-asset?property_id=`                                          |
+| Listing status + impact                                           | `GET property-lifecycle?property_id=&impact=1`                                         |
+| Pause / Resume / Archive / Restore                                | `POST property-lifecycle` `{ property_id, action }`                                    |
+| Delete                                                            | `DELETE delete-property` `{ propertyId, confirmName }`                                 |
 
 ---
 

@@ -19,16 +19,9 @@ import { friendlyToastError } from '@/lib/feedback/toastMessages';
 import { semanticBadgeClasses, semanticBadgeDotClasses } from '@/lib/statusToneColors';
 import { cn } from '@/lib/utils';
 
+import { AdminDialogShell } from '@/components/AdminDialogShell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  ResponsiveModal,
-  ResponsiveModalContent,
-  ResponsiveModalDescription,
-  ResponsiveModalFooter,
-  ResponsiveModalHeader,
-  ResponsiveModalTitle,
-} from '@/components/ui/responsive-modal';
 
 const ACTION_LABELS: Record<PropertyLifecycleAction, string> = {
   pause: 'Pause bookings',
@@ -44,6 +37,33 @@ const ACTION_TITLES: Record<PropertyLifecycleAction, string> = {
   restore: 'Restore this property?',
 };
 
+function actionDescription(action: PropertyLifecycleAction, propertyName: string): string {
+  switch (action) {
+    case 'pause':
+      return `${propertyName} stops taking new bookings. Guests who already booked keep their stay, guides, and messages.`;
+    case 'resume':
+      return `${propertyName} can accept new bookings again when your listing is approved.`;
+    case 'archive':
+      return `${propertyName} is retired from day-to-day hosting. Records stay; new bookings and automations turn off.`;
+    case 'restore':
+      return `${propertyName} comes back as paused. Turn calendar sync, posts, and automations back on when you are ready.`;
+  }
+}
+
+const ARCHIVE_OUTCOME_BULLETS = [
+  'No new bookings or guest form submissions',
+  'Calendar sync and scheduled posts turn off',
+  'Current guests keep stay guides, refunds, and reviews',
+] as const;
+
+function formatBlockingStatus(status: string): string {
+  return status
+    .split('_')
+    .join(' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 function CountLine({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3 py-1 text-sm">
@@ -55,67 +75,43 @@ function CountLine({ label, value }: { label: string; value: string }) {
 
 function ImpactBody({ impact }: { impact: PropertyLifecycleImpact }) {
   const bookingCount = impact.bookings.blockingCount;
+  const visibleBlockers = impact.bookings.blocking.slice(0, 6);
+  const hiddenBlockers = bookingCount - visibleBlockers.length;
+
   return (
     <div className="space-y-4 text-sm">
       {bookingCount > 0 ? (
         <div className="border-destructive/40 bg-destructive/5 space-y-2 rounded-lg border p-3">
-          <p className="text-destructive font-medium">Finish or cancel these bookings first.</p>
-          <ul className="space-y-1">
-            {impact.bookings.blocking.map((booking) => (
-              <li key={booking.id} className="text-muted-foreground text-xs">
-                {booking.guestName ?? 'Guest'} · {booking.status.split('_').join(' ').toLowerCase()}
+          <p className="text-destructive text-[13px] font-medium">
+            Finish or cancel {bookingCount} open booking{bookingCount === 1 ? '' : 's'} first.
+          </p>
+          <ul className="space-y-1.5">
+            {visibleBlockers.map((booking) => (
+              <li key={booking.id} className="text-muted-foreground text-xs leading-snug">
+                {booking.guestName ?? 'Guest'}
                 {booking.checkInDate ? ` · ${booking.checkInDate}` : ''}
+                <span className="text-foreground"> · {formatBlockingStatus(booking.status)}</span>
               </li>
             ))}
           </ul>
-        </div>
-      ) : null}
-
-      <div>
-        <p className="font-medium">What stops</p>
-        <div className="mt-1">
-          <CountLine label="New bookings" value="Stops" />
-          {impact.calendar.importFeeds > 0 ? (
-            <CountLine label="Calendar imports" value={`${impact.calendar.importFeeds} feed(s)`} />
-          ) : null}
-          {impact.calendar.exportEnabled ? (
-            <CountLine label="Calendar export" value="Disables" />
-          ) : null}
-          {impact.marketing.scheduledPosts > 0 ? (
-            <CountLine label="Scheduled posts" value={`${impact.marketing.scheduledPosts}`} />
+          {hiddenBlockers > 0 ? (
+            <p className="text-muted-foreground text-xs">+ {hiddenBlockers} more</p>
           ) : null}
         </div>
-      </div>
-
-      <div>
-        <p className="font-medium">What keeps working</p>
-        <div className="mt-1">
-          <CountLine label="Guests with bookings" value="Stay guide and trip page" />
-          <CountLine label="Refunds and reviews" value="Continue" />
-        </div>
-      </div>
-
-      <div>
-        <p className="font-medium">Team</p>
-        <div className="mt-1">
-          <CountLine
-            label="Members with access"
-            value={impact.team.members > 0 ? `${impact.team.members} (read only)` : 'None'}
-          />
-          {impact.team.pendingInvitations > 0 ? (
-            <CountLine label="Pending invitations" value={`${impact.team.pendingInvitations}`} />
+      ) : (
+        <>
+          <ul className="text-muted-foreground list-disc space-y-1.5 pl-4 text-[13px] leading-relaxed">
+            {ARCHIVE_OUTCOME_BULLETS.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+          {impact.subscription.billed ? (
+            <p className="text-muted-foreground text-xs">
+              Billing for this property stops on the next plan cycle.
+            </p>
           ) : null}
-        </div>
-      </div>
-
-      <div>
-        <p className="font-medium">Billing</p>
-        <p className="text-muted-foreground mt-1 text-xs">
-          {impact.subscription.billed
-            ? 'Leaves your bill from the next cycle.'
-            : 'Not on a paid plan right now.'}
-        </p>
-      </div>
+        </>
+      )}
     </div>
   );
 }
@@ -149,18 +145,34 @@ function DeleteBody({
     }
   }
 
+  const cascadeTotal =
+    impact == null
+      ? 0
+      : impact.cascade.inboxThreads +
+        impact.cascade.reviews +
+        impact.cascade.paymentTransactions +
+        impact.cascade.marketingRecords +
+        impact.team.members;
+
   return (
     <div className="space-y-4 text-sm">
-      <p className="text-muted-foreground">
-        This can't be undone. It removes the property profile, media, and every record below.
-      </p>
-      {impact ? (
+      {impact && cascadeTotal > 0 ? (
         <div className="rounded-lg border p-3">
-          <CountLine label="Inbox threads" value={String(impact.cascade.inboxThreads)} />
-          <CountLine label="Reviews" value={String(impact.cascade.reviews)} />
-          <CountLine label="Payment history" value={String(impact.cascade.paymentTransactions)} />
-          <CountLine label="Marketing records" value={String(impact.cascade.marketingRecords)} />
-          <CountLine label="Team access" value={`${impact.team.members} member(s)`} />
+          {impact.cascade.inboxThreads > 0 ? (
+            <CountLine label="Inbox threads" value={String(impact.cascade.inboxThreads)} />
+          ) : null}
+          {impact.cascade.reviews > 0 ? (
+            <CountLine label="Reviews" value={String(impact.cascade.reviews)} />
+          ) : null}
+          {impact.cascade.paymentTransactions > 0 ? (
+            <CountLine label="Payment history" value={String(impact.cascade.paymentTransactions)} />
+          ) : null}
+          {impact.cascade.marketingRecords > 0 ? (
+            <CountLine label="Marketing records" value={String(impact.cascade.marketingRecords)} />
+          ) : null}
+          {impact.team.members > 0 ? (
+            <CountLine label="Team access" value={`${impact.team.members} member(s)`} />
+          ) : null}
         </div>
       ) : null}
 
@@ -393,119 +405,105 @@ export function PropertyListingStatusSection({
         </div>
       )}
 
-      <ResponsiveModal open={compareOpen} onOpenChange={setCompareOpen}>
-        <ResponsiveModalContent className="max-w-[min(calc(100vw-1.5rem),32rem)]">
-          <ResponsiveModalHeader>
-            <ResponsiveModalTitle>Pause, archive, or delete</ResponsiveModalTitle>
-          </ResponsiveModalHeader>
-          <div className="space-y-3">
-            {PROPERTY_LIFECYCLE_OPTIONS.map((option) => (
-              <div key={option.key} className="rounded-lg border p-3">
-                <p className="text-sm font-semibold">{option.title}</p>
-                <p className="text-card-description">{option.summary}</p>
-                <p className="text-muted-foreground mt-1 text-xs">Keeps: {option.keeps}</p>
-                <p className="text-muted-foreground text-xs">Stops: {option.stops}</p>
-              </div>
-            ))}
-          </div>
-          <ResponsiveModalFooter>
-            <Button
-              type="button"
-              variant="outline"
-              className="min-h-[44px] w-full sm:w-auto"
-              onClick={() => setCompareOpen(false)}
-            >
-              Close
-            </Button>
-          </ResponsiveModalFooter>
-        </ResponsiveModalContent>
-      </ResponsiveModal>
-
-      <ResponsiveModal
-        open={pendingAction !== null}
-        onOpenChange={(open) => {
-          if (!open && !pending) setPendingAction(null);
-        }}
+      <AdminDialogShell
+        open={compareOpen}
+        onOpenChange={setCompareOpen}
+        title="Pause, archive, or delete"
+        description="Pick the option that matches how long you need the listing offline."
+        contentClassName="max-w-[min(calc(100vw-1.5rem),32rem)]"
+        bodyClassName="py-3 sm:py-4"
+        footer={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="settings-action w-full sm:w-auto"
+            onClick={() => setCompareOpen(false)}
+          >
+            Close
+          </Button>
+        }
       >
-        <ResponsiveModalContent className="max-w-[min(calc(100vw-1.5rem),30rem)]">
-          {pendingAction ? (
+        <div className="space-y-2.5">
+          {PROPERTY_LIFECYCLE_OPTIONS.map((option) => (
+            <div key={option.key} className="rounded-lg border p-3">
+              <p className="text-sm font-semibold">{option.title}</p>
+              <p className="text-muted-foreground mt-0.5 text-[13px] leading-relaxed">
+                {option.summary}
+              </p>
+            </div>
+          ))}
+        </div>
+      </AdminDialogShell>
+
+      {pendingAction ? (
+        <AdminDialogShell
+          open
+          onOpenChange={(open) => {
+            if (!open && !pending) setPendingAction(null);
+          }}
+          title={ACTION_TITLES[pendingAction]}
+          description={actionDescription(pendingAction, propertyName)}
+          contentClassName="max-w-[min(calc(100vw-1.5rem),30rem)]"
+          bodyClassName="py-3 sm:py-4"
+          footer={
             <>
-              <ResponsiveModalHeader>
-                <ResponsiveModalTitle>{ACTION_TITLES[pendingAction]}</ResponsiveModalTitle>
-                <ResponsiveModalDescription>{propertyName}</ResponsiveModalDescription>
-              </ResponsiveModalHeader>
-
-              {pendingAction === 'archive' ? (
-                impactQuery.isLoading ? (
-                  <div className="bg-muted/40 h-24 animate-pulse rounded-lg" aria-hidden />
-                ) : impact ? (
-                  <ImpactBody impact={impact} />
-                ) : null
-              ) : null}
-
-              {pendingAction === 'restore' ? (
-                <p className="text-muted-foreground text-sm">
-                  Calendar sync, the calendar export link, scheduled posts, Smart Pricing, Telegram,
-                  and AI replies stay off until you turn them back on.
-                </p>
-              ) : null}
-
-              <ResponsiveModalFooter className="flex-col gap-2 sm:flex-row">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="min-h-[44px] w-full sm:w-auto"
-                  disabled={pending}
-                  onClick={() => setPendingAction(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  className="min-h-[44px] w-full sm:w-auto"
-                  disabled={
-                    pending ||
-                    (pendingAction === 'archive' && (impact?.bookings.blockingCount ?? 0) > 0)
-                  }
-                  onClick={() => void runAction(pendingAction)}
-                >
-                  {pending ? 'Working…' : ACTION_LABELS[pendingAction]}
-                </Button>
-              </ResponsiveModalFooter>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="settings-action w-full sm:w-auto"
+                disabled={pending}
+                onClick={() => setPendingAction(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                className="settings-action w-full sm:w-auto"
+                disabled={
+                  pending ||
+                  (pendingAction === 'archive' && (impact?.bookings.blockingCount ?? 0) > 0)
+                }
+                onClick={() => void runAction(pendingAction)}
+              >
+                {pending ? 'Working…' : ACTION_LABELS[pendingAction]}
+              </Button>
             </>
+          }
+        >
+          {pendingAction === 'archive' ? (
+            impactQuery.isLoading ? (
+              <div className="bg-muted/40 h-24 animate-pulse rounded-lg" aria-hidden />
+            ) : impact ? (
+              <ImpactBody impact={impact} />
+            ) : null
+          ) : pendingAction === 'restore' ? (
+            <p className="text-muted-foreground text-[13px] leading-relaxed">
+              Calendar sync, calendar export, scheduled posts, Smart Pricing, Telegram, and AI
+              replies stay off until you turn them back on in property settings.
+            </p>
           ) : null}
-        </ResponsiveModalContent>
-      </ResponsiveModal>
+        </AdminDialogShell>
+      ) : null}
 
-      <ResponsiveModal
+      <AdminDialogShell
         open={deleteOpen}
         onOpenChange={(open) => {
           if (!open && !deleteProperty.isPending) setDeleteOpen(false);
         }}
-      >
-        <ResponsiveModalContent className="max-w-[min(calc(100vw-1.5rem),30rem)]">
-          <ResponsiveModalHeader>
-            <ResponsiveModalTitle className="text-destructive">
-              Delete {propertyName}?
-            </ResponsiveModalTitle>
-          </ResponsiveModalHeader>
-
-          {impactQuery.isLoading ? (
-            <div className="bg-muted/40 h-24 animate-pulse rounded-lg" aria-hidden />
-          ) : (
-            <DeleteBody
-              impact={impact}
-              propertyName={propertyName}
-              confirmName={confirmName}
-              onConfirmNameChange={setConfirmName}
-            />
-          )}
-
-          <ResponsiveModalFooter className="flex-col gap-2 sm:flex-row">
+        title={<span className="text-destructive">Delete {propertyName}?</span>}
+        description="Only for a property with no records. This cannot be undone."
+        contentClassName="max-w-[min(calc(100vw-1.5rem),30rem)]"
+        bodyClassName="py-3 sm:py-4"
+        footer={
+          <>
             <Button
               type="button"
               variant="outline"
-              className="min-h-[44px] w-full sm:w-auto"
+              size="sm"
+              className="settings-action w-full sm:w-auto"
               disabled={deleteProperty.isPending}
               onClick={() => setDeleteOpen(false)}
             >
@@ -514,7 +512,8 @@ export function PropertyListingStatusSection({
             <Button
               type="button"
               variant="destructive"
-              className="min-h-[44px] w-full sm:w-auto"
+              size="sm"
+              className="settings-action w-full sm:w-auto"
               disabled={
                 deleteProperty.isPending ||
                 deleteBlocked ||
@@ -524,9 +523,20 @@ export function PropertyListingStatusSection({
             >
               {deleteProperty.isPending ? 'Deleting…' : 'Delete property'}
             </Button>
-          </ResponsiveModalFooter>
-        </ResponsiveModalContent>
-      </ResponsiveModal>
+          </>
+        }
+      >
+        {impactQuery.isLoading ? (
+          <div className="bg-muted/40 h-24 animate-pulse rounded-lg" aria-hidden />
+        ) : (
+          <DeleteBody
+            impact={impact}
+            propertyName={propertyName}
+            confirmName={confirmName}
+            onConfirmNameChange={setConfirmName}
+          />
+        )}
+      </AdminDialogShell>
     </div>
   );
 }
