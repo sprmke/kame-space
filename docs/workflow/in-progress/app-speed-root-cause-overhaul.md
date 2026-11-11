@@ -4,7 +4,7 @@ status: planned
 stage: in-progress
 kind: plan
 tags: [performance, pwa, supabase, edge-functions, lighthouse, production-readiness, caching]
-updated: 2026-11-11
+updated: 2026-11-12
 readiness: unverified
 launch_gate: A
 launch_blocker: true
@@ -601,6 +601,18 @@ table; it is not "not started".
 | 9, 10                      | Need hosted credentials and a released build                                                                                                                                                                                                                                           | `SENTRY_AUTH_TOKEN` with transaction read, a PostHog personal key, and a host session                                           |
 
 ## Plan revisions
+
+2026-11-12:
+
+- **Traced the `property-team-*` consumer instead of reasoning about it.** It is the setup guide,
+  which mounts on every admin route and opens automatically for an incomplete property. Three
+  wrong hypotheses preceded one trace. Source reading was the wrong tool.
+- **Fixed a regression this plan introduced.** Making the team query opt-in broke
+  `PropertySettingsCard`'s team defaults after a later commit dropped the opt-in. Now explicit.
+- **`dashboard-stats` starts with the session context** rather than behind the chrome burst. It is
+  the only call content waits on.
+- **Method note:** Resource Timing evicts entries; CDP network events do not. All call-set claims
+  now come from `perf:boot-durations` via CDP.
 
 2026-11-11, after measuring durations rather than start times:
 
