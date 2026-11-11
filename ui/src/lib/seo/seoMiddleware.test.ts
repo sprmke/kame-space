@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { handleSeoRequest } from '@/lib/seo/seoMiddleware';
+import { DEFAULT_TIMEOUT_MS, PRIMARY_TIMEOUT_MS, handleSeoRequest } from '@/lib/seo/seoMiddleware';
 
 const SHELL =
   '<html><head><title>Old Brand</title></head><body><div id="root"></div></body></html>';
@@ -30,6 +30,15 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 const shell = () => Promise.resolve(SHELL);
+
+describe('edge fetch budgets', () => {
+  // Measured against production on 2026-11-11: get-public-property cold 4.3 s, warm 1.8-2.5 s.
+  // A 2.5 s cap on the payload that *is* the snapshot silently dropped property detail
+  // snapshots in production. This keeps the split honest.
+  it('gives the snapshot payload a bigger budget than optional enrichment', () => {
+    expect(PRIMARY_TIMEOUT_MS).toBeGreaterThan(DEFAULT_TIMEOUT_MS * 2);
+  });
+});
 
 describe('handleSeoRequest', () => {
   it('serves robots.txt pointing at the canonical sitemap', async () => {

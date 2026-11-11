@@ -90,7 +90,19 @@ export type SeoMiddlewareDeps = {
   indexableHosts?: readonly string[];
 };
 
-const DEFAULT_TIMEOUT_MS = 2_500;
+/**
+ * Budget for optional enrichment (related listings, neighbouring places, FAQs, plans). Any of
+ * these failing just means a shorter snapshot, so they stay tight.
+ */
+export const DEFAULT_TIMEOUT_MS = 2_500;
+
+/**
+ * Budget for the payload that *is* the snapshot. A cold `get-public-property` isolate was
+ * measured at 4.3 s against production (warm 1.8 to 2.5 s), so a 2.5 s cap silently served the
+ * bare SPA shell to crawlers on exactly the pages that matter. Crawler-only requests, so the
+ * extra headroom costs nothing for guests.
+ */
+export const PRIMARY_TIMEOUT_MS = 6_000;
 
 type Json = Record<string, unknown>;
 
@@ -112,11 +124,15 @@ function strings(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => !!str(item)) : [];
 }
 
-async function getJson(url: string, deps: SeoMiddlewareDeps): Promise<Json | null> {
+async function getJson(
+  url: string,
+  deps: SeoMiddlewareDeps,
+  timeoutMs = deps.timeoutMs ?? DEFAULT_TIMEOUT_MS
+): Promise<Json | null> {
   const doFetch = deps.fetchImpl ?? fetch;
   const res = await doFetch(url, {
     headers: { apikey: deps.anonKey, Authorization: `Bearer ${deps.anonKey}` },
-    signal: AbortSignal.timeout(deps.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) return null;
   return (await res.json()) as Json;
@@ -299,7 +315,11 @@ async function loadListingRoute(
   const encoded = encodeURIComponent(slug);
 
   if (family === 'property') {
-    const body = await getJson(`${base}/get-public-property?property=${encoded}`, deps);
+    const body = await getJson(
+      `${base}/get-public-property?property=${encoded}`,
+      deps,
+      PRIMARY_TIMEOUT_MS
+    );
     const data = (body?.data ?? null) as Json | null;
     const name = str(data?.name);
     if (!data || !name) return null;
@@ -409,7 +429,11 @@ async function loadListingRoute(
   }
 
   if (family === 'parking') {
-    const body = await getJson(`${base}/get-public-parking?parking=${encoded}`, deps);
+    const body = await getJson(
+      `${base}/get-public-parking?parking=${encoded}`,
+      deps,
+      PRIMARY_TIMEOUT_MS
+    );
     const data = (body?.data ?? null) as Json | null;
     const name = str(data?.name);
     if (!data || !name) return null;
@@ -494,7 +518,11 @@ async function loadListingRoute(
     };
   }
 
-  const body = await getJson(`${base}/list-public-developments?slug=${encoded}&pageSize=1`, deps);
+  const body = await getJson(
+    `${base}/list-public-developments?slug=${encoded}&pageSize=1`,
+    deps,
+    PRIMARY_TIMEOUT_MS
+  );
   const data = records(body?.data)[0];
   const name = str(data?.name);
   if (!data || !name) return null;
@@ -622,7 +650,8 @@ async function loadPlaceRoute(
 ): Promise<{ meta: SeoMeta; snapshot: SnapshotPage } | null> {
   const body = await getJson(
     `${apiBase(deps)}/${PLACE_ENDPOINT[family]}?locationSlug=${encodeURIComponent(place)}&pageSize=12`,
-    deps
+    deps,
+    PRIMARY_TIMEOUT_MS
   );
   const cards = records(body?.data);
   if (cards.length === 0) return null;
@@ -681,7 +710,8 @@ async function loadHostRoute(
 ): Promise<{ meta: SeoMeta; snapshot: SnapshotPage } | null> {
   const body = await getJson(
     `${apiBase(deps)}/get-public-host?org=${encodeURIComponent(orgSlug)}`,
-    deps
+    deps,
+    PRIMARY_TIMEOUT_MS
   );
   const data = (body?.data ?? null) as Json | null;
   const name = str(data?.name);
