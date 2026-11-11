@@ -329,3 +329,42 @@ Production state:
   (`20261327000000`, `20261328000000`, `20261329000000`) are live.
 - UI: the production Vercel build from the #408 release is Ready and aliased to `kamespace.com`.
   The temporary build-rate limit cleared before that release; later builds no longer need a retry.
+
+## 2026-11-12 tier A and post-booking releases
+
+Two batches shipped in one day, each as one PR into `develop` and one release PR into `main`.
+Every deleted branch was verified first: an ancestor of `develop`/`main`, or `git cherry` with no
+`+` lines, and a clean worktree. Blob-hash checks confirmed all 192 tier A files and all 170 batch
+two files survived the merges, with zero deletions in either release.
+
+| Release                         | Contents                                                                                                                                 | Result                                                              |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Tier A (#428, #429)             | #427 settings nav labels, #424 listing lifecycle sheets, #386 mascot library, #421 modal chrome, #364 agent skills, #426 boot-truth docs | Production UI released, no backend change                           |
+| Post-booking (#433, #434, #436) | #384 post-booking journey, #423 cookie banner, three pending plans and lighthouse evidence, migration renumbering                        | 5 migrations applied to production, functions deployed, UI released |
+
+Closed without shipping:
+
+- #380 `codex/f5-brand-assets` - 61 of its 76 brand files are byte-identical on `develop` and the
+  other 15 are older than `develop`; its docs commit would regress the planned backlog. Closed and
+  branch deleted.
+
+Deleted branches (local and remote): `fix/settings-section-nav-labels`,
+`fix/property-listing-lifecycle-modals`, `codex/mascot-character-library`, `feat/modal-chrome`,
+`chore/global-agent-skills`, `chore/tier-a-batch`, `release/2026-11-12-tier-a`,
+`feat/guest-post-booking-journey`, `fix/cookie-banner-compact`, `chore/batch-2`,
+`release/2026-11-12-batch-2`, `codex/f5-brand-assets`, `feat/seo-foundation`,
+`feat/guest-inbox-meta-sync`, `test/finance-recurrence`, `chore/deploy-prod-1111`,
+`release/2026-11-12-batch-2`.
+
+Removed worktrees: `tier-a`, `batch-2`, `seo-foundation`, `guest-inbox-meta-sync`,
+`listing-modals`, `section-nav`, `mascot-character-library`, `modal-chrome`, `cookie-ux`,
+`/private/tmp/seo-baseline`.
+
+Primary checkout reset from the merged `fix/edge-tslib-lock` to `develop`. Its 25 dirty files were
+either already shipped or machine noise; the four plan docs and the lighthouse evidence were
+salvaged into the post-booking batch first.
+
+Kept on purpose, still open: `#383` marketing trends (conflicted), `#379` marketing planner,
+`#354` multi-residence (draft, do not merge), `#353` mascot talking preview (draft),
+`test/full-app-test-architecture` (two doc commits, no PR), 13 dependabot PRs, and the
+`backup/` and `recover/` safety snapshots.
