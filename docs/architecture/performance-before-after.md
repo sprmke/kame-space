@@ -455,20 +455,29 @@ than changed.
 
 Production, 2026-11-11, same probe account and 4x CPU throttle, three runs each.
 
-| Metric                          | Before       | After            | Change                                               |
-| ------------------------------- | ------------ | ---------------- | ---------------------------------------------------- |
-| `route:content` (median)        | 5868 ms      | **4599 ms**      | **-22%**                                             |
-| `app-settings` handler          | 2456-3719 ms | **1793-1950 ms** | **-30%**                                             |
-| `property-team-members` handler | 3105-3904 ms | 2986-3522 ms     | unchanged, but no longer called on boot              |
-| Distinct boot calls             | 21           | 20               | `property-team-members` and `list-bookings` are gone |
-| Sum of call durations           | 38049 ms     | 32793 ms         | -14%                                                 |
+| Metric                          | Before       | After            | Change                  |
+| ------------------------------- | ------------ | ---------------- | ----------------------- |
+| `route:content` (median)        | 5868 ms      | **4599 ms**      | **-22%**                |
+| `app-settings` handler          | 2456-3719 ms | **1793-1950 ms** | **-30%**                |
+| `property-team-members` handler | 3105-3904 ms | 2986-3522 ms     | unchanged               |
+| Distinct boot calls             | 21           | 20               | `list-bookings` is gone |
+| Sum of call durations           | 38049 ms     | 32793 ms         | -14%                    |
 
 The raw medians are noisy on this machine (before: 7626, 3583, 5868; after: 6105, 4599, 4228), so
 the conservative reading is the direction and the per-call handler times, which were measured
 directly rather than through a browser.
 
-**The team call is gone from the dashboard entirely.** It no longer appears in the timeline at
-all, which is the point: it was never needed there.
+**The team call was not removed by the catalog gating, and the first reading said it was.** One
+run showed `property-team-members` missing from the resource list; that was the entry being
+dropped, not the call being gone. Re-checking the deployed build showed all three
+`property-team-*` calls still firing on `/dashboard`, while **none** of the catalog's other eleven
+queries fired. So the catalog gating worked and a direct `usePropertyTeam()` call was responsible,
+with a default of always on.
+
+`usePropertyTeam` is now opt-in (`propertyTeamQueryEnabled`), and only the two surfaces that list
+the team pass `enabled: true`. That fix is merged to `develop`; it is **not measured in
+production yet**, because the Vercel build quota blocked the release. The numbers above are the
+state before it.
 
 **`app-settings` is 30% faster, not 70%.** The fan-out removed the serial sequencing, but the
 handler still costs about 1.8s. The remaining time is inside `resolveAppSettings`, which runs its
@@ -498,6 +507,13 @@ behind ten chrome calls. Two ways forward, in order of value:
 2. **Collapse the burst into `get-session-context`**, the pattern that already took the boot chain
    from four calls to one. Larger, and less valuable now that the two genuinely slow calls are
    fixed.
+
+### Pending measurement
+
+The opt-in team query (`propertyTeamQueryEnabled`) is merged but not released. The Vercel free plan
+returned `Deployment rate limited - retry in 24 hours`, so no production build could be made.
+Re-run `perf:boot-durations` once it ships. Expectation: three fewer calls on `/dashboard` and
+`/bookings`, and a `route:content` below 4599 ms.
 
 ## Release state
 
