@@ -377,6 +377,80 @@ The weekly report's Sentry source is unblocked. Its PostHog source needs a perso
 **`query:read`** (and `project:read`); the existing key cannot run the HogQL queries the report
 depends on.
 
+## 15. Why the dashboard boot was slow: two calls, not ten
+
+Measured 2026-11-11 on production, mobiles at 4x CPU throttle, three runs, medians.
+
+Section 11 counted the calls and concluded the ten-call burst at ~4.1s was the critical path.
+Measuring **durations** instead of start times shows that was half right. The burst is real,
+but its members return in 0.8-2.6s. Two calls outside that reasoning were the actual cost:
+
+| Call                    | Handler time, warm | Why                                                                        |
+| ----------------------- | ------------------ | -------------------------------------------------------------------------- |
+| `property-team-members` | **3105-3904 ms**   | a seat reconcile on a GET, plus one GoTrue admin call per member in series |
+| `app-settings`          | **2456-3719 ms**   | nine sequential independent reads                                          |
+
+Both were verified with `Server-Timing` directly against the deployed functions, three times
+each, so this is handler time, not cold start or network.
+
+### `property-team-members` was not needed on the dashboard at all
+
+The dashboard never shows the team. The calls came from the AI composer's mention catalog:
+`useAssistantContextCatalog` fetched the org team, property team and parking team on mount,
+and `ChatComposerContextHub` mounts it with its popover **closed**. The catalog was loading the
+data for a menu nobody had opened.
+
+`useAssistantContextCatalog({ enabled })` now holds every request until a caller opens it.
+`ChatComposerContextHub` passes its own `open` state. Callers that only mount when the picker
+is visible (`ChatContextCommandPalette`, `MentionCandidatesLoader`) keep the default and are
+unchanged.
+
+`usePropertyTeam` gained an `enabled` option, the same shape `useParkings` already had.
+
+### `app-settings` stays, so it had to get faster
+
+`AdminBrandTheme` is mounted by `AdminLayout` and needs the brand colour, so this call is
+legitimate. The handler ran nine independent reads one after another. `resolveAppSettings` was
+already parallel internally; the outer function was not.
+
+They now fan out in one wave behind a single `Promise.all`. The two that genuinely depend on the
+resolved property id (residence name, then the PMO email derived from it) stay sequenced.
+
+### The N+1 nobody would notice until it mattered
+
+`listPropertyTeamMembers` awaited `getAuthProfile` inside its loops. One GoTrue admin round trip
+per member, plus one per inviter, in series. The test tenant has a single owner, so it cost one
+call there and would cost twenty on a ten-seat property. Profiles are now collected first and
+fetched together, then the rows are built from a map.
+
+### Code paths
+
+| Change            | File                                                                           |
+| ----------------- | ------------------------------------------------------------------------------ |
+| Catalog gating    | `ui/src/features/dashboard/ai-assistant/hooks/useAssistantContextCatalog.ts`   |
+| Hub passes `open` | `ui/src/features/dashboard/ai-assistant/components/ChatComposerContextHub.tsx` |
+| `enabled` option  | `ui/src/features/dashboard/team/hooks/usePropertyTeam.ts`                      |
+| Fan-out           | `supabase/functions/_shared/appSettings.ts`                                    |
+| Batched profiles  | `supabase/functions/_shared/propertyTeamService.ts`                            |
+
+### Reproduction
+
+```bash
+# per-call durations, not just start times
+bun run perf:boot-durations
+
+# handler time for a single function, warm
+curl -s -D - -o /dev/null \
+  -H "Authorization: Bearer $TOKEN" \
+  "$SUPABASE_URL/functions/v1/property-team-members?propertyId=$PID" | grep -i server-timing
+```
+
+The read-path seat reconcile is left in place. It is a write on a GET, which is why it is slow,
+but enforcement also runs on every plan and subscription change (`subscriptionOrchestrator`,
+`planEntitlements`), and removing the lazy catch-up would change how quickly a downgrade
+deactivates seats. That is a product decision, not a latency one, so it is recorded here rather
+than changed.
+
 ## Release state
 
 **2026-11-10.** PR #371 synced `main` to `develop`'s tree and shipped the UI side.
