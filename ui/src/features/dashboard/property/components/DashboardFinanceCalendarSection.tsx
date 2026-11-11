@@ -30,6 +30,8 @@ import type {
 
 import { AdminSurfaceCardHeader } from '@/components/shared/AdminSurfaceCardHeader';
 import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
+
+import { useAfterFirstPaint } from '@/hooks/useAfterFirstPaint';
 import { formatDateRangeDisplay, fromIsoDate, type DatePreset } from '@/lib/date/navigation';
 
 type Props = {
@@ -94,11 +96,15 @@ export function DashboardFinanceCalendarSection({
     [from, to]
   );
 
-  const lineItemsQuery = useFinanceLineItems(financeQuery, { enabled: canViewFinance });
+  // Secondary section: four reads that are not needed for the first frame. Held until the
+  // dashboard has painted so they stop competing with the page's own data.
+  const ready = useAfterFirstPaint();
+  const financeReady = canViewFinance && ready;
+  const lineItemsQuery = useFinanceLineItems(financeQuery, { enabled: financeReady });
   const financeBookingsQuery = useFinanceBookings(financeQuery, {
-    enabled: canViewFinance,
+    enabled: financeReady,
   });
-  const bookingsQueryResult = useBookings(bookingsQuery);
+  const bookingsQueryResult = useBookings(bookingsQuery, { enabled: ready });
 
   const chartData = useMemo(
     () =>

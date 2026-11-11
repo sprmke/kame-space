@@ -15,6 +15,7 @@ import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgCon
 import { propertySectionPath } from '@/features/dashboard/org/lib/tenantPaths';
 
 import { AdminSurfaceCardHeader } from '@/components/shared/AdminSurfaceCardHeader';
+import { useAfterFirstPaint } from '@/hooks/useAfterFirstPaint';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ATTENTION_SEVERITY_STYLES } from '@/lib/statusToneColors';
@@ -43,8 +44,11 @@ function buildQuery(from: string, to: string): MaintenanceQuery {
 export function DashboardMaintenanceRemindersCard({ from, to, rangeLabel, className }: Props) {
   const { orgSlug, propertySlug } = useOrgContext();
   const query = useMemo(() => buildQuery(from, to), [from, to]);
-  const summaryQuery = useMaintenanceSummary(query);
-  const itemsQuery = useMaintenanceItems(query, { includeDueInRange: true });
+  // Secondary card: two reads that are not needed for the first frame. Held until the
+  // dashboard has painted, so they stop competing with the page's own data.
+  const ready = useAfterFirstPaint();
+  const summaryQuery = useMaintenanceSummary(query, { enabled: ready });
+  const itemsQuery = useMaintenanceItems(query, { includeDueInRange: true, enabled: ready });
 
   const summary = summaryQuery.data;
   const allPendingItems = useMemo(() => {
@@ -115,7 +119,8 @@ export function DashboardMaintenanceRemindersCard({ from, to, rangeLabel, classN
         )}
       >
         {isLoading ? (
-          <div role="status"
+          <div
+            role="status"
             className="min-h-0 flex-1 space-y-2"
             aria-busy="true"
             aria-label="Loading maintenance"

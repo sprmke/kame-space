@@ -51,6 +51,7 @@ run_step() {
 # --- static guards: seconds each, and they guard the artifact we are about to ship ---
 run_step "check:filenames" bun run check:filenames
 run_step "e2e auth storage key" node scripts/dev/check-e2e-auth-key.mjs
+run_step "page coverage manifests" bun scripts/dev/check-test-coverage.ts
 run_step "playwright lane tags" node scripts/dev/check-e2e-lane-tags.mjs
 run_step "flaky quarantine discipline" node scripts/dev/check-flaky-quarantine.mjs
 run_step "unit test quality" node scripts/dev/check-unit-test-quality.mjs
