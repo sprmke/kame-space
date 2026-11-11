@@ -31,7 +31,7 @@ export function CookieConsentBanner() {
         role="region"
         aria-label="Cookie preferences"
         className={cn(
-          'border-border/70 bg-background/95 shadow-soft-sm pointer-events-auto',
+          'border-border/70 bg-background/95 shadow-soft pointer-events-auto',
           'supports-[backdrop-filter]:bg-background/88 backdrop-blur-md',
           'flex w-full max-w-[22rem] flex-col gap-1.5 rounded-lg border px-2.5 py-2',
           'sm:max-w-3xl sm:flex-row sm:items-center sm:gap-3 sm:px-3 sm:py-2'
