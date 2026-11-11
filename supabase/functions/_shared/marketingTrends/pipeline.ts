@@ -45,6 +45,16 @@ import type {
 /** A source needs at least this many candidates to count toward the run. */
 export const MIN_CANDIDATES_PER_SOURCE = 5;
 
+/**
+ * Items kept per source.
+ *
+ * A Wikipedia top-pages day can return ~1000 articles, and the merge below is
+ * quadratic in candidates. Only the head of each list can ever reach the top 25, so
+ * cutting at 50 bounds the merge cost (1000 -> 50 is a ~400x drop) and changes
+ * nothing about the result.
+ */
+export const MAX_ITEMS_PER_SOURCE = 50;
+
 /** How old a cached weekly source may be before it is ignored. */
 export const MAX_CACHED_SOURCE_AGE_DAYS = 14;
 
@@ -97,7 +107,7 @@ export function buildCandidates(results: readonly TrendSourceResult[]): {
 
   for (const result of results) {
     const newsDerived = NEWS_DERIVED_SOURCES.includes(result.source);
-    for (const item of result.items) {
+    for (const item of result.items.slice(0, MAX_ITEMS_PER_SOURCE)) {
       const normalized = normalizeRawTitle(item.title);
       if (!normalized.key || isStoplistedTitle(normalized.normalized)) {
         dropped += 1;

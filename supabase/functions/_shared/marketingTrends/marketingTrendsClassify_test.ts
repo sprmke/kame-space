@@ -5,7 +5,7 @@
 
 import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 
-import { shapeTrendClassifyOutput } from './marketingTrendsClassify.ts';
+import { shapeTrendClassifyOutput, TrendClassifyResponse } from './marketingTrendsClassify.ts';
 
 const KEYS = ['pinoy-big-brother-collab-3-0', 'alexandra-eala', 'lotto-result-today-9pm'];
 
@@ -165,4 +165,74 @@ Deno.test('a non-people category gets no brand guard', () => {
 Deno.test('a broken payload yields nothing instead of throwing', () => {
   assertEquals(shapeTrendClassifyOutput({ topics: 'nope' }, KEYS).topics.length, 0);
   assertEquals(shapeTrendClassifyOutput(null, KEYS).topics.length, 0);
+});
+
+Deno.test('a numeric stayFit arrives as a string and is still read', () => {
+  const result = shapeTrendClassifyOutput({ topics: [topic({ stayFit: '3' })] }, KEYS);
+  assertEquals(result.topics[0]?.stayFit, 3);
+});
+
+Deno.test('hashtags and guard rules survive a single string instead of a list', () => {
+  const result = shapeTrendClassifyOutput(
+    { topics: [topic({ hashtags: '#Staycation', brandGuard: 'no_logo' })] },
+    KEYS
+  );
+  assertEquals(result.topics[0]?.hashtags, ['#Staycation']);
+  assertEquals(result.topics[0]?.brandGuard.includes('no_logo'), true);
+});
+
+Deno.test('a single angle object instead of an array is still an angle', () => {
+  const result = shapeTrendClassifyOutput(
+    {
+      topics: [
+        topic({
+          angles: {
+            title: 'Watch party',
+            hook: 'Big night.',
+            output: 'post',
+            goal: 'vibe',
+            format: 'instagram-portrait',
+            prompt: 'A cozy living room.',
+          },
+        }),
+      ],
+    },
+    KEYS
+  );
+  assertEquals(result.topics[0]?.angles.length, 1);
+});
+
+Deno.test('one malformed topic does not cost the whole list', () => {
+  const result = shapeTrendClassifyOutput(
+    {
+      topics: [
+        { key: 'pinoy-big-brother-collab-3-0' }, // no title, summary or stayFit
+        topic({ key: 'alexandra-eala', title: 'Alexandra Eala', category: 'sports', stayFit: 2 }),
+      ],
+    },
+    KEYS
+  );
+  // The empty one is dropped (stayFit 0), the good one survives.
+  assertEquals(result.topics.length, 1);
+  assertEquals(result.topics[0]?.key, 'alexandra-eala');
+});
+
+Deno.test('a topics object instead of an array is unwrapped', () => {
+  const result = shapeTrendClassifyOutput({ topics: topic() }, KEYS);
+  assertEquals(result.topics.length, 1);
+});
+
+Deno.test('a bare array of topics is accepted', () => {
+  const result = shapeTrendClassifyOutput([topic()], KEYS);
+  assertEquals(result.topics.length, 1);
+});
+
+Deno.test('the gateway contract accepts both envelope shapes and rejects an empty reply', () => {
+  // A bare array and a {topics} object are both accepted: the model has produced each.
+  assertEquals(TrendClassifyResponse.safeParse([topic()]).success, true);
+  assertEquals(TrendClassifyResponse.safeParse({ topics: [topic()] }).success, true);
+  // JSON with no topics is a real contract failure, so the repair turn fires.
+  assertEquals(TrendClassifyResponse.safeParse({}).success, false);
+  assertEquals(TrendClassifyResponse.safeParse({ topics: [] }).success, false);
+  assertEquals(TrendClassifyResponse.safeParse('not json at all').success, false);
 });

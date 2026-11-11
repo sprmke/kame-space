@@ -10,6 +10,7 @@ import {
   applyClassifyMerges,
   buildCandidates,
   rankTodayTopics,
+  MAX_ITEMS_PER_SOURCE,
   MAX_TOPICS,
   type TrendOverrides,
 } from './pipeline.ts';
@@ -308,4 +309,15 @@ Deno.test('a real merge is remembered as an alias too', () => {
 
   applyClassifyMerges(candidates, [{ from: duplicate.key, into: target.key }]);
   assertEquals(target.aliases, [duplicate.key]);
+});
+
+Deno.test('a very long source list is cut at the head', () => {
+  // A Wikipedia top-pages day can be ~1000 rows; only the head can reach the list.
+  // Distinct single tokens so the merge step cannot collapse them: this test is about
+  // the cap, not about dedupe.
+  const titles = Array.from({ length: 400 }, (_, index) => `trenditem${index}`);
+  const { candidates } = buildCandidates([source('wikimedia_tl', titles)]);
+  assertEquals(candidates.length, MAX_ITEMS_PER_SOURCE);
+  // The cut keeps the top of the list, not an arbitrary slice.
+  assertEquals(candidates[0]?.title, 'trenditem0');
 });

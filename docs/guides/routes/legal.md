@@ -48,6 +48,8 @@ Site-wide `Organization` structured data is injected at bootstrap by `ui/src/lib
 
 Footer **Pricing** points to **`/for-hosts/pricing`**. Careers, Blog, and Host Resources were removed from the footer (no backing content).
 
+**Marketing Trends notice.** One line sits in the footer of the Trends sheet in AI Studio, not on a legal page: "Mention the trend, do not use their photos or logos." It is the host-visible half of the brand-safety rule described in [`marketing-trends.md`](../../architecture/marketing-trends.md) §Safety; the enforceable half is the deterministic guard in `_shared/marketingTrends/brandGuard.ts`, which drops poster variants and captions that suggest an endorsement or name a person. Wording changes here need the same review as a terms edit.
+
 ---
 
 ## Host-facing knowledge

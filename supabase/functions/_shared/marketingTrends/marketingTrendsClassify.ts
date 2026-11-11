@@ -22,6 +22,7 @@ import {
   type TrendCandidateInput,
 } from '../ai/prompts/marketingTrends.ts';
 import { isDeterministicallyUnsafe } from './safetyDenylist.ts';
+import { baseScore } from './score.ts';
 import {
   TREND_CATEGORIES,
   TREND_GOALS,
@@ -39,8 +40,15 @@ const FEATURE = 'marketing_trends_classify' as const;
 /** A list needs at least this many safe topics to be worth publishing. */
 export const MIN_SAFE_TOPICS = 5;
 
-/** How many candidates the model sees in one call. */
-export const MAX_CLASSIFY_CANDIDATES = 60;
+/**
+ * How many candidates the model sees in one call.
+ *
+ * Every candidate is an entry the model may write three angles for, so this is a
+ * token budget as much as a quality one: an unbounded list is how you get a truncated
+ * (and therefore unparseable) response. The list is pre-ranked by source strength, so
+ * the head is the part that could actually publish.
+ */
+export const MAX_CLASSIFY_CANDIDATES = 40;
 
 export const TREND_CLASSIFY_JSON_SCHEMA = {
   type: 'OBJECT',
@@ -84,33 +92,65 @@ export const TREND_CLASSIFY_JSON_SCHEMA = {
   required: ['topics'],
 } as const;
 
-const AngleSchema = z.object({
-  title: z.string(),
-  hook: z.string(),
-  output: z.string(),
-  goal: z.string(),
-  format: z.string(),
-  prompt: z.string(),
-});
+/**
+ * Permissive envelope, not a strict contract.
+ *
+ * The model is asked for a fixed shape, but JSON mode still drifts: a number arrives as
+ * a string, an array arrives as a single item, a field is missing. A strict schema turns
+ * any of those into a failed run, which costs the day's list. Everything below is
+ * therefore `unknown` except the one field we cannot work without, the candidate key,
+ * and `shapeTrendClassifyOutput` does the real shaping.
+ */
+const TopicSchema = z
+  .object({
+    key: z.union([z.string(), z.number()]),
+  })
+  .passthrough();
 
-const TopicSchema = z.object({
-  key: z.string(),
-  mergeInto: z.string().nullish(),
-  title: z.string(),
-  category: z.string(),
-  safety: z.string(),
-  blockReason: z.string().nullish(),
-  stayFit: z.number(),
-  summary: z.string(),
-  angles: z.array(AngleSchema).nullish(),
-  captionIdea: z.string().nullish(),
-  hashtags: z.array(z.string()).nullish(),
-  brandGuard: z.array(z.string()).nullish(),
-});
+/**
+ * The only thing the gateway must guarantee is that the reply is JSON containing at
+ * least one topic. The gateway's repair turn exists for exactly that failure. Shape is
+ * not its job: the model has returned `{topics: [...]}` and a bare `[...]` on
+ * different days, and either is fine once it reaches `topicRows`.
+ */
+export const TrendClassifyResponse = z
+  .unknown()
+  .refine((value) => topicRows(value).length > 0, {
+    message: 'expected a "topics" array with at least one entry',
+  });
 
-export const TrendClassifyResponse = z.object({
-  topics: z.array(TopicSchema),
-});
+/** Coerce whatever the model called the list into an array of candidate rows. */
+export function topicRows(raw: unknown): Array<Record<string, unknown>> {
+  const envelope = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const list = Array.isArray(envelope.topics)
+    ? envelope.topics
+    : envelope.topics && typeof envelope.topics === 'object'
+      ? [envelope.topics]
+      : Array.isArray(raw)
+        ? raw
+        : [];
+  return list.filter(
+    (row): row is Record<string, unknown> => Boolean(row) && typeof row === 'object'
+  );
+}
+
+/** A string, or an array of strings, or nothing. JSON mode returns all three. */
+function asStringList(value: unknown): string[] {
+  if (typeof value === 'string') return value.trim() ? [value.trim()] : [];
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+/** The angle list, from an array or from a single object. */
+function angleRows(value: unknown): Array<Record<string, unknown>> {
+  const list = Array.isArray(value) ? value : value ? [value] : [];
+  return list.filter(
+    (row): row is Record<string, unknown> => Boolean(row) && typeof row === 'object'
+  );
+}
 
 function clamp(text: unknown, max: number): string {
   if (typeof text !== 'string') return '';
@@ -135,8 +175,7 @@ export function shapeTrendClassifyOutput(
   blocked: number;
   dropped: number;
 } {
-  const parsed = TrendClassifyResponse.safeParse(raw);
-  const rows = parsed.success ? parsed.data.topics : [];
+  const rows = topicRows(raw);
   const known = new Set(candidateKeys);
 
   const topics: TrendClassifiedTopic[] = [];
@@ -145,8 +184,8 @@ export function shapeTrendClassifyOutput(
   let dropped = 0;
 
   for (const row of rows) {
-    const key = row.key.trim();
-    if (!known.has(key)) {
+    const key = String(row.key ?? '').trim();
+    if (!key || !known.has(key)) {
       dropped += 1;
       continue;
     }
@@ -168,7 +207,8 @@ export function shapeTrendClassifyOutput(
     const safety = row.safety === 'block' ? 'block' : 'safe';
 
     // The model's own text goes through the same denylist as the source titles.
-    const modelText = `${title} ${summary} ${row.captionIdea ?? ''}`;
+    const captionIdea = clamp(row.captionIdea, 200);
+    const modelText = `${title} ${summary} ${captionIdea}`;
     const blockedByDenylist = isDeterministicallyUnsafe(
       modelText.toLowerCase().replace(/[^\p{L}\p{N} ]+/gu, ' ').replace(/\s+/g, ' ').trim()
     );
@@ -185,9 +225,8 @@ export function shapeTrendClassifyOutput(
       | 3;
     if (stayFit === 0) continue;
 
-    const angles = shapeAngles(row.angles ?? [], category);
-    const hashtags = (row.hashtags ?? [])
-      .filter((tag) => typeof tag === 'string' && tag.trim())
+    const angles = shapeAngles(row.angles, category);
+    const hashtags = asStringList(row.hashtags)
       .slice(0, 5)
       .map((tag) => (tag.startsWith('#') ? tag : `#${tag}`).replace(/\s+/g, ''));
 
@@ -201,9 +240,9 @@ export function shapeTrendClassifyOutput(
       stayFit,
       summary,
       angles,
-      captionIdea: clamp(row.captionIdea, 200),
+      captionIdea,
       hashtags,
-      brandGuard: shapeBrandGuard(row.brandGuard ?? [], category),
+      brandGuard: shapeBrandGuard(asStringList(row.brandGuard), category),
     });
   }
 
@@ -221,12 +260,9 @@ const ALLOWED_FORMATS = [
   '4:5',
 ];
 
-function shapeAngles(
-  rows: Array<z.infer<typeof AngleSchema>>,
-  category: TrendCategory
-): TrendAngle[] {
+function shapeAngles(value: unknown, category: TrendCategory): TrendAngle[] {
   const angles: TrendAngle[] = [];
-  for (const row of rows) {
+  for (const row of angleRows(value)) {
     const title = clamp(row.title, 60);
     const hook = clamp(row.hook, 140);
     const prompt = clamp(row.prompt, 400);
@@ -258,7 +294,13 @@ export function toClassifyInputs(
   candidates: readonly TrendCandidate[],
   sourceLabels: Record<string, string>
 ): TrendCandidateInput[] {
-  return candidates.slice(0, MAX_CLASSIFY_CANDIDATES).map((candidate) => ({
+  // Pre-rank by the deterministic score so the head is the strongest signal; the model
+  // then spends its budget on topics that can actually publish.
+  const ranked = [...candidates]
+    .sort((a, b) => baseScore(b.sources) - baseScore(a.sources) || a.key.localeCompare(b.key))
+    .slice(0, MAX_CLASSIFY_CANDIDATES);
+
+  return ranked.map((candidate) => ({
     key: candidate.key,
     title: candidate.title,
     sources: candidate.sources.map((entry) => sourceLabels[entry.source] ?? entry.source),

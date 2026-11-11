@@ -14,11 +14,17 @@ import { fetchText, runSource, WEEKLY_TIMEOUT_MS } from './http.ts';
 export const NETFLIX_TOP10_TSV_URL =
   'https://www.netflix.com/tudum/top10/data/all-weeks-countries.tsv';
 
-/** Column names the parser needs. Anything else is ignored. */
-const REQUIRED_COLUMNS = ['week', 'category', 'show'];
+/**
+ * Columns the parser needs. The live file uses `show_title` and `weekly_rank`; the
+ * older spellings are accepted too, so a rename does not silently empty the cache.
+ * Anything else in the file is ignored.
+ */
+const SHOW_COLUMNS = ['show_title', 'show', 'title'];
+const RANK_COLUMNS = ['weekly_rank', 'rank'];
+const REQUIRED_COLUMNS = ['week', 'category'];
 const COUNTRY_COLUMN_PREFERENCE = [
-  'netflix_country_code',
   'country_iso2',
+  'netflix_country_code',
   'country_code',
   'iso2',
 ];
@@ -53,9 +59,14 @@ export function parseNetflixTop10(
   const countryColumn = COUNTRY_COLUMN_PREFERENCE.find((column) => header.includes(column));
   if (!countryColumn) return { rows: [], error: 'no country column in TSV header' };
 
+  const showColumn = SHOW_COLUMNS.find((column) => header.includes(column));
+  if (!showColumn) return { rows: [], error: 'no show column in TSV header' };
+
   const weekIndex = header.indexOf('week');
   const categoryIndex = header.indexOf('category');
-  const showIndex = header.indexOf('show');
+  const showIndex = header.indexOf(showColumn);
+  const rankColumn = RANK_COLUMNS.find((column) => header.includes(column));
+  const rankIndex = rankColumn ? header.indexOf(rankColumn) : -1;
   const countryIndex = header.indexOf(countryColumn);
 
   const weeks = new Set<string>();
@@ -73,7 +84,13 @@ export function parseNetflixTop10(
     const show = (cells[showIndex] ?? '').trim();
     if (!week || !show) continue;
     weeks.add(week);
-    rows.push({ week, category, show, rank: 0 });
+    const declaredRank = rankIndex >= 0 ? Number(cells[rankIndex]) : NaN;
+    rows.push({
+      week,
+      category,
+      show,
+      rank: Number.isFinite(declaredRank) && declaredRank > 0 ? declaredRank : 0,
+    });
   }
 
   if (!rows.length) return { rows: [], error: 'no rows for country' };
@@ -81,12 +98,13 @@ export function parseNetflixTop10(
   // Keep only the newest week.
   const newest = [...weeks].sort().at(-1)!;
   const newestRows = rows.filter((row) => row.week === newest);
-  // Rank inside each category (film vs TV show), in the order the file lists them.
+  // The file declares `weekly_rank`; fall back to the order per category when it is not
+  // there, so a header change costs the rank column, not the source.
   const perCategory = new Map<string, number>();
   const ranked = newestRows.map((row) => {
     const seen = (perCategory.get(row.category) ?? 0) + 1;
     perCategory.set(row.category, seen);
-    return { ...row, rank: seen };
+    return { ...row, rank: row.rank > 0 ? row.rank : seen };
   });
 
   return { rows: ranked, error: null };

@@ -151,6 +151,7 @@ export function TrendsSheet({
                     <button
                       type="button"
                       onClick={() => setCategory(null)}
+                      aria-pressed={category === null}
                       className={cn(
                         'border-border focus-visible:ring-ring inline-flex min-h-9 items-center rounded-full border px-3 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                         category === null
@@ -169,6 +170,7 @@ export function TrendsSheet({
                         <button
                           type="button"
                           onClick={() => setCategory(active ? null : candidate)}
+                          aria-pressed={active}
                           className={cn(
                             'border-border focus-visible:ring-ring inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                             active

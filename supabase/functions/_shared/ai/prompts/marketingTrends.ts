@@ -48,6 +48,8 @@ For each candidate you are given, produce one topic with:
 - hashtags: up to 5 hashtags, each starting with #.
 - brandGuard: the rules that apply, from no_likeness, no_logo, no_endorsement.
 
+Return **at most 25 topics**. Merge duplicates and drop anything you cannot write three good angles for, so the list stays inside that budget.
+
 Safety. Set safety to "block" for any topic about: deaths, illness, accidents, disasters and weather emergencies, crime and court cases, politics, elections and government, religion disputes, gambling and lotto, scams and data breaches, minors as the subject, adult content, brand crises, gossip and scandals, or anything that mocks a person or a group. When you are unsure, block. A blocked topic still needs a title, a category and a blockReason; leave the rest empty.
 
 Brand rules. A host may mention a topic. The host may not imply a partnership or endorsement, may not use a real person's face or likeness, and may not use show, network, team or brand logos. Set brandGuard to no_likeness, no_logo and no_endorsement for celebrity, tv_film and music topics. For every other category leave brandGuard empty.
