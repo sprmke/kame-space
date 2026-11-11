@@ -109,6 +109,16 @@ docs/guides/testing/
 
 `ui/e2e/shared/ids.ts` owns the stable E2E ids **and** `SUPABASE_AUTH_STORAGE_KEY`. Import it, never retype the key: it is derived from the Supabase project ref, so a literal breaks the moment the project moves, and the failure shows up as a signed-out page somewhere else. `bun run check:e2e-auth-key` fails on any `sb-<ref>-auth-token` literal outside that file.
 
+### Typed edge mocks and strict specs
+
+An inline `mockEdgeFunctions(page, [{ name, body }])` drifts silently: nothing ties the body to the edge function, and an endpoint the spec forgot to mock quietly reaches the network.
+
+- Typed mocks live in `ui/e2e/shared/edgeMocks/<fn>.ts` (for example `mockPlatformStatus()`), so the field names stay next to the function they mirror.
+- `mockEdgeFunctions(page, mocks, { strict: true })` **fails the test** on any `functions/v1` call no mock covers, naming the function. Turn it on for a spec whose endpoint set is fully known; leave it off where a shared harness still relies on pass-through.
+- Mocks match the function name **exactly** (the path segment after `/functions/v1/`), so `finance-summary` no longer matches `finance-summary-v2`.
+
+To adopt strict mode in a spec, run it once with the default (non-strict) and read the mock list it needs, or check the page's functions in `supabase/functions/`. Every `get-public-platform-status` call needs `mockPlatformStatus()`.
+
 ### Page coverage manifests
 
 A page is **adopted** by adding `ui/e2e/pages/<guide path>/<page>.coverage.ts` with `definePageCoverage`. The manifest mirrors the route guide: every behavioural `##` section is either claimed by a spec or marked `na` with a reason.
