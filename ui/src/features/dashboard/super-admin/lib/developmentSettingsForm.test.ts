@@ -288,3 +288,25 @@ describe('pdf templates round-trip through the editor', () => {
     expect(draft.pdfTemplates).toEqual([]);
   });
 });
+
+describe('property seeds round-trip through the editor', () => {
+  it('reads stored seeds and sends them back on save', () => {
+    const draft = developmentProfileDraftFromDevelopment(
+      development({ propertySeeds: { amenityIds: ['wifi'], houseRuleIds: ['no_smoking'] } })
+    );
+
+    expect(draft.propertySeeds.amenityIds).toEqual(['wifi']);
+    draft.propertySeeds = { amenityIds: ['wifi', 'pool'], houseRuleIds: ['no_smoking'] };
+
+    const payload = buildDevelopmentUpdatePayload(draft);
+    expect(payload.propertySeeds).toEqual({
+      amenityIds: ['wifi', 'pool'],
+      houseRuleIds: ['no_smoking'],
+    });
+  });
+
+  it('a development with no seeds starts empty', () => {
+    const draft = developmentProfileDraftFromDevelopment(development({}));
+    expect(draft.propertySeeds).toEqual({ amenityIds: [], houseRuleIds: [] });
+  });
+});

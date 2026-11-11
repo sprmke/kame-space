@@ -20,6 +20,7 @@ Route: `/admin/developments/:developmentSlug`
 | Photos & Videos       | Done     | Done       | Done | Shared `PropertyMediaUpload`; saves immediately on reorder/upload |
 | Email automations     | Done     | Done       | Done | PMO email (optional)                                              |
 | Document Requirements | Done     | Done       | Done | Ordered checklist for PENDING_DOCUMENTS (all properties in dev)   |
+| Property defaults     | Done     | Done       | Done | Amenity / house-rule ids a new property starts with               |
 | Unit types            | Done     | Done       | Done | Per-type max adults/children capacity presets                     |
 | Pool                  | Done     | Done       | Done | Pool fee (PHP) + schedule                                         |
 | Guest information     | Done     | Done       | Done | Requirements, guides, other info for guests + AI                  |
@@ -117,6 +118,21 @@ Removing a step is blocked while a non-terminal booking's `document_requirements
 Edge resolution for bookings: `documentRequirements.ts#resolveDocumentRequirements` (property override column deprecated; development default → **empty list**). An unconfigured development has **no** building approval steps; it never inherits another building's GAF and pet steps. A development read error **throws** so a live transition fails and retries instead of skipping documents. Existing developments were seeded with today's list by migration `20261324010300_seed_document_requirements_for_existing_developments.sql`; a new development starts empty.
 
 ---
+
+## Property defaults
+
+Two id lists a **new** property in this development starts with (plan §4.1 "seed"):
+
+| Field       | Storage                                            | Notes                                                             |
+| ----------- | -------------------------------------------------- | ----------------------------------------------------------------- |
+| Amenities   | `developments.settings.propertySeeds.amenityIds`   | Ids from `AMENITY_CATEGORIES`; copied into `enabledAmenities`     |
+| House rules | `developments.settings.propertySeeds.houseRuleIds` | Ids from `HOUSE_RULE_CATEGORIES`; copied into `enabledHouseRules` |
+
+Seeds are copied **once**, by `create-property`. Changing them later does not touch existing
+properties, which keep their own lists, so this is deliberately not an inherited setting.
+
+Save path: batched **Save Changes** → `PATCH update-development` with `propertySeeds`. The
+handler requires two string arrays, de-duplicates them, and rejects anything else.
 
 ## Unit types
 

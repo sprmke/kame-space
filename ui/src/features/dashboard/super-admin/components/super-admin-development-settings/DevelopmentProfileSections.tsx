@@ -21,6 +21,7 @@ import type { PropertyLocationFields } from '@/features/dashboard/org/lib/proper
 import type { PropertyMediaItem } from '@/features/dashboard/org/lib/propertySettingsConstants';
 import { DevelopmentAnnouncementsSection } from '@/features/dashboard/super-admin/components/super-admin-development-settings/DevelopmentAnnouncementsSection';
 import { DevelopmentDocumentRequirementsSection } from '@/features/dashboard/super-admin/components/super-admin-development-settings/DevelopmentDocumentRequirementsSection';
+import { DevelopmentPropertySeedsSection } from '@/features/dashboard/super-admin/components/super-admin-development-settings/DevelopmentPropertySeedsSection';
 import { DevelopmentGuestInfoSection } from '@/features/dashboard/super-admin/components/super-admin-development-settings/DevelopmentGuestInfoSection';
 import { DevelopmentStructureSection } from '@/features/dashboard/super-admin/components/super-admin-development-settings/DevelopmentStructureSection';
 import { DevelopmentUnitTypesSection } from '@/features/dashboard/super-admin/components/super-admin-development-settings/DevelopmentUnitTypesSection';
@@ -227,6 +228,12 @@ export function DevelopmentProfileSections({
         disabled={disabled}
         onChange={(next) => onChange('documentRequirements', next)}
         onPdfTemplatesChange={(next) => onChange('pdfTemplates', next)}
+      />
+
+      <DevelopmentPropertySeedsSection
+        seeds={draft.propertySeeds}
+        disabled={disabled}
+        onChange={(next) => onChange('propertySeeds', next)}
       />
 
       <DevelopmentUnitTypesSection

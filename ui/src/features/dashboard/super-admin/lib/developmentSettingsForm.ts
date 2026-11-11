@@ -35,6 +35,12 @@ import {
   type ResidenceProfile,
 } from '@/lib/residence/residenceProfile';
 
+function objectOrEmpty(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
 function readStringArray(settings: Record<string, unknown>, key: string): string[] {
   const value = settings[key];
   if (!Array.isArray(value)) return [];
@@ -101,6 +107,7 @@ export type DevelopmentProfileDraft = {
   pmoEmail: string;
   documentRequirements: DocumentRequirement[];
   pdfTemplates: ResidencePdfTemplate[];
+  propertySeeds: { amenityIds: string[]; houseRuleIds: string[] };
   unitTypes: DevelopmentUnitType[];
   poolFee: number | null;
   poolSchedule: string;
@@ -150,6 +157,10 @@ export function developmentProfileDraftFromDevelopment(
     pdfTemplates: parseResidencePdfTemplates(
       (settings.approvals as Record<string, unknown> | undefined)?.pdfTemplates
     ) ?? [],
+    propertySeeds: {
+      amenityIds: readStringArray(objectOrEmpty(settings.propertySeeds), 'amenityIds'),
+      houseRuleIds: readStringArray(objectOrEmpty(settings.propertySeeds), 'houseRuleIds'),
+    },
     unitTypes: mergeUnitTypes(settings.unitTypes, development.name),
     ...mergeDevelopmentPoolSettings(
       development.name,
@@ -206,6 +217,7 @@ export function buildDevelopmentUpdatePayload(draft: DevelopmentProfileDraft) {
     pmoEmail: draft.pmoEmail.trim() || null,
     documentRequirements: draft.documentRequirements,
     pdfTemplates: draft.pdfTemplates,
+    propertySeeds: draft.propertySeeds,
     unitTypes: draft.unitTypes,
     poolFee: draft.poolFee,
     poolSchedule: draft.poolSchedule.trim() || null,

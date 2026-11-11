@@ -60,6 +60,7 @@ const SETTINGS_SECTIONS: AdminSectionNavItem[] = [
   { id: 'media', label: 'Photos & Videos', icon: ImageIcon },
   { id: 'email', label: 'Email automations', icon: Mail },
   { id: 'document-requirements', label: 'Document Requirements', icon: FileCheck2 },
+  { id: 'property-defaults', label: 'Property defaults', icon: Sparkles },
   { id: 'unit-types', label: 'Unit types', icon: Home },
   { id: 'pool', label: 'Pool', icon: Waves },
   { id: 'guest-info', label: 'Guest information', icon: BookOpen },

@@ -401,6 +401,20 @@ serveAuthenticated('update-development', async (req) => {
     settingsChanged = true;
   }
 
+  if (body.propertySeeds !== undefined) {
+    const seeds = objectOrEmpty(body.propertySeeds);
+    const amenityIds = stringArray(seeds.amenityIds);
+    const houseRuleIds = stringArray(seeds.houseRuleIds);
+    if (!amenityIds || !houseRuleIds) {
+      return jsonError(req, 'propertySeeds.amenityIds and houseRuleIds must be string arrays');
+    }
+    settingsPatch.propertySeeds = {
+      amenityIds: [...new Set(amenityIds)],
+      houseRuleIds: [...new Set(houseRuleIds)],
+    };
+    settingsChanged = true;
+  }
+
   if (body.pdfTemplates !== undefined) {
     if (!Array.isArray(body.pdfTemplates)) {
       return jsonError(req, 'pdfTemplates must be an array');
