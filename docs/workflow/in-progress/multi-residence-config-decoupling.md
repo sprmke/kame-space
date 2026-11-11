@@ -685,10 +685,10 @@ Each phase ships independently. Azure snapshots are diffed after every phase. Ne
 
 ### Phase 5: Property defaults and building info
 
-- [ ] `propertySeeds` applied in `create-property` / `seedPropertySettings` instead of `INITIAL_ENABLED_*`.
-- [ ] `buildingRules` shown on property page, stay guide and showcase alongside host rules, marked as building rules.
-- [ ] `templateDefaults` for house rules, check-in / out instructions, parking reminders and email bodies.
-- [ ] `guestInfoVisibility`: building info block on stay guide and property page.
+- [x] `propertySeeds` applied in `create-property` (`applyResidencePropertySeeds`) and editable in the new **Property defaults** editor group.
+- [x] `buildingRules` shown on the **stay guide** under "The building", with requirements, guides, other info and facilities. Open: the public property page / showcase still show host rules only.
+- [x] `templateDefaults` for email bodies (`resolvePropertyTemplateContent`: property → residence → built-in). Open: house rules / check-in / parking reminder template defaults.
+- [x] `guestInfoVisibility.stayGuide` gates the trip-page block; the stored `propertyPage` value is not read yet.
 
 **Gate:** a new Test Residence property starts with its residence's amenities, rules and templates; editing a residence template changes every property that has not customized it.
 
@@ -926,6 +926,7 @@ Rulings recorded for a later session:
 | Resume step 5            | PDF pipeline: maps as data, `upload-development-pdf-template`, `generatePDFFromTemplate`, `fillPdfTemplateBytes`, `PDF_DATA_KEYS` picker UI with auto-map, draft/payload/validation for `approvals.pdfTemplates`                                                                                                                                                                                                         | `test:edge` 1533, `test` 5871, real-template fill round-trip, `check:azure-golden` unchanged |
 | Phase 6 first pass       | Route audit table in §8 for the guest, org/property and super-admin groups; defects listed with an owner. Four client-side silent-Azure fallbacks fixed (residence defaults, unit types, tower conflict, plan-skip copy)                                                                                                                                                                                                 | `test` 5857, lint 0 errors, golden unchanged                                                 |
 | Phase 5 (templates)      | Residence `templateDefaults` inheritance in `resolvePropertyTemplateContent`, with the property → residence → built-in order and a soft-fail residence read                                                                                                                                                                                                                                                              | `test:edge` 1522, `check:azure-golden` unchanged                                             |
+| F11 (guest display)      | `guestBuildingInfoFor` filters by `guestInfoVisibility`; `get-guest-trip` returns `buildingInfo`; trip page renders "The building" (rules Note / No / Ok, requirements, guides, info, facilities); editor gains a building-rules list and the two visibility switches                                                                                                                                                    | `test:edge` 1537, `test` 5876, dom 33, golden unchanged                                      |
 
 **Remaining, with the reason each was not done here**
 
