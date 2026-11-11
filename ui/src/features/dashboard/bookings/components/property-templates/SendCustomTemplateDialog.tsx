@@ -83,7 +83,7 @@ export function SendCustomTemplateDialog({ templateKey, templateName, open, onOp
   return (
     <ResponsiveModal open={open} onOpenChange={handleOpenChange}>
       <ResponsiveModalContent className="flex max-h-[min(85dvh,640px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[28rem]">
-        <ResponsiveModalHeader className="border-border/60 shrink-0 border-b px-4 py-3 sm:px-5">
+        <ResponsiveModalHeader className="border-border/60 shrink-0 border-b pb-2 pb-2">
           <ResponsiveModalTitle className="pr-8">
             Send &ldquo;{templateName}&rdquo;
           </ResponsiveModalTitle>
@@ -128,7 +128,7 @@ export function SendCustomTemplateDialog({ templateKey, templateName, open, onOp
           </CommandList>
         </Command>
 
-        <ResponsiveModalFooter className="border-border/60 shrink-0 gap-2 border-t px-4 py-3 sm:px-5">
+        <ResponsiveModalFooter className="border-border/60 shrink-0 gap-2 border-t pt-2 pt-2">
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>

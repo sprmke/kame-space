@@ -202,10 +202,10 @@ export function InboxManageModals({
             sheetLayout="split"
             className="flex max-h-[min(90dvh,640px)] max-w-[min(calc(100vw-1.5rem),40rem)] flex-col overflow-hidden sm:max-w-[min(92vw,40rem)]"
           >
-            <ResponsiveModalHeader className="shrink-0">
+            <ResponsiveModalHeader className="border-border shrink-0 border-b px-4 py-3 sm:px-5">
               <ResponsiveModalTitle>Channels</ResponsiveModalTitle>
             </ResponsiveModalHeader>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
               <InboxChannelsTab
                 connections={connections}
                 usingOrgMeta={usingOrgMeta}
@@ -235,7 +235,7 @@ export function InboxManageModals({
                 sheetLayout="split"
                 className="flex max-h-[min(92dvh,760px)] min-h-0 max-w-[min(calc(100vw-1.5rem),52rem)] flex-col overflow-hidden sm:max-w-[min(92vw,52rem)] lg:min-h-[min(80dvh,560px)]"
               >
-                <ResponsiveModalHeader className="shrink-0">
+                <ResponsiveModalHeader className="border-border shrink-0 border-b px-4 py-3 sm:px-5">
                   <ResponsiveModalTitle>Quick replies</ResponsiveModalTitle>
                 </ResponsiveModalHeader>
                 <div className="flex min-h-0 flex-1 flex-col">
@@ -261,10 +261,10 @@ export function InboxManageModals({
                 sheetLayout="split"
                 className="flex max-h-[min(92dvh,720px)] max-w-[min(calc(100vw-1.5rem),44rem)] flex-col overflow-hidden sm:max-w-[min(92vw,44rem)]"
               >
-                <ResponsiveModalHeader className="shrink-0">
+                <ResponsiveModalHeader className="border-border shrink-0 border-b px-4 py-3 sm:px-5">
                   <ResponsiveModalTitle>Automation</ResponsiveModalTitle>
                 </ResponsiveModalHeader>
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
                   <InboxAutomationTab
                     settings={automationSettings}
                     isLoading={automationLoading}

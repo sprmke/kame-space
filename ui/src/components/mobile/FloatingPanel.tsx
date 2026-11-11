@@ -138,10 +138,19 @@ type FloatingToolbarProps = {
 /**
  * Soft floating shell for filter / search toolbars (phone + tablet).
  * Desktop (`lg+`) is transparent so existing toolbar layout stays.
+ *
+ * `space-y-2` only applies on phone/tablet: a toolbar renders one row per
+ * breakpoint (the mobile variant is `lg:hidden`), so on desktop the stacking
+ * gap landed as a stray top margin on the visible row and pushed it away from
+ * the tabs above it.
  */
 export function FloatingToolbar({ children, className, padding = 'xs' }: FloatingToolbarProps) {
   return (
-    <FloatingPanel mobileOnly padding={padding} className={cn('space-y-2', className)}>
+    <FloatingPanel
+      mobileOnly
+      padding={padding}
+      className={cn('space-y-2 lg:space-y-0', className)}
+    >
       {children}
     </FloatingPanel>
   );

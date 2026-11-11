@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kame character library</title>
+<meta name="robots" content="noindex">
+<style>
+body{margin:0;background:#edf7f2;color:#193c32;font:16px system-ui}main{max-width:520px;margin:4vh auto;padding:20px}h1{font-size:26px}canvas{display:block;width:100%;height:auto;background:white;border-radius:20px}nav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}button,select{font:inherit;padding:10px;min-height:44px;border:1px solid #a5c9b9;border-radius:9px;background:white;color:inherit}button[aria-pressed=true]{background:#116d58;color:white}
+</style>
+<main><h1>Kame character library</h1><canvas width="448" height="468" aria-label="Kame mascot preview"></canvas><nav aria-label="Choose a pose"></nav>
+<button id="play">Play sequence</button> <label>Background <select><option value="white">White</option><option value="#193c32">Dark</option><option value="#cff4e6">Mint</option></select></label></main>
+<script type="module">
+const {poses}=await fetch('manifest.json').then(response=>response.json());
+const names=poses.map(pose=>pose.name);
+const canvas=document.querySelector('canvas'), ctx=canvas.getContext('2d');
+const play=document.querySelector('#play'), nav=document.querySelector('nav');
+const images=await Promise.all(poses.map(async pose=>{const image=new Image();image.src=pose.file;await image.decode();return image}));
+let current=0, timer=null;
+function show(index){current=index;ctx.clearRect(0,0,448,468);ctx.drawImage(images[index],0,0);canvas.setAttribute('aria-label','Kame: '+names[index]);Array.from(nav.children).forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)))}
+function stop(){clearInterval(timer);timer=null;play.textContent='Play sequence'}
+names.forEach((name,i)=>{const b=document.createElement('button');b.textContent=name;b.onclick=()=>{stop();show(i)};nav.append(b)});
+play.onclick=()=>{if(timer){stop();return}play.textContent='Pause sequence';timer=setInterval(()=>show((current+1)%names.length),1400)};
+document.querySelector('select').onchange=e=>canvas.style.background=e.target.value;
+show(0);
+</script></html>

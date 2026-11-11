@@ -67,7 +67,7 @@ export function ActivitySettingsSection({ scope }: Props) {
             'flex h-[min(92dvh,52rem)] max-h-[min(92dvh,52rem)] w-[min(calc(100vw-1.5rem),48rem)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-[min(95vw,48rem)] sm:p-0'
           )}
         >
-          <ResponsiveModalHeader className="border-border/60 shrink-0 space-y-0.5 border-b px-4 py-3 text-left sm:px-5 sm:py-3.5">
+          <ResponsiveModalHeader className="border-border/60 shrink-0 space-y-0.5 border-b px-4 py-3 text-left sm:px-5 sm:py-3">
             <ResponsiveModalTitle className="text-base sm:text-lg">Activity</ResponsiveModalTitle>
             <ResponsiveModalDescription className="max-lg:sr-only">
               {subtitle}

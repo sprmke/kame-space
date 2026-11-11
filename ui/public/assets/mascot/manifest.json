@@ -1,0 +1,167 @@
+{
+  "version": 1,
+  "format": "png",
+  "width": 448,
+  "height": 468,
+  "transparent": true,
+  "poses": [
+    { "name": "House rules", "file": "template-house-rules.png", "category": "standard-template" },
+    {
+      "name": "Check in instructions",
+      "file": "template-check-in-instructions.png",
+      "category": "standard-template"
+    },
+    {
+      "name": "Check out instructions",
+      "file": "template-check-out-instructions.png",
+      "category": "standard-template"
+    },
+    {
+      "name": "Parking reminders",
+      "file": "template-parking-reminders.png",
+      "category": "standard-template"
+    },
+    {
+      "name": "Custom template",
+      "file": "template-custom-template.png",
+      "category": "template-library"
+    },
+    {
+      "name": "Template folders",
+      "file": "template-template-folders.png",
+      "category": "template-library"
+    },
+    { "name": "GAF request", "file": "template-gaf-request.png", "category": "email-template" },
+    { "name": "Pet request", "file": "template-pet-request.png", "category": "email-template" },
+    {
+      "name": "New booking request",
+      "file": "template-new-booking-request.png",
+      "category": "email-template"
+    },
+    {
+      "name": "Booking acknowledgement",
+      "file": "template-booking-acknowledgement.png",
+      "category": "email-template"
+    },
+    {
+      "name": "Ready for check in",
+      "file": "template-ready-for-check-in.png",
+      "category": "email-template"
+    },
+    {
+      "name": "SD refund form request",
+      "file": "template-sd-refund-form-request.png",
+      "category": "email-template"
+    },
+    {
+      "name": "Booking cancelled guest",
+      "file": "template-booking-cancelled-guest.png",
+      "category": "email-template"
+    },
+    {
+      "name": "Booking cancelled host",
+      "file": "template-booking-cancelled-host.png",
+      "category": "email-template"
+    },
+    {
+      "name": "Cancellation request guest",
+      "file": "template-cancellation-request-guest.png",
+      "category": "email-template"
+    },
+    {
+      "name": "Refund sent guest",
+      "file": "template-refund-sent-guest.png",
+      "category": "email-template"
+    },
+    {
+      "name": "Standard templates",
+      "file": "template-standard-templates.png",
+      "category": "template-library"
+    },
+    {
+      "name": "Email templates",
+      "file": "template-email-templates.png",
+      "category": "template-library"
+    },
+    { "name": "Plan free", "file": "plan-free.png", "category": "plans" },
+    { "name": "Plan starter", "file": "plan-starter.png", "category": "plans" },
+    { "name": "Plan pro", "file": "plan-pro.png", "category": "plans" },
+    { "name": "Plan business", "file": "plan-business.png", "category": "plans" },
+    { "name": "Plan managed", "file": "plan-managed.png", "category": "plans" },
+    { "name": "Ai assistant", "file": "ai-assistant.png", "category": "ai" },
+    { "name": "Loading", "file": "loading.png", "category": "product-state" },
+    { "name": "Gentle failure", "file": "gentle-failure.png", "category": "product-state" },
+    { "name": "Action success", "file": "action-success.png", "category": "product-state" },
+    { "name": "Importing", "file": "importing.png", "category": "product-state" },
+    { "name": "New booking", "file": "new-booking.png", "category": "product-state" },
+    { "name": "Booking confirmed", "file": "booking-confirmed.png", "category": "product-state" },
+    { "name": "Dashboard overview", "file": "dashboard-overview.png", "category": "dashboard" },
+    { "name": "Finance ledger", "file": "finance-ledger.png", "category": "dashboard" },
+    { "name": "Repair visit", "file": "repair-visit.png", "category": "dashboard" },
+    { "name": "Pricing calendar", "file": "pricing-calendar.png", "category": "dashboard" },
+    { "name": "Analytics insight", "file": "analytics-insight.png", "category": "dashboard" },
+    { "name": "Marketing studio", "file": "marketing-studio.png", "category": "dashboard" },
+    { "name": "Guest inbox", "file": "guest-inbox.png", "category": "workspace" },
+    { "name": "Page templates", "file": "page-templates.png", "category": "workspace" },
+    { "name": "Public pages", "file": "public-pages.png", "category": "workspace" },
+    { "name": "Workspace settings", "file": "workspace-settings.png", "category": "workspace" },
+    { "name": "Help support", "file": "help-support.png", "category": "workspace" },
+    { "name": "Plans billing", "file": "plans-billing.png", "category": "workspace" },
+    { "name": "Coming soon", "file": "coming-soon.png", "category": "product-state" },
+    { "name": "Page not found", "file": "page-not-found.png", "category": "product-state" },
+    {
+      "name": "Something went wrong",
+      "file": "something-went-wrong.png",
+      "category": "product-state"
+    },
+    {
+      "name": "Scheduled maintenance",
+      "file": "scheduled-maintenance.png",
+      "category": "product-state"
+    },
+    { "name": "Success toast", "file": "success-toast.png", "category": "product-action" },
+    { "name": "Notice", "file": "notice.png", "category": "product-action" },
+    { "name": "Developments", "file": "developments.png", "category": "discovery" },
+    { "name": "Properties", "file": "properties.png", "category": "discovery" },
+    { "name": "Parking listings", "file": "parking-listings.png", "category": "discovery" },
+    { "name": "Install app", "file": "install-app.png", "category": "product-action" },
+    { "name": "Sign in", "file": "sign-in.png", "category": "product-action" },
+    { "name": "Offline", "file": "offline.png", "category": "product-state" },
+    { "name": "Discover", "file": "discover.png", "category": "discovery" },
+    { "name": "Favorites", "file": "favorites.png", "category": "discovery" },
+    { "name": "Voucher", "file": "voucher.png", "category": "product-action" },
+    { "name": "Parking guide", "file": "parking-guide.png", "category": "hospitality" },
+    { "name": "Guest review", "file": "guest-review.png", "category": "hospitality" },
+    { "name": "Travel dates", "file": "travel-dates.png", "category": "hospitality" },
+    { "name": "Maintenance", "file": "maintenance.png", "category": "reference" },
+    { "name": "Housekeeping", "file": "housekeeping.png", "category": "hospitality" },
+    { "name": "Photographer", "file": "photographer.png", "category": "lifestyle" },
+    { "name": "Teammate", "file": "teammate.png", "category": "lifestyle" },
+    { "name": "Analytics", "file": "analytics.png", "category": "product-action" },
+    { "name": "Announcement", "file": "announcement.png", "category": "product-action" },
+    { "name": "Phone", "file": "phone.png", "category": "lifestyle" },
+    { "name": "Pool float", "file": "pool-float.png", "category": "travel-leisure" },
+    { "name": "Beach chair", "file": "beach-chair.png", "category": "travel-leisure" },
+    { "name": "Arrival", "file": "arrival.png", "category": "hospitality" },
+    { "name": "Directions", "file": "directions.png", "category": "hospitality" },
+    { "name": "Pool ready", "file": "pool-ready.png", "category": "travel-leisure" },
+    { "name": "Halloween", "file": "halloween.png", "category": "seasonal" },
+    { "name": "Christmas parol", "file": "christmas-parol.png", "category": "seasonal" },
+    { "name": "Valentine", "file": "valentine.png", "category": "seasonal" },
+    { "name": "New year", "file": "new-year.png", "category": "seasonal" },
+    { "name": "Easter", "file": "easter.png", "category": "seasonal" },
+    { "name": "Rainy day", "file": "rainy-day.png", "category": "travel-leisure" },
+    { "name": "Seated", "file": "seated.png", "category": "lifestyle" },
+    { "name": "Lounging", "file": "lounging.png", "category": "lifestyle" },
+    { "name": "Peekaboo", "file": "peekaboo.png", "category": "lifestyle" },
+    { "name": "Room key", "file": "room-key.png", "category": "hospitality" },
+    { "name": "Sweet dreams", "file": "sweet-dreams.png", "category": "lifestyle" },
+    { "name": "Happy hop", "file": "happy-hop.png", "category": "conversation" },
+    { "name": "Hello", "file": "hello.png", "category": "conversation" },
+    { "name": "Listening", "file": "listening.png", "category": "conversation" },
+    { "name": "Explaining", "file": "explaining.png", "category": "conversation" },
+    { "name": "Delighted", "file": "delighted.png", "category": "conversation" },
+    { "name": "Thinking", "file": "thinking.png", "category": "conversation" },
+    { "name": "Shell", "file": "shell.png", "category": "reference" }
+  ]
+}

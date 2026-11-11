@@ -391,14 +391,14 @@ export function CopyPropertySettingsDialog({
           if (blockDismiss) event.preventDefault();
         }}
       >
-        <ResponsiveModalHeader className="border-border/60 shrink-0 gap-0 border-b px-5 py-4 text-left sm:px-6">
+        <ResponsiveModalHeader className="border-border/60 shrink-0 gap-0 border-b px-4 py-3 text-left sm:px-5">
           <ResponsiveModalTitle className="text-left">Copy settings</ResponsiveModalTitle>
           <div className="mt-4">
             <CopySettingsStepper activeStep={step} />
           </div>
         </ResponsiveModalHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 [-webkit-overflow-scrolling:touch] sm:px-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [-webkit-overflow-scrolling:touch] sm:px-5">
           <WizardStepHeading title={stepTitle} headingRef={stepHeadingRef} className="mb-4" />
 
           {step === 0 ? (
@@ -678,7 +678,7 @@ export function CopyPropertySettingsDialog({
           ) : null}
         </div>
 
-        <ResponsiveModalFooter className="border-border/60 shrink-0 flex-row items-center gap-2 border-t px-5 py-3.5 sm:px-6">
+        <ResponsiveModalFooter className="border-border/60 shrink-0 flex-row items-center gap-2 border-t px-4 py-3 sm:px-5">
           <div className="flex min-w-0 flex-1 justify-start">
             {step > 0 ? (
               <Button

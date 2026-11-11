@@ -39,7 +39,7 @@ export function ActivityDetailSheet({ event, onOpenChange }: Props) {
               </ResponsiveModalDescription>
             </ResponsiveModalHeader>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
               <ActivityDetailBody event={event} />
             </div>
           </>
