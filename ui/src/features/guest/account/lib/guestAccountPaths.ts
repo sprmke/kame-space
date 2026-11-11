@@ -2,12 +2,12 @@
 export const GUEST_ACCOUNT_PATH = '/account';
 
 export const GUEST_ACCOUNT_PROFILE_PATH = '/account/profile';
-/** Cross-property stay messaging hub (formerly `/account/messages`). */
+/** Cross-property messaging hub. The canonical route since the guest journey plan (D2). */
+export const GUEST_ACCOUNT_MESSAGES_PATH = '/account/messages';
+/** Legacy path — redirects to {@link GUEST_ACCOUNT_MESSAGES_PATH}. */
 export const GUEST_ACCOUNT_STAYS_PATH = '/account/stays';
 /** Booking list; each row opens the per-booking trip page. */
 export const GUEST_ACCOUNT_TRIPS_PATH = '/account/trips';
-/** Legacy path — redirects to {@link GUEST_ACCOUNT_STAYS_PATH}. */
-export const GUEST_ACCOUNT_MESSAGES_PATH = '/account/messages';
 export const GUEST_ACCOUNT_FAVORITES_PATH = '/account/favorites';
 /** Legacy path — redirects to {@link GUEST_ACCOUNT_FAVORITES_PATH}. */
 export const GUEST_ACCOUNT_WISHLIST_PATH = '/account/wishlist';

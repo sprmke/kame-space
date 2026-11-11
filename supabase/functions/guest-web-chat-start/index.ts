@@ -28,11 +28,14 @@ serveAuthenticated('guest-web-chat-start', async (req, user) => {
   const parkingSlug = String(body.parkingSlug ?? body.parking_slug ?? '').trim();
   const checkInDate = String(body.checkInDate ?? body.check_in_date ?? '').trim();
   const checkOutDate = String(body.checkOutDate ?? body.check_out_date ?? '').trim();
+  // A booked guest opens chat from their trip. The dates then come from the booking, so
+  // the guest is never asked to pick them again (plan E9, finding A1).
+  const bookingId = String(body.bookingId ?? body.booking_id ?? '').trim();
 
   if ((!propertySlug && !parkingSlug) || (propertySlug && parkingSlug)) {
     return jsonError(req, 'Exactly one of propertySlug or parkingSlug is required', 400);
   }
-  if (!checkInDate || !checkOutDate) {
+  if (!bookingId && (!checkInDate || !checkOutDate)) {
     return jsonError(req, 'checkInDate and checkOutDate required', 400);
   }
 
@@ -42,6 +45,7 @@ serveAuthenticated('guest-web-chat-start', async (req, user) => {
       parkingSlug: parkingSlug || undefined,
       checkInDate,
       checkOutDate,
+      bookingId: bookingId || undefined,
     });
     return jsonSuccess(req, result);
   } catch (e) {

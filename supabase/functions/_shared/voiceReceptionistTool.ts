@@ -418,7 +418,7 @@ export async function executeVoiceReceptionistTool(input: {
       return { spokenText: 'I could not find a booking for this property.', actions };
     }
     if (input.name === 'get_my_stay') {
-      actions.push({ type: 'open_booking', label: 'View stay', url: '/account/stays' });
+      actions.push({ type: 'open_booking', label: 'View stay', url: '/account/messages' });
       return {
         spokenText: `Your booking is ${String(booking.status).replaceAll('_', ' ').toLowerCase()}, from ${booking.check_in_date} to ${booking.check_out_date}.`,
         actions,

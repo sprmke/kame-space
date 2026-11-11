@@ -85,26 +85,37 @@ The four **standard** keys (`house-rules`, `check-in-instructions`, `check-out-i
 
 ### Email send path
 
-| UI `template_key`               | `emailService` function       | Dynamic section placeholders                                                                                                                                                                                                                    |
-| ------------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `email-gaf-request`             | `sendEmail`                   | `{{urgent_notice}}`, `{{update_notice}}`, `{{email_signature_section}}`                                                                                                                                                                         |
-| `email-pet-request`             | `sendPetEmail`                | `{{urgent_notice}}`, `{{update_notice}}`, `{{pet_details_section}}`, `{{pet_attachments_section}}`, `{{email_signature_section}}`                                                                                                               |
-| `email-new-booking-request`     | `sendNewBookingRequestNotify` | `{{urgent_notice}}`, `{{new_booking_detail_tables}}`, `{{downpayment_receipt_ai_section}}`, `{{booking_link_cta}}`                                                                                                                              |
-| `email-booking-acknowledgement` | `sendBookingAcknowledgement`  | `{{booking_acknowledgement_flow_section}}`, `{{email_signature_section}}`                                                                                                                                                                       |
-| `email-ready-for-checkin`       | `sendReadyForCheckin`         | `{{ready_for_checkin_booking_summary_section}}`, payment/GCash sections (empty when total balance is 0), `{{document_reminders_section}}`, `{{stay_guide_cta_section}}`, `{{ready_for_checkin_contact_section}}`, `{{email_signature_section}}` |
-| `email-sd-refund-form-request`  | `sendSdRefundFormRequest`     | `{{sd_refund_checklist_section}}`, `{{sd_refund_details_section}}`                                                                                                                                                                              |
+| UI `template_key`                | `emailService` function       | Dynamic section placeholders                                                                                                                                                                                                                    |
+| -------------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `email-gaf-request`              | `sendEmail`                   | `{{urgent_notice}}`, `{{update_notice}}`, `{{email_signature_section}}`                                                                                                                                                                         |
+| `email-pet-request`              | `sendPetEmail`                | `{{urgent_notice}}`, `{{update_notice}}`, `{{pet_details_section}}`, `{{pet_attachments_section}}`, `{{email_signature_section}}`                                                                                                               |
+| `email-new-booking-request`      | `sendNewBookingRequestNotify` | `{{urgent_notice}}`, `{{new_booking_detail_tables}}`, `{{downpayment_receipt_ai_section}}`, `{{booking_link_cta}}`                                                                                                                              |
+| `email-booking-request-received` | `sendBookingRequestReceived`  | `{{booking_request_received_flow_section}}`, `{{email_signature_section}}`                                                                                                                                                                      |
+| `{{trip_cta_section}}`           | any guest email               | Renders "View your booking". A body that places `{{trip_url}}` itself suppresses the button, so the guest never sees two links to the same place.                                                                                               |
+| `email-booking-acknowledgement`  | `sendBookingAcknowledgement`  | `{{booking_acknowledgement_flow_section}}`, `{{email_signature_section}}`                                                                                                                                                                       |
+| `email-ready-for-checkin`        | `sendReadyForCheckin`         | `{{ready_for_checkin_booking_summary_section}}`, payment/GCash sections (empty when total balance is 0), `{{document_reminders_section}}`, `{{stay_guide_cta_section}}`, `{{ready_for_checkin_contact_section}}`, `{{email_signature_section}}` |
+| `email-sd-refund-form-request`   | `sendSdRefundFormRequest`     | `{{sd_refund_checklist_section}}`, `{{sd_refund_details_section}}`                                                                                                                                                                              |
 
 Static files under `email-templates/*.html` remain for reference; live sends use the configurable body + send shell above. The retired `email-parking-request` template is no longer listed or editable: property parking broadcast emails were removed and parking uses **Find parking** / `linkStay`. Any stored row for that key is ignored.
 
 ## Sections
 
-| Group    | Keys                                                                                                                                                              |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Standard | `house-rules`, `check-in-instructions`, `check-out-instructions`, `parking-reminders`                                                                             |
-| Email    | `email-gaf-request`, `email-pet-request`, `email-new-booking-request`, `email-booking-acknowledgement`, `email-ready-for-checkin`, `email-sd-refund-form-request` |
-| Custom   | `custom-{uuid}` — operator-created; sent on demand to a picked booking's guest via **Send to guest**                                                              |
+| Group    | Keys                                                                                                                                                                                                |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Standard | `house-rules`, `check-in-instructions`, `check-out-instructions`, `parking-reminders`                                                                                                               |
+| Email    | `email-gaf-request`, `email-pet-request`, `email-new-booking-request`, `email-booking-request-received`, `email-booking-acknowledgement`, `email-ready-for-checkin`, `email-sd-refund-form-request` |
+| Custom   | `custom-{uuid}` — operator-created; sent on demand to a picked booking's guest via **Send to guest**                                                                                                |
 
 Built-in defaults ship in `propertyTemplates.ts` on the server. Rows in `property_template_contents` override defaults per property.
+
+**Requirement-aware acknowledgement.** The "What's next" steps are built from what this property
+actually requires for this booking. A property with no GAF requirement never mentions the GAF or
+the building administration; a pet requirement names the pet form instead. The follow-up email
+is called the **check-in details email**, never a "Booking Confirmation email".
+
+**Custom templates can reach guests.** A custom template has **Show to guests** plus a trip-stage
+picker (`always / before / arrival / stay / checkout / after`). Visible ones render as collapsed
+"From your host" sections on the guest trip page and as chapters in the stay guide.
 
 **Reset to default** restores shipped body copy including dynamic section placeholders (each on its own paragraph). Existing saved rows from before this layout will not show tables/CTAs until reset or placeholders are added manually.
 

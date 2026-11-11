@@ -48,6 +48,8 @@ export type InboxConversation = {
   guest_user_id?: string | null;
   inquiry_check_in?: string | null;
   inquiry_check_out?: string | null;
+  /** The booking this web chat thread is about, when it is linked (plan D9). */
+  booking_id?: string | null;
   property_name?: string | null;
   property_slug?: string | null;
   ai_handoff_at?: string | null;

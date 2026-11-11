@@ -37,7 +37,8 @@ test.describe('@ci guest - apply voucher on booking form', () => {
     await expect(page.getByRole('definition').filter({ hasText: /−₱[\d,]+\.\d{2}/ })).toBeVisible();
 
     await submitGuestForm(page);
-    await expect(page).toHaveURL(/\/success/, { timeout: 20_000 });
+    // A submission lands on the trip page, not the retired /success interstitial.
+    await expect(page).toHaveURL(/\/trip\?bookingId=/, { timeout: 20_000 });
     await demoPause(page);
 
     expect(guest.submitCalls).toBe(1);

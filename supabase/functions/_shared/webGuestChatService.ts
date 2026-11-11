@@ -3,6 +3,7 @@
  */
 
 import { loadAuthUserProfile } from './authUserProfile.ts';
+import { loadGuestBookingById, resolveGuestBookingForProperty } from './guestBookingLink.ts';
 import { loadPublicParkingBySlug } from './parkingScope.ts';
 import { loadPublicPropertyBySlug } from './publicPropertyService.ts';
 import { createServiceClient } from './orgAuth.ts';
@@ -112,11 +113,15 @@ export type WebChatStartResult = {
   stayGuideUrl: string | null;
   /** Relative `/properties/:slug/trip?bookingId=` for the guest's current/next stay here. */
   tripPath: string | null;
+  /** Booking status when the thread is linked to one, so the header can say "Confirmed". */
+  bookingStatus: string | null;
 };
 
 export type WebChatResumeResult = {
   hasMessages: boolean;
   conversationId: string | null;
+  /** Booking this thread is about, when the guest has one at this property. */
+  bookingId: string | null;
   inquiryCheckIn: string | null;
   inquiryCheckOut: string | null;
   replyStatus: 'pending' | 'replied' | 'none' | null;
@@ -138,6 +143,12 @@ export type StartGuestWebChatInput = {
   parkingSlug?: string;
   checkInDate: string;
   checkOutDate: string;
+  /**
+   * Booking the guest is asking about. When set, the thread is linked to it and the
+   * inquiry dates come from the booking, so a booked guest is never asked to pick dates
+   * again (plan E9, finding A1).
+   */
+  bookingId?: string | null;
 };
 
 async function loadParkingWebChatHost(organizationId: string): Promise<WebChatStartResult['host']> {
@@ -165,6 +176,7 @@ export async function resumeGuestWebChat(
   const empty: WebChatResumeResult = {
     hasMessages: false,
     conversationId: null,
+    bookingId: null,
     inquiryCheckIn: null,
     inquiryCheckOut: null,
     replyStatus: null,
@@ -192,7 +204,9 @@ export async function resumeGuestWebChat(
     const threadId = buildWebThreadId(property.id, user.id);
     const { data: conv, error } = await sb
       .from('social_conversations')
-      .select('id, inquiry_check_in, inquiry_check_out, subject_preview, reply_status')
+      .select(
+        'id, booking_id, inquiry_check_in, inquiry_check_out, subject_preview, reply_status'
+      )
       .eq('platform', 'web')
       .eq('external_thread_id', threadId)
       .maybeSingle();
@@ -200,6 +214,23 @@ export async function resumeGuestWebChat(
     if (error) {
       console.error('[webGuestChat] resume lookup failed:', error.message);
       return empty;
+    }
+
+    // A thread that started as an inquiry becomes the booking's thread once the guest
+    // books. Only reconcile when it is not linked yet — an already-linked thread costs
+    // no extra query on every chat open.
+    let bookingId = (conv?.booking_id as string | null | undefined) ?? null;
+    if (!bookingId) {
+      const linked = await resolveGuestBookingForProperty(user, property.id);
+      if (linked) {
+        bookingId = linked.bookingId;
+        if (conv) {
+          await sb
+            .from('social_conversations')
+            .update({ booking_id: bookingId })
+            .eq('id', conv.id as string);
+        }
+      }
     }
 
     const voiceReceptionistEnabled = await isVoiceReceptionistAvailableForProperty(property.id);
@@ -214,6 +245,7 @@ export async function resumeGuestWebChat(
     return {
       hasMessages: true,
       conversationId: conv.id as string,
+      bookingId,
       inquiryCheckIn: (conv.inquiry_check_in as string | null) ?? null,
       inquiryCheckOut: (conv.inquiry_check_out as string | null) ?? null,
       replyStatus: (conv.reply_status as WebChatResumeResult['replyStatus']) ?? 'none',
@@ -264,6 +296,7 @@ export async function resumeGuestWebChat(
   return {
     hasMessages: true,
     conversationId: conv.id as string,
+    bookingId: null,
     inquiryCheckIn: (conv.inquiry_check_in as string | null) ?? null,
     inquiryCheckOut: (conv.inquiry_check_out as string | null) ?? null,
     replyStatus: (conv.reply_status as WebChatResumeResult['replyStatus']) ?? 'none',
@@ -283,11 +316,6 @@ export async function startGuestWebChat(
   user: AuthenticatedUser,
   input: StartGuestWebChatInput
 ): Promise<WebChatStartResult> {
-  const dates = parseInquiryDates(input.checkInDate, input.checkOutDate);
-  if (!dates) {
-    throw new Error('Valid checkInDate and checkOutDate (YYYY-MM-DD) required');
-  }
-
   const propertySlug = input.propertySlug?.trim() ?? '';
   const parkingSlug = input.parkingSlug?.trim() ?? '';
   if ((!propertySlug && !parkingSlug) || (propertySlug && parkingSlug)) {
@@ -299,6 +327,13 @@ export async function startGuestWebChat(
   const participantName = profile.name.trim() || profile.email.split('@')[0]?.trim() || 'Guest';
 
   await linkGuestWebConversationUser(sb, user.id);
+
+  // A booked guest opens chat from their trip. The dates come from the booking, so the
+  // thread is linked to it and the guest is never asked to pick dates again (plan E9).
+  const linkedBooking =
+    propertySlug && input.bookingId?.trim()
+      ? await loadGuestBookingById(user, input.bookingId)
+      : null;
 
   if (propertySlug) {
     const property = await loadPublicPropertyBySlug(propertySlug);
@@ -318,6 +353,14 @@ export async function startGuestWebChat(
     const connection = await ensureWebChannelConnection(propertyRow.organization_id);
     const threadId = buildWebThreadId(property.id, user.id);
 
+    // A booked guest's dates come from the booking; a first inquiry keeps the picker's.
+    const dates = linkedBooking
+      ? { checkIn: linkedBooking.checkInDate, checkOut: linkedBooking.checkOutDate }
+      : parseInquiryDates(input.checkInDate, input.checkOutDate);
+    if (!dates) {
+      throw new Error('Valid checkInDate and checkOutDate (YYYY-MM-DD) required');
+    }
+
     const conversation = await upsertConversation({
       organization_id: propertyRow.organization_id,
       connection_id: connection.id,
@@ -329,6 +372,7 @@ export async function startGuestWebChat(
       participant_avatar_url: profile.avatarUrl,
       property_id: property.id,
       guest_user_id: user.id,
+      booking_id: linkedBooking?.bookingId ?? null,
       inquiry_check_in: dates.checkIn,
       inquiry_check_out: dates.checkOut,
       last_message_at: new Date().toISOString(),
@@ -357,12 +401,18 @@ export async function startGuestWebChat(
       voiceReceptionistEnabled: await isVoiceReceptionistAvailableForProperty(property.id),
       stayGuideUrl,
       tripPath,
+      bookingStatus: linkedBooking?.status ?? null,
     };
   }
 
   const parking = await loadPublicParkingBySlug(parkingSlug);
   if (!parking) {
     throw new Error('Parking not found');
+  }
+
+  const dates = parseInquiryDates(input.checkInDate, input.checkOutDate);
+  if (!dates) {
+    throw new Error('Valid checkInDate and checkOutDate (YYYY-MM-DD) required');
   }
 
   const { data: parkingRow, error: parkingError } = await sb
@@ -402,6 +452,8 @@ export async function startGuestWebChat(
       name: parking.name,
     },
     host,
+    // A parking thread is never linked to a property booking.
+    bookingStatus: null,
     inquiryCheckIn: dates.checkIn,
     inquiryCheckOut: dates.checkOut,
     replyStatus: (conversation.reply_status as WebChatStartResult['replyStatus']) ?? 'none',

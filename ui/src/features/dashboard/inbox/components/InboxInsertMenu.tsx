@@ -268,12 +268,14 @@ export function InboxInsertMenu({
 
   const checkInPackText = useMemo(() => {
     const stayGuideUrl = bookingRows.find((row) => row.key === 'stay-guide')?.url;
+    const tripUrl = bookingRows.find((row) => row.key === 'trip')?.url;
     return buildCheckInPackContent({
       propertySlug,
       checkInTime,
       checkOutTime,
       mapsUrl: mapsLink,
       stayGuideUrl,
+      tripUrl,
     });
   }, [propertySlug, checkInTime, checkOutTime, mapsLink, bookingRows]);
 

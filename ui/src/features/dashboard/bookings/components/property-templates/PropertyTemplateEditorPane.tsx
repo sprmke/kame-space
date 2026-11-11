@@ -23,7 +23,10 @@ import {
 } from '@/features/dashboard/bookings/components/property-templates/RichTextEditor';
 import { SendCustomTemplateDialog } from '@/features/dashboard/bookings/components/property-templates/SendCustomTemplateDialog';
 import { TemplateSectionImageField } from '@/features/dashboard/bookings/components/property-templates/TemplateSectionImageField';
-import { usePropertyTemplatePreview } from '@/features/dashboard/bookings/hooks/usePropertyTemplates';
+import {
+  usePropertyTemplatePreview,
+  type GuestTemplatePhase,
+} from '@/features/dashboard/bookings/hooks/usePropertyTemplates';
 import { useUploadPropertyTemplateAsset } from '@/features/dashboard/bookings/hooks/useUploadPropertyTemplateAsset';
 import { normalizePropertyTemplateEditorContent } from '@/features/dashboard/bookings/lib/normalizePropertyTemplateEditorContent';
 import {
@@ -89,7 +92,12 @@ const editorChromeActionClassName = cn(
 
 type Props = {
   entry: TemplateLibraryEntry;
-  onSave: (input: { content: string; sectionImageUrl?: string | null }) => Promise<void>;
+  onSave: (input: {
+    content: string;
+    sectionImageUrl?: string | null;
+    guestVisible?: boolean;
+    guestPhase?: GuestTemplatePhase;
+  }) => Promise<void>;
   onReset?: () => Promise<void> | void;
   onDelete?: () => void;
   /** Custom templates only — opens the rename prompt the page owns. */
@@ -122,6 +130,8 @@ export function PropertyTemplateEditorPane({
     normalizePropertyTemplateEditorContent(template)
   );
   const [sectionImageUrl, setSectionImageUrl] = React.useState(template.sectionImageUrl);
+  const [guestVisible, setGuestVisible] = React.useState(template.guestVisible);
+  const [guestPhase, setGuestPhase] = React.useState<GuestTemplatePhase>(template.guestPhase);
   const [sectionImagePreviewBust, setSectionImagePreviewBust] = React.useState(() =>
     template.updatedAt ? Date.parse(template.updatedAt) || 0 : 0
   );
@@ -150,8 +160,16 @@ export function PropertyTemplateEditorPane({
   React.useEffect(() => {
     setContent(baselineContent);
     setSectionImageUrl(template.sectionImageUrl);
+    setGuestVisible(template.guestVisible);
+    setGuestPhase(template.guestPhase);
     setSectionImagePreviewBust(template.updatedAt ? Date.parse(template.updatedAt) || 0 : 0);
-  }, [baselineContent, template.sectionImageUrl, template.updatedAt]);
+  }, [
+    baselineContent,
+    template.sectionImageUrl,
+    template.guestVisible,
+    template.guestPhase,
+    template.updatedAt,
+  ]);
 
   const handleSectionImageUrlChange = React.useCallback((url: string | null) => {
     setSectionImageUrl(url);
@@ -162,7 +180,11 @@ export function PropertyTemplateEditorPane({
     ? withStorageUrlCacheBust(sectionImageUrl, sectionImagePreviewBust || null)
     : null;
 
-  const hasChanges = content !== baselineContent || sectionImageUrl !== template.sectionImageUrl;
+  const hasChanges =
+    content !== baselineContent ||
+    sectionImageUrl !== template.sectionImageUrl ||
+    guestVisible !== template.guestVisible ||
+    guestPhase !== template.guestPhase;
   const isEmail = template.category === 'email';
   const isCustom = template.category === 'custom';
   const isStandard = template.category === 'standard';
@@ -188,7 +210,7 @@ export function PropertyTemplateEditorPane({
     onSave: async () => {
       if (openStarterUpgradeIfNeeded()) return false;
       try {
-        await onSave({ content, sectionImageUrl });
+        await onSave({ content, sectionImageUrl, guestVisible, guestPhase });
         return true;
       } catch {
         return false;
@@ -434,7 +456,9 @@ export function PropertyTemplateEditorPane({
                     disabled={saving}
                     onClick={() => {
                       if (openStarterUpgradeIfNeeded()) return;
-                      void onSave({ content, sectionImageUrl }).catch(() => undefined);
+                      void onSave({ content, sectionImageUrl, guestVisible, guestPhase }).catch(
+                        () => undefined
+                      );
                     }}
                     aria-label={saving ? 'Saving' : 'Save'}
                     title={saving ? 'Saving…' : 'Save'}
@@ -513,6 +537,52 @@ export function PropertyTemplateEditorPane({
           )
         ) : (
           <>
+            {isCustom ? (
+              <div className="border-border bg-muted/20 space-y-3 rounded-xl border p-3">
+                <label
+                  htmlFor="template-guest-visible"
+                  className="flex min-h-[44px] items-center justify-between gap-3"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium">Show to guests</span>
+                    <span className="text-muted-foreground block text-xs">
+                      Appears on the trip page and in the stay guide.
+                    </span>
+                  </span>
+                  <input
+                    id="template-guest-visible"
+                    type="checkbox"
+                    role="switch"
+                    checked={guestVisible}
+                    disabled={saving}
+                    onChange={(event) => setGuestVisible(event.target.checked)}
+                    className="accent-primary size-5 shrink-0"
+                  />
+                </label>
+                {guestVisible ? (
+                  <label htmlFor="template-guest-phase" className="block space-y-1.5">
+                    <span className="block text-sm font-medium">When to show it</span>
+                    <select
+                      id="template-guest-phase"
+                      value={guestPhase}
+                      disabled={saving}
+                      onChange={(event) =>
+                        setGuestPhase(event.target.value as GuestTemplatePhase)
+                      }
+                      className="border-input bg-background min-h-[44px] w-full rounded-lg border px-3 text-sm"
+                    >
+                      <option value="always">At every stage</option>
+                      <option value="before">Before the stay</option>
+                      <option value="arrival">On arrival</option>
+                      <option value="stay">During the stay</option>
+                      <option value="checkout">At check-out</option>
+                      <option value="after">After the stay</option>
+                    </select>
+                  </label>
+                ) : null}
+              </div>
+            ) : null}
+
             {allowSectionImage ? (
               <TemplateSectionImageField
                 templateKey={template.templateKey}

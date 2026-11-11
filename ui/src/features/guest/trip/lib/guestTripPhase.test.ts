@@ -13,6 +13,7 @@ import {
   tripHubStage,
   type GuestTripHeadlineInput,
   type GuestTripPhase,
+  guestTripTimeline,
 } from '@/features/guest/trip/lib/guestTripPhase';
 
 const HEADLINE_BASE: Omit<GuestTripHeadlineInput, 'phase' | 'timing'> = {
@@ -94,6 +95,27 @@ describe('guestTripProgress', () => {
 });
 
 describe('guestTripHeadline', () => {
+  it('does not call an expired request a cancellation', () => {
+    const expired = guestTripHeadline({
+      ...HEADLINE_BASE,
+      phase: 'cancelled',
+      timing: { kind: 'past' },
+      cancellationReasonCode: 'request_expired',
+    });
+    expect(expired.kicker).toBe('Request expired');
+    expect(expired.title).toBe('Your host did not reply in time');
+    expect(expired.body).toMatch(/nothing was charged/i);
+
+    // A cancellation the guest or host did make keeps the plain word.
+    const cancelled = guestTripHeadline({
+      ...HEADLINE_BASE,
+      phase: 'cancelled',
+      timing: { kind: 'past' },
+      cancellationReasonCode: 'change_of_plans',
+    });
+    expect(cancelled.kicker).toBe('Cancelled');
+  });
+
   it('says what the host is doing while documents are pending', () => {
     const headline = guestTripHeadline({
       ...HEADLINE_BASE,
@@ -279,5 +301,71 @@ describe('tripHubStage', () => {
   it('distinguishes upcoming from past', () => {
     expect(tripHubStage({ kind: 'upcoming', daysUntil: 5 })).toBe('upcoming');
     expect(tripHubStage({ kind: 'past' })).toBe('past');
+  });
+});
+
+describe('guestTripTimeline', () => {
+  const base = {
+    checkInDateLabel: 'Sat, Dec 10',
+    checkOutDateLabel: 'Mon, Dec 12',
+    amountDue: 0,
+    amountDueLabel: null as string | null,
+    documentsPending: false,
+    documentsTotal: 0,
+    refundLabel: null as string | null,
+  };
+
+  it('leads with the review and check-in while the request is pending', () => {
+    const items = guestTripTimeline({ ...base, phase: 'requested' });
+    expect(items.map((item) => item.key)).toEqual(['review', 'check_in']);
+  });
+
+  it('shows documents and the balance once confirmed', () => {
+    const items = guestTripTimeline({
+      ...base,
+      phase: 'confirmed',
+      documentsTotal: 1,
+      documentsPending: true,
+      amountDue: 3200,
+      amountDueLabel: '₱3,200',
+    });
+    expect(items.map((item) => item.key)).toEqual(['documents', 'balance', 'check_in']);
+    expect(items[0]?.done).toBe(false);
+    expect(items[1]?.dateLabel).toBe('₱3,200');
+  });
+
+  it('drops the documents step once approved', () => {
+    const items = guestTripTimeline({
+      ...base,
+      phase: 'confirmed',
+      documentsTotal: 1,
+      documentsPending: false,
+    });
+    expect(items.find((item) => item.key === 'documents')?.done).toBe(true);
+  });
+
+  it('shows only check-out while staying', () => {
+    const items = guestTripTimeline({ ...base, phase: 'staying' });
+    expect(items.map((item) => item.key)).toEqual(['check_out']);
+  });
+
+  it('shows the deposit refund after the stay', () => {
+    const items = guestTripTimeline({ ...base, phase: 'refund_pending' });
+    expect(items.map((item) => item.key)).toEqual(['refund']);
+    expect(items[0]?.done).toBe(false);
+  });
+
+  it('marks the refund done when the booking is completed', () => {
+    const items = guestTripTimeline({ ...base, phase: 'completed', refundLabel: 'Sep 18' });
+    expect(items[0]).toEqual({
+      key: 'refund',
+      label: 'Deposit refund',
+      dateLabel: 'Sep 18',
+      done: true,
+    });
+  });
+
+  it('shows nothing for a cancelled booking', () => {
+    expect(guestTripTimeline({ ...base, phase: 'cancelled' })).toEqual([]);
   });
 });

@@ -22,7 +22,7 @@ const STEPS = [
   {
     title: 'Send a request',
     body: 'Pick your dates, add your guests and a valid ID. No account needed.',
-    pill: 'Requested',
+    pill: 'Request sent',
   },
   {
     title: 'Host confirms',
@@ -37,12 +37,12 @@ const STEPS = [
   {
     title: 'Check in',
     body: 'Directions, Wi-Fi, and house rules are waiting in your stay guide.',
-    pill: 'Ready',
+    pill: 'Ready for check-in',
   },
   {
     title: 'Get your deposit back',
     body: 'After checkout, follow your security deposit until it is refunded.',
-    pill: 'Refund in progress',
+    pill: 'Deposit refund',
   },
 ] as const;
 

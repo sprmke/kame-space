@@ -27,15 +27,15 @@ export function isExternalHref(href: string): boolean {
   return /^(https?:|tel:|mailto:)/i.test(href);
 }
 
-/** Property chat with the stay dates pre-filled (guest signs in there if needed). */
+/**
+ * Property chat for a guest with a booking.
+ *
+ * The booking id is the only anchor: the server derives the stay dates from it and links
+ * the thread to the booking, so a booked guest is never asked to pick dates again
+ * (plan E9). Sending the dates too would only fragment the chat cache.
+ */
 export function guestTripMessageHostPath(trip: GuestTrip): string {
-  return guestMessagesPath(
-    trip.property.slug,
-    new URLSearchParams({
-      checkInDate: trip.stay.checkInDate,
-      checkOutDate: trip.stay.checkOutDate,
-    })
-  );
+  return guestMessagesPath(trip.property.slug, new URLSearchParams({ bookingId: trip.bookingId }));
 }
 
 export function guestTripEditBookingPath(trip: GuestTrip): string {
