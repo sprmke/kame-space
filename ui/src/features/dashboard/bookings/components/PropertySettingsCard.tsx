@@ -177,7 +177,7 @@ export function usePropertySettingsController() {
     isError: appSettingsError,
     error: appSettingsLoadError,
   } = useAppSettings();
-  const { data: propertyTeam } = usePropertyTeam();
+  const { data: propertyTeam } = usePropertyTeam({ enabled: true });
   const updateProperty = useUpdateProperty(orgSlug);
   const updateAppSettings = useUpdateAppSettings();
   const orgBrandColor = useOrgBrandColor();
