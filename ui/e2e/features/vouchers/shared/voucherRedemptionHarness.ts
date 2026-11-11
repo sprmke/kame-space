@@ -7,6 +7,7 @@
 
 import { expect, type Page, type Route } from '@playwright/test';
 
+import { fillStable } from '../../guest-form/shared/guestFormHarness';
 import { VOUCHER_E2E_BOOKING_ID } from './voucherRevealHarness';
 import { SUPABASE_AUTH_STORAGE_KEY } from '../../../shared/ids';
 import {
@@ -459,11 +460,16 @@ export async function fillMinimalGuestFormStep1(page: Page) {
     .not.toHaveValue('', { timeout: 8_000 })
     .catch(() => undefined);
 
+  // `fillStable` because the dev sample seed can land a second time after these keystrokes,
+  // which leaves a concatenated email and a permanently disabled Continue.
   const guestName = 'Maria Santos';
-  await nameField.fill(guestName);
-  await page.getByRole('textbox', { name: 'Email Address *' }).fill(VOUCHER_GUEST_EMAIL);
-  await page.getByRole('textbox', { name: 'Phone Number *' }).fill('09171234567');
-  await page.getByRole('textbox', { name: 'Address *', exact: true }).fill('Cebu City, Cebu');
+  await fillStable(nameField, guestName);
+  await fillStable(page.getByRole('textbox', { name: 'Email Address *' }), VOUCHER_GUEST_EMAIL);
+  await fillStable(page.getByRole('textbox', { name: 'Phone Number *' }), '09171234567');
+  await fillStable(
+    page.getByRole('textbox', { name: 'Address *', exact: true }),
+    'Cebu City, Cebu'
+  );
 
   // Collapse random sample party to primary only (Remove is only on the last extra guest).
   for (let i = 0; i < 4; i += 1) {
@@ -475,8 +481,8 @@ export async function fillMinimalGuestFormStep1(page: Page) {
   const firstGuest = page.locator('section').filter({
     has: page.getByRole('heading', { name: /Primary Guest/ }),
   });
-  await firstGuest.getByRole('textbox', { name: 'Name *' }).fill(guestName);
-  await firstGuest.getByRole('textbox', { name: 'Age *' }).fill('25');
+  await fillStable(firstGuest.getByRole('textbox', { name: 'Name *' }), guestName);
+  await fillStable(firstGuest.getByRole('textbox', { name: 'Age *' }), '25');
 
   const idInput = firstGuest.locator('input[type="file"]');
   await expect(idInput).toBeAttached({ timeout: 5_000 });

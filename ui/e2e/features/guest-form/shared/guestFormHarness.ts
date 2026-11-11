@@ -2,7 +2,7 @@ import { mockEdgeFunctions } from '../../../shared/interceptEdge';
 
 import { guestTripMock } from './guestTripMock';
 
-import type { Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 function manilaTodayYmd(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date());
@@ -188,4 +188,30 @@ export function guestFormPath(extraQuery = '') {
 
 export function guestCalendarPath() {
   return `/properties/${GUEST_FORM_PROPERTY_SLUG}/calendar`;
+}
+
+/**
+ * Fill a field and keep it filled.
+ *
+ * Outside production the form seeds itself with random sample data on load, and a second seed
+ * pass (the sample effect re-runs when the URL stay dates resolve) can land after the first
+ * keystrokes. A plain `fill` then leaves a concatenated value such as
+ * `sample@example.comtyped@example.com`, which fails validation and disables Continue.
+ * Retrying until the field actually holds the expected value is the only stable ordering.
+ */
+export async function fillStable(locator: Locator, value: string, timeout = 15_000): Promise<void> {
+  await expect
+    .poll(
+      async () => {
+        try {
+          await locator.fill(value);
+          return await locator.inputValue();
+        } catch {
+          // The field can detach while the seed re-renders the step.
+          return '<not-ready>';
+        }
+      },
+      { timeout, intervals: [100, 250, 500, 1_000] }
+    )
+    .toBe(value);
 }
