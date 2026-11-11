@@ -453,41 +453,67 @@ than changed.
 
 ### Measured after
 
-Production, 2026-11-11, same probe account and 4x CPU throttle, three runs each.
+Production, 2026-11-11, probe account, 4x CPU throttle.
 
-| Metric                          | Before       | After            | Change                  |
-| ------------------------------- | ------------ | ---------------- | ----------------------- |
-| `route:content` (median)        | 5868 ms      | **4599 ms**      | **-22%**                |
-| `app-settings` handler          | 2456-3719 ms | **1793-1950 ms** | **-30%**                |
-| `property-team-members` handler | 3105-3904 ms | 2986-3522 ms     | unchanged               |
-| Distinct boot calls             | 21           | 20               | `list-bookings` is gone |
-| Sum of call durations           | 38049 ms     | 32793 ms         | -14%                    |
+### Read this first: the first version of this section was measured wrong
 
-The raw medians are noisy on this machine (before: 7626, 3583, 5868; after: 6105, 4599, 4228), so
-the conservative reading is the direction and the per-call handler times, which were measured
-directly rather than through a browser.
+The numbers below were first produced with `performance.getEntriesByType('resource')`. That API
+reads a **fixed-size ring buffer**. Once it fills, entries are evicted and the list comes back
+short without any error. Two conclusions were drawn from a short list and both were wrong:
 
-**The team call was not removed by the catalog gating, and the first reading said it was.** One
-run showed `property-team-members` missing from the resource list; that was the entry being
-dropped, not the call being gone. Re-checking the deployed build showed all three
-`property-team-*` calls still firing on `/dashboard`, while **none** of the catalog's other eleven
-queries fired. So the catalog gating worked and a direct `usePropertyTeam()` call was responsible,
-with a default of always on.
+- "`property-team-members` is gone from the boot" was published twice. The call never stopped.
+- "21 distinct calls" was an undercount. Counting the same boot through CDP
+  `Network.requestWillBeSent` shows **24**.
 
-`usePropertyTeam` is now opt-in (`propertyTeamQueryEnabled`), and only the two surfaces that list
-the team pass `enabled: true`. That fix is merged to `develop`; it is **not measured in
-production yet**, because the Vercel build quota blocked the release. The numbers above are the
-state before it.
+`perf:boot-durations` now reads CDP network events, which are not evicted. Treat any call-set
+claim made before that change as unverified.
 
-**`app-settings` is 30% faster, not 70%.** The fan-out removed the serial sequencing, but the
-handler still costs about 1.8s. The remaining time is inside `resolveAppSettings`, which runs its
-own two waves, plus the PMO email lookup that derived from the residence name. Flattening that
-needs `serializeAppSettingsForAdmin` to consume `resolveAppSettings`'s intermediates instead of
-calling it, which is a larger refactor than this pass.
+### What is method-consistent and holds
 
-**`property-team-members` handler time did not move,** because on the single-owner test tenant the
-cost is the seat reconcile, not the per-member lookups. The N+1 fix matters on real multi-seat
-properties, which the probe account cannot show. Recorded honestly rather than claimed.
+| Metric                                             | Before       | After            | Change                             |
+| -------------------------------------------------- | ------------ | ---------------- | ---------------------------------- |
+| `app-settings` handler, direct `curl`, warm        | 2456-3719 ms | **1793-1950 ms** | **-30%**                           |
+| `property-team-members`, browser-observed duration | 5822 ms      | **174 ms**       | queueing relief, not handler speed |
+
+Both endpoints were called directly, three times each, with `Server-Timing`, so the `app-settings`
+figure is the same measurement before and after. The `property-team-members` figure is the
+browser-observed request duration, and the improvement is **its position in the queue**, not its
+handler: measured directly it still costs 2986-3522 ms, because on the single-owner test tenant
+the cost is the seat reconcile rather than the per-member lookups the N+1 fix targets.
+
+### Current state, measured with CDP
+
+| Metric                                       | Value                          |
+| -------------------------------------------- | ------------------------------ |
+| `route:content` median, `/dashboard`, 3 runs | **5132 ms** (5317, 5132, 4831) |
+| Distinct boot calls, `/dashboard`            | 24                             |
+| Distinct boot calls, `/bookings`             | 19                             |
+| `app-settings`                               | 1660 ms                        |
+| `org-plan`                                   | 1283 ms                        |
+| `dashboard-stats`                            | 827 ms                         |
+
+Content is gated on `dashboard-stats`, which starts about 400 ms after the chrome burst because it
+queues behind it.
+
+### Still open
+
+**The three `property-team-*` calls still fire on `/dashboard` and `/bookings`.** `usePropertyTeam`
+was made opt-in (`propertyTeamQueryEnabled`) and released in #422, and they still fire, so the
+consumer is not one of the four call sites that piece of work assumed. The mention catalog is
+ruled out: none of its other eleven queries fire. The composer's team picker is ruled out: its
+label is in no shipped chunk. That leaves a mount path nobody has found yet.
+
+Next step is to stop reasoning from source and instrument it: a preview build with a
+`console.trace` inside `usePropertyTeam`'s `queryFn`, opened once, answers it in one run. Do not
+make another call-set claim about this without that trace.
+
+### Two ways forward on content time
+
+1. **Start `dashboard-stats` as soon as the session context resolves**, instead of waiting for the
+   page to mount. It is the only call content waits on, so it should not queue behind chrome.
+   Roughly 400-600 ms.
+2. **Collapse the burst into `get-session-context`**, the pattern that already took the boot chain
+   from four calls to one. Larger, and less valuable now that `app-settings` is 30% cheaper.
 
 ### What gates content now
 
