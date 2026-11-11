@@ -31,7 +31,7 @@ Route: `/org/:orgSlug/property/:propertySlug/settings`
 | Integrations       | Done      | Done       | Done | Telegram + AI optional; GAF/pet via Resend inbound                                                                              |
 | AI features        | Moved     | n/a        | Done | Removed from property settings; configured in org Settings → AI features                                                        |
 | Activity           | Read-only | n/a        | Done | Summary row + **Manage** → modal with full property activity feed (`ActivityLogPanel`). Section shown only with `activity:view` |
-| Listing status     | Done      | Done       | Done | Pause, archive, restore, and delete with impact sheets                                                                          |
+| Listing status     | Done      | Done       | Done | Last section; layout-matched skeleton while lifecycle loads; confirm sheets for pause, archive, restore, and delete             |
 
 > **Also editable in Page Editor:** Photos & Videos, Brand color, Description, Amenities, House Rules, and Cancellation — same fields, same storage. **External reviews and vouchers** are Settings-only (**Reviews & vouchers**). **Socials** are Settings-only.
 
@@ -42,6 +42,8 @@ Route: `/org/:orgSlug/property/:propertySlug/settings`
 Living operator spec for property settings: what each section does, how data is saved, and setup completeness. **Save Changes** persists only dirty sections that pass validation — incomplete required areas still show a red dot for setup tracking. Field helpers use a **?** beside the label (`FieldLabel` `help` / `SettingsField` `help`) — not muted text under the control.
 
 Many section values can also be **seeded from another property** via org **Properties → Copy settings** (4-step wizard). Payment methods are not included.
+
+**Listing status** is the last section in the page and section nav (after Activity when visible). It is not the first item. Destructive actions stay at the bottom with setup and operational sections above.
 
 ### Permissions (Phase 5)
 

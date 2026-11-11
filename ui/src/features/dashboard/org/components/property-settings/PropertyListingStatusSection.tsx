@@ -20,6 +20,10 @@ import { semanticBadgeClasses, semanticBadgeDotClasses } from '@/lib/statusToneC
 import { cn } from '@/lib/utils';
 
 import { AdminDialogShell } from '@/components/AdminDialogShell';
+import {
+  PropertyListingImpactSkeleton,
+  PropertyListingStatusSectionSkeleton,
+} from '@/components/skeletons/PropertyListingStatusSkeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -62,15 +66,6 @@ function formatBlockingStatus(status: string): string {
     .join(' ')
     .toLowerCase()
     .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function CountLine({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 py-1 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium tabular-nums">{value}</span>
-    </div>
-  );
 }
 
 function ImpactBody({ impact }: { impact: PropertyLifecycleImpact }) {
@@ -127,60 +122,19 @@ function DeleteBody({
   confirmName: string;
   onConfirmNameChange: (value: string) => void;
 }) {
-  const blockerParts: string[] = [];
-  if (impact) {
-    if (impact.deleteBlockers.bookings > 0) {
-      blockerParts.push(`${impact.deleteBlockers.bookings} booking(s)`);
-    }
-    if (impact.deleteBlockers.finance > 0) {
-      blockerParts.push(
-        `${impact.deleteBlockers.finance} finance entr${impact.deleteBlockers.finance === 1 ? 'y' : 'ies'}`
-      );
-    }
-    if (impact.deleteBlockers.maintenance > 0) {
-      blockerParts.push(`${impact.deleteBlockers.maintenance} maintenance item(s)`);
-    }
-    if (impact.deleteBlockers.importBatches > 0) {
-      blockerParts.push(`${impact.deleteBlockers.importBatches} import batch(es)`);
-    }
-  }
-
-  const cascadeTotal =
-    impact == null
-      ? 0
-      : impact.cascade.inboxThreads +
-        impact.cascade.reviews +
-        impact.cascade.paymentTransactions +
-        impact.cascade.marketingRecords +
-        impact.team.members;
+  const deleteBlocked = (impact?.deleteBlockers.total ?? 0) > 0;
 
   return (
     <div className="space-y-4 text-sm">
-      {impact && cascadeTotal > 0 ? (
-        <div className="rounded-lg border p-3">
-          {impact.cascade.inboxThreads > 0 ? (
-            <CountLine label="Inbox threads" value={String(impact.cascade.inboxThreads)} />
-          ) : null}
-          {impact.cascade.reviews > 0 ? (
-            <CountLine label="Reviews" value={String(impact.cascade.reviews)} />
-          ) : null}
-          {impact.cascade.paymentTransactions > 0 ? (
-            <CountLine label="Payment history" value={String(impact.cascade.paymentTransactions)} />
-          ) : null}
-          {impact.cascade.marketingRecords > 0 ? (
-            <CountLine label="Marketing records" value={String(impact.cascade.marketingRecords)} />
-          ) : null}
-          {impact.team.members > 0 ? (
-            <CountLine label="Team access" value={`${impact.team.members} member(s)`} />
-          ) : null}
-        </div>
-      ) : null}
-
-      {blockerParts.length > 0 ? (
-        <p className="text-destructive">
-          Still referenced by {blockerParts.join(', ')}. Archive it instead.
+      {deleteBlocked ? (
+        <p className="text-destructive text-[13px] leading-relaxed">
+          This property still has bookings or records. Archive it instead of deleting.
         </p>
-      ) : null}
+      ) : (
+        <p className="text-muted-foreground text-[13px] leading-relaxed">
+          Removes the profile, media, and linked records for this property.
+        </p>
+      )}
 
       <div className="space-y-1.5">
         <label htmlFor="delete-property-confirm" className="text-sm font-medium">
@@ -279,7 +233,7 @@ export function PropertyListingStatusSection({
   return (
     <div className="space-y-4">
       {isLoading ? (
-        <div className="bg-muted/40 h-20 animate-pulse rounded-lg" aria-hidden />
+        <PropertyListingStatusSectionSkeleton showDelete={canDelete} />
       ) : isError || !lifecycle || !presentation ? (
         <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
           <p className="text-muted-foreground text-sm">Could not load the listing status.</p>
@@ -474,11 +428,11 @@ export function PropertyListingStatusSection({
           }
         >
           {pendingAction === 'archive' ? (
-            impactQuery.isLoading ? (
-              <div className="bg-muted/40 h-24 animate-pulse rounded-lg" aria-hidden />
-            ) : impact ? (
+            impactQuery.isLoading || !impact ? (
+              <PropertyListingImpactSkeleton variant="archive" />
+            ) : (
               <ImpactBody impact={impact} />
-            ) : null
+            )
           ) : pendingAction === 'restore' ? (
             <p className="text-muted-foreground text-[13px] leading-relaxed">
               Calendar sync, calendar export, scheduled posts, Smart Pricing, Telegram, and AI
@@ -527,7 +481,7 @@ export function PropertyListingStatusSection({
         }
       >
         {impactQuery.isLoading ? (
-          <div className="bg-muted/40 h-24 animate-pulse rounded-lg" aria-hidden />
+          <PropertyListingImpactSkeleton variant="delete" />
         ) : (
           <DeleteBody
             impact={impact}
