@@ -43,6 +43,24 @@ describe('guest journey vocabulary', () => {
     expect(guestJourneyStatusWord('CANCELLED')).toBe('Cancelled');
   });
 
+  it('names an expired request instead of calling it a cancellation', () => {
+    expect(guestJourneyStatusWord('CANCELLED', 'request_expired')).toBe('Request expired');
+    expect(guestJourneyStatusWord('CANCELLED', 'change_of_plans')).toBe('Cancelled');
+    expect(guestJourneyStatusWord('CANCELLED', null)).toBe('Cancelled');
+    // The reason never changes a live booking's word.
+    expect(guestJourneyStatusWord('READY_FOR_CHECKIN', 'request_expired')).toBe(
+      'Ready for check-in'
+    );
+  });
+
+  it('matches the edge module for the expiry reason', () => {
+    for (const reason of ['request_expired', 'change_of_plans', null, undefined, '']) {
+      expect(guestJourneyStatusWord('CANCELLED', reason)).toBe(
+        edgeStatusWord('CANCELLED', reason)
+      );
+    }
+  });
+
   it('never claims a pending review is confirmed, approved or booked', () => {
     expect(guestJourneyStatusWord('PENDING_REVIEW')).not.toMatch(/confirmed|approved|booked/i);
   });

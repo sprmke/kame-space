@@ -62,6 +62,8 @@ export type GuestTrip = {
   };
   refund: { amount: number | null; settledAt: string | null };
   cancellation: {
+    /** Why it was cancelled; `request_expired` when the expiry cron did it. */
+    reasonCode: string | null;
     policy: {
       title: string;
       description: string;

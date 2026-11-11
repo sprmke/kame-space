@@ -28,6 +28,7 @@ import {
 import { storeGuestBookingAccessToken } from '@/features/guest/form/lib/guestBookingAccess';
 import {
   absoluteGuestPath,
+  guestFormPath,
   guestPropertyPath,
   guestTripPath,
 } from '@/features/guest/lib/guestPublicPaths';
@@ -347,6 +348,7 @@ function GuestTripContent({
   const headline = guestTripHeadline({
     phase,
     timing,
+    cancellationReasonCode: trip.cancellation.reasonCode,
     checkInTimeLabel,
     checkOutTimeLabel,
     checkInDateLabel,
@@ -372,6 +374,27 @@ function GuestTripContent({
     amountDueLabel,
     directionsUrl,
   });
+
+  // An expired request has one useful next step: the same dates, pre-filled. It takes the
+  // primary slot, because messaging a host who already went quiet is the weaker option, and it
+  // lives on the Now card rather than a second section, so the page does not say "Request
+  // expired" twice.
+  const rebookLink =
+    cancelled && trip.cancellation.reasonCode === 'request_expired'
+      ? {
+          label: 'Request these dates again',
+          Icon: CalendarPlus,
+          to: guestFormPath(
+            trip.property.slug,
+            new URLSearchParams({
+              checkInDate: trip.stay.checkInDate,
+              checkOutDate: trip.stay.checkOutDate,
+            })
+          ),
+        }
+      : null;
+  const primaryAction = rebookLink ?? primary;
+  const secondaryAction = rebookLink ? primary : null;
 
   const timeline = guestTripTimeline({
     phase,
@@ -498,7 +521,8 @@ function GuestTripContent({
             headline={headline}
             progress={guestTripProgress(phase)}
             checklist={checklist}
-            primary={primary}
+            primary={primaryAction}
+            secondary={secondaryAction}
             voucher={
               phase === 'completed' || phase === 'checked_out' || phase === 'refund_pending'
                 ? trip.voucher

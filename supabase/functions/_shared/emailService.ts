@@ -50,6 +50,7 @@ import {
 } from './propertyEmailBranding.ts';
 import { buildEmailCtaHtml, renderBrandedEmailShell } from './brandedEmailShell.ts';
 import { isEmailSuppressed } from './emailSuppression.ts';
+import { PENDING_REVIEW_CHASE_LEAD_DAYS } from './pendingReviewPolicy.ts';
 import { PLATFORM_BRAND_NAME } from './platformBrand.ts';
 import { escapeHtml } from './renderEmailHtml.ts';
 import { resolvePublicGuestAppOrigin } from './publicAppOrigin.ts';
@@ -1470,6 +1471,7 @@ const CANCELLATION_REASON_LABELS: Record<string, string> = {
   no_payment: 'No payment received',
   duplicate_or_test: 'Duplicate or test booking',
   host_unavailable: 'Host could not host the stay',
+  request_expired: 'Request expired',
   other: 'Other',
 };
 
@@ -1545,16 +1547,24 @@ export async function sendBookingCancelledGuest(
 
   const c = await loadCancellationEmailContext(booking);
   const guestName = String(booking.guest_facebook_name ?? '').trim() || 'Guest';
-  const who = ctx.initiator === 'host' ? 'The host cancelled this booking.' : 'Your booking was cancelled.';
+  // An expired request is not a cancellation the guest chose, and calling it one reads like a
+  // decision they made. Say what happened, and say the dates are free again.
+  const expired = ctx.reasonCode === 'request_expired';
+  const who = expired
+    ? 'Your request expired because the host did not answer in time. Nothing was charged, and the dates are free again.'
+    : ctx.initiator === 'host'
+      ? 'The host cancelled this booking.'
+      : 'Your booking was cancelled.';
+  const nothingPaid = Number(ctx.refundDuePhp ?? 0) <= 0;
 
   const detail = buildCancellationDetailSectionHtml({
-    title: 'Cancellation summary',
+    title: expired ? 'Request summary' : 'Cancellation summary',
     rows: [
       { label: 'Stay', value: `${c.displayCheckInDate} to ${c.displayCheckOutDate}` },
-      { label: 'Reason', value: cancellationReasonLabel(ctx.reasonCode) },
+      ...(expired ? [] : [{ label: 'Reason', value: cancellationReasonLabel(ctx.reasonCode) }]),
       ...(ctx.policyTitle ? [{ label: 'Policy', value: ctx.policyTitle }] : []),
       ...(ctx.refundPercent != null ? [{ label: 'Policy refund', value: `${ctx.refundPercent}% of paid` }] : []),
-      { label: 'Refund', value: cancellationPeso(ctx.refundDuePhp) },
+      ...(nothingPaid ? [] : [{ label: 'Refund', value: cancellationPeso(ctx.refundDuePhp) }]),
     ],
     note: ctx.reasonNote ?? null,
   });
@@ -1562,7 +1572,7 @@ export async function sendBookingCancelledGuest(
   const html = await renderPropertyTemplateSendEmail({
     propertyId: c.propertyId,
     templateKey: 'email-booking-cancelled-guest',
-    emailTitle: 'Booking cancelled',
+    emailTitle: expired ? 'Request expired' : 'Booking cancelled',
     placeholderVars: buildBookingPlaceholderVars(
       booking,
       c.settings,
@@ -1582,7 +1592,56 @@ export async function sendBookingCancelledGuest(
     from: formatResendFromAddress(`${c.unitLabel} - ${c.branding.organizationName}`, c.branding.fromEmail),
     to: [booking.guest_email],
     reply_to: c.EMAIL_REPLY_TO,
-    subject: `${c.unitLabel} - Booking Cancelled ${formatEmailDateRange(c.displayCheckInDate, c.displayCheckOutDate)}`,
+    subject: `${c.unitLabel} - ${expired ? 'Request expired' : 'Booking Cancelled'} ${formatEmailDateRange(c.displayCheckInDate, c.displayCheckOutDate)}`,
+    html,
+    errorLabel: 'email',
+  });
+}
+
+/**
+ * Host mailbox: a request is about to expire because nobody answered it.
+ *
+ * The only warning before the sweep releases the dates, so it names the deadline and the guest
+ * rather than only the booking reference.
+ */
+export async function sendPendingReviewChaseHost(booking: GuestSubmission) {
+  const c = await loadCancellationEmailContext(booking);
+  const to = String(c.EMAIL_REPLY_TO ?? '').trim();
+  if (!to) return { skipped: true, reason: 'no_host_email' };
+  if (await isEmailSuppressed(to)) return { skipped: true, reason: 'suppressed' };
+
+  const guestName =
+    String(booking.primary_guest_name ?? '').trim() ||
+    String(booking.guest_facebook_name ?? '').trim() ||
+    'A guest';
+
+  const body = `<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;">Hi,</p>
+<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;"><strong>${escapeHtml(guestName)}</strong> asked for <strong>{{tower_and_unit_number}}</strong> from {{check_in_date}} to {{check_out_date}}, and the request is still waiting for a decision.</p>
+<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;">If it stays unanswered, it expires in ${PENDING_REVIEW_CHASE_LEAD_DAYS} days: the dates are released and the guest is told. Nothing has been charged, so there is nothing to refund. Accepting or declining it now keeps both the dates and the guest.</p>`;
+
+  const html = await renderPropertyTemplateSendEmail({
+    propertyId: c.propertyId,
+    templateKey: 'email-booking-acknowledgement',
+    emailTitle: 'A booking request is about to expire',
+    contentOverride: body,
+    placeholderVars: buildBookingPlaceholderVars(
+      booking,
+      c.settings,
+      {
+        ...c.guestLinkExtras,
+        ...buildGuestFacingPlaceholderVars(c.guestContact),
+        email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
+      },
+      c.branding
+    ),
+    branding: c.branding,
+  });
+
+  return sendResendEmail({
+    from: formatResendFromAddress(`${c.unitLabel} - ${c.branding.organizationName}`, c.branding.fromEmail),
+    to: [to],
+    reply_to: c.EMAIL_REPLY_TO,
+    subject: `${c.unitLabel} - Request expires in ${PENDING_REVIEW_CHASE_LEAD_DAYS} days ${formatEmailDateRange(c.displayCheckInDate, c.displayCheckOutDate)}`,
     html,
     errorLabel: 'email',
   });

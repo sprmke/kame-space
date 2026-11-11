@@ -15,7 +15,8 @@ export type GuestJourneyStatusWord =
   | 'Checked out'
   | 'Deposit refund'
   | 'Completed'
-  | 'Cancelled';
+  | 'Cancelled'
+  | 'Request expired';
 
 const CONFIRMED_STATUSES = new Set([
   'PENDING_DOCUMENTS',
@@ -24,10 +25,22 @@ const CONFIRMED_STATUSES = new Set([
   'PENDING_PET_REQUEST',
 ]);
 
-/** Status → guest word. Unknown statuses fall back to "Request sent" (never "Booked"). */
-export function guestJourneyStatusWord(status: string): GuestJourneyStatusWord {
+/**
+ * Status → guest word. Unknown statuses fall back to "Request sent" (never "Booked").
+ *
+ * A cancelled booking whose reason is `request_expired` says so: it reads like a decision the
+ * guest made otherwise, and the pending-review-expiry cron cancels on their behalf.
+ */
+export function guestJourneyStatusWord(
+  status: string,
+  cancellationReasonCode?: string | null
+): GuestJourneyStatusWord {
   const s = String(status ?? '').trim();
-  if (s === 'CANCELLED') return 'Cancelled';
+  if (s === 'CANCELLED') {
+    return String(cancellationReasonCode ?? '').trim() === 'request_expired'
+      ? 'Request expired'
+      : 'Cancelled';
+  }
   if (s === 'PENDING_REVIEW') return 'Request sent';
   if (CONFIRMED_STATUSES.has(s)) return 'Confirmed';
   if (s === 'READY_FOR_CHECKIN') return 'Ready for check-in';

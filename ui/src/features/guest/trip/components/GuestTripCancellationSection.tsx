@@ -239,6 +239,11 @@ export function GuestTripCancellationSection({
 
   if (cancelled) {
     if (!refund || refund.status === 'not_due') {
+      // A request the host never answered is not a cancellation the guest chose. Say what
+      // happened, and give them the one useful action: the same dates, pre-filled.
+      // An expired request has nothing to cancel and nothing to refund. The Now card already
+      // says what happened and offers the dates back, so a second section here only repeats it.
+      if (trip.cancellation.reasonCode === 'request_expired') return null;
       return (
         <section className="border-border/70 rounded-2xl border p-4">
           <h2 className="text-sm font-semibold">Cancellation</h2>

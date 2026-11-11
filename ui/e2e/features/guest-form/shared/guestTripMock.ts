@@ -57,6 +57,7 @@ export function guestTripMock(overrides: Partial<GuestTrip> = {}): GuestTrip {
     },
     refund: { amount: null, settledAt: null },
     cancellation: {
+      reasonCode: null,
       policy: {
         title: 'Flexible',
         description: 'Free cancellation up to 3 days before check-in.',

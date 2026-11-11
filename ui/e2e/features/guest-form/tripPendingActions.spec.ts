@@ -55,4 +55,34 @@ test.describe('@smoke @critical guest trip pending actions', () => {
     await expect(page.getByText('Cancelled').first()).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText(/Booking Confirmed!/i)).toHaveCount(0);
   });
+
+  test('an expired request says so and offers the same dates back', async ({ page }) => {
+    await seedSupabaseAuthSession(page, 'guest');
+    await installGuestFormMocks(page);
+    const base = guestTripMock({ status: 'CANCELLED' });
+    await mockEdgeFunctions(page, [
+      {
+        name: 'get-guest-trip',
+        body: {
+          success: true,
+          data: {
+            ...base,
+            cancellation: { ...base.cancellation, reasonCode: 'request_expired' },
+          },
+        },
+      },
+    ]);
+
+    await page.goto(`/properties/${GUEST_FORM_PROPERTY_SLUG}/trip?bookingId=${BOOKING_ID}`);
+
+    // The host never answered, so the guest did not cancel it: the wording has to say so.
+    await expect(page.getByText('Request expired').first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText(/Nothing was charged/i).first()).toBeVisible();
+    // Exactly once: the status is stated on the card, not repeated by a second section.
+    await expect(page.getByText('Request expired')).toHaveCount(1);
+    await expect(page.getByRole('link', { name: 'Request these dates again' })).toHaveAttribute(
+      'href',
+      `/properties/${GUEST_FORM_PROPERTY_SLUG}/form?checkInDate=2026-12-10&checkOutDate=2026-12-12`
+    );
+  });
 });

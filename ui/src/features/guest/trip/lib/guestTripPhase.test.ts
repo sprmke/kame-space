@@ -95,6 +95,27 @@ describe('guestTripProgress', () => {
 });
 
 describe('guestTripHeadline', () => {
+  it('does not call an expired request a cancellation', () => {
+    const expired = guestTripHeadline({
+      ...HEADLINE_BASE,
+      phase: 'cancelled',
+      timing: { kind: 'past' },
+      cancellationReasonCode: 'request_expired',
+    });
+    expect(expired.kicker).toBe('Request expired');
+    expect(expired.title).toBe('Your host did not reply in time');
+    expect(expired.body).toMatch(/nothing was charged/i);
+
+    // A cancellation the guest or host did make keeps the plain word.
+    const cancelled = guestTripHeadline({
+      ...HEADLINE_BASE,
+      phase: 'cancelled',
+      timing: { kind: 'past' },
+      cancellationReasonCode: 'change_of_plans',
+    });
+    expect(cancelled.kicker).toBe('Cancelled');
+  });
+
   it('says what the host is doing while documents are pending', () => {
     const headline = guestTripHeadline({
       ...HEADLINE_BASE,

@@ -172,6 +172,8 @@ export type GuestTripHeadlineInput = {
   refundLabel: string | null;
   /** Pre-formatted, e.g. "Sep 18". */
   cancelledOnLabel?: string | null;
+  /** `guest_submissions.cancellation_reason_code`, so an expired request says so. */
+  cancellationReasonCode?: string | null;
 };
 
 export function guestTripHeadline(input: GuestTripHeadlineInput): GuestTripHeadline {
@@ -257,7 +259,18 @@ export function guestTripHeadline(input: GuestTripHeadlineInput): GuestTripHeadl
         body: input.refundLabel ? `Deposit refunded: ${input.refundLabel}` : null,
         tone: 'neutral',
       };
-    case 'cancelled':
+    case 'cancelled': {
+      // The expiry cron cancels on the guest's behalf, so "Cancelled" would read like a decision
+      // they made. Name what happened and point at the exit: the dates are free again.
+      const expired = String(input.cancellationReasonCode ?? '').trim() === 'request_expired';
+      if (expired) {
+        return {
+          kicker: 'Request expired',
+          title: 'Your host did not reply in time',
+          body: 'Nothing was charged, and the dates are free again.',
+          tone: 'muted',
+        };
+      }
       return {
         kicker: 'Cancelled',
         title: input.cancelledOnLabel
@@ -266,6 +279,7 @@ export function guestTripHeadline(input: GuestTripHeadlineInput): GuestTripHeadl
         body: 'Questions about a refund? Message your host.',
         tone: 'muted',
       };
+    }
   }
 }
 
