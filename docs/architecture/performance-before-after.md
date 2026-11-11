@@ -495,25 +495,66 @@ the cost is the seat reconcile rather than the per-member lookups the N+1 fix ta
 Content is gated on `dashboard-stats`, which starts about 400 ms after the chrome burst because it
 queues behind it.
 
-### Still open
+### The team calls: found, and it was not what it looked like
 
-**The three `property-team-*` calls still fire on `/dashboard` and `/bookings`.** `usePropertyTeam`
-was made opt-in (`propertyTeamQueryEnabled`) and released in #422, and they still fire, so the
-consumer is not one of the four call sites that piece of work assumed. The mention catalog is
-ruled out: none of its other eleven queries fire. The composer's team picker is ruled out: its
-label is in no shipped chunk. That leaves a mount path nobody has found yet.
+Traced in a local dev build with unminified frames, which is what should have been done first:
 
-Next step is to stop reasoning from source and instrument it: a preview build with a
-`console.trace` inside `usePropertyTeam`'s `queryFn`, opened once, answers it in one run. Do not
-make another call-set claim about this without that trace.
+```
+usePropertyTeam
+  <- usePropertySettingsController   (PropertySettingsCard.tsx:180)
+  <- PropertySectionsInner           (SetupGuideStepBody.tsx:207)
+```
 
-### Two ways forward on content time
+`SetupGuideProvider` mounts the setup guide on every admin route, and the guide renders the
+property settings sections. The probe property is `INACTIVE` with no settings, so the guide
+**opens automatically**, and its building-forms step needs the team to prefill contact defaults.
+That is a legitimate read. It also explains why the calls appeared on `/dashboard`, `/bookings`
+and `/settings`: one open overlay, not three page-level consumers.
 
-1. **Start `dashboard-stats` as soon as the session context resolves**, instead of waiting for the
-   page to mount. It is the only call content waits on, so it should not queue behind chrome.
-   Roughly 400-600 ms.
-2. **Collapse the burst into `get-session-context`**, the pattern that already took the boot chain
-   from four calls to one. Larger, and less valuable now that `app-settings` is 30% cheaper.
+The earlier hypotheses were all wrong for the same reason: they were reasoned from the source
+tree instead of traced. The catalog was innocent (none of its eleven other queries fired), the
+composer picker was dead code (its label is in no shipped chunk), and the answer was a component
+two levels above the one that looked responsible.
+
+**A regression this pass introduced, now fixed.** Making the query opt-in broke
+`PropertySettingsCard`'s team defaults, and a later commit (`103047497`) had already dropped the
+`enabled: true` meant to keep it working. The controller now opts in explicitly, so the settings
+and setup-guide surfaces behave exactly as before, and only a future caller that forgets to opt
+in gets no request.
+
+### Content gate moved ahead of the burst
+
+`dashboard-stats` is the only call `route:content` waits on, and it used to start ~300 ms after the
+chrome burst because the burst had taken the connections. `useSessionBootstrap` now prefetches it
+as soon as the session context resolves, on the property dashboard route only
+(`isPropertyDashboardPath`, exact match, unit-tested). Same query key and `staleTime`, so the page
+reuses the in-flight request rather than firing a second one.
+
+Local ordering after the change, before deploy:
+
+```
+1  get-session-context
+2  dashboard-stats      <- now ahead of the chrome burst
+3  app-settings
+4  org-settings
+5  org-plan
+```
+
+### A testing trap worth recording
+
+Running the `org/unsavedChangesGuard` spec inside this worktree failed 11 of 14 while the same
+spec passed 7/7 on a clean checkout. The cause was not the code: copying real `ui/.env*` files into
+the worktree to run a dev server changed what the E2E app pointed at. Remove those files before
+running Playwright in a worktree, or the run measures the wrong thing. Bisecting by reverting
+source changes would never have found it.
+
+### Remaining structural option
+
+1. **Collapse the burst into `get-session-context`**, the pattern that already took the boot chain
+   from four calls to one. It is the only structural win left, and worth less than it was now that
+   `app-settings` is 30% cheaper and `dashboard-stats` no longer queues behind the burst.
+
+The `dashboard-stats` prefetch ships with this change and is measured after deploy.
 
 ### What gates content now
 
@@ -536,10 +577,12 @@ behind ten chrome calls. Two ways forward, in order of value:
 
 ### Pending measurement
 
-The opt-in team query (`propertyTeamQueryEnabled`) is merged but not released. The Vercel free plan
-returned `Deployment rate limited - retry in 24 hours`, so no production build could be made.
-Re-run `perf:boot-durations` once it ships. Expectation: three fewer calls on `/dashboard` and
-`/bookings`, and a `route:content` below 4599 ms.
+The `dashboard-stats` prefetch is merged but not deployed. Re-run `perf:boot-durations` after the
+release and compare two numbers only: where `dashboard-stats` starts relative to `app-settings`,
+and `route:content`.
+
+The opt-in team query shipped in #422. It did not remove the team calls, and the trace above
+explains why: they come from the setup guide, which only mounts when it is open.
 
 ## Release state
 

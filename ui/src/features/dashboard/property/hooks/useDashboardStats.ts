@@ -13,9 +13,17 @@ import { supabase } from '@/lib/supabase/client';
 
 const DASHBOARD_STATS_KEY = ['dashboard-stats'] as const;
 
+/** Key builder shared with the boot prefetch, so the two cannot drift apart. */
+export function dashboardStatsQueryKey(
+  propertyId: string | null,
+  period: { from: string; to: string }
+) {
+  return [...DASHBOARD_STATS_KEY, propertyId, period] as const;
+}
+
 const FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL as string;
 
-async function fetchDashboardStats(
+export async function fetchDashboardStats(
   from: string,
   to: string,
   propertyId: string | null
@@ -42,7 +50,7 @@ export function useDashboardStats() {
   const period = useMemo(() => resolveDashboardPeriod(searchParams), [searchParams]);
 
   const query = useQuery({
-    queryKey: [...DASHBOARD_STATS_KEY, propertyId, period] as const,
+    queryKey: dashboardStatsQueryKey(propertyId, period),
     queryFn: () => fetchDashboardStats(period.from, period.to, propertyId),
     staleTime: 30_000,
     refetchInterval: refetchIntervalWhenVisibleMs(60_000),
