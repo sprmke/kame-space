@@ -202,6 +202,15 @@ export function guestTripPath(propertySlug: string, bookingId: string): string {
   return withQuery(`${propertyBase(propertySlug)}/trip`, params);
 }
 
+/**
+ * Trip page right after a submission. `?welcome=1` shows the "Request sent" banner on the
+ * first view, so the guest lands on one page that says what happens next (plan D1).
+ */
+export function guestTripWelcomePath(propertySlug: string, bookingId: string): string {
+  const params = new URLSearchParams({ bookingId: bookingId.trim(), welcome: '1' });
+  return withQuery(`${propertyBase(propertySlug)}/trip`, params);
+}
+
 export function guestStayGuidePath(propertySlug: string, token: string): string {
   const params = new URLSearchParams({ token: token.trim() });
   return withQuery(`${propertyBase(propertySlug)}/stay-guide`, params);

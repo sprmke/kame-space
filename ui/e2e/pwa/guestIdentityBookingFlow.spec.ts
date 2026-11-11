@@ -110,7 +110,11 @@ test.describe('@pwa guest booking with a live ID check', () => {
     await expect(submit).toBeEnabled({ timeout: 20_000 });
     await submit.click();
 
-    await expect(page.getByText('Booking Confirmed!')).toBeVisible({ timeout: 40_000 });
+    // A submission lands on the trip page, which says the request was sent rather than
+    // confirming a booking the host has not reviewed yet.
+    await expect(page).toHaveURL(/\/properties\/solea-mactan\/trip\?/, { timeout: 40_000 });
+    await expect(page.getByText('Request sent').first()).toBeVisible({ timeout: 40_000 });
+    await expect(page.getByText('Booking Confirmed!')).toHaveCount(0);
     await demoPause();
   });
 });

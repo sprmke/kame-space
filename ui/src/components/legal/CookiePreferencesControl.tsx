@@ -16,14 +16,15 @@ export function CookiePreferencesControl() {
         {choice === 'accepted'
           ? 'Analytics cookies are on.'
           : choice === 'declined'
-            ? 'Only required cookies are on.'
-            : 'No choice yet. Required cookies keep the app working.'}
+            ? 'Only essential cookies are on.'
+            : 'No choice yet. Essential cookies keep the app working.'}
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button
           type="button"
           variant={choice === 'accepted' ? 'default' : 'outline'}
-          className="min-h-[44px] sm:min-h-9"
+          size="sm"
+          className="settings-action"
           onClick={() => setCookieConsent('accepted')}
         >
           Allow analytics
@@ -31,10 +32,11 @@ export function CookiePreferencesControl() {
         <Button
           type="button"
           variant={choice === 'declined' ? 'default' : 'outline'}
-          className="min-h-[44px] sm:min-h-9"
+          size="sm"
+          className="settings-action"
           onClick={() => setCookieConsent('declined')}
         >
-          Necessary only
+          Essential only
         </Button>
       </div>
     </div>

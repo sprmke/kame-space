@@ -62,6 +62,8 @@ export type GuestTrip = {
   };
   refund: { amount: number | null; settledAt: string | null };
   cancellation: {
+    /** Why it was cancelled; `request_expired` when the expiry cron did it. */
+    reasonCode: string | null;
     policy: {
       title: string;
       description: string;
@@ -143,6 +145,15 @@ export type GuestTrip = {
     hostText?: string | null;
   };
   stayGuidePath: string | null;
+  /**
+   * Structured arrival essentials. Secrets are null until `revealAt` passes. Optional so a
+   * payload cached before this shipped still renders.
+   */
+  essentials?: GuestTripEssentials | null;
+  /** Host check-in / check-out steps, rendered for this booking. */
+  instructions?: { checkInHtml: string | null; checkOutHtml: string | null };
+  /** Guest-visible custom templates for this trip stage. */
+  hostSections?: Array<{ id: string; name: string; html: string; phase: string }>;
   voucher: { code: string; amount: number | null; redeemed: boolean } | null;
   contact: {
     name: string;
@@ -152,6 +163,24 @@ export type GuestTrip = {
     airbnbUrl: string;
   };
   accessToken: string | null;
+};
+
+export type GuestTripEssentials = {
+  wifiName: string | null;
+  wifiPassword: string | null;
+  doorCode: string | null;
+  unitFloor: string | null;
+  parkingSlotNote: string | null;
+  /** Whether a door code exists at all; its value stays hidden until `revealAt`. */
+  hasDoorCode: boolean;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  buildingSecurityPhone: string | null;
+  garbageSchedule: string | null;
+  quietHours: string | null;
+  /** ISO timestamp the secrets become readable, or null when they already are. */
+  revealAt: string | null;
+  hasAny: boolean;
 };
 
 export type GuestTripErrorCode = 'sign_in_required' | 'not_found' | 'unknown';
@@ -295,4 +324,38 @@ export async function submitGuestRefundDetails(input: {
     accountNumber: input.accountNumber,
     phone: input.phone,
   });
+}
+
+/**
+ * Sends a balance payment receipt photo/PDF from the trip page (plan 3.3).
+ *
+ * Authorized by the booking access token or the signed-in guest, exactly like the trip
+ * payload. Writes the same column the host dashboard reads; never changes the status.
+ */
+export async function uploadGuestTripPaymentReceipt(
+  bookingId: string,
+  file: File
+): Promise<{ url: string; aiVerdict: string | null }> {
+  const id = bookingId.trim();
+  const form = new FormData();
+  form.append('bookingId', id);
+  const access = readGuestBookingAccessToken(id);
+  if (access) form.append('access', access);
+  form.append('assetType', 'guest_balance_payment_receipt');
+  form.append('file', file);
+
+  const res = await fetch(`${FUNCTIONS_URL}/guest-trip-payment-receipt`, {
+    method: 'POST',
+    headers: await guestEdgeAuthHeaders(),
+    body: form,
+  });
+  const json = (await res.json().catch(() => ({}))) as {
+    success?: boolean;
+    error?: string;
+    data?: { url?: string; aiVerdict?: string | null };
+  };
+  if (!res.ok || !json.success) {
+    throw new Error(json.error ?? 'We could not send your receipt.');
+  }
+  return { url: String(json.data?.url ?? ''), aiVerdict: json.data?.aiVerdict ?? null };
 }

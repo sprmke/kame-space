@@ -12,6 +12,7 @@ import {
   LogOut,
   MessageCircle,
   PawPrint,
+  Receipt,
   RefreshCw,
   Reply,
   Sparkles,
@@ -71,6 +72,7 @@ const NOTIFICATION_ICONS: Record<NotificationType, LucideIcon> = {
   review_response_received: Reply,
   maintenance_guest_reported: Wrench,
   guest_request_submitted: CalendarPlus,
+  booking_receipt_uploaded: Receipt,
 };
 
 /** Category glyph shared by the bell list, Activity page, and realtime toast. */

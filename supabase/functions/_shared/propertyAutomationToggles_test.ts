@@ -12,8 +12,8 @@ import {
   PROPERTY_AUTOMATION_TOGGLE_KEYS,
 } from './propertyAutomationToggles.ts';
 
-Deno.test('property automation keys - 8 keys, retired parking broadcast removed', () => {
-  assertEquals(PROPERTY_AUTOMATION_TOGGLE_KEYS.length, 8);
+Deno.test('property automation keys - 9 keys, retired parking broadcast removed', () => {
+  assertEquals(PROPERTY_AUTOMATION_TOGGLE_KEYS.length, 9);
   assertEquals(PROPERTY_AUTOMATION_TOGGLE_KEYS.includes('emailParkingBroadcast' as never), false);
 });
 
@@ -33,7 +33,7 @@ Deno.test('mergePropertyAutomationToggles - ignores unknown stored keys', () => 
   assertEquals('emailParkingBroadcast' in merged, false);
   assertEquals(merged.emailGafRequest, false);
   assertEquals(merged.emailNewBookingRequest, true);
-  assertEquals(Object.keys(merged).length, 8);
+  assertEquals(Object.keys(merged).length, 9);
 });
 
 Deno.test('mergePropertyAutomationToggles - defaults when raw is junk', () => {

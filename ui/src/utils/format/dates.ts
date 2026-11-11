@@ -61,6 +61,17 @@ export function formatYmdToFullLongDate(ymd: string | null | undefined): string 
   return date.format('MMMM D, YYYY');
 }
 
+/**
+ * Timestamp → `MMM D, h:mm A` in Asia/Manila, for a moment the guest can act on
+ * ("Available Dec 9, 2:00 PM"). Empty for an unreadable value.
+ */
+export const formatManilaDateTime = (iso: string | null | undefined): string => {
+  if (!iso) return '';
+  const d = dayjs(iso);
+  if (!d.isValid()) return '';
+  return d.tz('Asia/Manila').format('MMM D, h:mm A');
+};
+
 /** Timestamp → `MMM D, YYYY` in Asia/Manila, for record lines like "Completed". */
 export const formatManilaLongDate = (iso: string | null | undefined): string => {
   if (!iso) return '';

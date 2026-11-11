@@ -34,7 +34,11 @@ can open each one to check status, documents, payment and your contact details.
 - Q: Which bookings appear under Trips?
   A: Property stays only. Parking marketplace bookings are not listed in the guest Trips area.
 - Q: What does the status on a trip mean?
-  A: It matches the stage of your booking workflow, from review through check-in, check-out, and any deposit refund.
+  A: It matches the stage of your booking workflow, from review through check-in, check-out, and any
+  deposit refund. The words are the same everywhere the guest sees the booking: **Request sent**
+  while you review, **Confirmed** once you approve, **Ready for check-in** before arrival,
+  **Checked out** on the way out, **Deposit refund** while the deposit is being returned, and
+  **Completed** when everything is settled.
 - Q: Why is a checked-out stay still in Upcoming?
   A: A stay stays in Upcoming while it is waiting on a security-deposit refund. It moves to Past once that is finished.
 - Q: Where does a guest see documents and payment details?

@@ -148,9 +148,14 @@ export function useGuestChatStart(input: {
   parkingSlug?: string;
   checkInDate: string;
   checkOutDate: string;
+  /** Booking the guest is asking about; the dates then come from the booking. */
+  bookingId?: string;
   enabled: boolean;
 }) {
   const slug = input.propertySlug?.trim() || input.parkingSlug?.trim() || '';
+  const bookingId = input.bookingId?.trim() ?? '';
+  // A booked guest does not need inquiry dates — the booking carries them.
+  const hasDates = !!input.checkInDate.trim() && !!input.checkOutDate.trim();
   return useQuery({
     queryKey: [
       GUEST_CHAT_START_KEY,
@@ -158,6 +163,7 @@ export function useGuestChatStart(input: {
       input.parkingSlug ?? '',
       input.checkInDate,
       input.checkOutDate,
+      bookingId,
     ],
     queryFn: () =>
       startGuestWebChat({
@@ -165,8 +171,9 @@ export function useGuestChatStart(input: {
         parkingSlug: input.parkingSlug,
         checkInDate: input.checkInDate,
         checkOutDate: input.checkOutDate,
+        bookingId: bookingId || undefined,
       }),
-    enabled: input.enabled && !!slug && !!input.checkInDate.trim() && !!input.checkOutDate.trim(),
+    enabled: input.enabled && !!slug && (!!bookingId || hasDates),
     staleTime: 60_000,
     retry: 1,
   });

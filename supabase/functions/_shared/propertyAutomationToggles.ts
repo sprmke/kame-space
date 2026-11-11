@@ -14,6 +14,7 @@ import { resolvePropertyEntitlements } from './planEntitlements.ts';
 
 export const PROPERTY_AUTOMATION_TOGGLE_KEYS = [
   'emailNewBookingRequest',
+  'emailBookingRequestReceived',
   'emailGafRequest',
   'emailBookingAcknowledgement',
   'emailPetRequest',
@@ -38,6 +39,7 @@ export type PropertyAutomationToggles = Record<PropertyAutomationToggleKey, bool
 
 export const DEFAULT_PROPERTY_AUTOMATION_TOGGLES: PropertyAutomationToggles = {
   emailNewBookingRequest: true,
+  emailBookingRequestReceived: true,
   emailGafRequest: true,
   emailBookingAcknowledgement: true,
   emailPetRequest: true,

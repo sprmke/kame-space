@@ -6,8 +6,8 @@ import { GuestAccountLayout } from '@/features/guest/account/components/GuestAcc
 import { RequireGuestSession } from '@/features/guest/account/components/RequireGuestSession';
 import {
   GUEST_ACCOUNT_FAVORITES_PATH,
+  GUEST_ACCOUNT_MESSAGES_PATH,
   GUEST_ACCOUNT_PROFILE_PATH,
-  GUEST_ACCOUNT_STAYS_PATH,
 } from '@/features/guest/account/lib/guestAccountPaths';
 
 const GuestAccountIndexPage = lazy(() =>
@@ -68,14 +68,14 @@ export const guestAccountRoutes = [
   >
     <Route index element={<GuestAccountIndexPage />} />
     <Route path="profile" element={<GuestProfilePage />} />
-    <Route path="stays" element={<GuestMessagesPage />} />
+    <Route path="messages" element={<GuestMessagesPage />} />
     <Route path="vouchers" element={<GuestVouchersPage />} />
     <Route path="reviews" element={<GuestAccountReviewsPage />} />
     <Route path="favorites" element={<GuestWishlistPage />} />
     <Route path="tickets/*" element={<GuestTicketsPage />} />
     <Route path="help" element={<GuestAccountHelpPage />} />
     <Route path="trips" element={<GuestTripsPage />} />
-    <Route path="messages" element={<Navigate to={GUEST_ACCOUNT_STAYS_PATH} replace />} />
+    <Route path="stays" element={<Navigate to={GUEST_ACCOUNT_MESSAGES_PATH} replace />} />
     <Route path="wishlist" element={<Navigate to={GUEST_ACCOUNT_FAVORITES_PATH} replace />} />
     <Route path="settings" element={<Navigate to={GUEST_ACCOUNT_PROFILE_PATH} replace />} />
   </Route>,

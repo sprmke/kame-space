@@ -1451,7 +1451,7 @@ Open your profile and choose Request a copy or deletion of your data, or email u
 - audience: public
 - source: docs/guides/routes/legal.md
 
-On your first visit you can choose Allow analytics or Necessary only. Analytics cookies never load until you choose Allow analytics, and required cookies like sign-in and form protection work either way. Open the Cookie Policy page and use the Cookie settings card to switch at any time.
+On your first visit you can choose Allow analytics or Essential only. Analytics cookies never load until you choose Allow analytics, and required cookies like sign-in and form protection work either way. Open the Cookie Policy page and use the Cookie settings card to switch at any time.
 
 ### Is my plan renewed automatically, and do I get money back when I downgrade?
 
@@ -1468,3 +1468,109 @@ Plans are not charged automatically. Each month you get a payment link through P
 - source: docs/guides/routes/legal.md
 
 Some hosts use an AI assistant to answer common questions quickly. Ask for the host in the chat if you need a person. How we handle messages is explained in the Privacy Policy.
+
+### Where do I set the Wi-Fi password and door code my guest sees?
+
+- category: Property Settings
+- audience: host
+- source: docs/guides/routes/org/property/settings.md
+
+Property Settings, then **Guest experience**. Fill in the Wi-Fi name and password, the door or lock code, the unit and floor, a parking note, and a contact. Guests see these on their trip page and in the stay guide.
+
+The password and door code stay hidden until a set time before check-in. That is **Reveal codes before check-in**, 24 hours by default. Before then the guest sees "Available" with the date and time, so you can fill them in early without handing out the code.
+
+### Why does my guest not see the door code yet?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/trip.md
+
+The code is withheld until the reveal time, which is check-in minus the hours you set in Guest experience. This is deliberate: it stops a code reaching a guest who then cancels. To change when it appears, lower **Reveal codes before check-in**.
+
+### Can I give one guest a different door code?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/org/property/bookings-detail.md
+
+Yes. Open the booking, and on the Overview tab use **Door code for this stay** in the Guest view card. It applies to that stay only. Clear it to go back to the property code. The reveal timing does not change.
+
+### Where does the guest send their balance receipt now?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/trip.md
+
+From their trip page, under Payment, with **Send receipt**. It lands on the booking where you already look, and you get a notification. The booking status does not change on its own, so you still confirm the payment yourself.
+
+### What does the Guest view card on a booking show?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/org/property/bookings-detail.md
+
+It shows what your guest sees right now: their status in the same words they use, the one thing they are waiting on, and anything still open such as a missing balance receipt or pending documents. It reads from the booking itself, so it cannot disagree with their trip page.
+
+### Why does Guest experience say something is missing?
+
+- category: Property Settings
+- audience: host
+- source: docs/guides/routes/org/property/settings.md
+
+The readiness list at the top of Guest experience flags what an arriving guest has nothing for: usually the essentials or a payment method. Each row has a Fix action that takes you to the right place. Default check-in and check-out steps are not counted as missing, because they already say something useful.
+
+### Can a custom template show up for guests?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/templates.md
+
+Yes. In Templates, open the custom template and turn on **Show to guests**, then pick when it appears: before the stay, on arrival, during the stay, at check-out, after the stay, or at every stage. It shows as a collapsible section on the trip page and as a chapter in the stay guide.
+
+### Why did the stay guide link not work on the day I sent it?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/stay-guide.md
+
+It now does. The link used to open only from check-in day, even though the email went out earlier. It opens as soon as it is sent and stays available until the day after check-out. The door code and Wi-Fi password keep their own reveal time, so an early link is safe.
+
+### Does the guest get a reminder before arrival?
+
+- category: Guest Communication
+- audience: host
+- source: docs/architecture/guest-emails.md
+
+Yes, two days before check-in, with the balance, the check-in time and a link to their trip. It follows your **Ready for check-in** email toggle, so turning that off stops both.
+
+### Why does the acknowledgement email no longer mention the GAF?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/templates.md
+
+Because it now follows what your property actually requires. If you do not require a GAF, the email no longer mentions it or the building administration. A pet requirement is named instead. If you do require documents, the steps name them.
+
+### What happens to a booking request I never answer?
+
+- category: Bookings
+- audience: host
+- source: docs/architecture/guest-emails.md
+
+It does not hold the dates forever. Five days after it arrives you get one email warning that it expires in two days. If it is still pending after seven days, and nothing has been paid, it cancels itself: the dates go back on your calendar and the guest is told. If the guest has paid anything, it never expires on its own, so you can still accept it late.
+
+### Why did a request disappear from my pending list?
+
+- category: Bookings
+- audience: host
+- source: docs/architecture/guest-emails.md
+
+It expired. A request you did not answer within seven days, with nothing paid, cancels itself and frees the dates. You get a warning email two days before that happens. Requests the guest has paid towards are never expired automatically.
+
+### My request expired. Can I still book those dates?
+
+- category: Guest Portal
+- audience: guest
+- source: docs/guides/routes/trip.md
+
+Yes. The host did not reply in time, so the dates were released and nothing was charged. Open your trip and choose Request these dates again to send the same dates back to the host.

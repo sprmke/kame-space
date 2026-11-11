@@ -10,8 +10,8 @@ import {
 } from '@/features/dashboard/org/lib/propertyEmailAutomation';
 
 describe('PROPERTY_AUTOMATION_TOGGLE_KEYS', () => {
-  it('has 8 keys and no retired parking broadcast key', () => {
-    expect(PROPERTY_AUTOMATION_TOGGLE_KEYS).toHaveLength(8);
+  it('has 9 keys and no retired parking broadcast key', () => {
+    expect(PROPERTY_AUTOMATION_TOGGLE_KEYS).toHaveLength(9);
     expect(PROPERTY_AUTOMATION_TOGGLE_KEYS).not.toContain('emailParkingBroadcast' as never);
   });
 

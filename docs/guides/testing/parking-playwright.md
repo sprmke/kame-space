@@ -15,7 +15,7 @@ Feature-scoped Playwright coverage for the standalone parking marketplace flow (
 | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `guest/parkingGuestRequest.spec.ts`             | Guest submit → waiting screen; mocked payment after accept                                                                  |
 | `guest/parkingMarketplaceEdgeCases.spec.ts`     | `no_parking_available`; stay picker + **`linkStay` auto-select**                                                            |
-| `guest/guestFormParkingCta.spec.ts`             | Guest form success → **Need parking?** CTA links to `/parkings`                                                             |
+| `guest/guestFormParkingCta.spec.ts`             | Trip page (pending review) → **Find parking** links to `/parkings?linkStay=…`, and is absent when parking was not requested |
 | `host/parkingHostClaim.spec.ts`                 | Host accept → **Awaiting Payment** (Phase 3)                                                                                |
 | `host/parkingHostNewBooking.spec.ts`            | Host **New booking** modal on parking dashboard; host auto-claim and guest-payment copy                                     |
 | `host/parkingHostDetailPayment.spec.ts`         | Host payment card, failed endorsement resend                                                                                |

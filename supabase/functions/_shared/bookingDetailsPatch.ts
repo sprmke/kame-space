@@ -42,7 +42,9 @@ export type BookingDetailsOperation =
   | 'clear_asset'
   | 'review_document'
   | 'save_parking_rate_guest'
-  | 'ensure_need_parking';
+  | 'ensure_need_parking'
+  /** Per-booking arrival code override (guest journey plan D7 / task 7.3). */
+  | 'save_guest_access_code';
 
 /** Columns clients may send on `patch` — strict allowlist. */
 export const BOOKING_PATCH_ALLOWED_COLUMNS = new Set([
@@ -784,6 +786,36 @@ export async function applyBookingDetailsPatch(
     return { booking, changedColumns: Object.keys(patch) };
   }
 
+  if (operation === 'save_guest_access_code') {
+    // A rotating lock code for this one stay. An empty value clears the override, so the
+    // property default applies again.
+    const raw = body.doorCode;
+    if (raw !== null && raw !== undefined && typeof raw !== 'string') {
+      throw new Error('Door code must be text');
+    }
+    const doorCode = typeof raw === 'string' ? raw.trim() : '';
+    if (doorCode.length > 60) throw new Error('Door code is too long');
+    if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(doorCode)) {
+      throw new Error('Door code contains invalid characters');
+    }
+
+    const currentOverride =
+      existing.guest_essentials_override &&
+      typeof existing.guest_essentials_override === 'object' &&
+      !Array.isArray(existing.guest_essentials_override)
+        ? { ...(existing.guest_essentials_override as Record<string, unknown>) }
+        : {};
+    if (doorCode) currentOverride.doorCode = doorCode;
+    else delete currentOverride.doorCode;
+
+    const booking = await updateBookingRow(
+      bookingId,
+      { guest_essentials_override: currentOverride },
+      { expectedStatus: existingStatus }
+    );
+    return { booking, changedColumns: ['guest_essentials_override'] };
+  }
+
   if (operation === 'save_parking_rate_guest') {
     const parkingRateGuest = parseFiniteNumber(body.parkingRateGuest, 'parkingRateGuest');
     if (parkingRateGuest <= 0) throw new Error('Enter a parking rate greater than 0');
@@ -990,6 +1022,9 @@ export function requiredPermissionsForOperation(
   switch (operation) {
     case 'reschedule':
       return ['bookings.detail.stay:edit'];
+    case 'save_guest_access_code':
+      // The code is arrival information on the stay, so it follows the stay leaf.
+      return ['bookings.detail.stay:edit'];
     case 'save_parking_rate_guest':
     case 'ensure_need_parking':
       return ['bookings.detail.parking:edit'];
@@ -1022,7 +1057,8 @@ export function parseBookingDetailsOperation(value: unknown): BookingDetailsOper
     op === 'clear_asset' ||
     op === 'review_document' ||
     op === 'save_parking_rate_guest' ||
-    op === 'ensure_need_parking'
+    op === 'ensure_need_parking' ||
+    op === 'save_guest_access_code'
   ) {
     return op;
   }

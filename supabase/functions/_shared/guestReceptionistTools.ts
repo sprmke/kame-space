@@ -757,7 +757,7 @@ export async function executeGuestReceptionistTool(input: {
           url: `/properties/${encodeURIComponent(slug)}/trip?bookingId=${encodeURIComponent(bookingId)}`,
         });
       } else {
-        actions.push({ type: 'open_booking', label: 'View stay', url: '/account/stays' });
+        actions.push({ type: 'open_booking', label: 'View stay', url: '/account/messages' });
       }
       let spoken = `Your booking is ${String(booking.status).replaceAll('_', ' ').toLowerCase()}, from ${booking.check_in_date} to ${booking.check_out_date}.`;
       let richCard: GuestRichCard | null = null;

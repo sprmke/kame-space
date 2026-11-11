@@ -49,12 +49,25 @@ export function bookingNamesMatch(participantRaw: string, booking: BookingRow): 
   });
 }
 
-/** Best-effort booking match for the open inbox thread (inquiry dates + guest name). */
+/**
+ * Booking for the open inbox thread.
+ *
+ * An explicit `booking_id` wins: the web chat service sets it when a signed-in guest opens
+ * chat from their trip, so it is exact rather than a guess (plan D9, finding E1). Dates and
+ * the guest name stay as the fallback for Meta threads and older web threads.
+ */
 export function matchBookingForConversation(
   conversation: InboxConversation | null | undefined,
   bookings: BookingRow[]
 ): BookingRow | null {
   if (!conversation || bookings.length === 0) return null;
+
+  const linkedId = conversation.booking_id?.trim() ?? '';
+  if (linkedId) {
+    const linked = bookings.find((row) => row.id === linkedId);
+    if (linked) return linked;
+    // Linked but not in the loaded page: fall through rather than guessing another booking.
+  }
 
   const participant = normalizeName(conversation.participant_name ?? '');
   const inquiryIn = conversation.inquiry_check_in?.trim();
