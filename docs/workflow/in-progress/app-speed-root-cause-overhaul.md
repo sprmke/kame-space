@@ -4,7 +4,7 @@ status: planned
 stage: in-progress
 kind: plan
 tags: [performance, pwa, supabase, edge-functions, lighthouse, production-readiness, caching]
-updated: 2026-11-10
+updated: 2026-11-11
 readiness: unverified
 launch_gate: A
 launch_blocker: true
@@ -575,19 +575,19 @@ rows, and the served HTML contains no test-property data. Reference:
 Last updated 2026-11-10. "Do not ship" means deliberately not done, with the reason below the
 table; it is not "not started".
 
-| Phase | State                                               | Evidence                                                                                                                                                                                                                 |
-| ----- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 0     | done except hosted runs                             | Boot marks, `Server-Timing`, `perf:pg-stat:snapshot` (no `psql`). Lighthouse and authenticated boot traces need a hosted A/B.                                                                                            |
-| 1     | done                                                | 9 root causes decided with numbers; RC-4, RC-9, RC-10, 2.5 and 7.8 were already done or actively wrong.                                                                                                                  |
-| 2     | 2.1 shipped, 2.5 already present, 2.6 do not ship   | Landing chunk is module-preloaded and guarded by `check:landing-preload`. 2.3 would delete the transaction Phase 0.1 measures. 2.6 risks font regressions across themed pages.                                           |
-| 3     | 3.1, 3.3, 3.4, 3.5 shipped; 3.2 do not ship         | `get-session-context` took the boot chain from 3.0-5.7 s to 1.0-1.1 s. 3.2 rewrites the authorisation control flow of every dashboard route and needs a role-parity suite.                                               |
-| 4     | 4.1 rejected, 4.4 done, 4.2 deferred                | Region pinning measured 34% slower. Duplicate `getUser` removed. D-2 buys ~90 ms per burst at the cost of a one-hour revocation window. 4.3 would weaken an enforced quota; 4.5 is unverifiable here.                    |
-| 5     | do not ship                                         | Needs the Vercel same-origin proxy (D-1) plus an accepted staleness per endpoint. Changing public cache headers without the proxy only moves the staleness risk, not the latency.                                        |
-| 6     | analysed, fixes do not ship                         | Realtime is 85% of DB time. Moving to Broadcast changes how inbox, notifications and guest chat update, which is a product decision. 6.4 is a daily cron with no user-facing latency.                                    |
-| 7     | 7.2 chunk half and 7.8 shipped; 7.3-7.7 do not ship | 7.3-7.5 change navigation UX or cache staleness without a PWA harness to prove them. 7.6 touches service-worker launch behaviour; needs `test:e2e:pwa` time. 7.7 needs a profiler run.                                   |
-| 8     | partial                                             | Bundle budget ratcheted to 260/660 KiB and now actually fails when exceeded; `check:landing-preload` added; rules captured in `.cursor/rules/edge-latency.mdc`. Lighthouse CI and Sentry alerts need hosted credentials. |
-| 9     | blocked                                             | Needs a released build plus a host session for the real before/after.                                                                                                                                                    |
-| 10    | blocked                                             | Needs a PostHog personal API key and a Sentry token with transaction-read scope.                                                                                                                                         |
+| Phase | State                                               | Evidence                                                                                                                                                                                                                                    |
+| ----- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | done except hosted runs                             | Boot marks, `Server-Timing`, `perf:pg-stat:snapshot` (no `psql`). Lighthouse and authenticated boot traces need a hosted A/B.                                                                                                               |
+| 1     | done                                                | 9 root causes decided with numbers; RC-4, RC-9, RC-10, 2.5 and 7.8 were already done or actively wrong.                                                                                                                                     |
+| 2     | 2.1 shipped, 2.5 already present, 2.6 do not ship   | Landing chunk is module-preloaded and guarded by `check:landing-preload`. 2.3 would delete the transaction Phase 0.1 measures. 2.6 risks font regressions across themed pages.                                                              |
+| 3     | 3.1, 3.3, 3.4, 3.5 shipped; 3.2 do not ship         | `get-session-context` took the boot chain from 3.0-5.7 s to 1.0-1.1 s. 3.2 rewrites the authorisation control flow of every dashboard route and needs a role-parity suite.                                                                  |
+| 4     | 4.1 rejected, 4.4 done, 4.2 deferred                | Region pinning measured 34% slower. Duplicate `getUser` removed. D-2 buys ~90 ms per burst at the cost of a one-hour revocation window. 4.3 would weaken an enforced quota; 4.5 is unverifiable here.                                       |
+| 5     | do not ship                                         | Needs the Vercel same-origin proxy (D-1) plus an accepted staleness per endpoint. Changing public cache headers without the proxy only moves the staleness risk, not the latency.                                                           |
+| 6     | analysed, fixes do not ship                         | Realtime is 85% of DB time. Moving to Broadcast changes how inbox, notifications and guest chat update, which is a product decision. 6.4 is a daily cron with no user-facing latency.                                                       |
+| 7     | 7.2 chunk half and 7.8 shipped; 7.3-7.7 do not ship | 7.3-7.5 change navigation UX or cache staleness without a PWA harness to prove them. 7.6 touches service-worker launch behaviour; needs `test:e2e:pwa` time. 7.7 needs a profiler run.                                                      |
+| 8     | partial                                             | Bundle budget ratcheted to 260/660 KiB and now actually fails when exceeded; `check:landing-preload` added; rules captured in `.cursor/rules/edge-latency.mdc`. Lighthouse CI and Sentry alerts need hosted credentials.                    |
+| 9     | in progress                                         | Hero measured live (461 KiB to 56 KiB, LCP 8.2 s to 5.55 s). Dashboard boot measured per call: the slow paths were `property-team-members` (3.1-3.9 s) and `app-settings` (2.5-3.7 s), both fixed at source. Re-measure after this deploys. |
+| 10    | sources unblocked                                   | Sentry token works (2 projects). PostHog HogQL works through `/api/projects/@current/query/`; the key lacks `project:read`, which the queries do not need. Report generation is the remaining work.                                         |
 
 ### Deferred on purpose, and what would unblock each
 
@@ -601,6 +601,19 @@ table; it is not "not started".
 | 9, 10                      | Need hosted credentials and a released build                                                                                                                                                                                                                                           | `SENTRY_AUTH_TOKEN` with transaction read, a PostHog personal key, and a host session                                           |
 
 ## Plan revisions
+
+2026-11-11, after measuring durations rather than start times:
+
+- **Phase 9 method changed.** Section 11 of `performance-before-after.md` ranked calls by when
+  they _started_, which pointed at the ten-call burst at ~4.1 s. Reading Navigation Timing
+  durations instead showed the burst members return in 0.8-2.6 s while two calls elsewhere,
+  `property-team-members` (3.1-3.9 s) and `app-settings` (2.5-3.7 s), were most of the wall
+  clock. `perf:boot-durations` now captures that.
+- **The nine-call burst is not the fix.** Collapsing it into `get-session-context` would have
+  been a large change for a smaller gain than two targeted fixes. It stays as future work
+  behind the measured numbers, not ahead of them.
+- **`property-team-*` source found.** Not a call site in the dashboard tree: the AI composer's
+  mention catalog fetched the teams on mount with its popover closed.
 
 Reviewed against the tree on 2026-11-07 while starting execution. Changes made to this
 document, and why.

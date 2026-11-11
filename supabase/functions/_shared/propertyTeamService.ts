@@ -385,6 +385,38 @@ export async function listPropertyTeamMembers(
     throw new Error(`Failed to list members: ${error.message}`);
   }
 
+  // One GoTrue admin call per user, run together. This used to be awaited inside the loops
+  // below, which cost one round trip per member plus one per inviter, in series: a ten-seat
+  // property paid over twenty sequential calls before the list rendered.
+  const wantedUserIds = new Set<string>([ownerId]);
+  for (const row of rows ?? []) {
+    const userId = row.user_id as string;
+    if (userId === ownerId || orgAdminUserIds.has(userId)) continue;
+    wantedUserIds.add(userId);
+    if (row.invited_by) wantedUserIds.add(row.invited_by as string);
+  }
+  for (const row of orgAdminRows ?? []) {
+    const userId = row.user_id as string;
+    if (userId !== ownerId) wantedUserIds.add(userId);
+  }
+
+  type Profile = Awaited<ReturnType<typeof getAuthProfile>>;
+  const profileById = new Map<string, Profile>();
+  const [ownerMemberResult] = await Promise.all([
+    supabase
+      .from('organization_members')
+      .select('display_name, contact_phone')
+      .eq('organization_id', orgId)
+      .eq('user_id', ownerId)
+      .maybeSingle(),
+    ...Array.from(wantedUserIds, async (id) => {
+      profileById.set(id, await getAuthProfile(supabase, id));
+    }),
+  ]);
+  const ownerMemberRow = ownerMemberResult.data;
+  const profileOf = (id: string, fallbackName = 'Unknown'): Profile =>
+    profileById.get(id) ?? { name: fallbackName, email: '', avatar: null };
+
   const propertyMembers: SerializedTeamMember[] = [];
 
   for (const row of rows ?? []) {
@@ -392,10 +424,8 @@ export async function listPropertyTeamMembers(
     if (userId === ownerId || orgAdminUserIds.has(userId)) {
       continue;
     }
-    const profile = await getAuthProfile(supabase, userId);
-    const assignedBy = row.invited_by
-      ? (await getAuthProfile(supabase, row.invited_by as string)).name
-      : 'System';
+    const profile = profileOf(userId);
+    const assignedBy = row.invited_by ? profileOf(row.invited_by as string).name : 'System';
     propertyMembers.push(
       serializeMemberRow(row, profile, assignedBy, row.assigned_via_org === true)
     );
@@ -403,13 +433,7 @@ export async function listPropertyTeamMembers(
 
   const virtualMembers: SerializedTeamMember[] = [];
 
-  const ownerProfile = await getAuthProfile(supabase, ownerId);
-  const { data: ownerMemberRow } = await supabase
-    .from('organization_members')
-    .select('display_name, contact_phone')
-    .eq('organization_id', orgId)
-    .eq('user_id', ownerId)
-    .maybeSingle();
+  const ownerProfile = profileOf(ownerId);
   const ownerDisplayName =
     typeof ownerMemberRow?.display_name === 'string' && ownerMemberRow.display_name.trim()
       ? ownerMemberRow.display_name.trim()
@@ -436,7 +460,7 @@ export async function listPropertyTeamMembers(
   for (const row of orgAdminRows ?? []) {
     const userId = row.user_id as string;
     if (userId === ownerId) continue;
-    const profile = await getAuthProfile(supabase, userId);
+    const profile = profileOf(userId);
     const displayName =
       typeof row.display_name === 'string' && row.display_name.trim()
         ? row.display_name.trim()
