@@ -47,6 +47,11 @@ Keep in sync: `propertyTeamPermissions.ts`, `parkingTeamPermissions.ts` and UI t
 - **First Meta connect from a property** (no org-default yet) writes the **org-default** row so Marketing and other units can inherit.
 - Effective Meta = override if connected, else org default (`metaInboxScope.ts`). Inherited Meta threads = full Page inbox (1A).
 - Webhook handler is public but **must** verify `X-Hub-Signature-256` and dedupe via `social_webhook_events`. Resolve by `meta_page_id` to the owning connection row.
+- **Webhook dedupe order:** write the `social_webhook_events` row **after** the message lands, never before. Marking first makes Meta's retry of a failed event look like a duplicate, and the message is lost for good.
+- **Platform comes from the webhook `object` field** (`page` → Facebook, `instagram` → Instagram), never from a recipient-id prefix. Facebook Page ids and guest ids can both start with `17`.
+- **Direction comes from the account's own ids** (`meta_page_id`, `meta_ig_user_id`, `external_account_id`). An Instagram reply sent from the Instagram app carries the Instagram business account id, not the Facebook Page id.
+- **Graph paging URLs never leave the server.** A paging URL carries the Page access token, so the import keeps only the opaque `after` cursor (`social_channel_connections.meta_backfill_cursor`) and the browser never holds a Graph URL.
+- **Conversation summary only moves forward.** `inbox_bump_conversation` owns `last_message_at`, `subject_preview`, `reply_status`, `last_inbound_at`, the messaging window and the unread badge. Meta does not guarantee event order.
 - Tokens encrypted with `META_INBOX_TOKEN_ENCRYPTION_KEY`.
 - Org reconnect/disconnect must **not** delete property/parking override rows (`metaInboxLifecycle.ts`).
 - Marketing publish uses **org-default** Meta (first property connect establishes it).
@@ -54,7 +59,11 @@ Keep in sync: `propertyTeamPermissions.ts`, `parkingTeamPermissions.ts` and UI t
 ## Meta messaging rules
 
 - **24-hour window:** outbound DMs only when `messaging_window_expires_at` > now (set from last inbound). **Does not apply to `platform=web`.**
-- **Webhook-first:** Conversations API backfill on connect only; do not poll in a loop.
+- **Webhook-first, reconciliation as the safety net.** The webhook enqueues and acknowledges; `meta-inbox-processor` applies from the outbox. `meta-inbox-worker` (pg_cron, SQL-gated) drains the outbox and runs import/reconcile per `meta_sync_state` row. Do not poll from the browser and do not drive Graph paging from a client.
+- **`inbox_apply_meta_message` is the only writer.** Webhook, reconcile, import and Kame sends all go through it, so the message and the conversation can never disagree.
+- **Realtime is Broadcast, not Postgres Changes.** One private topic `inbox:org:<org_id>` carries ids and timestamps only; content is always fetched through the permission-checked edge path. `user_can_read_inbox_broadcast` must stay in step with `hasOrgInboxRealtimeAccess` in `_shared/inboxAccess.ts`.
+- **Graph API version:** `META_GRAPH_VERSION` in `_shared/metaInboxConfig.ts` is the single source. v21.0 expired 2027-01-21, so the repo is on **v26.0**. Build every URL, including the OAuth dialog, from that constant.
+- **Edit and Unsend are web-chat only.** Meta has no API to edit or unsend a Page message, so offering either would change only the Kame copy while the guest keeps seeing the original. The server rejects both on Facebook and Instagram threads.
 - **App Review:** production requires Advanced Access — see `docs/archive/operations/meta-app-review.md`.
 
 ## AI auto-reply

@@ -82,7 +82,7 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'superhost-assessment-cron': system,
   'meta-inbox-webhook': system,
   'meta-inbox-oauth-callback': system,
-  'meta-inbox-backfill': system,
+  'meta-inbox-sync': system,
   'complete-parking-bookings': system,
 
   // ── Assistant internals ───────────────────────────────────────────────────────────────────

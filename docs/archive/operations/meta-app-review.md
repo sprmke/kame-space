@@ -313,3 +313,5 @@ Submit when inbox + marketing flows work for app role users in Development mode.
 | `META_OAUTH_EXTRA_SCOPES`              | Optional comma-separated extra scopes                  |
 
 Implementation: `supabase/functions/_shared/metaInboxConfig.ts`, `metaInboxGraph.ts#buildMetaOAuthUrl`.
+
+**Graph API version.** `META_GRAPH_VERSION` in `supabase/functions/_shared/metaInboxConfig.ts` is the single source for every Graph call and for the OAuth dialog URL. The repo is on **v26.0**. Meta's version table (https://developers.facebook.com/docs/graph-api/changelog/versions) lists v21.0 as expiring on 2027-01-21, so the bump was required. When you move it again, read the Messenger and Instagram entries in the changelog first: some fields were removed across versions, and the removals apply to every supported version from 2026-10-27.

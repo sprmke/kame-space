@@ -100,9 +100,9 @@ export async function sendInboxReply(
       is_ai_generated: false,
     });
     await updateConversationAfterMessage(conv.id, {
+      direction: 'outbound',
       subject_preview: preview,
       last_message_at: now,
-      reply_status: 'replied',
       unread_delta: 0,
       guest_unread_delta: 1,
       aiHandoff: { clear_ai_handoff: true },
@@ -130,6 +130,8 @@ export async function sendInboxReply(
     throw new InboxSendReplyError('Channel not connected');
   }
   const connection = conn as SocialChannelConnectionRow;
+  // Narrowed above. Passed explicitly because the cast to the row type drops the guard.
+  const metaPageId: string = conn.meta_page_id;
   const token = await getPageAccessToken(connection);
 
   try {
@@ -149,7 +151,7 @@ export async function sendInboxReply(
         throw new InboxSendReplyError('Reply window closed - guest must message again');
       }
       const result = await sendMetaMessage({
-        pageId: connection.meta_page_id,
+        pageId: metaPageId,
         pageAccessToken: token,
         recipientId: conv.external_participant_id ?? '',
         text: trimmed,
@@ -177,16 +179,13 @@ export async function sendInboxReply(
     }
   } catch (err) {
     if (err instanceof InboxSendReplyError) throw err;
-    throw new InboxSendReplyError(
-      friendlyMetaSendError(err instanceof Error ? err.message : String(err)),
-      502
-    );
+    throw new InboxSendReplyError(friendlyMetaSendError(err), 502);
   }
 
   await updateConversationAfterMessage(conv.id, {
+    direction: 'outbound',
     subject_preview: trimmed.slice(0, 500),
     last_message_at: now,
-    reply_status: 'replied',
     unread_delta: 0,
     aiHandoff: { clear_ai_handoff: true },
   });

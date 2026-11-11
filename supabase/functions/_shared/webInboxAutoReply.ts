@@ -110,9 +110,9 @@ export async function maybeAutoReplyToWebInbound(
     is_ai_generated: true,
   });
   await updateConversationAfterMessage(conversationId, {
+    direction: 'outbound',
     subject_preview: draft.slice(0, 500),
     last_message_at: now,
-    reply_status: 'replied',
     guest_unread_delta: 1,
     ...(reply.handoffRequested
       ? {

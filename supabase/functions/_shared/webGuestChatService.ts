@@ -465,10 +465,9 @@ export async function sendGuestWebMessage(
   });
 
   await updateConversationAfterMessage(conv.id, {
+    direction: 'inbound',
     subject_preview: preview,
     last_message_at: now,
-    last_inbound_at: now,
-    reply_status: 'pending',
     unread_delta: 1,
   });
 
