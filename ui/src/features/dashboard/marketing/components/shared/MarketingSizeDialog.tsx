@@ -103,13 +103,13 @@ export function MarketingSizeDialog({
           sheetLayout="split"
           className="flex max-h-[min(90dvh,40rem)] max-w-[min(calc(100vw-1.5rem),28rem)] flex-col gap-0 overflow-hidden p-0 pb-0 pt-0 sm:max-w-[min(90vw,28rem)] sm:p-0"
         >
-          <ResponsiveModalHeader className="shrink-0 space-y-1 px-5 pb-3 pr-12 pt-4 text-left sm:px-6">
+          <ResponsiveModalHeader className="shrink-0 space-y-1 px-4 pb-3 pr-12 pt-4 text-left sm:px-5">
             <ResponsiveModalTitle>Size</ResponsiveModalTitle>
             <ResponsiveModalDescription>
               A copy keeps this design as it is. Resize changes this one.
             </ResponsiveModalDescription>
           </ResponsiveModalHeader>
-          <ul className="divide-border min-h-0 flex-1 divide-y overflow-y-auto overscroll-contain px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
+          <ul className="divide-border min-h-0 flex-1 divide-y overflow-y-auto overscroll-contain px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
             {options.map((option) => {
               const current = option.value === size;
               const siblingId = siblingBySize.get(option.value);

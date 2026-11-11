@@ -112,7 +112,7 @@ export function CancelBookingSheet({
   return (
     <ResponsiveModal open={open} onOpenChange={onOpenChange}>
       <ResponsiveModalContent sheetLayout="split">
-        <ResponsiveModalHeader>
+        <ResponsiveModalHeader className="border-border shrink-0 border-b px-4 py-3 sm:px-5">
           <ResponsiveModalTitle>Cancel booking</ResponsiveModalTitle>
         </ResponsiveModalHeader>
 

@@ -95,7 +95,7 @@ export function AiAssignDialog({
     <>
       <ResponsiveModal open={open} onOpenChange={guardedOpenChange}>
         <ResponsiveModalContent className="max-w-md">
-          <ResponsiveModalHeader className="px-4 sm:px-0">
+          <ResponsiveModalHeader>
             <ResponsiveModalTitle>Assign profile to {label}</ResponsiveModalTitle>
           </ResponsiveModalHeader>
 
@@ -128,7 +128,7 @@ export function AiAssignDialog({
             </div>
           </div>
 
-          <ResponsiveModalFooter className="px-4 pb-4 sm:px-0 sm:pb-0">
+          <ResponsiveModalFooter className="pb-4 sm:pb-0">
             <Button type="button" variant="outline" onClick={requestClose}>
               Cancel
             </Button>

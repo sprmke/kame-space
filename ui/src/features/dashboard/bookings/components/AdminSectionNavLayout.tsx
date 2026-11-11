@@ -285,13 +285,12 @@ function createSectionNavStore(
 
 function sectionNavItemClass(active: boolean) {
   return cn(
-    'relative z-[1] flex min-h-[44px] w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200',
+    'group relative z-[1] flex min-h-[44px] w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200',
     active
       ? 'text-primary-foreground'
-      : // Opaque so the sliding teal pill cannot pass *under* an inactive label while it
-        // moves between sections. Muted grey text on the teal pill fails WCAG contrast,
-        // and axe catches the transient frame. Same colour as the page, so it is invisible.
-        'bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+      : // Opaque fill so the sliding pill never shows through the label (contrast guard).
+        // Label stays foreground like the main sidebar; only the icon softens when idle.
+        'bg-background text-foreground hover:bg-muted/60 hover:text-foreground'
   );
 }
 
@@ -311,7 +310,13 @@ const SectionNavButton = React.forwardRef<
       onClick={() => onSelect(section.id)}
       className={sectionNavItemClass(active)}
     >
-      <Icon className="size-4 shrink-0" aria-hidden />
+      <Icon
+        className={cn(
+          'size-4 shrink-0 transition-colors',
+          active ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground'
+        )}
+        aria-hidden
+      />
       <span className="truncate">{section.label}</span>
       {section.badge ?? (section.hasIssue ? <SectionNavIssueDot className="ml-auto" /> : null)}
     </button>

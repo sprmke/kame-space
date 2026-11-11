@@ -90,12 +90,12 @@ export function WorkflowConfirmModal({
     >
       <ResponsiveModalContent
         sheetLayout="split"
-        className="flex max-h-[min(90dvh,calc(100dvh-1.5rem))] w-full max-w-[min(calc(100vw-1.5rem),28rem)] flex-col gap-0 overflow-hidden p-5 sm:max-w-[min(calc(100vw-1.5rem),28rem)]"
+        className="flex max-h-[min(90dvh,calc(100dvh-1.5rem))] w-full max-w-[min(calc(100vw-1.5rem),28rem)] flex-col gap-0 overflow-hidden sm:max-w-[min(calc(100vw-1.5rem),28rem)]"
       >
         <ResponsiveModalHeader className="sr-only">
           <ResponsiveModalTitle>{title}</ResponsiveModalTitle>
         </ResponsiveModalHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-5">
           <div className="flex items-start gap-3">
             {destructive && (
               <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-500/10">
@@ -160,7 +160,7 @@ export function WorkflowConfirmModal({
             </div>
           </div>
         </div>
-        <div className="mt-5 flex shrink-0 justify-end gap-2">
+        <div className="border-border flex shrink-0 justify-end gap-2 border-t px-4 py-3 sm:px-5">
           <Button
             type="button"
             variant="outline"

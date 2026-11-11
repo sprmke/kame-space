@@ -19,6 +19,11 @@ import type { FinanceLineItem, FinanceQuery } from '@/features/dashboard/finance
 
 import { UnsavedChangesDialog } from '@/components/forms/UnsavedChangesDialog';
 import {
+  MODAL_BODY_CLASS,
+  MODAL_FOOTER_CLASS,
+  MODAL_HEADER_CLASS,
+} from '@/components/ui/modal-chrome';
+import {
   ResponsiveModal,
   ResponsiveModalContent,
   ResponsiveModalFooter,
@@ -28,6 +33,7 @@ import {
 import { SegmentedStepProgress } from '@/components/wizard/SegmentedStepProgress';
 import { WizardModalActions } from '@/components/wizard/WizardModalActions';
 import { useGuardedClose } from '@/hooks/useGuardedClose';
+import { cn } from '@/lib/utils';
 
 const TRANSACTION_FORM_ID = 'finance-transaction-form';
 
@@ -204,7 +210,14 @@ export function FinanceTransactionModals({
             if (submitPending) e.preventDefault();
           }}
         >
-          <ResponsiveModalHeader className="border-border shrink-0 space-y-0 border-b px-4 pb-3.5 pt-[max(env(safe-area-inset-top,0px),1rem)] text-left sm:px-5 sm:pt-5">
+          <ResponsiveModalHeader
+            className={cn(
+              'space-y-0 text-left',
+              MODAL_HEADER_CLASS,
+              // Sheet safe-area top + room for the stepper row under the title.
+              'pb-3.5 pt-[max(env(safe-area-inset-top,0px),1rem)] sm:pb-3.5 sm:pt-4'
+            )}
+          >
             <ResponsiveModalTitle>
               {editingItem ? 'Edit transaction' : 'New transaction'}
             </ResponsiveModalTitle>
@@ -214,7 +227,12 @@ export function FinanceTransactionModals({
               </nav>
             ) : null}
           </ResponsiveModalHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+          <div
+            className={cn(
+              'min-h-0 flex-1 overflow-y-auto overscroll-contain',
+              MODAL_BODY_CLASS
+            )}
+          >
             <OperatingLineItemForm
               ref={formRef}
               formId={TRANSACTION_FORM_ID}
@@ -238,7 +256,7 @@ export function FinanceTransactionModals({
               />
             ) : null}
           </div>
-          <ResponsiveModalFooter className="border-border shrink-0 border-t px-4 py-3.5 sm:px-5">
+          <ResponsiveModalFooter className={cn(MODAL_FOOTER_CLASS)}>
             <WizardModalActions
               onCancel={requestClose}
               onBack={() => formRef.current?.goBack()}
