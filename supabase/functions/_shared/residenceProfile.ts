@@ -470,7 +470,7 @@ export function parseResidenceProfile(row: unknown): ResidenceProfile {
     houseRuleIds: readStringArray(seeds, 'houseRuleIds') ?? [],
   };
 
-  base.buildingRules = parseBuildingRules(settings?.buildingRules) ?? [];
+  base.buildingRules = parseResidenceBuildingRules(settings?.buildingRules) ?? [];
   base.templateDefaults = parseTemplateDefaults(settings?.templateDefaults);
   base.guestInfoVisibility = {
     stayGuide: readBoolean(asRecord(settings?.guestInfoVisibility), 'stayGuide') ?? true,
@@ -579,7 +579,7 @@ function readCopy(
   return copy;
 }
 
-function parseBuildingRules(value: unknown): ResidenceBuildingRule[] | null {
+export function parseResidenceBuildingRules(value: unknown): ResidenceBuildingRule[] | null {
   if (!Array.isArray(value)) return null;
   const rules: ResidenceBuildingRule[] = [];
   for (const raw of value) {

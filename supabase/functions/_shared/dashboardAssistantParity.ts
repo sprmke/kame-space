@@ -106,6 +106,7 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'update-development': superAdmin,
   'delete-development': superAdmin,
   'upload-development-media': superAdmin,
+  'upload-development-pdf-template': superAdmin,
   'list-hosts': superAdmin,
   'list-platform-properties': superAdmin,
 

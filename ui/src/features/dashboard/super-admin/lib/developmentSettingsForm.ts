@@ -7,7 +7,12 @@ import {
   mergeDocumentRequirements,
   type DocumentRequirement,
 } from '@/features/dashboard/bookings/lib/documentRequirements';
-import { parseResidencePdfTemplates, type ResidencePdfTemplate } from '@/lib/residence/residenceProfile';
+import {
+  parseResidenceBuildingRules,
+  parseResidencePdfTemplates,
+  type ResidenceBuildingRule,
+  type ResidencePdfTemplate,
+} from '@/lib/residence/residenceProfile';
 import {
   mergeUnitTypes,
   validateUnitTypes,
@@ -34,6 +39,14 @@ import {
   validateResidenceStructure,
   type ResidenceProfile,
 } from '@/lib/residence/residenceProfile';
+
+function readGuestInfoVisibility(value: unknown): { stayGuide: boolean; propertyPage: boolean } {
+  const record = objectOrEmpty(value);
+  return {
+    stayGuide: typeof record.stayGuide === 'boolean' ? record.stayGuide : true,
+    propertyPage: typeof record.propertyPage === 'boolean' ? record.propertyPage : true,
+  };
+}
 
 function objectOrEmpty(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -108,6 +121,8 @@ export type DevelopmentProfileDraft = {
   documentRequirements: DocumentRequirement[];
   pdfTemplates: ResidencePdfTemplate[];
   propertySeeds: { amenityIds: string[]; houseRuleIds: string[] };
+  buildingRules: ResidenceBuildingRule[];
+  guestInfoVisibility: { stayGuide: boolean; propertyPage: boolean };
   unitTypes: DevelopmentUnitType[];
   poolFee: number | null;
   poolSchedule: string;
@@ -161,6 +176,8 @@ export function developmentProfileDraftFromDevelopment(
       amenityIds: readStringArray(objectOrEmpty(settings.propertySeeds), 'amenityIds'),
       houseRuleIds: readStringArray(objectOrEmpty(settings.propertySeeds), 'houseRuleIds'),
     },
+    buildingRules: parseResidenceBuildingRules(settings.buildingRules) ?? [],
+    guestInfoVisibility: readGuestInfoVisibility(settings.guestInfoVisibility),
     unitTypes: mergeUnitTypes(settings.unitTypes, development.name),
     ...mergeDevelopmentPoolSettings(
       development.name,
@@ -218,6 +235,8 @@ export function buildDevelopmentUpdatePayload(draft: DevelopmentProfileDraft) {
     documentRequirements: draft.documentRequirements,
     pdfTemplates: draft.pdfTemplates,
     propertySeeds: draft.propertySeeds,
+    buildingRules: draft.buildingRules,
+    guestInfoVisibility: draft.guestInfoVisibility,
     unitTypes: draft.unitTypes,
     poolFee: draft.poolFee,
     poolSchedule: draft.poolSchedule.trim() || null,

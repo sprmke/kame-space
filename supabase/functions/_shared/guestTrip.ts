@@ -39,7 +39,13 @@ import { canGuestPublicUpdateForm } from './statusMachine.ts';
 import { buildStayGuideCheckInDocuments } from './stayGuideCheckInDocuments.ts';
 import { resolveDocumentRequirements } from './documentRequirements.ts';
 import { computeTotalGuestBalanceFromBooking } from './totalGuestBalance.ts';
+import { createClient } from './supabaseJs.ts';
 import { countStayNights } from './utils.ts';
+import {
+  developmentGuestContextFromRow,
+  guestBuildingInfoFor,
+  type GuestBuildingInfo,
+} from './developmentGuestInfo.ts';
 import type { GuestSubmission } from './types.ts';
 
 type BookingRow = Record<string, unknown>;
@@ -114,6 +120,8 @@ export type GuestTripDetailDto = {
     amountDue: number | null;
     isAirbnb: boolean;
   };
+  /** Building info, already filtered by `guestInfoVisibility.stayGuide`. */
+  buildingInfo: GuestBuildingInfo | null;
   refund: {
     amount: number | null;
     settledAt: string | null;
@@ -265,6 +273,56 @@ function guestBalanceAmounts(
   return { totalBalance, balancePaid, amountDue };
 }
 
+/**
+ * Building info for the stay guide, already filtered by `guestInfoVisibility.stayGuide`.
+ * Fails soft: a missing development means the guest sees no building block, never a broken trip.
+ */
+async function loadTripBuildingInfo(propertyId: string): Promise<GuestBuildingInfo | null> {
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    const { data: property } = await supabase
+      .from('properties')
+      .select('development_id, residence_name')
+      .eq('id', propertyId)
+      .maybeSingle();
+
+    const propertyRow = property as
+      | { development_id: string | null; residence_name: string | null }
+      | null;
+    if (!propertyRow) return null;
+
+    const query = supabase
+      .from('developments')
+      .select('name, developer_name, description, location, city, settings')
+      .limit(1);
+    const { data: development } = propertyRow.development_id
+      ? await query.eq('id', propertyRow.development_id).maybeSingle()
+      : await query.eq('name', String(propertyRow.residence_name ?? '').trim()).maybeSingle();
+
+    if (!development) return null;
+
+    return guestBuildingInfoFor(
+      developmentGuestContextFromRow(
+        development as {
+          name: string;
+          developer_name: string | null;
+          description: string | null;
+          location: string | null;
+          city: string | null;
+          settings: Record<string, unknown> | null;
+        }
+      ),
+      'stayGuide'
+    );
+  } catch (error) {
+    console.warn('[guestTrip] building info load failed:', error);
+    return null;
+  }
+}
+
 export async function buildGuestTripPayload(input: {
   booking: BookingRow;
   issueAccessToken: boolean;
@@ -316,6 +374,8 @@ export async function buildGuestTripPayload(input: {
     loadOpenCancellationRequest(bookingId),
     loadBookingRefund(bookingId),
   ]);
+
+  const buildingInfo = await loadTripBuildingInfo(propertyId);
 
   const needParking = row.need_parking === true;
   let findPath: string | null = null;
@@ -415,6 +475,7 @@ export async function buildGuestTripPayload(input: {
       ...guestBalanceAmounts(row),
       isAirbnb,
     },
+    buildingInfo,
     refund: {
       amount: numOrNull(row.sd_refund_amount),
       settledAt: str(row.settled_at) || null,

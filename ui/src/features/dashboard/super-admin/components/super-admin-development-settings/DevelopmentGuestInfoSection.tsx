@@ -6,10 +6,20 @@ import {
   emptyGuestGuide,
   type DevelopmentGuestGuide,
 } from '@/features/dashboard/super-admin/lib/developmentGuestInfo';
+import type { ResidenceBuildingRule } from '@/lib/residence/residenceProfile';
 import type { DevelopmentProfileDraft } from '@/features/dashboard/super-admin/lib/developmentSettingsForm';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 
 type Props = {
@@ -85,6 +95,89 @@ function GuestGuidesEditor({
   );
 }
 
+const BUILDING_RULE_TYPES: Array<{ value: ResidenceBuildingRule['type']; label: string }> = [
+  { value: 'info', label: 'Note' },
+  { value: 'prohibited', label: 'Not allowed' },
+  { value: 'allowed', label: 'Allowed' },
+];
+
+function BuildingRulesEditor({
+  rules,
+  disabled,
+  onChange,
+}: {
+  rules: ResidenceBuildingRule[];
+  disabled?: boolean;
+  onChange: (rules: ResidenceBuildingRule[]) => void;
+}) {
+  const updateRule = (index: number, patch: Partial<ResidenceBuildingRule>) => {
+    onChange(rules.map((rule, i) => (i === index ? { ...rule, ...patch } : rule)));
+  };
+
+  return (
+    <div className="space-y-3">
+      {rules.map((rule, index) => (
+        <div key={rule.id} className="flex flex-col gap-2 sm:flex-row sm:items-start">
+          <Input
+            value={rule.text}
+            placeholder="e.g. No smoking in the unit"
+            onChange={(event) => updateRule(index, { text: event.target.value })}
+            className="h-10 min-w-0 flex-1"
+            disabled={disabled}
+            aria-label={`Rule ${index + 1}`}
+          />
+          <div className="flex gap-2">
+            <Select
+              value={rule.type}
+              disabled={disabled}
+              onValueChange={(value) =>
+                updateRule(index, { type: value as ResidenceBuildingRule['type'] })
+              }
+            >
+              <SelectTrigger className="h-10 w-[9.5rem]" aria-label={`Rule ${index + 1} type`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BUILDING_RULE_TYPES.map((entry) => (
+                  <SelectItem key={entry.value} value={entry.value}>
+                    {entry.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="settings-action"
+              disabled={disabled}
+              aria-label={`Remove rule ${index + 1}`}
+              onClick={() => onChange(rules.filter((_, i) => i !== index))}
+            >
+              Remove
+            </Button>
+          </div>
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="settings-action"
+        disabled={disabled}
+        onClick={() =>
+          onChange([
+            ...rules,
+            { id: `rule-${Date.now()}`, text: '', type: 'info' },
+          ])
+        }
+      >
+        Add rule
+      </Button>
+    </div>
+  );
+}
+
 export function DevelopmentGuestInfoSection({ draft, disabled = false, onChange }: Props) {
   return (
     <>
@@ -140,6 +233,57 @@ export function DevelopmentGuestInfoSection({ draft, disabled = false, onChange 
             onChange={(guides) => onChange('guestGuides', guides)}
           />
         </SettingsField>
+        <SettingsField id="development-building-rules" label="Building rules">
+          <BuildingRulesEditor
+            rules={draft.buildingRules}
+            disabled={disabled}
+            onChange={(rules) => onChange('buildingRules', rules)}
+          />
+        </SettingsField>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <Label htmlFor="development-guest-info-stay-guide" className="text-sm font-medium">
+                Show on the stay guide
+              </Label>
+              <p className="text-muted-foreground text-xs leading-snug">
+                Guests see the building rules and info on their trip page.
+              </p>
+            </div>
+            <Switch
+              id="development-guest-info-stay-guide"
+              checked={draft.guestInfoVisibility.stayGuide}
+              disabled={disabled}
+              onCheckedChange={(checked) =>
+                onChange('guestInfoVisibility', {
+                  ...draft.guestInfoVisibility,
+                  stayGuide: checked,
+                })
+              }
+            />
+          </div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <Label htmlFor="development-guest-info-property-page" className="text-sm font-medium">
+                Show on the property page
+              </Label>
+              <p className="text-muted-foreground text-xs leading-snug">
+                Reserved for the public page; it does not read this yet.
+              </p>
+            </div>
+            <Switch
+              id="development-guest-info-property-page"
+              checked={draft.guestInfoVisibility.propertyPage}
+              disabled={disabled}
+              onCheckedChange={(checked) =>
+                onChange('guestInfoVisibility', {
+                  ...draft.guestInfoVisibility,
+                  propertyPage: checked,
+                })
+              }
+            />
+          </div>
+        </div>
         <SettingsField id="development-important-info" label="Other information">
           <Textarea
             id="development-important-info"

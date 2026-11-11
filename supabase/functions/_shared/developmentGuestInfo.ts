@@ -4,6 +4,10 @@
  */
 
 import type { SupabaseClient } from './supabaseJs.ts';
+import {
+  parseResidenceBuildingRules,
+  type ResidenceBuildingRule,
+} from './residenceProfile.ts';
 import { parseDocumentRequirements } from './documentRequirements.ts';
 import { trimOrEmpty } from './stringUtils.ts';
 
@@ -48,7 +52,54 @@ export type DevelopmentGuestContextDto = {
   guestGuides: DevelopmentGuestGuide[];
   importantInfo: string;
   documentRequirementLabels: string[];
+  buildingRules: ResidenceBuildingRule[];
+  guestInfoVisibility: GuestInfoVisibility;
 };
+
+export type GuestInfoVisibility = { stayGuide: boolean; propertyPage: boolean };
+
+/**
+ * What a guest actually sees of the building's info (plan §4.1 "building info").
+ *
+ * Rendering reads this, never the raw settings, so the super-admin visibility switches are
+ * the single control: a surface that is switched off returns null.
+ */
+export type GuestBuildingInfo = {
+  requirements: string;
+  guides: DevelopmentGuestGuide[];
+  importantInfo: string;
+  rules: ResidenceBuildingRule[];
+  poolFee: number | null;
+  poolSchedule: string;
+  amenities: string[];
+};
+
+export function guestBuildingInfoFor(
+  context: DevelopmentGuestContextDto,
+  surface: 'stayGuide' | 'propertyPage'
+): GuestBuildingInfo | null {
+  if (!context.guestInfoVisibility[surface]) return null;
+
+  const hasContent =
+    Boolean(context.guestRequirements) ||
+    context.guestGuides.length > 0 ||
+    Boolean(context.importantInfo) ||
+    context.buildingRules.length > 0 ||
+    context.poolFee != null ||
+    Boolean(context.poolSchedule) ||
+    context.amenities.length > 0;
+  if (!hasContent) return null;
+
+  return {
+    requirements: context.guestRequirements,
+    guides: context.guestGuides,
+    importantInfo: context.importantInfo,
+    rules: context.buildingRules,
+    poolFee: context.poolFee,
+    poolSchedule: context.poolSchedule,
+    amenities: context.amenities,
+  };
+}
 
 function readString(settings: Record<string, unknown>, key: string): string {
   const value = settings[key];
@@ -173,6 +224,19 @@ export function developmentGuestContextFromRow(row: {
     guestGuides: parseGuestGuides(settings.guestGuides),
     importantInfo: readString(settings, 'importantInfo'),
     documentRequirementLabels: documentRequirementLabels(settings),
+    buildingRules: parseResidenceBuildingRules(settings.buildingRules) ?? [],
+    guestInfoVisibility: parseGuestInfoVisibility(settings.guestInfoVisibility),
+  };
+}
+
+function parseGuestInfoVisibility(value: unknown): GuestInfoVisibility {
+  const record =
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  return {
+    stayGuide: typeof record.stayGuide === 'boolean' ? record.stayGuide : true,
+    propertyPage: typeof record.propertyPage === 'boolean' ? record.propertyPage : true,
   };
 }
 

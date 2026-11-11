@@ -310,3 +310,37 @@ describe('property seeds round-trip through the editor', () => {
     expect(draft.propertySeeds).toEqual({ amenityIds: [], houseRuleIds: [] });
   });
 });
+
+describe('building rules and visibility round-trip through the editor', () => {
+  it('reads stored rules and visibility', () => {
+    const draft = developmentProfileDraftFromDevelopment(
+      development({
+        buildingRules: [{ id: 'no-smoking', text: 'No smoking.', type: 'prohibited' }],
+        guestInfoVisibility: { stayGuide: false, propertyPage: true },
+      })
+    );
+
+    expect(draft.buildingRules).toEqual([
+      { id: 'no-smoking', text: 'No smoking.', type: 'prohibited' },
+    ]);
+    expect(draft.guestInfoVisibility).toEqual({ stayGuide: false, propertyPage: true });
+  });
+
+  it('defaults to shown when the settings say nothing', () => {
+    const draft = developmentProfileDraftFromDevelopment(development({}));
+    expect(draft.guestInfoVisibility).toEqual({ stayGuide: true, propertyPage: true });
+    expect(draft.buildingRules).toEqual([]);
+  });
+
+  it('sends both back on save', () => {
+    const draft = developmentProfileDraftFromDevelopment(development({}));
+    draft.buildingRules = [{ id: 'rule-1', text: 'Pool closes at 10 PM.', type: 'info' }];
+    draft.guestInfoVisibility = { stayGuide: true, propertyPage: false };
+
+    const payload = buildDevelopmentUpdatePayload(draft);
+    expect(payload.buildingRules).toEqual([
+      { id: 'rule-1', text: 'Pool closes at 10 PM.', type: 'info' },
+    ]);
+    expect(payload.guestInfoVisibility).toEqual({ stayGuide: true, propertyPage: false });
+  });
+});

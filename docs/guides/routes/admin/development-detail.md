@@ -23,7 +23,7 @@ Route: `/admin/developments/:developmentSlug`
 | Property defaults     | Done     | Done       | Done | Amenity / house-rule ids a new property starts with               |
 | Unit types            | Done     | Done       | Done | Per-type max adults/children capacity presets                     |
 | Pool                  | Done     | Done       | Done | Pool fee (PHP) + schedule                                         |
-| Guest information     | Done     | Done       | Done | Requirements, guides, other info for guests + AI                  |
+| Guest information     | Done     | Done       | Done | Requirements, guides, other info, building rules, visibility      |
 | Announcements         | Done     | Done       | Done | Host Announcements page for this development                      |
 | Amenities             | Done     | —          | Done | Suggested chips + free-text add                                   |
 | Location              | Done     | Done       | Done | Location line + `PropertyLocationPicker`                          |
@@ -185,6 +185,18 @@ Document requirement **labels** from the Document Requirements section are also 
 Save path: batched **Save Changes** → **`PATCH update-development`**.
 
 ---
+
+### Building rules and guest visibility
+
+**Building rules** (`developments.settings.buildingRules`) are the residence's own rules, shown
+to every guest on the trip page under "The building". Each rule is `{ id, text, type }` with
+`type` = Note / Not allowed / Allowed; a rule needs an id and text to save, and the id is
+generated when you add one.
+
+**Guest visibility** (`developments.settings.guestInfoVisibility`) decides whether guests see
+that block at all: **Show on the stay guide** gates the trip page. **Show on the property page**
+is stored for the public listing surface, which does not read it yet. Both default to on; a
+building with no rules and no info renders no section regardless.
 
 ## Announcements
 

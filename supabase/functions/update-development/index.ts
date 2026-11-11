@@ -21,7 +21,10 @@ import {
   parseDocumentRequirements,
   removedRequirementIds,
 } from '../_shared/documentRequirements.ts';
-import { parseResidencePdfTemplates } from '../_shared/residenceProfile.ts';
+import {
+  parseResidenceBuildingRules,
+  parseResidencePdfTemplates,
+} from '../_shared/residenceProfile.ts';
 import {
   normalizeResidenceStructure,
   validateResidenceStructure,
@@ -397,6 +400,33 @@ serveAuthenticated('update-development', async (req) => {
     settingsPatch.workflowDefaults = {
       ...objectOrEmpty(settingsPatch.workflowDefaults),
       documentRequirements: parsed,
+    };
+    settingsChanged = true;
+  }
+
+  if (body.buildingRules !== undefined) {
+    if (!Array.isArray(body.buildingRules)) {
+      return jsonError(req, 'buildingRules must be an array');
+    }
+    const parsedRules = parseResidenceBuildingRules(body.buildingRules) ?? [];
+    if (parsedRules.length !== body.buildingRules.length) {
+      return jsonError(req, 'Each building rule needs an id and text');
+    }
+    settingsPatch.buildingRules = parsedRules;
+    settingsChanged = true;
+  }
+
+  if (body.guestInfoVisibility !== undefined) {
+    const visibility = objectOrEmpty(body.guestInfoVisibility);
+    if (
+      (visibility.stayGuide !== undefined && typeof visibility.stayGuide !== 'boolean') ||
+      (visibility.propertyPage !== undefined && typeof visibility.propertyPage !== 'boolean')
+    ) {
+      return jsonError(req, 'guestInfoVisibility values must be true or false');
+    }
+    settingsPatch.guestInfoVisibility = {
+      stayGuide: visibility.stayGuide !== false,
+      propertyPage: visibility.propertyPage !== false,
     };
     settingsChanged = true;
   }
