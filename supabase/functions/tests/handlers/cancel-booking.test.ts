@@ -22,45 +22,47 @@ const EMAILS: Record<string, string> = {
 
 let calls: string[] = [];
 
-function stubSupabase() {
+/** Reset recorded calls. The stub itself is installed once: the client caches `fetch`. */
+function reset() {
   calls = [];
-  globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-    calls.push(url);
+}
 
-    if (url.includes('/auth/v1/user')) {
-      const auth = new Headers(init?.headers).get('authorization') ?? '';
-      const email = EMAILS[auth.replace(/^Bearer\s+/i, '')];
-      if (!email) {
-        return Promise.resolve(
-          new Response(JSON.stringify({ message: 'invalid token' }), {
-            status: 401,
-            headers: { 'content-type': 'application/json' },
-          })
-        );
-      }
+globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  calls.push(url);
+
+  if (url.includes('/auth/v1/user')) {
+    const auth = new Headers(init?.headers).get('authorization') ?? '';
+    const email = EMAILS[auth.replace(/^Bearer\s+/i, '')];
+    if (!email) {
       return Promise.resolve(
-        new Response(JSON.stringify({ user: { id: 'user-host-1', email } }), {
-          status: 200,
+        new Response(JSON.stringify({ message: 'invalid token' }), {
+          status: 401,
           headers: { 'content-type': 'application/json' },
         })
       );
     }
-
-    // `getPlatformSettingsSnapshot` reads this before the handler runs; `null` means defaults.
-    if (url.includes('/rest/v1/platform_settings')) {
-      return Promise.resolve(
-        new Response('null', { status: 200, headers: { 'content-type': 'application/json' } })
-      );
-    }
-
     return Promise.resolve(
-      new Response(JSON.stringify({ message: `unexpected fetch ${url}` }), { status: 599 })
+      new Response(JSON.stringify({ user: { id: 'user-host-1', email } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
     );
-  }) as typeof fetch;
-}
+  }
 
-stubSupabase();
+  // `getPlatformSettingsSnapshot` reads this before the handler runs; `null` means defaults.
+  if (url.includes('/rest/v1/platform_settings')) {
+    return Promise.resolve(
+      new Response('null', { status: 200, headers: { 'content-type': 'application/json' } })
+    );
+  }
+
+  return Promise.resolve(
+    new Response(JSON.stringify({ message: `unexpected fetch ${url}` }), { status: 599 })
+  );
+}) as typeof fetch;
+
+reset();
 await import('../../cancel-booking/index.ts');
 const { getMountedEdgeHandler } = await import('../../_shared/serveEdge.ts');
 
@@ -78,7 +80,7 @@ function request(method: string, token?: string): Request {
 }
 
 Deno.test('cancel-booking rejects a missing bearer before reading anything', async () => {
-  calls = [];
+  reset();
   const response = await handler!(request('POST'));
 
   assertEquals(response.status, 401);
@@ -91,7 +93,7 @@ Deno.test('cancel-booking rejects a missing bearer before reading anything', asy
 });
 
 Deno.test('cancel-booking rejects an invalid session', async () => {
-  calls = [];
+  reset();
   const response = await handler!(request('POST', 'not-a-real-token'));
 
   assertEquals(response.status, 401);
@@ -104,7 +106,7 @@ Deno.test('cancel-booking rejects an invalid session', async () => {
 });
 
 Deno.test('cancel-booking refuses a wrong verb for an authenticated host', async () => {
-  calls = [];
+  reset();
   const response = await handler!(request('GET', 'host-token'));
 
   assertEquals(response.status, 405);
