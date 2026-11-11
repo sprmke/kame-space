@@ -109,6 +109,17 @@ docs/guides/testing/
 
 `ui/e2e/shared/ids.ts` owns the stable E2E ids **and** `SUPABASE_AUTH_STORAGE_KEY`. Import it, never retype the key: it is derived from the Supabase project ref, so a literal breaks the moment the project moves, and the failure shows up as a signed-out page somewhere else. `bun run check:e2e-auth-key` fails on any `sb-<ref>-auth-token` literal outside that file.
 
+### Handler tests (`supabase/functions/tests/handlers/`)
+
+`EDGE_HANDLER_TEST=1` makes `serveEdge` mount the composed handler instead of starting a server, so a test drives the real wrapper: auth tier, validation order, envelope, headers. Stub Supabase at `fetch`, the only boundary the handler crosses.
+
+Two traps, both cost real debugging time:
+
+- **Install one `fetch` stub before importing the handler.** The Supabase client captures `fetch` when it is created, so reassigning `globalThis.fetch` per test is invisible to it and the first stub silently answers every test. Keep one stub with mutable state and reset the state per test.
+- **A missing row is `406` + `PGRST116`, not a `200` with `null`.** `.single()` maps that error to `null`, while a `200` with `null` or `[]` yields a row-like value, so a missing booking comes back as the wrong status. `DatabaseService.getBookingById` reads `guest_submissions`.
+
+Run them with `bun run test:edge:handlers`. `check:edge-test-coverage` is shrink-only: adding a handler test fails until its `scripts/dev/edge-handler-baseline.json` entry is deleted.
+
 ### Typed edge mocks and strict specs
 
 An inline `mockEdgeFunctions(page, [{ name, body }])` drifts silently: nothing ties the body to the edge function, and an endpoint the spec forgot to mock quietly reaches the network.
