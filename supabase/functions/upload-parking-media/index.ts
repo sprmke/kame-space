@@ -1,46 +1,17 @@
 /**
- * upload-parking-media — Admin upload/delete for parking cover photo (single image).
+ * upload-parking-media — Admin upload/delete for parking gallery photos (max 3).
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from '../_shared/supabaseJs.ts';
+import { buildActorContext, logActivity } from '../_shared/activityLog.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { handleEdgeError } from '../_shared/httpResponse.ts';
-import { createServiceClient } from '../_shared/orgAuth.ts';
+import {
+  applyParkingImageFromBytes,
+  readParkingMedia,
+  removeParkingMedia,
+} from '../_shared/parkingMediaUpload.ts';
 import { resolveScopedParkingTeamAccess } from '../_shared/parkingScope.ts';
-import { PROPERTY_MEDIA_BUCKET } from '../_shared/propertyMedia.ts';
-import { applyParkingCoverFromBytes } from '../_shared/parkingMediaUpload.ts';
-
-async function readParkingSettings(parkingId: string): Promise<Record<string, unknown>> {
-  const supabase = createServiceClient();
-  const { data, error } = await supabase
-    .from('parkings')
-    .select('settings')
-    .eq('id', parkingId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  const settings = data?.settings;
-  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
-    return {};
-  }
-  return settings as Record<string, unknown>;
-}
-
-async function persistCover(
-  parkingId: string,
-  coverImage: string | null,
-  coverImageStoragePath: string | null
-): Promise<{ coverImage: string | null; coverImageStoragePath: string | null }> {
-  const supabase = createServiceClient();
-  const current = await readParkingSettings(parkingId);
-  const nextSettings = { ...current, coverImage, coverImageStoragePath };
-  const { error } = await supabase
-    .from('parkings')
-    .update({ settings: nextSettings, updated_at: new Date().toISOString() })
-    .eq('id', parkingId);
-  if (error) throw new Error(error.message);
-  return { coverImage, coverImageStoragePath };
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -48,33 +19,54 @@ serve(async (req) => {
   }
 
   try {
-    const { parkingRow } = await resolveScopedParkingTeamAccess(req, 'settings:edit');
-    const parkingId = parkingRow.id;
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const { parkingRow, ...parkingAccess } = await resolveScopedParkingTeamAccess(
+      req,
+      'settings:edit'
     );
+    const parkingId = parkingRow.id as string;
+
+    const logMediaChange = async (mediaCount: number) => {
+      await logActivity({
+        action: 'parking.updated',
+        organizationId: parkingRow.organization_id as string,
+        parkingId,
+        scope: 'parking',
+        actor: buildActorContext('dashboard', { parkingAccess }, req),
+        targetType: 'parking',
+        targetId: parkingId,
+        targetLabel: (parkingRow.name as string | undefined) ?? null,
+        metadata: { photos: mediaCount },
+      });
+    };
 
     if (req.method === 'DELETE') {
-      const current = await readParkingSettings(parkingId);
-      const storagePath =
-        typeof current.coverImageStoragePath === 'string'
-          ? current.coverImageStoragePath.trim()
-          : '';
+      const body = (await req.json().catch(() => ({}))) as {
+        mediaId?: string;
+        storagePath?: string;
+      };
+      const hasTarget = Boolean(body.mediaId?.trim() || body.storagePath?.trim());
 
-      const saved = await persistCover(parkingId, null, null);
-
-      if (storagePath && storagePath.startsWith(`parking/${parkingId}/`)) {
-        const { error: removeError } = await supabase.storage
-          .from(PROPERTY_MEDIA_BUCKET)
-          .remove([storagePath]);
-        if (removeError) {
-          console.warn('[upload-parking-media] Storage delete failed:', removeError.message);
+      if (!hasTarget) {
+        // Legacy clients removed the single cover with a bare DELETE.
+        const current = await readParkingMedia(parkingId);
+        for (const item of current) {
+          await removeParkingMedia({ parkingId, mediaId: item.id });
         }
+        const media = await readParkingMedia(parkingId);
+        await logMediaChange(media.length);
+        return new Response(JSON.stringify({ success: true, data: { media } }), {
+          headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+        });
       }
 
-      return new Response(JSON.stringify({ success: true, data: saved }), {
+      const media = await removeParkingMedia({
+        parkingId,
+        mediaId: body.mediaId,
+        storagePath: body.storagePath,
+      });
+      await logMediaChange(media.length);
+
+      return new Response(JSON.stringify({ success: true, data: { media } }), {
         headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
@@ -91,27 +83,23 @@ serve(async (req) => {
     if (!fileName) throw new Error('fileName is required');
 
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const result = await applyParkingCoverFromBytes({
+    const result = await applyParkingImageFromBytes({
       parkingId,
       bytes,
       mimeType: file.type || '',
       fileName,
+      setPrimary: formData.get('setPrimary') === 'true',
     });
 
+    await logMediaChange(result.media.length);
+
     console.log(
-      `[upload-parking-media] Uploaded cover for ${parkingId}: ${result.coverImageStoragePath}`
+      `[upload-parking-media] Uploaded photo for ${parkingId}: ${result.item.storagePath}`
     );
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: {
-          coverImage: result.coverImage,
-          coverImageStoragePath: result.coverImageStoragePath,
-        },
-      }),
-      { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ success: true, data: { media: result.media } }), {
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     return await handleEdgeError(req, error, '[upload-parking-media]');
   }

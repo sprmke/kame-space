@@ -94,6 +94,53 @@ async function resolveValidIdFromIdentity(input: {
   return { path, verificationId: row.id };
 }
 
+
+/**
+ * Tier 2 ("Recommended") used to require a static selfie holding the ID, which is trivially
+ * replayed. The guided capture replaces it: a live verdict where the document was read and
+ * the liveness challenge passed. Only `verified` / `partially_verified` qualify, because both
+ * imply a completed liveness check; a weak capture falls back to "run it again", and the tier
+ * is optional so nobody is blocked from hosting.
+ *
+ * Legacy `selfieWithIdPath` rows still satisfy the requirement, so existing applications and
+ * the assistant path are unaffected.
+ */
+async function resolveLiveIdentityVerdict(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  organizationId: string;
+  ownerUserId: string;
+  identityVerificationId: string;
+}): Promise<{ id: string; verdict: string } | null> {
+  const { data, error } = await input.supabase
+    .from('identity_verifications')
+    .select('id, owner_user_id, organization_id, expires_at, verdict')
+    .eq('id', input.identityVerificationId)
+    .maybeSingle();
+  if (error || !data) return null;
+
+  const row = data as {
+    id: string;
+    owner_user_id: string | null;
+    organization_id: string | null;
+    expires_at: string | null;
+    verdict: string;
+  };
+  if (row.owner_user_id !== input.ownerUserId) return null;
+  if (row.organization_id && row.organization_id !== input.organizationId) return null;
+  if (row.expires_at && Date.parse(row.expires_at) < Date.now()) return null;
+  if (!['verified', 'partially_verified'].includes(row.verdict)) return null;
+
+  if (!row.organization_id) {
+    await input.supabase
+      .from('identity_verifications')
+      .update({ organization_id: input.organizationId })
+      .eq('id', row.id)
+      .is('organization_id', null);
+  }
+
+  return { id: row.id, verdict: row.verdict };
+}
+
 serveAuthenticated('submit-org-verification', async (req) => {
   requireHttpMethod(req, 'POST');
   const body = await readJsonBody(req);
@@ -181,8 +228,22 @@ serveAuthenticated('submit-org-verification', async (req) => {
       };
     }
 
-    if (!canSubmitEnhancedVerification(verification)) {
-      return jsonError(req, 'Required: selfie with ID');
+    const liveIdentity =
+      !verification.assets.selfieWithIdPath && identityVerificationId
+        ? await resolveLiveIdentityVerdict({
+            supabase,
+            organizationId: orgId,
+            ownerUserId: user.id,
+            identityVerificationId,
+          })
+        : null;
+
+    if (!canSubmitEnhancedVerification(verification) && !liveIdentity) {
+      return jsonError(req, 'Run the identity check to submit the Recommended tier');
+    }
+
+    if (liveIdentity) {
+      verification = { ...verification, liveIdentityVerifiedAt: new Date().toISOString() };
     }
 
     verification = {

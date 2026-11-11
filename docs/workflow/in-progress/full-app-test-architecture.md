@@ -2,7 +2,7 @@
 title: 'Full-app test architecture: page-mirrored suites, access matrix, enforced coverage'
 status: planned
 tags: [planning, testing, vitest, playwright, deno, pgtap, ci-cd, rbac, plans, governance]
-updated: 2026-11-10
+updated: 2026-11-11
 stage: in-progress
 kind: plan
 ---
@@ -14,12 +14,12 @@ kind: plan
 Branch `test/full-app-test-architecture`. Phases land in separate PRs; this section tracks
 what is actually shipped, not what is planned.
 
-| Phase  | State       | Evidence                                                                                                                                                                                                                                                                                          |
-| ------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0      | **shipped** | `e2e-ci` job in `ci.yml` (4 shards, required by `quality`); 17 orphan specs tagged; `check:e2e-lane-tags`; `check:flaky-quarantine`; `Asia/Manila` on Vitest, Deno and Playwright; deploy gate split from the PR suite (39.3 → 10.4 min) and skips Supabase when no function or migration changed |
-| 1      | **partly**  | `dom` Vitest project (happy-dom + Testing Library, `*.test.tsx`); handler seam in `serveEdge` (`EDGE_HANDLER_TEST`); first HTTP handler test; backend tests for cancellation money, settings write authorization and plan upgrade hooks; personas, `mockTenant`, `edgeMocks` still to do          |
-| 2      | **partly**  | `check:unit-test-quality` (393 export-only baseline, shrink-only), `check:edge-test-coverage` (344 uncovered functions baselined), `check:guide-spec-refs` (42/110 specs claimed by a guide), Vitest coverage floor. `check:test-coverage` per-section manifests and per-tier globs remain        |
-| 3 to 9 | not started |                                                                                                                                                                                                                                                                                                   |
+| Phase  | State       | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------ | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0      | **shipped** | `e2e-ci` job in `ci.yml` (4 shards, required by `quality`); 17 orphan specs tagged; `check:e2e-lane-tags`; `check:flaky-quarantine`; `Asia/Manila` on Vitest, Deno and Playwright; deploy gate split from the PR suite (39.3 → 10.4 min) and skips Supabase when no function or migration changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 1      | **partly**  | `dom` Vitest project (happy-dom + Testing Library, `*.test.tsx`); handler seam in `serveEdge` (`EDGE_HANDLER_TEST`); first HTTP handler tests; backend tests for cancellation money, settings write authorization and plan upgrade hooks; the auth storage key now has one definition in `ui/e2e/shared/ids.ts` with `check:e2e-auth-key` (7 harnesses used to retype it); personas, `mockTenant`, `edgeMocks` still to do                                                                                                                                                                                                                                                                                                                                                                                     |
+| 2      | **partly**  | `check:unit-test-quality` (shrink-only export-only baseline), `check:edge-test-coverage` (uncovered functions baselined), `check:guide-spec-refs` (specs claimed by a guide), Vitest coverage floor. **`check:test-coverage` landed**: `definePageCoverage` manifests, section decisions enforced, shrink-only `ui/e2e/coverage-baseline.json`, 1/107 guides adopted (finance) with 4 sections baselined. Per-tier globs and the C1 route-enumeration gate remain; **typed edge mocks landed**: `ui/e2e/shared/edgeMocks/<fn>.ts`, `mockEdgeFunctions(..., { strict: true })` fails on an unmocked call, exact function-name matching, adopted by `sdFormSubmit` (@ci @critical) and `acceptInviteSmoke`; handler tests added for `cancel-booking` and `guest-cancel-booking` (4 of 355 covered, baseline 351) |
+| 3 to 9 | not started |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 First full `@ci` run on this branch: **338 passed, 8 failed, 3.5 min**. Triage:
 
@@ -124,6 +124,21 @@ Rejected on purpose: `--only-changed` selection. Playwright's flag matches chang
 files, not changed source, so a source change would select nothing. Source-to-spec selection
 needs the page manifests from Phase 3; until then, the PR gate runs the full breadth (10 min)
 and the deploy gate runs the critical set.
+
+### Release state (2026-11-10)
+
+`main` and `develop` share **no commits**, so a `develop` → `main` PR always shows
+`CONFLICTING` and cannot be merged. Releases are therefore a **tree sync**: a single commit
+whose parent is `main` and whose tree equals `develop` (`git read-tree -u --reset
+origin/develop`), PR'd and merged. Compare trees (`git diff --name-only origin/main
+origin/develop`), never commit counts.
+
+Shipped this way today: #371 (performance work, parking notifications, coverage), #375 (RBAC
+coarse-permission fix, 6 files) and #382 (finance recurrence tests, 2 files). Production was
+verified 200 on `/`, `/for-hosts`, `/properties` and `/support` after each Vercel deployment.
+Backend is always live first, because edge functions deploy from `develop` on every push.
+
+Commitlint rejects `release:` as a type, so a release commit uses `chore:` or `test:`.
 
 ### Decisions taken
 

@@ -2,7 +2,7 @@
 title: 'Org Reviews — operator guide'
 status: active
 tags: [guides, routes, org, reviews]
-updated: 2026-10-21
+updated: 2026-11-11
 ---
 
 # Org Reviews — operator guide
@@ -40,6 +40,8 @@ Page order is the standard admin list: **KPI cards → tabs → toolbar → tabl
 **activity-log:** the actions log exactly as they do on the property page (`review.response_posted` / `review.response_deleted`, `review.reported`), because they call the same endpoints with the row's `property_id`.
 
 ---
+
+> **Legal notice:** The host review of a guest ends with a review-rules line linking to the Terms. Pattern and full list: [legal.md](../legal.md#in-app-notices).
 
 ## Host-facing knowledge
 
@@ -118,7 +120,7 @@ Opening a sheet pins it to that row's listing (`ReviewPropertyScopeProvider`), s
 
 Unpublished counterpart reviews never appear. Internal host notes never appear.
 
-Loading keeps the page chrome mounted and shows KPI and table or card skeletons; paging keeps the previous page on screen. A failed load shows **Try again**.
+Loading keeps the page chrome mounted and shows KPI cards plus the active tab's real column labels with skeleton rows. The list skeleton follows `?view=` and `?tab=` (From guests, To write, About guests, By property); switching tabs never shows the previous tab's rows. When the summary already says the tab is empty (To write = 0, no listings), a quiet empty-state placeholder replaces the row skeleton. Paging keeps the previous page on screen. A failed load shows **Try again**.
 
 ## By property
 
@@ -145,27 +147,28 @@ Both Reviews endpoints share `_shared/reviewListParams.ts`, so the two pages acc
 
 ## Implementation map
 
-| Concern       | Path                                                                                                                                                                                    |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Page          | `ui/src/features/reviews/pages/OrgReviewsPage.tsx` → shared `ReviewsListPage.tsx` (`scope="org"`)                                                                                       |
-| Loading       | `OrgReviewsRouteSkeleton` → `ReviewsPageSkeleton` (`AdminSkeletons.tsx`) — summary cards, tab row, responsive review list                                                               |
-| By property   | `ui/src/features/reviews/components/OrgPropertyReviewsTable.tsx`                                                                                                                        |
-| Sheet scoping | `ui/src/features/reviews/lib/reviewPropertyScope.tsx` + `reviewPropertyScopeContext.ts`                                                                                                 |
-| List state    | `ui/src/features/reviews/lib/orgReviewsApi.ts`, `propertyReviewsApi.ts`                                                                                                                 |
-| Hook          | `ui/src/features/reviews/hooks/useOrgReviews.ts`                                                                                                                                        |
-| Edge          | `supabase/functions/list-org-reviews/`                                                                                                                                                  |
-| Shared list   | `supabase/functions/_shared/orgReviewList.ts`, `reviewListParams.ts`                                                                                                                    |
-| Permissions   | `orgAuth.ts#resolvePropertyIdsWithPermissionForOrgUser`                                                                                                                                 |
-| SQL           | `review_summary_for_properties`, `review_stats_by_property`, `host_review_due_counts` (migration `20261316128200`); `host_reviews_to_write_for_properties` (migration `20261316128520`) |
+| Concern       | Path                                                                                                                                                                                                  |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page          | `ui/src/features/reviews/pages/OrgReviewsPage.tsx` → shared `ReviewsListPage.tsx` (`scope="org"`)                                                                                                     |
+| Loading       | `OrgReviewsRouteSkeleton` → `ReviewsPageSkeleton` (`AdminSkeletons.tsx`) — tab/view-aware `ReviewsTableSkeleton` / `ReviewsCardGridSkeleton`, plus `ReviewsEmptySkeleton` when the tab is known empty |
+| By property   | `ui/src/features/reviews/components/OrgPropertyReviewsTable.tsx`                                                                                                                                      |
+| Sheet scoping | `ui/src/features/reviews/lib/reviewPropertyScope.tsx` + `reviewPropertyScopeContext.ts`                                                                                                               |
+| List state    | `ui/src/features/reviews/lib/orgReviewsApi.ts`, `propertyReviewsApi.ts`                                                                                                                               |
+| Hook          | `ui/src/features/reviews/hooks/useOrgReviews.ts`                                                                                                                                                      |
+| Edge          | `supabase/functions/list-org-reviews/`                                                                                                                                                                |
+| Shared list   | `supabase/functions/_shared/orgReviewList.ts`, `reviewListParams.ts`                                                                                                                                  |
+| Permissions   | `orgAuth.ts#resolvePropertyIdsWithPermissionForOrgUser`                                                                                                                                               |
+| SQL           | `review_summary_for_properties`, `review_stats_by_property`, `host_review_due_counts` (migration `20261316128200`); `host_reviews_to_write_for_properties` (migration `20261316128520`)               |
 
 ---
 
 ## Testing
 
-| Layer | Path / spec                                                                |
-| ----- | -------------------------------------------------------------------------- |
-| E2E   | `ui/e2e/features/reviews/orgReviewsPage.spec.ts` (`@ci`)                   |
-| Edge  | `supabase/functions/tests/propertyReviews.test.ts` (shared param contract) |
+| Layer | Path / spec                                                                     |
+| ----- | ------------------------------------------------------------------------------- |
+| Unit  | `ui/src/features/reviews/lib/reviewsListLoadState.test.ts` (tab skeleton state) |
+| E2E   | `ui/e2e/features/reviews/orgReviewsPage.spec.ts` (`@ci`)                        |
+| Edge  | `supabase/functions/tests/propertyReviews.test.ts` (shared param contract)      |
 
 ---
 

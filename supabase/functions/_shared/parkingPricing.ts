@@ -28,6 +28,9 @@ export type ParkingPricingDto = {
    */
   guestRateCapWeekday: number;
   guestRateCapWeekend: number;
+  /** Same live values, named for the host-facing "guests pay" line. */
+  guestRateWeekday: number;
+  guestRateWeekend: number;
   /** Live super-admin-configured commission %, for the host-facing fee/net-payout breakdown. */
   commissionPct: number;
   /** Phase 8 — commission % applied to bookings made through this listing's direct link. */
@@ -242,6 +245,8 @@ export async function loadParkingPricing(
     blockedDateKeys,
     guestRateCapWeekday: platformSettings.guestRateWeekday,
     guestRateCapWeekend: platformSettings.guestRateWeekend,
+    guestRateWeekday: platformSettings.guestRateWeekday,
+    guestRateWeekend: platformSettings.guestRateWeekend,
     commissionPct: platformSettings.commissionPct,
     directCommissionPct: platformSettings.directCommissionPct,
     directBookingToken: directLink.token,

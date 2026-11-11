@@ -67,6 +67,8 @@ test.describe('@ci parking guest and host outcomes', () => {
       await hostPage.getByRole('button', { name: 'Open booking for Jamie Park' }).click();
       await captureParkingScreen(hostPage, 'host-booking-detail-pending', { role: 'host' });
       await hostPage.getByRole('button', { name: parkingFlowLabels.decline }).click();
+      await expect(hostPage.getByText('Decline this request?')).toBeVisible();
+      await hostPage.getByRole('button', { name: 'Decline request' }).click();
 
       await expect(hostPage.getByText('No host')).toBeVisible();
       await expect(hostPage.getByText('Request declined')).toBeVisible();

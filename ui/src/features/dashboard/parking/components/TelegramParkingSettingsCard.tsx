@@ -33,6 +33,11 @@ const TEMPLATE_DEFAULTS = {
   reservationRequestTemplate: 'New parking reservation request for {{slot_label}}.',
   checkInReminderTemplate: 'Parking check-in reminder: {{slot_label}} on {{check_in_date}}.',
   paymentReceivedTemplate: 'Payment received for parking {{slot_label}}.',
+  requestCancelledTemplate: 'Guest cancelled parking {{slot_label}} for {{check_in_date}}.',
+  paymentExpiredTemplate:
+    'Payment window expired for parking {{slot_label}}. The request is searching again.',
+  endorsementFailedTemplate:
+    'Endorsement failed for {{slot_label}} at {{residence_name}}. Add the PMO email and resend.',
 } as const;
 
 type TemplateKey = keyof typeof TEMPLATE_DEFAULTS;
@@ -56,6 +61,21 @@ const TEMPLATE_TABS: {
     id: 'paymentReceivedTemplate',
     label: 'Payment received',
     notifyKey: 'notifyOnPaymentReceived',
+  },
+  {
+    id: 'requestCancelledTemplate',
+    label: 'Guest cancelled',
+    notifyKey: 'notifyOnRequestCancelled',
+  },
+  {
+    id: 'paymentExpiredTemplate',
+    label: 'Payment window expired',
+    notifyKey: 'notifyOnPaymentExpired',
+  },
+  {
+    id: 'endorsementFailedTemplate',
+    label: 'Endorsement failed',
+    notifyKey: 'notifyOnEndorsementFailed',
   },
 ];
 
@@ -114,9 +134,15 @@ export function TelegramParkingSettingsCard() {
         reservationRequestTemplate: draft.reservationRequestTemplate,
         checkInReminderTemplate: draft.checkInReminderTemplate,
         paymentReceivedTemplate: draft.paymentReceivedTemplate,
+        requestCancelledTemplate: draft.requestCancelledTemplate,
+        paymentExpiredTemplate: draft.paymentExpiredTemplate,
+        endorsementFailedTemplate: draft.endorsementFailedTemplate,
         notifyOnReservationRequest: draft.notifyOnReservationRequest,
         notifyOnCheckInReminder: draft.notifyOnCheckInReminder,
         notifyOnPaymentReceived: draft.notifyOnPaymentReceived,
+        notifyOnRequestCancelled: draft.notifyOnRequestCancelled,
+        notifyOnPaymentExpired: draft.notifyOnPaymentExpired,
+        notifyOnEndorsementFailed: draft.notifyOnEndorsementFailed,
       });
       markDraftSaved(draft);
       toast.success('Parking notifications saved');

@@ -427,9 +427,7 @@ export async function executeApplyParkingMedia(
       data: {
         coverImage: result.coverImage,
         replacedExisting: result.replacedExisting,
-        message: result.replacedExisting
-          ? 'Parking cover photo replaced.'
-          : 'Parking cover photo updated.',
+        message: 'Parking cover photo updated.',
       },
     };
   } catch (err) {

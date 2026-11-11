@@ -107,6 +107,71 @@ ui/e2e/features/<domain>/
 docs/guides/testing/
 ```
 
+`ui/e2e/shared/ids.ts` owns the stable E2E ids **and** `SUPABASE_AUTH_STORAGE_KEY`. Import it, never retype the key: it is derived from the Supabase project ref, so a literal breaks the moment the project moves, and the failure shows up as a signed-out page somewhere else. `bun run check:e2e-auth-key` fails on any `sb-<ref>-auth-token` literal outside that file.
+
+### Handler tests (`supabase/functions/tests/handlers/`)
+
+`EDGE_HANDLER_TEST=1` makes `serveEdge` mount the composed handler instead of starting a server, so a test drives the real wrapper: auth tier, validation order, envelope, headers. Stub Supabase at `fetch`, the only boundary the handler crosses.
+
+Two traps, both cost real debugging time:
+
+- **Install one `fetch` stub before importing the handler.** The Supabase client captures `fetch` when it is created, so reassigning `globalThis.fetch` per test is invisible to it and the first stub silently answers every test. Keep one stub with mutable state and reset the state per test.
+- **A missing row is `406` + `PGRST116`, not a `200` with `null`.** `.single()` maps that error to `null`, while a `200` with `null` or `[]` yields a row-like value, so a missing booking comes back as the wrong status. `DatabaseService.getBookingById` reads `guest_submissions`.
+
+Run them with `bun run test:edge:handlers`. `check:edge-test-coverage` is shrink-only: adding a handler test fails until its `scripts/dev/edge-handler-baseline.json` entry is deleted.
+
+### Typed edge mocks and strict specs
+
+An inline `mockEdgeFunctions(page, [{ name, body }])` drifts silently: nothing ties the body to the edge function, and an endpoint the spec forgot to mock quietly reaches the network.
+
+- Typed mocks live in `ui/e2e/shared/edgeMocks/<fn>.ts` (for example `mockPlatformStatus()`), so the field names stay next to the function they mirror.
+- `mockEdgeFunctions(page, mocks, { strict: true })` **fails the test** on any `functions/v1` call no mock covers, naming the function. Turn it on for a spec whose endpoint set is fully known; leave it off where a shared harness still relies on pass-through.
+- Mocks match the function name **exactly** (the path segment after `/functions/v1/`), so `finance-summary` no longer matches `finance-summary-v2`.
+
+To adopt strict mode in a spec, run it once with the default (non-strict) and read the mock list it needs, or check the page's functions in `supabase/functions/`. Every `get-public-platform-status` call needs `mockPlatformStatus()`.
+
+### Page coverage manifests
+
+A page is **adopted** by adding `ui/e2e/pages/<guide path>/<page>.coverage.ts` with `definePageCoverage`. The manifest mirrors the route guide: every behavioural `##` section is either claimed by a spec or marked `na` with a reason.
+
+```ts
+export default definePageCoverage({
+  guide: 'docs/guides/routes/org/property/finance.md',
+  routes: ['/org/:orgSlug/property/:propertySlug/finance'],
+  archetype: 'DW',
+  levels: ['property'],
+  sections: {
+    'Summary cards & charts':
+      'ui/e2e/features/dashboard/dashboardModulesSmoke.spec.ts#<test title>',
+  },
+  na: {},
+  gates: ['financeReporting'],
+  permissions: ['finance:view', 'finance:edit'],
+  edgeFunctions: ['finance-summary', 'finance-line-items', 'finance-export'],
+  activity: ['finance.line_item.created'],
+  unit: ['ui/src/features/dashboard/finance/lib/financeSummaryStats.test.ts'],
+});
+```
+
+| Rule                   | Fails when                                                   |
+| ---------------------- | ------------------------------------------------------------ |
+| Section has a decision | a guide `##` heading is neither claimed, `na`, nor baselined |
+| Claim is real          | the spec path, or the unit suite, does not exist             |
+| Claim is current       | the heading no longer exists in the guide                    |
+| Baseline shrinks       | an entry is now claimed or gone (re-run with `--write`)      |
+| One owner per guide    | two manifests claim the same guide                           |
+
+Boilerplate headings (`Overview`, `Host-facing knowledge`, `API reference`, `Implementation map`, `Testing`, `Related docs`, `Progress overview`) are ignored.
+
+The `definePageCoverage` helper lives in `ui/e2e/shared/pageCoverage/`, not `coverage/`: `.gitignore` has `**/coverage` for coverage reports, so that directory name is silently untracked.
+
+`bun run check:test-coverage` reports progress as `N/107 guides adopted · sections claimed · na · baselined`. Unadopted guides are counted, not failed, so adoption is one page at a time. Gaps inside an adopted guide go into `ui/e2e/coverage-baseline.json`, which is shrink-only:
+
+```bash
+bun scripts/dev/check-test-coverage.ts            # check
+bun scripts/dev/check-test-coverage.ts --write    # rewrite the baseline after claiming a section
+```
+
 ## Playwright tags
 
 Vitest runs two projects:

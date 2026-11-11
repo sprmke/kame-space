@@ -7,10 +7,14 @@ import type { Organization, Parking } from '@/features/dashboard/org/types';
 
 export const PARKINGS_QUERY_KEY = ['parkings'] as const;
 
-export function useParkings(orgSlug: string | undefined) {
+export function useParkings(
+  orgSlug: string | undefined,
+  /** `enabled: false` holds the request until the caller is ready. Defaults to on. */
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: [...PARKINGS_QUERY_KEY, orgSlug] as const,
-    enabled: Boolean(orgSlug),
+    enabled: Boolean(orgSlug) && (options?.enabled ?? true),
     queryFn: () =>
       callEdgeFunction<{ parkings: Parking[] }>(
         `list-parkings?orgSlug=${encodeURIComponent(orgSlug!)}`

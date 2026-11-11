@@ -12,7 +12,6 @@ import {
 } from '@/features/dashboard/bookings/lib/adminSidebarNav';
 import { OrgListingVerificationRollup } from '@/features/dashboard/org/components/listing-authorization/OrgListingVerificationRollup';
 import { OnboardingHostVerificationSection } from '@/features/dashboard/org/components/onboarding/OnboardingHostVerificationSection';
-import { HostIdentityVerifyButton } from '@/features/verification/components/HostIdentityVerifyButton';
 import { OnboardingProofUpload } from '@/features/dashboard/org/components/onboarding/OnboardingProofUpload';
 import { useOptionalOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { RecommendedBadgePreview } from '@/features/dashboard/org/components/verification/RecommendedBadgePreview';
@@ -64,7 +63,12 @@ import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeMo
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 import { useHostRewardOffer } from '@/features/dashboard/setup-guide/hooks/useHostRewardOffer';
 
+import { HostIdentityVerifyButton } from '@/features/verification/components/HostIdentityVerifyButton';
+import { VerificationResultBadge } from '@/features/verification/components/VerificationResultBadge';
+import type { IdentityVerdict } from '@/features/verification/lib/identityVerdict';
+
 import { UnsavedChangesDialog } from '@/components/forms/UnsavedChangesDialog';
+import { HostVerificationLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { Button } from '@/components/ui/button';
 import {
   ResponsiveModal,
@@ -417,7 +421,8 @@ function RecommendedTierStepPanel({
   platformAdmin,
   businessPermit,
   verifiedTouched,
-  onSelfieChange,
+  liveVerification,
+  onLiveVerified,
   onPlatformAdminChange,
   onBusinessPermitChange,
 }: {
@@ -439,7 +444,9 @@ function RecommendedTierStepPanel({
   platformAdmin: ProofSlot;
   businessPermit: ProofSlot;
   verifiedTouched: boolean;
-  onSelfieChange: (file: File | null, previewUrl: string | null) => void;
+  /** The live identity check that replaces the static selfie-with-ID. */
+  liveVerification: { id: string; verdict: IdentityVerdict } | null;
+  onLiveVerified: (result: { id: string; verdict: IdentityVerdict } | null) => void;
   onPlatformAdminChange: (file: File | null, previewUrl: string | null) => void;
   onBusinessPermitChange: (file: File | null, previewUrl: string | null) => void;
 }) {
@@ -501,20 +508,40 @@ function RecommendedTierStepPanel({
       ) : null}
 
       <VerificationSectionCard
-        title="Documents"
-        description="The selfie with your ID is required. The other two are optional."
+        title="Identity check"
+        description="Verify your identity with the camera. The other two documents are optional."
       >
         <div className="space-y-3.5">
-          <OnboardingProofUpload
-            id="enhanced-selfie"
-            label={VERIFICATION_TIER2_DOC_LABELS.selfie}
-            help={VERIFICATION_TIER2_DOC_HELP.selfie}
-            file={selfie.file}
-            previewUrl={selfie.previewUrl}
-            error={verifiedTouched && !slotReady(selfie) ? 'Required' : null}
-            compact
-            onFileChange={onSelfieChange}
-          />
+          {liveVerification ? (
+            <div className="flex items-center justify-between gap-3 rounded-xl border p-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
+                <div className="min-w-0 space-y-1">
+                  <p className="text-sm font-medium">Identity check complete</p>
+                  <VerificationResultBadge verdict={liveVerification.verdict} />
+                </div>
+              </div>
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground shrink-0 text-xs underline"
+                onClick={() => onLiveVerified(null)}
+              >
+                Run it again
+              </button>
+            </div>
+          ) : (
+            <HostIdentityVerifyButton
+              organizationId={orgId}
+              onVerified={(result) =>
+                onLiveVerified({ id: result.verificationId, verdict: result.verdict })
+              }
+            />
+          )}
+          {!liveVerification && !slotReady(selfie) && !verifiedTouched ? (
+            <p className="text-muted-foreground text-xs">
+              Replaces the photo of you holding your ID.
+            </p>
+          ) : null}
           <OnboardingProofUpload
             id="enhanced-platform-admin"
             label={`${VERIFICATION_TIER2_DOC_LABELS.platformAdmin} (optional)`}
@@ -586,7 +613,14 @@ export function GetVerifiedModal({
   const hostModes = resolveHostModes(org);
   const tiers = buildVerificationTiers(detail);
   const hostChecklist = buildHostTierChecklist(detail);
-  const verifiedChecklist = buildVerifiedTierChecklist(detail);
+  /** Tier 2: the live check that replaces the static selfie-with-ID. */
+  const [liveTier2, setLiveTier2] = useState<{ id: string; verdict: IdentityVerdict } | null>(
+    null
+  );
+
+  const verifiedChecklist = buildVerifiedTierChecklist(detail, {
+    liveIdentity: Boolean(liveTier2) || Boolean(detail.liveIdentityVerifiedAt),
+  });
 
   const hostRejected = detail.baseStatus === 'rejected';
   const hostChangesRequested = isHostVerificationChangesRequestedFromDetail(detail);
@@ -693,7 +727,7 @@ export function GetVerifiedModal({
   );
 
   const canSubmitVerified = canSubmitVerifiedTier(detail, {
-    selfie: slotReady(selfie),
+    selfie: slotReady(selfie) || Boolean(liveTier2),
   });
 
   const setSlot = (setter: typeof setSelfie) => (file: File | null, previewUrl: string | null) => {
@@ -782,8 +816,10 @@ export function GetVerifiedModal({
         body: JSON.stringify({
           orgId: org.id,
           tier: 'enhanced',
+          ...(liveTier2 ? { identityVerificationId: liveTier2.id } : {}),
         }),
       });
+      setLiveTier2(null);
       await queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY });
       await queryClient.invalidateQueries({ queryKey: ['host-reward-offer', org.id] });
       await queryClient.invalidateQueries({ queryKey: ['org-plan'] });
@@ -906,11 +942,15 @@ export function GetVerifiedModal({
           platformAdmin={platformAdmin}
           businessPermit={businessPermit}
           verifiedTouched={verifiedTouched}
-          onSelfieChange={setSlot(setSelfie)}
+          liveVerification={liveTier2}
+          onLiveVerified={setLiveTier2}
           onPlatformAdminChange={setSlot(setPlatformAdmin)}
           onBusinessPermitChange={setSlot(setBusinessPermit)}
         />
       )}
+      {showHostSubmit || (stepIndex === 1 && verifiedEditable) ? (
+        <HostVerificationLegalNotice className="pt-1" />
+      ) : null}
     </>
   );
 

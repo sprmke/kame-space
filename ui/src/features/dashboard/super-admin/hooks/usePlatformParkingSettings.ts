@@ -9,6 +9,10 @@ export type PlatformParkingSettings = {
   directCommissionPct: number;
   guestRateWeekday: number;
   guestRateWeekend: number;
+  /** Estimated payment-processor cut of the guest charge, 0..1. */
+  paymentFeePct: number;
+  /** Fixed per-transaction processor fee in pesos. */
+  paymentFeeFixed: number;
   supportEscalationPhone: string | null;
   updatedAt?: string;
 };
@@ -29,6 +33,8 @@ export type ParkingPayoutTransaction = {
   commissionPct: number;
   bookingChannel: string;
   hostNetTotal: number;
+  paymentFeeAmount: number;
+  platformNetTotal: number;
   status: string;
   paidAt: string | null;
   disbursedAt: string | null;

@@ -169,6 +169,8 @@ export type OrgVerificationState = {
   enhancedRejectionKind: OrgVerificationRejectionKind | null;
   /** When kind=changes, which Tier 1 docs the host must re-upload. Empty = all (legacy). */
   baseChangesRequestedDocs: OrgVerificationChangeDocId[];
+  /** Set when the live identity check replaced the Tier 2 selfie-with-ID. */
+  liveIdentityVerifiedAt: string | null;
   assets: OrgVerificationAssets;
   /** Unit handoff Phase B — property-leg contract expiry lifecycle. */
   propertyLifecycle: ContractLegLifecycle;
@@ -208,6 +210,7 @@ export function emptyOrgVerificationState(): OrgVerificationState {
     baseRejectionKind: null,
     enhancedRejectionKind: null,
     baseChangesRequestedDocs: [],
+    liveIdentityVerifiedAt: null,
     assets: { ...EMPTY_ASSETS, pmoEmailPaths: [] },
     propertyLifecycle: emptyContractLegLifecycle(),
     parkingLifecycle: emptyContractLegLifecycle(),
@@ -307,6 +310,7 @@ export function readOrgVerificationFromSettings(
       asStatus(v.baseStatus) === 'rejected' && asRejectionKind(v.baseRejectionKind) === 'changes'
         ? asChangesRequestedDocs(v.baseChangesRequestedDocs)
         : [],
+    liveIdentityVerifiedAt: asPath(v.liveIdentityVerifiedAt),
     assets: {
       validIdPath: asPath(assetsRaw.validIdPath),
       socialProofPath: asPath(assetsRaw.socialProofPath),
@@ -345,6 +349,7 @@ export function orgVerificationToSettingsValue(
     baseRejectionKind: state.baseRejectionKind,
     enhancedRejectionKind: state.enhancedRejectionKind,
     baseChangesRequestedDocs: state.baseChangesRequestedDocs,
+    liveIdentityVerifiedAt: state.liveIdentityVerifiedAt,
     assets: {
       validIdPath: state.assets.validIdPath,
       socialProofPath: state.assets.socialProofPath,

@@ -22,6 +22,7 @@ import {
 } from '@/features/dashboard/plans/lib/planPricing';
 import { computeMidCycleProration } from '@/features/dashboard/plans/lib/planProration';
 
+import { PlanBillingLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -322,6 +323,8 @@ export function PlanReviewDialog({
                 <span>Paid features turn off immediately.</span>
               </label>
             ) : null}
+
+            <PlanBillingLegalNotice kind={isDowngrade ? 'downgrade' : 'checkout'} />
           </div>
         </div>
 

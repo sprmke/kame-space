@@ -22,6 +22,8 @@ function serialize(row: Record<string, unknown>) {
     directCommissionPct: Number(row.direct_commission_pct ?? 0.05),
     guestRateWeekday: Number(row.guest_rate_weekday ?? 400),
     guestRateWeekend: Number(row.guest_rate_weekend ?? 400),
+    paymentFeePct: Number(row.payment_fee_pct ?? 0.03125),
+    paymentFeeFixed: Number(row.payment_fee_fixed ?? 15),
     supportEscalationPhone: (row.support_escalation_phone as string | undefined)?.trim() || null,
     updatedAt: row.updated_at as string,
   };
@@ -76,6 +78,20 @@ serveSuperAdmin('platform-parking-settings', async (req, user) => {
         return jsonError(req, 'guestRateWeekend must be a non-negative number');
       }
       patch.guest_rate_weekend = rate;
+    }
+    if (body.paymentFeePct != null) {
+      const pct = Number(body.paymentFeePct);
+      if (!Number.isFinite(pct) || pct < 0 || pct > 1) {
+        return jsonError(req, 'paymentFeePct must be between 0 and 1');
+      }
+      patch.payment_fee_pct = pct;
+    }
+    if (body.paymentFeeFixed != null) {
+      const fee = Number(body.paymentFeeFixed);
+      if (!Number.isFinite(fee) || fee < 0) {
+        return jsonError(req, 'paymentFeeFixed must be a non-negative number');
+      }
+      patch.payment_fee_fixed = fee;
     }
     if (body.supportEscalationPhone != null) {
       patch.support_escalation_phone = String(body.supportEscalationPhone).trim() || null;

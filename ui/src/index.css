@@ -3303,6 +3303,27 @@ html.guest-embed-preview *::-webkit-scrollbar {
       animation: none;
     }
   }
+
+  /*
+   * Cookie consent: flush to the safe-area bottom on pages with no docked bar
+   * (auth, standalone status pages), and stacked above the bar when one is mounted.
+   * `:has(.mobile-bottom-bar)` covers both the persistent tab bar and a screen-owned
+   * ContextualActionBar, so the banner never floats high or covers the bar.
+   */
+  .cookie-consent-overlay {
+    bottom: max(0.75rem, var(--safe-bottom));
+  }
+  @media (max-width: 1023px) {
+    body:has(.mobile-bottom-bar) .cookie-consent-overlay {
+      bottom: calc(var(--mobile-bottom-bar-h) + 0.5rem);
+    }
+  }
+  @media (min-width: 1024px) {
+    .cookie-consent-overlay {
+      bottom: 0;
+      padding-bottom: calc(0.75rem + var(--safe-bottom));
+    }
+  }
 }
 
 /* Cloudflare Turnstile — full-bleed with form controls (see TurnstileWidget.tsx). */

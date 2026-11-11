@@ -16,6 +16,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { NoticeCallout } from '@/components/help/NoticeCallout';
+import { RefundDetailsLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -57,13 +58,7 @@ function formatManila(iso: string | null | undefined): string {
   }).format(date);
 }
 
-function RefundDetailsForm({
-  trip,
-  onDone,
-}: {
-  trip: GuestTrip;
-  onDone: () => void;
-}) {
+function RefundDetailsForm({ trip, onDone }: { trip: GuestTrip; onDone: () => void }) {
   const [method, setMethod] = useState<'same_phone' | 'other_bank' | 'cash'>('same_phone');
   const [bank, setBank] = useState('GCash');
   const [accountName, setAccountName] = useState('');
@@ -155,10 +150,9 @@ function RefundDetailsForm({
         </div>
       ) : null}
       {method === 'cash' ? (
-        <p className="text-muted-foreground text-sm">
-          Your host will arrange the pickup with you.
-        </p>
+        <p className="text-muted-foreground text-sm">Your host will arrange the pickup with you.</p>
       ) : null}
+      {method !== 'cash' ? <RefundDetailsLegalNotice /> : null}
       <Button type="button" className="min-h-[44px] w-full" onClick={submit} loading={saving}>
         Save refund details
       </Button>

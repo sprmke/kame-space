@@ -83,6 +83,12 @@ jobs:
       - name: Playwright lane tags (one tag per spec, no .only, no new waitForTimeout)
         run: node scripts/dev/check-e2e-lane-tags.mjs
 
+      - name: E2E auth storage key (one definition, no literals)
+        run: node scripts/dev/check-e2e-auth-key.mjs
+
+      - name: Page coverage manifests (every adopted guide section has a decision)
+        run: bun scripts/dev/check-test-coverage.ts
+
       - name: Flaky quarantine discipline (issue + expiry for every @flaky test)
         run: node scripts/dev/check-flaky-quarantine.mjs
 

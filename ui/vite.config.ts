@@ -18,6 +18,7 @@ import {
   POLOTNO_BLUEPRINT_ENTRY,
   scopeBlueprintCss,
 } from './postcss.config.js';
+import { preloadLandingChunk } from './vite-plugins/preloadLandingChunk';
 import { resolveReleaseId } from './vite-plugins/releaseId';
 import {
   patchOpenPolotnoHighlighter,
@@ -281,6 +282,7 @@ export default defineConfig({
     patchOpenPolotnoHighlighter(),
     scopeBlueprintCssPlugin(),
     react(),
+    preloadLandingChunk(),
     pwaPrecacheTiersPlugin(),
     ...gfmPwaPlugin(),
     ...(sentrySourceMapsEnabled ? sentrySourceMapsPlugin() : []),

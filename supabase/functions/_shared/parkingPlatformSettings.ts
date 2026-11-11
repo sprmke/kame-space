@@ -20,6 +20,9 @@ const STUB_COMMISSION_PCT = 0.1;
 const STUB_DIRECT_COMMISSION_PCT = 0.05;
 const STUB_GUEST_PARKING_RATE_WEEKDAY = 400;
 const STUB_GUEST_PARKING_RATE_WEEKEND = 400;
+/** Estimated PayMongo local-card cut; editable in the super-admin payout settings. */
+const STUB_PAYMENT_FEE_PCT = 0.03125;
+const STUB_PAYMENT_FEE_FIXED = 15;
 
 export type ParkingPlatformSettings = {
   commissionPct: number;
@@ -27,6 +30,10 @@ export type ParkingPlatformSettings = {
   directCommissionPct: number;
   guestRateWeekday: number;
   guestRateWeekend: number;
+  /** Estimated processor cut of the guest charge, used only for platform net margin. */
+  paymentFeePct: number;
+  /** Fixed per-transaction processor fee in pesos. */
+  paymentFeeFixed: number;
   supportEscalationPhone: string | null;
 };
 
@@ -48,7 +55,7 @@ export async function resolveParkingPlatformSettings(): Promise<ParkingPlatformS
   const { data } = await supabase
     .from('platform_parking_settings')
     .select(
-      'commission_pct, direct_commission_pct, guest_rate_weekday, guest_rate_weekend, support_escalation_phone'
+      'commission_pct, direct_commission_pct, guest_rate_weekday, guest_rate_weekend, payment_fee_pct, payment_fee_fixed, support_escalation_phone'
     )
     .eq('id', 1)
     .maybeSingle();
@@ -58,6 +65,8 @@ export async function resolveParkingPlatformSettings(): Promise<ParkingPlatformS
     directCommissionPct: Number(data?.direct_commission_pct ?? STUB_DIRECT_COMMISSION_PCT),
     guestRateWeekday: Number(data?.guest_rate_weekday ?? STUB_GUEST_PARKING_RATE_WEEKDAY),
     guestRateWeekend: Number(data?.guest_rate_weekend ?? STUB_GUEST_PARKING_RATE_WEEKEND),
+    paymentFeePct: Number(data?.payment_fee_pct ?? STUB_PAYMENT_FEE_PCT),
+    paymentFeeFixed: Number(data?.payment_fee_fixed ?? STUB_PAYMENT_FEE_FIXED),
     supportEscalationPhone: (data?.support_escalation_phone as string | undefined)?.trim() || null,
   };
 }

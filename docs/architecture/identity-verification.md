@@ -90,6 +90,11 @@ poll identity-session-get ────▶ status                          scan �
 ◀── status completed + verdict
 ```
 
+**The handoff is reachable from failure, not only from the start.** On a fine pointer the flow
+opens on _Verify on your phone_ / _Use this device_. If the device route then fails (no camera,
+MediaPipe blocked), the capture and liveness steps both offer **Use my phone instead**, which
+cancels the inline session best-effort and mints a handoff session in place.
+
 **Polling is the contract.** Realtime `postgres_changes` honours RLS and these tables have no
 anon read policy, so a subscription would silently never fire in production. The desktop polls
 every 2s, backing off to 5s after 30s.
@@ -109,6 +114,23 @@ The guest booking form is anonymous, so an identity cannot be keyed on `auth.use
 
 Reuse-by-email was rejected deliberately: typing someone else's address must not grant their
 verification.
+
+On the booking form, a signed-in **primary** guest with a live verdict gets it attached
+automatically and sees a confirmation row with "Use a different ID". Additional guest slots
+are different people and never inherit the booker's identity.
+
+### Tier 2 ("Recommended") uses the live check
+
+The static selfie-holding-the-ID was trivially replayed, so it is replaced by the guided capture:
+
+- `GetVerifiedModal` renders **Identity check** instead of the `enhanced-selfie` uploader.
+- `submit-org-verification` accepts `identityVerificationId` for the enhanced tier and requires
+  a verdict of `verified` or `partially_verified`. Those two are the only verdicts that imply a
+  completed liveness check, so a weak capture asks the host to run it again rather than quietly
+  lowering the bar. The tier is optional, so this never blocks hosting.
+- The verdict is written to `settings.verification.liveIdentityVerifiedAt`, which keeps the
+  checklist and the submitted-docs view correct after a reload.
+- Legacy `selfieWithIdPath` rows and the assistant path still submit as before.
 
 ### Host verification at registration
 

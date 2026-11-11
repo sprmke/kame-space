@@ -6,6 +6,7 @@
 import { expect, type Page, type Route } from '@playwright/test';
 
 import { featureAvailabilityBody } from '../../../shared/featureAvailabilityMocks';
+import { SUPABASE_AUTH_STORAGE_KEY } from '../../../shared/ids';
 import { mockPublicPropertyBody } from '../../../shared/mockFixtures';
 import { PLAN_PRO, PLANS_E2E_CATALOG } from '../../plans/shared/orgPlanHarnessShared';
 
@@ -48,8 +49,6 @@ let savedDashboardModeState: 'advanced' | 'ai' = 'advanced';
 export function mockedSavedDashboardMode() {
   return savedDashboardModeState;
 }
-
-const SUPABASE_AUTH_STORAGE_KEY = 'sb-127-auth-token';
 
 type AssistantChatBlock = {
   type: string;

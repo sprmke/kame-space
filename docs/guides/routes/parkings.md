@@ -2,7 +2,7 @@
 title: 'Parkings (guest marketing) — operator guide'
 status: active
 tags: [guides, routes, parking]
-updated: 2026-08-27
+updated: 2026-11-11
 ---
 
 # Parkings (guest marketing) — operator guide
@@ -100,7 +100,7 @@ Route is registered at the marketing shell level (no dynamic slug conflict).
 
 **`ParkingDetailPage`** — same shell as **`PropertyDetailPage`**: full-width **`ListingGallery`** (Share; single-photo uses the same tall panoramic layout), then **`lg:grid-cols-3`** with overview + amenities left and **`BookingCard`** sticky right.
 
-- Gallery: **`ListingGallery`** (shared with property via **`PropertyGallery`** wrapper)
+- Gallery: **`ListingGallery`** (shared with property via **`PropertyGallery`** wrapper). Hosts can upload up to 3 photos in parking Settings; the starred photo is the cover and renders first, the rest follow gallery order. A single photo keeps the tall panoramic layout.
 - Overview: **`ParkingOverview`** — parking type badge, title, **`ListingPlaceMeta`** (development · tower · level), inline dimension + check-in/out row (length / width / clearance · in/out times), **`ListingHostCard`** (**Contact Host** opens guest web chat sheet), description (**About this parking**). Brand color tints accents via **`ParkingPublicBrandShell`**. Pricing lives in **`BookingCard`** only.
 - Features: **`PropertyAmenities`** when `features[]` is non-empty
 - Location: **`PropertyLocation`** when `parkings.settings` has address or map pin (`get-public-parking` returns `address`, `city`, `province`, `country`, `latitude`, `longitude`, `placeId`)

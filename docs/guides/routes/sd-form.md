@@ -2,7 +2,7 @@
 title: 'SD Refund Form — operator guide'
 status: active
 tags: [guides, routes, sd-refund]
-updated: 2026-08-17
+updated: 2026-11-09
 ---
 
 # SD Refund Form — operator guide
@@ -38,6 +38,8 @@ Three-step guest stepper shown once a stay is near or past check-out. Full-page 
 Returning guests skip the review step only after the window is closed or the review is published. An unpublished draft stays on step 1 so they can edit. The voucher is claimable after check-out even if they skipped the review.
 
 ---
+
+> **Legal notice:** Refund step shows a privacy line above the actions (details used only for the refund) unless cash pickup is chosen. The review step shows a review-rules line. Pattern and full list: [legal.md](legal.md#in-app-notices).
 
 ## Host-facing knowledge
 

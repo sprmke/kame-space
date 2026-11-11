@@ -4,6 +4,7 @@
 
 import type { AppSettingsResolved } from './appSettings.ts';
 import { resolveAppSettings } from './appSettings.ts';
+import { buildEmailLegalFooterHtml } from './emailLegalFooter.ts';
 import {
   loadPropertyEmailBranding,
   resolveEmailUnitLabel,
@@ -310,7 +311,7 @@ export async function renderPropertyTemplateSendEmail(input: {
 
   const title =
     input.emailTitle.trim() || getBuiltinPropertyTemplate(input.templateKey)?.label || 'Email';
-  const legalFooter = `© ${branding.organizationName}. All rights reserved.`;
+  const legalFooter = buildEmailLegalFooterHtml(branding.organizationName);
   const dateLineBlock = buildDateLineBlockHtml(
     input.placeholderVars.check_in_date ?? '',
     input.placeholderVars.check_out_date ?? '',
@@ -327,7 +328,7 @@ export async function renderPropertyTemplateSendEmail(input: {
         emailTitle: escapeHtml(title),
         dateLineBlock,
         bodyContent,
-        legalFooter: escapeHtml(legalFooter),
+        legalFooter,
       },
       settings.brandColor
     )

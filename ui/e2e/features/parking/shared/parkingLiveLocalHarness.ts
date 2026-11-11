@@ -1,6 +1,7 @@
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
 import { captureParkingScreen } from './parkingScreenCapture';
+import { SUPABASE_AUTH_STORAGE_KEY } from '../../../shared/ids';
 
 const LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
 const LOCAL_SUPABASE_ANON_KEY =
@@ -10,7 +11,6 @@ const LOCAL_SUPABASE_SERVICE_ROLE_KEY =
 
 const LOCAL_HOST_EMAIL = 'sprmke.dev@gmail.com';
 const LOCAL_HOST_PASSWORD = 'local-test-only-pw-123!';
-const SUPABASE_AUTH_STORAGE_KEY = 'sb-127-auth-token';
 const E2E_ADMIN_SESSION_STORAGE_KEY = 'kame:e2e-admin-session';
 
 export const liveParkingFlowPaths = {
