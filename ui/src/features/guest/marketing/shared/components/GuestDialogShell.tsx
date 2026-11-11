@@ -3,6 +3,12 @@ import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
 
 import {
+  MODAL_BODY_CLASS,
+  MODAL_CLOSE_BUTTON_CLASS,
+  MODAL_FOOTER_CLASS,
+  MODAL_HEADER_CLASS,
+} from '@/components/ui/modal-chrome';
+import {
   ResponsiveModal,
   ResponsiveModalClose,
   ResponsiveModalContent,
@@ -75,31 +81,24 @@ export function GuestDialogShell({
       >
         <div
           className={cn(
-            'border-border flex shrink-0 items-center gap-3 border-b px-5 py-3',
+            'flex shrink-0 items-center gap-3',
+            MODAL_HEADER_CLASS,
             headerClassName
           )}
         >
           <div className="min-w-0 flex-1">
-            {typeof title === 'string' ? (
-              <ResponsiveModalTitle className="text-foreground text-base font-semibold tracking-tight">
-                {title}
-              </ResponsiveModalTitle>
-            ) : (
-              title
-            )}
+            {typeof title === 'string' ? <ResponsiveModalTitle>{title}</ResponsiveModalTitle> : title}
           </div>
 
-          <ResponsiveModalClose
-            className="text-muted-foreground ring-offset-background hover:bg-muted focus:ring-ring flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl opacity-80 transition-all hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none"
-            aria-label="Close"
-          >
-            <X className="size-5 shrink-0" aria-hidden />
+          <ResponsiveModalClose className={MODAL_CLOSE_BUTTON_CLASS} aria-label="Close">
+            <X className="size-4 shrink-0" aria-hidden />
           </ResponsiveModalClose>
         </div>
 
         <div
           className={cn(
-            'min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4',
+            'min-h-0 flex-1 overflow-y-auto overscroll-contain',
+            MODAL_BODY_CLASS,
             bodyClassName
           )}
         >
@@ -107,14 +106,7 @@ export function GuestDialogShell({
         </div>
 
         {footer != null ? (
-          <div
-            className={cn(
-              'border-border shrink-0 border-t px-5 py-3.5 pb-[max(env(safe-area-inset-bottom,0px),0.875rem)]',
-              footerClassName
-            )}
-          >
-            {footer}
-          </div>
+          <div className={cn(MODAL_FOOTER_CLASS, footerClassName)}>{footer}</div>
         ) : null}
       </ResponsiveModalContent>
     </ResponsiveModal>

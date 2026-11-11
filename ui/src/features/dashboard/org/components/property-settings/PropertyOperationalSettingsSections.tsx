@@ -365,7 +365,7 @@ export function PropertyOperationalSettingsSections({
                     'flex max-h-[min(92dvh,52rem)] w-[min(calc(100vw-1.5rem),40rem)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-[min(95vw,40rem)] sm:p-0'
                   )}
                 >
-                  <ResponsiveModalHeader className="border-border/60 shrink-0 space-y-0 border-b px-4 py-3 sm:px-5 sm:py-4">
+                  <ResponsiveModalHeader className="border-border/60 shrink-0 space-y-0 border-b px-4 py-3 sm:px-5 sm:py-3">
                     <ResponsiveModalTitle className="pr-8 text-base sm:text-lg">
                       Payment
                     </ResponsiveModalTitle>
@@ -456,7 +456,7 @@ export function PropertyOperationalSettingsSections({
                     'flex max-h-[min(92dvh,56rem)] w-[min(calc(100vw-1.5rem),64rem)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-[min(95vw,64rem)] sm:p-0'
                   )}
                 >
-                  <ResponsiveModalHeader className="border-border/60 shrink-0 space-y-0 border-b px-4 py-3 sm:px-5 sm:py-4">
+                  <ResponsiveModalHeader className="border-border/60 shrink-0 space-y-0 border-b px-4 py-3 sm:px-5 sm:py-3">
                     <ResponsiveModalTitle className="pr-8 text-base sm:text-lg">
                       Building Forms
                     </ResponsiveModalTitle>

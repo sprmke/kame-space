@@ -105,7 +105,7 @@ export function OrgPlanSidebarEntry({
           'flex-col gap-0 overflow-hidden p-0 sm:max-w-[56rem] sm:p-0'
         )}
       >
-        <ResponsiveModalHeader className="border-border/60 shrink-0 space-y-0 border-b px-5 py-4 text-left sm:px-6">
+        <ResponsiveModalHeader className="border-border/60 shrink-0 space-y-0 border-b px-4 py-3 text-left sm:px-5">
           <div className="flex items-center gap-3 pr-8">
             <PlanTierIconWell planCode={planCode} size="md" />
             <div className="min-w-0 flex-1">
@@ -132,7 +132,7 @@ export function OrgPlanSidebarEntry({
           </div>
         </ResponsiveModalHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
           {featureGroups.length > 0 ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {featureGroups.map((group) => (
@@ -171,7 +171,7 @@ export function OrgPlanSidebarEntry({
         </div>
 
         {canOpenPlans ? (
-          <ResponsiveModalFooter className="border-border/60 shrink-0 flex-col-reverse gap-2 border-t px-5 py-4 sm:flex-row sm:justify-end sm:gap-2 sm:space-x-0 sm:px-6">
+          <ResponsiveModalFooter className="border-border/60 shrink-0 flex-col-reverse gap-2 border-t px-4 py-3 sm:flex-row sm:justify-end sm:gap-2 sm:space-x-0 sm:px-5">
             <Button
               type="button"
               variant="outline"

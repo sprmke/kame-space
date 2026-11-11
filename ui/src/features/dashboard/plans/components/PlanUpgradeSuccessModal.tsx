@@ -68,7 +68,7 @@ export function PlanUpgradeSuccessModal({
           sheetLayout="split"
           sheetBodyClassName="px-0"
         >
-          <div className="from-primary/8 via-background to-background bg-gradient-to-b px-6 pb-5 pt-8 sm:px-8">
+          <div className="from-primary/8 via-background to-background bg-gradient-to-b px-4 pb-5 pt-8 sm:px-5">
             <div className="flex flex-col items-center text-center">
               <PlanTierIconWell planCode={targetPlan.code} size="lg" />
 
@@ -80,7 +80,7 @@ export function PlanUpgradeSuccessModal({
             </div>
           </div>
 
-          <div className="max-h-[min(42vh,320px)] overflow-y-auto px-6 py-4 sm:px-8">
+          <div className="max-h-[min(42vh,320px)] overflow-y-auto px-4 py-4 sm:px-5">
             {gains.length > 0 ? (
               <ul className="space-y-3">
                 {gains.map((gain, index) => (
@@ -102,7 +102,7 @@ export function PlanUpgradeSuccessModal({
             ) : null}
           </div>
 
-          <ResponsiveModalFooter className="border-border/60 flex-col gap-2 border-t px-6 py-4 sm:flex-row sm:px-8 sm:pb-0">
+          <ResponsiveModalFooter className="border-border/60 flex-col gap-2 border-t px-4 py-3 sm:flex-row sm:px-5 sm:pb-0">
             {onViewCompare ? (
               <Button
                 type="button"

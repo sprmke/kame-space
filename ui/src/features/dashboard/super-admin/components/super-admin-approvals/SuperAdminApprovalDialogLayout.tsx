@@ -9,13 +9,13 @@ export const superAdminApprovalDialogContentClass = cn(
 );
 
 export const superAdminApprovalDialogHeaderClass =
-  'border-border shrink-0 space-y-2 border-b px-5 pb-4 pt-5 text-left sm:px-6';
+  'border-border shrink-0 space-y-2 border-b px-4 py-3 text-left sm:px-5';
 
 export const superAdminApprovalDialogBodyClass =
-  'min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 sm:px-6';
+  'min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5';
 
 export const superAdminApprovalDialogFooterClass =
-  'border-border shrink-0 flex-col gap-2 border-t px-5 py-3.5 sm:flex-row sm:flex-wrap sm:justify-end sm:px-6 sm:py-4';
+  'border-border shrink-0 flex-col gap-2 border-t px-4 py-3 sm:flex-row sm:flex-wrap sm:justify-end sm:px-5';
 
 export const superAdminApprovalSectionTitleClass =
   'text-foreground text-xs font-semibold uppercase tracking-wide';

@@ -138,7 +138,7 @@ export function ListingContractRenewalModal({
             if (!dismissible) e.preventDefault();
           }}
         >
-          <ResponsiveModalHeader className="border-border shrink-0 border-b px-5 pb-3.5 pt-5 text-left sm:px-6">
+          <ResponsiveModalHeader className="border-border shrink-0 border-b px-4 pb-3 pt-5 text-left sm:px-5">
             <ResponsiveModalTitle className="flex items-center gap-2.5 text-left text-base font-semibold sm:text-lg">
               <span
                 className={cn(
@@ -152,7 +152,7 @@ export function ListingContractRenewalModal({
             </ResponsiveModalTitle>
           </ResponsiveModalHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
             <p className="text-muted-foreground text-sm leading-relaxed">
               <ListingContractRenewalModalBody
                 phase={phase}
@@ -188,7 +188,7 @@ export function ListingContractRenewalModal({
             ) : null}
           </div>
 
-          <ResponsiveModalFooter className="border-border shrink-0 flex-col gap-2 border-t px-5 py-3 sm:flex-col sm:px-6">
+          <ResponsiveModalFooter className="border-border shrink-0 flex-col gap-2 border-t px-4 py-3 sm:flex-col sm:px-5">
             <Button type="button" className="min-h-[44px] w-full" onClick={onSubmitRenewal}>
               {LISTING_CONTRACT_RENEWAL_PRIMARY}
             </Button>

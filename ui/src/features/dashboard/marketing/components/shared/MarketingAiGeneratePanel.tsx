@@ -812,7 +812,7 @@ export function MarketingAiGeneratePanel({
           if (generating) event.preventDefault();
         }}
       >
-        <ResponsiveModalHeader className="border-border/60 shrink-0 gap-0 border-b px-5 py-4 text-left sm:px-6">
+        <ResponsiveModalHeader className="border-border/60 shrink-0 gap-0 border-b px-4 py-3 text-left sm:px-5">
           <div className="flex flex-wrap items-center gap-2">
             <ResponsiveModalTitle className="text-left">{title}</ResponsiveModalTitle>
             <TierBadge feature="aiMarketingGeneration" />
@@ -827,7 +827,7 @@ export function MarketingAiGeneratePanel({
 
         <div
           ref={scrollRef}
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 [-webkit-overflow-scrolling:touch] sm:px-6"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [-webkit-overflow-scrolling:touch] sm:px-5"
         >
           <p className="sr-only" aria-live="polite">
             {stepCopy.title}. {stepCopy.description}
@@ -1250,7 +1250,7 @@ export function MarketingAiGeneratePanel({
           </p>
         </div>
 
-        <ResponsiveModalFooter className="border-border/60 shrink-0 gap-2 border-t px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <ResponsiveModalFooter className="border-border/60 shrink-0 gap-2 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <div className="flex min-w-0 flex-1 justify-start">
             {!isFirstStep ? (
               <Button

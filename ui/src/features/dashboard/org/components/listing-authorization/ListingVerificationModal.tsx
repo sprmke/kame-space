@@ -637,7 +637,7 @@ export function ListingVerificationModal({
             'sm:h-[min(90dvh,42rem)] sm:max-h-[min(90dvh,42rem)] sm:w-[min(92vw,40rem)] sm:max-w-[40rem] sm:p-0'
           )}
         >
-          <ResponsiveModalHeader className="border-border shrink-0 space-y-3 border-b px-5 pb-3.5 pt-5 text-left sm:px-6">
+          <ResponsiveModalHeader className="border-border shrink-0 space-y-3 border-b px-4 pb-3 pt-5 text-left sm:px-5">
             <ResponsiveModalTitle className="flex items-center gap-2.5 text-left text-base font-semibold sm:text-lg">
               <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full">
                 <Home className="size-5" aria-hidden />
@@ -653,11 +653,11 @@ export function ListingVerificationModal({
             />
           </ResponsiveModalHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
             {activeStep === 0 ? baseForm : recommendedForm}
           </div>
 
-          <ResponsiveModalFooter className="border-border shrink-0 gap-2 border-t px-5 py-3 sm:px-6">
+          <ResponsiveModalFooter className="border-border shrink-0 gap-2 border-t px-4 py-3 sm:px-5">
             <Button
               type="button"
               variant="outline"

@@ -96,7 +96,7 @@ export function BookingLinkPickerModal({ open, onOpenChange, propertySlug, kind 
           </ResponsiveModalDescription>
         </ResponsiveModalHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2 sm:px-5">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
           {isLoading ? (
             <ul className="space-y-3 py-2" aria-label="Loading bookings">
               {[0, 1, 2].map((index) => (
