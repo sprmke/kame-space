@@ -691,21 +691,21 @@ Edge functions use `servePublic` / `serveAdmin` / `serveCronPost`; email-sending
 
 ### 11.1 Edge cases
 
-| Case                                                   | Behavior                                                                                                                                |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Guest submits with no email                            | The request-received email is skipped (no address); the trip page still shows the reference and the review expectation.                 |
-| Guest submits but the host never reviews               | `PENDING_REVIEW` stays. The trip page shows the request state, "Message host" and "Cancel request". No auto-expiry (out of scope).      |
-| Host edits the booking after the guest edits it        | `compareFormData` decides; an unchanged re-submit returns early and sends **no** second request-received email.                         |
-| OTA / Airbnb completion                                | `submit-form-completion` is a separate path; it does **not** send the request-received email (only `submit-form` does).                 |
-| Signed-in guest opens a trip link from another device  | The `?access=` token is exchanged for a session token and dropped from the URL (already shipped in `GuestTripPage`).                    |
-| Guest has two trips at the same property               | The trip chip and the Messages tab point at the **closest upcoming** booking; the trip page itself always shows the booking in the URL. |
-| Guest cancels after the host confirms                  | The trip page switches to the cancelled state; the refund outcome comes from the existing `cancellation` payload.                       |
-| Property has no essentials filled in                   | The essentials card is hidden (not shown empty). The readiness card (7.2) tells the host.                                               |
-| Property is on a plan without `guestArrivalContent`    | The trip page shows "Message host" instead of the arrival steps; the Stay guide brochure keeps its own gate.                            |
-| Secret reveal time has not passed                      | The value renders as "Available {date, time}" — never a partially masked value that hints at the length.                                |
-| Guest is offline                                       | The last viewed trip renders from the SW cache; the receipt upload sheet shows an offline message and stays open.                       |
-| Two guests share a device / one signs out              | The access token is per booking and stored in sessionStorage; signing out clears it.                                                    |
-| Host on a Starter plan creates guest-visible templates | `customTemplates` (the authoring gate) still applies; `guestArrivalContent` only controls guest rendering.                              |
+| Case                                                   | Behavior                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Guest submits with no email                            | The request-received email is skipped (no address); the trip page still shows the reference and the review expectation.                                                                                                                                                                   |
+| Guest submits but the host never reviews               | Day 5: one chase email to the property mailbox. Day 7: if nothing is paid, `pending-review-expiry` cancels with reason `request_expired`, which frees the dates; the trip page says **Request expired** and offers the same dates back. A booking with money on it is never auto-expired. |
+| Host edits the booking after the guest edits it        | `compareFormData` decides; an unchanged re-submit returns early and sends **no** second request-received email.                                                                                                                                                                           |
+| OTA / Airbnb completion                                | `submit-form-completion` is a separate path; it does **not** send the request-received email (only `submit-form` does).                                                                                                                                                                   |
+| Signed-in guest opens a trip link from another device  | The `?access=` token is exchanged for a session token and dropped from the URL (already shipped in `GuestTripPage`).                                                                                                                                                                      |
+| Guest has two trips at the same property               | The trip chip and the Messages tab point at the **closest upcoming** booking; the trip page itself always shows the booking in the URL.                                                                                                                                                   |
+| Guest cancels after the host confirms                  | The trip page switches to the cancelled state; the refund outcome comes from the existing `cancellation` payload.                                                                                                                                                                         |
+| Property has no essentials filled in                   | The essentials card is hidden (not shown empty). The readiness card (7.2) tells the host.                                                                                                                                                                                                 |
+| Property is on a plan without `guestArrivalContent`    | The trip page shows "Message host" instead of the arrival steps; the Stay guide brochure keeps its own gate.                                                                                                                                                                              |
+| Secret reveal time has not passed                      | The value renders as "Available {date, time}" — never a partially masked value that hints at the length.                                                                                                                                                                                  |
+| Guest is offline                                       | The last viewed trip renders from the SW cache; the receipt upload sheet shows an offline message and stays open.                                                                                                                                                                         |
+| Two guests share a device / one signs out              | The access token is per booking and stored in sessionStorage; signing out clears it.                                                                                                                                                                                                      |
+| Host on a Starter plan creates guest-visible templates | `customTemplates` (the authoring gate) still applies; `guestArrivalContent` only controls guest rendering.                                                                                                                                                                                |
 
 ### 11.2 Rollback
 
@@ -774,11 +774,21 @@ Edge functions use `servePublic` / `serveAdmin` / `serveCronPost`; email-sending
 | G2 No content readiness check                | Phase 7.2                                                                       |
 | G3 Inbox Insert had no trip link             | Phase 5.6                                                                       |
 
+### Shipped after the first pass — request expiry
+
+`PENDING_REVIEW` used to hold its dates forever: only `CANCELLED` frees a night for the next
+guest, and `get-booked-dates` stops returning the row only once it is cancelled. So a request the
+host never answered locked the calendar for everyone and left the guest reading "your host is
+reviewing" indefinitely. Shipped as `pending-review-expiry`: chase at day 5, cancel at day 7 with
+reason `request_expired`, never when the guest has paid, and never before the chase has been out
+for the full two days (so a first run in an existing environment only chases). The guest email and
+the trip page say **Request expired**, and the trip page offers the same dates back through a
+pre-filled form.
+
 **Known follow-ups, deliberately not in this change**
 
 - Guest web push (E11): needs a new `notifications.type` and guest recipient resolution.
 - "Guest first viewed their trip" host notification: needs view tracking.
-- Auto-expiry of `PENDING_REVIEW`: a workflow change, out of scope by the plan.
 - `PUSH`/SMS delivery, smart locks, upsells: out of scope per §9.
 
 ## 14. Verification results (2026-11-10)

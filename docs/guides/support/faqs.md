@@ -1514,3 +1514,27 @@ Yes, two days before check-in, with the balance, the check-in time and a link to
 - source: docs/guides/routes/org/property/templates.md
 
 Because it now follows what your property actually requires. If you do not require a GAF, the email no longer mentions it or the building administration. A pet requirement is named instead. If you do require documents, the steps name them.
+
+### What happens to a booking request I never answer?
+
+- category: Bookings
+- audience: host
+- source: docs/architecture/guest-emails.md
+
+It does not hold the dates forever. Five days after it arrives you get one email warning that it expires in two days. If it is still pending after seven days, and nothing has been paid, it cancels itself: the dates go back on your calendar and the guest is told. If the guest has paid anything, it never expires on its own, so you can still accept it late.
+
+### Why did a request disappear from my pending list?
+
+- category: Bookings
+- audience: host
+- source: docs/architecture/guest-emails.md
+
+It expired. A request you did not answer within seven days, with nothing paid, cancels itself and frees the dates. You get a warning email two days before that happens. Requests the guest has paid towards are never expired automatically.
+
+### My request expired. Can I still book those dates?
+
+- category: Guest Portal
+- audience: guest
+- source: docs/guides/routes/trip.md
+
+Yes. The host did not reply in time, so the dates were released and nothing was charged. Open your trip and choose Request these dates again to send the same dates back to the host.

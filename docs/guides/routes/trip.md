@@ -63,9 +63,12 @@ dashboard. The words come from `ui/src/features/guest/trip/lib/guestJourneyCopy.
 | `PENDING_SD_REFUND`                                        | Deposit refund     |
 | `COMPLETED`                                                | Completed          |
 | `CANCELLED`                                                | Cancelled          |
+| `CANCELLED` with reason `request_expired`                  | Request expired    |
 
 A pending review is never "confirmed", "approved" or "booked". A confirmed booking is never
-"approved" as a status word.
+"approved" as a status word. A request the expiry cron cancelled is never "Cancelled": the guest
+did not choose it, so `guestJourneyStatusWord(status, cancellationReasonCode)` returns **Request
+expired**, mirrored on the edge and UI sides and parity tested.
 
 ---
 
@@ -206,15 +209,16 @@ once the guest has paid something. It reads the booking's
 `cancellation_policy_snapshot` (never the property's live policy), so changing your policy later
 does not change what an existing guest sees.
 
-| Booking state                        | What the guest sees                                                  |
-| ------------------------------------ | -------------------------------------------------------------------- |
-| Before check-in, down payment only   | Policy timeline, next deadline, refund now, **Cancel booking**       |
-| Before check-in, policy unset/custom | Same, with **Request to cancel**                                     |
-| Balance already paid                 | Same, with **Request to cancel**                                     |
-| Open request                         | "Cancellation requested", requested time, host message, **Withdraw** |
-| `CANCELLED` with a refund            | Refund amount + status; payout details form when still needed        |
-| `CANCELLED` with no refund due       | "This booking was cancelled"                                         |
-| After check-in                       | No cancel action; policy summary only                                |
+| Booking state                         | What the guest sees                                                                                                                                                                                   |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Before check-in, down payment only    | Policy timeline, next deadline, refund now, **Cancel booking**                                                                                                                                        |
+| Before check-in, policy unset/custom  | Same, with **Request to cancel**                                                                                                                                                                      |
+| Balance already paid                  | Same, with **Request to cancel**                                                                                                                                                                      |
+| Open request                          | "Cancellation requested", requested time, host message, **Withdraw**                                                                                                                                  |
+| `CANCELLED` with a refund             | Refund amount + status; payout details form when still needed                                                                                                                                         |
+| `CANCELLED` with no refund due        | "This booking was cancelled"                                                                                                                                                                          |
+| `CANCELLED`, reason `request_expired` | No cancellation section (there is nothing to cancel and nothing paid). The Now card carries it: primary **Request these dates again** (same dates, pre-filled in `/form`), secondary **Message host** |
+| After check-in                        | No cancel action; policy summary only                                                                                                                                                                 |
 
 Flow: `GuestTripCancellationSection` → `guest-cancel-booking` (instant) or
 `guest-cancellation-request` (create/withdraw). The server recomputes the refund from the snapshot
@@ -278,7 +282,7 @@ Thumbnail, property name (`h1`, not a link), date range and nights, city.
 | Part        | Content                                                                                                                                                                                                                                                                                                     |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Pill        | Phase word with a colored dot (label stays in the foreground color so light host brand colors keep contrast)                                                                                                                                                                                                |
-| Headline    | Phase sentence: "Your host is reviewing your booking", "Check-in in 6 days", "Check in from 2:00 PM", "Night 2 of 3", "Check out by 11:00 AM", "Get your deposit back", "Thanks for staying", "Cancelled on Sep 10"                                                                                         |
+| Headline    | Phase sentence: "Your host is reviewing your booking", "Check-in in 6 days", "Check in from 2:00 PM", "Night 2 of 3", "Check out by 11:00 AM", "Get your deposit back", "Thanks for staying", "Cancelled on Sep 10", or "Your host did not reply in time" for an expired request                            |
 | Progress    | 5 segments (Request sent · Confirmed · Check-in · Stay · Check-out) + "Step N of 5" caption; fills once on load, static under reduced motion; hidden when cancelled                                                                                                                                         |
 | Checklist   | Active phases only, max 3: payment (left to pay / paid in full), check-in documents (hidden once in the unit), parking; each row jumps to its section                                                                                                                                                       |
 | Main button | Blockers first: refund form → **Pay ₱X** (scrolls to Payment) → review → Book again (completed); arrival day → stay guide or directions; in stay → stay guide; before arrival → find parking; else **Message host** (always for pending review and cancelled)                                               |
