@@ -174,6 +174,9 @@ export async function installGuestFormMocks(page: Page, options: GuestFormMockOp
       body: { success: true, data: guestTripMock() },
     },
     {
+      // `null` on purpose. A real property body would carry a cancellation policy, and the form
+      // then requires the policy checkbox, which these journeys do not tick. Null also stops the
+      // request reaching a real endpoint and stalling the page.
       name: 'get-public-property',
       body: { success: true, data: null },
     },

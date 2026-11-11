@@ -193,6 +193,10 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
     'Listing status changes (pause / archive / restore)'
   ),
   'property-templates-preview': read,
+  'property-guest-essentials': handoff(
+    'property.settings',
+    'Guest experience essentials (Wi-Fi, door code, contacts) are edited on the property settings page'
+  ),
   'resolve-owner-default-parking': read,
   'resolve-booking-property': read,
   'smart-pricing-preview': tool('get_smart_pricing_preview'),
