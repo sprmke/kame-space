@@ -1,20 +1,4 @@
 {
   "$comment": "Shrink-only ratchet for check-edge-test-coverage.mjs. Each entry is an edge function with no supabase/functions/tests/handlers/<fn>.test.ts. Delete entries as handler tests land.",
-  "uncovered": [
-    "identity-session-create",
-    "identity-session-get",
-    "identity-session-submit",
-    "identity-session-upload",
-    "list-public-developments",
-    "list-public-parkings",
-    "list-public-place-groups",
-    "list-public-properties",
-    "meta-inbox-oauth-callback",
-    "org-settings",
-    "property-page-view",
-    "push-fanout",
-    "search-listings",
-    "submit-guest-refund-details",
-    "submit-guest-review"
-  ]
+  "uncovered": []
 }

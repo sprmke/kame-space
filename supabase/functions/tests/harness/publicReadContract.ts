@@ -117,3 +117,66 @@ export function publicDataContract(name: string): void {
     assertEquals(text.includes('@'), false, 'public data must not carry guest contact data');
   });
 }
+
+/**
+ * Endpoints that are not readable without input or a session: the point is that a request with
+ * neither is refused and writes nothing, whichever verb it arrives on.
+ */
+export function rejectsWithoutInputContract(name: string): void {
+  async function handlerFor() {
+    await import(`../../${name}/index.ts`);
+    const handler = getMountedEdgeHandler(name);
+    assert(handler, `${name} must mount through a serve wrapper`);
+    calls = [];
+    return handler!;
+  }
+
+  function assertNoWrites() {
+    assertEquals(
+      calls.filter(
+        (call) => /^(POST|PATCH|PUT|DELETE) /.test(call) && !call.includes('bump_rate_limit')
+      ),
+      [],
+      'a refused request must not write'
+    );
+  }
+
+  Deno.test(`${name} refuses a bare GET`, async () => {
+    const handler = await handlerFor();
+    const response = await handler(new Request(`${FUNCTIONS_URL}/${name}`, { method: 'GET' }));
+
+    // 405 for a read endpoint, 302 for the OAuth kickoff; either way not a 5xx.
+    assert(response.status < 500, `${name} must not 5xx on a bare GET, got ${response.status}`);
+    assertNoWrites();
+  });
+
+  Deno.test(`${name} refuses an empty POST`, async () => {
+    const handler = await handlerFor();
+    const response = await handler(
+      new Request(`${FUNCTIONS_URL}/${name}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      })
+    );
+
+    assert(response.status < 500, `${name} must not 5xx on an empty POST, got ${response.status}`);
+    assertNoWrites();
+  });
+}
+
+/** A public listing that may record analytics on read: 200 and no guest contact data. */
+export function publicListingContract(name: string): void {
+  Deno.test(`${name} serves a public listing without leaking guest data`, async () => {
+    await import(`../../${name}/index.ts`);
+    const handler = getMountedEdgeHandler(name);
+    assert(handler, `${name} must mount through a public wrapper`);
+    calls = [];
+
+    const response = await handler!(new Request(`${FUNCTIONS_URL}/${name}`, { method: 'GET' }));
+    const text = await response.text();
+
+    assertEquals(response.status, 200);
+    assertEquals(text.includes('@'), false, 'a public listing must not carry guest contact data');
+  });
+}
