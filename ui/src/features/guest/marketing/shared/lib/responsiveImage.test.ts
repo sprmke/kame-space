@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildResponsiveImage } from '@/features/guest/marketing/shared/lib/responsiveImage';
 
-const STORAGE =
-  'https://abc.supabase.co/storage/v1/object/public/property-media/p1/photo%201.jpg';
+const STORAGE = 'https://abc.supabase.co/storage/v1/object/public/property-media/p1/photo%201.jpg';
 
 describe('buildResponsiveImage', () => {
   it('uses the Storage render endpoint only when transforms are enabled', () => {
@@ -27,8 +26,12 @@ describe('buildResponsiveImage', () => {
   });
 
   it('leaves other hosts, data URLs, and garbage alone', () => {
-    expect(buildResponsiveImage('https://cdn.example.com/a.jpg', { storageTransforms: true })).toBeNull();
-    expect(buildResponsiveImage('data:image/png;base64,AAAA', { storageTransforms: true })).toBeNull();
+    expect(
+      buildResponsiveImage('https://cdn.example.com/a.jpg', { storageTransforms: true })
+    ).toBeNull();
+    expect(
+      buildResponsiveImage('data:image/png;base64,AAAA', { storageTransforms: true })
+    ).toBeNull();
     expect(buildResponsiveImage('/images/local.jpg', { storageTransforms: true })).toBeNull();
     expect(buildResponsiveImage('', { storageTransforms: true })).toBeNull();
   });
