@@ -35,7 +35,6 @@
  *             .cursor/rules/booking-workflow.mdc §3
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from '../_shared/supabaseJs.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { recordJobHeartbeat } from '../_shared/systemHealth/jobHeartbeat.ts';
@@ -54,6 +53,7 @@ import { captureSentryException } from '../_shared/sentry.ts';
 import { sendCronCheckIn } from '../_shared/sentryCron.ts';
 import { evaluateSdRefundLeadWindow, parseCheckoutManila } from '../_shared/sdRefundCronLead.ts';
 import { verifyCronSecret } from '../_shared/cronSecretGate.ts';
+import { serveHandler } from '../_shared/serveEdge.ts';
 
 const MANILA_TZ = 'Asia/Manila';
 
@@ -150,7 +150,7 @@ const CRON_MONITOR = {
 
 // ─── Main handler ──────────────────────────────────────────────────────────────
 
-serve(async (req) => {
+serveHandler('sd-refund-cron', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders(req) });
   }

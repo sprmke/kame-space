@@ -20,7 +20,6 @@
  * Phase 5.4.
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 import { buildExportCalendar, loadExportRanges } from '../_shared/calendarSyncRun.ts';
 import type { CalendarFeedProvider } from '../_shared/calendarSyncService.ts';
@@ -30,6 +29,7 @@ import { automationAllowed, loadPropertyLifecycleStates } from '../_shared/prope
 import { readPropertySlugFromUrl, resolvePropertyIdBySlug } from '../_shared/propertyScope.ts';
 import { captureSentryException } from '../_shared/sentry.ts';
 import { publicGetRateLimitGate } from '../_shared/publicEndpointRateLimit.ts';
+import { serveHandler } from '../_shared/serveEdge.ts';
 
 const PROVIDERS: readonly CalendarFeedProvider[] = ['airbnb', 'booking_com', 'vrbo', 'other'];
 
@@ -62,7 +62,7 @@ async function weakEtag(body: string): Promise<string> {
   return `W/"${hex}"`;
 }
 
-serve(async (req) => {
+serveHandler('ical-export', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders(req) });
   }

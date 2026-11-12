@@ -22,10 +22,10 @@ import {
   readJsonBody,
   requireHttpMethod,
 } from '../_shared/httpResponse.ts';
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { recordJobHeartbeat } from '../_shared/systemHealth/jobHeartbeat.ts';
+import { serveHandler } from '../_shared/serveEdge.ts';
 
-serve(async (req) => {
+serveHandler('superhost-assessment-cron', async (req) => {
   const options = handleOptions(req);
   if (options) return options;
   const heartbeatStartedAt = Date.now();
