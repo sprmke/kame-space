@@ -4,6 +4,7 @@ const isSentrySdkEnabled = { value: false };
 const setUser = vi.fn();
 const setTags = vi.fn();
 const setTag = vi.fn();
+const getActiveSpan = vi.fn();
 
 vi.mock('@/lib/sentry/init', () => ({
   get isSentrySdkEnabled() {
@@ -11,11 +12,10 @@ vi.mock('@/lib/sentry/init', () => ({
   },
 }));
 
-vi.mock('@sentry/react', () => ({ setUser, setTags, setTag }));
+vi.mock('@sentry/react', () => ({ setUser, setTags, setTag, getActiveSpan }));
 
-const { setSentrySurface, setSentryTenantScope, setSentryUser } = await import(
-  '@/lib/sentry/scope'
-);
+const { setSentryRoutePattern, setSentrySurface, setSentryTenantScope, setSentryUser } =
+  await import('@/lib/sentry/scope');
 
 describe('Sentry scope setters', () => {
   beforeEach(() => {
@@ -23,6 +23,7 @@ describe('Sentry scope setters', () => {
     setUser.mockReset();
     setTags.mockReset();
     setTag.mockReset();
+    getActiveSpan.mockReset();
   });
 
   it('does nothing when the SDK is off', () => {
@@ -85,5 +86,41 @@ describe('Sentry scope setters', () => {
       expect(() => setSentryTenantScope({ orgId: 'o1' })).not.toThrow();
       expect(() => setSentrySurface('host_dashboard')).not.toThrow();
     });
+  });
+});
+
+describe('setSentryRoutePattern', () => {
+  beforeEach(() => {
+    isSentrySdkEnabled.value = true;
+    setTag.mockReset();
+    getActiveSpan.mockReset();
+  });
+
+  it('tags the pattern and renames the active span', () => {
+    const updateName = vi.fn();
+    getActiveSpan.mockReturnValue({ updateName });
+
+    setSentryRoutePattern('/org/:param/property/:param/bookings');
+
+    expect(setTag).toHaveBeenCalledWith('route_pattern', '/org/:param/property/:param/bookings');
+    expect(updateName).toHaveBeenCalledWith('/org/:param/property/:param/bookings');
+  });
+
+  it('survives a span that cannot be renamed', () => {
+    getActiveSpan.mockReturnValue({});
+    expect(() => setSentryRoutePattern('/calendar')).not.toThrow();
+    expect(setTag).toHaveBeenCalledWith('route_pattern', '/calendar');
+  });
+
+  it('survives no active span at all', () => {
+    getActiveSpan.mockReturnValue(undefined);
+    expect(() => setSentryRoutePattern('/')).not.toThrow();
+  });
+
+  it('does nothing when the SDK is off', () => {
+    isSentrySdkEnabled.value = false;
+    setSentryRoutePattern('/calendar');
+    expect(setTag).not.toHaveBeenCalled();
+    expect(getActiveSpan).not.toHaveBeenCalled();
   });
 });

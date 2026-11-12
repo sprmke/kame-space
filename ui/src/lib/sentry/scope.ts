@@ -43,6 +43,23 @@ export function setSentryTenantScope(scope: SentryTenantScope): void {
   }
 }
 
+/**
+ * Names the active transaction after a route pattern.
+ *
+ * The router is a single splat route, so router-based integrations can only name `/*`. Without
+ * this, every transaction, and every boot measurement attached to it, is anonymous.
+ */
+export function setSentryRoutePattern(pattern: string | undefined): void {
+  if (!isSentrySdkEnabled) return;
+  try {
+    Sentry.setTag('route_pattern', pattern ?? undefined);
+    const span = Sentry.getActiveSpan() as { updateName?: (name: string) => void } | undefined;
+    span?.updateName?.(pattern ?? '/');
+  } catch {
+    // telemetry must never break the app
+  }
+}
+
 /** The surface tag used by filters and alert routing (`host_dashboard`, `guest_booking`, …). */
 export function setSentrySurface(surface: string | undefined): void {
   if (!isSentrySdkEnabled) return;

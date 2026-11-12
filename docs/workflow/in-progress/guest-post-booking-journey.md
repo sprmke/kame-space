@@ -1,9 +1,9 @@
 ---
 stage: in-progress
 title: 'Guest post-booking journey: one connected flow from dates to review'
-status: planned
+status: in-progress
 tags: [workflow, planned, guest, booking, trip, stay-guide, chat, emails, ux]
-updated: 2026-11-11
+updated: 2026-11-12
 kind: plan
 readiness: audited
 last_verified: 2026-11-10
@@ -722,6 +722,16 @@ Edge functions use `servePublic` / `serveAdmin` / `serveCronPost`; email-sending
 ---
 
 ## 13. Status (2026-11-11)
+
+**Deployed 2026-11-12.** The backend half shipped through `cd-prod.yml` on `develop`: all five
+migrations (`20261331000100` to `20261331000500`) applied to the production database, the changed
+edge functions deployed, the public endpoint smoke passed and migration parity reported zero drift.
+The UI shipped in release #436. The two migrations that collided with already-applied versions and
+an older-dated block that `db push` refused were renumbered before the deploy, with no SQL changes.
+
+**Still open, not complete:** guest push (E11) and the first-trip-view notification (7.5) stay
+deferred as described in the phase table. Do not mark this plan done until those are either built
+or explicitly dropped.
 
 | Phase                         | Shipped | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ----------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
