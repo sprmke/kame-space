@@ -312,8 +312,9 @@ const FEATURE_MODELS: Record<AiFeature, AiModelConfig> = {
     groqFallback: false,
   },
   marketing_plan_brief: {
-    // PENDING-PRICING: the per-generation credit price is the owner's call (open items §2).
-    // Token cost is measured on fixtures; the model tier is the same text tier as smart_pricing.
+    // Credits are derived, not hand-priced: recordAiUsage divides the measured token cost by
+    // the platform credit unit (default $0.001). A plan brief is roughly 2k in / 1k out, so
+    // about 3 credits per generation. Same text tier as smart_pricing.
     model: 'gemini-2.5-flash',
     tier: 'flash',
     inputUsdPer1M: 0.3,

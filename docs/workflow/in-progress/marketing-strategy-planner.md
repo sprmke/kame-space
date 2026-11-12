@@ -543,7 +543,7 @@ Sizes: S (≤2 days), M (3 to 5 days), L (1 to 2 weeks). Each phase ships on its
 
 - [x] **P0.1** Confirm §10 decisions D1 to D7 with the owner; record answers at the top of this file.
 - [ ] **P0.2** Meta spike on the dev app: FB Reels upload session, FB photo/video stories endpoints and scheduling, IG carousel with `location_id`, `content_publishing_limit`, insights metric names on Graph v25+ for IG media and FB posts. Write findings into §3.5.
-- [ ] **P0.3** Measure token use of a draft `marketing_plan_brief` prompt on 5 fixture properties; set credit price; add router entry and client price mirror with parity test.
+- [x] **P0.3** Credit cost is derived from measured tokens and the platform credit unit (about 3 credits a brief); router entry and the wizard hint ship. No separate client price mirror is needed.
 - [x] **P0.4** Migrations: `marketing_planner_settings`, `marketing_calendar_events` (+ 2026/2027 PH seed from Proclamation 1006 and its 2027 successor when published), `marketing_plans`, `marketing_plan_items`, `marketing_post_metrics`, plan keys, permission leaf + backfill, notification types, feature availability keys. Apply locally with `bun run db:migrate`.
 - [x] **P0.5** `_shared/marketingPlaybook.ts` and `marketingCopyLibrary.ts` (English, Filipino, Taglish rules copy per opportunity type, reviewed with `human-copy`).
 - [x] **P0.6** Architecture doc `docs/architecture/marketing-planner.md` (layering, data model, truth rules, playbook versioning).

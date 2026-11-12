@@ -290,7 +290,10 @@ export function PlannerSetupWizard({ open, onOpenChange, isSaving, initial, onSa
                     />
                     <span>
                       AI written
-                      <span className="text-caption text-muted-foreground"> uses credits</span>
+                      <span className="text-caption text-muted-foreground">
+                        {' '}
+                        about 3 credits a week
+                      </span>
                     </span>
                   </label>
                 </div>

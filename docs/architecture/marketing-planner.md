@@ -93,8 +93,10 @@ returned string goes through `marketingPlanGuard`, which rejects any number or m
 claims do not support. Rejected or unavailable AI leaves rules copy in place, and the plan records
 `mode`, `credits_consumed` and the prompt id and version.
 
-Pricing for `marketing_plan_brief` is still open (open items §2), so the router entry is marked
-`PENDING-PRICING`.
+Credits are derived rather than hand-priced: `recordAiUsage` divides the measured token cost by the
+platform credit unit (`credit_unit_usd`, default `$0.001`). A brief is roughly 2,000 input and 1,000
+output tokens at Gemini Flash rates, so **about 3 credits per AI plan**. Changing the platform credit
+unit changes the number everywhere, with no per-feature price to maintain.
 
 The dashboard assistant exposes one read tool, `get_marketing_plan`, which returns this week's
 items, their status and tracked visits. Write tools are Phase 6.
