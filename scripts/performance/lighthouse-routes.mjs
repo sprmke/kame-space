@@ -14,6 +14,7 @@
  * Usage:
  *   bun run build            # once
  *   node scripts/performance/lighthouse-routes.mjs [--base-url=http://host] [--label=text]
+ *     [--routes=all|public|host] [--out-dir=relative/path]
  *
  * Without --base-url, starts `vite preview` locally on an ephemeral port.
  */
@@ -44,6 +45,16 @@ const perfFloorArg = args.find((a) => a.startsWith('--assert-perf='));
 const SEO_FLOOR = seoFloorArg ? Number(seoFloorArg.split('=')[1]) : 95;
 const PERF_FLOOR = perfFloorArg ? Number(perfFloorArg.split('=')[1]) : 85;
 const externalBaseUrl = baseUrlArg ? baseUrlArg.slice('--base-url='.length) : null;
+// `--routes=public` audits only the anonymous routes. Against a deployed origin the rest
+// redirect to sign-in, so scoring them measures the login page, not the dashboard. Default is
+// `all`, which keeps the local-preview behaviour unchanged.
+const routesArg = args.find((a) => a.startsWith('--routes='));
+const routeScope = routesArg ? routesArg.slice('--routes='.length) : 'all';
+// `--out-dir` lets CI write somewhere it can upload as an artifact.
+const outDirArg = args.find((a) => a.startsWith('--out-dir='));
+const outputDir = outDirArg
+  ? path.resolve(repoRoot, outDirArg.slice('--out-dir='.length))
+  : baselineDir;
 
 // The route list from plan doc 00, Phase 0.2 — paths verified against the real
 // router (ui/src/features/{guest,dashboard}/**/routes/*.tsx) on 2026-09-16.
@@ -75,7 +86,12 @@ const ROUTES = [
   { path: '/about', persona: 'guest-anon', name: 'About (indexable)', seo: true },
   { path: '/support', persona: 'guest-anon', name: 'Support (indexable)', seo: true },
   { path: '/for-hosts', persona: 'guest-anon', name: 'For hosts (indexable)', seo: true },
-  { path: '/developments', persona: 'guest-anon', name: 'Developments list (indexable)', seo: true },
+  {
+    path: '/developments',
+    persona: 'guest-anon',
+    name: 'Developments list (indexable)',
+    seo: true,
+  },
   { path: '/parkings', persona: 'guest-anon', name: 'Parkings list (indexable)', seo: true },
   {
     path: '/admin',
@@ -189,6 +205,17 @@ async function runLighthouse(url, chromePort) {
   };
 }
 
+const SELECTED_ROUTES =
+  routeScope === 'public'
+    ? ROUTES.filter((route) => route.persona === 'guest-anon')
+    : routeScope === 'host'
+      ? ROUTES.filter((route) => route.persona !== 'guest-anon')
+      : ROUTES;
+
+if (SELECTED_ROUTES.length === 0) {
+  fail(`--routes=${routeScope} selected no routes. Use all, public or host.`);
+}
+
 async function main() {
   if (!existsSync(path.join(repoRoot, 'ui/dist')) && !externalBaseUrl) {
     fail(
@@ -281,7 +308,7 @@ async function main() {
 
   const results = [];
   try {
-    for (const route of ROUTES) {
+    for (const route of SELECTED_ROUTES) {
       const url = `${baseUrl}${route.path}`;
       process.stdout.write(
         `  Auditing ${route.persona} / ${route.name} (${url})${runs > 1 ? ` [${runs} runs, median]` : ''}... `
@@ -320,6 +347,7 @@ async function main() {
     capturedAt: new Date().toISOString(),
     label,
     runs,
+    routeScope,
     baseUrl,
     mode: externalBaseUrl ? 'deployed-preview' : 'local-vite-preview',
     note: externalBaseUrl
@@ -328,9 +356,9 @@ async function main() {
     routes: results,
   };
 
-  if (!existsSync(baselineDir)) mkdirSync(baselineDir, { recursive: true });
+  if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
   const filename = `${snapshot.capturedAt.slice(0, 10)}-lighthouse${label ? `-${label}` : ''}.json`;
-  const outPath = path.join(baselineDir, filename);
+  const outPath = path.join(outputDir, filename);
   writeFileSync(outPath, JSON.stringify(snapshot, null, 2) + '\n');
   console.log(`\nLighthouse baseline captured: ${path.relative(repoRoot, outPath)}`);
 

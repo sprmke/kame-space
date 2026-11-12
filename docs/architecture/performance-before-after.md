@@ -548,6 +548,27 @@ the worktree to run a dev server changed what the E2E app pointed at. Remove tho
 running Playwright in a worktree, or the run measures the wrong thing. Bisecting by reverting
 source changes would never have found it.
 
+### Telemetry had been measuring one page named `/*`
+
+Starting the report work surfaced this: seven days of Sentry contained **one** transaction name,
+`/*`, across 377 events.
+
+The router is deliberately a single splat route with `<Routes>` inside `AppRoutes` (see
+`ui/src/main.tsx`), so `reactRouterBrowserTracingIntegration` and `wrapCreateBrowserRouter` can
+only ever see the splat. Every transaction, and every `boot.*` measurement attached to it, was
+anonymous. Fixing the latency without noticing this would have left no way to prove the fix held
+beyond the day it shipped.
+
+`routePatternFor` derives the pattern from the pathname instead. Route names only: the segment
+after a tenant parent, and any UUID, long hex id or email-shaped segment, becomes `:param`. Fifteen
+unit cases assert that no identifier survives.
+
+**Not yet confirmed in Sentry.** Transactions are ingesting (2 in the hour after the release, which
+is the configured 5% of 40 dwelled loads), but the available API token cannot read the
+transactions dataset: `stats_v2?category=transaction` returns volume while
+`/events/?dataset=transactions` returns an empty list. Confirming names needs the Sentry UI or a
+token with event read on that dataset. Stated here rather than claimed as verified.
+
 ### Remaining structural option
 
 1. **Collapse the burst into `get-session-context`**, the pattern that already took the boot chain
@@ -579,14 +600,16 @@ behind ten chrome calls. Two ways forward, in order of value:
 
 Same probe account, same 4x CPU throttle, CDP counting, two independent three-run sets.
 
-| Metric                  | Before  | After            | Change    |
-| ----------------------- | ------- | ---------------- | --------- |
-| `route:content` median  | 5132 ms | **3215-3433 ms** | **-33%**  |
-| `dashboard-stats` start | 2976 ms | **1356 ms**      | **-54%**  |
-| Distinct boot calls     | 24      | 24               | no change |
+| Metric                  | Before  | After                | Change    |
+| ----------------------- | ------- | -------------------- | --------- |
+| `route:content` median  | 5132 ms | **3832 ms** (5 runs) | **-25%**  |
+| `dashboard-stats` start | 2976 ms | **1356 ms**          | **-54%**  |
+| Distinct boot calls     | 24      | 24                   | no change |
 
-Raw runs. Set one: 3215, 3888, 3057. Set two: 6954, 3340, 3433. The 6954 is a first-load outlier
-and the conservative figure quoted above is the higher median of the two sets.
+Raw runs, four independent sets: 3215, 3888, 3057 / 6954, 3340, 3433 / 7798, 2997, 4121 /
+3832, 4398, 2929, 4234, 3353. The first run of a set is usually the slowest, which is a cold edge
+isolate rather than the change. Quoted is the five-run median, the least favourable of the four,
+because this machine is noisy and the conservative number is the one worth publishing.
 
 The call count did not change, and that is the point: the win is ordering, not volume.
 `dashboard-stats` used to start 320 ms after the chrome burst had taken the connections; it now

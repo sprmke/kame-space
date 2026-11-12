@@ -17,7 +17,7 @@ export function clearAnalyticsScope(): void {
   scope = {};
 }
 
-function surfaceFromPath(pathname: string): AnalyticsSurface {
+export function surfaceForPath(pathname: string): AnalyticsSurface {
   if (pathname.startsWith('/admin')) return 'super_admin';
   if (pathname.startsWith('/account')) return 'guest_account';
   if (pathname.includes('/parking/')) return 'parking_dashboard';
@@ -54,7 +54,7 @@ export function buildSharedAnalyticsProperties(
   overrides?: Partial<SharedAnalyticsProperties>
 ): SharedAnalyticsProperties {
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
-  const surface = scope.surface ?? surfaceFromPath(pathname);
+  const surface = scope.surface ?? surfaceForPath(pathname);
   const persona = scope.persona ?? personaFromPath(pathname, signedInHint);
 
   return {
