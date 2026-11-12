@@ -79,6 +79,7 @@ kind: backlog
 - Refine edit booking detail page
 - App performance improvements and make the app very fast on both desktop and pwa
 - Improve backend performance
+- Toolchain upgrade wave: TypeScript 7, Tailwind 4, Zod 4, @hookform/resolvers 7, @types/node 26, @vitest/coverage-v8 5, eslint-plugin-react-hooks 7, @blueprintjs/core 6, framer-motion 14. Each needs a code migration, not a version bump, so the Dependabot majors are closed until it is planned.
 - Pricing plans refinement
 - Payment e2e and management from super admin
 - Improve QR design to include our logo?
