@@ -4,13 +4,13 @@
  * - inline_image: returns public URL for WYSIWYG editor embeds
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { handleEdgeError } from '../_shared/httpResponse.ts';
 import { resolveScopedPropertyAccess } from '../_shared/propertyScope.ts';
 import { applyPropertyTemplateAssetFromBytes } from '../_shared/propertyTemplateAssetUpload.ts';
+import { serveHandler } from '../_shared/serveEdge.ts';
 
-serve(async (req) => {
+serveHandler('upload-property-template-asset', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders(req) });
   }

@@ -1,4 +1,3 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { minutesBetweenTimes } from '../_shared/cleaningBuffer.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { DatabaseService } from '../_shared/databaseService.ts';
@@ -44,8 +43,9 @@ import {
   PropertyLifecycleError,
 } from '../_shared/propertyLifecycle.ts';
 import { captureSnapshotForBooking, PolicyChangedError } from '../_shared/cancellationService.ts';
+import { serveHandler } from '../_shared/serveEdge.ts';
 
-serve(async (req) => {
+serveHandler('submit-form', async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders(req) });

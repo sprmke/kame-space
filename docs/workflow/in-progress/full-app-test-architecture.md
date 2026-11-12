@@ -2,7 +2,7 @@
 title: 'Full-app test architecture: page-mirrored suites, access matrix, enforced coverage'
 status: planned
 tags: [planning, testing, vitest, playwright, deno, pgtap, ci-cd, rbac, plans, governance]
-updated: 2026-11-11
+updated: 2026-11-13
 stage: in-progress
 kind: plan
 ---
@@ -142,7 +142,7 @@ Commitlint rejects `release:` as a type, so a release commit uses `chore:` or `t
 
 ### Phase 1 findings (2026-11-11)
 
-- **`serve()` handlers are not handler-testable.** `serveEdge`'s `EDGE_HANDLER_TEST` mount only covers functions that use `servePublic` / `serveAdmin` / `serveAuthenticated` / `serveCronPost`. `submit-form`, the guest intake, still calls `serve()` directly, so it cannot be driven through its real `index.ts` without the Phase 1 option (b) codemod: export the handler, `if (import.meta.main) serve(...)`. That codemod is the prerequisite for `submit-form`, `pay-parking-*` and the older webhooks, and it is the largest single mechanical change left in Phase 1.
+- **~~`serve()` handlers are not handler-testable.~~ Fixed 2026-11-13.** Fifteen entrypoints imported `serve()` directly, so importing them booted a server. They now mount through `_shared/serveEdge.ts#serveHandler`, which keeps production on `serve(handler)` and only adds the test mount: the three crons, `submit-form`, `submit-form-completion`, `submit-sd-form`, `ical-export`, `meta-inbox-oauth-callback` and the nine `upload-*` functions. `import.meta.main` was rejected: the edge runtime does not guarantee it is set, and a wrong guess would start no server at all. `submit-form.test.ts` landed with it (CORS preflight, verb guard, maintenance 503 before any write).
 - **The god harness intercepts before `mockEdgeFunctions`.** `propertyTeamRbacHarness` (1,920 lines) installs its own `page.route` and covers every endpoint, so a spec using it cannot be measured for its real endpoint surface and cannot adopt `mockTenant`. Splitting that harness is Phase 3 work, not a Phase 1 tweak.
 - **Org `Operations` / `Read Only` have no client catalog.** They are seeded server-side custom templates. Personas use `orgCustom(leaves)` rather than a hard-coded copy that can drift from what the server grants.
 - **A Supabase client caches `fetch` at creation.** Per-test `globalThis.fetch` swapping is invisible to it; handler tests need one stub with mutable state. Same class of trap as the side-effect-free `.single()` shape: a missing row is `406` + `PGRST116`, not `200` with `null`.

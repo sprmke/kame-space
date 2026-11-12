@@ -113,6 +113,8 @@ docs/guides/testing/
 
 `EDGE_HANDLER_TEST=1` makes `serveEdge` mount the composed handler instead of starting a server, so a test drives the real wrapper: auth tier, validation order, envelope, headers. Stub Supabase at `fetch`, the only boundary the handler crosses.
 
+Every entrypoint is now testable. Fifteen used to import `serve()` directly and could not be imported by a test at all, because importing booted a server: the two crons plus `superhost-assessment-cron`, `submit-form`, `submit-form-completion`, `submit-sd-form`, `ical-export`, `meta-inbox-oauth-callback` and the nine `upload-*` functions. They now call `serveHandler('<fn-name>', handler)`, which keeps production on the same `serve(handler)` path and only adds the test mount. Do not wrap them in `servePublic` / `serveAdmin`: each one owns its CORS, auth and rate-limit decisions inline, and a wrapper would change behaviour.
+
 Two traps, both cost real debugging time:
 
 - **Install one `fetch` stub before importing the handler.** The Supabase client captures `fetch` when it is created, so reassigning `globalThis.fetch` per test is invisible to it and the first stub silently answers every test. Keep one stub with mutable state and reset the state per test.
