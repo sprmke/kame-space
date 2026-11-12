@@ -22,6 +22,11 @@ export type ParkingSettingsPayload = {
   updatedAt: string;
   parkingIntegrations?: PropertyIntegrationStatus;
   platformSecrets?: PlatformSecretsStatus;
+  archiveImpact?: {
+    pendingOffers: number;
+    upcomingBookings: number;
+    bookingHistory: number;
+  };
 };
 
 export function useParkingSettings() {

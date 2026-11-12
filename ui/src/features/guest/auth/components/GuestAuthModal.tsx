@@ -7,6 +7,7 @@ import { useGuestAuthActions } from '@/features/guest/auth/hooks/useGuestAuthAct
 
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { KameSpaceBrandIcon } from '@/components/branding/KameSpaceBrandIcon';
+import { SignInLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { useCaptchaToken } from '@/components/security/useCaptchaToken';
 import { Button } from '@/components/ui/button';
 import { SpinnerIcon } from '@/components/ui/icons';
@@ -129,14 +130,14 @@ export function GuestAuthModal({
         onEscapeKeyDown={blockDismiss}
         className="gap-0 p-0 sm:max-w-[min(calc(100vw-1.5rem),26rem)]"
       >
-        <ResponsiveModalHeader className="border-border/60 space-y-4 border-b px-4 pb-4 pt-5 text-center sm:px-6">
+        <ResponsiveModalHeader className="border-border/60 space-y-4 border-b px-4 pb-4 pt-5 text-center sm:px-5">
           <KameSpaceBrandIcon className="mx-auto h-11 w-11" />
           <ResponsiveModalTitle className="text-center text-lg font-bold sm:text-xl">
             {step === 'email' ? 'Log in or sign up' : 'Confirm your email'}
           </ResponsiveModalTitle>
         </ResponsiveModalHeader>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
           {step === 'otp' && (
             <button
               type="button"
@@ -233,6 +234,7 @@ export function GuestAuthModal({
                 disabled={busy}
                 loading={isSigningInWithGoogle}
               />
+              <SignInLegalNotice className="pt-2" />
             </>
           ) : (
             <button

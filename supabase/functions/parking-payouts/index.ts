@@ -13,6 +13,7 @@ import {
 } from '../_shared/httpResponse.ts';
 import { serveSuperAdmin } from '../_shared/serveEdge.ts';
 import { logSuperAdminAction } from '../_shared/superAdminAudit.ts';
+import { parkingRefundAmountError } from '../_shared/parkingPayoutRules.ts';
 import { requireSuperAdminStepUp } from '../_shared/superAdminVerification.ts';
 import { logActivity } from '../_shared/activityLog.ts';
 
@@ -45,6 +46,8 @@ function serializeRow(row: Record<string, unknown>) {
     commissionPct: Number(row.commission_pct ?? 0),
     bookingChannel: (row.booking_channel as string | undefined) ?? 'standard',
     hostNetTotal: Number(row.host_net_total ?? 0),
+    paymentFeeAmount: Number(row.payment_fee_amount ?? 0),
+    platformNetTotal: Number(row.platform_net_total ?? 0),
     status: row.status as string,
     paidAt: (row.paid_at as string | undefined) ?? null,
     disbursedAt: (row.disbursed_at as string | undefined) ?? null,
@@ -178,6 +181,19 @@ serveSuperAdmin('parking-payouts', async (req, admin) => {
       }
       if (!reference) return jsonError(req, 'reference is required');
       if (!reason) return jsonError(req, 'reason is required');
+
+      const { data: refundable, error: refundableError } = await supabase
+        .from('parking_payment_transactions')
+        .select('id, status, guest_charge_total')
+        .eq('id', transactionId)
+        .maybeSingle();
+      if (refundableError) return jsonError(req, refundableError.message, 500);
+      if (!refundable || (refundable.status !== 'paid' && refundable.status !== 'refund_review')) {
+        return jsonError(req, 'Refundable transaction not found', 404);
+      }
+      const guestCharge = Number(refundable.guest_charge_total ?? 0);
+      const amountError = parkingRefundAmountError(amount, guestCharge);
+      if (amountError) return jsonError(req, amountError);
 
       const nowIso = new Date().toISOString();
       const { data, error } = await supabase

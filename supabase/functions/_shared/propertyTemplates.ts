@@ -11,6 +11,25 @@ import { normalizeEmailCalloutPlaceholders } from './normalizeEmailCalloutPlaceh
 
 export type PropertyTemplateCategory = 'standard' | 'email' | 'custom';
 
+/**
+ * Which trip moment a guest-visible custom template belongs to (guest journey plan D8).
+ * `always` shows at every stage.
+ */
+export const GUEST_TEMPLATE_PHASES = [
+  'before',
+  'arrival',
+  'stay',
+  'checkout',
+  'after',
+  'always',
+] as const;
+
+export type GuestTemplatePhase = (typeof GUEST_TEMPLATE_PHASES)[number];
+
+export function isGuestTemplatePhase(value: unknown): value is GuestTemplatePhase {
+  return typeof value === 'string' && (GUEST_TEMPLATE_PHASES as readonly string[]).includes(value);
+}
+
 export type PropertyTemplateKey =
   | 'house-rules'
   | 'check-in-instructions'
@@ -19,6 +38,7 @@ export type PropertyTemplateKey =
   | 'email-gaf-request'
   | 'email-pet-request'
   | 'email-new-booking-request'
+  | 'email-booking-request-received'
   | 'email-booking-acknowledgement'
   | 'email-ready-for-checkin'
   | 'email-sd-refund-form-request'
@@ -46,6 +66,10 @@ export type PropertyTemplateRow = {
   content: string;
   section_image_url: string | null;
   folder_id: string | null;
+  /** Custom templates only: render this template on the guest trip page and stay guide. */
+  guest_visible?: boolean | null;
+  /** Custom templates only: which trip stage shows it. Null means `always`. */
+  guest_phase?: string | null;
   updated_at: string;
 };
 
@@ -78,6 +102,10 @@ export type PropertyTemplateDto = {
   sectionImageUrl: string | null;
   /** Custom templates only: the host folder holding this template, or null when ungrouped. */
   folderId: string | null;
+  /** Custom templates only: whether guests see it on the trip page and in the stay guide. */
+  guestVisible: boolean;
+  /** Custom templates only: the trip stage that shows it. `always` when unset. */
+  guestPhase: GuestTemplatePhase;
   updatedAt: string | null;
 };
 
@@ -198,6 +226,17 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
 <p>{{booking_link_cta}}</p>`,
   },
   {
+    key: 'email-booking-request-received',
+    label: 'Booking Request Received',
+    description: 'Guest email right after a booking request is submitted.',
+    category: 'email',
+    defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
+<p>We received your booking request for <strong>{{property_name}}</strong> from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong>.</p>
+<p>Your host is reviewing it now. We will email you as soon as it is confirmed.</p>
+<p>{{booking_request_received_flow_section}}</p>
+<p>{{email_signature_section}}</p>`,
+  },
+  {
     key: 'email-booking-acknowledgement',
     label: 'Booking Acknowledgement',
     description: 'Guest email after admin proceeds to pending documents.',
@@ -214,7 +253,8 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
     category: 'email',
     previewTemplateSlug: 'ready-for-checkin',
     defaultContent: `<p>Dear <strong>{{guest_facebook_name}}</strong>,</p>
-<p>Your Guest Advise Form (GAF) has been approved and your booking is now confirmed. We look forward to hosting you.</p>
+<p>Your check-in details are ready. We look forward to hosting you.</p>
+<p>{{trip_cta_section}}</p>
 <p>{{ready_for_checkin_booking_summary_section}}</p>
 <p>{{payment_breakdown_section}}</p>
 <p>{{gcash_payment_section}}</p>
@@ -232,7 +272,8 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
     defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
 <p>Thank you for staying with us! We hope you had a wonderful stay! Please follow the check-out instructions below. After that, please open and fill out the SD refund form so that we can process your refund.</p>
 <p>{{sd_refund_checklist_section}}</p>
-<p>{{sd_refund_details_section}}</p>`,
+<p>{{sd_refund_details_section}}</p>
+<p>{{trip_cta_section}}</p>`,
   },
   {
     key: 'email-booking-cancelled-guest',
@@ -244,6 +285,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
 <p>This is for your stay at <strong>{{tower_and_unit_number}}</strong> from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong>.</p>
 <p>{{cancellation_detail_section}}</p>
 <p>You can see the latest status any time from your trip page.</p>
+<p>{{trip_cta_section}}</p>
 <p>{{email_signature_section}}</p>`,
   },
   {
@@ -264,6 +306,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
     defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
 <p><strong>{{cancellation_request_title}}</strong></p>
 <p>{{cancellation_detail_section}}</p>
+<p>{{trip_cta_section}}</p>
 <p>{{email_signature_section}}</p>`,
   },
   {
@@ -274,6 +317,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
     defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
 <p>Your refund has been sent.</p>
 <p>{{cancellation_detail_section}}</p>
+<p>{{trip_cta_section}}</p>
 <p>{{email_signature_section}}</p>`,
   },
 ];
@@ -375,6 +419,10 @@ export async function upsertPropertyTemplateRow(input: {
   sectionImageUrl?: string | null;
   /** Custom templates only; built-ins always live in their fixed section. */
   folderId?: string | null;
+  /** Custom templates only: render it for guests. Built-ins are never guest-visible here. */
+  guestVisible?: boolean;
+  /** Custom templates only: the trip stage that shows it. */
+  guestPhase?: GuestTemplatePhase;
 }): Promise<PropertyTemplateRow> {
   const patch: Record<string, unknown> = {
     property_id: input.propertyId,
@@ -396,6 +444,14 @@ export async function upsertPropertyTemplateRow(input: {
   }
   if (input.folderId !== undefined) {
     patch.folder_id = input.category === 'custom' ? input.folderId : null;
+  }
+  // Guest visibility only means anything for a custom template: built-ins already reach the
+  // guest through the trip page's own sections.
+  if (input.guestVisible !== undefined) {
+    patch.guest_visible = input.category === 'custom' ? input.guestVisible : false;
+  }
+  if (input.guestPhase !== undefined) {
+    patch.guest_phase = input.category === 'custom' ? input.guestPhase : null;
   }
 
   const { data, error } = await supabaseAdmin()
@@ -561,6 +617,8 @@ function rowToDto(
     previewTemplateSlug: builtin?.previewTemplateSlug ?? null,
     sectionImageUrl: String(row.section_image_url ?? '').trim() || null,
     folderId: row.category === 'custom' ? (row.folder_id ?? null) : null,
+    guestVisible: row.category === 'custom' ? row.guest_visible === true : false,
+    guestPhase: isGuestTemplatePhase(row.guest_phase) ? row.guest_phase : 'always',
     updatedAt: row.updated_at,
   };
 }
@@ -577,6 +635,8 @@ function builtinToDto(builtin: PropertyTemplateDefinition): PropertyTemplateDto 
     previewTemplateSlug: builtin.previewTemplateSlug ?? null,
     sectionImageUrl: null,
     folderId: null,
+    guestVisible: false,
+    guestPhase: 'always',
     updatedAt: null,
   };
 }
@@ -759,6 +819,8 @@ export async function updateCustomTemplateRow(input: {
   name?: string;
   category?: PropertyTemplateCategory;
   folderId?: string | null;
+  guestVisible?: boolean;
+  guestPhase?: GuestTemplatePhase;
 }): Promise<PropertyTemplateRow | null> {
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (input.name !== undefined) patch.name = input.name.trim();
@@ -771,6 +833,12 @@ export async function updateCustomTemplateRow(input: {
     }
   } else if (input.folderId !== undefined) {
     patch.folder_id = input.folderId;
+  }
+  if (input.guestVisible !== undefined) {
+    patch.guest_visible = input.guestVisible;
+  }
+  if (input.guestPhase !== undefined) {
+    patch.guest_phase = input.guestPhase;
   }
 
   const { data, error } = await supabaseAdmin()

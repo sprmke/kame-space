@@ -1,4 +1,5 @@
 import { detectAnalyticsEnvironment, detectAppTrack } from '@/lib/posthog/env';
+import { routePatternFor } from '@/lib/telemetry/routePattern';
 import type {
   AnalyticsPersona,
   AnalyticsScope,
@@ -16,7 +17,7 @@ export function clearAnalyticsScope(): void {
   scope = {};
 }
 
-function surfaceFromPath(pathname: string): AnalyticsSurface {
+export function surfaceForPath(pathname: string): AnalyticsSurface {
   if (pathname.startsWith('/admin')) return 'super_admin';
   if (pathname.startsWith('/account')) return 'guest_account';
   if (pathname.includes('/parking/')) return 'parking_dashboard';
@@ -53,7 +54,7 @@ export function buildSharedAnalyticsProperties(
   overrides?: Partial<SharedAnalyticsProperties>
 ): SharedAnalyticsProperties {
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
-  const surface = scope.surface ?? surfaceFromPath(pathname);
+  const surface = scope.surface ?? surfaceForPath(pathname);
   const persona = scope.persona ?? personaFromPath(pathname, signedInHint);
 
   return {
@@ -63,6 +64,8 @@ export function buildSharedAnalyticsProperties(
     ...(import.meta.env.VITE_APP_VERSION ? { app_release: import.meta.env.VITE_APP_VERSION } : {}),
     persona,
     surface,
+    // Route pattern, never the slug: two tenants on the same page must not split the metric.
+    route_pattern: routePatternFor(pathname),
     ...(scope.orgId ? { org_id: scope.orgId } : {}),
     ...(scope.propertyId ? { property_id: scope.propertyId } : {}),
     ...(scope.parkingId ? { parking_id: scope.parkingId } : {}),

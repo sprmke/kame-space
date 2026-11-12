@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Wallet } from 'lucide-react';
 
+import { computeParkingPlatformSettlement } from '@/features/dashboard/parking/lib/parkingPayout';
 import { SuperAdminEmptyState } from '@/features/dashboard/super-admin/components/shared/SuperAdminEmptyState';
 import { SuperAdminPage } from '@/features/dashboard/super-admin/components/shared/SuperAdminPage';
 import {
@@ -45,6 +46,7 @@ import { useGuardedClose } from '@/hooks/useGuardedClose';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { FORM_PLACEHOLDERS } from '@/lib/constants/formPlaceholders';
 import { appPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { cn } from '@/lib/utils';
 
 function formatPhp(value: number): string {
   return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -280,6 +282,106 @@ function RecordRefundDialog({ transaction }: { transaction: ParkingPayoutTransac
   );
 }
 
+function ParkingSettlementPreview({
+  guestRate,
+  commissionPct,
+  directCommissionPct,
+  paymentFeePct,
+  paymentFeeFixed,
+}: {
+  guestRate: number;
+  commissionPct: number;
+  directCommissionPct: number;
+  paymentFeePct: number;
+  paymentFeeFixed: number;
+}) {
+  const [hostRate, setHostRate] = useState('300');
+  const hostGross = Number(hostRate) || 0;
+
+  const standard = useMemo(
+    () =>
+      computeParkingPlatformSettlement({
+        guestChargeTotal: guestRate,
+        hostGrossTotal: hostGross,
+        commissionPct,
+        paymentFeePct,
+        paymentFeeFixed,
+      }),
+    [guestRate, hostGross, commissionPct, paymentFeePct, paymentFeeFixed]
+  );
+  const direct = useMemo(
+    () =>
+      computeParkingPlatformSettlement({
+        guestChargeTotal: guestRate,
+        hostGrossTotal: hostGross,
+        commissionPct: directCommissionPct,
+        paymentFeePct,
+        paymentFeeFixed,
+      }),
+    [guestRate, hostGross, directCommissionPct, paymentFeePct, paymentFeeFixed]
+  );
+
+  const rows: Array<{ label: string; value: number; tone?: 'muted' | 'strong' }> = [
+    { label: 'Guest pays', value: guestRate, tone: 'muted' },
+    { label: `Host gross`, value: hostGross, tone: 'muted' },
+    {
+      label: `Commission (${Math.round(commissionPct * 1000) / 10}%)`,
+      value: -standard.commissionAmount,
+      tone: 'muted',
+    },
+    { label: 'Host receives', value: standard.hostNet, tone: 'strong' },
+    { label: 'Processor fee (est.)', value: -standard.paymentFeeAmount, tone: 'muted' },
+    { label: 'Platform net', value: standard.platformNetTotal, tone: 'strong' },
+  ];
+
+  return (
+    <div className="border-border/60 bg-muted/20 rounded-lg border p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-medium">Per-night example</p>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="parking-example-host-rate" className="text-muted-foreground text-xs">
+            Host rate
+          </Label>
+          <Input
+            id="parking-example-host-rate"
+            type="number"
+            min={0}
+            step={1}
+            value={hostRate}
+            onChange={(event) => setHostRate(event.target.value)}
+            className="h-9 w-24 text-sm tabular-nums"
+          />
+        </div>
+      </div>
+      <dl className="mt-3 grid gap-1 text-xs sm:grid-cols-2 sm:gap-x-6">
+        {rows.map((row) => (
+          <div key={row.label} className="flex items-baseline justify-between gap-3">
+            <dt
+              className={
+                row.tone === 'strong' ? 'text-foreground font-medium' : 'text-muted-foreground'
+              }
+            >
+              {row.label}
+            </dt>
+            <dd
+              className={cn(
+                'tabular-nums',
+                row.tone === 'strong' ? 'text-foreground font-semibold' : 'text-foreground'
+              )}
+            >
+              {row.value < 0 ? '-' : ''}
+              {formatPhp(Math.abs(row.value))}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p className="text-muted-foreground mt-2 text-xs">
+        Direct link: platform net {formatPhp(direct.platformNetTotal)} per night.
+      </p>
+    </div>
+  );
+}
+
 function ParkingSettingsCard() {
   const { data, isLoading, error } = usePlatformParkingSettings();
   const save = useUpdatePlatformParkingSettings();
@@ -287,6 +389,8 @@ function ParkingSettingsCard() {
   const [directCommissionPct, setDirectCommissionPct] = useState('5');
   const [weekday, setWeekday] = useState('400');
   const [weekend, setWeekend] = useState('400');
+  const [paymentFeePct, setPaymentFeePct] = useState('3.125');
+  const [paymentFeeFixed, setPaymentFeeFixed] = useState('15');
   const [escalationPhone, setEscalationPhone] = useState('');
   const [initialized, setInitialized] = useState(false);
 
@@ -296,6 +400,8 @@ function ParkingSettingsCard() {
     setDirectCommissionPct(String(Math.round(data.directCommissionPct * 1000) / 10));
     setWeekday(String(data.guestRateWeekday));
     setWeekend(String(data.guestRateWeekend));
+    setPaymentFeePct(String(Math.round(data.paymentFeePct * 10000) / 100));
+    setPaymentFeeFixed(String(data.paymentFeeFixed));
     setEscalationPhone(data.supportEscalationPhone ?? '');
     setInitialized(true);
   }, [data, initialized]);
@@ -305,6 +411,8 @@ function ParkingSettingsCard() {
     directCommissionPct: Number(directCommissionPct) / 100,
     guestRateWeekday: Number(weekday),
     guestRateWeekend: Number(weekend),
+    paymentFeePct: Number(paymentFeePct) / 100,
+    paymentFeeFixed: Number(paymentFeeFixed),
     supportEscalationPhone: escalationPhone.trim(),
   };
   const isDirty =
@@ -314,6 +422,8 @@ function ParkingSettingsCard() {
       directCommissionPct !== String(Math.round(data.directCommissionPct * 1000) / 10) ||
       weekday !== String(data.guestRateWeekday) ||
       weekend !== String(data.guestRateWeekend) ||
+      paymentFeePct !== String(Math.round(data.paymentFeePct * 10000) / 100) ||
+      paymentFeeFixed !== String(data.paymentFeeFixed) ||
       escalationPhone.trim() !== (data.supportEscalationPhone ?? '').trim());
 
   const saveSettings = async (): Promise<boolean> => {
@@ -328,13 +438,15 @@ function ParkingSettingsCard() {
   useUnsavedChangesGuard({ isDirty, onSave: saveSettings });
 
   if (isLoading && !data)
-    return <SuperAdminSettingsBodySkeleton cards={1} titles={['Commission & guest rate']} />;
+    return (
+      <SuperAdminSettingsBodySkeleton cards={1} titles={['Commission, guest rate & margin']} />
+    );
   if (error) return <p className="text-destructive text-sm">Could not load parking settings.</p>;
 
   return (
     <SuperAdminSettingsCard
-      title="Commission & guest rate"
-      description="Guest rate is what riders are charged per night and doubles as the price cap that excludes hosts priced above it from matching. Commission is taken from the host's gross rate. Changes only apply to bookings created after saving. Already-paid transactions keep their snapshotted values."
+      title="Commission, guest rate & margin"
+      description="Guests pay the guest rate. Hosts are paid their rate minus commission. The processor fee estimates what the payment provider keeps. Changes apply to new bookings only."
       icon={<Wallet className="text-muted-foreground size-4" aria-hidden />}
       onSubmit={() => void saveSettings()}
       footer={
@@ -344,10 +456,10 @@ function ParkingSettingsCard() {
       }
     >
       {isLoading && !data ? (
-        <SectionContentSkeleton rows={4} />
+        <SectionContentSkeleton rows={6} />
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <SuperAdminSettingsRow stacked label="Commission (%)" htmlFor="commission-pct">
               <Input
                 id="commission-pct"
@@ -402,7 +514,46 @@ function ParkingSettingsCard() {
                 onChange={(event) => setWeekend(event.target.value)}
               />
             </SuperAdminSettingsRow>
+            <SuperAdminSettingsRow
+              stacked
+              label="Processor fee (%)"
+              htmlFor="payment-fee-pct"
+              description="Estimate only. PayMongo's rate varies by payment method."
+            >
+              <Input
+                id="payment-fee-pct"
+                type="number"
+                min={0}
+                max={100}
+                step={0.001}
+                value={paymentFeePct}
+                onChange={(event) => setPaymentFeePct(event.target.value)}
+              />
+            </SuperAdminSettingsRow>
+            <SuperAdminSettingsRow
+              stacked
+              label="Processor fee fixed (₱)"
+              htmlFor="payment-fee-fixed"
+              description="Per transaction."
+            >
+              <Input
+                id="payment-fee-fixed"
+                type="number"
+                min={0}
+                step={0.01}
+                value={paymentFeeFixed}
+                onChange={(event) => setPaymentFeeFixed(event.target.value)}
+              />
+            </SuperAdminSettingsRow>
           </div>
+
+          <ParkingSettlementPreview
+            guestRate={Number(weekday) || 0}
+            commissionPct={Number(commissionPct) / 100 || 0}
+            directCommissionPct={Number(directCommissionPct) / 100 || 0}
+            paymentFeePct={Number(paymentFeePct) / 100 || 0}
+            paymentFeeFixed={Number(paymentFeeFixed) || 0}
+          />
           <SuperAdminSettingsRow
             stacked
             label="Support escalation phone"
@@ -459,10 +610,24 @@ function PayoutsLedger() {
   const [filter, setFilter] = useState<ParkingPayoutStatusFilter>('paid');
   const { data, isLoading, error } = useParkingPayouts(filter);
 
+  const transactions = useMemo(() => data ?? [], [data]);
+  const totals = useMemo(
+    () =>
+      transactions.reduce(
+        (acc, txn) => ({
+          guest: acc.guest + txn.guestChargeTotal,
+          host: acc.host + txn.hostNetTotal,
+          fee: acc.fee + txn.paymentFeeAmount,
+          platform: acc.platform + txn.platformNetTotal,
+        }),
+        { guest: 0, host: 0, fee: 0, platform: 0 }
+      ),
+    [transactions]
+  );
+
   if (isLoading && !data) return <SuperAdminAdminListBodySkeleton metricCount={0} />;
   if (error) return <p className="text-destructive text-sm">Could not load the payout ledger.</p>;
 
-  const transactions = data ?? [];
   const filters = (
     <div className="flex flex-wrap gap-2">
       {PAYOUT_FILTERS.map((option) => (
@@ -492,6 +657,24 @@ function PayoutsLedger() {
   return (
     <>
       {filters}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {[
+          { label: 'Guest charges', value: totals.guest },
+          { label: 'Host payouts', value: totals.host },
+          { label: 'Processor (est.)', value: totals.fee },
+          { label: 'Platform net', value: totals.platform },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="border-border/60 bg-muted/20 rounded-lg border px-3 py-2"
+          >
+            <div className="text-muted-foreground text-xs">{stat.label}</div>
+            <div className="text-foreground text-sm font-semibold tabular-nums">
+              {formatPhp(stat.value)}
+            </div>
+          </div>
+        ))}
+      </div>
       {/* Desktop table */}
       <Card className="hidden overflow-hidden lg:block">
         <div className="overflow-x-auto">
@@ -500,7 +683,8 @@ function PayoutsLedger() {
               <TableRow>
                 <TableHead>Booking</TableHead>
                 <TableHead>Host</TableHead>
-                <TableHead>Net payout</TableHead>
+                <TableHead>Host payout</TableHead>
+                <TableHead>Platform net</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -533,6 +717,15 @@ function PayoutsLedger() {
                         Clawback: {formatPhp(txn.clawbackAmount)}
                       </div>
                     ) : null}
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium tabular-nums">
+                      {formatPhp(txn.platformNetTotal)}
+                    </div>
+                    <div className="text-muted-foreground text-xs tabular-nums">
+                      Guest {formatPhp(txn.guestChargeTotal)} · Processor{' '}
+                      {formatPhp(txn.paymentFeeAmount)}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <PayoutStatusBadge txn={txn} />
@@ -568,11 +761,15 @@ function PayoutsLedger() {
                 {txn.parkingName ?? '-'}{' '}
                 <span className="text-muted-foreground">· {txn.organizationName ?? '-'}</span>
               </div>
-              <div className="font-medium">{formatPhp(txn.hostNetTotal)} net</div>
+              <div className="font-medium">{formatPhp(txn.hostNetTotal)} to host</div>
               <div className="text-muted-foreground text-xs">
                 Gross {formatPhp(txn.hostGrossTotal)} · Commission{' '}
                 {(txn.commissionPct * 100).toFixed(1)}%
                 {txn.bookingChannel === 'direct_link' ? ' · Direct link' : ''}
+              </div>
+              <div className="text-muted-foreground text-xs tabular-nums">
+                Guest {formatPhp(txn.guestChargeTotal)} · Processor{' '}
+                {formatPhp(txn.paymentFeeAmount)} · Platform net {formatPhp(txn.platformNetTotal)}
               </div>
               {txn.clawbackAmount != null ? (
                 <div className="text-destructive text-xs">
@@ -594,7 +791,7 @@ export function SuperAdminParkingPayoutsPage() {
   return (
     <SuperAdminPage
       title="Parking payouts"
-      subtitle="Commission / guest-rate config and the manual host disbursement ledger for the parkings vertical."
+      subtitle="Commission, guest rate, processor fees, and the manual host disbursement ledger for the parkings vertical."
     >
       <ParkingSettingsCard />
       <div className="space-y-3">

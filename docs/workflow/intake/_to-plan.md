@@ -2,7 +2,7 @@
 title: 'Tasks To Plan'
 status: active
 tags: [planning, intake, backlog]
-updated: 2026-11-09
+updated: 2026-11-13
 stage: intake
 kind: backlog
 ---
@@ -1386,3 +1386,11 @@ super-admin console and emailed to the team.
 ===
 
 🔵 Support google map directions from use current area to properties/places
+
+===
+
+📋 Escalate urgent production errors to developers immediately
+
+Blockers like the guest booking form outage must reach a developer's phone within minutes, across every source: browser, edge, crons, webhooks, Vercel and CI/CD deploys, and Supabase platform errors. Rank urgency so only real blockers page, and use free channels first (Telegram, email), with Slack, Discord or paid Sentry as options.
+
+→ **Planned:** [`../planned/production-error-escalation.md`](../planned/production-error-escalation.md): P0-P3 registry, ops dispatcher to Telegram + email, journey watchdog for 4xx blockers, deploy/probe alerts, Sentry email relay, Supabase log scan, ack loop.

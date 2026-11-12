@@ -43,7 +43,7 @@ export function ChatComposerContextHub({
   const [open, setOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const propertyId = usePropertyIdParam();
-  const { groups, isLoading } = useAssistantContextCatalog();
+  const { groups, isLoading } = useAssistantContextCatalog({ enabled: open });
   const { picker } = useAssistantContextPicker();
   const preferredModuleType = PICKER_ATTACHED_TYPE[picker];
   const {

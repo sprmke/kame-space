@@ -23,12 +23,14 @@ export function GuestFormCancellationPolicy({
   accepted,
   onAcceptedChange,
   showAgreement,
+  showPolicyChangedNotice = false,
 }: {
   policy: ResolvedCancellationPolicyDisplay;
   checkInDate: string;
   accepted: boolean;
   onAcceptedChange: (accepted: boolean) => void;
   showAgreement: boolean;
+  showPolicyChangedNotice?: boolean;
 }) {
   if (policy.unset) {
     return (
@@ -46,6 +48,11 @@ export function GuestFormCancellationPolicy({
 
   return (
     <div className="border-border/80 bg-card rounded-xl border px-4 py-4 shadow-sm">
+      {showPolicyChangedNotice ? (
+        <NoticeCallout tone="warning" className="mb-3">
+          The cancellation policy was updated. Review the new terms and tick the box again.
+        </NoticeCallout>
+      ) : null}
       <p className="text-sm font-semibold">{policy.title}</p>
       <p className="text-muted-foreground mt-1 text-sm">{policy.description}</p>
       <p className="text-muted-foreground mt-1 text-xs">

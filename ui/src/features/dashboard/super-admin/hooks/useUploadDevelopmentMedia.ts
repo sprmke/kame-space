@@ -35,7 +35,7 @@ export function useUploadDevelopmentMedia(developmentId: string | undefined) {
       if (!developmentId) throw new Error('Development context is required');
 
       const prepared = await prepareUpload(rawFile, {
-        imagePreset: 'PHOTO_MASTER',
+        imagePreset: 'LISTING_PHOTO',
         surface: 'development-media',
       });
       if (prepared.error) throw new Error(prepared.error);

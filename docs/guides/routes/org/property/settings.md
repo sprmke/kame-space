@@ -31,7 +31,7 @@ Route: `/org/:orgSlug/property/:propertySlug/settings`
 | Integrations       | Done      | Done       | Done | Telegram + AI optional; GAF/pet via Resend inbound                                                                              |
 | AI features        | Moved     | n/a        | Done | Removed from property settings; configured in org Settings → AI features                                                        |
 | Activity           | Read-only | n/a        | Done | Summary row + **Manage** → modal with full property activity feed (`ActivityLogPanel`). Section shown only with `activity:view` |
-| Listing status     | Done      | Done       | Done | Pause, archive, restore, and delete with impact sheets                                                                          |
+| Listing status     | Done      | Done       | Done | Last section; layout-matched skeleton while lifecycle loads; confirm sheets for pause, archive, restore, and delete             |
 
 > **Also editable in Page Editor:** Photos & Videos, Brand color, Description, Amenities, House Rules, and Cancellation — same fields, same storage. **External reviews and vouchers** are Settings-only (**Reviews & vouchers**). **Socials** are Settings-only.
 
@@ -42,6 +42,8 @@ Route: `/org/:orgSlug/property/:propertySlug/settings`
 Living operator spec for property settings: what each section does, how data is saved, and setup completeness. **Save Changes** persists only dirty sections that pass validation — incomplete required areas still show a red dot for setup tracking. Field helpers use a **?** beside the label (`FieldLabel` `help` / `SettingsField` `help`) — not muted text under the control.
 
 Many section values can also be **seeded from another property** via org **Properties → Copy settings** (4-step wizard). Payment methods are not included.
+
+**Listing status** is the last section in the page and section nav (after Activity when visible). It is not the first item. Destructive actions stay at the bottom with setup and operational sections above.
 
 ### Permissions (Phase 5)
 
@@ -65,6 +67,8 @@ Property Settings is where you complete operational setup: basic info, capacity,
   A: Restore only appears when the listing is verified and the listing contract is current. A new listing has to be approved first, and an ended contract has to be renewed. The listing status card shows which one applies.
 - Q: Can guests still book a property I paused or archived?
   A: No. A paused listing keeps its public page but shows "Not taking new bookings". An archived, suspended, or unapproved listing is hidden and its direct booking link shows the same closed message. Guests who already have a booking keep their form, trip page, and stay guide.
+- Q: What do I see when I pause or archive?
+  A: A confirm sheet with a short description under the title, not just the property name. Archive may list open bookings that block the action, or a short bullet list of what changes when archive is allowed. Compare options uses the same split sheet with one line per choice.
 - Q: What turns off when I archive?
   A: New bookings, calendar imports, the calendar export link, scheduled social posts, Smart Pricing, Telegram digests, inbox AI replies, and the voice receptionist. Refunds, cancellation refunds, and review requests keep running.
 - Q: Does deleting a property refund my current billing period?
@@ -255,6 +259,61 @@ Compact card on Property Settings: names the first amenities plus **Manage** in 
 Compact card on Property Settings: names the first rules plus **Manage** in the summary row. Opens a large `ResponsiveModal` (`PropertyHouseRulesManageDialog`) with collapsible rule categories (3-column grid on large screens): Check-in & timing, Restrictions, Guests & pets, Property — catalog in `propertyHouseRulesConstants.ts` includes condo-building presets (comply with condo/building rules, valid ID at lobby, no unregistered guests, etc.). Preset + custom house rules (`enabledHouseRules` / `customHouseRules`). Mutually exclusive presets still apply on toggle. Changes update the page draft live; persist with the page **Save**. Also editable in the listing Page Editor. Preset catalog still mirrors `propertyHouseRulesConstants.ts`; check-in/out presets use property detail times on the public listing. Templates → **House Rules** remains email copy only.
 
 **Summary row:** uses `resolveHouseRulesForDisplay` so check-in/out rules read with the property's own times ("Check-in: After 14:00 · Checkout: Before 12:00"), then the same `+N` pill and **Manage**. Same 3-item / 48-character collapse as Amenities. Empty selection reads "No house rules selected".
+
+---
+
+## Guest experience
+
+The arrival content a guest sees on their trip page and in the stay guide (guest journey plan
+D7). Sits between **Email Automations** and **Activity** in the section rail.
+
+### Readiness card
+
+First thing in the section. Lists the guest-facing inputs and flags what is missing:
+
+| Row                               | Ready when                        | Missing means                           |
+| --------------------------------- | --------------------------------- | --------------------------------------- |
+| Check-in steps                    | the host saved their own copy     | the shipped default is doing the work   |
+| Check-out steps                   | the host saved their own copy     | the shipped default is doing the work   |
+| Essentials                        | any essentials field is filled in | the guest has no Wi-Fi, code or contact |
+| Payment methods                   | at least one method               | the guest cannot pay the balance        |
+| House rules / Cancellation policy | —                                 | opens the editor; no status is claimed  |
+
+Rows a host can read from the page (`missing`) show **Fix** and scroll to the editor. Rows that
+are only links show **Open**. Readiness never nags about default copy — it has nothing to fix.
+
+### Fields
+
+Stored in `property_guest_essentials`, **not** `properties.settings`, because every public
+listing read returns `settings` and a Wi-Fi password must not leak there.
+
+| Group          | Fields                                                   |
+| -------------- | -------------------------------------------------------- |
+| Wi-Fi          | network name, password (secret)                          |
+| Getting in     | door or lock code (secret), unit and floor, parking slot |
+| Contacts       | emergency contact name + phone, building security phone  |
+| Building notes | garbage schedule, quiet hours                            |
+
+**Secrets:** the password and door code render masked with a reveal toggle. They reach a guest
+only from **check-in minus `Reveal codes before check-in` hours** (default 24, 0-720). Before
+then `get-guest-trip` and `get-guest-stay-guide` return `null` for the value and only the
+timestamp, and the guest sees "Available {date, time}".
+
+A **per-booking** code override lives on the booking detail's Guest view card, for rotating
+locks. It wins over the property default and never changes the reveal timing.
+
+### Save path
+
+`PATCH property-guest-essentials` with `{ property_id, essentials }`. Sends only the fields that
+changed, so one edit cannot clear the rest. `templates:standard:edit` is required (the same leaf
+as check-in and check-out instructions). `GET` uses `templates:view`.
+
+**Activity:** `settings.updated` with `area: "guest essentials"` and the **field names only**. A
+`changes` diff would put the Wi-Fi password and door code into the activity feed, which hosts
+and org admins can read.
+
+The section is guarded by `useUnsavedChangesGuard`: leaving with unsaved edits prompts Save /
+Discard / Keep editing.
 
 ---
 
@@ -469,12 +528,12 @@ Read-only. Summary: "Who did what on this property." **Manage** opens a large mo
 
 ### Pause / Resume
 
-- Impact sheet → `POST property-lifecycle` (`settings.listingStatus:edit`)
-- Pause is instant and reversible. Resume re-checks the listing authorization, contract lock, and tower/unit peer.
+- Confirm sheet (fixed header and footer, scrollable body on phone) → `POST property-lifecycle` (`settings.listingStatus:edit`)
+- Title asks the action; the description explains what happens to the property by name. Pause is instant and reversible. Resume re-checks the listing authorization, contract lock, and tower/unit peer.
 
 ### Archive
 
-- Impact sheet lists booking blockers, what stops, what keeps working, team access, and the billing line
+- Same split confirm sheet. When archive is allowed, the body is a short outcome list (new bookings off, automations off, current guests keep guides and refunds) plus a billing line when the property is on a paid plan. When open bookings block archive, the body lists those bookings and counts them; confirm stays disabled until they are finished or cancelled.
 - `POST property-lifecycle { action: "archive" }`. Pre-check and a post-write re-check both read open bookings, cancellation requests, and refunds; a booking that lands mid-archive rolls the state back.
 - On success: `status = INACTIVE`, `inactive_reason = archived`, `archived_at`, `archived_by`; iCal feeds disabled, export disabled, scheduled posts marked failed, subscription slot removed.
 

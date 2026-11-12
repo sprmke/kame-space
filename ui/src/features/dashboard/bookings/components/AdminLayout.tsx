@@ -132,6 +132,7 @@ import { PageTransition } from '@/components/mobile/PageTransition';
 import { AiAssistantPanelSkeleton } from '@/components/skeletons/AiAssistantSkeleton';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { FeatureAvailabilityBanner } from '@/components/feature-availability/FeatureAvailabilityBanner';
+import { LegalFooterLinks } from '@/components/legal/LegalFooterLinks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SlidingActivePill } from '@/components/ui/SlidingActivePill';
 import { useAfterFirstPaint } from '@/hooks/useAfterFirstPaint';
@@ -302,12 +303,15 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
     propertySlug?: string;
     parkingSlug?: string;
   }>();
+  // Declared before its first consumer: the tenant lists, the notification preview and the
+  // announcement dot all gate on it, and a `const` read before its declaration would throw.
+  const afterFirstPaint = useAfterFirstPaint();
   const tenant = useOptionalOrgContext();
   const parkingTenant = useOptionalParkingContext();
   const { data: orgsData } = useOrganizations();
   const orgSlugForLists = tenant?.orgSlug ?? parkingTenant?.orgSlug ?? routeOrgSlug;
   const { data: propertiesData } = useProperties(orgSlugForLists);
-  const { data: parkingsData } = useParkings(orgSlugForLists);
+  const { data: parkingsData } = useParkings(orgSlugForLists, { enabled: afterFirstPaint });
   const { email, signOut } = useAdminSession();
   const { displayName, avatarUrl, initials } = useAccountIdentity();
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -428,8 +432,7 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
   // Non-critical chrome: the notification preview and the announcement unread dot only
   // decorate the shell, so they start after the first paint instead of competing with the
   // page's own reads for the phone's 4 to 6 connections. The badges still appear, just
-  // one idle tick later.
-  const afterFirstPaint = useAfterFirstPaint();
+  // one idle tick later. `afterFirstPaint` is declared above, beside the tenant lists.
   const { data: notificationsPreview } = useNotificationsList('preview', {
     enabled: afterFirstPaint,
   });
@@ -1370,6 +1373,11 @@ function AdminProfileFooter({
                   Sign out
                 </button>
               </div>
+
+              <LegalFooterLinks
+                includeCookies={false}
+                className="border-border/50 border-t px-3 py-1"
+              />
             </div>
           )}
 

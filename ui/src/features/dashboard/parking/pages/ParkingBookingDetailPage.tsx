@@ -22,10 +22,12 @@ import {
 } from '@/features/dashboard/parking/hooks/useParkingPayments';
 import { useParkingPermissions } from '@/features/dashboard/team/hooks/useParkingPermissions';
 import { hasParkingPermission } from '@/features/dashboard/team/lib/parkingPermissions';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 
 import { AdminDialogShell } from '@/components/AdminDialogShell';
 import { FloatingPanel } from '@/components/mobile/FloatingPanel';
 import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { ContextualActionBar } from '@/components/mobile/ContextualActionBar';
 import {
   PARKING_STATUS_FLOW_STEPS,
   ParkingFlowStepper,
@@ -99,6 +101,7 @@ function DetailField({
 
 export function ParkingBookingDetailPage() {
   const reduceMotion = useReducedMotion();
+  const isBelowLg = useIsBelowLg();
   const { bookingId } = useParams<{ bookingId: string }>();
   const { parking, org, orgSlug, parkingSlug } = useParkingContext();
   const { data: booking, isLoading, error } = useBooking(bookingId, { parkingId: parking.id });
@@ -118,6 +121,7 @@ export function ParkingBookingDetailPage() {
   const [endorsementNote, setEndorsementNote] = useState('');
   const [endorsementExpanded, setEndorsementExpanded] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [declineOpen, setDeclineOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelNote, setCancelNote] = useState('');
 
@@ -177,6 +181,11 @@ export function ParkingBookingDetailPage() {
     onDiscard: resetCancelDraft,
   });
 
+  const submitDecline = () => {
+    if (!booking) return;
+    decline.mutate({ bookingId: booking.id }, { onSuccess: () => setDeclineOpen(false) });
+  };
+
   if (isLoading || (isPendingAcceptance && broadcastLoading)) {
     return (
       <AdminMobilePage title="Booking" subtitle={parking.name} titleId="parking-booking-heading">
@@ -232,7 +241,7 @@ export function ParkingBookingDetailPage() {
             disabled={busy}
             loading={decline.isPending}
             className="min-h-[44px]"
-            onClick={() => decline.mutate({ bookingId: booking.id })}
+            onClick={() => setDeclineOpen(true)}
           >
             Decline
           </Button>
@@ -263,294 +272,336 @@ export function ParkingBookingDetailPage() {
   );
 
   return (
-    <AdminMobilePage
-      title={booking.primary_guest_name || 'Parking booking'}
-      subtitle={parking.name}
-      titleId="parking-booking-heading"
-      desktopActions={desktopActions}
-    >
-      {canEdit && (myBroadcastPending || next || canCancel) && (
-        <div className="flex flex-wrap gap-2 lg:hidden">{desktopActions}</div>
-      )}
-
-      <FloatingPanel padding="lg" className="space-y-5">
-        {(isPendingAcceptance || isPendingPayment || booking.status === 'PENDING_REVIEW') && (
-          <ParkingFlowStepper
-            steps={PARKING_STATUS_FLOW_STEPS}
-            activeIndex={parkingStatusFlowIndex(String(booking.status))}
-          />
-        )}
-
-        <AnimatePresence initial={false}>
-          {myBroadcastPending && booking.parking_broadcast_expires_at ? (
-            <motion.div
-              key="claim-urgency"
-              initial={reduceMotion ? false : parkingFlowFadeUp.initial}
-              animate={parkingFlowFadeUp.animate}
-              exit={reduceMotion ? undefined : parkingFlowFadeUp.exit}
-              transition={parkingFlowTransition(reduceMotion, 0.28)}
-              className={cn(
-                'flex flex-col gap-3 rounded-xl px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between',
-                'bg-amber-50/80 dark:bg-amber-950/25'
-              )}
-            >
-              <div className="flex items-start gap-2.5">
-                <Timer
-                  className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-300"
-                  aria-hidden
-                />
-                <div>
-                  <p className="text-foreground text-sm font-semibold">Respond to claim</p>
-                  <p className="text-muted-foreground text-xs">First accept wins this request</p>
-                </div>
-              </div>
-              <ParkingBroadcastCountdown
-                expiresAt={booking.parking_broadcast_expires_at}
-                prominent
-                className="text-amber-900 dark:text-amber-100"
-              />
-            </motion.div>
-          ) : null}
-
-          {isPendingPayment && booking.parking_payment_expires_at ? (
-            <motion.div
-              key="payment-wait"
-              initial={reduceMotion ? false : parkingFlowFadeUp.initial}
-              animate={parkingFlowFadeUp.animate}
-              exit={reduceMotion ? undefined : parkingFlowFadeUp.exit}
-              transition={parkingFlowTransition(reduceMotion, 0.28)}
-              className="bg-muted/40 flex flex-col gap-2 rounded-xl px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="flex items-start gap-2.5">
-                <Wallet className="text-primary mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                <div>
-                  <p className="text-foreground text-sm font-semibold">Awaiting guest payment</p>
-                  <p className="text-muted-foreground text-xs">Booking confirms after they pay</p>
-                </div>
-              </div>
-              <ParkingBroadcastCountdown expiresAt={booking.parking_payment_expires_at} prominent />
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge status={booking.status} />
-          {isPendingAcceptance && offerExpired ? (
-            <span className="text-destructive text-xs font-medium">Offer expired</span>
-          ) : isPendingAcceptance && booking.parking_broadcast_expires_at && !myBroadcastPending ? (
-            <ParkingBroadcastCountdown expiresAt={booking.parking_broadcast_expires_at} />
-          ) : null}
-        </div>
-
-        <ParkingStaySummary
-          checkIn={booking.check_in_date}
-          checkOut={booking.check_out_date}
-          organizationName={org.name}
-          compact
-        />
-
-        {hostNote ? (
-          <p className="text-muted-foreground text-sm leading-relaxed">{hostNote}</p>
-        ) : null}
-
-        {myBroadcastPending && (
-          <div className="space-y-2">
-            <label htmlFor="endorsement-note" className="text-foreground text-sm font-medium">
-              Access instructions
-            </label>
-            <Textarea
-              id="endorsement-note"
-              value={endorsementNote}
-              onChange={(event) =>
-                setEndorsementNote(event.target.value.slice(0, ENDORSEMENT_NOTE_MAX))
-              }
-              disabled={busy}
-              rows={3}
-              placeholder="Gate code, level, contact on arrival…"
-              className="resize-y"
+    <>
+      <AdminMobilePage
+        title={booking.primary_guest_name || 'Parking booking'}
+        subtitle={parking.name}
+        titleId="parking-booking-heading"
+        desktopActions={desktopActions}
+      >
+        <FloatingPanel padding="lg" className="space-y-5">
+          {(isPendingAcceptance ||
+            isPendingPayment ||
+            booking.status === 'PENDING_REVIEW' ||
+            booking.status === 'READY_FOR_CHECKIN') && (
+            <ParkingFlowStepper
+              steps={PARKING_STATUS_FLOW_STEPS}
+              activeIndex={parkingStatusFlowIndex(String(booking.status))}
             />
-            <p className="text-muted-foreground text-xs tabular-nums">
-              {endorsementNote.length}/{ENDORSEMENT_NOTE_MAX}
-            </p>
-          </div>
-        )}
+          )}
 
-        {isPendingAcceptance && !myBroadcastPending && (
-          <p className="text-muted-foreground text-sm" aria-live="polite">
-            {broadcastStatus?.response === 'claimed'
-              ? 'Another host claimed this request.'
-              : broadcastStatus?.response === 'declined'
-                ? 'You declined this request.'
-                : 'This request is no longer available.'}
-          </p>
-        )}
-
-        <dl className="border-border/60 grid gap-4 border-t pt-4 sm:grid-cols-2">
-          <DetailField label="Email" value={booking.guest_email ?? '-'} icon={Mail} />
-          <DetailField label="Phone" value={booking.guest_phone_number ?? '-'} icon={Phone} />
-          <DetailField label="Plate" value={booking.car_plate_number ?? '-'} icon={Car} />
-          <DetailField label="Vehicle" value={vehicleLabel} icon={Car} />
-          {booking.tower_and_unit_number ? (
-            <DetailField label="Unit / tower" value={booking.tower_and_unit_number} icon={Car} />
-          ) : null}
-        </dl>
-
-        {booking.guest_special_requests ? (
-          <div className="border-border/60 border-t pt-4">
-            <p className="text-muted-foreground text-xs">Guest notes</p>
-            <p className="text-foreground mt-1 text-sm leading-relaxed">
-              {booking.guest_special_requests}
-            </p>
-          </div>
-        ) : null}
-
-        {payment ? (
-          <div className="border-border/60 border-t pt-4">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-section-title">Payment</h2>
-              <span className="text-muted-foreground text-xs capitalize">
-                {payment.status.replace(/_/g, ' ')}
-              </span>
-            </div>
-            <dl className="grid gap-2 text-sm sm:grid-cols-2">
-              <div className="flex justify-between gap-3">
-                <dt className="text-muted-foreground">Guest paid</dt>
-                <dd className="font-medium">{formatPeso(payment.guestChargeTotal)}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-muted-foreground">Your rate</dt>
-                <dd className="font-medium">{formatPeso(payment.hostGrossTotal)}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-muted-foreground">
-                  Fee ({(payment.commissionPct * 100).toFixed(1)}%)
-                </dt>
-                <dd className="font-medium">
-                  {formatPeso(payment.hostGrossTotal - payment.hostNetTotal)}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-muted-foreground">Your payout</dt>
-                <dd className="font-semibold">{formatPeso(payment.hostNetTotal)}</dd>
-              </div>
-            </dl>
-            <p className="text-muted-foreground mt-2 text-xs">
-              {payment.refundedAt
-                ? `Refunded ${formatPeso(payment.refundAmount ?? 0)}`
-                : payment.status === 'refund_review'
-                  ? 'Refund review. Payout is on hold.'
-                  : payment.disbursedAt
-                    ? `Disbursed${payment.disbursementReference ? ` (${payment.disbursementReference})` : ''}`
-                    : 'Awaiting payout'}
-              {payment.bookingChannel === 'direct_link' ? ' · Direct link' : ''}
-            </p>
-          </div>
-        ) : null}
-
-        {PAID_STATUSES.includes(String(booking.status)) ? (
-          <div className="border-border/60 space-y-2 border-t pt-4">
-            <h2 className="text-section-title">Endorsement</h2>
-            {booking.endorsement_sent_at ? (
-              <p className="text-muted-foreground text-sm">Sent to the PMO.</p>
-            ) : (
-              <>
-                <p className="text-muted-foreground text-sm">
-                  {booking.endorsement_send_error
-                    ? `Not sent: ${booking.endorsement_send_error}`
-                    : 'Not sent yet.'}
-                </p>
-                {canEdit ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="min-h-[44px]"
-                    disabled={resendEndorsement.isPending}
-                    onClick={() => resendEndorsement.mutate(String(bookingId))}
-                  >
-                    {resendEndorsement.isPending ? 'Sending…' : 'Resend endorsement'}
-                  </Button>
-                ) : null}
-              </>
-            )}
-          </div>
-        ) : null}
-
-        {booking.parking_endorsement_note ? (
-          <div className="border-border/60 border-t pt-4">
-            <button
-              type="button"
-              className="text-foreground flex min-h-[44px] w-full items-center justify-between gap-2 text-left text-sm font-medium"
-              aria-expanded={endorsementExpanded}
-              onClick={() => setEndorsementExpanded((open) => !open)}
-            >
-              Your access note
-              <ChevronDown
+          <AnimatePresence initial={false}>
+            {myBroadcastPending && booking.parking_broadcast_expires_at ? (
+              <motion.div
+                key="claim-urgency"
+                initial={reduceMotion ? false : parkingFlowFadeUp.initial}
+                animate={parkingFlowFadeUp.animate}
+                exit={reduceMotion ? undefined : parkingFlowFadeUp.exit}
+                transition={parkingFlowTransition(reduceMotion, 0.28)}
                 className={cn(
-                  'text-muted-foreground h-4 w-4 shrink-0 transition-transform',
-                  endorsementExpanded && 'rotate-180'
+                  'flex flex-col gap-3 rounded-xl px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between',
+                  'bg-amber-50/80 dark:bg-amber-950/25'
                 )}
-                aria-hidden
-              />
-            </button>
-            {endorsementExpanded ? (
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                {booking.parking_endorsement_note}
-              </p>
+              >
+                <div className="flex items-start gap-2.5">
+                  <Timer
+                    className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-300"
+                    aria-hidden
+                  />
+                  <div>
+                    <p className="text-foreground text-sm font-semibold">Respond to claim</p>
+                    <p className="text-muted-foreground text-xs">First accept wins this request</p>
+                  </div>
+                </div>
+                <ParkingBroadcastCountdown
+                  expiresAt={booking.parking_broadcast_expires_at}
+                  prominent
+                  className="text-amber-900 dark:text-amber-100"
+                />
+              </motion.div>
+            ) : null}
+
+            {isPendingPayment && booking.parking_payment_expires_at ? (
+              <motion.div
+                key="payment-wait"
+                initial={reduceMotion ? false : parkingFlowFadeUp.initial}
+                animate={parkingFlowFadeUp.animate}
+                exit={reduceMotion ? undefined : parkingFlowFadeUp.exit}
+                transition={parkingFlowTransition(reduceMotion, 0.28)}
+                className="bg-muted/40 flex flex-col gap-2 rounded-xl px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex items-start gap-2.5">
+                  <Wallet className="text-primary mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  <div>
+                    <p className="text-foreground text-sm font-semibold">Awaiting guest payment</p>
+                    <p className="text-muted-foreground text-xs">Booking confirms after they pay</p>
+                  </div>
+                </div>
+                <ParkingBroadcastCountdown
+                  expiresAt={booking.parking_payment_expires_at}
+                  prominent
+                />
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={booking.status} />
+            {isPendingAcceptance && offerExpired ? (
+              <span className="text-destructive text-xs font-medium">Offer expired</span>
+            ) : isPendingAcceptance &&
+              booking.parking_broadcast_expires_at &&
+              !myBroadcastPending ? (
+              <ParkingBroadcastCountdown expiresAt={booking.parking_broadcast_expires_at} />
             ) : null}
           </div>
-        ) : null}
 
-        {booking.endorsement_sent_at && (
-          <Button asChild variant="outline" className="min-h-[44px] w-full sm:w-auto">
-            <Link to={parkingInboxPath(orgSlug, parkingSlug)}>
-              <MessageCircle className="mr-2 h-4 w-4" aria-hidden />
-              Message guest
-            </Link>
-          </Button>
-        )}
-      </FloatingPanel>
+          <ParkingStaySummary
+            checkIn={booking.check_in_date}
+            checkOut={booking.check_out_date}
+            organizationName={org.name}
+            compact
+          />
 
-      <AdminDialogShell
-        open={cancelOpen}
-        onOpenChange={onCancelOpenChange}
-        title="Cancel booking"
-        description={
-          wasPaid
-            ? 'The guest is notified and a refund is placed in review. Their payout is blocked until the refund is recorded.'
-            : 'The guest is notified that this booking is cancelled.'
-        }
-        footer={
-          <Button
-            type="button"
-            variant="destructive"
-            disabled={transition.isPending || !cancelReason.trim()}
-            className="min-h-[44px]"
-            onClick={() => void submitCancel()}
-          >
-            Cancel booking
-          </Button>
-        }
-      >
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="parking-cancel-reason">Reason</Label>
-            <Input
-              id="parking-cancel-reason"
-              value={cancelReason}
-              onChange={(event) => setCancelReason(event.target.value)}
-            />
+          {hostNote ? (
+            <p className="text-muted-foreground text-sm leading-relaxed">{hostNote}</p>
+          ) : null}
+
+          {myBroadcastPending && (
+            <div className="space-y-2">
+              <label htmlFor="endorsement-note" className="text-foreground text-sm font-medium">
+                Access instructions
+              </label>
+              <Textarea
+                id="endorsement-note"
+                value={endorsementNote}
+                onChange={(event) =>
+                  setEndorsementNote(event.target.value.slice(0, ENDORSEMENT_NOTE_MAX))
+                }
+                disabled={busy}
+                rows={3}
+                placeholder="Gate code, level, contact on arrival…"
+                className="resize-y"
+              />
+              <p className="text-muted-foreground text-xs tabular-nums">
+                {endorsementNote.length}/{ENDORSEMENT_NOTE_MAX}
+              </p>
+            </div>
+          )}
+
+          {isPendingAcceptance && !myBroadcastPending && (
+            <p className="text-muted-foreground text-sm" aria-live="polite">
+              {broadcastStatus?.response === 'claimed'
+                ? 'Another host claimed this request.'
+                : broadcastStatus?.response === 'declined'
+                  ? 'You declined this request.'
+                  : 'This request is no longer available.'}
+            </p>
+          )}
+
+          <dl className="border-border/60 grid gap-4 border-t pt-4 sm:grid-cols-2">
+            <DetailField label="Email" value={booking.guest_email ?? '-'} icon={Mail} />
+            <DetailField label="Phone" value={booking.guest_phone_number ?? '-'} icon={Phone} />
+            <DetailField label="Plate" value={booking.car_plate_number ?? '-'} icon={Car} />
+            <DetailField label="Vehicle" value={vehicleLabel} icon={Car} />
+            {booking.tower_and_unit_number ? (
+              <DetailField label="Unit / tower" value={booking.tower_and_unit_number} icon={Car} />
+            ) : null}
+          </dl>
+
+          {booking.guest_special_requests ? (
+            <div className="border-border/60 border-t pt-4">
+              <p className="text-muted-foreground text-xs">Guest notes</p>
+              <p className="text-foreground mt-1 text-sm leading-relaxed">
+                {booking.guest_special_requests}
+              </p>
+            </div>
+          ) : null}
+
+          {payment ? (
+            <div className="border-border/60 border-t pt-4">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-section-title">Payment</h2>
+                <span className="text-muted-foreground text-xs capitalize">
+                  {payment.status.replace(/_/g, ' ')}
+                </span>
+              </div>
+              <dl className="grid gap-2 text-sm sm:grid-cols-2">
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">Guest paid</dt>
+                  <dd className="font-medium">{formatPeso(payment.guestChargeTotal)}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">Your rate</dt>
+                  <dd className="font-medium">{formatPeso(payment.hostGrossTotal)}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">
+                    Fee ({(payment.commissionPct * 100).toFixed(1)}%)
+                  </dt>
+                  <dd className="font-medium">
+                    {formatPeso(payment.hostGrossTotal - payment.hostNetTotal)}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">Your payout</dt>
+                  <dd className="font-semibold">{formatPeso(payment.hostNetTotal)}</dd>
+                </div>
+              </dl>
+              <p className="text-muted-foreground mt-2 text-xs">
+                {payment.refundedAt
+                  ? `Refunded ${formatPeso(payment.refundAmount ?? 0)}`
+                  : payment.status === 'refund_review'
+                    ? 'Refund review. Payout is on hold.'
+                    : payment.disbursedAt
+                      ? `Disbursed${payment.disbursementReference ? ` (${payment.disbursementReference})` : ''}`
+                      : 'Awaiting payout'}
+                {payment.bookingChannel === 'direct_link' ? ' · Direct link' : ''}
+              </p>
+            </div>
+          ) : null}
+
+          {PAID_STATUSES.includes(String(booking.status)) ? (
+            <div className="border-border/60 space-y-2 border-t pt-4">
+              <h2 className="text-section-title">Endorsement</h2>
+              {booking.endorsement_sent_at ? (
+                <p className="text-muted-foreground text-sm">Sent to the PMO.</p>
+              ) : (
+                <>
+                  <p className="text-muted-foreground text-sm">
+                    {booking.endorsement_send_error
+                      ? `Not sent: ${booking.endorsement_send_error}`
+                      : 'Not sent yet.'}
+                  </p>
+                  {canEdit ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-h-[44px]"
+                      disabled={resendEndorsement.isPending}
+                      onClick={() => resendEndorsement.mutate(String(bookingId))}
+                    >
+                      {resendEndorsement.isPending ? 'Sending…' : 'Resend endorsement'}
+                    </Button>
+                  ) : null}
+                </>
+              )}
+            </div>
+          ) : null}
+
+          {booking.parking_endorsement_note ? (
+            <div className="border-border/60 border-t pt-4">
+              <button
+                type="button"
+                className="text-foreground flex min-h-[44px] w-full items-center justify-between gap-2 text-left text-sm font-medium"
+                aria-expanded={endorsementExpanded}
+                onClick={() => setEndorsementExpanded((open) => !open)}
+              >
+                Your access note
+                <ChevronDown
+                  className={cn(
+                    'text-muted-foreground h-4 w-4 shrink-0 transition-transform',
+                    endorsementExpanded && 'rotate-180'
+                  )}
+                  aria-hidden
+                />
+              </button>
+              {endorsementExpanded ? (
+                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  {booking.parking_endorsement_note}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {booking.endorsement_sent_at && (
+            <Button asChild variant="outline" className="min-h-[44px] w-full sm:w-auto">
+              <Link to={parkingInboxPath(orgSlug, parkingSlug)}>
+                <MessageCircle className="mr-2 h-4 w-4" aria-hidden />
+                Message guest
+              </Link>
+            </Button>
+          )}
+        </FloatingPanel>
+
+        <AdminDialogShell
+          open={declineOpen}
+          onOpenChange={setDeclineOpen}
+          title="Decline this request?"
+          description="The guest is told no host accepted. The request moves to the next batch or closes if no hosts remain."
+          footer={
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-[44px]"
+                disabled={decline.isPending}
+                onClick={() => setDeclineOpen(false)}
+              >
+                Keep request
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                className="min-h-[44px]"
+                loading={decline.isPending}
+                onClick={submitDecline}
+              >
+                Decline request
+              </Button>
+            </>
+          }
+        >
+          <p className="text-muted-foreground text-sm">
+            Decline only this offer. Other hosts can still accept.
+          </p>
+        </AdminDialogShell>
+
+        <AdminDialogShell
+          open={cancelOpen}
+          onOpenChange={onCancelOpenChange}
+          title="Cancel booking"
+          description={
+            wasPaid
+              ? 'The guest is notified and a refund is placed in review. Their payout is blocked until the refund is recorded.'
+              : 'The guest is notified that this booking is cancelled.'
+          }
+          footer={
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={transition.isPending || !cancelReason.trim()}
+              className="min-h-[44px]"
+              onClick={() => void submitCancel()}
+            >
+              Cancel booking
+            </Button>
+          }
+        >
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="parking-cancel-reason">Reason</Label>
+              <Input
+                id="parking-cancel-reason"
+                value={cancelReason}
+                onChange={(event) => setCancelReason(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="parking-cancel-note">Note (optional)</Label>
+              <Textarea
+                id="parking-cancel-note"
+                value={cancelNote}
+                onChange={(event) => setCancelNote(event.target.value)}
+              />
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="parking-cancel-note">Note (optional)</Label>
-            <Textarea
-              id="parking-cancel-note"
-              value={cancelNote}
-              onChange={(event) => setCancelNote(event.target.value)}
-            />
-          </div>
-        </div>
-      </AdminDialogShell>
-      <UnsavedChangesDialog {...cancelDialogProps} />
-    </AdminMobilePage>
+        </AdminDialogShell>
+        <UnsavedChangesDialog {...cancelDialogProps} />
+      </AdminMobilePage>
+      {isBelowLg && desktopActions ? (
+        <ContextualActionBar>{desktopActions}</ContextualActionBar>
+      ) : null}
+    </>
   );
 }

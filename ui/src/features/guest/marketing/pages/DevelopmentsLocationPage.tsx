@@ -45,7 +45,8 @@ import {
   ListingRowSkeleton,
 } from '@/components/skeletons/ListingGridSkeleton';
 import { Button } from '@/components/ui/button';
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePageTitle } from '@/lib/pageTitle';
+import { buildPageTitle, minNightlyRate, placeDescription, placeTitle } from '@/lib/seo/seoMeta';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 /** Development rows per page — each row is a carousel of that development's homes. */
@@ -105,9 +106,14 @@ export function DevelopmentsLocationPage() {
   const city = developments[0] != null ? normalizeCityPlace(developments[0].city) : null;
   const totalDevelopments = developmentsResult.data?.total ?? 0;
   const placeLabel = city ?? humanizeLocationSlug(locationSlug);
-  usePageTitle(publicPageTitle(`Developments in ${placeLabel}`));
+  usePageTitle(buildPageTitle(placeTitle('development', placeLabel)));
   usePageMeta({
-    description: `Residential developments in ${placeLabel}, with the homes available in each.`,
+    description: placeDescription({
+      family: 'development',
+      place: placeLabel,
+      count: totalDevelopments,
+      priceFrom: minNightlyRate(developments),
+    }),
     canonicalPath: `/developments/in/${locationSlug}`,
   });
   const isLoading =

@@ -11,13 +11,14 @@ import { ParkingRegistrationForm } from '@/features/guest/marketing/parkings/com
 import { useLinkableParkingBookings } from '@/features/guest/marketing/parkings/hooks/useLinkableParkingBookings';
 import { usePublicParkingDetail } from '@/features/guest/marketing/parkings/hooks/usePublicParkingDetail';
 import { useSubmitParkingBookingRequest } from '@/features/guest/marketing/parkings/hooks/useSubmitParkingBookingRequest';
-import { formatParkingLocation } from '@/features/dashboard/org/lib/formatParkingLocation';
 import {
   captureParkingLinkStayFromSearch,
   clearParkingLinkStayId,
   getParkingLinkStayId,
 } from '@/features/guest/marketing/parkings/lib/parkingLinkStay';
 import type { ParkingRegistrationValues } from '@/features/guest/marketing/parkings/lib/parkingRegistrationSchema';
+
+import { formatParkingLocation } from '@/features/dashboard/org/lib/formatParkingLocation';
 
 import { GuestFormBrandHeader } from '@/components/branding/GuestFormBrandHeader';
 import { ParkingStaySummary } from '@/components/parking/ParkingStaySummary';

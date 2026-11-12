@@ -72,14 +72,18 @@ kind: backlog
 - Improve performance, slow queries, lighthouse, before & after
 - Refine Channel sync modal
 - Inbox refinement
+- Refine email templates, refine flows/events or actions that we need to send email
 - Reposition light/dark switch
 - Improve paid/pro subscription badge/flow
 - Control for auto transition to ready for check-in status?
 - Refine edit booking detail page
 - App performance improvements and make the app very fast on both desktop and pwa
 - Improve backend performance
+- Toolchain upgrade wave: TypeScript 7, Tailwind 4, Zod 4, @hookform/resolvers 7, @types/node 26, @vitest/coverage-v8 5, eslint-plugin-react-hooks 7, @blueprintjs/core 6, framer-motion 14. Each needs a code migration, not a version bump, so the Dependabot majors are closed until it is planned.
 - Pricing plans refinement
 - Payment e2e and management from super admin
+- Improve QR design to include our logo?
+- Select turtle character and add it on their templates
 - Super admin - playbook articles?
 - Super admin -> System health warnings & errors
 - AI usage, estimates, cost and profits? Implement buy more credits

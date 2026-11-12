@@ -7,6 +7,8 @@ export type PublicPropertyMedia = {
   url: string;
   type: 'image' | 'video';
   caption?: string;
+  /** Host-written alt text; falls back to a generated description. */
+  alt?: string;
   isPrimary?: boolean;
   order: number;
 };

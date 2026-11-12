@@ -30,6 +30,8 @@ function template(overrides: Partial<PropertyTemplateDto> = {}): PropertyTemplat
     previewTemplateSlug: null,
     sectionImageUrl: null,
     folderId: null,
+    guestVisible: false,
+    guestPhase: 'always',
     updatedAt: null,
     ...overrides,
   };

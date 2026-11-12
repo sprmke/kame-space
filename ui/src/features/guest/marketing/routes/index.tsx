@@ -5,7 +5,6 @@ import { Navigate, Route, useParams } from 'react-router-dom';
 import { guestAccountRoutes } from '@/features/guest/account/routes';
 import { MarketingLayoutShell } from '@/features/guest/marketing/shared/components/MarketingLayoutShell';
 
-import { NotFoundPage } from '@/routes/NotFoundPage';
 
 const ExplorePreviewPage = lazy(() =>
   import('@/features/guest/marketing/explore-preview/pages/ExplorePreviewPage').then((m) => ({
@@ -134,6 +133,9 @@ const ParkingRequestStatusPage = lazy(() =>
   import('@/features/guest/marketing/parkings/pages/ParkingRequestStatusPage').then((m) => ({
     default: m.ParkingRequestStatusPage,
   }))
+);
+const NotFoundPage = lazy(() =>
+  import('@/routes/NotFoundPage').then((m) => ({ default: m.NotFoundPage }))
 );
 const SearchResultsPage = lazy(() =>
   import('@/features/guest/search/pages/SearchResultsPage').then((m) => ({

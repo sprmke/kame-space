@@ -42,7 +42,7 @@ export function TelegramPlaceholdersNestedDialog({
         )}
         overlayClassName="z-[110]"
       >
-        <ResponsiveModalHeader className="border-border/60 shrink-0 border-b px-4 py-3 sm:px-5 sm:py-4">
+        <ResponsiveModalHeader className="border-border/60 shrink-0 border-b px-4 py-3 sm:px-5 sm:py-3">
           <ResponsiveModalTitle className="text-base sm:text-lg">Placeholders</ResponsiveModalTitle>
         </ResponsiveModalHeader>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">

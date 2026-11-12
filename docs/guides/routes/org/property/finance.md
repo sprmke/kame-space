@@ -62,6 +62,8 @@ Finance gives hosts one place to see how much money is coming in and going out f
   A: Yes. The summary cards, charts, and transaction list all use the selected range. Booking income is counted for the nights that fall inside it.
 - Q: My expense does not fit any category. Can I add my own?
   A: Yes. Pick **Other (type your own)**, then type the category name and press Enter (or choose **Use "…"**). Custom categories work in filters, charts, and exports like any other category.
+- Q: My rent repeats on the 31st. What happens in February?
+  A: It moves to the last day of that month, so February is the 28th (the 29th in a leap year) and April is the 30th. The series still produces one entry every month.
 
 ---
 
@@ -137,6 +139,7 @@ Charts (`FinanceTransactionsChart`) plot the same underlying data as cash-flow (
 
 - **Category picker** (`CategoryCombobox`): presets are ordered by common use, typing filters them, and the pinned **Use "…"** row saves a custom category. Choosing **Other (type your own)** clears the field, focuses it, and switches the placeholder to **Type your custom category**, so the next keystrokes name a real category instead of saving `Other`. Enter picks the highlighted preset (or the typed custom value); Escape restores the value from before the dropdown opened. Matching a preset case-insensitively restores its canonical casing (`rent` → `Rent`) so filters and charts stay grouped. Presets live in `financeCategories.ts`.
 - Telegram due-date reminders are sent via the property's Finance Telegram integration, configured under **Notifications → Finance** (not on this page).
+- A recurrence day the target month does not have clamps to that month's last day (31st to the 30th, 28th, or 29th), anchored on the series day so the series returns to the 31st in a long month. This matches `_shared/financeRecurrence.ts`; the reminder preview uses the same dates. A 31st series used to skip every short month.
 - `paid_at` on a line item stops future reminders for that item across every reminder interval.
 
 ---

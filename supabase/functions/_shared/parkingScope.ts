@@ -18,6 +18,7 @@ import {
   readParkingSpaceLengthM,
   readParkingSpaceWidthM,
 } from './parkingDimensionDefaults.ts';
+import { parkingMediaItemsFromSettings } from './parkingMedia.ts';
 import { formatCheckTime12h } from './publicPropertyService.ts';
 import { isListingRecommendedBadge, resolveListingAuthorization } from './listingAuthorization.ts';
 import type { OrgPermissionParam } from './orgTeamPermissions.ts';
@@ -239,7 +240,8 @@ export async function loadPublicParkingBySlug(slug: string) {
       ? (org.settings as Record<string, unknown>)
       : {};
   const settings = (data.settings ?? {}) as Record<string, unknown>;
-  const images = Array.isArray(settings.images) ? settings.images : [];
+  const media = parkingMediaItemsFromSettings(settings);
+  const images = media.map((item) => item.url);
   const features = Array.isArray(settings.features) ? settings.features : [];
 
   const readString = (key: string): string => {
@@ -287,7 +289,7 @@ export async function loadPublicParkingBySlug(slug: string) {
       dateOverrides: {} as Record<string, number>,
       currency: 'PHP',
     },
-    coverImage: typeof settings.coverImage === 'string' ? settings.coverImage : (images[0] ?? null),
+    coverImage: media.find((item) => item.isPrimary)?.url ?? images[0] ?? null,
     images,
     features,
     notes: description,

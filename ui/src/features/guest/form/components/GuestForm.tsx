@@ -21,13 +21,13 @@ import {
   minAllowedCheckInTime,
 } from '@/features/guest/calendar/lib/guestCalendarAvailability';
 import { GuestBookingsClosedNotice } from '@/features/guest/form/components/GuestBookingsClosedNotice';
+import { GuestFormCancellationPolicy } from '@/features/guest/form/components/GuestFormCancellationPolicy';
 import { GuestFormGuestsSection } from '@/features/guest/form/components/GuestFormGuestsSection';
 import {
   GuestFormInfoCallout,
   GuestFormOptionCard,
 } from '@/features/guest/form/components/GuestFormOptionCard';
 import { GuestFormPaymentStepContent } from '@/features/guest/form/components/GuestFormPaymentStepContent';
-import { GuestFormCancellationPolicy } from '@/features/guest/form/components/GuestFormCancellationPolicy';
 import { GuestFormStepNavigation } from '@/features/guest/form/components/GuestFormStepNavigation';
 import { GuestFormStepper } from '@/features/guest/form/components/GuestFormStepper';
 import { GuestFormVoucherPicker } from '@/features/guest/form/components/GuestFormVoucherPicker';
@@ -92,7 +92,7 @@ import {
 import {
   guestCalendarPath,
   guestFormPath,
-  guestSuccessPath,
+  guestTripWelcomePath,
 } from '@/features/guest/lib/guestPublicPaths';
 import { usePublicPropertyDetail } from '@/features/guest/marketing/properties/hooks/usePublicPropertyDetail';
 import { GuestStayContextBar } from '@/features/guest/property/components/GuestStayContextBar';
@@ -103,6 +103,10 @@ import {
 } from '@/features/dashboard/pricing/lib/pricingCompute';
 
 import { GuestFormBrandHeader } from '@/components/branding/GuestFormBrandHeader';
+import {
+  BookingSubmitLegalNotice,
+  StayPaymentLegalNotice,
+} from '@/components/legal/LegalNoticePresets';
 import { bottomTabBarOffsetClassName } from '@/components/mobile/BottomTabBar';
 import { useAntiSpamSubmit } from '@/components/security/useAntiSpamSubmit';
 import { GuestFormPageSkeleton } from '@/components/skeletons/GuestPageSkeletons';
@@ -282,6 +286,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
   const [currentStep, setCurrentStep] = useState<GuestFormStepId>(1);
   const [submitReady, setSubmitReady] = useState(false);
   const [cancellationAccepted, setCancellationAccepted] = useState(false);
+  const [policyChangedNotice, setPolicyChangedNotice] = useState(false);
   const stepPanelRef = useRef<HTMLDivElement>(null);
   const pendingSubmitAfterAuthRef = useRef(false);
   const guestFormStartedRef = useRef(false);
@@ -1060,11 +1065,15 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
       formData.append('bookingSource', bookingSource);
 
       if (!bookingId && !isCompletionMode && publicProperty) {
-        formData.append(
-          'cancellationPolicyVersionId',
-          publicProperty.cancellationPolicyVersionId ?? ''
-        );
-        formData.append('cancellationPolicyHash', publicProperty.cancellationPolicyHash ?? '');
+        if (publicProperty.cancellationPolicyVersionId) {
+          formData.append(
+            'cancellationPolicyVersionId',
+            publicProperty.cancellationPolicyVersionId
+          );
+        }
+        if (publicProperty.cancellationPolicyHash) {
+          formData.append('cancellationPolicyHash', publicProperty.cancellationPolicyHash);
+        }
         formData.append('cancellationPolicyAccepted', String(cancellationAccepted));
       }
 
@@ -1208,11 +1217,12 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
         }
         if (errorData.error === 'policy_changed') {
           setCancellationAccepted(false);
+          setPolicyChangedNotice(true);
           await refetchPublicProperty();
-          toast.error(
-            'The host updated the cancellation policy. Review it and tick the box again.'
-          );
-          throw new Error('The cancellation policy changed. Review the new terms and try again.');
+          toast.message('Cancellation policy updated', {
+            description: 'Review the new terms and tick the box again.',
+          });
+          return;
         }
         throw new Error(
           errorData.error ||
@@ -1246,7 +1256,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
 
       // Check if submission was skipped due to no changes
       if (result.skipped) {
-        console.log('ℹ️ No changes detected, redirecting to success page');
+        console.log('ℹ️ No changes detected, redirecting to the trip page');
         clearGuestFormStartedMarker();
         clearDraft();
 
@@ -1258,13 +1268,10 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
           return;
         }
 
-        // Redirect to success page with booking data
+        // Redirect to the trip page with booking data
         runUnguarded(() =>
           navigate(
-            guestSuccessPath(
-              propertySlug,
-              new URLSearchParams({ bookingId: currentBookingId ?? '' })
-            ),
+            guestTripWelcomePath(propertySlug, currentBookingId ?? ''),
             {
               state: { bookingData },
             }
@@ -1294,17 +1301,11 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
         return;
       }
 
-      // Redirect to success page with bookingId and booking data
+      // Redirect to the trip page with bookingId and booking data
       runUnguarded(() =>
-        navigate(
-          guestSuccessPath(
-            propertySlug,
-            new URLSearchParams({ bookingId: currentBookingId ?? '' })
-          ),
-          {
-            state: { bookingData },
-          }
-        )
+        navigate(guestTripWelcomePath(propertySlug, currentBookingId ?? ''), {
+          state: { bookingData },
+        })
       );
     } catch (error: unknown) {
       console.error('Error submitting form:', {
@@ -2563,7 +2564,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                                         src={
                                           petImagePreview || (value && URL.createObjectURL(value))
                                         }
-                                        alt="Pet Image Preview"
+                                        alt="Uploaded pet document preview"
                                         className="h-full w-full object-cover"
                                       />
                                       <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
@@ -2800,6 +2801,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                         </FormItem>
                       )}
                     />
+                    {!skipAuthGate ? <StayPaymentLegalNotice /> : null}
                   </div>
                 )}
 
@@ -2926,9 +2928,21 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                 policy={publicProperty.cancellationPolicy}
                 checkInDate={watchedValues.checkInDate ?? ''}
                 accepted={cancellationAccepted}
-                onAcceptedChange={setCancellationAccepted}
+                onAcceptedChange={(accepted) => {
+                  setCancellationAccepted(accepted);
+                  if (accepted) setPolicyChangedNotice(false);
+                }}
                 showAgreement={!publicProperty.cancellationPolicy.unset}
+                showPolicyChangedNotice={policyChangedNotice}
               />
+            ) : null}
+
+            {/* Host-entered bookings (admin New booking) skip the guest-facing agreement line. */}
+            {!bookingId &&
+            !isCompletionMode &&
+            !skipAuthGate &&
+            currentStep === guestFormStepCount ? (
+              <BookingSubmitLegalNotice />
             ) : null}
 
             {antiSpam.render}

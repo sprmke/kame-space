@@ -29,7 +29,8 @@ export type NotificationType =
   | 'review_due'
   | 'review_response_received'
   | 'maintenance_guest_reported'
-  | 'guest_request_submitted';
+  | 'guest_request_submitted'
+  | 'booking_receipt_uploaded';
 
 export type NotificationRecord = {
   id: string;

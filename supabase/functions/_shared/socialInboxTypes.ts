@@ -31,6 +31,9 @@ export type SocialChannelConnectionRow = {
   property_id?: string | null;
   parking_id?: string | null;
   meta_backfill_phase?: 'messenger' | 'instagram' | null;
+  /** Opaque Graph paging cursor. Never a URL: a Graph paging URL carries the access token. */
+  meta_backfill_cursor?: string | null;
+  /** @deprecated Held Graph paging URLs with the access token. Use meta_backfill_cursor. */
   meta_backfill_next_url?: string | null;
   meta_backfill_done?: boolean;
   updated_at?: string;
@@ -60,6 +63,8 @@ export type SocialConversationRow = {
   connection_status?: ConnectionStatus | null;
   inquiry_check_in?: string | null;
   inquiry_check_out?: string | null;
+  /** Booking this web chat thread is about (plan D9). NULL for Meta threads. */
+  booking_id?: string | null;
   guest_last_read_at?: string | null;
   host_last_read_at?: string | null;
   guest_unread_count?: number;

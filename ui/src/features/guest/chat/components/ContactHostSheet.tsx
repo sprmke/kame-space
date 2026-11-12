@@ -373,7 +373,7 @@ export function ContactHostSheet({
             if (voiceSessionOpen) event.preventDefault();
           }}
         >
-          <ResponsiveModalHeader className="border-border shrink-0 gap-0 space-y-0 border-b px-5 py-4 text-left">
+          <ResponsiveModalHeader className="border-border shrink-0 gap-0 space-y-0 border-b px-4 py-3 text-left">
             <ResponsiveModalTitle className="sr-only">{hostLabel}</ResponsiveModalTitle>
             <GuestChatHeaderBar
               avatar={hostAvatarNode}

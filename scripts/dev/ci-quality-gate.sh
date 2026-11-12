@@ -45,6 +45,7 @@ run_step "brand guard (retired product name)" bun scripts/brand/check-brand.ts -
 run_step "AI knowledge coverage" bun run check:ai-knowledge-coverage
 run_step "support content format" bun run check:support-content
 run_step "support content parser tests" bun run test:support-content
+run_step "seo route registry" bun run check:seo-routes
 run_step "migration versions" bash scripts/dev/check-migration-versions.sh
 run_step "migration security" bash scripts/dev/check-migration-security.sh
 run_step "local seed identity" node scripts/dev/check-seed-identity.mjs
@@ -63,6 +64,8 @@ run_step "sentry has one import surface" bash scripts/dev/check-sentry-imports.s
 run_step "cache class guard" bash scripts/dev/check-cache-class.sh
 run_step "select('*') guard" bash scripts/dev/check-select-star.sh
 run_step "public static asset size" bash scripts/dev/check-public-asset-size.sh
+run_step "e2e auth storage key (one definition)" node scripts/dev/check-e2e-auth-key.mjs
+run_step "page coverage manifests" bun scripts/dev/check-test-coverage.ts
 run_step "playwright lane tags (one tag per spec)" node scripts/dev/check-e2e-lane-tags.mjs
 run_step "flaky quarantine discipline" node scripts/dev/check-flaky-quarantine.mjs
 run_step "unit test quality (no new export-only tests)" node scripts/dev/check-unit-test-quality.mjs

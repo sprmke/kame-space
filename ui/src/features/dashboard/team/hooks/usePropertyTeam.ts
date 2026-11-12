@@ -42,7 +42,20 @@ async function loadPropertyTeam(propertyId: string): Promise<PropertyTeamData> {
   };
 }
 
-export function usePropertyTeam() {
+/**
+ * Opt-in on purpose. This query fans out to three endpoints and a seat reconcile, and it used
+ * to fire from components that only render a picker trigger. Callers that genuinely list the
+ * team pass `enabled: true`; anything else stays quiet. Extracted so the default is testable
+ * without a DOM.
+ */
+export function propertyTeamQueryEnabled(
+  propertyId: string | null | undefined,
+  options?: { enabled?: boolean }
+): boolean {
+  return Boolean(propertyId) && options?.enabled === true;
+}
+
+export function usePropertyTeam(options?: { enabled?: boolean }) {
   const propertyId = usePropertyIdParam();
 
   return useQuery({
@@ -51,7 +64,7 @@ export function usePropertyTeam() {
       if (!propertyId) throw new Error('Property not found');
       return loadPropertyTeam(propertyId);
     },
-    enabled: Boolean(propertyId),
+    enabled: propertyTeamQueryEnabled(propertyId, options),
     // Membership/roles change infrequently; mutations already invalidate this exact key.
     staleTime: 60_000,
   });

@@ -511,7 +511,7 @@ export function MaintenanceRemindersTab({
             if (submitPending) e.preventDefault();
           }}
         >
-          <ResponsiveModalHeader className="border-border shrink-0 space-y-0 border-b px-4 pb-3.5 pt-[max(env(safe-area-inset-top,0px),1rem)] text-left sm:px-5 sm:pt-5">
+          <ResponsiveModalHeader className="border-border shrink-0 space-y-0 border-b px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),1rem)] text-left sm:px-5 sm:pt-5">
             <ResponsiveModalTitle>
               {editing ? 'Edit reminder' : 'New reminder'}
             </ResponsiveModalTitle>
@@ -545,7 +545,7 @@ export function MaintenanceRemindersTab({
               />
             ) : null}
           </div>
-          <ResponsiveModalFooter className="border-border shrink-0 border-t px-4 py-3.5 sm:px-5">
+          <ResponsiveModalFooter className="border-border shrink-0 border-t px-4 py-3 sm:px-5">
             <WizardModalActions
               onCancel={requestClose}
               onBack={() => formRef.current?.goBack()}

@@ -24,13 +24,13 @@ Parking-slot **reservations** for one slot — separate from stay `need_parking`
 
 ## New booking (modal)
 
-**Entry:** **New booking** button in the page header (desktop) or hero icon (mobile). Opens `AdminParkingNewBookingModal` — no route change, target parking slot fixed from the current page context; **Tower** is pre-filled read-only from the slot's record. Rendered as a **`ResponsiveModal`** (`sheetLayout="split"`): centered dialog on desktop, **full-width bottom sheet** with a sticky header + scrolling body on phone/tablet.
+**Entry:** **New booking** button in the page header (desktop) or hero icon (mobile). Opens `AdminParkingNewBookingModal` — no route change, target parking slot fixed from the current page context; **Tower** is pre-filled read-only from the slot's record. Rendered as a **`ResponsiveModal`** (`sheetLayout="split"`): centered dialog on desktop, **full-width bottom sheet** with a sticky header + scrolling body on phone/tablet. The modal states that online bookings confirm after the guest pays and the host's own request is accepted automatically.
 
 `submit-parking-booking-request` is guest-authenticated. A caller may submit with a guest email that is not their own only when they hold `bookings:edit` on the pinned parking; otherwise the caller must use their own email. This is what separates a host creating a booking for a guest from a guest trying to skip the per-account request limits. The row records `created_by_host_user_id`.
 
 Payment and cancel ownership initially binds to the host account. The guest recovers access by signing in with the booking email (the ownership check rebinds on an email match), after which they can pay or cancel from the status page. If that is not practical, collect payment the way you would outside this flow.
 
-**Host notifications.** You get an in-app notification when a guest cancels while the request is searching, when a guest cancels after accepting but before payment, when a payment window expires, and when an endorsement could not be sent.
+**Host notifications.** You get an in-app notification and a Telegram alert (when parking Telegram is enabled) when a guest cancels while the request is searching, when a guest cancels after accepting but before payment, when a payment window expires, and when an endorsement could not be sent. Each alert has its own Telegram template and toggle.
 
 **Paid outside Kame Space:** a host with `bookings:edit` can tick that option in the New booking modal for cash or bank transfer. The request auto-claims, records a ₱0 offline ledger row, and confirms without a payment link. No platform fee is taken. The guest still receives the confirmation and the PMO endorsement.
 
@@ -40,7 +40,7 @@ On success, the modal shows an inline summary (dates, guest, email, phone, vehic
 
 ## Booking detail (`/bookings/:bookingId`)
 
-**`ParkingBookingDetailPage`** — flat guest grid (email, phone, plate, vehicle) without bordered stat boxes. Shared **Match · Pay · Done** stepper (`ParkingFlowStepper` — same trail + fraction + segmented bars as guest status/form) on pending/payment/review. Status-specific strips:
+**`ParkingBookingDetailPage`** — flat guest grid (email, phone, plate, vehicle) without bordered stat boxes. Shared **Match · Pay · Done** stepper (`ParkingFlowStepper` — same trail + fraction + segmented bars as guest status/form) on pending, payment, review, and ready-for-check-in. Status-specific strips:
 
 - **Respond to claim** — amber urgency strip + countdown when this host's broadcast is still pending (`PENDING_HOST_ACCEPTANCE`)
 - **Awaiting guest payment** — muted strip + payment countdown when status is `PENDING_PAYMENT` (`parking_payment_expires_at`)
@@ -49,6 +49,8 @@ On success, the modal shows an inline summary (dates, guest, email, phone, vehic
 - **Payment card** — guest paid, your rate, fee, net payout, payout/refund status, direct-link marker
 - **Endorsement card** — sent, not sent with the failure reason, and **Resend endorsement** for hosts with `bookings:edit`
 - **Message guest** → parking Inbox once endorsement sent
+
+On phone, Accept / Decline / next status / Cancel live in the shared bottom action bar (`ContextualActionBar`). Decline and Cancel both confirm before writing; the bar is hidden on desktop, where the header actions stay visible.
 
 Status badge labels match guest surfaces via `parkingFlowCopy.ts` (e.g. **Finding host**, **Awaiting payment**). Claim/payment urgency strips animate in/out on status change (`parkingFlowMotion.ts`, `motion-reduce`-aware).
 

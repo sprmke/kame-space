@@ -7,7 +7,7 @@
 
 import {
   buildCancellationPolicySnapshot,
-  cancellationPolicyHash,
+  isCancellationPolicyStale,
   readCancellationPolicyFromSettings,
   readCancellationPolicyVersionId,
   isCancellationPolicyNonRefundable,
@@ -48,6 +48,8 @@ export const CANCELLATION_REASON_CODES = [
   'no_payment',
   'duplicate_or_test',
   'host_unavailable',
+  /** A pending request the host never answered; set by the pending-review-expiry cron. */
+  'request_expired',
   'other',
 ] as const;
 
@@ -144,19 +146,14 @@ export async function captureSnapshotForBooking(input: {
 }): Promise<CancellationPolicySnapshot> {
   const context = await loadPropertyCancellationContext(input.propertyId);
   // Content hash wins: copy-to-properties can change the policy without minting
-  // a new version id, and a stale version id alone would miss that.
+  // a new version id. Empty values mean "not sent" and must never block a guest.
   if (
-    input.clientHash !== undefined &&
-    input.clientHash !== null &&
-    input.clientHash !== '' &&
-    input.clientHash !== cancellationPolicyHash(context.policy)
-  ) {
-    throw new PolicyChangedError();
-  }
-  if (
-    input.clientVersionId !== undefined &&
-    input.clientVersionId !== null &&
-    input.clientVersionId !== context.versionId
+    isCancellationPolicyStale({
+      clientVersionId: input.clientVersionId,
+      clientHash: input.clientHash,
+      currentPolicy: context.policy,
+      currentVersionId: context.versionId,
+    })
   ) {
     throw new PolicyChangedError();
   }
@@ -743,6 +740,8 @@ export function buildGuestCancellationPayload(input: {
     !str(booking.external_source);
 
   return {
+    /** Why this booking is cancelled, so the trip page can word it ("Request expired"). */
+    reasonCode: str(booking.cancellation_reason_code) || null,
     policy: {
       title: input.snapshot?.rendered.title || display.title,
       description: input.snapshot?.rendered.description || display.description,

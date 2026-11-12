@@ -5,12 +5,26 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DEFAULT_DESCRIPTION,
+  MAX_DESCRIPTION_LENGTH,
+  MAX_TITLE_LENGTH,
+  buildPageTitle,
   buildPropertyJsonLd,
   buildRobotsTxt,
+  developmentTitle,
+  hostDescription,
+  hostTitle,
   injectMetaIntoHtml,
   isCrawlerUserAgent,
+  listingDescription,
   matchListingDetailPath,
+  minNightlyRate,
+  parkingTitle,
+  placeDescription,
+  placeTitle,
+  propertyTitle,
+  sanitizeMetaText,
   serializeJsonLd,
+  socialImageMeta,
   truncateDescription,
 } from '@/lib/seo/seoMeta';
 
@@ -110,6 +124,26 @@ describe('injectMetaIntoHtml', () => {
     expect(content.length).toBeLessThanOrEqual(160);
   });
 
+  it('preloads the cover photo as the LCP image', () => {
+    const html = injectMetaIntoHtml(shell, {
+      title: 't',
+      description: 'd',
+      canonicalUrl: 'https://kamespace.com/properties/a',
+      image: 'https://img.example.com/a.jpg',
+    });
+    expect(html).toContain('<link rel="preload" as="image" href="https://img.example.com/a.jpg"');
+    expect(html).toContain('fetchpriority="high"');
+  });
+
+  it('does not preload the default brand card', () => {
+    const html = injectMetaIntoHtml(shell, {
+      title: 't',
+      description: 'd',
+      canonicalUrl: 'https://kamespace.com/',
+    });
+    expect(html).not.toContain('rel="preload"');
+  });
+
   it('returns the input when there is no head', () => {
     expect(
       injectMetaIntoHtml('<p>x</p>', { title: 't', description: 'd', canonicalUrl: 'u' })
@@ -138,11 +172,20 @@ describe('helpers', () => {
     expect(serializeJsonLd({ a: '<' })).toBe('{"a":"\\u003c"}');
   });
 
-  it('robots.txt points at the sitemap and blocks private areas', () => {
-    const txt = buildRobotsTxt('https://example.com', ['example.com']);
+  it('robots.txt points at the canonical sitemap and blocks private areas', () => {
+    const txt = buildRobotsTxt('https://example.com', ['example.com'], 'https://example.com');
     expect(txt).toContain('Sitemap: https://example.com/sitemap.xml');
     expect(txt).toContain('Disallow: /org/');
     expect(txt).toContain('Disallow: /account');
+  });
+
+  it('declares the AI crawlers with the same private-path disallows', () => {
+    const txt = buildRobotsTxt('https://kamespace.com');
+    for (const agent of ['GPTBot', 'OAI-SearchBot', 'ClaudeBot', 'PerplexityBot', 'Bingbot']) {
+      expect(txt).toContain(`User-agent: ${agent}`);
+    }
+    expect(txt).toContain('User-agent: *');
+    expect(txt).not.toContain('User-agent: CCBot\nDisallow: /\n');
   });
 });
 
@@ -165,7 +208,198 @@ describe('robots trip pages', () => {
     for (const origin of ['https://kamespace.com', 'https://www.kamespace.com']) {
       const txt = buildRobotsTxt(origin);
       expect(txt).toContain('Allow: /');
-      expect(txt).toContain(`Sitemap: ${origin}/sitemap.xml`);
+      // Every host points at the apex sitemap so ranking signals never split.
+      expect(txt).toContain('Sitemap: https://kamespace.com/sitemap.xml');
     }
+  });
+});
+
+describe('buildPageTitle', () => {
+  it('puts the brand last', () => {
+    expect(buildPageTitle('About', 'Kame Space')).toBe('About | Kame Space');
+    expect(buildPageTitle('Host plans and pricing', 'Kame Space')).toBe(
+      'Host plans and pricing | Kame Space'
+    );
+  });
+
+  it('drops the brand suffix before shortening the page part', () => {
+    const page = 'A very long listing name that runs well past the limit';
+    const withBrand = buildPageTitle(page, 'Kame Space');
+    expect(withBrand).toBe(page);
+    expect(withBrand.length).toBeLessThanOrEqual(MAX_TITLE_LENGTH);
+  });
+
+  it('truncates an over-long page part on a word boundary', () => {
+    const title = buildPageTitle('word '.repeat(40), 'Kame Space');
+    expect(title.length).toBeLessThanOrEqual(MAX_TITLE_LENGTH);
+    expect(title.endsWith('…')).toBe(true);
+    expect(title).not.toContain('  ');
+  });
+
+  it('never emits a trailing separator and handles an empty page', () => {
+    expect(buildPageTitle('   ', 'Kame Space')).toBe('Kame Space');
+    expect(buildPageTitle('About', '')).toBe('About');
+  });
+
+  it('collapses whitespace from data-driven names', () => {
+    expect(buildPageTitle('  Monaco   2604  ', 'Kame Space')).toBe('Monaco 2604 | Kame Space');
+  });
+});
+
+describe('title templates', () => {
+  it('builds a property title with and without a unit type', () => {
+    expect(propertyTitle({ name: 'Monaco 2604', unitType: 'Studio', city: 'San Fernando' })).toBe(
+      'Monaco 2604, Studio in San Fernando'
+    );
+    expect(propertyTitle({ name: 'Monaco 2604', city: 'San Fernando' })).toBe(
+      'Monaco 2604 in San Fernando'
+    );
+    expect(propertyTitle({ name: 'Monaco 2604', unitType: 'Studio' })).toBe('Monaco 2604, Studio');
+    expect(propertyTitle({ name: 'Monaco 2604' })).toBe('Monaco 2604');
+  });
+
+  it('builds a parking title', () => {
+    expect(parkingTitle({ name: 'Slot A1', place: 'Azure North' })).toBe(
+      'Slot A1 parking in Azure North'
+    );
+    expect(parkingTitle({ name: 'Slot A1' })).toBe('Slot A1 parking');
+  });
+
+  it('builds a development title', () => {
+    expect(developmentTitle({ name: 'Azure North', city: 'San Fernando' })).toBe(
+      'Azure North, San Fernando condos and parking'
+    );
+    expect(developmentTitle({ name: 'Azure North' })).toBe('Azure North condos and parking');
+  });
+
+  it('builds place titles per family', () => {
+    expect(placeTitle('property', 'Makati')).toBe('Condos and homes for rent in Makati');
+    expect(placeTitle('parking', 'Makati')).toBe('Parking for rent in Makati');
+    expect(placeTitle('development', 'Makati')).toBe('Condos and parking in Makati');
+  });
+
+  it('builds a host title', () => {
+    expect(hostTitle('Kame Stays')).toBe('Kame Stays stays and parking');
+  });
+});
+
+describe('sanitizeMetaText', () => {
+  it('strips markdown, html, urls, emails, phones and emoji', () => {
+    const dirty =
+      '**Great** <b>stay</b> [book](https://evil.example) mail me a@b.co or 0917 123 4567 🔥🌴';
+    const clean = sanitizeMetaText(dirty);
+    expect(clean).toContain('Great stay');
+    expect(clean).toContain('book');
+    expect(clean).not.toContain('*');
+    expect(clean).not.toContain('<b>');
+    expect(clean).not.toContain('http');
+    expect(clean).not.toContain('a@b.co');
+    expect(clean).not.toContain('0917');
+    expect(clean).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
+  });
+
+  it('collapses whitespace and handles empty input', () => {
+    expect(sanitizeMetaText('  a   b  ')).toBe('a b');
+    expect(sanitizeMetaText(null)).toBe('');
+  });
+});
+
+describe('listingDescription', () => {
+  it('uses a usable host description as-is', () => {
+    const host =
+      'A bright studio steps from the mall with fast wifi and a balcony you can work from.';
+    expect(listingDescription({ name: 'Monaco 2604', hostDescription: host })).toBe(host);
+  });
+
+  it('falls back to the data template and skips missing parts', () => {
+    const text = listingDescription({
+      name: 'Monaco 2604',
+      unitType: 'Studio',
+      city: 'San Fernando',
+      guests: 2,
+      bedrooms: 1,
+      amenities: ['Wifi', 'Pool'],
+      priceFrom: 2500,
+    });
+    expect(text).toContain('Monaco 2604: Studio in San Fernando');
+    expect(text).toContain('sleeps 2');
+    expect(text).toContain('1 bedroom');
+    expect(text).toContain('Wifi and Pool');
+    expect(text).toContain('From PHP 2500 per night');
+    expect(text.length).toBeLessThanOrEqual(MAX_DESCRIPTION_LENGTH);
+  });
+
+  it('never renders undefined, NaN or a missing price', () => {
+    const text = listingDescription({ name: 'Slot A1' });
+    expect(text).toBe('Slot A1. Check dates and book online.');
+    expect(text).not.toContain('undefined');
+    expect(text).not.toContain('NaN');
+  });
+
+  it('ignores a host description that is too short to be useful', () => {
+    const text = listingDescription({ name: 'Monaco 2604', hostDescription: 'Nice place' });
+    expect(text).toContain('Monaco 2604');
+    expect(text.length).toBeGreaterThan(40);
+  });
+});
+
+describe('place and host descriptions', () => {
+  it('builds a place description from the count and lowest price', () => {
+    expect(
+      placeDescription({ family: 'property', place: 'Makati', count: 12, priceFrom: 1800 })
+    ).toBe('12 stays in Makati, from PHP 1800 per night. Check dates and book online.');
+    expect(placeDescription({ family: 'parking', place: 'BGC', count: 3 })).toBe(
+      '3 parking slots in BGC. Check dates and book online.'
+    );
+    expect(placeDescription({ family: 'development', place: 'Cebu', count: 2 })).toContain(
+      '2 developments in Cebu'
+    );
+  });
+
+  it('builds a host description', () => {
+    expect(hostDescription({ name: 'Kame Stays', stays: 3, parking: 1 })).toBe(
+      'Kame Stays lists 3 stays and 1 parking slot on Kame Space.'
+    );
+    expect(hostDescription({ name: 'Kame Stays', stays: 0, parking: 0 })).toBe(
+      'Kame Stays lists stays and parking on Kame Space.'
+    );
+  });
+});
+
+describe('minNightlyRate', () => {
+  it('reads the three card price fields and ignores junk', () => {
+    expect(minNightlyRate([{ price: 3000 }, { price: 1800 }])).toBe(1800);
+    expect(minNightlyRate([{ ratePerNight: 450 }])).toBe(450);
+    expect(minNightlyRate([{ nightlyRate: 900 }])).toBe(900);
+    expect(minNightlyRate([{ price: null }, { price: 0 }, { price: Number.NaN }])).toBeNull();
+    expect(minNightlyRate([])).toBeNull();
+  });
+});
+
+describe('social image', () => {
+  const storage = 'https://abc.supabase.co/storage/v1/object/public/property-media/a.jpg';
+
+  it('leaves the URL alone when transforms are off', () => {
+    expect(socialImageMeta(storage, false)).toEqual({ image: storage });
+  });
+
+  it('builds a 1200x630 cover crop when transforms are on', () => {
+    const meta = socialImageMeta(storage, true);
+    expect(meta.image).toContain('/storage/v1/render/image/public/property-media/a.jpg');
+    expect(meta.image).toContain('width=1200');
+    expect(meta.image).toContain('height=630');
+    expect(meta.image).toContain('resize=cover');
+    expect(meta.imageWidth).toBe(1200);
+    expect(meta.imageHeight).toBe(630);
+  });
+
+  it('passes non-storage URLs through untouched', () => {
+    expect(socialImageMeta('https://images.unsplash.com/photo-1', true)).toEqual({
+      image: 'https://images.unsplash.com/photo-1',
+    });
+  });
+
+  it('returns null for a missing photo', () => {
+    expect(socialImageMeta(null, true)).toEqual({ image: null });
   });
 });

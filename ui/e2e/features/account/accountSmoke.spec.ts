@@ -10,9 +10,9 @@ test.describe('@ci guest account shells', () => {
     await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
   });
 
-  test('stays page shows empty messages state', async ({ page }) => {
+  test('messages page shows empty state', async ({ page }) => {
     await installGuestFavoritesMocks(page);
-    await page.goto('/account/stays');
+    await page.goto('/account/messages');
     await expect(page.getByText('No messages yet.')).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole('link', { name: 'Browse properties' })).toHaveAttribute(
       'href',

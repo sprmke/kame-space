@@ -12,6 +12,7 @@ import {
   Home,
   Image as ImageIcon,
   Info,
+  KeyRound,
   ListChecks,
   Mail,
   MapPin,
@@ -25,6 +26,7 @@ import {
 import { toast } from 'sonner';
 
 import { ActivitySettingsSection } from '@/features/dashboard/activity/components/ActivitySettingsSection';
+import { PropertyGuestExperienceSection } from '@/features/dashboard/guest-experience/components/PropertyGuestExperienceSection';
 import {
   AdminSection,
   AdminSectionNavLayout,
@@ -112,7 +114,6 @@ import { friendlyToastError } from '@/lib/feedback/toastMessages';
 import { propertyBrandColorStoredValue } from '@/lib/theme/brandColor';
 
 const SETTINGS_SECTIONS: AdminSectionNavItem[] = [
-  { id: 'danger', label: 'Listing status', icon: AlertTriangle },
   { id: 'basic', label: 'Basic Information', icon: Info },
   { id: 'details', label: 'Property Details', icon: Home },
   { id: 'media', label: 'Photos & Videos', icon: ImageIcon },
@@ -125,9 +126,11 @@ const SETTINGS_SECTIONS: AdminSectionNavItem[] = [
   { id: 'guest-rewards', label: 'Reviews & vouchers', icon: Gift },
   { id: 'payment', label: 'Payment', icon: Wallet },
   { id: 'building-forms', label: 'Building Forms', icon: ClipboardList },
+  { id: 'guest-experience', label: 'Guest experience', icon: KeyRound },
   { id: 'email-automations', label: 'Email Automations', icon: Mail },
   { id: 'integrations', label: 'Integrations', icon: Globe },
   { id: 'activity', label: 'Activity', icon: ScrollText },
+  { id: 'danger', label: 'Listing status', icon: AlertTriangle },
 ];
 
 function mergeProfileDraftAfterSave(
@@ -177,7 +180,7 @@ export function usePropertySettingsController() {
     isError: appSettingsError,
     error: appSettingsLoadError,
   } = useAppSettings();
-  const { data: propertyTeam } = usePropertyTeam();
+  const { data: propertyTeam } = usePropertyTeam({ enabled: true });
   const updateProperty = useUpdateProperty(orgSlug);
   const updateAppSettings = useUpdateAppSettings();
   const orgBrandColor = useOrgBrandColor();
@@ -1058,19 +1061,6 @@ export function PropertySettingsCard() {
         />
       ) : appSettings && operationalDraft ? (
         <AdminSectionNavLayout className="min-h-0 flex-1" sections={navSections}>
-          <AdminSection id="danger" title="Listing status" icon={AlertTriangle}>
-            <PropertyListingStatusSection
-              orgSlug={orgSlug}
-              propertyId={property.id}
-              propertyName={profileDraft.name.trim() || property.name}
-              canManage={canEditListingStatus}
-              canDelete={canDeleteProperty}
-              disabled={busy}
-              onPropertyChanged={handleLifecyclePropertyChanged}
-              onDeleted={handlePropertyDeleted}
-            />
-          </AdminSection>
-
           <PropertyProfileMainSections
             draft={profileDraft}
             onChange={setProfileField}
@@ -1131,6 +1121,10 @@ export function PropertySettingsCard() {
             savingReviewId={savingReviewId}
           />
 
+          <AdminSection id="guest-experience" title="Guest experience" icon={KeyRound}>
+            <PropertyGuestExperienceSection propertyId={property.id} disabled={busy} />
+          </AdminSection>
+
           <PropertyOperationalSettingsSections
             data={appSettings}
             draft={operationalDraft}
@@ -1150,6 +1144,19 @@ export function PropertySettingsCard() {
               <ActivitySettingsSection scope="property" />
             </AdminSection>
           ) : null}
+
+          <AdminSection id="danger" title="Listing status" icon={AlertTriangle}>
+            <PropertyListingStatusSection
+              orgSlug={orgSlug}
+              propertyId={property.id}
+              propertyName={profileDraft.name.trim() || property.name}
+              canManage={canEditListingStatus}
+              canDelete={canDeleteProperty}
+              disabled={busy}
+              onPropertyChanged={handleLifecyclePropertyChanged}
+              onDeleted={handlePropertyDeleted}
+            />
+          </AdminSection>
         </AdminSectionNavLayout>
       ) : null}
     </AdminMobilePage>

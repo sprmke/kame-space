@@ -11,8 +11,9 @@ import {
 
 import { ListingHeroSearch } from '@/features/guest/marketing/shared/components/ListingHeroSearch';
 
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+
 import { cn } from '@/lib/utils';
+import { usePublicStaticRouteSeo } from '@/lib/seo/routeTitle';
 
 const servicePreviews = [
   { label: 'Become a property manager', icon: Building2, enterDelay: '', floatDelay: '0s' },
@@ -45,7 +46,7 @@ const servicePreviews = [
 ] as const;
 
 export function ServicesPage() {
-  usePageTitle(publicPageTitle('Services'));
+  usePublicStaticRouteSeo('/services');
   const reduceMotion = useReducedMotion();
 
   return (

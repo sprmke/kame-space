@@ -503,7 +503,7 @@ function ChatScene() {
 
 /* --------------------------------- Trip --------------------------------- */
 
-const TRIP_STEPS = ['Requested', 'Confirmed', 'Ready', 'Checked out', 'Done'];
+const TRIP_STEPS = ['Request sent', 'Confirmed', 'Ready for check-in', 'Checked out', 'Done'];
 
 function TripRow({
   icon: Icon,
@@ -547,7 +547,7 @@ function TripScene() {
   // requested, confirmed, ready, docs approved, parking assigned, next-step banner
   const step = useShowcaseSteps([400, 1000, 1600, 2200, 2700, 3400]);
   const reached = Math.min(step, 3);
-  const statusLabel = ['Requested', 'Requested', 'Confirmed', 'Ready'][reached];
+  const statusLabel = ['Request sent', 'Request sent', 'Confirmed', 'Ready for check-in'][reached];
   const fill = reached <= 1 ? 0 : ((reached - 1) / (TRIP_STEPS.length - 1)) * 100;
 
   return (

@@ -279,6 +279,357 @@ plausible-sounding changes that either did nothing or made the app slower.
 
 ---
 
+## 11. Authenticated dashboard boot (first real measurement)
+
+**Date:** 2026-11-11. Production, signed in as the probe account, 390x844, 4x CPU throttle,
+median of three warm runs, read from the Phase 0.1 boot marks.
+
+| Metric                                          | Value       |
+| ----------------------------------------------- | ----------- |
+| First render                                    | 134 ms      |
+| Full-screen loader visible                      | **1754 ms** |
+| Content ready                                   | **4201 ms** |
+| Authenticated edge calls for one dashboard load | **24**      |
+
+That corrects an earlier estimate in this document: the boot path is not four to six calls, it
+is twenty-four.
+
+### Where those calls sit on the timeline
+
+Each row is the first request for that endpoint, relative to navigation start.
+
+| At          | Phase          | Calls                                                                                                                                                                                                                |
+| ----------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1484 ms     | before content | `get-public-platform-status`                                                                                                                                                                                         |
+| 1819 ms     | before content | `get-session-context`                                                                                                                                                                                                |
+| **3747 ms** | before content | burst of 9: `app-settings`, `org-settings`, `org-plan`, `list-parkings`, `notifications-list`, `org-access`, `get-feature-availability`, `property-lifecycle`, `dashboard-assistant-settings`, `user-ui-preferences` |
+| 3801 ms     | before content | `guest-profile`                                                                                                                                                                                                      |
+| 3962 ms     | before content | `list-host-announcements`                                                                                                                                                                                            |
+| **4298 ms** | before content | `dashboard-stats` plus `property-team-members`, `-invitations`, `-custom-roles`                                                                                                                                      |
+| 6738 ms     | at content     | `maintenance-summary`, `maintenance-items`, `finance-line-items`, `finance-bookings`, `list-bookings`                                                                                                                |
+
+Content was ready at 6749 ms. Three things this shows that guessing had got wrong:
+
+1. The **9-call burst at 3747 ms** is the critical path, not the tail. It starts 1.9 s after the
+   bootstrap resolves (shell-chunk download plus render) and competes for the phone's 4 to 6
+   connections while `dashboard-stats` is in flight.
+2. `notifications-list` and `list-host-announcements` are already gated behind first paint and
+   still land before content, because first paint is at 3747 ms and content at 6749 ms. The gate
+   bought paint time, not content time.
+3. The five calls below land **exactly at** content, which is what the gate is meant to do.
+
+### Five calls moved off the critical path
+
+`maintenance-summary`, `maintenance-items` (the maintenance reminders card) and
+`finance-line-items`, `finance-bookings`, `list-bookings` (the finance calendar section) now gate
+on `useAfterFirstPaint`, the same mechanism already used for the notification preview. The cards
+still render, with their existing skeletons, and the data arrives one idle tick later.
+
+### Still to find
+
+The three `property-team-*` calls fire in the same millisecond as `dashboard-stats`, so they live
+in the dashboard render tree, but no call site on that tree references `usePropertyTeam`. The
+built chunk `usePropertyTeam-*.js` is imported by `AdminLayout`, so the consumer is somewhere in
+that graph and needs elimination rather than grep. `guest-profile` fires on an admin route
+because the guest auth provider wraps every route. Both are recorded so the next pass starts from
+evidence.
+
+## 13. Decisions, settled
+
+**Date:** 2026-11-11. Both were open questions in the plan; the owner delegated the call.
+
+### D-2, local JWT verification: **not doing it**
+
+`getUser` costs 84-121 ms, and after the token cache and the verified-user threading it is paid
+**once per burst**, not per call. Against that saving, `getUser` is what makes sign-out, session
+revocation and account disable take effect immediately. Local ES256 verification would leave each
+of those accepting reads for up to the token lifetime, measured at **3600 s**, on a surface that
+returns guest names, contact details and bookings.
+
+Bounded, quantified, and on the wrong side of the trade. Revisit only with a stated maximum
+offboarding delay and reads-only scope.
+
+### Realtime Postgres Changes: **not changing it now**
+
+Realtime `list_changes` is **85.02%** of all database time, 12.88M ms across 1,664,792 calls. It
+is also the largest single number in this document.
+
+It is not, however, user-facing latency today: index and table cache hit rates are both `1.00`
+and the slow handlers in the call timeline are round trips, not query time. Moving to Broadcast
+from Database triggers changes how inbox, notifications and guest chat receive updates, which
+needs its own realtime test pass.
+
+So: measured, prioritised, and deliberately deferred to a focused change rather than folded into
+a latency pass. The number stays here so it is not forgotten.
+
+## 14. Credentials available on this machine
+
+Checked 2026-11-11, read-only.
+
+| Credential                 | Where                            | Status                                                                     |
+| -------------------------- | -------------------------------- | -------------------------------------------------------------------------- |
+| `SENTRY_AUTH_TOKEN`        | `supabase/.env.management.local` | **works**, 2 projects reachable                                            |
+| `POSTHOG_PERSONAL_API_KEY` | `supabase/.env.management.local` | valid but **project-scoped and missing `query:read`**, so HogQL is refused |
+| `SUPABASE_ACCESS_TOKEN`    | `supabase/.env.management.local` | works                                                                      |
+| `VERCEL_TOKEN` (env)       | `supabase/.env.management.local` | invalid; the working credential is the Vercel CLI login                    |
+
+The weekly report's Sentry source is unblocked. Its PostHog source needs a personal API key with
+**`query:read`** (and `project:read`); the existing key cannot run the HogQL queries the report
+depends on.
+
+## 15. Why the dashboard boot was slow: two calls, not ten
+
+Measured 2026-11-11 on production, mobiles at 4x CPU throttle, three runs, medians.
+
+Section 11 counted the calls and concluded the ten-call burst at ~4.1s was the critical path.
+Measuring **durations** instead of start times shows that was half right. The burst is real,
+but its members return in 0.8-2.6s. Two calls outside that reasoning were the actual cost:
+
+| Call                    | Handler time, warm | Why                                                                        |
+| ----------------------- | ------------------ | -------------------------------------------------------------------------- |
+| `property-team-members` | **3105-3904 ms**   | a seat reconcile on a GET, plus one GoTrue admin call per member in series |
+| `app-settings`          | **2456-3719 ms**   | nine sequential independent reads                                          |
+
+Both were verified with `Server-Timing` directly against the deployed functions, three times
+each, so this is handler time, not cold start or network.
+
+### `property-team-members` was not needed on the dashboard at all
+
+The dashboard never shows the team. The calls came from the AI composer's mention catalog:
+`useAssistantContextCatalog` fetched the org team, property team and parking team on mount,
+and `ChatComposerContextHub` mounts it with its popover **closed**. The catalog was loading the
+data for a menu nobody had opened.
+
+`useAssistantContextCatalog({ enabled })` now holds every request until a caller opens it.
+`ChatComposerContextHub` passes its own `open` state. Callers that only mount when the picker
+is visible (`ChatContextCommandPalette`, `MentionCandidatesLoader`) keep the default and are
+unchanged.
+
+`usePropertyTeam` gained an `enabled` option, the same shape `useParkings` already had.
+
+### `app-settings` stays, so it had to get faster
+
+`AdminBrandTheme` is mounted by `AdminLayout` and needs the brand colour, so this call is
+legitimate. The handler ran nine independent reads one after another. `resolveAppSettings` was
+already parallel internally; the outer function was not.
+
+They now fan out in one wave behind a single `Promise.all`. The two that genuinely depend on the
+resolved property id (residence name, then the PMO email derived from it) stay sequenced.
+
+### The N+1 nobody would notice until it mattered
+
+`listPropertyTeamMembers` awaited `getAuthProfile` inside its loops. One GoTrue admin round trip
+per member, plus one per inviter, in series. The test tenant has a single owner, so it cost one
+call there and would cost twenty on a ten-seat property. Profiles are now collected first and
+fetched together, then the rows are built from a map.
+
+### Code paths
+
+| Change            | File                                                                           |
+| ----------------- | ------------------------------------------------------------------------------ |
+| Catalog gating    | `ui/src/features/dashboard/ai-assistant/hooks/useAssistantContextCatalog.ts`   |
+| Hub passes `open` | `ui/src/features/dashboard/ai-assistant/components/ChatComposerContextHub.tsx` |
+| `enabled` option  | `ui/src/features/dashboard/team/hooks/usePropertyTeam.ts`                      |
+| Fan-out           | `supabase/functions/_shared/appSettings.ts`                                    |
+| Batched profiles  | `supabase/functions/_shared/propertyTeamService.ts`                            |
+
+### Reproduction
+
+```bash
+# per-call durations, not just start times
+bun run perf:boot-durations
+
+# handler time for a single function, warm
+curl -s -D - -o /dev/null \
+  -H "Authorization: Bearer $TOKEN" \
+  "$SUPABASE_URL/functions/v1/property-team-members?propertyId=$PID" | grep -i server-timing
+```
+
+The read-path seat reconcile is left in place. It is a write on a GET, which is why it is slow,
+but enforcement also runs on every plan and subscription change (`subscriptionOrchestrator`,
+`planEntitlements`), and removing the lazy catch-up would change how quickly a downgrade
+deactivates seats. That is a product decision, not a latency one, so it is recorded here rather
+than changed.
+
+### Measured after
+
+Production, 2026-11-11, probe account, 4x CPU throttle.
+
+### Read this first: the first version of this section was measured wrong
+
+The numbers below were first produced with `performance.getEntriesByType('resource')`. That API
+reads a **fixed-size ring buffer**. Once it fills, entries are evicted and the list comes back
+short without any error. Two conclusions were drawn from a short list and both were wrong:
+
+- "`property-team-members` is gone from the boot" was published twice. The call never stopped.
+- "21 distinct calls" was an undercount. Counting the same boot through CDP
+  `Network.requestWillBeSent` shows **24**.
+
+`perf:boot-durations` now reads CDP network events, which are not evicted. Treat any call-set
+claim made before that change as unverified.
+
+### What is method-consistent and holds
+
+| Metric                                             | Before       | After            | Change                             |
+| -------------------------------------------------- | ------------ | ---------------- | ---------------------------------- |
+| `app-settings` handler, direct `curl`, warm        | 2456-3719 ms | **1793-1950 ms** | **-30%**                           |
+| `property-team-members`, browser-observed duration | 5822 ms      | **174 ms**       | queueing relief, not handler speed |
+
+Both endpoints were called directly, three times each, with `Server-Timing`, so the `app-settings`
+figure is the same measurement before and after. The `property-team-members` figure is the
+browser-observed request duration, and the improvement is **its position in the queue**, not its
+handler: measured directly it still costs 2986-3522 ms, because on the single-owner test tenant
+the cost is the seat reconcile rather than the per-member lookups the N+1 fix targets.
+
+### State at that point, measured with CDP (before the prefetch below)
+
+| Metric                                       | Value                          |
+| -------------------------------------------- | ------------------------------ |
+| `route:content` median, `/dashboard`, 3 runs | **5132 ms** (5317, 5132, 4831) |
+| Distinct boot calls, `/dashboard`            | 24                             |
+| Distinct boot calls, `/bookings`             | 19                             |
+| `app-settings`                               | 1660 ms                        |
+| `org-plan`                                   | 1283 ms                        |
+| `dashboard-stats`                            | 827 ms                         |
+
+Content is gated on `dashboard-stats`, which starts about 400 ms after the chrome burst because it
+queues behind it.
+
+### The team calls: found, and it was not what it looked like
+
+Traced in a local dev build with unminified frames, which is what should have been done first:
+
+```
+usePropertyTeam
+  <- usePropertySettingsController   (PropertySettingsCard.tsx:180)
+  <- PropertySectionsInner           (SetupGuideStepBody.tsx:207)
+```
+
+`SetupGuideProvider` mounts the setup guide on every admin route, and the guide renders the
+property settings sections. The probe property is `INACTIVE` with no settings, so the guide
+**opens automatically**, and its building-forms step needs the team to prefill contact defaults.
+That is a legitimate read. It also explains why the calls appeared on `/dashboard`, `/bookings`
+and `/settings`: one open overlay, not three page-level consumers.
+
+The earlier hypotheses were all wrong for the same reason: they were reasoned from the source
+tree instead of traced. The catalog was innocent (none of its eleven other queries fired), the
+composer picker was dead code (its label is in no shipped chunk), and the answer was a component
+two levels above the one that looked responsible.
+
+**A regression this pass introduced, now fixed.** Making the query opt-in broke
+`PropertySettingsCard`'s team defaults, and a later commit (`103047497`) had already dropped the
+`enabled: true` meant to keep it working. The controller now opts in explicitly, so the settings
+and setup-guide surfaces behave exactly as before, and only a future caller that forgets to opt
+in gets no request.
+
+### Content gate moved ahead of the burst
+
+`dashboard-stats` is the only call `route:content` waits on, and it used to start ~300 ms after the
+chrome burst because the burst had taken the connections. `useSessionBootstrap` now prefetches it
+as soon as the session context resolves, on the property dashboard route only
+(`isPropertyDashboardPath`, exact match, unit-tested). Same query key and `staleTime`, so the page
+reuses the in-flight request rather than firing a second one.
+
+Local ordering after the change, before deploy:
+
+```
+1  get-session-context
+2  dashboard-stats      <- now ahead of the chrome burst
+3  app-settings
+4  org-settings
+5  org-plan
+```
+
+### A testing trap worth recording
+
+Running the `org/unsavedChangesGuard` spec inside this worktree failed 11 of 14 while the same
+spec passed 7/7 on a clean checkout. The cause was not the code: copying real `ui/.env*` files into
+the worktree to run a dev server changed what the E2E app pointed at. Remove those files before
+running Playwright in a worktree, or the run measures the wrong thing. Bisecting by reverting
+source changes would never have found it.
+
+### Telemetry had been measuring one page named `/*`
+
+Starting the report work surfaced this: seven days of Sentry contained **one** transaction name,
+`/*`, across 377 events.
+
+The router is deliberately a single splat route with `<Routes>` inside `AppRoutes` (see
+`ui/src/main.tsx`), so `reactRouterBrowserTracingIntegration` and `wrapCreateBrowserRouter` can
+only ever see the splat. Every transaction, and every `boot.*` measurement attached to it, was
+anonymous. Fixing the latency without noticing this would have left no way to prove the fix held
+beyond the day it shipped.
+
+`routePatternFor` derives the pattern from the pathname instead. Route names only: the segment
+after a tenant parent, and any UUID, long hex id or email-shaped segment, becomes `:param`. Fifteen
+unit cases assert that no identifier survives.
+
+**Not yet confirmed in Sentry.** Transactions are ingesting (2 in the hour after the release, which
+is the configured 5% of 40 dwelled loads), but the available API token cannot read the
+transactions dataset: `stats_v2?category=transaction` returns volume while
+`/events/?dataset=transactions` returns an empty list. Confirming names needs the Sentry UI or a
+token with event read on that dataset. Stated here rather than claimed as verified.
+
+### Remaining structural option
+
+1. **Collapse the burst into `get-session-context`**, the pattern that already took the boot chain
+   from four calls to one. It is the only structural win left, and worth less than it was now that
+   `app-settings` is 30% cheaper and `dashboard-stats` no longer queues behind the burst.
+
+The `dashboard-stats` prefetch ships with this change and is measured after deploy.
+
+### What gates content now
+
+```
+2655 ms   burst starts (org-settings, org-plan, list-parkings, notifications-list, ...)
+2976 ms   dashboard-stats starts  <- 320 ms after the burst got the connections
+4613 ms   dashboard-stats ends
+4599 ms   route:content
+```
+
+Content is gated on `dashboard-stats`, and `dashboard-stats` now starts late because it queues
+behind ten chrome calls. Two ways forward, in order of value:
+
+1. **Start `dashboard-stats` as soon as the session context resolves**, instead of waiting for the
+   page to mount. It is the only call content waits on, so it should not queue at all. This is the
+   cheapest remaining win, roughly 400-600 ms.
+2. **Collapse the burst into `get-session-context`**, the pattern that already took the boot chain
+   from four calls to one. Larger, and less valuable now that the two genuinely slow calls are
+   fixed.
+
+### Measured after the prefetch, production
+
+Same probe account, same 4x CPU throttle, CDP counting, two independent three-run sets.
+
+| Metric                  | Before  | After                | Change    |
+| ----------------------- | ------- | -------------------- | --------- |
+| `route:content` median  | 5132 ms | **3832 ms** (5 runs) | **-25%**  |
+| `dashboard-stats` start | 2976 ms | **1356 ms**          | **-54%**  |
+| Distinct boot calls     | 24      | 24                   | no change |
+
+Raw runs, four independent sets: 3215, 3888, 3057 / 6954, 3340, 3433 / 7798, 2997, 4121 /
+3832, 4398, 2929, 4234, 3353. The first run of a set is usually the slowest, which is a cold edge
+isolate rather than the change. Quoted is the five-run median, the least favourable of the four,
+because this machine is noisy and the conservative number is the one worth publishing.
+
+The call count did not change, and that is the point: the win is ordering, not volume.
+`dashboard-stats` used to start 320 ms after the chrome burst had taken the connections; it now
+starts 150 ms after the session context returns, ahead of everything else.
+
+```
+ 279 ms  get-session-context starts
+ 878 ms  get-session-context ends
+1356 ms  dashboard-stats starts   <- was 2976
+1945 ms  dashboard-stats ends
+1534 ms  chrome burst starts (app-settings, org-plan, list-parkings, ...)
+3215 ms  route:content
+```
+
+Content now lands about 1.3 s after the stats response, which is React render and paint rather
+than network. The remaining structural option is collapsing the burst; it is worth less now.
+
+The opt-in team query shipped in #422. It did not remove the team calls, and the trace above
+explains why: they come from the setup guide, which only mounts when it is open.
+
 ## Release state
 
 **2026-11-10.** PR #371 synced `main` to `develop`'s tree and shipped the UI side.

@@ -31,6 +31,7 @@ import { TierBadgeAnchor } from '@/features/dashboard/plans/components/TierBadge
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 
+import { MarketingAiLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { ListRowsSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -262,11 +263,11 @@ export function PublishDialog({ open, onOpenChange, media }: Props) {
         sheetLayout="split"
         className="flex max-h-[min(90dvh,36rem)] max-w-[min(calc(100vw-1.5rem),28rem)] flex-col gap-0 overflow-hidden p-0 pb-0 pt-0 sm:p-0"
       >
-        <ResponsiveModalHeader className="shrink-0 px-6 pt-6">
+        <ResponsiveModalHeader className="shrink-0 px-4 pt-6">
           <ResponsiveModalTitle>{MARKETING_PUBLISH_META_LABEL}</ResponsiveModalTitle>
         </ResponsiveModalHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
           {connectionsQuery.isLoading ? (
             <ListRowsSkeleton rows={3} label="Loading connections" className="min-h-[120px]" />
           ) : channels.length === 0 ? (
@@ -399,11 +400,12 @@ export function PublishDialog({ open, onOpenChange, media }: Props) {
                   className="min-h-[88px]"
                 />
               </div>
+              <MarketingAiLegalNotice />
             </div>
           )}
         </div>
 
-        <ResponsiveModalFooter className="shrink-0 gap-2 px-6 pb-6 pt-3">
+        <ResponsiveModalFooter className="shrink-0 gap-2 px-4 pb-6 pt-3">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

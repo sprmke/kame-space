@@ -11,6 +11,7 @@ import { resolveParkingSlotImage } from '@/features/guest/marketing/developments
 import { MarketingImage as Image } from '@/features/guest/marketing/shared/components/MarketingImage';
 
 import { Button } from '@/components/ui/button';
+import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 
 import type { ParkingSlot } from '../types';
 
@@ -70,7 +71,10 @@ export function ParkingSlotCard({
             {imageUrl ? (
               <Image
                 src={imageUrl}
-                alt=""
+                alt={buildListingImageAlt({
+                  listingName: developmentName ?? 'Parking slot',
+                  unitType: 'Parking slot',
+                })}
                 fill
                 className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transform-none"
                 sizes="(max-width: 640px) 240px, 260px"
@@ -117,7 +121,10 @@ export function ParkingSlotCard({
         {imageUrl ? (
           <Image
             src={imageUrl}
-            alt=""
+            alt={buildListingImageAlt({
+              listingName: developmentName ?? 'Parking slot',
+              unitType: 'Parking slot',
+            })}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             sizes="(max-width: 640px) 280px, 320px"

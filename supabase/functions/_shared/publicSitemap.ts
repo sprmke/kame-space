@@ -15,7 +15,6 @@ export const STATIC_SITEMAP_PATHS = [
   '/parkings',
   '/for-hosts',
   '/for-hosts/pricing',
-  '/services',
   '/about',
   '/contact',
   '/support',

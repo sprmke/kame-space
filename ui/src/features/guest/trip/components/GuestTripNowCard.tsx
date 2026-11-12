@@ -12,6 +12,7 @@ import {
 } from '@/features/guest/trip/lib/guestTripPhase';
 
 import { Button } from '@/components/ui/button';
+import { captureAppEvent } from '@/lib/posthog/capture';
 import { cn } from '@/lib/utils';
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
@@ -185,7 +186,10 @@ export function GuestTripNowCard({
       <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
         {primary.to ? (
           <Button asChild size="lg" className="w-full sm:w-auto">
-            <GuestTripSmartLink to={primary.to}>
+            <GuestTripSmartLink
+              to={primary.to}
+              onClick={() => captureAppEvent('guest_next_action_clicked', { action: primary.label })}
+            >
               <primary.Icon aria-hidden />
               {primary.label}
             </GuestTripSmartLink>

@@ -13,13 +13,20 @@ type DocumentCaptureStepProps = {
   side: 'front' | 'back';
   onCaptured: (file: File, quality: CaptureQualityResult | null) => void;
   onUseUpload: (file: File) => void;
+  /** Desktop only: hand the capture to the host's phone instead. */
+  onUsePhone?: () => void;
 };
 
 /**
  * Live capture with a frame guide and auto-capture. The upload fallback is always visible:
  * a denied camera, an old browser, or a desktop with no handoff must never dead-end.
  */
-export function DocumentCaptureStep({ side, onCaptured, onUseUpload }: DocumentCaptureStepProps) {
+export function DocumentCaptureStep({
+  side,
+  onCaptured,
+  onUseUpload,
+  onUsePhone,
+}: DocumentCaptureStepProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -111,6 +118,11 @@ export function DocumentCaptureStep({ side, onCaptured, onUseUpload }: DocumentC
               <ImagePlus className="mr-2 h-4 w-4" />
               Upload a photo
             </Button>
+            {onUsePhone ? (
+              <Button type="button" variant="ghost" onClick={onUsePhone}>
+                Use my phone instead
+              </Button>
+            ) : null}
           </div>
         )}
 

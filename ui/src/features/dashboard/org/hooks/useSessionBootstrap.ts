@@ -1,6 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams, useSearchParams } from 'react-router-dom';
+
+import {
+  dashboardStatsQueryKey,
+  fetchDashboardStats,
+} from '@/features/dashboard/property/hooks/useDashboardStats';
+import { resolveDashboardPeriod } from '@/features/dashboard/property/lib/dashboardPeriod';
 
 import { ORGANIZATIONS_QUERY_KEY } from '@/features/dashboard/org/hooks/useOrganizations';
 import { callEdgeFunction } from '@/features/dashboard/org/lib/edgeClient';
@@ -21,6 +27,11 @@ import type { PropertyAccessPayload } from '@/features/dashboard/team/lib/proper
  *   ['properties', orgSlug]                    useProperties
  *   ['property-access', propertyId]            usePropertyPermissions
  *   ['property', propertyId, 'entitlements']   usePropertyEntitlements
+ *
+ * It also starts `dashboard-stats` on the property dashboard. That call is the only thing the
+ * page's first paint waits on, and it used to start ~300 ms late because the shell's own reads
+ * had already taken the connections. Starting it here puts it ahead of them. Same key, same
+ * staleTime, so the page reuses the in-flight request instead of firing a second one.
  */
 
 type BootstrapResponse = {
@@ -32,9 +43,28 @@ type BootstrapResponse = {
 
 const entitlementsKey = (propertyId: string) => ['property', propertyId, 'entitlements'] as const;
 
+/**
+ * True only for the property dashboard route. The stats call is what that page's first paint
+ * waits on, so it is the one route worth starting early. Anywhere else it would be a wasted
+ * request, which is why the match is exact rather than a prefix.
+ */
+export function isPropertyDashboardPath(
+  pathname: string,
+  orgSlug: string | undefined,
+  propertySlug: string | undefined
+): boolean {
+  if (!orgSlug || !propertySlug) return false;
+  const normalised = pathname.replace(/\/+$/, '');
+  return normalised === `/org/${orgSlug}/property/${propertySlug}`;
+}
+
 export function useSessionBootstrap() {
   const { orgSlug, propertySlug } = useParams<{ orgSlug?: string; propertySlug?: string }>();
+  const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+
+  const onPropertyDashboard = isPropertyDashboardPath(pathname, orgSlug, propertySlug);
 
   return useQuery({
     queryKey: ['session-context', orgSlug ?? '', propertySlug ?? ''] as const,
@@ -64,6 +94,14 @@ export function useSessionBootstrap() {
         queryClient.setQueryData(PROPERTY_ACCESS_QUERY_KEY(propertyId), data.propertyAccess);
         if (data.entitlements) {
           queryClient.setQueryData(entitlementsKey(propertyId), data.entitlements);
+        }
+        if (onPropertyDashboard) {
+          const period = resolveDashboardPeriod(searchParams);
+          void queryClient.prefetchQuery({
+            queryKey: dashboardStatsQueryKey(propertyId, period),
+            queryFn: () => fetchDashboardStats(period.from, period.to, propertyId),
+            staleTime: 30_000,
+          });
         }
       }
 

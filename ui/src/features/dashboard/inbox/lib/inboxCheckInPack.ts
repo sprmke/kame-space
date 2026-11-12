@@ -8,6 +8,11 @@ export type CheckInPackInput = {
   checkOutTime?: string | null;
   mapsUrl?: string | null;
   stayGuideUrl?: string | null;
+  /**
+   * Guest trip page for the booking, when one is known. It leads the pack because it is the
+   * guest's home for everything else.
+   */
+  tripUrl?: string | null;
 };
 
 /** Multi-line check-in bundle for host chat insert (plain text + https links → rich cards). */
@@ -19,11 +24,18 @@ export function buildCheckInPackContent(input: CheckInPackInput): string | null 
   const checkOutTime = (input.checkOutTime?.trim() || '12:00').slice(0, 5);
   const mapsUrl = input.mapsUrl?.trim() ?? '';
   const stayGuideUrl = input.stayGuideUrl?.trim() ?? '';
+  const tripUrl = input.tripUrl?.trim() ?? '';
 
-  const lines: string[] = [
-    'Check-in details',
-    `Check-in: ${formatTimeToAMPM(checkInTime, true)} · Check-out: ${formatTimeToAMPM(checkOutTime, false)}`,
-  ];
+  const lines: string[] = ['Check-in details'];
+
+  // The trip page is the one link to send first: it carries the arrival steps, the Wi-Fi
+  // and (after the reveal time) the door code. Secrets are deliberately kept out of a chat
+  // message, which would bypass the reveal rule.
+  if (tripUrl) lines.push(`Your trip: ${tripUrl}`);
+
+  lines.push(
+    `Check-in: ${formatTimeToAMPM(checkInTime, true)} · Check-out: ${formatTimeToAMPM(checkOutTime, false)}`
+  );
 
   if (stayGuideUrl) lines.push(stayGuideUrl);
   if (mapsUrl) lines.push(mapsUrl);

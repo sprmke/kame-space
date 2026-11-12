@@ -301,3 +301,70 @@ git diff --name-status $(git merge-base develop <branch>)..<branch> | awk '$1=="
 
 The `branch-lifecycle` skill (`.agent/skills/branch-lifecycle/`) wraps this into a repeatable
 checklist and defines when a branch must be deleted.
+
+## 2026-11-11 parking module cleanup
+
+The parking module branches were landed and cleaned in one pass. Every deleted branch was merged
+into `develop` first (`git merge-base --is-ancestor <branch> develop` or `git cherry develop
+<branch>` with no `+` lines), and the worktree was clean before removal.
+
+| Branch                                | Tip SHA     | Checks                                          | Action                           |
+| ------------------------------------- | ----------- | ----------------------------------------------- | -------------------------------- |
+| `feat/parking-final-cleanup`          | `4fc093d91` | merged via #360; worktree clean                 | Worktree removed, branch deleted |
+| `feat/parking-telegram-alerts`        | `d3f49e881` | merged via #394; worktree clean                 | Worktree removed, branch deleted |
+| `docs/parking-completion-final`       | `4fab5251f` | merged via #395                                 | Deleted local + remote           |
+| `test/parking-host-mobile-smoke`      | `26e85f173` | merged via #396                                 | Deleted local + remote           |
+| `fix/parking-assistant-conflict-copy` | `b4e691fbc` | merged via #398                                 | Deleted local + remote           |
+| `feat/parking-production-completion`  | `7034da787` | already contained in `develop`; remote was gone | Deleted local                    |
+| `feat/parking-e2e-flows`              | `d9ee05935` | merged via #323; remote deleted                 | Local branch already gone        |
+| `release/2026-11-11-parking`          | `a58fa5742` | merged via #389; production build Ready         | Worktree removed, branch deleted |
+| `release/2026-11-11-lock`             | `925a997fa` | merged via #403; build-time lock only           | Worktree removed, branch deleted |
+| `feat/parking-commission`             | `466e27e83` | merged via #391                                 | Worktree removed, branch deleted |
+| `release/2026-11-11-final`            | `d22a20d61` | merged via #406                                 | Worktree removed, branch deleted |
+| `release/2026-11-11-commission`       | `365011e90` | merged via #408                                 | Worktree removed, branch deleted |
+
+Production state:
+
+- Backend: the `develop` CD deploy after #391 succeeded, so the parking functions and migrations
+  (`20261327000000`, `20261328000000`, `20261329000000`) are live.
+- UI: the production Vercel build from the #408 release is Ready and aliased to `kamespace.com`.
+  The temporary build-rate limit cleared before that release; later builds no longer need a retry.
+
+## 2026-11-12 tier A and post-booking releases
+
+Two batches shipped in one day, each as one PR into `develop` and one release PR into `main`.
+Every deleted branch was verified first: an ancestor of `develop`/`main`, or `git cherry` with no
+`+` lines, and a clean worktree. Blob-hash checks confirmed all 192 tier A files and all 170 batch
+two files survived the merges, with zero deletions in either release.
+
+| Release                         | Contents                                                                                                                                 | Result                                                              |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Tier A (#428, #429)             | #427 settings nav labels, #424 listing lifecycle sheets, #386 mascot library, #421 modal chrome, #364 agent skills, #426 boot-truth docs | Production UI released, no backend change                           |
+| Post-booking (#433, #434, #436) | #384 post-booking journey, #423 cookie banner, three pending plans and lighthouse evidence, migration renumbering                        | 5 migrations applied to production, functions deployed, UI released |
+
+Closed without shipping:
+
+- #380 `codex/f5-brand-assets` - 61 of its 76 brand files are byte-identical on `develop` and the
+  other 15 are older than `develop`; its docs commit would regress the planned backlog. Closed and
+  branch deleted.
+
+Deleted branches (local and remote): `fix/settings-section-nav-labels`,
+`fix/property-listing-lifecycle-modals`, `codex/mascot-character-library`, `feat/modal-chrome`,
+`chore/global-agent-skills`, `chore/tier-a-batch`, `release/2026-11-12-tier-a`,
+`feat/guest-post-booking-journey`, `fix/cookie-banner-compact`, `chore/batch-2`,
+`release/2026-11-12-batch-2`, `codex/f5-brand-assets`, `feat/seo-foundation`,
+`feat/guest-inbox-meta-sync`, `test/finance-recurrence`, `chore/deploy-prod-1111`,
+`release/2026-11-12-batch-2`.
+
+Removed worktrees: `tier-a`, `batch-2`, `seo-foundation`, `guest-inbox-meta-sync`,
+`listing-modals`, `section-nav`, `mascot-character-library`, `modal-chrome`, `cookie-ux`,
+`/private/tmp/seo-baseline`.
+
+Primary checkout reset from the merged `fix/edge-tslib-lock` to `develop`. Its 25 dirty files were
+either already shipped or machine noise; the four plan docs and the lighthouse evidence were
+salvaged into the post-booking batch first.
+
+Kept on purpose, still open: `#383` marketing trends (conflicted), `#379` marketing planner,
+`#354` multi-residence (draft, do not merge), `#353` mascot talking preview (draft),
+`test/full-app-test-architecture` (two doc commits, no PR), 13 dependabot PRs, and the
+`backup/` and `recover/` safety snapshots.

@@ -46,7 +46,7 @@ export function GuestAccountMobileNav({ pathname, className }: GuestAccountMobil
               title={item.label}
               className={cn(
                 'relative z-[1] flex min-h-[52px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 transition-colors',
-                active ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                active ? 'text-primary-foreground' : 'text-foreground hover:bg-muted/60'
               )}
             >
               <Icon className="size-[18px] shrink-0" aria-hidden />

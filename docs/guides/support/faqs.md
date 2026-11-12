@@ -2,7 +2,7 @@
 title: 'Curated support FAQs'
 status: active
 tags: [guides, support, faqs, help-center]
-updated: 2026-11-08
+updated: 2026-11-11
 ---
 
 # Curated support FAQs
@@ -228,7 +228,16 @@ No. These are standalone parking listings such as tower slots or motorcycle bays
 - source: docs/guides/routes/org/parking/settings.md
 - order: 30
 
-Basic info, photos, location, and amenities flow to your public parking page. Keep the cover photo and description accurate before sharing the link. Guests pay through PayMongo at checkout, so there are no payment details to fill in.
+Basic info, photos, location, and amenities flow to your public parking page. Keep the photos and description accurate before sharing the link. Guests pay through PayMongo at checkout, so there are no payment details to fill in.
+
+### How many photos can I add to a parking listing?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/org/parking/settings.md
+- order: 31
+
+Up to 3. The starred photo is the cover and shows first on your public parking page. Drag the photos to change their order.
 
 ### Why is there no Payment section on parking settings?
 
@@ -500,6 +509,24 @@ Meta only allows replies within 24 hours of the guest's last message. After that
 
 On the property Inbox under Manage, then Quick replies or Automation. Those settings apply across your organization.
 
+### Why can't I edit or unsend a message I sent on Facebook or Instagram?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/inbox.md
+- order: 25
+
+Meta cannot change or take back a message that was already sent to a guest, so those actions are not offered on Facebook and Instagram threads. Editing the copy here would only change what you see, not what the guest sees. Website chat messages can still be edited and unsent.
+
+### Why does a new message sometimes take a minute to show up?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/inbox.md
+- order: 26
+
+New messages normally appear within seconds. If your role does not include org-wide live updates, the list refreshes about once a minute while the tab is open, and it refreshes straight away when you come back to the tab. Organization owners and organization admins get live updates.
+
 ### Do I need to connect Facebook before I can publish marketing content?
 
 - category: Guest Communication
@@ -562,6 +589,15 @@ No. That ledger is for the parking slot's own operating transactions. Guest stay
 - order: 40
 
 Yes. When you edit or delete a recurring transaction, you choose whether the change applies to that occurrence, that one and all future ones, or the whole series.
+
+### My expense repeats on the 31st. What happens in February?
+
+- category: Billing & Finance
+- audience: host
+- source: docs/guides/routes/org/property/finance.md
+- order: 45
+
+It moves to the last day of that month, so February is the 28th (the 29th in a leap year) and April is the 30th. The series still produces one entry every month, and it returns to the 31st in a month that has one.
 
 ### Do the finance charts follow the date range I pick?
 
@@ -895,6 +931,24 @@ Stay guide, security-deposit refund, and guest review links are per booking. Cal
 - order: 60
 
 Yes. On the Calendar card choose Copy link, select the check-in and check-out dates, then Copy link. The guest opens the calendar with that range selected. You can also copy the calendar without dates.
+
+### What is alt text and do I need it?
+
+- category: Public Pages
+- audience: host
+- source: docs/guides/routes/org/property/settings.md
+- order: 65
+
+Alt text describes a photo for guests who use a screen reader, and search engines read it too. Open Property Settings, Photos and Videos, then the pencil on a photo to write one short line such as "Studio with a balcony facing the pool". It is optional. If you leave it empty, we use the photo caption, then a description built from the listing name, unit type and city.
+
+### Why doesn't my listing show up on Google or in an AI answer?
+
+- category: Public Pages
+- audience: host
+- source: docs/guides/routes/properties.md
+- order: 70
+
+A new listing can take a few weeks to be discovered, and search engines decide the order. To give it the best chance, publish it, keep the name, photos and description filled in, and use the listing's own public link when you share it. Only published listings are offered to search engines. If the listing is still missing after a month, ask support to check the public page.
 
 ### How do I block dates for a property?
 
@@ -1279,9 +1333,33 @@ Archive when you want to stop taking new bookings but keep the history. Delete i
 
 - category: Parking
 - audience: host
-- source: docs/guides/routes/parkings.md
+- source: docs/guides/routes/org/parking/pricing.md
 
-Guests always see and pay the platform guest rate. Your nightly rate is what your payout is calculated from, after commission. The guest rate is also the price cap, so a slot priced above it is not matched.
+Guests always see and pay the platform guest rate. Your nightly rate is what your payout is calculated from. We take the platform fee from your rate, and the rest is yours. The guest rate is also the price cap, so a slot priced above it is not matched.
+
+### How much does Kame Space take from a parking booking?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/org/parking/pricing.md
+
+A fixed percentage of your nightly rate, not the guest price. Pricing shows the exact split: guests pay, the platform fee, and what you receive. At 10% on a ₱300 rate, the fee is ₱30 and you receive ₱270 per night.
+
+### How do I get a lower fee on a parking booking?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/org/parking/pricing.md
+
+Share your direct booking link from Pricing. Bookings through that link use a lower platform fee because you brought the guest in. The card shows the per-night difference using your current rate. Guests still sign in before booking.
+
+### When do I get paid for a parking booking?
+
+- category: Parking
+- audience: host
+- source: docs/guides/routes/org/parking/finance.md
+
+Payouts are sent manually by the Kame Space team after the guest's payment is confirmed. You are paid your rate minus the platform fee. Parking Finance shows each booking's guest price, gross, fee, net and payout status.
 
 ### Can I record a parking booking the guest already paid in cash?
 
@@ -1306,7 +1384,7 @@ Parking Finance shows a read-only **Marketplace payouts** section with the guest
 - source: docs/guides/routes/verify.md
 - order: 910
 
-A live photo is much harder to fake than a gallery upload, and it reads the QR on a PhilSys ID directly. Guests can still upload a photo if their camera is blocked, and their result is then reviewed by a person.
+An ID is required for adult guests, but the guest chooses how to send it. Verifying with the camera takes about a minute and is harder to fake than an upload. Uploading an existing photo works just as well and is shown next to it, not hidden behind it.
 
 ### What do the ID badges mean on a booking?
 
@@ -1350,3 +1428,149 @@ Browsers, home-screen shortcuts and messaging apps can keep older icons or link 
 - source: docs/guides/routes/org/parking/bookings.md
 
 Yes. You get an in-app notification when a guest cancels while the request is still searching or after you accepted but before payment. You also get one when a guest's payment window expires.
+
+### Where can I read the Terms and Privacy Policy?
+
+- category: Account & Security
+- audience: public
+- source: docs/guides/routes/legal.md
+
+They are linked in the site footer, the More menu on phone, and your account menu. When you sign in, book, pay, or share documents, a short line near the button links to the part that applies. Tapping it opens the policy without leaving the page, so nothing you typed is lost.
+
+### How do I get a copy of my data or ask to delete it?
+
+- category: Account & Security
+- audience: public
+- source: docs/guides/routes/legal.md
+
+Open your profile and choose Request a copy or deletion of your data, or email us from the address on your account. We may ask you to confirm it is you and aim to reply within 15 days. Some records, such as payment history, are kept when the law requires it.
+
+### What does the cookie banner do, and can I change my choice later?
+
+- category: Account & Security
+- audience: public
+- source: docs/guides/routes/legal.md
+
+On your first visit you can choose Allow analytics or Essential only. Analytics cookies never load until you choose Allow analytics, and required cookies like sign-in and form protection work either way. Open the Cookie Policy page and use the Cookie settings card to switch at any time.
+
+### Is my plan renewed automatically, and do I get money back when I downgrade?
+
+- category: Plans & Billing
+- audience: host
+- source: docs/guides/routes/org/plans.md
+
+Plans are not charged automatically. Each month you get a payment link through PayMongo. Upgrading credits the unused time on your current plan. Downgrading applies right away, and unused time is never refunded in cash.
+
+### Are chat replies from the host or from AI?
+
+- category: Guest Portal
+- audience: guest
+- source: docs/guides/routes/legal.md
+
+Some hosts use an AI assistant to answer common questions quickly. Ask for the host in the chat if you need a person. How we handle messages is explained in the Privacy Policy.
+
+### Where do I set the Wi-Fi password and door code my guest sees?
+
+- category: Property Settings
+- audience: host
+- source: docs/guides/routes/org/property/settings.md
+
+Property Settings, then **Guest experience**. Fill in the Wi-Fi name and password, the door or lock code, the unit and floor, a parking note, and a contact. Guests see these on their trip page and in the stay guide.
+
+The password and door code stay hidden until a set time before check-in. That is **Reveal codes before check-in**, 24 hours by default. Before then the guest sees "Available" with the date and time, so you can fill them in early without handing out the code.
+
+### Why does my guest not see the door code yet?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/trip.md
+
+The code is withheld until the reveal time, which is check-in minus the hours you set in Guest experience. This is deliberate: it stops a code reaching a guest who then cancels. To change when it appears, lower **Reveal codes before check-in**.
+
+### Can I give one guest a different door code?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/org/property/bookings-detail.md
+
+Yes. Open the booking, and on the Overview tab use **Door code for this stay** in the Guest view card. It applies to that stay only. Clear it to go back to the property code. The reveal timing does not change.
+
+### Where does the guest send their balance receipt now?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/trip.md
+
+From their trip page, under Payment, with **Send receipt**. It lands on the booking where you already look, and you get a notification. The booking status does not change on its own, so you still confirm the payment yourself.
+
+### What does the Guest view card on a booking show?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/org/property/bookings-detail.md
+
+It shows what your guest sees right now: their status in the same words they use, the one thing they are waiting on, and anything still open such as a missing balance receipt or pending documents. It reads from the booking itself, so it cannot disagree with their trip page.
+
+### Why does Guest experience say something is missing?
+
+- category: Property Settings
+- audience: host
+- source: docs/guides/routes/org/property/settings.md
+
+The readiness list at the top of Guest experience flags what an arriving guest has nothing for: usually the essentials or a payment method. Each row has a Fix action that takes you to the right place. Default check-in and check-out steps are not counted as missing, because they already say something useful.
+
+### Can a custom template show up for guests?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/templates.md
+
+Yes. In Templates, open the custom template and turn on **Show to guests**, then pick when it appears: before the stay, on arrival, during the stay, at check-out, after the stay, or at every stage. It shows as a collapsible section on the trip page and as a chapter in the stay guide.
+
+### Why did the stay guide link not work on the day I sent it?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/stay-guide.md
+
+It now does. The link used to open only from check-in day, even though the email went out earlier. It opens as soon as it is sent and stays available until the day after check-out. The door code and Wi-Fi password keep their own reveal time, so an early link is safe.
+
+### Does the guest get a reminder before arrival?
+
+- category: Guest Communication
+- audience: host
+- source: docs/architecture/guest-emails.md
+
+Yes, two days before check-in, with the balance, the check-in time and a link to their trip. It follows your **Ready for check-in** email toggle, so turning that off stops both.
+
+### Why does the acknowledgement email no longer mention the GAF?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/templates.md
+
+Because it now follows what your property actually requires. If you do not require a GAF, the email no longer mentions it or the building administration. A pet requirement is named instead. If you do require documents, the steps name them.
+
+### What happens to a booking request I never answer?
+
+- category: Bookings
+- audience: host
+- source: docs/architecture/guest-emails.md
+
+It does not hold the dates forever. Five days after it arrives you get one email warning that it expires in two days. If it is still pending after seven days, and nothing has been paid, it cancels itself: the dates go back on your calendar and the guest is told. If the guest has paid anything, it never expires on its own, so you can still accept it late.
+
+### Why did a request disappear from my pending list?
+
+- category: Bookings
+- audience: host
+- source: docs/architecture/guest-emails.md
+
+It expired. A request you did not answer within seven days, with nothing paid, cancels itself and frees the dates. You get a warning email two days before that happens. Requests the guest has paid towards are never expired automatically.
+
+### My request expired. Can I still book those dates?
+
+- category: Guest Portal
+- audience: guest
+- source: docs/guides/routes/trip.md
+
+Yes. The host did not reply in time, so the dates were released and nothing was charged. Open your trip and choose Request these dates again to send the same dates back to the host.

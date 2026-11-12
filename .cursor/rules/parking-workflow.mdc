@@ -258,15 +258,25 @@ that surface; revisit once Phase 8's unauthenticated direct-link entry point exi
 ## Platform config & payouts (Phase 4)
 
 - **Config resolver**: `parkingPlatformSettings.ts#resolveParkingPlatformSettings()` is the
-  single source of truth for `commissionPct`/`guestRateWeekday`/`guestRateWeekend`, reading the
-  singleton `platform_parking_settings` row (`id = 1` CHECK, mirrors `platform_payment_settings`).
+  single source of truth for `commissionPct`/`guestRateWeekday`/`guestRateWeekend`, plus the
+  estimated `paymentFeePct`/`paymentFeeFixed` and `directCommissionPct`, reading the singleton
+  `platform_parking_settings` row (`id = 1` CHECK, mirrors `platform_payment_settings`).
   Every caller (`parkingBroadcastRanking.ts` for the cap, `parkingPaymentOrchestrator.ts` for
   payment amounts, `parkingPricing.ts` for the host-facing cap + display) resolves it **once per
   operation** and threads the values through — never re-query per candidate/night.
+- **Settlement math**: `parkingSettlement.ts#computeParkingSettlement()` is the only place that
+  turns guest charge + host gross into `commissionAmount`, `hostNetTotal`, `paymentFeeAmount`
+  (guest charge × processor fee pct + fixed) and `platformNetTotal`
+  (guest charge − host net − processor fee). The orchestrator snapshots all four onto
+  `parking_payment_transactions`; offline and complimentary bookings store 0 for the processor
+  fee. Do not re-derive these in a caller or the UI. The UI mirror
+  `ui/src/features/dashboard/parking/lib/parkingPayout.ts` is display-only (host breakdown and
+  super-admin preview).
 - **Super-admin config page**: `platform-parking-settings` edge function (GET/PUT singleton,
   `serveSuperAdmin`, mirrors `platform-payment-settings`) + `SuperAdminParkingPayoutsPage.tsx`
-  (`/admin/parking/payouts`). Changing commission/guest rate here only affects bookings created
-  **after** saving — see the snapshot invariant above.
+  (`/admin/parking/payouts`). The page includes a live per-night settlement preview (host rate →
+  host net → processor fee → platform net). Changing commission/guest rate/processor fee here only
+  affects bookings created **after** saving — see the snapshot invariant above.
 - **Host-readable cap**: hosts can't call the super-admin-gated settings endpoint, so
   `parking-pricing` GET piggybacks the live cap (`guestRateCapWeekday`/`guestRateCapWeekend`)
   and `commissionPct` onto its own response (`ParkingPricingDto`) for
@@ -277,13 +287,15 @@ that surface; revisit once Phase 8's unauthenticated direct-link entry point exi
   `disbursed_at`/`disbursed_by`/`disbursement_reference`/`disbursement_method` (default
   `'manual'` — `'paymongo_platforms'` is reserved for when real PayMongo Platforms split-payout
   ships, not yet built) and `clawback_amount`/`clawback_reason`/`clawback_at`/`clawback_by`
-  (audit trail only, no automated collection). `parking-payouts` edge function
+  (audit trail only, no automated collection). It also carries `payment_fee_amount` and
+  `platform_net_total` (processor-fee and platform-margin snapshot). `parking-payouts` edge function
   (`serveSuperAdmin`): GET lists `status = 'paid'` transactions; PATCH with
   `{action: 'mark_disbursed', transactionId, reference?}` or `{action: 'record_clawback',
 transactionId, amount, reason}` — mirrors `org-subscriptions-admin`'s GET/PATCH action-dispatch
   shape.
 - **Out of scope until PayMongo Platforms business/compliance work lands**: real automated
-  split-payout, host KYC onboarding, PayMongo's real fee schedule, volume eligibility threshold —
+  split-payout, host KYC onboarding, per-transaction reconciliation of PayMongo's real fee
+  (the configured processor-fee estimate is not a reconciliation), volume eligibility threshold —
   these require directly contacting PayMongo, not code. Don't build a "real payout" API path
   ahead of that.
 
@@ -411,9 +423,9 @@ transactionId, amount, reason}` — mirrors `org-subscriptions-admin`'s GET/PATC
   CTA URL uses `resolveGuestParkingCtaAbsoluteUrl` (own-default when available).
 - **Legacy broadcast retirement**: `sendParkingBroadcast()` and the per-property **Parking owners**
   setting are removed. `workflowOrchestrator.ts` no longer accepts
-  `sendParkingBroadcastEmail`, and `submit-pay-parking` is a **410 stub**. Host **Find parking**
-  no longer opens the vehicle form. The property **Parking rate** stays as manual-parking pricing
-  only.
+  `sendParkingBroadcastEmail`. The `submit-pay-parking` and `parking-broadcast-email` endpoints
+  are deleted, not stubs. Host **Find parking** no longer opens the vehicle form. The property
+  **Parking rate** stays as manual-parking pricing only.
 - **Complimentary own parking** requires `allowParking === true` **and**
   `complimentaryOwnerParking === true` (`readComplimentaryOwnerParking`). A stale saved `true`
   is inert while parking is off, and the own-slot CTA falls back to the marketplace URL.
@@ -500,6 +512,11 @@ Both Telegram and email host notifications deep-link straight to
 `/org/:orgSlug/parking/:parkingSlug/bookings/:bookingId` (`ParkingBookingDetailPage`) — not the
 bare bookings list. Telegram has no button/CTA affordance, so the link is appended as plain text
 after the templated message body (not part of the user-editable template).
+
+Telegram templates/toggles cover reservation request, check-in reminder, payment received,
+guest cancelled, payment window expired, and endorsement failed. New alerts go through
+`sendParkingTelegramNotice()` in `telegramParking.ts`, which never throws; a Telegram outage must
+not fail the booking, payment, or cancellation path.
 
 ## Host dashboard
 

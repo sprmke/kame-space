@@ -1,16 +1,18 @@
 import { AlertTriangle, Loader2, Save } from 'lucide-react';
 
+import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
 import {
   STUB_COMMISSION_PCT,
   STUB_GUEST_PARKING_RATE_WEEKDAY,
   STUB_GUEST_PARKING_RATE_WEEKEND,
 } from '@/features/dashboard/parking/lib/parkingPricingDefaults';
-import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
 import {
   pricingRatesFormStackClassName,
   pricingRatesFormSurfaceClassName,
 } from '@/features/dashboard/pricing/lib/pricingCalendarLayout';
+import { PRICING_HELP_COPY } from '@/features/dashboard/pricing/lib/pricingHelpCopy';
 
+import { InfoHint } from '@/components/help/InfoHint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +21,9 @@ import { cn } from '@/lib/utils';
 type Props = {
   weekdayRate: number;
   weekendRate: number;
+  /** Live super-admin-configured guest rates — what riders actually pay. */
+  guestRateWeekday?: number;
+  guestRateWeekend?: number;
   /** Live super-admin-configured values — fall back to the stub defaults until loaded. */
   guestRateCapWeekday?: number;
   guestRateCapWeekend?: number;
@@ -34,13 +39,18 @@ type Props = {
 };
 
 function formatPhp(amount: number): string {
-  return `₱${amount.toLocaleString('en-PH', { maximumFractionDigits: 0 })}`;
+  return `₱${Math.round(amount).toLocaleString('en-PH', { maximumFractionDigits: 0 })}`;
+}
+
+function formatPct(value: number): string {
+  return `${Math.round(value * 100)}%`;
 }
 
 function MoneyInput({
   id,
   label,
   value,
+  guestRate,
   cap,
   commissionPct,
   readOnly,
@@ -49,14 +59,15 @@ function MoneyInput({
   id: string;
   label: string;
   value: number;
+  guestRate: number;
   cap: number;
   commissionPct: number;
   readOnly?: boolean;
   onChange: (value: number) => void;
 }) {
   const overCap = value > cap;
-  const serviceFee = Math.round(value * commissionPct);
-  const netPayout = value - serviceFee;
+  const commissionAmount = Math.round(value * commissionPct);
+  const netPayout = value - commissionAmount;
 
   return (
     <div className="space-y-2">
@@ -88,9 +99,22 @@ function MoneyInput({
           Above max {formatPhp(cap)} - lower to save and offer to guests.
         </p>
       ) : (
-        <p className="text-muted-foreground text-xs">
-          Service fee {formatPhp(serviceFee)} · You get {formatPhp(netPayout)} / night
-        </p>
+        <dl className="space-y-1 text-xs">
+          <div className="flex items-baseline justify-between gap-3">
+            <dt className="text-muted-foreground">Guests pay</dt>
+            <dd className="text-foreground tabular-nums">{formatPhp(guestRate)} / night</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-3">
+            <dt className="text-muted-foreground">Platform fee ({formatPct(commissionPct)})</dt>
+            <dd className="text-muted-foreground tabular-nums">-{formatPhp(commissionAmount)}</dd>
+          </div>
+          <div className="border-border/60 flex items-baseline justify-between gap-3 border-t pt-1">
+            <dt className="text-foreground font-medium">You receive</dt>
+            <dd className="text-foreground font-semibold tabular-nums">
+              {formatPhp(netPayout)} / night
+            </dd>
+          </div>
+        </dl>
       )}
     </div>
   );
@@ -99,6 +123,8 @@ function MoneyInput({
 export function ParkingPricingRatesFormCard({
   weekdayRate,
   weekendRate,
+  guestRateWeekday = STUB_GUEST_PARKING_RATE_WEEKDAY,
+  guestRateWeekend = STUB_GUEST_PARKING_RATE_WEEKEND,
   guestRateCapWeekday = STUB_GUEST_PARKING_RATE_WEEKDAY,
   guestRateCapWeekend = STUB_GUEST_PARKING_RATE_WEEKEND,
   commissionPct = STUB_COMMISSION_PCT,
@@ -117,12 +143,20 @@ export function ParkingPricingRatesFormCard({
     <section className={pricingRatesFormSurfaceClassName(compactChrome)}>
       <div className={pricingRatesFormStackClassName(compactChrome)}>
         <div>
-          <h3 className="text-foreground text-sm font-semibold">Base rates</h3>
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-foreground text-sm font-semibold">Base rates</h3>
+            <InfoHint
+              label="Base rates"
+              text={PRICING_HELP_COPY.parkingPayout.hint}
+              variant="section"
+            />
+          </div>
           <div className="mt-3 space-y-4">
             <MoneyInput
               id="parking-weekday-rate"
               label="Weekday / night"
               value={weekdayRate}
+              guestRate={guestRateWeekday}
               cap={guestRateCapWeekday}
               commissionPct={commissionPct}
               readOnly={readOnly}
@@ -132,6 +166,7 @@ export function ParkingPricingRatesFormCard({
               id="parking-weekend-rate"
               label="Fri–Sun / night"
               value={weekendRate}
+              guestRate={guestRateWeekend}
               cap={guestRateCapWeekend}
               commissionPct={commissionPct}
               readOnly={readOnly}

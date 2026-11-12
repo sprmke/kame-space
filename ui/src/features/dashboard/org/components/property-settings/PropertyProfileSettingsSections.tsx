@@ -52,6 +52,7 @@ import {
   isTowerInResidence,
 } from '@/features/dashboard/org/lib/propertyResidences';
 import { type PropertySettingsSectionId } from '@/features/dashboard/org/lib/propertySettingsCompletion';
+import { propertySettingsSectionHasIssue } from '@/features/dashboard/org/lib/propertySettingsCompletion';
 import {
   CUSTOM_AMENITY_MAX_LENGTH,
   PROPERTY_TYPES,
@@ -64,7 +65,6 @@ import {
   propertyGuestCapacityTotal,
   type PropertyProfileDraft,
 } from '@/features/dashboard/org/lib/propertySettingsForm';
-import { propertySettingsSectionHasIssue } from '@/features/dashboard/org/lib/propertySettingsCompletion';
 import { summarizeSettingsLabels } from '@/features/dashboard/org/lib/propertySettingsSummaryLabels';
 import { isValidUnitNumber } from '@/features/dashboard/org/lib/propertyTowerUnit';
 import { toResidenceProfile, useResidenceOptions } from '@/features/dashboard/org/hooks/useResidenceOptions';
@@ -385,6 +385,7 @@ export function PropertyProfileMainSections({
                 copyUrl={absoluteGuestPropertyUrl(slugPreview)}
                 disabled={lock('basic')}
                 placeholder="property-slug"
+                hint="Renaming the property changes this link. Old links keep working."
               />
             </SettingsField>
           </FieldGrid>

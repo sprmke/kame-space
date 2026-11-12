@@ -13,10 +13,10 @@ test.describe('@smoke legacy route redirects', () => {
     await expect(page).toHaveURL(/\/account\/favorites/, { timeout: 15_000 });
   });
 
-  test('account messages redirects to stays', async ({ page }) => {
+  test('account stays redirects to messages', async ({ page }) => {
     await installGuestFavoritesMocks(page);
-    await page.goto('/account/messages');
-    await expect(page).toHaveURL(/\/account\/stays/, { timeout: 15_000 });
+    await page.goto('/account/stays');
+    await expect(page).toHaveURL(/\/account\/messages/, { timeout: 15_000 });
   });
 
   test('property custom-pages redirects to public-pages', async ({ page }) => {

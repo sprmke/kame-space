@@ -54,7 +54,6 @@ commit_paths "feat(supabase): enforce feature availability on host edge modules"
   supabase/functions/calendar-sync-settings \
   supabase/functions/generate-marketing-media \
   supabase/functions/ical-export \
-  supabase/functions/meta-inbox-backfill \
   supabase/functions/meta-inbox-disconnect \
   supabase/functions/meta-inbox-oauth-callback \
   supabase/functions/meta-inbox-oauth-complete \

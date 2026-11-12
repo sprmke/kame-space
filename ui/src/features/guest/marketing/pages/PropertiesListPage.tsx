@@ -49,7 +49,7 @@ import {
   ListingRowSkeleton,
 } from '@/components/skeletons/ListingGridSkeleton';
 import { Button } from '@/components/ui/button';
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePublicStaticRouteSeo } from '@/lib/seo/routeTitle';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 function parseViewMode(raw: string | null): ViewMode {
@@ -84,7 +84,7 @@ function isDefaultGroupedBrowse(query: PropertiesListingQuery, viewMode: ViewMod
 }
 
 export function PropertiesListPage() {
-  usePageTitle(publicPageTitle('Properties'));
+  usePublicStaticRouteSeo('/properties');
   usePageMeta({
     canonicalPath: '/properties',
     description: 'Browse condos, houses, and villas for rent across the Philippines.',

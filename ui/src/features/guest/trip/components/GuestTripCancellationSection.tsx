@@ -16,6 +16,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { NoticeCallout } from '@/components/help/NoticeCallout';
+import { RefundDetailsLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -57,13 +58,7 @@ function formatManila(iso: string | null | undefined): string {
   }).format(date);
 }
 
-function RefundDetailsForm({
-  trip,
-  onDone,
-}: {
-  trip: GuestTrip;
-  onDone: () => void;
-}) {
+function RefundDetailsForm({ trip, onDone }: { trip: GuestTrip; onDone: () => void }) {
   const [method, setMethod] = useState<'same_phone' | 'other_bank' | 'cash'>('same_phone');
   const [bank, setBank] = useState('GCash');
   const [accountName, setAccountName] = useState('');
@@ -155,10 +150,9 @@ function RefundDetailsForm({
         </div>
       ) : null}
       {method === 'cash' ? (
-        <p className="text-muted-foreground text-sm">
-          Your host will arrange the pickup with you.
-        </p>
+        <p className="text-muted-foreground text-sm">Your host will arrange the pickup with you.</p>
       ) : null}
+      {method !== 'cash' ? <RefundDetailsLegalNotice /> : null}
       <Button type="button" className="min-h-[44px] w-full" onClick={submit} loading={saving}>
         Save refund details
       </Button>
@@ -245,6 +239,11 @@ export function GuestTripCancellationSection({
 
   if (cancelled) {
     if (!refund || refund.status === 'not_due') {
+      // A request the host never answered is not a cancellation the guest chose. Say what
+      // happened, and give them the one useful action: the same dates, pre-filled.
+      // An expired request has nothing to cancel and nothing to refund. The Now card already
+      // says what happened and offers the dates back, so a second section here only repeats it.
+      if (trip.cancellation.reasonCode === 'request_expired') return null;
       return (
         <section className="border-border/70 rounded-2xl border p-4">
           <h2 className="text-sm font-semibold">Cancellation</h2>
@@ -306,23 +305,50 @@ export function GuestTripCancellationSection({
   }
 
   const nextDeadline = cancellation.outcome.nextDeadline;
+  // With nothing paid there is nothing to refund, so refund maths is noise. Show the fact and
+  // the action, nothing else. Covers the review wait and a confirmed stay where the guest has
+  // not sent the down payment yet.
+  const nothingPaidYet =
+    trip.status === 'PENDING_REVIEW' || cancellation.outcome.amountPaidPhp <= 0;
 
   return (
     <section className="border-border/70 rounded-2xl border p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold">{policy.title || 'Cancellation policy'}</h2>
-          <p className="text-muted-foreground mt-1 text-sm">{policy.description}</p>
+          <h2 className="text-sm font-semibold">
+            {nothingPaidYet ? 'Need to cancel?' : policy.title || 'Cancellation policy'}
+          </h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {nothingPaidYet
+              ? 'Nothing has been charged yet, so cancelling costs nothing.'
+              : policy.description}
+          </p>
         </div>
       </div>
 
-      {cancellation.nonRefundable ? (
+      {nothingPaidYet ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-3 min-h-[44px]"
+          onClick={() => {
+            setStep('review');
+            setConfirmed(false);
+            setOpen(true);
+          }}
+        >
+          Cancel request
+          <ChevronRight className="ml-1 size-4" aria-hidden />
+        </Button>
+      ) : null}
+
+      {!nothingPaidYet && cancellation.nonRefundable ? (
         <NoticeCallout tone="warning" className="mt-3">
           This booking is non-refundable. You will not get back what you paid.
         </NoticeCallout>
       ) : null}
 
-      {nextDeadline ? (
+      {!nothingPaidYet && nextDeadline ? (
         <div className="bg-muted/40 mt-3 flex items-start gap-2 rounded-xl p-3 text-sm">
           <CalendarClock className="text-muted-foreground mt-0.5 size-4 shrink-0" aria-hidden />
           <span>
@@ -332,7 +358,7 @@ export function GuestTripCancellationSection({
         </div>
       ) : null}
 
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className={nothingPaidYet ? 'hidden' : 'mt-4 flex items-center justify-between gap-3'}>
         <div>
           <p className="text-muted-foreground text-xs">
             {cancellation.canRequest ? 'If your host approves' : 'If you cancel now'}
@@ -366,7 +392,7 @@ export function GuestTripCancellationSection({
         }}
       >
         <ResponsiveModalContent sheetLayout="split">
-          <ResponsiveModalHeader>
+          <ResponsiveModalHeader className="border-border shrink-0 border-b px-4 py-3 sm:px-5">
             <ResponsiveModalTitle>
               {step === 'refund'
                 ? 'Refund details'

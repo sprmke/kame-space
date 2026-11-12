@@ -34,6 +34,13 @@ import {
 import { createServiceClient } from './orgAuth.ts';
 import { resolveGuestParkingCtaAbsoluteUrl } from './ownerDefaultParking.ts';
 import { normalizePropertyMediaItems } from './propertyMedia.ts';
+import { loadGuestEssentials, type GuestEssentialsDto } from './guestEssentials.ts';
+import {
+  guestTripStage,
+  loadGuestTripContent,
+  type GuestTripHostSection,
+  type GuestTripInstructions,
+} from './guestTripContent.ts';
 import { guestBookingDocumentPath, guestStayGuidePath } from './publicGuestPaths.ts';
 import { canGuestPublicUpdateForm } from './statusMachine.ts';
 import { buildStayGuideCheckInDocuments } from './stayGuideCheckInDocuments.ts';
@@ -144,6 +151,15 @@ export type GuestTripDetailDto = {
     hostText: string | null;
   };
   stayGuidePath: string | null;
+  /**
+   * Structured arrival essentials (Wi-Fi, door code, unit, contacts). `null` when the
+   * property has none. Secrets are withheld until `revealAt` (plan D7).
+   */
+  essentials: GuestEssentialsDto | null;
+  /** Host check-in / check-out steps, rendered for this booking. */
+  instructions: GuestTripInstructions;
+  /** Guest-visible custom templates for this trip stage (plan D8). */
+  hostSections: GuestTripHostSection[];
   voucher: { code: string; amount: number | null; redeemed: boolean } | null;
   contact: {
     name: string;
@@ -396,6 +412,24 @@ export async function buildGuestTripPayload(input: {
   const checkOutDate =
     normalizeBookingDateToYmd(str(row.check_out_date)) ?? str(row.check_out_date);
 
+  // Coarse stage for host content: a stay in progress reads "stay", a finished one "after".
+  const todayManila = manilaTodayYmd();
+  const isInStay = checkInDate <= todayManila && todayManila < checkOutDate;
+  const tripStage = guestTripStage(status, isInStay);
+  // One read for the essentials and one for the host content; both are small and both are
+  // skipped for a cancelled booking, where arrival info no longer applies.
+  const [essentials, tripContent] = cancelled
+    ? [null, { checkInHtml: null, checkOutHtml: null, hostSections: [] }]
+    : await Promise.all([
+        loadGuestEssentials({ propertyId, booking: row }),
+        loadGuestTripContent({
+          propertyId,
+          booking,
+          publicOrigin: settings.publicGuestAppOrigin,
+          stage: tripStage,
+        }),
+      ]);
+
   const voucherCode = str(row.next_stay_voucher_code);
 
   const cancellationOutcome = computeOutcomeForBooking({
@@ -485,6 +519,12 @@ export async function buildGuestTripPayload(input: {
       hostText: hostReviewRow?.status === 'published' ? (hostReviewRow.review_text ?? null) : null,
     },
     stayGuidePath,
+    essentials,
+    instructions: {
+      checkInHtml: tripContent.checkInHtml,
+      checkOutHtml: tripContent.checkOutHtml,
+    },
+    hostSections: tripContent.hostSections,
     voucher: voucherCode
       ? {
           code: voucherCode,

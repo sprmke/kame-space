@@ -1,7 +1,8 @@
 import { Suspense, useEffect, useMemo, useRef } from 'react';
 
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 
+import { GUEST_ACCOUNT_TRIPS_PATH } from '@/features/guest/account/lib/guestAccountPaths';
 import { usePreviewOverride } from '@/features/guest/lib/previewOverrideContext';
 import { PublicPagePlanAccessOverlay } from '@/features/guest/lib/PublicPagePlanAccessOverlay';
 import { getShowcaseTemplate } from '@/features/guest/marketing/showcase/templates/registry';
@@ -10,7 +11,9 @@ import {
   useGuestStayGuidePreview,
 } from '@/features/guest/stay-guide/hooks/useGuestStayGuide';
 import { mapStayGuideData } from '@/features/guest/stay-guide/lib/mapStayGuideData';
+import { GuestTripReturnBar } from '@/features/guest/trip/components/GuestTripReturnBar';
 
+import { ShowcaseLegalFooterLink } from '@/components/legal/ShowcaseLegalFooterLink';
 import { PublicFullBleedPageSkeleton } from '@/components/skeletons/GuestPageSkeletons';
 import { propertyPublicPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { captureAppEvent } from '@/lib/posthog/capture';
@@ -29,6 +32,13 @@ function StayGuideUnavailable({ message }: { message: string }) {
         )}
       >
         <p className="text-base font-medium text-[#171717] dark:text-[#FAFAFA]">{message}</p>
+        {/* Not a dead end: the guest can always reach their trips from here (plan 4.6). */}
+        <Link
+          to={GUEST_ACCOUNT_TRIPS_PATH}
+          className="mt-4 inline-flex min-h-[44px] items-center text-sm font-semibold text-[#171717] underline underline-offset-4 dark:text-[#FAFAFA]"
+        >
+          View your trips
+        </Link>
       </div>
     </div>
   );
@@ -113,10 +123,20 @@ export function StayGuidePage() {
 
   const entry = getShowcaseTemplate(showcaseData.templateKey);
   const Template = entry.component;
+  // A guest who arrived from the check-in email needs a way back to the booking and to
+  // their host (plan 4.4, findings A7 and D2). Hidden in preview and embed.
+  const tripPath = data.tripPath ?? null;
+  const showReturnBar = !isPreview && !isEmbed && Boolean(tripPath);
 
   return (
-    <Suspense fallback={<StayGuideLoading />}>
-      <Template data={showcaseData} />
-    </Suspense>
+    <>
+      <Suspense fallback={<StayGuideLoading />}>
+        <Template data={showcaseData} />
+        {!isEditorPreview ? <ShowcaseLegalFooterLink /> : null}
+      </Suspense>
+      {showReturnBar ? (
+        <GuestTripReturnBar tripPath={tripPath} chatPath={data.chatPath ?? null} />
+      ) : null}
+    </>
   );
 }

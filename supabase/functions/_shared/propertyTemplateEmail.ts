@@ -4,6 +4,7 @@
 
 import type { AppSettingsResolved } from './appSettings.ts';
 import { resolveAppSettings } from './appSettings.ts';
+import { buildEmailLegalFooterHtml } from './emailLegalFooter.ts';
 import {
   loadPropertyEmailBranding,
   resolveEmailUnitLabel,
@@ -21,7 +22,7 @@ import {
   replacePlaceholders,
   withEmailShellStyleVars,
 } from './renderEmailHtml.ts';
-import { buildDateLineBlockHtml } from './propertyTemplateEmailSections.ts';
+import { buildDateLineBlockHtml, buildGuestTripCtaHtml } from './propertyTemplateEmailSections.ts';
 import { normalizeBlockLevelPlaceholdersInHtml } from './normalizeBlockLevelPlaceholders.ts';
 import { normalizeEmailCalloutPlaceholders } from './normalizeEmailCalloutPlaceholders.ts';
 import {
@@ -39,6 +40,7 @@ export const PROPERTY_EMAIL_TEMPLATE_KEYS = [
   'email-pet-request',
   'email-parking-request',
   'email-new-booking-request',
+  'email-booking-request-received',
   'email-booking-acknowledgement',
   'email-ready-for-checkin',
   'email-sd-refund-form-request',
@@ -219,6 +221,10 @@ export function buildBookingPlaceholderVars(
     form_url: escapeHtml(formUrl),
     review_url: escapeHtml(reviewUrl),
     trip_url: escapeHtml(tripUrl),
+    // Rendered by default in every guest email that needs a way back to the trip. A
+    // template that places {{trip_url}} itself blanks this out, so the guest never sees two
+    // links to the same place (plan 6.3).
+    trip_cta_section: tripUrl ? buildGuestTripCtaHtml(tripUrl, settings.brandColor) : '',
     security_deposit: escapeHtml(formatPeso(booking.security_deposit as number | null)),
     ...Object.fromEntries(Object.entries(flags).map(([k, v]) => [k, escapeHtml(v)])),
     ...extras,
@@ -301,7 +307,14 @@ export function renderTemplateSendEmailHtml(input: {
   rawContent = normalizeBlockLevelPlaceholdersInHtml(rawContent);
   rawContent = normalizeEmailCalloutPlaceholders(rawContent, input.templateKey);
 
-  let body = applyPropertyTemplatePlaceholders(rawContent, input.placeholderVars);
+  // The default trip button steps aside when the host already put the trip link in the body,
+  // so a guest never sees two links to the same place (plan 6.3).
+  const vars =
+    rawContent.includes('{{trip_url}}') && input.placeholderVars.trip_cta_section !== undefined
+      ? { ...input.placeholderVars, trip_cta_section: '' }
+      : input.placeholderVars;
+
+  let body = applyPropertyTemplatePlaceholders(rawContent, vars);
   body = prepareConfigurableEmailBodyHtml(body, settings.publicGuestAppOrigin);
 
   const bodyContent = body;
@@ -312,7 +325,7 @@ export function renderTemplateSendEmailHtml(input: {
 
   const title =
     input.emailTitle.trim() || getBuiltinPropertyTemplate(input.templateKey)?.label || 'Email';
-  const legalFooter = `© ${branding.organizationName}. All rights reserved.`;
+  const legalFooter = buildEmailLegalFooterHtml(branding.organizationName);
   const dateLineBlock = buildDateLineBlockHtml(
     input.placeholderVars.check_in_date ?? '',
     input.placeholderVars.check_out_date ?? '',

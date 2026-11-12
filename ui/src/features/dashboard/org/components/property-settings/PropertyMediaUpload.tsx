@@ -22,6 +22,7 @@ import {
   GripVertical,
   Image as ImageIcon,
   Loader2,
+  Pencil,
   Plus,
   Star,
   Trash2,
@@ -30,6 +31,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { PropertyMediaAltDialog } from '@/features/dashboard/org/components/property-settings/PropertyMediaAltDialog';
 import { PropertyMediaPreviewDialog } from '@/features/dashboard/org/components/property-settings/PropertyMediaPreviewDialog';
 import { useUploadPropertyMedia } from '@/features/dashboard/org/hooks/useUploadPropertyMedia';
 import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
@@ -66,7 +68,7 @@ function stopSortablePointer(event: React.PointerEvent | React.MouseEvent) {
   event.stopPropagation();
 }
 
-function MediaCardAction({
+export function MediaCardAction({
   label,
   tone = 'neutral',
   disabled,
@@ -137,7 +139,7 @@ function FilePickerOverlay({
   );
 }
 
-function AddMediaSlot({
+export function AddMediaSlot({
   kind,
   slotKey,
   enabled,
@@ -187,7 +189,7 @@ function AddMediaSlot({
   );
 }
 
-function CoverStarButton({
+export function CoverStarButton({
   isPrimary,
   disabled,
   onSetPrimary,
@@ -247,7 +249,7 @@ function DragReorderHandle({
   );
 }
 
-function SortableImageCard({
+export function SortableImageCard({
   item,
   disabled,
   busy,
@@ -255,6 +257,7 @@ function SortableImageCard({
   onSetPrimary,
   onRemove,
   onPreview,
+  onEditAlt,
 }: {
   item: PropertyMediaItem;
   disabled: boolean;
@@ -263,6 +266,7 @@ function SortableImageCard({
   onSetPrimary: () => void;
   onRemove: () => void;
   onPreview: () => void;
+  onEditAlt?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -325,6 +329,11 @@ function SortableImageCard({
             disabled={busy}
             onSetPrimary={onSetPrimary}
           />
+          {onEditAlt ? (
+            <MediaCardAction label="Edit alt text" disabled={busy} onClick={onEditAlt}>
+              <Pencil className="size-3.5" aria-hidden />
+            </MediaCardAction>
+          ) : null}
           <MediaCardAction
             label="Remove photo"
             tone="destructive"
@@ -516,6 +525,8 @@ export function PropertyMediaUpload({
   const [uploadingSlotKey, setUploadingSlotKey] = useState<string | null>(null);
   const [previewItem, setPreviewItem] = useState<PropertyMediaItem | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [altItem, setAltItem] = useState<PropertyMediaItem | null>(null);
+  const [altOpen, setAltOpen] = useState(false);
 
   const { images, video } = partitionPropertyMedia(items);
   const counts = countPropertyMedia(items);
@@ -553,6 +564,16 @@ export function PropertyMediaUpload({
         toast.error(error instanceof Error ? error.message : 'Failed to save gallery order');
       }
     }
+  };
+
+  const saveAlt = async (itemId: string, alt: string) => {
+    const next = items.map((entry) =>
+      entry.id === itemId ? { ...entry, alt: alt || undefined } : entry
+    );
+    applyMedia(next);
+    await persistOrder(next);
+    setAltOpen(false);
+    setAltItem(null);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -722,6 +743,10 @@ export function PropertyMediaUpload({
                       onSetPrimary={() => setPrimary(item.id)}
                       onRemove={() => void handleRemove(item)}
                       onPreview={() => openPreview(item)}
+                      onEditAlt={() => {
+                        setAltItem(item);
+                        setAltOpen(true);
+                      }}
                     />
                   ) : (
                     <AddMediaSlot
@@ -757,6 +782,16 @@ export function PropertyMediaUpload({
           </DndContext>
         </>
       )}
+
+      <PropertyMediaAltDialog
+        item={altItem}
+        open={altOpen}
+        onOpenChange={(next) => {
+          setAltOpen(next);
+          if (!next) setAltItem(null);
+        }}
+        onSave={saveAlt}
+      />
     </div>
   );
 }

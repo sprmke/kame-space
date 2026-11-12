@@ -51,6 +51,7 @@ import {
 import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble';
 import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatThreadSearchPanel } from '@/components/chat/ChatThreadSearch';
+import { GuestChatLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
@@ -736,6 +737,7 @@ export function GuestChatThread({
             Host is typing…
           </p>
         ) : null}
+        {!isLoading && messages.length === 0 ? <GuestChatLegalNotice /> : null}
         {composerBar}
         {pendingAttachments.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">

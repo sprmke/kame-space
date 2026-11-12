@@ -58,6 +58,28 @@ describe('cancellation policy client/server parity', () => {
     }
   });
 
+  it('flags stale policies identically', () => {
+    const policy = client.buildCancellationPreset('moderate');
+    const cases = [
+      { clientVersionId: '', clientHash: '', currentPolicy: policy, currentVersionId: null },
+      { clientVersionId: '  ', currentPolicy: policy, currentVersionId: 'v1' },
+      { clientVersionId: 'v1', currentPolicy: policy, currentVersionId: null },
+      { clientVersionId: 'v1', currentPolicy: policy, currentVersionId: 'v2' },
+      { clientVersionId: 'v1', currentPolicy: policy, currentVersionId: 'v1' },
+      { clientHash: 'deadbeef', currentPolicy: policy, currentVersionId: null },
+      {
+        clientHash: client.cancellationPolicyHash(policy),
+        currentPolicy: policy,
+        currentVersionId: null,
+      },
+    ];
+    for (const fixture of cases) {
+      expect(client.isCancellationPolicyStale(fixture)).toBe(
+        server.isCancellationPolicyStale(fixture)
+      );
+    }
+  });
+
   it('builds identical snapshots', () => {
     const policy = client.buildCancellationPreset('firm');
     const capturedAt = '2026-11-05T00:00:00.000Z';

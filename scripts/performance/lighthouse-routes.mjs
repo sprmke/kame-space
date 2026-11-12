@@ -14,6 +14,7 @@
  * Usage:
  *   bun run build            # once
  *   node scripts/performance/lighthouse-routes.mjs [--base-url=http://host] [--label=text]
+ *     [--routes=all|public|host] [--out-dir=relative/path]
  *
  * Without --base-url, starts `vite preview` locally on an ephemeral port.
  */
@@ -37,7 +38,23 @@ const labelArg = args.find((a) => a.startsWith('--label='));
 const runsArg = args.find((a) => a.startsWith('--runs='));
 const label = labelArg ? labelArg.slice('--label='.length) : null;
 const runs = runsArg ? Math.max(1, Number(runsArg.split('=')[1]) || 1) : 1;
+// SEO-14.3: public routes must clear these floors. Pass `--assert` to enforce them.
+const assertMode = args.includes('--assert');
+const seoFloorArg = args.find((a) => a.startsWith('--assert-seo='));
+const perfFloorArg = args.find((a) => a.startsWith('--assert-perf='));
+const SEO_FLOOR = seoFloorArg ? Number(seoFloorArg.split('=')[1]) : 95;
+const PERF_FLOOR = perfFloorArg ? Number(perfFloorArg.split('=')[1]) : 85;
 const externalBaseUrl = baseUrlArg ? baseUrlArg.slice('--base-url='.length) : null;
+// `--routes=public` audits only the anonymous routes. Against a deployed origin the rest
+// redirect to sign-in, so scoring them measures the login page, not the dashboard. Default is
+// `all`, which keeps the local-preview behaviour unchanged.
+const routesArg = args.find((a) => a.startsWith('--routes='));
+const routeScope = routesArg ? routesArg.slice('--routes='.length) : 'all';
+// `--out-dir` lets CI write somewhere it can upload as an artifact.
+const outDirArg = args.find((a) => a.startsWith('--out-dir='));
+const outputDir = outDirArg
+  ? path.resolve(repoRoot, outDirArg.slice('--out-dir='.length))
+  : baselineDir;
 
 // The route list from plan doc 00, Phase 0.2 — paths verified against the real
 // router (ui/src/features/{guest,dashboard}/**/routes/*.tsx) on 2026-09-16.
@@ -65,6 +82,17 @@ const ROUTES = [
     name: 'Admin finance (needs auth session + real slugs)',
   },
   { path: '/for-hosts/pricing', persona: 'host', name: 'Plans/pricing page' },
+  // Public, indexable routes (SEO item 14). These must also clear the SEO category floor.
+  { path: '/about', persona: 'guest-anon', name: 'About (indexable)', seo: true },
+  { path: '/support', persona: 'guest-anon', name: 'Support (indexable)', seo: true },
+  { path: '/for-hosts', persona: 'guest-anon', name: 'For hosts (indexable)', seo: true },
+  {
+    path: '/developments',
+    persona: 'guest-anon',
+    name: 'Developments list (indexable)',
+    seo: true,
+  },
+  { path: '/parkings', persona: 'guest-anon', name: 'Parkings list (indexable)', seo: true },
   {
     path: '/admin',
     persona: 'super-admin',
@@ -87,6 +115,7 @@ function median(sortedNums) {
 function medianMetrics(samples) {
   const keys = [
     'performanceScore',
+    'seoScore',
     'lcpMs',
     'clsScore',
     'tbtMs',
@@ -164,6 +193,9 @@ async function runLighthouse(url, chromePort) {
   return {
     performanceScore:
       lhr.categories.performance?.score != null ? lhr.categories.performance.score * 100 : null,
+    seoScore: lhr.categories.seo?.score != null ? lhr.categories.seo.score * 100 : null,
+    a11yScore:
+      lhr.categories.accessibility?.score != null ? lhr.categories.accessibility.score * 100 : null,
     lcpMs: audits['largest-contentful-paint']?.numericValue ?? null,
     clsScore: audits['cumulative-layout-shift']?.numericValue ?? null,
     tbtMs: audits['total-blocking-time']?.numericValue ?? null,
@@ -171,6 +203,17 @@ async function runLighthouse(url, chromePort) {
     speedIndexMs: audits['speed-index']?.numericValue ?? null,
     totalByteWeightBytes: audits['total-byte-weight']?.numericValue ?? null,
   };
+}
+
+const SELECTED_ROUTES =
+  routeScope === 'public'
+    ? ROUTES.filter((route) => route.persona === 'guest-anon')
+    : routeScope === 'host'
+      ? ROUTES.filter((route) => route.persona !== 'guest-anon')
+      : ROUTES;
+
+if (SELECTED_ROUTES.length === 0) {
+  fail(`--routes=${routeScope} selected no routes. Use all, public or host.`);
 }
 
 async function main() {
@@ -265,7 +308,7 @@ async function main() {
 
   const results = [];
   try {
-    for (const route of ROUTES) {
+    for (const route of SELECTED_ROUTES) {
       const url = `${baseUrl}${route.path}`;
       process.stdout.write(
         `  Auditing ${route.persona} / ${route.name} (${url})${runs > 1 ? ` [${runs} runs, median]` : ''}... `
@@ -304,6 +347,7 @@ async function main() {
     capturedAt: new Date().toISOString(),
     label,
     runs,
+    routeScope,
     baseUrl,
     mode: externalBaseUrl ? 'deployed-preview' : 'local-vite-preview',
     note: externalBaseUrl
@@ -312,15 +356,43 @@ async function main() {
     routes: results,
   };
 
-  if (!existsSync(baselineDir)) mkdirSync(baselineDir, { recursive: true });
+  if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
   const filename = `${snapshot.capturedAt.slice(0, 10)}-lighthouse${label ? `-${label}` : ''}.json`;
-  const outPath = path.join(baselineDir, filename);
+  const outPath = path.join(outputDir, filename);
   writeFileSync(outPath, JSON.stringify(snapshot, null, 2) + '\n');
   console.log(`\nLighthouse baseline captured: ${path.relative(repoRoot, outPath)}`);
 
   const failedRoutes = results.filter((r) => r.error);
   if (failedRoutes.length > 0) {
     console.error(`\n${failedRoutes.length} route(s) failed to audit — see JSON for details.`);
+  }
+
+  if (assertMode) {
+    const breaches = [];
+    for (const route of results) {
+      const seo = route.metrics?.seoScore;
+      const perf = route.metrics?.performanceScore;
+      if (route.seo && seo != null && seo < SEO_FLOOR) {
+        breaches.push(`${route.path} SEO ${seo.toFixed(0)} < ${SEO_FLOOR}`);
+      }
+      if (route.seo && perf != null && perf < PERF_FLOOR) {
+        breaches.push(`${route.path} performance ${perf.toFixed(0)} < ${PERF_FLOOR}`);
+      }
+      if (route.seo && route.metrics?.lcpMs != null && route.metrics.lcpMs > 2500) {
+        breaches.push(`${route.path} LCP ${Math.round(route.metrics.lcpMs)}ms > 2500ms`);
+      }
+      if (route.seo && route.metrics?.clsScore != null && route.metrics.clsScore > 0.1) {
+        breaches.push(`${route.path} CLS ${route.metrics.clsScore.toFixed(3)} > 0.1`);
+      }
+    }
+    if (breaches.length > 0) {
+      console.error(`\nSEO/performance floors breached (${breaches.length}):`);
+      for (const breach of breaches) console.error(`  - ${breach}`);
+      process.exit(1);
+    }
+    console.log(
+      `\nPublic route floors OK — SEO >= ${SEO_FLOOR}, performance >= ${PERF_FLOOR}, LCP <= 2500ms, CLS <= 0.1.`
+    );
   }
 }
 

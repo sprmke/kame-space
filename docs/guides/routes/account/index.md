@@ -13,15 +13,15 @@ Route: `/account`
 
 ## Progress overview
 
-| Section  | E2E save | Validation | Docs       | Notes                       |
-| -------- | -------- | ---------- | ---------- | --------------------------- |
-| Redirect | —        | —          | Documented | Always → `/account/profile` |
+| Section  | E2E save | Validation | Docs       | Notes                     |
+| -------- | -------- | ---------- | ---------- | ------------------------- |
+| Redirect | —        | —          | Documented | Always → `/account/trips` |
 
 ---
 
 ## Overview
 
-`GuestAccountIndexPage` renders no UI — it immediately `<Navigate replace>`s to **`/account/profile`**. There is no account landing/dashboard page; the sidebar nav (Profile · Trips · Reviews · Stays · Vouchers · Favorites · Tickets · Help) is the entry point instead.
+`GuestAccountIndexPage` renders no UI — it immediately `<Navigate replace>`s to **`/account/trips`** (guest journey plan, decision D2: a guest with an upcoming stay wants the trip first). There is no account landing/dashboard page; the sidebar nav (Profile · Trips · Reviews · Messages · Vouchers · Favorites · Tickets · Help) is the entry point instead.
 
 `/account/settings` also redirects to `/account/profile` (see [profile.md](./profile.md) § Settings).
 
@@ -34,11 +34,11 @@ Guests who tap their account avatar and land on the account area always see thei
 **Common host questions**
 
 - Q: A guest says they can't find an "Account" overview page. Where does it go?
-  A: There isn't a separate overview page. Signing in and opening the account menu takes them straight to their Profile tab, with Stays, Vouchers, and Favorites as other tabs in the same area.
+  A: There isn't a separate overview page. Signing in and opening the account menu takes them straight to their Trips, with Profile, Messages, Vouchers, and Favorites as other tabs in the same area.
 - Q: How does a guest open their account?
   A: After signing in, they open the avatar in the top navigation. On a phone, the same links live in the account tab at the bottom.
 - Q: What can a guest do from the account area?
-  A: They can edit their profile, review trips, read messages in Stays, manage vouchers and favorites, and check tickets they filed with us.
+  A: They can review trips, edit their profile, read messages, manage vouchers and favorites, and check tickets they filed with us.
 
 ---
 
@@ -54,9 +54,9 @@ Guests who tap their account avatar and land on the account area always see thei
 
 ## Testing
 
-| Layer | Path / spec                | Manual |
-| ----- | -------------------------- | ------ |
-| E2E   | N/A — redirects to profile | —      |
+| Layer | Path / spec              | Manual |
+| ----- | ------------------------ | ------ |
+| E2E   | N/A — redirects to trips | —      |
 
 ---
 
@@ -64,7 +64,7 @@ Guests who tap their account avatar and land on the account area always see thei
 
 - [Route index](../README.md)
 - [Profile](./profile.md)
-- [Stays](./stays.md)
+- [Messages](./messages.md)
 - [Favorites](./favorites.md)
 - [`docs/PROJECT.md`](../../PROJECT.md)
 

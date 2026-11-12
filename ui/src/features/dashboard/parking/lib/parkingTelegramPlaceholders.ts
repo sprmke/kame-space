@@ -3,4 +3,5 @@ export const PARKING_TELEGRAM_PLACEHOLDER_KEYS = [
   'check_in_date',
   'guest_name',
   'amount',
+  'residence_name',
 ] as const;

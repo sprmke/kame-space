@@ -6,6 +6,17 @@ vi.mock('posthog-js', () => ({
   default: { init: mockInit, register: vi.fn() },
 }));
 
+/** Cookie Policy owner decision D1: PostHog only starts after this choice is "accepted".
+ * No DOM here (this file runs in the Node unit project), so the consent module itself is
+ * mocked rather than real `localStorage` — the event-driven re-init path is browser-only
+ * glue, verified by the component wiring and manual checks, not this Node-env test. */
+let consentChoice: 'accepted' | 'declined' | null = null;
+
+vi.mock('./cookieConsent', () => ({
+  COOKIE_CONSENT_CHANGED_EVENT: 'kh:cookie-consent-changed',
+  getCookieConsent: () => consentChoice,
+}));
+
 async function loadClient() {
   vi.resetModules();
   return import('./client');
@@ -15,11 +26,13 @@ describe('posthog client init', () => {
   afterEach(() => {
     mockInit.mockClear();
     vi.unstubAllEnvs();
+    consentChoice = null;
   });
 
   it('does not initialize when VITE_POSTHOG_KEY is unset', async () => {
     vi.stubEnv('VITE_POSTHOG_KEY', '');
     vi.stubEnv('VITE_POSTHOG_HOST', 'https://us.i.posthog.com');
+    consentChoice = 'accepted';
 
     const mod = await loadClient();
     expect(mod.isPostHogEnabled).toBe(false);
@@ -29,6 +42,7 @@ describe('posthog client init', () => {
   it('treats a whitespace-only key as unconfigured', async () => {
     vi.stubEnv('VITE_POSTHOG_KEY', '   ');
     vi.stubEnv('VITE_POSTHOG_HOST', 'https://us.i.posthog.com');
+    consentChoice = 'accepted';
 
     const mod = await loadClient();
     expect(mod.isPostHogEnabled).toBe(false);
@@ -38,18 +52,41 @@ describe('posthog client init', () => {
   it('does not initialize when VITE_POSTHOG_HOST is unset', async () => {
     vi.stubEnv('VITE_POSTHOG_KEY', 'phc_test_key');
     vi.stubEnv('VITE_POSTHOG_HOST', '');
+    consentChoice = 'accepted';
 
     const mod = await loadClient();
     expect(mod.isPostHogEnabled).toBe(false);
     expect(mockInit).not.toHaveBeenCalled();
   });
 
+  it('does not initialize before the cookie banner records a choice', async () => {
+    vi.stubEnv('VITE_POSTHOG_KEY', 'phc_test_key');
+    vi.stubEnv('VITE_POSTHOG_HOST', 'https://us.i.posthog.com');
+    consentChoice = null;
+
+    const mod = await loadClient();
+    expect(mod.isPostHogEnabled).toBe(true);
+    expect(mod.isPostHogActive()).toBe(false);
+    expect(mockInit).not.toHaveBeenCalled();
+  });
+
+  it('does not initialize when the visitor chose necessary cookies only', async () => {
+    vi.stubEnv('VITE_POSTHOG_KEY', 'phc_test_key');
+    vi.stubEnv('VITE_POSTHOG_HOST', 'https://us.i.posthog.com');
+    consentChoice = 'declined';
+
+    await loadClient();
+    expect(mockInit).not.toHaveBeenCalled();
+  });
+
   it('trims whitespace from the key and forwards a custom host', async () => {
     vi.stubEnv('VITE_POSTHOG_KEY', '  phc_test_key  ');
     vi.stubEnv('VITE_POSTHOG_HOST', '  https://eu.i.posthog.com  ');
+    consentChoice = 'accepted';
 
-    await loadClient();
+    const mod = await loadClient();
 
+    expect(mod.isPostHogActive()).toBe(true);
     expect(mockInit).toHaveBeenCalledWith(
       'phc_test_key',
       expect.objectContaining({ api_host: 'https://eu.i.posthog.com' })
@@ -59,6 +96,7 @@ describe('posthog client init', () => {
   it('never calls init twice for a single module load (singleton guard)', async () => {
     vi.stubEnv('VITE_POSTHOG_KEY', 'phc_test_key');
     vi.stubEnv('VITE_POSTHOG_HOST', 'https://us.i.posthog.com');
+    consentChoice = 'accepted';
 
     await loadClient();
     await import('./client');
@@ -71,11 +109,13 @@ describe('posthog is analytics-only', () => {
   afterEach(() => {
     mockInit.mockClear();
     vi.unstubAllEnvs();
+    consentChoice = null;
   });
 
   it('disables exception capture and performance capture', async () => {
     vi.stubEnv('VITE_POSTHOG_KEY', 'phc_test_key');
     vi.stubEnv('VITE_POSTHOG_HOST', 'https://us.i.posthog.com');
+    consentChoice = 'accepted';
 
     await loadClient();
 
@@ -95,6 +135,7 @@ describe('posthog is analytics-only', () => {
   it('wires before_send so URLs are scrubbed before they leave the browser', async () => {
     vi.stubEnv('VITE_POSTHOG_KEY', 'phc_test_key');
     vi.stubEnv('VITE_POSTHOG_HOST', 'https://us.i.posthog.com');
+    consentChoice = 'accepted';
 
     await loadClient();
 

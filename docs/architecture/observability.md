@@ -172,6 +172,57 @@ Durations only. No ids, no function arguments, no counts, which is why
 passes the body through untouched and returns the original response if the body was already
 read.
 
+### Route patterns for transactions and events
+
+The router is **one splat route** (`{ path: '*' }`) with `<Routes>` inside `AppRoutes`. That is
+deliberate, but it means router-based integrations can only ever see `/*`: for seven days every
+browser transaction in Sentry was named `/*`, one name in total. Per-route latency, and the boot
+measurements attached to that transaction, were unreadable.
+
+`ui/src/lib/telemetry/routePattern.ts#routePatternFor` derives the pattern from the pathname
+instead. It replaces the segment after a known tenant parent (`org`, `property`, `properties`,
+`parking`, `developments`) and any UUID, long hex id or email-shaped segment with `:param`, so
+`/org/acme/property/villa/bookings` becomes `/org/:param/property/:param/bookings`.
+
+`RoutePatternSync` (`lib/sentry/RoutePatternSync.tsx`, mounted in `AppShell`) renames the active
+Sentry transaction on every navigation and tags it `route_pattern`.
+
+PostHog needs **both** halves, and the distinction cost a debugging round:
+
+- `PostHogRouteSync` registers `route_pattern` and `surface` with `posthog.register(...)`, which
+  makes them **super properties**. This is what the SDK's automatic `$pageview` actually carries.
+- `buildSharedAnalyticsProperties` also includes `route_pattern`, which decorates events captured
+  through `captureAppEvent`.
+
+Adding it only to the builder measured 1,146 page views with no pattern on any of them, because
+`$pageview` never goes through the builder. If a future property must appear on page views, it has
+to be registered.
+
+The pattern is safe to send: route names only, never a slug, id, email or token. Tests in
+`routePattern.test.ts` assert that no identifier survives, and `context.test.ts` asserts a tenant
+slug never reaches the PostHog properties.
+
+### Verifying route patterns after a deploy
+
+The change is only useful if transactions actually carry the pattern, so verify it rather than
+assume it:
+
+1. Open the dashboard and a couple of child routes in a real browser for a minute. Pageload
+   transactions flush on idle; rapid navigation cancels them, so a headless page that leaves in
+   under a second produces none.
+2. In Sentry, filter the `kame-space-web` project to transactions for the last hour and check the
+   names are `/org/:param/property/:param` style, not `/*`.
+
+**You cannot do step 2 through the API with the token in `supabase/.env.management.local`.** The
+`/events/?dataset=transactions` endpoint returns an empty `data` array for it, while
+`stats_v2?category=transaction` shows the volume, so the data is there and the token simply cannot
+read that dataset. Verified 2026-11-12: 2 transactions in the hour after the release build, which
+is the configured 5% of 40 dwelled loads. Use the Sentry UI, or issue a token with event read on
+the transactions dataset, before building anything that aggregates transaction names or durations.
+
+PostHog pageviews are consent-gated: an unattended browser with no cookie consent records nothing,
+so a zero result there is not evidence of a broken client.
+
 ## Do not
 
 - Emit `activity_log` from either vendor, or a telemetry event to replace `activity_log`.

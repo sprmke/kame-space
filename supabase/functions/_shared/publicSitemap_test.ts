@@ -33,3 +33,18 @@ Deno.test('buildSitemapIndex lists numbered parts', () => {
   assertStringIncludes(xml, '<sitemapindex');
   assertStringIncludes(xml, 'sitemap.xml?part=2');
 });
+
+Deno.test('every <loc> uses the canonical https apex', () => {
+  const xml = buildUrlset('https://kamespace.com', [
+    { path: '/properties/monaco-2604', lastmod: '2026-11-01' },
+    { path: '/properties/in/san-fernando' },
+  ]);
+
+  const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]!);
+  assertEquals(locs.length, 2);
+  for (const loc of locs) {
+    assertEquals(loc.startsWith('https://kamespace.com/'), true, loc);
+    assertEquals(loc.includes('http://'), false, loc);
+    assertEquals(new URL(loc).hostname, 'kamespace.com', loc);
+  }
+});

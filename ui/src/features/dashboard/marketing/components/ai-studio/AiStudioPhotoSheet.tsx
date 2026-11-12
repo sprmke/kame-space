@@ -108,7 +108,7 @@ export function AiStudioPhotoSheet({
           )}
         </ResponsiveModalHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
           {source === 'listing' ? (
             listingLoading ? (
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">

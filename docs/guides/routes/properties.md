@@ -46,6 +46,17 @@ Browse and view rental listings. Ported from PMA `features/marketing/properties/
 
 ---
 
+## Existing trip banner
+
+A signed-in guest who already has a stay at this property sees a **You have a trip here** banner
+with the date range and a **View trip** link:
+
+- **Phone and tablet:** under the gallery, above the title.
+- **Desktop (`@5xl`):** above the booking card in the right column.
+
+Reserve stays for new dates. The banner appears only for a non-cancelled stay whose check-out is
+today or later, read from the cached `guest-trips` query.
+
 ## Host-facing knowledge
 
 This is where guests browse homes, open a listing, save favorites, contact the host, and start a booking. Each live listing can also link to a public host profile page that shows everything that host currently offers.
@@ -187,6 +198,20 @@ Same route and component as the operational booking picker — see **[calendar.m
 Full field map + dashboard gaps: **[[public-property-catalog|Public property catalog — reference]]**.
 
 ---
+
+## SEO
+
+- Registry entries: `properties` (list), `properties-place` (`/properties/in/:location`),
+  `property-detail` (`/properties/:propertySlug`).
+- Canonical: self, on the apex origin, query string dropped. Detail pages canonicalize
+  themselves only once the edge payload resolves the slug.
+- Sitemap: the list page is static; each ACTIVE listing and each place page is added from
+  `public_listing_search`.
+- Crawler HTML: detail pages get a snapshot with one `<h1>`, price-from, guest and bedroom
+  facts, gallery images with alt, a breadcrumb trail, and links to the place, development and
+  host page. Place pages list the first 12 listings as real links.
+- A slug the catalogue does not have answers crawlers with 404 and `noindex`.
+- Reference: [`architecture/seo.md`](../../architecture/seo.md).
 
 ## Implementation map
 

@@ -1,6 +1,7 @@
 import { expect, type Page, type Route } from '@playwright/test';
 
 import { captureParkingScreen } from './parkingScreenCapture';
+import { SUPABASE_AUTH_STORAGE_KEY } from '../../../shared/ids';
 
 const ORG_ID = 'org-e2e-001';
 export { ORG_ID };
@@ -11,7 +12,6 @@ const PARKING_ID = 'parking-e2e-001';
 const BOOKING_ID = 'booking-e2e-001';
 const GUEST_USER_ID = 'user-e2e-guest-001';
 const DIRECT_LINK_TOKEN = 'e2e-direct-link-token-001';
-const SUPABASE_AUTH_STORAGE_KEY = 'sb-127-auth-token';
 
 function e2eSupabaseAuthSession() {
   const nowSeconds = Math.floor(Date.now() / 1000);
@@ -142,6 +142,12 @@ export type ParkingFlowState = {
   claimFailsAlreadyClaimed: boolean;
   /** Guest taps Pay now after the payment window closed; checkout returns 409. */
   paymentWindowExpiredOnCheckout: boolean;
+  /** Archive/delete warnings from parking-settings. */
+  archiveImpact?: {
+    pendingOffers: number;
+    upcomingBookings: number;
+    bookingHistory: number;
+  };
 };
 
 const MOCK_HOST_CONTACT = {
@@ -622,16 +628,18 @@ function parkingList() {
 
 function parkingPricingPayload() {
   return {
-    weekdayNightlyRate: 1200,
-    weekendNightlyRate: 1350,
+    weekdayNightlyRate: 300,
+    weekendNightlyRate: 350,
     dateOverrides: {},
     currency: 'PHP',
     guestRateCapWeekday: 400,
-    guestRateCapWeekend: 450,
-    commissionPct: 0.2,
+    guestRateCapWeekend: 400,
+    guestRateWeekday: 400,
+    guestRateWeekend: 400,
+    commissionPct: 0.1,
     directBookingToken: DIRECT_LINK_TOKEN,
     directBookingSlug: 'slot-12a',
-    directCommissionPct: 0.1,
+    directCommissionPct: 0.05,
   };
 }
 
@@ -884,6 +892,56 @@ export async function installParkingFlowMocks(page: Page, state: ParkingFlowStat
         retryParkingEndorsement(state);
         await fulfillJson(route, { success: true, data: { sent: true } });
         return;
+      case 'parking-settings': {
+        const telegramStatus = {
+          tokenConfigured: false,
+          chatIdConfigured: false,
+          tokenSource: 'none',
+          chatIdSource: 'none',
+          secretsEncryptionConfigured: true,
+        };
+        await fulfillJson(route, {
+          success: true,
+          data: {
+            parkingId: 'parking-e2e-001',
+            paymentProvider: 'paymongo',
+            gcashName: 'Sample Stays PH',
+            gcashNumber: '09171234567',
+            gcashQrImageUrl: null,
+            paymentMethods: [],
+            parkingNotificationTemplates: {},
+            automationToggles: {
+              emailParkingReservationRequest: true,
+              emailParkingGuestConfirmed: true,
+              emailParkingNoHostAvailable: true,
+              autoAcceptTopMatch: false,
+            },
+            updatedAt: '2026-08-01T00:00:00.000Z',
+            archiveImpact: state.archiveImpact ?? {
+              pendingOffers: 0,
+              upcomingBookings: 0,
+              bookingHistory: 0,
+            },
+            parkingIntegrations: {
+              telegram: {
+                marketing: telegramStatus,
+                staff: telegramStatus,
+                admin: telegramStatus,
+                finance: telegramStatus,
+                maintenance: telegramStatus,
+                chat: telegramStatus,
+              },
+            },
+            platformSecrets: {
+              resendApiKeyConfigured: true,
+              secretsEncryptionKeyConfigured: true,
+              geminiApiKeyConfigured: true,
+              groqApiKeyConfigured: false,
+            },
+          },
+        });
+        return;
+      }
       case 'parking-pricing':
         if (route.request().method() === 'GET') {
           await fulfillJson(route, { success: true, data: parkingPricingPayload() });

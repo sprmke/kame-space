@@ -60,11 +60,11 @@ export function AiOrgLimitsSheet({ orgId, onOpenChange }: AiOrgLimitsSheetProps)
           className="max-h-[min(90dvh,44rem)] max-w-2xl sm:max-w-2xl"
           sheetLayout="split"
         >
-          <ResponsiveModalHeader className="shrink-0 px-4 sm:px-0">
+          <ResponsiveModalHeader className="shrink-0 px-4 sm:px-5">
             <ResponsiveModalTitle>{org?.name ?? 'AI limits'}</ResponsiveModalTitle>
           </ResponsiveModalHeader>
 
-          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 pb-4 sm:px-0">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 pb-4 sm:px-5">
             {isLoading ? (
               <div role="status" className="space-y-2" aria-label="Loading AI limits">
                 {Array.from({ length: 6 }).map((_, i) => (

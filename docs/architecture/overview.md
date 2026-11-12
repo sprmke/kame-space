@@ -126,6 +126,8 @@ Routes: [`routing.md`](routing.md). Per-page behavior: [`docs/guides/routes/`](.
 
 Specialized UI: **Polotno** + **Remotion** (Marketing Studio), **Google Maps**, Web Worker image compression, pdf-lib. Phone chrome uses shared primitives (`ResponsiveModal`, `BottomTabBar`, `ContextualActionBar`), not a shrunk desktop layout.
 
+Every dialog and bottom sheet shares one chrome — canonical padding, title scale and close control — defined in [`ui/src/components/ui/modal-chrome.ts`](../../ui/src/components/ui/modal-chrome.ts) and specified in [`modal-chrome.md`](modal-chrome.md).
+
 Feedback toasts route through `ui/src/lib/feedback/toastMessages.ts`: raw provider/API copy is sanitized, and an identical error or warning replaces the toast already on screen instead of stacking a duplicate.
 
 **Timezone:** all user-visible times are **Asia/Manila**. Guest date fields in Postgres are often `TEXT` `MM-DD-YYYY`; UI and query params prefer `YYYY-MM-DD`. Normalize with `ui/src/utils/format/dates.ts` and `_shared/utils.ts`.
@@ -151,7 +153,7 @@ flowchart TD
 
 Public listing GETs may use `publicStatic` / `publicDynamic` / `publicAvailability` cache classes. Admin and guest-PII responses stay `no-store`. Contracts: [`edge-functions.md`](edge-functions.md).
 
-Public browse and search read a trigger-maintained Postgres index (`public_listing_search`) through `search_public_*` RPCs: filters, sort, disjunctive facets, availability, and paging happen in SQL, and edge functions map only the page's cards. Responses are cached per isolate under a catalog version the index triggers bump, so listing, price, and review edits invalidate within seconds. Listing detail URLs get server-side meta for crawlers from the Vercel middleware (`ui/middleware.ts`), which also serves `robots.txt` and `sitemap.xml`. Detail: [`PROJECT.md`](../PROJECT.md#public-listing-search-index-browse-search-seo).
+Public browse and search read a trigger-maintained Postgres index (`public_listing_search`) through `search_public_*` RPCs: filters, sort, disjunctive facets, availability, and paging happen in SQL, and edge functions map only the page's cards. Responses are cached per isolate under a catalog version the index triggers bump, so listing, price, and review edits invalidate within seconds. Every public route is declared once in `ui/src/lib/seo/publicRoutes.ts` (indexable, in sitemap, canonical policy, title, description). The Vercel middleware (`ui/middleware.ts`) serves `robots.txt`, proxies `sitemap.xml`, answers `llms.txt` / `llms-full.txt` and the IndexNow key file, and returns a semantic HTML snapshot of `#root` to crawler user agents, so bots that do not run JS still see real text, one `<h1>`, real links and JSON-LD. Canonical and `og:url` always use `https://kamespace.com`, never the request host. `bun run check:seo-routes` keeps the registry, the router, the sitemap and `robots.txt` in sync. Detail: [`seo.md`](seo.md) · [`PROJECT.md`](../PROJECT.md#public-listing-search-index-browse-search-seo).
 
 ---
 

@@ -22,6 +22,7 @@ import {
   type CategoryRatings,
 } from '@/features/reviews/lib/reviewCatalog';
 
+import { ReviewLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { useAntiSpamSubmit } from '@/components/security/useAntiSpamSubmit';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -202,6 +203,8 @@ export function SdFormReviewSection({
           disabled={submitMut.isPending}
         />
       </div>
+
+      <ReviewLegalNotice />
 
       <div className="flex flex-col gap-2 sm:flex-row-reverse">
         <Button

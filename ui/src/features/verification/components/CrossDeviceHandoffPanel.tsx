@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { CheckCircle2, Copy, Loader2, RefreshCw, Smartphone } from 'lucide-react';
+import { CheckCircle2, Copy, RefreshCw, Smartphone } from 'lucide-react';
 import QRCode from 'qrcode';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 
 import type { IdentitySessionStatus } from '../lib/identityApi';
 
@@ -14,6 +16,8 @@ type CrossDeviceHandoffPanelProps = {
   status: IdentitySessionStatus;
   onRestart: () => void;
 };
+
+const QR_SIZE = 208;
 
 function remainingLabel(expiresAt: string): string {
   const remainingMs = Date.parse(expiresAt) - Date.now();
@@ -26,6 +30,9 @@ function remainingLabel(expiresAt: string): string {
 /**
  * Desktop → phone handoff. QR plus a copyable link; the desktop keeps polling the session
  * and the caller advances itself when the status changes. No `navigate()` from here.
+ *
+ * Layout contract: one centered QR block, then actions, then live status. The countdown is a
+ * quiet pill rather than a floating line so the panel reads as three deliberate rows.
  */
 export function CrossDeviceHandoffPanel({
   verifyUrl,
@@ -41,7 +48,7 @@ export function CrossDeviceHandoffPanel({
     let cancelled = false;
     void QRCode.toDataURL(verifyUrl, {
       margin: 1,
-      width: 220,
+      width: QR_SIZE * 2,
       errorCorrectionLevel: 'M',
     })
       .then((url) => {
@@ -75,8 +82,8 @@ export function CrossDeviceHandoffPanel({
 
   if (status === 'completed') {
     return (
-      <div className="flex flex-col items-center gap-2 py-6 text-center">
-        <CheckCircle2 className="h-7 w-7 text-emerald-500" aria-hidden />
+      <div className="flex flex-col items-center gap-2 py-8 text-center">
+        <CheckCircle2 className="h-7 w-7 text-emerald-600" aria-hidden />
         <p className="text-sm font-semibold">Done</p>
         <p className="text-muted-foreground text-xs">Your phone finished the check.</p>
       </div>
@@ -85,10 +92,13 @@ export function CrossDeviceHandoffPanel({
 
   if (expired || status === 'expired' || status === 'failed') {
     return (
-      <div className="space-y-3 py-4 text-center">
-        <p className="text-sm font-medium">This link expired</p>
+      <div className="flex flex-col items-center gap-4 py-8 text-center">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold">This link expired</p>
+          <p className="text-muted-foreground text-xs">Start a new one and scan again.</p>
+        </div>
         <Button type="button" variant="outline" onClick={onRestart}>
-          <RefreshCw className="mr-2 h-4 w-4" />
+          <RefreshCw className="mr-2 h-4 w-4" aria-hidden />
           Start again
         </Button>
       </div>
@@ -103,33 +113,42 @@ export function CrossDeviceHandoffPanel({
             <img
               src={qrDataUrl}
               alt="QR code for the verification link"
-              width={220}
-              height={220}
-              className="h-[220px] w-[220px]"
+              width={QR_SIZE}
+              height={QR_SIZE}
+              className="block rounded-md"
+              style={{ height: QR_SIZE, width: QR_SIZE }}
             />
           ) : (
-            <div className="flex h-[220px] w-[220px] items-center justify-center">
-              <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-            </div>
+            <Skeleton className="rounded-md" style={{ height: QR_SIZE, width: QR_SIZE }} />
           )}
         </div>
-        <div className="text-muted-foreground flex items-center gap-2 text-sm">
-          <Smartphone className="h-4 w-4" aria-hidden />
-          <span>Scan with your phone camera</span>
+
+        <div className="space-y-2 text-center">
+          <p className="text-muted-foreground flex items-center justify-center gap-1.5 text-sm">
+            <Smartphone className="h-3.5 w-3.5" aria-hidden />
+            Scan with your phone camera
+          </p>
+          <p className="text-muted-foreground bg-muted inline-flex rounded-full px-2.5 py-1 text-xs font-medium tabular-nums">
+            {remaining}
+          </p>
         </div>
-        <p className="text-muted-foreground text-xs">{remaining}</p>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Button type="button" variant="outline" className="flex-1" onClick={() => void copyLink()}>
-          <Copy className="mr-2 h-4 w-4" />
+      <Separator />
+
+      <div className="space-y-3">
+        <Button type="button" variant="outline" className="w-full" onClick={() => void copyLink()}>
+          <Copy className="mr-2 h-4 w-4" aria-hidden />
           {copied ? 'Copied' : 'Copy link'}
         </Button>
-      </div>
 
-      <div className="text-muted-foreground flex items-center justify-center gap-2 text-xs">
-        <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
-        <span>Waiting for your phone</span>
+        <p
+          className="text-muted-foreground flex items-center justify-center gap-2 text-xs"
+          aria-live="polite"
+        >
+          <span className="bg-primary size-1.5 animate-pulse rounded-full" aria-hidden />
+          Waiting for your phone
+        </p>
       </div>
     </div>
   );

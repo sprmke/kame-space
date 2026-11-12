@@ -17,7 +17,6 @@ import { reactRootErrorHandlers } from '@/lib/sentry/capture';
 import { initSentry } from '@/lib/sentry/init';
 import { wrapRouterForSentry } from '@/lib/sentry/router';
 import { installServiceWorkerErrorBridge } from '@/lib/sentry/swBridge';
-import { installOrganizationJsonLd } from '@/lib/seo/organizationJsonLd';
 
 import { ThemeProvider } from './components/theme/ThemeProvider';
 import '@/lib/pwa/installPrompt'; // capture beforeinstallprompt early
@@ -32,7 +31,9 @@ initSentry();
 bootstrapPostHogTelemetry();
 installChunkErrorRecovery();
 installServiceWorkerErrorBridge();
-installOrganizationJsonLd();
+// Structured data is not needed for first paint, and importing it eagerly would pull the
+// whole SEO schema module into the entry bundle.
+void import('@/lib/seo/organizationJsonLd').then((module) => module.installOrganizationJsonLd());
 
 /**
  * Data router (not `<BrowserRouter>`) so `useBlocker` works for the global

@@ -11,10 +11,11 @@ import { scrollToSection } from '@/features/guest/marketing/for-hosts/lib/scroll
 import { AbstractBackground } from '@/features/guest/marketing/shared/components/AbstractBackground';
 
 import { Button } from '@/components/ui/button';
-import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { usePublicStaticRouteSeo } from '@/lib/seo/routeTitle';
+import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
 
 export function ForHostsPage() {
-  usePageTitle(publicPageTitle('For Hosts'));
+  usePublicStaticRouteSeo('/for-hosts');
   const reduceMotion = useReducedMotion();
 
   return (
@@ -43,9 +44,9 @@ export function ForHostsPage() {
                 transition={{ delay: 0.3 }}
                 className="text-foreground mb-4 text-[2rem] font-black leading-[1.05] tracking-[-0.04em] md:mb-6 md:text-5xl lg:text-6xl dark:text-white"
               >
-                Run every stay
+                {STATIC_PAGE_COPY.forHosts.heading}
                 <br />
-                <span className="text-primary">from one dashboard</span>
+                <span className="text-primary">{STATIC_PAGE_COPY.forHosts.headingAccent}</span>
               </motion.h1>
 
               <motion.p
@@ -54,8 +55,7 @@ export function ForHostsPage() {
                 transition={{ delay: 0.4 }}
                 className="public-lead text-muted-foreground mx-auto mb-6 max-w-3xl md:mb-9 dark:text-white/70"
               >
-                Bookings, guest messages, finance, marketing, and operations stay connected, so work
-                keeps moving when you step away.
+                {STATIC_PAGE_COPY.forHosts.intro}
               </motion.p>
 
               <motion.div

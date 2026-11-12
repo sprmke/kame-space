@@ -34,6 +34,11 @@ function serializeParkingSettingsRow(
   extras?: {
     parkingIntegrations?: Awaited<ReturnType<typeof buildParkingIntegrationStatus>>;
     platformSecrets?: ReturnType<typeof buildPlatformSecretsStatus>;
+    archiveImpact?: {
+      pendingOffers: number;
+      upcomingBookings: number;
+      bookingHistory: number;
+    };
   }
 ) {
   return {
@@ -48,6 +53,37 @@ function serializeParkingSettingsRow(
     updatedAt: row.updated_at,
     parkingIntegrations: extras?.parkingIntegrations,
     platformSecrets: extras?.platformSecrets,
+    archiveImpact: extras?.archiveImpact,
+  };
+}
+
+async function loadArchiveImpact(
+  supabase: ReturnType<typeof createServiceClient>,
+  parkingId: string
+) {
+  const [offers, history, upcoming] = await Promise.all([
+    supabase
+      .from('parking_booking_broadcasts')
+      .select('id', { count: 'exact', head: true })
+      .eq('parking_id', parkingId)
+      .eq('response', 'pending'),
+    supabase
+      .from('guest_submissions')
+      .select('id', { count: 'exact', head: true })
+      .or(`parking_id.eq.${parkingId},parking_pinned_id.eq.${parkingId}`),
+    supabase
+      .from('guest_submissions')
+      .select('id', { count: 'exact', head: true })
+      .eq('parking_id', parkingId)
+      .in('status', ['PENDING_REVIEW', 'READY_FOR_CHECKIN']),
+  ]);
+  if (offers.error) console.error('[parking-settings] offer count:', offers.error.message);
+  if (history.error) console.error('[parking-settings] history count:', history.error.message);
+  if (upcoming.error) console.error('[parking-settings] upcoming count:', upcoming.error.message);
+  return {
+    pendingOffers: offers.count ?? 0,
+    upcomingBookings: upcoming.count ?? 0,
+    bookingHistory: history.count ?? 0,
   };
 }
 
@@ -73,6 +109,7 @@ serveAuthenticated('parking-settings', async (req, user) => {
       serializeParkingSettingsRow(data as Record<string, unknown>, {
         parkingIntegrations: await buildParkingIntegrationStatus(parkingId),
         platformSecrets: buildPlatformSecretsStatus(),
+        archiveImpact: await loadArchiveImpact(supabase, parkingId),
       })
     );
   }

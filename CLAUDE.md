@@ -215,3 +215,13 @@ Full index: `.claude/README.md` (Claude Code) · `.cursor/rules/README.md` (Curs
 - Co-author trailers or AI commit/PR attribution — `.cursor/rules/git-commits.mdc` and **`git-commits`** skill; `.husky/commit-msg` strips `Co-authored-by` lines automatically.
 - **Production Supabase/DB deploys without unlock** — `.cursor/rules/no-prod-deploy.mdc`. Never run or recommend `deploy:supabase`, `db push`, `functions deploy`, or remote migrations unless the user said **`kamewave`** in the same message. Shell hooks enforce this.
 - Trusting a skill just because it's in the picker — if `property-management-app` (a separate Next.js/tRPC/Drizzle repo) is also open this session, its skills will appear too; ignore them here.
+
+<!-- global-agent-skills -->
+
+## Global agent skills
+
+This machine has 159 shared skills in `~/.agents/skill-library` (Claude Code, Cursor,
+Codex and OpenCode all read them). Only five behaviour skills are always visible.
+For anything else, open `~/.agents/skill-library/agent-skills-index/SKILL.md`, find the
+skill that fits, then read `~/.agents/skill-library/<skill>/SKILL.md`.
+Manage with `~/.agents/bin/agent-stack.sh`. Repo skills and rules always win.
