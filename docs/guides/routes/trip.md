@@ -10,7 +10,7 @@ updated: 2026-11-10
 Route: `/properties/:propertySlug/trip?bookingId=<uuid>` (email links add `&access=<token>`; a
 submission redirects here with `&welcome=1`)
 
-> **Status:** Documented. Plan: [`guest-post-booking-journey.md`](../../workflow/in-progress/guest-post-booking-journey.md)
+> **Status:** Documented. Plan: [`guest-post-booking-journey.md`](../../workflow/done/guest-post-booking-journey.md)
 
 ## Progress overview
 
