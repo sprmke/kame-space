@@ -27,6 +27,21 @@ globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
 const { getMountedEdgeHandler } = await import('../../_shared/serveEdge.ts');
 
 export function cronPostContract(name: string, envKey: string, headerName: string): void {
+  /**
+   * Deno runs every test file in one process, so an env var set here leaks into later files and
+   * can change their behaviour (fail-closed crons suddenly reject). Save once, restore after each
+   * case.
+   */
+  const previousEnv = Deno.env.get('ENVIRONMENT');
+  const previousSecret = Deno.env.get(envKey);
+
+  function restoreEnv() {
+    if (previousEnv === undefined) Deno.env.delete('ENVIRONMENT');
+    else Deno.env.set('ENVIRONMENT', previousEnv);
+    if (previousSecret === undefined) Deno.env.delete(envKey);
+    else Deno.env.set(envKey, previousSecret);
+  }
+
   function request(method: string, secret?: string): Request {
     return new Request(`${FUNCTIONS_URL}/${name}`, {
       method,
@@ -57,6 +72,7 @@ export function cronPostContract(name: string, envKey: string, headerName: strin
 
     // 405 is the precise code; some wrappers flatten the method guard to 400. The invariant
     // is the rejection without running the job.
+    restoreEnv();
     assert([400, 405].includes(response.status), `got ${response.status}`);
     assertEquals(calls, [], 'a wrong verb must not run the job');
   });
@@ -67,6 +83,7 @@ export function cronPostContract(name: string, envKey: string, headerName: strin
 
     const response = await handler(request('POST'));
 
+    restoreEnv();
     assertEquals(response.status, 401);
     assertEquals(calls, [], 'an unauthenticated run must not touch data');
   });
@@ -77,6 +94,7 @@ export function cronPostContract(name: string, envKey: string, headerName: strin
 
     const response = await handler(request('POST', 'wrong-secret'));
 
+    restoreEnv();
     assertEquals(response.status, 401);
     assertEquals(calls, []);
   });
@@ -87,6 +105,7 @@ export function cronPostContract(name: string, envKey: string, headerName: strin
 
     const response = await handler(request('POST'));
 
+    restoreEnv();
     assertEquals(response.status, 401);
     assertEquals(calls, []);
   });

@@ -59,6 +59,15 @@ export function webhookContract(contract: WebhookContract): void {
 
   const { name, signatureHeader, secretEnvKey, payload } = contract;
 
+  // Deno runs every test file in one process: restore the secret so it cannot change a later
+  // file's behaviour.
+  const previousSecret = secretEnvKey ? Deno.env.get(secretEnvKey) : undefined;
+  function restoreEnv() {
+    if (!secretEnvKey) return;
+    if (previousSecret === undefined) Deno.env.delete(secretEnvKey);
+    else Deno.env.set(secretEnvKey, previousSecret);
+  }
+
   async function handlerFor() {
     if (secretEnvKey) Deno.env.set(secretEnvKey, 'test-webhook-secret');
     await import(`../../${name}/index.ts`);
@@ -78,6 +87,7 @@ export function webhookContract(contract: WebhookContract): void {
       })
     );
 
+    restoreEnv();
     assert(
       response.status >= 400 && response.status < 500,
       `${name} must reject an unsigned request, got ${response.status}`
@@ -95,6 +105,7 @@ export function webhookContract(contract: WebhookContract): void {
       })
     );
 
+    restoreEnv();
     assert(
       response.status >= 400 && response.status < 500,
       `${name} must reject a bad signature, got ${response.status}`
