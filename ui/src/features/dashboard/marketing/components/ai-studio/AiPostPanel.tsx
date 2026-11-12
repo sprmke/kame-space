@@ -118,7 +118,7 @@ export function AiPostPanel({ onOpenInDesign, onPublish, canPublish }: Props) {
   const { data: publicProperty, isLoading: propertyLoading } = usePublicPropertyDetail(
     property.slug
   );
-  const { data: appSettings } = useAppSettings();
+  const { data: appSettings } = useAppSettings({ lean: true });
   const { data: orgSettings } = useOrgSettings();
   const orgBrandColor = useOrgBrandColor();
   // Inside the studio, posts follow the active theme (palette + type).

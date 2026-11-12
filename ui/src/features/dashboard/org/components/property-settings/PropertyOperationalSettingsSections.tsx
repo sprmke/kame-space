@@ -522,13 +522,16 @@ export function PropertyOperationalSettingsSections({
               message={propertySettingsSectionBanner('integrations', sectionMessages)!}
             />
           ) : null}
-          <PropertyIntegrationsPanel
-            status={data.propertyIntegrations}
-            aiKeys={{
-              primaryKeysConfigured: data.platformSecrets.geminiApiKeyConfigured,
-              fallbackKeyConfigured: data.platformSecrets.groqApiKeyConfigured,
-            }}
-          />
+          {/* The settings controller always requests the full payload; a lean one carries null. */}
+          {data.propertyIntegrations ? (
+            <PropertyIntegrationsPanel
+              status={data.propertyIntegrations}
+              aiKeys={{
+                primaryKeysConfigured: data.platformSecrets.geminiApiKeyConfigured,
+                fallbackKeyConfigured: data.platformSecrets.groqApiKeyConfigured,
+              }}
+            />
+          ) : null}
         </AdminSection>
       ) : null}
     </>
