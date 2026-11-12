@@ -183,6 +183,71 @@ export const PROBES: ProbeDef[] = [
     },
   },
   {
+    id: 'meta_inbox_outbox',
+    label: 'Meta inbox outbox',
+    group: 'Meta',
+    features: ['Guest inbox'],
+    hint: 'Dead letters need a replay. See docs/archive/operations/meta-inbox-sync-runbook.md.',
+    isConfigured: has('META_APP_ID', 'META_APP_SECRET'),
+    run: async ({ supabase }) => {
+      // The outbox is the pipeline's only signal of loss: a dead letter is a guest message
+      // that Meta will never send again, so it is an error rather than a warning.
+      const [due, dead, oldest] = await Promise.all([
+        supabase
+          .from('meta_webhook_events')
+          .select('id', { count: 'exact', head: true })
+          .in('status', ['pending', 'retry']),
+        supabase
+          .from('meta_webhook_events')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'dead'),
+        supabase
+          .from('meta_webhook_events')
+          .select('received_at')
+          .in('status', ['pending', 'retry'])
+          .order('received_at', { ascending: true })
+          .limit(1),
+      ]);
+      if (due.error || dead.error) {
+        return { status: 'unknown', detail: 'Could not read the webhook outbox' };
+      }
+
+      const deadCount = dead.count ?? 0;
+      const dueCount = due.count ?? 0;
+      const oldestRow = (oldest.data ?? [])[0] as { received_at?: string } | undefined;
+      const lagMinutes = oldestRow?.received_at
+        ? Math.max(0, Math.round((Date.now() - new Date(oldestRow.received_at).getTime()) / 60_000))
+        : 0;
+
+      if (deadCount > 0) {
+        return {
+          status: 'error',
+          detail: `${deadCount} dead letter${deadCount === 1 ? '' : 's'} to replay. ${dueCount} queued.`,
+          meta: { dead: deadCount, due: dueCount, lag_minutes: lagMinutes },
+        };
+      }
+      if (lagMinutes >= 15) {
+        return {
+          status: 'error',
+          detail: `Oldest queued event is ${lagMinutes} minutes old, so the worker is not draining.`,
+          meta: { dead: 0, due: dueCount, lag_minutes: lagMinutes },
+        };
+      }
+      if (dueCount >= 100) {
+        return {
+          status: 'warn',
+          detail: `${dueCount} events queued, ${lagMinutes} min behind.`,
+          meta: { dead: 0, due: dueCount, lag_minutes: lagMinutes },
+        };
+      }
+      return {
+        status: 'ok',
+        detail: dueCount === 0 ? 'Drained' : `${dueCount} queued, ${lagMinutes} min behind`,
+        meta: { dead: 0, due: dueCount, lag_minutes: lagMinutes },
+      };
+    },
+  },
+  {
     id: 'meta_pages',
     label: 'Meta page tokens',
     group: 'Meta',
