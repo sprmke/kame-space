@@ -32,6 +32,8 @@ import {
 } from '@/components/ui/responsive-modal';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { SearchPreviewFields } from '@/components/settings/SearchPreviewFields';
+import { buildPageTitle, listingDescription, parkingTitle } from '@/lib/seo/seoMeta';
 
 type SettingsController = ReturnType<typeof useParkingSettingsController>;
 
@@ -208,6 +210,24 @@ export function ParkingBasicInformationSection({ controller }: { controller: Set
           {profileDraft.description.length}/{PARKING_DESCRIPTION_MAX} characters
         </p>
       </SettingsField>
+
+      <SearchPreviewFields
+        title={profileDraft.seoTitle}
+        description={profileDraft.seoDescription}
+        autoTitle={buildPageTitle(
+          parkingTitle({ name: parking.name, place: profileDraft.residenceName })
+        )}
+        autoDescription={listingDescription({
+          name: parking.name,
+          city: profileDraft.residenceName,
+          hostDescription: profileDraft.description,
+        })}
+        breadcrumb={`kamespace.com › parkings › ${parking.slug}`}
+        idPrefix="parking"
+        disabled={busy}
+        onChangeTitle={(value) => setProfileField('seoTitle', value)}
+        onChangeDescription={(value) => setProfileField('seoDescription', value)}
+      />
     </AdminSection>
   );
 }
