@@ -120,7 +120,24 @@ Two traps, both cost real debugging time:
 - **Install one `fetch` stub before importing the handler.** The Supabase client captures `fetch` when it is created, so reassigning `globalThis.fetch` per test is invisible to it and the first stub silently answers every test. Keep one stub with mutable state and reset the state per test.
 - **A missing row is `406` + `PGRST116`, not a `200` with `null`.** `.single()` maps that error to `null`, while a `200` with `null` or `[]` yields a row-like value, so a missing booking comes back as the wrong status. `DatabaseService.getBookingById` reads `guest_submissions`.
 
-Run them with `bun run test:edge:handlers`. `check:edge-test-coverage` is shrink-only: adding a handler test fails until its `scripts/dev/edge-handler-baseline.json` entry is deleted.
+Run them with `bun run test:edge:handlers`.
+
+**Every edge function now has a handler test**, and the families live in `supabase/functions/tests/harness/`. Each `tests/handlers/<fn>.test.ts` is a few lines that call the contract for its shape, so the same assertion is not retyped 361 times:
+
+| Contract                      | Applies to                                      | Pins                                                                      |
+| ----------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------- |
+| `authenticatedPostContract`   | `serveAuthenticated` / `serveSuperAdmin` writes | preflight, 401 with no session, no I/O                                    |
+| `cronPostContract`            | `serveCronPost` jobs                            | wrong verb refused, 401 without the shared secret, fail-closed when unset |
+| `webhookContract`             | provider webhooks                               | unsigned and badly signed requests refused without writes                 |
+| `publicReadContract`          | token or identifier guarded reads               | 4xx with no token or identifier, no writes, no guest contact data         |
+| `publicDataContract`          | always-readable data                            | 200, no writes, no guest contact data                                     |
+| `publicListingContract`       | listings that record analytics on read          | 200, no guest contact data                                                |
+| `rejectsWithoutInputContract` | endpoints needing input or a session            | bare GET and empty POST never 5xx, never write                            |
+| `uploadEndpointContract`      | the sixteen upload endpoints                    | preflight, unauthenticated write refused before storage                   |
+
+Endpoint-specific cases belong in that file below the contract call. `check:edge-test-coverage` ratchets on the file existing, so a new function needs one before the gate passes.
+
+`check:edge-test-coverage` is shrink-only: adding a handler test fails until its `scripts/dev/edge-handler-baseline.json` entry is deleted.
 
 ### Personas and `mockTenant`
 
