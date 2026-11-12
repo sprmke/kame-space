@@ -840,5 +840,7 @@ in §13 shipped, plus the two items that were originally deferred:
   a separate plan: the push pipeline resolves org members, while guests are often anonymous with
   only a booking token, so they need their own recipient model. Every lifecycle moment already
   emails the guest, so this adds a channel rather than a missing capability.
-- **"Guest first viewed their trip" host notification (7.5)** — needs trip-view tracking
-  (`guest_trip_viewed_at`) before a notification can be sent once and only once.
+- **"Guest first viewed their trip" host notification (7.5)** — **shipped after closure.**
+  `guest_trip_first_viewed_at` stamps on the first authorised trip read (conditional update, so a
+  refresh or a second device produces one row) and raises one `booking_trip_viewed` notification
+  for the host. Bell only, not email: the host already gets mail for anything needing a decision.

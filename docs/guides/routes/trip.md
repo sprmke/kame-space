@@ -105,6 +105,19 @@ button appears there too.
 
 ---
 
+## Host signal: first view
+
+The first authorised read of this page stamps `guest_submissions.guest_trip_first_viewed_at` and
+raises one **`booking_trip_viewed`** notification for the host ("Maria opened their trip"). It is
+deliberately a bell row, not an email: the host already gets mail for anything that needs a
+decision.
+
+- The update is conditional on the column being null, so a refresh, a second device or two tabs at
+  once still produce exactly one stamp and one row.
+- A revisit is a read of an already-stamped booking, so it writes nothing at all.
+- Only an authorised read counts: a 404, a 401 or a rate-limited call never stamps.
+- The notification carries the booking, so the bell row deep-links to it.
+
 ## Request sent banner
 
 Shown on the first view after a submission (`?welcome=1`) while the booking is still
