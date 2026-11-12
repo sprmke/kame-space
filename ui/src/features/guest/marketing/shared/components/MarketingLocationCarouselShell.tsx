@@ -71,7 +71,7 @@ export function MarketingLocationCarouselShell({
 
       <div
         ref={scrollRef}
-        className="scrollbar-hide flex min-w-0 gap-3 overflow-x-auto sm:gap-4 overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="scrollbar-hide flex min-w-0 gap-3 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-4 [&::-webkit-scrollbar]:hidden"
         style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
       >
         {children}

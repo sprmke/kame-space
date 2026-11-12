@@ -76,6 +76,14 @@ Keep the family list in sync with `fontFamily` in `ui/tailwind.config.js`.
 - `app.kamespace.com` is deliberately **not** redirected yet; its role as a dashboard entry is
   unconfirmed.
 
+## Visible breadcrumbs
+
+Property, parking and development detail pages render `Home / Stays / <development or city> /
+<listing>` above the title (`ListingBreadcrumbs`). The middle crumb links the development when
+the listing belongs to one; otherwise it is plain text, so a crumb never points at a guessed
+place slug. The same item list feeds the page's `BreadcrumbList` through
+`buildBreadcrumbJsonLdFromItems`, so markup and structured data cannot drift.
+
 ## Crawler snapshot rules
 
 - User agents matched by `isCrawlerUserAgent` get the snapshot; everyone else gets `next()`.

@@ -192,6 +192,13 @@ Full field map + dashboard gaps: **[[public-property-catalog|Public property cat
 
 ---
 
+## Breadcrumbs
+
+Detail pages render `Home / Stays / <development or city> / <name>` above the title
+(`ListingBreadcrumbs`). The middle crumb is a link only when the listing belongs to a
+development; otherwise it is plain text. The same items feed the page's `BreadcrumbList`
+JSON-LD.
+
 ## SEO
 
 - Registry entries: `properties` (list), `properties-place` (`/properties/in/:location`),

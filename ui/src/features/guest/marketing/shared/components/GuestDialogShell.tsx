@@ -80,14 +80,14 @@ export function GuestDialogShell({
         aria-describedby={undefined}
       >
         <div
-          className={cn(
-            'flex shrink-0 items-center gap-3',
-            MODAL_HEADER_CLASS,
-            headerClassName
-          )}
+          className={cn('flex shrink-0 items-center gap-3', MODAL_HEADER_CLASS, headerClassName)}
         >
           <div className="min-w-0 flex-1">
-            {typeof title === 'string' ? <ResponsiveModalTitle>{title}</ResponsiveModalTitle> : title}
+            {typeof title === 'string' ? (
+              <ResponsiveModalTitle>{title}</ResponsiveModalTitle>
+            ) : (
+              title
+            )}
           </div>
 
           <ResponsiveModalClose className={MODAL_CLOSE_BUTTON_CLASS} aria-label="Close">

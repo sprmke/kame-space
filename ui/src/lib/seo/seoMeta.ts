@@ -369,6 +369,22 @@ export function buildBreadcrumbJsonLd(
   };
 }
 
+/** `BreadcrumbList` from the same items the visible trail renders. */
+export function buildBreadcrumbJsonLdFromItems(
+  items: ReadonlyArray<{ label: string; to?: string }>,
+  canonicalOrigin: string
+): Record<string, unknown> | null {
+  const crumbs = items
+    .filter((item) => item.label.trim())
+    .map((item) => ({
+      name: item.label.trim(),
+      url: item.to
+        ? `${canonicalOrigin.replace(/\/+$/, '')}${item.to}`
+        : `${canonicalOrigin.replace(/\/+$/, '')}/`,
+    }));
+  return buildBreadcrumbJsonLd(crumbs);
+}
+
 export function buildItemListJsonLd(input: {
   name: string;
   items: ReadonlyArray<{ name: string; url: string; image?: string | null }>;

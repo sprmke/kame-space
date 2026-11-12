@@ -21,11 +21,7 @@ import {
 import { useMarketingBrandColor } from '@/features/guest/marketing/shared/context/ModeSwitchTransitionContext';
 
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
-import {
-  buildPageTitle,
-  hostDescription,
-  hostTitle,
-} from '@/lib/seo/seoMeta';
+import { buildPageTitle, hostDescription, hostTitle } from '@/lib/seo/seoMeta';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 
 function HostPublicPageSkeleton() {

@@ -30,10 +30,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { parkingFlowTransition } from '@/lib/parking/parkingFlowMotion';
-import { absoluteCanonicalUrl } from '@/lib/seo/canonicalOrigin';
+import { absoluteCanonicalUrl, siteOrigin } from '@/lib/seo/canonicalOrigin';
 import {
+  buildBreadcrumbJsonLdFromItems,
   buildPageTitle,
   buildParkingJsonLd,
+  combineJsonLd,
   listingDescription,
   parkingTitle,
 } from '@/lib/seo/seoMeta';
@@ -41,6 +43,7 @@ import { descriptionFromOverride, titleFromOverride } from '@/lib/seo/seoPrimiti
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 import { cn } from '@/lib/utils';
 import { formatDateToYYYYMMDD } from '@/utils/format/dates';
+import { ListingBreadcrumbs } from '@/features/guest/marketing/shared/components/ListingBreadcrumbs';
 
 function formatRate(amount: number): string {
   return new Intl.NumberFormat('en-PH', {
@@ -64,9 +67,7 @@ export function ParkingDetailPage() {
   const { data, isLoading, isError } = usePublicParkingDetail(parkingSlug);
   const parkingPageTitle = data
     ? (titleFromOverride(data.seoTitle) ??
-      buildPageTitle(
-        parkingTitle({ name: data.name, place: data.residenceName ?? data.city })
-      ))
+      buildPageTitle(parkingTitle({ name: data.name, place: data.residenceName ?? data.city })))
     : publicPageTitle('Parking');
   usePageTitle(parkingPageTitle);
 
@@ -81,6 +82,21 @@ export function ParkingDetailPage() {
     : undefined;
 
   const parkingCanonicalPath = `/parkings/${data?.slug ?? parkingSlug}`;
+  const breadcrumbItems = data
+    ? [
+        { label: 'Home', to: '/' },
+        { label: 'Parking', to: '/parkings' },
+        ...(data.development?.slug
+          ? [
+              {
+                label: data.development.name,
+                to: `/developments/${data.development.slug}`,
+              },
+            ]
+          : []),
+        { label: data.name },
+      ]
+    : [];
   usePageMeta(
     {
       title: parkingPageTitle,
@@ -88,14 +104,17 @@ export function ParkingDetailPage() {
       canonicalPath: parkingCanonicalPath,
       image: data?.coverImage ?? null,
       jsonLd: data
-        ? buildParkingJsonLd({
-            name: data.name,
-            url: absoluteCanonicalUrl(parkingCanonicalPath),
-            description: data.description,
-            image: data.coverImage,
-            address: { city: data.city, province: data.province, country: data.country },
-            priceFrom: data.ratePerNight,
-          })
+        ? combineJsonLd([
+            buildParkingJsonLd({
+              name: data.name,
+              url: absoluteCanonicalUrl(parkingCanonicalPath),
+              description: data.description,
+              image: data.coverImage,
+              address: { city: data.city, province: data.province, country: data.country },
+              priceFrom: data.ratePerNight,
+            }),
+            buildBreadcrumbJsonLdFromItems(breadcrumbItems, siteOrigin()),
+          ])
         : null,
     },
     Boolean(data)
@@ -306,6 +325,7 @@ export function ParkingDetailPage() {
         </div>
 
         <div className="@xl:px-6 @5xl:px-8 @xl:py-8 container mx-auto px-4 py-5">
+          <ListingBreadcrumbs items={breadcrumbItems} className="mb-3" />
           <div className="@5xl:grid-cols-3 @5xl:gap-12 grid grid-cols-1 gap-8">
             <motion.div
               initial={reduceMotion ? false : { opacity: 0, y: 8 }}
