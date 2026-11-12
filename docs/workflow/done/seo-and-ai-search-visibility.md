@@ -1,13 +1,62 @@
 ---
 title: 'SEO and AI search visibility (17-point checklist)'
-status: in-progress
-tags: [workflow, planned, seo, aeo, public-site, images, performance, middleware]
-updated: 2026-11-11
-stage: in-progress
+status: done
+tags: [workflow, done, seo, aeo, public-site, images, performance, middleware]
+updated: 2026-11-13
+closed: 2026-11-13
+stage: done
 kind: plan
 ---
 
 # SEO and AI search visibility
+
+> **Closed 2026-11-13.** Shipped to production on 2026-11-12 (PR #400 into `develop`, released to
+> `main` in #445). Outcome below. The 16 unchecked tasks are follow-ups, not gaps in the shipped
+> surface; each has a reason in §Deferred, with reasons.
+
+## Outcome (production, 2026-11-12)
+
+Crawl audit of `https://kamespace.com` with a real crawler user agent, before and after
+(`done/seo-evidence/`):
+
+| Measure                       | Before (2026-11-10)   | After (2026-11-12)            |
+| ----------------------------- | --------------------- | ----------------------------- |
+| Sitemap URLs audited          | 17                    | 16                            |
+| Errors                        | 34                    | **0**                         |
+| Warnings                      | 36                    | **2** (both fixed, see below) |
+| Pages with exactly one `<h1>` | 0 of 17               | **16 of 16**                  |
+| Pages with a canonical        | 0 of 17               | **16 of 16**                  |
+| Unique titles / descriptions  | no (all "Kame Space") | **yes**                       |
+| Orphan URLs                   | 17 of 17              | **0**                         |
+| Crawler text per page         | 898 chars (shell)     | 1,118 to 1,392 chars          |
+
+Live spot checks on the apex:
+
+- `/about` as GPTBot: 14.5 KB, `<h1>Philippine stays, one operating system</h1>`, canonical
+  `https://kamespace.com/about`.
+- `/properties/kame-home`: 19.9 KB, `<h1>Kame Home</h1>`,
+  `Kame Home, Condo in San Fernando | Kame Space`, full `LodgingBusiness` + `Offer` +
+  `GeoCoordinates` + `BreadcrumbList` + `Organization` + `WebSite` graph.
+- `/properties/in/san-fernando`: 15.9 KB place snapshot with real listing links.
+- Dead listing slug: **404** with `noindex`. `/Properties/Kame-Home`: **301** to the apex path.
+- Browser user agent never receives the snapshot.
+- `robots.txt` carries the AI crawler groups, `llms.txt` and `llms-full.txt` are 200.
+
+Two residual audit findings, both fixed in this close-out PR:
+
+1. **Orphan on `/`** — the crawler nav had no link to the home page. `Home` is now the first
+   nav item.
+2. **60-character description** on a one-listing place page — `placeDescription` now
+   singularises ("1 development", not "1 developments") and always clears the 70-character
+   floor.
+
+### Tooling defect found while closing
+
+`scripts/seo/crawl-audit.ts` used the user agent `KameSpaceSeoAudit/1.0`, which has no
+bot/crawler token, so `isCrawlerUserAgent` treated it as a browser and every page came back as
+the SPA shell. The audit reported the pre-launch state for a day after the fix was live. The UA
+is now `KameSpaceSeoAuditBot/1.0` and the script asserts at startup that
+`isCrawlerUserAgent` recognises it.
 
 > **Revised 2026-11-11 (execute-plan):** audited every named path against the code on
 > `origin/develop` (`6b856c01`). Drift found and corrected below; scope for this branch is
@@ -345,7 +394,7 @@ Current: F6, F7, no link checker.
 - [x] SEO-12.4 New `scripts/seo/crawl-audit.mjs` (`bun run seo:audit -- --origin <url>`): reads the sitemap, fetches each URL with a crawler UA and a browser UA, follows internal links one level, and reports status codes, redirect chains, missing/duplicate titles and descriptions, canonical mismatch, `noindex` on sitemap URLs, images without alt, broken images (Storage 404), JSON-LD parse errors, and orphans. Output Markdown + JSON to `docs/workflow/in-progress/seo-evidence/`.
 - [x] SEO-12.5 External link check (report only, never fails CI): host-provided URLs (Facebook, Instagram, maps), footer socials, email template links.
 - [x] SEO-12.6 Stored media URLs: report `settings.media[].url` and cover image URLs that 404 in Storage (deleted files still referenced).
-- [x] SEO-12.7 Schedule `seo:audit` weekly against production in `web-probe.yml` (or a new workflow) and on PRs that touch `ui/src/routes`, `features/guest/**/routes`, `lib/seo`, `middleware.ts`, `public-sitemap`, against the preview URL.
+- [x] SEO-12.7 Schedule `seo:audit` weekly against production in `web-probe.yml`: the `seo-audit` job runs after each `main` release and on a Monday 02:00 UTC cron, and uploads the report as an artifact. The PR-triggered preview variant was dropped: the per-branch preview alias lags the build, and Vercel deployment protection returns its own login page instead of the site.
 
 ### Item 13. Compress images
 
@@ -456,19 +505,19 @@ Current: none.
 
 Each phase is one or more PRs, merged to `main` and tested on the dev deploy before the next.
 
-| Phase | Name                        | Tasks                                                                                                                         | Size | Depends on |
-| ----- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---- | ---------- |
-| 0     | Baseline                    | SEO-12.4 (crawl audit script first), SEO-14.8, SEO-19.3 on current prod, Lighthouse runs                                      | S    | none       |
-| 1     | Foundation                  | SEO-0.1 to 0.7, SEO-4.2, SEO-4.3                                                                                              | L    | 0          |
-| 2     | Crawl control               | Items 1, 2, 3, SEO-4.1, 4.4 to 4.9, SEO-12.1 to 12.3                                                                          | M    | 1          |
-| 3     | Titles, descriptions, OG    | Items 5, 6 (6.1 to 6.5, 6.7, 6.8), 18 (18.1, 18.2, 18.5)                                                                      | M    | 1          |
-| 4     | Snapshot content and schema | Items 10, 11 (crawler HTML for all routes, breadcrumbs JSON-LD, related links)                                                | L    | 1, 3       |
-| 5     | Images                      | Items 9, 13                                                                                                                   | L    | 1          |
-| 6     | Slugs and redirects         | Item 17, SEO-12.5, 12.6                                                                                                       | M    | 2          |
-| 7     | HTTPS and CWV               | Items 16, 14 (14.1 to 14.7)                                                                                                   | M    | 5          |
-| 8     | AI discovery and consoles   | Item 20, Item 19, SEO-2.4                                                                                                     | M    | 2, 4       |
-| 9     | Optional host features      | SEO-6.6 (search preview override), SEO-18.3 (generated OG cards), SEO-18.4, SEO-11.7 (visible breadcrumbs, needs UI sign-off) | M    | 3, 4       |
-| 10    | After report                | Re-run Phase 0, compare, write before/after in the evidence folder, schedule SEO-12.7                                         | S    | all        |
+| Phase | Name                        | Tasks                                                                                                                                                | Size | Depends on |
+| ----- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ---------- |
+| 0     | Baseline                    | SEO-12.4 (crawl audit script first), SEO-14.8, SEO-19.3 on current prod, Lighthouse runs                                                             | S    | none       |
+| 1     | Foundation                  | SEO-0.1 to 0.7, SEO-4.2, SEO-4.3                                                                                                                     | L    | 0          |
+| 2     | Crawl control               | Items 1, 2, 3, SEO-4.1, 4.4 to 4.9, SEO-12.1 to 12.3                                                                                                 | M    | 1          |
+| 3     | Titles, descriptions, OG    | Items 5, 6 (6.1 to 6.5, 6.7, 6.8), 18 (18.1, 18.2, 18.5)                                                                                             | M    | 1          |
+| 4     | Snapshot content and schema | Items 10, 11 (crawler HTML for all routes, breadcrumbs JSON-LD, related links)                                                                       | L    | 1, 3       |
+| 5     | Images                      | Items 9, 13                                                                                                                                          | L    | 1          |
+| 6     | Slugs and redirects         | Item 17, SEO-12.5, 12.6                                                                                                                              | M    | 2          |
+| 7     | HTTPS and CWV               | Items 16, 14 (14.1 to 14.7)                                                                                                                          | M    | 5          |
+| 8     | AI discovery and consoles   | Item 20, Item 19, SEO-2.4                                                                                                                            | M    | 2, 4       |
+| 9     | Optional host features      | SEO-6.6 (search preview override), SEO-18.3 (generated OG cards), SEO-18.4, SEO-11.7 (visible breadcrumbs, needs UI sign-off)                        | M    | 3, 4       |
+| 10    | After report                | ✅ Shipped 2026-11-13: audit re-run against production, before/after recorded in `done/seo-evidence/`, and the weekly audit scheduled in `web-probe.yml` (SEO-12.7). | S    | all        |
 
 Production steps (Supabase migrations for SEO-17.1/17.2, edge deploys, backfills) need the
 `kamewave` unlock as usual. Vercel env changes (SEO-0.2, SEO-13.1, SEO-19.5) are listed in each

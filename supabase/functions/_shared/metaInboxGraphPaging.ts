@@ -53,12 +53,15 @@ export function extractMetaPagingCursor(pagingNext: string | null | undefined): 
 export function buildMetaConversationHeadUrl(
   pageId: string,
   pageAccessToken: string,
-  platform: 'messenger' | 'instagram'
+  platform: 'messenger' | 'instagram',
+  after?: string | null
 ): string {
   const url = new URL(`${META_GRAPH_BASE}/${pageId}/conversations`);
   url.searchParams.set('platform', platform);
   url.searchParams.set('fields', 'id,updated_time');
   url.searchParams.set('limit', '25');
+  const cursor = after?.trim();
+  if (cursor) url.searchParams.set('after', cursor);
   url.searchParams.set('access_token', pageAccessToken);
   return url.toString();
 }

@@ -38,6 +38,10 @@ import {
   type InboxApiScope,
 } from '@/features/dashboard/inbox/lib/inboxApi';
 import { uploadInboxChatAttachment } from '@/features/dashboard/inbox/lib/inboxChatAttachment';
+import {
+  patchMessageRows,
+  patchThreadRows,
+} from '@/features/dashboard/inbox/lib/inboxCachePatch';
 import { handleFeatureUnavailableMutationError } from '@/lib/featureAvailability/featureUnavailableError';
 import { isInboxMockMode } from '@/features/dashboard/inbox/lib/inboxMockMode';
 import {
@@ -747,34 +751,14 @@ type InboxBroadcastSignal = {
   at?: string;
 };
 
-/** Patch changed thread rows in place, and add a brand new thread at the top. */
+/** Apply a thread delta and a message delta to the cache. Pure logic lives in the lib. */
 function mergeThreadRowsIntoCache(qc: QueryClient, rows: InboxConversation[]) {
   if (!rows.length) return;
-  const byId = new Map(rows.map((row) => [row.id, row]));
-  qc.setQueriesData<InfiniteData<InboxThreadsPage>>({ queryKey: [INBOX_THREADS_KEY] }, (old) => {
-    if (!old?.pages?.length) return old;
-    const seen = new Set<string>();
-    const pages = old.pages.map((page) => ({
-      ...page,
-      conversations: page.conversations.map((conversation) => {
-        seen.add(conversation.id);
-        return byId.get(conversation.id) ?? conversation;
-      }),
-    }));
-    const fresh = rows.filter((row) => !seen.has(row.id) && !row.id.startsWith('mock-'));
-    if (fresh.length) {
-      pages[0] = {
-        ...pages[0]!,
-        conversations: [...fresh, ...pages[0]!.conversations].sort((a, b) =>
-          (b.last_message_at ?? '').localeCompare(a.last_message_at ?? '')
-        ),
-      };
-    }
-    return { ...old, pages };
-  });
+  qc.setQueriesData<InfiniteData<InboxThreadsPage>>({ queryKey: [INBOX_THREADS_KEY] }, (old) =>
+    patchThreadRows(old, rows)
+  );
 }
 
-/** Patch changed messages in the open thread, keeping send order. */
 function mergeMessageRowsIntoCache(
   qc: QueryClient,
   msgKey: readonly unknown[],
@@ -783,24 +767,8 @@ function mergeMessageRowsIntoCache(
   if (!rows.length) return false;
   let patched = false;
   qc.setQueryData<InfiniteData<{ messages: InboxMessage[] }>>(msgKey, (old) => {
-    if (!old?.pages?.length) return old;
-    const byId = new Map(rows.map((row) => [row.id, row]));
-    const pages = old.pages.map((page) => ({
-      ...page,
-      messages: page.messages.map((message) => byId.get(message.id) ?? message),
-    }));
-    const existing = new Set(pages.flatMap((page) => page.messages.map((message) => message.id)));
-    const fresh = rows.filter((row) => !existing.has(row.id));
-    if (fresh.length) {
-      pages[0] = {
-        ...pages[0]!,
-        messages: [...pages[0]!.messages, ...fresh].sort((a, b) =>
-          (a.sent_at ?? '').localeCompare(b.sent_at ?? '')
-        ),
-      };
-    }
     patched = true;
-    return { ...old, pages };
+    return patchMessageRows(old, rows);
   });
   return patched;
 }

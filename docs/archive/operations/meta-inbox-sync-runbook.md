@@ -56,6 +56,19 @@ Two invariants worth remembering:
 
 ### Webhooks stopped arriving
 
+**Check the app-level subscription first.** The health check now reads
+`GET /app/subscriptions` on every run and reports `wrong_callback_url`, `inactive`, `missing`
+or `missing_fields` per object, then captures the problem to Sentry. App-level and Page-level
+subscriptions are separate settings, and the app-level one is what actually gates delivery: a
+Page can look perfectly subscribed while the app points at an ngrok tunnel or is switched off.
+
+Fix the app-level subscription in the Meta console, then run the same check again. A
+re-subscribe now asks reconciliation for a **72-hour look-back** on that connection, so the
+gap is filled without a reconnect. Reconciliation pages the conversation head up to four
+times to reach that far back.
+
+If the app subscription is correct, continue below.
+
 Symptom: threads are stale, `meta_sync_state.last_checked_at` moves but no new messages.
 
 1. Channels → **Fix connection** on the affected account. It re-verifies and re-subscribes

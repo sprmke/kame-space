@@ -78,6 +78,7 @@ export function PropertyListItem({ property, index = 0 }: PropertyListItemProps)
                     src={image}
                     alt={buildListingImageAlt({ listingName: property.name, index: idx })}
                     fill
+                    priority={index === 0 && idx === 0}
                     className={cn(
                       'object-cover transition-all duration-500',
                       idx === currentImageIndex ? 'opacity-100' : 'opacity-0'
