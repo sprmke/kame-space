@@ -708,14 +708,26 @@ simply never passed it.
 
 No visual change: the same image at the same size, loaded earlier.
 
-### Expected effect
+### Measured after
 
-The image starts downloading during HTML parse instead of after layout, and the connection
-handshake is already open. Re-run the weekly Lighthouse job after release and compare `/` ,
-`/properties` and `/developments`; the numbers above are the "before".
+Released 2026-11-12, same mobile viewport, LCP element read from a PerformanceObserver. The element
+now reports `loading=eager` and `fetchPriority=high`, which is the proof the change applied.
 
-`/properties` measured 8507 ms and `/parkings` 5991 ms in the same run, with the same lazy-first-card
-pattern, which is why the fix was applied to the property cards too.
+| Route           | Before  | After       | Change                 |
+| --------------- | ------- | ----------- | ---------------------- |
+| `/properties`   | 8507 ms | **4320 ms** | **-49%**               |
+| `/developments` | 7668 ms | 6628 ms     | -14%                   |
+| `/`             | -       | 1112 ms     | hero already optimised |
+
+`/properties` halved. `/developments` improved less, and the reason matters: its cover still comes
+from `images.unsplash.com` with a `w=480` transform, and that third-party fetch is now most of the
+remaining 6.6 s. Real developments carry Supabase Storage covers (the `/properties` LCP is a
+Supabase `.avif`), so this is a fixture problem, not an app one. Making `/developments` fast would
+mean serving local covers in the demo data, which is a content change rather than a performance
+one.
+
+`/parkings` measured 5991 ms in the same run, with the same lazy-first-card pattern, which is why
+the fix went into the property cards too.
 
 ## Release state
 
