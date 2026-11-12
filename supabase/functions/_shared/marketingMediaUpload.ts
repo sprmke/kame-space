@@ -4,6 +4,7 @@
 
 import type { SupabaseClient } from './supabaseJs.ts';
 
+import { MARKETING_MEDIA_CACHE_CONTROL } from './marketingMediaStorage.ts';
 import { PROPERTY_MEDIA_BUCKET } from './propertyMedia.ts';
 import { assertUploadMatchesBytes } from './sniffMime.ts';
 import { formatPublicUrl } from './utils.ts';
@@ -81,10 +82,13 @@ export async function uploadMarketingMediaBytes(
 ): Promise<string> {
   const contentType = assertUploadMatchesBytes(bytes, mime, MARKETING_MEDIA_MIME);
   const storagePath = marketingExportStoragePath(propertyId, ext);
+  // `marketingExportStoragePath` is `{propertyId}/{prefix}/{timestamp}-{uuid}{ext}`, so the
+  // object at this path never changes. Caching it for five minutes made every repeat view a
+  // re-download for no reason.
   const { error } = await supabase.storage.from(PROPERTY_MEDIA_BUCKET).upload(storagePath, bytes, {
     contentType,
     upsert: true,
-    cacheControl: '300',
+    cacheControl: MARKETING_MEDIA_CACHE_CONTROL,
   });
 
   if (error) {

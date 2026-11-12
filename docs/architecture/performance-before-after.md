@@ -630,6 +630,56 @@ than network. The remaining structural option is collapsing the burst; it is wor
 The opt-in team query shipped in #422. It did not remove the team calls, and the trace above
 explains why: they come from the setup guide, which only mounts when it is open.
 
+## 16. Uploads
+
+Measured 2026-11-12 against production, `upload-app-settings-asset`, warm, two samples per size,
+real JPEGs encoded to size.
+
+| File     | Total time  |
+| -------- | ----------- |
+| 10 KiB   | 0.89-1.40 s |
+| 64 KiB   | 0.86-1.12 s |
+| 1.55 MiB | 1.75-1.78 s |
+| 4.53 MiB | 2.48-3.25 s |
+
+Two numbers fall out of that: a **fixed ~0.85 s per upload** regardless of size, and roughly
+**0.5 s per MiB** on top. The fixed part is auth plus the storage round trip plus the row write;
+the linear part is the file being proxied through the edge function.
+
+### What the path actually does
+
+- Every upload is a multipart POST to an edge function, which then uploads to Storage. File bytes
+  travel to the function and then to storage; nothing streams end to end.
+- `UploadService.uploadFile` buffered the **entire file** (`arrayBuffer()`) only to sniff its MIME
+  type, then uploaded the copy. The sniffer reads the first 12 bytes.
+- The guest booking submit awaited **eight uploads in series**: pet document, pet photo, payment
+  receipt, then up to five ID documents. At the measured fixed cost that is roughly 6.8 s of pure
+  waiting before the booking row is written.
+
+Images are not the problem: the client already runs `prepareImageForUpload` before sending. The
+linear cost lands on **documents and video**, which are never compressed.
+
+### Changed
+
+| Change                                                                             | File                              |
+| ---------------------------------------------------------------------------------- | --------------------------------- |
+| Sniff 512 bytes, upload the `File` so the runtime streams it                       | `_shared/uploadService.ts`        |
+| Booking submit runs its uploads concurrently                                       | `_shared/databaseService.ts`      |
+| Bounded pool, 3 in flight, so a five-guest form cannot hold five documents at once | `_shared/concurrency.ts`          |
+| Immutable marketing exports cached for a year instead of five minutes              | `_shared/marketingMediaUpload.ts` |
+
+### Expected effect
+
+A form with eight uploads goes from eight waves to three at the bounded pool size: about
+**6.8 s to 2.6 s** of upload waiting, derived from the measured per-upload cost above. That is a
+calculation, not an end-to-end measurement: a real booking submit needs a full valid payload, and
+the load-test tooling deliberately refuses to write to production. The mechanism is proven by
+`concurrency_test.ts`, where three 40 ms jobs finish in 41 ms rather than 120 ms.
+
+What is **not** addressed: the bytes still proxy through the function. Direct-to-Storage uploads
+with a signed URL would remove the ~0.5 s/MiB entirely, but that has to re-do authorisation and
+post-upload validation on ten endpoints, which is a deliberate migration rather than a tweak.
+
 ## Release state
 
 **2026-11-10.** PR #371 synced `main` to `develop`'s tree and shipped the UI side.

@@ -8,6 +8,7 @@ import {
   requestPdfClearPatchForChangedFormFields,
   shouldRevertGuestFieldEditsToPendingReview,
 } from './statusMachine.ts';
+import { runWithConcurrency } from './concurrency.ts';
 import { UploadService } from './uploadService.ts';
 import { assertWithinUploadLimit } from './uploadLimits.ts';
 import { hashIdentityEmail } from './identityVerification.ts';
@@ -277,51 +278,42 @@ export class DatabaseService {
         assertWithinUploadLimit(petImage, 'image');
       }
 
-      if (hasPets) {
-        // Handle pet vaccination upload
+      // These three are independent. Each used to be awaited in turn, so a form with a pet
+      // document, a pet photo and a receipt paid three sequential round trips before the
+      // booking was written. Branches and errors are unchanged; only the waiting overlaps.
+      const uploadPetVaccinationIfNeeded = async (): Promise<string | undefined> => {
+        if (!hasPets) return undefined;
         if (petVaccination) {
-          const petVaccinationFileName = formData.get('petVaccinationFileName') as string;
-          const prefixedFileName = petVaccinationFileName;
+          const prefixedFileName = formData.get('petVaccinationFileName') as string;
           if (saveImagesToStorage) {
-            petVaccinationUrl = await UploadService.uploadPetVaccination(
+            return await UploadService.uploadPetVaccination(
               petVaccination,
               prefixedFileName,
               propertyId
             );
-          } else {
-            console.log('⚠️ Skipping pet vaccination upload (saveImagesToStorage=false)');
-            petVaccinationUrl = 'dev-mode-skipped';
           }
-        } else if (existingBooking) {
-          petVaccinationUrl = existingBooking.pet_vaccination_url;
-        } else if (!saveImagesToStorage) {
-          petVaccinationUrl = 'dev-mode-skipped';
-        } else {
-          throw new Error('Pet vaccination record is required when bringing pets');
+          console.log('⚠️ Skipping pet vaccination upload (saveImagesToStorage=false)');
+          return 'dev-mode-skipped';
         }
+        if (existingBooking) return existingBooking.pet_vaccination_url;
+        if (!saveImagesToStorage) return 'dev-mode-skipped';
+        throw new Error('Pet vaccination record is required when bringing pets');
+      };
 
-        // Handle pet image upload
+      const uploadPetImageIfNeeded = async (): Promise<string | undefined> => {
+        if (!hasPets) return undefined;
         if (petImage) {
-          const petImageFileName = formData.get('petImageFileName') as string;
-          const prefixedFileName = petImageFileName;
+          const prefixedFileName = formData.get('petImageFileName') as string;
           if (saveImagesToStorage) {
-            petImageUrl = await UploadService.uploadPetImage(
-              petImage,
-              prefixedFileName,
-              propertyId
-            );
-          } else {
-            console.log('⚠️ Skipping pet image upload (saveImagesToStorage=false)');
-            petImageUrl = 'dev-mode-skipped';
+            return await UploadService.uploadPetImage(petImage, prefixedFileName, propertyId);
           }
-        } else if (existingBooking) {
-          petImageUrl = existingBooking.pet_image_url;
-        } else if (!saveImagesToStorage) {
-          petImageUrl = 'dev-mode-skipped';
-        } else {
-          throw new Error('Pet image is required when bringing pets');
+          console.log('⚠️ Skipping pet image upload (saveImagesToStorage=false)');
+          return 'dev-mode-skipped';
         }
-      }
+        if (existingBooking) return existingBooking.pet_image_url;
+        if (!saveImagesToStorage) return 'dev-mode-skipped';
+        throw new Error('Pet image is required when bringing pets');
+      };
 
       // Get the downpayment receipt file (FormData: paymentReceipt → payment_receipt_url)
       // Airbnb bookings skip the payment step — receipt is not required.
@@ -330,28 +322,34 @@ export class DatabaseService {
       if (paymentReceipt instanceof File && paymentReceipt.size > 0) {
         assertWithinUploadLimit(paymentReceipt, 'document');
       }
-      if (paymentReceipt) {
-        const paymentReceiptFileName = formData.get('paymentReceiptFileName') as string;
-        const prefixedFileName = paymentReceiptFileName;
-        if (saveImagesToStorage) {
-          paymentReceiptUrl = await UploadService.uploadPaymentReceipt(
-            paymentReceipt,
-            prefixedFileName,
-            propertyId
-          );
-        } else {
+
+      const uploadPaymentReceiptIfNeeded = async (): Promise<string | undefined> => {
+        if (paymentReceipt) {
+          const prefixedFileName = formData.get('paymentReceiptFileName') as string;
+          if (saveImagesToStorage) {
+            return await UploadService.uploadPaymentReceipt(
+              paymentReceipt,
+              prefixedFileName,
+              propertyId
+            );
+          }
           console.log('⚠️ Skipping downpayment receipt upload (saveImagesToStorage=false)');
-          paymentReceiptUrl = 'dev-mode-skipped';
+          return 'dev-mode-skipped';
         }
-      } else if (existingBooking) {
-        paymentReceiptUrl = existingBooking.payment_receipt_url;
-      } else if (!saveImagesToStorage) {
-        paymentReceiptUrl = 'dev-mode-skipped';
-      } else if (isAirbnbSource) {
-        paymentReceiptUrl = '';
-      } else {
+        if (existingBooking) return existingBooking.payment_receipt_url;
+        if (!saveImagesToStorage) return 'dev-mode-skipped';
+        if (isAirbnbSource) return '';
         throw new Error('Downpayment receipt is required');
-      }
+      };
+
+      const [petVaccinationResult, petImageResult, paymentReceiptResult] = await Promise.all([
+        uploadPetVaccinationIfNeeded(),
+        uploadPetImageIfNeeded(),
+        uploadPaymentReceiptIfNeeded(),
+      ]);
+      petVaccinationUrl = petVaccinationResult;
+      petImageUrl = petImageResult;
+      paymentReceiptUrl = paymentReceiptResult ?? '';
 
       // Get the valid ID files (primary + additional guests)
       const primaryGuestAge = Number(formData.get('primaryGuestAge') || 0);
@@ -503,54 +501,82 @@ export class DatabaseService {
         return trimmed || undefined;
       };
 
-      const validIdUrl =
-        (await uploadValidIdIfPresent(
-          'validId',
-          'validIdFileName',
-          true,
-          readIdentityId('primaryIdentityVerificationId'),
-          1
-        )) || '';
-      const guest2ValidIdUrl =
-        guest2Age >= 18
-          ? await uploadValidIdIfPresent(
-              'guest2ValidId',
-              'guest2ValidIdFileName',
-              true,
-              readIdentityId('guest2IdentityVerificationId'),
-              2
+      type IdSpec = {
+        field: string;
+        fileNameField: string;
+        required: boolean;
+        identityId: string | undefined;
+        slot: number;
+        enabled: boolean;
+      };
+
+      const idSpecs: IdSpec[] = [
+        {
+          field: 'validId',
+          fileNameField: 'validIdFileName',
+          required: true,
+          identityId: readIdentityId('primaryIdentityVerificationId'),
+          slot: 1,
+          enabled: true,
+        },
+        {
+          field: 'guest2ValidId',
+          fileNameField: 'guest2ValidIdFileName',
+          required: true,
+          identityId: readIdentityId('guest2IdentityVerificationId'),
+          slot: 2,
+          enabled: guest2Age >= 18,
+        },
+        {
+          field: 'guest3ValidId',
+          fileNameField: 'guest3ValidIdFileName',
+          required: true,
+          identityId: readIdentityId('guest3IdentityVerificationId'),
+          slot: 3,
+          enabled: guest3Age >= 18,
+        },
+        {
+          field: 'guest4ValidId',
+          fileNameField: 'guest4ValidIdFileName',
+          required: true,
+          identityId: readIdentityId('guest4IdentityVerificationId'),
+          slot: 4,
+          enabled: guest4Age >= 18,
+        },
+        {
+          field: 'guest5ValidId',
+          fileNameField: 'guest5ValidIdFileName',
+          required: true,
+          identityId: readIdentityId('guest5IdentityVerificationId'),
+          slot: 5,
+          enabled: guest5Age >= 18,
+        },
+      ];
+
+      // Slots that were skipped stay absent, exactly as the previous ternary chain left them.
+      const idUploads = new Map<number, string | undefined>();
+      await runWithConcurrency(
+        idSpecs.filter((spec) => spec.enabled),
+        3,
+        async (spec) => {
+          idUploads.set(
+            spec.slot,
+            await uploadValidIdIfPresent(
+              spec.field,
+              spec.fileNameField,
+              spec.required,
+              spec.identityId,
+              spec.slot
             )
-          : undefined;
-      const guest3ValidIdUrl =
-        guest3Age >= 18
-          ? await uploadValidIdIfPresent(
-              'guest3ValidId',
-              'guest3ValidIdFileName',
-              true,
-              readIdentityId('guest3IdentityVerificationId'),
-              3
-            )
-          : undefined;
-      const guest4ValidIdUrl =
-        guest4Age >= 18
-          ? await uploadValidIdIfPresent(
-              'guest4ValidId',
-              'guest4ValidIdFileName',
-              true,
-              readIdentityId('guest4IdentityVerificationId'),
-              4
-            )
-          : undefined;
-      const guest5ValidIdUrl =
-        guest5Age >= 18
-          ? await uploadValidIdIfPresent(
-              'guest5ValidId',
-              'guest5ValidIdFileName',
-              true,
-              readIdentityId('guest5IdentityVerificationId'),
-              5
-            )
-          : undefined;
+          );
+        }
+      );
+
+      const validIdUrl = idUploads.get(1) || '';
+      const guest2ValidIdUrl = idUploads.get(2);
+      const guest3ValidIdUrl = idUploads.get(3);
+      const guest4ValidIdUrl = idUploads.get(4);
+      const guest5ValidIdUrl = idUploads.get(5);
 
       // Convert form data to an object
       const formDataObj: Partial<GuestFormData> = {};
