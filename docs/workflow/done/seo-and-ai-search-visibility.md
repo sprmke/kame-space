@@ -381,7 +381,10 @@ links in crawler HTML (F1), no breadcrumbs, possible JS-only navigation.
 - [x] SEO-11.4 Host pages link to all their public listings; listings link back to the host page.
 - [x] SEO-11.5 Audit public cards and buttons for `onClick={() => navigate(...)}` or `div` click handlers that should be `<Link>`/`<a href>`. Fix without visual change.
 - [x] SEO-11.6 Descriptive anchor text in snapshot links (listing names, "Condos in Makati"), no "click here" or "view".
-- [ ] SEO-11.7 Visible breadcrumbs on detail pages: **separate UI decision** (out of scope by default because it changes UI). JSON-LD breadcrumbs (SEO-10.2) ship regardless.
+- [x] SEO-11.7 Visible breadcrumbs on detail pages: **separate UI decision** (out of scope by default because it changes UI). JSON-LD breadcrumbs (SEO-10.2) ship regardless.
+
+  **Shipped 2026-11-13 (user asked for it).** `ListingBreadcrumbs` renders `Home / Stays / <development or city> / <listing>` above the title on the property, parking and development detail pages. The middle crumb links the development when the listing belongs to one and is plain text otherwise, so a crumb can never point at a guessed place slug and 404. The same items feed `BreadcrumbList` through `buildBreadcrumbJsonLdFromItems`, so the visible trail and the structured data cannot disagree. Wraps instead of scrolling on phone; verified at 375, 768 and 1280 with no horizontal overflow.
+
 - [x] SEO-11.8 Orphan check: crawl audit reports sitemap URLs with zero inbound internal links.
 
 ### Item 12. Fix broken links
@@ -505,18 +508,18 @@ Current: none.
 
 Each phase is one or more PRs, merged to `main` and tested on the dev deploy before the next.
 
-| Phase | Name                        | Tasks                                                                                                                                                | Size | Depends on |
-| ----- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ---------- |
-| 0     | Baseline                    | SEO-12.4 (crawl audit script first), SEO-14.8, SEO-19.3 on current prod, Lighthouse runs                                                             | S    | none       |
-| 1     | Foundation                  | SEO-0.1 to 0.7, SEO-4.2, SEO-4.3                                                                                                                     | L    | 0          |
-| 2     | Crawl control               | Items 1, 2, 3, SEO-4.1, 4.4 to 4.9, SEO-12.1 to 12.3                                                                                                 | M    | 1          |
-| 3     | Titles, descriptions, OG    | Items 5, 6 (6.1 to 6.5, 6.7, 6.8), 18 (18.1, 18.2, 18.5)                                                                                             | M    | 1          |
-| 4     | Snapshot content and schema | Items 10, 11 (crawler HTML for all routes, breadcrumbs JSON-LD, related links)                                                                       | L    | 1, 3       |
-| 5     | Images                      | Items 9, 13                                                                                                                                          | L    | 1          |
-| 6     | Slugs and redirects         | Item 17, SEO-12.5, 12.6                                                                                                                              | M    | 2          |
-| 7     | HTTPS and CWV               | Items 16, 14 (14.1 to 14.7)                                                                                                                          | M    | 5          |
-| 8     | AI discovery and consoles   | Item 20, Item 19, SEO-2.4                                                                                                                            | M    | 2, 4       |
-| 9     | Optional host features      | SEO-6.6 (search preview override), SEO-18.3 (generated OG cards), SEO-18.4, SEO-11.7 (visible breadcrumbs, needs UI sign-off)                        | M    | 3, 4       |
+| Phase | Name                        | Tasks                                                                                                                                                                | Size | Depends on |
+| ----- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ---------- |
+| 0     | Baseline                    | SEO-12.4 (crawl audit script first), SEO-14.8, SEO-19.3 on current prod, Lighthouse runs                                                                             | S    | none       |
+| 1     | Foundation                  | SEO-0.1 to 0.7, SEO-4.2, SEO-4.3                                                                                                                                     | L    | 0          |
+| 2     | Crawl control               | Items 1, 2, 3, SEO-4.1, 4.4 to 4.9, SEO-12.1 to 12.3                                                                                                                 | M    | 1          |
+| 3     | Titles, descriptions, OG    | Items 5, 6 (6.1 to 6.5, 6.7, 6.8), 18 (18.1, 18.2, 18.5)                                                                                                             | M    | 1          |
+| 4     | Snapshot content and schema | Items 10, 11 (crawler HTML for all routes, breadcrumbs JSON-LD, related links)                                                                                       | L    | 1, 3       |
+| 5     | Images                      | Items 9, 13                                                                                                                                                          | L    | 1          |
+| 6     | Slugs and redirects         | Item 17, SEO-12.5, 12.6                                                                                                                                              | M    | 2          |
+| 7     | HTTPS and CWV               | Items 16, 14 (14.1 to 14.7)                                                                                                                                          | M    | 5          |
+| 8     | AI discovery and consoles   | Item 20, Item 19, SEO-2.4                                                                                                                                            | M    | 2, 4       |
+| 9     | Optional host features      | SEO-6.6 (search preview override), SEO-18.3 (generated OG cards), SEO-18.4, SEO-11.7 (visible breadcrumbs, needs UI sign-off)                                        | M    | 3, 4       |
 | 10    | After report                | ✅ Shipped 2026-11-13: audit re-run against production, before/after recorded in `done/seo-evidence/`, and the weekly audit scheduled in `web-probe.yml` (SEO-12.7). | S    | all        |
 
 Production steps (Supabase migrations for SEO-17.1/17.2, edge deploys, backfills) need the
@@ -610,7 +613,6 @@ Run on `feat/seo-foundation` (2026-11-11), worktree `.worktrees/seo-foundation`.
 | SEO-6.6 Search preview override               | A new host-facing settings surface inside a 600-line form. It needs the full Plans + RBAC + audit + guard pass and its own review, not a tail-end addition. The data path (`settings` JSONB) is ready.                                  |
 | SEO-9.4 AI alt suggestion                     | Needs the AI gateway vision path wired into the upload flow plus credit accounting. The deterministic fallback and the host field ship now, so the suggestion only saves typing.                                                        |
 | SEO-9.10 Static marketing alt for film scenes | For-hosts film scenes render inline SVG (`PhotoTile`), so there is no photo to describe. Remaining decorative art keeps `alt=""` by design.                                                                                             |
-| SEO-11.7 Visible breadcrumbs                  | Explicitly out of scope in §2 (changes visible UI). JSON-LD breadcrumbs ship in SEO-10.2.                                                                                                                                               |
 | SEO-13.2 Every image through `MarketingImage` | Swapping raw `<img>` for a `fill`-based component changes layout per template and needs visual QA on each showcase direction. The measurable win (AVIF/WebP + budget guard) shipped in SEO-13.1 to 13.7.                                |
 | SEO-14.5 Fewer font families on public pages  | Hosts pick the brand font for their public pages, so 15 families are the product. The stylesheet is already `preload` + async swap (not render-blocking) and `display=swap` is set. Restricting it per route would break host branding. |
 | SEO-18.3 Generated OG cards                   | The plan says decide after 18.2 based on share click-through. 18.2 shipped; this waits on data.                                                                                                                                         |

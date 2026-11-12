@@ -63,9 +63,7 @@ export function ExploreDestinationAtlas() {
           viewport={inViewOnce}
           className="max-w-xl"
         >
-          <h2 className="text-foreground public-section-title font-bold">
-            Where to next
-          </h2>
+          <h2 className="text-foreground public-section-title font-bold">Where to next</h2>
           <p className="text-muted-foreground mt-3">
             From island beachfronts to city lofts. Pick a place and see what is open for your dates.
           </p>

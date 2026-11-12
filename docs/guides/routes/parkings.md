@@ -191,6 +191,13 @@ Security / access notes:
 
 ---
 
+## Breadcrumbs
+
+Detail pages render `Home / Parking / <development or city> / <name>` above the title
+(`ListingBreadcrumbs`). The middle crumb is a link only when the listing belongs to a
+development; otherwise it is plain text. The same items feed the page's `BreadcrumbList`
+JSON-LD.
+
 ## SEO
 
 - Registry entries: `parkings` (list), `parkings-place`, `parking-detail`,
