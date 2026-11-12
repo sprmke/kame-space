@@ -133,6 +133,19 @@ one-shot backfill `20261210120100_stay_guide_config_v2.sql`.
 `stay-guide-warm-arrival` rows to `showcase-aurora`
 (`20261210120300_stay_guide_template_keys.sql`).
 
+## The building block
+
+Below the templated guide, the page renders **"The building"** from the residence
+(`buildingInfo` in `get-guest-stay-guide`): building rules with a Note / No / Ok label,
+requirements, guides, other information and facilities. It is system content, not a host
+chapter, so it sits under the template in the app's own tokens and cannot be reordered.
+
+- Gated by `guestInfoVisibility.stayGuide`, the same switch as the trip page, and resolved by
+  the same function (`loadGuestBuildingInfoForProperty`), so a guest never sees two versions.
+- `buildingInfo: null` when the switch is off or the building has nothing filled in, and the
+  page then renders no section at all.
+- Written in the super-admin development editor under Guest information.
+
 ## API
 
 | Function                   | Method | Auth                                                 | Query                                                            |

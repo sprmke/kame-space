@@ -38,6 +38,10 @@ import {
   type StayGuideCheckInDocumentDto,
 } from './stayGuideCheckInDocuments.ts';
 import type { GuestSubmission } from './types.ts';
+import {
+  loadGuestBuildingInfoForProperty,
+  type GuestBuildingInfo,
+} from './developmentGuestInfo.ts';
 
 export const STAY_GUIDE_STANDARD_SECTION_KEYS = [
   'check-in-instructions',
@@ -355,6 +359,8 @@ export type GuestStayGuideDto = {
     organizationName: string;
   };
   sections: StayGuideSectionDto[];
+  /** Building rules and info, filtered by `guestInfoVisibility.stayGuide`. */
+  buildingInfo: GuestBuildingInfo | null;
   /** Approved check-in papers for this booking (GAF, pet, parking, custom). */
   checkInDocuments: StayGuideCheckInDocumentDto[];
   validUntil: string;
@@ -691,9 +697,15 @@ async function buildGuestStayGuidePayload(
     checkInYmd <= nowYmd && nowYmd < checkOutYmd
   );
 
-  const [essentials, tripContent] = await Promise.all([
+  const [essentials, tripContent, buildingInfo] = await Promise.all([
     loadGuestEssentials({ propertyId, booking }),
     loadGuestTripContent({ propertyId, booking, publicOrigin, stage }),
+    // Same resolver and switch as the trip page, so a guest never sees two versions.
+    loadGuestBuildingInfoForProperty(
+      supabaseAdmin(),
+      { residenceName: property.residenceName },
+      'stayGuide'
+    ),
   ]);
 
   const revealLabel =
@@ -739,6 +751,7 @@ async function buildGuestStayGuidePayload(
     },
     host,
     sections,
+    buildingInfo,
     checkInDocuments,
     validUntil,
     todayManila: manilaTodayYmd(),

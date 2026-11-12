@@ -10,6 +10,7 @@ import {
   useGuestStayGuide,
   useGuestStayGuidePreview,
 } from '@/features/guest/stay-guide/hooks/useGuestStayGuide';
+import { StayGuideBuildingBlock } from '@/features/guest/stay-guide/components/StayGuideBuildingBlock';
 import { mapStayGuideData } from '@/features/guest/stay-guide/lib/mapStayGuideData';
 import { GuestTripReturnBar } from '@/features/guest/trip/components/GuestTripReturnBar';
 
@@ -132,6 +133,7 @@ export function StayGuidePage() {
     <>
       <Suspense fallback={<StayGuideLoading />}>
         <Template data={showcaseData} />
+        {data.buildingInfo ? <StayGuideBuildingBlock info={data.buildingInfo} /> : null}
         {!isEditorPreview ? <ShowcaseLegalFooterLink /> : null}
       </Suspense>
       {showReturnBar ? (
