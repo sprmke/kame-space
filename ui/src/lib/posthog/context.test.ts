@@ -5,6 +5,7 @@ import {
   clearAnalyticsScope,
   setAnalyticsSignedIn,
   buildSharedAnalyticsProperties,
+  surfaceForPath,
 } from '@/lib/posthog/context';
 
 describe('setAnalyticsScope', () => {
@@ -46,5 +47,16 @@ describe('buildSharedAnalyticsProperties', () => {
     } finally {
       (globalThis as { window?: unknown }).window = original;
     }
+  });
+});
+
+describe('surfaceForPath', () => {
+  it('maps each audience to one surface', () => {
+    expect(surfaceForPath('/admin/ops-reports')).toBe('super_admin');
+    expect(surfaceForPath('/account/trips')).toBe('guest_account');
+    expect(surfaceForPath('/org/acme/parking/lot-1')).toBe('parking_dashboard');
+    expect(surfaceForPath('/org/acme/property/villa/bookings')).toBe('host_dashboard');
+    expect(surfaceForPath('/properties/villa/form')).toBe('guest_ops');
+    expect(surfaceForPath('/for-hosts/pricing')).toBe('marketing');
   });
 });

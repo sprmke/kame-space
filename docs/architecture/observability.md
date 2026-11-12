@@ -185,8 +185,18 @@ instead. It replaces the segment after a known tenant parent (`org`, `property`,
 `/org/acme/property/villa/bookings` becomes `/org/:param/property/:param/bookings`.
 
 `RoutePatternSync` (`lib/sentry/RoutePatternSync.tsx`, mounted in `AppShell`) renames the active
-Sentry transaction on every navigation and tags it `route_pattern`. The same value is added to
-`buildSharedAnalyticsProperties`, so PostHog no longer splits one page across tenants.
+Sentry transaction on every navigation and tags it `route_pattern`.
+
+PostHog needs **both** halves, and the distinction cost a debugging round:
+
+- `PostHogRouteSync` registers `route_pattern` and `surface` with `posthog.register(...)`, which
+  makes them **super properties**. This is what the SDK's automatic `$pageview` actually carries.
+- `buildSharedAnalyticsProperties` also includes `route_pattern`, which decorates events captured
+  through `captureAppEvent`.
+
+Adding it only to the builder measured 1,146 page views with no pattern on any of them, because
+`$pageview` never goes through the builder. If a future property must appear on page views, it has
+to be registered.
 
 The pattern is safe to send: route names only, never a slug, id, email or token. Tests in
 `routePattern.test.ts` assert that no identifier survives, and `context.test.ts` asserts a tenant
