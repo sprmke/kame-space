@@ -29,6 +29,7 @@ import {
   sendReadyForCheckin,
   sendSdRefundFormRequest,
 } from './emailService.ts';
+import { sendGuestPushForBookingStatus } from './guestPush.ts';
 import {
   planBlockedAutomationToggleKeys,
   propertyAutomationEnabled,
@@ -1316,6 +1317,17 @@ export class WorkflowOrchestrator {
         } catch (notifyError) {
           console.error('[orchestrator] Cancellation notification failed (non-fatal):', notifyError);
         }
+      }
+    }
+
+    // Guest OS push — one milestone on the guest's own device, independent of the email
+    // toggles: the guest turned this on for their phone, so the host's email preferences
+    // should not silently switch it off. Suppressed for OTA-ingested rows (no guest).
+    if (!suppressGuestSideEffects) {
+      try {
+        await sendGuestPushForBookingStatus(updatedBooking, toStatus);
+      } catch (pushError) {
+        console.error('[orchestrator] Guest push failed (non-fatal):', pushError);
       }
     }
 
