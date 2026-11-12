@@ -24,7 +24,16 @@ globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
   calls.push(`${init?.method ?? 'GET'} ${url}`);
 
   if (url.includes('/rest/v1/')) {
-    if (!state.dbReachable) return Promise.reject(new Error('connect ECONNREFUSED'));
+    // A rejected promise here can surface as an unhandled rejection in the runner and fail an
+    // unrelated test, so model the outage as a 503 the client sees.
+    if (!state.dbReachable) {
+      return Promise.resolve(
+        new Response(JSON.stringify({ message: 'database unavailable' }), {
+          status: 503,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+    }
     return Promise.resolve(
       new Response('[]', { status: 200, headers: { 'content-type': 'application/json' } })
     );
