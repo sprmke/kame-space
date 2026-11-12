@@ -548,6 +548,27 @@ the worktree to run a dev server changed what the E2E app pointed at. Remove tho
 running Playwright in a worktree, or the run measures the wrong thing. Bisecting by reverting
 source changes would never have found it.
 
+### Telemetry had been measuring one page named `/*`
+
+Starting the report work surfaced this: seven days of Sentry contained **one** transaction name,
+`/*`, across 377 events.
+
+The router is deliberately a single splat route with `<Routes>` inside `AppRoutes` (see
+`ui/src/main.tsx`), so `reactRouterBrowserTracingIntegration` and `wrapCreateBrowserRouter` can
+only ever see the splat. Every transaction, and every `boot.*` measurement attached to it, was
+anonymous. Fixing the latency without noticing this would have left no way to prove the fix held
+beyond the day it shipped.
+
+`routePatternFor` derives the pattern from the pathname instead. Route names only: the segment
+after a tenant parent, and any UUID, long hex id or email-shaped segment, becomes `:param`. Fifteen
+unit cases assert that no identifier survives.
+
+**Not yet confirmed in Sentry.** Transactions are ingesting (2 in the hour after the release, which
+is the configured 5% of 40 dwelled loads), but the available API token cannot read the
+transactions dataset: `stats_v2?category=transaction` returns volume while
+`/events/?dataset=transactions` returns an empty list. Confirming names needs the Sentry UI or a
+token with event read on that dataset. Stated here rather than claimed as verified.
+
 ### Remaining structural option
 
 1. **Collapse the burst into `get-session-context`**, the pattern that already took the boot chain

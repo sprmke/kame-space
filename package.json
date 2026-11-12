@@ -118,6 +118,7 @@
     "perf:pg-stat:snapshot": "node scripts/performance/pg-stat-snapshot.mjs",
     "perf:boot-timeline": "playwright test ui/e2e/features/observability/adminBootTimeline.spec.ts --project=chromium --reporter=list",
     "perf:boot-durations": "node scripts/performance/boot-durations.mjs",
+    "perf:boot-render": "node scripts/performance/boot-render-blocking.mjs",
     "check:test-tenant": "node scripts/dev/test-tenant.mjs",
     "perf:supabase:metrics": "node scripts/performance/capture-supabase-metrics.mjs",
     "perf:supabase:advisors": "node scripts/performance/capture-supabase-advisors.mjs",

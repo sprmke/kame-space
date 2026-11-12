@@ -192,6 +192,27 @@ The pattern is safe to send: route names only, never a slug, id, email or token.
 `routePattern.test.ts` assert that no identifier survives, and `context.test.ts` asserts a tenant
 slug never reaches the PostHog properties.
 
+### Verifying route patterns after a deploy
+
+The change is only useful if transactions actually carry the pattern, so verify it rather than
+assume it:
+
+1. Open the dashboard and a couple of child routes in a real browser for a minute. Pageload
+   transactions flush on idle; rapid navigation cancels them, so a headless page that leaves in
+   under a second produces none.
+2. In Sentry, filter the `kame-space-web` project to transactions for the last hour and check the
+   names are `/org/:param/property/:param` style, not `/*`.
+
+**You cannot do step 2 through the API with the token in `supabase/.env.management.local`.** The
+`/events/?dataset=transactions` endpoint returns an empty `data` array for it, while
+`stats_v2?category=transaction` shows the volume, so the data is there and the token simply cannot
+read that dataset. Verified 2026-11-12: 2 transactions in the hour after the release build, which
+is the configured 5% of 40 dwelled loads. Use the Sentry UI, or issue a token with event read on
+the transactions dataset, before building anything that aggregates transaction names or durations.
+
+PostHog pageviews are consent-gated: an unattended browser with no cookie consent records nothing,
+so a zero result there is not evidence of a broken client.
+
 ## Do not
 
 - Emit `activity_log` from either vendor, or a telemetry event to replace `activity_log`.
