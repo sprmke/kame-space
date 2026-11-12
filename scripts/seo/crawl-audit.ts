@@ -24,7 +24,25 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const CRAWLER_UA = 'Mozilla/5.0 (compatible; KameSpaceSeoAudit/1.0; +https://kamespace.com)';
+import { isCrawlerUserAgent } from '../../ui/src/lib/seo/seoMeta';
+
+/**
+ * Must match `isCrawlerUserAgent` in `ui/src/lib/seo/seoMeta.ts`, otherwise the middleware
+ * treats this crawler as a browser and serves the SPA shell. That is exactly what happened
+ * with the first version of this tool ("KameSpaceSeoAudit" has no bot token), so the audit
+ * reported the pre-launch state for two days after the fix was live. The assertion below is
+ * the guard.
+ */
+const CRAWLER_UA = 'Mozilla/5.0 (compatible; KameSpaceSeoAuditBot/1.0; +https://kamespace.com)';
+
+if (!isCrawlerUserAgent(CRAWLER_UA)) {
+  console.error(
+    `seo:audit: CRAWLER_UA "${CRAWLER_UA}" is not recognised by isCrawlerUserAgent, so every ` +
+      'page would be fetched as a browser and the report would be meaningless. Give the UA a ' +
+      'bot/crawler token.'
+  );
+  process.exit(2);
+}
 const BROWSER_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0 Safari/537.36';
 
@@ -87,7 +105,7 @@ const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '../..');
 const outDir =
   typeof args.get('out') === 'string'
     ? resolve(root, args.get('out') as string)
-    : join(root, 'docs/workflow/in-progress/seo-evidence');
+    : join(root, 'docs/workflow/done/seo-evidence');
 
 async function fetchText(url: string, userAgent: string) {
   const res = await fetch(url, {

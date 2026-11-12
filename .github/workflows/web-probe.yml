@@ -13,6 +13,9 @@ on:
   push:
     branches:
       - main
+  # Weekly SEO crawl audit (SEO-12.7). Monday 02:00 UTC is Monday 10:00 in Asia/Manila.
+  schedule:
+    - cron: '0 2 * * 1'
   workflow_dispatch:
 
 concurrency:
@@ -45,3 +48,36 @@ jobs:
           done
           echo "web probe failed after 8 attempts" >&2
           exit 1
+
+  # Public SEO surfaces, report-only. Runs after a release and weekly so drift (a listing that
+  # 404s from the sitemap, a canonical pointing at the wrong host, a page that lost its
+  # description) shows up without blocking a release on a transient listing edit.
+  # The script refuses to run with a user agent `isCrawlerUserAgent` does not recognise, which
+  # is the mistake that made the first version of this audit report the SPA shell.
+  seo-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Wait for the production deploy
+        if: github.event_name == 'push'
+        run: sleep 180
+
+      - name: Crawl audit kamespace.com
+        run: bun scripts/seo/crawl-audit.ts --origin https://kamespace.com --limit 200
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        with:
+          name: seo-audit
+          path: docs/workflow/done/seo-evidence/seo-audit-*.md
+          retention-days: 30
+          if-no-files-found: warn

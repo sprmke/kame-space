@@ -32,7 +32,7 @@ Record any change of owner here in the same PR that changes access.
       `INDEXNOW_CRON_SECRET`, and a weekly `pg_cron` job hitting `indexnow-submit`.
 - [ ] Rich Results Test and `validator.schema.org` for one URL per type (stay, parking,
       development, place, host, `/for-hosts/pricing`, `/support`). Save screenshots to
-      `docs/workflow/in-progress/seo-evidence/`.
+      `docs/workflow/done/seo-evidence/`.
 
 ## Monthly checklist
 
