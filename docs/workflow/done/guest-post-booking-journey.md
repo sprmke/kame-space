@@ -1,7 +1,7 @@
 ---
 stage: in-progress
 title: 'Guest post-booking journey: one connected flow from dates to review'
-status: in-progress
+status: done
 tags: [workflow, planned, guest, booking, trip, stay-guide, chat, emails, ux]
 updated: 2026-11-12
 kind: plan
@@ -820,3 +820,25 @@ pre-filled form.
 `PLAYWRIGHT_PORT` (4173). Another worktree had a dev server there, so the first run served that
 checkout's code and failed on an old page. Run it with `PLAYWRIGHT_PORT=4273 PLAYWRIGHT_PWA_PORT=4274`
 when another session holds the default ports.
+
+## 15. Closed (2026-11-13)
+
+Merged as `3a6ff28c` (PR #384, 2026-11-11) and deployed in `8f7372b7` (2026-11-12). Every phase
+in §13 shipped, plus the two items that were originally deferred:
+
+- **Request expiry** (`pending-review-expiry`): a `PENDING_REVIEW` booking used to hold its dates
+  forever, because only `CANCELLED` frees a night. Chase at day 5, cancel at day 7 with reason
+  `request_expired`, never when the guest has paid, never before the chase is two days old.
+- **Cron observability**: both guest-journey crons were missing from
+  `_shared/systemHealth/jobsRegistry.ts`, so `/admin/health` could not show them, and both batch
+  sweeps answered `ok` while some items failed. Both are registered now and both call
+  `reportCronPartialFailure`.
+
+**Moved to their own plans, with the reason**
+
+- **Guest web push (E11)** — `docs/architecture/pwa.md` §8 already scopes "Guest push (Tier B)" to
+  a separate plan: the push pipeline resolves org members, while guests are often anonymous with
+  only a booking token, so they need their own recipient model. Every lifecycle moment already
+  emails the guest, so this adds a channel rather than a missing capability.
+- **"Guest first viewed their trip" host notification (7.5)** — needs trip-view tracking
+  (`guest_trip_viewed_at`) before a notification can be sent once and only once.
