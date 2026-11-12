@@ -10,7 +10,7 @@ const CASES: ReadonlyArray<readonly [string, string]> = [
   ['/org/acme/property/villa/settings', '/org/:param/property/:param/settings'],
   ['/org/acme/property/villa/team', '/org/:param/property/:param/team'],
   ['/org/acme/parking/lot-1', '/org/:param/parking/:param'],
-  ['/properties/kame-home-2604', '/properties/:param'],
+  ['/properties/sample-listing-2604', '/properties/:param'],
   ['/calendar', '/calendar'],
   ['/for-hosts/pricing', '/for-hosts/pricing'],
   ['/bookings/2f1c9e40-0d2a-4a11-9c6b-1f5e0d7c9a11', '/bookings/:param'],
