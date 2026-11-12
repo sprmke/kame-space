@@ -51,9 +51,18 @@ describe('mapPlannerItem', () => {
     expect(item.status).toBe('planned');
     expect(item.manualTargets).toEqual([]);
     expect(item.claims).toEqual({});
-    expect(item.brief).toEqual({});
+    expect(item.brief).toEqual({ photoUrls: [] });
     expect(item.trackedVisits).toBe(0);
     expect(item.insights).toBeNull();
+  });
+
+  it('normalizes selected photo urls and drops junk', () => {
+    const item = mapPlannerItem({
+      ...ROW,
+      brief: { hook: 'x', photoUrls: ['https://cdn/a.jpg', 42, null] },
+    });
+    expect(item.brief.photoUrls).toEqual(['https://cdn/a.jpg']);
+    expect(mapPlannerItem(ROW).brief.photoUrls).toEqual([]);
   });
 
   it('ignores a non-object results blob', () => {

@@ -75,6 +75,9 @@ already holds, with no AI required.
 - Items carry a tracked link. Plan reads count matching page views and show them on the card. This
   works without any Meta insight scope.
 
+The item sheet also suggests gallery photos: photos no other item has used come first, and the ones
+the host picks lead the design seed.
+
 **Open in editor** on an item picks the tab from its format (calendar builder, Videos for a reel,
 Posts, or AI Studio for types that read better as a generated image) and seeds the draft once:
 AI Studio fills the composer, Videos sets the hook, caption and call to action on the beats, Posts

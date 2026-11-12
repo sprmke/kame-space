@@ -25,6 +25,7 @@ import {
   toDatetimeLocal,
 } from '@/features/dashboard/marketing/lib/planner/plannerRange';
 import type { PlannerItemDto } from '@/features/dashboard/marketing/lib/planner/plannerApi';
+import { togglePhotoSelection } from '@/features/dashboard/marketing/lib/planner/plannerPhotos';
 
 const FORMATS = ['post', 'carousel', 'story', 'reel', 'calendar'] as const;
 
@@ -35,6 +36,7 @@ type Draft = {
   cta: string;
   scheduledFor: string;
   format: string;
+  photoUrls: string[];
 };
 
 function draftFrom(item: PlannerItemDto): Draft {
@@ -45,6 +47,7 @@ function draftFrom(item: PlannerItemDto): Draft {
     cta: item.brief.cta ?? '',
     scheduledFor: toDatetimeLocal(item.scheduledFor),
     format: item.format,
+    photoUrls: item.brief.photoUrls ?? [],
   };
 }
 
@@ -55,7 +58,8 @@ function sameDraft(a: Draft, b: Draft): boolean {
     a.message === b.message &&
     a.cta === b.cta &&
     a.scheduledFor === b.scheduledFor &&
-    a.format === b.format
+    a.format === b.format &&
+    a.photoUrls.join(',') === b.photoUrls.join(',')
   );
 }
 
@@ -73,6 +77,8 @@ type Props = {
   isRefreshing?: boolean;
   /** Opens the editor that finishes this item and copies the caption. */
   onOpenEditor?: (item: PlannerItemDto) => void;
+  /** Ranked gallery photos to suggest for this item. */
+  photoOptions?: string[];
 };
 
 export function PlanItemSheet({
@@ -84,6 +90,7 @@ export function PlanItemSheet({
   onRefresh,
   isRefreshing,
   onOpenEditor,
+  photoOptions = [],
 }: Props) {
   const [draft, setDraft] = useState<Draft | null>(null);
 
@@ -104,6 +111,9 @@ export function PlanItemSheet({
     if (draft.hook !== (item.brief.hook ?? '')) brief.hook = draft.hook;
     if (draft.message !== (item.brief.message ?? '')) brief.message = draft.message;
     if (draft.cta !== (item.brief.cta ?? '')) brief.cta = draft.cta;
+    if (draft.photoUrls.join(',') !== (item.brief.photoUrls ?? []).join(',')) {
+      brief.photoUrls = draft.photoUrls;
+    }
     if (Object.keys(brief).length > 0) patch.brief = brief;
     if (Object.keys(patch).length === 0) return true;
     return onSave(item, patch);
@@ -239,6 +249,36 @@ export function PlanItemSheet({
                 </Select>
               </div>
             </div>
+
+            {photoOptions.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-caption text-muted-foreground">Suggested photos</p>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {photoOptions.map((url) => {
+                    const selected = draft.photoUrls.includes(url);
+                    return (
+                      <button
+                        key={url}
+                        type="button"
+                        aria-pressed={selected}
+                        aria-label={selected ? 'Remove photo' : 'Use photo'}
+                        onClick={() =>
+                          setDraft({
+                            ...draft,
+                            photoUrls: togglePhotoSelection(draft.photoUrls, url, 5),
+                          })
+                        }
+                        className={`size-16 shrink-0 overflow-hidden rounded-lg border-2 ${
+                          selected ? 'border-primary' : 'border-transparent'
+                        }`}
+                      >
+                        <img src={url} alt="" className="size-full object-cover" loading="lazy" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
 
             <div className="rounded-lg bg-muted p-3 text-sm">
               <p className="text-caption text-muted-foreground">

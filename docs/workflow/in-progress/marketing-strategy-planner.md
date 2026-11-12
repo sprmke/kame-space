@@ -4,7 +4,7 @@ title: 'Marketing Planner: AI strategy, schedule and execution for listing promo
 status: planned
 tags:
   [workflow, planned, marketing, ai, publishing, meta, scheduling, analytics, plans-and-permissions]
-updated: 2026-11-11
+updated: 2026-11-13
 kind: plan
 ---
 
@@ -616,7 +616,7 @@ Known gaps, deliberately left open rather than half-claimed:
 
 - [x] **P2.1** `plannerHandoff.ts`: map each `opportunity_type` × `format` to a preset or recipe and a binding payload (dates, nights left, rate, review id, photo ids, copy). Reuse the review and AI Studio handoff patterns.
 - [x] **P2.2** Editors accept the planner payload and call `attach_asset` on first save (design, video, calendar, AI session). The item moves to `ready`.
-- [ ] **P2.3** Photo picking: rank listing photos by use count and recency so suggestions vary between items.
+- [x] **P2.3** Photo picking: the item sheet suggests gallery photos, unused ones first, and the picked photo leads the design seed.
 - [x] **P2.4** `PrepareWeekDialog`: batch-create template drafts for all items in range (free), list AI Studio items with total credits, run on confirm, show progress per item.
 - [x] **P2.5** Item preview uses stored thumbnails only (no editor engines in the Plan bundle). Check the PWA precache budget in the build.
 
@@ -708,8 +708,6 @@ Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gap
 
 ### Deliberate v1 exclusions
 
-- **P2.3 photo picking** is not built: the design and video bindings already rotate gallery media
-  per item, so a separate ranking has no consumer until the item sheet grows a photo picker.
 - **P6.2 auto-prepare** is replaced by **Prepare week**, which the host starts. Auto-preparing on
   every plan generation would create blank drafts nobody asked for.
 

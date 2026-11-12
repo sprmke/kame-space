@@ -11,6 +11,12 @@ import {
   setPendingPlannerDraft,
 } from '@/features/dashboard/marketing/lib/planner/plannerHandoff';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
+import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
+import { usePublicPropertyDetail } from '@/features/guest/marketing/properties/hooks/usePublicPropertyDetail';
+import {
+  normalizeGallery,
+  suggestPlannerPhotos,
+} from '@/features/dashboard/marketing/lib/planner/plannerPhotos';
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 import { PlanItemCard } from '@/features/dashboard/marketing/components/planner/PlanItemCard';
 import { PlanItemSheet } from '@/features/dashboard/marketing/components/planner/PlanItemSheet';
@@ -57,6 +63,8 @@ export function PlannerHome() {
   const generate = useGeneratePlan();
   const { skip, markPosted, update } = usePlanItemActions();
   const refreshBrief = useRefreshPlanBrief();
+  const { property } = useOrgContext();
+  const listing = usePublicPropertyDetail(property.slug);
   const { setTab, startAiSession } = useMarketingTheme();
   const settings = usePlannerSettings();
   const saveSettings = useSavePlannerSettings();
@@ -76,6 +84,15 @@ export function PlannerHome() {
   }, [allowed, data?.items]);
 
   const groups = useMemo(() => groupItemsByDay(items), [items]);
+
+  const gallery = useMemo(() => normalizeGallery(listing.data?.images ?? []), [listing.data?.images]);
+  const usedPhotoUrls = useMemo(() => {
+    const used = new Set<string>();
+    for (const item of data?.items ?? []) {
+      for (const url of item.brief.photoUrls ?? []) used.add(url);
+    }
+    return used;
+  }, [data?.items]);
 
   useEffect(() => {
     if (viewed.current || !data) return;
@@ -100,6 +117,7 @@ export function PlannerHome() {
       trackedUrl: item.trackedUrl,
       photoIds: [],
       rateFrom: item.claims.rateFrom ?? null,
+      photoUrls: item.brief.photoUrls ?? [],
     });
     void navigator.clipboard?.writeText(caption).catch(() => undefined);
     setOpenItem(null);
@@ -273,6 +291,7 @@ export function PlannerHome() {
             : undefined
         }
         onOpenEditor={allowed ? handleOpenEditor : undefined}
+        photoOptions={suggestPlannerPhotos(gallery, usedPhotoUrls)}
         onSave={(target, patch) =>
           update.mutateAsync({ itemId: target.id, ...patch }).then(
             () => true,

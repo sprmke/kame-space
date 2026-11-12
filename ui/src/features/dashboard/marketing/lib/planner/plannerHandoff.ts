@@ -26,6 +26,8 @@ export type PlannerHandoffPayload = {
   photoIds: string[];
   /** Quoted nightly rate, when the item claims one. */
   rateFrom?: number | null;
+  /** Gallery photos the host picked for this item, lead photo first. */
+  photoUrls?: string[];
 };
 
 /** Format first, then the opportunity type as a tie-break. */
@@ -119,6 +121,14 @@ export function applyPlannerSeedToDesignBinding<T extends PlannerDesignSeed>(
   };
   if (seed.rateFrom != null && seed.rateFrom > 0) {
     merged.nightlyRate = `₱${seed.rateFrom.toLocaleString('en-PH')} / night`;
+  }
+  // Lead with the photos the host picked for this item, keeping the rest behind them.
+  const picked = seed.photoUrls ?? [];
+  if (picked.length > 0 && binding.propertyMedia && binding.propertyMedia.length > 0) {
+    const pickedSet = new Set(picked);
+    const lead = binding.propertyMedia.filter((media) => pickedSet.has(media.url));
+    const rest = binding.propertyMedia.filter((media) => !pickedSet.has(media.url));
+    if (lead.length > 0) merged.propertyMedia = [...lead, ...rest];
   }
   return merged;
 }

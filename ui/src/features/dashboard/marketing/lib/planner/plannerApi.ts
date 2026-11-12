@@ -22,6 +22,8 @@ export type PlannerBriefDto = {
   message?: string;
   cta?: string;
   why?: string;
+  /** Gallery URLs the host picked for this item. */
+  photoUrls?: string[];
 };
 
 export type PlannerItemDto = {
@@ -77,6 +79,14 @@ function nullableStr(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
 }
 
+function normalizeBrief(raw: unknown): PlannerBriefDto {
+  const brief = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  const photoUrls = Array.isArray(brief.photoUrls)
+    ? brief.photoUrls.filter((value): value is string => typeof value === 'string')
+    : [];
+  return { ...(brief as PlannerBriefDto), photoUrls };
+}
+
 function numberOrNull(value: unknown): number | null {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
@@ -100,7 +110,7 @@ export function mapPlannerItem(row: RawItem): PlannerItemDto {
     targetFrom: nullableStr(row.target_from),
     targetTo: nullableStr(row.target_to),
     claims: (row.claims && typeof row.claims === 'object' ? row.claims : {}) as PlannerClaimsDto,
-    brief: (row.brief && typeof row.brief === 'object' ? row.brief : {}) as PlannerBriefDto,
+    brief: normalizeBrief(row.brief),
     status: str(row.status) || 'planned',
     statusReason: nullableStr(row.status_reason),
     trackedUrl: nullableStr(row.tracked_url),

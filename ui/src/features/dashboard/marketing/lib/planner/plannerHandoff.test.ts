@@ -117,6 +117,23 @@ describe('applyPlannerSeedToDesignBinding', () => {
     expect(merged.propertyPhoto).toBe('https://example.test/a.jpg');
   });
 
+  it('leads with the photos the host picked', () => {
+    const media = [
+      { url: 'https://cdn/a.jpg', type: 'image' as const },
+      { url: 'https://cdn/b.jpg', type: 'image' as const },
+      { url: 'https://cdn/c.jpg', type: 'image' as const },
+    ];
+    const merged = applyPlannerSeedToDesignBinding(
+      { ...binding, propertyMedia: media },
+      { ...seed, photoUrls: ['https://cdn/c.jpg'] }
+    );
+    expect(merged.propertyMedia?.map((item) => item.url)).toEqual([
+      'https://cdn/c.jpg',
+      'https://cdn/a.jpg',
+      'https://cdn/b.jpg',
+    ]);
+  });
+
   it('leaves the binding alone without a seed or without dates', () => {
     expect(applyPlannerSeedToDesignBinding(binding, null)).toBe(binding);
     expect(applyPlannerSeedToDesignBinding(binding, { ...seed, dates: [] })).toBe(binding);
