@@ -49,6 +49,8 @@ import {
   placeTitle,
   propertyTitle,
   socialImageMeta,
+  descriptionFromOverride,
+  titleFromOverride,
   type ListingFamily,
   type SeoMeta,
 } from './seoMeta';
@@ -331,16 +333,18 @@ async function loadListingRoute(
     const pricing = (data.pricing ?? {}) as Json;
     const price = num(pricing.weekdayNightlyRate);
     const city = str(data.city);
-    const description = listingDescription({
-      name,
-      unitType: str(data.type),
-      city,
-      guests: num(data.maxGuests),
-      bedrooms: num(data.bedrooms),
-      amenities: strings(data.amenities),
-      priceFrom: price,
-      hostDescription: str(data.description),
-    });
+    const description =
+      descriptionFromOverride(str(data.seoDescription)) ??
+      listingDescription({
+        name,
+        unitType: str(data.type),
+        city,
+        guests: num(data.maxGuests),
+        bedrooms: num(data.bedrooms),
+        amenities: strings(data.amenities),
+        priceFrom: price,
+        hostDescription: str(data.description),
+      });
     const share = socialImageMeta(images[0] ?? str(data.coverImage), Boolean(deps.imageTransforms));
 
     const facts: Array<{ label: string; value: string }> = [];
@@ -380,10 +384,11 @@ async function loadListingRoute(
 
     return {
       meta: {
-        title: buildPageTitle(
-          propertyTitle({ name, unitType: str(data.type), city }),
-          deps.siteName
-        ),
+        // A host can override the search title and description; both fall back to the
+        // generated values when the override is blank.
+        title:
+          titleFromOverride(str(data.seoTitle), deps.siteName) ??
+          buildPageTitle(propertyTitle({ name, unitType: str(data.type), city }), deps.siteName),
         description,
         canonicalUrl,
         image: share.image,
@@ -442,12 +447,14 @@ async function loadListingRoute(
     if (!data || !name) return null;
     const place = str(data.residenceName) ?? str(data.city);
     const rate = num(data.ratePerNight);
-    const description = listingDescription({
-      name,
-      city: str(data.city),
-      priceFrom: rate,
-      hostDescription: str(data.description),
-    });
+    const description =
+      descriptionFromOverride(str(data.seoDescription)) ??
+      listingDescription({
+        name,
+        city: str(data.city),
+        priceFrom: rate,
+        hostDescription: str(data.description),
+      });
     const share = socialImageMeta(str(data.coverImage), Boolean(deps.imageTransforms));
 
     const facts: Array<{ label: string; value: string }> = [];
@@ -480,7 +487,9 @@ async function loadListingRoute(
 
     return {
       meta: {
-        title: buildPageTitle(parkingTitle({ name, place }), deps.siteName),
+        title:
+          titleFromOverride(str(data.seoTitle), deps.siteName) ??
+          buildPageTitle(parkingTitle({ name, place }), deps.siteName),
         description,
         canonicalUrl,
         image: share.image,

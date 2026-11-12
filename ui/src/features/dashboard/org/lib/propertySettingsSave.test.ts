@@ -58,6 +58,8 @@ function baseProfile(overrides: Partial<PropertyProfileDraft> = {}): PropertyPro
     allowSurpriseDecor: false,
     preferredOwnerParkingId: '',
     complimentaryOwnerParking: false,
+    seoTitle: '',
+    seoDescription: '',
     ...overrides,
   };
 }

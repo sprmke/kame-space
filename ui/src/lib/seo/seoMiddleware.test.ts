@@ -203,6 +203,48 @@ describe('handleSeoRequest', () => {
     );
   });
 
+  it('honours a host search title and description override', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse({
+        data: {
+          name: 'Monaco 2612',
+          description: 'A long host description that would otherwise be used here.',
+          seoTitle: 'Studio in San Fernando, walk to the mall',
+          seoDescription:
+            'Bright studio near the mall, with wifi and a pool. Check dates and book.',
+          locationLabel: 'San Fernando, Pampanga',
+          images: [],
+          city: 'San Fernando',
+        },
+      })
+    );
+    const res = await handleSeoRequest(req('/properties/monaco-2612'), deps(fetchImpl), shell);
+    const html = await res!.text();
+    expect(html).toContain('<title>Studio in San Fernando, walk to the mall | Old Brand</title>');
+    const metaDescription = /<meta name="description" content="([^"]*)"/.exec(html)?.[1];
+    expect(metaDescription).toBe(
+      'Bright studio near the mall, with wifi and a pool. Check dates and book.'
+    );
+  });
+
+  it('does not double the brand when the override already has it', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse({
+        data: {
+          name: 'Monaco 2612',
+          seoTitle: 'Studio in Makati | Old Brand',
+          locationLabel: 'Makati',
+          images: [],
+          city: 'Makati',
+        },
+      })
+    );
+    const res = await handleSeoRequest(req('/properties/monaco-2612'), deps(fetchImpl), shell);
+    const html = await res!.text();
+    expect(html).toContain('<title>Studio in Makati | Old Brand</title>');
+    expect(html).not.toContain('Old Brand | Old Brand');
+  });
+
   it('handles parking and development detail pages', async () => {
     const parkingFetch = vi
       .fn()

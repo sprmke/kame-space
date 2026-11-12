@@ -42,6 +42,8 @@ const FIELD_SECTIONS: Record<string, PropertySettingsSectionId> = {
   'property-contact-phone': 'basic',
   'property-contact-email': 'basic',
   'property-brand-color': 'basic',
+  'property-seo-title': 'basic',
+  'property-seo-description': 'basic',
   'property-facebook-page-url': 'branding',
   'property-airbnb-url': 'branding',
   'property-instagram-url': 'branding',
@@ -771,6 +773,12 @@ export function buildProfilePatchForSections(
     settings.contactRole = fullSettings.contactRole;
     settings.contactPhone = fullSettings.contactPhone;
     settings.contactEmail = fullSettings.contactEmail;
+    // Clearing the override must remove the key, not store an empty string, or the public page
+    // would prefer a blank override over the generated title.
+    if (fullSettings.seoTitle) settings.seoTitle = fullSettings.seoTitle;
+    else delete settings.seoTitle;
+    if (fullSettings.seoDescription) settings.seoDescription = fullSettings.seoDescription;
+    else delete settings.seoDescription;
     hasSettings = true;
   }
   if (sectionSet.has('media')) {
@@ -934,6 +942,8 @@ export function applySavedProfileSections(
       contactRole: saved.contactRole,
       contactPhone: saved.contactPhone,
       contactEmail: saved.contactEmail,
+      seoTitle: saved.seoTitle,
+      seoDescription: saved.seoDescription,
     };
   }
   if (sectionSet.has('media')) {
