@@ -82,6 +82,12 @@ export const SCHEDULED_JOBS: ScheduledJobDef[] = [
     features: ['AI assistant'],
   },
   {
+    fn: 'meta-inbox-worker',
+    label: 'Meta inbox worker',
+    secretEnv: 'META_INBOX_WORKER_SECRET',
+    features: ['Guest inbox'],
+  },
+  {
     fn: 'meta-inbox-webhook-healthcheck',
     label: 'Meta webhook check',
     secretEnv: 'META_INBOX_WEBHOOK_HEALTHCHECK_CRON_SECRET',

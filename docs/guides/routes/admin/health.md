@@ -45,7 +45,7 @@ System health is a super-admin-only page. Hosts never see it.
 - Q: A scheduled job shows "No runs recorded yet". Is it broken?
   A: Not necessarily. Jobs report in after their next run. If it stays that way past the job's interval, check that the job's Vault secret and edge secret match.
 - Q: A token shows as expiring. What do I do?
-  A: For Meta page tokens, the host must reconnect the page in Inbox settings. For platform keys (Resend, Gemini, PayMongo, Turnstile), create a new key in that provider's dashboard and update the edge secret.
+  A: For Meta page tokens, the host must reconnect the page in Inbox settings. For **Meta inbox outbox** dead letters, replay them with the query in `docs/archive/operations/meta-inbox-sync-runbook.md`; the write is idempotent, so a replay cannot duplicate a message. For platform keys (Resend, Gemini, PayMongo, Turnstile), create a new key in that provider's dashboard and update the edge secret.
 - Q: Why does a setting show "Missing" here but things seem to work?
   A: Recommended settings have fallbacks. The hint explains what is degraded without it.
 - Q: How do I fix an issue from here?
