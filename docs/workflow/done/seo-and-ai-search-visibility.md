@@ -394,7 +394,7 @@ Current: F6, F7, no link checker.
 - [x] SEO-12.4 New `scripts/seo/crawl-audit.mjs` (`bun run seo:audit -- --origin <url>`): reads the sitemap, fetches each URL with a crawler UA and a browser UA, follows internal links one level, and reports status codes, redirect chains, missing/duplicate titles and descriptions, canonical mismatch, `noindex` on sitemap URLs, images without alt, broken images (Storage 404), JSON-LD parse errors, and orphans. Output Markdown + JSON to `docs/workflow/in-progress/seo-evidence/`.
 - [x] SEO-12.5 External link check (report only, never fails CI): host-provided URLs (Facebook, Instagram, maps), footer socials, email template links.
 - [x] SEO-12.6 Stored media URLs: report `settings.media[].url` and cover image URLs that 404 in Storage (deleted files still referenced).
-- [x] SEO-12.7 Schedule `seo:audit` weekly against production in `web-probe.yml` (or a new workflow) and on PRs that touch `ui/src/routes`, `features/guest/**/routes`, `lib/seo`, `middleware.ts`, `public-sitemap`, against the preview URL.
+- [x] SEO-12.7 Schedule `seo:audit` weekly against production in `web-probe.yml`: the `seo-audit` job runs after each `main` release and on a Monday 02:00 UTC cron, and uploads the report as an artifact. The PR-triggered preview variant was dropped: the per-branch preview alias lags the build, and Vercel deployment protection returns its own login page instead of the site.
 
 ### Item 13. Compress images
 
@@ -517,7 +517,7 @@ Each phase is one or more PRs, merged to `main` and tested on the dev deploy bef
 | 7     | HTTPS and CWV               | Items 16, 14 (14.1 to 14.7)                                                                                                                          | M    | 5          |
 | 8     | AI discovery and consoles   | Item 20, Item 19, SEO-2.4                                                                                                                            | M    | 2, 4       |
 | 9     | Optional host features      | SEO-6.6 (search preview override), SEO-18.3 (generated OG cards), SEO-18.4, SEO-11.7 (visible breadcrumbs, needs UI sign-off)                        | M    | 3, 4       |
-| 10    | After report                | ✅ Shipped 2026-11-13: audit re-run against production, before/after recorded in `done/seo-evidence/`. SEO-12.7 (weekly audit) is the one follow-up. | S    | all        |
+| 10    | After report                | ✅ Shipped 2026-11-13: audit re-run against production, before/after recorded in `done/seo-evidence/`, and the weekly audit scheduled in `web-probe.yml` (SEO-12.7). | S    | all        |
 
 Production steps (Supabase migrations for SEO-17.1/17.2, edge deploys, backfills) need the
 `kamewave` unlock as usual. Vercel env changes (SEO-0.2, SEO-13.1, SEO-19.5) are listed in each
