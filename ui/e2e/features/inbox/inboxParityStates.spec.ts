@@ -35,8 +35,9 @@ test.describe('@ci inbox meta parity states', () => {
 
     await page.getByRole('button', { name: 'How this inbox works' }).click();
 
-    // The limits Meta imposes are the whole point of the sheet.
-    await expect(page.getByText('How this inbox works')).toBeVisible();
+    // The limits Meta imposes are the whole point of the sheet. Assert the body copy, not
+    // the title: the pill's own button carries the same words, so the title is ambiguous.
+    await expect(page.getByText('What it is')).toBeVisible();
     await expect(page.getByText(/only the latest 20/)).toBeVisible();
     await expect(page.getByText(/24 hours after the guest/)).toBeVisible();
   });
