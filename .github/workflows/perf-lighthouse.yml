@@ -1,0 +1,125 @@
+name: Perf Lighthouse (public routes)
+
+# Weekly public-route Lighthouse run against production, plus manual dispatch.
+#
+# Report-only on purpose. Scores on a shared runner vary run to run, so a hard threshold here
+# would fail for noise and get muted, which is worse than no gate. The job records a trend and
+# uploads the JSON; a human reads the delta and opens a task when it moves.
+#
+# Scope is public routes only (`--routes=public`). The host routes redirect to sign-in when there
+# is no session, so auditing them would measure the login page and report it as the dashboard.
+
+on:
+  schedule:
+    # Monday 02:00 UTC = 10:00 Manila, ahead of the week.
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Origin to audit'
+        required: false
+        default: 'https://kamespace.com'
+      routes:
+        description: 'all, public or host'
+        required: false
+        default: 'public'
+      runs:
+        description: 'Runs per route (median is reported)'
+        required: false
+        default: '3'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-lighthouse
+  cancel-in-progress: false
+
+jobs:
+  lighthouse:
+    name: Public routes
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Locate Chrome
+        id: chrome
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "path=$(command -v google-chrome)" >> "$GITHUB_OUTPUT"
+          elif command -v chromium-browser >/dev/null 2>&1; then
+            echo "path=$(command -v chromium-browser)" >> "$GITHUB_OUTPUT"
+          else
+            echo "No system Chrome found; letting chrome-launcher resolve one."
+            echo "path=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run Lighthouse
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.path }}
+          BASE_URL: ${{ inputs.base_url || 'https://kamespace.com' }}
+          ROUTES: ${{ inputs.routes || 'public' }}
+          RUNS: ${{ inputs.runs || '3' }}
+        run: |
+          node scripts/performance/lighthouse-routes.mjs \
+            --base-url="$BASE_URL" \
+            --routes="$ROUTES" \
+            --runs="$RUNS" \
+            --label=ci \
+            --out-dir=perf-baselines
+
+      - name: Summarise
+        if: always()
+        run: |
+          node <<'NODE'
+          const { readdirSync, readFileSync } = require('node:fs');
+          const path = require('node:path');
+          const dir = 'perf-baselines';
+          let files = [];
+          try {
+            files = readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
+          } catch {
+            console.log('No baseline written.');
+            process.exit(0);
+          }
+          if (files.length === 0) {
+            console.log('No baseline written.');
+            process.exit(0);
+          }
+          const snapshot = JSON.parse(readFileSync(path.join(dir, files.at(-1)), 'utf8'));
+          const rows = snapshot.routes.map((route) => {
+            const m = route.metrics ?? {};
+            const num = (v, digits = 0) => (v == null ? 'n/a' : Number(v).toFixed(digits));
+            return `| ${route.path} | ${num(m.performanceScore)} | ${num(m.lcpMs)} | ${num(m.clsScore, 3)} | ${num(m.tbtMs)} |`;
+          });
+          const body = [
+            `### Lighthouse, ${snapshot.routeScope ?? 'all'} routes, ${snapshot.runs} run(s)`,
+            '',
+            `Origin: ${snapshot.baseUrl}`,
+            '',
+            '| Route | Perf | LCP ms | CLS | TBT ms |',
+            '| --- | --- | --- | --- | --- |',
+            ...rows,
+            '',
+            '_Report only. Compare with the previous weekly artifact before acting._',
+          ].join('\n');
+          require('node:fs').appendFileSync(process.env.GITHUB_STEP_SUMMARY, body + '\n');
+          console.log(body);
+          NODE
+
+      - name: Upload baseline
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.4.0
+        with:
+          name: lighthouse-public-${{ github.run_id }}
+          path: perf-baselines/
+          if-no-files-found: warn
+          retention-days: 30
