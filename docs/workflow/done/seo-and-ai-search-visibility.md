@@ -421,7 +421,10 @@ the public, indexable pages and must not duplicate that plan.
 - [x] SEO-14.2 Sentry dashboard filtered to registry routes (home, list, place, detail, for-hosts, pricing). Weekly check in the ops report.
 - [x] SEO-14.3 Add public routes to `scripts/performance/lighthouse-routes.mjs` with assertions: SEO category >= 95, Performance >= 85 mobile, no "image elements without width/height", no "properly size images" failures.
 - [x] SEO-14.4 LCP: preload and `fetchPriority="high"` on the listing detail cover photo and home hero; snapshot HTML includes the preload link for crawler renders.
-- [ ] SEO-14.5 Fonts: public pages load only the platform fonts, not all 15 host-selectable families; `font-display: swap`; preload the primary weight.
+- [x] SEO-14.5 Fonts: public pages load only the platform fonts, not all 15 host-selectable families; `font-display: swap`; preload the primary weight.
+
+  **Shipped 2026-11-13.** `index.html` now requests **Plus Jakarta Sans only**; the fourteen display families moved to `ui/src/lib/fonts/displayFonts.ts`, which `ShowcaseShell` appends when a themed surface mounts (covers `/properties/:slug/showcase` and the stay guide). Verified in a browser: `/about` makes one Google Fonts CSS request and never adds the display link. Every display class has a real fallback in `tailwind.config.js`, so the late stylesheet is a swap, not a blank. `display=swap` was already set and stays.
+
 - [x] SEO-14.6 CLS: image dimensions (SEO-13.2), fixed skeleton heights on cards, reserved map container height.
 - [x] SEO-14.7 Third parties: Google Maps loads on interaction or in view; PostHog and Sentry after first paint (confirm current behaviour).
 - [x] SEO-14.8 Field data from CrUX: record origin CWV from PageSpeed Insights and the Search Console Core Web Vitals report before and after.
