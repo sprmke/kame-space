@@ -6,6 +6,7 @@ import {
   getMetaAppCredentials,
   META_GRAPH_BASE,
   META_WEBHOOK_SUBSCRIBED_FIELDS,
+  metaInboxPublicBaseUrl,
 } from './metaInboxConfig.ts';
 import {
   getPageAccessToken,
@@ -110,6 +111,100 @@ export async function verifyMetaPageWebhookSubscription(
   };
 }
 
+/** One app-level webhook subscription, as Meta reports it. */
+export type MetaAppSubscription = {
+  object: string;
+  callbackUrl: string | null;
+  active: boolean;
+  fields: string[];
+};
+
+/** The URL Meta must call. Anything else means deliveries go somewhere we do not own. */
+export function expectedMetaWebhookCallbackUrl(): string {
+  return `${metaInboxPublicBaseUrl()}/functions/v1/meta-inbox-webhook`;
+}
+
+/**
+ * Fields Meta must have enabled at the app level.
+ *
+ * App-level and Page-level subscriptions are separate settings, and the app-level one is
+ * what actually gates delivery. A Page can look perfectly subscribed while the app itself is
+ * pointing at an ngrok tunnel or is switched off.
+ */
+export function requiredMetaAppFields(): string[] {
+  return EXPECTED_WEBHOOK_FIELDS;
+}
+
+export type MetaAppSubscriptionProblem = {
+  object: string;
+  reason: 'missing' | 'inactive' | 'wrong_callback_url' | 'missing_fields';
+  detail: string;
+};
+
+/**
+ * Compare Meta's app subscriptions against what this deployment needs.
+ *
+ * Pure, so the decision can be tested without Graph.
+ */
+export function auditMetaAppSubscriptions(
+  subscriptions: MetaAppSubscription[],
+  opts: { expectedCallbackUrl: string; requiredFields: string[] }
+): MetaAppSubscriptionProblem[] {
+  const problems: MetaAppSubscriptionProblem[] = [];
+  const normalize = (url: string | null) => (url ?? '').trim().replace(/\/+$/, '');
+
+  for (const object of ['page', 'instagram'] as const) {
+    const row = subscriptions.find((entry) => entry.object === object);
+    if (!row) {
+      problems.push({ object, reason: 'missing', detail: `No app subscription for ${object}.` });
+      continue;
+    }
+    if (!row.active) {
+      problems.push({ object, reason: 'inactive', detail: `App subscription for ${object} is off.` });
+    }
+    if (normalize(row.callbackUrl) !== normalize(opts.expectedCallbackUrl)) {
+      problems.push({
+        object,
+        reason: 'wrong_callback_url',
+        detail: `App subscription for ${object} points at ${row.callbackUrl ?? '(none)'}.`,
+      });
+    }
+    const missing = opts.requiredFields.filter((field) => !row.fields.includes(field));
+    if (missing.length > 0) {
+      problems.push({
+        object,
+        reason: 'missing_fields',
+        detail: `App subscription for ${object} is missing ${missing.join(', ')}.`,
+      });
+    }
+  }
+
+  return problems;
+}
+
+/** Read the app-level webhook subscriptions. Needs the app access token, not a Page token. */
+export async function fetchMetaAppSubscriptions(): Promise<MetaAppSubscription[]> {
+  const { appId, appSecret } = getMetaAppCredentials();
+  const url = new URL(`${META_GRAPH_BASE}/app/subscriptions`);
+  url.searchParams.set('access_token', `${appId}|${appSecret}`);
+  const res = await fetch(url.toString());
+  const json = await parseMetaGraphJson(res);
+  if (!res.ok) {
+    throw new Error(
+      (json.error as { message?: string } | undefined)?.message ??
+        'Failed to read app subscriptions'
+    );
+  }
+
+  const rows = Array.isArray(json.data) ? (json.data as Record<string, unknown>[]) : [];
+  return rows.map((row) => ({
+    object: String(row.object ?? ''),
+    callbackUrl: typeof row.callback_url === 'string' ? row.callback_url : null,
+    active: row.active !== false,
+    fields: normalizeSubscribedFields((row.fields as string[] | string | null) ?? null),
+  }));
+}
+
 type MetaTokenDebugResult = {
   valid: boolean;
   expiresAt: string | null;
@@ -148,6 +243,27 @@ export async function debugMetaConnectionToken(
   } catch {
     return null;
   }
+}
+
+/** Hours of history reconciliation should re-scan after a webhook outage. */
+export const META_OUTAGE_RECOVERY_HOURS = 72;
+
+/**
+ * Point reconciliation at the outage window.
+ *
+ * `meta_sync_state.watermark` only moves forward inside `meta_sync_finish`, so lowering it
+ * once is a one-shot wide look-back rather than a permanently wider scan.
+ */
+async function requestMetaOutageRecovery(
+  connection: SocialChannelConnectionRow
+): Promise<void> {
+  const sb = socialInboxDb();
+  const since = new Date(Date.now() - META_OUTAGE_RECOVERY_HOURS * 3_600_000).toISOString();
+  const { error } = await sb
+    .from('meta_sync_state')
+    .update({ next_run_at: new Date().toISOString(), watermark: since, updated_at: new Date().toISOString() })
+    .eq('connection_id', connection.id);
+  if (error) console.warn('[metaInboxWebhookHealth] outage recovery:', error.message);
 }
 
 export async function reconcileMetaConnectionWebhook(
@@ -222,6 +338,14 @@ export async function reconcileMetaConnectionWebhook(
       token_expires_at: tokenDebug?.expiresAt ?? connection.token_expires_at ?? null,
       error_message: [tokenInvalid, tokenExpiringSoon].filter(Boolean).join(' ') || null,
     });
+
+    // A re-subscribe means deliveries were missing for a while, and Meta never resends them.
+    // Ask reconciliation for a 72-hour look-back now; the next successful run lifts the
+    // watermark back to the newest thread on its own.
+    if (resubscribed) {
+      await requestMetaOutageRecovery(connection);
+    }
+
     return {
       verified: true,
       resubscribed,

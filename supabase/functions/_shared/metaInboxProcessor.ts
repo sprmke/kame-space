@@ -327,7 +327,7 @@ export async function applyMetaEvent(
  * Story replies, shared posts and stickers arrive as attachments with a Meta type, not as
  * text. Naming them lets the thread show a card instead of a bare "(attachment)".
  */
-function messageKindFor(
+export function messageKindFor(
   message: Record<string, unknown>,
   isPostback: boolean,
   eventType: string
