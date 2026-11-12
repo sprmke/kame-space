@@ -50,6 +50,8 @@ const GRAPH_CONCURRENCY = 4;
 export const RECONCILE_RECOVERY_LOOKBACK_HOURS = 72;
 /** Reconciliation always reaches slightly further back than the watermark, so a clock skew between Meta and Postgres cannot miss a row. */
 const WATERMARK_OVERLAP_MINUTES = 10;
+/** Head pages a single reconcile may scan. Bounds the 72-hour post-outage look-back. */
+const HEAD_SCAN_MAX_PAGES = 4;
 /** At this rate-limit percentage every interval doubles. */
 const RATE_LIMIT_SOFT_PCT = 75;
 /** At this percentage only a manual check runs. */
@@ -364,17 +366,38 @@ async function runReconcile(
     return { job: 'reconcile', conversations: 0, messages: 0 };
   }
 
-  const headRes = await fetch(buildMetaConversationHeadUrl(pageId, token, platform));
-  const headJson = await parseMetaGraphJson(headRes);
-  if (!headRes.ok) {
-    throw metaGraphErrorFromResponse(headJson, headRes.status, 'Meta conversation head failed');
-  }
-  const rateLimitPct = readMetaRateLimitPct(headRes.headers);
-  const head = (headJson.data ?? []) as Array<{ id: string; updated_time?: string }>;
-
   const cutoff = state.watermark
     ? new Date(new Date(state.watermark).getTime() - WATERMARK_OVERLAP_MINUTES * 60_000)
     : new Date(Date.now() - RECONCILE_RECOVERY_LOOKBACK_HOURS * 3_600_000);
+
+  // After an outage the cutoff can be 72 hours back, which does not fit on one head page, so
+  // keep paging while the oldest thread on the page is still inside the window. Bounded, so
+  // one very busy Page cannot hold the worker.
+  const head: Array<{ id: string; updated_time?: string }> = [];
+  let headCursor: string | null = null;
+  let rateLimitPct: number | null = null;
+  for (let page = 0; page < HEAD_SCAN_MAX_PAGES; page++) {
+    const headRes = await fetch(
+      buildMetaConversationHeadUrl(pageId, token, platform, headCursor)
+    );
+    const headJson = await parseMetaGraphJson(headRes);
+    if (!headRes.ok) {
+      throw metaGraphErrorFromResponse(headJson, headRes.status, 'Meta conversation head failed');
+    }
+    rateLimitPct = readMetaRateLimitPct(headRes.headers) ?? rateLimitPct;
+    const rows = (headJson.data ?? []) as Array<{ id: string; updated_time?: string }>;
+    head.push(...rows);
+
+    const nextCursor = extractMetaPagingCursor(
+      (headJson.paging as { next?: string } | undefined)?.next
+    );
+    const oldest = rows
+      .map((row) => row.updated_time)
+      .filter((value): value is string => Boolean(value))
+      .sort()[0];
+    if (!nextCursor || !oldest || new Date(oldest) < cutoff) break;
+    headCursor = nextCursor;
+  }
 
   const changed = head.filter((row) => row.updated_time && new Date(row.updated_time) >= cutoff);
   const newestHead = head

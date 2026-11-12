@@ -281,6 +281,8 @@ function buildMetrics(
         ['Tickets opened', formatNumber(support.opened)],
         ['Tickets open now', formatNumber(support.open_now)],
         ['Social webhook events', formatNumber(social.webhook_events)],
+        // The one metric that says the inbox pipeline is losing events, not just quiet.
+        ['Social webhook dead letters', formatNumber(social.webhook_dead)],
       ]),
     },
     {
