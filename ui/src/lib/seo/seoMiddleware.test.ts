@@ -124,6 +124,23 @@ describe('handleSeoRequest', () => {
     expect(await res!.text()).toContain('not public');
   });
 
+  it('serves a markdown variant of a static page', async () => {
+    const res = await handleSeoRequest(req('/about.md', BROWSER), deps(vi.fn()), shell);
+    const md = await res!.text();
+    expect(res!.headers.get('content-type')).toContain('text/markdown');
+    expect(md.startsWith('# Philippine stays, one operating system')).toBe(true);
+    expect(md).toContain('Canonical: https://kamespace.com/about');
+    // Site nav is folded in so the file is a usable map, not just a hero line.
+    expect(md).toContain('- [Home](https://kamespace.com/)');
+    expect(md).toContain('- [Stays](https://kamespace.com/properties)');
+  });
+
+  it('does not serve markdown for a private or unknown route', async () => {
+    for (const path of ['/services.md', '/account/profile.md', '/nope.md']) {
+      expect(await handleSeoRequest(req(path, BROWSER), deps(vi.fn()), shell), path).toBeNull();
+    }
+  });
+
   it('serves the IndexNow key file when configured', async () => {
     const res = await handleSeoRequest(
       req('/abc123.txt', BROWSER),

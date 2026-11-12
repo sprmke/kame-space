@@ -53,6 +53,7 @@ import {
   type SeoMeta,
 } from './seoMeta';
 import { canonicalUrlFor, PRODUCTION_SITE_ORIGIN } from './siteOrigin';
+import { buildStaticPageMarkdown } from './markdown';
 import {
   buildLlmsFullTxt,
   buildLlmsTxt,
@@ -62,6 +63,8 @@ import {
 import {
   injectSnapshotIntoHtml,
   renderSnapshotHtml,
+  SNAPSHOT_FOOTER,
+  SNAPSHOT_NAV,
   type SnapshotImage,
   type SnapshotLink,
   type SnapshotPage,
@@ -1111,6 +1114,36 @@ export async function handleSeoRequest(
       };
       const body = full ? buildLlmsFullTxt(input) : buildLlmsTxt(input);
       return new Response(body, { headers });
+    }
+
+    // Markdown variant of a static page (`/about.md`). Same snapshot the crawler HTML gets,
+    // rendered as text for AI engines and CLI agents. Static routes only: a listing `.md`
+    // would need a live edge read on every fetch for little gain.
+    if (url.pathname.endsWith('.md') && url.pathname.length > 3) {
+      const htmlPath = url.pathname.slice(0, -3) || '/';
+      const entry = matchStaticRoute(htmlPath);
+      if (!entry?.indexable) return null;
+      const canonicalUrl = canonicalUrlFor(siteOrigin, htmlPath);
+      const { snapshot } = buildStaticRoute(entry, canonicalUrl, deps);
+      // The HTML snapshot carries the site nav in <header>/<footer>; markdown is a flat file, so
+      // the same links go in the body to keep it a usable map of the site.
+      const siteLinks = [...SNAPSHOT_NAV, ...SNAPSHOT_FOOTER].map((item) => ({
+        href: item.href,
+        label: item.label,
+      }));
+      return new Response(
+        buildStaticPageMarkdown({
+          page: { ...snapshot, links: [...(snapshot.links ?? []), ...siteLinks] },
+          canonicalUrl,
+          siteName: deps.siteName,
+        }),
+        {
+          headers: {
+            'content-type': 'text/markdown; charset=utf-8',
+            'cache-control': 'public, max-age=1800, s-maxage=3600, stale-while-revalidate=86400',
+          },
+        }
+      );
     }
 
     if (deps.indexNowKey && url.pathname === `/${deps.indexNowKey}.txt`) {

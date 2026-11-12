@@ -243,9 +243,9 @@ the canonical apex.
 - [x] SEO-1.0 Dynamic `/sitemap.xml` via middleware proxy to `public-sitemap`.
 - [x] SEO-1.1 Derive `STATIC_SITEMAP_PATHS` from the D2 registry; `check:seo-routes` fails CI on drift.
 - [x] SEO-1.2 Add `/hosts/:orgSlug` for orgs with at least one ACTIVE public listing (read from `public_listing_search` org column or a join; exclude unverified orgs).
-- [ ] SEO-1.3 Decide and add development sub-pages `/developments/:slug/properties` and `/developments/:slug/parking` (include only when the list is non-empty; they already set their own canonical).
+- [x] SEO-1.3 Decide and add development sub-pages `/developments/:slug/properties` and `/developments/:slug/parking` (include only when the list is non-empty; they already set their own canonical).
 - [x] SEO-1.4 Decide showcase (`/properties/:slug/showcase`) and stay guide: include only if their content is distinct from the detail page; otherwise canonical to the detail page and exclude (see SEO-4.7).
-- [ ] SEO-1.5 `lastmod` for place pages = max `refreshed_at` of their listings; static pages = last content change (registry field updated with the page copy, not build time, so Google keeps trusting it).
+- [x] SEO-1.5 `lastmod` for place pages = max `refreshed_at` of their listings; static pages = last content change (registry field updated with the page copy, not build time, so Google keeps trusting it).
 - [x] SEO-1.6 Split into typed child sitemaps (`?part=static|properties|parkings|developments|places|hosts`) under one sitemap index so Search Console reports indexing per type. Keep the 45,000 URL split per child.
 - [x] SEO-1.7 Image sitemap extension (`<image:image><image:loc>`) for up to 10 photos per listing (Google Images discovery).
 - [x] SEO-1.8 Use the canonical origin (D3) for every `<loc>`; assert in a Deno test that no `<loc>` uses a non-apex host or `http://`.
@@ -484,7 +484,7 @@ Current: none.
 - [x] SEO-20.3 Only public, ACTIVE data. No host emails, phone numbers, addresses beyond city/province, or guest data. Unit test that the builder rejects PII fields.
 - [x] SEO-20.4 Non-indexable hosts return a minimal file that says the host is not public.
 - [x] SEO-20.5 Cache like the sitemap (`s-maxage=3600`, `stale-while-revalidate`).
-- [ ] SEO-20.6 Optional: Markdown versions of key static pages (`/about.md`, `/for-hosts/pricing.md`) from the shared `content.ts` modules.
+- [x] SEO-20.6 Optional: Markdown versions of key static pages (`/about.md`, `/for-hosts/pricing.md`) from the shared `content.ts` modules.
 - [x] SEO-20.7 Reference `llms.txt` from `robots.txt` as a comment and link it from the footer of the snapshot HTML.
 
 ---
@@ -505,18 +505,18 @@ Current: none.
 
 Each phase is one or more PRs, merged to `main` and tested on the dev deploy before the next.
 
-| Phase | Name                        | Tasks                                                                                                                                                | Size | Depends on |
-| ----- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ---------- |
-| 0     | Baseline                    | SEO-12.4 (crawl audit script first), SEO-14.8, SEO-19.3 on current prod, Lighthouse runs                                                             | S    | none       |
-| 1     | Foundation                  | SEO-0.1 to 0.7, SEO-4.2, SEO-4.3                                                                                                                     | L    | 0          |
-| 2     | Crawl control               | Items 1, 2, 3, SEO-4.1, 4.4 to 4.9, SEO-12.1 to 12.3                                                                                                 | M    | 1          |
-| 3     | Titles, descriptions, OG    | Items 5, 6 (6.1 to 6.5, 6.7, 6.8), 18 (18.1, 18.2, 18.5)                                                                                             | M    | 1          |
-| 4     | Snapshot content and schema | Items 10, 11 (crawler HTML for all routes, breadcrumbs JSON-LD, related links)                                                                       | L    | 1, 3       |
-| 5     | Images                      | Items 9, 13                                                                                                                                          | L    | 1          |
-| 6     | Slugs and redirects         | Item 17, SEO-12.5, 12.6                                                                                                                              | M    | 2          |
-| 7     | HTTPS and CWV               | Items 16, 14 (14.1 to 14.7)                                                                                                                          | M    | 5          |
-| 8     | AI discovery and consoles   | Item 20, Item 19, SEO-2.4                                                                                                                            | M    | 2, 4       |
-| 9     | Optional host features      | SEO-6.6 (search preview override), SEO-18.3 (generated OG cards), SEO-18.4, SEO-11.7 (visible breadcrumbs, needs UI sign-off)                        | M    | 3, 4       |
+| Phase | Name                        | Tasks                                                                                                                                                                | Size | Depends on |
+| ----- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ---------- |
+| 0     | Baseline                    | SEO-12.4 (crawl audit script first), SEO-14.8, SEO-19.3 on current prod, Lighthouse runs                                                                             | S    | none       |
+| 1     | Foundation                  | SEO-0.1 to 0.7, SEO-4.2, SEO-4.3                                                                                                                                     | L    | 0          |
+| 2     | Crawl control               | Items 1, 2, 3, SEO-4.1, 4.4 to 4.9, SEO-12.1 to 12.3                                                                                                                 | M    | 1          |
+| 3     | Titles, descriptions, OG    | Items 5, 6 (6.1 to 6.5, 6.7, 6.8), 18 (18.1, 18.2, 18.5)                                                                                                             | M    | 1          |
+| 4     | Snapshot content and schema | Items 10, 11 (crawler HTML for all routes, breadcrumbs JSON-LD, related links)                                                                                       | L    | 1, 3       |
+| 5     | Images                      | Items 9, 13                                                                                                                                                          | L    | 1          |
+| 6     | Slugs and redirects         | Item 17, SEO-12.5, 12.6                                                                                                                                              | M    | 2          |
+| 7     | HTTPS and CWV               | Items 16, 14 (14.1 to 14.7)                                                                                                                                          | M    | 5          |
+| 8     | AI discovery and consoles   | Item 20, Item 19, SEO-2.4                                                                                                                                            | M    | 2, 4       |
+| 9     | Optional host features      | SEO-6.6 (search preview override), SEO-18.3 (generated OG cards), SEO-18.4, SEO-11.7 (visible breadcrumbs, needs UI sign-off)                                        | M    | 3, 4       |
 | 10    | After report                | ✅ Shipped 2026-11-13: audit re-run against production, before/after recorded in `done/seo-evidence/`, and the weekly audit scheduled in `web-probe.yml` (SEO-12.7). | S    | all        |
 
 Production steps (Supabase migrations for SEO-17.1/17.2, edge deploys, backfills) need the
@@ -602,6 +602,15 @@ Run on `feat/seo-foundation` (2026-11-11), worktree `.worktrees/seo-foundation`.
 | `deno test _shared/publicSitemap_test.ts`                        | 5 pass, including "every `<loc>` uses the canonical https apex".                                                                                                                                |
 | `/tmp` middleware smoke, real built shell                        | `/about` as GPTBot: 200, one `<h1>`, apex canonical, snapshot injected, `#root` replaced.                                                                                                       |
 | `deno test _shared/publicSitemap_test.ts`                        | 4 pass. Full `bun run test:edge` fails locally on `npm:dayjs@1.11.10` resolution (installed 1.11.23), a pre-existing worktree environment issue unrelated to this change.                       |
+
+### Follow-up pass (2026-11-13)
+
+The plan was closed on 2026-11-13 with the shipped surface verified. The remaining checkboxes
+above are being worked through in follow-up PRs, in this order: sitemap depth (SEO-1.3, SEO-1.5)
+and markdown variants (SEO-20.6), then the host search-preview feature (SEO-6.6), then visible
+breadcrumbs and image-credit work (SEO-11.7, SEO-9.10, SEO-13.2, SEO-18.4), then fonts and AI alt
+suggestions (SEO-14.5, SEO-9.4). The Search Console and Bing items (SEO-19.x) need owner access
+and stay listed as blocked.
 
 ### Deferred, with reasons
 
