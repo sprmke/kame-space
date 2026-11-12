@@ -206,7 +206,7 @@ function WorkflowPanelInner({
   // the transition actions wait on the host's confirmation.
   const { needsReviewAck, confirmReview } = usePendingReviewAck(booking);
 
-  const { data: appSettings } = useAppSettings();
+  const { data: appSettings } = useAppSettings({ lean: true });
   const { data: propertyAccess } = usePropertyPermissions();
   const canEditPricing = hasPropertyPermission(
     propertyAccess?.permissions,
