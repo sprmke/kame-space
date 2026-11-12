@@ -234,6 +234,11 @@ ALLOWLIST=(
   'social-inbox-ai-suggest/index.ts'
   'social-inbox-settings/index.ts'
   'social-inbox-templates/index.ts'
+  # Sitemap development check: `.select('slug').in('slug', [...])`. The result set cannot
+  # exceed the slug list it filters on, which is at most one entry per development already
+  # collected by the paginated loop above. There is no `.range()` shape for an `.in()` filter.
+  'public-sitemap/index.ts'
+
 )
 
 is_allowlisted() {

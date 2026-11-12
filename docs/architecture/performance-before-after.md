@@ -745,10 +745,27 @@ settings controller keeps the full payload and guards the panel on the value.
 Lean and full use separate cache keys, and the save mutations write both, so a save cannot leave
 one variant stale.
 
-### Expected effect
+### Measured after
 
-Six credential reads removed from the dashboard's `app-settings` call. The handler should land
-meaningfully below the 1566 ms baseline; the number is measured after deploy rather than claimed.
+Same `Server-Timing` method, three warm calls each, after the deploy.
+
+| Variant                           | Handler          |
+| --------------------------------- | ---------------- |
+| Full (settings page)              | 1591-1645 ms     |
+| Lean (the other seven call sites) | **1442-1532 ms** |
+
+So the integrations block is worth about **100-150 ms**, not the larger figure this section
+originally predicted. That prediction was wrong and is corrected here: the six credential reads run
+in parallel and are cached, so they never cost what six serial reads would.
+
+What the change still buys is real but smaller: six fewer reads and their decryption on every
+dashboard load, which is work off the edge function and off the database rather than a large
+latency drop.
+
+The remaining ~1.5 s is elsewhere in the payload: the settings row, the org settings row, the
+residence name, the derived PMO email and the two document-requirement resolutions. Cutting that
+further means splitting the payload by consumer, which changes the API surface for eight call
+sites, so it is recorded rather than attempted.
 
 ## Release state
 
