@@ -16,8 +16,21 @@ import {
 } from '../_shared/httpResponse.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 import { validateOptionalEmail } from '../_shared/appSettings.ts';
-import { parseDocumentRequirements } from '../_shared/documentRequirements.ts';
+import {
+  mergeDocumentRequirements,
+  parseDocumentRequirements,
+  removedRequirementIds,
+} from '../_shared/documentRequirements.ts';
+import {
+  parseResidenceBuildingRules,
+  parseResidencePdfTemplates,
+} from '../_shared/residenceProfile.ts';
+import {
+  normalizeResidenceStructure,
+  validateResidenceStructure,
+} from '../_shared/residenceProfile.ts';
 import { verifySuperAdminJwt } from '../_shared/superAdminAuth.ts';
+import { logSuperAdminAction } from '../_shared/superAdminAudit.ts';
 import { validatePropertyMediaArray } from '../_shared/propertyMedia.ts';
 import { parseUnitTypes, validateUnitTypes } from '../_shared/unitTypes.ts';
 import {
@@ -29,6 +42,44 @@ import {
   stampHostAnnouncementsForSave,
   validateHostAnnouncements,
 } from '../_shared/hostAnnouncements.ts';
+
+
+/** Non-terminal bookings whose approval-step snapshot still lists one of `removedIds`. */
+async function countSnapshotsReferencing(
+  supabase: ReturnType<typeof createServiceClient>,
+  developmentId: string,
+  removedIds: string[]
+): Promise<number> {
+  const { data: properties, error: propertyError } = await supabase
+    .from('properties')
+    .select('id')
+    .eq('development_id', developmentId)
+    .limit(500);
+  if (propertyError) {
+    throw new Error(`Could not check bookings for this development: ${propertyError.message}`);
+  }
+  const propertyIds = (properties ?? []).map((row) => (row as { id: string }).id);
+  if (propertyIds.length === 0) return 0;
+
+  const { data: bookings, error: bookingError } = await supabase
+    .from('guest_submissions')
+    .select('document_requirements_snapshot')
+    .in('property_id', propertyIds)
+    .not('document_requirements_snapshot', 'is', null)
+    .not('status', 'in', '(COMPLETED,CANCELLED)')
+    .limit(500);
+  if (bookingError) {
+    throw new Error(`Could not check bookings for this development: ${bookingError.message}`);
+  }
+
+  return (bookings ?? []).filter((row) => {
+    const snapshot = (row as { document_requirements_snapshot: unknown })
+      .document_requirements_snapshot;
+    return mergeDocumentRequirements(snapshot).some((requirement) =>
+      removedIds.includes(requirement.id)
+    );
+  }).length;
+}
 
 const DEVELOPMENT_TYPES = new Set([
   'CONDOMINIUM',
@@ -62,7 +113,7 @@ function objectOrEmpty(value: unknown): Record<string, unknown> {
 
 serveAuthenticated('update-development', async (req) => {
   requireHttpMethod(req, 'PATCH');
-  await verifySuperAdminJwt(req);
+  const admin = await verifySuperAdminJwt(req);
 
   const body = await readJsonBody(req);
   const developmentId = typeof body.developmentId === 'string' ? body.developmentId.trim() : '';
@@ -83,6 +134,78 @@ serveAuthenticated('update-development', async (req) => {
   }
   if (!existing) {
     return jsonError(req, 'Development not found', 404);
+  }
+
+  // Optimistic concurrency: the editor sends the `updated_at` it loaded. A second save
+  // from a stale tab gets a 409 instead of silently overwriting the other admin.
+  const expectedUpdatedAt =
+    typeof body.expectedUpdatedAt === 'string' ? body.expectedUpdatedAt.trim() : '';
+  if (expectedUpdatedAt && expectedUpdatedAt !== (existing as DevelopmentRow).updated_at) {
+    return jsonError(
+      req,
+      'This development changed since you loaded it. Reload to see the latest version.',
+      409
+    );
+  }
+
+  const restoreHistoryId =
+    typeof body.restoreHistoryId === 'string' ? body.restoreHistoryId.trim() : '';
+  if (restoreHistoryId) {
+    const { data: version, error: versionError } = await supabase
+      .from('development_settings_history')
+      .select('id, settings, saved_at, saved_by_email')
+      .eq('id', restoreHistoryId)
+      .eq('development_id', developmentId)
+      .maybeSingle();
+    if (versionError) {
+      console.error('[update-development] history load:', versionError.message);
+      throw new Error('Failed to load that version');
+    }
+    if (!version) return jsonError(req, 'Version not found', 404);
+
+    // An old version was valid when saved, but a schema rule may have tightened since.
+    const restoredSettings = (version as { settings?: Record<string, unknown> }).settings ?? {};
+    if (restoredSettings.structure !== undefined) {
+      const restoredStructure = normalizeResidenceStructure(restoredSettings.structure);
+      const restoredStructureError = validateResidenceStructure(restoredStructure);
+      if (restoredStructureError) {
+        return jsonError(req, `That version is no longer valid: ${restoredStructureError}`);
+      }
+      restoredSettings.structure = restoredStructure;
+    }
+
+    const { error: restoreError } = await supabase
+      .from('developments')
+      .update({ settings: restoredSettings, updated_at: new Date().toISOString() })
+      .eq('id', developmentId);
+    if (restoreError) {
+      console.error('[update-development] restore:', restoreError.message);
+      throw new Error('Failed to restore that version');
+    }
+
+    await logSuperAdminAction(admin, {
+      action: 'development.settings_restored',
+      targetType: 'development',
+      targetId: developmentId,
+      summary: `Restored a settings version of ${(existing as DevelopmentRow).name}`,
+      metadata: { historyId: restoreHistoryId, savedAt: (version as { saved_at?: string }).saved_at },
+    });
+
+    const { data: restored } = await supabase
+      .from('developments')
+      .select('*')
+      .eq('id', developmentId)
+      .maybeSingle();
+
+    const restoredRow = (restored ?? existing) as DevelopmentRow;
+    const statsMap = await developmentStatsByName(supabase, [restoredRow.name]);
+    return jsonSuccess(req, {
+      development: serializeDevelopment(
+        restoredRow,
+        statsMap.get(restoredRow.name) ?? { propertyCount: 0, parkingCount: 0 }
+      ),
+      restored: true,
+    });
   }
 
   const patch: Record<string, unknown> = {
@@ -210,6 +333,22 @@ serveAuthenticated('update-development', async (req) => {
     settingsChanged = true;
   }
 
+  if (body.structure !== undefined) {
+    const structure = normalizeResidenceStructure(body.structure);
+    const structureError = validateResidenceStructure(structure);
+    if (structureError) {
+      return jsonError(req, structureError);
+    }
+    settingsPatch.structure = structure;
+    // Flat keys stay in sync until Phase 7 retires them.
+    settingsPatch.propertyTowers = structure.propertyTowers.map((tower) => tower.name);
+    settingsPatch.parkingTowers = structure.parkingTowers.map((tower) => tower.name);
+    settingsPatch.parkingLevels = [
+      ...new Set(structure.parkingTowers.flatMap((tower) => tower.levels)),
+    ];
+    settingsChanged = true;
+  }
+
   if (body.unitTypes !== undefined) {
     const parsed = parseUnitTypes(body.unitTypes);
     if (!parsed) {
@@ -236,9 +375,89 @@ serveAuthenticated('update-development', async (req) => {
         'Each document requirement needs an id, label, order, trigger, and approval source'
       );
     }
+    const existingRequirements = (objectOrEmpty(settingsPatch.workflowDefaults) as Record<
+      string,
+      unknown
+    >).documentRequirements;
+    const removedIds = removedRequirementIds(existingRequirements, parsed);
+    if (removedIds.length > 0) {
+      // A booking that already started with a step must keep it; retire it instead.
+      let inFlight = 0;
+      try {
+        inFlight = await countSnapshotsReferencing(supabase, developmentId, removedIds);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Could not check bookings';
+        return jsonError(req, message, 500);
+      }
+      if (inFlight > 0) {
+        return jsonError(
+          req,
+          `${inFlight} booking${inFlight === 1 ? '' : 's'} already started with a step you removed. Set it to inactive instead.`,
+          409
+        );
+      }
+    }
     settingsPatch.workflowDefaults = {
       ...objectOrEmpty(settingsPatch.workflowDefaults),
       documentRequirements: parsed,
+    };
+    settingsChanged = true;
+  }
+
+  if (body.buildingRules !== undefined) {
+    if (!Array.isArray(body.buildingRules)) {
+      return jsonError(req, 'buildingRules must be an array');
+    }
+    const parsedRules = parseResidenceBuildingRules(body.buildingRules) ?? [];
+    if (parsedRules.length !== body.buildingRules.length) {
+      return jsonError(req, 'Each building rule needs an id and text');
+    }
+    settingsPatch.buildingRules = parsedRules;
+    settingsChanged = true;
+  }
+
+  if (body.guestInfoVisibility !== undefined) {
+    const visibility = objectOrEmpty(body.guestInfoVisibility);
+    if (
+      (visibility.stayGuide !== undefined && typeof visibility.stayGuide !== 'boolean') ||
+      (visibility.propertyPage !== undefined && typeof visibility.propertyPage !== 'boolean')
+    ) {
+      return jsonError(req, 'guestInfoVisibility values must be true or false');
+    }
+    settingsPatch.guestInfoVisibility = {
+      stayGuide: visibility.stayGuide !== false,
+      propertyPage: visibility.propertyPage !== false,
+    };
+    settingsChanged = true;
+  }
+
+  if (body.propertySeeds !== undefined) {
+    const seeds = objectOrEmpty(body.propertySeeds);
+    const amenityIds = stringArray(seeds.amenityIds);
+    const houseRuleIds = stringArray(seeds.houseRuleIds);
+    if (!amenityIds || !houseRuleIds) {
+      return jsonError(req, 'propertySeeds.amenityIds and houseRuleIds must be string arrays');
+    }
+    settingsPatch.propertySeeds = {
+      amenityIds: [...new Set(amenityIds)],
+      houseRuleIds: [...new Set(houseRuleIds)],
+    };
+    settingsChanged = true;
+  }
+
+  if (body.pdfTemplates !== undefined) {
+    if (!Array.isArray(body.pdfTemplates)) {
+      return jsonError(req, 'pdfTemplates must be an array');
+    }
+    const parsedTemplates = parseResidencePdfTemplates(body.pdfTemplates) ?? [];
+    // The parser skips a malformed entry, so compare counts and reject instead of
+    // silently dropping a template the super admin still sees.
+    if (parsedTemplates.length !== body.pdfTemplates.length) {
+      return jsonError(req, 'Each PDF template needs an id, name and storage path');
+    }
+    settingsPatch.approvals = {
+      ...objectOrEmpty(settingsPatch.approvals),
+      pdfTemplates: parsedTemplates,
     };
     settingsChanged = true;
   }
@@ -310,6 +529,17 @@ serveAuthenticated('update-development', async (req) => {
       return jsonError(req, guestInfoError);
     }
     patch.settings = settingsPatch;
+
+    // Keep the previous settings so a bad edit to a live residence is reversible.
+    const { error: historyError } = await supabase.from('development_settings_history').insert({
+      development_id: developmentId,
+      settings: (existing as DevelopmentRow).settings ?? {},
+      saved_by: admin.id ?? null,
+      saved_by_email: admin.email ?? null,
+    });
+    if (historyError) {
+      console.error('[update-development] history insert:', historyError.message);
+    }
   }
 
   const { data, error } = await supabase
@@ -325,6 +555,39 @@ serveAuthenticated('update-development', async (req) => {
   }
 
   const row = data as DevelopmentRow;
+
+  await logSuperAdminAction(admin, {
+    action: typeof patch.name === 'string' ? 'development.renamed' : 'development.settings_updated',
+    targetType: 'development',
+    targetId: developmentId,
+    summary:
+      typeof patch.name === 'string'
+        ? `Renamed a development to ${row.name}`
+        : `Updated the settings of ${row.name}`,
+    metadata: { settingsChanged, fields: Object.keys(patch) },
+  });
+
+  // The FK is the identity; `residence_name` is the display copy. Keep it in step on rename
+  // so grouping, search place slugs and the unmatched-row view stay consistent.
+  if (typeof patch.name === 'string') {
+    const [{ error: propertyRenameError }, { error: parkingRenameError }] = await Promise.all([
+      supabase
+        .from('properties')
+        .update({ residence_name: row.name })
+        .eq('development_id', developmentId),
+      supabase
+        .from('parkings')
+        .update({ residence_name: row.name })
+        .eq('development_id', developmentId),
+    ]);
+    if (propertyRenameError) {
+      console.error('[update-development] property rename:', propertyRenameError.message);
+    }
+    if (parkingRenameError) {
+      console.error('[update-development] parking rename:', parkingRenameError.message);
+    }
+  }
+
   const statsMap = await developmentStatsByName(supabase, [row.name]);
 
   return jsonSuccess(req, {

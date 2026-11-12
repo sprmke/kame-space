@@ -4,7 +4,7 @@ status: planned
 stage: in-progress
 kind: plan
 tags: [performance, pwa, supabase, edge-functions, lighthouse, production-readiness, caching]
-updated: 2026-11-12
+updated: 2026-11-13
 readiness: unverified
 launch_gate: A
 launch_blocker: true

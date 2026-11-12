@@ -33,6 +33,12 @@ run_step() {
 }
 
 run_step "type-check" bun run type-check
+# Merge/deploy blocking runs in CI (.github/workflows/ci.yml `merge-guard` job and
+# cd-prod.yml), not here: it intentionally fails on the guarded feature branch.
+run_step "merge guard self-test" node scripts/dev/check-merge-guard.mjs --self-test
+run_step "residence profile edge/UI drift" node scripts/dev/check-residence-profile-drift.mjs
+run_step "residence profile snapshot" bun scripts/dev/residence-profile-snapshots.ts --check
+run_step "Azure golden set (settings, guest form, PDF fields, emails, titles)" bun run check:azure-golden
 run_step "lint (ESLint errors block CD — warnings OK)" bun run lint
 run_step "check:filenames" bun run check:filenames
 run_step "brand guard (retired product name)" bun scripts/brand/check-brand.ts --check

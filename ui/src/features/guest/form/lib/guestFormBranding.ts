@@ -18,6 +18,36 @@ export function formatResidenceShortName(name: string | null | undefined): strin
   return trimmed.replace(/\s+Residences$/i, '').trim() || trimmed;
 }
 
+export type ResidenceCopyKey = keyof GuestResidenceCopy;
+
+/** Guest-facing copy the residence may override (plan §4.6). */
+export type GuestResidenceCopy = {
+  'guestForm.parking.stepHint': string;
+  'guestForm.parking.paidDescription': string;
+  'guestForm.parking.noPaidDescription': string;
+  'guestForm.pets.policyTitle': string;
+  'guestForm.pets.policyBody': string;
+  'guestForm.contact.emailHint': string;
+  'guestForm.guests.limitMessage': string;
+  'success.administrationLabel': string;
+  'payParking.lastMinuteWarning': string;
+};
+
+/**
+ * Residence override wins; otherwise the built-in copy that Azure ships today.
+ *
+ * The API only sends the keys a residence actually set, so an unconfigured building
+ * renders exactly the same text as before the registry existed.
+ */
+export function resolveGuestCopy(
+  info: { copy?: Partial<GuestResidenceCopy> } | null | undefined,
+  key: ResidenceCopyKey,
+  fallback: string
+): string {
+  const override = info?.copy?.[key];
+  return typeof override === 'string' && override.trim() ? override.trim() : fallback;
+}
+
 export function resolveGuestFormLogoUrl(
   info: Pick<GuestPaymentInfo, 'emailLogoUrl' | 'propertyCoverImageUrl'>
 ): string {

@@ -93,14 +93,16 @@ serveAuthenticated('update-property', async (req) => {
   }
 
   if (typeof body.tower === 'string' || typeof body.unitNumber === 'string') {
-    const residenceForTower =
-      typeof body.residenceName === 'string' ? body.residenceName.trim() : property.residence_name;
-    const parsed = parsePropertyTowerUnitFromBody(
-      {
-        tower: body.tower,
-        unitNumber: body.unitNumber,
-      },
-      { residenceName: residenceForTower }
+    const profile = await loadResidenceProfileForResidence(supabase, {
+      developmentId: (property as { development_id?: string | null }).development_id,
+      residenceName:
+        typeof body.residenceName === 'string'
+          ? body.residenceName.trim()
+          : property.residence_name,
+    });
+    const parsed = parsePropertyTowerUnitWithProfile(
+      { tower: body.tower, unitNumber: body.unitNumber },
+      profile
     );
     if (!parsed.ok) {
       return jsonError(req, parsed.error);

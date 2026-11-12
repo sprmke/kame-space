@@ -1,5 +1,3 @@
-import { getParkingLevelsForDevelopment } from '@/features/dashboard/org/lib/orgDevelopments';
-
 const LEGACY_PARKING_LEVEL_MAP: Record<string, string> = {
   B1: 'Level 1',
   B2: 'Level 2',
@@ -24,9 +22,16 @@ export function normalizeDevelopmentParkingLevels(levels: string[]): string[] {
     .filter((level, index, list) => level.length > 0 && list.indexOf(level) === index);
 }
 
-/** Default parking levels when none are stored (falls back to org parking catalog). */
+const AZURE_RESIDENCE_NAMES = new Set(['azure north residences', 'azure north']);
+
+/**
+ * Legacy fallback for rows that predate `settings.structure`. Every current development
+ * reads its levels from the structure; this only keeps an old Azure row editable.
+ */
 export function defaultParkingLevelsForDevelopment(developmentName: string): readonly string[] {
-  return getParkingLevelsForDevelopment(developmentName);
+  return AZURE_RESIDENCE_NAMES.has(developmentName.trim().toLowerCase())
+    ? ['Level 1', 'Level 2', 'Level 3']
+    : [];
 }
 
 export function readDevelopmentParkingLevels(

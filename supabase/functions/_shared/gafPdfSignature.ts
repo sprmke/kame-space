@@ -18,7 +18,9 @@ const GAF_PDF_FIELD_UNIT_OWNER_SIGNATURE = 'unitOwnerSignature_es_:signer:signat
 
 const GAF_PDF_FIELD_UNIT_OWNER_SIGNATURE_NAME = 'unitOwnerSignatureName';
 
-export const GAF_PDF_FIELD_CARPARK_SLOT_NUMBER = 'carparkSlotNumber';
+// The field-name constants live in `gafPdfFields.ts` so the PDF field maps stay free of
+// the pdf-lib import (the golden set snapshots the maps without loading the library).
+export { GAF_PDF_FIELD_CARPARK_SLOT_NUMBER } from './gafPdfFields.ts';
 
 export type GafOwnerSignatureBlockOptions = {
   unitOwner: string;

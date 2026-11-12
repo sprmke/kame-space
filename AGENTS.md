@@ -193,8 +193,8 @@ Full index: `.codex/README.md` (Codex) · `.cursor/rules/README.md` (Cursor) · 
 - `?testing=true` / a test-booking pipeline — use local or staging Supabase.
 - Co-author trailers or AI commit/PR attribution — `.cursor/rules/git-commits.mdc` and **`git-commits`** skill; `.husky/commit-msg` strips `Co-authored-by` lines automatically.
 - **Production Supabase/DB deploys without unlock** — `.cursor/rules/no-prod-deploy.mdc`. Never run or recommend `deploy:supabase`, `db push`, `functions deploy`, or remote migrations unless the user said **`kamewave`** in the same message. Shell hooks enforce this.
+- **Merging or un-drafting a `merge-guard`-blocked PR** — `docs/workflow/merge-guard.json` + the `merge-guard` CI job. A `develop` merge is a production Supabase deploy. Only the owner clears it, by setting `clearedAt` / `clearedBy`.
 - Trusting a skill just because it's in the picker — if `property-management-app` (a separate Next.js/tRPC/Drizzle repo) is also open this session, its skills will appear too; ignore them here.
-
 
 ## Codex compatibility
 
@@ -203,6 +203,7 @@ Before working, read [.codex/README.md](.codex/README.md). It lists this project
 Superpowers workflows and subagent delegation remain opt-in; do not start them automatically. Run `python3 .codex/sync.py` after changing project skills, commands or agent definitions. Review/trust hooks through Codex before relying on their enforcement. This repository setup is independent of the hourly job-search task in the personal chat.
 
 <!-- global-agent-skills -->
+
 ## Global agent skills
 
 This machine has 159 shared skills in `~/.agents/skill-library` (Claude Code, Cursor,

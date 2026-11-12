@@ -18,7 +18,7 @@ tags:
     reliability,
     ux,
   ]
-updated: 2026-11-11
+updated: 2026-11-13
 readiness: phase-1-verified
 last_verified: 2026-11-10
 ---

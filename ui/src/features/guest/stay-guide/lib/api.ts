@@ -86,6 +86,16 @@ export type GuestStayGuideDto = {
     organizationName: string;
   };
   sections: StayGuideSectionDto[];
+  /** Building rules and info; null when the residence hides it or has none. */
+  buildingInfo: {
+    requirements: string;
+    guides: Array<{ id: string; title: string; content: string }>;
+    importantInfo: string;
+    rules: Array<{ id: string; text: string; type: 'info' | 'prohibited' | 'allowed' }>;
+    poolFee: number | null;
+    poolSchedule: string;
+    amenities: string[];
+  } | null;
   /** Present on current API; older responses may omit. */
   checkInDocuments?: StayGuideCheckInDocumentDto[];
   validUntil: string;

@@ -21,8 +21,8 @@ function isGeneralChildAge(age: number): boolean {
   return age < ADULT_MIN_AGE;
 }
 
-function isAzureChildAge(age: number): boolean {
-  return age <= AZURE_CHILD_MAX_AGE;
+function isChildAge(age: number, childMaxAge: number): boolean {
+  return age <= childMaxAge;
 }
 
 /** General rule: guests under 18 = child. Named slots only. */
@@ -53,8 +53,11 @@ export function computeGuestCounts(guests: GuestSlot[]): {
   };
 }
 
-/** Azure occupancy counts — guest form validation only. */
-export function computeAzureGuestCountsByAge(guests: GuestSlot[]): {
+/** Occupancy counts by the residence's child age (defaults to the historical Azure rule). */
+export function computeAzureGuestCountsByAge(
+  guests: GuestSlot[],
+  childMaxAge: number = AZURE_CHILD_MAX_AGE
+): {
   adults: number;
   children: number;
 } {
@@ -65,7 +68,7 @@ export function computeAzureGuestCountsByAge(guests: GuestSlot[]): {
     const age = parseGuestAge(guest.age);
     if (age == null) continue;
 
-    if (isAzureChildAge(age)) {
+    if (isChildAge(age, childMaxAge)) {
       children += 1;
     } else {
       adults += 1;
@@ -83,14 +86,15 @@ export type PropertyGuestCapacity = {
 /** Property-scoped party rules enforced on public guest form submit only. */
 export function assertPropertyGuestPartyRules(
   guests: GuestSlot[],
-  capacity: PropertyGuestCapacity
+  capacity: PropertyGuestCapacity,
+  childMaxAge: number = AZURE_CHILD_MAX_AGE
 ): void {
   const partySize = getActivePartySize(guests);
 
   if (partySize === MAX_GUESTS) {
     const fifthAge = parseGuestAge(guests[MAX_GUESTS - 1]?.age);
-    if (fifthAge != null && fifthAge > FIFTH_PARTY_GUEST_MAX_AGE) {
-      throw new Error(`The 5th guest must be ${FIFTH_PARTY_GUEST_MAX_AGE} years old or younger`);
+    if (fifthAge != null && fifthAge > childMaxAge) {
+      throw new Error(`The 5th guest must be ${childMaxAge} years old or younger`);
     }
   }
 
@@ -99,7 +103,7 @@ export function assertPropertyGuestPartyRules(
     return guest.name?.trim() || age != null;
   });
 
-  const occupancyCounts = computeAzureGuestCountsByAge(activeGuests);
+  const occupancyCounts = computeAzureGuestCountsByAge(activeGuests, childMaxAge);
 
   if (
     occupancyCounts.adults > capacity.maxAdults ||

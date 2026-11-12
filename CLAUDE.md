@@ -217,6 +217,7 @@ Full index: `.claude/README.md` (Claude Code) · `.cursor/rules/README.md` (Curs
 - Trusting a skill just because it's in the picker — if `property-management-app` (a separate Next.js/tRPC/Drizzle repo) is also open this session, its skills will appear too; ignore them here.
 
 <!-- global-agent-skills -->
+
 ## Global agent skills
 
 This machine has 159 shared skills in `~/.agents/skill-library` (Claude Code, Cursor,

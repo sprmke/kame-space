@@ -35,6 +35,7 @@ import {
 import { usePublicPropertyDetail } from '@/features/guest/marketing/properties/hooks/usePublicPropertyDetail';
 import type { ResolvedPropertyDetail } from '@/features/guest/marketing/properties/types/publicProperty';
 import { GuestTripArrivalSection } from '@/features/guest/trip/components/GuestTripArrivalSection';
+import { GuestTripBuildingSection } from '@/features/guest/trip/components/GuestTripBuildingSection';
 import { GuestTripCancellationSection } from '@/features/guest/trip/components/GuestTripCancellationSection';
 import { GuestTripDetailsSection } from '@/features/guest/trip/components/GuestTripDetailsSection';
 import { GuestTripEssentialsCard } from '@/features/guest/trip/components/GuestTripEssentialsCard';
@@ -562,6 +563,8 @@ function GuestTripContent({
           <GuestTripPaymentSection trip={trip} phase={phase} paymentMethods={paymentMethods} />
 
           <GuestTripCancellationSection trip={trip} />
+
+          {trip.buildingInfo ? <GuestTripBuildingSection buildingInfo={trip.buildingInfo} /> : null}
 
           {!cancelled && (active || phase === 'requested') ? (
             <GuestTripArrivalSection

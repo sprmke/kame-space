@@ -2,7 +2,7 @@
 title: 'Tasks To Plan'
 status: active
 tags: [planning, intake, backlog]
-updated: 2026-11-11
+updated: 2026-11-13
 stage: intake
 kind: backlog
 ---
@@ -980,7 +980,7 @@ Example:
 
 ===
 
-📋 Multi-residence support — config decoupling from Azure North
+🚧 Multi-residence support — config decoupling from Azure North
 
 → **Planned:** [`../planned/multi-residence-config-decoupling.md`](../planned/multi-residence-config-decoupling.md) — Goal. Support any number of residences / developments / real-estate types without code changes, with per-residence configuration edited from /admin, and Azure North reduced to a seeded row that behaves byte-identically to today.
 

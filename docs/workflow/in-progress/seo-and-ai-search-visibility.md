@@ -2,7 +2,7 @@
 title: 'SEO and AI search visibility (17-point checklist)'
 status: in-progress
 tags: [workflow, planned, seo, aeo, public-site, images, performance, middleware]
-updated: 2026-11-11
+updated: 2026-11-13
 stage: in-progress
 kind: plan
 ---

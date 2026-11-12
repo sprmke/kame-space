@@ -14,7 +14,7 @@ import {
   type DocumentRequirement,
 } from './documentRequirements.ts';
 
-type AppSettingsRow = {
+export type AppSettingsRow = {
   id: number;
   updated_at: string;
   email_to: string | null;
@@ -92,6 +92,11 @@ export type GuestPaymentInfoDto = {
   cleaningBufferMinutes: number;
   maxAdults: number;
   maxChildren: number;
+  /** Building occupancy rules, resolved from the residence profile. */
+  childMaxAge: number;
+  adultMinAge: number;
+  idRequiredFromAge: number;
+  primaryGuestMinAge: number;
   propertyName: string;
   propertyEyebrow: string;
   propertyCoverImageUrl: string | null;
@@ -101,6 +106,10 @@ export type GuestPaymentInfoDto = {
   petFee: number;
   /** Flat per-booking down payment (`app_settings.default_down_payment`). */
   downPayment: number;
+  /** Residence copy overrides for the guest-facing keys (§4.6). Only keys the row sets. */
+  copy: Partial<Record<ResidenceCopyKey, string>>;
+  /** Residence term overrides (building admin, checkpoint). Only keys the row sets. */
+  terms: Partial<Record<ResidenceTermKey, string>>;
   /** Listing lifecycle state — drives the guest "not taking bookings" screen. */
   listingState: 'pending_verification' | 'live' | 'paused' | 'suspended' | 'archived';
   acceptingBookings: boolean;
@@ -122,7 +131,7 @@ import {
   type PropertyIntegrationStatus,
 } from './propertyIntegrationStatus.ts';
 import { loadOrgBrandColorByPropertyId } from './orgBrandColor.ts';
-import { loadOrgSettingsRowByPropertyId, pickOrgSettingsFieldsFromRow } from './orgSettings.ts';
+import { loadOrgSettingsRowByPropertyId, pickOrgSettingsFieldsFromRow, type OrgSettingsRow } from './orgSettings.ts';
 import { resolveOrgBrandColorFromSettings } from './orgSettingsValidation.ts';
 import {
   resolvePropertyFacebookUrl,
@@ -136,7 +145,12 @@ import {
 import { getEmailAutomationDefaults } from './propertyEmailAutomationDefaults.ts';
 import { DEFAULT_RESIDENCE_NAME } from './propertyResidenceDefaults.ts';
 import { loadDevelopmentPmoEmailByName } from './developmentSerialize.ts';
-import { resolveGuestFormSettings } from './guestFormSettings.ts';
+import { resolveGuestFormSettings, type GuestFormSettings } from './guestFormSettings.ts';
+import {
+  loadResidenceProfileForProperty,
+  type ResidenceCopyKey,
+  type ResidenceTermKey,
+} from './residenceProfile.ts';
 import { getDefaultPropertyId } from './propertyScope.ts';
 import { loadPropertyPricing } from './propertyPricing.ts';
 import {
@@ -417,11 +431,11 @@ async function loadPropertyResidenceName(propertyId: string): Promise<string> {
 
   if (error) {
     console.warn('[appSettings] residence load failed:', error.message);
-    return DEFAULT_RESIDENCE_NAME;
+    // Never fall back to a real building's name: a blank residence is generic.
+    return '';
   }
 
-  const name = trimOrEmpty(data?.residence_name as string | null | undefined);
-  return name || DEFAULT_RESIDENCE_NAME;
+  return trimOrEmpty(data?.residence_name as string | null | undefined);
 }
 
 function pickPaymentProvider(row: AppSettingsRow | null): {
@@ -477,24 +491,27 @@ function pickPropertyFieldsFromRow(
   };
 }
 
-export async function resolveAppSettings(propertyId?: string | null): Promise<AppSettingsResolved> {
-  const resolvedPropertyId = propertyId ?? (await getDefaultPropertyId());
-  const [row, orgRow, residenceName, brandColor] = await Promise.all([
-    loadSettingsRow(propertyId),
-    propertyId ? loadOrgSettingsRowByPropertyId(propertyId) : Promise.resolve(null),
-    propertyId
-      ? loadPropertyResidenceName(resolvedPropertyId)
-      : Promise.resolve(DEFAULT_RESIDENCE_NAME),
-    loadOrgBrandColorByPropertyId(resolvedPropertyId),
-  ]);
-  const org = pickOrgSettingsFieldsFromRow(orgRow);
+/**
+ * Pure half of {@link resolveAppSettings}: every field is picked from rows that the caller
+ * loaded. Keeps the Azure golden set (`scripts/dev/golden/`) able to snapshot the resolved
+ * settings without a database.
+ */
+export function resolveAppSettingsFromRows(input: {
+  settingsRow: AppSettingsRow | null;
+  orgSettingsRow: OrgSettingsRow | null;
+  residenceName: string;
+  developmentPmoEmail: string | null;
+  brandColor: string;
+}): AppSettingsResolved {
+  const org = pickOrgSettingsFieldsFromRow(input.orgSettingsRow);
   const originBase = resolvePublicGuestAppOrigin(org.origin.value || null);
-  const developmentPmoEmail = await loadDevelopmentPmoEmailByName(
-    createServiceClient(),
-    residenceName
+  const property = pickPropertyFieldsFromRow(
+    input.settingsRow,
+    originBase,
+    input.residenceName,
+    input.developmentPmoEmail
   );
-  const property = pickPropertyFieldsFromRow(row, originBase, residenceName, developmentPmoEmail);
-  const branding = pickPropertyBrandingFromRow(row);
+  const branding = pickPropertyBrandingFromRow(input.settingsRow);
 
   const facebookReviewsUrl = resolvePropertyFacebookUrl(
     branding.facebook.value,
@@ -515,7 +532,7 @@ export async function resolveAppSettings(propertyId?: string | null): Promise<Ap
     facebookReviewsUrl,
     airbnbUrl,
     emailLogoUrl: org.logo.value || DEFAULT_EMAIL_LOGO_URL,
-    brandColor,
+    brandColor: input.brandColor,
     defaultParkingRateGuest: property.parkingRate.value,
     gcashName: property.gcashName.value,
     gcashNumber: formatPaymentAccountNumberDisplay(
@@ -529,24 +546,47 @@ export async function resolveAppSettings(propertyId?: string | null): Promise<Ap
   };
 }
 
-export async function serializeGuestPaymentInfo(
-  propertyId?: string | null
-): Promise<GuestPaymentInfoDto> {
+export async function resolveAppSettings(propertyId?: string | null): Promise<AppSettingsResolved> {
   const resolvedPropertyId = propertyId ?? (await getDefaultPropertyId());
-  const [s, guestForm, pricing, lifecycleRow] = await Promise.all([
-    resolveAppSettings(resolvedPropertyId),
-    resolveGuestFormSettings(resolvedPropertyId),
-    loadPropertyPricing(resolvedPropertyId),
-    createServiceClient()
-      .from('properties')
-      .select('status, inactive_reason')
-      .eq('id', resolvedPropertyId)
-      .maybeSingle(),
+  const [row, orgRow, residenceName, brandColor] = await Promise.all([
+    loadSettingsRow(propertyId),
+    propertyId ? loadOrgSettingsRowByPropertyId(propertyId) : Promise.resolve(null),
+    propertyId ? loadPropertyResidenceName(resolvedPropertyId) : Promise.resolve(''),
+    loadOrgBrandColorByPropertyId(resolvedPropertyId),
   ]);
+  const developmentPmoEmail = await loadDevelopmentPmoEmailByName(
+    createServiceClient(),
+    residenceName
+  );
 
+  return resolveAppSettingsFromRows({
+    settingsRow: row,
+    orgSettingsRow: orgRow,
+    residenceName,
+    developmentPmoEmail,
+    brandColor,
+  });
+}
+
+/**
+ * Pure half of {@link serializeGuestPaymentInfo}: the guest payment payload is assembled
+ * from already-resolved settings, so the golden set can snapshot it without pricing reads.
+ */
+export function buildGuestPaymentInfoDto(input: {
+  settings: AppSettingsResolved;
+  guestForm: GuestFormSettings;
+  petFee: number;
+  downPayment: number;
+  status: string | null;
+  inactiveReason: string | null;
+  copy?: Partial<Record<ResidenceCopyKey, string>>;
+  terms?: Partial<Record<ResidenceTermKey, string>>;
+}): GuestPaymentInfoDto {
+  const s = input.settings;
+  const guestForm = input.guestForm;
   const listingState = resolvePropertyLifecycleState({
-    status: (lifecycleRow.data?.status as string | null) ?? null,
-    inactive_reason: (lifecycleRow.data?.inactive_reason as string | null) ?? null,
+    status: input.status,
+    inactive_reason: input.inactiveReason,
   });
 
   return {
@@ -572,15 +612,50 @@ export async function serializeGuestPaymentInfo(
     cleaningBufferMinutes: guestForm.cleaningBufferMinutes,
     maxAdults: guestForm.maxAdults,
     maxChildren: guestForm.maxChildren,
+    childMaxAge: guestForm.childMaxAge,
+    adultMinAge: guestForm.adultMinAge,
+    idRequiredFromAge: guestForm.idRequiredFromAge,
+    primaryGuestMinAge: guestForm.primaryGuestMinAge,
     propertyName: guestForm.propertyName,
     propertyEyebrow: guestForm.propertyEyebrow,
     propertyCoverImageUrl: guestForm.propertyCoverImageUrl,
     residenceName: guestForm.residenceName,
     organizationName: guestForm.organizationName,
     defaultParkingRateGuest: s.defaultParkingRateGuest,
+    petFee: input.petFee,
+    downPayment: input.downPayment,
+    copy: input.copy ?? {},
+    terms: input.terms ?? {},
+  };
+}
+
+export async function serializeGuestPaymentInfo(
+  propertyId?: string | null
+): Promise<GuestPaymentInfoDto> {
+  const resolvedPropertyId = propertyId ?? (await getDefaultPropertyId());
+  const [s, guestForm, pricing, lifecycleRow, profile] = await Promise.all([
+    resolveAppSettings(resolvedPropertyId),
+    resolveGuestFormSettings(resolvedPropertyId),
+    loadPropertyPricing(resolvedPropertyId),
+    createServiceClient()
+      .from('properties')
+      .select('status, inactive_reason')
+      .eq('id', resolvedPropertyId)
+      .maybeSingle(),
+    // Guest-facing copy and terms ride along so the anon form makes no extra request (§4.7).
+    loadResidenceProfileForProperty(createServiceClient(), resolvedPropertyId, { strict: false }),
+  ]);
+
+  return buildGuestPaymentInfoDto({
+    settings: s,
+    guestForm,
     petFee: pricing.petFee,
     downPayment: pricing.downPayment,
-  };
+    status: (lifecycleRow.data?.status as string | null) ?? null,
+    inactiveReason: (lifecycleRow.data?.inactive_reason as string | null) ?? null,
+    copy: profile.copy,
+    terms: profile.terms,
+  });
 }
 
 /** Documents Approver / development PMO (`emailTo`) — Azure reply sender allow-list for inbound approvals. */
@@ -637,6 +712,8 @@ export async function serializeAppSettingsForAdmin(
 
   const org = pickOrgSettingsFieldsFromRow(orgRow);
   const originBase = resolvePublicGuestAppOrigin(org.origin.value || null);
+  // `residenceName` is resolved in the fan-out above; a second read here was the pre-fan-out
+  // shape and would also redeclare it.
   const developmentPmoEmail = await loadDevelopmentPmoEmailByName(
     createServiceClient(),
     residenceName
@@ -792,6 +869,24 @@ export function validateGafContactNumber(raw: string): string | null {
   return null;
 }
 
+/** Pure half of {@link applyGafDefaultsToFormData}: operator GAF defaults always win. */
+export function applyGafDefaults<T extends Partial<GuestFormData>>(
+  data: T,
+  settings: AppSettingsResolved
+): T &
+  Pick<
+    GuestFormData,
+    'unitOwner' | 'towerAndUnitNumber' | 'ownerOnsiteContactPerson' | 'ownerContactNumber'
+  > {
+  return {
+    ...data,
+    unitOwner: settings.gafUnitOwner,
+    towerAndUnitNumber: settings.gafTowerAndUnitNumber,
+    ownerOnsiteContactPerson: settings.gafGuestsOnsiteContactPerson,
+    ownerContactNumber: settings.gafOwnerContactNumber,
+  };
+}
+
 /** Apply operator GAF defaults — server always wins over client-submitted values. */
 export async function applyGafDefaultsToFormData<T extends Partial<GuestFormData>>(
   data: T,
@@ -803,12 +898,5 @@ export async function applyGafDefaultsToFormData<T extends Partial<GuestFormData
       'unitOwner' | 'towerAndUnitNumber' | 'ownerOnsiteContactPerson' | 'ownerContactNumber'
     >
 > {
-  const s = await resolveAppSettings(propertyId);
-  return {
-    ...data,
-    unitOwner: s.gafUnitOwner,
-    towerAndUnitNumber: s.gafTowerAndUnitNumber,
-    ownerOnsiteContactPerson: s.gafGuestsOnsiteContactPerson,
-    ownerContactNumber: s.gafOwnerContactNumber,
-  };
+  return applyGafDefaults(data, await resolveAppSettings(propertyId));
 }

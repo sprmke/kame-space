@@ -14,14 +14,17 @@ import {
   findPropertyNameConflict,
 } from '../_shared/propertyNameConflict.ts';
 import { getReservedDisplayNameViolation } from '../_shared/reservedDisplayNames.ts';
-import { defaultPropertySettingsForResidence } from '../_shared/propertyResidenceDefaults.ts';
 import {
-  azureNorthLocationSeed,
-  isAzureNorthResidence,
-} from '../_shared/propertyLocationDefaults.ts';
+  applyResidencePropertySeeds,
+  defaultPropertySettingsForResidence,
+} from '../_shared/propertyResidenceDefaults.ts';
+import {
+  loadResidenceProfileForResidence,
+  residenceLocationSeed,
+} from '../_shared/residenceProfile.ts';
 import {
   DUPLICATE_TOWER_UNIT_MESSAGE,
-  parsePropertyTowerUnitFromBody,
+  parsePropertyTowerUnitWithProfile,
 } from '../_shared/propertyTowerUnit.ts';
 import {
   jsonError,
@@ -59,8 +62,10 @@ serveAuthenticated('create-property', async (req, user) => {
     return jsonError(req, nameReserved, 409);
   }
 
-  const residenceName =
+  const requestedResidenceName =
     typeof body.residenceName === 'string' ? body.residenceName.trim() || null : null;
+  const requestedDevelopmentId =
+    typeof body.developmentId === 'string' ? body.developmentId.trim() || null : null;
   const address = typeof body.address === 'string' ? body.address.trim() || null : null;
   const maxGuests =
     typeof body.maxGuests === 'number' && body.maxGuests > 0 ? Math.round(body.maxGuests) : null;
@@ -76,8 +81,15 @@ serveAuthenticated('create-property', async (req, user) => {
 
   const supabase = createServiceClient();
 
+  const profile = await loadResidenceProfileForResidence(supabase, {
+    developmentId: requestedDevelopmentId,
+    residenceName: requestedResidenceName,
+  });
+  const residenceName = requestedResidenceName ?? profile.developmentName;
+  const developmentId = requestedDevelopmentId ?? profile.developmentId;
+
   if (hasTowerUnitFields) {
-    const parsed = parsePropertyTowerUnitFromBody(body);
+    const parsed = parsePropertyTowerUnitWithProfile(body, profile);
     if (!parsed.ok) {
       return jsonError(req, parsed.error);
     }
@@ -97,9 +109,11 @@ serveAuthenticated('create-property', async (req, user) => {
   }
 
   const slug = await allocatePropertySlug(supabase, name);
-  const effectiveResidence = residenceName ?? 'Azure North Residences';
-  const defaultSettings = defaultPropertySettingsForResidence(effectiveResidence);
-  const azureLocation = isAzureNorthResidence(effectiveResidence) ? azureNorthLocationSeed() : null;
+  const defaultSettings = applyResidencePropertySeeds(
+    defaultPropertySettingsForResidence(residenceName ?? ''),
+    profile.propertySeeds
+  );
+  const locationSeed = residenceLocationSeed(profile);
 
   const { data, error } = await supabase
     .from('properties')
@@ -113,9 +127,10 @@ serveAuthenticated('create-property', async (req, user) => {
       unit_number: unitNumber,
       tower_and_unit: towerAndUnit,
       residence_name: residenceName,
-      address: address ?? azureLocation?.address ?? null,
+      development_id: developmentId,
+      address: address ?? locationSeed?.address ?? null,
       max_guests: maxGuests ?? (defaultSettings.maxGuests as number),
-      settings: azureLocation ? { ...defaultSettings, ...azureLocation.settings } : defaultSettings,
+      settings: locationSeed ? { ...defaultSettings, ...locationSeed.settings } : defaultSettings,
     })
     .select('*')
     .single();

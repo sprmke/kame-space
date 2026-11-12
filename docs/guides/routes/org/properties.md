@@ -134,6 +134,10 @@ Toolbar layout matches Bookings / Finance: phone uses search + refine icon + seg
 
 **Add property** (header button, empty state, sidebar switcher **+**) → `AddPropertyDialog` → **`POST create-property`** (`org:properties:create`) → navigates to new property **Settings**. Hidden for org **Admin** and property-only members.
 
+**Residence rules.** The dialog loads ACTIVE residences from **`GET list-residence-options`** and renders the selected residence's rules: its tower label and tower list, its unit label and unit format (example as placeholder, digits-only input only for digit presets), and its parking structure. Validation uses the same resolver the server uses (`validateTowerForProfile`, `unitNumberError`), so a subdivision accepts `Blk 3 Lot 5` while a 4-digit residence rejects it. The request sends both `residenceName` and `developmentId`, and the server re-validates against the resolved profile; a client mismatch is rejected rather than silently normalised.
+
+A residence with `towersRequired: false` and no towers hides the tower field entirely. A residence with no configured parking towers disables the parking tower select instead of offering Azure's towers.
+
 ---
 
 ## Copy settings

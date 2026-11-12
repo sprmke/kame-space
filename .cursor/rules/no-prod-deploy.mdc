@@ -91,6 +91,24 @@ Also **do not**:
 
 `.cursor/hooks/guard-shell.sh` and `.claude/hooks/guard-shell.sh` **deny** blocked commands unless **`kamewave`** appears in the command string. Rules alone are not enough — hooks are the backstop. The shared lib (`scripts/dev/prod-deploy-guard-lib.sh`) checks dev-targeted/read-only command shapes first, so a dev deploy/backup/status command is never mistaken for a prod one.
 
+## Guarded plans — merge equals deploy
+
+`docs/workflow/merge-guard.json` lists plans that must **not** be merged or deployed until the
+owner clears them. It is enforced, not advisory:
+
+- The `merge-guard` CI job (`node scripts/dev/check-merge-guard.mjs --mode=merge`) fails on a
+  guarded branch, so the PR cannot go green.
+- `cd-prod.yml` runs `--mode=deploy` and fails while a guarded module is in the tree.
+- The PR itself is a **draft**.
+
+**Never**, without the owner saying so in that message: mark a guarded draft PR ready, remove or
+edit its `merge-guard.json` entry, set `clearedAt` / `clearedBy`, or push a commit that deletes
+the guarded module's marker file to get past the check. Clearing is an owner action, recorded in
+the registry.
+
+Check the registry before treating any "finish this branch" request as a merge request:
+`bun run check:merge-guard --mode=merge` should pass only on unguarded branches.
+
 ## Related docs
 
 - **`docs/archive/operations/production-deployment.md`** — prod cutover checklist

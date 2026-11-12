@@ -7,22 +7,23 @@ updated: 2026-11-08
 
 # Local seed data
 
-One canonical dataset for local development: **one organization, one property, one parking**, with realistic rows for every module we support.
+One canonical dataset for local development: **one organization, one property, one parking**, with realistic rows for every module we support. A second **`INACTIVE`** development, `test-residence`, exists so local dev is never single-residence: generic-fallback bugs only show up when a non-Azure building is in the database.
 
 Files live in [`scripts/dev/seed/`](../../../scripts/dev/seed/) and load automatically on `bun run db:reset` via `supabase/config.toml` `[db.seed]`.
 
 ## Canonical identity
 
-| Entity       | Value                                                                                                    |
-| ------------ | -------------------------------------------------------------------------------------------------------- |
-| Organization | `kame-homes` — Kame Space                                                                                |
-| Property     | `kame-home` — Monaco 2604                                                                                |
-| Parking      | `monaco-level-2-slot-27`                                                                                 |
-| Development  | `azure-north-residences`                                                                                 |
-| Plan         | Business (`pro`), active                                                                                 |
-| Seed owner   | `seed-owner@example.com` / `seed-password`                                                               |
-| Demo guest   | `guest.demo@example.com` / `seed-password`                                                               |
-| Team         | `manager.demo@`, `operations.demo@`, `viewer.demo@`, `parking.demo@` (all `@example.com`, same password) |
+| Entity          | Value                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------- |
+| Organization    | `kame-homes` — Kame Space                                                                                |
+| Property        | `kame-home` — Monaco 2604                                                                                |
+| Parking         | `monaco-level-2-slot-27`                                                                                 |
+| Development     | `azure-north-residences` (linked to the property and parking by `development_id`)                        |
+| 2nd development | `test-residence` — Test Residence, `INACTIVE`, no towers, alnum units, pets off, two manual steps        |
+| Plan            | Business (`pro`), active                                                                                 |
+| Seed owner      | `seed-owner@example.com` / `seed-password`                                                               |
+| Demo guest      | `guest.demo@example.com` / `seed-password`                                                               |
+| Team            | `manager.demo@`, `operations.demo@`, `viewer.demo@`, `parking.demo@` (all `@example.com`, same password) |
 
 Dashboard paths:
 

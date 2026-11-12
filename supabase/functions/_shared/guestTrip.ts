@@ -46,7 +46,12 @@ import { canGuestPublicUpdateForm } from './statusMachine.ts';
 import { buildStayGuideCheckInDocuments } from './stayGuideCheckInDocuments.ts';
 import { resolveDocumentRequirements } from './documentRequirements.ts';
 import { computeTotalGuestBalanceFromBooking } from './totalGuestBalance.ts';
+import { createClient } from './supabaseJs.ts';
 import { countStayNights } from './utils.ts';
+import {
+  loadGuestBuildingInfoForProperty,
+  type GuestBuildingInfo,
+} from './developmentGuestInfo.ts';
 import type { GuestSubmission } from './types.ts';
 
 type BookingRow = Record<string, unknown>;
@@ -121,6 +126,8 @@ export type GuestTripDetailDto = {
     amountDue: number | null;
     isAirbnb: boolean;
   };
+  /** Building info, already filtered by `guestInfoVisibility.stayGuide`. */
+  buildingInfo: GuestBuildingInfo | null;
   refund: {
     amount: number | null;
     settledAt: string | null;
@@ -281,6 +288,36 @@ function guestBalanceAmounts(
   return { totalBalance, balancePaid, amountDue };
 }
 
+/**
+ * Building info for the stay guide, already filtered by `guestInfoVisibility.stayGuide`.
+ * Shares the resolver with the public property page so both surfaces agree.
+ */
+async function loadTripBuildingInfo(propertyId: string): Promise<GuestBuildingInfo | null> {
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+  const { data: property } = await supabase
+    .from('properties')
+    .select('development_id, residence_name')
+    .eq('id', propertyId)
+    .maybeSingle();
+
+  const propertyRow = property as
+    | { development_id: string | null; residence_name: string | null }
+    | null;
+  if (!propertyRow) return null;
+
+  return loadGuestBuildingInfoForProperty(
+    supabase,
+    {
+      developmentId: propertyRow.development_id,
+      residenceName: propertyRow.residence_name,
+    },
+    'stayGuide'
+  );
+}
+
 export async function buildGuestTripPayload(input: {
   booking: BookingRow;
   issueAccessToken: boolean;
@@ -332,6 +369,8 @@ export async function buildGuestTripPayload(input: {
     loadOpenCancellationRequest(bookingId),
     loadBookingRefund(bookingId),
   ]);
+
+  const buildingInfo = await loadTripBuildingInfo(propertyId);
 
   const needParking = row.need_parking === true;
   let findPath: string | null = null;
@@ -449,6 +488,7 @@ export async function buildGuestTripPayload(input: {
       ...guestBalanceAmounts(row),
       isAirbnb,
     },
+    buildingInfo,
     refund: {
       amount: numOrNull(row.sd_refund_amount),
       settledAt: str(row.settled_at) || null,

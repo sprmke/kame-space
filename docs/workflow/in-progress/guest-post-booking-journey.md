@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Guest post-booking journey: one connected flow from dates to review'
 status: in-progress
 tags: [workflow, planned, guest, booking, trip, stay-guide, chat, emails, ux]
-updated: 2026-11-12
+updated: 2026-11-13
 kind: plan
 readiness: audited
 last_verified: 2026-11-10

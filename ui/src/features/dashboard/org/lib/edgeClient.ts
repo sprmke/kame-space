@@ -151,7 +151,8 @@ async function callEdgeFunctionInner<T>(
       ...init,
       headers: {
         Authorization: `Bearer ${jwt}`,
-        'Content-Type': 'application/json',
+        // FormData sets its own multipart boundary; a JSON content type would break it.
+        ...(init?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         'x-request-id': requestId,
         ...(otpToken ? { 'x-superadmin-otp': otpToken } : {}),
         ...init?.headers,

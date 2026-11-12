@@ -10,32 +10,11 @@ import { useCheckPropertyName } from '@/features/dashboard/org/hooks/useCheckPro
 import { useCreateParking } from '@/features/dashboard/org/hooks/useCreateParking';
 import { useCreateProperty } from '@/features/dashboard/org/hooks/useCreateProperty';
 import { useParkingSlotConflict } from '@/features/dashboard/org/hooks/useParkingSlotConflict';
+import {
+  toResidenceProfile,
+  useResidenceOptions,
+} from '@/features/dashboard/org/hooks/useResidenceOptions';
 import { useTowerUnitConflict } from '@/features/dashboard/org/hooks/useTowerUnitConflict';
-import {
-  DEFAULT_DEVELOPMENT_NAME,
-  getOrgDevelopmentNames,
-  getParkingTowersForDevelopment,
-  getPropertyTowersForDevelopment,
-} from '@/features/dashboard/org/lib/orgDevelopments';
-import {
-  getParkingLevelsForTower,
-  DEFAULT_PARKING_LEVEL,
-  DEFAULT_PARKING_TOWER,
-} from '@/features/dashboard/org/lib/parkingResidences';
-import {
-  formatParkingCode,
-  formatParkingDisplayName,
-  inferParkingTypeForTower,
-  isValidParkingSlotNumber,
-  sanitizeParkingSlotNumber,
-} from '@/features/dashboard/org/lib/parkingSlotDisplay';
-import {
-  formatTowerAndUnit,
-  isPropertyTowerForResidence,
-  isValidUnitNumber,
-  sanitizeUnitNumberInput,
-  type PropertyTower,
-} from '@/features/dashboard/org/lib/propertyTowerUnit';
 import { orgPlansPath } from '@/features/dashboard/org/lib/tenantPaths';
 import type { Parking, Property } from '@/features/dashboard/org/types';
 import { useOrgPlan } from '@/features/dashboard/plans/hooks/useOrgPlan';
@@ -61,6 +40,19 @@ import {
   resolveNameAvailabilityState,
 } from '@/lib/availabilityCheckState';
 import { FORM_PLACEHOLDERS } from '@/lib/constants/formPlaceholders';
+import {
+  activeParkingTowers,
+  activePropertyTowers,
+  formatParkingCodeForProfile,
+  formatParkingLocation,
+  formatUnitLabel,
+  parkingLevelsForTower,
+  parkingSlotError,
+  parkingTypeForTower,
+  sanitizeSlotLabel,
+  unitNumberError,
+  validateTowerForProfile,
+} from '@/lib/residence/residenceProfile';
 import { cn } from '@/lib/utils';
 
 type AssetKind = 'property' | 'parking';
@@ -104,10 +96,14 @@ function KindToggle({
 function DevelopmentField({
   id,
   value,
+  options,
+  loading,
   onChange,
 }: {
   id: string;
   value: string;
+  options: string[];
+  loading?: boolean;
   onChange: (name: string) => void;
 }) {
   return (
@@ -118,7 +114,10 @@ function DevelopmentField({
           <SelectValue placeholder="Select development" />
         </SelectTrigger>
         <SelectContent position="popper">
-          {getOrgDevelopmentNames().map((name) => (
+          {loading ? (
+            <div className="text-muted-foreground px-3 py-2 text-sm">Loading residences</div>
+          ) : null}
+          {options.map((name) => (
             <SelectItem key={name} value={name}>
               {name}
             </SelectItem>
@@ -150,22 +149,71 @@ export function AddEntityDialog({
   const showKindToggle = canAddProperty && canAddParking;
   const [kind, setKind] = useState<AssetKind>(defaultKind);
 
-  const [tower, setTower] = useState<PropertyTower | ''>('');
+  const [developmentName, setDevelopmentName] = useState('');
+  const [parkingTower, setParkingTower] = useState('');
+  const [level, setLevel] = useState('');
+  const [slotNumber, setSlotNumber] = useState('');
+
+  const { data: residenceOptionsData, isLoading: residenceOptionsLoading } = useResidenceOptions({
+    enabled: open,
+  });
+  const residenceOptions = useMemo(
+    () => residenceOptionsData?.residences ?? [],
+    [residenceOptionsData]
+  );
+  const selectedResidence = useMemo(
+    () => residenceOptions.find((option) => option.name === developmentName) ?? null,
+    [residenceOptions, developmentName]
+  );
+  const residenceProfile = useMemo(
+    () => (selectedResidence ? toResidenceProfile(selectedResidence) : null),
+    [selectedResidence]
+  );
+
+  const [tower, setTower] = useState('');
   const [unitNumber, setUnitNumber] = useState('');
   const [unitTouched, setUnitTouched] = useState(false);
   const [propertyDisplayName, setPropertyDisplayName] = useState('');
-  const [developmentName, setDevelopmentName] = useState(DEFAULT_DEVELOPMENT_NAME);
-  const propertyTowerOptions = getPropertyTowersForDevelopment(developmentName);
+
+  const propertyTowerOptions = useMemo(
+    () =>
+      residenceProfile
+        ? activePropertyTowers(residenceProfile).map((entry) => entry.name)
+        : [],
+    [residenceProfile]
+  );
+  const towerResult = residenceProfile
+    ? validateTowerForProfile(residenceProfile, tower)
+    : { ok: false as const, error: 'Select a residence first' };
+  const unitMessage = residenceProfile
+    ? unitNumberError(residenceProfile, unitNumber)
+    : 'Unit number is required';
+  const unitInvalid = unitTouched && unitNumber.trim().length > 0 && Boolean(unitMessage);
+  const unitFormat = residenceProfile?.structure.unitNumberFormat;
+  const unitInputMode = unitFormat?.preset === 'digits' || unitFormat?.preset === 'digits4'
+    ? 'numeric'
+    : 'text';
+  const unitMaxLength =
+    unitFormat?.preset === 'digits4' ? 4 : unitFormat?.preset === 'digits' ? 6 : 15;
+
   const {
     conflict,
     hasActiveListing: propertyListed,
     isChecking: towerUnitChecking,
-  } = useTowerUnitConflict(tower, unitNumber);
-  const unitInvalid = unitTouched && unitNumber.length > 0 && !isValidUnitNumber(unitNumber);
+  } = useTowerUnitConflict(tower, unitNumber, undefined, {
+    developmentId: selectedResidence?.developmentId ?? null,
+    residenceName: selectedResidence?.name ?? null,
+    profile: residenceProfile,
+  });
+
   const towerUnitReady =
-    isPropertyTowerForResidence(tower, developmentName) && isValidUnitNumber(unitNumber);
+    Boolean(residenceProfile) &&
+    towerResult.ok &&
+    unitNumber.trim().length > 0 &&
+    !unitMessage;
   const resolvedPropertyName =
-    propertyDisplayName.trim() || (towerUnitReady ? formatTowerAndUnit(tower, unitNumber) : '');
+    propertyDisplayName.trim() ||
+    (towerUnitReady && residenceProfile ? formatUnitLabel(residenceProfile, tower, unitNumber) : '');
   const propertyNameReady = towerUnitReady && resolvedPropertyName.trim().length >= 2;
   const propertyNameCheck = useCheckPropertyName(
     resolvedPropertyName,
@@ -189,21 +237,35 @@ export function AddEntityDialog({
   });
   const propertyCanSubmit = towerUnitReady && !propertyNameBlocked;
 
-  const [parkingTower, setParkingTower] = useState(DEFAULT_PARKING_TOWER);
-  const [level, setLevel] = useState(DEFAULT_PARKING_LEVEL);
-  const [slotNumber, setSlotNumber] = useState('');
-  const parkingDisplayName = useMemo(
-    () => formatParkingDisplayName(parkingTower, level, slotNumber),
-    [parkingTower, level, slotNumber]
+  const parkingTowerOptions = useMemo(
+    () =>
+      residenceProfile
+        ? activeParkingTowers(residenceProfile).map((entry) => entry.name)
+        : [],
+    [residenceProfile]
   );
-  const parkingCode = useMemo(
-    () => formatParkingCode(parkingTower, level, slotNumber),
-    [parkingTower, level, slotNumber]
-  );
+  const parkingLevelOptions = residenceProfile
+    ? parkingLevelsForTower(residenceProfile, parkingTower)
+    : [];
+  const parkingDisplayName =
+    residenceProfile && parkingTower && level
+      ? formatParkingLocation(residenceProfile, parkingTower, level, slotNumber)
+      : '';
+  const parkingCode =
+    residenceProfile && parkingTower && level
+      ? formatParkingCodeForProfile(residenceProfile, parkingTower, level, slotNumber)
+      : '';
+  const slotMessage = residenceProfile
+    ? parkingSlotError(residenceProfile, slotNumber)
+    : 'Slot number is required';
   const { hasDuplicate: parkingDuplicate, isChecking: parkingSlotChecking } =
-    useParkingSlotConflict(parkingTower, level, slotNumber, developmentName);
+    useParkingSlotConflict(parkingTower, level, slotNumber, selectedResidence?.name ?? '');
   const parkingSlotReady =
-    Boolean(parkingTower) && Boolean(level) && isValidParkingSlotNumber(slotNumber);
+    Boolean(residenceProfile) &&
+    Boolean(parkingTower) &&
+    Boolean(level) &&
+    slotNumber.trim().length > 0 &&
+    !slotMessage;
   const parkingSlotAvailabilityState = resolveAsyncAvailabilityState({
     ready: parkingSlotReady,
     isChecking: parkingSlotChecking,
@@ -211,8 +273,6 @@ export function AddEntityDialog({
   });
   const parkingCanSubmit = parkingSlotReady && !parkingDuplicate;
 
-  const parkingTowerOptions = getParkingTowersForDevelopment(developmentName);
-  const parkingLevelOptions = getParkingLevelsForTower(parkingTower);
 
   const [error, setError] = useState<string | null>(null);
   const isPending = createProperty.isPending || createParking.isPending;
@@ -234,26 +294,34 @@ export function AddEntityDialog({
     setUnitNumber('');
     setUnitTouched(false);
     setPropertyDisplayName('');
-    setDevelopmentName(DEFAULT_DEVELOPMENT_NAME);
-    setParkingTower(DEFAULT_PARKING_TOWER);
-    setLevel(DEFAULT_PARKING_LEVEL);
+    setDevelopmentName('');
+    setParkingTower('');
+    setLevel('');
     setSlotNumber('');
     setError(null);
   }, [open, canAddProperty, canAddParking, defaultKind]);
+
+  // Fill the residence and its first parking tower once options arrive.
+  useEffect(() => {
+    if (!open || developmentName) return;
+    const first = residenceOptions[0];
+    if (!first) return;
+    const profile = toResidenceProfile(first);
+    const firstParkingTower = activeParkingTowers(profile)[0];
+    setDevelopmentName(first.name ?? '');
+    setParkingTower(firstParkingTower?.name ?? '');
+    setLevel(firstParkingTower?.levels[0] ?? '');
+  }, [open, developmentName, residenceOptions]);
 
   useEffect(() => {
     setError(null);
   }, [kind, tower, unitNumber, parkingTower, level, slotNumber, developmentName]);
 
+  // The residence and its first parking tower are prefilled, so only a typed value counts
+  // as an unsaved edit here.
   const isDirty =
     open &&
-    (tower !== '' ||
-      unitNumber !== '' ||
-      propertyDisplayName !== '' ||
-      slotNumber !== '' ||
-      developmentName !== DEFAULT_DEVELOPMENT_NAME ||
-      parkingTower !== DEFAULT_PARKING_TOWER ||
-      level !== DEFAULT_PARKING_LEVEL);
+    (tower !== '' || unitNumber !== '' || propertyDisplayName !== '' || slotNumber !== '');
   const {
     onOpenChange: guardedOpenChange,
     requestClose,
@@ -270,23 +338,31 @@ export function AddEntityDialog({
     setTower('');
     setUnitNumber('');
     setUnitTouched(false);
-    setParkingTower(DEFAULT_PARKING_TOWER);
-    setLevel(DEFAULT_PARKING_LEVEL);
+    setParkingTower('');
+    setLevel('');
     setSlotNumber('');
+
+    const next = residenceOptions.find((option) => option.name === name);
+    if (!next) return;
+    const profile = toResidenceProfile(next);
+    const firstParkingTower = activeParkingTowers(profile)[0];
+    setParkingTower(firstParkingTower?.name ?? '');
+    setLevel(firstParkingTower?.levels[0] ?? '');
   };
 
   const handleParkingTowerChange = (value: string) => {
-    setParkingTower(value as typeof DEFAULT_PARKING_TOWER);
-    const levels = getParkingLevelsForTower(value);
-    if (level && !levels.includes(level)) setLevel(DEFAULT_PARKING_LEVEL);
+    setParkingTower(value);
+    const levels = residenceProfile ? parkingLevelsForTower(residenceProfile, value) : [];
+    if (!levels.includes(level)) setLevel(levels[0] ?? '');
   };
 
   const handleSubmit = async (): Promise<boolean> => {
     if (activeKind === 'property') {
       setUnitTouched(true);
-      if (!propertyCanSubmit || !isPropertyTowerForResidence(tower, developmentName)) return false;
+      if (!propertyCanSubmit || !towerResult.ok || !residenceProfile) return false;
 
-      const resolvedName = propertyDisplayName.trim() || formatTowerAndUnit(tower, unitNumber);
+      const resolvedName =
+        propertyDisplayName.trim() || formatUnitLabel(residenceProfile, tower, unitNumber);
       if (resolvedName.length < 2) {
         setError('Display name must be at least 2 characters');
         return false;
@@ -304,7 +380,8 @@ export function AddEntityDialog({
           name: resolvedName,
           tower,
           unitNumber,
-          residenceName: developmentName,
+          residenceName: selectedResidence?.name ?? undefined,
+          developmentId: residenceProfile.developmentId ?? undefined,
         });
         runUnguarded(() => {
           onOpenChange(false);
@@ -326,7 +403,15 @@ export function AddEntityDialog({
       }
     }
 
-    if (!parkingCanSubmit || !parkingTower || !level || !parkingDisplayName) return false;
+    if (
+      !parkingCanSubmit ||
+      !parkingTower ||
+      !level ||
+      !parkingDisplayName ||
+      !residenceProfile
+    ) {
+      return false;
+    }
     setError(null);
     try {
       const { parking } = await createParking.mutateAsync({
@@ -336,8 +421,9 @@ export function AddEntityDialog({
         tower: parkingTower,
         level,
         slotLabel: slotNumber.trim(),
-        parkingType: inferParkingTypeForTower(parkingTower),
-        residenceName: developmentName,
+        parkingType: parkingTypeForTower(residenceProfile, parkingTower),
+        residenceName: selectedResidence?.name ?? undefined,
+        developmentId: residenceProfile.developmentId ?? undefined,
       });
       runUnguarded(() => {
         onOpenChange(false);
@@ -395,52 +481,72 @@ export function AddEntityDialog({
           <DevelopmentField
             id="add-entity-development"
             value={developmentName}
+            options={residenceOptions
+              .map((option) => option.name ?? '')
+              .filter((name) => name.length > 0)}
+            loading={residenceOptionsLoading}
             onChange={handleDevelopmentChange}
           />
 
           {activeKind === 'property' ? (
             <>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="add-entity-property-tower">Tower</Label>
-                  <Select
-                    value={tower || undefined}
-                    onValueChange={(value) => setTower(value as PropertyTower)}
-                  >
-                    <SelectTrigger
-                      id="add-entity-property-tower"
-                      className={cn('h-10', propertyFieldErrorClass)}
-                      aria-invalid={undefined}
+                {propertyTowerOptions.length > 0 ? (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="add-entity-property-tower">
+                      {residenceProfile?.structure.towerLabel ?? 'Tower'}
+                    </Label>
+                    <Select
+                      value={tower || undefined}
+                      onValueChange={(value) => setTower(value)}
                     >
-                      <SelectValue placeholder="Select tower" />
-                    </SelectTrigger>
-                    <SelectContent position="popper">
-                      {propertyTowerOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                      <SelectTrigger
+                        id="add-entity-property-tower"
+                        className={cn('h-10', propertyFieldErrorClass)}
+                        aria-invalid={undefined}
+                      >
+                        <SelectValue placeholder="Select tower" />
+                      </SelectTrigger>
+                      <SelectContent position="popper">
+                        {propertyTowerOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : null}
                 <div className="space-y-1.5">
-                  <Label htmlFor="add-entity-property-unit">Unit</Label>
+                  <Label htmlFor="add-entity-property-unit">
+                    {residenceProfile?.structure.unitLabel ?? 'Unit'}
+                  </Label>
                   <AvailabilityCheckInput
                     id="add-entity-property-unit"
-                    inputMode="numeric"
+                    inputMode={unitInputMode}
                     autoComplete="off"
                     value={unitNumber}
-                    onChange={(e) => setUnitNumber(sanitizeUnitNumberInput(e.target.value))}
+                    onChange={(e) =>
+                      setUnitNumber(
+                        unitInputMode === 'numeric'
+                          ? e.target.value.replace(/\D/g, '').slice(0, unitMaxLength)
+                          : e.target.value.slice(0, unitMaxLength)
+                      )
+                    }
                     onBlur={() => setUnitTouched(true)}
-                    placeholder={FORM_PLACEHOLDERS.unitNumber}
-                    maxLength={4}
+                    placeholder={unitFormat?.example ?? FORM_PLACEHOLDERS.unitNumber}
+                    maxLength={unitMaxLength}
                     aria-invalid={unitInvalid || undefined}
-                    className={cn('h-10 tabular-nums', propertyFieldErrorClass)}
+                    className={cn(
+                      'h-10',
+                      unitInputMode === 'numeric' && 'tabular-nums',
+                      propertyFieldErrorClass
+                    )}
                     checkState={unitAvailabilityState}
                   />
                   {unitInvalid ? (
                     <p role="alert" className="text-destructive text-xs">
-                      Enter a 4-digit unit number
+                      {unitMessage}
                     </p>
                   ) : null}
                 </div>
@@ -457,8 +563,8 @@ export function AddEntityDialog({
                   value={propertyDisplayName}
                   onChange={(e) => setPropertyDisplayName(e.target.value)}
                   placeholder={
-                    towerUnitReady
-                      ? formatTowerAndUnit(tower, unitNumber)
+                    towerUnitReady && residenceProfile
+                      ? formatUnitLabel(residenceProfile, tower, unitNumber)
                       : FORM_PLACEHOLDERS.towerAndUnit
                   }
                   maxLength={120}
@@ -482,6 +588,7 @@ export function AddEntityDialog({
                   <Select
                     value={parkingTower || undefined}
                     onValueChange={handleParkingTowerChange}
+                    disabled={parkingTowerOptions.length === 0}
                   >
                     <SelectTrigger id="add-entity-parking-tower" className="h-10">
                       <SelectValue placeholder="Tower" />
@@ -499,7 +606,7 @@ export function AddEntityDialog({
                   <Label htmlFor="add-entity-parking-level">Level</Label>
                   <Select
                     value={level || undefined}
-                    onValueChange={(value) => setLevel(value as typeof DEFAULT_PARKING_LEVEL)}
+                    onValueChange={(value) => setLevel(value)}
                   >
                     <SelectTrigger id="add-entity-parking-level" className="h-10">
                       <SelectValue placeholder="Level" />
@@ -519,13 +626,28 @@ export function AddEntityDialog({
                 <Label htmlFor="add-entity-slot-number">Slot number</Label>
                 <AvailabilityCheckInput
                   id="add-entity-slot-number"
-                  inputMode="numeric"
+                  inputMode={
+                    residenceProfile?.structure.parkingSlotFormat.preset === 'digits1to4'
+                      ? 'numeric'
+                      : 'text'
+                  }
                   autoComplete="off"
                   value={slotNumber}
-                  onChange={(e) => setSlotNumber(sanitizeParkingSlotNumber(e.target.value))}
-                  placeholder="26"
-                  maxLength={4}
-                  className={cn('h-10 tabular-nums', parkingDuplicate && 'border-destructive')}
+                  onChange={(e) =>
+                    setSlotNumber(
+                      residenceProfile
+                        ? sanitizeSlotLabel(residenceProfile, e.target.value)
+                        : e.target.value
+                    )
+                  }
+                  placeholder={residenceProfile?.structure.parkingSlotFormat.example ?? '26'}
+                  maxLength={residenceProfile?.structure.parkingSlotFormat.preset === 'digits1to4' ? 4 : 10}
+                  className={cn(
+                    'h-10',
+                    residenceProfile?.structure.parkingSlotFormat.preset === 'digits1to4' &&
+                      'tabular-nums',
+                    parkingDuplicate && 'border-destructive'
+                  )}
                   aria-invalid={Boolean(parkingDuplicate)}
                   checkState={parkingSlotAvailabilityState}
                 />

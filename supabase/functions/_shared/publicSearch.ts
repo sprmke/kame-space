@@ -176,6 +176,8 @@ export function mapPropertySearchSummary(
     residence_name: string | null;
     max_guests: number | null;
     settings: unknown;
+    lat?: number | null;
+    lng?: number | null;
   },
   extras?: { price?: number | null; rating?: number | null; reviewCount?: number }
 ): PropertySearchSummary {
@@ -190,7 +192,10 @@ export function mapPropertySearchSummary(
       : maxAdults != null
         ? Math.max(maxAdults + Math.max(maxChildren, 0), 1)
         : null;
-  const coords = resolveListingCoords(row.settings, row.residence_name);
+  const coords =
+    typeof row.lat === 'number' && typeof row.lng === 'number'
+      ? { lat: row.lat, lng: row.lng }
+      : resolveListingCoords(row.settings, row.residence_name);
 
   return {
     id: row.id,
@@ -225,13 +230,18 @@ export function mapDevelopmentSearchSummary(
     developer_name: string | null;
     cover_image_url: string | null;
     settings: unknown;
+    lat?: number | null;
+    lng?: number | null;
   },
   propertyCount = 0
 ): DevelopmentSearchSummary {
   const settings = asRecord(row.settings);
   const images = readStringArray(settings, 'images');
   const coverImage = row.cover_image_url || images[0] || null;
-  const coords = resolveListingCoords(row.settings, row.name);
+  const coords =
+    typeof row.lat === 'number' && typeof row.lng === 'number'
+      ? { lat: row.lat, lng: row.lng }
+      : resolveListingCoords(row.settings, row.name);
   return {
     id: row.id,
     slug: row.slug,
@@ -262,12 +272,17 @@ export function mapParkingSearchSummary(row: {
   parking_type: string;
   rate_per_night: number | null;
   settings: unknown;
+  lat?: number | null;
+  lng?: number | null;
 }): ParkingSearchSummary {
   const settings = asRecord(row.settings);
   const city = readString(settings, 'city') || null;
   const { coverImage, images } = firstImageFromSettings(settings);
   const rateFromSettings = readNumber(settings, 'ratePerNight');
-  const coords = resolveListingCoords(row.settings, row.residence_name);
+  const coords =
+    typeof row.lat === 'number' && typeof row.lng === 'number'
+      ? { lat: row.lat, lng: row.lng }
+      : resolveListingCoords(row.settings, row.residence_name);
   return {
     id: row.id,
     slug: row.slug,

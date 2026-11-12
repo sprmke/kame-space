@@ -37,3 +37,17 @@ describe('validatePropertyDetailsForResidence', () => {
     expect(typeof validatePropertyDetailsForResidence).toBe('function');
   });
 });
+
+describe('residence defaults are not name-matched (F2)', () => {
+  it('does not give one building its own ranges by name', () => {
+    const azure = getResidencePropertyDefaults('Azure North Residences');
+    const blank = getResidencePropertyDefaults('');
+    const other = getResidencePropertyDefaults('Test Residence');
+
+    expect(azure).toEqual(blank);
+    expect(azure).toEqual(other);
+    // Azure North's 29-floor / 6-adult cap is residence config now, not a client map.
+    expect(azure.floors.max).toBe(50);
+    expect(azure.maxAdults.max).toBe(30);
+  });
+});

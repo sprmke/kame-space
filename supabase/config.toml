@@ -30,6 +30,7 @@ sql_paths = [
   "../scripts/dev/seed/01-identity.sql",
   "../scripts/dev/seed/02-subscription.sql",
   "../scripts/dev/seed/03-settings.sql",
+  "../scripts/dev/seed/03b-test-residence.sql",
   "../scripts/dev/seed/04-team.sql",
   "../scripts/dev/seed/05-bookings-property.sql",
   "../scripts/dev/seed/06-bookings-parking.sql",
@@ -1128,6 +1129,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.update-development]
+verify_jwt = false
+
+[functions.upload-development-pdf-template]
 verify_jwt = false
 
 [functions.delete-development]

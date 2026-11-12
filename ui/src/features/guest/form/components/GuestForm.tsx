@@ -66,6 +66,7 @@ import {
   formatPetPolicyTitle,
   formatResidenceShortName,
   pickGuestBrandHeaderProps,
+  resolveGuestCopy,
 } from '@/features/guest/form/lib/guestFormBranding';
 import {
   clampGuestFormStep,
@@ -353,7 +354,14 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
       allowSurpriseDecor: guestPaymentInfo.allowSurpriseDecor,
       maxAdults: guestPaymentInfo.maxAdults,
       maxChildren: guestPaymentInfo.maxChildren,
+      ageRules: {
+        adultMinAge: guestPaymentInfo.adultMinAge,
+        idRequiredFromAge: guestPaymentInfo.idRequiredFromAge,
+        primaryGuestMinAge: guestPaymentInfo.primaryGuestMinAge,
+        childMaxAge: guestPaymentInfo.childMaxAge,
+      },
       residenceName: guestPaymentInfo.residenceName,
+      copy: guestPaymentInfo.copy,
       bookedDates,
       cleaningBufferMinutes: guestPaymentInfo.cleaningBufferMinutes,
       currentBookingId,
@@ -365,19 +373,45 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
       guestPaymentInfo.allowSurpriseDecor,
       guestPaymentInfo.maxAdults,
       guestPaymentInfo.maxChildren,
+      guestPaymentInfo.adultMinAge,
+      guestPaymentInfo.idRequiredFromAge,
+      guestPaymentInfo.primaryGuestMinAge,
+      guestPaymentInfo.childMaxAge,
       guestPaymentInfo.residenceName,
+      guestPaymentInfo.copy,
       bookedDates,
       guestPaymentInfo.cleaningBufferMinutes,
       currentBookingId,
     ]
   );
 
-  const parkingNoPaidDescription = formatNoPaidParkingDescription(guestPaymentInfo.residenceName);
-  const parkingPaidDescription = formatPaidParkingDescription(guestPaymentInfo.residenceName);
-  const petPolicyTitle = formatPetPolicyTitle(guestPaymentInfo.residenceName);
+  const parkingNoPaidDescription = resolveGuestCopy(
+    guestPaymentInfo,
+    'guestForm.parking.noPaidDescription',
+    formatNoPaidParkingDescription(guestPaymentInfo.residenceName)
+  );
+  const parkingPaidDescription = resolveGuestCopy(
+    guestPaymentInfo,
+    'guestForm.parking.paidDescription',
+    formatPaidParkingDescription(guestPaymentInfo.residenceName)
+  );
+  const petPolicyTitle = resolveGuestCopy(
+    guestPaymentInfo,
+    'guestForm.pets.policyTitle',
+    formatPetPolicyTitle(guestPaymentInfo.residenceName)
+  );
   const petPolicyResidence =
     formatResidenceShortName(guestPaymentInfo.residenceName) || 'The building';
-  const gafEmailHint = formatGafEmailHint(guestPaymentInfo.residenceName);
+  const petPolicyBody = resolveGuestCopy(
+    guestPaymentInfo,
+    'guestForm.pets.policyBody',
+    `${petPolicyResidence} requires complete pet details and vaccination records for PMO approval.`
+  );
+  const gafEmailHint = resolveGuestCopy(
+    guestPaymentInfo,
+    'guestForm.contact.emailHint',
+    formatGafEmailHint(guestPaymentInfo.residenceName)
+  );
   const petFeeLine = formatPetFeeLine(guestPaymentInfo.petFee);
   const brandHeader = pickGuestBrandHeaderProps(guestPaymentInfo);
 
@@ -705,6 +739,27 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
     }
     if (gafOwnerContactNumber) form.setValue('ownerContactNumber', gafOwnerContactNumber);
   }, [bookingId, guestPaymentInfo, guestPaymentInfoFetched, guestPaymentInfoPlaceholder, form]);
+
+  /**
+   * A residence may require an older primary guest than the platform default. Bumping the
+   * pre-filled age keeps an untouched field from failing validation on first submit.
+   */
+  const primaryAgeRaisedRef = useRef(false);
+  useEffect(() => {
+    if (primaryAgeRaisedRef.current) return;
+    if (!guestPaymentInfoFetched || guestPaymentInfoPlaceholder) return;
+    primaryAgeRaisedRef.current = true;
+    const min = guestPaymentInfo.primaryGuestMinAge;
+    const current = Number(form.getValues('primaryGuestAge'));
+    if (Number.isFinite(current) && current < min) {
+      form.setValue('primaryGuestAge', min);
+    }
+  }, [
+    guestPaymentInfoFetched,
+    guestPaymentInfoPlaceholder,
+    guestPaymentInfo.primaryGuestMinAge,
+    form,
+  ]);
 
   const fetchFormData = async () => {
     if (!bookingId) return;
@@ -1410,13 +1465,16 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
 
   // Keep adults/children counts in sync with per-guest ages for downstream consumers.
   useEffect(() => {
-    const counts = computeGuestCountsByAge([
-      { age: form.getValues('primaryGuestAge') },
-      { age: form.getValues('guest2Age') },
-      { age: form.getValues('guest3Age') },
-      { age: form.getValues('guest4Age') },
-      { age: form.getValues('guest5Age') },
-    ]);
+    const counts = computeGuestCountsByAge(
+      [
+        { age: form.getValues('primaryGuestAge') },
+        { age: form.getValues('guest2Age') },
+        { age: form.getValues('guest3Age') },
+        { age: form.getValues('guest4Age') },
+        { age: form.getValues('guest5Age') },
+      ],
+      visibilityFlags.ageRules
+    );
     form.setValue('numberOfAdults', Math.max(counts.adults, 1));
     form.setValue('numberOfChildren', counts.children);
   }, [
@@ -1431,6 +1489,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
     guestAgeWatch?.[8],
     guestAgeWatch?.[9],
     form,
+    visibilityFlags.ageRules,
   ]);
 
   // Pre-fill primary guest name from the contact name until the guest edits it separately.
@@ -1903,6 +1962,8 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                       validIdImageErrors={validIdImageErrors}
                       seedKey={guestSectionSeedKey}
                       guestCapacity={guestCapacity}
+                      ageRules={visibilityFlags.ageRules}
+                      copy={guestPaymentInfo.copy}
                       propertySlug={propertySlug}
                       onValidIdPreviewChange={(field, preview) =>
                         setValidIdPreviews((prev) => ({ ...prev, [field]: preview }))
@@ -2366,10 +2427,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                             <li>
                               Use the service elevator only. Keep pets leashed outside the unit.
                             </li>
-                            <li>
-                              {petPolicyResidence} requires complete pet details and vaccination
-                              records for PMO approval.
-                            </li>
+                            <li>{petPolicyBody}</li>
                             <li>
                               No pets allowed in: Main Lobby, Viewing Deck, Common/Amenity Areas,
                               Roof Deck

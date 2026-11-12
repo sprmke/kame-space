@@ -371,11 +371,17 @@ export class DatabaseService {
 
       const partySlots = guestPartySlotsFromFormData(formData);
       const resolvedPropertyId = propertyId ?? (await getDefaultPropertyId());
-      const guestFormSettings = await resolveGuestFormSettings(resolvedPropertyId);
-      assertPropertyGuestPartyRules(partySlots, {
-        maxAdults: guestFormSettings.maxAdults,
-        maxChildren: guestFormSettings.maxChildren,
+      const guestFormSettings = await resolveGuestFormSettings(resolvedPropertyId, {
+        strictResidence: true,
       });
+      assertPropertyGuestPartyRules(
+        partySlots,
+        {
+          maxAdults: guestFormSettings.maxAdults,
+          maxChildren: guestFormSettings.maxChildren,
+        },
+        guestFormSettings.childMaxAge
+      );
 
       /**
        * Live identity verification → the legacy `valid-ids` contract.

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import { buildDocumentRequirement } from '@/features/dashboard/bookings/lib/documentRequirements';
 import {
+  applyDocumentRequirementPatch,
   isRequestPdfTemplateId,
   documentRequirementsOverrideEqual,
   documentRequirementLabelFieldErrors,
@@ -63,5 +65,46 @@ describe('updateDocumentRequirement', () => {
 describe('DOCUMENT_PDF_TEMPLATE_NONE', () => {
   it('is defined', () => {
     expect(DOCUMENT_PDF_TEMPLATE_NONE).toBeDefined();
+  });
+});
+
+describe('applyDocumentRequirementPatch keeps v1 aliases and v2 fields in step', () => {
+  const base = buildDocumentRequirement({
+    id: 'custom-1',
+    label: 'Old name',
+    order: 1,
+    pdfTemplateId: null,
+    approvalSource: 'manual',
+    triggerCondition: 'always',
+    calendarIcon: null,
+  });
+
+  it('renaming through `label` also renames the v2 step label', () => {
+    const next = applyDocumentRequirementPatch(base, { label: 'New name' });
+    expect(next.label).toBe('New name');
+    expect(next.labels.step).toBe('New name');
+  });
+
+  it('changing the approval source also updates approval.source', () => {
+    const next = applyDocumentRequirementPatch(base, { approvalSource: 'email-listener' });
+    expect(next.approvalSource).toBe('email-listener');
+    expect(next.approval.source).toBe('email-listener');
+  });
+
+  it('changing the PDF template also updates output', () => {
+    const withTemplate = applyDocumentRequirementPatch(base, { pdfTemplateId: 'gaf' });
+    expect(withTemplate.output).toEqual({ type: 'generated_pdf', pdfTemplateId: 'gaf' });
+    expect(withTemplate.pdfTemplateId).toBe('gaf');
+
+    const cleared = applyDocumentRequirementPatch(withTemplate, { pdfTemplateId: null });
+    expect(cleared.output).toEqual({ type: 'none' });
+    expect(cleared.pdfTemplateId).toBeNull();
+  });
+
+  it('a patch that sets labels directly back-fills the v1 alias', () => {
+    const next = applyDocumentRequirementPatch(base, {
+      labels: { ...base.labels, step: 'Direct label' },
+    });
+    expect(next.label).toBe('Direct label');
   });
 });

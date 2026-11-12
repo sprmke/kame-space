@@ -4,6 +4,10 @@
  */
 
 import type { SupabaseClient } from './supabaseJs.ts';
+import {
+  parseResidenceBuildingRules,
+  type ResidenceBuildingRule,
+} from './residenceProfile.ts';
 import { parseDocumentRequirements } from './documentRequirements.ts';
 import { trimOrEmpty } from './stringUtils.ts';
 
@@ -48,7 +52,54 @@ export type DevelopmentGuestContextDto = {
   guestGuides: DevelopmentGuestGuide[];
   importantInfo: string;
   documentRequirementLabels: string[];
+  buildingRules: ResidenceBuildingRule[];
+  guestInfoVisibility: GuestInfoVisibility;
 };
+
+export type GuestInfoVisibility = { stayGuide: boolean; propertyPage: boolean };
+
+/**
+ * What a guest actually sees of the building's info (plan §4.1 "building info").
+ *
+ * Rendering reads this, never the raw settings, so the super-admin visibility switches are
+ * the single control: a surface that is switched off returns null.
+ */
+export type GuestBuildingInfo = {
+  requirements: string;
+  guides: DevelopmentGuestGuide[];
+  importantInfo: string;
+  rules: ResidenceBuildingRule[];
+  poolFee: number | null;
+  poolSchedule: string;
+  amenities: string[];
+};
+
+export function guestBuildingInfoFor(
+  context: DevelopmentGuestContextDto,
+  surface: 'stayGuide' | 'propertyPage'
+): GuestBuildingInfo | null {
+  if (!context.guestInfoVisibility[surface]) return null;
+
+  const hasContent =
+    Boolean(context.guestRequirements) ||
+    context.guestGuides.length > 0 ||
+    Boolean(context.importantInfo) ||
+    context.buildingRules.length > 0 ||
+    context.poolFee != null ||
+    Boolean(context.poolSchedule) ||
+    context.amenities.length > 0;
+  if (!hasContent) return null;
+
+  return {
+    requirements: context.guestRequirements,
+    guides: context.guestGuides,
+    importantInfo: context.importantInfo,
+    rules: context.buildingRules,
+    poolFee: context.poolFee,
+    poolSchedule: context.poolSchedule,
+    amenities: context.amenities,
+  };
+}
 
 function readString(settings: Record<string, unknown>, key: string): string {
   const value = settings[key];
@@ -173,6 +224,19 @@ export function developmentGuestContextFromRow(row: {
     guestGuides: parseGuestGuides(settings.guestGuides),
     importantInfo: readString(settings, 'importantInfo'),
     documentRequirementLabels: documentRequirementLabels(settings),
+    buildingRules: parseResidenceBuildingRules(settings.buildingRules) ?? [],
+    guestInfoVisibility: parseGuestInfoVisibility(settings.guestInfoVisibility),
+  };
+}
+
+function parseGuestInfoVisibility(value: unknown): GuestInfoVisibility {
+  const record =
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  return {
+    stayGuide: typeof record.stayGuide === 'boolean' ? record.stayGuide : true,
+    propertyPage: typeof record.propertyPage === 'boolean' ? record.propertyPage : true,
   };
 }
 
@@ -253,4 +317,51 @@ export function collectDevelopmentPricingValues(development: DevelopmentGuestCon
   const values: number[] = [];
   if (development.poolFee != null) values.push(development.poolFee);
   return values;
+}
+
+/**
+ * Building info for one surface, resolved from the property's development.
+ *
+ * Reads by `development_id` and falls back to the denormalized name, so a property linked
+ * before the FK existed still resolves. Never throws: a missing development means "no
+ * building block", which is also what a guest-facing page must do on a read error.
+ */
+export async function loadGuestBuildingInfoForProperty(
+  supabase: SupabaseClient,
+  lookup: { developmentId?: string | null; residenceName?: string | null },
+  surface: 'stayGuide' | 'propertyPage'
+): Promise<GuestBuildingInfo | null> {
+  try {
+    const developmentId = lookup.developmentId?.trim() || '';
+    const residenceName = lookup.residenceName?.trim() || '';
+    if (!developmentId && !residenceName) return null;
+
+    const query = supabase
+      .from('developments')
+      .select('name, developer_name, description, location, city, settings')
+      .limit(1);
+
+    const { data: development } = developmentId
+      ? await query.eq('id', developmentId).maybeSingle()
+      : await query.eq('name', residenceName).maybeSingle();
+
+    if (!development) return null;
+
+    return guestBuildingInfoFor(
+      developmentGuestContextFromRow(
+        development as {
+          name: string;
+          developer_name: string | null;
+          description: string | null;
+          location: string | null;
+          city: string | null;
+          settings: Record<string, unknown> | null;
+        }
+      ),
+      surface
+    );
+  } catch (error) {
+    console.warn('[developmentGuestInfo] building info load failed:', error);
+    return null;
+  }
 }

@@ -60,11 +60,14 @@ function formatPeso(amount: number | null | undefined): string {
   })}`;
 }
 
-async function emailHeaderLogoHtml(propertyId?: string | null, logoAlt?: string): Promise<string> {
-  const settings = await resolveAppSettings(propertyId);
-  const frag = await loadEmailTemplate('fragments/email-header-logo');
+/** Pure: header-logo fragment HTML + resolved settings → the fragment with placeholders filled. */
+export function buildEmailHeaderLogoHtml(
+  fragmentHtml: string,
+  settings: AppSettingsResolved,
+  logoAlt?: string
+): string {
   return replacePlaceholders(
-    frag,
+    fragmentHtml,
     withEmailShellStyleVars(
       {
         logoUrl: escapeHtml(settings.emailLogoUrl),
@@ -72,6 +75,15 @@ async function emailHeaderLogoHtml(propertyId?: string | null, logoAlt?: string)
       },
       settings.brandColor
     )
+  );
+}
+
+async function emailHeaderLogoHtml(propertyId?: string | null, logoAlt?: string): Promise<string> {
+  const settings = await resolveAppSettings(propertyId);
+  return buildEmailHeaderLogoHtml(
+    await loadEmailTemplate('fragments/email-header-logo'),
+    settings,
+    logoAlt
   );
 }
 
@@ -273,6 +285,70 @@ export function buildGuestFormPlaceholderVars(
   };
 }
 
+/**
+ * Pure half of {@link renderPropertyTemplateSendEmail}: template content + settings +
+ * the shell/fragment HTML in, finished email HTML out. The golden set snapshots it.
+ */
+export function renderTemplateSendEmailHtml(input: {
+  settings: AppSettingsResolved;
+  /** Admin-authored body, before placeholder substitution. */
+  content: string;
+  templateKey: string;
+  emailTitle: string;
+  placeholderVars: Record<string, string>;
+  branding: PropertyEmailBranding;
+  shell: string;
+  headerLogoHtml: string;
+}): string {
+  const settings = input.settings;
+  const branding = input.branding;
+
+  let rawContent = input.content;
+  rawContent = normalizeBlockLevelPlaceholdersInHtml(rawContent);
+  rawContent = normalizeEmailCalloutPlaceholders(rawContent, input.templateKey);
+
+  // The default trip button steps aside when the host already put the trip link in the body,
+  // so a guest never sees two links to the same place (plan 6.3).
+  const vars =
+    rawContent.includes('{{trip_url}}') && input.placeholderVars.trip_cta_section !== undefined
+      ? { ...input.placeholderVars, trip_cta_section: '' }
+      : input.placeholderVars;
+
+  let body = applyPropertyTemplatePlaceholders(rawContent, vars);
+  body = prepareConfigurableEmailBodyHtml(body, settings.publicGuestAppOrigin);
+
+  const bodyContent = body;
+
+  const emailHeaderLogo = input.headerLogoHtml;
+  const shell = input.shell;
+  const unitLabel = input.placeholderVars.tower_and_unit_number || escapeHtml(branding.unitLabel);
+
+  const title =
+    input.emailTitle.trim() || getBuiltinPropertyTemplate(input.templateKey)?.label || 'Email';
+  const legalFooter = buildEmailLegalFooterHtml(branding.organizationName);
+  const dateLineBlock = buildDateLineBlockHtml(
+    input.placeholderVars.check_in_date ?? '',
+    input.placeholderVars.check_out_date ?? '',
+    settings.brandColor
+  );
+
+  return replacePlaceholders(
+    shell,
+    withEmailShellStyleVars(
+      {
+        emailHeaderLogo,
+        brandName: escapeHtml(branding.organizationName),
+        unitLabel,
+        emailTitle: escapeHtml(title),
+        dateLineBlock,
+        bodyContent,
+        legalFooter: escapeHtml(legalFooter),
+      },
+      settings.brandColor
+    )
+  );
+}
+
 export async function renderPropertyTemplateSendEmail(input: {
   propertyId: string | undefined;
   /** Custom (`custom-*`) keys are only valid together with `contentOverride`. */
@@ -302,47 +378,14 @@ export async function renderPropertyTemplateSendEmail(input: {
     throw new Error(`Property email template "${input.templateKey}" has empty content`);
   }
 
-  rawContent = normalizeBlockLevelPlaceholdersInHtml(rawContent);
-  rawContent = normalizeEmailCalloutPlaceholders(rawContent, input.templateKey);
-
-  // The default trip button steps aside when the host already put the trip link in the body,
-  // so a guest never sees two links to the same place (plan 6.3).
-  const vars =
-    rawContent.includes('{{trip_url}}') && input.placeholderVars.trip_cta_section !== undefined
-      ? { ...input.placeholderVars, trip_cta_section: '' }
-      : input.placeholderVars;
-
-  let body = applyPropertyTemplatePlaceholders(rawContent, vars);
-  body = prepareConfigurableEmailBodyHtml(body, settings.publicGuestAppOrigin);
-
-  const bodyContent = body;
-
-  const emailHeaderLogo = await emailHeaderLogoHtml(input.propertyId, branding.organizationName);
-  const shell = await loadEmailTemplate('fragments/configurable-template-send');
-  const unitLabel = input.placeholderVars.tower_and_unit_number || escapeHtml(branding.unitLabel);
-
-  const title =
-    input.emailTitle.trim() || getBuiltinPropertyTemplate(input.templateKey)?.label || 'Email';
-  const legalFooter = buildEmailLegalFooterHtml(branding.organizationName);
-  const dateLineBlock = buildDateLineBlockHtml(
-    input.placeholderVars.check_in_date ?? '',
-    input.placeholderVars.check_out_date ?? '',
-    settings.brandColor
-  );
-
-  return replacePlaceholders(
-    shell,
-    withEmailShellStyleVars(
-      {
-        emailHeaderLogo,
-        brandName: escapeHtml(branding.organizationName),
-        unitLabel,
-        emailTitle: escapeHtml(title),
-        dateLineBlock,
-        bodyContent,
-        legalFooter,
-      },
-      settings.brandColor
-    )
-  );
+  return renderTemplateSendEmailHtml({
+    settings,
+    content: rawContent,
+    templateKey: input.templateKey,
+    emailTitle: input.emailTitle,
+    placeholderVars: input.placeholderVars,
+    branding,
+    shell: await loadEmailTemplate('fragments/configurable-template-send'),
+    headerLogoHtml: await emailHeaderLogoHtml(input.propertyId, branding.organizationName),
+  });
 }

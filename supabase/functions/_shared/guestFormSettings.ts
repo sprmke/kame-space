@@ -7,10 +7,11 @@ import { DEFAULT_CLEANING_BUFFER_MINUTES, isValidCleaningBufferMinutes } from '.
 import { createServiceClient } from './orgAuth.ts';
 import { resolvePublicBrandName } from './platformBrand.ts';
 import { normalizePropertyMediaItems } from './propertyMedia.ts';
+import { getResidencePropertyDefaults } from './propertyResidenceDefaults.ts';
 import {
-  DEFAULT_RESIDENCE_NAME,
-  getResidencePropertyDefaults,
-} from './propertyResidenceDefaults.ts';
+  loadResidenceProfileForResidence,
+  type ResidenceProfile,
+} from './residenceProfile.ts';
 
 export type GuestFormSettings = {
   allowPets: boolean;
@@ -22,6 +23,11 @@ export type GuestFormSettings = {
   cleaningBufferMinutes: number;
   maxAdults: number;
   maxChildren: number;
+  /** Building occupancy rules. 0 disables the age exception / ID requirement where noted. */
+  childMaxAge: number;
+  adultMinAge: number;
+  idRequiredFromAge: number;
+  primaryGuestMinAge: number;
   propertyName: string;
   propertyEyebrow: string;
   propertyCoverImageUrl: string | null;
@@ -38,6 +44,10 @@ export const DEFAULT_GUEST_FORM_SETTINGS: GuestFormSettings = {
   cleaningBufferMinutes: DEFAULT_CLEANING_BUFFER_MINUTES,
   maxAdults: 4,
   maxChildren: 0,
+  childMaxAge: 3,
+  adultMinAge: 18,
+  idRequiredFromAge: 18,
+  primaryGuestMinAge: 18,
   propertyName: '',
   propertyEyebrow: '',
   propertyCoverImageUrl: null,
@@ -83,26 +93,34 @@ function buildPropertyEyebrow(
   return unit || residence || propertyName.trim();
 }
 
-/** Reads properties.settings guest-form keys; missing booleans default true. */
-export async function resolveGuestFormSettings(propertyId: string): Promise<GuestFormSettings> {
-  const { data, error } = await createServiceClient()
-    .from('properties')
-    .select('name, tower_and_unit, residence_name, settings, organization_id')
-    .eq('id', propertyId)
-    .maybeSingle();
+/** Columns `resolveGuestFormSettings` reads — the shape `buildGuestFormSettings` accepts. */
+export type GuestFormSettingsSource = {
+  name: string | null;
+  tower_and_unit: string | null;
+  residence_name: string | null;
+  development_id: string | null;
+  settings: unknown;
+  organization_id: string | null;
+};
 
-  if (error) {
-    console.warn('[guestFormSettings] property load failed:', error.message);
-    return { ...DEFAULT_GUEST_FORM_SETTINGS };
-  }
-
+/**
+ * Pure half of {@link resolveGuestFormSettings}: property row + residence profile in,
+ * resolved guest-form settings out. The golden set snapshots it without a database.
+ */
+export function buildGuestFormSettings(input: {
+  property: GuestFormSettingsSource | null;
+  organizationName: string;
+  profile: ResidenceProfile;
+}): GuestFormSettings {
+  const data = input.property;
   const settings =
     data?.settings && typeof data.settings === 'object' && !Array.isArray(data.settings)
       ? (data.settings as Record<string, unknown>)
       : {};
 
   const residenceName = typeof data?.residence_name === 'string' ? data.residence_name.trim() : '';
-  const residenceDefaults = getResidencePropertyDefaults(residenceName || DEFAULT_RESIDENCE_NAME);
+  const residenceDefaults = getResidencePropertyDefaults(residenceName);
+  const profile = input.profile;
 
   const propertyName = String(data?.name ?? '').trim();
   const towerAndUnit = String(data?.tower_and_unit ?? '').trim() || null;
@@ -111,6 +129,76 @@ export async function resolveGuestFormSettings(propertyId: string): Promise<Gues
   const primaryImage =
     media.find((item) => item.isPrimary && item.type === 'image') ??
     media.find((item) => item.type === 'image');
+
+  const organizationName = String(input.organizationName ?? '').trim();
+
+  const propertyMaxAdults = readSettingsNumber(
+    settings,
+    'maxAdults',
+    residenceDefaults.maxAdults.default
+  );
+  const propertyMaxChildren = readSettingsNumber(
+    settings,
+    'maxChildren',
+    residenceDefaults.maxChildren.default
+  );
+
+  return {
+    // A building rule can only take an option away.
+    allowPets: profile.stay.petsAllowed && readSettingsBoolean(settings, 'allowPets', true),
+    allowParking:
+      profile.stay.paidParkingAvailable && readSettingsBoolean(settings, 'allowParking', true),
+    allowSurpriseDecor:
+      profile.stay.surpriseDecorAllowed && readSettingsBoolean(settings, 'allowSurpriseDecor', true),
+    checkInTime: readSettingsString(settings, 'checkInTime', profile.stay.checkInTime),
+    checkOutTime: readSettingsString(settings, 'checkOutTime', profile.stay.checkOutTime),
+    cleaningBufferMinutes: (() => {
+      const value = settings.cleaningBufferMinutes;
+      return typeof value === 'number' && isValidCleaningBufferMinutes(value)
+        ? value
+        : DEFAULT_CLEANING_BUFFER_MINUTES;
+    })(),
+    maxAdults: Math.max(1, Math.min(propertyMaxAdults, profile.occupancy.maxAdultsCap)),
+    maxChildren: Math.max(0, Math.min(propertyMaxChildren, profile.occupancy.maxChildrenCap)),
+    childMaxAge: profile.occupancy.childMaxAge,
+    adultMinAge: profile.occupancy.adultMinAge,
+    idRequiredFromAge: profile.occupancy.idRequiredFromAge,
+    primaryGuestMinAge: profile.occupancy.primaryGuestMinAge,
+    propertyName,
+    propertyEyebrow: buildPropertyEyebrow(propertyName, residenceName || null, towerAndUnit),
+    propertyCoverImageUrl: primaryImage?.url?.trim() || null,
+    residenceName: residenceName || null,
+    organizationName: resolvePublicBrandName(organizationName) || propertyName || 'Host',
+  };
+}
+
+/** Reads properties.settings guest-form keys; missing booleans default true. */
+export async function resolveGuestFormSettings(
+  propertyId: string,
+  options: { strictResidence?: boolean } = {}
+): Promise<GuestFormSettings> {
+  const { data, error } = await createServiceClient()
+    .from('properties')
+    .select('name, tower_and_unit, residence_name, development_id, settings, organization_id')
+    .eq('id', propertyId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('[guestFormSettings] property load failed:', error.message);
+    return { ...DEFAULT_GUEST_FORM_SETTINGS };
+  }
+
+  const residenceName = typeof data?.residence_name === 'string' ? data.residence_name.trim() : '';
+  const profile = await loadResidenceProfileForResidence(
+    createServiceClient(),
+    {
+      developmentId: (data as { development_id?: string | null } | null)?.development_id ?? null,
+      residenceName,
+    },
+    // Booking submission fails closed: a residence read error must not fall back to
+    // generic rules that would allow pets or parking the building forbids.
+    { strict: options.strictResidence ?? false }
+  );
 
   let organizationName = '';
   const organizationId = data?.organization_id as string | undefined;
@@ -126,27 +214,9 @@ export async function resolveGuestFormSettings(propertyId: string): Promise<Gues
     organizationName = String(org?.name ?? '').trim();
   }
 
-  return {
-    allowPets: readSettingsBoolean(settings, 'allowPets', true),
-    allowParking: readSettingsBoolean(settings, 'allowParking', true),
-    allowSurpriseDecor: readSettingsBoolean(settings, 'allowSurpriseDecor', true),
-    checkInTime: readSettingsString(settings, 'checkInTime', residenceDefaults.checkInTime),
-    checkOutTime: readSettingsString(settings, 'checkOutTime', residenceDefaults.checkOutTime),
-    cleaningBufferMinutes: (() => {
-      const value = settings.cleaningBufferMinutes;
-      return typeof value === 'number' && isValidCleaningBufferMinutes(value)
-        ? value
-        : DEFAULT_CLEANING_BUFFER_MINUTES;
-    })(),
-    maxAdults: readSettingsNumber(settings, 'maxAdults', residenceDefaults.maxAdults.default),
-    maxChildren: Math.max(
-      readSettingsNumber(settings, 'maxChildren', residenceDefaults.maxChildren.default),
-      0
-    ),
-    propertyName,
-    propertyEyebrow: buildPropertyEyebrow(propertyName, residenceName || null, towerAndUnit),
-    propertyCoverImageUrl: primaryImage?.url?.trim() || null,
-    residenceName: residenceName || null,
-    organizationName: resolvePublicBrandName(organizationName) || propertyName || 'Host',
-  };
+  return buildGuestFormSettings({
+    property: (data as GuestFormSettingsSource | null) ?? null,
+    organizationName,
+    profile,
+  });
 }

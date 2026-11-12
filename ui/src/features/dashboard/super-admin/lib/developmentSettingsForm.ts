@@ -8,6 +8,12 @@ import {
   type DocumentRequirement,
 } from '@/features/dashboard/bookings/lib/documentRequirements';
 import {
+  parseResidenceBuildingRules,
+  parseResidencePdfTemplates,
+  type ResidenceBuildingRule,
+  type ResidencePdfTemplate,
+} from '@/lib/residence/residenceProfile';
+import {
   mergeUnitTypes,
   validateUnitTypes,
   type DevelopmentUnitType,
@@ -25,11 +31,28 @@ import {
   developmentMediaToLegacyFields,
   readDevelopmentMedia,
 } from '@/features/dashboard/super-admin/lib/developmentMedia';
-import {
-  normalizeDevelopmentParkingLevels,
-  readDevelopmentParkingLevels,
-} from '@/features/dashboard/super-admin/lib/developmentParking';
+import { readDevelopmentParkingLevels } from '@/features/dashboard/super-admin/lib/developmentParking';
 import type { Development } from '@/features/dashboard/super-admin/types/development';
+
+import {
+  normalizeResidenceStructure,
+  validateResidenceStructure,
+  type ResidenceProfile,
+} from '@/lib/residence/residenceProfile';
+
+function readGuestInfoVisibility(value: unknown): { stayGuide: boolean; propertyPage: boolean } {
+  const record = objectOrEmpty(value);
+  return {
+    stayGuide: typeof record.stayGuide === 'boolean' ? record.stayGuide : true,
+    propertyPage: typeof record.propertyPage === 'boolean' ? record.propertyPage : true,
+  };
+}
+
+function objectOrEmpty(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
 
 function readStringArray(settings: Record<string, unknown>, key: string): string[] {
   const value = settings[key];
@@ -42,6 +65,29 @@ function readStringArray(settings: Record<string, unknown>, key: string): string
 function readNumber(settings: Record<string, unknown>, key: string): number | null {
   const value = settings[key];
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+/** Pre-Phase-1 rows kept tower names in flat arrays; derive the shape once for the editor. */
+function legacyStructureFromSettings(
+  settings: Record<string, unknown>,
+  developmentName: string
+): unknown {
+  const storedLevels = readDevelopmentParkingLevels(
+    developmentName,
+    readStringArray(settings, 'parkingLevels').filter(Boolean)
+  );
+  return {
+    propertyTowers: readStringArray(settings, 'propertyTowers').filter(Boolean),
+    parkingTowers: readStringArray(settings, 'parkingTowers')
+      .filter(Boolean)
+      .map((name) => ({
+        name,
+        code: name,
+        active: true,
+        levels: storedLevels,
+        parkingType: name === 'Bay' ? 'outside_tower' : 'inside_tower',
+      })),
+  };
 }
 
 function readString(settings: Record<string, unknown>, key: string): string {
@@ -62,9 +108,7 @@ export type DevelopmentProfileDraft = {
   coverImageUrl: string;
   images: string[];
   amenities: string[];
-  propertyTowers: string[];
-  parkingTowers: string[];
-  parkingLevels: string[];
+  structure: ResidenceProfile['structure'];
   address: string;
   province: string;
   country: string;
@@ -75,6 +119,10 @@ export type DevelopmentProfileDraft = {
   placeId: string;
   pmoEmail: string;
   documentRequirements: DocumentRequirement[];
+  pdfTemplates: ResidencePdfTemplate[];
+  propertySeeds: { amenityIds: string[]; houseRuleIds: string[] };
+  buildingRules: ResidenceBuildingRule[];
+  guestInfoVisibility: { stayGuide: boolean; propertyPage: boolean };
   unitTypes: DevelopmentUnitType[];
   poolFee: number | null;
   poolSchedule: string;
@@ -90,7 +138,6 @@ export function developmentProfileDraftFromDevelopment(
   const settings = development.settings ?? {};
   const media = readDevelopmentMedia(development);
   const legacy = developmentMediaToLegacyFields(media);
-  const storedParkingLevels = readStringArray(settings, 'parkingLevels').filter(Boolean);
   const workflowDefaults =
     settings.workflowDefaults && typeof settings.workflowDefaults === 'object'
       ? (settings.workflowDefaults as Record<string, unknown>)
@@ -109,9 +156,9 @@ export function developmentProfileDraftFromDevelopment(
     coverImageUrl: legacy.coverImageUrl,
     images: legacy.images,
     amenities: readStringArray(settings, 'amenities'),
-    propertyTowers: readStringArray(settings, 'propertyTowers'),
-    parkingTowers: readStringArray(settings, 'parkingTowers'),
-    parkingLevels: readDevelopmentParkingLevels(development.name, storedParkingLevels),
+    structure: normalizeResidenceStructure(
+      settings.structure ?? legacyStructureFromSettings(settings, development.name)
+    ),
     address: readString(settings, 'address'),
     province: readString(settings, 'province'),
     country: readString(settings, 'country'),
@@ -122,6 +169,15 @@ export function developmentProfileDraftFromDevelopment(
     placeId: readString(settings, 'placeId'),
     pmoEmail: readString(settings, 'pmoEmail'),
     documentRequirements: mergeDocumentRequirements(workflowDefaults?.documentRequirements),
+    pdfTemplates: parseResidencePdfTemplates(
+      (settings.approvals as Record<string, unknown> | undefined)?.pdfTemplates
+    ) ?? [],
+    propertySeeds: {
+      amenityIds: readStringArray(objectOrEmpty(settings.propertySeeds), 'amenityIds'),
+      houseRuleIds: readStringArray(objectOrEmpty(settings.propertySeeds), 'houseRuleIds'),
+    },
+    buildingRules: parseResidenceBuildingRules(settings.buildingRules) ?? [],
+    guestInfoVisibility: readGuestInfoVisibility(settings.guestInfoVisibility),
     unitTypes: mergeUnitTypes(settings.unitTypes, development.name),
     ...mergeDevelopmentPoolSettings(
       development.name,
@@ -139,7 +195,12 @@ export function developmentProfileDraftIsDirty(
   baseline: DevelopmentProfileDraft,
   draft: DevelopmentProfileDraft
 ): boolean {
-  return JSON.stringify(baseline) !== JSON.stringify(draft);
+  const normalize = (value: DevelopmentProfileDraft): string =>
+    JSON.stringify({
+      ...value,
+      structure: normalizeResidenceStructure(value.structure),
+    });
+  return normalize(baseline) !== normalize(draft);
 }
 
 export function buildDevelopmentUpdatePayload(draft: DevelopmentProfileDraft) {
@@ -157,9 +218,11 @@ export function buildDevelopmentUpdatePayload(draft: DevelopmentProfileDraft) {
     images: legacy.images,
     media: legacy.media,
     amenities: draft.amenities,
-    propertyTowers: draft.propertyTowers,
-    parkingTowers: draft.parkingTowers,
-    parkingLevels: normalizeDevelopmentParkingLevels(draft.parkingLevels),
+    structure: draft.structure,
+    // Flat keys stay in sync until Phase 7 retires them.
+    propertyTowers: draft.structure.propertyTowers.map((tower) => tower.name),
+    parkingTowers: draft.structure.parkingTowers.map((tower) => tower.name),
+    parkingLevels: [...new Set(draft.structure.parkingTowers.flatMap((tower) => tower.levels))],
     address: draft.address.trim() || null,
     province: draft.province.trim() || null,
     country: draft.country.trim() || null,
@@ -170,6 +233,10 @@ export function buildDevelopmentUpdatePayload(draft: DevelopmentProfileDraft) {
     placeId: draft.placeId.trim() || null,
     pmoEmail: draft.pmoEmail.trim() || null,
     documentRequirements: draft.documentRequirements,
+    pdfTemplates: draft.pdfTemplates,
+    propertySeeds: draft.propertySeeds,
+    buildingRules: draft.buildingRules,
+    guestInfoVisibility: draft.guestInfoVisibility,
     unitTypes: draft.unitTypes,
     poolFee: draft.poolFee,
     poolSchedule: draft.poolSchedule.trim() || null,
@@ -181,9 +248,16 @@ export function buildDevelopmentUpdatePayload(draft: DevelopmentProfileDraft) {
 }
 
 export function validateDevelopmentProfileDraft(draft: DevelopmentProfileDraft): string | null {
+  const structureError = validateResidenceStructure(draft.structure);
+  if (structureError) return structureError;
+
+  // F14: the PMO address is only needed when a step actually emails the building admin.
+  const emailsBuildingAdmin = draft.documentRequirements.some(
+    (requirement) => requirement.active && requirement.approvalSource === 'email-listener'
+  );
   const email = draft.pmoEmail.trim();
-  if (!email) return 'PMO email is required';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Enter a valid PMO email';
+  if (emailsBuildingAdmin && !email) return 'PMO email is required for email approval steps';
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Enter a valid PMO email';
   const labelErrors = documentRequirementLabelFieldErrors(draft.documentRequirements);
   const firstLabelError = Object.values(labelErrors)[0];
   if (firstLabelError) return firstLabelError;

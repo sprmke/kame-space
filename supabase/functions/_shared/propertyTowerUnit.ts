@@ -1,10 +1,16 @@
 import type { SupabaseClient } from './supabaseJs.ts';
 import {
   ALL_PROPERTY_TOWERS,
-  DEFAULT_RESIDENCE_NAME,
   getTowersForResidence,
   isTowerInResidence,
 } from './propertyResidences.ts';
+import {
+  activePropertyTowers,
+  formatUnitLabel,
+  unitNumberError,
+  validateTowerForProfile,
+  type ResidenceProfile,
+} from './residenceProfile.ts';
 
 export { isTowerInResidence } from './propertyResidences.ts';
 
@@ -47,8 +53,7 @@ export function parsePropertyTowerUnitFromBody(
 ): ParsedPropertyTowerUnit {
   const residenceName =
     options?.residenceName?.trim() ||
-    (typeof body.residenceName === 'string' ? body.residenceName.trim() : '') ||
-    DEFAULT_RESIDENCE_NAME;
+    (typeof body.residenceName === 'string' ? body.residenceName.trim() : '');
 
   const towerRaw = typeof body.tower === 'string' ? body.tower.trim() : '';
   const unitRaw = typeof body.unitNumber === 'string' ? body.unitNumber.trim() : '';
@@ -122,7 +127,8 @@ export async function lookupPropertyTowerUnitConflict(
   supabase: SupabaseClient,
   tower: string,
   unitNumber: string,
-  excludePropertyId?: string
+  excludePropertyId?: string,
+  developmentId?: string | null
 ): Promise<{ id: string; name: string; orgName: string | null } | null> {
   let query = supabase
     .from('properties')
@@ -131,6 +137,11 @@ export async function lookupPropertyTowerUnitConflict(
     .eq('unit_number', unitNumber)
     .eq('status', 'ACTIVE')
     .limit(1);
+
+  // Scoped by residence: "Tower 1 / 0101" may exist once per residence.
+  if (developmentId) {
+    query = query.eq('development_id', developmentId);
+  }
 
   if (excludePropertyId) {
     query = query.neq('id', excludePropertyId);
@@ -369,3 +380,60 @@ export async function activatePropertyAfterListingApproval(
 
 export const DUPLICATE_TOWER_UNIT_MESSAGE =
   'Another organization already has an active listing for this tower and unit';
+
+export type ParsedPropertyTowerUnitV2 =
+  | { ok: true; tower: string; unitNumber: string; towerAndUnit: string }
+  | { ok: false; error: string };
+
+/**
+ * Residence-aware tower/unit parser. This is the path every admin write uses in Phase 1+.
+ * The legacy name-based parser above stays only for callers that have not been migrated.
+ */
+export function parsePropertyTowerUnitWithProfile(
+  body: Record<string, unknown>,
+  profile: ResidenceProfile
+): ParsedPropertyTowerUnitV2 {
+  const towerRaw = typeof body.tower === 'string' ? body.tower.trim() : '';
+  const unitRaw = typeof body.unitNumber === 'string' ? body.unitNumber.trim() : '';
+  const legacy = typeof body.towerAndUnit === 'string' ? body.towerAndUnit.trim() : '';
+
+  let tower = towerRaw;
+  let unitNumber = unitRaw;
+
+  if (!tower && !unitNumber && legacy) {
+    // Legacy combined value. Prefer a configured tower prefix, else split at the last space.
+    const configured = activePropertyTowers(profile)
+      .map((entry) => entry.name)
+      .sort((a, b) => b.length - a.length)
+      .find((name) => legacy.toLowerCase().startsWith(`${name.toLowerCase()} `));
+    if (configured) {
+      tower = configured;
+      unitNumber = legacy.slice(configured.length).trim();
+    } else {
+      const index = legacy.lastIndexOf(' ');
+      tower = index > 0 ? legacy.slice(0, index).trim() : '';
+      unitNumber = index > 0 ? legacy.slice(index + 1).trim() : '';
+    }
+  }
+
+  if (!tower && !unitNumber) {
+    return {
+      ok: false,
+      error: `${profile.structure.towerLabel} and unit number are required`,
+    };
+  }
+  if (!unitNumber) return { ok: false, error: 'Unit number is required' };
+
+  const towerResult = validateTowerForProfile(profile, tower);
+  if (!towerResult.ok) return { ok: false, error: towerResult.error };
+
+  const unitMessage = unitNumberError(profile, unitNumber);
+  if (unitMessage) return { ok: false, error: unitMessage };
+
+  return {
+    ok: true,
+    tower: towerResult.tower,
+    unitNumber: unitNumber.trim(),
+    towerAndUnit: formatUnitLabel(profile, towerResult.tower, unitNumber),
+  };
+}

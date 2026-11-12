@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Parking module hardening: end-to-end audit, fixes, and test coverage'
 status: in-progress
 tags: [workflow, planned, parking, payments, rbac, e2e, production-readiness]
-updated: 2026-11-11
+updated: 2026-11-13
 kind: plan
 supersedes:
   - parking-e2e-later-phases.md

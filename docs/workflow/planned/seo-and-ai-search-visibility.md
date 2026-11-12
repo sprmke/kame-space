@@ -22,7 +22,7 @@ kind: plan
 > - **Drift 3.** `usePageMeta` runs on 15 pages, not "15 public pages" as claimed: 12 marketing
 >   pages plus trip, search and the hook itself. The static-page gap (F2) is real and larger:
 >   8 public pages set a title but never call `usePageMeta`.
-> - **Drift 4.** `ROBOTS_DISALLOW` already carries `/for-hosts/v2`; the *static*
+> - **Drift 4.** `ROBOTS_DISALLOW` already carries `/for-hosts/v2`; the _static_
 >   `ui/public/robots.txt` is the file that drifted (missing `/for-hosts/v2` and `/*/trip?`).
 >   SEO-2.2 (generate the fallback) is the fix, not a manual edit.
 > - **Added:** `## Decisions`, per-phase acceptance commands, an edge-case list, and a rollback
@@ -129,56 +129,56 @@ since it feeds many smaller models. Decision recorded in the robots builder with
 Phases 0 and 1 plus the registry-derived half of Phase 2. Everything else stays here as the
 next PRs, in the plan's own order.
 
-| Phase | This branch              | Why                                                                                                                              |
-| ----- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | Partial                  | Vercel/Search Console baselines need dashboard access (SEO-14.8, SEO-19.3). `seo:audit` script ships here; prod run follows.      |
-| 1     | **Yes, all**             | Registry, origin, content modules, snapshot, middleware, `check:seo-routes`, `usePageMeta` fix.                                   |
+| Phase | This branch               | Why                                                                                                                                   |
+| ----- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | Partial                   | Vercel/Search Console baselines need dashboard access (SEO-14.8, SEO-19.3). `seo:audit` script ships here; prod run follows.          |
+| 1     | **Yes, all**              | Registry, origin, content modules, snapshot, middleware, `check:seo-routes`, `usePageMeta` fix.                                       |
 | 2     | **Yes, registry-derived** | Robots (AI groups, disallows, generated fallback), sitemap static paths, canonical, noindex, trailing slash, 404 status, `seo:audit`. |
-| 3-10  | No, separate PRs         | Each is its own goal with its own copy, assets, migrations or console work. Bundling them makes an unreviewable diff.              |
+| 3-10  | No, separate PRs          | Each is its own goal with its own copy, assets, migrations or console work. Bundling them makes an unreviewable diff.                 |
 
 ---
 
 ## 2b. Decisions
 
-| #   | Decision                                                            | Choice                                                                                            | Why                                                                                                                       |
-| --- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Registry location                                                   | `ui/src/lib/seo/publicRoutes.ts`, dependency-free (no `@/` imports)                                | Must be importable by the Vite SPA, the middleware bundle and the Node check script without a second copy.                 |
-| 2   | Static copy source for snapshots                                    | `ui/src/lib/seo/content/*.ts` pure data modules, imported by page and by snapshot renderer         | Satisfies D1's "same source" guardrail without a 5,000-line refactor. Only the hero + section copy moves.                  |
-| 3   | Snapshot escaping                                                   | Reuse `escapeHtml` / `serializeJsonLd` from `seoMeta.ts`                                           | One escaper, already tested.                                                                                              |
-| 4   | Snapshot HTML shape                                                 | `<header>` nav, `<main>` with exactly one `<h1>`, facts `<dl>`, `<a href>` links, `<footer>`        | Matches what a crawler needs and what the SPA renders; no invented copy.                                                   |
-| 5   | Canonical origin default                                            | `https://kamespace.com`; `VITE_PUBLIC_SITE_ORIGIN` only overrides when set                             | A stale env must never de-index or split the live domain, same reasoning as `DEFAULT_INDEXABLE_HOSTS`.                     |
-| 6   | `app.kamespace.com` redirect (SEO-4.9)                              | Not in this branch                                                                                | Its role as a dashboard entry is unconfirmed; redirecting it could break host sign-in. www. keeps working and self-canonicalizes for now. |
-| 7   | robots.txt fallback generation (SEO-2.2)                            | `scripts/seo/generate-robots.mjs` writes `ui/public/robots.txt` from `ROBOTS_DISALLOW`, run by `check:seo-routes` in CI     | A Vite plugin would regenerate on every dev build for no gain; one script plus a CI diff check catches drift.              |
-| 8   | 404 status (SEO-12.2)                                               | Middleware returns 404 + `noindex` only when the edge lookup proves the slug is missing on a crawler UA; browsers keep the SPA shell | Browsers need the shell to render `NotFoundPage`; crawlers need the status.                                                |
-| 9   | Title format (SEO-5.1)                                              | Deferred to Phase 3                                                                               | Changing 70 page titles is a copy PR, not a foundation PR.                                                                 |
-| 10  | Host-facing copy for new surfaces                                    | None added                                                                                        | Nothing host-visible ships in this branch.                                                                                 |
+| #   | Decision                                 | Choice                                                                                                                               | Why                                                                                                                                       |
+| --- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Registry location                        | `ui/src/lib/seo/publicRoutes.ts`, dependency-free (no `@/` imports)                                                                  | Must be importable by the Vite SPA, the middleware bundle and the Node check script without a second copy.                                |
+| 2   | Static copy source for snapshots         | `ui/src/lib/seo/content/*.ts` pure data modules, imported by page and by snapshot renderer                                           | Satisfies D1's "same source" guardrail without a 5,000-line refactor. Only the hero + section copy moves.                                 |
+| 3   | Snapshot escaping                        | Reuse `escapeHtml` / `serializeJsonLd` from `seoMeta.ts`                                                                             | One escaper, already tested.                                                                                                              |
+| 4   | Snapshot HTML shape                      | `<header>` nav, `<main>` with exactly one `<h1>`, facts `<dl>`, `<a href>` links, `<footer>`                                         | Matches what a crawler needs and what the SPA renders; no invented copy.                                                                  |
+| 5   | Canonical origin default                 | `https://kamespace.com`; `VITE_PUBLIC_SITE_ORIGIN` only overrides when set                                                           | A stale env must never de-index or split the live domain, same reasoning as `DEFAULT_INDEXABLE_HOSTS`.                                    |
+| 6   | `app.kamespace.com` redirect (SEO-4.9)   | Not in this branch                                                                                                                   | Its role as a dashboard entry is unconfirmed; redirecting it could break host sign-in. www. keeps working and self-canonicalizes for now. |
+| 7   | robots.txt fallback generation (SEO-2.2) | `scripts/seo/generate-robots.mjs` writes `ui/public/robots.txt` from `ROBOTS_DISALLOW`, run by `check:seo-routes` in CI              | A Vite plugin would regenerate on every dev build for no gain; one script plus a CI diff check catches drift.                             |
+| 8   | 404 status (SEO-12.2)                    | Middleware returns 404 + `noindex` only when the edge lookup proves the slug is missing on a crawler UA; browsers keep the SPA shell | Browsers need the shell to render `NotFoundPage`; crawlers need the status.                                                               |
+| 9   | Title format (SEO-5.1)                   | Deferred to Phase 3                                                                                                                  | Changing 70 page titles is a copy PR, not a foundation PR.                                                                                |
+| 10  | Host-facing copy for new surfaces        | None added                                                                                                                           | Nothing host-visible ships in this branch.                                                                                                |
 
 ---
 
 ## 2c. Per-phase acceptance
 
-| Phase | Command that proves it                                                                                                       |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------- |
-| 0     | `bun run seo:audit -- --origin https://kamespace.com --out docs/workflow/in-progress/seo-evidence`                            |
-| 1     | `bun run type-check && bun run lint && bun run test && bun run check:seo-routes`                                              |
-| 2     | `bun run test:edge && bun run check:seo-routes && curl -sI $PREVIEW/robots.txt`                                              |
+| Phase | Command that proves it                                                                             |
+| ----- | -------------------------------------------------------------------------------------------------- |
+| 0     | `bun run seo:audit -- --origin https://kamespace.com --out docs/workflow/in-progress/seo-evidence` |
+| 1     | `bun run type-check && bun run lint && bun run test && bun run check:seo-routes`                   |
+| 2     | `bun run test:edge && bun run check:seo-routes && curl -sI $PREVIEW/robots.txt`                    |
 
 ---
 
 ## 2d. Edge cases this branch must handle
 
-| Case                                                     | Required behaviour                                                                    |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Middleware edge fetch times out or 500s                   | Return the plain SPA shell (`next()`), never a 5xx                                     |
-| Crawler hits a slug that does not exist                    | 404 with `noindex`, not a 200 shell                                                    |
-| Browser hits the same dead slug                            | Normal shell, `NotFoundPage` renders, `noindex` set by the page                        |
-| Route in the registry but missing from the router          | `check:seo-routes` fails CI                                                            |
-| Route in the router but missing from the registry          | `check:seo-routes` fails CI                                                            |
-| `VITE_PUBLIC_SITE_ORIGIN` unset                            | Canonical falls back to `https://kamespace.com`                                        |
-| `VITE_PUBLIC_SITE_ORIGIN` set on a preview deploy          | Canonical stays the apex; robots stays `Disallow: /` because the host is not indexable  |
-| Query string (`?swLat=`, UTM, filters)                      | Dropped from canonical and `og:url`                                                    |
-| Trailing slash                                             | 308 to the slashless path via `vercel.json`                                            |
-| Non-production host                                        | `X-Robots-Tag: noindex, nofollow` from the middleware                                 |
+| Case                                              | Required behaviour                                                                     |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Middleware edge fetch times out or 500s           | Return the plain SPA shell (`next()`), never a 5xx                                     |
+| Crawler hits a slug that does not exist           | 404 with `noindex`, not a 200 shell                                                    |
+| Browser hits the same dead slug                   | Normal shell, `NotFoundPage` renders, `noindex` set by the page                        |
+| Route in the registry but missing from the router | `check:seo-routes` fails CI                                                            |
+| Route in the router but missing from the registry | `check:seo-routes` fails CI                                                            |
+| `VITE_PUBLIC_SITE_ORIGIN` unset                   | Canonical falls back to `https://kamespace.com`                                        |
+| `VITE_PUBLIC_SITE_ORIGIN` set on a preview deploy | Canonical stays the apex; robots stays `Disallow: /` because the host is not indexable |
+| Query string (`?swLat=`, UTM, filters)            | Dropped from canonical and `og:url`                                                    |
+| Trailing slash                                    | 308 to the slashless path via `vercel.json`                                            |
+| Non-production host                               | `X-Robots-Tag: noindex, nofollow` from the middleware                                  |
 
 ---
 

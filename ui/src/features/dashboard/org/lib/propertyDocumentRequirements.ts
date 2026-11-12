@@ -1,8 +1,9 @@
-import type {
-  DocumentApprovalSource,
-  DocumentRequirement,
-  DocumentTriggerCondition,
-  RequestPdfTemplateId,
+import {
+  buildDocumentRequirement,
+  type DocumentApprovalSource,
+  type DocumentRequirement,
+  type DocumentTriggerCondition,
+  type RequestPdfTemplateId,
 } from '@/features/dashboard/bookings/lib/documentRequirements';
 
 export const DOCUMENT_TRIGGER_CONDITIONS: DocumentTriggerCondition[] = [
@@ -32,6 +33,7 @@ export const DOCUMENT_TRIGGER_CONDITION_LABELS: Record<DocumentTriggerCondition,
 export const DOCUMENT_APPROVAL_SOURCE_LABELS: Record<DocumentApprovalSource, string> = {
   manual: 'Manual (admin marks complete)',
   'email-listener': 'Email listener (auto-approve)',
+  none: 'No approval',
 };
 
 export const DOCUMENT_PDF_TEMPLATE_LABELS: Record<RequestPdfTemplateId, string> = {
@@ -59,7 +61,8 @@ export function documentRequirementLabelFieldErrors(
   const errors: Record<string, string> = {};
   if (list === null) return errors;
   list.forEach((req, index) => {
-    if (!req.label.trim()) {
+    // A retired step never applies to a booking, so it cannot block a save.
+    if (req.active && !req.label.trim()) {
       errors[`document-requirement-${index}-label`] = 'Enter a document label';
     }
   });
@@ -78,15 +81,16 @@ function nextRequirementId(existing: DocumentRequirement[]): string {
 }
 
 export function createDocumentRequirement(existing: DocumentRequirement[]): DocumentRequirement {
-  return {
+  const order = existing.length + 1;
+  return buildDocumentRequirement({
     id: nextRequirementId(existing),
     label: '',
-    order: existing.length + 1,
+    order,
     pdfTemplateId: null,
     approvalSource: 'manual',
     triggerCondition: 'always',
     calendarIcon: null,
-  };
+  });
 }
 
 export function addDocumentRequirement(list: DocumentRequirement[]): DocumentRequirement[] {
@@ -114,10 +118,46 @@ export function moveDocumentRequirement(
   return withNormalizedOrder(next);
 }
 
+/**
+ * Apply a patch without letting the v1 aliases and the v2 fields drift apart.
+ *
+ * The editor edits `label` / `approvalSource` / `pdfTemplateId`, while the runtime reads
+ * `labels.step` / `approval.source` / `output`. Patching one side only would make the edit a
+ * silent no-op after the parser re-derives the other, so both move together here.
+ */
+export function applyDocumentRequirementPatch(
+  requirement: DocumentRequirement,
+  patch: Partial<DocumentRequirement>
+): DocumentRequirement {
+  const next: DocumentRequirement = { ...requirement, ...patch };
+
+  if (patch.label !== undefined && patch.labels === undefined) {
+    next.labels = { ...requirement.labels, step: patch.label };
+  }
+  if (patch.labels?.step !== undefined && patch.label === undefined) {
+    next.label = patch.labels.step;
+  }
+  if (patch.approvalSource !== undefined && patch.approval === undefined) {
+    next.approval = { ...requirement.approval, source: patch.approvalSource };
+  }
+  if (patch.approval?.source !== undefined && patch.approvalSource === undefined) {
+    next.approvalSource = patch.approval.source;
+  }
+  if (patch.output !== undefined && patch.pdfTemplateId === undefined) {
+    next.pdfTemplateId = patch.output.type === 'generated_pdf' ? patch.output.pdfTemplateId : null;
+  }
+  if (patch.pdfTemplateId !== undefined && patch.output === undefined) {
+    next.output = patch.pdfTemplateId
+      ? { type: 'generated_pdf', pdfTemplateId: patch.pdfTemplateId }
+      : { type: 'none' };
+  }
+  return next;
+}
+
 export function updateDocumentRequirement(
   list: DocumentRequirement[],
   index: number,
   patch: Partial<DocumentRequirement>
 ): DocumentRequirement[] {
-  return list.map((req, i) => (i === index ? { ...req, ...patch } : req));
+  return list.map((req, i) => (i === index ? applyDocumentRequirementPatch(req, patch) : req));
 }

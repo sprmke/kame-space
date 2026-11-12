@@ -3,10 +3,15 @@ import { toast } from 'sonner';
 import type { BookingWorkflowEmailKind } from '@/features/dashboard/bookings/lib/bookingWorkflowEmail';
 import { openUpgradeModalFromBridge } from '@/features/dashboard/plans/lib/upgradeModalBridge';
 
-/** Human labels for `workflowOrchestrator.ts`'s `automationSkippedByPlan` side-effect names. */
+/**
+ * Human labels for `workflowOrchestrator.ts`'s `automationSkippedByPlan` side-effect names.
+ * Building-neutral on purpose: the same toast shows for every residence, so naming one
+ * building here told every other host their email went somewhere it did not. Per-residence
+ * step labels land with `workflow.automationSkipped` (Phase 3).
+ */
 export const AUTOMATION_SKIP_LABELS: Record<string, string> = {
-  gaf_request: 'GAF request email to Azure',
-  pet_request: 'Pet request email to Azure',
+  gaf_request: 'GAF request email',
+  pet_request: 'Pet request email',
   booking_acknowledgement: 'Booking acknowledgement email',
   ready_for_checkin: 'Ready-for-check-in email',
   sd_refund_form_request: 'Check-out & SD refund email',

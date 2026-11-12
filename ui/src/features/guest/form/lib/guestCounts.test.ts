@@ -254,3 +254,39 @@ describe('AZURE_ADULT_LIMIT_MESSAGE', () => {
     expect(AZURE_ADULT_LIMIT_MESSAGE).toBeDefined();
   });
 });
+
+describe('residence age rules', () => {
+  const rules = {
+    adultMinAge: 21,
+    idRequiredFromAge: 16,
+    primaryGuestMinAge: 21,
+    childMaxAge: 12,
+  };
+
+  it('requires a valid ID from the residence age', () => {
+    expect(requiresValidId(17)).toBe(false);
+    expect(requiresValidId(18)).toBe(true);
+    expect(requiresValidId(15, rules)).toBe(false);
+    expect(requiresValidId(16, rules)).toBe(true);
+  });
+
+  it('counts a 12-year-old as a child when the residence says so', () => {
+    expect(computeOccupancyGuestCountsByAge([{ age: 12 }])).toEqual({ adults: 1, children: 0 });
+    expect(computeOccupancyGuestCountsByAge([{ age: 12 }], rules)).toEqual({
+      adults: 0,
+      children: 1,
+    });
+  });
+
+  it('defaults the overflow slot to the residence child age and the rest to the adult age', () => {
+    const capacity = { maxAdults: 4, maxChildren: 1 };
+    expect(getDefaultAgeForGuestFormPartyGuest(1, 5, capacity, rules)).toBe(21);
+    expect(getDefaultAgeForGuestFormPartyGuest(5, 5, capacity, rules)).toBe(12);
+  });
+
+  it('quotes the residence child age in the limit message', () => {
+    const message = buildGuestLimitMessage({ maxAdults: 4, maxChildren: 1 }, 5, 5, rules);
+    expect(message).toContain('age 12 or below');
+  });
+});
+

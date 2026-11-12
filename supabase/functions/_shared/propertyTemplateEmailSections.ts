@@ -132,7 +132,8 @@ function notifySectionTitle(
   return `<p class="section-label" style="${margin};font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${color};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">${text}</p>`;
 }
 
-function formatPeso(amount: number | null | undefined): string {
+/** Peso display for email sections (also used by the Azure golden set). */
+export function formatPeso(amount: number | null | undefined): string {
   if (amount == null || !Number.isFinite(Number(amount))) return '-';
   return `₱${Number(amount).toLocaleString('en-PH', {
     minimumFractionDigits: 2,

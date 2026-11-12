@@ -4,6 +4,8 @@ import {
   GUEST_FORM_DEFAULT_CHECK_IN_TIME,
   GUEST_FORM_DEFAULT_CHECK_OUT_TIME,
 } from '@/features/guest/form/lib/guestFormPropertyDefaults';
+// Type-only: erased at build time, so the branding module can keep depending on this one.
+import type { GuestResidenceCopy } from '@/features/guest/form/lib/guestFormBranding';
 import { useGuestPropertySlug } from '@/features/guest/hooks/useGuestPropertySlug';
 
 import { DEFAULT_CLEANING_BUFFER_MINUTES } from '@/lib/cleaningBuffer';
@@ -40,6 +42,17 @@ export type GuestPaymentInfo = {
   cleaningBufferMinutes: number;
   maxAdults: number;
   maxChildren: number;
+  /** Building occupancy rules, resolved from the residence profile. */
+  childMaxAge: number;
+  adultMinAge: number;
+  idRequiredFromAge: number;
+  primaryGuestMinAge: number;
+
+  /** Residence copy overrides the guest form should prefer over the built-in strings. */
+  copy: Partial<GuestResidenceCopy>;
+  /** Residence term overrides (building admin label, arrival checkpoint). */
+  terms: Partial<Record<'buildingAdmin' | 'buildingAdminLong' | 'arrivalCheckpoint', string>>;
+
   propertyName: string;
   propertyEyebrow: string;
   propertyCoverImageUrl: string | null;
@@ -74,6 +87,12 @@ export const DEFAULT_GUEST_PAYMENT_INFO: GuestPaymentInfo = {
   cleaningBufferMinutes: DEFAULT_CLEANING_BUFFER_MINUTES,
   maxAdults: 4,
   maxChildren: 1,
+  childMaxAge: 3,
+  adultMinAge: 18,
+  idRequiredFromAge: 18,
+  primaryGuestMinAge: 18,
+  copy: {},
+  terms: {},
   propertyName: '',
   propertyEyebrow: '',
   propertyCoverImageUrl: null,

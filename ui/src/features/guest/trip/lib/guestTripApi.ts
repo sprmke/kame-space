@@ -60,6 +60,16 @@ export type GuestTrip = {
     amountDue: number | null;
     isAirbnb: boolean;
   };
+  /** Building info for the stay guide; null when the residence hides it or has none. */
+  buildingInfo: {
+    requirements: string;
+    guides: Array<{ id: string; title: string; content: string }>;
+    importantInfo: string;
+    rules: Array<{ id: string; text: string; type: 'info' | 'prohibited' | 'allowed' }>;
+    poolFee: number | null;
+    poolSchedule: string;
+    amenities: string[];
+  } | null;
   refund: { amount: number | null; settledAt: string | null };
   cancellation: {
     /** Why it was cancelled; `request_expired` when the expiry cron did it. */

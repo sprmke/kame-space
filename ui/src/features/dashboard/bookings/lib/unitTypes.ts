@@ -9,14 +9,6 @@ export type DevelopmentUnitType = {
   maxChildren: number;
 };
 
-export const AZURE_NORTH_RESIDENCE_NAME = 'Azure North Residences';
-
-export const DEFAULT_AZURE_NORTH_UNIT_TYPES: DevelopmentUnitType[] = [
-  { id: 'studio', label: 'Studio', bedrooms: 1, bathrooms: 1, maxAdults: 4, maxChildren: 1 },
-  { id: '1br', label: '1 bedroom', bedrooms: 1, bathrooms: 1, maxAdults: 6, maxChildren: 2 },
-  { id: '2br', label: '2 bedroom', bedrooms: 2, bathrooms: 1, maxAdults: 8, maxChildren: 3 },
-];
-
 export const GENERIC_UNIT_TYPES: DevelopmentUnitType[] = [
   {
     id: 'standard',
@@ -44,11 +36,11 @@ function readPositiveInt(value: unknown, fallback: number): number {
   return Math.round(n);
 }
 
-export function defaultUnitTypesForResidence(residenceName: string): DevelopmentUnitType[] {
-  const normalized = residenceName.trim().toLowerCase();
-  if (normalized === AZURE_NORTH_RESIDENCE_NAME.toLowerCase()) {
-    return DEFAULT_AZURE_NORTH_UNIT_TYPES.map((entry) => ({ ...entry }));
-  }
+/**
+ * Placeholder unit types until the residence profile loads. Residence-specific unit types
+ * live on `developments.settings` (`useResidenceUnitTypes`), never in a name-matching map.
+ */
+export function defaultUnitTypesForResidence(_residenceName?: string): DevelopmentUnitType[] {
   return GENERIC_UNIT_TYPES.map((entry) => ({ ...entry }));
 }
 

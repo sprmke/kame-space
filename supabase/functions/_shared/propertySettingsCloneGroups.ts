@@ -182,9 +182,7 @@ const propertyDetailsGroup: CloneGroup = {
   },
   async write(payload, targetCtx) {
     const target = await loadPropertyRow(targetCtx.propertyId);
-    const defaults = getResidencePropertyDefaults(
-      (target.residence_name ?? '').trim() || 'Azure North Residences'
-    );
+    const defaults = getResidencePropertyDefaults((target.residence_name ?? '').trim());
     const settingsPatch: Record<string, unknown> = {};
     const num = (v: unknown, range: { min: number; max: number; default: number }) =>
       clampToRange(Number(v), range);

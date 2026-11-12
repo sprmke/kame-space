@@ -41,6 +41,10 @@ import {
   resolvePublicDevelopmentLink,
   type PublicDevelopmentLink,
 } from './publicDevelopmentLink.ts';
+import {
+  loadGuestBuildingInfoForProperty,
+  type GuestBuildingInfo,
+} from './developmentGuestInfo.ts';
 
 export type PublicPropertyMediaDto = {
   id: string;
@@ -85,6 +89,8 @@ export type PublicPropertyDetailDto = {
   residenceName: string | null;
   /** ACTIVE development matching `residenceName`, for public links. */
   development: PublicDevelopmentLink | null;
+  /** Building rules and info, only when `guestInfoVisibility.propertyPage` allows it. */
+  buildingInfo: GuestBuildingInfo | null;
   towerAndUnit: string | null;
   tower: string | null;
   unitNumber: string | null;
@@ -378,6 +384,7 @@ export async function loadPublicPropertyById(
     sectionConfig,
     development,
     reviewSummaryResult,
+    buildingInfo,
   ] = await Promise.all([
     loadPropertyPricing(propertyId, { ensureSettings: false }),
     loadResolvedBrandColorByPropertyId(propertyId),
@@ -397,6 +404,14 @@ export async function loadPublicPropertyById(
     getPublicPageConfigOrDefault(propertyId, 'property_landing') as Promise<PropertyLandingConfig>,
     resolvePublicDevelopmentLink(row.residence_name),
     supabase.rpc('property_review_summary', { p_property_id: propertyId }),
+    loadGuestBuildingInfoForProperty(
+      supabase,
+      {
+        developmentId: (row as { development_id?: string | null }).development_id ?? null,
+        residenceName: row.residence_name,
+      },
+      'propertyPage'
+    ),
   ]);
 
   const externalReviews = listApprovedPublicExternalReviews(
@@ -488,6 +503,7 @@ export async function loadPublicPropertyById(
     placeId: readString(settings, 'placeId') || null,
     residenceName: row.residence_name?.trim() || null,
     development,
+    buildingInfo,
     towerAndUnit: row.tower_and_unit?.trim() || null,
     tower: row.tower?.trim() || null,
     unitNumber: row.unit_number?.trim() || null,

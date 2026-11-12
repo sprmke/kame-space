@@ -57,3 +57,11 @@ describe('notifyEmailsFailed', () => {
     vi.doUnmock('sonner');
   });
 });
+
+describe('automation skip labels name no building', () => {
+  it('never tells a host their email went to another residence', () => {
+    const labels = automationSkipLabelsForKinds(['gaf_request', 'pet_request']);
+    expect(labels.join(' ')).not.toMatch(/azure/i);
+    expect(labels).toEqual(['GAF request email', 'Pet request email']);
+  });
+});

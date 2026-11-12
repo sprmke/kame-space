@@ -11,7 +11,6 @@ import { RequireAdmin } from '@/features/dashboard/bookings/components/RequireAd
 import { useAdminSession } from '@/features/dashboard/bookings/hooks/useAdminSession';
 import { OnboardingFeatureShowcase } from '@/features/dashboard/org/components/onboarding/OnboardingFeatureShowcase';
 import { OnboardingHostVerificationSection } from '@/features/dashboard/org/components/onboarding/OnboardingHostVerificationSection';
-import { HostIdentityVerifyButton } from '@/features/verification/components/HostIdentityVerifyButton';
 import {
   OnboardingProfileHeader,
   readGoogleAvatarUrl,
@@ -29,6 +28,10 @@ import {
   useOrganizations,
 } from '@/features/dashboard/org/hooks/useOrganizations';
 import { useParkingSlotConflict } from '@/features/dashboard/org/hooks/useParkingSlotConflict';
+import {
+  toResidenceProfile,
+  useResidenceOptions,
+} from '@/features/dashboard/org/hooks/useResidenceOptions';
 import { useTowerUnitConflict } from '@/features/dashboard/org/hooks/useTowerUnitConflict';
 import { callEdgeFunction, getSessionJwt } from '@/features/dashboard/org/lib/edgeClient';
 import { submitListingAuthorization } from '@/features/dashboard/org/lib/listingAuthorizationApi';
@@ -45,34 +48,6 @@ import {
   validateVerificationFile,
 } from '@/features/dashboard/org/lib/orgVerification';
 import {
-  AZURE_NORTH_PARKING_TOWERS,
-  DEFAULT_PARKING_LEVEL,
-  DEFAULT_PARKING_RESIDENCE_NAME,
-  DEFAULT_PARKING_TOWER,
-  getParkingLevelsForTower,
-  type AzureNorthParkingLevel,
-  type AzureNorthParkingTower,
-} from '@/features/dashboard/org/lib/parkingResidences';
-import {
-  formatParkingCode,
-  formatParkingDisplayName,
-  inferParkingTypeForTower,
-  isValidParkingSlotNumber,
-  sanitizeParkingSlotNumber,
-} from '@/features/dashboard/org/lib/parkingSlotDisplay';
-import { DEFAULT_RESIDENCE_NAME } from '@/features/dashboard/org/lib/propertyDisplay';
-import {
-  DEFAULT_PROPERTY_TOWER,
-  getTowersForResidence,
-} from '@/features/dashboard/org/lib/propertyResidences';
-import {
-  formatTowerAndUnit,
-  isPropertyTowerForResidence,
-  isValidUnitNumber,
-  sanitizeUnitNumberInput,
-  type PropertyTower,
-} from '@/features/dashboard/org/lib/propertyTowerUnit';
-import {
   orgDashboardPath,
   parkingSectionPath,
   propertySectionPath,
@@ -80,6 +55,8 @@ import {
   setLastTenantContext,
 } from '@/features/dashboard/org/lib/tenantPaths';
 import type { Organization } from '@/features/dashboard/org/types';
+
+import { HostIdentityVerifyButton } from '@/features/verification/components/HostIdentityVerifyButton';
 
 import { AvailabilityCheckInput } from '@/components/AvailabilityCheckInput';
 import { RouteGuardSkeleton } from '@/components/skeletons/AdminSkeletons';
@@ -103,6 +80,19 @@ import { FORM_PLACEHOLDERS } from '@/lib/constants/formPlaceholders';
 import { prepareUpload } from '@/lib/media/prepareUpload';
 import { appPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { captureAppEvent } from '@/lib/posthog/capture';
+import {
+  activeParkingTowers,
+  activePropertyTowers,
+  formatParkingCodeForProfile,
+  formatParkingLocation,
+  formatUnitLabel,
+  parkingLevelsForTower,
+  parkingSlotError,
+  parkingTypeForTower,
+  sanitizeSlotLabel,
+  unitNumberError,
+  validateTowerForProfile,
+} from '@/lib/residence/residenceProfile';
 import { cn } from '@/lib/utils';
 import {
   validateFullPersonName,
@@ -227,21 +217,58 @@ export function OnboardingPage() {
   const createdTenantRef = useRef<CreatedOnboardingTenant | null>(null);
 
   const [propertyName, setPropertyName] = useState('');
-  const [tower, setTower] = useState<PropertyTower>(DEFAULT_PROPERTY_TOWER);
+  const [residenceName, setResidenceName] = useState('');
+  const [tower, setTower] = useState('');
   const [unitNumber, setUnitNumber] = useState('');
   const [unitTouched, setUnitTouched] = useState(false);
 
-  const [parkingTower, setParkingTower] = useState<AzureNorthParkingTower>(DEFAULT_PARKING_TOWER);
-  const [parkingLevel, setParkingLevel] = useState(DEFAULT_PARKING_LEVEL);
+  const [parkingTower, setParkingTower] = useState('');
+  const [parkingLevel, setParkingLevel] = useState('');
   const [slotNumber, setSlotNumber] = useState('');
-  const parkingDisplayName = useMemo(
-    () => formatParkingDisplayName(parkingTower, parkingLevel, slotNumber),
-    [parkingTower, parkingLevel, slotNumber]
+
+  const { data: residenceOptionsData, isLoading: residenceOptionsLoading } = useResidenceOptions();
+  const residenceOptions = useMemo(
+    () => residenceOptionsData?.residences ?? [],
+    [residenceOptionsData]
   );
-  const parkingCode = useMemo(
-    () => formatParkingCode(parkingTower, parkingLevel, slotNumber),
-    [parkingTower, parkingLevel, slotNumber]
+  const selectedResidence = useMemo(
+    () => residenceOptions.find((option) => option.name === residenceName) ?? null,
+    [residenceOptions, residenceName]
   );
+  const residenceProfile = useMemo(
+    () => (selectedResidence ? toResidenceProfile(selectedResidence) : null),
+    [selectedResidence]
+  );
+  const towerOptions = residenceProfile
+    ? activePropertyTowers(residenceProfile).map((entry) => entry.name)
+    : [];
+  const parkingTowerOptions = residenceProfile
+    ? activeParkingTowers(residenceProfile).map((entry) => entry.name)
+    : [];
+  const parkingLevelOptions = residenceProfile
+    ? parkingLevelsForTower(residenceProfile, parkingTower)
+    : [];
+  const parkingDisplayName =
+    residenceProfile && parkingTower && parkingLevel
+      ? formatParkingLocation(residenceProfile, parkingTower, parkingLevel, slotNumber)
+      : '';
+  const parkingCode =
+    residenceProfile && parkingTower && parkingLevel
+      ? formatParkingCodeForProfile(residenceProfile, parkingTower, parkingLevel, slotNumber)
+      : '';
+
+  // Default to the first residence and its first parking tower once options arrive.
+  useEffect(() => {
+    if (residenceName) return;
+    const first = residenceOptions[0];
+    if (!first) return;
+    const profile = toResidenceProfile(first);
+    const firstParkingTower = activeParkingTowers(profile)[0];
+    setResidenceName(first.name ?? '');
+    setTower(activePropertyTowers(profile)[0]?.name ?? '');
+    setParkingTower(firstParkingTower?.name ?? '');
+    setParkingLevel(firstParkingTower?.levels[0] ?? '');
+  }, [residenceName, residenceOptions]);
 
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -253,7 +280,6 @@ export function OnboardingPage() {
     }
   }, [name]);
 
-  const towerOptions = getTowersForResidence(DEFAULT_RESIDENCE_NAME);
   const orgNameReady = orgName.trim().length >= 2;
   const contactNameError = orgContactNameError(contactName);
   const contactPhoneError = orgContactPhoneError(contactPhone);
@@ -281,34 +307,48 @@ export function OnboardingPage() {
     : null;
   const propertyNameChecking = propertyNameCheck.isChecking;
 
+  const towerValid = residenceProfile ? validateTowerForProfile(residenceProfile, tower).ok : false;
+  const unitMessage = residenceProfile
+    ? unitNumberError(residenceProfile, unitNumber)
+    : 'Unit number is required';
+  const slotMessage = residenceProfile
+    ? parkingSlotError(residenceProfile, slotNumber)
+    : 'Slot number is required';
+
   const propertyReady =
     !showPropertyBlock ||
-    (isPropertyTowerForResidence(tower, DEFAULT_RESIDENCE_NAME) &&
-      isValidUnitNumber(unitNumber) &&
-      propertyNameTrimmed.length >= 2);
-  const unitInvalid = unitTouched && !isValidUnitNumber(unitNumber);
+    (towerValid && unitNumber.trim().length > 0 && !unitMessage && propertyNameTrimmed.length >= 2);
+  const unitInvalid = unitTouched && unitNumber.trim().length > 0 && Boolean(unitMessage);
   const {
     conflict: towerUnitConflict,
     hasActiveListing: towerUnitListed,
     isChecking: towerUnitChecking,
-  } = useTowerUnitConflict(tower, unitNumber);
+  } = useTowerUnitConflict(tower, unitNumber, undefined, {
+    developmentId: selectedResidence?.developmentId ?? null,
+    residenceName: selectedResidence?.name ?? null,
+    profile: residenceProfile,
+  });
   const towerUnitReady =
-    isPropertyTowerForResidence(tower, DEFAULT_RESIDENCE_NAME) && isValidUnitNumber(unitNumber);
-  const unitFieldError = unitInvalid ? 'Enter a 4-digit unit number' : null;
-  const towerMissing = unitTouched && !isPropertyTowerForResidence(tower, DEFAULT_RESIDENCE_NAME);
+    Boolean(residenceProfile) &&
+    towerValid &&
+    unitNumber.trim().length > 0 &&
+    !unitMessage;
+  const unitFieldError = unitInvalid ? unitMessage : null;
+  const towerMissing = unitTouched && !towerValid;
   const propertyNameMissing = showPropertyBlock && unitTouched && propertyNameTrimmed.length < 2;
 
   const parkingSlotReady =
     !showParkingBlock ||
     (Boolean(parkingTower) &&
       Boolean(parkingLevel) &&
-      isValidParkingSlotNumber(slotNumber) &&
+      slotNumber.trim().length > 0 &&
+      !slotMessage &&
       Boolean(parkingDisplayName));
   const {
     conflict: parkingConflict,
     hasDuplicate: parkingSlotDuplicate,
     isChecking: parkingSlotChecking,
-  } = useParkingSlotConflict(parkingTower, parkingLevel, slotNumber);
+  } = useParkingSlotConflict(parkingTower, parkingLevel, slotNumber, residenceName);
 
   const orgNameAvailabilityState = resolveNameAvailabilityState({
     ready: orgNameReady,
@@ -332,7 +372,8 @@ export function OnboardingPage() {
       showParkingBlock &&
       Boolean(parkingTower) &&
       Boolean(parkingLevel) &&
-      isValidParkingSlotNumber(slotNumber),
+      slotNumber.trim().length > 0 &&
+      !slotMessage,
     isChecking: parkingSlotChecking,
     hasConflict: parkingSlotDuplicate,
   });
@@ -462,7 +503,8 @@ export function OnboardingPage() {
       contactRole: userRole,
       contactPhone: contactPhone.trim(),
       hostModes,
-      residenceName: DEFAULT_RESIDENCE_NAME,
+      residenceName,
+      developmentId: selectedResidence?.developmentId ?? undefined,
     };
 
     if (showPropertyBlock && propertyReady) {
@@ -476,8 +518,11 @@ export function OnboardingPage() {
         tower: parkingTower,
         level: parkingLevel,
         slotLabel: slotNumber.trim(),
-        parkingType: inferParkingTypeForTower(parkingTower),
-        residenceName: DEFAULT_PARKING_RESIDENCE_NAME,
+        parkingType: residenceProfile
+          ? parkingTypeForTower(residenceProfile, parkingTower)
+          : 'inside_tower',
+        residenceName,
+        developmentId: selectedResidence?.developmentId ?? undefined,
         name: parkingDisplayName,
       };
     }
@@ -789,28 +834,64 @@ export function OnboardingPage() {
                             <VerificationFieldLabel
                               htmlFor="residence"
                               label="Residence"
-                              help="For now we only support Azure North residence. More residences and property types are coming soon."
+                              help="Pick the building. Its tower and unit rules apply."
                             />
-                            <Input
-                              id="residence"
-                              name="residenceName"
-                              value={DEFAULT_RESIDENCE_NAME}
-                              readOnly
-                              aria-readonly="true"
-                              className="bg-muted/40 text-muted-foreground h-10 cursor-default"
-                            />
+                            <Select
+                              value={residenceName || undefined}
+                              onValueChange={(value) => {
+                                setResidenceName(value);
+                                setTower('');
+                                setUnitNumber('');
+                                setUnitTouched(false);
+                                setParkingTower('');
+                                setParkingLevel('');
+                                setSlotNumber('');
+                                const next = residenceOptions.find(
+                                  (option) => option.name === value
+                                );
+                                if (!next) return;
+                                const profile = toResidenceProfile(next);
+                                const firstParkingTower = activeParkingTowers(profile)[0];
+                                setTower(activePropertyTowers(profile)[0]?.name ?? '');
+                                setParkingTower(firstParkingTower?.name ?? '');
+                                setParkingLevel(firstParkingTower?.levels[0] ?? '');
+                              }}
+                            >
+                              <SelectTrigger id="residence" className="h-10">
+                                <SelectValue
+                                  placeholder={
+                                    residenceOptionsLoading
+                                      ? 'Loading residences'
+                                      : 'Select residence'
+                                  }
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {residenceOptions
+                                  .map((option) => option.name ?? '')
+                                  .filter((name) => name.length > 0)
+                                  .map((name) => (
+                                    <SelectItem key={name} value={name}>
+                                      {name}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div className="space-y-1.5">
                               <Label htmlFor="tower">
-                                Tower
-                                <RequiredMark />
+                                {residenceProfile?.structure.towerLabel ?? 'Tower'}
+                                {residenceProfile?.structure.towersRequired ? (
+                                  <RequiredMark />
+                                ) : null}
                               </Label>
                               <Select
                                 value={tower || undefined}
+                                disabled={towerOptions.length === 0}
                                 onValueChange={(value) => {
                                   setUnitTouched(true);
-                                  setTower(value as PropertyTower);
+                                  setTower(value);
                                 }}
                               >
                                 <SelectTrigger
@@ -836,19 +917,44 @@ export function OnboardingPage() {
                             </div>
                             <div className="space-y-1.5">
                               <Label htmlFor="unit-number">
-                                Unit
+                                {residenceProfile?.structure.unitLabel ?? 'Unit'}
                                 <RequiredMark />
                               </Label>
                               <AvailabilityCheckInput
                                 id="unit-number"
-                                inputMode="numeric"
+                                inputMode={
+                                  residenceProfile?.structure.unitNumberFormat.preset ===
+                                    'digits' ||
+                                  residenceProfile?.structure.unitNumberFormat.preset === 'digits4'
+                                    ? 'numeric'
+                                    : 'text'
+                                }
                                 value={unitNumber}
                                 onChange={(e) => {
                                   setUnitTouched(true);
-                                  setUnitNumber(sanitizeUnitNumberInput(e.target.value));
+                                  const digitOnly =
+                                    residenceProfile?.structure.unitNumberFormat.preset ===
+                                      'digits' ||
+                                    residenceProfile?.structure.unitNumberFormat.preset ===
+                                      'digits4';
+                                  setUnitNumber(
+                                    digitOnly
+                                      ? e.target.value.replace(/\D/g, '').slice(0, 6)
+                                      : e.target.value.slice(0, 15)
+                                  );
                                 }}
-                                placeholder={FORM_PLACEHOLDERS.unitNumber}
-                                maxLength={4}
+                                placeholder={
+                                  residenceProfile?.structure.unitNumberFormat.example ??
+                                  FORM_PLACEHOLDERS.unitNumber
+                                }
+                                maxLength={
+                                  residenceProfile?.structure.unitNumberFormat.preset === 'digits4'
+                                    ? 4
+                                    : residenceProfile?.structure.unitNumberFormat.preset ===
+                                        'digits'
+                                      ? 6
+                                      : 15
+                                }
                                 required
                                 aria-invalid={Boolean(unitFieldError)}
                                 className={cn(
@@ -884,9 +990,8 @@ export function OnboardingPage() {
                                 setPropertyName(e.target.value);
                               }}
                               placeholder={
-                                isPropertyTowerForResidence(tower, DEFAULT_RESIDENCE_NAME) &&
-                                isValidUnitNumber(unitNumber)
-                                  ? formatTowerAndUnit(tower, unitNumber)
+                                towerUnitReady && residenceProfile
+                                  ? formatUnitLabel(residenceProfile, tower, unitNumber)
                                   : FORM_PLACEHOLDERS.towerAndUnit
                               }
                               maxLength={120}
@@ -929,13 +1034,15 @@ export function OnboardingPage() {
                               </Label>
                               <Select
                                 value={parkingTower || undefined}
+                                disabled={parkingTowerOptions.length === 0}
                                 onValueChange={(v) => {
-                                  setParkingTower(v as AzureNorthParkingTower);
-                                  const levels = getParkingLevelsForTower(v);
-                                  if (parkingLevel && !levels.includes(parkingLevel)) {
-                                    setParkingLevel(
-                                      (levels[0] as typeof parkingLevel) || DEFAULT_PARKING_LEVEL
-                                    );
+                                  setParkingTower(v);
+                                  const levels =
+                                    residenceProfile &&
+                                    parkingLevelsForTower(residenceProfile, v);
+                                  if (!levels) return;
+                                  if (!levels.includes(parkingLevel)) {
+                                    setParkingLevel(levels[0] ?? '');
                                   }
                                 }}
                               >
@@ -943,7 +1050,7 @@ export function OnboardingPage() {
                                   <SelectValue placeholder="Tower" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {AZURE_NORTH_PARKING_TOWERS.map((t) => (
+                                  {parkingTowerOptions.map((t) => (
                                     <SelectItem key={t} value={t}>
                                       {t}
                                     </SelectItem>
@@ -958,13 +1065,13 @@ export function OnboardingPage() {
                               </Label>
                               <Select
                                 value={parkingLevel || undefined}
-                                onValueChange={(v) => setParkingLevel(v as AzureNorthParkingLevel)}
+                                onValueChange={(v) => setParkingLevel(v)}
                               >
                                 <SelectTrigger id="parking-level" className="h-10">
                                   <SelectValue placeholder="Level" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {getParkingLevelsForTower(parkingTower).map((l) => (
+                                  {parkingLevelOptions.map((l) => (
                                     <SelectItem key={l} value={l}>
                                       {l}
                                     </SelectItem>
@@ -980,16 +1087,34 @@ export function OnboardingPage() {
                             </Label>
                             <AvailabilityCheckInput
                               id="slot-number"
-                              inputMode="numeric"
+                              inputMode={
+                                residenceProfile?.structure.parkingSlotFormat.preset ===
+                                'digits1to4'
+                                  ? 'numeric'
+                                  : 'text'
+                              }
                               autoComplete="off"
                               value={slotNumber}
                               onChange={(e) =>
-                                setSlotNumber(sanitizeParkingSlotNumber(e.target.value))
+                                setSlotNumber(
+                                  residenceProfile
+                                    ? sanitizeSlotLabel(residenceProfile, e.target.value)
+                                    : e.target.value
+                                )
                               }
-                              placeholder="26"
-                              maxLength={4}
+                              placeholder={
+                                residenceProfile?.structure.parkingSlotFormat.example ?? '26'
+                              }
+                              maxLength={
+                                residenceProfile?.structure.parkingSlotFormat.preset ===
+                                'digits1to4'
+                                  ? 4
+                                  : 10
+                              }
                               className={cn(
-                                'h-10 tabular-nums',
+                                'h-10',
+                                residenceProfile?.structure.parkingSlotFormat.preset ===
+                                  'digits1to4' && 'tabular-nums',
                                 parkingSlotDuplicate && 'border-destructive'
                               )}
                               aria-invalid={Boolean(parkingSlotDuplicate)}

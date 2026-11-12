@@ -455,6 +455,7 @@ export function PropertyDetailPage() {
             maxGuests={propertyData.guests}
             cancellationPolicy={propertyData.cancellationPolicy}
             showSafetySection={propertyData.source === 'mock'}
+            buildingInfo={propertyData.buildingInfo}
           />
         );
       case 'reviews':

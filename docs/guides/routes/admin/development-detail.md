@@ -20,13 +20,15 @@ Route: `/admin/developments/:developmentSlug`
 | Photos & Videos       | Done     | Done       | Done | Shared `PropertyMediaUpload`; saves immediately on reorder/upload |
 | Email automations     | Done     | Done       | Done | PMO email (optional)                                              |
 | Document Requirements | Done     | Done       | Done | Ordered checklist for PENDING_DOCUMENTS (all properties in dev)   |
+| Property defaults     | Done     | Done       | Done | Amenity / house-rule ids a new property starts with               |
 | Unit types            | Done     | Done       | Done | Per-type max adults/children capacity presets                     |
 | Pool                  | Done     | Done       | Done | Pool fee (PHP) + schedule                                         |
-| Guest information     | Done     | Done       | Done | Requirements, guides, other info for guests + AI                  |
+| Guest information     | Done     | Done       | Done | Requirements, guides, other info, building rules, visibility      |
 | Announcements         | Done     | Done       | Done | Host Announcements page for this development                      |
 | Amenities             | Done     | —          | Done | Suggested chips + free-text add                                   |
 | Location              | Done     | Done       | Done | Location line + `PropertyLocationPicker`                          |
-| Towers & Parking      | Done     | —          | Done | Free-text tag lists                                               |
+| Structure             | Done     | Done       | Done | Tower/unit labels, towers, parking towers, formats                |
+| History               | Done     | Done       | Done | Last 10 settings versions, one-click restore                      |
 | Danger Zone           | Done     | Done       | Done | Delete blocked (409) while linked                                 |
 
 ---
@@ -96,15 +98,41 @@ Ordered checklist of documents required before a booking reaches **Ready for che
 | ------------- | ------------------------------------------------------------- | --------------------------------------------------------------- |
 | Document list | `developments.settings.workflowDefaults.documentRequirements` | JSON array; empty list → bookings skip `PENDING_DOCUMENTS` (D2) |
 
-Each row: **label**, **trigger** (Always required / Guest has pets / Guest needs parking), **approval source** (Manual / Email listener), **PDF template** (None / GAF request form / Pet request form).
+Each row: **label**, **trigger** (Always required / Guest has pets / Guest needs parking), **approval source** (Manual / Email listener), **PDF template** (None / GAF request form / Pet request form), **guest-facing name**, and an **Active** toggle.
 
-**PDF template** is what binds a row to the request pipeline: `requirementMatchesPdfTemplate` matches on `pdfTemplateId` **or** the literal row id (`gaf` / `pet`). A row left on **None** is tracked as a checklist step only — the orchestrator generates no request PDF and sends no request email for it. Re-adding a deleted GAF/pet row creates it with id `custom-N` and no template, so the template must be set explicitly or the request stops firing.
+- **Label** is what the host booking rail shows. Renaming keeps the row's identity: `id` is what bookings record, so a rename never detaches a live booking (`labels.step` and the legacy `label` alias are written together).
+- **Guest-facing name** is what the stay guide calls the document once approved ("Approved GAF"). Blank or retired rows are never shown.
+- **Active** off retires the step: it stays in the list so bookings that already have it keep it, but it stops applying to new bookings. A retired email step also stops demanding a PMO email, and a retired row does not need a label to save.
+- Steps stored as v2 (`labels`, `output`, `approval`, `active`, `legacyKind`) and old v1 rows both load; the parser upgrades v1 in memory, so saving a development rewrites its list in the v2 shape.
+
+**PDF template** is what binds a row to the request pipeline: `requirementMatchesPdfTemplate` matches on the row's `output.pdfTemplateId` **or** the historical `gaf` / `pet` id. A row left on **None** is tracked as a checklist step only — the orchestrator generates no request PDF and sends no request email for it. Re-adding a deleted GAF/pet row creates it with id `custom-N` and no template, so the template must be set explicitly or the request stops firing.
+
+A row is never classified as the GAF or pet document from its label or from a shared template: only the historical ids `gaf` / `pet` (`legacyKind`) drive the `gaf_*` / `pet_*` columns and the approved-file requirement. A "Carpet inspection" step stays a checklist step even if its label contains "pet".
+
+**PDF templates** (`approvals.pdfTemplates`): in the Document Requirements section, name a template, choose a fillable PDF and press **Upload**. `POST upload-development-pdf-template` stores it and returns its AcroForm field names; the editor maps each one to a `PDF_DATA_KEYS` value and lists any field left blank. Each field is mapped to a `PDF_DATA_KEYS` value (`property.unitOwner`, `stay.checkInDate`, `vehicle.slot`, …); a residence template fills by that map, and a field the PDF does not have is logged and left blank rather than failing the send. Uploads are immutable: replacing a template creates a new path, so a booking that already generated its PDF never changes underneath. Azure's two templates are unchanged by this path.
 
 Save path: batched **Save Changes** → **`PATCH update-development`** with `documentRequirements`. The handler rejects the payload if any row is missing `id`, `label`, `order`, `triggerCondition`, or `approvalSource` rather than silently dropping it.
 
-Edge resolution for bookings: `documentRequirements.ts#resolveDocumentRequirements` (property override column deprecated; development default → `DEFAULT_DOCUMENT_REQUIREMENTS` fallback).
+Removing a step is blocked while a non-terminal booking's `document_requirements_snapshot` still lists it: the request fails with 409 and the count, and the editor should retire the step (**Active** off) instead. Bookings snapshot their steps when they first enter `PENDING_DOCUMENTS`, so a save never changes what an in-flight booking is waiting for.
+
+Edge resolution for bookings: `documentRequirements.ts#resolveDocumentRequirements` (property override column deprecated; development default → **empty list**). An unconfigured development has **no** building approval steps; it never inherits another building's GAF and pet steps. A development read error **throws** so a live transition fails and retries instead of skipping documents. Existing developments were seeded with today's list by migration `20261324010300_seed_document_requirements_for_existing_developments.sql`; a new development starts empty.
 
 ---
+
+## Property defaults
+
+Two id lists a **new** property in this development starts with (plan §4.1 "seed"):
+
+| Field       | Storage                                            | Notes                                                             |
+| ----------- | -------------------------------------------------- | ----------------------------------------------------------------- |
+| Amenities   | `developments.settings.propertySeeds.amenityIds`   | Ids from `AMENITY_CATEGORIES`; copied into `enabledAmenities`     |
+| House rules | `developments.settings.propertySeeds.houseRuleIds` | Ids from `HOUSE_RULE_CATEGORIES`; copied into `enabledHouseRules` |
+
+Seeds are copied **once**, by `create-property`. Changing them later does not touch existing
+properties, which keep their own lists, so this is deliberately not an inherited setting.
+
+Save path: batched **Save Changes** → `PATCH update-development` with `propertySeeds`. The
+handler requires two string arrays, de-duplicates them, and rejects anything else.
 
 ## Unit types
 
@@ -158,6 +186,18 @@ Save path: batched **Save Changes** → **`PATCH update-development`**.
 
 ---
 
+### Building rules and guest visibility
+
+**Building rules** (`developments.settings.buildingRules`) are the residence's own rules, shown
+to every guest on the trip page under "The building". Each rule is `{ id, text, type }` with
+`type` = Note / Not allowed / Allowed; a rule needs an id and text to save, and the id is
+generated when you add one.
+
+**Guest visibility** (`developments.settings.guestInfoVisibility`) decides whether guests see
+that block at all: **Show on the stay guide** gates the trip page. **Show on the property page**
+is stored for the public listing surface, which does not read it yet. Both default to on; a
+building with no rules and no info renders no section regardless.
+
 ## Announcements
 
 Host-facing notices shown on the property/parking **Announcements** page for every org with properties or parking linked to this development (`residence_name` match).
@@ -197,9 +237,35 @@ Uses the shared `PropertyLocationPicker`. The location line auto-suggests from c
 
 ---
 
-## Towers & Parking
+## Structure
 
-Three free-text tag lists stored in `developments.settings`: `propertyTowers`, `parkingTowers`, `parkingLevels`. These populate tower/level choices offered to admins when they set up individual properties/parking slots that belong to this development.
+The building's physical rules, stored in **`developments.settings.structure`** (migration `20261324000400`). This is the runtime source of truth for hosts and the server.
+
+| Field                    | Storage                                        | Notes                                                                                                              |
+| ------------------------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Tower label / unit label | `structure.towerLabel` / `structure.unitLabel` | Shown in onboarding, the New listing dialog and property settings (`Phase`, `Block & Lot`, …)                      |
+| Tower required           | `structure.towersRequired`                     | `false` hides the tower field for a subdivision or lot-only residence                                              |
+| Floors max               | `structure.floorsMax`                          | Nullable                                                                                                           |
+| Towers                   | `structure.propertyTowers[]`                   | `{ name, code, active }`. Case-insensitive uniqueness, max 60                                                      |
+| Parking towers           | `structure.parkingTowers[]`                    | `{ name, code, active, levels[], parkingType }`. Per-tower levels, `inside_tower` / `outside_tower` / `motorcycle` |
+| Unit format              | `structure.unitNumberFormat`                   | `digits4` / `digits` / `alnum` / `custom` + `pattern` + `example`                                                  |
+| Slot format              | `structure.parkingSlotFormat`                  | `digits1to4` / `alnum` / `custom` + `pattern` + `example`                                                          |
+
+Save path: batched **Save Changes** → **`PATCH update-development`** with `structure`. The handler normalises it with the shared resolver and rejects an invalid shape (empty labels, duplicate tower or level, a custom pattern that does not compile or does not match its example, floors outside 1–200). The flat `propertyTowers` / `parkingTowers` / `parkingLevels` keys are written from `structure` for compatibility until Phase 7 retires them.
+
+The same structure drives the public reads **`list-residence-options`** (onboarding, New listing) and **`get-residence-profile`**.
+
+---
+
+## History and concurrent edits
+
+Every save that changes `settings` writes the **previous** settings into `development_settings_history` (`development_id`, `settings`, `saved_by`, `saved_by_email`, `saved_at`). `GET get-development` returns the last 10 versions as metadata only (`id`, `savedAt`, `savedByEmail`); the payload stays on the server.
+
+**Restore** → **`PATCH update-development`** with `restoreHistoryId`. The server checks the version belongs to this development, replaces `settings` wholesale, writes a `development.settings_restored` super-admin audit event, and returns the restored row. Restore is disabled while the draft has unsaved edits.
+
+**Concurrent edits.** Save sends the `updatedAt` it loaded as `expectedUpdatedAt`. A second admin saving from a stale tab gets **409** with a message; the toast offers **Reload**, which refetches the latest version. Nothing is overwritten silently.
+
+Platform-level writes emit `super_admin_audit_events` (`development.settings_updated`, `development.renamed`, `development.settings_restored`), not org `activity_log`, because a development is not org-scoped.
 
 ---
 

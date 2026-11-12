@@ -19,6 +19,31 @@ export const AZURE_CHILD_MAX_AGE = OCCUPANCY_CHILD_MAX_AGE;
 /** Max/default age for the overflow party guest when adults are already at capacity. */
 export const FIFTH_PARTY_GUEST_MAX_AGE = OCCUPANCY_CHILD_MAX_AGE;
 
+/**
+ * Age rules for one residence (`occupancy` in the Residence Profile).
+ *
+ * Every helper below takes these as an optional argument so admin screens that have no
+ * residence loaded keep the platform defaults; the public guest form passes the resolved
+ * rules from `get-guest-payment-info`.
+ */
+export type GuestAgeRules = {
+  /** Guests below this age count as children for the general 18+ split. */
+  adultMinAge: number;
+  /** Age at which a valid government ID is required. */
+  idRequiredFromAge: number;
+  /** Minimum age for the primary guest. */
+  primaryGuestMinAge: number;
+  /** Ages at or below this count as a child for occupancy limits. */
+  childMaxAge: number;
+};
+
+export const DEFAULT_GUEST_AGE_RULES: GuestAgeRules = {
+  adultMinAge: ADULT_MIN_AGE,
+  idRequiredFromAge: VALID_ID_MIN_AGE,
+  primaryGuestMinAge: PRIMARY_GUEST_MIN_AGE,
+  childMaxAge: OCCUPANCY_CHILD_MAX_AGE,
+};
+
 /** @deprecated Use property maxAdults from get-guest-payment-info */
 export const AZURE_MAX_ADULTS = 4;
 
@@ -37,13 +62,14 @@ export const DEFAULT_PROPERTY_GUEST_CAPACITY: PropertyGuestCapacity = {
 export function buildGuestLimitMessage(
   capacity: PropertyGuestCapacity,
   partySize = 0,
-  maxPartySlots = MAX_GUESTS
+  maxPartySlots = MAX_GUESTS,
+  rules: GuestAgeRules = DEFAULT_GUEST_AGE_RULES
 ): string {
   const childLabel = capacity.maxChildren === 1 ? 'child' : 'children';
   const base = `Please note that this unit allows a maximum of ${capacity.maxAdults} adults and ${capacity.maxChildren} ${childLabel} in the unit and at the swimming pool.`;
   const maxPartySize = Math.min(capacity.maxAdults + capacity.maxChildren, maxPartySlots);
   if (partySize >= maxPartySize && capacity.maxChildren > 0) {
-    return `${base} Please enter age ${OCCUPANCY_CHILD_MAX_AGE} or below for the ${maxPartySize}${maxPartySize === 1 ? 'st' : maxPartySize === 2 ? 'nd' : maxPartySize === 3 ? 'rd' : 'th'} guest when adults are at capacity.`;
+    return `${base} Please enter age ${rules.childMaxAge} or below for the ${maxPartySize}${maxPartySize === 1 ? 'st' : maxPartySize === 2 ? 'nd' : maxPartySize === 3 ? 'rd' : 'th'} guest when adults are at capacity.`;
   }
   return base;
 }
@@ -58,12 +84,13 @@ export const AZURE_ADULT_LIMIT_MESSAGE = buildGuestLimitMessage(
 export function getDefaultAgeForGuestFormPartyGuest(
   partyPosition: number,
   partySize: number,
-  capacity: PropertyGuestCapacity = DEFAULT_PROPERTY_GUEST_CAPACITY
+  capacity: PropertyGuestCapacity = DEFAULT_PROPERTY_GUEST_CAPACITY,
+  rules: GuestAgeRules = DEFAULT_GUEST_AGE_RULES
 ): number {
   if (isPartyOverflowGuest(partyPosition, partySize, capacity)) {
-    return FIFTH_PARTY_GUEST_MAX_AGE;
+    return rules.childMaxAge;
   }
-  return DEFAULT_GUEST_AGE;
+  return rules.primaryGuestMinAge;
 }
 
 /** @deprecated Use getDefaultAgeForGuestFormPartyGuest on the public guest form only. */
@@ -151,18 +178,21 @@ export function shouldShowAzureAdultLimitMessage(azureAdultCount: number, partyS
   );
 }
 
-/** General rule: under 18 = child. */
-function isGeneralChildAge(age: number): boolean {
-  return age < ADULT_MIN_AGE;
+/** General rule: under `adultMinAge` = child (platform default 18). */
+function isGeneralChildAge(age: number, rules: GuestAgeRules): boolean {
+  return age < rules.adultMinAge;
 }
 
-/** Azure occupancy rule: age 3 and below = child. Guest form capacity checks only. */
-function isOccupancyChildAge(age: number): boolean {
-  return age <= OCCUPANCY_CHILD_MAX_AGE;
+/** Occupancy rule: `childMaxAge` and below = child. Guest form capacity checks only. */
+function isOccupancyChildAge(age: number, rules: GuestAgeRules): boolean {
+  return age <= rules.childMaxAge;
 }
 
-export function requiresValidId(age: number): boolean {
-  return age >= VALID_ID_MIN_AGE;
+export function requiresValidId(
+  age: number,
+  rules: GuestAgeRules = DEFAULT_GUEST_AGE_RULES
+): boolean {
+  return age >= rules.idRequiredFromAge;
 }
 
 export type GuestSlotValues = {
@@ -170,8 +200,11 @@ export type GuestSlotValues = {
   age?: number | null;
 };
 
-/** Count adults/children using the general 18+ rule (named guests only). */
-export function computeGuestCounts(guests: GuestSlotValues[]): {
+/** Count adults/children using the general adult rule (named guests only). */
+export function computeGuestCounts(
+  guests: GuestSlotValues[],
+  rules: GuestAgeRules = DEFAULT_GUEST_AGE_RULES
+): {
   adults: number;
   children: number;
 } {
@@ -185,7 +218,7 @@ export function computeGuestCounts(guests: GuestSlotValues[]): {
     const age = guest.age;
     if (age == null || Number.isNaN(age)) continue;
 
-    if (isGeneralChildAge(age)) {
+    if (isGeneralChildAge(age, rules)) {
       children += 1;
     } else {
       adults += 1;
@@ -199,7 +232,10 @@ export function computeGuestCounts(guests: GuestSlotValues[]): {
 }
 
 /** Occupancy counts from ages alone — public guest form validation/banner only. */
-export function computeOccupancyGuestCountsByAge(guests: Array<{ age?: number | null }>): {
+export function computeOccupancyGuestCountsByAge(
+  guests: Array<{ age?: number | null }>,
+  rules: GuestAgeRules = DEFAULT_GUEST_AGE_RULES
+): {
   adults: number;
   children: number;
 } {
@@ -210,7 +246,7 @@ export function computeOccupancyGuestCountsByAge(guests: Array<{ age?: number | 
     const age = guest.age;
     if (age == null || Number.isNaN(age)) continue;
 
-    if (isOccupancyChildAge(age)) {
+    if (isOccupancyChildAge(age, rules)) {
       children += 1;
     } else {
       adults += 1;
@@ -221,19 +257,25 @@ export function computeOccupancyGuestCountsByAge(guests: Array<{ age?: number | 
 }
 
 /** @deprecated Use computeOccupancyGuestCountsByAge */
-export function computeAzureGuestCountsByAge(guests: Array<{ age?: number | null }>): {
+export function computeAzureGuestCountsByAge(
+  guests: Array<{ age?: number | null }>,
+  rules: GuestAgeRules = DEFAULT_GUEST_AGE_RULES
+): {
   adults: number;
   children: number;
 } {
-  return computeOccupancyGuestCountsByAge(guests);
+  return computeOccupancyGuestCountsByAge(guests, rules);
 }
 
 /** @deprecated Use computeAzureGuestCountsByAge on the guest form; computeGuestCounts elsewhere. */
-export function computeGuestCountsByAge(guests: Array<{ age?: number | null }>): {
+export function computeGuestCountsByAge(
+  guests: Array<{ age?: number | null }>,
+  rules: GuestAgeRules = DEFAULT_GUEST_AGE_RULES
+): {
   adults: number;
   children: number;
 } {
-  return computeAzureGuestCountsByAge(guests);
+  return computeAzureGuestCountsByAge(guests, rules);
 }
 
 export type BookingGuestAgeFields = {

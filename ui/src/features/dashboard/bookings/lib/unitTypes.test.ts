@@ -12,7 +12,6 @@ import {
   updateUnitType,
   removeUnitType,
   applyUnitTypeDefaultsToProfile,
-  AZURE_NORTH_RESIDENCE_NAME,
 } from '@/features/dashboard/bookings/lib/unitTypes';
 
 describe('defaultUnitTypesForResidence', () => {
@@ -81,8 +80,12 @@ describe('applyUnitTypeDefaultsToProfile', () => {
   });
 });
 
-describe('AZURE_NORTH_RESIDENCE_NAME', () => {
-  it('is defined', () => {
-    expect(AZURE_NORTH_RESIDENCE_NAME).toBeDefined();
+describe('unit types are not name-matched (F2)', () => {
+  it('returns the generic list for every residence name', () => {
+    const azure = defaultUnitTypesForResidence('Azure North Residences');
+    const other = defaultUnitTypesForResidence('Test Residence');
+
+    expect(azure).toEqual(other);
+    expect(azure.map((entry) => entry.id)).toEqual(['standard']);
   });
 });

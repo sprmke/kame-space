@@ -3,13 +3,14 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { callEdgeFunction } from '@/features/dashboard/org/lib/edgeClient';
-import { DEFAULT_RESIDENCE_NAME } from '@/features/dashboard/org/lib/propertyDisplay';
-import {
-  isPropertyTowerForResidence,
-  isValidUnitNumber,
-} from '@/features/dashboard/org/lib/propertyTowerUnit';
 import type { PropertyTowerUnitConflict } from '@/features/dashboard/org/lib/propertyTowerUnitConflict';
 import type { Property } from '@/features/dashboard/org/types';
+
+import {
+  unitNumberError,
+  validateTowerForProfile,
+  type ResidenceProfile,
+} from '@/lib/residence/residenceProfile';
 
 type CheckTowerUnitResponse = {
   available: boolean;
@@ -22,10 +23,18 @@ type CheckTowerUnitResponse = {
   } | null;
 };
 
+export type TowerUnitResidenceContext = {
+  developmentId?: string | null;
+  residenceName?: string | null;
+  /** When present, validation uses the residence format instead of the legacy Azure rule. */
+  profile?: ResidenceProfile | null;
+};
+
 export function useTowerUnitConflict(
   tower: string,
   unitNumber: string,
-  excludePropertyId?: string
+  excludePropertyId?: string,
+  residence?: TowerUnitResidenceContext
 ): {
   conflict: PropertyTowerUnitConflict | null;
   /** ACTIVE peer already lists this tower+unit — warning only, not a create block. */
@@ -35,11 +44,27 @@ export function useTowerUnitConflict(
   isChecking: boolean;
   message: string | null;
 } {
-  const ready =
-    isPropertyTowerForResidence(tower, DEFAULT_RESIDENCE_NAME) && isValidUnitNumber(unitNumber);
+  const profile = residence?.profile ?? null;
+  // No profile yet means no residence rules yet. Falling back to one building's tower list
+  // is the silent-Azure-fallback bug (F2), so the check simply stays idle until it loads.
+  const ready = profile
+    ? validateTowerForProfile(profile, tower).ok &&
+      unitNumber.trim().length > 0 &&
+      unitNumberError(profile, unitNumber) === null
+    : false;
+
+  const developmentId = residence?.developmentId ?? profile?.developmentId ?? null;
+  const residenceName = residence?.residenceName ?? profile?.developmentName ?? null;
 
   const query = useQuery({
-    queryKey: ['check-tower-unit', tower, unitNumber, excludePropertyId] as const,
+    queryKey: [
+      'check-tower-unit',
+      tower,
+      unitNumber,
+      excludePropertyId,
+      developmentId,
+      residenceName,
+    ] as const,
     enabled: ready,
     staleTime: 30_000,
     queryFn: () => {
@@ -49,6 +74,12 @@ export function useTowerUnitConflict(
       });
       if (excludePropertyId) {
         params.set('excludePropertyId', excludePropertyId);
+      }
+      if (developmentId) {
+        params.set('developmentId', developmentId);
+      }
+      if (residenceName) {
+        params.set('residenceName', residenceName);
       }
       return callEdgeFunction<CheckTowerUnitResponse>(`check-tower-unit?${params.toString()}`);
     },

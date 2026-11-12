@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Legal and privacy coverage: current policies and consistent notices across the app'
 status: in-progress
 tags: [workflow, in-progress, legal, privacy, terms, cookies, payments, consent, ux]
-updated: 2026-11-11
+updated: 2026-11-13
 kind: plan
 ---
 

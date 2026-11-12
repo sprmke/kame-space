@@ -76,9 +76,8 @@ export function validatePropertyDetailsForResidence(settings: {
   maxAdults?: unknown;
   maxChildren?: unknown;
 }): string | null {
-  const defaults = getResidencePropertyDefaults(
-    (settings.residenceName ?? '').trim() || DEFAULT_RESIDENCE_NAME
-  );
+  // A blank residence resolves the generic range. Never another building's.
+  const defaults = getResidencePropertyDefaults((settings.residenceName ?? '').trim());
   const bedrooms = Number(settings.bedrooms);
   const bathrooms = Number(settings.bathrooms);
   const floors = Number(settings.floors);
@@ -116,5 +115,27 @@ export function defaultPropertySettingsForResidence(
     customHouseRules: [],
     cancellationPolicy: { type: 'grace_period', gracePeriodHours: 48 },
     media: [],
+  };
+}
+
+/**
+ * Residence seeds (plan §4.1 "seed"): copied into the property once, then host-owned.
+ *
+ * Only the two lists a property already stores in full (amenity ids, house rule ids) are
+ * seeded; everything else stays inherited so residence edits keep propagating. A residence
+ * with no seeds returns the settings untouched, which is why Azure is unaffected.
+ */
+export function applyResidencePropertySeeds(
+  settings: Record<string, unknown>,
+  seeds: { amenityIds: string[]; houseRuleIds: string[] }
+): Record<string, unknown> {
+  const amenityIds = seeds.amenityIds.filter((id) => typeof id === 'string' && id.trim());
+  const houseRuleIds = seeds.houseRuleIds.filter((id) => typeof id === 'string' && id.trim());
+  if (amenityIds.length === 0 && houseRuleIds.length === 0) return settings;
+
+  return {
+    ...settings,
+    enabledAmenities: amenityIds,
+    enabledHouseRules: houseRuleIds,
   };
 }

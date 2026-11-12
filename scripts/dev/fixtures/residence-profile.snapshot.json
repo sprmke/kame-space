@@ -1,0 +1,242 @@
+{
+  "generic": {
+    "schemaVersion": 2,
+    "developmentId": null,
+    "developmentName": null,
+    "developmentType": null,
+    "structure": {
+      "towerLabel": "Tower",
+      "unitLabel": "Unit",
+      "towersRequired": false,
+      "propertyTowers": [],
+      "parkingTowers": [],
+      "unitNumberFormat": {
+        "preset": "alnum",
+        "example": "0101"
+      },
+      "parkingSlotFormat": {
+        "preset": "alnum",
+        "example": "B2-07"
+      },
+      "floorsMax": null
+    },
+    "occupancy": {
+      "maxAdultsCap": 5,
+      "maxChildrenCap": 4,
+      "childMaxAge": 3,
+      "adultMinAge": 18,
+      "idRequiredFromAge": 18,
+      "primaryGuestMinAge": 18
+    },
+    "stay": {
+      "checkInTime": "14:00",
+      "checkOutTime": "12:00",
+      "petsAllowed": true,
+      "paidParkingAvailable": true,
+      "surpriseDecorAllowed": true,
+      "petTypes": ["Dog", "Cat"],
+      "petVaccinationRequired": true
+    },
+    "location": {
+      "latitude": null,
+      "longitude": null,
+      "address": null,
+      "city": null,
+      "province": null,
+      "country": null,
+      "zipCode": null
+    },
+    "approvals": {
+      "buildingAdminLabel": "Building admin",
+      "pmoEmail": null,
+      "ccPropertyEmail": false,
+      "documentRequirements": [],
+      "pdfTemplates": []
+    },
+    "terms": {},
+    "copy": {},
+    "propertySeeds": {
+      "amenityIds": [],
+      "houseRuleIds": []
+    },
+    "buildingRules": [],
+    "templateDefaults": {},
+    "guestInfoVisibility": {
+      "stayGuide": true,
+      "propertyPage": true
+    },
+    "verification": {
+      "tier2BuildingProofLabel": "",
+      "tier2BuildingProofRequired": false
+    }
+  },
+  "azure": {
+    "schemaVersion": 2,
+    "developmentId": "00000000-0000-4000-8000-000000000001",
+    "developmentName": "Azure North Residences",
+    "developmentType": "CONDOMINIUM",
+    "structure": {
+      "towerLabel": "Tower",
+      "unitLabel": "Unit",
+      "towersRequired": true,
+      "propertyTowers": [
+        {
+          "name": "Monaco",
+          "code": "Monaco",
+          "active": true
+        },
+        {
+          "name": "Bali",
+          "code": "Bali",
+          "active": true
+        },
+        {
+          "name": "Barbados",
+          "code": "Barbados",
+          "active": true
+        }
+      ],
+      "parkingTowers": [
+        {
+          "name": "Monaco",
+          "code": "Monaco",
+          "active": true,
+          "levels": ["B1", "B2", "B3", "G"],
+          "parkingType": "inside_tower"
+        },
+        {
+          "name": "Bali",
+          "code": "Bali",
+          "active": true,
+          "levels": ["B1", "B2", "B3", "G"],
+          "parkingType": "inside_tower"
+        },
+        {
+          "name": "Barbados",
+          "code": "Barbados",
+          "active": true,
+          "levels": ["B1", "B2", "B3", "G"],
+          "parkingType": "inside_tower"
+        },
+        {
+          "name": "Bay",
+          "code": "BY",
+          "active": true,
+          "levels": ["G"],
+          "parkingType": "outside_tower"
+        }
+      ],
+      "unitNumberFormat": {
+        "preset": "digits4",
+        "example": "2604"
+      },
+      "parkingSlotFormat": {
+        "preset": "digits1to4",
+        "example": "B2-27"
+      },
+      "floorsMax": 29
+    },
+    "occupancy": {
+      "maxAdultsCap": 5,
+      "maxChildrenCap": 4,
+      "childMaxAge": 3,
+      "adultMinAge": 18,
+      "idRequiredFromAge": 18,
+      "primaryGuestMinAge": 18
+    },
+    "stay": {
+      "checkInTime": "14:00",
+      "checkOutTime": "12:00",
+      "petsAllowed": true,
+      "paidParkingAvailable": true,
+      "surpriseDecorAllowed": true,
+      "petTypes": ["Dog", "Cat"],
+      "petVaccinationRequired": true
+    },
+    "location": {
+      "latitude": null,
+      "longitude": null,
+      "address": null,
+      "city": null,
+      "province": null,
+      "country": null,
+      "zipCode": null
+    },
+    "approvals": {
+      "buildingAdminLabel": "Building admin",
+      "pmoEmail": "stlmonaco.theresortresidences@azurenorth.com.ph",
+      "ccPropertyEmail": false,
+      "documentRequirements": [
+        {
+          "id": "gaf",
+          "label": "GAF Request",
+          "order": 1,
+          "pdfTemplateId": "gaf",
+          "approvalSource": "email-listener",
+          "triggerCondition": "always",
+          "calendarIcon": null
+        },
+        {
+          "id": "pet",
+          "label": "Pet Approval",
+          "order": 2,
+          "pdfTemplateId": "pet",
+          "approvalSource": "email-listener",
+          "triggerCondition": "has_pets",
+          "calendarIcon": "🐶"
+        }
+      ],
+      "pdfTemplates": []
+    },
+    "terms": {},
+    "copy": {},
+    "propertySeeds": {
+      "amenityIds": [],
+      "houseRuleIds": []
+    },
+    "buildingRules": [],
+    "templateDefaults": {},
+    "guestInfoVisibility": {
+      "stayGuide": true,
+      "propertyPage": true
+    },
+    "verification": {
+      "tier2BuildingProofLabel": "",
+      "tier2BuildingProofRequired": false
+    }
+  },
+  "sampleProperty": {
+    "maxAdults": {
+      "value": 4,
+      "source": "property",
+      "ownership": "cap",
+      "cap": 5
+    },
+    "maxChildren": {
+      "value": 0,
+      "source": "property",
+      "ownership": "cap",
+      "cap": 4
+    },
+    "checkInTime": {
+      "value": "14:00",
+      "source": "property",
+      "ownership": "inherited"
+    },
+    "checkOutTime": {
+      "value": "12:00",
+      "source": "property",
+      "ownership": "inherited"
+    },
+    "petsAllowed": {
+      "value": true,
+      "source": "generic",
+      "ownership": "locked"
+    },
+    "paidParkingAvailable": {
+      "value": true,
+      "source": "generic",
+      "ownership": "locked"
+    }
+  }
+}

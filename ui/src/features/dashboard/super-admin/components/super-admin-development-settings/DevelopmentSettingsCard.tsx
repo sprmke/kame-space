@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   Megaphone,
   FileCheck2,
+  History,
   Home,
   Image as ImageIcon,
   Info,
@@ -59,13 +60,15 @@ const SETTINGS_SECTIONS: AdminSectionNavItem[] = [
   { id: 'media', label: 'Photos & Videos', icon: ImageIcon },
   { id: 'email', label: 'Email automations', icon: Mail },
   { id: 'document-requirements', label: 'Document Requirements', icon: FileCheck2 },
+  { id: 'property-defaults', label: 'Property defaults', icon: Sparkles },
   { id: 'unit-types', label: 'Unit types', icon: Home },
   { id: 'pool', label: 'Pool', icon: Waves },
   { id: 'guest-info', label: 'Guest information', icon: BookOpen },
   { id: 'announcements', label: 'Announcements', icon: Megaphone },
   { id: 'amenities', label: 'Amenities', icon: Sparkles },
   { id: 'location', label: 'Location', icon: MapPin },
-  { id: 'towers', label: 'Towers & Parking', icon: Building2 },
+  { id: 'towers', label: 'Structure', icon: Building2 },
+  { id: 'history', label: 'History', icon: History },
   { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
 ];
 
@@ -76,7 +79,7 @@ type Props = {
 export function DevelopmentSettingsCard({ slug }: Props) {
   const navigate = useNavigate();
   const runUnguarded = useRunUnguarded();
-  const { data: development, isLoading, error } = useDevelopment(slug);
+  const { data: development, isLoading, error, refetch } = useDevelopment(slug);
   const updateDevelopment = useUpdateDevelopment(slug);
   const deleteDevelopment = useDeleteDevelopment();
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -168,6 +171,8 @@ export function DevelopmentSettingsCard({ slug }: Props) {
       const result = await updateDevelopment.mutateAsync({
         developmentId: development.id,
         ...buildDevelopmentUpdatePayload(draft),
+        // Optimistic concurrency: a second admin with a stale tab gets a 409.
+        expectedUpdatedAt: development.updatedAt,
       });
       const saved = developmentProfileDraftFromDevelopment(result);
       setBaseline(saved);
@@ -180,8 +185,40 @@ export function DevelopmentSettingsCard({ slug }: Props) {
       toast.success('Settings saved');
       return true;
     } catch (err) {
+      const status = (err as { status?: number }).status;
+      if (status === 409) {
+        toast.error(err instanceof Error ? err.message : 'This development changed.', {
+          action: {
+            label: 'Reload',
+            onClick: () => {
+              void refetch();
+            },
+          },
+        });
+        return false;
+      }
       toast.error(friendlyToastError(err, 'Could not save settings'));
       return false;
+    }
+  };
+
+  const handleRestore = async (historyId: string) => {
+    if (!development) return;
+    if (isDirty) {
+      toast.error('Save or discard your edits before restoring a version.');
+      return;
+    }
+    try {
+      const result = await updateDevelopment.mutateAsync({
+        developmentId: development.id,
+        restoreHistoryId: historyId,
+      });
+      const saved = developmentProfileDraftFromDevelopment(result);
+      setBaseline(saved);
+      setDraft(saved);
+      toast.success('Version restored');
+    } catch (err) {
+      toast.error(friendlyToastError(err, 'Could not restore that version'));
     }
   };
 
@@ -257,6 +294,9 @@ export function DevelopmentSettingsCard({ slug }: Props) {
             onMediaPersisted={handleMediaPersisted}
             onPersistMediaOrder={persistMediaOrder}
             mediaGalleryBusy={mediaGalleryBusy}
+            history={development.history}
+            onRestore={(historyId) => void handleRestore(historyId)}
+            restoring={updateDevelopment.isPending}
           />
         )}
       </AdminSectionNavLayout>

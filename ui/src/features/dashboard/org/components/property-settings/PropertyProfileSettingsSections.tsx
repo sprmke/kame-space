@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
   Baby,
@@ -67,6 +67,8 @@ import {
 } from '@/features/dashboard/org/lib/propertySettingsForm';
 import { summarizeSettingsLabels } from '@/features/dashboard/org/lib/propertySettingsSummaryLabels';
 import { isValidUnitNumber } from '@/features/dashboard/org/lib/propertyTowerUnit';
+import { toResidenceProfile, useResidenceOptions } from '@/features/dashboard/org/hooks/useResidenceOptions';
+import { unitNumberError, validateTowerForProfile } from '@/lib/residence/residenceProfile';
 import type { PropertyTowerUnitConflict } from '@/features/dashboard/org/lib/propertyTowerUnitConflict';
 
 import { AvailabilityCheckInput } from '@/components/AvailabilityCheckInput';
@@ -178,10 +180,32 @@ export function PropertyProfileMainSections({
   };
   const isCondo = isCondoPropertyType(draft.type);
   const effectiveResidence = draft.residenceName.trim() || DEFAULT_RESIDENCE_NAME;
-  const residenceOptions = getPropertyResidenceNames();
+  const { data: residenceOptionsData } = useResidenceOptions();
+  const residenceProfiles = useMemo(
+    () => residenceOptionsData?.residences ?? [],
+    [residenceOptionsData]
+  );
+  const residenceOptions = useMemo(() => {
+    const names = residenceProfiles
+      .map((residence) => residence.name)
+      .filter((name): name is string => Boolean(name));
+    return names.length > 0 ? names : getPropertyResidenceNames();
+  }, [residenceProfiles]);
+  const activeResidenceProfile = useMemo(() => {
+    const match = residenceProfiles.find((residence) => residence.name === effectiveResidence);
+    return match ? toResidenceProfile(match) : null;
+  }, [residenceProfiles, effectiveResidence]);
   const towerValid =
-    isCondo && Boolean(draft.tower) && isTowerInResidence(draft.tower, effectiveResidence);
-  const towerUnitReady = towerValid && isValidUnitNumber(draft.unitNumber);
+    isCondo &&
+    Boolean(draft.tower) &&
+    (activeResidenceProfile
+      ? validateTowerForProfile(activeResidenceProfile, draft.tower).ok
+      : isTowerInResidence(draft.tower, effectiveResidence));
+  const towerUnitReady =
+    towerValid &&
+    (activeResidenceProfile
+      ? unitNumberError(activeResidenceProfile, draft.unitNumber) === null
+      : isValidUnitNumber(draft.unitNumber));
   const hasDuplicate = towerUnitReady && towerConflict !== null;
   const propertyTypeLabel =
     PROPERTY_TYPES.find((type) => type.value === draft.type)?.label ?? draft.type;
