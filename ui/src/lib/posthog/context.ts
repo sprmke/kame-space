@@ -1,4 +1,5 @@
 import { detectAnalyticsEnvironment, detectAppTrack } from '@/lib/posthog/env';
+import { routePatternFor } from '@/lib/telemetry/routePattern';
 import type {
   AnalyticsPersona,
   AnalyticsScope,
@@ -63,6 +64,8 @@ export function buildSharedAnalyticsProperties(
     ...(import.meta.env.VITE_APP_VERSION ? { app_release: import.meta.env.VITE_APP_VERSION } : {}),
     persona,
     surface,
+    // Route pattern, never the slug: two tenants on the same page must not split the metric.
+    route_pattern: routePatternFor(pathname),
     ...(scope.orgId ? { org_id: scope.orgId } : {}),
     ...(scope.propertyId ? { property_id: scope.propertyId } : {}),
     ...(scope.parkingId ? { parking_id: scope.parkingId } : {}),

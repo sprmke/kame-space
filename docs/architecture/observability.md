@@ -172,6 +172,26 @@ Durations only. No ids, no function arguments, no counts, which is why
 passes the body through untouched and returns the original response if the body was already
 read.
 
+### Route patterns for transactions and events
+
+The router is **one splat route** (`{ path: '*' }`) with `<Routes>` inside `AppRoutes`. That is
+deliberate, but it means router-based integrations can only ever see `/*`: for seven days every
+browser transaction in Sentry was named `/*`, one name in total. Per-route latency, and the boot
+measurements attached to that transaction, were unreadable.
+
+`ui/src/lib/telemetry/routePattern.ts#routePatternFor` derives the pattern from the pathname
+instead. It replaces the segment after a known tenant parent (`org`, `property`, `properties`,
+`parking`, `developments`) and any UUID, long hex id or email-shaped segment with `:param`, so
+`/org/acme/property/villa/bookings` becomes `/org/:param/property/:param/bookings`.
+
+`RoutePatternSync` (`lib/sentry/RoutePatternSync.tsx`, mounted in `AppShell`) renames the active
+Sentry transaction on every navigation and tags it `route_pattern`. The same value is added to
+`buildSharedAnalyticsProperties`, so PostHog no longer splits one page across tenants.
+
+The pattern is safe to send: route names only, never a slug, id, email or token. Tests in
+`routePattern.test.ts` assert that no identifier survives, and `context.test.ts` asserts a tenant
+slug never reaches the PostHog properties.
+
 ## Do not
 
 - Emit `activity_log` from either vendor, or a telemetry event to replace `activity_log`.
