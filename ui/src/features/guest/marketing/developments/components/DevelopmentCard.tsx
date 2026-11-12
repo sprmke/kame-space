@@ -86,6 +86,9 @@ export function DevelopmentCard({
               src={coverImage}
               alt={development.name}
               fill
+              // The first card's cover is the page's largest contentful paint. Left lazy, the
+              // browser only discovers it after layout, which measured 7.7 s to LCP on a phone.
+              priority={index === 0}
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
             <div className="absolute left-3 top-3">
@@ -144,6 +147,9 @@ export function DevelopmentCard({
               src={coverImage}
               alt={development.name}
               fill
+              // The first card's cover is the page's largest contentful paint. Left lazy, the
+              // browser only discovers it after layout, which measured 7.7 s to LCP on a phone.
+              priority={index === 0}
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
 

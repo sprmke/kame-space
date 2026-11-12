@@ -680,6 +680,43 @@ What is **not** addressed: the bytes still proxy through the function. Direct-to
 with a signed URL would remove the ~0.5 s/MiB entirely, but that has to re-do authorisation and
 post-upload validation on ten endpoints, which is a deliberate migration rather than a tweak.
 
+## 17. Listing pages: the LCP was a lazy image
+
+Measured 2026-11-12 on production, mobile viewport, LCP element from a PerformanceObserver.
+
+| Route           | LCP element                    | LCP         |
+| --------------- | ------------------------------ | ----------- |
+| `/developments` | `IMG`, remote Unsplash `w=480` | **7668 ms** |
+| `/for-hosts`    | `H1` text                      | 1624 ms     |
+
+`/for-hosts` is fine: its largest paint is text. `/developments` was not. The largest element was
+a card cover image that carried `loading="lazy"` and no priority hint, so the browser only
+discovered it **after layout**. There was also no `preconnect` to `images.unsplash.com`, putting
+DNS and TLS for the image host on the critical path.
+
+`MarketingImage` already supported `priority` (eager + `fetchPriority="high"`); the listing cards
+simply never passed it.
+
+### Changed
+
+| Change                                                 | File                                          |
+| ------------------------------------------------------ | --------------------------------------------- |
+| `preconnect` + `dns-prefetch` to `images.unsplash.com` | `ui/index.html`                               |
+| First development card eager with high priority        | `developments/components/DevelopmentCard.tsx` |
+| First property card cover eager with high priority     | `properties/components/PropertyCard.tsx`      |
+| First row's first gallery image eager                  | `properties/components/PropertyListItem.tsx`  |
+
+No visual change: the same image at the same size, loaded earlier.
+
+### Expected effect
+
+The image starts downloading during HTML parse instead of after layout, and the connection
+handshake is already open. Re-run the weekly Lighthouse job after release and compare `/` ,
+`/properties` and `/developments`; the numbers above are the "before".
+
+`/properties` measured 8507 ms and `/parkings` 5991 ms in the same run, with the same lazy-first-card
+pattern, which is why the fix was applied to the property cards too.
+
 ## Release state
 
 **2026-11-10.** PR #371 synced `main` to `develop`'s tree and shipped the UI side.

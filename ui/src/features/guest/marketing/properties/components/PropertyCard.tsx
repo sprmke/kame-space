@@ -97,6 +97,9 @@ export const PropertyCard = memo(function PropertyCard({
                 src={cover}
                 alt={property.name}
                 fill
+                // First card's cover is the LCP element on the listing pages. Lazy made the
+                // browser discover it after layout, which measured 8.5 s to LCP on a phone.
+                priority={index === 0}
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
             ) : null}
