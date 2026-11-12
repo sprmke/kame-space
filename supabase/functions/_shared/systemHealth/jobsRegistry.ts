@@ -161,6 +161,18 @@ export const SCHEDULED_JOBS: ScheduledJobDef[] = [
     features: ['Two-way reviews'],
   },
   {
+    fn: 'pre-arrival-reminders',
+    label: 'Pre-arrival reminders',
+    secretEnv: 'PRE_ARRIVAL_REMINDER_CRON_SECRET',
+    features: ['Guest emails'],
+  },
+  {
+    fn: 'pending-review-expiry',
+    label: 'Request expiry',
+    secretEnv: 'PENDING_REVIEW_EXPIRY_CRON_SECRET',
+    features: ['Booking requests'],
+  },
+  {
     fn: 'ops-report-cron',
     label: 'Weekly operations report',
     secretEnv: 'OPS_REPORT_CRON_SECRET',
