@@ -836,10 +836,12 @@ in §13 shipped, plus the two items that were originally deferred:
 
 **Moved to their own plans, with the reason**
 
-- **Guest web push (E11)** — `docs/architecture/pwa.md` §8 already scopes "Guest push (Tier B)" to
-  a separate plan: the push pipeline resolves org members, while guests are often anonymous with
-  only a booking token, so they need their own recipient model. Every lifecycle moment already
-  emails the guest, so this adds a channel rather than a missing capability.
+- **Guest web push (E11)** — **shipped for signed-in guests** after closure. The plan's assumption
+  was wrong in a useful way: no new notification model was needed. A subscription belongs to the
+  signed-in user, and `guest_submissions.guest_user_id` links a booking to the account that signed
+  in with the booking email, so `_shared/guestPush.ts` pushes from the orchestrator at **Confirmed**
+  and **Ready for check-in** without touching the team-scoped `notifications` table. Anonymous
+  bookings keep their email. Opt-in lives on `/account/profile`.
 - **"Guest first viewed their trip" host notification (7.5)** — **shipped after closure.**
   `guest_trip_first_viewed_at` stamps on the first authorised trip read (conditional update, so a
   refresh or a second device produces one row) and raises one `booking_trip_viewed` notification
