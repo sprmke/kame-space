@@ -187,7 +187,10 @@ The `definePageCoverage` helper lives in `ui/e2e/shared/pageCoverage/`, not `cov
 ```bash
 bun scripts/dev/check-test-coverage.ts            # check
 bun scripts/dev/check-test-coverage.ts --write    # rewrite the baseline after claiming a section
+bun scripts/dev/check-test-coverage.ts --report   # regenerate coverage-report.md
 ```
+
+`docs/guides/testing/coverage-report.md` is generated: adopted pages with their gate counts and open gaps, then the guides that have no manifest yet. It still runs the check after writing, so a broken manifest cannot produce a report that reads as green.
 
 ## Playwright tags
 
