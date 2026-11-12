@@ -96,7 +96,17 @@ export function InboxSyncStatusPill({ status, onAction, onHowItWorks, className 
                   {status.actionLabel}
                 </Button>
               ) : null}
-              <Button type="button" variant="outline" onClick={onHowItWorks} className="sm:flex-1">
+              <Button
+                type="button"
+                variant="outline"
+                // Close first: two stacked sheets leave two headings on screen and nothing
+                // for a screen reader to focus.
+                onClick={() => {
+                  setOpen(false);
+                  onHowItWorks();
+                }}
+                className="sm:flex-1"
+              >
                 How this inbox works
               </Button>
             </div>
