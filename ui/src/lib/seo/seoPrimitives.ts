@@ -75,6 +75,43 @@ function truncateTitle(text: string, max: number): string {
 /** Locale of the public site. Every page is Philippine English. */
 export const OG_LOCALE = 'en_PH';
 
+/** Drop markup a host may have pasted in, and collapse whitespace. */
+function stripMarkup(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * A host-written search title, normalised.
+ *
+ * Returns null when the override is blank so callers can fall back to the generated title.
+ * If the host already included the site name, it is used verbatim (no double brand); otherwise
+ * the brand is appended with the usual ` | ` separator.
+ */
+export function titleFromOverride(
+  override: string | null | undefined,
+  siteName: string = SITE_NAME
+): string | null {
+  const clean = stripMarkup(override ?? '');
+  if (!clean) return null;
+  if (siteName && clean.toLowerCase().includes(siteName.toLowerCase())) {
+    return truncateTitle(clean, MAX_TITLE_LENGTH + 10);
+  }
+  return buildPageTitle(clean, siteName);
+}
+
+/** A host-written meta description, stripped of markup and capped. */
+export function descriptionFromOverride(
+  override: string | null | undefined,
+  max = MAX_DESCRIPTION_LENGTH
+): string | null {
+  const clean = stripMarkup(override ?? '');
+  if (!clean) return null;
+  return truncateDescription(clean, max);
+}
+
 export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')

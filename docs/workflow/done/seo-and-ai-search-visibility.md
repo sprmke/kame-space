@@ -324,7 +324,10 @@ home default. Gaps: F2, weak fallbacks, no host control.
 - [x] SEO-6.3 Place pages: `{count} condos and homes in {City}, from PHP {min}/night. Check dates and book online.` (counts from `public_listing_search`).
 - [x] SEO-6.4 Host pages and development pages: data-driven templates.
 - [x] SEO-6.5 Sanitize: strip Markdown, HTML, emoji runs, URLs, phone numbers and emails (no PII in meta), collapse whitespace, then truncate.
-- [ ] SEO-6.6 Optional host feature: "Search preview" (SEO title + description override) in property and parking Public page settings with a live Google-style preview and character counter. Needs `unsaved-changes-guard`, `mobile-responsive`, `plans-and-permissions` (recommend all plans, existing public-page edit permission), `audit-logging` (rides the existing settings save event or new `listing.seo_updated`), route guide and FAQ updates. Ship after SEO-6.1 to 6.5.
+- [x] SEO-6.6 Optional host feature: "Search preview" (SEO title + description override) in property and parking Public page settings with a live Google-style preview and character counter. Needs `unsaved-changes-guard`, `mobile-responsive`, `plans-and-permissions` (recommend all plans, existing public-page edit permission), `audit-logging` (rides the existing settings save event or new `listing.seo_updated`), route guide and FAQ updates. Ship after SEO-6.1 to 6.5.
+
+  **Shipped 2026-11-13.** Property and parking Basic Information each carry a Search preview card (`SearchPreviewFields`): optional title (70 char max, 60 recommended) and description (170 max, 160 recommended), a live result preview, and placeholders showing the generated text. Stored as `settings.seoTitle` / `settings.seoDescription`; a blank field deletes the key so the generated text wins. `titleFromOverride` / `descriptionFromOverride` are the single normaliser for both surfaces (strip markup, no double brand, truncate) and are used by the SPA and the crawler middleware. Plans: N/A, rides the existing listing edit permission. Activity log: rides the existing property/parking settings save event.
+
 - [x] SEO-6.7 Align the shorter `twitter:description` in `index.html` with the main description.
 - [x] SEO-6.8 Crawl audit flags missing, duplicate, under 70 or over 160 character descriptions.
 
@@ -505,18 +508,18 @@ Current: none.
 
 Each phase is one or more PRs, merged to `main` and tested on the dev deploy before the next.
 
-| Phase | Name                        | Tasks                                                                                                                                                | Size | Depends on |
-| ----- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ---------- |
-| 0     | Baseline                    | SEO-12.4 (crawl audit script first), SEO-14.8, SEO-19.3 on current prod, Lighthouse runs                                                             | S    | none       |
-| 1     | Foundation                  | SEO-0.1 to 0.7, SEO-4.2, SEO-4.3                                                                                                                     | L    | 0          |
-| 2     | Crawl control               | Items 1, 2, 3, SEO-4.1, 4.4 to 4.9, SEO-12.1 to 12.3                                                                                                 | M    | 1          |
-| 3     | Titles, descriptions, OG    | Items 5, 6 (6.1 to 6.5, 6.7, 6.8), 18 (18.1, 18.2, 18.5)                                                                                             | M    | 1          |
-| 4     | Snapshot content and schema | Items 10, 11 (crawler HTML for all routes, breadcrumbs JSON-LD, related links)                                                                       | L    | 1, 3       |
-| 5     | Images                      | Items 9, 13                                                                                                                                          | L    | 1          |
-| 6     | Slugs and redirects         | Item 17, SEO-12.5, 12.6                                                                                                                              | M    | 2          |
-| 7     | HTTPS and CWV               | Items 16, 14 (14.1 to 14.7)                                                                                                                          | M    | 5          |
-| 8     | AI discovery and consoles   | Item 20, Item 19, SEO-2.4                                                                                                                            | M    | 2, 4       |
-| 9     | Optional host features      | SEO-6.6 (search preview override), SEO-18.3 (generated OG cards), SEO-18.4, SEO-11.7 (visible breadcrumbs, needs UI sign-off)                        | M    | 3, 4       |
+| Phase | Name                        | Tasks                                                                                                                                                                | Size | Depends on |
+| ----- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ---------- |
+| 0     | Baseline                    | SEO-12.4 (crawl audit script first), SEO-14.8, SEO-19.3 on current prod, Lighthouse runs                                                                             | S    | none       |
+| 1     | Foundation                  | SEO-0.1 to 0.7, SEO-4.2, SEO-4.3                                                                                                                                     | L    | 0          |
+| 2     | Crawl control               | Items 1, 2, 3, SEO-4.1, 4.4 to 4.9, SEO-12.1 to 12.3                                                                                                                 | M    | 1          |
+| 3     | Titles, descriptions, OG    | Items 5, 6 (6.1 to 6.5, 6.7, 6.8), 18 (18.1, 18.2, 18.5)                                                                                                             | M    | 1          |
+| 4     | Snapshot content and schema | Items 10, 11 (crawler HTML for all routes, breadcrumbs JSON-LD, related links)                                                                                       | L    | 1, 3       |
+| 5     | Images                      | Items 9, 13                                                                                                                                                          | L    | 1          |
+| 6     | Slugs and redirects         | Item 17, SEO-12.5, 12.6                                                                                                                                              | M    | 2          |
+| 7     | HTTPS and CWV               | Items 16, 14 (14.1 to 14.7)                                                                                                                                          | M    | 5          |
+| 8     | AI discovery and consoles   | Item 20, Item 19, SEO-2.4                                                                                                                                            | M    | 2, 4       |
+| 9     | Optional host features      | SEO-6.6 (search preview override), SEO-18.3 (generated OG cards), SEO-18.4, SEO-11.7 (visible breadcrumbs, needs UI sign-off)                                        | M    | 3, 4       |
 | 10    | After report                | ✅ Shipped 2026-11-13: audit re-run against production, before/after recorded in `done/seo-evidence/`, and the weekly audit scheduled in `web-probe.yml` (SEO-12.7). | S    | all        |
 
 Production steps (Supabase migrations for SEO-17.1/17.2, edge deploys, backfills) need the
@@ -607,7 +610,6 @@ Run on `feat/seo-foundation` (2026-11-11), worktree `.worktrees/seo-foundation`.
 
 | Task                                          | Why it is not in this branch                                                                                                                                                                                                            |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SEO-6.6 Search preview override               | A new host-facing settings surface inside a 600-line form. It needs the full Plans + RBAC + audit + guard pass and its own review, not a tail-end addition. The data path (`settings` JSONB) is ready.                                  |
 | SEO-9.4 AI alt suggestion                     | Needs the AI gateway vision path wired into the upload flow plus credit accounting. The deterministic fallback and the host field ship now, so the suggestion only saves typing.                                                        |
 | SEO-9.10 Static marketing alt for film scenes | For-hosts film scenes render inline SVG (`PhotoTile`), so there is no photo to describe. Remaining decorative art keeps `alt=""` by design.                                                                                             |
 | SEO-11.7 Visible breadcrumbs                  | Explicitly out of scope in §2 (changes visible UI). JSON-LD breadcrumbs ship in SEO-10.2.                                                                                                                                               |

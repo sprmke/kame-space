@@ -932,6 +932,15 @@ Stay guide, security-deposit refund, and guest review links are per booking. Cal
 
 Yes. On the Calendar card choose Copy link, select the check-in and check-out dates, then Copy link. The guest opens the calendar with that range selected. You can also copy the calendar without dates.
 
+### Can I control what my listing says on Google?
+
+- category: Public Pages
+- audience: host
+- source: docs/guides/routes/org/property/settings.md
+- order: 68
+
+Yes. Property Settings and parking Settings have a Search preview card with an optional title and description, next to a live preview of how the result looks and a character counter. Leave both blank and we write them for you from the listing details. If you change your mind later, clear the field and save.
+
 ### What is alt text and do I need it?
 
 - category: Public Pages
