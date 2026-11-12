@@ -3,9 +3,12 @@ import { assertEquals, assertStringIncludes } from 'jsr:@std/assert@1';
 import {
   buildSitemapIndex,
   buildUrlset,
+  developmentSubPath,
   escapeXml,
   listingPath,
   placePath,
+  STATIC_SITEMAP_LASTMOD,
+  STATIC_SITEMAP_PATHS,
 } from './publicSitemap.ts';
 
 Deno.test('escapeXml escapes markup characters', () => {
@@ -47,4 +50,35 @@ Deno.test('every <loc> uses the canonical https apex', () => {
     assertEquals(loc.includes('http://'), false, loc);
     assertEquals(new URL(loc).hostname, 'kamespace.com', loc);
   }
+});
+
+Deno.test('development sub-paths only exist for the listed segments', () => {
+  assertEquals(
+    developmentSubPath('azure-north', 'properties'),
+    '/developments/azure-north/properties'
+  );
+  assertEquals(developmentSubPath('azure north', 'parking'), '/developments/azure%20north/parking');
+});
+
+Deno.test('static sitemap lastmod is a fixed date per path, never build time', () => {
+  for (const path of STATIC_SITEMAP_PATHS) {
+    const value = STATIC_SITEMAP_LASTMOD[path];
+    assertEquals(typeof value, 'string', path);
+    assertEquals(/^\d{4}-\d{2}-\d{2}$/.test(value), true, path);
+    // A build-time date would always be today, which is exactly what Google ignores.
+    assertEquals(value < '2026-12-31', true, path);
+  }
+  assertEquals(Object.keys(STATIC_SITEMAP_LASTMOD).sort(), [...STATIC_SITEMAP_PATHS].sort());
+});
+
+Deno.test('buildUrlset still emits lastmod for dates', () => {
+  const xml = buildUrlset('https://kamespace.com', [
+    { path: '/properties', lastmod: '2026-11-13' },
+    { path: '/parkings', lastmod: null },
+  ]);
+  assertStringIncludes(
+    xml,
+    '<loc>https://kamespace.com/properties</loc><lastmod>2026-11-13</lastmod>'
+  );
+  assertEquals(xml.includes('/parkings</loc><lastmod>'), false);
 });
