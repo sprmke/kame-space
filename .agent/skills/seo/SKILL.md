@@ -61,4 +61,4 @@ bun run test                                   # seo unit tests
 bun run seo:audit -- --origin https://<preview-url> --fail-on-error
 ```
 
-Reports land in `docs/workflow/in-progress/seo-evidence/`.
+Reports land in `docs/workflow/done/seo-evidence/`.
