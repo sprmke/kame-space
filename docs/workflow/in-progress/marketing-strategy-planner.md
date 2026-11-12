@@ -626,7 +626,8 @@ Known gaps, deliberately left open rather than half-claimed:
 
 > Shipped: the publish scheduler cron with claim re-check and hold (P3.1, P3.2), Share it yourself
 > (P3.5), and the planner cron for weekly rules plans, expiry and reminders (P3.6). Reminders honour
-> each property's `reminders.leadMinutes`, clamped to 5 minutes to 24 hours.
+> each property's `reminders.leadMinutes`, clamped to 5 minutes to 24 hours. The same sweep sends one
+> `marketing_opportunity_urgent` per property per day when tonight is free and nothing is planned.
 >
 > Also shipped: `freed_dates` (a cancellation creates a `freed_dates` item plus a
 > `marketing_opportunity_urgent` notification from the orchestrator, non-fatal and idempotent per

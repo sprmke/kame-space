@@ -205,3 +205,14 @@ export function freedWindowDays(nights: readonly string[], today: string): numbe
   if (nights.length === 0) return 0;
   return calendarDaysBetween(today, nights[nights.length - 1]);
 }
+
+/**
+ * Should tonight raise an urgent "still open" nudge? Only when the night is free AND the
+ * property has nothing already planned for today, so a host who planned work is not pinged twice.
+ */
+export function shouldNotifyTonightOpen(input: {
+  tonightOpen: boolean;
+  hasActiveItemToday: boolean;
+}): boolean {
+  return input.tonightOpen && !input.hasActiveItemToday;
+}

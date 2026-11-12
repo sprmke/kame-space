@@ -2,6 +2,7 @@ import { assertEquals, assert } from 'https://deno.land/std@0.224.0/assert/mod.t
 
 import {
   FREED_DATES_HORIZON_DAYS,
+  shouldNotifyTonightOpen,
   freedNightsInWindow,
   freedWindowDays,
   manilaMinuteOfDay,
@@ -73,4 +74,10 @@ Deno.test('manilaMinuteOfDay: converts to the Manila clock', () => {
 Deno.test('freedWindowDays: days from today to the last freed night', () => {
   assertEquals(freedWindowDays(['2026-11-13', '2026-11-15'], '2026-11-09'), 6);
   assertEquals(freedWindowDays([], '2026-11-09'), 0);
+});
+
+Deno.test('shouldNotifyTonightOpen: only when free and nothing is planned today', () => {
+  assertEquals(shouldNotifyTonightOpen({ tonightOpen: true, hasActiveItemToday: false }), true);
+  assertEquals(shouldNotifyTonightOpen({ tonightOpen: true, hasActiveItemToday: true }), false);
+  assertEquals(shouldNotifyTonightOpen({ tonightOpen: false, hasActiveItemToday: false }), false);
 });

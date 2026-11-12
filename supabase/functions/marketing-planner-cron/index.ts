@@ -21,6 +21,8 @@ import {
   reminderLeadMinutes,
 } from '../_shared/marketingPublishScheduler.ts';
 import { shouldUseAiPlan } from '../_shared/marketingPlanMode.ts';
+import { loadBlockedNightKeys } from '../_shared/marketingSignalsData.ts';
+import { shouldNotifyTonightOpen } from '../_shared/marketingFreedDates.ts';
 import { isFeatureEnabled } from '../_shared/planFeatures.ts';
 import { resolvePropertyEntitlements } from '../_shared/planEntitlements.ts';
 import { createOrCoalesceNotification } from '../_shared/notificationService.ts';
@@ -78,8 +80,9 @@ serveCronPost(
     const weekly = await runWeeklyPlans(sb, now, startedAt);
     const expired = await expireStaleItems(sb, now);
     const reminders = await sendDueReminders(sb, now);
+    const tonight = await notifyTonightOpen(sb, startedAt);
 
-    return { weekly, expired, reminders };
+    return { weekly, expired, reminders, tonight };
   }
 );
 
@@ -280,4 +283,54 @@ export async function resolveWeeklyPlanMode(
   return shouldUseAiPlan({ mode: rawMode, cap: rawCap, spent, entitled })
     ? 'ai'
     : 'rules';
+}
+
+/**
+ * "Tonight is still open and nothing is planned". One nudge per property per Manila day, and
+ * only for properties that finished setup, so a host who planned their day is not pinged.
+ */
+async function notifyTonightOpen(
+  sb: ReturnType<typeof createServiceClient>,
+  startedAt: number
+): Promise<number> {
+  const today = manilaTodayYmd();
+  const { data: settings } = await sb
+    .from('marketing_planner_settings')
+    .select('property_id, organization_id, onboarded_at')
+    .not('onboarded_at', 'is', null)
+    .limit(25);
+
+  let sent = 0;
+  for (const row of settings ?? []) {
+    if (Date.now() - startedAt > TIME_BUDGET_MS) break;
+    const propertyId = String(row.property_id);
+
+    const { count: activeToday } = await sb
+      .from('marketing_plan_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('property_id', propertyId)
+      .is('deleted_at', null)
+      .in('status', ['planned', 'ready', 'scheduled', 'publishing'])
+      .gte('scheduled_for', `${today}T00:00:00+08:00`)
+      .lte('scheduled_for', `${today}T23:59:59+08:00`);
+    if ((activeToday ?? 0) > 0) continue;
+
+    const blocked = await loadBlockedNightKeys(propertyId).catch(() => new Set<string>());
+    const tonightOpen = !blocked.has(today);
+    if (!shouldNotifyTonightOpen({ tonightOpen, hasActiveItemToday: (activeToday ?? 0) > 0 })) {
+      continue;
+    }
+
+    await createOrCoalesceNotification({
+      organizationId: String(row.organization_id),
+      propertyId,
+      type: 'marketing_opportunity_urgent',
+      title: 'Still open tonight',
+      body: 'Tonight has no booking and nothing is planned to post.',
+      dedupeKey: `marketing_opportunity_urgent:tonight:${today}`,
+      metadata: { night: today },
+    });
+    sent += 1;
+  }
+  return sent;
 }
