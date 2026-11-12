@@ -10,7 +10,7 @@ updated: 2026-11-11
 How the public guest site (`kamespace.com`) is made crawlable, canonical, and citable by both
 classic search engines and AI answer engines.
 
-Plan of record: [`docs/workflow/in-progress/seo-and-ai-search-visibility.md`](../workflow/in-progress/seo-and-ai-search-visibility.md).
+Plan of record: [`docs/workflow/done/seo-and-ai-search-visibility.md`](../workflow/done/seo-and-ai-search-visibility.md).
 
 ## The problem this solves
 
@@ -99,8 +99,16 @@ place slug. The same item list feeds the page's `BreadcrumbList` through
 ## sitemap.xml
 
 - Served by the `public-sitemap` edge function through the middleware.
-- URLs: static registry pages, every ACTIVE listing, every place page. Above 45,000 URLs the
-  root becomes a sitemap index of `?part=N` files.
+- URLs: static registry pages, every ACTIVE listing, every place page, and a development's
+  `/properties` / `/parking` sub-pages **only once that development has at least one unit or
+  slot**. Candidate slugs come from `public_listing_search.residence_slug` and are confirmed
+  against `developments` first, so a renamed development cannot put a 404 in the sitemap.
+- `<lastmod>` is a **fixed date per route**, never the build time: a sitemap where `lastmod`
+  always equals today is ignored by Google. Listing entries use `refreshed_at`; a place or
+  development sub-page uses the newest `refreshed_at` in it. Static dates live in two places that
+  `check:seo-routes` keeps equal: `publicRoutes.ts#lastReviewed` and
+  `_shared/publicSitemap.ts#STATIC_SITEMAP_LASTMOD`. **Bump both in the same change as the copy.**
+- Above 45,000 URLs the root becomes a sitemap index of `?part=N` files.
 - `<loc>` uses `PUBLIC_GUEST_APP_ORIGIN` (server) which defaults to the same apex.
 
 ## AI discovery files
@@ -133,4 +141,4 @@ Reports land in `docs/workflow/done/seo-evidence/`.
 
 - Route guides: [`docs/guides/routes/`](../guides/routes/README.md)
 - Sitemap builder: `supabase/functions/_shared/publicSitemap.ts`
-- Plan: [`docs/workflow/in-progress/seo-and-ai-search-visibility.md`](../workflow/in-progress/seo-and-ai-search-visibility.md)
+- Plan: [`docs/workflow/done/seo-and-ai-search-visibility.md`](../workflow/done/seo-and-ai-search-visibility.md)

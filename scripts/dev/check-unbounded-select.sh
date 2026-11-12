@@ -28,6 +28,11 @@ ALLOWLIST=(
   # capped at BATCH rows per run. There is no `.range()`/`.limit()` shape for an update.
   'identity-captures-purge-cron/index.ts'
 
+  # First-view stamp: `update ... .eq('id', bookingId).is('guest_trip_first_viewed_at', null)
+  # .select('id')` — one row by primary key, and the returned row is how the caller knows this
+  # read established the first view. There is no `.limit()` shape for an update.
+  '_shared/guestTripView.ts'
+
   # Query builder is created once (`.select('id, name')`) and reused across two
   # mutually exclusive branches (`.eq('id', orgId).maybeSingle()` vs
   # `.eq('slug', orgSlug).maybeSingle()`), so the bound and the `.select(` are in

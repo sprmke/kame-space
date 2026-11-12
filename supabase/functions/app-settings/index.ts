@@ -84,11 +84,13 @@ function appSettingsArea(fields: string[]): string {
 }
 
 serveAuthenticated('app-settings', async (req, user) => {
+    // `?lean=1` skips the Telegram integration status; only the settings page renders it.
+    const includeIntegrations = new URL(req.url).searchParams.get('lean') !== '1';
   if (req.method === 'GET') {
     const { property } = await resolveScopedPropertyAccess(req, 'settings:view');
     const propertyId = property.id;
     await ensurePropertySettings(propertyId);
-    const data = await serializeAppSettingsForAdmin(propertyId);
+    const data = await serializeAppSettingsForAdmin(propertyId, { includeIntegrations });
     return jsonSuccess(req, data);
   }
 
@@ -392,7 +394,7 @@ serveAuthenticated('app-settings', async (req, user) => {
 
     await DatabaseService.updateAppSettings(patch, propertyId);
     invalidateAppSettingsCache(propertyId);
-    const data = await serializeAppSettingsForAdmin(propertyId);
+    const data = await serializeAppSettingsForAdmin(propertyId, { includeIntegrations });
 
     const changedFields = Object.keys(patch);
     await logAssetActivity({

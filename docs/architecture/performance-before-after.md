@@ -729,6 +729,27 @@ one.
 `/parkings` measured 5991 ms in the same run, with the same lazy-first-card pattern, which is why
 the fix went into the property cards too.
 
+## 18. `app-settings`: stop paying for integrations on every load
+
+Measured on production, `Server-Timing` on the handler, three warm calls: **1566-2424 ms**.
+
+`serializeAppSettingsForAdmin` returns one payload used by eight call sites: the dashboard theme,
+the bookings list, the booking edit form, the workflow panel, the inbox insert menu, the page
+editor, the guest-experience readiness card, and the property settings page. Only the last one
+renders `propertyIntegrations`, which is six Telegram credential reads.
+
+Every other caller paid for those reads on every load. The endpoint now takes `?lean=1`, which
+skips that block and returns `propertyIntegrations: null`. Seven call sites ask for lean; the
+settings controller keeps the full payload and guards the panel on the value.
+
+Lean and full use separate cache keys, and the save mutations write both, so a save cannot leave
+one variant stale.
+
+### Expected effect
+
+Six credential reads removed from the dashboard's `app-settings` call. The handler should land
+meaningfully below the 1566 ms baseline; the number is measured after deploy rather than claimed.
+
 ## Release state
 
 **2026-11-10.** PR #371 synced `main` to `develop`'s tree and shipped the UI side.

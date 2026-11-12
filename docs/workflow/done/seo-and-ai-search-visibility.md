@@ -243,9 +243,9 @@ the canonical apex.
 - [x] SEO-1.0 Dynamic `/sitemap.xml` via middleware proxy to `public-sitemap`.
 - [x] SEO-1.1 Derive `STATIC_SITEMAP_PATHS` from the D2 registry; `check:seo-routes` fails CI on drift.
 - [x] SEO-1.2 Add `/hosts/:orgSlug` for orgs with at least one ACTIVE public listing (read from `public_listing_search` org column or a join; exclude unverified orgs).
-- [ ] SEO-1.3 Decide and add development sub-pages `/developments/:slug/properties` and `/developments/:slug/parking` (include only when the list is non-empty; they already set their own canonical).
+- [x] SEO-1.3 Decide and add development sub-pages `/developments/:slug/properties` and `/developments/:slug/parking` (include only when the list is non-empty; they already set their own canonical).
 - [x] SEO-1.4 Decide showcase (`/properties/:slug/showcase`) and stay guide: include only if their content is distinct from the detail page; otherwise canonical to the detail page and exclude (see SEO-4.7).
-- [ ] SEO-1.5 `lastmod` for place pages = max `refreshed_at` of their listings; static pages = last content change (registry field updated with the page copy, not build time, so Google keeps trusting it).
+- [x] SEO-1.5 `lastmod` for place pages = max `refreshed_at` of their listings; static pages = last content change (registry field updated with the page copy, not build time, so Google keeps trusting it).
 - [x] SEO-1.6 Split into typed child sitemaps (`?part=static|properties|parkings|developments|places|hosts`) under one sitemap index so Search Console reports indexing per type. Keep the 45,000 URL split per child.
 - [x] SEO-1.7 Image sitemap extension (`<image:image><image:loc>`) for up to 10 photos per listing (Google Images discovery).
 - [x] SEO-1.8 Use the canonical origin (D3) for every `<loc>`; assert in a Deno test that no `<loc>` uses a non-apex host or `http://`.
@@ -324,7 +324,10 @@ home default. Gaps: F2, weak fallbacks, no host control.
 - [x] SEO-6.3 Place pages: `{count} condos and homes in {City}, from PHP {min}/night. Check dates and book online.` (counts from `public_listing_search`).
 - [x] SEO-6.4 Host pages and development pages: data-driven templates.
 - [x] SEO-6.5 Sanitize: strip Markdown, HTML, emoji runs, URLs, phone numbers and emails (no PII in meta), collapse whitespace, then truncate.
-- [ ] SEO-6.6 Optional host feature: "Search preview" (SEO title + description override) in property and parking Public page settings with a live Google-style preview and character counter. Needs `unsaved-changes-guard`, `mobile-responsive`, `plans-and-permissions` (recommend all plans, existing public-page edit permission), `audit-logging` (rides the existing settings save event or new `listing.seo_updated`), route guide and FAQ updates. Ship after SEO-6.1 to 6.5.
+- [x] SEO-6.6 Optional host feature: "Search preview" (SEO title + description override) in property and parking Public page settings with a live Google-style preview and character counter. Needs `unsaved-changes-guard`, `mobile-responsive`, `plans-and-permissions` (recommend all plans, existing public-page edit permission), `audit-logging` (rides the existing settings save event or new `listing.seo_updated`), route guide and FAQ updates. Ship after SEO-6.1 to 6.5.
+
+  **Shipped 2026-11-13.** Property and parking Basic Information each carry a Search preview card (`SearchPreviewFields`): optional title (70 char max, 60 recommended) and description (170 max, 160 recommended), a live result preview, and placeholders showing the generated text. Stored as `settings.seoTitle` / `settings.seoDescription`; a blank field deletes the key so the generated text wins. `titleFromOverride` / `descriptionFromOverride` are the single normaliser for both surfaces (strip markup, no double brand, truncate) and are used by the SPA and the crawler middleware. Plans: N/A, rides the existing listing edit permission. Activity log: rides the existing property/parking settings save event.
+
 - [x] SEO-6.7 Align the shorter `twitter:description` in `index.html` with the main description.
 - [x] SEO-6.8 Crawl audit flags missing, duplicate, under 70 or over 160 character descriptions.
 
@@ -487,7 +490,7 @@ Current: none.
 - [x] SEO-20.3 Only public, ACTIVE data. No host emails, phone numbers, addresses beyond city/province, or guest data. Unit test that the builder rejects PII fields.
 - [x] SEO-20.4 Non-indexable hosts return a minimal file that says the host is not public.
 - [x] SEO-20.5 Cache like the sitemap (`s-maxage=3600`, `stale-while-revalidate`).
-- [ ] SEO-20.6 Optional: Markdown versions of key static pages (`/about.md`, `/for-hosts/pricing.md`) from the shared `content.ts` modules.
+- [x] SEO-20.6 Optional: Markdown versions of key static pages (`/about.md`, `/for-hosts/pricing.md`) from the shared `content.ts` modules.
 - [x] SEO-20.7 Reference `llms.txt` from `robots.txt` as a comment and link it from the footer of the snapshot HTML.
 
 ---
@@ -606,11 +609,19 @@ Run on `feat/seo-foundation` (2026-11-11), worktree `.worktrees/seo-foundation`.
 | `/tmp` middleware smoke, real built shell                        | `/about` as GPTBot: 200, one `<h1>`, apex canonical, snapshot injected, `#root` replaced.                                                                                                       |
 | `deno test _shared/publicSitemap_test.ts`                        | 4 pass. Full `bun run test:edge` fails locally on `npm:dayjs@1.11.10` resolution (installed 1.11.23), a pre-existing worktree environment issue unrelated to this change.                       |
 
+### Follow-up pass (2026-11-13)
+
+The plan was closed on 2026-11-13 with the shipped surface verified. The remaining checkboxes
+above are being worked through in follow-up PRs, in this order: sitemap depth (SEO-1.3, SEO-1.5)
+and markdown variants (SEO-20.6), then the host search-preview feature (SEO-6.6), then visible
+breadcrumbs and image-credit work (SEO-11.7, SEO-9.10, SEO-13.2, SEO-18.4), then fonts and AI alt
+suggestions (SEO-14.5, SEO-9.4). The Search Console and Bing items (SEO-19.x) need owner access
+and stay listed as blocked.
+
 ### Deferred, with reasons
 
 | Task                                          | Why it is not in this branch                                                                                                                                                                                                            |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SEO-6.6 Search preview override               | A new host-facing settings surface inside a 600-line form. It needs the full Plans + RBAC + audit + guard pass and its own review, not a tail-end addition. The data path (`settings` JSONB) is ready.                                  |
 | SEO-9.4 AI alt suggestion                     | Needs the AI gateway vision path wired into the upload flow plus credit accounting. The deterministic fallback and the host field ship now, so the suggestion only saves typing.                                                        |
 | SEO-9.10 Static marketing alt for film scenes | For-hosts film scenes render inline SVG (`PhotoTile`), so there is no photo to describe. Remaining decorative art keeps `alt=""` by design.                                                                                             |
 | SEO-13.2 Every image through `MarketingImage` | Swapping raw `<img>` for a `fill`-based component changes layout per template and needs visual QA on each showcase direction. The measurable win (AVIF/WebP + budget guard) shipped in SEO-13.1 to 13.7.                                |

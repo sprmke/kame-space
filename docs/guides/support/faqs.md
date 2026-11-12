@@ -932,6 +932,15 @@ Stay guide, security-deposit refund, and guest review links are per booking. Cal
 
 Yes. On the Calendar card choose Copy link, select the check-in and check-out dates, then Copy link. The guest opens the calendar with that range selected. You can also copy the calendar without dates.
 
+### Can I control what my listing says on Google?
+
+- category: Public Pages
+- audience: host
+- source: docs/guides/routes/org/property/settings.md
+- order: 68
+
+Yes. Property Settings and parking Settings have a Search preview card with an optional title and description, next to a live preview of how the result looks and a character counter. Leave both blank and we write them for you from the listing details. If you change your mind later, clear the field and save.
+
 ### What is alt text and do I need it?
 
 - category: Public Pages
@@ -1574,3 +1583,19 @@ It expired. A request you did not answer within seven days, with nothing paid, c
 - source: docs/guides/routes/trip.md
 
 Yes. The host did not reply in time, so the dates were released and nothing was charged. Open your trip and choose Request these dates again to send the same dates back to the host.
+
+### How do I know my guest has seen their trip?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/notifications.md
+
+The first time a guest opens their trip page you get one notification, "Maria opened their trip", and a row in the bell. It never repeats, so a refresh or a second device does not add another. If you never see it, the guest has not opened the trip page yet; the dates and directions are waiting there for them.
+
+### How do I get booking alerts on my phone?
+
+- category: Guest Portal
+- audience: guest
+- source: docs/guides/routes/account/profile.md
+
+Sign in, open your profile, and turn on Alerts on this device. On an iPhone or iPad, add the site to your home screen first, then turn it on, because Safari only allows alerts for installed apps. You get an alert when your host confirms your booking and when your check-in is ready; everything else still arrives by email.

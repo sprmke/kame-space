@@ -159,7 +159,17 @@ booking transition / webhook / cron
 - **Client** — `ui/src/lib/pwa/push.ts` (`getPushState` / `enablePush` / `disablePush` / `resyncPushSubscription` / `closeOsNotifications`), `usePushNotifications`, `PushNotificationsCard` on the Notifications page. `enablePush` must run inside a user gesture (iOS). `NotificationsProvider` heals a rotated / pruned subscription on session start. A native `InvalidStateError` from the iOS `pushManager` getter is a device limitation: reading state returns "no subscription" and enabling shows a short not-available message instead of a raw browser exception.
 - **Preferences (per user, global across orgs)** — `notification_preferences` (`20261316129000_notification_preferences.sql`) stores muted type groups and a quiet-hours window. Read by `push-fanout`; written by `notification-preferences` (authenticated) and edited on the Notifications page (`NotificationPreferencesCard` for groups, `QuietHoursCard` for the window, instant saves). Only the OS push is filtered — the in-app bell keeps every row. `calendar_sync_failing` bypasses quiet hours; a mute still wins. A missing row means "everything on", so no backfill exists.
 - **Quiet hours** — `start > end` wraps midnight; `start === end` means "no window" (a mis-set form can never silence push for a full day). Local time comes from the stored IANA zone, not the server's.
-- **Guest push (Tier B)** is **not** in this plan — it needs its own notification model; tracked separately.
+- **Guest push (Tier B)** — shipped for **signed-in guests** only, and it needed no new notification
+  model: a subscription already belongs to the signed-in user, and `guest_submissions.guest_user_id`
+  links a booking to the account that signed in with the booking email. So the send path is
+  `_shared/guestPush.ts` (called from the workflow orchestrator at the two milestones a guest
+  actually waits on: **Confirmed** and **Ready for check-in**), which resolves
+  `push_subscriptions` for that user and pushes an app-relative trip link. The `notifications`
+  table is untouched; it addresses team members, and its realtime policy stays team-scoped.
+  `notification_preferences` is per user, so a guest who mutes **Bookings** or sets quiet hours is
+  respected. The opt-in lives on `/account/profile` (`GuestPushNotificationsCard`, reusing
+  `usePushNotifications` + `push-subscribe`). An **anonymous** booking has no user to push to and
+  keeps its email, so nothing is a dead end.
 - **Delivery observability** — `push-fanout` logs `[push-fanout] {notificationId,type,recipients,endpoints,sent,pruned,failed}`. Alert on a rising `failed/sent` ratio.
 
 ### VAPID rotation

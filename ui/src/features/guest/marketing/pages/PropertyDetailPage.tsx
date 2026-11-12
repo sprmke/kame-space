@@ -58,6 +58,7 @@ import {
   listingDescription,
   propertyTitle,
 } from '@/lib/seo/seoMeta';
+import { descriptionFromOverride, titleFromOverride } from '@/lib/seo/seoPrimitives';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 import { cn } from '@/lib/utils';
 import { parseGuestInquiryDateRange, formatDateToYYYYMMDD } from '@/utils/format/dates';
@@ -95,18 +96,20 @@ export function PropertyDetailPage() {
     [similarResult.data?.data, propertySlug, propertyData?.id]
   );
   const propertyPageTitle = propertyData
-    ? buildPageTitle(
+    ? (titleFromOverride(propertyData.seoTitle) ??
+      buildPageTitle(
         propertyTitle({
           name: propertyData.name,
           unitType: propertyData.type,
           city: propertyData.city,
         })
-      )
+      ))
     : publicPageTitle('Property');
   usePageTitle(propertyPageTitle);
 
   const propertyDescription = propertyData
-    ? listingDescription({
+    ? (descriptionFromOverride(propertyData.seoDescription) ??
+      listingDescription({
         name: propertyData.name,
         unitType: propertyData.type,
         city: propertyData.city,
@@ -115,7 +118,7 @@ export function PropertyDetailPage() {
         amenities: propertyData.amenities,
         priceFrom: propertyData.pricing.baseRate,
         hostDescription: propertyData.description,
-      })
+      }))
     : undefined;
 
   const propertyCanonicalPath = `/properties/${propertyData?.slug ?? propertySlug}`;

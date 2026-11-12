@@ -39,6 +39,7 @@ import {
   listingDescription,
   parkingTitle,
 } from '@/lib/seo/seoMeta';
+import { descriptionFromOverride, titleFromOverride } from '@/lib/seo/seoPrimitives';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 import { cn } from '@/lib/utils';
 import { formatDateToYYYYMMDD } from '@/utils/format/dates';
@@ -65,17 +66,19 @@ export function ParkingDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data, isLoading, isError } = usePublicParkingDetail(parkingSlug);
   const parkingPageTitle = data
-    ? buildPageTitle(parkingTitle({ name: data.name, place: data.residenceName ?? data.city }))
+    ? (titleFromOverride(data.seoTitle) ??
+      buildPageTitle(parkingTitle({ name: data.name, place: data.residenceName ?? data.city })))
     : publicPageTitle('Parking');
   usePageTitle(parkingPageTitle);
 
   const parkingDescription = data
-    ? listingDescription({
+    ? (descriptionFromOverride(data.seoDescription) ??
+      listingDescription({
         name: data.name,
         city: data.city,
         priceFrom: data.ratePerNight,
         hostDescription: data.description,
-      })
+      }))
     : undefined;
 
   const parkingCanonicalPath = `/parkings/${data?.slug ?? parkingSlug}`;

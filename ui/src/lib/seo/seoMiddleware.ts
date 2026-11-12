@@ -49,10 +49,13 @@ import {
   placeTitle,
   propertyTitle,
   socialImageMeta,
+  descriptionFromOverride,
+  titleFromOverride,
   type ListingFamily,
   type SeoMeta,
 } from './seoMeta';
 import { canonicalUrlFor, PRODUCTION_SITE_ORIGIN } from './siteOrigin';
+import { buildStaticPageMarkdown } from './markdown';
 import {
   buildLlmsFullTxt,
   buildLlmsTxt,
@@ -62,6 +65,8 @@ import {
 import {
   injectSnapshotIntoHtml,
   renderSnapshotHtml,
+  SNAPSHOT_FOOTER,
+  SNAPSHOT_NAV,
   type SnapshotImage,
   type SnapshotLink,
   type SnapshotPage,
@@ -328,16 +333,18 @@ async function loadListingRoute(
     const pricing = (data.pricing ?? {}) as Json;
     const price = num(pricing.weekdayNightlyRate);
     const city = str(data.city);
-    const description = listingDescription({
-      name,
-      unitType: str(data.type),
-      city,
-      guests: num(data.maxGuests),
-      bedrooms: num(data.bedrooms),
-      amenities: strings(data.amenities),
-      priceFrom: price,
-      hostDescription: str(data.description),
-    });
+    const description =
+      descriptionFromOverride(str(data.seoDescription)) ??
+      listingDescription({
+        name,
+        unitType: str(data.type),
+        city,
+        guests: num(data.maxGuests),
+        bedrooms: num(data.bedrooms),
+        amenities: strings(data.amenities),
+        priceFrom: price,
+        hostDescription: str(data.description),
+      });
     const share = socialImageMeta(images[0] ?? str(data.coverImage), Boolean(deps.imageTransforms));
 
     const facts: Array<{ label: string; value: string }> = [];
@@ -377,10 +384,11 @@ async function loadListingRoute(
 
     return {
       meta: {
-        title: buildPageTitle(
-          propertyTitle({ name, unitType: str(data.type), city }),
-          deps.siteName
-        ),
+        // A host can override the search title and description; both fall back to the
+        // generated values when the override is blank.
+        title:
+          titleFromOverride(str(data.seoTitle), deps.siteName) ??
+          buildPageTitle(propertyTitle({ name, unitType: str(data.type), city }), deps.siteName),
         description,
         canonicalUrl,
         image: share.image,
@@ -439,12 +447,14 @@ async function loadListingRoute(
     if (!data || !name) return null;
     const place = str(data.residenceName) ?? str(data.city);
     const rate = num(data.ratePerNight);
-    const description = listingDescription({
-      name,
-      city: str(data.city),
-      priceFrom: rate,
-      hostDescription: str(data.description),
-    });
+    const description =
+      descriptionFromOverride(str(data.seoDescription)) ??
+      listingDescription({
+        name,
+        city: str(data.city),
+        priceFrom: rate,
+        hostDescription: str(data.description),
+      });
     const share = socialImageMeta(str(data.coverImage), Boolean(deps.imageTransforms));
 
     const facts: Array<{ label: string; value: string }> = [];
@@ -477,7 +487,9 @@ async function loadListingRoute(
 
     return {
       meta: {
-        title: buildPageTitle(parkingTitle({ name, place }), deps.siteName),
+        title:
+          titleFromOverride(str(data.seoTitle), deps.siteName) ??
+          buildPageTitle(parkingTitle({ name, place }), deps.siteName),
         description,
         canonicalUrl,
         image: share.image,
@@ -1111,6 +1123,36 @@ export async function handleSeoRequest(
       };
       const body = full ? buildLlmsFullTxt(input) : buildLlmsTxt(input);
       return new Response(body, { headers });
+    }
+
+    // Markdown variant of a static page (`/about.md`). Same snapshot the crawler HTML gets,
+    // rendered as text for AI engines and CLI agents. Static routes only: a listing `.md`
+    // would need a live edge read on every fetch for little gain.
+    if (url.pathname.endsWith('.md') && url.pathname.length > 3) {
+      const htmlPath = url.pathname.slice(0, -3) || '/';
+      const entry = matchStaticRoute(htmlPath);
+      if (!entry?.indexable) return null;
+      const canonicalUrl = canonicalUrlFor(siteOrigin, htmlPath);
+      const { snapshot } = buildStaticRoute(entry, canonicalUrl, deps);
+      // The HTML snapshot carries the site nav in <header>/<footer>; markdown is a flat file, so
+      // the same links go in the body to keep it a usable map of the site.
+      const siteLinks = [...SNAPSHOT_NAV, ...SNAPSHOT_FOOTER].map((item) => ({
+        href: item.href,
+        label: item.label,
+      }));
+      return new Response(
+        buildStaticPageMarkdown({
+          page: { ...snapshot, links: [...(snapshot.links ?? []), ...siteLinks] },
+          canonicalUrl,
+          siteName: deps.siteName,
+        }),
+        {
+          headers: {
+            'content-type': 'text/markdown; charset=utf-8',
+            'cache-control': 'public, max-age=1800, s-maxage=3600, stale-while-revalidate=86400',
+          },
+        }
+      );
     }
 
     if (deps.indexNowKey && url.pathname === `/${deps.indexNowKey}.txt`) {
