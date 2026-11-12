@@ -132,12 +132,16 @@ export class UploadService {
     // replaces the stored one rather than silently keeping the stale copy. The old
     // check also listed at the root prefix, so it never matched property-scoped
     // (`{propertyId}/…`) keys and every re-upload hit the 409 path.
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    assertMimeMatchesBytes(bytes, file.type || '');
+    // Sniff the header only. The detector reads the first 12 bytes, so buffering the whole
+    // file just to check it doubled memory per upload and forced the runtime to hold the
+    // entire document before the storage call could start. Uploading the File itself lets
+    // the runtime stream it, which matters at the 12 MB document ceiling.
+    const head = new Uint8Array(await file.slice(0, 512).arrayBuffer());
+    assertMimeMatchesBytes(head, file.type || '');
 
     const { error: uploadError } = await this.supabase.storage
       .from(bucket)
-      .upload(storageKey, bytes, {
+      .upload(storageKey, file, {
         upsert: true,
         cacheControl: '300',
         contentType: file.type || 'application/octet-stream',
