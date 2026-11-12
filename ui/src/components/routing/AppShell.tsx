@@ -4,6 +4,7 @@ import { ThemedToaster } from '@/components/theme/ThemedToaster';
 import { useBootMarks } from '@/hooks/useBootMarks';
 import { PostHogIdentitySync } from '@/lib/posthog/PostHogIdentitySync';
 import { SentryIdentitySync } from '@/lib/sentry/SentryIdentitySync';
+import { RoutePatternSync } from '@/lib/sentry/RoutePatternSync';
 import { SentrySurfaceSync } from '@/lib/sentry/SentrySurfaceSync';
 
 import App from '@/App';
@@ -18,6 +19,7 @@ export function AppShell() {
       <PostHogIdentitySync />
       <SentryIdentitySync />
       <SentrySurfaceSync />
+      <RoutePatternSync />
       <App />
       <ThemedToaster />
     </UnsavedChangesProvider>

@@ -38,6 +38,8 @@ export type SharedAnalyticsProperties = {
   app_release?: string;
   persona: AnalyticsPersona;
   surface: AnalyticsSurface;
+  /** Route template (`/org/:param/property/:param/bookings`), never a slug. */
+  route_pattern?: string;
   org_id?: string;
   property_id?: string;
   parking_id?: string;
