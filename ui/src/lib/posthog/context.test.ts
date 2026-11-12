@@ -29,4 +29,22 @@ describe('buildSharedAnalyticsProperties', () => {
   it('buildSharedAnalyticsProperties is exported', () => {
     expect(typeof buildSharedAnalyticsProperties).toBe('function');
   });
+
+  /**
+   * Pages used to be split per tenant in PostHog because only the raw pathname was available.
+   * The pattern must carry the route, never the slug.
+   */
+  it('carries a route pattern and never the tenant slug', () => {
+    const original = (globalThis as { window?: unknown }).window;
+    (globalThis as { window?: unknown }).window = {
+      location: { pathname: '/org/acme-realty/property/beach-villa/bookings' },
+    };
+    try {
+      const properties = buildSharedAnalyticsProperties();
+      expect(properties.route_pattern).toBe('/org/:param/property/:param/bookings');
+      expect(JSON.stringify(properties)).not.toContain('acme-realty');
+    } finally {
+      (globalThis as { window?: unknown }).window = original;
+    }
+  });
 });
