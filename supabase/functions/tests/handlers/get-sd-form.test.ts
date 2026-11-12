@@ -1,3 +1,3 @@
-import { tokenGuardedReadContract } from '../harness/tokenGuardedReadContract.ts';
+import { publicReadContract } from '../harness/publicReadContract.ts';
 
-tokenGuardedReadContract('get-sd-form');
+publicReadContract('get-sd-form');

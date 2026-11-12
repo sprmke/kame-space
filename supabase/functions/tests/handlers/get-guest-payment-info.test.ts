@@ -1,3 +1,3 @@
-import { tokenGuardedReadContract } from '../harness/tokenGuardedReadContract.ts';
+import { publicReadContract } from '../harness/publicReadContract.ts';
 
-tokenGuardedReadContract('get-guest-payment-info');
+publicReadContract('get-guest-payment-info');

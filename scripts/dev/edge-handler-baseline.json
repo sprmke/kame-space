@@ -1,13 +1,6 @@
 {
   "$comment": "Shrink-only ratchet for check-edge-test-coverage.mjs. Each entry is an edge function with no supabase/functions/tests/handlers/<fn>.test.ts. Delete entries as handler tests land.",
   "uncovered": [
-    "get-booked-dates",
-    "get-pay-parking",
-    "get-public-host",
-    "get-public-parking",
-    "get-public-property",
-    "get-public-showcase",
-    "get-residence-unit-types",
     "identity-session-create",
     "identity-session-get",
     "identity-session-submit",
@@ -15,17 +8,12 @@
     "list-public-developments",
     "list-public-parkings",
     "list-public-place-groups",
-    "list-public-pricing-plans",
     "list-public-properties",
-    "list-public-support-faqs",
     "meta-inbox-oauth-callback",
     "org-settings",
     "property-page-view",
-    "public-sitemap",
     "push-fanout",
-    "resolve-booking-property",
     "search-listings",
-    "search-suggestions",
     "submit-guest-refund-details",
     "submit-guest-review"
   ]

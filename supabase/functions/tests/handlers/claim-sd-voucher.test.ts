@@ -1,3 +1,3 @@
-import { tokenGuardedReadContract } from '../harness/tokenGuardedReadContract.ts';
+import { publicReadContract } from '../harness/publicReadContract.ts';
 
-tokenGuardedReadContract('claim-sd-voucher');
+publicReadContract('claim-sd-voucher');
