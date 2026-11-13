@@ -1,6 +1,7 @@
 # Branch cleanup audit
 
-**Last run:** 2026-11-04 · **Base:** `develop` (`3b41e15a`), `main` (`babe1985`)
+**Last run:** 2026-11-14 · **Base:** `develop` (`c73b67615`), `main` (`67660b928`)
+**Previous run:** 2026-11-04 · **Base:** `develop` (`3b41e15a`), `main` (`babe1985`)
 
 Every local and remote branch was compared against `develop` before anything was deleted.
 The audit answers one question per branch: **does this branch still hold a change that
@@ -368,3 +369,41 @@ Kept on purpose, still open: `#383` marketing trends (conflicted), `#379` market
 `#354` multi-residence (draft, do not merge), `#353` mascot talking preview (draft),
 `test/full-app-test-architecture` (two doc commits, no PR), 13 dependabot PRs, and the
 `backup/` and `recover/` safety snapshots.
+
+## 2026-11-14 run — one release for the ready work
+
+Four finished branches were consolidated into PR #481 and merged in one release commit
+(`8913e0772`): `fix/landing-hero-quality` (uncommitted work committed on the branch),
+`perf/burst-collapse` (#480), `feat/marketing-planner-v2` (#379) and
+`feat/marketing-trending-topics` (#383). GitHub marked all three child PRs merged.
+
+Two migration hotfixes followed after the first production deploy failed on
+`notifications_type_check`: #482 added `booking_receipt_uploaded`, #483 added `booking_trip_viewed`.
+The constraint now lists the union of every type any migration has ever allowed.
+
+Deleted, local and remote:
+
+`fix/landing-hero-quality`, `perf/burst-collapse`, `feat/marketing-planner-v2`,
+`feat/marketing-trending-topics`, `test/full-app-test-architecture`, `perf/fix-boot-counting`,
+`perf/hero-responsive`, `perf/lean-app-settings`, `perf/listing-lcp`, `perf/slow-pages`,
+`docs/lcp-after`, `docs/lean-measured`, `docs/stale-time-measured`, `docs/journey-cron-secrets-done`,
+`docs/journey-open-items`, `feat/guest-trip-view-notification`, `fix/cron-failure-reason`,
+`fix/deploy-config-only-changes`, `fix/guest-journey-cron-health`, `feat/marketing-planner`
+(superseded by v2, PR #350 closed), and four stale dependabot branches whose PRs are closed.
+
+Removed worktrees: `marketing-planner`, `marketing-trending-topics`, `perf-collapse`, `test-arch`,
+and the unregistered leftover directory `.worktrees/parking-final-cleanup`.
+
+Kept on purpose:
+
+| Branch                                                | Why                                    |
+| ----------------------------------------------------- | -------------------------------------- |
+| `feat/multi-residence-config-decoupling` (+ worktree) | PR #354 is a draft marked DO NOT MERGE |
+| `codex/mascot-talking-preview` (+ worktree)           | PR #353 is a draft visual prototype    |
+| `backup/multi-residence-pre-rebase-1794322170`        | pre-rebase safety snapshot             |
+| `recover/pre-reset-20261110`                          | pre-reset safety snapshot              |
+
+Kept in the stash, not shipped: `stash@{0}` (on `perf/fix-boot-counting`, `wip-before-hero-fix`)
+holds the planned AI Studio quality overhaul, the listing-slug reservation migrations and the
+full-app QA audit plan. Those plans are still `status: planned`, so folding them into a production
+release would have been unsafe. They need their own session.
