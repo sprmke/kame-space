@@ -136,20 +136,48 @@ jobs:
           # Safe default: deploy every function. Narrowed below only when provably safe.
           echo "functions=all" >> "$GITHUB_OUTPUT"
 
-          if git diff --quiet FETCH_HEAD "$GITHUB_SHA" -- supabase/functions supabase/migrations; then
+          if git diff --quiet FETCH_HEAD "$GITHUB_SHA" -- supabase/functions supabase/migrations supabase/config.toml; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "functions=none" >> "$GITHUB_OUTPUT"
-            echo "No function or migration changes since $prev."
+            echo "No function, migration or config changes since $prev."
             exit 0
           fi
 
           echo "Backend changes since $prev:"
-          git diff --name-only FETCH_HEAD "$GITHUB_SHA" -- supabase/functions supabase/migrations | sed 's/^/  /'
+          git diff --name-only FETCH_HEAD "$GITHUB_SHA" -- supabase/functions supabase/migrations supabase/config.toml | sed 's/^/  /'
+
+          # `supabase/config.toml` carries per-function deploy settings (`verify_jwt`,
+          # `static_files`). A change there must redeploy the functions whose blocks moved, or the
+          # setting is simply never applied: on 2026-11 a config-only fix adding static_files left
+          # both guest crons unable to render email while the deploy reported success.
+          config_functions=""
+          config_changed=false
+          if ! git diff --quiet FETCH_HEAD "$GITHUB_SHA" -- supabase/config.toml; then
+            config_changed=true
+            # `config.toml` carries per-function deploy settings (verify_jwt, static_files). The
+            # narrowing below only looks at function directories, so a pure config edit would
+            # deploy nothing and the setting would never be applied. The helper compares whole
+            # [functions.<name>] blocks, because the usual fix edits lines inside an existing one.
+            git show FETCH_HEAD:supabase/config.toml > "$RUNNER_TEMP/config-old.toml" 2>/dev/null || : > "$RUNNER_TEMP/config-old.toml"
+            git show "$GITHUB_SHA":supabase/config.toml > "$RUNNER_TEMP/config-new.toml" 2>/dev/null || : > "$RUNNER_TEMP/config-new.toml"
+            config_functions=$(python3 scripts/deploy/changed-config-functions.py "$RUNNER_TEMP/config-old.toml" "$RUNNER_TEMP/config-new.toml")
+            echo "Config changed; functions whose block changed: ${config_functions:-none}"
+          fi
 
           # Deploying all 345 functions took ~19 minutes per deploy. Narrow it to the changed
           # directories, but deploy everything whenever shared code moved: `_shared/**` is
           # bundled into every function at deploy time, so a change there can affect all.
           if git diff --quiet FETCH_HEAD "$GITHUB_SHA" -- supabase/functions; then
+            if [[ "$config_changed" == "true" ]]; then
+              if [[ -n "$config_functions" ]]; then
+                echo "functions=$config_functions" >> "$GITHUB_OUTPUT"
+                echo "Only config.toml changed; redeploying: $config_functions"
+              else
+                echo "functions=all" >> "$GITHUB_OUTPUT"
+                echo "config.toml changed outside a function block; deploying every function."
+              fi
+              exit 0
+            fi
             echo "functions=none" >> "$GITHUB_OUTPUT"
             echo "Only migrations changed; functions deploy skipped."
             exit 0
@@ -174,9 +202,10 @@ jobs:
             exit 0
           fi
 
-          names=$(echo "$changed_functions" \
-            | awk -F/ 'NF >= 3 && $3 != "tests" && $3 !~ /\./ { print $3 }' \
-            | sort -u | tr '\n' ' ' | sed 's/ *$//')
+          names=$( { echo "$changed_functions" \
+              | awk -F/ 'NF >= 3 && $3 != "tests" && $3 !~ /\./ { print $3 }'; \
+            echo "$config_functions" | tr ' ' '\n'; } \
+            | grep -v '^$' | sort -u | tr '\n' ' ' | sed 's/ *$//')
 
           if [[ -z "$names" ]]; then
             if ! echo "$changed_functions" | grep -qvE '^supabase/functions/tests/'; then
