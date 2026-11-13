@@ -809,16 +809,23 @@ So the fix removes the refetch on every navigation, which is the common case. It
 remove the six on first load, because those six are three distinct keys each fetched twice by the
 double mount below — and a stale time cannot help two simultaneous mounts.
 
-**2. Shell calls fire twice, simultaneously.** `get-session-context` at 298 and 299 ms,
-`org-settings` at 2123 and 2130 ms, and so on for every shell read. Simultaneous duplicates mean
-two mounts, not a refetch — React Query deduplicates in-flight queries, so these are two distinct
-query executions. The page also renders two `<h1>` elements, which may be responsive variants
-rather than proof of a double render.
+**2. A counting trap that produced a false conclusion.** An ad-hoc script that counted requests
+from a second `Network.enable` CDP session reported every shell call twice, with different request
+ids, 1 ms apart. That was published here as "the shell mounts twice", and as a 2x multiplier on
+dashboard cost. It was wrong.
 
-Cause not yet identified. Instrumenting `window.fetch` showed two `useAppSettings` `queryFn`
-executions plus one from `AdminLayout`, which points at two property contexts rather than one
-component mounting twice. That needs the next session's attention; it is the largest remaining
-multiplier on dashboard cost.
+Playwright's own `page.on('request')` is authoritative: **one** `get-session-context`, and 24
+distinct edge calls on a dashboard load. A raw second CDP session double-reports each request, and
+because the two reports carry **different request ids**, a per-id dedupe does not collapse them
+either.
+
+`perf:boot-durations` now reads Playwright request events, and its header explains why. Any call-set
+claim taken from a second CDP session should be treated as unverified.
+
+What the authoritative count does show is smaller and explainable: `app-settings` is requested
+**three** times on this property (two full payloads, one lean), because the setup guide and the
+settings controller both mount the controller while the guide is open. On a fully configured
+property the guide stays closed and only the lean caller runs.
 
 ## Release state
 
