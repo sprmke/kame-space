@@ -46,6 +46,9 @@ const WRAPPER_TIER = {
   serveAuthenticated: 'org (authenticated user)',
   servePublic: 'guest-anon',
   serveCronPost: 'cron (secret-gated)',
+  // Mounts the handler with no wrapper of its own: the function runs its auth, CORS and
+  // rate-limit checks inline (guest intake, uploads, crons, the Meta OAuth callback).
+  serveHandler: 'own guards (no wrapper)',
 };
 
 const WRAPPER_PATTERNS = [
@@ -54,6 +57,7 @@ const WRAPPER_PATTERNS = [
   ['serveAuthenticated', /\bserveAuthenticated\s*\(/],
   ['servePublic', /\bservePublic\s*\(/],
   ['serveCronPost', /\bserveCronPost\s*\(/],
+  ['serveHandler', /\bserveHandler\s*\(/],
 ];
 
 const RAW_SERVE_PATTERNS = [/\bDeno\.serve\s*\(/, /(?<!\w)serve\s*\(\s*async/, /\bserve\s*\(\s*\(/];
