@@ -421,6 +421,7 @@ ALTER TABLE public.notifications ADD CONSTRAINT notifications_type_check CHECK (
     'review_response_received',
     'maintenance_guest_reported',
     'guest_request_submitted',
+    'booking_receipt_uploaded',
     'marketing_plan_ready',
     'marketing_item_due',
     'marketing_opportunity_urgent',
