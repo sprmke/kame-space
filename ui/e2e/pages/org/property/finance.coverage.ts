@@ -14,6 +14,8 @@ export default definePageCoverage({
   sections: {
     'Summary cards & charts':
       'ui/e2e/features/dashboard/dashboardModulesSmoke.spec.ts#finance card header titles never sit under their filter at 1024px',
+    'Unified ledger':
+      'ui/e2e/features/dashboard/financeLedger.spec.ts#shows the seeded transaction and stay in the unified ledger',
     Permissions:
       'ui/e2e/features/team/propertyTeamNavRbac.spec.ts#Operations deep-link to Finance redirects away from /finance',
   },
