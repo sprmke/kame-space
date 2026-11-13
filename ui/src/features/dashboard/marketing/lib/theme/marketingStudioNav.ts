@@ -4,14 +4,15 @@
  * per-property last tab.
  */
 
-/** Display order: AI Studio first, daily tools next, the monthly calendar last. */
-export const MARKETING_STUDIO_TABS = ['generate', 'design', 'video', 'calendar'] as const;
+/** Display order: the plan first, AI Studio next, daily tools after, the calendar last. */
+export const MARKETING_STUDIO_TABS = ['plan', 'generate', 'design', 'video', 'calendar'] as const;
 export type MarketingStudioTab = (typeof MARKETING_STUDIO_TABS)[number];
 
-/** Tabs that open an editor on a saved item (`?item=`). AI Studio has no items. */
-export type MarketingEditorTab = Exclude<MarketingStudioTab, 'generate'>;
+/** Tabs that open an editor on a saved item (`?item=`). AI Studio and Plan have no items. */
+export type MarketingEditorTab = Exclude<MarketingStudioTab, 'generate' | 'plan'>;
 
 export const MARKETING_STUDIO_TAB_LABELS: Record<MarketingStudioTab, string> = {
+  plan: 'Plan',
   generate: 'AI Studio',
   design: 'Posts',
   video: 'Videos',
@@ -27,15 +28,15 @@ export function isMarketingEditorTab(value: unknown): value is MarketingEditorTa
 }
 
 /**
- * Tab to open when the URL has none: the last tab used on this property, else
- * AI Studio when the host can generate anything, else Posts.
+ * Tab to open when the URL has none: the last tab used on this property, else the
+ * Plan, which is the daily home of the studio (plan D2).
  */
 export function resolveDefaultMarketingStudioTab(input: {
   lastTab: string | null;
   aiAvailable: boolean;
 }): MarketingStudioTab {
   if (isMarketingStudioTab(input.lastTab)) return input.lastTab;
-  return input.aiAvailable ? 'generate' : 'design';
+  return 'plan';
 }
 
 export function normalizeMarketingStudioTab(

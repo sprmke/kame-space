@@ -18,6 +18,7 @@ const AI_FEATURE_LABELS: Record<string, string> = {
   booking_ai_summary_pets: 'Booking review: pets',
   booking_ai_summary_pricing: 'Booking review: pricing',
   smart_pricing: 'Smart pricing',
+  marketing_plan_brief: 'Marketing plan briefs',
   host_analytics: 'Host analytics',
   review_draft: 'Review draft',
   identity_extraction: 'Identity document read',

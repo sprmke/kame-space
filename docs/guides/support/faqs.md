@@ -743,6 +743,15 @@ The organization becomes past due and keeps full access during the grace period.
 
 Managed is sales-assisted. Choose Contact sales on the Managed card, or file a ticket from Help and Support, and our team will confirm onboarding and pricing.
 
+### What is the Plan tab in Marketing?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 5
+
+It is a short to-do list of what to post, when, and why, built from your own calendar: open nights, weekend gaps, long weekends, how far ahead guests book, and recent reviews. Open Marketing, then Plan. Nothing is invented, and it works without AI.
+
 ### What is Marketing Studio?
 
 - category: Marketing Studio

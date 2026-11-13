@@ -88,6 +88,8 @@ export const COMPARE_EXPECTATIONS: CompareGroupExpectation[] = [
     label: 'Marketing',
     rows: [
       { label: 'Content Studio', cells: ['off', 'off', 'on', 'on', 'on'] },
+      { label: 'Marketing Planner', cells: ['off', 'off', 'on', 'on', 'on'] },
+      { label: 'AI Marketing Planner', cells: ['off', 'off', 'off', 'on', 'on'] },
       { label: 'AI content generation', cells: ['off', 'off', 'off', 'on', 'on'] },
       { label: 'AI image generation', cells: ['off', 'off', 'on', 'on', 'on'] },
       { label: 'AI video generation', cells: ['off', 'off', 'off', 'on', 'on'] },
@@ -232,6 +234,7 @@ export const CARD_EXPECTATIONS: Record<TierCode, CardExpectation> = {
     bullets: [
       'Up to 5 team members',
       'Marketing Content Studio',
+      'Marketing Planner',
       'Top 30 search placement',
       'AI receipt and ID validation',
       'Recommended badge eligible',
@@ -255,6 +258,7 @@ export const CARD_EXPECTATIONS: Record<TierCode, CardExpectation> = {
     pitch: 'Simplify your management with AI-powered features.',
     bullets: [
       'Up to 10 team members',
+      'AI Marketing Planner',
       'Publish in Meta platforms',
       'Top 15 search placement',
       'AI content generation',
@@ -361,6 +365,7 @@ export const UNLOCKS: Record<string, string[]> = {
     'Analytics export and AI review',
     'Up to 5 team members',
     'Content Studio',
+    'Marketing Planner',
     'AI image generation',
     'Public pages editor',
     'Property showcase & stay guide access',
@@ -371,6 +376,7 @@ export const UNLOCKS: Record<string, string[]> = {
   ],
   'growth>pro': [
     'Up to 10 team members',
+    'AI Marketing Planner',
     'AI content generation',
     'AI video generation',
     'Unlimited Meta publishing',
@@ -410,6 +416,8 @@ export const REMOVES: Record<string, string[]> = {
     'Up to 10 team members',
     'Custom team roles',
     'Content Studio',
+    'Marketing Planner',
+    'AI Marketing Planner',
     'AI content generation',
     'AI image generation',
     'AI video generation',
