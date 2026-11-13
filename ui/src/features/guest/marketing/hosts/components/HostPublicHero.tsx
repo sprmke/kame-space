@@ -99,7 +99,7 @@ export function HostPublicHero({ host, className }: Props) {
             </div>
 
             {host.description ? (
-              <p className="text-muted-foreground text-[13px] leading-snug sm:mx-0 sm:text-sm sm:text-[15px] sm:leading-relaxed">
+              <p className="text-muted-foreground text-[13px] leading-snug sm:mx-0 sm:text-[15px] sm:text-sm sm:leading-relaxed">
                 {host.description}
               </p>
             ) : null}

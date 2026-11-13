@@ -103,10 +103,13 @@ async function loadEntries(): Promise<SitemapEntry[]> {
   // A renamed or deleted development would otherwise put a 404 in the sitemap, so the candidates
   // are confirmed against the developments table before they are listed.
   if (development.size > 0) {
+    const slugs = [...development.keys()];
     const { data: existing, error: developmentError } = await supabase
       .from('developments')
       .select('slug')
-      .in('slug', [...development.keys()]);
+      .in('slug', slugs)
+      // Exactly the candidate set, so the read is bounded by the page loop above.
+      .limit(slugs.length);
     if (developmentError) throw new Error(`sitemap read failed: ${developmentError.message}`);
     const live = new Set(
       (existing ?? [])

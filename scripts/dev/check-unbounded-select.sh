@@ -234,6 +234,8 @@ ALLOWLIST=(
   'social-inbox-ai-suggest/index.ts'
   'social-inbox-settings/index.ts'
   'social-inbox-templates/index.ts'
+  # Sitemap development check: `.select('slug').in('slug', [...])`. The result set cannot
+
 )
 
 is_allowlisted() {

@@ -350,7 +350,9 @@ Rendering:
 - [x] SEO-9.7 Triage every `alt=""` in `features/guest/**`, `features/reviews/**`, `components/**` (40 files found). Rule: decorative (icons, background textures, avatars next to a visible name) keeps `alt=""`; content (photos, showcase gallery, hero product shots, QR codes, maps) gets descriptive alt. Priority files: all `showcase/templates/*Sections.tsx`, `ShowcaseGalleryCarousel`, `StayGuideSections`, `GuestOperationalHeader`, `V2ApertureHero`, `V2PlacesIndex`, `BookingSteps`, `PropertyReviews` (review photos), `ReviewCardContent`, `ChatMapLinkCard`.
 - [x] SEO-9.8 Host and org logos: `alt="{Org name}"`; review photos: `"Guest photo from a review of {listing}"`.
 - [x] SEO-9.9 Listing `og:image:alt` and `twitter:image:alt` from the cover photo alt.
-- [ ] SEO-9.10 Static marketing images in `ui/public/marketing/**` and for-hosts film scenes: descriptive alt from the component, not the filename.
+- [x] SEO-9.10 Static marketing images in `ui/public/marketing/**` and for-hosts film scenes: descriptive alt from the component, not the filename.
+
+  **Done 2026-11-13.** Triaged every `<img>` under `features/guest/marketing`: the for-hosts film renders inline SVG (`PhotoTile`), so it has no photo to describe; the remaining `alt=""` tags are brand marks, owner avatars beside a visible name, and decorative device mockups, which `jsx-a11y/alt-text` allows on purpose. The one real photo, the home hero, now describes itself (`Sunlit living room in a Kame Space stay, looking out to the water`); its night layer stays decorative because it is the same scene for the other theme.
 
 Guardrails:
 
@@ -384,7 +386,10 @@ links in crawler HTML (F1), no breadcrumbs, possible JS-only navigation.
 - [x] SEO-11.4 Host pages link to all their public listings; listings link back to the host page.
 - [x] SEO-11.5 Audit public cards and buttons for `onClick={() => navigate(...)}` or `div` click handlers that should be `<Link>`/`<a href>`. Fix without visual change.
 - [x] SEO-11.6 Descriptive anchor text in snapshot links (listing names, "Condos in Makati"), no "click here" or "view".
-- [ ] SEO-11.7 Visible breadcrumbs on detail pages: **separate UI decision** (out of scope by default because it changes UI). JSON-LD breadcrumbs (SEO-10.2) ship regardless.
+- [x] SEO-11.7 Visible breadcrumbs on detail pages: **separate UI decision** (out of scope by default because it changes UI). JSON-LD breadcrumbs (SEO-10.2) ship regardless.
+
+  **Shipped 2026-11-13 (user asked for it).** `ListingBreadcrumbs` renders `Home / Stays / <development or city> / <listing>` above the title on the property, parking and development detail pages. The middle crumb links the development when the listing belongs to one and is plain text otherwise, so a crumb can never point at a guessed place slug and 404. The same items feed `BreadcrumbList` through `buildBreadcrumbJsonLdFromItems`, so the visible trail and the structured data cannot disagree. Wraps instead of scrolling on phone; verified at 375, 768 and 1280 with no horizontal overflow.
+
 - [x] SEO-11.8 Orphan check: crawl audit reports sitemap URLs with zero inbound internal links.
 
 ### Item 12. Fix broken links
@@ -421,7 +426,10 @@ the public, indexable pages and must not duplicate that plan.
 - [x] SEO-14.2 Sentry dashboard filtered to registry routes (home, list, place, detail, for-hosts, pricing). Weekly check in the ops report.
 - [x] SEO-14.3 Add public routes to `scripts/performance/lighthouse-routes.mjs` with assertions: SEO category >= 95, Performance >= 85 mobile, no "image elements without width/height", no "properly size images" failures.
 - [x] SEO-14.4 LCP: preload and `fetchPriority="high"` on the listing detail cover photo and home hero; snapshot HTML includes the preload link for crawler renders.
-- [ ] SEO-14.5 Fonts: public pages load only the platform fonts, not all 15 host-selectable families; `font-display: swap`; preload the primary weight.
+- [x] SEO-14.5 Fonts: public pages load only the platform fonts, not all 15 host-selectable families; `font-display: swap`; preload the primary weight.
+
+  **Shipped 2026-11-13.** `index.html` now requests **Plus Jakarta Sans only**; the fourteen display families moved to `ui/src/lib/fonts/displayFonts.ts`, which `ShowcaseShell` appends when a themed surface mounts (covers `/properties/:slug/showcase` and the stay guide). Verified in a browser: `/about` makes one Google Fonts CSS request and never adds the display link. Every display class has a real fallback in `tailwind.config.js`, so the late stylesheet is a swap, not a blank. `display=swap` was already set and stays.
+
 - [x] SEO-14.6 CLS: image dimensions (SEO-13.2), fixed skeleton heights on cards, reserved map container height.
 - [x] SEO-14.7 Third parties: Google Maps loads on interaction or in view; PostHog and Sentry after first paint (confirm current behaviour).
 - [x] SEO-14.8 Field data from CrUX: record origin CWV from PageSpeed Insights and the Search Console Core Web Vitals report before and after.
@@ -615,13 +623,39 @@ breadcrumbs and image-credit work (SEO-11.7, SEO-9.10, SEO-13.2, SEO-18.4), then
 suggestions (SEO-14.5, SEO-9.4). The Search Console and Bing items (SEO-19.x) need owner access
 and stay listed as blocked.
 
+### Remaining items (state as of 2026-11-13)
+
+Everything below is deliberately not in this pass. Nothing here leaves the shipped surface
+incomplete: crawler content, canonicals, robots/sitemap, structured data, alt text, slug
+redirects, CWV work and AI discovery are all live and verified in production.
+
+**Blocked on owner console access (5).** These need a Google or Bing login, so an agent cannot
+run them. `docs/archive/operations/seo-runbook.md` has the click-by-click checklist; the evidence
+template for each is `docs/workflow/done/seo-evidence/`.
+
+| Task     | Exact next step                                                                                                                                                   |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEO-19.1 | Search Console → Sitemaps → add `https://kamespace.com/sitemap.xml`, then request indexing for `/`, one listing, one place page                                   |
+| SEO-19.2 | Search Console → the old `kamehomes.space` property → Change of Address → submit `kamespace.com`. Only if that property is still verified; the 301s already exist |
+| SEO-19.3 | Search Console → URL Inspection → Test live URL for `/`, one listing, one place page, `/about`; screenshot each into the evidence folder                          |
+| SEO-19.4 | Bing Webmaster Tools → Import from Search Console → submit the sitemap. Bing feeds ChatGPT search and Copilot                                                     |
+| SEO-19.6 | Add the owner plus one backup as users in both consoles, then record the names in the runbook's access table                                                      |
+
+**Deliberate deferrals (4).** Each has the reason and the exact next step.
+
+| Task                                          | Why now is the wrong time                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Next step                                                                                                                                                                                                                                                                                                |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEO-9.4 AI alt suggestion                     | Needs a **new `AiFeature` key** in `aiModelRouter.ts` (model tier, per-feature token budget, Groq-vision fallback) plus a matching entry in the AI limit profiles super admins manage, and a decision on what a photo caption may cost. That is a platform cost/config change, not only code, so it does not belong in an SEO PR. The seam is otherwise clean: `generateText` already meters credits and accepts `inlineData` images. The host alt field (SEO-9.3) and the deterministic fallback ship, so the gap is typing convenience. | Add `listing_alt_text` to `AI_FEATURES` + router config + limit profiles, then a `suggest-media-alt` function following `draft-review-with-ai` (`serveAuthenticated`, `resolveScopedPropertyAccess`, `aiErrorResponse`) and a Suggest button in `PropertyMediaAltDialog` that downscales to ~512px first |
+| SEO-13.2 Every image through `MarketingImage` | Remaining raw `<img>` are showcase photos in fixed-aspect containers: no CLS to fix, and the only gain (`srcSet`) needs `VITE_SUPABASE_IMAGE_TRANSFORMS=true`, which production does not set                                                                                                                                                                                                                                                                                                                                              | Do it in the PR that flips that env var, with a rendered showcase page to compare                                                                                                                                                                                                                        |
+| SEO-18.3 Generated OG cards                   | The plan says decide after share click-through data; there is none yet, and raster text on the edge needs a wasm renderer                                                                                                                                                                                                                                                                                                                                                                                                                 | Revisit with share data from the Meta/LinkedIn previews                                                                                                                                                                                                                                                  |
+| SEO-18.4 Per-page OG art                      | Belongs in the Remotion studio (`marketing/social`, `render:stills`) which owns the brand system and font loading. A `sharp` text composite depends on system fonts and would differ between machines; a placeholder would look worse than the shared card                                                                                                                                                                                                                                                                                | Add a 1200x630 "link" composition there and render three stills into `ui/public/brand/og/`                                                                                                                                                                                                               |
+
 ### Deferred, with reasons
 
 | Task                                          | Why it is not in this branch                                                                                                                                                                                                            |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | SEO-9.4 AI alt suggestion                     | Needs the AI gateway vision path wired into the upload flow plus credit accounting. The deterministic fallback and the host field ship now, so the suggestion only saves typing.                                                        |
 | SEO-9.10 Static marketing alt for film scenes | For-hosts film scenes render inline SVG (`PhotoTile`), so there is no photo to describe. Remaining decorative art keeps `alt=""` by design.                                                                                             |
-| SEO-11.7 Visible breadcrumbs                  | Explicitly out of scope in §2 (changes visible UI). JSON-LD breadcrumbs ship in SEO-10.2.                                                                                                                                               |
 | SEO-13.2 Every image through `MarketingImage` | Swapping raw `<img>` for a `fill`-based component changes layout per template and needs visual QA on each showcase direction. The measurable win (AVIF/WebP + budget guard) shipped in SEO-13.1 to 13.7.                                |
 | SEO-14.5 Fewer font families on public pages  | Hosts pick the brand font for their public pages, so 15 families are the product. The stylesheet is already `preload` + async swap (not render-blocking) and `display=swap` is set. Restricting it per route would break host branding. |
 | SEO-18.3 Generated OG cards                   | The plan says decide after 18.2 based on share click-through. 18.2 shipped; this waits on data.                                                                                                                                         |

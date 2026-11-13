@@ -55,6 +55,15 @@ production on 2026-11-10 recorded exactly that (17 sitemap URLs, all `h1-count 0
 is missing from `STATIC_SITEMAP_PATHS`, when an indexable route is blocked by robots, or when
 `ui/public/robots.txt` drifts from `ROBOTS_DISALLOW`.
 
+## Fonts
+
+`index.html` requests **Plus Jakarta Sans only**, the product font. The fourteen display
+families (`font-fraunces`, `font-cormorant`, `font-grotesk`, …) exist for host-themed showcase
+pages and stay guides, and only `features/guest/marketing/showcase/**` uses them.
+`ensureDisplayFonts()` (`ui/src/lib/fonts/displayFonts.ts`) appends that stylesheet when
+`ShowcaseShell` mounts, so a listing, booking form, auth screen or dashboard never fetches it.
+Keep the family list in sync with `fontFamily` in `ui/tailwind.config.js`.
+
 ## Canonical rules
 
 - Canonical, `og:url`, sitemap `<loc>`, robots `Sitemap:` and JSON-LD `url` always use the
@@ -66,6 +75,14 @@ is missing from `STATIC_SITEMAP_PATHS`, when an indexable route is blocked by ro
   assets.
 - `app.kamespace.com` is deliberately **not** redirected yet; its role as a dashboard entry is
   unconfirmed.
+
+## Visible breadcrumbs
+
+Property, parking and development detail pages render `Home / Stays / <development or city> /
+<listing>` above the title (`ListingBreadcrumbs`). The middle crumb links the development when
+the listing belongs to one; otherwise it is plain text, so a crumb never points at a guessed
+place slug. The same item list feeds the page's `BreadcrumbList` through
+`buildBreadcrumbJsonLdFromItems`, so markup and structured data cannot drift.
 
 ## Crawler snapshot rules
 
