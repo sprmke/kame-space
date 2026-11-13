@@ -652,6 +652,10 @@ Edge functions use `servePublic` / `serveAdmin` / `serveCronPost`; email-sending
 
 ## 9. Out of scope
 
+Every item below is carried in [`../planned/guest-journey-followups.md`](../planned/guest-journey-followups.md)
+with the reason it was not built and what would unblock it. This section stays as the record of the
+decision; that file is where the work would start.
+
 - Auto-expiry / auto-decline of `PENDING_REVIEW` bookings (workflow change; separate plan).
 - Online payment checkout (PayMongo plan).
 - Smart lock integrations and generated lock codes.
