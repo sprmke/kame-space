@@ -708,14 +708,64 @@ simply never passed it.
 
 No visual change: the same image at the same size, loaded earlier.
 
-### Expected effect
+### Measured after
 
-The image starts downloading during HTML parse instead of after layout, and the connection
-handshake is already open. Re-run the weekly Lighthouse job after release and compare `/` ,
-`/properties` and `/developments`; the numbers above are the "before".
+Released 2026-11-12, same mobile viewport, LCP element read from a PerformanceObserver. The element
+now reports `loading=eager` and `fetchPriority=high`, which is the proof the change applied.
 
-`/properties` measured 8507 ms and `/parkings` 5991 ms in the same run, with the same lazy-first-card
-pattern, which is why the fix was applied to the property cards too.
+| Route           | Before  | After       | Change                 |
+| --------------- | ------- | ----------- | ---------------------- |
+| `/properties`   | 8507 ms | **4320 ms** | **-49%**               |
+| `/developments` | 7668 ms | 6628 ms     | -14%                   |
+| `/`             | -       | 1112 ms     | hero already optimised |
+
+`/properties` halved. `/developments` improved less, and the reason matters: its cover still comes
+from `images.unsplash.com` with a `w=480` transform, and that third-party fetch is now most of the
+remaining 6.6 s. Real developments carry Supabase Storage covers (the `/properties` LCP is a
+Supabase `.avif`), so this is a fixture problem, not an app one. Making `/developments` fast would
+mean serving local covers in the demo data, which is a content change rather than a performance
+one.
+
+`/parkings` measured 5991 ms in the same run, with the same lazy-first-card pattern, which is why
+the fix went into the property cards too.
+
+## 18. `app-settings`: stop paying for integrations on every load
+
+Measured on production, `Server-Timing` on the handler, three warm calls: **1566-2424 ms**.
+
+`serializeAppSettingsForAdmin` returns one payload used by eight call sites: the dashboard theme,
+the bookings list, the booking edit form, the workflow panel, the inbox insert menu, the page
+editor, the guest-experience readiness card, and the property settings page. Only the last one
+renders `propertyIntegrations`, which is six Telegram credential reads.
+
+Every other caller paid for those reads on every load. The endpoint now takes `?lean=1`, which
+skips that block and returns `propertyIntegrations: null`. Seven call sites ask for lean; the
+settings controller keeps the full payload and guards the panel on the value.
+
+Lean and full use separate cache keys, and the save mutations write both, so a save cannot leave
+one variant stale.
+
+### Measured after
+
+Same `Server-Timing` method, three warm calls each, after the deploy.
+
+| Variant                           | Handler          |
+| --------------------------------- | ---------------- |
+| Full (settings page)              | 1591-1645 ms     |
+| Lean (the other seven call sites) | **1442-1532 ms** |
+
+So the integrations block is worth about **100-150 ms**, not the larger figure this section
+originally predicted. That prediction was wrong and is corrected here: the six credential reads run
+in parallel and are cached, so they never cost what six serial reads would.
+
+What the change still buys is real but smaller: six fewer reads and their decryption on every
+dashboard load, which is work off the edge function and off the database rather than a large
+latency drop.
+
+The remaining ~1.5 s is elsewhere in the payload: the settings row, the org settings row, the
+residence name, the derived PMO email and the two document-requirement resolutions. Cutting that
+further means splitting the payload by consumer, which changes the API surface for eight call
+sites, so it is recorded rather than attempted.
 
 ## Release state
 

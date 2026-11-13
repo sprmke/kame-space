@@ -188,7 +188,7 @@ export function InboxInsertMenu({
   const propertyRows = useInboxPropertyShareRows(propertySlug);
   const bookingRows = useInboxBookingShareRows(propertySlug, selectedBooking);
 
-  const { data: appSettings } = useAppSettings();
+  const { data: appSettings } = useAppSettings({ lean: true });
   const paymentMethods = useMemo(() => {
     if (!appSettings) return [];
     const legacyGcashQr = legacyGcashQrForPaymentMethods(

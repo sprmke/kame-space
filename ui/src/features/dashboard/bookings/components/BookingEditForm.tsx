@@ -256,7 +256,7 @@ export function BookingEditForm({
   const updateMut = useUpdateBooking();
   const apiUrl = import.meta.env.VITE_API_URL;
   const orgContext = useOptionalOrgContext();
-  const { data: appSettings } = useAppSettings();
+  const { data: appSettings } = useAppSettings({ lean: true });
   const documentRequirements =
     appSettings?.resolvedDocumentRequirements ?? DEFAULT_DOCUMENT_REQUIREMENTS;
   const editTabsRef = useRef<BookingEditTabsHandle>(null);

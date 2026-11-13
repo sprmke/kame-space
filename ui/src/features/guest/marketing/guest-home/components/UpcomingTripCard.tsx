@@ -47,9 +47,7 @@ export function UpcomingTripCard({
     path: string | null;
   } | null;
 }) {
-  const [dismissed, setDismissed] = useState(() =>
-    trip ? readDismissed(trip.bookingId) : false
-  );
+  const [dismissed, setDismissed] = useState(() => (trip ? readDismissed(trip.bookingId) : false));
 
   if (!trip?.path || dismissed) return null;
 

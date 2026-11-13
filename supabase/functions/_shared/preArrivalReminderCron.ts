@@ -20,6 +20,7 @@ import { formatEmailDateRange, formatResendFromAddress } from './propertyEmailBr
 import { createServiceClient } from './orgAuth.ts';
 import { isEmailSuppressed } from './emailSuppression.ts';
 import { sendResendEmail } from './sendResendEmail.ts';
+import { reportCronPartialFailure } from './sentryCron.ts';
 import { guestBookingEmailLinkPlaceholderExtras } from './guestBookingEmailLinks.ts';
 import type { GuestSubmission } from './types.ts';
 
@@ -196,6 +197,15 @@ export async function runPreArrivalReminderSweep(
       result.failed += 1;
     }
   }
+
+  // Same rule as the other batch crons: a run where some sends failed still answers ok, so
+  // report the count or it looks clean. No-op when nothing failed.
+  await reportCronPartialFailure({
+    cron: 'pre-arrival-reminders',
+    attempted: candidates.length,
+    failed: result.failed,
+    extra: { sent: result.sent },
+  });
 
   return result;
 }

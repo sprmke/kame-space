@@ -18,7 +18,7 @@ export function ExploreClosingCta() {
           viewport={inViewOnce}
           className="gradient-primary relative overflow-hidden rounded-[2rem] px-4 py-8 text-center sm:px-12 sm:py-20"
         >
-          <h2 className="mx-auto max-w-2xl public-section-title font-bold text-white">
+          <h2 className="public-section-title mx-auto max-w-2xl font-bold text-white">
             Your next stay is a search away
           </h2>
           <p className="mx-auto mt-4 max-w-md text-white/85">

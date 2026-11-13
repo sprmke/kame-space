@@ -9,6 +9,7 @@
 import { DatabaseService } from '../_shared/databaseService.ts';
 import { buildGuestTripPayload } from '../_shared/guestTrip.ts';
 import { authorizeGuestTripAccess } from '../_shared/guestTripAccess.ts';
+import { recordGuestTripFirstView } from '../_shared/guestTripView.ts';
 import { jsonResponse, jsonSuccess, requireHttpMethod } from '../_shared/httpResponse.ts';
 import { tryGetAuthenticatedUser } from '../_shared/orgAuth.ts';
 import { publicGetRateLimitGate } from '../_shared/publicEndpointRateLimit.ts';
@@ -66,6 +67,17 @@ servePublic('get-guest-trip', async (req) => {
     expectedPropertySlug: expectedSlug,
   });
   if (!payload) return jsonResponse(req, NOT_FOUND, 404);
+
+  // First authorised read is the signal the host wants ("they have seen it"). Awaited because the
+  // stamp is the idempotency key; the notification itself runs after the response.
+  await recordGuestTripFirstView({
+    bookingId,
+    propertyId: String(booking.property_id),
+    guestName: String(booking.primary_guest_name ?? booking.guest_facebook_name ?? '') || null,
+    alreadyViewed: Boolean(
+      (booking as { guest_trip_first_viewed_at?: unknown }).guest_trip_first_viewed_at
+    ),
+  });
 
   return jsonSuccess(req, payload);
 });

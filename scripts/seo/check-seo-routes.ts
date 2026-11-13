@@ -25,7 +25,10 @@ import {
   type PublicRouteEntry,
 } from '../../ui/src/lib/seo/publicRoutes';
 import { buildRobotsTxt, DEFAULT_INDEXABLE_HOSTS } from '../../ui/src/lib/seo/seoMeta';
-import { STATIC_SITEMAP_PATHS } from '../../supabase/functions/_shared/publicSitemap';
+import {
+  STATIC_SITEMAP_LASTMOD,
+  STATIC_SITEMAP_PATHS,
+} from '../../supabase/functions/_shared/publicSitemap';
 import { PRODUCTION_SITE_ORIGIN } from '../../ui/src/lib/seo/siteOrigin';
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '../..');

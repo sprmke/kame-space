@@ -1,7 +1,7 @@
 ---
 stage: in-progress
 title: 'Guest post-booking journey: one connected flow from dates to review'
-status: in-progress
+status: done
 tags: [workflow, planned, guest, booking, trip, stay-guide, chat, emails, ux]
 updated: 2026-11-12
 kind: plan
@@ -820,3 +820,29 @@ pre-filled form.
 `PLAYWRIGHT_PORT` (4173). Another worktree had a dev server there, so the first run served that
 checkout's code and failed on an old page. Run it with `PLAYWRIGHT_PORT=4273 PLAYWRIGHT_PWA_PORT=4274`
 when another session holds the default ports.
+
+## 15. Closed (2026-11-13)
+
+Merged as `3a6ff28c` (PR #384, 2026-11-11) and deployed in `8f7372b7` (2026-11-12). Every phase
+in §13 shipped, plus the two items that were originally deferred:
+
+- **Request expiry** (`pending-review-expiry`): a `PENDING_REVIEW` booking used to hold its dates
+  forever, because only `CANCELLED` frees a night. Chase at day 5, cancel at day 7 with reason
+  `request_expired`, never when the guest has paid, never before the chase is two days old.
+- **Cron observability**: both guest-journey crons were missing from
+  `_shared/systemHealth/jobsRegistry.ts`, so `/admin/health` could not show them, and both batch
+  sweeps answered `ok` while some items failed. Both are registered now and both call
+  `reportCronPartialFailure`.
+
+**Moved to their own plans, with the reason**
+
+- **Guest web push (E11)** — **shipped for signed-in guests** after closure. The plan's assumption
+  was wrong in a useful way: no new notification model was needed. A subscription belongs to the
+  signed-in user, and `guest_submissions.guest_user_id` links a booking to the account that signed
+  in with the booking email, so `_shared/guestPush.ts` pushes from the orchestrator at **Confirmed**
+  and **Ready for check-in** without touching the team-scoped `notifications` table. Anonymous
+  bookings keep their email. Opt-in lives on `/account/profile`.
+- **"Guest first viewed their trip" host notification (7.5)** — **shipped after closure.**
+  `guest_trip_first_viewed_at` stamps on the first authorised trip read (conditional update, so a
+  refresh or a second device produces one row) and raises one `booking_trip_viewed` notification
+  for the host. Bell only, not email: the host already gets mail for anything needing a decision.

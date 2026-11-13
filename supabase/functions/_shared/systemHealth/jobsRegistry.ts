@@ -82,6 +82,12 @@ export const SCHEDULED_JOBS: ScheduledJobDef[] = [
     features: ['AI assistant'],
   },
   {
+    fn: 'meta-inbox-worker',
+    label: 'Meta inbox worker',
+    secretEnv: 'META_INBOX_WORKER_SECRET',
+    features: ['Guest inbox'],
+  },
+  {
     fn: 'meta-inbox-webhook-healthcheck',
     label: 'Meta webhook check',
     secretEnv: 'META_INBOX_WEBHOOK_HEALTHCHECK_CRON_SECRET',
@@ -159,6 +165,18 @@ export const SCHEDULED_JOBS: ScheduledJobDef[] = [
     label: 'Review lifecycle',
     secretEnv: 'REVIEW_LIFECYCLE_CRON_SECRET',
     features: ['Two-way reviews'],
+  },
+  {
+    fn: 'pre-arrival-reminders',
+    label: 'Pre-arrival reminders',
+    secretEnv: 'PRE_ARRIVAL_REMINDER_CRON_SECRET',
+    features: ['Guest emails'],
+  },
+  {
+    fn: 'pending-review-expiry',
+    label: 'Request expiry',
+    secretEnv: 'PENDING_REVIEW_EXPIRY_CRON_SECRET',
+    features: ['Booking requests'],
   },
   {
     fn: 'ops-report-cron',

@@ -12,7 +12,7 @@ E2E covers the shapes; this script covers the things only a real inbox and a rea
 the email actually arriving, the stay guide opening the day it is sent, and the door code
 appearing at the reveal time.
 
-Plan: `docs/workflow/in-progress/guest-post-booking-journey.md`.
+Plan: `docs/workflow/done/guest-post-booking-journey.md` (shipped).
 
 ## Setup
 
