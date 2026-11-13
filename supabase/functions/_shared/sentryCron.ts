@@ -178,6 +178,22 @@ export async function reportCronPartialFailure(input: {
   });
 }
 
+/**
+ * Records one failed item in a batch sweep.
+ *
+ * Keeps the **first** failure only: it is the one that explains the run, and holding every
+ * message would grow the response for no extra signal. Exported so both guest crons share the
+ * rule and it can be tested without a database.
+ */
+export function recordCronItemFailure(
+  result: { failed: number; first_error: string | null },
+  err: unknown
+): void {
+  result.failed += 1;
+  if (result.first_error) return;
+  result.first_error = err instanceof Error ? err.message : String(err);
+}
+
 /** Test seam. */
 export function resetSentryCronDsnForTests(): void {
   parsedDsn = undefined;
