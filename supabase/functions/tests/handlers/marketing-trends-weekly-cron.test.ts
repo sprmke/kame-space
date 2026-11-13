@@ -13,6 +13,21 @@ import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.t
 const FUNCTIONS_URL = 'http://127.0.0.1:54321';
 const SECRET = 'test-trends-secret';
 
+/*
+ * Deno runs every handler test file in one process, so `ENVIRONMENT=production` set below
+ * changes later files: public write handlers start enforcing captcha. Capture the originals
+ * and put them back in a final test, which runs last in this file.
+ */
+const ORIGINAL_ENVIRONMENT = Deno.env.get('ENVIRONMENT');
+const ORIGINAL_CRON_SECRET = Deno.env.get('MARKETING_TRENDS_CRON_SECRET');
+
+function restoreEnvironmentForLaterFiles() {
+  if (ORIGINAL_ENVIRONMENT === undefined) Deno.env.delete('ENVIRONMENT');
+  else Deno.env.set('ENVIRONMENT', ORIGINAL_ENVIRONMENT);
+  if (ORIGINAL_CRON_SECRET === undefined) Deno.env.delete('MARKETING_TRENDS_CRON_SECRET');
+  else Deno.env.set('MARKETING_TRENDS_CRON_SECRET', ORIGINAL_CRON_SECRET);
+}
+
 Deno.env.set('EDGE_HANDLER_TEST', '1');
 Deno.env.set('SUPABASE_URL', FUNCTIONS_URL);
 Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role-key');
@@ -102,4 +117,8 @@ Deno.test('the weekly cron stores the newest Philippine week and nothing else', 
   assertEquals(payload.items[0]?.title, 'Newest Film');
   assertEquals(payload.items[0]?.rank, 1);
   assertEquals(payload.error, null);
+});
+
+Deno.test('restores the environment for later test files', () => {
+  restoreEnvironmentForLaterFiles();
 });
