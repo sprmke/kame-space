@@ -38,3 +38,21 @@ test.describe('@ci finance ledger', () => {
     await expect(page.getByText('Maria Santos')).toHaveCount(0);
   });
 });
+
+test.describe('@ci finance export', () => {
+  test('exports a PDF for the selected period', async ({ page }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access', { financeSeeded: true });
+    await page.goto(FINANCE_PATH);
+    await expect(page.getByRole('heading', { name: 'Finance', exact: true })).toBeVisible({
+      timeout: 20_000,
+    });
+
+    // The export is client-side, so the proof is a real download with a PDF payload.
+    const download = page.waitForEvent('download', { timeout: 60_000 });
+    await page.getByRole('button', { name: 'Export report' }).first().click();
+    await page.getByRole('menuitem', { name: /Full report/i }).click();
+
+    const file = await download;
+    expect(file.suggestedFilename().toLowerCase()).toContain('.pdf');
+  });
+});

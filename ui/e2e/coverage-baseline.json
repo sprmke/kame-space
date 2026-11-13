@@ -2,7 +2,6 @@
   "docs/guides/routes/form.md": ["Identity verification (2026-11-07)"],
   "docs/guides/routes/org/property/finance.md": [
     "Transaction CRUD (`finance_line_items`)",
-    "Export report",
     "Entry activity history"
   ]
 }
