@@ -294,7 +294,21 @@ export function useMetaInboxSyncStatus(
   const query = useQuery({
     queryKey: [INBOX_SYNC_STATUS_KEY, orgSlug, orgId, ...inboxScopeKey(scope), mockMode],
     queryFn: async (): Promise<MetaInboxSyncStatusData | null> => {
-      if (mockMode) return null;
+      // Preview mode has no server to ask. Report a healthy, freshly checked connection so
+      // the pill does not read "Delayed" for a reason that does not exist.
+      if (mockMode) {
+        return {
+          connected: true,
+          status: 'connected',
+          importComplete: true,
+          importRunning: false,
+          conversationsImported: 0,
+          lastCheckedAt: new Date().toISOString(),
+          consecutiveFailures: 0,
+          lastErrorCode: null,
+          syncPaused: false,
+        };
+      }
       const payload = (await requestMetaInboxSync(
         orgSlug,
         orgId,
