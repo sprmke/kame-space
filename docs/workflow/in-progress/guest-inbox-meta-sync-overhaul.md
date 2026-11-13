@@ -708,6 +708,51 @@ is operator work and still blocks the parity target, not the code.
 | 7     | partial                   | `integrations.meta_sync_degraded` / `_recovered` / `_meta_import_completed` are emitted, and the weekly ops report now shows social webhook volume plus dead letters. The `/admin/health` panel shows outbox backlog, dead letters and the worker heartbeat (probes plus the jobs registry), and per-connection token errors were already covered. The Sentry alert rules and per-run history (miss rate, top Graph error codes) still need the dashboard and a history table. The runbook shipped: `docs/archive/operations/meta-inbox-sync-runbook.md`. |
 | 8     | partial                   | **8.1** dropped `social_webhook_events`, `meta_backfill_next_url`, the legacy `meta-inbox-backfill` endpoint and its client caller. **8.4** decided: keep everything for now, revisit at 50% of plan storage. **8.5** docs shipped. **8.2** guest web chat still uses Postgres Changes, so `meta_backfill_cursor`/`_phase`/`_done` stay. **8.3** needs a deploy to measure.                                                                                                                                                                               |
 
+## Milestone: pipeline live (2026-11-13)
+
+Phases 1 to 7, plus 5.9, 6.7 and most of 8, are merged and deployed. This section records what
+was verified against production, and what is still genuinely open.
+
+### Verified in production
+
+| Check                    | Result                                                                                                                        |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `meta-inbox-worker` auth | **200** with the worker secret, **401** without. Edge secret and Vault secret agree                                           |
+| Worker heartbeat         | `system_job_heartbeats` shows `meta-inbox-worker` `ok`                                                                        |
+| Crons                    | `meta-inbox-worker-every-minute`, `meta-inbox-webhook-healthcheck-every-10m`, `meta-inbox-outbox-retention-hourly` all active |
+| Webhooks arriving        | 688 events accepted for Page `240400222497718`                                                                                |
+| Migrations               | all 12 applied                                                                                                                |
+| Deploy smoke             | passed on every deploy                                                                                                        |
+
+### What production state actually shows
+
+**No Facebook or Instagram Page is connected.** The only channel row is `web` (Website chat).
+So Channel repair is not the right action: there is nothing to repair. A host must **connect**
+the Page in Channels, which needs a host session plus Meta login and cannot be done by an agent.
+
+Meta is nevertheless sending webhooks for Page `240400222497718` (424 `delivery`, 151 `echo`,
+77 `message`, 36 `read`). The app-level subscription is live and the callback URL is correct, but
+the events cannot be attributed because no connection row exists, so they are parked as
+`skipped`. Payloads are stripped after 24 hours and the rows deleted after 14, so this does not
+grow without bound. Until the Page is connected, those live messages are not recoverable; the
+import recovers the latest 20 per chat once it is connected.
+
+The high `delivery` count is itself evidence that the Page's field subscription still carries the
+old list, which includes `message_deliveries`. One re-subscribe (or the 10-minute health check)
+drops it.
+
+### Still open
+
+| Item                          | Why it is open                                                                               | Next action                                       |
+| ----------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Connect the Page              | Needs a host session and Meta login                                                          | Host connects in Channels                         |
+| 3.7 deepen/repair             | Writes real message rows                                                                     | Operator approves a dry run, then runs it         |
+| 4.4 `inbox_list_threads`      | Cost only, highest-regression surface in the inbox                                           | Land with the Playwright suite as the gate        |
+| 4.6 + 8.2 guest chat realtime | Guests are not org members, so the topic needs conversation-scoped auth for guest identities | One combined change, verified by Playwright first |
+| 4.8 / 8.3 measurements        | Need traffic after a Page is connected                                                       | Re-measure once connected                         |
+| Phase 0 parity sample         | Needs the Meta console and real accounts                                                     | Operator                                          |
+| Sentry alert rules            | Dashboard configuration                                                                      | Operator, using the runbook's five rules          |
+
 ## Verification results
 
 Recorded 2026-11-10, on `feat/guest-inbox-meta-sync` from `origin/develop`.
