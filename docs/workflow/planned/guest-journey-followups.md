@@ -20,27 +20,32 @@ built and the thing that would unblock it. Start any of them with `/workflow-sta
 
 ---
 
-## Outstanding production task (not a feature)
+## Production task — done (2026-11-13)
 
-**The two guest-journey crons are scheduled but rejected.** Both jobs exist and are active, and
-neither has ever written a heartbeat, while the other crons have. That is the fail-closed cron gate:
-`_shared/cronSecretGate.ts#verifyCronSecret` rejects every call when the edge secret is unset, which
-it is in production. Deploy scripts only set `APP_RELEASE`, so these are hand-provisioned.
+Both guest crons were scheduled and active but had never written a heartbeat, while the other
+crons had. That was the fail-closed cron gate: `_shared/cronSecretGate.ts#verifyCronSecret`
+rejects every call when the edge secret is unset.
 
-| Job | Edge secret | Vault secret |
-| --- | --- | --- |
-| `pre-arrival-reminders` | `PRE_ARRIVAL_REMINDER_CRON_SECRET` | `pre_arrival_reminder_cron_secret` |
-| `pending-review-expiry` | `PENDING_REVIEW_EXPIRY_CRON_SECRET` | `pending_review_expiry_cron_secret` |
+Resolved in this order, each step found by actually running the job:
 
-Values are already generated and stored in the gitignored `supabase/.env.production` (and
-`.env.local`, `.env.dev.local`). Both halves must hold the **same** value or the call fails on the
-header check. `/admin/health` reports the pair under `db.vault.parity.<ENV_KEY>` and shows a
-registered job with no heartbeat, so the page is the confirmation.
+1. **Secrets provisioned.** `PRE_ARRIVAL_REMINDER_CRON_SECRET` and
+   `PENDING_REVIEW_EXPIRY_CRON_SECRET` set on the project, with
+   `pre_arrival_reminder_cron_secret` and `pending_review_expiry_cron_secret` added to Vault. Values
+   are in the gitignored `supabase/.env.production`; both halves must match.
+2. **Both crons were silently unable to send.** `pre-arrival-reminders` and
+   `pending-review-expiry` render branded mail but declared no `static_files`, so the first render
+   threw `path not found: .../email-templates/fragments/email-header-logo.html`. Fixed, and a test
+   now fails if an entry loses the globs.
+3. **A batch job could not say what broke.** Both sweeps answered `failed: 1` with no reason.
+   They now return `first_error` verbatim and attach it to the Sentry warning, which is what made
+   step 2 findable without production log access.
+4. **A config-only fix deployed nothing.** CD narrowed the deploy to changed function
+   _directories_, and `config.toml` was outside the diff. It now counts as a backend change and
+   redeploys the functions whose block changed.
 
-Until this is done: the T-48h reminder does not send, and no request expires, so the dates a stale
-request holds stay held.
-
----
+Verified live: the reminder returned `{"candidates":1,"sent":1,"failed":0}`, the booking carries
+`pre_arrival_emailed_at`, and both jobs report `last_status = ok` in `system_job_heartbeats`.
+`/admin/health` shows both green.
 
 ## J1 — Push for anonymous guests
 
