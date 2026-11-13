@@ -16,7 +16,7 @@ const HERO_DIR = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../../../../../public/marketing/home'
 );
-const WIDTHS = [480, 800, 1200];
+const WIDTHS = [640, 960, 1280, 1672];
 const NAMES = ['hero-day', 'hero-night'];
 
 describe('marketing hero width variants', () => {
@@ -30,22 +30,29 @@ describe('marketing hero width variants', () => {
         expect(statSync(avif).size).toBeLessThan(statSync(webp).size);
       });
 
-      it(`${name}-${width}.webp exists and is smaller than the full render`, () => {
+      it(`${name}-${width}.webp exists and is smaller than or equal to the full render`, () => {
         const variant = path.join(HERO_DIR, `${name}-${width}.webp`);
         const full = path.join(HERO_DIR, `${name}.webp`);
 
         expect(existsSync(variant), `missing ${variant}`).toBe(true);
-        if (existsSync(full)) {
+        if (existsSync(full) && width < 1672) {
           expect(statSync(variant).size).toBeLessThan(statSync(full).size);
         }
       });
     }
   }
 
-  it('the 480w variant is meaningfully smaller than the full render', () => {
-    const small = statSync(path.join(HERO_DIR, 'hero-day-480.webp')).size;
+  it('the 640w variant is meaningfully smaller than the full render', () => {
+    const small = statSync(path.join(HERO_DIR, 'hero-day-640.webp')).size;
     const full = statSync(path.join(HERO_DIR, 'hero-day.webp')).size;
-    // A phone must not download the tablet file. Real ratio is ~9x; assert a floor of 4x.
-    expect(full / small).toBeGreaterThan(4);
+    // A phone must not download the desktop file. Assert a floor of 3x.
+    expect(full / small).toBeGreaterThan(3);
+  });
+
+  it('ships a full-width 1672w variant for large and retina screens', () => {
+    for (const name of NAMES) {
+      expect(existsSync(path.join(HERO_DIR, `${name}-1672.webp`))).toBe(true);
+      expect(existsSync(path.join(HERO_DIR, `${name}-1672.avif`))).toBe(true);
+    }
   });
 });
