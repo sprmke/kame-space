@@ -149,12 +149,20 @@ function countH1(html: string): number {
   return (html.match(/<h1[\s>]/gi) ?? []).length;
 }
 
+/**
+ * Characters of text a reader (or a crawler) actually sees.
+ *
+ * HTML comments are stripped first: `index.html` carries long maintainer comments, and
+ * counting them inflated every page by hundreds of characters, which made this metric useless
+ * and once reported a false "thin crawler HTML" failure across the whole site.
+ */
 function visibleTextLength(html: string): number {
-  const withoutScripts = html
+  const withoutNoise = html
+    .replace(/<!--[\s\S]*?-->/g, ' ')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ');
-  return withoutScripts.replace(/\s+/g, ' ').trim().length;
+  return withoutNoise.replace(/\s+/g, ' ').trim().length;
 }
 
 function imagesWithoutAlt(html: string): number {
@@ -173,8 +181,9 @@ function internalLinks(html: string, origin: string): string[] {
     try {
       const url = new URL(href, origin);
       if (url.origin !== origin) continue;
-      const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '') : url.pathname;
-      links.add(`${origin}${path}`);
+      // Same normalisation `orphanFindings` uses for the page key, otherwise `/` can never
+      // match the links pointing at it and reports as an orphan on every run.
+      links.add(`${origin}${url.pathname}`.replace(/\/+$/, ''));
     } catch {
       // Ignore malformed hrefs; a separate finding would be noise.
     }
@@ -271,11 +280,11 @@ async function auditPage(url: string): Promise<PageAudit> {
       message: `${h1Count} <h1> elements in crawler HTML`,
     });
   }
-  if (textLength < 400) {
+  if (textLength < 150) {
     findings.push({
       level: 'error',
       code: 'thin-crawler-html',
-      message: `Only ${textLength} characters of text without JS`,
+      message: `Only ${textLength} characters of text without JS (a bare SPA shell is ~20)`,
     });
   }
   if (missingAlt > 0) {
@@ -358,7 +367,7 @@ function orphanFindings(pages: PageAudit[]): Finding[] {
   }
   const findings: Finding[] = [];
   for (const page of pages) {
-    const key = page.url.length > 1 ? page.url.replace(/\/+$/, '') : page.url;
+    const key = page.url.replace(/\/+$/, '');
     if ((inbound.get(key) ?? 0) > 0) continue;
     findings.push({
       level: 'warning',

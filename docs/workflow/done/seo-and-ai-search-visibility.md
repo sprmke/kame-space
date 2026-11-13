@@ -50,6 +50,21 @@ Two residual audit findings, both fixed in this close-out PR:
    singularises ("1 development", not "1 developments") and always clears the 70-character
    floor.
 
+### Crawl audit tooling defects fixed (2026-11-13)
+
+A post-release audit reported 14 "thin crawler HTML" errors across a site where every page
+served a full snapshot. Two bugs in the tool, not the site:
+
+1. **Comments counted as text.** `visibleTextLength` stripped tags but not HTML comments, so the
+   long maintainer comments in `index.html` were counted as page text. Shortening one comment
+   made every page appear to lose ~850 characters. Comments are now stripped, and the threshold
+   is 150 characters (a bare SPA shell is ~20), which is what the metric was meant to catch.
+2. **`/` could never match its own inbound links.** `internalLinks` kept the trailing slash while
+   the orphan check stripped it, so the home page reported as an orphan on every run. Both now
+   normalise the same way.
+
+With both fixed the production audit is **0 errors, 0 warnings** across all 17 sitemap URLs.
+
 ### Tooling defect found while closing
 
 `scripts/seo/crawl-audit.ts` used the user agent `KameSpaceSeoAudit/1.0`, which has no

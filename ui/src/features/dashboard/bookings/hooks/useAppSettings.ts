@@ -263,6 +263,10 @@ export function useAppSettings(options?: { lean?: boolean }) {
       return json.data;
     },
     enabled: Boolean(propertyId),
+    // Six components read this on a dashboard page. Without a stale time each mount refetched it,
+    // which measured as six requests for one page load. Every mutation that changes it invalidates
+    // this key, so 60 s cannot serve stale data after a save.
+    staleTime: 60_000,
   });
 }
 
