@@ -14,6 +14,27 @@ Route: `/org/:orgSlug/property/:propertySlug/analytics`
 > Ask Analytics), Phase 5 shipped as org portfolio rollup + CSV export.
 > Plan: [`../../../../workflow/for-testing/host-analytics-module.md`](../../../../workflow/for-testing/host-analytics-module.md)
 
+## Needs promotion this week
+
+`OrgMarketingRanking` sits above the org listings list. It ranks unlocked property rows by open
+nights in the next 30 days times ADR, so a cheap listing with one gap never outranks an expensive
+listing with an empty week. Each row links straight to that property's plan.
+
+- Hidden when every listing is full or the org has no unlocked properties.
+- Parkings are excluded: the planner markets properties only.
+- Pure ranking in `lib/marketingPortfolio.ts`, unit-tested.
+
+## Marketing results
+
+`MarketingResultsCard` sits in the Overview grid. It reads the `marketing` block on
+`analytics-summary`: tracked visits and attributed booking requests from planner tracked links,
+grouped by channel.
+
+- Numbers are **at least**: attribution is first-touch and campaign-code based, so Instagram link
+  in bio and manual posts undercount.
+- The card renders only when the server returns the block; a missing or failed query says
+  "No tracked planner visits in this period" rather than showing zeros as fact.
+
 ## Progress overview
 
 | Section                                      | E2E save | Validation | Docs    | Notes                                                                                                                                                                                                                                                                                                                                                                      |

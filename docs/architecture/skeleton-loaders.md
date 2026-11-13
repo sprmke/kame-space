@@ -27,6 +27,10 @@ Loading UI must mirror the **layout that appears after data loads**, on phone an
 
 Super-admin lazy routes use `superAdminRoute(page, skeleton)` in `ui/src/features/dashboard/super-admin/routes/index.tsx`.
 
+Marketing Trends adds two in-component skeletons rather than route skeletons, because the page chrome is already mounted: `TrendingRail` shows a real `Trending today` LazySkeleton row of three chips while the list loads, and `TrendsSheet` shows five topic-row skeletons inside the sheet. Both keep the labels and the tabs fixed and skeleton only the async rows.
+
+`SuperAdminMarketingTrendsRouteSkeleton` covers `/admin/marketing-trends` (real title, run-now action, card list body).
+
 Weekly ops reports use two route-specific skeletons: `SuperAdminOpsReportsRouteSkeleton` (real title + **Generate now**, five report rows) and `SuperAdminOpsReportDetailRouteSkeleton` (real title + back link, four fixed severity labels, finding cards).
 
 Nested layouts with lazy children keep their own `Suspense` around `<Outlet />` so switching sections does not unmount the layout (Help & Support: `HelpSupportSectionSkeleton`).
@@ -180,3 +184,10 @@ first data load. Both use the same page chrome, so nothing jumps when the chunk 
 ### Platform boot mark
 
 The singleton app loader renders the static F5 shell immediately from the shell-precached brand SVG. Only its existing decorative sheen animates; the brand and product wordmark do not depend on an API response.
+
+## Marketing Plan tab
+
+`MarketingPlannerSkeleton` (in `MarketingSkeletons.tsx`, re-exported from `AdminSkeletons`) covers
+the Plan tab's async region: one summary line and two agenda groups. The range chips, the tab row
+and the page title stay mounted and interactive, so switching range while loading does not blank
+the tab.

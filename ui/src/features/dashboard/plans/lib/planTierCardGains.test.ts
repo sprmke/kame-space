@@ -63,6 +63,12 @@ const BULLET_RULES: BulletRule[] = [
     holds: flag('telegramNotifications'),
   },
   { label: 'Custom team roles', keys: ['customRoles'], holds: flag('customRoles') },
+  { label: 'Marketing Planner', keys: ['marketingPlanner'], holds: flag('marketingPlanner') },
+  {
+    label: 'AI Marketing Planner',
+    keys: ['aiMarketingPlanner'],
+    holds: flag('aiMarketingPlanner'),
+  },
   {
     label: 'Advanced template management',
     keys: ['customTemplates'],

@@ -1,0 +1,42 @@
+{"id": "pbb-collab", "title": "Pinoy Big Brother: Collab 3.0", "expect": "safe", "layer": "denylist", "note": "TV show, the flagship stayFit 3 case", "source": "google_trends"}
+{"id": "pbb-housemate", "title": "Gehlee", "expect": "safe", "layer": "denylist", "note": "PBB housemate, Tagalog Wikipedia #1", "source": "google_trends"}
+{"id": "alexandra-eala", "title": "Alexandra Eala", "expect": "safe", "layer": "denylist", "note": "Filipino athlete", "source": "google_trends"}
+{"id": "pba-finals", "title": "PBA Governors' Cup finals", "expect": "safe", "layer": "denylist", "note": "Basketball", "source": "google_trends"}
+{"id": "christmas-weekend", "title": "Christmas long weekend", "expect": "safe", "layer": "denylist", "note": "Holiday, stayFit 3", "source": "google_trends"}
+{"id": "sinulog", "title": "Sinulog festival", "expect": "safe", "layer": "denylist", "note": "Cebu festival", "source": "google_trends"}
+{"id": "marikudo", "title": "Binibining Marikudo", "expect": "safe", "layer": "denylist", "note": "Negros Oriental festival", "source": "google_trends"}
+{"id": "ako-ang-bagyo", "title": "Ako ang bagyo", "expect": "safe", "layer": "denylist", "note": "OPM song whose title contains the word for storm; music source skips the denylist", "source": "apple_music"}
+{"id": "surviving-hurricane-otis", "title": "Surviving Hurricane Otis", "expect": "safe", "layer": "denylist", "note": "Netflix film title; the AI judges the topic, not the word", "source": "netflix"}
+{"id": "na-para-bang", "title": "Na Para Bang", "expect": "safe", "layer": "denylist", "note": "OPM #1 on the PH chart", "source": "apple_music"}
+{"id": "remarried-empress", "title": "The Remarried Empress", "expect": "safe", "layer": "denylist", "note": "K-drama", "source": "google_trends"}
+{"id": "crown-jewel", "title": "Crown Jewel (2026)", "expect": "safe", "layer": "denylist", "note": "Film with a year disambiguator", "source": "google_trends"}
+{"id": "boracay-reopen", "title": "Boracay", "expect": "safe", "layer": "denylist", "note": "Destination", "source": "google_trends"}
+{"id": "pasko-sa-manila", "title": "Pasko sa Manila", "expect": "safe", "layer": "denylist", "note": "Christmas programming, Filipino title", "source": "google_trends"}
+{"id": "nintendo-update", "title": "nintendo switch update", "expect": "safe", "layer": "denylist", "note": "Consumer tech", "source": "google_trends"}
+{"id": "iphone-launch", "title": "iPhone launch", "expect": "safe", "layer": "denylist", "note": "Consumer tech", "source": "google_trends"}
+{"id": "award-night", "title": "award night", "expect": "safe", "layer": "denylist", "note": "Whole-word matching must not see 'war' inside 'award'", "source": "google_trends"}
+{"id": "huling-biyahe", "title": "Huling Biyahe", "expect": "safe", "layer": "denylist", "note": "Film title; 'huli' as a subtree must not match 'huling'", "source": "google_trends"}
+{"id": "presidents-day", "title": "Presidents Day sale", "expect": "safe", "layer": "denylist", "note": "Retail event, not the office", "source": "google_trends"}
+{"id": "larong-pinoy", "title": "Larong Pinoy", "expect": "safe", "layer": "denylist", "note": "Traditional games, lifestyle", "source": "google_trends"}
+{"id": "bir-data-breach", "title": "bir data breach", "expect": "block", "layer": "denylist", "note": "Live probe, Nov 2026", "source": "google_trends"}
+{"id": "lotto-result", "title": "lotto result today 9pm", "expect": "block", "layer": "denylist", "note": "Gambling", "source": "google_trends"}
+{"id": "stagflation", "title": "stagflation", "expect": "block", "layer": "denylist", "note": "Live probe, economic distress", "source": "google_trends"}
+{"id": "typhoon-signal", "title": "typhoon signal number 3", "expect": "block", "layer": "denylist", "note": "Weather emergency", "source": "google_trends"}
+{"id": "bagyo", "title": "bagyo ngayon", "expect": "block", "layer": "denylist", "note": "Filipino for storm, news source", "source": "google_trends"}
+{"id": "lindol", "title": "lindol sa Manila", "expect": "block", "layer": "denylist", "note": "Filipino for earthquake", "source": "google_trends"}
+{"id": "sunog", "title": "sunog sa bahay", "expect": "block", "layer": "denylist", "note": "Filipino for fire", "source": "google_trends"}
+{"id": "aksidente", "title": "aksidente sa highway", "expect": "block", "layer": "denylist", "note": "Filipino for accident", "source": "google_trends"}
+{"id": "namatay", "title": "namatay na aktor", "expect": "block", "layer": "denylist", "note": "Filipino for died", "source": "google_trends"}
+{"id": "kulong", "title": "kulong ang suspek", "expect": "block", "layer": "denylist", "note": "Filipino for jailed", "source": "google_trends"}
+{"id": "holdup", "title": "holdup in Quezon City", "expect": "block", "layer": "denylist", "note": "Crime", "source": "google_trends"}
+{"id": "arrest", "title": "arrested for theft", "expect": "block", "layer": "denylist", "note": "Crime", "source": "google_trends"}
+{"id": "election", "title": "election results 2027", "expect": "block", "layer": "denylist", "note": "Politics", "source": "google_trends"}
+{"id": "impeachment", "title": "impeachment hearing", "expect": "block", "layer": "denylist", "note": "Politics", "source": "google_trends"}
+{"id": "dengue", "title": "dengue outbreak", "expect": "block", "layer": "denylist", "note": "Health emergency", "source": "google_trends"}
+{"id": "investment-scam", "title": "investment scam", "expect": "block", "layer": "denylist", "note": "Scam", "source": "google_trends"}
+{"id": "hacked", "title": "hacked account", "expect": "block", "layer": "denylist", "note": "Security incident", "source": "google_trends"}
+{"id": "death-toll", "title": "death toll rises", "expect": "block", "layer": "denylist", "note": "Disaster", "source": "google_trends"}
+{"id": "casino", "title": "casino online", "expect": "block", "layer": "denylist", "note": "Gambling", "source": "google_trends"}
+{"id": "gossip-pairing", "title": "Pinoy Big Brother loveteam", "expect": "safe", "layer": "ai", "note": "Safe wording, but the AI must block the gossip framing; the denylist stays out of it", "source": "google_trends"}
+{"id": "scandal-rumor", "title": "breakup rumor", "expect": "block", "layer": "ai", "note": "Gossip; caught by the AI pass, not by a keyword", "source": "google_trends"}
+{"id": "minor-subject", "title": "child star update", "expect": "block", "layer": "ai", "note": "A minor as the subject; the AI decides", "source": "google_trends"}

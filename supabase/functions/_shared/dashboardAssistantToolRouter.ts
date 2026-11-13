@@ -118,6 +118,8 @@ export const ASSISTANT_TOOL_MODULES: Record<string, AssistantToolModule> = {
   draft_marketing_caption: 'marketing',
   draft_marketing_template: 'marketing',
   list_marketing_templates: 'marketing',
+  get_marketing_plan: 'marketing',
+  propose_mark_plan_item_posted: 'marketing',
   get_marketing_publish_history: 'marketing',
   search_marketing_music: 'marketing',
   propose_publish_to_meta: 'marketing',

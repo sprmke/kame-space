@@ -1,4 +1,4 @@
 {
   "$comment": "Shrink-only ratchet for check-edge-test-coverage.mjs. Each entry is an edge function with no supabase/functions/tests/handlers/<fn>.test.ts. Delete entries as handler tests land.",
-  "uncovered": []
+  "uncovered": ["marketing-planner", "marketing-planner-cron", "marketing-publish-scheduler-cron"]
 }

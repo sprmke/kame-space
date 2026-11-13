@@ -21,6 +21,10 @@ import { resolveScopedPropertyAccess } from '../_shared/propertyScope.ts';
 import { identityFromRequest, rateLimitGate } from '../_shared/rateLimit.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 import { capturePostHogEvent } from '../_shared/posthog.ts';
+import {
+  loadTrendContext,
+  TREND_UNAVAILABLE_MESSAGE,
+} from '../_shared/marketingTrends/trendContext.ts';
 
 /** Context blocks are host-derived property data; clipped so they cannot flood the prompt. */
 const CONTEXT_TEXT_MAX = 1_000;
@@ -267,6 +271,14 @@ async function handlePoster(
   );
   const brandColor = clipString(body.brandColor, 9);
 
+  // Marketing Trends: the host sends a topic key, the server loads the topic.
+  const trendKey = typeof body.trendTopicKey === 'string' ? body.trendTopicKey.trim() : null;
+  const trend = await loadTrendContext(sb, trendKey);
+  if (!trend.ok && trend.reason !== 'no_key') {
+    return jsonError(req, TREND_UNAVAILABLE_MESSAGE, 400);
+  }
+  const trendContext = trend.ok ? trend.context : null;
+
   try {
     const variants = await generatePosterSpecs({
       organizationId: String(propertyRow.organization_id),
@@ -281,15 +293,21 @@ async function handlePoster(
       count: revise ? 1 : count,
       revise,
       preferredArchetype: readPreferredArchetype(body.preferredArchetype),
+      trendContext,
     });
     // photoUrls tells the client which of its photos each photoIndex refers to.
     await capturePostHogEvent('marketing_asset_generated', {
       logPrefix: 'generate-marketing-template',
       request: req,
-      distinctId: user.id,
-      properties: { kind: 'poster' },
+      distinctId: actorUserId,
+      properties: { kind: 'poster', trend_topic_key: trendContext?.topicKey ?? null },
     });
-    return jsonSuccess(req, { contentType: 'poster', variants, photoUrls: urls });
+    return jsonSuccess(req, {
+      contentType: 'poster',
+      variants,
+      photoUrls: urls,
+      trendTopicKey: trendContext?.topicKey ?? null,
+    });
   } catch (err) {
     return aiErrorResponse(req, err, 'generate-marketing-template');
   }

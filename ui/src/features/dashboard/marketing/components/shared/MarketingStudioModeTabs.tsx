@@ -17,6 +17,7 @@ export function MarketingStudioModeTabs() {
       {MARKETING_STUDIO_TABS.map((tab) => (
         <SlidingTabsTrigger key={tab} value={tab}>
           {MARKETING_STUDIO_TAB_LABELS[tab]}
+          {tab === 'plan' ? <TierBadge feature="marketingPlanner" className="ml-1.5" /> : null}
           {tab === 'generate' ? (
             <>
               {!aiStudioAvailability.available && !aiStudioAvailability.isLoading ? (

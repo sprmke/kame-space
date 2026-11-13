@@ -65,8 +65,9 @@ kind: backlog
 - Refine and further improve the marketing default generated marketing materials/examples/templates. They all look very ugly!
 - Refine landing page
 - ✅ Optional Resend hygiene: send From a dedicated subdomain (e.g. `notify.kamespace.com`) instead of apex `mail@kamespace.com`. Requires new Resend domain + DNS, then `RESEND_FROM_EMAIL` flip (`kamewave`). Image-hosting insight is already fixed in code via CID inlining (`sendResendEmail`).
-- Refine mascot
+- ✅ Refine mascot
 - Airbnb conflict
+  → **Planned:** [`../planned/calendar-sync-conflict-resolution.md`](../planned/calendar-sync-conflict-resolution.md)
 - Improve quick access on bottom part of the screen to include (Notifications, chat, dark/light switch, AI assistant)
 - Needs manual reload for webapp?
 - Improve performance, slow queries, lighthouse, before & after
@@ -95,6 +96,37 @@ kind: backlog
   - Updated guide docs for support Q/A and guides
 - Improve ? helper notes from tooltip to a new whole modal with detailed instruction and graphics/images
   - Pricing -> Channel Sync
+- UI Improvements:
+  ✅ Improve cookies/analytics banner to look more good
+  ✅ ~~Check if we still need to display Kame Space updates, version on clear offline data on Help & Support page?~~ Done: removed from Help; “On this device” on Profile
+  ✅ ~~Fix secondary menu issue on settings~~ Done: idle section-nav items match Card (no gray pill fill)
+  - Fix and address blurred landing page hero image
+  - Address calendar conflicts when we sync from Airbnb. I feel like this end to end flow is broken and we should have better controls here or maybe add the item on needs attention? Clicking this on Notifications page does not do anything
+  - Improve UI/UX on current plan modal. Use mascot?
+  - Add chat icon and relevant or helpful quick actions on bookings list in different view
+  - Address landing page hero UX when we click on our search toolbar
+  - Address and refine more default templates that's applicable to condo
+  - Remove this "Only import guest data you are allowed to use for running your stays" on "AI-Assisted import bookings" modal
+  - Rephrase "No manual updates needed!" on Download Template modal
+  - Refine table/list action buttons, some behavior looks weird there.
+  - Improve edit transaction modal to disable action buttons if required fields are not filled up
+  - Pricing -> Set increment price from 1 to 100?
+  - Analytics -> Fix Playbook UI issues
+  - Fix Marketing AI Studio skeleton loader because it changed the entire layout once data finish loading
+  - Inbox -> Remove Not connected badge
+  - Check privacy policy and legal info/text if it's safe or okay to disclose all technologies that we are using. I feel we become more vulnerable if we disclose them
+  - Fix broken UI on /bookings Kanban view when we click a booking
+  - Refine, critique and improve UI/UX on export PDF on Finance, Maintenance
+  - Refine and address this confusing texts ("Estimate - security deposit pass-through is not included.") on Finance items
+  - Implement skeleton loader on landing page list section
+  - Remove bottom footer, move Install app & All rights reserved from bottom to inside footer content
+  - Improve coming soon, 404 with our new mascot
+  - Fix guest tickets & dashboard support page skeleton loader to match empty and with data states
+  - Improve guest account help UI/UX
+  - Address initial loading on /bookings where after few seconds, the content/list is changed. Maybe because of date range?
+  - Check and refine Reviews -> By Property tab?
+  - Improve Org -> Analytics -> Grid view
+  - Update default pricing
 
 ## Post-release items
 

@@ -7,6 +7,7 @@ import {
   PublishDialog,
   type PublishMedia,
 } from '@/features/dashboard/marketing/components/publishing/PublishDialog';
+import { PlannerHome } from '@/features/dashboard/marketing/components/planner/PlannerHome';
 import { MarketingEditorHost } from '@/features/dashboard/marketing/components/shared/MarketingEditorHost';
 import {
   MarketingStudioModeTabs,
@@ -102,6 +103,7 @@ function MarketingStudioWorkspace() {
 
   const content = (() => {
     if (showThemes) return <ThemesHome />;
+    if (tab === 'plan') return <PlannerHome />;
     if (!active || !tabReady) {
       if (tab === 'generate') {
         return item.mode === 'library' ? (

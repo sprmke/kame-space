@@ -19,6 +19,8 @@ import { generateStructured, type LlmBilling, type LlmPart } from './ai/llmClien
 import { definePrompt } from './ai/prompt.ts';
 import { withUntrustedDataRule, wrapUntrusted } from './ai/untrusted.ts';
 import { assertOrgAndPropertyAiQuota, type AiActorType } from './aiUsageService.ts';
+import { findBrandGuardViolation } from './marketingTrends/brandGuard.ts';
+import { buildTrendPromptBlock, type TrendContext } from './marketingTrends/trendContext.ts';
 
 const FEATURE = 'marketing_template' as const;
 
@@ -202,6 +204,8 @@ export type GeneratePosterSpecsInput = {
   revise?: { spec: Record<string, unknown>; instruction: string } | null;
   /** AI Studio example: the layout the host picked; one variant uses it and comes first. */
   preferredArchetype?: PosterArchetype | null;
+  /** Marketing Trends topic the host picked (loaded by the caller, never by the client). */
+  trendContext?: TrendContext | null;
 };
 
 export type PosterArchetype = (typeof POSTER_ARCHETYPES)[number];
@@ -326,6 +330,9 @@ function buildUserParts(input: GeneratePosterSpecsInput): LlmPart[] {
         input.prompt
           ? `Host request:\n${wrapUntrusted('host_prompt', input.prompt, 500)}`
           : 'Host request: none, choose the strongest angle for the goal.',
+        input.trendContext
+          ? `Marketing trend:\n${wrapUntrusted('trend_context', buildTrendPromptBlock(input.trendContext), 1_200)}`
+          : null,
         ...(input.revise
           ? [
               `Current post (revise this one):\n${wrapUntrusted(
@@ -353,6 +360,35 @@ function buildUserParts(input: GeneratePosterSpecsInput): LlmPart[] {
 }
 
 /** The model call itself, with explicit billing (callers own quota checks). */
+/** Every copy line of a variant, joined, for the brand guard to read. */
+function variantCopyText(variant: Record<string, unknown>): string {
+  const copy = variant.copy;
+  if (!copy || typeof copy !== 'object') return '';
+  const parts: string[] = [];
+  for (const value of Object.values(copy as Record<string, unknown>)) {
+    if (typeof value === 'string') parts.push(value);
+    else if (Array.isArray(value)) {
+      for (const item of value) if (typeof item === 'string') parts.push(item);
+    }
+  }
+  return parts.join(' ');
+}
+
+/**
+ * Drops a variant whose copy breaks the brand guard (endorsement wording, a
+ * person's name, a logo). A poster that suggests an endorsement is worse than
+ * one fewer variant.
+ */
+export function dropBrandGuardViolations(
+  variants: Array<Record<string, unknown>>,
+  trendContext: TrendContext | null | undefined
+): Array<Record<string, unknown>> {
+  if (!trendContext) return variants;
+  return variants.filter(
+    (variant) => findBrandGuardViolation(variantCopyText(variant), trendContext.category) === null
+  );
+}
+
 export async function directPosterSpecs(
   input: GeneratePosterSpecsInput,
   billing: LlmBilling
@@ -371,9 +407,12 @@ export async function directPosterSpecs(
     billing,
   });
   return preferArchetypeFirst(
-    result.data.variants
-      .slice(0, input.revise ? 1 : input.count)
-      .map((variant) => sanitizeVariant(variant, input)),
+    dropBrandGuardViolations(
+      result.data.variants
+        .slice(0, input.revise ? 1 : input.count)
+        .map((variant) => sanitizeVariant(variant, input)),
+      input.trendContext
+    ),
     input.revise ? null : input.preferredArchetype
   );
 }

@@ -14,6 +14,7 @@ import {
 } from '@/features/guest/form/lib/guestFormBranding';
 import { readGuestPropertySlug } from '@/features/guest/form/lib/guestPropertyScope';
 import { useGuestPropertySlug } from '@/features/guest/hooks/useGuestPropertySlug';
+import { useFirstTouchUtm } from '@/features/guest/hooks/useFirstTouchUtm';
 import {
   resolveBookingPropertySlug,
 } from '@/features/guest/lib/guestBookingPropertyResolver';
@@ -124,6 +125,7 @@ function resolveBookingTabActiveKey(pathname: string): string | null {
 
 function GuestPublicLayout() {
   const location = useLocation();
+  useFirstTouchUtm();
   const propertySlug = useGuestPropertySlug();
   const [searchParams] = useSearchParams();
   const { data: guestBrand } = useGuestPaymentInfo();

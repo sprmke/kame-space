@@ -18,6 +18,16 @@ export const NEW_ITEM = 'new';
 export const OUTPUT_PARAM = 'output';
 /** AI Studio step 2: example applied to the new creation (`item=new&output=…&sample=…`). */
 export const SAMPLE_PARAM = 'sample';
+/** AI Studio: the Trends sheet opens on this window (`?tab=generate&trends=today`). */
+export const TRENDS_PARAM = 'trends';
+
+export type TrendsWindowParam = 'today' | 'week' | 'month';
+
+/** The Trends window the sheet should open on, or null. */
+export function readTrendsWindow(params: URLSearchParams): TrendsWindowParam | null {
+  const value = params.get(TRENDS_PARAM);
+  return value === 'today' || value === 'week' || value === 'month' ? value : null;
+}
 
 /** What AI Studio makes. Ids match the server (`image` = Photo, `video` = Clip). */
 export const AI_STUDIO_OUTPUTS = ['post', 'image', 'video'] as const;
@@ -107,6 +117,7 @@ export function clearItemParams(params: URLSearchParams): void {
   params.delete(SIZE_PARAM);
   params.delete(OUTPUT_PARAM);
   params.delete(SAMPLE_PARAM);
+  params.delete(TRENDS_PARAM);
 }
 
 export function applyOpenItem(params: URLSearchParams, id: string): void {

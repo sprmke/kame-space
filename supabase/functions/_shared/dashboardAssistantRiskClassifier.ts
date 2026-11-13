@@ -54,6 +54,7 @@ export const READ_TOOL_NAMES = new Set([
   'list_inbox_quick_reply_templates',
   'draft_inbox_reply',
   'list_marketing_templates',
+  'get_marketing_plan',
   'get_marketing_publish_history',
   'search_marketing_music',
   'draft_marketing_caption',

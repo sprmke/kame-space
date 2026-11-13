@@ -48,6 +48,7 @@ sql_paths = [
   "../scripts/dev/seed/19-super-admin.sql",
   "../scripts/dev/seed/20-guest-portal.sql",
   "../scripts/dev/seed/21-refresh-public-cache.sql",
+  "../scripts/dev/seed/22-marketing-trends.sql",
   "../scripts/dev/seed/99-verify.sql",
 ]
 
@@ -1095,6 +1096,15 @@ verify_jwt = false
 [functions.publish-to-meta]
 verify_jwt = false
 
+[functions.marketing-planner]
+verify_jwt = false
+
+[functions.marketing-planner-cron]
+verify_jwt = false
+
+[functions.marketing-publish-scheduler-cron]
+verify_jwt = false
+
 [functions.generate-marketing-caption]
 verify_jwt = false
 
@@ -1461,4 +1471,16 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.ops-report-cron]
+verify_jwt = false
+
+[functions.marketing-trends]
+verify_jwt = false
+
+[functions.marketing-trends-cron]
+verify_jwt = false
+
+[functions.marketing-trends-weekly-cron]
+verify_jwt = false
+
+[functions.admin-marketing-trends]
 verify_jwt = false

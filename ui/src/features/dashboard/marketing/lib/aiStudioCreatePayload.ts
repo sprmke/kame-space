@@ -30,6 +30,8 @@ export type AiCreateRequest =
       /** From an example: this layout leads the batch when it passes layout QA. */
       preferredArchetype: PosterArchetypeId | null;
       sampleId: string | null;
+      /** Marketing Trends topic this creation came from (server loads it). */
+      trendTopicKey: string | null;
     }
   | {
       output: 'image' | 'video';
@@ -37,6 +39,8 @@ export type AiCreateRequest =
       aspect: string;
       payload: GenerateMarketingMediaPayload;
       sampleId: string | null;
+      /** Marketing Trends topic this creation came from (server loads it). */
+      trendTopicKey: string | null;
     };
 
 export type AiCreateFormState = {
@@ -57,6 +61,8 @@ export type AiCreateFormState = {
   /** Example applied to the form, if any. */
   sampleId: string | null;
   preferredArchetype: PosterArchetypeId | null;
+  /** Marketing Trends topic applied to the form, if any. */
+  trendTopicKey?: string | null;
 };
 
 /** 720p unless 1080p is allowed and quality is above Draft. */
@@ -70,6 +76,7 @@ export function effectiveVideoResolution(
 
 export function buildAiCreateRequest(state: AiCreateFormState): AiCreateRequest {
   const description = state.text.trim();
+  const trendTopicKey = state.trendTopicKey ?? null;
   if (state.output === 'post') {
     return {
       output: 'post',
@@ -78,6 +85,7 @@ export function buildAiCreateRequest(state: AiCreateFormState): AiCreateRequest 
       prompt: description,
       preferredArchetype: state.preferredArchetype,
       sampleId: state.sampleId,
+      trendTopicKey,
     };
   }
   const hasStartFrame = state.output === 'video' && state.referenceIds.length > 0;
@@ -90,6 +98,7 @@ export function buildAiCreateRequest(state: AiCreateFormState): AiCreateRequest 
       prompt: description,
       aspect: state.aspect,
       sampleId: state.sampleId,
+      trendTopicKey,
       payload: {
         mediaType: 'video',
         prompt,
@@ -110,6 +119,7 @@ export function buildAiCreateRequest(state: AiCreateFormState): AiCreateRequest 
     prompt: description,
     aspect: state.aspect,
     sampleId: state.sampleId,
+    trendTopicKey,
     payload: {
       mediaType: 'image',
       prompt,

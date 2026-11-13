@@ -2,7 +2,7 @@
 title: 'Marketing — operator guide'
 status: active
 tags: [guides, routes, org, property]
-updated: 2026-10-21
+updated: 2026-11-09
 ---
 
 # Marketing — operator guide
@@ -11,7 +11,7 @@ updated: 2026-10-21
 
 Route: `/org/:orgSlug/property/:propertySlug/marketing`
 
-> **Status:** Documented — Content Studio + Telegram (see Notifications)
+> **Status:** Documented — Plan, Content Studio + Telegram (see Notifications)
 
 Legacy redirect: `/marketing` → `…/property/:propertySlug/marketing` (Content Studio)
 
@@ -25,11 +25,128 @@ Saved marketing designs are bulk-copyable via org **Properties → Copy settings
 
 ---
 
+## Plan
+
+Route state: `…/marketing?tab=plan&range=today|3d|5d|7d`
+
+The first tab in Content Studio. It answers "what do I post today, and why" from data the app
+already holds, with no AI required.
+
+**What it shows**
+
+- **Range chips:** Today (default), 3 days, 5 days, Week. An unknown `?range=` value normalizes to
+  Today without an error.
+- **Summary card:** one plain sentence generated from the top opportunity, plus the horizon end.
+- **Agenda:** items grouped by Manila day, each with time, format, channel, title, hook, one-line why
+  and a status pill. Today and Tomorrow get their own headings.
+- **Showcase on lower tiers:** Free and Starter read the summary and the first three items. Every
+  action stays disabled and the footer links to the upgrade dialog.
+
+**Save paths**
+
+| Action              | Endpoint                                    | Permission            | Plan gate          |
+| ------------------- | ------------------------------------------- | --------------------- | ------------------ |
+| Load a range        | `GET marketing-planner?property_id=&range=` | `marketing:view`      | none (read-open)   |
+| Load settings       | `GET marketing-planner?view=settings`       | `marketing:view`      | none               |
+| Build a rules plan  | `POST marketing-planner {action:generate}`  | `marketing.plan:edit` | `marketingPlanner` |
+| Reschedule / edit   | `POST {action:update_item}`                 | `marketing.plan:edit` | none               |
+| Skip                | `POST {action:skip}`                        | `marketing.plan:edit` | none               |
+| Mark posted by hand | `POST {action:mark_posted}`                 | `marketing.plan:edit` | none               |
+| Save settings       | `PATCH marketing-planner`                   | `marketing.plan:edit` | none               |
+
+**Behaviour**
+
+- Building a plan loads occupancy, pace, lead time, gap nights, reviews, live rates and calendar
+  events, runs the pure engine, and writes one `marketing_plans` row plus its `marketing_plan_items`.
+- Regenerating never duplicates an opportunity: the partial unique index on
+  `(property_id, opportunity_key)` plus a used-key filter means only new items are added.
+- Every item carries `claims` (open nights, nights left, rate, rating, review id). Claims are the
+  source of truth; the copy is filled from them.
+- Scheduling never places an item in quiet hours (23:00 to 07:00 Manila), never in the past on the
+  same day, and never past the horizon.
+- A property with no connected channel still gets items, marked for manual sharing.
+- The item sheet offers **Shorter**, **More playful** and **Taglish** when the host is entitled. A
+  rewrite goes through the same guard and leaves the stored copy alone if it fails.
+- `mode: ai` runs the rules skeleton first, then rewrites the words. Every string is checked by a
+  deterministic guard: an invented number or month drops that item back to rules copy. AI outages
+  never block a plan.
+- Every plan read re-checks availability claims and moves a broken item to `needs update` with a
+  plain reason, so a booking that lands between visits is caught before the host posts.
+- Items carry a tracked link. Plan reads count matching page views and show them on the card. This
+  works without any Meta insight scope.
+
+The item sheet also suggests gallery photos: photos no other item has used come first, and the ones
+the host picks lead the design seed.
+
+**Open in editor** on an item picks the tab from its format (calendar builder, Videos for a reel,
+Posts, or AI Studio for types that read better as a generated image) and seeds the draft once:
+AI Studio fills the composer, Videos sets the hook, caption and call to action on the beats, Posts
+takes the dates, month and rate, Calendar opens on the promoted month. The caption is also copied
+as a fallback.
+
+**Plan setup** opens on first visit and from the header. Three steps: goals (up to two), where you post
+(connected Facebook Page and Instagram from Inbox, plus manual places), then time budget and
+language, and, when the host has the AI planner, whether the weekly plan is rules only or AI
+written (20 credits a week). It stores real connection ids; the wizard is guarded against unsaved
+edits.
+
+**Prepare week** moves every unbuilt item in the selected range to Preparing and returns the work
+list. Each saved draft attaches itself back to its item, which moves it to Ready. The button is
+disabled when there is nothing to prepare.
+
+**Freed dates:** when a booking is cancelled, the planner adds a `freed_dates` item for those
+nights (within 30 days) and sends an urgent notification. It is idempotent per check-in date and
+never blocks the cancellation.
+
+**Assistant:** the dashboard assistant can read this week's plan and mark an item posted by hand.
+
+**Crons:** a quarter-hour sweep builds the weekly plan for opted-in properties, expires items whose
+post-by date passed and sends due reminders. A every-minute sweep publishes scheduled posts, re-checks
+each post's claims first, and holds instead of publishing a stale date or price.
+
+**Share it yourself** opens from an item: caption plus tracked link, a checklist of the host's
+places, the phone share sheet where the browser allows it, a copy fallback otherwise, and I posted
+it with an optional link.
+
+**Not in this phase:** Prepare handoffs into the editors, scheduling and publishing to Meta,
+reminders, insight snapshots, autopilot. See
+[marketing-strategy-planner.md](../../../workflow/in-progress/marketing-strategy-planner.md).
+
+**Plans and permissions**
+
+- `marketingPlanner` (Pro and above) gates building a plan. Reading the summary and the first three
+  suggestions is open on every tier so lower plans can see the feature.
+- `aiMarketingPlanner` (Business and above) is declared and shown as an upgrade path; it is not
+  enforced server-side until AI briefs exist.
+- Team leaf `marketing.plan:edit` covers settings, add, reschedule, skip and mark posted. Backfilled
+  from `marketing.content:add` / `marketing.content:edit`.
+
+**Testing**
+
+- Unit: `ui/src/features/dashboard/marketing/lib/planner/*.test.ts`
+- Edge: `supabase/functions/_shared/marketing*_test.ts`
+- No E2E spec yet (Phase 1 UI is mocked-API ready but the journey spec lands with Phase 2).
+
 ## Host-facing knowledge
 
 Marketing Content Studio is where you create promotional content for this property: availability calendars, social posts, short videos, and AI-generated photos. You start by picking a theme, and everything you make in it shares the same colors and fonts. You can download what you make or publish it straight to your connected Facebook and Instagram accounts. Marketing Telegram alerts live in a separate place, under Notifications.
 
 **Common host questions**
+
+Marketing plan
+
+- Q: What is the Plan tab?
+  A: It is a short to-do list of what to post, when, and why, built from your calendar. It is the first tab in Marketing. You open it, see today's items, and work through them.
+- Q: Where do the suggestions come from?
+  A: From your own data: open nights, weekend gaps, long weekends, how far ahead guests book, recent reviews and your rates. Nothing is invented.
+- Q: Do I need AI for this?
+  A: No. The plan works without AI and without a connected Facebook account. AI only makes the writing better.
+- Q: What is a claim?
+  A: The fact under a post, for example "these two nights are open". We check it again when your calendar changes and before publishing, and hold the post if it stopped being true.
+- Q: Why is an item greyed out on my plan?
+  A: Your plan does not include the full planner. You can still read the summary and the first three suggestions, and upgrade for the full list.
+- Q: What does "Build plan" do?
+  A: It looks at the next month and adds the items you do not already have. It never duplicates one you already planned or skipped.
 
 - Q: What is a theme?
   A: A theme is your look: a few colors, three fonts, a background style and a corner style. Calendars, posts, videos and AI results you make inside a theme all use it, so your marketing looks like one brand.
@@ -154,6 +271,22 @@ Marketing Content Studio is where you create promotional content for this proper
   A: Yes. Collage cells are normal photos on the same canvas; use Elements, Text, or the Logo option exactly as you would on any other post.
 - Q: What does **Blank** do?
   A: Opens an empty page in the size you picked so you can build from scratch.
+- Q: What are the topics under **Trending today**?
+  A: They are what people in the Philippines are reading and searching about today, this week and this month. Every topic comes with three ready-made angles so you do not start from a blank page.
+- Q: Where do the topics come from?
+  A: Public lists: Google Trends for the Philippines, Wikipedia pages people read, the Apple Music Philippines chart, and the Netflix Philippines top 10. Each topic shows where it came from.
+- Q: Why is a topic I saw on TikTok not on the list?
+  A: TikTok, Facebook, Instagram and X do not offer a free public list we can use. The topics we do get usually catch a viral moment a day or so later, when people start searching for it. Staff can add a topic by hand when something important is missed.
+- Q: How do I use a topic?
+  A: Tap the topic, pick one of the three angles, then tap **Make a post**, **Make a photo** or **Make a clip**. Your description is filled in and the trend is attached as a chip you can remove. Nothing is generated, and no credits are used, until you press **Generate**.
+- Q: Do trends cost credits?
+  A: No. Browsing trends and copying the caption idea are free on every plan. Generating from a trend uses the same credits as any other generation.
+- Q: Can I use a celebrity's photo or the show's logo in my post?
+  A: No. You can mention what people are watching, but do not use a real person's photo or likeness, a show or network logo, or wording that sounds like a partnership or an endorsement. The app blocks that wording for you.
+- Q: Why does the heading say **Seasonal ideas** instead of **Trending today**?
+  A: It means there is no fresh list right now, so we are showing Philippine seasonal ideas instead, such as long weekends and the Christmas season.
+- Q: Why did a topic disappear?
+  A: Topics are checked for safety. Anything about a death, a crime, a disaster, politics or gambling is removed, and staff can hide a topic by hand. The list also refreshes every morning.
 
 ## Marketing Content Studio
 
@@ -525,6 +658,98 @@ Property-team RBAC (Phase 7). Route guard: **`marketing:view`**. Org owner, org 
 
 **Plan gating (inner, after permission):** see sections above — `marketingStudio`, `aiMarketingGeneration`, `aiMarketingImageGeneration` (Generate tab images, Pro+), `aiMarketingVideoGeneration` (Generate tab video, Business+), `customTemplates`, and publish limit via `marketingPublishLimitPerGroup`. Permission = visibility; plan = actionability (D16). The Generate tab's **read** paths deliberately carry no plan gate — see the view-past-output note above.
 
+## Trends
+
+> Architecture: [`marketing-trends.md`](../../../../architecture/marketing-trends.md)
+
+A ranked list of what people in the Philippines are talking about **today, this week and this
+month**, rebuilt once a day. It lives inside **AI Studio**, not a separate tab: it exists to feed
+generation, and the Plan tab slot is reserved for the Strategy Planner.
+
+### Where it appears
+
+**1. `Trending today` rail** at the top of the AI Studio create form, above the description
+field. Up to 8 chips, 44 px targets, horizontally scrollable. **See all** opens the sheet. When
+there is no usable list the heading reads **Seasonal ideas** and shows the bundled Philippine
+seasonal ideas instead.
+
+**2. Trends sheet** (`ResponsiveModal`: bottom sheet below `lg`, centred dialog at `lg+`)
+
+```
+Trends in the Philippines                    Updated Nov 10
+[ Today ][ This week ][ This month ]
+[All] [TV & film] [Music] [Sports] [Celebrity] [Holidays] …
+
+1  PBB Collab 3.0
+   Fans are following the new housemates this week.
+   New · 2 days
+2  Alexandra Eala
+   …
+──────────────────────────────────────────────
+Mention the trend, do not use their photos or logos.
+```
+
+Week and month only appear once 3 / 7 published runs exist. A category chip only appears when at
+least one topic in the window has it.
+
+**3. Topic detail** (pushes inside the same sheet)
+
+- Title, summary, momentum, days trending, source labels.
+- **Three angle cards**: post, photo or clip, each with a hook and a **Make a post** / **Make a
+  photo** / **Make a clip** button.
+- **Copy caption idea**: free on every plan.
+
+### Handoff
+
+Tapping an angle sets a one-shot pending trend (`setPendingAiTrend`), starts a new AI Studio
+creation for that output, and the create form picks it up once:
+
+- the description is filled with the angle's prompt,
+- a removable **Trend: PBB Collab 3.0** chip appears above the field,
+- the request carries only `trendTopicKey`, never trend text.
+
+Nothing is generated and nothing is charged until the host presses **Generate**.
+
+**Locked output.** If the plan or the role does not cover that output, the angle button still
+responds: it opens the upgrade prompt, the same path the Generate button takes, so the host is
+never left with a dead control. **Copy caption idea** still works, which is the free path.
+
+### Routes and params
+
+| Param                                 | Meaning                                   |
+| ------------------------------------- | ----------------------------------------- |
+| `?tab=generate&trends=today`          | Open the Trends sheet on the Today window |
+| `?tab=generate&trends=week` / `month` | Open it on another window                 |
+
+`startAiSession` clears the param, so using an angle closes the sheet and lands on the form.
+
+The sheet is open _because_ the URL says so, which is what makes the phone back gesture close the
+sheet instead of leaving the studio. Closing it with the X clears the param (replace), so the
+back button then goes wherever the host came from.
+
+### States
+
+| State                                       | What the host sees                                                          |
+| ------------------------------------------- | --------------------------------------------------------------------------- |
+| Loading                                     | Skeleton heading and three skeleton chips, page chrome mounted              |
+| Fresh list                                  | `Trending today` with the date it was built                                 |
+| List older than 36 h                        | Same list, labelled with its date                                           |
+| No usable list (none, or older than 72 h)   | `Seasonal ideas` with bundled PH ideas                                      |
+| Endpoint error                              | The rail hides itself; the client falls back to seasonal ideas              |
+| `marketing.trends` off for the property     | Rail and sheet hidden, no error message                                     |
+| Empty filter                                | `No sports topics today`                                                    |
+| Trend hidden between opening and generating | The run is refused, the form keeps the text and drops the chip with a toast |
+
+### What the server enforces
+
+- The host sends a topic key. The server loads the topic, so a client cannot inject its own
+  "trend context" into a prompt.
+- A hidden key, or one more than 7 days old, is refused with `trend_unavailable`.
+- Generated poster variants and captions are checked for endorsement wording and for naming a
+  person. A variant that breaks the rule is dropped; a caption is regenerated once.
+- Image and clip prompts for celebrity, TV and music topics add "no recognizable real people, no
+  logos, no brand names".
+
 ## Telegram marketing (legacy module)
 
 | Concern     | Path                                                                              |
@@ -625,6 +850,7 @@ See [notifications.md](./notifications.md) for the unified page layout and save 
 | Library → Editor, save model, Recently deleted, AI Studio outputs       | Code-complete; unit + Deno + e2e + local API/browser verified; migration not yet on hosted dev                                                                                                                |
 | AI Studio conversations (versions, refine, shared toolbar, start row)   | Code-complete; unit + Deno + e2e + local API/browser verified; migrations not yet on hosted dev                                                                                                               |
 | AI Studio examples gallery (post/photo/clip, detail, Use this example)  | Posts: code-complete, live-rendered, unit + Deno + e2e verified. Photo/clip: catalog + UI code-complete but gated off (`READY_SAMPLE_IDS` empty) until the one-time AI asset pass runs with a paid Gemini key |
+| Trends (rail, sheet, topic detail, angle handoff, caption copy)         | Code-complete; Deno unit + Vitest + local rendering; cron and publish RPC verified on a local stack                                                                                                           |
 
 ---
 
@@ -643,5 +869,7 @@ See [notifications.md](./notifications.md) for the unified page layout and save 
 | Unit  | `lib/collage/collageDocument.test.ts`, `coverCrop.test.ts` — layout registry (cap 9, tiles with no gaps/overlap), frame geometry, relayout photo-order preservation, style application                                                                                                                                                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                           |
 | Edge  | `supabase/functions/_shared/marketingUploadStorage_test.ts` — storage path safety, image-vs-video mime sniffing; `marketingVideoPromptBuilder_test.ts` (guardrail tail always present, start frame sent to the rewrite, fail-open), `marketingVideoGenerationAi_test.ts` (Veo request body), `mp4Probe_test.ts` (output validation)                                                                                                                                                                                                                       | —                                                                                                                                                                                                                                                                                           |
 | E2E   | `ui/e2e/features/marketing/marketingCollage.spec.ts` (`@ci`) — Start-from switching, layout pick turns the canvas into a collage, Blank clears the canvas, 390px bottom sheet with no horizontal overflow                                                                                                                                                                                                                                                                                                                                                 | Fill all with real property photos (no gallery fixtures in the mocked harness), drag-to-reorder cells, native crop-mode handles, real upload round-trip                                                                                                                                     |
+| Unit  | `lib/trends/evergreenIdeas.test.ts` (client mirror matches the server copy, every month), `lib/trends/trendHandoff.test.ts` (one-shot handoff)                                                                                                                                                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                           |
+| Edge  | `_shared/marketingTrends/{normalize,score,windows,safetyDenylist,brandGuard,response,pipeline,marketingTrendsClassify}_test.ts` (merging, cross-source bonus, momentum, pins, hide-at-read, stale/evergreen, validator), `sources/sources_test.ts` (real fixtures for RSS, Apple and the Netflix TSV)                                                                                                                                                                                                                                                     | Live source drift; a real 33 MB Netflix download                                                                                                                                                                                                                                            |
 | N/A   | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Real Veo video generation (async, minutes, real cost). Request shape and constraints were checked against the live API with invalid-on-purpose calls (free); a full paid render has not run yet because the local keys have no Veo quota, closed-tab sweeper finalize, double-finalize race |
 | N/A   | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Meta OAuth manual                                                                                                                                                                                                                                                                           |
