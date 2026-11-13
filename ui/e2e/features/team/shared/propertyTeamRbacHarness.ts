@@ -42,6 +42,8 @@ export type PropertyTeamRbacMockOpts = {
   savedDashboardMode?: 'advanced' | 'ai';
   /** Keys returned as unavailable from `get-feature-availability`. */
   featureAvailabilityOff?: string[];
+  /** Seed one operating transaction and one stay so the finance ledger has rows. */
+  financeSeeded?: boolean;
 };
 
 /** Last dashboard mode PATCHed to user-ui-preferences in this test (mock server state). */
@@ -1209,6 +1211,7 @@ export async function installPropertyTeamRbacMocks(
   const crossPropertyBookingSeeded = Boolean(opts?.crossPropertyBookingSeeded);
   const aiModeEnabled = Boolean(opts?.aiModeEnabled);
   const featureAvailabilityOff = opts?.featureAvailabilityOff ?? [];
+  const financeSeeded = Boolean(opts?.financeSeeded);
   savedDashboardModeState = opts?.savedDashboardMode ?? 'advanced';
   let assistantTurn = 0;
   let orgSettingsState = orgSettingsPayload();
@@ -1653,7 +1656,13 @@ export async function installPropertyTeamRbacMocks(
         });
         return;
       case 'finance-bookings':
-        await fulfillJson(route, { success: true, data: [], total: 0, page: 1, limit: 100 });
+        await fulfillJson(route, {
+          success: true,
+          data: financeSeeded ? [financeBookingRowFixture()] : [],
+          total: financeSeeded ? 1 : 0,
+          page: 1,
+          limit: 100,
+        });
         return;
       case 'maintenance-summary':
         await fulfillJson(route, {
@@ -1665,7 +1674,10 @@ export async function installPropertyTeamRbacMocks(
         });
         return;
       case 'finance-line-items':
-        await fulfillJson(route, { success: true, data: [] });
+        await fulfillJson(route, {
+          success: true,
+          data: financeSeeded ? [financeLineItemFixture()] : [],
+        });
         return;
       case 'maintenance-items':
         await fulfillJson(route, { success: true, data: [] });
@@ -1916,4 +1928,76 @@ export async function expectNavLinkHidden(page: Page, label: string) {
 
   await openAdminMoreSheet(page);
   await expect(moreNav(page).getByRole('link', { name: label })).toHaveCount(0);
+}
+
+/** One operating expense for the finance ledger when `financeSeeded` is set. */
+function financeLineItemFixture() {
+  return {
+    id: 'line-item-e2e-001',
+    kind: 'expense' as const,
+    label: 'Electricity bill',
+    amount: 2400,
+    category: 'Utilities',
+    occurred_on: '2026-03-05',
+    notes: null,
+    receipt_path: null,
+    recurrence_series_id: null,
+    recurrence_interval: null,
+    telegram_reminder_enabled: false,
+    telegram_due_date: null,
+    telegram_days_before: 3,
+    telegram_reminder_interval: 'daily_noon' as const,
+    telegram_message_template: null,
+    paid_at: null,
+    created_by: null,
+    created_at: '2026-03-05T00:00:00.000Z',
+    updated_at: '2026-03-05T00:00:00.000Z',
+  };
+}
+
+/** One completed stay for the finance ledger when `financeSeeded` is set. */
+function financeBookingRowFixture() {
+  return {
+    id: 'booking-finance-e2e-001',
+    guest_facebook_name: '',
+    primary_guest_name: 'Maria Santos',
+    guest_email: 'maria@example.test',
+    valid_id_url: null,
+    need_parking: false,
+    has_pets: false,
+    guest_requests_surprise_decor: null,
+    check_in_date: '03-10-2026',
+    check_out_date: '03-12-2026',
+    number_of_nights: 2,
+    status: 'COMPLETED',
+    status_updated_at: null,
+    pricing: {
+      check_in_date: '03-10-2026',
+      check_out_date: '03-12-2026',
+      number_of_nights: 2,
+      nightly_rate: 2500,
+      down_payment: 5000,
+      additional_guest_fee: 0,
+      pet_fee: 0,
+      parking_fee: 0,
+      security_deposit: 3000,
+      total_guest_balance: 5000,
+      source: 'direct',
+    },
+    financials: {
+      bookingRate: 5000,
+      otherFees: 0,
+      totalGuestBalance: 5000,
+      guestCollected: 5000,
+      guestUnpaid: 0,
+      stayRevenue: 5000,
+      parkingMargin: null,
+      sdExpenseTotal: 0,
+      sdProfitTotal: 0,
+      voucherCost: 0,
+      hostProfit: 5000,
+      hostExpenses: 0,
+      hostNet: 5000,
+    },
+  };
 }
