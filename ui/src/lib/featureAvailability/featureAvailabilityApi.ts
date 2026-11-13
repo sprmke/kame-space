@@ -21,11 +21,18 @@ export type FeatureAvailabilitySnapshot = {
   serverSkewMs: number;
 };
 
-export async function fetchFeatureAvailability(): Promise<FeatureAvailabilitySnapshot> {
-  const data = await callEdgeFunction<{
-    serverNow: string;
-    entries: FeatureAvailabilityPublicEntry[];
-  }>('get-feature-availability');
+export type FeatureAvailabilityPayload = {
+  serverNow: string;
+  entries: FeatureAvailabilityPublicEntry[];
+};
+
+/**
+ * Raw payload to the snapshot the hooks read. Shared with the session bootstrap, which receives
+ * the same payload inside `get-session-context` and must seed the identical shape.
+ */
+export function toFeatureAvailabilitySnapshot(
+  data: FeatureAvailabilityPayload
+): FeatureAvailabilitySnapshot {
   const serverNowMs = new Date(data.serverNow).getTime();
   const serverSkewMs = Number.isNaN(serverNowMs) ? 0 : serverNowMs - Date.now();
   return {
@@ -33,4 +40,9 @@ export async function fetchFeatureAvailability(): Promise<FeatureAvailabilitySna
     entries: data.entries ?? [],
     serverSkewMs,
   };
+}
+
+export async function fetchFeatureAvailability(): Promise<FeatureAvailabilitySnapshot> {
+  const data = await callEdgeFunction<FeatureAvailabilityPayload>('get-feature-availability');
+  return toFeatureAvailabilitySnapshot(data);
 }
