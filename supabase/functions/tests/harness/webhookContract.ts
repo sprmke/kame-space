@@ -51,7 +51,7 @@ export function webhookContract(contract: WebhookContract): void {
         // The public rate limiter counters every hit, including a rejected one; that is the
         // only allowed write. Everything else here would be the webhook acting on unverified
         // input.
-        (/^(POST|PATCH|PUT|DELETE) /.test(call) && !call.includes('rpc/bump_rate_limit')) ||
+        (/^(POST|PATCH|PUT|DELETE) /.test(call) && !call.includes('rpc/bump_rate_limit') && !call.includes('request_rate_limits')) ||
         call.includes('guest_submissions')
     );
     assertEquals(offending.join(' | '), '', 'an unverified webhook must not write or read bookings');

@@ -10,6 +10,21 @@ import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.t
 
 const FUNCTIONS_URL = 'http://127.0.0.1:54321';
 
+/*
+ * Deno runs every handler test file in one process, so an env var set here changes later
+ * files: `ENVIRONMENT=production` makes unrelated crons fail closed. Capture the originals and
+ * put them back in a final test, which runs last in this file.
+ */
+const ORIGINAL_ENVIRONMENT = Deno.env.get('ENVIRONMENT');
+const ORIGINAL_SECRET = Deno.env.get('SD_REFUND_CRON_SECRET');
+
+function restoreEnvironmentForLaterFiles() {
+  if (ORIGINAL_ENVIRONMENT === undefined) Deno.env.delete('ENVIRONMENT');
+  else Deno.env.set('ENVIRONMENT', ORIGINAL_ENVIRONMENT);
+  if (ORIGINAL_SECRET === undefined) Deno.env.delete('SD_REFUND_CRON_SECRET');
+  else Deno.env.set('SD_REFUND_CRON_SECRET', ORIGINAL_SECRET);
+}
+
 Deno.env.set('EDGE_HANDLER_TEST', '1');
 Deno.env.set('SUPABASE_URL', FUNCTIONS_URL);
 Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role-key');
@@ -81,4 +96,8 @@ Deno.test('sd-refund-cron fails closed in production when the secret is unset', 
   const body = (await response.json()) as Envelope;
   assertEquals(body.error, 'Unauthorized');
   assertEquals(calls, []);
+});
+
+Deno.test('restores the environment for later test files', () => {
+  restoreEnvironmentForLaterFiles();
 });

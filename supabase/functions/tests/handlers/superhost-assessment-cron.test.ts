@@ -9,6 +9,14 @@ import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.t
 
 const FUNCTIONS_URL = 'http://127.0.0.1:54321';
 
+/* Deno shares one process across handler test files: restore what we changed. */
+const ORIGINAL_ENVIRONMENT = Deno.env.get('ENVIRONMENT');
+
+function restoreEnvironmentForLaterFiles() {
+  if (ORIGINAL_ENVIRONMENT === undefined) Deno.env.delete('ENVIRONMENT');
+  else Deno.env.set('ENVIRONMENT', ORIGINAL_ENVIRONMENT);
+}
+
 Deno.env.set('EDGE_HANDLER_TEST', '1');
 Deno.env.set('SUPABASE_URL', FUNCTIONS_URL);
 Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role-key');
@@ -62,4 +70,8 @@ Deno.test('superhost-assessment-cron refuses a non-POST verb', async () => {
   // the rejection without I/O, not the exact code.
   assert([400, 401, 405].includes(response.status), `got ${response.status}`);
   assertEquals(calls, []);
+});
+
+Deno.test('restores the environment for later test files', () => {
+  restoreEnvironmentForLaterFiles();
 });

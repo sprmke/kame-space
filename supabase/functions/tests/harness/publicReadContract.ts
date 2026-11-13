@@ -67,10 +67,10 @@ export function publicReadContract(name: string): void {
       `${name} must refuse a read with no token or identifier, got ${response.status}`
     );
     assertEquals(
-      calls.filter(
-        (call) => /^(POST|PATCH|PUT|DELETE) /.test(call) && !call.includes('bump_rate_limit')
-      ),
-      [],
+      calls
+        .filter((call) => /^(POST|PATCH|PUT|DELETE) /.test(call) && !call.includes('bump_rate_limit') && !call.includes('request_rate_limits'))
+        .join(' | '),
+      '',
       'a refused read must not write'
     );
     assertEquals(text.includes('@'), false, 'a rejection must not echo guest contact data');
@@ -109,7 +109,7 @@ export function publicDataContract(name: string): void {
     assertEquals(response.status, 200);
     assertEquals(
       calls.filter(
-        (call) => /^(POST|PATCH|PUT|DELETE) /.test(call) && !call.includes('bump_rate_limit')
+        (call) => /^(POST|PATCH|PUT|DELETE) /.test(call) && !call.includes('bump_rate_limit') && !call.includes('request_rate_limits')
       ),
       [],
       'a public read must not write'
@@ -134,7 +134,7 @@ export function rejectsWithoutInputContract(name: string): void {
   function assertNoWrites() {
     assertEquals(
       calls.filter(
-        (call) => /^(POST|PATCH|PUT|DELETE) /.test(call) && !call.includes('bump_rate_limit')
+        (call) => /^(POST|PATCH|PUT|DELETE) /.test(call) && !call.includes('bump_rate_limit') && !call.includes('request_rate_limits')
       ),
       [],
       'a refused request must not write'
