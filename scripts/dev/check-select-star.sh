@@ -144,6 +144,10 @@ ALLOWLIST=(
   'list-org-listing-verifications/index.ts'
   'list-organizations/index.ts'
   'list-parkings/index.ts'
+  # Parkings for one organization; `*` is deliberate because `serializeParking` reads every column
+  # and sends them to the client. Moved here from `list-parkings/index.ts` when the loader was
+  # extracted so the bootstrap and the dedicated endpoint share one query.
+  '_shared/listParkings.ts'
   # Properties for one organization; `*` is deliberate because every column is serialized
   # to the client. Moved here from `list-properties/index.ts` when the loader was extracted
   # for the session bootstrap.
