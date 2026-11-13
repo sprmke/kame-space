@@ -24,9 +24,24 @@ import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
 const HERO_WIDTHS = [480, 800, 1200] as const;
 const HERO_SIZES = '(min-width: 1280px) 1280px, 100vw';
 
-function HeroArt({ src, priority }: { src: string; priority?: boolean }) {
+/**
+ * Hero art sits behind the headline and the search. The day render is the one that paints
+ * first, so it carries the description; the night layer is the same scene for the other theme
+ * and stays decorative so a screen reader hears it once.
+ */
+const HERO_ART_ALT = 'Sunlit living room in a Kame Space stay, looking out to the water';
+
+function HeroArt({
+  src,
+  priority,
+  decorative = false,
+}: {
+  src: string;
+  priority?: boolean;
+  decorative?: boolean;
+}) {
   const shared = {
-    alt: '',
+    alt: decorative ? '' : HERO_ART_ALT,
     width: HERO_IMAGE_WIDTH,
     height: HERO_IMAGE_HEIGHT,
     sizes: HERO_SIZES,
@@ -61,7 +76,7 @@ export function SpotlightHero() {
             <HeroArt src={HERO_IMAGE_LIGHT} priority />
           </div>
           <div className="hero-theme-layer hero-theme-layer--dark absolute inset-0">
-            <HeroArt src={HERO_IMAGE_DARK} />
+            <HeroArt src={HERO_IMAGE_DARK} decorative />
           </div>
 
           {/* Legibility scrim. The sunrise render already has a strong dark vignette on its

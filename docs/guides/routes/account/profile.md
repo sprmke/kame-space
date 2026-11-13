@@ -81,6 +81,8 @@ Sub-nav: Profile · Trips · Reviews · Stays · Vouchers · Favorites · Ticket
 - API: **`guest-profile`** GET/PATCH, **`upload-guest-profile-asset`** POST
 - DB: **`guest_profiles`** (RLS scoped to `auth.uid()`)
 - Avatar resolution: profile row → OAuth metadata → initials
+- **Alerts on this device** (`GuestPushNotificationsCard`): one switch that turns OS push on for the signed-in guest. Reuses `usePushNotifications` / `push-subscribe`, so the subscription belongs to the user, not to a team. It shows **Checking this device…** until the browser state is read, **Add this app to your home screen first** on iOS install-required, and **This browser cannot show alerts.** when push is unsupported. Copy is guest-specific: guests have no Activity feed, so it never points at one.
+- Guest push only carries two milestones, both sent from the workflow orchestrator: **Confirmed** and **Ready for check-in**. Deep link is an app-relative trip page. `notification_preferences` applies (a guest who mutes **Bookings**, or sets quiet hours, stops receiving them). An anonymous booking has no user to push to and keeps its email.
 
 ---
 

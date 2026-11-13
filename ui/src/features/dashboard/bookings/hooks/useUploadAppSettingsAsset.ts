@@ -7,6 +7,7 @@ import { useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type { AppSettingsDto } from '@/features/dashboard/bookings/hooks/useAppSettings';
+import { appSettingsQueryKey } from '@/features/dashboard/bookings/hooks/useAppSettings';
 import { scopedFunctionsUrl, usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
 
 import type { OptimizePreset } from '@/lib/media/imageOptimizationPlan';
@@ -92,7 +93,7 @@ export function useUploadAppSettingsAsset() {
     },
     onSuccess: (data, variables) => {
       if (propertyId) {
-        qc.setQueryData(['app-settings', propertyId], (current: AppSettingsDto | undefined) => {
+        qc.setQueryData(appSettingsQueryKey(propertyId), (current: AppSettingsDto | undefined) => {
           if (!current) return current;
 
           // Payment QR is staging-only until OTP save — do not mutate cached settings.

@@ -10,6 +10,7 @@ import { cancelBooking } from './cancellationService.ts';
 import { verifyCronSecret } from './cronSecretGate.ts';
 import { DatabaseService } from './databaseService.ts';
 import { sendPendingReviewChaseHost } from './emailService.ts';
+import { reportCronPartialFailure } from './sentryCron.ts';
 import { createServiceClient } from './orgAuth.ts';
 import {
   PENDING_REVIEW_CHASE_LEAD_DAYS,
@@ -170,6 +171,15 @@ export async function runPendingReviewExpirySweep(
       result.failed += 1;
     }
   }
+
+  // One warning per run when some items failed but the sweep still completed, so "2 of 40 failed"
+  // does not read as a clean sweep in the logs. No-op when every item succeeded.
+  await reportCronPartialFailure({
+    cron: 'pending-review-expiry',
+    attempted: candidates.length,
+    failed: result.failed,
+    extra: { expired: result.expired, chased: result.chased },
+  });
 
   return result;
 }

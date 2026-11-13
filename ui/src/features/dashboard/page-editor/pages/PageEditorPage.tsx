@@ -198,7 +198,7 @@ function PropertyLandingPageEditor({
   const previewJwt = useEditorPreviewJwt();
   const previewQuery = usePublicPropertyDetail(propertySlug, { previewJwt });
   const updateProperty = useUpdateProperty(orgSlug);
-  const { data: appSettings } = useAppSettings();
+  const { data: appSettings } = useAppSettings({ lean: true });
   const updateAppSettings = useUpdateAppSettings();
   const orgBrandColor = useOrgBrandColor();
   const inheritedBrandColor = appSettings?.inheritedBrandColor ?? orgBrandColor;

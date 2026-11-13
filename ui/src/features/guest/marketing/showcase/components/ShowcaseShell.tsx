@@ -19,6 +19,7 @@ import {
   useSmoothScroll,
 } from '@/features/guest/marketing/showcase/components/SmoothScrollProvider';
 import { useScrollSpy } from '@/features/guest/marketing/showcase/hooks/useScrollSpy';
+import { ensureDisplayFonts } from '@/lib/fonts/displayFonts';
 import { useShowcaseCompactHeaderNav } from '@/features/guest/marketing/showcase/hooks/useShowcaseCompactHeaderNav';
 import { useShowcaseHeaderPin } from '@/features/guest/marketing/showcase/hooks/useShowcaseHeaderPin';
 import { useShowcaseMediaPalette } from '@/features/guest/marketing/showcase/hooks/useShowcaseMediaPalette';
@@ -593,6 +594,11 @@ export function ShowcaseShell({
   className?: string;
 }) {
   const isTemplateThumb = useShowcaseTemplateThumbSurface();
+  // The display families are not in index.html any more; fetch them when a themed surface
+  // actually mounts. Idempotent, so re-entering the route costs nothing.
+  useEffect(() => {
+    ensureDisplayFonts();
+  }, []);
   usePageTitle(
     isTemplateThumb
       ? undefined

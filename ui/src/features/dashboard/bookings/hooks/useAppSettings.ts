@@ -124,7 +124,8 @@ export type AppSettingsDto = {
     | 'gafUnitOwnerSignatureUrl',
     AppSettingsFieldSource
   >;
-  propertyIntegrations: PropertyIntegrationStatus;
+  /** `null` on the lean payload: only the settings integrations section renders it. */
+  propertyIntegrations: PropertyIntegrationStatus | null;
   platformSecrets: PlatformSecretsStatus;
   externalReviews: PropertyExternalReview[];
   vouchersEnabled: boolean;
@@ -224,13 +225,31 @@ function appSettingsUrl(propertyId: string | null): string {
   return scopedFunctionsUrl('/app-settings', propertyId);
 }
 
-export function useAppSettings() {
+/**
+ * `lean: true` asks the server to skip the Telegram integration status block.
+ *
+ * That block is six credential reads and is rendered by one section of the property settings page.
+ * Every other caller was paying for it on each dashboard load. Lean requests use their own cache
+ * key so the full payload and the lean one cannot overwrite each other.
+ */
+export function appSettingsQueryKey(propertyId: string | null | undefined, lean = false) {
+  return ['app-settings', propertyId, lean ? 'lean' : 'full'] as const;
+}
+
+/** Every cache entry this feature writes, so a save keeps both variants in step. */
+function appSettingsKeys(propertyId: string | null | undefined) {
+  return [appSettingsQueryKey(propertyId, false), appSettingsQueryKey(propertyId, true)] as const;
+}
+
+export function useAppSettings(options?: { lean?: boolean }) {
+  const lean = options?.lean === true;
   const propertyId = usePropertyIdParam();
   return useQuery({
-    queryKey: ['app-settings', propertyId],
+    queryKey: appSettingsQueryKey(propertyId, lean),
     queryFn: async (): Promise<AppSettingsDto> => {
       const jwt = await getAdminJwt();
-      const res = await fetch(appSettingsUrl(propertyId), {
+      const url = appSettingsUrl(propertyId);
+      const res = await fetch(lean ? `${url}${url.includes('?') ? '&' : '?'}lean=1` : url, {
         headers: { Authorization: `Bearer ${jwt}` },
       });
       const json = (await res.json()) as {
@@ -273,7 +292,7 @@ export function useUpdateAppSettings() {
       return json.data;
     },
     onSuccess: (data) => {
-      qc.setQueryData(['app-settings', propertyId], data);
+      for (const key of appSettingsKeys(propertyId)) qc.setQueryData(key, data);
       qc.invalidateQueries({ queryKey: ['guest-payment-info', propertySlug ?? null] });
     },
   });
@@ -334,7 +353,7 @@ export function useClearAppSettingsImage() {
       return json.data;
     },
     onSuccess: (data, field) => {
-      qc.setQueryData(['app-settings', propertyId], data);
+      for (const key of appSettingsKeys(propertyId)) qc.setQueryData(key, data);
       if (field === 'gcashQrImageUrl') {
         qc.invalidateQueries({ queryKey: ['guest-payment-info', propertySlug ?? null] });
       }
