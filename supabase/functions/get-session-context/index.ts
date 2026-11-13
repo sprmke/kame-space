@@ -20,13 +20,57 @@
  * Query: ?orgSlug=slug&propertySlug=slug (both optional; the org shell has no property).
  */
 
+import { buildFeatureAvailabilityEntries } from '../_shared/featureAvailabilityPublicEntries.ts';
+import { getFeatureAvailabilityRows } from '../_shared/featureAvailability.ts';
 import { jsonSuccess, requireHttpMethod } from '../_shared/httpResponse.ts';
-import { createServiceClient } from '../_shared/orgAuth.ts';
+import { buildOrgAccessPayload } from '../_shared/orgAccessPayload.ts';
+import {
+  createServiceClient,
+  resolveAssignedListingIdsForOrgUser,
+  serializeParking,
+  verifyOrgAccess,
+} from '../_shared/orgAuth.ts';
 import { loadOrganizationsPayload } from '../_shared/listOrganizations.ts';
 import { buildSessionContext } from '../_shared/sessionContext.ts';
 import { loadPropertiesPayload } from '../_shared/listProperties.ts';
 import { loadPropertyEntitlementsBySlug } from '../_shared/propertyEntitlementsLookup.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
+
+/**
+ * The parking list as `list-parkings` returns it. Scoped org admins only see assigned parkings,
+ * so the same filter runs here rather than being dropped in the name of speed.
+ */
+async function loadParkingsForBootstrap(
+  req: Request,
+  user: { id: string },
+  ctx: Awaited<ReturnType<typeof verifyOrgAccess>>
+) {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from('parkings')
+    .select('*')
+    .eq('organization_id', ctx.org.id)
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('[get-session-context] parkings:', error.message);
+    throw new Error('Failed to list parkings');
+  }
+
+  let rows = data ?? [];
+  if (!ctx.canListAllProperties) {
+    const assigned = await resolveAssignedListingIdsForOrgUser(user.id, ctx.org.id as string);
+    const allowed = new Set(assigned.parkingIds);
+    rows = rows.filter((row) => allowed.has(row.id as string));
+  }
+
+  return {
+    parkings: rows.map((row) => ({
+      ...serializeParking(row),
+      stats: { activeReservations: 0, monthlyRevenue: 0, occupancyRate: 0 },
+    })),
+  };
+}
 
 serveAuthenticated('get-session-context', async (req, user) => {
   requireHttpMethod(req, 'GET');
@@ -41,6 +85,27 @@ serveAuthenticated('get-session-context', async (req, user) => {
       organizations: () => loadOrganizationsPayload(createServiceClient(), user),
       properties: (slug) => loadPropertiesPayload(req, user, { orgSlug: slug }),
       propertyScoped: (org, property) => loadPropertyEntitlementsBySlug(req, user, org, property),
+      // The shell fetched these three on its own right after this call resolved. They are org
+      // scoped, cheap, and independent, so they ride along instead of costing three more round
+      // trips. Each payload comes from the same builder its dedicated endpoint uses.
+      orgExtras: async (org) => {
+        const ctx = await verifyOrgAccess(req, { orgSlug: org });
+        const now = new Date();
+
+        const [featureRows, parkingsPayload] = await Promise.all([
+          getFeatureAvailabilityRows(),
+          loadParkingsForBootstrap(req, user, ctx),
+        ]);
+
+        return {
+          orgAccess: buildOrgAccessPayload(ctx),
+          featureAvailability: {
+            serverNow: now.toISOString(),
+            entries: buildFeatureAvailabilityEntries(featureRows, now, user),
+          },
+          parkings: parkingsPayload,
+        };
+      },
     }
   );
 

@@ -827,6 +827,31 @@ What the authoritative count does show is smaller and explainable: `app-settings
 settings controller both mount the controller while the guide is open. On a fully configured
 property the guide stays closed and only the lean caller runs.
 
+## 20. Four shell reads folded into the bootstrap
+
+This is the plan's Phase "collapse the burst", done for the three reads that are org scoped, cheap
+and independent, plus the permissions payload they depend on.
+
+| Was                                 | Now                               |
+| ----------------------------------- | --------------------------------- |
+| `get-session-context`               | same call, unchanged              |
+| `org-access`                        | returned as `orgAccess`           |
+| `get-feature-availability`          | returned as `featureAvailability` |
+| `list-parkings`                     | returned as `parkings`            |
+| separate auth + rate-limit per call | paid once                         |
+
+`buildOrgAccessPayload` is shared with the `org-access` handler, so the two cannot drift. The
+parking list keeps the assigned-only filter for scoped org admins rather than dropping it for
+speed. The feature-availability payload is converted client-side by
+`toFeatureAvailabilitySnapshot`, the same helper the dedicated fetch uses, so the snapshot shape is
+identical including `serverSkewMs`.
+
+Every seeded key matches the hook that reads it, and each hook still fetches on its own if the
+bootstrap fails, so this degrades to the previous behaviour rather than a blank shell.
+
+Not folded in: `app-settings` and `org-plan`. Both are heavier, and `org-plan` reconciles payment
+transactions, which does not belong on every dashboard open.
+
 ## Release state
 
 **2026-11-10.** PR #371 synced `main` to `develop`'s tree and shipped the UI side.
