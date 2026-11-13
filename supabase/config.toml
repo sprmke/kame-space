@@ -48,6 +48,7 @@ sql_paths = [
   "../scripts/dev/seed/19-super-admin.sql",
   "../scripts/dev/seed/20-guest-portal.sql",
   "../scripts/dev/seed/21-refresh-public-cache.sql",
+  "../scripts/dev/seed/22-marketing-trends.sql",
   "../scripts/dev/seed/99-verify.sql",
 ]
 
