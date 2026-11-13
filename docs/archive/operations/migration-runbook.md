@@ -893,6 +893,20 @@ Verify with an org that has a pending parking request: open the org Bookings lis
 3. **`record_listing_slug_change()`** — trigger on `UPDATE OF slug` for `properties`, `parkings`, `developments`. Writes the previous slug, and clears any stale row that claims the new slug.
 4. **`resolve_listing_slug_redirect(family, slug)`** — read helper used by `get-public-property`, `get-public-parking` and `list-public-developments`.
 
+---
+
+## 12. Additive: Marketing Trends (November 2026)
+
+`20261340000300_marketing_trends.sql`.
+
+| What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Reversible?                                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Creates `marketing_trend_runs`, `marketing_trend_topics`, `marketing_trend_overrides`, `marketing_trend_manual_topics` and `marketing_trend_source_cache` with RLS on and no policies (service role only, like the other edge-mediated platform tables). Adds `marketing_trend_topics.aliases` so a respelled topic keeps its streak. Adds `marketing_ai_sessions.trend_topic_key`. Adds `publish_marketing_trend_run(uuid, date, jsonb)`: one transaction with `pg_try_advisory_xact_lock(hashtext('marketing-trends'))`, the same-date swap, the precomputed week and month windows, and the 35-day prune. Adds `sync_marketing_trends_cron_job()` and `sync_marketing_trends_weekly_cron_job()`, both self-invoking and both a safe no-op without `pg_cron`/Vault. | Yes. Drop the five tables, drop `marketing_ai_sessions.trend_topic_key`, drop the three functions, and unschedule `marketing-trends-daily` and `marketing-trends-netflix-weekly`. The host read endpoint then returns `fallback: 'evergreen'`, so the UI keeps working on the bundled seasonal ideas. Nothing here touches org or guest data. |
+
+**Before relying on the crons**, provision the Vault secret `marketing_trends_cron_secret` and the function env `MARKETING_TRENDS_CRON_SECRET`. Both jobs send it as `X-Marketing-Trends-Cron-Secret`; without it, production rejects the call (fail-closed) and non-production runs it unauthenticated.
+
+The challenge price of this migration is that the topics table has a column named `window`, which is a reserved word in Postgres. It is quoted everywhere; a new query against that table must quote it too.
+
 Verify after apply:
 
 ```sql
@@ -913,3 +927,20 @@ Remote writes need `kamewave`. Backup first.
 
 - `properties `media[].alt`` is new and optional. Nothing to migrate (JSONB), no backfill required: missing alt falls back to the caption, then to a generated description in `buildListingImageAlt`.
 - `bun run media:storage-audit` reports object counts and p50/p90/p99 sizes per bucket. Use it to find listings over 1 MB before running any re-compress; there is no automated rewrite, by design.
+  SELECT count(*) FROM pg_tables WHERE tablename LIKE 'marketing_trend%'; -- 5
+  SELECT proname FROM pg_proc WHERE proname = 'publish_marketing_trend_run'; -- 1
+  SELECT jobname FROM cron.job WHERE jobname LIKE 'marketing-trends%'; -- 2 (after the sync calls and with Vault set)
+
+````
+
+Then publish one list and read it back:
+
+```sql
+SELECT public.sync_marketing_trends_cron_job();
+SELECT public.sync_marketing_trends_weekly_cron_job();
+-- Press Run now on /admin/marketing-trends, or POST the cron with the secret.
+SELECT status, topic_count FROM public.marketing_trend_runs ORDER BY run_date DESC LIMIT 1;
+SELECT "window", count(*) FROM public.marketing_trend_topics GROUP BY 1;
+````
+
+Remote writes need `kamewave`. Back up first.

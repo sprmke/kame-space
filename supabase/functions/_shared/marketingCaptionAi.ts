@@ -8,6 +8,8 @@ import {
   finalizeCaption,
   MARKETING_CAPTION_PROMPT,
 } from './ai/prompts/marketingCaption.ts';
+import { findBrandGuardViolation } from './marketingTrends/brandGuard.ts';
+import type { TrendCategory } from './marketingTrends/types.ts';
 import type { AiActorType } from './aiUsageService.ts';
 
 export type MarketingCaptionInput = {
@@ -21,6 +23,10 @@ export type MarketingCaptionInput = {
   availabilityText?: string;
   actorUserId?: string | null;
   actorType?: AiActorType;
+  /** Marketing Trends topic to mention. The topic text is loaded on the server. */
+  trendBlock?: string;
+  /** The topic's category, so the brand guard knows how strict to be. */
+  trendCategory?: TrendCategory;
 };
 
 export async function generateMarketingCaption(input: MarketingCaptionInput): Promise<string> {
@@ -39,5 +45,11 @@ export async function generateMarketingCaption(input: MarketingCaptionInput): Pr
       actorType: input.actorType ?? 'staff',
     },
   });
-  return finalizeCaption(result.text, input.postType);
+  const caption = finalizeCaption(result.text, input.postType);
+  // A caption that suggests an endorsement is worse than no caption: the guard
+  // runs over the finished text.
+  if (input.trendCategory && findBrandGuardViolation(caption, input.trendCategory)) {
+    return '';
+  }
+  return caption;
 }

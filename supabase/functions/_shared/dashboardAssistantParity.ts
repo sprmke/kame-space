@@ -178,6 +178,9 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'list-support-tickets': read,
   'maintenance-summary': read,
   'marketing-generations': read,
+  // Trends are a platform-wide read list; the assistant can show them, never change them
+  // (hide / pin / add / run now are super-admin only and audit-logged).
+  'marketing-trends': read,
   'meta-inbox-status': read,
   'notifications-list': tool('list_notifications'),
   'org-access': read,

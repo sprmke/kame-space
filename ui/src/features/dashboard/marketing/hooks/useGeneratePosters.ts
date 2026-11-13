@@ -26,6 +26,8 @@ export type GeneratePostersInput = {
   revise?: { spec: Record<string, unknown>; instruction: string };
   /** AI Studio example: the layout the host picked (one variant uses it). */
   preferredArchetype?: PosterArchetypeId | null;
+  /** Marketing Trends topic this post came from (the server loads the topic). */
+  trendTopicKey?: string | null;
 };
 
 export type GeneratePostersResult = {
@@ -60,6 +62,7 @@ export async function requestPosterSpecs(
       ...(input.preferredArchetype && !input.revise
         ? { preferredArchetype: input.preferredArchetype }
         : {}),
+      ...(input.trendTopicKey ? { trendTopicKey: input.trendTopicKey } : {}),
       photoUrls: input.facts.photos.slice(0, 6),
       facts: {
         propertyName: input.facts.propertyName,

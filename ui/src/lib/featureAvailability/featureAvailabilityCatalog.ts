@@ -15,6 +15,7 @@ export const FEATURE_AVAILABILITY_KEYS = [
   'marketing.ai_studio.generate',
   'marketing.planner',
   'marketing.planner.ai',
+  'marketing.trends',
   'analytics.ai_review',
   'analytics.ai_review.regenerate',
   'notifications.telegram',
@@ -149,6 +150,15 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     label: 'AI studio generation',
     description:
       'New creation, refine, references upload. Past sessions and outputs stay viewable.',
+  },
+  {
+    key: 'marketing.trends',
+    parent: null,
+    module: 'marketing',
+    surface: 'section (tab)',
+    label: 'Marketing trends',
+    description:
+      'Trending topics rail and sheet in AI studio, and the marketing-trends read endpoint.',
   },
   {
     key: 'analytics.ai_review',

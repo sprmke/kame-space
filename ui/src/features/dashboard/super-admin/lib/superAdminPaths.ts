@@ -11,6 +11,7 @@ export const superAdminPaths = {
   health: '/admin/health',
   healthSection: (section: 'configuration' | 'integrations' | 'jobs' | 'usage') =>
     `/admin/health/${section}`,
+  marketingTrends: '/admin/marketing-trends',
   opsReports: '/admin/ops-reports',
   opsReportDetail: (reportId: string) => `/admin/ops-reports/${reportId}`,
   organizations: '/admin/orgs',

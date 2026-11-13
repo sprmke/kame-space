@@ -1608,3 +1608,35 @@ The first time a guest opens their trip page you get one notification, "Maria op
 - source: docs/guides/routes/account/profile.md
 
 Sign in, open your profile, and turn on Alerts on this device. On an iPhone or iPad, add the site to your home screen first, then turn it on, because Safari only allows alerts for installed apps. You get an alert when your host confirms your booking and when your check-in is ready; everything else still arrives by email.
+
+### What are the topics under Trending today?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+
+They are what people in the Philippines are reading and searching about today, this week and this month. Each topic comes with three ready-made angles, so you can start from something people already care about instead of a blank page.
+
+### Where do the trending topics come from?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+
+Public lists: Google Trends for the Philippines, Wikipedia pages people are reading, the Apple Music Philippines chart, and the Netflix Philippines top 10. Every topic shows where it came from. TikTok, Facebook, Instagram and X do not offer a free public list, so something viral usually shows up here a day or so later.
+
+### Can I use a celebrity photo or a show logo in my post?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+
+No. You can mention what people are watching, but do not use a real person's photo or likeness, a show or network logo, or wording that sounds like a partnership or an endorsement. The app blocks that wording for you.
+
+### Why does the rail say Seasonal ideas instead of Trending today?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+
+It means there is no fresh list right now, so you are seeing Philippine seasonal ideas instead, such as long weekends and the Christmas season. The list rebuilds every morning.
