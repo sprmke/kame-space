@@ -11,7 +11,6 @@
  *   feeds immediately (still serialised via the per-feed claim).
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 import {
   loadCalendarFeed,
@@ -34,6 +33,7 @@ import { isFeatureAvailable, featureUnavailableResponse } from '../_shared/featu
 import { automationAllowed, loadPropertyLifecycleStates } from '../_shared/propertyLifecycle.ts';
 import { captureSentryException } from '../_shared/sentry.ts';
 import { reportCronPartialFailure } from '../_shared/sentryCron.ts';
+import { serveHandler } from '../_shared/serveEdge.ts';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GLOBAL_BATCH = 100;
@@ -66,7 +66,7 @@ async function parseBody(req: Request): Promise<{ feedId?: string; propertyId?: 
   }
 }
 
-serve(async (req) => {
+serveHandler('calendar-sync-cron', async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) });
   if (req.method !== 'POST') return json(req, { success: false, error: 'Method not allowed' }, 405);
 

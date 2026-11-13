@@ -3,7 +3,6 @@
  * Auth: verifyAdminJwt. Writes public URL to app_settings when configured.
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from '../_shared/supabaseJs.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { handleEdgeError } from '../_shared/httpResponse.ts';
@@ -15,11 +14,12 @@ import {
 import { assertWithinUploadLimit } from '../_shared/uploadLimits.ts';
 import { formatPublicUrl } from '../_shared/utils.ts';
 import { assertUploadMatchesBytes } from '../_shared/sniffMime.ts';
+import { serveHandler } from '../_shared/serveEdge.ts';
 
 const BUCKET = 'app-settings-assets';
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
-serve(async (req) => {
+serveHandler('upload-app-settings-asset', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders(req) });
   }

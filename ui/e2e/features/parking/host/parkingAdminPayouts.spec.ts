@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-import { seedSupabaseAuthSession } from '../../../shared/authSeam';
 import { mockEdgeFunctions } from '../../../shared/interceptEdge';
+import { installTenant, mockTenant } from '../../../shared/tenant';
 
 const REFUND_ROW = {
   id: 'txn-refund-001',
@@ -39,12 +39,10 @@ const REFUND_ROW = {
 
 test.describe('@ci super-admin parking payouts', () => {
   test('shows refund review rows and opens the refund form', async ({ page }) => {
-    await seedSupabaseAuthSession(page, 'host');
+    const tenant = mockTenant({ persona: 'superAdmin', level: 'platform' });
+    await installTenant(page, tenant);
     await mockEdgeFunctions(page, [
-      {
-        name: 'list-organizations',
-        body: { success: true, data: { organizations: [], isSuperAdmin: true } },
-      },
+      ...tenant.mocks,
       {
         name: 'platform-parking-settings',
         body: {
