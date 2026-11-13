@@ -210,6 +210,7 @@ ALLOWLIST=(
   'list-org-listing-verifications/index.ts'
   'list-organizations/index.ts'
   'list-parkings/index.ts'
+  '_shared/listParkings.ts'
   'list-platform-properties/index.ts'
   # Properties for one organization. Bounded by how many listings a single org has, which
   # the product caps well below any pagination need; moved here from
