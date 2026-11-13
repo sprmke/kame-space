@@ -9,10 +9,18 @@ import {
 import { resolveDashboardPeriod } from '@/features/dashboard/property/lib/dashboardPeriod';
 
 import { ORGANIZATIONS_QUERY_KEY } from '@/features/dashboard/org/hooks/useOrganizations';
+import { PARKINGS_QUERY_KEY } from '@/features/dashboard/org/hooks/useParkings';
 import { callEdgeFunction } from '@/features/dashboard/org/lib/edgeClient';
 import type { Organization, Property } from '@/features/dashboard/org/types';
+import { ORG_ACCESS_QUERY_KEY } from '@/features/dashboard/team/hooks/useOrgPermissions';
 import { PROPERTY_ACCESS_QUERY_KEY } from '@/features/dashboard/team/hooks/usePropertyPermissions';
+import type { OrgAccessPayload } from '@/features/dashboard/team/lib/orgPermissions';
 import type { PropertyAccessPayload } from '@/features/dashboard/team/lib/propertyPermissions';
+import {
+  type FeatureAvailabilityPayload,
+  toFeatureAvailabilitySnapshot,
+} from '@/lib/featureAvailability/featureAvailabilityApi';
+import { FEATURE_AVAILABILITY_QUERY_KEY } from '@/lib/featureAvailability/useFeatureAvailability';
 
 /**
  * One call that seeds the query keys the admin guards already read.
@@ -27,6 +35,9 @@ import type { PropertyAccessPayload } from '@/features/dashboard/team/lib/proper
  *   ['properties', orgSlug]                    useProperties
  *   ['property-access', propertyId]            usePropertyPermissions
  *   ['property', propertyId, 'entitlements']   usePropertyEntitlements
+ *   ['org-access', orgSlug]                    useOrgPermissions
+ *   ['feature-availability']                   useFeatureAvailabilitySnapshot
+ *   ['parkings', orgSlug]                      useParkings
  *
  * It also starts `dashboard-stats` on the property dashboard. That call is the only thing the
  * page's first paint waits on, and it used to start ~300 ms late because the shell's own reads
@@ -39,6 +50,10 @@ type BootstrapResponse = {
   properties?: { properties: Property[] };
   propertyAccess?: PropertyAccessPayload;
   entitlements?: Record<string, unknown>;
+  /** Org-scoped extras, so the shell does not fetch them separately. */
+  orgAccess?: OrgAccessPayload;
+  featureAvailability?: FeatureAvailabilityPayload;
+  parkings?: { parkings: unknown[] };
 };
 
 const entitlementsKey = (propertyId: string) => ['property', propertyId, 'entitlements'] as const;
@@ -89,6 +104,20 @@ export function useSessionBootstrap() {
       if (data.properties && orgSlug) {
         queryClient.setQueryData(['properties', orgSlug] as const, data.properties);
       }
+      // Org-scoped reads the shell used to fire right after this resolved.
+      if (data.orgAccess && orgSlug) {
+        queryClient.setQueryData(ORG_ACCESS_QUERY_KEY(orgSlug), data.orgAccess);
+      }
+      if (data.featureAvailability) {
+        queryClient.setQueryData(
+          FEATURE_AVAILABILITY_QUERY_KEY,
+          toFeatureAvailabilitySnapshot(data.featureAvailability)
+        );
+      }
+      if (data.parkings && orgSlug) {
+        queryClient.setQueryData([...PARKINGS_QUERY_KEY, orgSlug] as const, data.parkings);
+      }
+
       if (data.propertyAccess) {
         const propertyId = data.propertyAccess.propertyId;
         queryClient.setQueryData(PROPERTY_ACCESS_QUERY_KEY(propertyId), data.propertyAccess);
