@@ -1,0 +1,37 @@
+{
+  "duration": 6.66,
+  "isolation": {
+    "rigidDraws": 6944,
+    "maximumStrength": 1.5,
+    "noStretchOrShear": true
+  },
+  "frames": 442,
+  "fps": 60,
+  "mouthShapes": [
+    "X",
+    "D",
+    "C",
+    "B",
+    "A",
+    "F",
+    "G",
+    "E",
+    "H"
+  ],
+  "alpha": {
+    "zero": 251463,
+    "partial": 85796,
+    "pixels": 393450
+  },
+  "viewportWidths": [
+    375,
+    390,
+    768,
+    1024,
+    1440
+  ],
+  "playback": "passed",
+  "pause": "passed",
+  "reducedMotion": "passed",
+  "pageErrors": []
+}
