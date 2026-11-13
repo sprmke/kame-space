@@ -767,6 +767,47 @@ residence name, the derived PMO email and the two document-requirement resolutio
 further means splitting the payload by consumer, which changes the API surface for eight call
 sites, so it is recorded rather than attempted.
 
+## 19. Per-page latency, finally readable, and what it showed
+
+The Sentry token blocked this for a while. The cause was not scopes: this organisation ingests the
+**spans** dataset, so `dataset=transactions` returns nothing while `dataset=spans` returns data.
+`sentry.io/api/0/organizations/{org}/events/?field=transaction&field=p75(span.duration)&field=count()&dataset=spans`
+now gives per-route p75 over any period.
+
+### The ranking, 7 days
+
+| Page                                      | p75         | Samples |
+| ----------------------------------------- | ----------- | ------- |
+| `/org/:param/property/:param/analytics`   | **3139 ms** | 100     |
+| `/org/:param/property/:param/maintenance` | **2264 ms** | 140     |
+| `/org/:param/property/:param/marketing`   | **2053 ms** | 240     |
+| `/org/:param/dashboard`                   | **1883 ms** | 200     |
+| `/org/:param/property/:param`             | 1384 ms     | 280     |
+| `/org/:param/property/:param/bookings`    | 1177 ms     | 200     |
+| `/org/:param/bookings`                    | 892 ms      | 40      |
+| `/org/:param/property/:param/finance`     | 660 ms      | 20      |
+
+Also visible: `GET fwor…supabase.co` spans at **p75 4758 ms** across 3 320 samples. The individual
+calls are cheap in isolation; under a page load that fires a dozen of them at once, they are not.
+
+### Two defects this exposed
+
+**1. `app-settings` had no `staleTime`,** so every component that mounted refetched it. One bookings
+page load produced **six** requests for a payload that changes only when someone edits settings.
+`useAppSettings` now uses 60 s, and `useParkings` matches it. Every mutation that changes either
+already invalidates the key, so this cannot serve stale data after a save.
+
+**2. Shell calls fire twice, simultaneously.** `get-session-context` at 298 and 299 ms,
+`org-settings` at 2123 and 2130 ms, and so on for every shell read. Simultaneous duplicates mean
+two mounts, not a refetch — React Query deduplicates in-flight queries, so these are two distinct
+query executions. The page also renders two `<h1>` elements, which may be responsive variants
+rather than proof of a double render.
+
+Cause not yet identified. Instrumenting `window.fetch` showed two `useAppSettings` `queryFn`
+executions plus one from `AdminLayout`, which points at two property contexts rather than one
+component mounting twice. That needs the next session's attention; it is the largest remaining
+multiplier on dashboard cost.
+
 ## Release state
 
 **2026-11-10.** PR #371 synced `main` to `develop`'s tree and shipped the UI side.
