@@ -20,7 +20,7 @@ import { formatEmailDateRange, formatResendFromAddress } from './propertyEmailBr
 import { createServiceClient } from './orgAuth.ts';
 import { isEmailSuppressed } from './emailSuppression.ts';
 import { sendResendEmail } from './sendResendEmail.ts';
-import { reportCronPartialFailure } from './sentryCron.ts';
+import { recordCronItemFailure, reportCronPartialFailure } from './sentryCron.ts';
 import { guestBookingEmailLinkPlaceholderExtras } from './guestBookingEmailLinks.ts';
 import type { GuestSubmission } from './types.ts';
 
@@ -74,6 +74,13 @@ export type PreArrivalSweepResult = {
   sent: number;
   skipped: number;
   failed: number;
+  /**
+   * The first failure, verbatim. A batch job that answers `failed: 3` with no reason is not
+   * operable: the count lands in Sentry, the message only in a log line nobody can reach from
+   * the cron response. The endpoint is cron-secret gated, so the message is returned to pg_net
+   * and also attached to the Sentry warning.
+   */
+  first_error: string | null;
 };
 
 /** Loads the bookings due a reminder today. Exported so the cron test can steer it. */
@@ -185,6 +192,7 @@ export async function runPreArrivalReminderSweep(
     sent: 0,
     skipped: 0,
     failed: 0,
+    first_error: null,
   };
 
   for (const row of candidates) {
@@ -194,7 +202,7 @@ export async function runPreArrivalReminderSweep(
       else result.skipped += 1;
     } catch (err) {
       console.error(`[preArrivalReminder] send failed for ${row.id}:`, err);
-      result.failed += 1;
+      recordCronItemFailure(result, err);
     }
   }
 
@@ -204,7 +212,7 @@ export async function runPreArrivalReminderSweep(
     cron: 'pre-arrival-reminders',
     attempted: candidates.length,
     failed: result.failed,
-    extra: { sent: result.sent },
+    extra: { sent: result.sent, first_error: result.first_error },
   });
 
   return result;
