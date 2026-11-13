@@ -797,6 +797,18 @@ page load produced **six** requests for a payload that changes only when someone
 `useAppSettings` now uses 60 s, and `useParkings` matches it. Every mutation that changes either
 already invalidates the key, so this cannot serve stale data after a save.
 
+Measured after release, one browser session:
+
+| Action                       | `app-settings` requests |
+| ---------------------------- | ----------------------- |
+| First load of `/bookings`    | 6                       |
+| Navigate to the dashboard    | **0**                   |
+| Navigate back to `/bookings` | **0**                   |
+
+So the fix removes the refetch on every navigation, which is the common case. It does **not**
+remove the six on first load, because those six are three distinct keys each fetched twice by the
+double mount below — and a stale time cannot help two simultaneous mounts.
+
 **2. Shell calls fire twice, simultaneously.** `get-session-context` at 298 and 299 ms,
 `org-settings` at 2123 and 2130 ms, and so on for every shell read. Simultaneous duplicates mean
 two mounts, not a refetch — React Query deduplicates in-flight queries, so these are two distinct
