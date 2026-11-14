@@ -40,11 +40,24 @@ export type PosterCanvas = {
   isWide: boolean;
   /** Smallest text size allowed on this canvas (~21px at 1080): phone-feed legibility. */
   minText: number;
-  /** Bottom band covered by platform UI (Story reply bar); content stays above it. */
+  /** Top band covered by platform UI (Stories / Reels header); 14% of a 9:16 canvas. */
+  safeTop: number;
+  /** Bottom band covered by platform UI (reply bar, caption); 18% of a 9:16 canvas. */
   safeBottom: number;
+  /**
+   * Side inset that keeps content inside the centered 3:4 crop the Instagram profile
+   * grid shows for a 4:5 post. Zero on other shapes.
+   */
+  gridInset: number;
   /** Scale a length given as a fraction of the short side. */
   s: (ratio: number) => number;
 };
+
+/** 4:5 feed portrait (1080x1350): wider than 3:4, so the profile grid crops its sides. */
+function isFeedPortrait(width: number, height: number): boolean {
+  const ratio = height / width;
+  return ratio > 1.2 && ratio < 1.3;
+}
 
 export function createPosterCanvas(width: number, height: number): PosterCanvas {
   const short = Math.min(width, height);
@@ -57,7 +70,9 @@ export function createPosterCanvas(width: number, height: number): PosterCanvas 
     isStory: height / width > 1.6,
     isWide: width / height > 1.3,
     minText: Math.max(12, Math.round(short * 0.019)),
-    safeBottom: height / width > 1.6 ? Math.round(height * 0.1) : 0,
+    safeTop: height / width > 1.6 ? Math.round(height * 0.14) : 0,
+    safeBottom: height / width > 1.6 ? Math.round(height * 0.18) : 0,
+    gridInset: isFeedPortrait(width, height) ? Math.round((width - (height * 3) / 4) / 2) : 0,
     s: (ratio: number) => Math.round(short * ratio),
   };
 }
@@ -610,6 +625,8 @@ export function infoBar(options: {
   ink?: string;
   radius?: number;
   floor?: number;
+  /** Keeps the cells inside a crop (the 3:4 grid area on 4:5 posts); the bar still bleeds. */
+  contentInset?: number;
 }): PolotnoChild[] {
   const items = options.items.filter((item) => item.value.trim());
   if (items.length === 0) return [];
@@ -625,12 +642,13 @@ export function infoBar(options: {
       cornerRadius: options.radius ?? 0,
     }),
   ];
-  const cell = options.width / items.length;
+  const inset = Math.max(0, options.contentInset ?? 0);
+  const cell = (options.width - inset * 2) / items.length;
   const ring = Math.round(options.height * 0.46);
   const titleSize = Math.round(options.height * 0.15);
   const valueSize = Math.round(options.height * 0.19);
   items.forEach((item, index) => {
-    const cellX = options.x + index * cell;
+    const cellX = options.x + inset + index * cell;
     const padL = Math.round(cell * 0.08);
     const ringY = options.y + (options.height - ring) / 2;
     children.push(
@@ -822,4 +840,39 @@ export function logoElement(options: {
     keepRatio: true,
     ...(options.round ? { cornerRadius: options.size / 2 } : {}),
   };
+}
+
+/**
+ * Logo on a paper disc at a fixed corner. The disc gives any logo (a square JPEG with
+ * its own background included) a clean surface on the photo, and the fixed size and
+ * corner mean it cannot collide with the copy stack by construction.
+ */
+export function logoChip(options: {
+  url: string;
+  x: number;
+  y: number;
+  size: number;
+  paper: string;
+}): PolotnoChild[] {
+  const padding = Math.round(options.size * 0.14);
+  const inner = options.size - padding * 2;
+  return [
+    rect({
+      name: 'Logo chip',
+      x: options.x,
+      y: options.y,
+      width: options.size,
+      height: options.size,
+      fill: options.paper,
+      subType: 'circle',
+      shadow: { blur: Math.round(options.size * 0.12), offsetY: 2, opacity: 0.18 },
+    }),
+    logoElement({
+      url: options.url,
+      x: options.x + padding,
+      y: options.y + padding,
+      size: inner,
+      round: true,
+    }),
+  ];
 }

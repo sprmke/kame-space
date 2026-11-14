@@ -185,7 +185,7 @@ export function PropertyProfileMainSections({
   const hasDuplicate = towerUnitReady && towerConflict !== null;
   const propertyTypeLabel =
     PROPERTY_TYPES.find((type) => type.value === draft.type)?.label ?? draft.type;
-  const readOnlyFieldClass = 'bg-muted/40';
+  const readOnlyFieldClass = 'bg-muted/40 cursor-not-allowed';
   const { data: unitTypes = [] } = useResidenceUnitTypes(effectiveResidence);
 
   const amenitySummary = summarizeSettingsLabels(
@@ -361,7 +361,7 @@ export function PropertyProfileMainSections({
                 copyUrl={absoluteGuestPropertyUrl(slugPreview)}
                 disabled={lock('basic')}
                 placeholder="property-slug"
-                hint="Renaming the property changes this link. Old links keep working."
+                hint="Renaming updates this public link. Shared links still open this listing."
               />
             </SettingsField>
           </FieldGrid>

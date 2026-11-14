@@ -66,8 +66,8 @@ export function thumbnailFrameForScene(project: VideoProject, sceneIndex: number
 
   const start = sceneStartFrame(project, sceneIndex);
   const sceneFrames = sceneDurationInFrames(scene, project.fps);
-  // ~45% into the clip (and at least ~0.4s) so enter springs have settled.
-  const minOffset = Math.max(1, Math.ceil(project.fps * 0.4));
+  // ~45% into the clip (and at least ~0.6s) so enter springs and the 0.5s text entrance have settled.
+  const minOffset = Math.max(1, Math.ceil(project.fps * 0.6));
   const frameInScene = Math.min(
     Math.max(Math.floor(sceneFrames * 0.45), minOffset),
     Math.max(sceneFrames - 1, 0)
@@ -118,7 +118,9 @@ export async function renderVideoSceneThumbnail(
   project: VideoProject,
   sceneIndex: number,
   brandColor?: string,
-  theme?: MarketingThemeTokens | null
+  theme?: MarketingThemeTokens | null,
+  /** Dev sheets: a frame counted from the start of the scene instead of the settled one. */
+  frameInScene?: number
 ): Promise<string | null> {
   if (typeof document !== 'undefined' && document.hidden) {
     return null;
@@ -128,7 +130,13 @@ export async function renderVideoSceneThumbnail(
   return runVideoThumbnailCapture(async () => {
     const dims = VIDEO_FORMAT_DIMENSIONS[project.format];
     const durationInFrames = videoProjectDurationInFrames(project);
-    const frame = thumbnailFrameForScene(project, sceneIndex);
+    const frame =
+      frameInScene === undefined
+        ? thumbnailFrameForScene(project, sceneIndex)
+        : Math.min(
+            sceneStartFrame(project, sceneIndex) + Math.max(0, frameInScene),
+            Math.max(durationInFrames - 1, 0)
+          );
 
     try {
       await Promise.race([

@@ -20,7 +20,7 @@ export const OUTPUT_PARAM = 'output';
 export const SAMPLE_PARAM = 'sample';
 
 /** What AI Studio makes. Ids match the server (`image` = Photo, `video` = Clip). */
-export const AI_STUDIO_OUTPUTS = ['post', 'image', 'video'] as const;
+export const AI_STUDIO_OUTPUTS = ['post', 'image', 'video', 'reel'] as const;
 export type AiStudioOutput = (typeof AI_STUDIO_OUTPUTS)[number];
 
 export function isAiStudioOutput(value: unknown): value is AiStudioOutput {

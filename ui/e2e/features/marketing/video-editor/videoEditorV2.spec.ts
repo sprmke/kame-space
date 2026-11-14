@@ -159,6 +159,22 @@ test.describe('@ci marketing video editor v2', () => {
     await expect(page.locator('[data-timeline-item]')).toHaveCount(before);
   });
 
+  test('the music clip offers Cut to the beat and says so when the track cannot be read', async ({
+    page,
+  }) => {
+    await installMediaMocks(page, [asset('s1', 'audio', 'song.mp3')]);
+    await openDraft(page);
+    await openMediaPanel(page);
+    await page.getByRole('tab', { name: 'Audio' }).click();
+    await page.getByRole('button', { name: 'Use song.mp3' }).click();
+    await page.locator('[data-lane]').first().locator('[data-timeline-item]').first().click();
+    const button = page.getByRole('button', { name: 'Cut to the beat' });
+    await expect(button).toBeVisible();
+    // The mocked file is not audio, so decoding fails and the editor says so.
+    await button.click();
+    await expect(page.getByText('Could not read this track to find the beat.')).toBeVisible();
+  });
+
   test('delete removes the selected clip', async ({ page }) => {
     await installMediaMocks(page, []);
     await openDraft(page);

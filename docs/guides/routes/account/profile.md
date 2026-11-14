@@ -56,6 +56,8 @@ Guests manage their own display name, bio, phone, location, and photo from their
   A: No. Profile info (name, bio, phone, location, photo) is separate from booking details already submitted.
 - Q: How do I open the host dashboard while browsing as a guest?
   A: Open the avatar menu and tap Dashboard. On a phone, open More and tap Dashboard.
+- Q: Where do I clear cached app data or check the app version?
+  A: Open Profile. Under On this device you can check for updates or clear saved data. Install the app from More.
 
 ---
 
@@ -75,12 +77,13 @@ Sub-nav: Profile · Trips · Reviews · Stays · Vouchers · Favorites · Ticket
 
 - Edit display name, bio, phone, location, profile photo
 - Same form opens from the **host dashboard** sidebar account menu → **Profile** (modal)
-- Dashboard modal: centered larger photo, read-only **Email** field above display name; **`/account/profile`** page layout unchanged
+- Dashboard modal: ~32×42rem (desktop), centered larger photo, read-only **Email** field above display name; **`/account/profile`** page layout unchanged
 - **Phone:** optional; when set, must be an 11-digit Philippine mobile (`09…`) — same rules as team invites (`validatePhilippineMobilePhone`)
 - **Location:** `LocationSearchInput` — Philippines-biased Places autocomplete (legacy `AutocompleteService` + `getDetails`); loads **Places library only** on first focus; suggestions in a Radix **Popover** (works inside dashboard Profile modal); stores city/province/country label (max 120 chars); manual typing when Maps API key is unset
 - API: **`guest-profile`** GET/PATCH, **`upload-guest-profile-asset`** POST
 - DB: **`guest_profiles`** (RLS scoped to `auth.uid()`)
 - Avatar resolution: profile row → OAuth metadata → initials
+- **On this device** (`AppInfoCard`): version + **Check updates**; offline usage with **Keep data** / **Clear saved data** on one row when Keep is shown. Same block under the host dashboard Profile modal. **Install app** stays on More / marketing, not here
 
 ---
 
@@ -109,6 +112,7 @@ Saved-properties grid (the guest's heart/favorites list). See [favorites.md](./f
 | Nav menu       | `ui/src/features/guest/account/components/GuestAccountMenu.tsx`                                                                                                                                           |
 | Layout + guard | `ui/src/features/guest/account/components/GuestAccountLayout.tsx`, `ui/src/features/guest/account/components/GuestAccountSidebar.tsx`, `ui/src/features/guest/account/components/RequireGuestSession.tsx` |
 | Pages          | `ui/src/features/guest/account/pages/*`, `GuestProfileModal.tsx`, `GuestProfileForm.tsx`, `GuestMessagesHub.tsx`, `GuestMessageThreadRow.tsx`                                                             |
+| On this device | `ui/src/components/pwa/AppInfoCard.tsx` (Profile page + host Profile modal)                                                                                                                               |
 | Validation     | `ui/src/features/guest/account/lib/guestProfileValidation.ts`, `ui/src/lib/google-maps/LocationSearchInput.tsx`                                                                                           |
 | API client     | `ui/src/features/guest/account/lib/guestAccountApi.ts`                                                                                                                                                    |
 | Edge services  | `supabase/functions/_shared/guestProfileService.ts`                                                                                                                                                       |

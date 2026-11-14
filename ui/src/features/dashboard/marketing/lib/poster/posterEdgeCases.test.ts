@@ -169,3 +169,73 @@ describe('poster edge cases', () => {
     expect(fitted.lines).toEqual(['Supercalifragilistic']);
   });
 });
+
+describe('listings with little to show', () => {
+  const LONG_NAME = 'A Very Long Listing Name For The Garden View Loft Residences';
+  const base = buildPosterFacts({
+    propertyName: LONG_NAME,
+    photos: [],
+    property: null,
+  });
+
+  it('centres a text-only post in the safe area instead of pinning it to the top', () => {
+    for (const format of FORMATS) {
+      const spec = normalizePosterSpec(
+        { archetype: 'minimal-title', copy: { headline: 'Bare Stay' } },
+        base
+      );
+      const document = compilePosterDocument(spec, base, format);
+      const texts = document.pages[0]!.children.filter((child) => child.type === 'text');
+      const top = Math.min(...texts.map((t) => Number(t.y)));
+      const bottom = Math.max(...texts.map((t) => Number(t.y) + Number(t.height)));
+      const mid = (top + bottom) / 2;
+      const isStory = document.height / document.width > 1.6;
+      const regionMid = isStory
+        ? (document.height * 0.14 + document.height * (1 - 0.18)) / 2
+        : document.height / 2;
+      // Within a quarter of the canvas of true centre; the old layout sat near the top edge.
+      expect(Math.abs(mid - regionMid)).toBeLessThan(document.height * 0.25);
+      expect(mid).toBeGreaterThan(document.height * 0.3);
+      expect(auditPosterDocument(document)).toEqual([]);
+    }
+  });
+
+  it('prints the listing name once when the headline already is the name', () => {
+    const withPhoto = { ...base, photos: ['https://example.com/a.jpg'] };
+    const spec = normalizePosterSpec(
+      { archetype: 'sky-headline', copy: { headline: LONG_NAME }, photoIndexes: [0] },
+      withPhoto
+    );
+    const document = compilePosterDocument(spec, withPhoto, 'instagram-story', {
+      photoSizes: { 'https://example.com/a.jpg': { width: 1600, height: 1200 } },
+    });
+    const names = document.pages[0]!.children.filter(
+      (child) =>
+        child.type === 'text' && String(child.text).replace(/\s+/g, ' ').includes('Garden View')
+    );
+    expect(names).toHaveLength(1);
+  });
+
+  it('every goal compiles to a clean poster for a bare listing with no photos', () => {
+    for (const goal of POSTER_GOALS) {
+      for (const spec of buildRuleBasedPosterSpecs(base, goal)) {
+        for (const format of FORMATS) {
+          expect(
+            auditPosterDocument(compilePosterDocument(spec, base, format)),
+            `${goal} ${spec.archetype} ${format}`
+          ).toEqual([]);
+        }
+      }
+    }
+  });
+});
+
+describe('spec version', () => {
+  it('marks the six frozen layouts version 1 and every later layout version 2', async () => {
+    const { POSTER_ARCHETYPE_IDS, posterSpecVersion } = await import(
+      '@/features/dashboard/marketing/lib/poster/posterSpec'
+    );
+    expect(POSTER_ARCHETYPE_IDS.slice(0, 6).map(posterSpecVersion)).toEqual([1, 1, 1, 1, 1, 1]);
+    expect(POSTER_ARCHETYPE_IDS.slice(6).every((id) => posterSpecVersion(id) === 2)).toBe(true);
+  });
+});

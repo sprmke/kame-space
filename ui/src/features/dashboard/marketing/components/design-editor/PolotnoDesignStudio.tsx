@@ -43,7 +43,9 @@ import { MarketingReplaceTemplateDialog } from '@/features/dashboard/marketing/c
 import { MarketingReviewSidebarSection } from '@/features/dashboard/marketing/components/shared/MarketingReviewSidebarSection';
 import { MarketingSizeDialog } from '@/features/dashboard/marketing/components/shared/MarketingSizeDialog';
 import { useMarketingTheme } from '@/features/dashboard/marketing/components/themes/MarketingThemeProvider';
-import { useGenerateMarketingTemplate } from '@/features/dashboard/marketing/hooks/useGenerateMarketingTemplate';
+import type { PosterGoal } from '@/features/dashboard/marketing/lib/poster/posterSpec';
+import type { DesignCampaignCategory } from '@/features/dashboard/marketing/lib/designAiTokens';
+import { useAiPosterEngine } from '@/features/dashboard/marketing/hooks/useAiPosterEngine';
 import { useMarketingAutoSaveSuspension } from '@/features/dashboard/marketing/hooks/useMarketingAutoSaveSuspension';
 import { useMarketingBookedDates } from '@/features/dashboard/marketing/hooks/useMarketingBookedDates';
 import { useMarketingDesignSession } from '@/features/dashboard/marketing/hooks/useMarketingDesignSession';
@@ -51,7 +53,6 @@ import { useDuplicateMarketingItem } from '@/features/dashboard/marketing/hooks/
 import { useMarketingPermissions } from '@/features/dashboard/marketing/hooks/useMarketingPermissions';
 import {
   fetchMarketingTemplate,
-  saveMarketingTemplate,
   type MarketingTemplateRecord,
 } from '@/features/dashboard/marketing/hooks/useMarketingTemplates';
 import { usePolotnoHistoryState } from '@/features/dashboard/marketing/hooks/usePolotnoHistoryState';
@@ -63,7 +64,6 @@ import {
   getCollageSettings,
   isStoreInCollageMode,
 } from '@/features/dashboard/marketing/lib/collage/collageStoreOps';
-import { applyDesignAiPreferencesToTokens } from '@/features/dashboard/marketing/lib/designAiGenerateOptions';
 import {
   DESIGN_FORMAT_DIMENSIONS,
   getCampaignTemplate,
@@ -99,11 +99,9 @@ import { ensurePolotnoConfigured } from '@/features/dashboard/marketing/lib/polo
 import { polishOrgLogoElements } from '@/features/dashboard/marketing/lib/polotno/orgLogoCircle';
 import {
   DESIGN_AI_FORMATS,
-  resolveAiGeneratedDesignDocument,
 } from '@/features/dashboard/marketing/lib/polotno/polotnoAiCampaignDocuments';
 import {
   buildPolotnoCampaignDocument,
-  themeCampaignFontMap,
 } from '@/features/dashboard/marketing/lib/polotno/polotnoCampaignDocuments';
 import {
   createPolotnoStore,
@@ -111,7 +109,6 @@ import {
   hasUnpersistedBlobSources,
   type PolotnoStore,
 } from '@/features/dashboard/marketing/lib/polotno/polotnoStore';
-import { pickRandomPropertyPhoto } from '@/features/dashboard/marketing/lib/polotno/propertyMedia';
 import { syncPolotnoTextBounds } from '@/features/dashboard/marketing/lib/polotno/syncPolotnoTextBounds';
 import {
   renderDesignStoreSavedThumbnail,
@@ -121,9 +118,7 @@ import {
   DESIGN_PRESET_FORMATS,
   type DesignTemplateFormat,
 } from '@/features/dashboard/marketing/lib/templateRegistry';
-import { themedAiDesignTokens } from '@/features/dashboard/marketing/lib/theme/aiThemeAdapter';
 import {
-  applyCampaignFontsToDocument,
   polotnoHandEditedIds,
   polotnoThemeBaseline,
   rethemePolotnoDocument,
@@ -198,6 +193,24 @@ function presetBaseId(sourceTemplateId: string | null): string | null {
   return sourceTemplateId?.startsWith('preset:') ? sourceTemplateId.slice('preset:'.length) : null;
 }
 
+/** The poster goal each rail category maps to. */
+const POSTER_GOAL_FOR_RAIL_CATEGORY: Partial<Record<DesignCampaignCategory, PosterGoal>> = {
+  promo: 'promo',
+  slots: 'promo',
+  giveaway: 'promo',
+  'fully-booked': 'vibe',
+  reviews: 'vibe',
+  custom: 'vibe',
+};
+
+/** What the category is, in words the poster director can write for. */
+const RAIL_CATEGORY_HINT: Partial<Record<DesignCampaignCategory, string>> = {
+  slots: 'Last open dates',
+  giveaway: 'Giveaway',
+  'fully-booked': 'Fully booked, join the waitlist',
+  reviews: 'Guest reviews',
+};
+
 export function PolotnoDesignStudio({ document, nav, onPublish }: Props) {
   const { property, org } = useOrgContext();
   const { data: orgSettings } = useOrgSettings();
@@ -216,7 +229,7 @@ export function PolotnoDesignStudio({ document, nav, onPublish }: Props) {
   const storeRef = useRef<PolotnoStore | null>(null);
   const isBelowLg = useIsBelowLg();
   const propertyId = usePropertyIdParam();
-  const generateTemplate = useGenerateMarketingTemplate();
+  const posterEngine = useAiPosterEngine(theme.key);
   const duplicate = useDuplicateMarketingItem();
 
   const record = document.mode === 'saved' ? document.record : null;
@@ -770,107 +783,37 @@ export function PolotnoDesignStudio({ document, nav, onPublish }: Props) {
     async (input: MarketingAiGenerateInput) => {
       if (!('content' in input.preferences) || !('backgroundMood' in input.preferences)) return;
       setAiGenerateBusy(true);
-      let aiSucceeded = false;
       try {
-        const amenities = publicProperty?.amenities ?? [];
-        const amenitiesText = amenities.slice(0, 8).join(', ') || undefined;
-        const result = await generateTemplate.mutateAsync({
-          contentType: 'design',
-          prompt: input.prompt,
-          includeContext: input.includeContext,
-          amenitiesText: input.includeContext.amenities ? amenitiesText : undefined,
-          availabilityText: input.includeContext.availability
-            ? binding.availabilityText
-            : undefined,
-          content: input.preferences.content,
-          preferences: {
-            layoutArchetype: input.preferences.layoutArchetype,
-            fontPairing: input.preferences.fontPairing,
-            backgroundMood: input.preferences.backgroundMood,
-            category: input.preferences.category,
-          },
+        // One engine: every rail category goes through the AI Studio poster engine (real
+        // photos, facts from settings, the finished layouts). The category steers the
+        // goal and rides on the prompt so the director writes for it.
+        const posterGoal = POSTER_GOAL_FOR_RAIL_CATEGORY[input.preferences.category] ?? 'vibe';
+        const label = RAIL_CATEGORY_HINT[input.preferences.category];
+        const posterFormat = DESIGN_AI_FORMATS.includes(format) ? format : DESIGN_AI_FORMATS[0]!;
+        const batch = await posterEngine.generateBatch({
+          goal: posterGoal,
+          prompt: label ? `${label}: ${input.prompt}` : input.prompt,
+          format: posterFormat,
         });
-        if (result.contentType !== 'design') {
-          throw new Error('Unexpected content type from AI generation');
-        }
-        aiSucceeded = true;
-
-        // AI picks layout, words and category; the theme sets colors, type and background.
-        const tokens = themedAiDesignTokens(
-          applyDesignAiPreferencesToTokens(result.tokens, input.preferences),
-          themeTokens
-        );
-        const aiFormat = DESIGN_AI_FORMATS.includes(format) ? format : DESIGN_AI_FORMATS[0]!;
-        const imageUrls =
-          publicProperty?.images?.filter(Boolean) ??
-          (binding.propertyPhoto ? [binding.propertyPhoto] : []);
-        const doc = applyCampaignFontsToDocument(
-          resolveAiGeneratedDesignDocument(binding, tokens, aiFormat, {
-            brandColor: accentColor,
-            propertyPhotoUrl: input.includeContext.propertyPhoto
-              ? pickRandomPropertyPhoto(imageUrls)
-              : null,
-            orgLogoUrl,
-            includeCta: input.includeContext.cta ?? true,
-            includePropertyName: input.includeContext.propertyName ?? true,
-            includeOrgLogo: input.includeContext.orgLogo ?? true,
-          }),
-          themeCampaignFontMap(themeTokens)
-        );
-        const resized = await resizeDesignDocument(
-          doc as Record<string, unknown>,
-          DESIGN_FORMAT_DIMENSIONS[aiFormat].width,
-          DESIGN_FORMAT_DIMENSIONS[aiFormat].height
-        );
-        const aiGenerationId =
-          typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-            ? crypto.randomUUID()
-            : `ai-${Date.now()}`;
-        const saved = await saveMarketingTemplate(propertyId, {
-          name: tokens.label,
-          contentType: 'design',
-          aspectPreset: aiFormat,
-          platform: aiFormat.includes('facebook') ? 'facebook' : 'instagram',
-          themeKey: theme.key,
-          kind: 'design',
-          designJson: {
-            templateId: '',
-            format: aiFormat,
-            binding,
-            aiGenerated: true,
-            aiGenerationId,
-            aiTokens: tokens,
-            polotno: resized?.document ?? doc,
-            ...themeStampForSave(themeTokens),
-            ...(resized?.thumbnail ? { thumbnailDataUrl: resized.thumbnail } : {}),
-          },
+        const lead = batch.specs[0];
+        if (!lead) throw new Error('Could not make a post. Try different words.');
+        const id = await posterEngine.saveToPosts({
+          spec: lead,
+          photoUrls: batch.photoUrls,
+          format: posterFormat,
+          name: lead.copy.headline || 'Post made with AI',
+          previewUrl: null,
         });
         setAiGenerateOpen(false);
         toast.success('Post made with AI');
-        nav.openItem(saved.id, { replace: session.isDraft && !edited });
+        nav.openItem(id, { replace: session.isDraft && !edited });
       } catch (error) {
-        if (aiSucceeded) {
-          toast.error((error as Error).message || 'Could not save the post');
-        }
+        toast.error((error as Error).message || 'Could not make the post. Try again.');
       } finally {
         setAiGenerateBusy(false);
       }
     },
-    [
-      accentColor,
-      binding,
-      edited,
-      format,
-      generateTemplate,
-      nav,
-      orgLogoUrl,
-      propertyId,
-      publicProperty?.amenities,
-      publicProperty?.images,
-      session.isDraft,
-      theme.key,
-      themeTokens,
-    ]
+    [edited, format, posterEngine, nav, session.isDraft]
   );
 
   // ── Export ──────────────────────────────────────────────────────────────
@@ -1009,7 +952,7 @@ export function PolotnoDesignStudio({ document, nav, onPublish }: Props) {
             <Button
               type="button"
               className="min-h-[44px] w-full gap-2"
-              disabled={aiGenerateBusy || generateTemplate.isPending}
+              disabled={aiGenerateBusy}
               onClick={() => setAiGenerateOpen(true)}
             >
               <Sparkles className="size-4" aria-hidden />
@@ -1033,7 +976,6 @@ export function PolotnoDesignStudio({ document, nav, onPublish }: Props) {
       handleSelectReview,
       canGenerate,
       aiGenerateBusy,
-      generateTemplate.isPending,
     ]
   );
 
@@ -1265,7 +1207,7 @@ export function PolotnoDesignStudio({ document, nav, onPublish }: Props) {
         }}
         contentType="design"
         theme={{ name: theme.name, tokens: themeTokens }}
-        generating={aiGenerateBusy || generateTemplate.isPending}
+        generating={aiGenerateBusy}
         propertyPhotoUrls={propertyPhotoUrls}
         brandColor={accentColor}
         contextOptions={[

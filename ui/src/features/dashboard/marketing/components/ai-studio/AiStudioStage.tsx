@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { AlertTriangle, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 
+import { AiStudioBeforeAfter } from '@/features/dashboard/marketing/components/ai-studio/AiStudioBeforeAfter';
 import { AiStudioGeneratingStage } from '@/features/dashboard/marketing/components/ai-studio/AiStudioGeneratingStage';
 import type { AiPendingTurn } from '@/features/dashboard/marketing/components/ai-studio/AiStudioThread';
 import {
@@ -163,6 +164,16 @@ function VersionMedia({
         controls
         playsInline
         className="size-full bg-black object-contain"
+      />
+    );
+  }
+  const original = job.referenceUrls.length === 1 ? job.referenceUrls[0] : null;
+  if (original && original !== job.outputUrl) {
+    return (
+      <AiStudioBeforeAfter
+        before={original}
+        after={job.outputUrl}
+        alt={`Version ${version.number}`}
       />
     );
   }

@@ -94,3 +94,7 @@ Library cards (Marketing Studio Library) read `thumbnailUrl` from `view=library`
 ## Not in this slice
 
 - Theme colors in OpenPolotno's color picker (the toolbar bundle keeps its preset list private).
+
+## AI Post wordmark
+
+`themedPosterFontPairing` also sets `PosterFontPairing.wordmark` to the theme display face, so the "at BRAND" line no longer uses a fixed Fredoka inside a theme. Outside a theme the layout default is unchanged.

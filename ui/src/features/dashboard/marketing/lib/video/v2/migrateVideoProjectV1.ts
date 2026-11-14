@@ -80,6 +80,7 @@ function sceneToMediaItem(scene: VideoScene, index: number, fps: number): MediaI
     item.trimBeforeFrames = 0;
   }
   if (scene.motion !== undefined) item.motion = scene.motion;
+  if (scene.focal) item.focal = scene.focal;
   if (index > 0 && scene.transition !== 'none') {
     item.transitionIn = {
       type: scene.transition,

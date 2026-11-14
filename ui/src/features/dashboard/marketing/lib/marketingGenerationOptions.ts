@@ -212,3 +212,91 @@ export const VIDEO_SUBJECT_IDEAS: string[] = [
   'Pool water rippling in the sun',
   'City lights coming on at dusk',
 ];
+
+/**
+ * Enhance a photo: structure-locked edits of one real listing photo. The instruction
+ * is wrapped server-side (`buildImageEditPrompt` with `lockStructure`), so each says
+ * only what may change.
+ */
+export type EnhancePreset = {
+  id: string;
+  title: string;
+  hint: string;
+  instruction: string;
+  /** Forces the output shape (Extend presets). */
+  aspect?: string;
+  /** Asks for the largest size the tier allows (Upscale). */
+  upscale?: boolean;
+};
+
+export const ENHANCE_PRESETS: EnhancePreset[] = [
+  {
+    id: 'brighten',
+    title: 'Brighten and balance',
+    hint: 'Even light, true colors',
+    instruction:
+      'brighten the room and balance exposure and white balance so it looks like a bright, even, natural daylight photo; keep colors true and do not over-process',
+  },
+  {
+    id: 'golden-hour',
+    title: 'Golden hour',
+    hint: 'Warm late sun',
+    instruction:
+      'change the light to warm late-afternoon golden sunlight with soft long shadows, keeping everything else identical',
+  },
+  {
+    id: 'blue-hour',
+    title: 'Blue hour',
+    hint: 'Dusk glow',
+    instruction:
+      'change the light to just after sunset: cool blue sky outside and warm interior lamps glowing, keeping everything else identical',
+  },
+  {
+    id: 'declutter',
+    title: 'Declutter',
+    hint: 'Clear small mess',
+    instruction:
+      'remove small loose clutter such as stray cables, bottles, papers and trash, but keep all furniture, decor and fixtures exactly as they are',
+  },
+  {
+    id: 'clear-sky',
+    title: 'Clear sky',
+    hint: 'Blue sky in windows',
+    instruction:
+      'replace a dull or overcast sky seen through windows and outdoors with a clear blue sky, keeping everything else identical',
+  },
+  {
+    id: 'extend-portrait',
+    title: 'Extend to 4:5',
+    hint: 'Taller for the feed',
+    instruction:
+      'extend the photo to a taller frame by continuing the existing walls, floor and ceiling naturally; the original content stays exactly as it is and nothing new is added',
+    aspect: '4:5',
+  },
+  {
+    id: 'extend-story',
+    title: 'Extend to 9:16',
+    hint: 'Full-height Story',
+    instruction:
+      'extend the photo to a full-height vertical frame by continuing the existing walls, floor and ceiling naturally; the original content stays exactly as it is and nothing new is added',
+    aspect: '9:16',
+  },
+  {
+    id: 'upscale',
+    title: 'Upscale',
+    hint: 'Sharper, more detail',
+    instruction:
+      'increase sharpness and fine detail and reduce noise and compression artifacts; do not change anything in the scene',
+    upscale: true,
+  },
+];
+
+export function enhancePresetById(id: string | null | undefined): EnhancePreset | undefined {
+  return ENHANCE_PRESETS.find((item) => item.id === id);
+}
+
+export function enhanceInstruction(presetId: string | null, note: string): string {
+  const preset = ENHANCE_PRESETS.find((item) => item.id === presetId);
+  const extra = note.trim();
+  return [preset?.instruction, extra].filter(Boolean).join('. ');
+}

@@ -35,18 +35,19 @@ The stack keeps all 159 skills installed but makes only a small curated set visi
 
 | Set                      | Count | Cost per request |
 | ------------------------ | ----- | ---------------- |
-| Visible (every provider) | 5     | ~161 tokens      |
-| Library (loaded by name) | 154   | 0 until used     |
+| Visible (every provider) | 6     | ~164 tokens      |
+| Library (loaded by name) | 153   | 0 until used     |
 
-The five visible skills are chosen because they change behaviour on almost every task:
+The visible skills are chosen because they change behaviour on almost every task:
 
-| Skill                            | Why always on                                                             |
-| -------------------------------- | ------------------------------------------------------------------------- |
-| `ponytail`                       | Smallest change that solves the task, no speculative code                 |
-| `investigate-first`              | Diagnose before editing on ambiguous failures                             |
-| `surgical-patch`                 | Fix at the narrowest responsible layer                                    |
-| `verification-before-completion` | Never claim done without running the gate                                 |
-| `agent-skills-index`             | Maps a task to the other 154 skills without paying for their descriptions |
+| Skill                            | Why always on                                                                 |
+| -------------------------------- | ----------------------------------------------------------------------------- |
+| `ponytail`                       | Smallest change that solves the task, no speculative code                     |
+| `investigate-first`              | Diagnose before editing on ambiguous failures                                 |
+| `surgical-patch`                 | Fix at the narrowest responsible layer                                        |
+| `verification-before-completion` | Never claim done without running the gate                                     |
+| `agent-skills-index`             | Maps a task to the other library skills without paying for their descriptions |
+| `humanizer`                      | Strip AI-sounding prose on every provider (UI copy, docs, PR text)            |
 
 ## Provider discovery, verified
 

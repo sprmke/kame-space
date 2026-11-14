@@ -12,12 +12,12 @@ export const DESIGN_FORMAT_DIMENSIONS: Record<
 };
 
 /**
- * Formats with hand-built Design presets. 4:5 portrait is produced by AI Post
- * (lib/poster) and opens in the Design editor, but the preset library has not been
- * tuned for it, so the editor's format picker only lists it while it's the open format.
+ * Formats with built-in Design presets. The layouts are ratio-based, so 4:5 portrait
+ * (checked on the preset contact sheet, plan 9.2) is offered beside the others.
  */
 export const DESIGN_PRESET_FORMATS: DesignTemplateFormat[] = [
   'instagram-post',
+  'instagram-portrait',
   'instagram-story',
   'facebook-post',
 ];

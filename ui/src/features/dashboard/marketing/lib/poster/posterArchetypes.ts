@@ -1,5 +1,16 @@
 import type { PolotnoChild } from '@/features/dashboard/marketing/lib/polotno/polotnoCampaignDocuments';
 import {
+  buildArchFrame,
+  buildBigType,
+  buildDuoCollage,
+  buildTrioGrid,
+  buildFramedEditorial,
+  buildQuoteCard,
+  buildSplitPanel,
+  buildInfoCard,
+  buildPhotoFirst,
+} from '@/features/dashboard/marketing/lib/poster/cleanLayouts';
+import {
   readableOn,
   type PosterPalette,
 } from '@/features/dashboard/marketing/lib/poster/posterColor';
@@ -217,7 +228,7 @@ function buildWaveDuo(ctx: PosterBuildContext): PosterBuildResult {
 
   const photoABox = pick(canvas, {
     square: { x: W * 0.44, y: 0, w: W * 0.56, h: H * (hasSecond ? 0.56 : 0.64) },
-    story: { x: 0, y: 0, w: W, h: H * 0.4 },
+    story: { x: 0, y: 0, w: W, h: H * 0.36 },
     wide: { x: W * 0.5, y: 0, w: W * 0.5, h: H },
   });
   if (photoA) {
@@ -244,7 +255,7 @@ function buildWaveDuo(ctx: PosterBuildContext): PosterBuildResult {
   }
   const col = pick(canvas, {
     square: { x: pad, w: W * 0.42 - pad, top: pad * 1.1 },
-    story: { x: pad, w: W - pad * 2, top: H * 0.43 },
+    story: { x: pad, w: W - pad * 2, top: H * 0.39 },
     wide: { x: pad, w: W * 0.47 - pad, top: pad * 0.9 },
   });
   const center = col.x + col.w / 2;
@@ -460,7 +471,11 @@ function buildSkyHeadline(ctx: PosterBuildContext): PosterBuildResult {
     );
   }
 
-  let cursor = pick(canvas, { square: pad * 0.9, story: pad * 2.2, wide: pad });
+  let cursor = pick(canvas, {
+    square: pad * 0.9,
+    story: Math.max(pad * 2.2, canvas.safeTop),
+    wide: pad,
+  });
   const eyebrow = push(
     children,
     posterText({
@@ -636,7 +651,10 @@ function buildSkyHeadline(ctx: PosterBuildContext): PosterBuildResult {
     if (band.height > 0) bottom -= band.height + canvas.s(0.015);
   }
   const nameSize = canvas.s(pick(canvas, { square: 0.085, story: 0.1, wide: 0.08 }));
-  if (room(nameSize * 1.2)) {
+  // The listing name prints once: when the headline already is the name, skip this line.
+  const headlineIsName =
+    spec.copy.headline.trim().toLowerCase() === facts.propertyName.trim().toLowerCase();
+  if (!headlineIsName && room(nameSize * 1.2)) {
     const name = posterText({
       floor: canvas.minText,
       name: 'Property name',
@@ -689,6 +707,7 @@ function buildSkyHeadline(ctx: PosterBuildContext): PosterBuildResult {
         palette,
         titleRole: fonts.chip,
         valueRole: fonts.body,
+        contentInset: canvas.gridInset,
       })
     );
   }
@@ -721,7 +740,11 @@ function buildNightGlass(ctx: PosterBuildContext): PosterBuildResult {
   );
 
   const textW = pick(canvas, { square: W * 0.62, story: W - pad * 2, wide: W * 0.5 });
-  let cursor = pick(canvas, { square: pad, story: pad * 2, wide: pad * 0.8 });
+  let cursor = pick(canvas, {
+    square: pad,
+    story: Math.max(pad * 2, canvas.safeTop),
+    wide: pad * 0.8,
+  });
   const eyebrow = push(
     children,
     posterText({
@@ -1016,7 +1039,12 @@ function buildMinimalTitle(ctx: PosterBuildContext): PosterBuildResult {
   }
   const textW = pick(canvas, { square: W * 0.8, story: W * 0.84, wide: W * 0.64 });
   const textX = (W - textW) / 2;
-  let cursor = pick(canvas, { square: pad * 1.1, story: pad * 2.4, wide: pad });
+  let cursor = pick(canvas, {
+    square: pad * 1.1,
+    story: Math.max(pad * 2.4, canvas.safeTop),
+    wide: pad,
+  });
+  const startY = cursor;
   const leafSize = canvas.s(0.05);
   children.push(
     iconElement({
@@ -1062,7 +1090,25 @@ function buildMinimalTitle(ctx: PosterBuildContext): PosterBuildResult {
     })
   );
   addLegibilityScrims(canvas, children, { top: { color: palette.scrimLight, alpha: 0.9 } });
+  if (!photo) centerStackVertically(canvas, children, startY, cursor);
   return { background: palette.field, children };
+}
+
+/**
+ * A poster with no photo is type only: centre the stack in the safe area instead of
+ * leaving it pinned to the top of an empty canvas.
+ */
+function centerStackVertically(
+  canvas: PosterCanvas,
+  children: PolotnoChild[],
+  stackTop: number,
+  stackBottom: number
+): void {
+  const regionTop = canvas.safeTop;
+  const regionBottom = canvas.height - canvas.safeBottom;
+  const shift = (regionTop + regionBottom) / 2 - (stackTop + stackBottom) / 2;
+  if (!(shift > 0)) return;
+  for (const child of children) child.y = Number(child.y) + shift;
 }
 
 // ---------------------------------------------------------------------------
@@ -1079,7 +1125,11 @@ function buildMagazineCover(ctx: PosterBuildContext): PosterBuildResult {
   const shadeRgb = parseHexRgb(warmShade) ?? palette.scrimDark;
 
   const textW = pick(canvas, { square: W * 0.6, story: W * 0.8, wide: W * 0.5 });
-  let cursor = pick(canvas, { square: pad * 1.1, story: pad * 2.2, wide: pad });
+  let cursor = pick(canvas, {
+    square: pad * 1.1,
+    story: Math.max(pad * 2.2, canvas.safeTop),
+    wide: pad,
+  });
   const headline = push(
     children,
     posterText({
@@ -1131,7 +1181,7 @@ function buildMagazineCover(ctx: PosterBuildContext): PosterBuildResult {
     floor: canvas.minText,
     name: 'Brand',
     value: brand,
-    role: WORDMARK_ROLE,
+    role: fonts.wordmark ?? WORDMARK_ROLE,
     x: pad + atSize * 1.5,
     y: cursor,
     width: textW - atSize * 1.5,
@@ -1215,7 +1265,7 @@ function buildMagazineCover(ctx: PosterBuildContext): PosterBuildResult {
   const hasLogo = spec.include.logo && Boolean(facts.logoUrl);
   if (features.length > 0) {
     const stripH = canvas.s(pick(canvas, { square: 0.085, story: 0.08, wide: 0.1 }));
-    const stripW = W - pad * 2 - (hasLogo && !canvas.isStory ? logoSize * 0.55 : 0);
+    const stripW = W - pad * 2 - (hasLogo && !canvas.isStory ? logoSize + pad * 0.3 : 0);
     const stripY = bottom - stripH;
     const iconSize = stripH * 0.4;
     const labelWidth = (count: number) => (stripW - stripH * 0.4) / count - iconSize - stripH * 0.2;
@@ -1338,7 +1388,11 @@ function buildFeatureSticker(ctx: PosterBuildContext): PosterBuildResult {
   const photo = fullBleedPhoto(ctx, 0.62);
   if (photo) children.push(photo);
 
-  let cursor = pick(canvas, { square: pad * 0.7, story: pad * 1.8, wide: pad * 0.6 });
+  let cursor = pick(canvas, {
+    square: pad * 0.7,
+    story: Math.max(pad * 1.8, canvas.safeTop),
+    wide: pad * 0.6,
+  });
   if (spec.include.logo && facts.logoUrl) {
     const logoSize = canvas.s(pick(canvas, { square: 0.12, story: 0.15, wide: 0.12 }));
     children.push(
@@ -1608,6 +1662,15 @@ export const POSTER_ARCHETYPES: Record<
   'minimal-title': buildMinimalTitle,
   'magazine-cover': buildMagazineCover,
   'feature-sticker': buildFeatureSticker,
+  'photo-first': buildPhotoFirst,
+  'framed-editorial': buildFramedEditorial,
+  'big-type': buildBigType,
+  'info-card': buildInfoCard,
+  'split-panel': buildSplitPanel,
+  'quote-card': buildQuoteCard,
+  'arch-frame': buildArchFrame,
+  'duo-collage': buildDuoCollage,
+  'trio-grid': buildTrioGrid,
 };
 
 /** Default type system per archetype, used when the director doesn't pick one. */
@@ -1618,4 +1681,13 @@ export const POSTER_ARCHETYPE_DEFAULT_FONTS: Record<PosterArchetypeId, PosterFon
   'minimal-title': 'editorial-calm',
   'magazine-cover': 'magazine-cover',
   'feature-sticker': 'playful-pop',
+  'photo-first': 'modern-minimal',
+  'framed-editorial': 'editorial-calm',
+  'big-type': 'modern-minimal',
+  'info-card': 'editorial-calm',
+  'split-panel': 'modern-minimal',
+  'quote-card': 'editorial-calm',
+  'arch-frame': 'editorial-calm',
+  'duo-collage': 'modern-minimal',
+  'trio-grid': 'modern-minimal',
 };

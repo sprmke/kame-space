@@ -1333,19 +1333,8 @@ export async function allocatePropertySlug(
   preferred?: string,
   excludePropertyId?: string
 ): Promise<string> {
-  const { slugifyName, withSlugSuffix } = await import('./slugUtils.ts');
-  const base = slugifyName(preferred?.trim() || name);
-  for (let i = 0; i < 20; i++) {
-    const candidate = withSlugSuffix(base, i);
-    const { data } = await supabase
-      .from('properties')
-      .select('id')
-      .eq('slug', candidate)
-      .maybeSingle();
-    if (!data) return candidate;
-    if (excludePropertyId && data.id === excludePropertyId) return candidate;
-  }
-  return `${base}-${crypto.randomUUID().slice(0, 8)}`;
+  const { allocateUniqueListingSlug } = await import('./listingSlugAllocation.ts');
+  return allocateUniqueListingSlug(supabase, 'property', name, preferred, excludePropertyId);
 }
 
 export function serializeOrganization(org: OrgRow) {
@@ -1392,19 +1381,8 @@ export async function allocateParkingSlug(
   preferred?: string,
   excludeParkingId?: string
 ): Promise<string> {
-  const { slugifyName, withSlugSuffix } = await import('./slugUtils.ts');
-  const base = slugifyName(preferred?.trim() || name);
-  for (let i = 0; i < 20; i++) {
-    const candidate = withSlugSuffix(base, i);
-    const { data } = await supabase
-      .from('parkings')
-      .select('id')
-      .eq('slug', candidate)
-      .maybeSingle();
-    if (!data) return candidate;
-    if (excludeParkingId && data.id === excludeParkingId) return candidate;
-  }
-  return `${base}-${crypto.randomUUID().slice(0, 8)}`;
+  const { allocateUniqueListingSlug } = await import('./listingSlugAllocation.ts');
+  return allocateUniqueListingSlug(supabase, 'parking', name, preferred, excludeParkingId);
 }
 
 export function serializeParking(parking: ParkingRow) {

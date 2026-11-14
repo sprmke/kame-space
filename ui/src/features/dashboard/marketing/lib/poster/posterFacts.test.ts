@@ -5,6 +5,8 @@ import {
   formatPosterLocation,
   formatPosterMoney,
   formatPosterTime,
+  isDistinctiveAmenity,
+  rankAmenities,
 } from '@/features/dashboard/marketing/lib/poster/posterFacts';
 
 describe('formatPosterTime', () => {
@@ -56,7 +58,11 @@ describe('formatPosterMoney', () => {
 describe('formatPosterLocation', () => {
   it('prefers residence name plus state', () => {
     expect(
-      formatPosterLocation({ residenceName: 'Azure North', city: 'San Fernando', state: 'Pampanga' })
+      formatPosterLocation({
+        residenceName: 'Azure North',
+        city: 'San Fernando',
+        state: 'Pampanga',
+      })
     ).toBe('Azure North, Pampanga');
   });
 
@@ -121,5 +127,32 @@ describe('buildPosterFacts', () => {
       logoUrl: null,
       photos: [],
     });
+  });
+});
+
+describe('rankAmenities', () => {
+  it('puts distinctive amenities first and baseline last, keeping host order in a tier', () => {
+    expect(rankAmenities(['Wi-Fi', 'Air conditioning', 'Kitchen', 'Pool', 'Netflix'])).toEqual([
+      'Pool',
+      'Netflix',
+      'Kitchen',
+      'Wi-Fi',
+      'Air conditioning',
+    ]);
+  });
+
+  it('de-duplicates case-insensitively and drops blanks', () => {
+    expect(rankAmenities(['pool', 'Pool ', '', '  '])).toEqual(['pool']);
+  });
+
+  it('keeps unknown amenities above baseline ones', () => {
+    expect(rankAmenities(['WiFi', 'Fire pit'])).toEqual(['Fire pit', 'WiFi']);
+  });
+
+  it('flags only non-baseline labels as distinctive', () => {
+    expect(isDistinctiveAmenity('Wi-Fi')).toBe(false);
+    expect(isDistinctiveAmenity('Hair dryer')).toBe(false);
+    expect(isDistinctiveAmenity('Jacuzzi')).toBe(true);
+    expect(isDistinctiveAmenity('  ')).toBe(false);
   });
 });

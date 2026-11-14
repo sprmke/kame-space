@@ -1,3 +1,4 @@
+import { POSTER_ARCHETYPE_FAMILY, type PosterArchetypeId } from '@/features/dashboard/marketing/lib/poster/posterSpec';
 import type { PolotnoDesignDocument } from '@/features/dashboard/marketing/lib/polotno/polotnoCampaignDocuments';
 
 /**
@@ -14,7 +15,14 @@ export type PosterAuditIssue = {
     | 'text-too-small'
     | 'text-overflow'
     | 'empty-text'
-    | 'invalid-geometry';
+    | 'invalid-geometry'
+    | 'unsafe-zone'
+    | 'too-many-fonts'
+    | 'text-budget'
+    | 'grid-unsafe'
+    | 'logo-overlap'
+    | 'script-misuse'
+    | 'ornament-in-clean';
   element: string;
   detail: string;
 };
@@ -31,6 +39,34 @@ type Box = {
 /** ~19px on a 1080 canvas: the smallest size that still reads in a phone feed. */
 const MIN_FONT_RATIO = 0.0175;
 const EDGE_TOLERANCE = 2;
+/** Stories and Reels cover the top 14% and bottom 18% with platform UI. */
+const STORY_SAFE_TOP = 0.14;
+const STORY_SAFE_BOTTOM = 0.18;
+/** Tall enough to be a Story/Reel canvas (9:16). */
+const STORY_RATIO = 1.6;
+
+/** Two families plus one script accent; more reads as a ransom note. */
+export const MAX_FONT_FAMILIES = 3;
+/** Text elements on one poster (including chips, labels and info rows). */
+export const MAX_TEXT_ELEMENTS = 18;
+/** Script faces belong to the Flyer family only (plan 2.3); Clean and Lifestyle never use one. */
+const SCRIPT_FAMILIES = new Set([
+  'Great Vibes',
+  'Allura',
+  'Sacramento',
+  'Parisienne',
+  'Kaushan Script',
+]);
+
+/** The layout family a compiled poster came from, when it records one. */
+function documentFamily(document: PolotnoDesignDocument): string | null {
+  const poster = document.custom?.poster as { archetype?: string } | undefined;
+  const id = poster?.archetype as PosterArchetypeId | undefined;
+  return id && id in POSTER_ARCHETYPE_FAMILY ? POSTER_ARCHETYPE_FAMILY[id] : null;
+}
+
+/** 4:5 feed posts are cropped to 3:4 in the profile grid. */
+const FEED_PORTRAIT_RATIO = 1.25;
 
 function overlapArea(a: Box, b: Box): number {
   const w = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
@@ -67,6 +103,10 @@ export function auditPosterDocument(document: PolotnoDesignDocument): PosterAudi
   const { width: W, height: H } = document;
   const minFont = Math.min(W, H) * MIN_FONT_RATIO;
   const texts: Box[] = [];
+  const families = new Set<string>();
+  const family = documentFamily(document);
+  const logos: Box[] = [];
+  const gridInset = Math.abs(H / W - FEED_PORTRAIT_RATIO) < 0.01 ? (W - (H * 3) / 4) / 2 : 0;
 
   for (const page of document.pages) {
     for (const child of page.children) {
@@ -100,7 +140,38 @@ export function auditPosterDocument(document: PolotnoDesignDocument): PosterAudi
           });
         }
       }
+      if (/logo/i.test(name) && child.type !== 'text') {
+        logos.push({ name, x, y, width, height, allowOverlap: false });
+      }
+      if (family && family !== 'flyer' && /^ornament/i.test(name)) {
+        issues.push({
+          kind: 'ornament-in-clean',
+          element: name,
+          detail: 'Clean and Lifestyle layouts carry no ornament (plan 2.9)',
+        });
+      }
       if (child.type === 'text') {
+        // The brand wordmark is its own mark, not part of the type system.
+        if (
+          name !== 'Brand' &&
+          String(child.text ?? '').trim() &&
+          typeof child.fontFamily === 'string'
+        ) {
+          families.add(child.fontFamily);
+        }
+        if (
+          family &&
+          family !== 'flyer' &&
+          typeof child.fontFamily === 'string' &&
+          SCRIPT_FAMILIES.has(child.fontFamily) &&
+          String(child.text ?? '').trim()
+        ) {
+          issues.push({
+            kind: 'script-misuse',
+            element: name,
+            detail: `${child.fontFamily} is reserved for the Flyer family`,
+          });
+        }
         if (!String(child.text ?? '').trim()) {
           issues.push({ kind: 'empty-text', element: name, detail: 'no text' });
           continue;
@@ -118,6 +189,57 @@ export function auditPosterDocument(document: PolotnoDesignDocument): PosterAudi
           issues.push({ kind: 'text-overflow', element: name, detail: 'copy exceeds its slot' });
         }
         texts.push(textInkBox(child));
+        if (
+          gridInset > 0 &&
+          (x < gridInset - EDGE_TOLERANCE || x + width > W - gridInset + EDGE_TOLERANCE)
+        ) {
+          issues.push({
+            kind: 'grid-unsafe',
+            element: name,
+            detail: `x ${Math.round(x)}-${Math.round(x + width)} outside the 3:4 grid crop ${Math.round(gridInset)}-${Math.round(W - gridInset)}`,
+          });
+        }
+        if (H / W > STORY_RATIO) {
+          // Text must clear the platform header and the reply/caption area.
+          const top = H * STORY_SAFE_TOP - EDGE_TOLERANCE;
+          const bottom = H * (1 - STORY_SAFE_BOTTOM) + EDGE_TOLERANCE;
+          if (y < top || y + height > bottom) {
+            issues.push({
+              kind: 'unsafe-zone',
+              element: name,
+              detail: `y ${Math.round(y)}-${Math.round(y + height)} outside ${Math.round(top)}-${Math.round(bottom)}`,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  if (families.size > MAX_FONT_FAMILIES) {
+    issues.push({
+      kind: 'too-many-fonts',
+      element: 'Typography',
+      detail: `${families.size} families: ${[...families].join(', ')}`,
+    });
+  }
+  if (texts.length > MAX_TEXT_ELEMENTS) {
+    issues.push({
+      kind: 'text-budget',
+      element: 'Copy',
+      detail: `${texts.length} text elements, budget ${MAX_TEXT_ELEMENTS}`,
+    });
+  }
+  for (const logo of logos) {
+    for (const text of texts) {
+      if (
+        overlapArea(logo, text) > 0 &&
+        overlapArea(logo, text) / (text.width * text.height || 1) > 0.05
+      ) {
+        issues.push({
+          kind: 'logo-overlap',
+          element: `${logo.name} × ${text.name}`,
+          detail: 'logo covers text',
+        });
       }
     }
   }

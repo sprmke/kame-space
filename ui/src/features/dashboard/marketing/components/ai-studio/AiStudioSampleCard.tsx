@@ -44,7 +44,13 @@ export function AiStudioSampleArt({
   controls?: boolean;
   eager?: boolean;
 }) {
-  const post = usePostSampleImage(sample.output === 'post' ? sample : null, renderer, active);
+  const post = usePostSampleImage(
+    sample.output === 'post' ? sample : null,
+    renderer,
+    active,
+    // The open example draws with the host's own photos; cards use the shipped image.
+    eager
+  );
   const { width, height } = aspectSize(sampleAspect(sample));
   const frame = cn('size-full object-cover');
   const alt = `${sample.title}, ${SAMPLE_OUTPUT_NOUN[sample.output].toLowerCase()} example`;

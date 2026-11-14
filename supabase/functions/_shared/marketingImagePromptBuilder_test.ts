@@ -393,3 +393,15 @@ Deno.test('buildImageEditPrompt frames a refinement as an edit of the first refe
   assertMatch(prompt, /Keep the room/);
   assertMatch(prompt, /feed post/i);
 });
+
+Deno.test('buildImageEditPrompt locks the structure when enhancing a real listing photo', () => {
+  const locked = buildImageEditPrompt({
+    instruction: 'brighten and balance the light',
+    aspectRatio: '4:5',
+    lockStructure: true,
+  });
+  assertMatch(locked, /real listing photo/);
+  assertMatch(locked, /Do not add, remove, move/);
+  const plain = buildImageEditPrompt({ instruction: 'make it evening', aspectRatio: '4:5' });
+  assertEquals(/real listing photo/.test(plain), false);
+});

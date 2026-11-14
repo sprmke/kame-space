@@ -47,32 +47,32 @@ export function ReadonlySlugField({
   return (
     <div className={cn('min-w-0', className)}>
       <div className="flex min-w-0 items-center gap-2">
-      <Input
-        id={id}
-        value={value}
-        readOnly
-        disabled={disabled}
-        placeholder={placeholder}
-        className="bg-muted/40 h-10 min-w-0 flex-1"
-        autoComplete="off"
-        spellCheck={false}
-        aria-readonly="true"
-      />
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="size-11 shrink-0"
-        disabled={disabled || !copyUrl}
-        onClick={() => void handleCopy()}
-        aria-label={copied ? 'Public URL copied' : 'Copy public URL'}
-      >
-        {copied ? (
-          <Check className="size-4" aria-hidden />
-        ) : (
-          <Copy className="size-4" aria-hidden />
-        )}
-      </Button>
+        <Input
+          id={id}
+          value={value}
+          readOnly
+          disabled={disabled}
+          placeholder={placeholder}
+          className="bg-muted/40 h-10 min-w-0 flex-1 cursor-not-allowed"
+          autoComplete="off"
+          spellCheck={false}
+          aria-readonly="true"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="size-11 shrink-0"
+          disabled={disabled || !copyUrl}
+          onClick={() => void handleCopy()}
+          aria-label={copied ? 'Public URL copied' : 'Copy public URL'}
+        >
+          {copied ? (
+            <Check className="size-4" aria-hidden />
+          ) : (
+            <Copy className="size-4" aria-hidden />
+          )}
+        </Button>
       </div>
       {hint ? <p className="text-muted-foreground mt-1.5 text-xs">{hint}</p> : null}
     </div>

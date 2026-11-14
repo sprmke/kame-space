@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { derivePosterPalette } from '@/features/dashboard/marketing/lib/poster/posterColor';
 import type { PosterTypeRole } from '@/features/dashboard/marketing/lib/poster/posterFonts';
 import {
   burstOrnament,
@@ -17,7 +18,6 @@ import {
   rect,
   stickerBadge,
 } from '@/features/dashboard/marketing/lib/poster/posterModules';
-import { derivePosterPalette } from '@/features/dashboard/marketing/lib/poster/posterColor';
 
 const ROLE: PosterTypeRole = {
   family: 'Poppins',
@@ -44,7 +44,9 @@ describe('createPosterCanvas', () => {
       isWide: false,
       pad: 65,
       minText: 21,
+      safeTop: 0,
       safeBottom: 0,
+      gridInset: 0,
     });
     expect(canvas.s(0.5)).toBe(540);
   });
@@ -54,7 +56,17 @@ describe('createPosterCanvas', () => {
 
     expect(canvas.isPortrait).toBe(true);
     expect(canvas.isStory).toBe(true);
-    expect(canvas.safeBottom).toBe(192);
+    expect(canvas.safeTop).toBe(269);
+    expect(canvas.safeBottom).toBe(346);
+  });
+
+  it('keeps a 4:5 feed post inside the centered 3:4 profile-grid crop', () => {
+    const canvas = createPosterCanvas(1080, 1350);
+
+    expect(canvas.isStory).toBe(false);
+    expect(canvas.gridInset).toBe(34);
+    expect(canvas.safeTop).toBe(0);
+    expect(createPosterCanvas(1080, 1080).gridInset).toBe(0);
   });
 
   it('describes a landscape banner', () => {
@@ -258,7 +270,13 @@ describe('iconElement', () => {
 
 describe('photoElement', () => {
   it('uses a full crop when the natural size is unknown', () => {
-    const photo = photoElement({ url: 'https://img.test/a.jpg', x: 0, y: 0, width: 400, height: 300 });
+    const photo = photoElement({
+      url: 'https://img.test/a.jpg',
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 300,
+    });
 
     expect(photo).toMatchObject({
       type: 'image',
@@ -340,7 +358,11 @@ describe('pill', () => {
     expect(result.overflow).toBe(false);
     expect(result.children).toHaveLength(2);
     expect(result.children[0]).toMatchObject({ type: 'figure', cornerRadius: 30 });
-    expect(result.children[1]).toMatchObject({ type: 'text', text: 'Pet friendly', align: 'center' });
+    expect(result.children[1]).toMatchObject({
+      type: 'text',
+      text: 'Pet friendly',
+      align: 'center',
+    });
     expect(result.width).toBeGreaterThan(0);
   });
 
@@ -528,8 +550,8 @@ describe('logoElement', () => {
       keepRatio: true,
     });
 
-    expect(logoElement({ url: 'https://img.test/logo.png', x: 0, y: 0, size: 80, round: true })).toMatchObject(
-      { cornerRadius: 40 }
-    );
+    expect(
+      logoElement({ url: 'https://img.test/logo.png', x: 0, y: 0, size: 80, round: true })
+    ).toMatchObject({ cornerRadius: 40 });
   });
 });

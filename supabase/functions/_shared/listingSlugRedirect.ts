@@ -4,6 +4,9 @@
  * `listing_slug_redirects` is filled by a trigger whenever a property, parking or development
  * slug changes. Public handlers ask this helper before answering 404, so a shared link from
  * before a rename keeps working and search engines see a 301 instead of a dead page.
+ *
+ * Allocation / reservation (skip redirects owned by another listing) lives in
+ * `listingSlugAllocation.ts` plus the DB trigger `assert_listing_slug_not_redirect_reserved`.
  */
 
 import { createServiceClient } from './orgAuth.ts';

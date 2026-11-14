@@ -53,6 +53,10 @@ targets=(
   _shared/marketingMediaStorage.ts
   _shared/marketingMediaIngest.ts
   _shared/marketingMediaSweeper.ts
+  # AI Studio poster director: an undefined `user` after the AI call turned every
+  # successful generation into an error and silently forced the rule-based fallback.
+  generate-marketing-template/index.ts
+  _shared/marketingPosterDirector.ts
   # Weekly operations report — super-admin console, cron, and the shared health collector.
   ops-report/index.ts
   ops-report-cron/index.ts

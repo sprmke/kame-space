@@ -42,8 +42,16 @@ Any **new** user-facing string (UI labels, helpers, buttons, toasts, empty state
 
 If unsure, prefer **shorter** or **omit** (see `minimal-ui-copy` skill).
 
+## Humanizer (all providers)
+
+When adding or rewriting user-facing or host-facing prose, also load and follow **`humanizer`**
+(`blader/humanizer`): global always-visible skill on Claude Code, Cursor, Codex, and OpenCode,
+plus the project copy under `.agents/skills/humanizer`. It removes AI staging, filler, and
+stock phrasing. Repo `human-copy` still owns bans (em dash, fluff) and length bars.
+
 ## Related
 
 - Rule: `ui-minimal-copy.mdc` (volume)
 - Skill: `human-copy` (examples + checklist)
+- Skill: `humanizer` (global + project — AI-tell rewrite)
 - Skill: `minimal-ui-copy` (when to add zero text)

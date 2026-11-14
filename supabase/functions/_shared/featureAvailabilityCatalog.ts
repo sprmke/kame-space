@@ -18,6 +18,7 @@ export const FEATURE_AVAILABILITY_KEYS = [
   'pricing.channel_sync.import',
   'marketing.ai_studio',
   'marketing.ai_studio.generate',
+  'marketing.ai_studio.poster_v2',
   'analytics.ai_review',
   'analytics.ai_review.regenerate',
   'notifications.telegram',
@@ -145,6 +146,15 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     label: 'AI studio generation',
     description:
       'New creation, refine, references upload. Past sessions and outputs stay viewable.',
+  },
+  {
+    key: 'marketing.ai_studio.poster_v2',
+    parent: 'marketing.ai_studio',
+    module: 'marketing',
+    surface: 'button',
+    label: 'AI studio new layouts',
+    description:
+      'Clean and Lifestyle poster layouts. Off falls back to the original Flyer layouts for new posts. Saved posts are unchanged.',
   },
   {
     key: 'analytics.ai_review',

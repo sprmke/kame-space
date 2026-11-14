@@ -136,4 +136,6 @@ declare module 'openpolotno/config' {
   export function setUploadFunc(
     fn: (file: File, attrs?: Record<string, unknown>) => Promise<string>
   ): void;
+  /** Called with `image with id <id> url: <src>` each time an image fails to load. */
+  export function onLoadError(handler: (message: string) => void): void;
 }

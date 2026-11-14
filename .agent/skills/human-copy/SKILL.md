@@ -107,4 +107,5 @@ toast.message('Pricing updated');
 
 - `.cursor/rules/human-copy.mdc`
 - `.cursor/rules/ui-minimal-copy.mdc` + skill `minimal-ui-copy`
+- `humanizer` (global always-visible on Claude/Cursor/Codex/OpenCode; strip AI staging)
 - `accessibility` (required labels stay short)

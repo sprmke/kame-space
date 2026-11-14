@@ -43,6 +43,8 @@ describe('OUTPUT_FEATURE', () => {
       post: 'aiMarketingGeneration',
       image: 'aiMarketingImageGeneration',
       video: 'aiMarketingVideoGeneration',
+      // A reel is directed like a post, so it shares the post's plan feature.
+      reel: 'aiMarketingGeneration',
     });
   });
 });

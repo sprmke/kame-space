@@ -8,6 +8,7 @@ import {
   resolvePosterIcon,
   type PosterIconName,
 } from '@/features/dashboard/marketing/lib/poster/posterIcons';
+import type { PosterOffer } from '@/features/dashboard/marketing/lib/poster/posterOffer';
 
 /**
  * PosterSpec: the contract between the AI art director and the deterministic
@@ -23,9 +24,51 @@ export const POSTER_ARCHETYPE_IDS = [
   'minimal-title',
   'magazine-cover',
   'feature-sticker',
+  // Clean family (design system v2). Appended, so v1 ids and their output never change.
+  'photo-first',
+  'framed-editorial',
+  'big-type',
+  'info-card',
+  'split-panel',
+  'quote-card',
+  'arch-frame',
+  'duo-collage',
+  'trio-grid',
 ] as const;
 
 export type PosterArchetypeId = (typeof POSTER_ARCHETYPE_IDS)[number];
+
+/**
+ * The six layouts frozen as spec version 1 (`posterGolden.test.ts` hashes their
+ * output). Every layout after them is version 2, so a stored version always compiles
+ * with the builders it was made with.
+ */
+export const POSTER_V1_ARCHETYPE_IDS: readonly PosterArchetypeId[] = POSTER_ARCHETYPE_IDS.slice(0, 6);
+
+export function posterSpecVersion(archetype: PosterArchetypeId): 1 | 2 {
+  return POSTER_V1_ARCHETYPE_IDS.includes(archetype) ? 1 : 2;
+}
+
+/** Style families a host can steer by: Clean is the safe floor, Lifestyle shows several photos, Flyer is the staycation look. */
+export type PosterStyleFamily = 'clean' | 'lifestyle' | 'flyer';
+
+export const POSTER_ARCHETYPE_FAMILY: Record<PosterArchetypeId, PosterStyleFamily> = {
+  'wave-duo': 'flyer',
+  'sky-headline': 'flyer',
+  'night-glass': 'flyer',
+  'minimal-title': 'clean',
+  'magazine-cover': 'flyer',
+  'feature-sticker': 'flyer',
+  'photo-first': 'clean',
+  'framed-editorial': 'clean',
+  'big-type': 'clean',
+  'info-card': 'clean',
+  'split-panel': 'clean',
+  'quote-card': 'clean',
+  'arch-frame': 'lifestyle',
+  'duo-collage': 'lifestyle',
+  'trio-grid': 'lifestyle',
+};
 
 export const POSTER_GOALS = [
   'vibe',
@@ -51,6 +94,8 @@ export type PosterFacts = {
   amenities: string[];
   logoUrl: string | null;
   photos: string[];
+  /** Promo only: the offer the host typed. Printed verbatim; never invented. */
+  offer?: PosterOffer | null;
 };
 
 export type PosterCopy = {
@@ -76,7 +121,8 @@ export type PosterCopy = {
 export type PosterFeature = { label: string; icon: PosterIconName };
 
 export type PosterSpec = {
-  version: 1;
+  /** 1: the six frozen original layouts. 2: the Clean and Lifestyle families. */
+  version: 1 | 2;
   archetype: PosterArchetypeId;
   fontPairing: PosterFontPairingId;
   goal: PosterGoal;
@@ -220,9 +266,12 @@ export function normalizePosterSpec(input: unknown, facts: PosterFacts): PosterS
   // The property name is a fact: never clipped, and the headline is never empty.
   if (!copy.headline) copy.headline = posterShortName(facts.propertyName);
 
+  const archetype: PosterArchetypeId = isOneOf(raw.archetype, POSTER_ARCHETYPE_IDS)
+    ? raw.archetype
+    : 'sky-headline';
   return {
-    version: 1,
-    archetype: isOneOf(raw.archetype, POSTER_ARCHETYPE_IDS) ? raw.archetype : 'sky-headline',
+    version: posterSpecVersion(archetype),
+    archetype,
     fontPairing: isPosterFontPairingId(raw.fontPairing) ? raw.fontPairing : 'tropical-script',
     goal: isOneOf(raw.goal, POSTER_GOALS) ? raw.goal : 'vibe',
     palette: {

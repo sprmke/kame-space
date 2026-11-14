@@ -95,7 +95,7 @@ To clear a stuck SW: DevTools → Application → Service Workers → Unregister
 - **Cooldown**: dismissal 1 → 14 days, 2 → 30 days, 3 → 90 days, 4+ → passive entry only. "Don't ask again" ends proactive offers.
 - **Variants**: Chromium native `beforeinstallprompt`; iOS/iPadOS Safari step guide (version-aware: iOS 26 moved Share behind "…"); other iOS browsers get an "open in Safari" path; macOS Safari 17+ "Add to Dock"; Android overflow-menu guide.
 - **Memory** (`ui/src/lib/pwa/installMemory.ts`, `gfm:install:memory`) is **device-scoped on purpose**: it survives sign-out so a later cold launch goes to host login instead of the public marketplace, and it is therefore _not_ part of `purgeOfflineState`.
-- **Permanent entry**: `InstallAppEntry` in the admin More sheet, the marketing More sheet/footer, and Help & Support (`AppInfoCard`, which also shows the build id and a "Check for updates" action).
+- **Permanent entry**: `InstallAppEntry` in the admin More sheet and the marketing More sheet/footer. Build id, **Check for updates**, and offline clear live on **Profile** (`AppInfoCard` “On this device”), not on Help & Support.
 - **First standalone launch**: one-time welcome sheet. On iOS the installed app has separate storage from Safari, so it explains the sign-in and offers notifications behind a real user gesture.
 - **One surface at a time**: `ui/src/lib/pwa/pwaSurfaceStore.ts` arbitrates kill notice > forced update > offline strip > update prompt > push ask > install offer. The install offer also waits while the analytics-cookie choice is `null`, so it never stacks with `CookieConsentBanner` on a first visit.
 

@@ -34,6 +34,7 @@ AI-built videos are saved as v1 scene projects and upgrade on open. The builder 
 
 - `VideoCompositionV2.tsx`: `TransitionSeries` for main, `Sequence` per other item, `Video`/`Audio` from `@remotion/media` (the only ones the web renderer supports). Contain fit uses a blurred backdrop. A missing file shows a striped placeholder; during export `strictMedia` makes it fail instead.
 - `exportVideoV2.ts`: blockers (empty, over 60 s) → `canRenderMediaOnWeb` → reachability probe of every media URL (`exportPreflight.ts`) → `renderMediaOnWeb` with an `AbortSignal` (Cancel) and progress. Muted when nothing can make sound (`projectHasAudio`). Jamendo stream clips are cached to Storage first (`exportAudio.ts`); a clip that cannot be cached is dropped from the export with a notice.
+- Text and CTA layers with the default `template` entrance spring in from the motion profile's offset and fade up over about 0.5 s (`layerMotion`, `clipStyles.ts`), matching the classic (v1) composition's text entrance.
 - Verified in Chromium only. Safari and Firefox need a manual matrix. `maxCanvasSinkFrameSize` is not exposed by the installed `@remotion/media`, so preview decode load is limited by the 3-visible-videos warning and `premountFor`.
 - Thumbnails: `renderVideoProjectThumbnailV2` (audio tracks dropped) renders a still at 60% into the first main-track clip; the Library card and template stills use it for v2 rows, the v1 renderer for legacy ones.
 
@@ -67,3 +68,15 @@ Only the Videos rail reads this library today. The Posts (Polotno) Upload panel 
 ## Tests
 
 Vitest for all pure modules; Deno for the edge helpers; live local `functions/tests/marketingMedia.integration_test.ts` (`LOCAL_MEDIA_LIVE=1`); Playwright `ui/e2e/features/marketing/video-editor/` (desktop and phone). CI asserts Mediabunny stays lazy (`scripts/media/assert-lazy-mediabunny.mjs`).
+
+## Reel from AI Studio
+
+`lib/video/reelBuilder.ts` builds a reel deterministically (no AI, no credits): `buildReelTokens` picks a recipe (`tour`, five beats of 3.5 s plus a 2.5 s booking beat, or `highlights`, three photo beats plus a booking beat) by photo count, fills facts-only copy (name, place, rate, `Book direct`, at most 7 words per beat), and `buildReel` compiles it with `resolveAiGeneratedVideoProject` into an ordinary `VideoProject`. `useAiPosterEngine.saveReel` saves it as a `video` template and AI Studio's **Make a reel** opens it in the Videos editor. Not yet done: a Reel output with its own stage player, a director that orders photos and writes beats, and an end card with logo. Beat-synced cuts ship as an editor action instead (below).
+
+### Focal push-in
+
+`VideoScene.focal` and `MediaItem.focal` (0 to 1 across the photo) make the Ken Burns zoom scale about the subject instead of the centre (`backgroundMotionTransform(..., focal)`: `translate(o) scale translate(-o)`). `saveReel` fills it from the poster pixel analysis (`PhotoAnalysis.focal`) via `applyFocalPoints`; absent or centred focal keeps the old transform exactly.
+
+## Cut to the beat
+
+Select the music clip in the Videos editor and tap **Cut to the beat** in its inspector. `VideoEditorV2.cutToBeat` caches a Jamendo stream to Storage first (its CDN blocks browser reads), then `lib/media/decodeBeats.ts` decodes the file with `AudioContext` and `lib/media/beats.ts` finds the beats (10 ms RMS envelope, positive energy jumps, adaptive threshold, 0.28 s minimum gap). `lib/video/v2/beatCuts.ts#cutToBeats` moves each cut between main-track clips to the nearest beat within 0.6 s, keeps every clip at least 0.8 s, never stretches a video past its source, drops nothing and leaves the total length unchanged. Captions that start or end on a cut move with it. The change is one undo step, and the preview seeks to the start and plays so the result can be heard. A track with no clear pulse, or one that cannot be read, shows a toast and changes nothing. It is an editor action, not part of reel save, because a saved reel has no resolved audio yet.

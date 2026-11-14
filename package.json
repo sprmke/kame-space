@@ -117,6 +117,7 @@
     "verify:deployed-preview": "node scripts/performance/verify-deployed-preview.mjs",
     "perf:pg-stat-statements": "bash scripts/performance/capture-pg-stat-statements.sh",
     "perf:pg-stat:snapshot": "node scripts/performance/pg-stat-snapshot.mjs",
+    "marketing:contact-sheet": "bun scripts/marketing/poster-contact-sheet/run.ts",
     "perf:boot-timeline": "playwright test ui/e2e/features/observability/adminBootTimeline.spec.ts --project=chromium --reporter=list",
     "perf:boot-durations": "node scripts/performance/boot-durations.mjs",
     "perf:boot-render": "node scripts/performance/boot-render-blocking.mjs",

@@ -126,9 +126,9 @@ const SETTINGS_SECTIONS: AdminSectionNavItem[] = [
   { id: 'guest-rewards', label: 'Reviews & vouchers', icon: Gift },
   { id: 'payment', label: 'Payment', icon: Wallet },
   { id: 'building-forms', label: 'Building Forms', icon: ClipboardList },
-  { id: 'guest-experience', label: 'Guest experience', icon: KeyRound },
   { id: 'email-automations', label: 'Email Automations', icon: Mail },
   { id: 'integrations', label: 'Integrations', icon: Globe },
+  { id: 'guest-experience', label: 'Guest experience', icon: KeyRound },
   { id: 'activity', label: 'Activity', icon: ScrollText },
   { id: 'danger', label: 'Listing status', icon: AlertTriangle },
 ];
@@ -1121,10 +1121,6 @@ export function PropertySettingsCard() {
             savingReviewId={savingReviewId}
           />
 
-          <AdminSection id="guest-experience" title="Guest experience" icon={KeyRound}>
-            <PropertyGuestExperienceSection propertyId={property.id} disabled={busy} />
-          </AdminSection>
-
           <PropertyOperationalSettingsSections
             data={appSettings}
             draft={operationalDraft}
@@ -1138,6 +1134,10 @@ export function PropertySettingsCard() {
             markFieldInteracted={markFieldInteracted}
             sectionMessages={settingsCompletion.sectionMessages}
           />
+
+          <AdminSection id="guest-experience" title="Guest experience" icon={KeyRound}>
+            <PropertyGuestExperienceSection propertyId={property.id} disabled={busy} />
+          </AdminSection>
 
           {canViewActivity ? (
             <AdminSection id="activity" title="Activity" icon={ScrollText}>

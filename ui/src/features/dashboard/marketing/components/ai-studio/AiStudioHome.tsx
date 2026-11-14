@@ -68,6 +68,7 @@ const START_CARD_PHOTO: Record<AiStudioOutput, string> = {
   post: showcasePhotoUrl('3209045'),
   image: showcasePhotoUrl('6782567'),
   video: showcasePhotoUrl('261102'),
+  reel: showcasePhotoUrl('261102'),
 };
 
 export const AI_OUTPUT_START: Array<{
@@ -94,6 +95,12 @@ export const AI_OUTPUT_START: Array<{
     hint: '1 video, 8 seconds, from one photo',
     feature: 'aiMarketingVideoGeneration',
   },
+  {
+    value: 'reel',
+    title: 'Reel',
+    hint: '12 to 20 seconds from your photos, directed by AI',
+    feature: 'aiMarketingGeneration',
+  },
 ];
 
 const GRID_CLASS =
@@ -103,7 +110,7 @@ const ALL = 'all';
 /** Which outputs this role may start (each has its own team permission). */
 export function useAiOutputAccess(): Record<AiStudioOutput, boolean> {
   const { canGenerate, canGenerateImage, canGenerateVideo } = useMarketingPermissions();
-  return { post: canGenerate, image: canGenerateImage, video: canGenerateVideo };
+  return { post: canGenerate, image: canGenerateImage, video: canGenerateVideo, reel: canGenerate };
 }
 
 /**
@@ -160,6 +167,7 @@ export function AiStudioHome() {
           { value: 'post', label: 'Posts' },
           { value: 'image', label: 'Photos' },
           { value: 'video', label: 'Clips' },
+          { value: 'reel', label: 'Reels' },
         ],
         onChange: (value) => setOutputFilter(isAiStudioOutput(value) ? value : null),
       },
@@ -220,7 +228,7 @@ export function AiStudioHome() {
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center gap-5 p-4 py-8 sm:p-6 lg:py-12">
           <h2 className="text-admin-page-title text-center">What do you want to make?</h2>
-          <div className="mx-auto grid w-full max-w-4xl gap-3 sm:grid-cols-3">
+          <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-3 sm:grid-cols-4">
             {AI_OUTPUT_START.map((option) => (
               <OutputStartCard
                 key={option.value}
@@ -492,6 +500,7 @@ const PREVIEW_FRAME: Record<AiStudioOutput, string> = {
   post: 'aspect-[4/5]',
   image: 'aspect-square',
   video: 'aspect-[9/16]',
+  reel: 'aspect-[9/16]',
 };
 
 /** Soft property-tinted wash behind the preview frame (pastel in light, deep in dark). */

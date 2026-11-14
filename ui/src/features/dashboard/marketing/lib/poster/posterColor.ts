@@ -62,6 +62,26 @@ function secondaryFromAccent(accent: string): string {
   return hslToHex((hsl.h + 110) % 360, Math.min(55, Math.max(35, hsl.s)), 38);
 }
 
+/** Keeps a trace of hue but pulls saturation down, so ink never vibrates on tinted paper. */
+function nearNeutral(hex: string, keep = 0.35): string {
+  const rgb = parseHexRgb(hex);
+  if (!rgb) return hex;
+  const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  return hslToHex(hsl.h, Math.min(hsl.s, 100) * keep, hsl.l);
+}
+
+/** Smallest angle between two hues, 0 to 180. */
+function hueGap(a: string, b: string): number {
+  const ra = parseHexRgb(a);
+  const rb = parseHexRgb(b);
+  if (!ra || !rb) return 180;
+  const diff = Math.abs(rgbToHsl(ra.r, ra.g, ra.b).h - rgbToHsl(rb.r, rb.g, rb.b).h) % 360;
+  return diff > 180 ? 360 - diff : diff;
+}
+
+/** Below this the accent and secondary read as one colour, so two-tone copy looks like a mistake. */
+const MIN_TONE_HUE_GAP = 35;
+
 export function derivePosterPalette(input: {
   accent?: string | null;
   secondary?: string | null;
@@ -76,13 +96,19 @@ export function derivePosterPalette(input: {
     relativeLuminance(baseField) < 0.72 ? mixHexToward(baseField, WHITE, 0.78) : baseField;
   // The accent carries pills and icon strokes on the field, so it needs 3:1 there.
   const accent = ensureContrast(rawAccent, field, 3);
-  const secondary = ensureContrast(
-    normalizePosterHex(input.secondary) ?? secondaryFromAccent(accent),
+  const requestedSecondary = normalizePosterHex(input.secondary);
+  // A secondary that is the accent in disguise (or a grey) is replaced by the derived partner.
+  const secondaryPick =
+    requestedSecondary && hueGap(requestedSecondary, accent) >= MIN_TONE_HUE_GAP
+      ? requestedSecondary
+      : secondaryFromAccent(accent);
+  const secondary = ensureContrast(secondaryPick, field, 3);
+  const fieldInk = ensureContrast(nearNeutral(mixHexToward(accent, BLACK, 0.62)), field, 7);
+  const fieldMuted = ensureContrast(
+    nearNeutral(mixHexToward(accent, BLACK, 0.35), 0.5),
     field,
-    3
+    4.5
   );
-  const fieldInk = ensureContrast(mixHexToward(accent, BLACK, 0.62), field, 7);
-  const fieldMuted = ensureContrast(mixHexToward(accent, BLACK, 0.35), field, 4.5);
   const deep = mixHexToward(mixHexToward(accent, NIGHT_NAVY, 0.82), BLACK, 0.1);
   const glow = ensureContrast(mixHexToward(accent, { r: 240, g: 200, b: 130 }, 0.65), deep, 4.5);
   const deepRgb = parseHexRgb(deep) ?? NIGHT_NAVY;

@@ -73,6 +73,8 @@ export type MarketingGenerationOptions = {
   sound?: string;
   /** AI Studio example the host started from (attribution only; catalog lives in the client). */
   sampleId?: string;
+  /** The photo was changed by AI (Enhance a photo); shown so it is never passed off as the original. */
+  aiEdited?: boolean;
 };
 
 const SAMPLE_ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -90,6 +92,7 @@ function readGenerationOptions(value: unknown): MarketingGenerationOptions {
   if (typeof raw.sound === 'string') options.sound = raw.sound;
   const sampleId = readSampleId(raw.sampleId);
   if (sampleId) options.sampleId = sampleId;
+  if (raw.aiEdited === true) options.aiEdited = true;
   return options;
 }
 

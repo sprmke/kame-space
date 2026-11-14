@@ -81,3 +81,16 @@ describe('marketingThemeFontList', () => {
     ).toEqual(['Poppins']);
   });
 });
+
+describe('marketingFontClass', () => {
+  it('classes every theme family and defaults unknown ones to sans', async () => {
+    const { marketingFontClass, MARKETING_THEME_FONT_FAMILIES } = await import(
+      '@/features/dashboard/marketing/lib/theme/marketingThemeFonts'
+    );
+    for (const family of MARKETING_THEME_FONT_FAMILIES) {
+      expect(['serif', 'sans', 'rounded', 'display']).toContain(marketingFontClass(family));
+    }
+    expect(marketingFontClass('Fraunces')).toBe('serif');
+    expect(marketingFontClass('Nope')).toBe('sans');
+  });
+});

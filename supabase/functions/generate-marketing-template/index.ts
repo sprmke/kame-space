@@ -6,6 +6,7 @@
 import { generateMarketingTemplateTokens } from '../_shared/marketingTemplateGenerationAi.ts';
 import { generateMarketingTheme } from '../_shared/marketingThemeDirector.ts';
 import {
+  readPosterOffer,
   readPreferredArchetype,
   allowedPropertyPhotoUrls,
   generatePosterSpecs,
@@ -14,6 +15,7 @@ import {
   type PosterFactsInput,
   type PosterGoal,
 } from '../_shared/marketingPosterDirector.ts';
+import { generateReelDirection } from '../_shared/marketingReelDirector.ts';
 import { jsonError, jsonSuccess, readJsonBody } from '../_shared/httpResponse.ts';
 import { aiErrorResponse } from '../_shared/ai/aiErrorResponse.ts';
 import { createServiceClient, requirePropertyPermissionAndFeature } from '../_shared/orgAuth.ts';
@@ -59,6 +61,9 @@ serveAuthenticated('generate-marketing-template', async (req, user) => {
 
   if (body.contentType === 'poster') {
     return handlePoster(req, body, propertyId, actorUserId);
+  }
+  if (body.contentType === 'reel') {
+    return handleReel(req, body, propertyId, actorUserId);
   }
   if (body.contentType === 'theme') {
     return handleTheme(req, body, propertyId, actorUserId);
@@ -230,6 +235,7 @@ async function handlePoster(
           .map((item) => item.trim().slice(0, 40))
           .slice(0, 30)
       : [],
+    offer: readPosterOffer(rawFacts.offer),
   };
   let revise: { spec: Record<string, unknown>; instruction: string } | null = null;
   if (body.revise !== undefined && body.revise !== null) {
@@ -286,10 +292,82 @@ async function handlePoster(
     await capturePostHogEvent('marketing_asset_generated', {
       logPrefix: 'generate-marketing-template',
       request: req,
-      distinctId: user.id,
+      distinctId: actorUserId,
       properties: { kind: 'poster' },
     });
     return jsonSuccess(req, { contentType: 'poster', variants, photoUrls: urls });
+  } catch (err) {
+    return aiErrorResponse(req, err, 'generate-marketing-template');
+  }
+}
+
+/**
+ * contentType "reel": AI direction for a free reel (recipe, photo order, short lines).
+ * Returns a direction only; the client builds the video with its deterministic builder.
+ */
+async function handleReel(
+  req: Request,
+  body: Record<string, unknown>,
+  propertyId: string,
+  actorUserId: string
+): Promise<Response> {
+  const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
+  if (prompt.length > 500) return jsonError(req, 'Prompt is too long', 400);
+  const rawFacts =
+    body.facts && typeof body.facts === 'object' ? (body.facts as Record<string, unknown>) : {};
+  const facts: PosterFactsInput = {
+    propertyName: clipString(rawFacts.propertyName, 120) ?? '',
+    brandName: clipString(rawFacts.brandName, 80),
+    location: clipString(rawFacts.location, 120),
+    checkIn: null,
+    checkOut: null,
+    securityDeposit: null,
+    nightlyRate: clipString(rawFacts.nightlyRate, 30),
+    amenities: Array.isArray(rawFacts.amenities)
+      ? rawFacts.amenities
+          .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+          .map((item) => item.trim().slice(0, 40))
+          .slice(0, 30)
+      : [],
+  };
+  const requestedPhotos = Array.isArray(body.photoUrls)
+    ? body.photoUrls.filter((url): url is string => typeof url === 'string')
+    : [];
+
+  const sb = createServiceClient();
+  const { data: propertyRow, error } = await sb
+    .from('properties')
+    .select('name, settings, organization_id')
+    .eq('id', propertyId)
+    .maybeSingle();
+  if (error) return jsonError(req, error.message, 500);
+  if (!propertyRow?.organization_id) return jsonError(req, 'Property not found', 404);
+  if (!facts.propertyName) facts.propertyName = String(propertyRow.name ?? '');
+
+  const { urls, photos } = await loadPosterPhotos(
+    requestedPhotos,
+    allowedPropertyPhotoUrls((propertyRow.settings ?? {}) as Record<string, unknown>)
+  );
+  if (photos.length === 0) return jsonError(req, 'Add listing photos to direct a reel', 400);
+
+  try {
+    const direction = await generateReelDirection({
+      organizationId: String(propertyRow.organization_id),
+      propertyId,
+      actorUserId,
+      actorType: 'staff',
+      prompt,
+      facts,
+      photos,
+    });
+    await capturePostHogEvent('marketing_asset_generated', {
+      logPrefix: 'generate-marketing-template',
+      request: req,
+      distinctId: actorUserId,
+      properties: { kind: 'reel' },
+    });
+    // photoUrls tells the client which of its photos each photoIndex refers to.
+    return jsonSuccess(req, { contentType: 'reel', direction, photoUrls: urls });
   } catch (err) {
     return aiErrorResponse(req, err, 'generate-marketing-template');
   }

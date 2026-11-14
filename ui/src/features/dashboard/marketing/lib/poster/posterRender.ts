@@ -11,7 +11,10 @@ import {
 } from '@/features/dashboard/marketing/lib/polotno/fitPosterTextSlots';
 import { ensurePolotnoConfigured } from '@/features/dashboard/marketing/lib/polotno/initPolotno';
 import type { PolotnoDesignDocument } from '@/features/dashboard/marketing/lib/polotno/polotnoCampaignDocuments';
+import { startLoadGuard } from '@/features/dashboard/marketing/lib/polotno/polotnoLoadGuard';
 import type { PolotnoStore } from '@/features/dashboard/marketing/lib/polotno/polotnoStore';
+
+export { PosterRenderError } from '@/features/dashboard/marketing/lib/polotno/polotnoLoadGuard';
 
 /**
  * Renders compiled posters to images outside the Design editor (Generate tab
@@ -69,13 +72,26 @@ export function renderPosterDocument(
 ): Promise<RenderedPoster> {
   const run = async (): Promise<RenderedPoster> => {
     const store = await getRenderStore();
-    store.loadJSON(document);
-    store.history.clear();
-    await waitForPageStage(store);
-    await store.waitLoading();
+    const guard = startLoadGuard(document);
+    const load = async () => {
+      store.loadJSON(document);
+      store.history.clear();
+      await waitForPageStage(store);
+      await store.waitLoading();
+    };
+    await load();
+    if (guard.failed().length > 0) {
+      // Transient network failures are common under queued renders: one retry.
+      await new Promise((resolve) => window.setTimeout(resolve, 400));
+      guard.reset();
+      await load();
+    }
+    guard.assertClean();
     await fitPosterTextSlots(store);
     await posterSettle();
     await store.waitLoading();
+    // Never export a frame that contains OpenPolotno's red error placeholder.
+    guard.assertClean();
     const dataUrl = await (
       store as unknown as {
         toDataURL: (opts: Record<string, unknown>) => Promise<string>;

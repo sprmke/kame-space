@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Legal and privacy coverage: current policies and consistent notices across the app'
 status: in-progress
 tags: [workflow, in-progress, legal, privacy, terms, cookies, payments, consent, ux]
-updated: 2026-11-11
+updated: 2026-11-15
 kind: plan
 ---
 
@@ -63,7 +63,7 @@ show no links at all.
 
 Benchmark: Airbnb (one line above "Confirm and pay" naming house rules, rebooking and refund
 policy), Stripe/PayMongo hosted checkout (processor + Terms + Privacy in the footer),
-Google/Notion/Linear sign-in ("By continuing, you agree to the Terms and acknowledge the
+Google/Notion/Linear sign-in ("By continuing, you agree to our Terms and
 Privacy Policy"), Booking.com (policy link under the final button).
 
 **Decision**
@@ -169,7 +169,7 @@ P0 = shipped in this change. P1 = shipped in this change if time allows. P2 = fo
 
 | #   | Surface                                                                                    | File                                                                       | Copy (final wording in `legalCopy.ts`)                                                                                                                                                            | P    |
 | --- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 1   | Host and guest sign-in pages (`/sign-in`, `/sign-up`, host auth)                           | `features/guest/auth/components/AuthPageContent.tsx`                       | By continuing, you agree to the **Terms** and acknowledge the **Privacy Policy**.                                                                                                                 | P0   |
+| 1   | Host and guest sign-in pages (`/sign-in`, `/sign-up`, host auth)                           | `features/guest/auth/components/AuthPageContent.tsx`                       | By continuing, you agree to our **Terms** and **Privacy Policy**. (Under Google; host switch below.)                                                                                              | P0   |
 | 2   | Guest auth modal (Reserve, Contact host, Contact page)                                     | `features/guest/auth/components/GuestAuthModal.tsx`                        | Same as 1.                                                                                                                                                                                        | P0   |
 | 3   | Booking form last step (`/form`, property Reserve modal); hidden for host-entered bookings | `features/guest/form/components/GuestForm.tsx`                             | By submitting, you agree to the host's house rules, the **Terms** and the **Privacy Policy**.                                                                                                     | P0   |
 | 4   | Booking form payment step (receipt upload)                                                 | `GuestFormPaymentStepContent.tsx`                                          | You pay the host directly. We check your receipt and keep it private. **Payments terms**                                                                                                          | P1   |

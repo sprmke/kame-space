@@ -115,6 +115,8 @@ export type MediaItem = ItemBase & {
   transform: VisualTransform;
   /** Ken Burns override (images). */
   motion?: VideoMotionOverride;
+  /** Where the photo's subject sits (0 to 1); the push-in lands there. */
+  focal?: { x: number; y: number };
   adjust?: MediaAdjust;
   /** Photo wash (main track). */
   overlay?: VideoOverlayMode;

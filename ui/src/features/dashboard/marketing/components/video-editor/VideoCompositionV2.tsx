@@ -278,7 +278,7 @@ function MainClip({
   // Template camera motion is for photos; real footage only moves when the host picked a motion.
   const useMotion = item.type === 'image' || item.motion !== undefined;
   const transform = useMotion
-    ? backgroundMotionTransform(motion, progress, index, zoom)
+    ? backgroundMotionTransform(motion, progress, index, zoom, item.focal)
     : undefined;
   const reveal = item.sceneKind === 'cta' ? ctaReveal(frame, motion.ctaRevealFrames) : 1;
   const scrim = scrimStyle(

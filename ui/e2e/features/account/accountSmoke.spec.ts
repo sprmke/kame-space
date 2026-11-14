@@ -7,7 +7,7 @@ test.describe('@ci guest account shells', () => {
     await installGuestFavoritesMocks(page);
     await page.goto('/account/profile');
     await expect(page.getByLabel('Display name')).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeVisible();
   });
 
   test('messages page shows empty state', async ({ page }) => {

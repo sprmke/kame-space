@@ -253,7 +253,10 @@ describe('poster compiler', () => {
     expect(new Set(specs.map((spec) => spec.archetype)).size).toBe(4);
     for (const spec of specs) {
       for (const format of FORMATS) {
-        expect(auditPosterDocument(compilePosterDocument(spec, RICH_FACTS, format))).toEqual([]);
+        expect(
+          auditPosterDocument(compilePosterDocument(spec, RICH_FACTS, format)),
+          `${spec.archetype} ${format}`
+        ).toEqual([]);
       }
     }
   });

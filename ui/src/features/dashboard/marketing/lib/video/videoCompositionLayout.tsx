@@ -70,6 +70,15 @@ export function positionedLayerStyle(
   };
 }
 
+/** Mask reveal wipes the line in left to right; fade up eases opacity in. */
+export function textEntranceStyle(kind: 'mask' | 'fade', progress: number): CSSProperties {
+  const p = Math.min(1, Math.max(0, progress));
+  if (p >= 1) return {};
+  return kind === 'mask'
+    ? { clipPath: `inset(0 ${((1 - p) * 100).toFixed(2)}% 0 0)` }
+    : { opacity: p };
+}
+
 export function layerHitZoneStyle(layer: VideoSceneLayer): CSSProperties {
   const align = layer.position.align ?? 'center';
   const widthPct = layerUsesWidthPct(layer) ? resolveLayerWidthPct(layer) : undefined;
@@ -89,12 +98,15 @@ export function PositionedLayer({
   scale,
   enterOffset = 0,
   enterOffsetX = 0,
+  entrance,
   children,
 }: {
   layer: VideoSceneLayer;
   scale: number;
   enterOffset?: number;
   enterOffsetX?: number;
+  /** Text entrance: a mask reveal for the headline, a fade up for the rest. */
+  entrance?: { kind: 'mask' | 'fade'; progress: number };
   children: ReactNode;
 }) {
   return (
@@ -102,6 +114,7 @@ export function PositionedLayer({
       style={{
         ...positionedLayerStyle(layer, scale, enterOffset, enterOffsetX),
         pointerEvents: 'none',
+        ...(entrance ? textEntranceStyle(entrance.kind, entrance.progress) : {}),
       }}
     >
       {children}

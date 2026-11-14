@@ -2,15 +2,21 @@ import { assertEquals } from 'jsr:@std/assert@1';
 
 import {
   allowedPropertyPhotoUrls,
+  clampCopyForLayout,
+  clampCopyText,
+  POSTER_DIRECTOR_PROMPT,
   groundPosterFeatures,
   loadPosterPhotos,
+  posterPhotoFetchTarget,
   preferArchetypeFirst,
   preferredArchetypeLine,
+  readPosterOffer,
   readPreferredArchetype,
   type PosterFactsInput,
   revisableSpec,
   sanitizeVariant,
   stripBannedCopy,
+  stripInventedOffers,
 } from './marketingPosterDirector.ts';
 
 const FACTS: PosterFactsInput = {
@@ -243,5 +249,170 @@ Deno.test(
     assertEquals(preferArchetypeFirst(variants, 'wave-duo'), variants);
     assertEquals(preferArchetypeFirst(variants, 'magazine-cover'), variants);
     assertEquals(preferArchetypeFirst(variants, null), variants);
+  }
+);
+
+Deno.test(
+  'posterPhotoFetchTarget passes https and maps local Storage to the project origin',
+  () => {
+    const project = 'http://kong:8000';
+    assertEquals(
+      posterPhotoFetchTarget('https://cdn.example.com/a.jpg', project),
+      'https://cdn.example.com/a.jpg'
+    );
+    assertEquals(
+      posterPhotoFetchTarget(
+        'http://127.0.0.1:54321/storage/v1/object/public/p/a.jpg?t=1',
+        project
+      ),
+      'http://kong:8000/storage/v1/object/public/p/a.jpg?t=1'
+    );
+    assertEquals(
+      posterPhotoFetchTarget('http://localhost:54321/storage/v1/object/public/p/a.jpg', project),
+      'http://kong:8000/storage/v1/object/public/p/a.jpg'
+    );
+  }
+);
+
+Deno.test('posterPhotoFetchTarget refuses other http hosts and non-Storage paths', () => {
+  const project = 'http://kong:8000';
+  assertEquals(posterPhotoFetchTarget('http://169.254.169.254/latest', project), null);
+  assertEquals(posterPhotoFetchTarget('http://127.0.0.1:54321/rest/v1/secret', project), null);
+  assertEquals(posterPhotoFetchTarget('http://evil.example/storage/v1/x.jpg', project), null);
+  assertEquals(posterPhotoFetchTarget('http://127.0.0.1:54321/storage/v1/x.jpg', null), null);
+  assertEquals(posterPhotoFetchTarget('not a url', project), null);
+});
+
+Deno.test('clampCopyText trims to the word and character budget without cutting a word', () => {
+  assertEquals(
+    clampCopyText('Slow mornings by the sea', { words: 3, chars: 40 }),
+    'Slow mornings by'
+  );
+  assertEquals(clampCopyText('Slow mornings by the sea', { words: 5, chars: 14 }), 'Slow mornings');
+  assertEquals(clampCopyText('  spaced   out  ', { words: 5, chars: 40 }), 'spaced out');
+  assertEquals(
+    clampCopyText('Extraordinarilylongword here', { words: 2, chars: 10 }),
+    'Extraordinarilylongword'
+  );
+  assertEquals(clampCopyText('', { words: 2, chars: 10 }), '');
+  assertEquals(clampCopyText('Cozy,', { words: 2, chars: 10 }), 'Cozy');
+});
+
+Deno.test('clampCopyForLayout enforces each layout budget and tidies chips', () => {
+  const copy = {
+    headline: 'Sunrise over the quiet lagoon today',
+    accent: 'Slow mornings forever and ever',
+    subhead: 'Keep this as is.',
+    chips: ['Sea view', 'sea view', 'Pet friendly guests welcome', '', 5, 'Kitchen', 'Extra'],
+  };
+  const magazine = clampCopyForLayout(copy, 'magazine-cover');
+  assertEquals(magazine.headline, 'Sunrise');
+  assertEquals(magazine.accent, 'Slow mornings');
+  assertEquals(magazine.subhead, 'Keep this as is.');
+  assertEquals(magazine.chips, ['Sea view', 'Pet friendly', 'Kitchen']);
+  // An unknown layout is not trimmed beyond chips.
+  assertEquals(clampCopyForLayout(copy, 'nope').headline, copy.headline);
+});
+
+Deno.test('sanitizeVariant clamps copy for the chosen layout', () => {
+  const out = sanitizeVariant(
+    { archetype: 'sky-headline', copy: { accent: 'Golden Hour Paradise', headline: 'Welcome' } },
+    { facts: FACTS, goal: 'vibe', prompt: '', photos: [] } as never
+  );
+  assertEquals((out.copy as Record<string, unknown>).accent, 'Golden');
+});
+
+Deno.test('director prompt version moved with the v3 prompt', () => {
+  assertEquals(POSTER_DIRECTOR_PROMPT.version, '2026-11-13.3');
+});
+
+Deno.test(
+  'readPosterOffer keeps a good offer and drops expired, malformed or oversized ones',
+  () => {
+    const today = '2026-11-13';
+    assertEquals(
+      readPosterOffer(
+        { text: '20% off weekdays', validUntil: '2026-12-31', code: 'summer10' },
+        today
+      ),
+      { text: '20% off weekdays', validUntil: '2026-12-31', code: 'SUMMER10' }
+    );
+    assertEquals(
+      readPosterOffer({ text: 'Free breakfast', validUntil: '2026-11-12' }, today),
+      null
+    );
+    assertEquals(
+      readPosterOffer({ text: 'Free breakfast', validUntil: '2026-11-13' }, today)?.validUntil,
+      '2026-11-13'
+    );
+    assertEquals(
+      readPosterOffer({ text: 'Free breakfast', validUntil: '2026-02-31', code: 'a b' }, today),
+      { text: 'Free breakfast', validUntil: null, code: null }
+    );
+    assertEquals(
+      readPosterOffer({ text: 'a very long offer that goes on and on forever and ever' }, today),
+      null
+    );
+    assertEquals(readPosterOffer({ text: '   ' }, today), null);
+    assertEquals(readPosterOffer('nope', today), null);
+    assertEquals(readPosterOffer(null, today), null);
+    assertEquals(readPosterOffer({ text: '10% off — weekdays' }, today)?.text, '10% off, weekdays');
+  }
+);
+
+Deno.test('stripInventedOffers blanks deal wording and keeps plain copy', () => {
+  const out = stripInventedOffers({
+    headline: 'Cozy Corner',
+    subhead: 'Save 20% on your stay',
+    tagline: 'Limited time only',
+    cta: 'Book direct',
+    chips: ['Pool', '20% off', 'Wi-Fi'],
+  });
+  assertEquals(out.headline, 'Cozy Corner');
+  assertEquals(out.subhead, '');
+  assertEquals(out.tagline, '');
+  assertEquals(out.cta, 'Book direct');
+  assertEquals(out.chips, ['Pool', 'Wi-Fi']);
+});
+
+Deno.test(
+  'sanitizeVariant strips invented offers unless the host gave one or it is a revision',
+  () => {
+    const base = {
+      organizationId: 'o',
+      propertyId: 'p',
+      goal: 'promo' as const,
+      prompt: '',
+      brandColor: null,
+      photos: [],
+      count: 1,
+      facts: {
+        propertyName: 'X',
+        brandName: null,
+        location: null,
+        checkIn: null,
+        checkOut: null,
+        securityDeposit: null,
+        nightlyRate: null,
+        amenities: [],
+      },
+    };
+    const raw = {
+      archetype: 'photo-first',
+      copy: { headline: 'Save 20% today', subhead: 'Book now' },
+    };
+    const none = sanitizeVariant(raw, base).copy as Record<string, string>;
+    assertEquals(none.headline, '');
+    assertEquals(none.subhead, 'Book now');
+    const withOffer = sanitizeVariant(raw, {
+      ...base,
+      facts: { ...base.facts, offer: { text: '20% off', validUntil: null, code: null } },
+    }).copy as Record<string, string>;
+    assertEquals(withOffer.headline, 'Save 20% today');
+    const revised = sanitizeVariant(raw, {
+      ...base,
+      revise: { spec: {}, instruction: 'change' },
+    }).copy as Record<string, string>;
+    assertEquals(revised.headline, 'Save 20% today');
   }
 );

@@ -4,6 +4,7 @@ import { useAiPosterEngine } from '@/features/dashboard/marketing/hooks/useAiPos
 import {
   postSampleCacheKey,
   postSampleFacts,
+  staticPostSampleUrl,
   showcaseFacts,
   type PostSample,
 } from '@/features/dashboard/marketing/lib/aiStudioSamples';
@@ -107,14 +108,16 @@ export type PostSampleImage =
 export function usePostSampleImage(
   sample: PostSample | null,
   renderer: PostSampleRenderer,
-  enabled: boolean
+  enabled: boolean,
+  /** Draw with the host's listing instead of using the shipped example image. */
+  live = false
 ): PostSampleImage {
   const [state, setState] = useState<PostSampleImage>({ status: 'idle' });
   const plan = sample && renderer.ready ? renderer.planFor(sample) : null;
   const key = plan?.key ?? null;
 
   useEffect(() => {
-    if (!sample || !key || !enabled) return;
+    if (!sample || !key || !enabled || !live) return;
     const hit = memoryCache.get(key);
     if (hit) {
       setState({ status: 'ready', dataUrl: hit, showcase: plan?.showcase ?? false });
@@ -140,7 +143,13 @@ export function usePostSampleImage(
     };
     // `renderer.render` changes with the same inputs that change `key`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sample?.id, key, enabled]);
+  }, [sample?.id, key, enabled, live]);
 
+  // Cards use the shipped image: no render, no Konva, no network beyond one image.
+  if (sample && !live) {
+    return enabled
+      ? { status: 'ready', dataUrl: staticPostSampleUrl(sample.id), showcase: true }
+      : { status: 'idle' };
+  }
   return state;
 }

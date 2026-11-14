@@ -342,7 +342,8 @@ async function savePostVersions(
     publicUrl: (path: string | null) => string | null;
   }
 ): Promise<Response> {
-  const versions = parsePostVersionInputs(body.versions);
+  const output = body.output === 'reel' ? 'reel' : 'post';
+  const versions = parsePostVersionInputs(body.versions, output);
   if (typeof versions === 'string') return jsonError(req, versions, 400);
   const prompt = normalizeTurnPrompt(body.prompt);
   const themeKey =
@@ -359,7 +360,9 @@ async function savePostVersions(
     if (!isUuid(body.sessionId)) return jsonError(req, 'sessionId must be a UUID', 400);
     session = await loadSession(sb, body.sessionId, ctx.propertyId);
     if (!session) return jsonError(req, 'Conversation not found', 404);
-    if (session.output !== 'post') return jsonError(req, 'That conversation is not a post', 400);
+    if (session.output !== output) {
+      return jsonError(req, `That conversation is not a ${output}`, 400);
+    }
     if (session.deleted_at)
       return jsonError(req, 'Restore this creation to keep working on it', 409);
   } else {
@@ -368,8 +371,8 @@ async function savePostVersions(
       .insert({
         organization_id: ctx.organizationId,
         property_id: ctx.propertyId,
-        output: 'post',
-        title: normalizeSessionTitle(body.title) ?? sessionTitleFromPrompt(prompt, 'post'),
+        output,
+        title: normalizeSessionTitle(body.title) ?? sessionTitleFromPrompt(prompt, output),
         theme_key: themeKey,
         created_by: ctx.userId,
       })

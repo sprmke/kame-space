@@ -10,7 +10,12 @@ import {
 const ORANGE = '#e8752a';
 const CREAM = '#fff8f0';
 const RED = '#dc2626';
-const ALL_FORMATS: DesignTemplateFormat[] = ['instagram-post', 'instagram-story', 'facebook-post'];
+const ALL_FORMATS: DesignTemplateFormat[] = [
+  'instagram-post',
+  'instagram-portrait',
+  'instagram-story',
+  'facebook-post',
+];
 
 type BaseCampaignTemplate = {
   baseId: string;

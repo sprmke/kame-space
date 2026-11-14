@@ -2,6 +2,7 @@ import { GuestPrivacyCard } from '@/features/guest/account/components/GuestPriva
 import { GuestProfileForm } from '@/features/guest/account/components/GuestProfileForm';
 import { GuestIdentityCard } from '@/features/verification/components/GuestIdentityCard';
 
+import { AppInfoCard } from '@/components/pwa/AppInfoCard';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 
 export function GuestProfilePage() {
@@ -11,6 +12,7 @@ export function GuestProfilePage() {
       <GuestProfileForm />
       <GuestIdentityCard />
       <GuestPrivacyCard />
+      <AppInfoCard />
     </div>
   );
 }

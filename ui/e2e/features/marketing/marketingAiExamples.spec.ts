@@ -138,7 +138,7 @@ test.describe('@ci @flaky marketing AI Studio examples', () => {
       contentType: 'poster',
       goal: 'promo',
       prompt: 'Book direct for weekday stays',
-      preferredArchetype: 'sky-headline',
+      preferredArchetype: 'quote-card',
     });
   });
 

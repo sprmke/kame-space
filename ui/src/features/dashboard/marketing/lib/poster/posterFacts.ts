@@ -71,6 +71,48 @@ export function formatPosterLocation(
   return unique.length > 0 ? unique.join(', ') : null;
 }
 
+/** Everyday amenities every listing has; they never lead a poster. */
+const BASELINE_AMENITY =
+  /\b(wi-?fi|internet|air ?con(?:ditioning|ditioner)?|a\/c|aircon|heating|heater|hair ?dryer|tv|television|towels?|linens?|toiletries|essentials|hot water|fan)\b/i;
+
+/** Amenities worth leading with, most distinctive first. */
+const DISTINCTIVE_ORDER: RegExp[] = [
+  /pool/i,
+  /jacuzzi|hot ?tub|bath ?tub/i,
+  /view|balcon|terrace|rooftop|sea|beach|mountain/i,
+  /netflix|console|playstation|xbox|karaoke|projector|movie/i,
+  /kitchen|grill|bbq/i,
+  /parking/i,
+  /pet/i,
+];
+
+export function isDistinctiveAmenity(label: string): boolean {
+  return label.trim().length > 0 && !BASELINE_AMENITY.test(label);
+}
+
+function amenityRank(label: string): number {
+  if (BASELINE_AMENITY.test(label)) return DISTINCTIVE_ORDER.length + 1;
+  const index = DISTINCTIVE_ORDER.findIndex((pattern) => pattern.test(label));
+  return index === -1 ? DISTINCTIVE_ORDER.length : index;
+}
+
+/** Distinctive first, baseline last, host order kept inside a tier. De-duplicated. */
+export function rankAmenities(labels: string[]): string[] {
+  const seen = new Set<string>();
+  const unique = labels
+    .map((label) => label.trim())
+    .filter((label) => {
+      const key = label.toLowerCase();
+      if (!label || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  return unique
+    .map((label, order) => ({ label, order, rank: amenityRank(label) }))
+    .sort((a, b) => a.rank - b.rank || a.order - b.order)
+    .map((item) => item.label);
+}
+
 export function buildPosterFacts(input: {
   propertyName: string;
   brandName?: string | null;
@@ -91,7 +133,7 @@ export function buildPosterFacts(input: {
       property?.pricing?.currency
     ),
     nightlyRate: formatPosterMoney(property?.pricing?.baseRate, property?.pricing?.currency),
-    amenities: (property?.amenities ?? []).map((label) => label.trim()).filter(Boolean),
+    amenities: rankAmenities(property?.amenities ?? []),
     logoUrl: input.logoUrl?.trim() || null,
     photos,
   };

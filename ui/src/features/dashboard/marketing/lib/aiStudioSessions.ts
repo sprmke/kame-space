@@ -5,6 +5,10 @@ import {
 import { isGenerationInFlight } from '@/features/dashboard/marketing/lib/marketingGenerationProgress';
 import type { MarketingGenerationJob } from '@/features/dashboard/marketing/lib/marketingGenerationTypes';
 import type { AiStudioOutput } from '@/features/dashboard/marketing/lib/marketingStudioRoute';
+import {
+  POST_CHANGE_LABEL,
+  describePostChange,
+} from '@/features/dashboard/marketing/lib/poster/posterQuickEdit';
 
 /**
  * AI Studio conversations, client side. A conversation (session) is the host's first
@@ -76,6 +80,7 @@ export const AI_OUTPUT_LABEL: Record<AiStudioOutput, { one: string; many: string
   post: { one: 'Post', many: 'Posts' },
   image: { one: 'Photo', many: 'Photos' },
   video: { one: 'Clip', many: 'Clips' },
+  reel: { one: 'Reel', many: 'Reels' },
 };
 
 const POST_FORMAT_LABEL: Record<string, string> = {
@@ -120,8 +125,9 @@ function postTurnNote(
   if (first.prompt) return null;
   const parent = first.parentVersionId ? byId.get(first.parentVersionId) : null;
   if (!parent) return `${postGoalLabel(first.goal)} post`;
-  if (parent.format !== first.format) return `Resized to ${postFormatLabel(first.format)}`;
-  return 'New layout';
+  const change = describePostChange(parent, first);
+  if (change === 'size') return `Resized to ${postFormatLabel(first.format)}`;
+  return POST_CHANGE_LABEL[change === 'none' ? 'layout' : change];
 }
 
 /**
@@ -152,10 +158,13 @@ export function buildAiTurns(detail: Pick<AiSessionDetail, 'jobs' | 'postVersion
   for (const [turnId, rows] of postTurns) {
     const ordered = [...rows].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     const first = ordered[0]!;
+    // Three or more different goals from one parent is a carousel, not a layout change.
+    const isCarousel =
+      first.parentVersionId !== null && new Set(ordered.map((row) => row.goal)).size >= 3;
     turns.push({
       key: `turn:${turnId}`,
       prompt: first.prompt,
-      note: postTurnNote(first, byId),
+      note: isCarousel && !first.prompt ? 'Carousel' : postTurnNote(first, byId),
       createdAt: first.createdAt,
       versions: ordered.map((post) => ({
         kind: 'post' as const,
@@ -206,9 +215,12 @@ export function versionThumbUrl(version: AiVersion): string | null {
 
 /** One-tap refinements under the message box, in host language. */
 export const REFINE_SUGGESTIONS: Record<AiStudioOutput, string[]> = {
-  post: ['Shorter headline', 'Use a different photo', 'More playful'],
+  // Retyping words and swapping the photo are free in Quick edit, so these are the changes
+  // only the AI can make.
+  post: ['More playful', 'More upscale', 'Write it in Taglish'],
   image: ['Make it evening', 'Brighter and airier', 'Closer view'],
   video: ['Slower camera', 'Pull back instead', 'Warmer light'],
+  reel: ['Start with the pool', 'Focus on the bedroom', 'Shorter and punchier'],
 };
 
 /** Example requests on an empty new-creation box. */
@@ -216,6 +228,7 @@ export const START_EXAMPLES: Record<AiStudioOutput, string[]> = {
   post: ['Weekday stays, book direct', 'Pool and fast WiFi', 'Check-in details for this weekend'],
   image: ['Living room with a view', 'Bedroom ready for guests', 'Balcony at golden hour'],
   video: ['Curtains moving in a breeze', 'Slow walk through the living room', 'Pool at sunset'],
+  reel: ['Show off the pool', 'A cozy weekend stay', 'Best rooms first'],
 };
 
 /** Aspect ratio of a version's media (CSS `aspect-ratio`). */

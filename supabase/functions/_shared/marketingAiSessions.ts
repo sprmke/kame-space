@@ -9,7 +9,7 @@
 
 import { isUuid, normalizeItemName } from './marketingTemplateLibrary.ts';
 
-export const AI_SESSION_OUTPUTS = ['post', 'image', 'video'] as const;
+export const AI_SESSION_OUTPUTS = ['post', 'image', 'video', 'reel'] as const;
 export type AiSessionOutput = (typeof AI_SESSION_OUTPUTS)[number];
 
 export const AI_SESSION_DEFAULT_LIMIT = 24;
@@ -43,6 +43,7 @@ const FALLBACK_TITLE: Record<AiSessionOutput, string> = {
   post: 'Post',
   image: 'Photo',
   video: 'Clip',
+  reel: 'Reel',
 };
 
 /**
@@ -191,7 +192,12 @@ export type PostVersionInput = {
  * Validates `post-versions` items. The spec is the client's compiled-from contract;
  * the server only checks shape and size (the compiler re-normalizes on read).
  */
-export function parsePostVersionInputs(value: unknown): PostVersionInput[] | string {
+const REEL_RECIPE_IDS = ['tour', 'highlights'];
+
+export function parsePostVersionInputs(
+  value: unknown,
+  output: 'post' | 'reel' = 'post'
+): PostVersionInput[] | string {
   if (!Array.isArray(value) || value.length === 0) return 'versions is required';
   if (value.length > MAX_POST_VERSIONS_PER_TURN) {
     return `At most ${MAX_POST_VERSIONS_PER_TURN} versions at a time`;
@@ -204,8 +210,16 @@ export function parsePostVersionInputs(value: unknown): PostVersionInput[] | str
     const spec = raw.spec;
     if (!spec || typeof spec !== 'object' || Array.isArray(spec)) return 'spec must be an object';
     if (JSON.stringify(spec).length > MAX_SPEC_CHARS) return 'spec is too large';
-    if (!(AI_POST_GOALS as readonly unknown[]).includes(raw.goal)) return 'goal is not valid';
-    if (!(AI_POST_FORMATS as readonly unknown[]).includes(raw.format)) return 'format is not valid';
+    if (output === 'reel') {
+      // A reel version is a direction the client plays; it has no goal or format choice.
+      const direction = spec as Record<string, unknown>;
+      if (!REEL_RECIPE_IDS.includes(direction.recipe as string)) return 'recipe is not valid';
+      if (!direction.copy || typeof direction.copy !== 'object') return 'copy must be an object';
+    } else {
+      if (!(AI_POST_GOALS as readonly unknown[]).includes(raw.goal)) return 'goal is not valid';
+      if (!(AI_POST_FORMATS as readonly unknown[]).includes(raw.format))
+        return 'format is not valid';
+    }
     const photos = Array.isArray(raw.photoUrls) ? raw.photoUrls : [];
     if (photos.length > MAX_POST_PHOTOS) return `At most ${MAX_POST_PHOTOS} photos per post`;
     if (
@@ -217,8 +231,8 @@ export function parsePostVersionInputs(value: unknown): PostVersionInput[] | str
     }
     out.push({
       spec: spec as Record<string, unknown>,
-      goal: raw.goal as PostVersionInput['goal'],
-      format: raw.format as PostVersionInput['format'],
+      goal: (output === 'reel' ? 'vibe' : raw.goal) as PostVersionInput['goal'],
+      format: (output === 'reel' ? 'instagram-story' : raw.format) as PostVersionInput['format'],
       photoUrls: photos as string[],
       previewDataUrl:
         typeof raw.previewDataUrl === 'string' && raw.previewDataUrl.startsWith('data:')

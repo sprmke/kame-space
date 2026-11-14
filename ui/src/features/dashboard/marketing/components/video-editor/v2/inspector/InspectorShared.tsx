@@ -29,6 +29,8 @@ export type InspectorActions = {
   setRate: (itemId: string, rate: VideoPlaybackRate) => void;
   setTransition: (itemId: string, type: VideoTransition) => void;
   replaceMedia: (itemId: string) => void;
+  /** Snap the main-track cuts onto this music clip's beats. */
+  cutToBeat: (audioId: string) => Promise<void>;
   remove: (itemId: string) => void;
 };
 

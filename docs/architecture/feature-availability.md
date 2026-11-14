@@ -53,7 +53,7 @@ Optional `Retry-After` when `expected_back_at` is in the future. Client: `featur
 | ------------ | ---------------------------------------------- | ----------------------------------------- |
 | Inbox Meta   | `inbox.meta` (+ connect/reply/auto_reply/sync) | Webhook ingest, read threads, web chat    |
 | Channel sync | `pricing.channel_sync` (+ import)              | **`ical-export`** (never gated)           |
-| AI studio    | `marketing.ai_studio` (+ generate)             | Job polling, sweeper, session read/save   |
+| AI studio    | `marketing.ai_studio` (+ generate, poster_v2)  | Job polling, sweeper, session read/save   |
 | AI review    | `analytics.ai_review` (+ regenerate)           | Last review visible when regenerate off   |
 | Telegram     | `notifications.telegram` (+ settings/delivery) | Settings GET; delivery skipped not queued |
 

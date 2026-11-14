@@ -1,5 +1,11 @@
-import { Replace, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
+import { Clapperboard, Replace, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { useOptionalMarketingTheme } from '@/features/dashboard/marketing/components/themes/MarketingThemeProvider';
+import { useUploadMarketingGenerationReference } from '@/features/dashboard/marketing/hooks/useMarketingGenerationReferences';
+import { setPendingAiStartPhoto } from '@/features/dashboard/marketing/lib/aiStudioHandoff';
 import { NumberSlider } from '@/features/dashboard/marketing/components/calendar-builder/components/controls/NumberSlider';
 import {
   Field,
@@ -57,6 +63,28 @@ export function MediaItemInspector({ item, actions }: Props) {
     patch({ transform: { ...item.transform, ...changes } });
   const adjust = item.adjust ?? { brightness: 1, contrast: 1, saturation: 1 };
   const sourceFrames = sourceDurationFrames(item.media, project.fps);
+  const studio = useOptionalMarketingTheme();
+  const uploadReference = useUploadMarketingGenerationReference();
+  const [animating, setAnimating] = useState(false);
+
+  /** Hands this photo to the AI Studio clip form; the clip is made there, with credits. */
+  const animateShot = async () => {
+    if (!studio || animating) return;
+    setAnimating(true);
+    try {
+      const response = await fetch(item.media.url);
+      if (!response.ok) throw new Error('fetch failed');
+      const blob = await response.blob();
+      const file = new File([blob], 'shot.jpg', { type: blob.type || 'image/jpeg' });
+      const reference = await uploadReference.mutateAsync(file);
+      setPendingAiStartPhoto(reference);
+      studio.startAiSession('video');
+    } catch {
+      toast.error('Could not use this photo. Try again.');
+    } finally {
+      setAnimating(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -234,6 +262,23 @@ export function MediaItemInspector({ item, actions }: Props) {
             options={OVERLAYS}
             onChange={(overlay) => patch({ overlay })}
           />
+          {item.type === 'image' && !missing && studio ? (
+            <div className="space-y-1">
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-[44px] w-full gap-2 lg:min-h-9"
+                disabled={animating}
+                onClick={() => void animateShot()}
+              >
+                <Clapperboard className="size-4" aria-hidden />
+                {animating ? 'Preparing' : 'Animate this shot'}
+              </Button>
+              <p className="text-muted-foreground text-xs">
+                Makes a short AI clip from this photo in AI Studio. Uses AI credits.
+              </p>
+            </div>
+          ) : null}
           {!isFirstMain ? (
             <OptionSelect<VideoTransition>
               label="Transition in"

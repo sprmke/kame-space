@@ -58,3 +58,15 @@ describe('poster font pairings', () => {
     expect(families.sort()).toEqual([...expected].sort());
   });
 });
+
+describe('type system rules (plan 2.3)', () => {
+  it('uses the outline effect in the playful system only', async () => {
+    const { POSTER_FONT_PAIRINGS, POSTER_FONT_PAIRING_IDS } = await import(
+      '@/features/dashboard/marketing/lib/poster/posterFonts'
+    );
+    const outlined = POSTER_FONT_PAIRING_IDS.filter(
+      (id) => POSTER_FONT_PAIRINGS[id].displayEffect === 'outline-shadow'
+    );
+    expect(outlined).toEqual(['playful-pop']);
+  });
+});

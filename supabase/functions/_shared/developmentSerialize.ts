@@ -48,19 +48,8 @@ export async function allocateDevelopmentSlug(
   preferred?: string,
   excludeDevelopmentId?: string
 ): Promise<string> {
-  const { slugifyName, withSlugSuffix } = await import('./slugUtils.ts');
-  const base = slugifyName(preferred?.trim() || name);
-  for (let i = 0; i < 20; i++) {
-    const candidate = withSlugSuffix(base, i);
-    const { data } = await supabase
-      .from('developments')
-      .select('id')
-      .eq('slug', candidate)
-      .maybeSingle();
-    if (!data) return candidate;
-    if (excludeDevelopmentId && data.id === excludeDevelopmentId) return candidate;
-  }
-  return `${base}-${crypto.randomUUID().slice(0, 8)}`;
+  const { allocateUniqueListingSlug } = await import('./listingSlugAllocation.ts');
+  return allocateUniqueListingSlug(supabase, 'development', name, preferred, excludeDevelopmentId);
 }
 
 export async function developmentStatsByName(

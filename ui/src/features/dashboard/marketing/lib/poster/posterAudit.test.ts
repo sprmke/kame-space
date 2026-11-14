@@ -70,9 +70,7 @@ describe('auditPosterDocument', () => {
   });
 
   it('flags a slot the compiler marked as overflowing', () => {
-    const issues = auditPosterDocument(
-      doc([text({ custom: { posterSlot: { overflow: true } } })])
-    );
+    const issues = auditPosterDocument(doc([text({ custom: { posterSlot: { overflow: true } } })]));
 
     expect(issues.map((issue) => issue.kind)).toContain('text-overflow');
   });
@@ -123,9 +121,163 @@ describe('auditPosterDocument', () => {
     const document = {
       width: W,
       height: H,
-      pages: [{ children: [text({ name: 'A' })] }, { children: [text({ name: 'B', width: 5000 })] }],
+      pages: [
+        { children: [text({ name: 'A' })] },
+        { children: [text({ name: 'B', width: 5000 })] },
+      ],
     } as unknown as PolotnoDesignDocument;
 
     expect(auditPosterDocument(document).map((issue) => issue.element)).toEqual(['B']);
+  });
+});
+
+describe('auditPosterDocument story safe zones', () => {
+  const story = (children: Child[]) =>
+    ({ width: 1080, height: 1920, pages: [{ children }] }) as unknown as PolotnoDesignDocument;
+
+  it('flags text under the Stories header and over the reply bar', () => {
+    const issues = auditPosterDocument(
+      story([text({ name: 'High', y: 100 }), text({ id: 't2', name: 'Low', y: 1700 })])
+    );
+
+    expect(issues.map((issue) => `${issue.kind}:${issue.element}`)).toEqual([
+      'unsafe-zone:High',
+      'unsafe-zone:Low',
+    ]);
+  });
+
+  it('accepts text inside the safe band, and ignores feed posts', () => {
+    expect(auditPosterDocument(story([text({ y: 400 })]))).toEqual([]);
+    expect(auditPosterDocument(doc([text({ y: 20 })]))).toEqual([]);
+  });
+});
+
+describe('auditPosterDocument v2 rules', () => {
+  const kinds = (children: Child[], size = { width: W, height: H }) =>
+    auditPosterDocument({ ...size, pages: [{ children }] } as unknown as PolotnoDesignDocument).map(
+      (issue) => issue.kind
+    );
+
+  it('flags more than two families plus a script accent', () => {
+    const family = (id: string, fontFamily: string, y: number) =>
+      text({ id, name: id, fontFamily, y, x: 100 });
+    expect(
+      kinds([
+        family('a', 'Poppins', 100),
+        family('b', 'Great Vibes', 300),
+        family('c', 'Fredoka', 500),
+      ])
+    ).toEqual([]);
+    expect(
+      kinds([
+        family('a', 'Poppins', 100),
+        family('b', 'Great Vibes', 300),
+        family('c', 'Fredoka', 500),
+        family('d', 'Montserrat', 700),
+      ])
+    ).toEqual(['too-many-fonts']);
+  });
+
+  it('does not count the brand wordmark as a family', () => {
+    const base = ['Poppins', 'Great Vibes', 'Fredoka'].map((fontFamily, i) =>
+      text({ id: `t${i}`, name: `T${i}`, fontFamily, y: 100 + i * 200 })
+    );
+    expect(
+      kinds([...base, text({ id: 'b', name: 'Brand', fontFamily: 'Pacifico', y: 800 })])
+    ).toEqual([]);
+  });
+
+  it('flags a poster with more text elements than the budget', () => {
+    const many = Array.from({ length: 19 }, (_, i) =>
+      text({ id: `t${i}`, name: `T${i}`, x: 10, y: i * 50, width: 40, height: 20, fontSize: 30 })
+    );
+    expect(kinds(many)).toContain('text-budget');
+    expect(kinds(many.slice(0, 18))).not.toContain('text-budget');
+  });
+
+  it('keeps 4:5 text inside the centered 3:4 grid crop', () => {
+    const portrait = { width: 1080, height: 1350 };
+    expect(kinds([text({ x: 20, width: 400 })], portrait)).toEqual(['grid-unsafe']);
+    expect(kinds([text({ x: 60, width: 400 })], portrait)).toEqual([]);
+    expect(kinds([text({ x: 1000, width: 80 })], portrait)).toEqual(['grid-unsafe']);
+    expect(kinds([text({ x: 20, width: 400 })])).toEqual([]);
+  });
+
+  it('flags a logo that sits on text but not one beside it', () => {
+    const logo = { id: 'l', type: 'image', name: 'Logo', x: 100, y: 100, width: 100, height: 100 };
+    expect(kinds([text({ x: 120, y: 120, width: 200, height: 40 }), logo])).toContain(
+      'logo-overlap'
+    );
+    expect(kinds([text({ x: 400, y: 120, width: 200, height: 40 }), logo])).toEqual([]);
+  });
+});
+
+describe('script faces stay in the Flyer family', () => {
+  const doc = (archetype: string, fontFamily: string) =>
+    ({
+      width: 1080,
+      height: 1350,
+      schemaVersion: 2,
+      fonts: [],
+      custom: { poster: { archetype } },
+      pages: [
+        {
+          id: 'p',
+          background: '#fff',
+          children: [
+            {
+              id: 't',
+              type: 'text',
+              name: 'Headline',
+              text: 'Hello',
+              x: 100,
+              y: 100,
+              width: 800,
+              height: 120,
+              fontSize: 100,
+              fontFamily,
+            },
+          ],
+        },
+      ],
+    }) as never;
+
+  it('flags a script face on a Clean layout but not on a Flyer layout', () => {
+    expect(auditPosterDocument(doc('photo-first', 'Allura')).map((i) => i.kind)).toContain(
+      'script-misuse'
+    );
+    expect(auditPosterDocument(doc('wave-duo', 'Allura')).map((i) => i.kind)).not.toContain(
+      'script-misuse'
+    );
+    expect(auditPosterDocument(doc('photo-first', 'Fraunces')).map((i) => i.kind)).not.toContain(
+      'script-misuse'
+    );
+  });
+});
+
+describe('ornaments stay out of Clean and Lifestyle layouts', () => {
+  const withOrnament = (archetype: string) =>
+    ({
+      width: 1080,
+      height: 1350,
+      schemaVersion: 2,
+      fonts: [],
+      custom: { poster: { archetype } },
+      pages: [
+        {
+          id: 'p',
+          background: '#fff',
+          children: [{ id: 'o', type: 'svg', name: 'Ornament', x: 10, y: 10, width: 100, height: 100 }],
+        },
+      ],
+    }) as never;
+
+  it('flags an ornament on a Clean layout only', () => {
+    expect(auditPosterDocument(withOrnament('photo-first')).map((i) => i.kind)).toContain(
+      'ornament-in-clean'
+    );
+    expect(auditPosterDocument(withOrnament('wave-duo')).map((i) => i.kind)).not.toContain(
+      'ornament-in-clean'
+    );
   });
 });

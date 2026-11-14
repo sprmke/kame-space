@@ -142,6 +142,9 @@ import {
   cacheJamendoAudioForExport,
   remapAudioUrls,
 } from '@/features/dashboard/marketing/lib/video/v2/exportAudio';
+import { decodeBeatTimes } from '@/features/dashboard/marketing/lib/media/decodeBeats';
+import { beatsOnTimeline, cutToBeats } from '@/features/dashboard/marketing/lib/video/v2/beatCuts';
+import { isJamendoStreamUrl } from '@/features/dashboard/marketing/lib/video/importVideoMusic';
 import { migrateVideoProjectV1 } from '@/features/dashboard/marketing/lib/video/v2/migrateVideoProjectV1';
 import {
   CLAMPED_NOTICE,
@@ -808,6 +811,42 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     onCommand: handleCommand,
   });
 
+  /** Decode the music, snap the cuts to its beats, then play it from the top so it can be heard. */
+  const cutToBeat = useCallback(
+    async (audioId: string) => {
+      const current = projectRef.current;
+      if (!current || !canEditContent) return;
+      const found = findItem(current, audioId)?.item;
+      if (!found || !isAudioItem(found)) return;
+      try {
+        let url = found.media.url;
+        if (isJamendoStreamUrl(url)) {
+          const audio = await cacheJamendoAudioForExport(current, propertyId);
+          const cachedUrl = audio.cached.get(audioId);
+          if (!cachedUrl) throw new Error('unreadable');
+          url = cachedUrl;
+          amendProject((p) => (p ? remapAudioUrls(p, audio.cached) : p));
+        }
+        const sourceBeats = await decodeBeatTimes(url);
+        const latest = projectRef.current ?? current;
+        const latestAudio = findItem(latest, audioId)?.item;
+        if (!latestAudio || !isAudioItem(latestAudio)) return;
+        const result = cutToBeats(latest, beatsOnTimeline(sourceBeats, latestAudio, latest.fps));
+        if (result.moved === 0) {
+          toast.message('No cuts could move onto a beat in this track.');
+          return;
+        }
+        commit(result.project);
+        toast.success(`Moved ${result.moved} ${result.moved === 1 ? 'cut' : 'cuts'} onto the beat`);
+        playerRef.current?.seekTo(0);
+        playerRef.current?.play();
+      } catch {
+        toast.error('Could not read this track to find the beat.');
+      }
+    },
+    [amendProject, canEditContent, commit, propertyId]
+  );
+
   const inspectorActions = useMemo<InspectorActions | null>(
     () =>
       project
@@ -820,10 +859,11 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
             setRate: (id, rate) => apply((p) => setPlaybackRate(p, id, rate)),
             setTransition: (id, type) => apply((p) => setTransition(p, id, type)),
             replaceMedia: startReplace,
+            cutToBeat,
             remove: (id) => apply((p) => deleteItems(p, [id])),
           }
         : null,
-    [project, templateTypography, apply, startReplace]
+    [project, templateTypography, apply, startReplace, cutToBeat]
   );
 
   // Waveforms come from the audio library's saved peaks.
