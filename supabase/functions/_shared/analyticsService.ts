@@ -371,7 +371,11 @@ export async function computeAnalyticsBundle(
 
   if (bookingsError) throw new Error(bookingsError.message);
 
-  const rows = (bookingRows ?? []).map(normalizeRow).filter((r) => r.checkInIso);
+  // The select list is a runtime string, so supabase-js cannot infer column types and falls
+  // back to GenericStringError. Cast the rows once; normalizeRow reads them defensively anyway.
+  const rows = ((bookingRows ?? []) as unknown as Record<string, unknown>[])
+    .map(normalizeRow)
+    .filter((r) => r.checkInIso);
   const inWindow = rows.filter((r) => r.checkInIso >= queryFrom && r.checkInIso <= queryTo);
 
   // For an all-time sample-size gate we need slightly more than the query window, but a 5000

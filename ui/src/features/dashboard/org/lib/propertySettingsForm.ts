@@ -83,6 +83,10 @@ export type PropertyProfileDraft = {
   preferredOwnerParkingId: string;
   /** Same-org own-slot pins skip PayMongo and auto-fulfill. */
   complimentaryOwnerParking: boolean;
+  /** Optional search-result title override. Empty means the generated title is used. */
+  seoTitle: string;
+  /** Optional meta description override. Empty means the generated description is used. */
+  seoDescription: string;
 };
 
 function readSettingsString(settings: Record<string, unknown>, key: string): string {
@@ -277,6 +281,8 @@ export function propertyProfileDraftFromProperty(property: Property): PropertyPr
     allowSurpriseDecor: readSettingsBoolean(settings, 'allowSurpriseDecor', true),
     preferredOwnerParkingId: readSettingsString(settings, 'preferredOwnerParkingId'),
     complimentaryOwnerParking: readSettingsBoolean(settings, 'complimentaryOwnerParking', false),
+    seoTitle: readSettingsString(settings, 'seoTitle'),
+    seoDescription: readSettingsString(settings, 'seoDescription'),
   });
 }
 
@@ -333,6 +339,8 @@ export function propertyProfileExtendedDirty(
     draft.allowPets !== baseline.allowPets ||
     draft.allowParking !== baseline.allowParking ||
     draft.allowSurpriseDecor !== baseline.allowSurpriseDecor ||
+    draft.seoTitle.trim() !== baseline.seoTitle.trim() ||
+    draft.seoDescription.trim() !== baseline.seoDescription.trim() ||
     draft.preferredOwnerParkingId !== baseline.preferredOwnerParkingId ||
     draft.complimentaryOwnerParking !== baseline.complimentaryOwnerParking
   );
@@ -397,6 +405,10 @@ export function propertyProfileSettingsPatch(draft: PropertyProfileDraft): Recor
     allowSurpriseDecor: draft.allowSurpriseDecor,
     preferredOwnerParkingId: draft.preferredOwnerParkingId.trim(),
     complimentaryOwnerParking: draft.complimentaryOwnerParking,
+    // Trimmed, and omitted when blank so `settings` stays clean and `undefined` falls back to
+    // the generated title/description.
+    ...(draft.seoTitle.trim() ? { seoTitle: draft.seoTitle.trim() } : {}),
+    ...(draft.seoDescription.trim() ? { seoDescription: draft.seoDescription.trim() } : {}),
   };
 }
 

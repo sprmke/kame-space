@@ -110,6 +110,7 @@ import {
   applyGuestReviewToVideoProject,
   isReviewVideoTemplate,
 } from '@/features/dashboard/marketing/lib/video/applyGuestReviewToVideoProject';
+import { applyPlannerSeedToVideoProject } from '@/features/dashboard/marketing/lib/video/applyPlannerSeedToVideoProject';
 import { ensureVideoMusicForExport } from '@/features/dashboard/marketing/lib/video/importVideoMusic';
 import { resolveAiGeneratedVideoProjectsForAllFormats } from '@/features/dashboard/marketing/lib/video/videoAiProjectBuilder';
 import {
@@ -692,9 +693,12 @@ export function VideoEditor({ document, nav, onPublish }: Props) {
       if (selectedReview && isReviewVideoTemplate(template.id)) {
         next = applyGuestReviewToVideoProject(next, selectedReview, binding);
       }
+      if (document.mode === 'draft' && document.plannerSeed) {
+        next = applyPlannerSeedToVideoProject(next, document.plannerSeed, binding);
+      }
       return next;
     },
-    [binding, format, propertyId, selectedReview]
+    [binding, document, format, propertyId, selectedReview]
   );
 
   const replaceWithTemplate = useCallback(

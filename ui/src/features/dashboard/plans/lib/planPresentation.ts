@@ -187,6 +187,7 @@ export const PLAN_TIER_CARD_GAINS: Record<string, string[]> = {
   growth: [
     'Up to 5 team members',
     'Marketing Content Studio',
+    'Marketing Planner',
     'Top 30 search placement',
     'AI receipt and ID validation',
     'Recommended badge eligible',
@@ -202,6 +203,7 @@ export const PLAN_TIER_CARD_GAINS: Record<string, string[]> = {
   ],
   pro: [
     'Up to 10 team members',
+    'AI Marketing Planner',
     'Publish in Meta platforms',
     'Top 15 search placement',
     'AI content generation',
@@ -327,6 +329,8 @@ export const PLAN_FEATURE_ROWS: PlanFeatureRow[] = [
   boolRow('customRoles', 'Custom team roles', 'team'),
 
   boolRow('marketingStudio', 'Content Studio', 'marketing'),
+  boolRow('marketingPlanner', 'Marketing Planner', 'marketing'),
+  boolRow('aiMarketingPlanner', 'AI Marketing Planner', 'marketing'),
   boolRow('aiMarketingGeneration', 'AI content generation', 'marketing'),
   boolRow('aiMarketingImageGeneration', 'AI image generation', 'marketing'),
   boolRow('aiMarketingVideoGeneration', 'AI video generation', 'marketing'),

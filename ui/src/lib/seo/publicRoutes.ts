@@ -52,6 +52,11 @@ export type PublicRouteEntry = {
   title?: string;
   /** Static meta description, 120-160 characters. Dynamic routes build theirs. */
   description?: string;
+  /**
+   * Date this page's copy last changed (`YYYY-MM-DD`). Feeds the sitemap `<lastmod>`; must match
+   * `STATIC_SITEMAP_LASTMOD` in `supabase/functions/_shared/publicSitemap.ts`.
+   */
+  lastReviewed?: string;
   /** Why the route is excluded, or any caveat worth keeping next to the entry. */
   note?: string;
 };
@@ -64,6 +69,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
+    lastReviewed: '2026-11-13',
     title: 'Kame Space: Book condos, homes and parking in the Philippines',
     description:
       'Book condos, homes and parking across the Philippines. Browse by place, check dates and reserve online with the host.',
@@ -75,6 +81,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
+    lastReviewed: '2026-11-13',
     title: 'Places to stay in the Philippines | Kame Space',
     description:
       'Browse condos, houses and apartments across the Philippines. Filter by city, dates and guest count, then book with the host.',
@@ -103,6 +110,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
+    lastReviewed: '2026-11-13',
     title: 'Parking for rent in the Philippines | Kame Space',
     description:
       'Find parking slots near condos, offices and malls across the Philippines. Check availability and reserve online.',
@@ -148,6 +156,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
+    lastReviewed: '2026-11-13',
     title: 'Condos and parking by development | Kame Space',
     description:
       'Browse condominium developments across the Philippines and see the units and parking slots available in each one.',
@@ -201,6 +210,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
+    lastReviewed: '2026-11-13',
     title: 'Run your rentals from one dashboard | Kame Space',
     description:
       'Bookings, guest messages, documents, finance and marketing in one host dashboard built for Philippine rentals.',
@@ -212,6 +222,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
+    lastReviewed: '2026-11-13',
     title: 'Host plans and pricing | Kame Space',
     description:
       'Start free on one listing. Upgrade for automation, marketing, AI and hands-off hosting. Compare host plans and what each one unlocks.',
@@ -223,6 +234,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
+    lastReviewed: '2026-11-13',
     title: 'About Kame Space',
     description:
       'Kame Space connects guest booking, host operations, messaging, marketing and parking so every Philippine stay has a clear path to check-out.',
@@ -234,6 +246,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
+    lastReviewed: '2026-11-13',
     title: 'Contact Kame Space',
     description:
       'Reach the Kame Space team about a stay, host onboarding or your account. Sign in to open a support ticket and track the reply.',
@@ -245,6 +258,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
+    lastReviewed: '2026-11-13',
     title: 'Support and answers | Kame Space',
     description:
       'Short answers for guests and hosts on bookings, payments, documents, check-in and account access. Find the answer, then contact us.',
@@ -256,6 +270,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
+    lastReviewed: '2026-11-12',
     title: 'Terms of Service | Kame Space',
     description:
       'The terms that govern use of Kame Space as a guest, host, organization member or visitor of the public site.',
@@ -267,6 +282,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
+    lastReviewed: '2026-11-12',
     title: 'Privacy Policy | Kame Space',
     description:
       'What Kame Space collects from guests and hosts, how it is used to run a booking, and how to ask for a copy or deletion.',
@@ -278,6 +294,7 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     inSitemap: true,
     canonical: 'self',
     snapshot: 'static',
+    lastReviewed: '2026-11-12',
     title: 'Cookie Policy | Kame Space',
     description:
       'Which cookies Kame Space sets, what each one is for, and how to change your choice in the browser or in the app.',

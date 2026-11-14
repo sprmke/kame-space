@@ -2,7 +2,6 @@
  * Public GET: Meta redirects here with ?code=&state=.
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import {
   buildMetaOAuthErrorRedirect,
@@ -25,8 +24,9 @@ import { isFeatureAvailable } from '../_shared/featureAvailability.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
 import { captureSentryException } from '../_shared/sentry.ts';
 import { capturePostHogEvent } from '../_shared/posthog.ts';
+import { serveHandler } from '../_shared/serveEdge.ts';
 
-serve(async (req) => {
+serveHandler('meta-inbox-oauth-callback', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders(req) });
   }

@@ -60,6 +60,7 @@ export const TEAM_PERMISSION_IDS = [
   'marketing.media:add',
   'marketing.media:delete',
   'marketing.publish:add',
+  'marketing.plan:edit',
   'notifications:view',
   'notifications.chat:edit',
   'notifications.marketing:edit',

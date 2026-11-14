@@ -33,6 +33,19 @@ const ALLOWLIST = new Map<string, string>([
   ['icons/maskable-512.png', 'PWA maskable icon; size is fixed by the manifest'],
   ['icons/apple-touch-icon.png', 'iOS home-screen icon; fixed size'],
   ['brand/kame-space-mark-2048.png', 'Print and OAuth source art; never loaded by a page'],
+  // Landing LCP art: phones take the 640w AVIF (~30 KB); these masters are the JPEG/WebP
+  // fallbacks and the top of the srcset ladder. Kept sharp on purpose (see generate-hero-variants).
+  ['marketing/home/hero-day.jpg', 'Home hero JPEG master / fallback; srcset serves smaller widths'],
+  [
+    'marketing/home/hero-night.jpg',
+    'Home hero JPEG master / fallback; srcset serves smaller widths',
+  ],
+  ['marketing/home/hero-day.webp', 'Home hero WebP master; srcset serves smaller widths first'],
+  ['marketing/home/hero-night.webp', 'Home hero WebP master; srcset serves smaller widths first'],
+  ['marketing/home/hero-day-1672.webp', 'Home hero full-width WebP for large / retina viewports'],
+  ['marketing/home/hero-night-1672.webp', 'Home hero full-width WebP for large / retina viewports'],
+  ['marketing/home/hero-day-1672.avif', 'Home hero full-width AVIF for large / retina viewports'],
+  ['marketing/home/hero-night-1672.avif', 'Home hero full-width AVIF for large / retina viewports'],
 ]);
 
 type Oversized = { path: string; kb: number; reason?: string };

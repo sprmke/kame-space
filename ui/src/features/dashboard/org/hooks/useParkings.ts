@@ -15,6 +15,9 @@ export function useParkings(
   return useQuery({
     queryKey: [...PARKINGS_QUERY_KEY, orgSlug] as const,
     enabled: Boolean(orgSlug) && (options?.enabled ?? true),
+    // Parking create/update/delete all invalidate this key, so a stale time only removes the
+    // duplicate fetches that happened when several components mounted together.
+    staleTime: 60_000,
     queryFn: () =>
       callEdgeFunction<{ parkings: Parking[] }>(
         `list-parkings?orgSlug=${encodeURIComponent(orgSlug!)}`

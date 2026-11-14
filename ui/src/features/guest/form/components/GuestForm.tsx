@@ -15,6 +15,7 @@ import {
   formatVoucherOfferLabel,
 } from '@/features/guest/account/lib/voucherDiscount';
 import { useGuestAuth } from '@/features/guest/auth/context/GuestAuthContext';
+import { firstTouchPayload, sessionStorageSafe } from '@/features/guest/lib/firstTouchUtm';
 import { guestEdgeAuthHeaders } from '@/features/guest/auth/lib/guestEdgeAuthHeaders';
 import {
   maxAllowedCheckOutTime,
@@ -1008,6 +1009,9 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
       });
 
       formData.append('bookingSource', bookingSource);
+
+      const attribution = firstTouchPayload(sessionStorageSafe());
+      if (attribution) formData.append('attribution', attribution);
 
       if (!bookingId && !isCompletionMode && publicProperty) {
         if (publicProperty.cancellationPolicyVersionId) {

@@ -67,6 +67,15 @@ test.describe('@smoke @critical public marketing pages', () => {
     await expect(page.getByRole('heading', { name: 'Solea Mactan' })).toBeVisible({
       timeout: 20_000,
     });
+    // Visible breadcrumb trail: Home / Stays / <place or development> / <listing>.
+    const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb' });
+    await expect(breadcrumb).toBeVisible();
+    await expect(breadcrumb.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
+    await expect(breadcrumb.getByRole('link', { name: 'Stays' })).toHaveAttribute(
+      'href',
+      '/properties'
+    );
+    await expect(breadcrumb.getByText('Solea Mactan')).toHaveAttribute('aria-current', 'page');
     await expectPublicPageReady(page);
   });
 

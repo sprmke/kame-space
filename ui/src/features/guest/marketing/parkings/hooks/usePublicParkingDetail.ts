@@ -26,6 +26,10 @@ export type PublicParkingDetail = {
   ratePerNight: number | null;
   brandColor: string;
   description: string | null;
+  /** Host-written search-result title, or null to use the generated one. */
+  seoTitle?: string | null;
+  /** Host-written meta description, or null to use the generated one. */
+  seoDescription?: string | null;
   spaceLengthM: number;
   spaceWidthM: number;
   heightClearanceM: number;

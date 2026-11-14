@@ -5,7 +5,6 @@
  * Validates status === READY_FOR_CHECKOUT, then transitions → PENDING_SD_REFUND via orchestrator.
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { capturePostHogEvent } from '../_shared/posthog.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { DatabaseService } from '../_shared/databaseService.ts';
@@ -22,6 +21,7 @@ import {
   authorizeGuestBookingAccess,
   guestBookingAccessTokenFromRequest,
 } from '../_shared/guestBookingAccessToken.ts';
+import { serveHandler } from '../_shared/serveEdge.ts';
 
 type RefundBody = {
   method: 'same_phone' | 'other_bank' | 'cash';
@@ -61,7 +61,7 @@ function validateRefund(r: RefundBody): string | null {
   return null;
 }
 
-serve(async (req) => {
+serveHandler('submit-sd-form', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders(req) });
   }

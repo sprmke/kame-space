@@ -42,6 +42,10 @@ export type PublicPropertyDetailDto = {
   listingState?: 'pending_verification' | 'live' | 'paused' | 'suspended' | 'archived';
   acceptingBookings?: boolean;
   description: string | null;
+  /** Host-written search-result title, or null to use the generated one. */
+  seoTitle?: string | null;
+  /** Host-written meta description, or null to use the generated one. */
+  seoDescription?: string | null;
   locationLabel: string;
   address: string;
   city: string;
@@ -147,6 +151,10 @@ export type ResolvedPropertyDetail = {
   name: string;
   type: string;
   description: string | null;
+  /** Host-written search-result title; empty means the generated title is used. */
+  seoTitle?: string | null;
+  /** Host-written meta description; empty means the generated description is used. */
+  seoDescription?: string | null;
   /** False when the listing is paused or otherwise closed to new bookings. */
   acceptingBookings?: boolean;
   location: string;

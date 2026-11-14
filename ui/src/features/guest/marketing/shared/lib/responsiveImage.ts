@@ -49,9 +49,7 @@ export function buildResponsiveImage(
   }
 
   if (url.hostname === 'images.unsplash.com') {
-    const srcSet = widths
-      .map((w) => `${withParam(url, 'w', String(w))} ${w}w`)
-      .join(', ');
+    const srcSet = widths.map((w) => `${withParam(url, 'w', String(w))} ${w}w`).join(', ');
     return { src: withParam(url, 'w', String(widths[widths.length - 1])), srcSet };
   }
 

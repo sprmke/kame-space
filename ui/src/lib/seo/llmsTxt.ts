@@ -134,6 +134,7 @@ export function buildLlmsTxt(input: LlmsTxtInput): string {
     '',
     '- Listings are added and removed as hosts publish. Only ACTIVE listings appear here.',
     `- Machine-readable URL list: ${origin}/sitemap.xml`,
+    `- Markdown version of any static page: append \`.md\`, for example ${origin}/about.md`,
     ''
   );
 

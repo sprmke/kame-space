@@ -114,3 +114,25 @@ Every call writes one `ai_platform_usage_events` row (success or failure) with `
 - **No per-page tool subsetting yet.** Tools enforce their own permissions and have no declarative permission map; a wrong subset would silently break cross-page requests. The static system-prompt prefix and tool declarations come first in every request, so Gemini implicit prefix caching applies. Explicit context caching is not worth its storage cost at current volume.
 - **Atomic quota reserve/settle** is deferred to Phase 2 of `ai-paid-provider-and-production-quotas.md`. Overshoot is bounded by per-user rate limits and the platform cap.
 - **Chat turn loop stays in the handler.** The prompt, schema, tool registry, guards, context budget and deferred writes are shared modules; the loop itself is bound to ~20 pieces of per-turn state and extracting it would add indirection without reuse.
+
+## `marketing_trends_classify` (Marketing Trends)
+
+One call a day from `marketing-trends-cron`, over up to 60 normalized feed candidates. Model
+`gemini-3.1-flash-lite`, `thinkingBudget: 0`, `defaultMaxOutputTokens: 8192`, 45 s timeout, Groq
+fallback on. The prompt is `_shared/ai/prompts/marketingTrends.ts` (`definePrompt` id
+`marketing_trends_classify`); the candidate block is fenced with `wrapUntrusted` because feed
+titles are third-party text. JSON mode with `TREND_CLASSIFY_JSON_SCHEMA`, validated by
+`TrendClassifyResponse` and then re-shaped by `shapeTrendClassifyOutput`, which drops unknown keys,
+clamps lengths, enforces the enums, re-runs the deterministic denylist over the model's own text
+and refuses a list with fewer than five safe topics.
+
+**Billing:** `mode: 'none'` with no organisation. The daily job is platform-wide and has no host
+to charge, and `ai_platform_usage_events.organization_id` is `NOT NULL`, so there is no row to
+write. Token counts and the estimated cost land on `marketing_trend_runs`
+(`ai_input_tokens` / `ai_output_tokens` / `ai_cost_usd`) and are shown on
+`/admin/marketing-trends`, which is where an operator looks for this cost. The key appears on the
+super-admin AI limits page with no host toggle.
+
+**Evals:** the labelled set is `supabase/functions/tests/evals/datasets/marketing_trends_classify.jsonl`.
+The offline suite asserts the deterministic layer agrees with every case that must be blocked; the
+model verdicts are scored by a live run.

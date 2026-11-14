@@ -46,6 +46,8 @@ export type AiCreateRequest =
       /** Also render the best post as a Story (free, one extra version). */
       alsoStory: boolean;
       sampleId: string | null;
+      /** Marketing Trends topic this creation came from. */
+      trendTopicKey: string | null;
     }
   | {
       output: 'reel';
@@ -53,6 +55,8 @@ export type AiCreateRequest =
       /** Photos the host picked, best first. Empty: the engine ranks the listing. */
       photoUrls: string[];
       sampleId: string | null;
+      /** Marketing Trends topic this creation came from (server loads it). */
+      trendTopicKey: string | null;
     }
   | {
       output: 'image' | 'video';
@@ -60,6 +64,8 @@ export type AiCreateRequest =
       aspect: string;
       payload: GenerateMarketingMediaPayload;
       sampleId: string | null;
+      /** Marketing Trends topic this creation came from (server loads it). */
+      trendTopicKey: string | null;
     };
 
 export type AiCreateFormState = {
@@ -90,6 +96,8 @@ export type AiCreateFormState = {
   /** Photo output: edit one listing photo (`enhance`) or make a new scene. */
   imageMode?: 'enhance' | 'scene';
   enhancePreset?: string | null;
+  /** Marketing Trends topic applied to the form, if any. */
+  trendTopicKey?: string | null;
 };
 
 /** 720p unless 1080p is allowed and quality is above Draft. */
@@ -103,6 +111,7 @@ export function effectiveVideoResolution(
 
 export function buildAiCreateRequest(state: AiCreateFormState): AiCreateRequest {
   const description = state.text.trim();
+  const trendTopicKey = state.trendTopicKey ?? null;
   if (state.output === 'post') {
     return {
       output: 'post',
@@ -122,6 +131,7 @@ export function buildAiCreateRequest(state: AiCreateFormState): AiCreateRequest 
       family: state.family ?? 'auto',
       alsoStory: Boolean(state.alsoStory) && state.format !== 'instagram-story',
       sampleId: state.sampleId,
+      trendTopicKey,
     };
   }
   if (state.output === 'reel') {
@@ -130,6 +140,7 @@ export function buildAiCreateRequest(state: AiCreateFormState): AiCreateRequest 
       prompt: description,
       photoUrls: state.photoUrls ?? [],
       sampleId: state.sampleId,
+      trendTopicKey,
     };
   }
   const hasStartFrame = state.output === 'video' && state.referenceIds.length > 0;
@@ -142,6 +153,7 @@ export function buildAiCreateRequest(state: AiCreateFormState): AiCreateRequest 
       prompt: description,
       aspect: state.aspect,
       sampleId: state.sampleId,
+      trendTopicKey,
       payload: {
         mediaType: 'video',
         prompt,
@@ -172,6 +184,7 @@ export function buildAiCreateRequest(state: AiCreateFormState): AiCreateRequest 
       prompt: instruction,
       aspect,
       sampleId: state.sampleId,
+      trendTopicKey,
       payload: {
         mediaType: 'image',
         prompt: instruction,
@@ -190,6 +203,7 @@ export function buildAiCreateRequest(state: AiCreateFormState): AiCreateRequest 
     prompt: description,
     aspect: state.aspect,
     sampleId: state.sampleId,
+    trendTopicKey,
     payload: {
       mediaType: 'image',
       prompt,

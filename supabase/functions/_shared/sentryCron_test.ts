@@ -13,6 +13,7 @@ import {
   resetSentryCronDsnForTests,
   sendCronCheckIn,
   withCronCheckIn,
+  recordCronItemFailure,
 } from './sentryCron.ts';
 
 const DSN = 'https://publickey@o1.ingest.us.sentry.io/4512354438021120';
@@ -201,4 +202,19 @@ Deno.test('reportCronPartialFailure sends one warning with the failure counts', 
   } finally {
     restoreCapture();
   }
+});
+
+Deno.test('recordCronItemFailure keeps the first reason and counts every failure', () => {
+  const result = { failed: 0, first_error: null as string | null };
+
+  recordCronItemFailure(result, new Error('Resend 403: domain not verified'));
+  recordCronItemFailure(result, new Error('a later, different failure'));
+  recordCronItemFailure(result, 'a thrown string');
+
+  assertEquals(result.failed, 3, 'every failure is counted');
+  assertEquals(
+    result.first_error,
+    'Resend 403: domain not verified',
+    'the first reason is the one that explains the run'
+  );
 });

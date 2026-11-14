@@ -130,7 +130,15 @@ export function MarketingBottomNav() {
       { key: 'account', label: 'Account', href: accountHref, Icon: User },
       moreTabItem(() => setMoreOpen(true)),
     ];
-  }, [isExploreMode, isGuestSignedIn, isTransitioning, navigate, switchMode, accountHref, nextTrip]);
+  }, [
+    isExploreMode,
+    isGuestSignedIn,
+    isTransitioning,
+    navigate,
+    switchMode,
+    accountHref,
+    nextTrip,
+  ]);
 
   const tabKeys = useMemo(() => new Set(items.map((item) => item.key)), [items]);
   const activeKey = moreOpen ? 'more' : resolveActiveKey(pathname, tabKeys);

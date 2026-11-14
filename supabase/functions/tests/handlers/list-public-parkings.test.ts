@@ -1,0 +1,3 @@
+import { publicListingContract } from '../harness/publicReadContract.ts';
+
+publicListingContract('list-public-parkings');

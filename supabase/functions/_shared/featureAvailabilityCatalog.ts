@@ -19,6 +19,9 @@ export const FEATURE_AVAILABILITY_KEYS = [
   'marketing.ai_studio',
   'marketing.ai_studio.generate',
   'marketing.ai_studio.poster_v2',
+  'marketing.planner',
+  'marketing.planner.ai',
+  'marketing.trends',
   'analytics.ai_review',
   'analytics.ai_review.regenerate',
   'notifications.telegram',
@@ -131,6 +134,22 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     provider: 'Airbnb',
   },
   {
+    key: 'marketing.planner',
+    parent: null,
+    module: 'marketing',
+    surface: 'section (tab)',
+    label: 'Marketing Planner',
+    description: 'Plan tab content and every planner write: build, reschedule, skip, mark posted',
+  },
+  {
+    key: 'marketing.planner.ai',
+    parent: 'marketing.planner',
+    module: 'marketing',
+    surface: 'button',
+    label: 'AI plan briefs',
+    description: 'AI-written hooks, captions and plan summaries (rules copy keeps working)',
+  },
+  {
     key: 'marketing.ai_studio',
     parent: null,
     module: 'marketing',
@@ -155,6 +174,15 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     label: 'AI studio new layouts',
     description:
       'Clean and Lifestyle poster layouts. Off falls back to the original Flyer layouts for new posts. Saved posts are unchanged.',
+  },
+  {
+    key: 'marketing.trends',
+    parent: null,
+    module: 'marketing',
+    surface: 'section (tab)',
+    label: 'Marketing trends',
+    description:
+      'Trending topics rail and sheet in AI studio, and the marketing-trends read endpoint.',
   },
   {
     key: 'analytics.ai_review',

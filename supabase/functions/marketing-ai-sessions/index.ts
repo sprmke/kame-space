@@ -348,6 +348,11 @@ async function savePostVersions(
   const prompt = normalizeTurnPrompt(body.prompt);
   const themeKey =
     typeof body.themeKey === 'string' && isMarketingThemeKey(body.themeKey) ? body.themeKey : null;
+  // Marketing Trends provenance: the topic key the host started from.
+  const trendTopicKey =
+    typeof body.trendTopicKey === 'string' && body.trendTopicKey.trim()
+      ? body.trendTopicKey.trim().slice(0, 120)
+      : null;
 
   let parentVersionId: string | null = null;
   if (body.parentVersionId !== undefined && body.parentVersionId !== null) {
@@ -375,6 +380,7 @@ async function savePostVersions(
         title: normalizeSessionTitle(body.title) ?? sessionTitleFromPrompt(prompt, output),
         theme_key: themeKey,
         created_by: ctx.userId,
+        trend_topic_key: trendTopicKey,
       })
       .select(SESSION_COLUMNS)
       .single();

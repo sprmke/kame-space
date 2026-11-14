@@ -38,6 +38,10 @@ export type ParkingProfileDraft = {
   residenceName: string;
   brandColor: string;
   description: string;
+  /** Optional search-result title override. Empty means the generated title is used. */
+  seoTitle: string;
+  /** Optional meta description override. Empty means the generated description is used. */
+  seoDescription: string;
 };
 
 export type ParkingVehicleTypeDraft = 'car' | 'motorcycle';
@@ -103,6 +107,8 @@ export function parkingProfileDraftFromParking(
     residenceName: parking.residenceName?.trim() || DEFAULT_PARKING_RESIDENCE_NAME,
     brandColor: propertyBrandColorFormValue(brandStored, resolvedBrandColor),
     description,
+    seoTitle: readSettingsString(settings, 'seoTitle'),
+    seoDescription: readSettingsString(settings, 'seoDescription'),
   };
 }
 
@@ -118,6 +124,8 @@ export function parkingProfileDraftIsDirty(
     draft.parkingType !== baseline.parkingType ||
     draft.residenceName.trim() !== baseline.residenceName.trim() ||
     draft.description.trim() !== baseline.description.trim() ||
+    draft.seoTitle.trim() !== baseline.seoTitle.trim() ||
+    draft.seoDescription.trim() !== baseline.seoDescription.trim() ||
     propertyBrandColorStoredValue(draft.brandColor, resolvedBrandColor).toLowerCase() !==
       propertyBrandColorStoredValue(baseline.brandColor, resolvedBrandColor).toLowerCase()
   );
@@ -149,6 +157,9 @@ export function parkingProfileSettingsPatch(
   return {
     brandColor: propertyBrandColorStoredValue(draft.brandColor, resolvedBrandColor),
     description: draft.description.trim().slice(0, DESCRIPTION_MAX),
+    // Blank clears the override so the public page falls back to the generated text.
+    ...(draft.seoTitle.trim() ? { seoTitle: draft.seoTitle.trim() } : {}),
+    ...(draft.seoDescription.trim() ? { seoDescription: draft.seoDescription.trim() } : {}),
   };
 }
 

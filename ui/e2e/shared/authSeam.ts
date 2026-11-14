@@ -4,7 +4,7 @@ import type { Page } from '@playwright/test';
 
 export type E2eAuthRole = 'host' | 'guest';
 
-function buildSession(role: E2eAuthRole) {
+export function buildSupabaseSession(role: E2eAuthRole) {
   const nowSeconds = Math.floor(Date.now() / 1000);
   const isHost = role === 'host';
   return {
@@ -34,7 +34,19 @@ export async function seedSupabaseAuthSession(page: Page, role: E2eAuthRole) {
     ({ key, session }) => {
       window.localStorage.setItem(key, JSON.stringify(session));
     },
-    { key: SUPABASE_AUTH_STORAGE_KEY, session: buildSession(role) }
+    { key: SUPABASE_AUTH_STORAGE_KEY, session: buildSupabaseSession(role) }
+  );
+}
+
+export type SupabaseSession = ReturnType<typeof buildSupabaseSession>;
+
+/** Seed an already-built session, for callers composing their own (see `tenant.ts`). */
+export async function seedSupabaseSession(page: Page, session: SupabaseSession) {
+  await page.addInitScript(
+    ({ key, value }) => {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    },
+    { key: SUPABASE_AUTH_STORAGE_KEY, value: session }
   );
 }
 

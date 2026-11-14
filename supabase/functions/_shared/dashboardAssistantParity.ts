@@ -178,6 +178,9 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'list-support-tickets': read,
   'maintenance-summary': read,
   'marketing-generations': read,
+  // Trends are a platform-wide read list; the assistant can show them, never change them
+  // (hide / pin / add / run now are super-admin only and audit-logged).
+  'marketing-trends': read,
   'meta-inbox-status': read,
   'notifications-list': tool('list_notifications'),
   'org-access': read,
@@ -386,6 +389,7 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'delete-parking': excluded('parking.settings', 'Irreversible delete'),
   'delete-property': excluded('property.settings', 'Irreversible delete'),
   'import-commit': excluded('property.bookings', 'CSV auto-commit'),
+  'marketing-planner': tool('get_marketing_plan', 'propose_mark_plan_item_posted'),
   'marketing-templates': excluded('property.marketing', 'Template save / delete via chat'),
   'marketing-themes': excluded('property.marketing', 'Theme create / edit / delete via chat'),
   'property-templates-settings': excluded('property.templates', 'Long-form legal templates'),

@@ -34,7 +34,7 @@ function RowIcon({ status }: { status: GuestReadinessRow['status'] }) {
 export function GuestExperienceReadinessCard() {
   const templatesQuery = usePropertyTemplates();
   const essentialsQuery = useGuestEssentialsQuery();
-  const settingsQuery = useAppSettings();
+  const settingsQuery = useAppSettings({ lean: true });
 
   const templates = templatesQuery.data?.templates ?? [];
 

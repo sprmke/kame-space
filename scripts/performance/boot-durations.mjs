@@ -9,9 +9,10 @@
  * reported `property-team-members` absent, which was read as "the call is gone" when the
  * entry had simply been evicted. Twice.
  *
- * CDP `Network.requestWillBeSent` / `responseReceived` events are not buffered the same way,
- * so the request set is complete. Use this, not the Resource Timing API, whenever the
- * question is "did this call happen".
+ * A raw `Network.enable` on a second CDP session is **not** safe either: it can report each
+ * request twice, with different request ids, so a per-id dedupe still double counts. That mistake
+ * once produced a "every shell call fires twice" conclusion about the app, which was false.
+ * Playwright's own `page.on('request')` is authoritative; it is what this script uses.
  *
  * Usage:
  *   node scripts/performance/boot-durations.mjs
@@ -51,35 +52,26 @@ const browser = await chromium.launch();
 const collect = async (path) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
-  const cdp = await context.newCDPSession(page);
-  await cdp.send('Network.enable');
-  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
-
-  /** url key -> pending request record */
-  const pending = new Map();
   const calls = [];
+  const started = new Map();
   let base = null;
 
-  cdp.on('Network.requestWillBeSent', (event) => {
-    const url = event.request.url;
-    if (!url.includes('/functions/v1/')) return;
-    base ??= event.timestamp;
-    pending.set(event.requestId, {
-      name: url.split('/functions/v1/')[1].split('?')[0],
-      start: Math.round((event.timestamp - base) * 1000),
-    });
+  page.on('request', (request) => {
+    if (!request.url().includes('/functions/v1/')) return;
+    const now = Date.now();
+    base ??= now;
+    started.set(request, now);
+    calls.push({ request, start: now - base });
   });
-
-  cdp.on('Network.loadingFinished', (event) => {
-    const record = pending.get(event.requestId);
-    if (!record) return;
-    pending.delete(event.requestId);
-    const end = Math.round((event.timestamp - base) * 1000);
-    calls.push({
-      name: record.name,
-      start: record.start,
-      duration: Math.max(0, end - record.start),
-    });
+  page.on('requestfinished', (request) => {
+    const start = started.get(request);
+    if (start === undefined) return;
+    const entry = calls.find((c) => c.request === request);
+    if (entry) entry.duration = Date.now() - start;
+  });
+  page.on('requestfailed', (request) => {
+    const entry = calls.find((c) => c.request === request);
+    if (entry) entry.duration = 0;
   });
 
   await page.addInitScript(
@@ -97,12 +89,17 @@ const collect = async (path) => {
   await page.waitForTimeout(3_000);
 
   const content = await page.evaluate(
-    () =>
-      performance.getEntriesByType('mark').find((m) => m.name === 'route:content')?.startTime ?? 0
+    () => performance.getEntriesByType('mark').find((m) => m.name === 'route:content')?.startTime ?? 0
   );
 
+  const collected = calls.map((c) => ({
+    name: c.request.url().split('/functions/v1/')[1].split('?')[0],
+    start: c.start,
+    duration: c.duration ?? 0,
+  }));
+
   await context.close();
-  return { calls, content: Math.round(content) };
+  return { calls: collected, content: Math.round(content) };
 };
 
 for (const path of PATHS) {

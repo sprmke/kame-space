@@ -806,6 +806,15 @@ The organization becomes past due and keeps full access during the grace period.
 
 Managed is sales-assisted. Choose Contact sales on the Managed card, or file a ticket from Help and Support, and our team will confirm onboarding and pricing.
 
+### What is the Plan tab in Marketing?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 5
+
+It is a short to-do list of what to post, when, and why, built from your own calendar: open nights, weekend gaps, long weekends, how far ahead guests book, and recent reviews. Open Marketing, then Plan. Nothing is invented, and it works without AI.
+
 ### What is Marketing Studio?
 
 - category: Marketing Studio
@@ -994,6 +1003,15 @@ Stay guide, security-deposit refund, and guest review links are per booking. Cal
 - order: 60
 
 Yes. On the Calendar card choose Copy link, select the check-in and check-out dates, then Copy link. The guest opens the calendar with that range selected. You can also copy the calendar without dates.
+
+### Can I control what my listing says on Google?
+
+- category: Public Pages
+- audience: host
+- source: docs/guides/routes/org/property/settings.md
+- order: 68
+
+Yes. Property Settings and parking Settings have a Search preview card with an optional title and description, next to a live preview of how the result looks and a character counter. Leave both blank and we write them for you from the listing details. If you change your mind later, clear the field and save.
 
 ### What is alt text and do I need it?
 
@@ -1637,3 +1655,51 @@ It expired. A request you did not answer within seven days, with nothing paid, c
 - source: docs/guides/routes/trip.md
 
 Yes. The host did not reply in time, so the dates were released and nothing was charged. Open your trip and choose Request these dates again to send the same dates back to the host.
+
+### How do I know my guest has seen their trip?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/notifications.md
+
+The first time a guest opens their trip page you get one notification, "Maria opened their trip", and a row in the bell. It never repeats, so a refresh or a second device does not add another. If you never see it, the guest has not opened the trip page yet; the dates and directions are waiting there for them.
+
+### How do I get booking alerts on my phone?
+
+- category: Guest Portal
+- audience: guest
+- source: docs/guides/routes/account/profile.md
+
+Sign in, open your profile, and turn on Alerts on this device. On an iPhone or iPad, add the site to your home screen first, then turn it on, because Safari only allows alerts for installed apps. You get an alert when your host confirms your booking and when your check-in is ready; everything else still arrives by email.
+
+### What are the topics under Trending today?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+
+They are what people in the Philippines are reading and searching about today, this week and this month. Each topic comes with three ready-made angles, so you can start from something people already care about instead of a blank page.
+
+### Where do the trending topics come from?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+
+Public lists: Google Trends for the Philippines, Wikipedia pages people are reading, the Apple Music Philippines chart, and the Netflix Philippines top 10. Every topic shows where it came from. TikTok, Facebook, Instagram and X do not offer a free public list, so something viral usually shows up here a day or so later.
+
+### Can I use a celebrity photo or a show logo in my post?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+
+No. You can mention what people are watching, but do not use a real person's photo or likeness, a show or network logo, or wording that sounds like a partnership or an endorsement. The app blocks that wording for you.
+
+### Why does the rail say Seasonal ideas instead of Trending today?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+
+It means there is no fresh list right now, so you are seeing Philippine seasonal ideas instead, such as long weekends and the Christmas season. The list rebuilds every morning.

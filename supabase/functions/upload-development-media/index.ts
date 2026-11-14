@@ -3,7 +3,6 @@
  * Auth: verifySuperAdminJwt.
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from '../_shared/supabaseJs.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
@@ -23,6 +22,7 @@ import {
   type PropertyMediaRecord,
   ALLOWED_PROPERTY_MEDIA_MIME,
 } from '../_shared/propertyMedia.ts';
+import { serveHandler } from '../_shared/serveEdge.ts';
 
 function extensionForMime(mime: string, fileName: string): string {
   const fromName = fileName.includes('.') ? `.${fileName.split('.').pop()?.toLowerCase()}` : '';
@@ -105,7 +105,7 @@ async function persistMedia(developmentId: string, items: PropertyMediaRecord[])
   if (updateError) throw new Error(updateError.message);
 }
 
-serve(async (req) => {
+serveHandler('upload-development-media', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders(req) });
   }

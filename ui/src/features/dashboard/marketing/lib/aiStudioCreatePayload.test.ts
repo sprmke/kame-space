@@ -93,6 +93,7 @@ describe('buildAiCreateRequest', () => {
       family: 'auto',
       alsoStory: false,
       sampleId: 'sample-1',
+      trendTopicKey: null,
     });
   });
 

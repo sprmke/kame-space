@@ -98,6 +98,11 @@ import {
   uploadGenerationBytes,
 } from '../_shared/marketingGenerationStorage.ts';
 import { loadResolvedBrandColorByPropertyId } from '../_shared/propertyBranding.ts';
+import {
+  buildTrendPromptBlock,
+  loadTrendContext,
+  TREND_UNAVAILABLE_MESSAGE,
+} from '../_shared/marketingTrends/trendContext.ts';
 import { isMarketingThemeKey } from '../_shared/marketingTheme.ts';
 import { isUuid } from '../_shared/marketingTemplateLibrary.ts';
 import { refineParentError, sessionTitleFromPrompt } from '../_shared/marketingAiSessions.ts';
@@ -352,6 +357,22 @@ async function handleImageGeneration(req: Request, ctx: GenerationRequestContext
 
   // `intent: 'enhance'` edits the host's own listing photo (first reference) in place.
   const enhanceIntent = body.intent === 'enhance' && references.length === 1;
+
+  // Marketing Trends: the host sends a topic key, the server loads the topic and
+  // adds it to the prompt sent to the model. The job row keeps the host's own
+  // words so the refine box still shows what they typed.
+  const trend = await loadTrendContext(
+    sb,
+    typeof body.trendTopicKey === 'string' ? body.trendTopicKey : null
+  );
+  if (!trend.ok && trend.reason !== 'no_key') {
+    return jsonError(req, TREND_UNAVAILABLE_MESSAGE, 400);
+  }
+  const trendContext = trend.ok ? trend.context : null;
+  const modelPrompt = trendContext
+    ? `${prompt}\n\n${buildTrendPromptBlock(trendContext)}`
+    : prompt;
+
   const enhancement = plan.parentJobId || enhanceIntent
     ? {
         prompt: buildImageEditPrompt({
@@ -365,7 +386,7 @@ async function handleImageGeneration(req: Request, ctx: GenerationRequestContext
       ? await enhanceMarketingImagePrompt({
           organizationId,
           propertyId,
-          prompt,
+          prompt: modelPrompt,
           aspectRatio: options.aspectRatio,
           property: propertyContext,
           hasReferenceImages: references.length > 0,
@@ -373,7 +394,7 @@ async function handleImageGeneration(req: Request, ctx: GenerationRequestContext
         })
       : {
           prompt: buildStructuredImagePrompt({
-            prompt,
+            prompt: modelPrompt,
             aspectRatio: options.aspectRatio,
             property: propertyContext,
           }),
@@ -385,6 +406,7 @@ async function handleImageGeneration(req: Request, ctx: GenerationRequestContext
     propertyId,
     output: 'image',
     actorUserId,
+    trendTopicKey: trendContext?.topicKey ?? null,
   });
   const job = await insertMarketingGenerationJob(sb, {
     organizationId,
@@ -403,6 +425,7 @@ async function handleImageGeneration(req: Request, ctx: GenerationRequestContext
     generationOptions: {
       ...(sampleId ? { sampleId } : {}),
       ...(enhanceIntent && !plan.parentJobId ? { aiEdited: true } : {}),
+      ...(trendContext ? { trendTopicKey: trendContext.topicKey } : {}),
     },
     model: options.config.model,
     qualityTier: options.tier,
@@ -530,9 +553,9 @@ async function handleImageGeneration(req: Request, ctx: GenerationRequestContext
     await capturePostHogEvent('marketing_asset_generated', {
       logPrefix: 'generate-marketing-media',
       request: req,
-      distinctId: user.id,
+      distinctId: actorUserId,
       groups: { organization: organizationId, property: propertyId },
-      properties: { kind: mediaType },
+      properties: { kind: 'image', trend_topic_key: trendContext?.topicKey ?? null },
     });
 
     return jsonSuccess(req, {
@@ -660,16 +683,31 @@ async function handleVideoGeneration(req: Request, ctx: GenerationRequestContext
     property: await loadPropertyContextForPrompt(sb, propertyId),
     hasStartFrame: startFrame !== null,
   };
+
+  // Marketing Trends: same rule as the photo path — the topic is loaded on the
+  // server and added to the prompt sent to the model.
+  const trend = await loadTrendContext(
+    sb,
+    typeof body.trendTopicKey === 'string' ? body.trendTopicKey : null
+  );
+  if (!trend.ok && trend.reason !== 'no_key') {
+    return jsonError(req, TREND_UNAVAILABLE_MESSAGE, 400);
+  }
+  const trendContext = trend.ok ? trend.context : null;
+  const modelPromptInput = trendContext
+    ? { ...promptInput, prompt: `${hostPrompt}\n\n${buildTrendPromptBlock(trendContext)}` }
+    : promptInput;
+
   const enhancement =
     body.enhancePrompt !== false
       ? await enhanceMarketingVideoPrompt({
-          ...promptInput,
+          ...modelPromptInput,
           organizationId,
           propertyId,
           startFrame,
           actorUserId,
         })
-      : { prompt: buildStructuredVideoPrompt(promptInput), enhanced: false };
+      : { prompt: buildStructuredVideoPrompt(modelPromptInput), enhanced: false };
 
   // The job row is the credit hold, so re-check right before inserting it: the photo
   // read and the rewrite above take seconds, long enough for parallel requests to pass.
@@ -686,6 +724,7 @@ async function handleVideoGeneration(req: Request, ctx: GenerationRequestContext
     propertyId,
     output: 'video',
     actorUserId,
+    trendTopicKey: trendContext?.topicKey ?? null,
   });
   const job = await insertMarketingGenerationJob(sb, {
     organizationId,
@@ -976,6 +1015,8 @@ async function ensureGenerationSession(
     propertyId: string;
     output: 'image' | 'video';
     actorUserId: string;
+    /** Marketing Trends topic this creation came from (null when it did not). */
+    trendTopicKey?: string | null;
   }
 ): Promise<string> {
   if (plan.sessionId) {
@@ -983,6 +1024,13 @@ async function ensureGenerationSession(
       .from('marketing_ai_sessions')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', plan.sessionId);
+    if (input.trendTopicKey) {
+      await sb
+        .from('marketing_ai_sessions')
+        .update({ trend_topic_key: input.trendTopicKey })
+        .eq('id', plan.sessionId)
+        .is('trend_topic_key', null);
+    }
     return plan.sessionId;
   }
   const { data, error } = await sb
@@ -994,6 +1042,7 @@ async function ensureGenerationSession(
       title: plan.title,
       theme_key: plan.themeKey,
       created_by: input.actorUserId,
+      trend_topic_key: input.trendTopicKey ?? null,
     })
     .select('id')
     .single();

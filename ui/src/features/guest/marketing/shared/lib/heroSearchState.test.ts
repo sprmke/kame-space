@@ -45,7 +45,9 @@ describe('heroSearchState', () => {
       guests: '3',
     });
     expect(formatGuestSummary(counts)).toBe('3 guests, 1 pet');
-    expect(formatGuestSummaryCompact({ adults: 0, children: 0, infants: 0, pets: 2 })).toBe('2 pet');
+    expect(formatGuestSummaryCompact({ adults: 0, children: 0, infants: 0, pets: 2 })).toBe(
+      '2 pet'
+    );
     expect(formatDateRange(range)).toBe('Aug 5 – Aug 7');
     expect(formatDateRange(undefined)).toBe('');
   });

@@ -22,6 +22,7 @@ import {
   prepareBookingAiReviewJob,
   type BookingAiReviewRow,
 } from './bookingAiReviewService.ts';
+import { buildActorContext } from './activityLog.ts';
 import { classifyActionRisk, type ActionRiskTier } from './dashboardAssistantRiskClassifier.ts';
 import { assertActionSafeToExecute } from './dashboardAssistantSafetyGuard.ts';
 import { DatabaseService } from './databaseService.ts';
@@ -46,6 +47,10 @@ import {
   verifyParkingTeamAccess,
   verifyPropertyAccess,
 } from './orgAuth.ts';
+import {
+  getPlanItem,
+  markPlanItemPosted,
+} from './marketingPlanner.ts';
 import {
   computeOrgPortfolioSummary,
   defaultMonthRange,
@@ -1857,6 +1862,69 @@ function notificationScopeBody(ctx: ParityToolContext, args: Record<string, unkn
 
 // ─── Registry ────────────────────────────────────────────────────────────────────────────────
 
+const markPlanItemPostedTool = defineWriteTool(
+  {
+    name: 'propose_mark_plan_item_posted',
+    description:
+      'Record that the host posted a Marketing Planner item by hand (a Facebook group, TikTok, a chat app). Optionally pass the post URL. Internal bookkeeping, so it can run without a confirm step.',
+    parameters: {
+      type: 'object',
+      properties: {
+        propertyId: { type: 'string' },
+        itemId: { type: 'string' },
+        postedUrl: { type: 'string' },
+      },
+      required: ['propertyId', 'itemId'],
+    },
+  },
+  async (ctx, args) => {
+    const propertyId = await resolvePropertyInOrg(ctx, args);
+    await verifyPropertyAccess(ctx.req, propertyId, 'marketing.plan:edit');
+    const itemId = str(args, 'itemId');
+    if (!itemId) fail('itemId is required');
+    const postedUrl = str(args, 'postedUrl');
+    if (postedUrl && !/^https?:\/\//i.test(postedUrl)) fail('postedUrl must start with http');
+    const item = await getPlanItem(propertyId, itemId);
+    if (!item) fail('That plan item was not found.');
+    if (item.status === 'posted_manually') {
+      return {
+        payload: { propertyId, itemId, postedUrl },
+        summary: `"${item.title}" is already marked posted.`,
+      };
+    }
+    return {
+      payload: { propertyId, itemId, postedUrl },
+      summary: `Mark "${item.title}" as posted.`,
+      details: [{ label: 'Item', value: item.title }],
+      target: { propertyId },
+    };
+  },
+  async (ctx, payload) => {
+    const propertyId = String(payload.propertyId);
+    await verifyPropertyAccess(ctx.req, propertyId, 'marketing.plan:edit');
+    const actor = buildActorContext('ai_assistant', {
+      assistant: {
+        conversationId: ctx.conversationId ?? 'assistant',
+        userId: ctx.userId,
+        email: ctx.userEmail,
+      },
+    });
+    const item = await markPlanItemPosted({
+      propertyId,
+      organizationId: ctx.organizationId,
+      actor,
+      itemId: String(payload.itemId),
+      postedUrl: payload.postedUrl ? String(payload.postedUrl) : null,
+    });
+    return {
+      ok: true,
+      data: { itemId: item.id, status: item.status },
+      auditPropertyId: propertyId,
+      resultNote: 'Marked as posted.',
+    };
+  }
+);
+
 const TOOLS: Array<ReadTool | WriteTool> = [
   listParkingTeam,
   inviteParkingTeamMember,
@@ -1883,6 +1951,7 @@ const TOOLS: Array<ReadTool | WriteTool> = [
   replySupportTicket,
   reopenSupportTicketTool,
   markNotificationsReadTool,
+  markPlanItemPostedTool,
 ];
 
 const BY_NAME = new Map(TOOLS.map((tool) => [tool.declaration.name, tool]));

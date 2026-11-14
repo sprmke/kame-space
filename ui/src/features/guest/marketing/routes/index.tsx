@@ -5,7 +5,6 @@ import { Navigate, Route, useParams } from 'react-router-dom';
 import { guestAccountRoutes } from '@/features/guest/account/routes';
 import { MarketingLayoutShell } from '@/features/guest/marketing/shared/components/MarketingLayoutShell';
 
-
 const ExplorePreviewPage = lazy(() =>
   import('@/features/guest/marketing/explore-preview/pages/ExplorePreviewPage').then((m) => ({
     default: m.ExplorePreviewPage,

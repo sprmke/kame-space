@@ -72,6 +72,10 @@ export type PublicPropertyDetailDto = {
   listingState: PropertyLifecycleState;
   acceptingBookings: boolean;
   description: string | null;
+  /** Host-written search-result title, or null to use the generated one. */
+  seoTitle: string | null;
+  /** Host-written meta description, or null to use the generated one. */
+  seoDescription: string | null;
   locationLabel: string;
   address: string;
   city: string;
@@ -476,6 +480,8 @@ export async function loadPublicPropertyById(
     listingState,
     acceptingBookings: stateAcceptsNewBookings(listingState),
     description: readString(settings, 'description') || null,
+    seoTitle: readString(settings, 'seoTitle') || null,
+    seoDescription: readString(settings, 'seoDescription') || null,
     locationLabel: buildLocationLabel(city, province ?? '', country),
     address: (row.address ?? readString(settings, 'address')) || '',
     city,

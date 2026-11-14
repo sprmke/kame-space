@@ -55,6 +55,14 @@ ALLOWLIST=(
   # Weekly ops report: single-row reads of ops_reports by id; the full row includes
   # the JSON summary and Markdown body. The list query uses explicit columns.
   'ops-report/index.ts'
+  # Marketing planner tables are narrow and every read is property-scoped and bounded:
+  # settings is one row per property, plans/items are capped at 200, and each insert or
+  # update returns the single row just written. Column lists here fight the typed client
+  # (a non-literal select string degrades to GenericStringError), so '*' is deliberate.
+  '_shared/marketingPlanner.ts'
+  # Same planner tables, read-only loader: property row, planner settings, calendar
+  # events (capped at 200) and first-touch publications (capped at 30).
+  '_shared/marketingSignalsData.ts'
   '_shared/opsReportRunner.ts'
   # Pre-arrival reminder: one booking row per due reminder, read by primary key and passed
   # whole to the email renderer (dates, guests, contact, payment, parking, pet).
@@ -144,6 +152,10 @@ ALLOWLIST=(
   'list-org-listing-verifications/index.ts'
   'list-organizations/index.ts'
   'list-parkings/index.ts'
+  # Parkings for one organization; `*` is deliberate because `serializeParking` reads every column
+  # and sends them to the client. Moved here from `list-parkings/index.ts` when the loader was
+  # extracted so the bootstrap and the dedicated endpoint share one query.
+  '_shared/listParkings.ts'
   # Properties for one organization; `*` is deliberate because every column is serialized
   # to the client. Moved here from `list-properties/index.ts` when the loader was extracted
   # for the session bootstrap.

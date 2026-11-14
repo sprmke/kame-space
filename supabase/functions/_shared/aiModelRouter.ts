@@ -30,10 +30,12 @@ export const AI_FEATURES = [
   'dashboard_assistant',
   'dashboard_assistant_complex',
   'smart_pricing',
+  'marketing_plan_brief',
   'host_analytics',
   'review_draft',
   'marketing_image_generate',
   'marketing_video_generate',
+  'marketing_trends_classify',
   'identity_extraction',
 ] as const;
 
@@ -310,6 +312,19 @@ const FEATURE_MODELS: Record<AiFeature, AiModelConfig> = {
     timeoutMs: 45000,
     groqFallback: false,
   },
+  marketing_plan_brief: {
+    // Credits are derived, not hand-priced: recordAiUsage divides the measured token cost by
+    // the platform credit unit (default $0.001). A plan brief is roughly 2k in / 1k out, so
+    // about 3 credits per generation. Same text tier as smart_pricing.
+    model: 'gemini-2.5-flash',
+    tier: 'flash',
+    inputUsdPer1M: 0.3,
+    outputUsdPer1M: 2.5,
+    defaultMaxOutputTokens: 2048,
+    thinkingBudget: 0,
+    timeoutMs: 45000,
+    groqFallback: true,
+  },
   marketing_video_generate: {
     model: 'veo-3.1-fast-generate-preview',
     tier: 'flash',
@@ -319,6 +334,19 @@ const FEATURE_MODELS: Record<AiFeature, AiModelConfig> = {
     thinkingBudget: 0,
     timeoutMs: 30000,
     groqFallback: false,
+  },
+  // Daily Marketing Trends classify pass: one ungrounded call a day over the
+  // candidate feed. Platform cost, never a host credit (the job has no org).
+  // The Groq fallback keeps the list publishing when Gemini is out of quota.
+  marketing_trends_classify: {
+    model: 'gemini-3.1-flash-lite',
+    tier: 'flash_lite',
+    inputUsdPer1M: 0.25,
+    outputUsdPer1M: 1.5,
+    defaultMaxOutputTokens: 8192,
+    thinkingBudget: 0,
+    timeoutMs: 45000,
+    groqFallback: true,
   },
 };
 

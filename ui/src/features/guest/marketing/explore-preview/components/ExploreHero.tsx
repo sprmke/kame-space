@@ -67,17 +67,14 @@ export function ExploreHero() {
         <div className="from-background/70 absolute inset-x-0 top-0 h-36 bg-gradient-to-b to-transparent" />
       </div>
 
-      <div className="container mx-auto flex flex-1 flex-col justify-center px-4 pb-10 pt-[calc(var(--public-nav-h)+1.5rem)] sm:pb-16 sm:pt-28 sm:px-6 lg:px-8">
+      <div className="container mx-auto flex flex-1 flex-col justify-center px-4 pb-10 pt-[calc(var(--public-nav-h)+1.5rem)] sm:px-6 sm:pb-16 sm:pt-28 lg:px-8">
         <motion.div
           variants={reduce ? undefined : riseStagger}
           initial={reduce ? false : 'hidden'}
           animate="shown"
           className="max-w-2xl"
         >
-          <motion.h1
-            variants={rise}
-            className="public-display font-bold text-white"
-          >
+          <motion.h1 variants={rise} className="public-display font-bold text-white">
             Where do you want to wake up?
           </motion.h1>
           <motion.p variants={rise} className="mt-5 max-w-md text-base text-white/85 sm:text-lg">

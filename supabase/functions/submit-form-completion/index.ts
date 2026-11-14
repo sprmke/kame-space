@@ -14,7 +14,6 @@
  *  - stamps guest_form_completed_at + emits `booking_guest_form_completed`.
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 import { corsHeaders } from '../_shared/cors.ts';
 import { DatabaseService } from '../_shared/databaseService.ts';
@@ -35,8 +34,9 @@ import { maintenanceModeResponse } from '../_shared/platformSettingsCache.ts';
 import { syncReviewIdentityKey } from '../_shared/hostGuestReviewService.ts';
 import { captureFaultIfServerError } from '../_shared/httpResponse.ts';
 import { captureSnapshotForBooking } from '../_shared/cancellationService.ts';
+import { serveHandler } from '../_shared/serveEdge.ts';
 
-serve(async (req) => {
+serveHandler('submit-form-completion', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders(req) });
   }

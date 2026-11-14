@@ -278,6 +278,9 @@ export async function loadPublicParkingBySlug(slug: string) {
     ratePerNight: guestRate.weekday,
     brandColor,
     description,
+    /* Host-written search overrides; null means the public page generates its own. */
+    seoTitle: readString('seoTitle') || null,
+    seoDescription: readString('seoDescription') || null,
     spaceLengthM: readParkingSpaceLengthM(settings),
     spaceWidthM: readParkingSpaceWidthM(settings),
     heightClearanceM: readParkingHeightClearanceM(settings),

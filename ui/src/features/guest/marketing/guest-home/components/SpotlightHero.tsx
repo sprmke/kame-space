@@ -16,17 +16,35 @@ import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
  * Full-bleed theme art.
  *
  * The hero is the LCP element on `/`, so the width matters: pre-rendered variants let the
- * browser pick by viewport (27 KB at 480w instead of the full render). AVIF is roughly half
- * the WebP at the same width and is offered first; WebP covers browsers without AVIF, and the
- * JPEG is the last fallback for old WebViews. Regenerate with
+ * browser pick by viewport (phone ~640w, full master on large/retina). AVIF is offered first;
+ * WebP covers browsers without AVIF; JPEG is the last fallback. Regenerate with
  * `node scripts/media/generate-hero-variants.mjs`.
+ *
+ * Do not progressive-enhance blur→sharp here: that flash hurts perceived quality and LCP
+ * already picks the right candidate from `srcset` + `sizes`.
  */
-const HERO_WIDTHS = [480, 800, 1200] as const;
-const HERO_SIZES = '(min-width: 1280px) 1280px, 100vw';
+const HERO_WIDTHS = [640, 960, 1280, 1672] as const;
+/** Matches `.public-shell` content width (~1280px) on large screens; DPR multiplies for retina. */
+const HERO_SIZES = '(min-width: 1440px) 1280px, (min-width: 1024px) calc(100vw - 4rem), 100vw';
 
-function HeroArt({ src, priority }: { src: string; priority?: boolean }) {
+/**
+ * Hero art sits behind the headline and the search. The day render is the one that paints
+ * first, so it carries the description; the night layer is the same scene for the other theme
+ * and stays decorative so a screen reader hears it once.
+ */
+const HERO_ART_ALT = 'Sunlit living room in a Kame Space stay, looking out to the water';
+
+function HeroArt({
+  src,
+  priority,
+  decorative = false,
+}: {
+  src: string;
+  priority?: boolean;
+  decorative?: boolean;
+}) {
   const shared = {
-    alt: '',
+    alt: decorative ? '' : HERO_ART_ALT,
     width: HERO_IMAGE_WIDTH,
     height: HERO_IMAGE_HEIGHT,
     sizes: HERO_SIZES,
@@ -61,7 +79,7 @@ export function SpotlightHero() {
             <HeroArt src={HERO_IMAGE_LIGHT} priority />
           </div>
           <div className="hero-theme-layer hero-theme-layer--dark absolute inset-0">
-            <HeroArt src={HERO_IMAGE_DARK} />
+            <HeroArt src={HERO_IMAGE_DARK} decorative />
           </div>
 
           {/* Legibility scrim. The sunrise render already has a strong dark vignette on its

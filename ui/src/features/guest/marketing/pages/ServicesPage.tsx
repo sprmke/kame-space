@@ -11,7 +11,6 @@ import {
 
 import { ListingHeroSearch } from '@/features/guest/marketing/shared/components/ListingHeroSearch';
 
-
 import { cn } from '@/lib/utils';
 import { usePublicStaticRouteSeo } from '@/lib/seo/routeTitle';
 

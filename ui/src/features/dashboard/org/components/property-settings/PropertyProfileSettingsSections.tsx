@@ -24,6 +24,7 @@ import { PropertyCancellationPolicySection } from '@/features/dashboard/org/comp
 import { PropertyGuestFormSettingsSection } from '@/features/dashboard/org/components/property-settings/PropertyGuestFormSettingsSection';
 import { PropertyHouseRulesManageDialog } from '@/features/dashboard/org/components/property-settings/PropertyHouseRulesManageDialog';
 import { PropertyLocationSettingsBlock } from '@/features/dashboard/org/components/property-settings/PropertyLocationSettingsBlock';
+import { SearchPreviewFields } from '@/components/settings/SearchPreviewFields';
 import { PropertyMediaUpload } from '@/features/dashboard/org/components/property-settings/PropertyMediaUpload';
 import {
   PropertySettingsSectionAlert,
@@ -61,6 +62,7 @@ import {
   type PropertyMediaItem,
 } from '@/features/dashboard/org/lib/propertySettingsConstants';
 import { propertySettingsSectionBanner } from '@/features/dashboard/org/lib/propertySettingsFieldError';
+import { buildPageTitle, listingDescription, propertyTitle } from '@/lib/seo/seoMeta';
 import {
   propertyGuestCapacityTotal,
   type PropertyProfileDraft,
@@ -365,6 +367,34 @@ export function PropertyProfileMainSections({
               />
             </SettingsField>
           </FieldGrid>
+
+          <SearchPreviewFields
+            title={draft.seoTitle}
+            description={draft.seoDescription}
+            autoTitle={buildPageTitle(
+              propertyTitle({
+                name: draft.name || 'Your property',
+                unitType: draft.type,
+                city: draft.city,
+              })
+            )}
+            autoDescription={listingDescription({
+              name: draft.name || 'Your property',
+              unitType: draft.type,
+              city: draft.city,
+              guests: draft.maxGuests,
+              bedrooms: draft.bedrooms,
+              amenities: draft.enabledAmenities,
+              priceFrom: null,
+            })}
+            breadcrumb={`kamespace.com › properties › ${slugPreview}`}
+            idPrefix="property"
+            disabled={lock('basic')}
+            onChangeTitle={(value) => setField('seoTitle', value, 'property-seo-title')}
+            onChangeDescription={(value) =>
+              setField('seoDescription', value, 'property-seo-description')
+            }
+          />
 
           <BrandColorField
             id="property-brand-color"

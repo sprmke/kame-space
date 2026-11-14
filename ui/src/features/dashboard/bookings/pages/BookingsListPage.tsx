@@ -276,7 +276,7 @@ export function BookingsListPage({ scope = 'property' }: BookingsListPageProps) 
   } = useBookings(summaryQuery, { scope });
   // Resolved document requirements (§4.5) for the kanban view only — property-scoped,
   // disabled automatically when `usePropertyIdParam()` has no property (org scope).
-  const { data: appSettings } = useAppSettings();
+  const { data: appSettings } = useAppSettings({ lean: true });
   const documentRequirements = appSettings?.resolvedDocumentRequirements;
 
   const resolveBookingHref = useCallback(

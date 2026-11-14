@@ -10,6 +10,7 @@ import { cancelBooking } from './cancellationService.ts';
 import { verifyCronSecret } from './cronSecretGate.ts';
 import { DatabaseService } from './databaseService.ts';
 import { sendPendingReviewChaseHost } from './emailService.ts';
+import { recordCronItemFailure, reportCronPartialFailure } from './sentryCron.ts';
 import { createServiceClient } from './orgAuth.ts';
 import {
   PENDING_REVIEW_CHASE_LEAD_DAYS,
@@ -44,6 +45,8 @@ export type PendingReviewSweepResult = {
   expired: number;
   skipped: number;
   failed: number;
+  /** The first failure, verbatim — a count alone is not operable. See preArrivalReminderCron. */
+  first_error: string | null;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -135,6 +138,7 @@ export async function runPendingReviewExpirySweep(
     expired: 0,
     skipped: 0,
     failed: 0,
+    first_error: null,
   };
 
   for (const row of candidates) {
@@ -167,9 +171,18 @@ export async function runPendingReviewExpirySweep(
       else result.expired += 1;
     } catch (err) {
       console.error(`[pendingReviewExpiry] ${action} failed for ${row.id}:`, err);
-      result.failed += 1;
+      recordCronItemFailure(result, err);
     }
   }
+
+  // One warning per run when some items failed but the sweep still completed, so "2 of 40 failed"
+  // does not read as a clean sweep in the logs. No-op when every item succeeded.
+  await reportCronPartialFailure({
+    cron: 'pending-review-expiry',
+    attempted: candidates.length,
+    failed: result.failed,
+    extra: { expired: result.expired, chased: result.chased, first_error: result.first_error },
+  });
 
   return result;
 }

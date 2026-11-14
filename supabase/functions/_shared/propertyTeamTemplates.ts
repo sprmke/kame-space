@@ -57,6 +57,7 @@ export const SEEDED_TEMPLATE_PERMISSIONS: Record<SeededPropertyTemplateKey, Team
     'marketing.media:add',
     'marketing.media:delete',
     'marketing.publish:add',
+    'marketing.plan:edit',
     'analytics:view',
     'assistant:view',
     'activity:view',

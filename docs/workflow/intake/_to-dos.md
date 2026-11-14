@@ -67,6 +67,7 @@ kind: backlog
 - ✅ Optional Resend hygiene: send From a dedicated subdomain (e.g. `notify.kamespace.com`) instead of apex `mail@kamespace.com`. Requires new Resend domain + DNS, then `RESEND_FROM_EMAIL` flip (`kamewave`). Image-hosting insight is already fixed in code via CID inlining (`sendResendEmail`).
 - ✅ Refine mascot
 - Airbnb conflict
+  → **Planned:** [`../planned/calendar-sync-conflict-resolution.md`](../planned/calendar-sync-conflict-resolution.md)
 - Improve quick access on bottom part of the screen to include (Notifications, chat, dark/light switch, AI assistant)
 - Needs manual reload for webapp?
 - Improve performance, slow queries, lighthouse, before & after

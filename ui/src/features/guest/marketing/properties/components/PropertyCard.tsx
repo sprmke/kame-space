@@ -106,7 +106,7 @@ export const PropertyCard = memo(function PropertyCard({
             <PropertySaveButton propertySlug={property.slug} variant="carousel" />
             {(property.isSuperhost || property.isNew) && (
               <div className="absolute left-2 top-2 sm:left-3 sm:top-3">
-                <span className="rounded-full bg-white/95 px-2 py-0.5 text-[11px] sm:px-2.5 sm:py-1 sm:text-xs font-semibold text-slate-900 shadow-sm backdrop-blur-sm">
+                <span className="rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-slate-900 shadow-sm backdrop-blur-sm sm:px-2.5 sm:py-1 sm:text-xs">
                   {property.isSuperhost ? 'Superhost' : 'New'}
                 </span>
               </div>

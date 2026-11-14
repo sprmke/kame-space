@@ -708,14 +708,149 @@ simply never passed it.
 
 No visual change: the same image at the same size, loaded earlier.
 
-### Expected effect
+### Measured after
 
-The image starts downloading during HTML parse instead of after layout, and the connection
-handshake is already open. Re-run the weekly Lighthouse job after release and compare `/` ,
-`/properties` and `/developments`; the numbers above are the "before".
+Released 2026-11-12, same mobile viewport, LCP element read from a PerformanceObserver. The element
+now reports `loading=eager` and `fetchPriority=high`, which is the proof the change applied.
 
-`/properties` measured 8507 ms and `/parkings` 5991 ms in the same run, with the same lazy-first-card
-pattern, which is why the fix was applied to the property cards too.
+| Route           | Before  | After       | Change                 |
+| --------------- | ------- | ----------- | ---------------------- |
+| `/properties`   | 8507 ms | **4320 ms** | **-49%**               |
+| `/developments` | 7668 ms | 6628 ms     | -14%                   |
+| `/`             | -       | 1112 ms     | hero already optimised |
+
+`/properties` halved. `/developments` improved less, and the reason matters: its cover still comes
+from `images.unsplash.com` with a `w=480` transform, and that third-party fetch is now most of the
+remaining 6.6 s. Real developments carry Supabase Storage covers (the `/properties` LCP is a
+Supabase `.avif`), so this is a fixture problem, not an app one. Making `/developments` fast would
+mean serving local covers in the demo data, which is a content change rather than a performance
+one.
+
+`/parkings` measured 5991 ms in the same run, with the same lazy-first-card pattern, which is why
+the fix went into the property cards too.
+
+## 18. `app-settings`: stop paying for integrations on every load
+
+Measured on production, `Server-Timing` on the handler, three warm calls: **1566-2424 ms**.
+
+`serializeAppSettingsForAdmin` returns one payload used by eight call sites: the dashboard theme,
+the bookings list, the booking edit form, the workflow panel, the inbox insert menu, the page
+editor, the guest-experience readiness card, and the property settings page. Only the last one
+renders `propertyIntegrations`, which is six Telegram credential reads.
+
+Every other caller paid for those reads on every load. The endpoint now takes `?lean=1`, which
+skips that block and returns `propertyIntegrations: null`. Seven call sites ask for lean; the
+settings controller keeps the full payload and guards the panel on the value.
+
+Lean and full use separate cache keys, and the save mutations write both, so a save cannot leave
+one variant stale.
+
+### Measured after
+
+Same `Server-Timing` method, three warm calls each, after the deploy.
+
+| Variant                           | Handler          |
+| --------------------------------- | ---------------- |
+| Full (settings page)              | 1591-1645 ms     |
+| Lean (the other seven call sites) | **1442-1532 ms** |
+
+So the integrations block is worth about **100-150 ms**, not the larger figure this section
+originally predicted. That prediction was wrong and is corrected here: the six credential reads run
+in parallel and are cached, so they never cost what six serial reads would.
+
+What the change still buys is real but smaller: six fewer reads and their decryption on every
+dashboard load, which is work off the edge function and off the database rather than a large
+latency drop.
+
+The remaining ~1.5 s is elsewhere in the payload: the settings row, the org settings row, the
+residence name, the derived PMO email and the two document-requirement resolutions. Cutting that
+further means splitting the payload by consumer, which changes the API surface for eight call
+sites, so it is recorded rather than attempted.
+
+## 19. Per-page latency, finally readable, and what it showed
+
+The Sentry token blocked this for a while. The cause was not scopes: this organisation ingests the
+**spans** dataset, so `dataset=transactions` returns nothing while `dataset=spans` returns data.
+`sentry.io/api/0/organizations/{org}/events/?field=transaction&field=p75(span.duration)&field=count()&dataset=spans`
+now gives per-route p75 over any period.
+
+### The ranking, 7 days
+
+| Page                                      | p75         | Samples |
+| ----------------------------------------- | ----------- | ------- |
+| `/org/:param/property/:param/analytics`   | **3139 ms** | 100     |
+| `/org/:param/property/:param/maintenance` | **2264 ms** | 140     |
+| `/org/:param/property/:param/marketing`   | **2053 ms** | 240     |
+| `/org/:param/dashboard`                   | **1883 ms** | 200     |
+| `/org/:param/property/:param`             | 1384 ms     | 280     |
+| `/org/:param/property/:param/bookings`    | 1177 ms     | 200     |
+| `/org/:param/bookings`                    | 892 ms      | 40      |
+| `/org/:param/property/:param/finance`     | 660 ms      | 20      |
+
+Also visible: `GET fwor…supabase.co` spans at **p75 4758 ms** across 3 320 samples. The individual
+calls are cheap in isolation; under a page load that fires a dozen of them at once, they are not.
+
+### Two defects this exposed
+
+**1. `app-settings` had no `staleTime`,** so every component that mounted refetched it. One bookings
+page load produced **six** requests for a payload that changes only when someone edits settings.
+`useAppSettings` now uses 60 s, and `useParkings` matches it. Every mutation that changes either
+already invalidates the key, so this cannot serve stale data after a save.
+
+Measured after release, one browser session:
+
+| Action                       | `app-settings` requests |
+| ---------------------------- | ----------------------- |
+| First load of `/bookings`    | 6                       |
+| Navigate to the dashboard    | **0**                   |
+| Navigate back to `/bookings` | **0**                   |
+
+So the fix removes the refetch on every navigation, which is the common case. It does **not**
+remove the six on first load, because those six are three distinct keys each fetched twice by the
+double mount below — and a stale time cannot help two simultaneous mounts.
+
+**2. A counting trap that produced a false conclusion.** An ad-hoc script that counted requests
+from a second `Network.enable` CDP session reported every shell call twice, with different request
+ids, 1 ms apart. That was published here as "the shell mounts twice", and as a 2x multiplier on
+dashboard cost. It was wrong.
+
+Playwright's own `page.on('request')` is authoritative: **one** `get-session-context`, and 24
+distinct edge calls on a dashboard load. A raw second CDP session double-reports each request, and
+because the two reports carry **different request ids**, a per-id dedupe does not collapse them
+either.
+
+`perf:boot-durations` now reads Playwright request events, and its header explains why. Any call-set
+claim taken from a second CDP session should be treated as unverified.
+
+What the authoritative count does show is smaller and explainable: `app-settings` is requested
+**three** times on this property (two full payloads, one lean), because the setup guide and the
+settings controller both mount the controller while the guide is open. On a fully configured
+property the guide stays closed and only the lean caller runs.
+
+## 20. Four shell reads folded into the bootstrap
+
+This is the plan's Phase "collapse the burst", done for the three reads that are org scoped, cheap
+and independent, plus the permissions payload they depend on.
+
+| Was                                 | Now                               |
+| ----------------------------------- | --------------------------------- |
+| `get-session-context`               | same call, unchanged              |
+| `org-access`                        | returned as `orgAccess`           |
+| `get-feature-availability`          | returned as `featureAvailability` |
+| `list-parkings`                     | returned as `parkings`            |
+| separate auth + rate-limit per call | paid once                         |
+
+`buildOrgAccessPayload` is shared with the `org-access` handler, so the two cannot drift. The
+parking list keeps the assigned-only filter for scoped org admins rather than dropping it for
+speed. The feature-availability payload is converted client-side by
+`toFeatureAvailabilitySnapshot`, the same helper the dedicated fetch uses, so the snapshot shape is
+identical including `serverSkewMs`.
+
+Every seeded key matches the hook that reads it, and each hook still fetches on its own if the
+bootstrap fails, so this degrades to the previous behaviour rather than a blank shell.
+
+Not folded in: `app-settings` and `org-plan`. Both are heavier, and `org-plan` reconciles payment
+transactions, which does not belong on every dashboard open.
 
 ## Release state
 

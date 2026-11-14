@@ -49,16 +49,20 @@ import { Button } from '@/components/ui/button';
 import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { captureAppEvent } from '@/lib/posthog/capture';
-import { absoluteCanonicalUrl } from '@/lib/seo/canonicalOrigin';
+import { absoluteCanonicalUrl, siteOrigin } from '@/lib/seo/canonicalOrigin';
 import {
+  buildBreadcrumbJsonLdFromItems,
   buildPageTitle,
   buildPropertyJsonLd,
+  combineJsonLd,
   listingDescription,
   propertyTitle,
 } from '@/lib/seo/seoMeta';
+import { descriptionFromOverride, titleFromOverride } from '@/lib/seo/seoPrimitives';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
 import { cn } from '@/lib/utils';
 import { parseGuestInquiryDateRange, formatDateToYYYYMMDD } from '@/utils/format/dates';
+import { ListingBreadcrumbs } from '@/features/guest/marketing/shared/components/ListingBreadcrumbs';
 
 export function PropertyDetailPage() {
   const { propertySlug = '' } = useParams<{ propertySlug: string }>();
@@ -92,18 +96,20 @@ export function PropertyDetailPage() {
     [similarResult.data?.data, propertySlug, propertyData?.id]
   );
   const propertyPageTitle = propertyData
-    ? buildPageTitle(
+    ? (titleFromOverride(propertyData.seoTitle) ??
+      buildPageTitle(
         propertyTitle({
           name: propertyData.name,
           unitType: propertyData.type,
           city: propertyData.city,
         })
-      )
+      ))
     : publicPageTitle('Property');
   usePageTitle(propertyPageTitle);
 
   const propertyDescription = propertyData
-    ? listingDescription({
+    ? (descriptionFromOverride(propertyData.seoDescription) ??
+      listingDescription({
         name: propertyData.name,
         unitType: propertyData.type,
         city: propertyData.city,
@@ -112,10 +118,29 @@ export function PropertyDetailPage() {
         amenities: propertyData.amenities,
         priceFrom: propertyData.pricing.baseRate,
         hostDescription: propertyData.description,
-      })
+      }))
     : undefined;
 
   const propertyCanonicalPath = `/properties/${propertyData?.slug ?? propertySlug}`;
+  // Middle crumb links the development when the listing belongs to one. A city is shown as
+  // text rather than a guessed place slug, so a crumb can never 404.
+  const breadcrumbItems = propertyData
+    ? [
+        { label: 'Home', to: '/' },
+        { label: 'Stays', to: '/properties' },
+        ...(propertyData.development?.slug
+          ? [
+              {
+                label: propertyData.development.name,
+                to: `/developments/${propertyData.development.slug}`,
+              },
+            ]
+          : propertyData.city
+            ? [{ label: propertyData.city }]
+            : []),
+        { label: propertyData.name },
+      ]
+    : [];
   usePageMeta(
     {
       title: propertyPageTitle,
@@ -123,20 +148,23 @@ export function PropertyDetailPage() {
       canonicalPath: propertyCanonicalPath,
       image: propertyData?.images[0] ?? null,
       jsonLd: propertyData
-        ? buildPropertyJsonLd({
-            name: propertyData.name,
-            url: absoluteCanonicalUrl(propertyCanonicalPath),
-            description: propertyData.description,
-            images: propertyData.images,
-            address: {
-              city: propertyData.city,
-              province: propertyData.state,
-              country: propertyData.country,
-            },
-            rating: propertyData.rating ?? null,
-            reviewCount: propertyData.reviews ?? 0,
-            priceFrom: propertyData.pricing.baseRate,
-          })
+        ? combineJsonLd([
+            buildPropertyJsonLd({
+              name: propertyData.name,
+              url: absoluteCanonicalUrl(propertyCanonicalPath),
+              description: propertyData.description,
+              images: propertyData.images,
+              address: {
+                city: propertyData.city,
+                province: propertyData.state,
+                country: propertyData.country,
+              },
+              rating: propertyData.rating ?? null,
+              reviewCount: propertyData.reviews ?? 0,
+              priceFrom: propertyData.pricing.baseRate,
+            }),
+            buildBreadcrumbJsonLdFromItems(breadcrumbItems, siteOrigin()),
+          ])
         : null,
     },
     Boolean(propertyData) && !isEditorPreview
@@ -502,7 +530,7 @@ export function PropertyDetailPage() {
               its own slot or a returning guest never sees it (plan 2.6). */}
           {existingTrip ? (
             <PropertyExistingTripBanner
-              className="mb-4 @5xl:hidden"
+              className="@5xl:hidden mb-4"
               tripPath={existingTrip.path}
               checkInDate={existingTrip.checkInDate}
               checkOutDate={existingTrip.checkOutDate}
@@ -520,6 +548,7 @@ export function PropertyDetailPage() {
                 !forceMobileChrome && '@5xl:col-span-2'
               )}
             >
+              <ListingBreadcrumbs items={breadcrumbItems} className="-mb-1" />
               {bodySections.map((sectionId, index) => renderBodySection(sectionId, index))}
             </div>
 
@@ -539,7 +568,7 @@ export function PropertyDetailPage() {
               ) : null}
               {existingTrip ? (
                 <PropertyExistingTripBanner
-                  className="mb-3 hidden @5xl:flex"
+                  className="@5xl:flex mb-3 hidden"
                   tripPath={existingTrip.path}
                   checkInDate={existingTrip.checkInDate}
                   checkOutDate={existingTrip.checkOutDate}

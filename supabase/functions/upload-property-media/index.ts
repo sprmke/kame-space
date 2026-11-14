@@ -3,7 +3,6 @@
  * Auth: JWT + resolveScopedPropertyAccess (`settings.media:edit`).
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from '../_shared/supabaseJs.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { handleEdgeError } from '../_shared/httpResponse.ts';
@@ -14,8 +13,9 @@ import {
   persistPropertyMedia,
   readPropertyMedia,
 } from '../_shared/propertyMediaUpload.ts';
+import { serveHandler } from '../_shared/serveEdge.ts';
 
-serve(async (req) => {
+serveHandler('upload-property-media', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders(req) });
   }

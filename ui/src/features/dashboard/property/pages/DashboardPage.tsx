@@ -11,6 +11,7 @@ import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgCon
 import { usePropertyRejectedExternalReviewsAttentionItem } from '@/features/dashboard/org/hooks/usePropertyRejectedExternalReviewsAttentionItem';
 import { DashboardFinanceCalendarSection } from '@/features/dashboard/property/components/DashboardFinanceCalendarSection';
 import { DashboardStatCards } from '@/features/dashboard/property/components/DashboardStatCards';
+import { PlannerTodayCard } from '@/features/dashboard/marketing/components/planner/PlannerTodayCard';
 import { ViewPropertyButton } from '@/features/dashboard/property/components/ViewPropertyButton';
 import { useDashboardStats } from '@/features/dashboard/property/hooks/useDashboardStats';
 import {
@@ -146,6 +147,8 @@ export function DashboardPage() {
       ) : data ? (
         <div className="native-stagger flex min-w-0 flex-col gap-2.5 sm:gap-3 lg:gap-4">
           <DashboardStatCards stats={data} />
+
+          <PlannerTodayCard />
 
           {period.from && period.to ? (
             <DashboardFinanceCalendarSection

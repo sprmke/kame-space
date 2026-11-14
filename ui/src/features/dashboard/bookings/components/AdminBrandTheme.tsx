@@ -48,7 +48,7 @@ export function AdminBrandTheme({ children }: Props) {
   const propertyId = usePropertyIdParam();
   const parkingCtx = useOptionalParkingContext();
   const orgBrand = useOrgBrandColor();
-  const { data: appSettings } = useAppSettings();
+  const { data: appSettings } = useAppSettings({ lean: true });
 
   const parkingStored =
     typeof parkingCtx?.parking.settings?.brandColor === 'string'

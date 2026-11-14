@@ -257,6 +257,7 @@ export function useAiPosterEngine(themeKey?: string | null) {
       offer?: PosterOffer | null;
       photoUrls?: string[];
       family?: PosterStyleChoice;
+      trendTopicKey?: string | null;
     }) => {
       // The offer rides on the facts for this request only; it is never stored on the listing.
       const ranked = await withUsablePhotos(baseFacts);
@@ -272,6 +273,7 @@ export function useAiPosterEngine(themeKey?: string | null) {
           facts: usableFacts,
           brandColor,
           preferredArchetype: input.preferredArchetype ?? null,
+          trendTopicKey: input.trendTopicKey ?? null,
         }),
         loadFonts(),
       ]);

@@ -199,7 +199,8 @@ export type AppSettingsDto = AppSettingsResolved & {
     | 'tiktokUrl',
     AppSettingsFieldSource
   >;
-  propertyIntegrations: PropertyIntegrationStatus;
+  /** `null` when the caller asked for the lean payload (`?lean=1`). */
+  propertyIntegrations: PropertyIntegrationStatus | null;
   platformSecrets: PlatformSecretsStatus;
 };
 
@@ -590,8 +591,17 @@ export async function getApprovalSenderAllowList(propertyId?: string | null): Pr
 }
 
 export async function serializeAppSettingsForAdmin(
-  propertyId?: string | null
+  propertyId?: string | null,
+  /**
+   * `includeIntegrations: false` skips the Telegram credential status block.
+   *
+   * That block is six reads and is rendered by exactly one section of the property settings page.
+   * Every other caller paid for it on each dashboard load. Default stays `true` so nothing that
+   * reads the field changes behaviour unless it asks to.
+   */
+  options?: { includeIntegrations?: boolean }
 ): Promise<AppSettingsDto> {
+  const includeIntegrations = options?.includeIntegrations ?? true;
   // Every read below is keyed on `propertyId` or on the resolved property id, and none of them
   // reads another's result. They used to run one after another, which cost the admin settings
   // page eight sequential round trips (measured 2.4-3.7s in the handler). Resolving the id
@@ -632,7 +642,9 @@ export async function serializeAppSettingsForAdmin(
         return [];
       })
     ),
-    buildPropertyIntegrationStatus(propertyId!),
+    includeIntegrations
+      ? buildPropertyIntegrationStatus(propertyId!)
+      : Promise.resolve(null),
   ]);
 
   const org = pickOrgSettingsFieldsFromRow(orgRow);

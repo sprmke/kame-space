@@ -2,7 +2,6 @@
  * upload-parking-media — Admin upload/delete for parking gallery photos (max 3).
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { buildActorContext, logActivity } from '../_shared/activityLog.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { handleEdgeError } from '../_shared/httpResponse.ts';
@@ -12,8 +11,9 @@ import {
   removeParkingMedia,
 } from '../_shared/parkingMediaUpload.ts';
 import { resolveScopedParkingTeamAccess } from '../_shared/parkingScope.ts';
+import { serveHandler } from '../_shared/serveEdge.ts';
 
-serve(async (req) => {
+serveHandler('upload-parking-media', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders(req) });
   }

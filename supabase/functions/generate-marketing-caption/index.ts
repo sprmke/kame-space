@@ -12,6 +12,11 @@ import { createServiceClient, requirePropertyPermissionAndFeature } from '../_sh
 import { resolveScopedPropertyAccess } from '../_shared/propertyScope.ts';
 import { identityFromRequest, rateLimitGate } from '../_shared/rateLimit.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
+import {
+  buildTrendPromptBlock,
+  loadTrendContext,
+  TREND_UNAVAILABLE_MESSAGE,
+} from '../_shared/marketingTrends/trendContext.ts';
 
 const CaptionRequest = z.object({
   platform: z.enum(['facebook', 'instagram']).catch('facebook'),
@@ -51,9 +56,10 @@ serveAuthenticated('generate-marketing-caption', async (req, user) => {
     throw err;
   }
 
+  const body = await readJsonBody(req);
   const { platform, postType, contentHint, nightlyRate, availabilityText } = parseAiRequestBody(
     CaptionRequest,
-    await readJsonBody(req)
+    body
   );
 
   const sb = createServiceClient();
@@ -68,6 +74,16 @@ serveAuthenticated('generate-marketing-caption', async (req, user) => {
     return jsonError(req, 'Property not found', 404);
   }
 
+  // Marketing Trends: the host sends a topic key, the server loads the topic.
+  const trend = await loadTrendContext(
+    sb,
+    typeof body.trendTopicKey === 'string' ? body.trendTopicKey : null
+  );
+  if (!trend.ok && trend.reason !== 'no_key') {
+    return jsonError(req, TREND_UNAVAILABLE_MESSAGE, 400);
+  }
+  const trendContext = trend.ok ? trend.context : null;
+
   try {
     const caption = await generateMarketingCaption({
       organizationId: String(propertyRow.organization_id),
@@ -80,6 +96,8 @@ serveAuthenticated('generate-marketing-caption', async (req, user) => {
       availabilityText,
       actorUserId,
       actorType: 'staff',
+      trendBlock: trendContext ? buildTrendPromptBlock(trendContext) : undefined,
+      trendCategory: trendContext?.category,
     });
     return jsonSuccess(req, { caption });
   } catch (err) {

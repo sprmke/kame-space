@@ -144,6 +144,19 @@ export function getMountedEdgeHandler(
   return mountedEdgeHandlers.get(logPrefix) ?? null;
 }
 
+/**
+ * Entrypoint that mounts itself with `serve()` and owns its CORS, auth and rate-limit
+ * decisions inline: the crons, the guest submission trio, the upload endpoints and the Meta
+ * OAuth callback. Routing those through `servePublic` / `serveAdmin` would change behaviour,
+ * so this keeps the production path identical (`serve(handler)`) and only adds the test mount.
+ */
+export function serveHandler(
+  logPrefix: string,
+  handler: (req: Request) => Promise<Response>
+): void {
+  mountEdgeHandler(logPrefix, handler);
+}
+
 export function serveAdmin(
   logPrefix: string,
   handler: (req: Request, admin: AdminUser) => Promise<Response>

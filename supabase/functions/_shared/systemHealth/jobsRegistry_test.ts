@@ -174,3 +174,37 @@ Deno.test('evaluateJobs: SQL-only cron jobs are listed separately', () => {
     [{ name: 'prune', schedule: '0 3 * * *', active: true }]
   );
 });
+
+/**
+ * A scheduled job that is missing here is invisible on the super-admin health page, so a run
+ * that stops happening looks like a healthy system. That is exactly how the two guest journey
+ * crons slipped through: they were scheduled by their own migrations and never registered.
+ */
+Deno.test('the guest journey crons are registered', () => {
+  const fns = new Set(SCHEDULED_JOBS.map((job) => job.fn));
+  for (const fn of ['pre-arrival-reminders', 'pending-review-expiry']) {
+    assertEquals(fns.has(fn), true, `${fn} must appear on the health page`);
+  }
+});
+
+Deno.test('every registered job points at a real function directory', async () => {
+  const missing: string[] = [];
+  for (const job of SCHEDULED_JOBS) {
+    try {
+      await Deno.stat(new URL(`../../${job.fn}/index.ts`, import.meta.url));
+    } catch {
+      missing.push(job.fn);
+    }
+  }
+  assertEquals(missing, [], 'a stale registry entry hides a job that no longer exists');
+});
+
+Deno.test('scheduled job entries are unique', () => {
+  const seen = new Set<string>();
+  const duplicates: string[] = [];
+  for (const job of SCHEDULED_JOBS) {
+    if (seen.has(job.fn)) duplicates.push(job.fn);
+    seen.add(job.fn);
+  }
+  assertEquals(duplicates, []);
+});

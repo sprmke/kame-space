@@ -16,14 +16,15 @@ GFM already ships six AI features (all Gemini-primary, Groq/Llama-4-Scout fallba
 
 ## Already shipped (baseline — don't re-propose these)
 
-| Feature                           | Where                                                                                                         | Model                                    |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| Receipt AI validation             | `submit-form`, `validate-booking-receipts` → `_shared/receiptValidationService.ts`                            | Gemini 2.5 Flash (vision), Groq fallback |
-| Guest Inbox AI suggest/auto-reply | `social-inbox-ai-suggest` → `_shared/socialInboxAiService.ts`                                                 | Gemini 2.5 Flash, Groq fallback          |
-| Marketing caption generation      | `generate-marketing-caption` → `_shared/marketingCaptionAi.ts`                                                | Gemini 2.0 Flash, Groq fallback          |
-| AI integration health card        | `AiIntegrationCard.tsx` / `useAiIntegration.ts` (Property Settings)                                           | checks Gemini/Groq key + latency         |
-| Voice Receptionist                | `voice-receptionist-*` fns, `useVoiceSession.ts`, guest chat page                                             | Gemini Live (native audio)               |
-| Smart CSV import (bookings)       | Bookings import wizard + `IMPORTED` status — [`smart-ai-data-importer.md`](../done/smart-ai-data-importer.md) | Gemini column mapping, preview/fix queue |
+| Feature                                     | Where                                                                                                                                                                                          | Model                                                              |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Receipt AI validation                       | `submit-form`, `validate-booking-receipts` → `_shared/receiptValidationService.ts`                                                                                                             | Gemini 2.5 Flash (vision), Groq fallback                           |
+| Guest Inbox AI suggest/auto-reply           | `social-inbox-ai-suggest` → `_shared/socialInboxAiService.ts`                                                                                                                                  | Gemini 2.5 Flash, Groq fallback                                    |
+| Marketing caption generation                | `generate-marketing-caption` → `_shared/marketingCaptionAi.ts`                                                                                                                                 | Gemini 2.0 Flash, Groq fallback                                    |
+| AI integration health card                  | `AiIntegrationCard.tsx` / `useAiIntegration.ts` (Property Settings)                                                                                                                            | checks Gemini/Groq key + latency                                   |
+| Voice Receptionist                          | `voice-receptionist-*` fns, `useVoiceSession.ts`, guest chat page                                                                                                                              | Gemini Live (native audio)                                         |
+| Smart CSV import (bookings)                 | Bookings import wizard + `IMPORTED` status — [`smart-ai-data-importer.md`](../done/smart-ai-data-importer.md)                                                                                  | Gemini column mapping, preview/fix queue                           |
+| Marketing Trends (daily PH trending topics) | `marketing-trends-cron` / `-weekly-cron`, `marketing-trends`, `admin-marketing-trends`; AI Studio rail + sheet — [`marketing-trending-topics.md`](../in-progress/marketing-trending-topics.md) | `gemini-3.1-flash-lite` classify over free PH feeds, Groq fallback |
 
 ## Idea catalog
 

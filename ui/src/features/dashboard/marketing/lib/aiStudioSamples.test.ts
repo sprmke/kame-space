@@ -274,6 +274,7 @@ describe('recipe → request', () => {
       family: 'auto',
       alsoStory: false,
       sampleId: sample.id,
+      trendTopicKey: null,
     });
   });
 

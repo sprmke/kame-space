@@ -63,7 +63,7 @@ When revisited: reactivate `pricing_model = commission` UX on super-admin + host
 
 When you change seed migrations, super-admin plan edits, or `PLAN_TIER_CARD_GAINS` / feature rows, open **`/for-hosts/pricing`** and **`/org/:orgSlug/plans`** (the only in-app Plans page — billing is org-level only) and confirm they still tell the same story. Agents: **`.cursor/rules/documentation-maintenance.mdc`** lists this as a required sync surface.
 
-**Compare matrix grouping:** `planFeatureMatrixGroups()` sections rows by product module in **property sidebar order** (Dashboard, Bookings, Finance, Maintenance, Pricing, Team, Marketing, Inbox, Notifications, Templates, Public pages), then Visibility, AI, Managed hosting. Baseline Free tools fold into the same module as related paid upgrades (e.g. Finance management + Finance reporting). **`customPages`** (gallery + editor explore-open on Free+) is **omitted** from the host compare matrix — only **`publicPagesAutosave`** (“Public pages editor”) and **`propertyShowcase`** (“Property showcase & stay guide access”) appear under Public pages. **`marketingStudio`** (Content Studio — edit without watermark, download) is **Pro+** (`20261210120200`); **`marketingPublishLimitPerGroup`** (Publish in Meta platforms) is **Business+** (`20261210120400`); **`aiMarketingGeneration`** stays **Business+**.
+**Compare matrix grouping:** `planFeatureMatrixGroups()` sections rows by product module in **property sidebar order** (Dashboard, Bookings, Finance, Maintenance, Pricing, Team, Marketing, Inbox, Notifications, Templates, Public pages), then Visibility, AI, Managed hosting. Baseline Free tools fold into the same module as related paid upgrades (e.g. Finance management + Finance reporting). **`customPages`** (gallery + editor explore-open on Free+) is **omitted** from the host compare matrix — only **`publicPagesAutosave`** (“Public pages editor”) and **`propertyShowcase`** (“Property showcase & stay guide access”) appear under Public pages. **`marketingStudio`** (Content Studio — edit without watermark, download) is **Pro+** (`20261210120200`); **`marketingPublishLimitPerGroup`** (Publish in Meta platforms) is **Business+** (`20261210120400`); **`aiMarketingGeneration`** stays **Business+**. **`marketingPlanner`** (Marketing Planner, `20261324000000`) is **Pro+** with the read-only showcase open on every tier; **`aiMarketingPlanner`** (AI briefs) is **Business+** and is not enforced server-side until AI briefs ship.
 
 ## Client gate: loading, errors, rate limits
 
@@ -114,6 +114,8 @@ Unit (Vitest, `plans/lib/*.test.ts`): tier entitlements and minimum tier per key
 | `aiValidations`                 | —          | —          | ✅           | ✅             | ✅             | ✅           |
 | `aiMonthlyCreditAllowance`      | 0          | 0          | 5000         | 25000          | 60000          | 1000         |
 | `marketingStudio`               | —          | —          | ✅           | ✅             | ✅             | ✅           |
+| `marketingPlanner`              | —          | —          | ✅           | ✅             | ✅             | ✅           |
+| `aiMarketingPlanner`            | —          | —          | —            | ✅             | ✅             | —            |
 | `marketingMediaLibrary`         | 100 MB     | 500 MB     | 3 GB         | 10 GB          | 25 GB          | 100 MB       |
 | `customPages`                   | ✅         | ✅         | ✅           | ✅             | ✅             | ✅           |
 | `aiDashboardAssistant`          | —          | —          | —            | ✅             | ✅             | —            |
@@ -123,6 +125,15 @@ Unit (Vitest, `plans/lib/*.test.ts`): tier entitlements and minimum tier per key
 | `aiMarketingVideoGeneration`    | —          | —          | —            | ✅             | ✅             | —            |
 | `aiChatAutoReply`               | —          | —          | —            | ✅             | ✅             | —            |
 | `fullyManagedByPlatform`        | —          | —          | —            | —              | ✅             | —            |
+
+### View-only surfaces (no plan key)
+
+Some host surfaces are deliberately available on every plan that has their module, so they carry no `PlanFeatureKey`. They are listed here so a future audit does not read their absence as an oversight.
+
+| Surface                                                             | Available on                                                     | Why no key                                                                                                                                                                                                                                                                    |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Marketing **Trends** (view the rail and sheet, copy a caption idea) | Every plan with `marketingStudio` (`growth` / `pro` / `managed`) | It drives use and upgrades of generation the host already pays for. Generating from a trend uses `aiMarketingGeneration` / `aiMarketingImageGeneration` / `aiMarketingVideoGeneration` as before. Gated off per property by the `marketing.trends` feature-availability leaf. |
+| AI Studio past output (list, detail, rename, delete)                | Every plan with `marketingStudio`                                | A downgrade must not lock a host out of work they already paid to generate.                                                                                                                                                                                                   |
 
 `marketingMediaLibrary` is an object quota (`storageMb`, `maxFiles`, `maxImageMb`, `maxVideoMb`, `maxVideoSec`, `maxAudioMb`, `dailyUploads`), seeded by `20261316128910_marketing_media_library_plan_features.sql` and corrected per tier by `…950`. It is available on every tier, so it appears in the Compare table as a value row and in the review dialog as a gain, but not as a card bullet. Going over quota blocks new uploads only; nothing is deleted on downgrade. Team RBAC uses `marketing.media:add` / `marketing.media:delete` (`20261318140000_marketing_media_permissions.sql` backfills them from `marketing.content:add` / `:edit`).
 

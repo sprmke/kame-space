@@ -1,4 +1,5 @@
 import {
+  Eye,
   AlertTriangle,
   BarChart3,
   CalendarCheck,
@@ -61,6 +62,7 @@ const NOTIFICATION_ICONS: Record<NotificationType, LucideIcon> = {
   booking_external_imported: RefreshCw,
   booking_guest_form_completed: ClipboardCheck,
   booking_cancellation_requested: CalendarX,
+  booking_trip_viewed: Eye,
   booking_cancellation_request_resolved: CalendarCheck,
   booking_cancelled_by_guest: CalendarX,
   booking_refund_due: Wallet,

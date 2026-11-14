@@ -111,6 +111,11 @@ Not connected to operational **`/bookings/:id/parking`** (admin/guest pay parkin
 
 ---
 
+## Breadcrumbs
+
+Detail pages render `Home / Developments / <name>` above the hero (`ListingBreadcrumbs`), and
+the same items feed the page's `BreadcrumbList` JSON-LD. Wraps on phone; no horizontal scroll.
+
 ## SEO
 
 - Registry entries: `developments` (list), `developments-place`, `development-detail`,

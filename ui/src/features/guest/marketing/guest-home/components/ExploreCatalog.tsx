@@ -152,8 +152,7 @@ function FeedState<T>({
 /** Centered under the grid, only once there is something to see more of. */
 function SeeAll<T>({ to, feed, noun }: { to: string; feed: Feed<T>; noun: string }) {
   if (feed.isLoading || feed.items.length === 0) return null;
-  const label =
-    feed.total > feed.items.length ? `See all ${feed.total} ${noun}` : `Browse ${noun}`;
+  const label = feed.total > feed.items.length ? `See all ${feed.total} ${noun}` : `Browse ${noun}`;
 
   return (
     <div className="mt-10 flex justify-center">

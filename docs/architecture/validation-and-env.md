@@ -291,6 +291,7 @@ When set, matching cron endpoints require the corresponding header. See **`docs/
 | `PLATFORM_BILLING_CRON_SECRET`               | `X-Platform-Billing-Cron-Secret`                                          |
 | `CALENDAR_SYNC_CRON_SECRET`                  | `X-Calendar-Sync-Cron-Secret`                                             |
 | `SMART_PRICING_CRON_SECRET`                  | `X-Smart-Pricing-Cron-Secret`                                             |
+| `MARKETING_TRENDS_CRON_SECRET`               | `X-Marketing-Trends-Cron-Secret`                                          |
 | `SUPERHOST_ASSESSMENT_CRON_SECRET`           | `X-Superhost-Assessment-Cron-Secret`                                      |
 | `ANALYTICS_AI_REVIEW_CRON_SECRET`            | `X-Analytics-Ai-Review-Cron-Secret`                                       |
 | `PROPERTY_PAGE_VIEWS_PRUNE_CRON_SECRET`      | `X-Property-Page-Views-Prune-Cron-Secret`                                 |
@@ -306,6 +307,8 @@ When set, matching cron endpoints require the corresponding header. See **`docs/
 **Marketing AI image generation (`aiMarketingImageGeneration`, Pro+):** no new env var. Reuses the platform `GEMINI_API_KEYS` / `GEMINI_API_KEY` and the shared `ai_platform_*` quota/credit system (feature `marketing_image_generate`), on the same `generativelanguage.googleapis.com/v1beta` host as every other Gemini call. Per-property tuning (`enabled`, `monthly_credit_cap`) lives in `ai_platform_property_settings.feature_configs`, not env.
 
 **Marketing AI video generation (`aiMarketingVideoGeneration`, Business+, Phase 2):** reuses the same Gemini keys (Veo lives on the same API host). One new optional edge secret **`MARKETING_GENERATION_CRON_SECRET`** + Vault key `marketing_generation_cron_secret` gate the `marketing-generation-sweeper` cron (fail-open locally when unset, fail-closed once `ENVIRONMENT=production`, per `_shared/cronSecretGate.ts`). After a hosted deploy, run `SELECT public.sync_marketing_generation_cron_job();` once to (re)register the 1-minute pg_cron job.
+
+**Marketing Trends:** `MARKETING_TRENDS_CRON_SECRET` (optional) gates both `marketing-trends-cron` and `marketing-trends-weekly-cron`; the same secret is the Vault secret `marketing_trends_cron_secret` the schedule functions read. Nothing else is configurable by env: source weights, stoplists and the AI feature row live in code, and the topic list lives in `marketing_trend_*`. The classify call is platform-billed with no organisation, so no host quota env applies.
 
 **Smart Pricing (`smartPricing`, Pro+):** `SMART_PRICING_CRON_SECRET` (optional) gates the global `smart-pricing-cron` autopilot sweep. All other Smart Pricing tuning lives in `property_smart_pricing_settings` (per property, host-editable), not env. The optional AI rationale pass reuses the platform `GEMINI_API_KEYS` and the shared `ai_platform_*` quota/credit system (feature `smart_pricing`) — no new AI env var.
 

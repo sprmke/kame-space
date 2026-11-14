@@ -7,6 +7,7 @@ import {
   OrgAnalyticsListingRow,
 } from '@/features/dashboard/analytics/components/OrgAnalyticsListingCard';
 import { OrgAnalyticsListingsTable } from '@/features/dashboard/analytics/components/OrgAnalyticsListingsTable';
+import { OrgMarketingRanking } from '@/features/dashboard/analytics/components/OrgMarketingRanking';
 import {
   ORG_ANALYTICS_DEFAULT_SORT,
   filterOrgAnalyticsRows,
@@ -95,6 +96,7 @@ export function OrgAnalyticsListingsSection({ rows }: Props) {
 
   return (
     <section className="flex min-w-0 flex-col gap-2.5 sm:gap-3" aria-label="Listings">
+      <OrgMarketingRanking rows={rows} orgSlug={orgSlug} />
       <FloatingToolbar>
         <OrgListingToolbar<OrgAnalyticsAttentionFilter>
           search={filters.search}

@@ -110,6 +110,7 @@ import {
   resolveOutboundDeliveryStatus,
   unsentMessageLabel,
 } from '@/lib/chat/chatMessageFormat';
+import { inboxMessageKindLabel } from '@/features/dashboard/inbox/lib/inboxMessageKind';
 import { focusComposerInput, type ComposerFocusMode } from '@/lib/chat/focusComposerInput';
 import { CHAT_MESSAGE_MAX_CHARS } from '@/lib/chat/messageLimits';
 import { useChatThreadSearch } from '@/lib/chat/useChatThreadSearch';
@@ -842,17 +843,10 @@ export function InboxConversationView({
                 renderMessage={(msg) => {
                   const outbound = msg.direction === 'outbound';
                   const isUnsent = isChatMessageUnsent(msg);
-                  // Meta message kinds that have no readable text of their own.
-                  const kindLabel =
-                    msg.message_kind === 'story_reply'
-                      ? 'Replied to a story'
-                      : msg.message_kind === 'share'
-                        ? 'Shared a post'
-                        : msg.message_kind === 'unsupported'
-                          ? 'This message only opens in Meta'
-                          : null;
                   const attachments = isUnsent ? [] : inboxAttachmentPreviews(msg.attachments);
                   const hasText = !!msg.body_text?.trim();
+                  // Meta message kinds that have no readable text of their own.
+                  const kindLabel = inboxMessageKindLabel(msg.message_kind, hasText);
                   const hasMedia = attachments.length > 0;
                   const highlightQuery = threadSearch.open ? threadSearch.trimmedQuery : '';
                   const activeHighlightRange =
