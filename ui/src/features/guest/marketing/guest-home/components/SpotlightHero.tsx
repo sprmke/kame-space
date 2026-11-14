@@ -16,13 +16,16 @@ import { STATIC_PAGE_COPY } from '@/lib/seo/content/staticPageCopy';
  * Full-bleed theme art.
  *
  * The hero is the LCP element on `/`, so the width matters: pre-rendered variants let the
- * browser pick by viewport (27 KB at 480w instead of the full render). AVIF is roughly half
- * the WebP at the same width and is offered first; WebP covers browsers without AVIF, and the
- * JPEG is the last fallback for old WebViews. Regenerate with
+ * browser pick by viewport (phone ~640w, full master on large/retina). AVIF is offered first;
+ * WebP covers browsers without AVIF; JPEG is the last fallback. Regenerate with
  * `node scripts/media/generate-hero-variants.mjs`.
+ *
+ * Do not progressive-enhance blur→sharp here: that flash hurts perceived quality and LCP
+ * already picks the right candidate from `srcset` + `sizes`.
  */
-const HERO_WIDTHS = [480, 800, 1200] as const;
-const HERO_SIZES = '(min-width: 1280px) 1280px, 100vw';
+const HERO_WIDTHS = [640, 960, 1280, 1672] as const;
+/** Matches `.public-shell` content width (~1280px) on large screens; DPR multiplies for retina. */
+const HERO_SIZES = '(min-width: 1440px) 1280px, (min-width: 1024px) calc(100vw - 4rem), 100vw';
 
 /**
  * Hero art sits behind the headline and the search. The day render is the one that paints

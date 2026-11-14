@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { HardDriveDownload, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { InstallAppEntry } from '@/components/pwa/InstallAppEntry';
 import { Button } from '@/components/ui/button';
-import { PLATFORM_APP_NAME } from '@/lib/platformBranding';
 import { getPwaCapabilities, requestPersistentStorage } from '@/lib/pwa/capabilities';
 import { purgeOfflineState } from '@/lib/pwa/purgeOfflineState';
 import { checkForPwaUpdate } from '@/lib/pwa/useRegisterSW';
@@ -13,6 +11,8 @@ import { cn } from '@/lib/utils';
 
 type AppInfoCardProps = {
   className?: string;
+  /** `card` = bordered block. `embedded` = no chrome (profile modal / sheets). */
+  variant?: 'card' | 'embedded';
 };
 
 type StorageState = {
@@ -20,6 +20,8 @@ type StorageState = {
   quota: number | null;
   persisted: boolean | null;
 };
+
+const actionButtonClassName = 'h-11 w-full justify-start gap-2 px-3 sm:h-10';
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -33,14 +35,51 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[unit]}`;
 }
 
+/** Human label for `VITE_APP_VERSION` (avoids raw "local" / empty). */
+function formatAppVersion(version: string | undefined): string {
+  const trimmed = version?.trim();
+  if (!trimmed) return 'Unknown';
+  if (trimmed === 'local' || trimmed === 'dev') return 'Local build';
+  return trimmed;
+}
+
+function storageUsageLabel(state: StorageState): string {
+  if (state.usage === null) return 'Not available';
+  return `${formatBytes(state.usage)} used`;
+}
+
+/** Shared fact block: muted label, value, then optional actions below. */
+function DeviceFact({
+  label,
+  value,
+  children,
+}: {
+  label: string;
+  value: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="space-y-0.5">
+        <p className="text-muted-foreground text-xs">{label}</p>
+        <p className="text-foreground text-sm">{value}</p>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 /**
- * Offline storage panel: how much is cached, whether the browser has promised to
- * keep it, and one action to clear everything (PWA v2 tasks 5.14 / 4.8 / 2.2).
+ * Offline storage: usage, optional persist request, and clear (PWA v2 tasks 5.14 / 4.8 / 2.2).
+ * Install lives on More / marketing (`InstallAppEntry`), not here.
  */
 function OfflineDataPanel() {
   const [state, setState] = useState<StorageState>({ usage: null, quota: null, persisted: null });
   const [clearing, setClearing] = useState(false);
   const caps = getPwaCapabilities();
+  const showKeep = state.persisted === false && caps.persistentStorage;
+  const value =
+    state.persisted === true ? `${storageUsageLabel(state)} · kept` : storageUsageLabel(state);
 
   useEffect(() => {
     if (!caps.storageEstimate) return;
@@ -66,88 +105,85 @@ function OfflineDataPanel() {
   }, [caps.storageEstimate]);
 
   return (
-    <div className="border-border/70 mt-3 space-y-2 border-t pt-3">
-      <p className="text-foreground text-xs font-semibold">Offline data</p>
-      <p className="text-muted-foreground text-xs">
-        {state.usage === null
-          ? 'Storage usage is unavailable in this browser.'
-          : `${formatBytes(state.usage)} used${state.quota ? ` of ${formatBytes(state.quota)}` : ''}`}
-        {state.persisted === true
-          ? ' · kept until you clear it'
-          : state.persisted === false
-            ? ' · may be cleared by the browser when space is low'
-            : ''}
-      </p>
-      <div className="flex flex-wrap items-center gap-2">
-        {state.persisted === false && caps.persistentStorage ? (
+    <DeviceFact label="Offline" value={value}>
+      <div className="flex flex-row gap-2">
+        {showKeep ? (
           <Button
+            type="button"
             size="sm"
             variant="outline"
-            className="gap-1.5"
+            className={cn(actionButtonClassName, 'min-w-0 flex-1')}
             onClick={() => {
               void requestPersistentStorage().then((ok) => {
                 setState((prev) => ({ ...prev, persisted: ok }));
-                if (ok) toast.success('Offline data will be kept');
+                if (ok) toast.success('Saved data will be kept');
               });
             }}
           >
-            <HardDriveDownload className="size-3.5" aria-hidden />
-            Keep offline data
+            <HardDriveDownload className="size-3.5 shrink-0" aria-hidden />
+            Keep data
           </Button>
         ) : null}
         <Button
+          type="button"
           size="sm"
           variant="outline"
+          className={cn(actionButtonClassName, 'min-w-0 flex-1')}
           disabled={clearing}
           onClick={() => {
             setClearing(true);
             void purgeOfflineState()
               .then(() => {
-                toast.success('Offline data cleared');
+                toast.success('Saved data cleared');
                 setState((prev) => ({ ...prev, usage: 0 }));
               })
               .finally(() => setClearing(false));
           }}
         >
-          Clear offline data
+          {clearing ? 'Clearing…' : 'Clear saved data'}
         </Button>
       </div>
-      <p className="text-muted-foreground text-[11px] leading-snug">
-        Clears cached pages, saved drafts and queued changes on this device. You stay signed in.
-      </p>
-    </div>
+    </DeviceFact>
   );
 }
 
 /**
- * App version + "Check for updates" + the permanent install entry + offline
- * data controls. Support can ask "which build are you on?" and a host can clear
- * cached data without reinstalling.
+ * Quiet device controls: build id, check for updates, offline clear.
+ * One left column: label → value → full-width left-aligned actions.
+ * Install stays on More / marketing via `InstallAppEntry`.
  */
-export function AppInfoCard({ className }: AppInfoCardProps) {
-  const version = import.meta.env.VITE_APP_VERSION;
+export function AppInfoCard({ className, variant = 'card' }: AppInfoCardProps) {
+  const version = formatAppVersion(import.meta.env.VITE_APP_VERSION);
 
   return (
-    <div className={cn('border-border bg-card rounded-xl border p-4', className)}>
-      <p className="text-foreground text-sm font-semibold">{PLATFORM_APP_NAME} app</p>
-      <p className="text-muted-foreground mt-0.5 text-xs">
-        {version ? `Version ${version}` : 'Version unavailable'}
-      </p>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+    <div
+      className={cn(
+        'space-y-4',
+        variant === 'card' && 'border-border bg-card rounded-xl border p-4',
+        variant === 'embedded' && 'border-border/70 border-t pt-4',
+        className
+      )}
+    >
+      <p className="text-foreground text-sm font-semibold">On this device</p>
+
+      <DeviceFact label="Version" value={version}>
         <Button
+          type="button"
           size="sm"
           variant="outline"
-          className="gap-1.5"
+          className={actionButtonClassName}
           onClick={() => {
             checkForPwaUpdate();
           }}
         >
-          <RefreshCw className="size-3.5" aria-hidden />
-          Check for updates
+          <RefreshCw className="size-3.5 shrink-0" aria-hidden />
+          Check updates
         </Button>
-        <InstallAppEntry />
+      </DeviceFact>
+
+      <div className="border-border/70 border-t pt-4">
+        <OfflineDataPanel />
       </div>
-      <OfflineDataPanel />
     </div>
   );
 }

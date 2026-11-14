@@ -731,7 +731,19 @@ async function loadStaffSettings(propertyId?: string): Promise<TelegramStaffSett
 
 export type StaffDailySummaryResult = {
   sent: boolean;
-  mode: 'sent' | 'no_bookings_sent' | 'disabled' | 'no_env' | 'no_settings' | 'error';
+  /**
+   * `skipped` is returned when the schedule does not match or the per-property batch was
+   * skipped; it was missing from this union, so a full `deno check` of any module that
+   * imports this file failed.
+   */
+  mode:
+    | 'sent'
+    | 'no_bookings_sent'
+    | 'skipped'
+    | 'disabled'
+    | 'no_env'
+    | 'no_settings'
+    | 'error';
   detail?: string;
   todayBookingCount?: number;
   nextDaysBookingCount?: number;

@@ -140,7 +140,7 @@ bun run check:seo-routes                         # registry vs router vs sitemap
 bun run seo:audit -- --origin https://kamespace.com --limit 100
 bun run seo:audit -- --origin https://<preview>.vercel.app --fail-on-error
 bun run images:budget                        # public raster budget
-node scripts/media/generate-hero-variants.mjs # hero AVIF + WebP width variants
+node scripts/media/generate-hero-variants.mjs # hero AVIF + WebP at 640/960/1280/1672 (sharp, not the old 1400 crush)
 bun run test                                     # seoMeta, publicRoutes, siteOrigin, snapshot, middleware
 ```
 

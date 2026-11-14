@@ -2,14 +2,14 @@
  * upload-org-settings-asset — Admin upload for org-scoped team logo.
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { handleEdgeError } from '../_shared/httpResponse.ts';
 import { verifyAdminJwt } from '../_shared/auth.ts';
 import { resolveOrgAccessContext } from '../_shared/propertyScope.ts';
 import { applyOrgTeamLogoFromBytes } from '../_shared/orgTeamLogoUpload.ts';
+import { serveHandler } from '../_shared/serveEdge.ts';
 
-serve(async (req) => {
+serveHandler('upload-org-settings-asset', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders(req) });
   }

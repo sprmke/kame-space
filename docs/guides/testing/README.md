@@ -113,12 +113,46 @@ docs/guides/testing/
 
 `EDGE_HANDLER_TEST=1` makes `serveEdge` mount the composed handler instead of starting a server, so a test drives the real wrapper: auth tier, validation order, envelope, headers. Stub Supabase at `fetch`, the only boundary the handler crosses.
 
+Every entrypoint is now testable. Fifteen used to import `serve()` directly and could not be imported by a test at all, because importing booted a server: the two crons plus `superhost-assessment-cron`, `submit-form`, `submit-form-completion`, `submit-sd-form`, `ical-export`, `meta-inbox-oauth-callback` and the nine `upload-*` functions. They now call `serveHandler('<fn-name>', handler)`, which keeps production on the same `serve(handler)` path and only adds the test mount. Do not wrap them in `servePublic` / `serveAdmin`: each one owns its CORS, auth and rate-limit decisions inline, and a wrapper would change behaviour.
+
 Two traps, both cost real debugging time:
 
 - **Install one `fetch` stub before importing the handler.** The Supabase client captures `fetch` when it is created, so reassigning `globalThis.fetch` per test is invisible to it and the first stub silently answers every test. Keep one stub with mutable state and reset the state per test.
 - **A missing row is `406` + `PGRST116`, not a `200` with `null`.** `.single()` maps that error to `null`, while a `200` with `null` or `[]` yields a row-like value, so a missing booking comes back as the wrong status. `DatabaseService.getBookingById` reads `guest_submissions`.
 
-Run them with `bun run test:edge:handlers`. `check:edge-test-coverage` is shrink-only: adding a handler test fails until its `scripts/dev/edge-handler-baseline.json` entry is deleted.
+Run them with `bun run test:edge:handlers`.
+
+**Every edge function now has a handler test**, and the families live in `supabase/functions/tests/harness/`. Each `tests/handlers/<fn>.test.ts` is a few lines that call the contract for its shape, so the same assertion is not retyped 361 times:
+
+| Contract                      | Applies to                                      | Pins                                                                      |
+| ----------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------- |
+| `authenticatedPostContract`   | `serveAuthenticated` / `serveSuperAdmin` writes | preflight, 401 with no session, no I/O                                    |
+| `cronPostContract`            | `serveCronPost` jobs                            | wrong verb refused, 401 without the shared secret, fail-closed when unset |
+| `webhookContract`             | provider webhooks                               | unsigned and badly signed requests refused without writes                 |
+| `publicReadContract`          | token or identifier guarded reads               | 4xx with no token or identifier, no writes, no guest contact data         |
+| `publicDataContract`          | always-readable data                            | 200, no writes, no guest contact data                                     |
+| `publicListingContract`       | listings that record analytics on read          | 200, no guest contact data                                                |
+| `rejectsWithoutInputContract` | endpoints needing input or a session            | bare GET and empty POST never 5xx, never write                            |
+| `uploadEndpointContract`      | the sixteen upload endpoints                    | preflight, unauthenticated write refused before storage                   |
+
+Endpoint-specific cases belong in that file below the contract call. `check:edge-test-coverage` ratchets on the file existing, so a new function needs one before the gate passes.
+
+`check:edge-test-coverage` is shrink-only: adding a handler test fails until its `scripts/dev/edge-handler-baseline.json` entry is deleted.
+
+### Personas and `mockTenant`
+
+```ts
+import { installTenant, mockTenant } from '../shared/tenant';
+
+const tenant = mockTenant({ persona: 'superAdmin', level: 'platform' });
+await installTenant(page, tenant); // seeds the session
+await mockEdgeFunctions(page, [...tenant.mocks, ...pageMocks], { strict: true });
+```
+
+- `ui/e2e/shared/personas.ts` derives every permission list from the real catalogs (`SEEDED_TEMPLATE_PERMISSIONS`, `PARKING_ROLE_PERMISSIONS`, `ORG_ROLE_PERMISSIONS`) and tiers from `planTierGolden`. A renamed leaf flows into the personas that hold it; nothing is retyped.
+- Org `Operations` and `Read Only` are seeded **server-side** templates with no client catalog. Use `orgCustom(leaves)` with the leaves the test needs instead of inventing a list that may disagree with the server.
+- `tenant.mocks` covers only what every signed-in page reads on boot: session, `list-organizations`, `get-public-platform-status`, `get-feature-availability`. Page data endpoints stay in the spec, so strict mode fails loudly rather than rendering from an invented payload.
+- Merge `tenant.mocks` into the spec's own `mockEdgeFunctions` call. Registering them separately would put two handlers on the same URL pattern and let one shadow the other.
 
 ### Typed edge mocks and strict specs
 
@@ -170,7 +204,10 @@ The `definePageCoverage` helper lives in `ui/e2e/shared/pageCoverage/`, not `cov
 ```bash
 bun scripts/dev/check-test-coverage.ts            # check
 bun scripts/dev/check-test-coverage.ts --write    # rewrite the baseline after claiming a section
+bun scripts/dev/check-test-coverage.ts --report   # regenerate coverage-report.md
 ```
+
+`docs/guides/testing/coverage-report.md` is generated: adopted pages with their gate counts and open gaps, then the guides that have no manifest yet. It still runs the check after writing, so a broken manifest cannot produce a report that reads as green.
 
 ## Playwright tags
 
