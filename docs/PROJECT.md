@@ -2,7 +2,7 @@
 title: 'Guest Form Management — Project Documentation'
 status: active
 tags: [docs]
-updated: 2026-11-05
+updated: 2026-11-15
 ---
 
 # Guest Form Management — Project Documentation
@@ -17,6 +17,7 @@ This document is the entry point for the **guest-form-management** architecture 
 | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | **Start here** — full-app picture: system diagram, stack, surfaces, auth, booking, deploy            | [`docs/architecture/overview.md`](architecture/overview.md)                             |
 | Routes, pages, admin dashboard behavior, user flows                                                  | [`docs/architecture/routing.md`](architecture/routing.md)                               |
+| Guest and host product advantages, comparison guardrails, approved marketing claims                  | [`docs/product-positioning.md`](product-positioning.md)                                 |
 | Postgres schema (`guest_submissions`, multi-tenancy, finance/maintenance)                            | [`docs/architecture/data-model.md`](architecture/data-model.md)                         |
 | Storage buckets                                                                                      | [`docs/architecture/storage.md`](architecture/storage.md)                               |
 | Edge function inventory (API surface)                                                                | [`docs/architecture/edge-functions.md`](architecture/edge-functions.md)                 |

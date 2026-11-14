@@ -2,7 +2,7 @@
 title: 'Curated support FAQs'
 status: active
 tags: [guides, support, faqs, help-center]
-updated: 2026-11-11
+updated: 2026-11-15
 ---
 
 # Curated support FAQs
@@ -58,6 +58,33 @@ Hosts sign in with Google. The invite email must match the Google account the pe
 - order: 40
 
 Deletion is permanent and only allowed when there is no booking history and no blocking finance or maintenance records. You must type the organization slug to confirm. Your Google sign-in account stays; only this org and its properties are removed.
+
+### Does Kame replace Airbnb or Agoda?
+
+- category: Getting Started
+- audience: public
+- source: docs/guides/routes/for-hosts.md
+- order: 42
+
+Kame gives you a direct booking channel and the tools to run each stay. You can still use marketplaces for discovery. Airbnb availability and reservations can sync into Kame today. Connections for Agoda and other channels are not available yet.
+
+### Does Kame charge a commission on property bookings?
+
+- category: Plans & Billing
+- audience: public
+- source: docs/guides/routes/for-hosts.md
+- order: 15
+
+Active property plans use a subscription and do not charge a Kame percentage on each property booking. Parking has a separate fee model. Payment provider fees and fees from other booking channels may still apply.
+
+### How does Kame help guests trust a listing?
+
+- category: Account & Security
+- audience: public
+- source: docs/guides/routes/for-hosts.md
+- order: 15
+
+Hosts submit identity and listing-rights information for review before going live. Guests also get clear booking, payment, policy, and stay details in one place. Verification reduces risk, but no platform can promise that fraud is impossible.
 
 ### Why can't I see the Add property button?
 
