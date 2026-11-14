@@ -2,7 +2,7 @@
 title: 'Documentation index'
 status: active
 tags: [docs]
-updated: 2026-11-05
+updated: 2026-11-15
 ---
 
 # Documentation index
@@ -14,6 +14,8 @@ Navigation for **guest-form-management**.
 **AI agents:** **[`.cursor/rules/README.md`](../.cursor/rules/README.md)** → **[`architecture/overview.md`](./architecture/overview.md)** (full-app picture, then topic files)
 
 **Vocabulary:** [`GLOSSARY.md`](./GLOSSARY.md) — product names, casing and the identifiers that intentionally keep the old name.
+
+**Product positioning:** [`product-positioning.md`](./product-positioning.md). Approved guest and host advantages, comparison framing, and marketing claim guardrails.
 
 ## Workflow (active feature work)
 

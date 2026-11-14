@@ -346,6 +346,18 @@ export const PUBLIC_ROUTES: readonly PublicRouteEntry[] = [
     note: 'Redesign preview, not linked from nav.',
   },
   {
+    id: 'for-hosts-v4',
+    pattern: '/for-hosts/v4',
+    title: 'For Hosts | Kame Space',
+    description:
+      'Preview Kame Space host tools for direct bookings, stay operations, guest support, and growth.',
+    indexable: false,
+    inSitemap: false,
+    canonical: 'none',
+    snapshot: 'none',
+    note: 'Outcome-led redesign preview, not linked from nav.',
+  },
+  {
     id: 'explore-preview',
     pattern: '/explore-preview',
     indexable: false,

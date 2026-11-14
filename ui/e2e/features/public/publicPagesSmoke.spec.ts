@@ -49,6 +49,15 @@ test.describe('@smoke @critical public marketing pages', () => {
     await expectPublicPageReady(page);
   });
 
+  test('for-hosts v4 preview loads its outcome-led hero', async ({ page }) => {
+    await page.goto('/for-hosts/v4');
+    await expect(page.getByRole('heading', { name: 'More direct. Less work.' })).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(page.getByRole('heading', { name: 'Better hosting compounds.' })).toBeVisible();
+    await expectPublicPageReady(page);
+  });
+
   test('for-hosts pricing loads plan cards', async ({ page }) => {
     await mockEdgeFunctions(page, [
       { name: 'list-public-pricing-plans', body: mockPublicPricingPlansBody },
