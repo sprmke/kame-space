@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import { useAdminLayoutFillMain } from '@/features/dashboard/bookings/lib/adminLayoutFillMain';
+import { findActiveSectionIdInContainer } from '@/features/dashboard/bookings/lib/adminSectionNavScroll';
 import { SectionNavIssueDot } from '@/features/dashboard/org/components/property-settings/PropertySettingsFields';
 
 import { FieldHelpTooltip } from '@/components/forms/FieldLabel';
@@ -64,75 +65,6 @@ function useSectionNavStore(): SectionNavStore {
   return store;
 }
 
-const SCROLL_MARKER_OFFSET_PX = 24;
-/** Only treat the scrollport as "at bottom" when essentially flush with the end. */
-const SCROLL_BOTTOM_SLACK_PX = 12;
-const MIN_VISIBLE_SECTION_PX = 32;
-/** At true bottom, last section wins when it holds this share of the prior section's visible area. */
-const BOTTOM_LAST_SECTION_VISIBLE_RATIO = 0.4;
-
-function sectionVisibleHeight(rect: DOMRect, containerRect: DOMRect): number {
-  const top = Math.max(rect.top, containerRect.top);
-  const bottom = Math.min(rect.bottom, containerRect.bottom);
-  return Math.max(0, bottom - top);
-}
-
-function isScrollAtBottom(container: HTMLElement, slackPx: number): boolean {
-  return container.scrollTop + container.clientHeight >= container.scrollHeight - slackPx;
-}
-
-function findActiveSectionIdInContainer(
-  container: HTMLElement,
-  sectionIds: string[],
-  markerOffsetPx: number = SCROLL_MARKER_OFFSET_PX
-): string {
-  if (sectionIds.length === 0) return '';
-
-  const containerRect = container.getBoundingClientRect();
-  const markerY = containerRect.top + markerOffsetPx;
-
-  const entries = sectionIds
-    .map((id) => {
-      const el = document.getElementById(`section-${id}`);
-      if (!el) return null;
-      const rect = el.getBoundingClientRect();
-      return { id, rect, visible: sectionVisibleHeight(rect, containerRect) };
-    })
-    .filter((entry): entry is { id: string; rect: DOMRect; visible: number } => entry !== null);
-
-  if (entries.length === 0) return sectionIds[0] ?? '';
-
-  if (isScrollAtBottom(container, SCROLL_BOTTOM_SLACK_PX)) {
-    const last = entries[entries.length - 1]!;
-    if (last.visible >= MIN_VISIBLE_SECTION_PX) {
-      const previous = entries[entries.length - 2];
-      if (!previous || last.visible >= previous.visible * BOTTOM_LAST_SECTION_VISIBLE_RATIO) {
-        return last.id;
-      }
-    }
-  }
-
-  let bestIndex = 0;
-  let bestVisible = entries[0]!.visible;
-
-  for (let i = 1; i < entries.length; i++) {
-    if (entries[i]!.visible > bestVisible) {
-      bestVisible = entries[i]!.visible;
-      bestIndex = i;
-    }
-  }
-
-  if (bestVisible > 0) {
-    return entries[bestIndex]!.id;
-  }
-
-  let active = entries[0]!.id;
-  for (const entry of entries) {
-    if (entry.rect.top <= markerY) active = entry.id;
-  }
-  return active;
-}
-
 type InternalSectionNavStore = SectionNavStore & {
   _attach: () => void;
   _detach: () => void;
@@ -179,6 +111,7 @@ function createSectionNavStore(
   };
 
   const scrollToSection = (sectionId: string) => {
+    // Never scrollIntoView the rail itself — that jumps the menu list. Content scrolls only.
     setActiveSection(sectionId);
     programmaticTarget = sectionId;
     isProgrammaticScroll = true;
@@ -221,6 +154,7 @@ function createSectionNavStore(
   const onScroll = () => {
     if (isProgrammaticScroll) return;
     if (scrollThrottleTimer) return;
+    // Throttle only — no debounce. Neighbor-to-neighbor updates keep the spring glide smooth.
     scrollThrottleTimer = setTimeout(() => {
       scrollThrottleTimer = null;
       syncActiveFromScroll();
@@ -288,9 +222,8 @@ function sectionNavItemClass(active: boolean) {
     'group relative z-[1] flex min-h-[44px] w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200',
     active
       ? 'text-primary-foreground'
-      : // Opaque fill so the sliding pill never shows through the label (contrast guard).
-        // Label stays foreground like the main sidebar; only the icon softens when idle.
-        'bg-background text-foreground hover:bg-muted/60 hover:text-foreground'
+      : // Same idle treatment as the main sidebar: no fill so the spring pill can glide cleanly.
+        'text-foreground hover:bg-muted/60 hover:text-foreground'
   );
 }
 
@@ -340,7 +273,6 @@ const SectionNavList = React.memo(function SectionNavList({ className }: { class
   const sectionGroups = React.useContext(SectionNavGroupsContext);
   const activeSection = React.useSyncExternalStore(store.subscribe, store.getActiveSection);
   const sections = React.useSyncExternalStore(store.subscribe, store.getSections);
-  const navItemRefs = React.useRef<Record<string, HTMLElement | null>>({});
   const sectionIdsKey = React.useMemo(
     () => sections.map((section) => section.id).join('\0'),
     [sections]
@@ -356,26 +288,6 @@ const SectionNavList = React.memo(function SectionNavList({ className }: { class
     sectionIdsKey,
     groupStructureKey,
   ]);
-
-  const setNavItemRef = React.useCallback(
-    (id: string) => (node: HTMLElement | null) => {
-      navItemRefs.current[id] = node;
-      setItemRef(id)(node);
-    },
-    [setItemRef]
-  );
-
-  React.useEffect(() => {
-    if (!activeSection) return;
-    const navItem = navItemRefs.current[activeSection];
-    const navScrollParent = navItem?.closest('[data-section-nav-scroll]');
-    if (!navItem || !navScrollParent) return;
-    const navRect = navItem.getBoundingClientRect();
-    const parentRect = navScrollParent.getBoundingClientRect();
-    if (navRect.top < parentRect.top || navRect.bottom > parentRect.bottom) {
-      navItem.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-    }
-  }, [activeSection, sectionIdsKey, groupStructureKey]);
 
   if (sectionGroups?.length) {
     return (
@@ -394,7 +306,7 @@ const SectionNavList = React.memo(function SectionNavList({ className }: { class
             {group.sections.map((section) => (
               <SectionNavButton
                 key={section.id}
-                ref={setNavItemRef(section.id)}
+                ref={setItemRef(section.id)}
                 section={section}
                 active={activeSection === section.id}
                 onSelect={store.scrollToSection}
@@ -418,7 +330,7 @@ const SectionNavList = React.memo(function SectionNavList({ className }: { class
       {sections.map((section) => (
         <SectionNavButton
           key={section.id}
-          ref={setNavItemRef(section.id)}
+          ref={setItemRef(section.id)}
           section={section}
           active={activeSection === section.id}
           onSelect={store.scrollToSection}
