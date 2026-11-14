@@ -2,7 +2,7 @@
 title: 'Route-based operator guides'
 status: active
 tags: [guides, routes]
-updated: 2026-08-27
+updated: 2026-11-15
 ---
 
 # Route-based operator guides
@@ -121,7 +121,7 @@ Platform-level control panel, distinct from org/property admin and the legacy `A
 | Route                                                                                                          | Guide                                          | Status                                                                                         |
 | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `/` · `/explore-preview` · `/v2`                                                                               | [index-landing.md](./index-landing.md)         | Documented — `/` is the live home; `/explore-preview` and `/v2` remain unlinked previews       |
-| `/for-hosts` · `/for-hosts/pricing` · `/for-hosts/v2` · `/for-hosts/v3`                                        | [for-hosts.md](./for-hosts.md)                 | Documented — UI only; `/v2` and `/v3` hold redesigns pending review                            |
+| `/for-hosts` · `/for-hosts/pricing` · `/for-hosts/v2` · `/for-hosts/v3` · `/for-hosts/v4`                      | [for-hosts.md](./for-hosts.md)                 | Documented; `/v2`, `/v3`, and `/v4` are unlinked redesign previews                             |
 | `/for-hosts/preview`                                                                                           | —                                              | No dedicated guide — internal preview alias for the v3 landing                                 |
 | `/services`                                                                                                    | [services.md](./services.md)                   | Documented — UI-only coming soon                                                               |
 | `/search`                                                                                                      | [search.md](./search.md)                       | Documented — live typeahead + availability results                                             |
