@@ -21,7 +21,8 @@ import {
   withEmailShellStyleVars,
 } from './renderEmailHtml.ts';
 import type { GuestFormData, GuestSubmission } from './types.ts';
-import { computeTotalGuestBalanceFromBooking, isAirbnbBookingSource } from './totalGuestBalance.ts';
+import { computeTotalGuestBalanceFromBooking } from './totalGuestBalance.ts';
+import { isOtaPrepaidSource } from './bookingChannel.ts';
 import { countStayNights, formatDateForEmail, formatTimeForDisplay } from './utils.ts';
 import { formatReceiptVerdictLabel } from './receiptValidationService.ts';
 
@@ -689,7 +690,7 @@ export function buildPaymentBreakdownSectionFromBooking(
   <colgroup><col width="28%"/><col width="22%"/><col width="50%"/></colgroup>`;
   const totalRow = `<tr class="tbl-row-emphasis fee-addon-row"><td class="tbl-label" style="padding:12px 16px;background-color:#fffbeb;border-bottom:none;font-weight:600;color:#78350f;vertical-align:top;">Total balance</td><td class="tbl-num" style="padding:12px 16px;background-color:#fffbeb;border-bottom:none;text-align:right;color:#b45309;font-weight:700;vertical-align:top;">${totalBalanceDue}</td><td class="tbl-note" style="padding:12px 16px;background-color:#fffbeb;border-bottom:none;font-size:12px;color:#92400e;line-height:1.45;vertical-align:top;"><em class="italic-note">Payable on or before check-in. Please pay via online or bank transfer.</em></td></tr>`;
 
-  if (isAirbnbBookingSource(booking.booking_source)) {
+  if (isOtaPrepaidSource(booking.booking_source)) {
     return `${notifySectionTitle('Payment breakdown', brandColor)}${tableOpen}
   <tr><td class="tbl-label" style="padding:12px 16px;background-color:#ffffff;border-bottom:1px solid #e2e8f0;font-weight:600;color:#475569;vertical-align:top;">Stay</td><td class="tbl-num" style="padding:12px 16px;background-color:#ffffff;border-bottom:1px solid #e2e8f0;text-align:right;color:#333333;vertical-align:top;">Paid</td><td class="tbl-note" style="padding:12px 16px;background-color:#ffffff;border-bottom:1px solid #e2e8f0;font-size:12px;color:#555555;line-height:1.45;vertical-align:top;">Paid through Airbnb</td></tr>
   ${parkingPaymentRow}${petPaymentRow}${additionalFeeRow}

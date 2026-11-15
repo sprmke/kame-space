@@ -5,10 +5,13 @@ import { throwIfFeatureUnavailableBody } from '@/lib/featureAvailability/feature
 
 import { supabase } from '@/lib/supabase/client';
 
-export type CalendarFeedProvider = 'airbnb' | 'booking_com' | 'vrbo' | 'other';
+import type { CalendarFeedProvider } from './calendarChannels';
+
+export type { CalendarFeedProvider };
 
 export const CALENDAR_PROVIDER_LABELS: Record<CalendarFeedProvider, string> = {
   airbnb: 'Airbnb',
+  agoda: 'Agoda',
   booking_com: 'Booking.com',
   vrbo: 'VRBO',
   other: 'Other (iCal URL)',

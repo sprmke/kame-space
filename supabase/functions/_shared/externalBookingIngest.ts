@@ -5,6 +5,7 @@
  * Kept free of DB access so the adoption / relink / past-stay decisions are unit tested.
  */
 
+import { canonicalBookingSource } from './bookingChannel.ts';
 import { normalizeBookingDateToYmd } from './calendarAvailabilityManila.ts';
 
 export type IngestBookingRow = {
@@ -20,15 +21,6 @@ export type IngestBookingRow = {
 /** Rows the sync must never treat as a live booking to adopt, relink, or cancel. */
 export function isEligibleIngestRow(row: IngestBookingRow): boolean {
   return row.status !== 'CANCELLED' && row.status !== 'IMPORTED';
-}
-
-/** True for a source label we are allowed to adopt into an OTA feed (Airbnb today). */
-export function isAirbnbBookingSource(source: string | null | undefined): boolean {
-  return (
-    String(source ?? '')
-      .trim()
-      .toLowerCase() === 'airbnb'
-  );
 }
 
 /** `YYYY-MM-DD|YYYY-MM-DD` for exact-date matching; null when either date is unparseable. */
@@ -69,8 +61,9 @@ export function findRelinkableBooking(
 }
 
 /**
- * A manually entered Airbnb row with the exact same stay. Hosts who already re-key
- * Airbnb reservations should get provenance attached, not a second booking.
+ * A manually entered row for the *same channel* with the exact same stay. Hosts who already
+ * re-key OTA reservations should get provenance attached, not a second booking. A manual Agoda
+ * stay must never be adopted by an Airbnb feed.
  */
 export function findAdoptableManualBooking(
   rows: IngestBookingRow[],
@@ -83,8 +76,8 @@ export function findAdoptableManualBooking(
       (row) =>
         isEligibleIngestRow(row) &&
         !row.external_uid &&
-        isAirbnbBookingSource(row.booking_source) &&
-        isAirbnbBookingSource(input.bookingSource) &&
+        canonicalBookingSource(row.booking_source) ===
+          canonicalBookingSource(input.bookingSource) &&
         bookingDateKey(row.check_in_date, row.check_out_date) === key
     ) ?? null
   );

@@ -6,7 +6,7 @@
  * guest_additional_fee.
  * Computes total guest balance (excludes parking — settled on Parking Request):
  * Facebook: booking_rate - down_payment + security_deposit + pet_fee + guest_additional_fee.
- * Airbnb: pet_fee + guest_additional_fee only (stay paid on Airbnb).
+ * OTA prepaid (Airbnb, Agoda, Booking.com, Vrbo): pet_fee + guest_additional_fee only.
  *
  * Plan: docs/planning/NEW_FLOW_PLAN.md §6.1 Q2.1, Q2.3, Q2.4
  */
@@ -38,8 +38,8 @@ import {
 } from '@/features/dashboard/bookings/lib/moneyFieldSchema';
 import {
   computeTotalGuestBalance,
-  isAirbnbBookingSource,
 } from '@/features/dashboard/bookings/lib/totalGuestBalance';
+import { bookingChannelLabel, isOtaPrepaidSource } from '@/lib/bookingChannel';
 import type { BookingRow } from '@/features/dashboard/bookings/lib/types';
 import type { PricingHolidayRuleDto } from '@/features/dashboard/pricing/lib/phHolidayRules';
 import {
@@ -51,18 +51,18 @@ import {
 import { FORM_PLACEHOLDERS } from '@/lib/constants/formPlaceholders';
 import { formatMoney } from '@/utils/format/currency';
 
-function createReviewPricingSchema(surpriseDecorRequested: boolean, isAirbnb: boolean) {
+function createReviewPricingSchema(surpriseDecorRequested: boolean, isOtaPrepaid: boolean) {
   const guestAdditionalFeeSchema = surpriseDecorRequested
     ? requiredNonNegativeMoney({
         requiredError: 'Additional fee is required when the guest requested surprise decor',
       })
     : optionalNonNegativeMoney();
-  const downPaymentSchema = isAirbnb
+  const downPaymentSchema = isOtaPrepaid
     ? optionalNonNegativeMoney()
     : requiredNonNegativeMoney({
         requiredError: 'Enter down payment',
       });
-  const securityDepositSchema = isAirbnb
+  const securityDepositSchema = isOtaPrepaid
     ? optionalNonNegativeMoney()
     : requiredNonNegativeMoney({
         requiredError: 'Enter security deposit',
@@ -116,13 +116,13 @@ export function ReviewPricingForm({
   editMode = false,
   variant = 'workflow',
 }: Props) {
-  const isAirbnb = isAirbnbBookingSource(booking.booking_source);
+  const isOtaPrepaid = isOtaPrepaidSource(booking.booking_source);
   const surpriseDecorRequested = !!booking.guest_requests_surprise_decor;
   const needParking = booking.need_parking === true;
   const hasPets = booking.has_pets === true;
   const schema = useMemo(
-    () => createReviewPricingSchema(surpriseDecorRequested, isAirbnb),
-    [surpriseDecorRequested, isAirbnb]
+    () => createReviewPricingSchema(surpriseDecorRequested, isOtaPrepaid),
+    [surpriseDecorRequested, isOtaPrepaid]
   );
   const computedDefaultRate = computeDefaultBookingRate(
     booking,
@@ -195,8 +195,8 @@ export function ReviewPricingForm({
   const emitPricingDraft = useCallback((): ReviewPricingFormValues => {
     return {
       booking_rate: bookingRate,
-      down_payment: isAirbnb ? 0 : downPayment,
-      security_deposit: isAirbnb ? 0 : securityDeposit,
+      down_payment: isOtaPrepaid ? 0 : downPayment,
+      security_deposit: isOtaPrepaid ? 0 : securityDeposit,
       pet_fee: petFee,
       parking_rate_guest: parkingRateGuest,
       guest_additional_fee: additionalFee,
@@ -212,7 +212,7 @@ export function ReviewPricingForm({
     parkingRateGuest,
     additionalFee,
     appliedVoucherDiscount,
-    isAirbnb,
+    isOtaPrepaid,
   ]);
 
   const validateForProceed = useCallback(async () => {
@@ -285,9 +285,10 @@ export function ReviewPricingForm({
         </div>
       ) : null}
 
-      {isAirbnb ? (
+      {isOtaPrepaid ? (
         <p className="text-muted-foreground mb-3 text-xs leading-snug">
-          Paid through Airbnb. Down payment and security deposit are handled there.
+          Paid through {bookingChannelLabel(booking.booking_source)}. Down payment and security
+          deposit are handled there.
         </p>
       ) : null}
 
@@ -305,7 +306,7 @@ export function ReviewPricingForm({
           />
         </Field>
 
-        {!isAirbnb ? (
+        {!isOtaPrepaid ? (
           <>
             <Field label="Down Payment" required error={shownErrors.down_payment?.message}>
               <input
@@ -398,9 +399,9 @@ export function ReviewPricingForm({
           <span className="text-foreground flex items-center gap-1.5 text-sm font-semibold leading-tight">
             Total Guest Balance
           </span>
-          {isAirbnb ? (
+          {isOtaPrepaid ? (
             <span className="text-muted-foreground text-[10.5px] leading-snug">
-              Booking rate is excluded for Airbnb bookings.
+              Booking rate is excluded for {bookingChannelLabel(booking.booking_source)} bookings.
             </span>
           ) : null}
         </span>
@@ -468,7 +469,7 @@ function buildPricingDefaultValues(
   surpriseDecorRequested: boolean,
   propertyDefaults: PropertyPricingDefaults
 ): DefaultValues<ReviewPricingFormValues> {
-  const isAirbnb = isAirbnbBookingSource(booking.booking_source);
+  const isOtaPrepaid = isOtaPrepaidSource(booking.booking_source);
   const hasPets = booking.has_pets === true;
   const needParking = booking.need_parking === true;
   const storedAdditional = toNullableNumber(booking.guest_additional_fee);
@@ -493,10 +494,10 @@ function buildPricingDefaultValues(
   const fromBooking: DefaultValues<ReviewPricingFormValues> = {
     booking_rate:
       toNullableNumber(booking.booking_rate) ?? netDefault ?? computedDefaultRate ?? undefined,
-    down_payment: isAirbnb
+    down_payment: isOtaPrepaid
       ? 0
       : (toNullableNumber(booking.down_payment) ?? propertyDefaults.downPayment),
-    security_deposit: isAirbnb
+    security_deposit: isOtaPrepaid
       ? 0
       : (toNullableNumber(booking.security_deposit) ?? propertyDefaults.securityDeposit),
     pet_fee: hasPets ? (toNullableNumber(booking.pet_fee) ?? propertyDefaults.petFee) : 0,
@@ -510,7 +511,7 @@ function buildPricingDefaultValues(
   return {
     ...fromBooking,
     ...initialDraft,
-    ...(isAirbnb ? { down_payment: 0, security_deposit: 0 } : {}),
+    ...(isOtaPrepaid ? { down_payment: 0, security_deposit: 0 } : {}),
   } satisfies DefaultValues<ReviewPricingFormValues>;
 }
 

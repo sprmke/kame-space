@@ -22,10 +22,11 @@ import { buildActorContext, logActivity, type ActorContext } from './activityLog
 import {
   findAdoptableManualBooking,
   findRelinkableBooking,
-  isAirbnbBookingSource,
   isPastReservation,
   type IngestBookingRow,
 } from './externalBookingIngest.ts';
+import { calendarChannel, type CalendarChannelDefinition } from './calendarChannels.ts';
+import { isOtaPrepaidSource } from './bookingChannel.ts';
 import { resolveOrganizationIdForProperty } from './propertyScope.ts';
 import {
   buildExportCalendar, // re-exported for the ical-export function's convenience
@@ -53,6 +54,22 @@ import { WorkflowOrchestrator } from './workflowOrchestrator.ts';
 import { buildCancellationPolicySnapshot } from './cancellationPolicy.ts';
 
 export { buildExportCalendar };
+
+/**
+ * Placeholder guest name for a channel that sends dates only. Airbnb keeps its exact previous
+ * output (`Airbnb HM…`, `Airbnb guest ··1234`, `Airbnb guest`) so existing rows and search
+ * results do not shift.
+ */
+export function reservationDisplayName(
+  channel: CalendarChannelDefinition,
+  ev: Pick<ParsedCalendarEvent, 'confirmationCode' | 'phoneLast4'>
+): string {
+  if (channel.provider === 'airbnb' && ev.confirmationCode) {
+    return `${channel.label} ${ev.confirmationCode}`;
+  }
+  if (ev.phoneLast4) return `${channel.placeholderGuestName} ··${ev.phoneLast4}`;
+  return channel.placeholderGuestName;
+}
 
 // ─── Outbound feed (GFM → OTA) ───────────────────────────────────────────────
 
@@ -123,6 +140,11 @@ export async function loadExportRanges(
 
 export const CALENDAR_SYNC_FAILING_THRESHOLD = 4;
 export const CALENDAR_SYNC_MIN_INTERVAL_MINUTES_DEFAULT = 30;
+/**
+ * A feed claimed a few seconds into a sweep must still be claimable at the next cadence mark,
+ * otherwise it silently skips a whole interval (observed as ~60 min syncs on a 30 min interval).
+ */
+export const CALENDAR_SYNC_CLAIM_SLACK_MS = 2 * 60_000;
 
 export interface CalendarFeedRow {
   id: string;
@@ -182,16 +204,31 @@ export async function loadCalendarFeed(
 /** Active feeds for the global sweep, oldest-attempted first (guarantees progress under a time budget). */
 export async function loadDueCalendarFeeds(
   supabase: SupabaseClient,
-  limit: number
+  limit: number,
+  opts: { cutoffIso?: string } = {}
 ): Promise<CalendarFeedRow[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from('property_calendar_feeds')
     .select(FEED_SELECT)
-    .eq('is_active', true)
+    .eq('is_active', true);
+  // Filter in SQL, not after loading: a full batch of not-yet-due feeds would starve the tail.
+  if (opts.cutoffIso) {
+    query = query.or(`last_attempted_at.is.null,last_attempted_at.lt.${opts.cutoffIso}`);
+  }
+  const { data, error } = await query
     .order('last_attempted_at', { ascending: true, nullsFirst: true })
     .limit(limit);
   if (error) throw new Error(`load due feeds: ${error.message}`);
   return (data as CalendarFeedRow[] | null) ?? [];
+}
+
+/**
+ * How long after its last attempt a feed may be claimed. Forced "Sync now" keeps the original
+ * 5 s serialisation window; a normal sweep subtracts the slack so a feed claimed at `:00:07` is
+ * claimable again at `:30:00` instead of slipping to `:40`.
+ */
+export function claimCutoffMs(minIntervalMs: number, force: boolean): number {
+  return force ? 5_000 : Math.max(0, minIntervalMs - CALENDAR_SYNC_CLAIM_SLACK_MS);
 }
 
 /**
@@ -206,7 +243,7 @@ async function claimFeed(
   minIntervalMs: number,
   force: boolean
 ): Promise<boolean> {
-  const cutoffIso = new Date(Date.now() - (force ? 5_000 : minIntervalMs)).toISOString();
+  const cutoffIso = new Date(Date.now() - claimCutoffMs(minIntervalMs, force)).toISOString();
   const { data, error } = await supabase
     .from('property_calendar_feeds')
     .update({ last_attempted_at: new Date().toISOString() })
@@ -462,6 +499,30 @@ async function markFeedSuccess(
  * Sync one feed. Never throws for expected failure modes (network, bad body) — those become
  * `{ ok:false, status:'error' }` with feed health updated. Programming errors still throw.
  */
+/**
+ * One row per feed run so cadence, duration and per-channel failure rate are measurable.
+ * Never throws: instrumentation must not fail a sync.
+ */
+export async function recordFeedRun(
+  supabase: SupabaseClient,
+  feed: Pick<CalendarFeedRow, 'id' | 'property_id' | 'provider'>,
+  result: Pick<RunFeedResult, 'status' | 'error'>,
+  durationMs: number
+): Promise<void> {
+  try {
+    await supabase.from('calendar_sync_runs').insert({
+      feed_id: feed.id,
+      property_id: feed.property_id,
+      provider: feed.provider,
+      status: result.status,
+      error_code: result.error ? result.error.slice(0, 120) : null,
+      duration_ms: Math.max(0, Math.round(durationMs)),
+    });
+  } catch (err) {
+    console.error('[calendarSyncRun] run log failed (non-fatal):', err);
+  }
+}
+
 export async function runFeedSync(
   feed: CalendarFeedRow,
   opts: {
@@ -606,6 +667,7 @@ export async function runFeedSync(
         feed_id: feed.id,
         external_uid: ev.uid,
         external_summary: ev.summary || null,
+        external_kind: ev.kind,
         last_seen_at: new Date().toISOString(),
       })
       .select('id')
@@ -645,6 +707,7 @@ export async function runFeedSync(
         start_date: ev.startDate,
         end_date: ev.endDate,
         external_summary: ev.summary || null,
+        external_kind: ev.kind,
         note: `${feedLabel} - ${ev.summary || ev.kind}`,
         last_seen_at: new Date().toISOString(),
       })
@@ -975,13 +1038,15 @@ async function logBookingIngestActivity(
   try {
     const organizationId = await resolveOrganizationIdForProperty(feed.property_id);
     if (!organizationId) return;
+    const channel = calendarChannel(feed.provider);
     await logActivity({
       action: 'system.cron_run',
       organizationId,
       propertyId: feed.property_id,
       actor,
       metadata: {
-        message: 'Airbnb calendar sync updated bookings',
+        message: `${channel.label} calendar sync updated bookings`,
+        provider: feed.provider,
         count,
         bookings_created: result.bookingsCreated,
         bookings_updated: result.bookingsUpdated,
@@ -1005,6 +1070,7 @@ async function reconcileExternalBookings(
   allowCreate: boolean
 ): Promise<void> {
   const feedLabel = feed.label ?? feed.provider;
+  const channel = calendarChannel(feed.provider);
   const reservations = events.filter((e) => e.kind === 'reservation');
   const byUid = new Map(reservations.map((e) => [e.uid, e]));
 
@@ -1016,8 +1082,10 @@ async function reconcileExternalBookings(
   if (!allowCreate && current.length === 0) return;
 
   const currentByUid = new Map(current.map((r) => [r.external_uid, r]));
+  // Only rows for this channel can be adopted: a manual Agoda stay must never be claimed by
+  // an Airbnb feed (and vice versa).
   const manualCandidates = allRows.filter(
-    (row) => !row.external_uid && isAirbnbBookingSource(row.booking_source)
+    (row) => !row.external_uid && isOtaPrepaidSource(row.booking_source)
   );
   const today = manilaTodayYmd();
 
@@ -1084,7 +1152,7 @@ async function reconcileExternalBookings(
       const adoptable = findAdoptableManualBooking(manualCandidates, {
         checkInYmd: ev.startDate,
         checkOutYmd: ev.endDate,
-        bookingSource: 'Airbnb',
+        bookingSource: channel.bookingSource,
       });
       if (adoptable) {
         const adopted = await adoptManualBooking(supabase, feed, runId, ev, adoptable);
@@ -1118,18 +1186,14 @@ async function reconcileExternalBookings(
         continue;
       }
 
-      const displayName = ev.confirmationCode
-        ? `Airbnb ${ev.confirmationCode}`
-        : ev.phoneLast4
-          ? `Airbnb guest ··${ev.phoneLast4}`
-          : 'Airbnb guest';
+      const displayName = reservationDisplayName(channel, ev);
       const { data, error } = await supabase
         .from('guest_submissions')
         .insert({
           property_id: feed.property_id,
           status: 'PENDING_REVIEW',
           status_updated_at: new Date().toISOString(),
-          booking_source: 'Airbnb',
+          booking_source: channel.bookingSource,
           external_source: feed.provider,
           external_uid: ev.uid,
           external_feed_id: feed.id,
@@ -1145,7 +1209,7 @@ async function reconcileExternalBookings(
           guest_email: null,
           guest_phone_number: '',
           guest_address: '',
-          find_us: 'Airbnb',
+          find_us: channel.bookingSource,
           payment_receipt_url: '',
           check_in_date: startMdy,
           check_out_date: endMdy,

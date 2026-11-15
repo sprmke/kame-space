@@ -10,7 +10,13 @@
  * `property_blocked_dates` and Airbnb's own `DTEND`. No ±1 fudge anywhere.
  */
 
-export type CalendarFeedProvider = 'airbnb' | 'booking_com' | 'vrbo' | 'other';
+import {
+  calendarChannel,
+  hostMatchesChannelSuffix,
+  type CalendarFeedProvider,
+} from './calendarChannels.ts';
+
+export type { CalendarFeedProvider };
 
 /** Reservation = a real stay; block = host-blocked / unavailable-gap night. */
 export type CalendarEventKind = 'reservation' | 'block';
@@ -444,18 +450,10 @@ export class ExternalFetchError extends Error {
   }
 }
 
-/** Provider → allowed host suffixes. `other` allows any public host (still IP-guarded). */
-const PROVIDER_HOST_ALLOWLIST: Record<Exclude<CalendarFeedProvider, 'other'>, string[]> = {
-  airbnb: ['airbnb.com', 'airbnb.co.uk', 'airbnb.ca', 'airbnb.com.au', 'muscache.com'],
-  booking_com: ['booking.com', 'admin.booking.com', 'ical.booking.com'],
-  vrbo: ['vrbo.com', 'homeaway.com', 'abritel.fr', 'expediagroup.com'],
-};
-
-function hostMatchesSuffix(host: string, suffixes: string[]): boolean {
-  const h = host.toLowerCase();
-  return suffixes.some((s) => h === s || h.endsWith('.' + s));
+/** Provider → allowed host suffixes, from the channel registry. */
+function providerHostSuffixes(provider: CalendarFeedProvider): string[] | null {
+  return calendarChannel(provider).hostSuffixes;
 }
-
 const PRIVATE_IPV4 = [
   /^0\./,
   /^10\./,
@@ -556,10 +554,10 @@ export function assertExternalIcsUrlShape(rawUrl: string, provider: CalendarFeed
     throw new ExternalFetchError('That host is not allowed', 'private_host');
   }
   if (provider !== 'other') {
-    const allow = PROVIDER_HOST_ALLOWLIST[provider];
-    if (!hostMatchesSuffix(u.hostname, allow)) {
+    const allow = providerHostSuffixes(provider);
+    if (!allow || !hostMatchesChannelSuffix(u.hostname, allow)) {
       throw new ExternalFetchError(
-        `For ${provider}, the URL must be on ${allow[0]}`,
+        `For ${provider}, the URL must be on ${allow?.[0] ?? provider}`,
         'host_not_allowed'
       );
     }
@@ -610,8 +608,8 @@ export async function fetchExternalIcs(
       throw new ExternalFetchError('refusing URL with embedded credentials', 'has_credentials');
     }
     if (opts.provider !== 'other') {
-      const allow = PROVIDER_HOST_ALLOWLIST[opts.provider];
-      if (!hostMatchesSuffix(current.hostname, allow)) {
+      const allow = providerHostSuffixes(opts.provider);
+      if (!allow || !hostMatchesChannelSuffix(current.hostname, allow)) {
         throw new ExternalFetchError(
           `host ${current.hostname} is not allowed for provider ${opts.provider}`,
           'host_not_allowed'

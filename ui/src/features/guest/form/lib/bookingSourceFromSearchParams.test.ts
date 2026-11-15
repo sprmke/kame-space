@@ -13,6 +13,19 @@ describe('normalizeBookingSource', () => {
   it('normalizeBookingSource is exported', () => {
     expect(typeof normalizeBookingSource).toBe('function');
   });
+
+  it('keeps an OTA source that is not in the picker yet', () => {
+    // G4 regression: saving the edit form must not turn an Agoda stay into a direct booking.
+    expect(normalizeBookingSource('Agoda')).toBe('Agoda');
+    expect(normalizeBookingSource(' booking_com ')).toBe('Booking.com');
+    expect(normalizeBookingSource('Expedia')).toBe('Expedia');
+  });
+
+  it('still folds known aliases and blank values', () => {
+    expect(normalizeBookingSource('airbnb')).toBe('Airbnb');
+    expect(normalizeBookingSource('')).toBe('Direct');
+    expect(normalizeBookingSource(null)).toBe('Direct');
+  });
 });
 
 describe('bookingSourceFromUrlSearchParams', () => {

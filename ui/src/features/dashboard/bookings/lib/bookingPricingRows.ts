@@ -1,4 +1,4 @@
-import { isAirbnbBookingSource } from '@/features/dashboard/bookings/lib/totalGuestBalance';
+import { isOtaPrepaidSource } from '@/lib/bookingChannel';
 import type { BookingRow } from '@/features/dashboard/bookings/lib/types';
 
 import { formatMoney } from '@/utils/format/currency';
@@ -24,14 +24,14 @@ type BookingRateRowSource = Pick<
 /**
  * Rates & fees ledger for the booking detail Pricing tab.
  *
- * Airbnb stays are paid through the platform, so down payment, balance after
+ * OTA prepaid stays are paid through the platform, so down payment, balance after
  * down payment, and security deposit rows are omitted rather than shown as ₱0.00.
  */
 export function buildBookingRateRows(booking: BookingRateRowSource): BookingRateRow[] {
   const additionalGuestFee = Number(booking.guest_additional_fee ?? 0);
   const petFee = booking.has_pets === true ? formatMoney(booking.pet_fee) : '-';
 
-  const rows: BookingRateRow[] = isAirbnbBookingSource(booking.booking_source)
+  const rows: BookingRateRow[] = isOtaPrepaidSource(booking.booking_source)
     ? [
         { key: 'rate', label: 'Booking rate', value: formatMoney(booking.booking_rate) },
         { key: 'pet', label: 'Pet fee', value: petFee },

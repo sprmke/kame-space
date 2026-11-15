@@ -1,8 +1,8 @@
+import { isOtaPrepaidSource } from './bookingChannel.ts';
 import {
   bookingDateKey,
   findAdoptableManualBooking,
   findRelinkableBooking,
-  isAirbnbBookingSource,
   isPastReservation,
   type IngestBookingRow,
 } from './externalBookingIngest.ts';
@@ -91,9 +91,38 @@ Deno.test('findAdoptableManualBooking refuses rows with provenance or another so
   );
 });
 
-Deno.test('isAirbnbBookingSource is trimmed and case insensitive', () => {
-  assert(isAirbnbBookingSource(' Airbnb '));
-  assert(isAirbnbBookingSource('AIRBNB'));
-  assertFalse(isAirbnbBookingSource('Facebook'));
-  assertFalse(isAirbnbBookingSource(null));
+Deno.test('canonical booking sources drive OTA-prepaid behaviour', () => {
+  assert(isOtaPrepaidSource(' Airbnb '));
+  assert(isOtaPrepaidSource('AIRBNB'));
+  assert(isOtaPrepaidSource('Agoda'));
+  assertFalse(isOtaPrepaidSource('Facebook'));
+  assertFalse(isOtaPrepaidSource(null));
+});
+
+Deno.test('adoption never crosses channels', () => {
+  const manualAgoda = row({ booking_source: 'Agoda' });
+  assertEquals(
+    findAdoptableManualBooking([manualAgoda], {
+      checkInYmd: '2026-11-20',
+      checkOutYmd: '2026-11-23',
+      bookingSource: 'Airbnb',
+    }),
+    null
+  );
+  assertEquals(
+    findAdoptableManualBooking([manualAgoda], {
+      checkInYmd: '2026-11-20',
+      checkOutYmd: '2026-11-23',
+      bookingSource: 'booking_com',
+    }),
+    null
+  );
+  assertEquals(
+    findAdoptableManualBooking([manualAgoda], {
+      checkInYmd: '2026-11-20',
+      checkOutYmd: '2026-11-23',
+      bookingSource: 'Agoda',
+    })?.id,
+    'row-1'
+  );
 });

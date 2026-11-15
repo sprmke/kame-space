@@ -1,5 +1,7 @@
+import { canonicalBookingSource } from '@/lib/bookingChannel';
+
 /**
- * Public guest-form handoff for Airbnb-branded copy + `bookingSource` on submit.
+ * Public guest-form handoff for OTA-branded copy + `bookingSource` on submit.
  * Use **`?source=airbnb`** (case-insensitive). Legacy **`?from=airbnb`** is migrated in
  * `GuestForm` to `source=airbnb` and stripped from the URL.
  */
@@ -18,11 +20,13 @@ export const STRIPPED_GUEST_QUERY_KEYS = [
   'updateGoogleSheets',
 ] as const;
 
-export function normalizeBookingSource(value: string | null | undefined): BookingSource {
-  const v = value?.trim().toLowerCase();
-  if (v === 'airbnb') return 'Airbnb';
-  if (v === 'facebook') return 'Facebook';
-  return 'Direct';
+/**
+ * Storage-safe source. Known aliases map to their label; an unknown value is kept instead of
+ * collapsing to `Direct`, so saving the edit form can never turn an Agoda or Booking.com stay
+ * into a direct booking (and silently change its money rules).
+ */
+export function normalizeBookingSource(value: string | null | undefined): string {
+  return canonicalBookingSource(value);
 }
 
 export function bookingSourceFromUrlSearchParams(sp: URLSearchParams): BookingSource {

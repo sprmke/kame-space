@@ -3,11 +3,14 @@
  * booking_rate − down_payment + security_deposit
  * + (pet_fee when has_pets) + guest_additional_fee.
  *
- * **Airbnb:** stay rate, down payment, and security deposit are excluded — only
- * pet fee and additional guest fees count toward guest balance settlement.
+ * **OTA prepaid (Airbnb, Agoda, Booking.com, Vrbo):** stay rate, down payment, and security
+ * deposit are excluded — only pet fee and additional guest fees count toward guest balance
+ * settlement.
  *
  * Parking is excluded — settled separately on the Parking Request sub-step.
  */
+
+import { isOtaPrepaidSource } from './bookingChannel.ts';
 
 function num(v: unknown): number {
   if (v === null || v === undefined || v === '') return 0;
@@ -17,14 +20,6 @@ function num(v: unknown): number {
 
 function bookingFlagTrue(v: unknown): boolean {
   return v === true || v === 'true';
-}
-
-export function isAirbnbBookingSource(source: unknown): boolean {
-  return (
-    String(source ?? '')
-      .trim()
-      .toLowerCase() === 'airbnb'
-  );
 }
 
 function petFeeForGuestBalance(booking: Record<string, unknown>): number {
@@ -50,7 +45,7 @@ export function computeTotalGuestBalanceFromBooking(
   if (raw === null || raw === undefined || raw === '') return null;
 
   const petAndAdditional = petAndAdditionalFeesForGuestBalance(booking);
-  if (isAirbnbBookingSource(booking.booking_source)) {
+  if (isOtaPrepaidSource(booking.booking_source)) {
     return petAndAdditional;
   }
 
