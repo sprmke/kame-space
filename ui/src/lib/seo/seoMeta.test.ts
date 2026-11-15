@@ -347,13 +347,32 @@ describe('place and host descriptions', () => {
   it('builds a place description from the count and lowest price', () => {
     expect(
       placeDescription({ family: 'property', place: 'Makati', count: 12, priceFrom: 1800 })
-    ).toBe('12 stays in Makati, from PHP 1800 per night. Check dates and book online.');
+    ).toBe(
+      '12 stays in Makati, from PHP 1800 per night. Compare photos, check dates and book direct with the host.'
+    );
     expect(placeDescription({ family: 'parking', place: 'BGC', count: 3 })).toBe(
-      '3 parking slots in BGC. Check dates and book online.'
+      '3 parking slots in BGC. Check availability and reserve your slot by the night.'
     );
     expect(placeDescription({ family: 'development', place: 'Cebu', count: 2 })).toContain(
       '2 developments in Cebu'
     );
+  });
+
+  it('singularises a one-listing place and still clears the description floor', () => {
+    const cases = [
+      placeDescription({ family: 'property', place: 'Makati', count: 1 }),
+      placeDescription({ family: 'parking', place: 'BGC', count: 1 }),
+      placeDescription({ family: 'development', place: 'San Fernando', count: 1 }),
+    ];
+    for (const text of cases) {
+      expect(text, text).not.toMatch(/\b1 (stays|parking slots|developments)\b/);
+      // The crawl audit fails a meta description under 70 characters.
+      expect(text.length, text).toBeGreaterThanOrEqual(70);
+      expect(text.length, text).toBeLessThanOrEqual(MAX_DESCRIPTION_LENGTH);
+    }
+    expect(cases[0]).toContain('1 stay in Makati');
+    expect(cases[1]).toContain('1 parking slot in BGC');
+    expect(cases[2]).toContain('1 development in San Fernando');
   });
 
   it('builds a host description', () => {

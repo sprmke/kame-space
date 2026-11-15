@@ -68,6 +68,7 @@ describe('buildAiCreateRequest reel', () => {
       prompt: 'Pool first',
       photoUrls: ['https://img/a.jpg'],
       sampleId: null,
+      trendTopicKey: null,
     });
   });
 });

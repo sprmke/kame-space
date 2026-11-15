@@ -2,7 +2,7 @@
 title: 'SEO and AI search visibility (17-point checklist)'
 status: done
 tags: [workflow, done, seo, aeo, public-site, images, performance, middleware]
-updated: 2026-11-15
+updated: 2026-11-13
 closed: 2026-11-13
 stage: done
 kind: plan

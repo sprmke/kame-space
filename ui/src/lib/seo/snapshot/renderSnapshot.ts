@@ -41,6 +41,8 @@ type NavItem = { href: string; label: string };
 
 /** Primary navigation, mirroring the public site header. */
 export const SNAPSHOT_NAV: readonly NavItem[] = [
+  // Home first so every snapshot page has an inbound link to `/` (the orphan check flags it).
+  { href: routePath('home'), label: 'Home' },
   { href: routePath('properties'), label: 'Stays' },
   { href: routePath('parkings'), label: 'Parking' },
   { href: routePath('developments'), label: 'Developments' },

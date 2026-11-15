@@ -140,19 +140,36 @@ export function placeDescription(input: {
   count: number;
   priceFrom?: number | null;
 }): string {
-  const noun =
-    input.family === 'parking'
-      ? 'parking slots'
-      : input.family === 'development'
-        ? 'developments'
-        : 'stays';
   const count = Math.max(input.count, 1);
-  const head = `${count} ${noun} in ${input.place.trim()}`;
+  const plural = count !== 1;
+
+  // Singular and plural per family, plus a closing clause that keeps a one-listing place
+  // page above the 70-character floor instead of shipping a 44-character description.
+  const subject =
+    input.family === 'parking'
+      ? `${count} parking ${plural ? 'slots' : 'slot'}`
+      : input.family === 'development'
+        ? `${count} ${plural ? 'developments' : 'development'}`
+        : `${count} ${plural ? 'stays' : 'stay'}`;
+
   const price =
     input.priceFrom && input.priceFrom > 0
       ? `, from PHP ${Math.round(input.priceFrom)} per night`
       : '';
-  return truncateDescription(`${head}${price}. Check dates and book online.`);
+
+  const closing =
+    input.family === 'parking'
+      ? 'Check availability and reserve your slot by the night.'
+      : input.family === 'development'
+        ? 'with the homes and parking inside each.'
+        : 'Compare photos, check dates and book direct with the host.';
+
+  const head =
+    input.family === 'development'
+      ? `${subject} in ${input.place.trim()}${price}, ${closing}`
+      : `${subject} in ${input.place.trim()}${price}. ${closing}`;
+
+  return truncateDescription(head);
 }
 
 /**
