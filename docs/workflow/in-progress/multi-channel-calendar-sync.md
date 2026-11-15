@@ -901,6 +901,7 @@ does not need it and shipped first.
 | `bun run check:filenames`                                            | pass                                                                                                                                                                            |
 | Migrations applied locally                                           | M1 to M6 applied cleanly via `psql`; `bun run db:migrate` blocked by local history drift from another branch (versions `20261331000600`, `20261332000100` are not on `develop`) |
 | `bun run check:plan-catalog`                                         | not run — no plan feature key changed                                                                                                                                           |
+| `bun run test:e2e:smoke`                                             | 259 passed, 1 skipped; 1 tablet guest-form case flaked on a disabled Continue under parallel load and passes standalone on rerun                                                |
 | Phase 0                                                              | **blocked** on host-supplied Agoda + Booking.com listings                                                                                                                       |
 
 **Not in Phase 1a (deliberate, see X3/X4):** relay rule 3, echo detection, bounded concurrency, Booking.com setup warning, and the multi-channel Channel sync UI. All of them need either the conflict-plan classifier or a Phase 0 answer, and none changes Airbnb behaviour today.
