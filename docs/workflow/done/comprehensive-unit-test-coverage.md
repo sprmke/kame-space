@@ -36,7 +36,7 @@ kind: plan
 | Drift                                                               | 1,707 lib `.ts` files; 85 have no sibling test. Nothing from the original sessions regressed.                                                                                |
 | Scope                                                               | The 85 only. No second pass over already-tested modules.                                                                                                                     |
 | N/A rule                                                            | The inventory script had no "no test needed" path, so 0-missing was only reachable by writing tautological tests. Add a file-level `test: N/A — <reason>` marker it honours. |
-| Quality bar                                                         | `docs/workflow/planned/full-app-test-architecture.md` (C8) bans export-only scaffolds. Tests assert behaviour or an enforced rule, never `expect(CONST).toBe(CONST)`.        |
+| Quality bar                                                         | `docs/workflow/in-progress/full-app-test-architecture.md` (C8) bans export-only scaffolds. Tests assert behaviour or an enforced rule, never `expect(CONST).toBe(CONST)`.        |
 | Docs                                                                | `docs/guides/testing/README.md` coverage table + this file. No route-guide rows: no route UX changed.                                                                        |
 | Access / Audit / Observability / Loading / Mobile / Unsaved changes | N/A — tests only. No runtime behaviour, no UI, no mutation, no new dependency.                                                                                               |
 

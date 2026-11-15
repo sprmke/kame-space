@@ -2,7 +2,7 @@
 title: 'For testing'
 status: active
 tags: [workflow, for-testing, qa]
-updated: 2026-11-07
+updated: 2026-11-16
 stage: for-testing
 kind: reference
 ---
@@ -58,6 +58,10 @@ Implementation **complete** — remaining work is **manual verification only** (
 | [`public-native-density.md`](./public-native-density.md) | **Public pages native density** — native type, spacing and touch targets across public routes. | Signed-in booking wizard, account pages, real iPhone/Android safe-area check |
 | [`two-way-reviews.md`](./two-way-reviews.md) | **Two-way reviews** — guests rate stays, hosts rate guests, with both sides visible. | Plan § QA — submit each side, verify visibility and moderation |
 | [`verification-scope-split.md`](./verification-scope-split.md) | **Verification scope split** — independent Host/Org and Listing verification, each with Tier 1 and Tier 2. | Plan § 10-item manual QA checklist |
+
+| [`marketing-strategy-planner.md`](./marketing-strategy-planner.md) | **Marketing Planner** — plan-first Marketing: schema, engine, `marketing-planner` endpoint, two crons, AI brief with guard, Plan tab, attribution, assistant tools, plan gates. Merged in #379; backend live since 2026-11-13. | Plan § Verification plus [`marketing-strategy-planner-open-items.md`](./marketing-strategy-planner-open-items.md) — owner decisions (Meta App Review, AI credit price, languages, 2027 holidays) and the manual browser pass |
+| [`marketing-trending-topics.md`](./marketing-trending-topics.md) | **Marketing Trends** — daily ranked PH trending topics from free feeds, deterministic ranking plus one AI classify call, rail and sheet in AI Studio, super-admin page, crons and fallbacks. Merged in #383; backend live since 2026-11-13. | Plan § 11.2, then provision Vault `marketing_trends_cron_secret` + `MARKETING_TRENDS_CRON_SECRET` and run the first publish |
+| [`legal-and-privacy-coverage.md`](./legal-and-privacy-coverage.md) | **Legal and privacy coverage** — rewritten Terms, Privacy and Cookie policies, contextual notices, lazy legal sheet, cookie consent gate before PostHog. | Plan § 6 manual pass at 375 / 768 / 1280; D3 lawyer review is the only open decision |
 
 Plans still in [`../in-progress/`](../in-progress/) have open implementation or product scope — do not move here until code work is closed.
 

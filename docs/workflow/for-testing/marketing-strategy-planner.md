@@ -1,14 +1,19 @@
 ---
-stage: in-progress
+stage: for-testing
 title: 'Marketing Planner: AI strategy, schedule and execution for listing promotion'
-status: planned
+status: for-testing
 tags:
-  [workflow, planned, marketing, ai, publishing, meta, scheduling, analytics, plans-and-permissions]
-updated: 2026-11-14
+  [workflow, for-testing, marketing, ai, publishing, meta, scheduling, analytics, plans-and-permissions]
+updated: 2026-11-16
 kind: plan
 ---
 
 # Marketing Planner: AI strategy, schedule and execution for listing promotion
+
+> **Status 2026-11-16:** implementation shipped in #379 and the backend has been live in
+> production since the 2026-11-13 deploy. The Marketing UI is merged into `develop` and not
+> released yet. Remaining work is owner decisions plus manual QA, tracked in
+> [`marketing-strategy-planner-open-items.md`](./marketing-strategy-planner-open-items.md).
 
 > **Open items I need from the owner:** [marketing-strategy-planner-open-items.md](./marketing-strategy-planner-open-items.md)
 >
@@ -64,7 +69,7 @@ The planner is mostly a **brain and a to-do list on top of existing parts**. Not
 | AI post / photo / clip               | AI Studio (`marketing-ai-sessions`, `generate-marketing-template` `contentType: 'poster'`, `generate-marketing-media`), angles `Vibe · Promo · Amenities · Feature · Stay info`               | Planner hands off a filled description + angle. Credits shown before Generate as today.                                                                                                                                  |
 | Availability calendar image          | Calendar builder + AI calendar                                                                                                                                                                | A very common Philippine host post ("available dates this month"). First-class planner format.                                                                                                                           |
 | Captions                             | `generate-marketing-caption` / `_shared/marketingCaptionAi.ts`                                                                                                                                | Superseded for planner items by the plan brief (Phase 4), kept for the publish dialog.                                                                                                                                   |
-| Publishing                           | `publish-to-meta`, `_shared/metaPublishing.ts`, `marketing_publications`, `PublishDialog`, `PublishHistory`                                                                                   | Gaps (scheduling cron, permalink, retry, Reels in UI) are in [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gaps.md).                                                                                 |
+| Publishing                           | `publish-to-meta`, `_shared/metaPublishing.ts`, `marketing_publications`, `PublishDialog`, `PublishHistory`                                                                                   | Gaps (scheduling cron, permalink, retry, Reels in UI) are in [`marketing-meta-publishing-gaps.md`](../planned/marketing-meta-publishing-gaps.md).                                                                                 |
 | Meta connection                      | `social_channel_connections` via Guest Inbox (`meta-inbox-oauth-*`), scopes in `_shared/metaInboxConfig.ts`                                                                                   | Insight scopes are **not** requested today (see §5.9).                                                                                                                                                                   |
 | Page traffic + UTM                   | `property_page_views` (`utm_source`, `utm_medium`, `utm_campaign`, `referrer_host`), `property-page-view`, `usePropertyPageViewTracking`                                                      | Attribution half-built already. Booking submissions do not record UTM yet.                                                                                                                                               |
 | Advisory AI over metrics             | `analytics-ai-review` (+ cron), `_shared/hostPlaybook.ts` (`applies_when` matcher)                                                                                                            | Pattern to copy: deterministic evidence, LLM writes words, deep links into the app.                                                                                                                                      |
@@ -74,7 +79,7 @@ The planner is mostly a **brain and a to-do list on top of existing parts**. Not
 | Dashboard assistant                  | `dashboardAssistantTools.ts` (`list_marketing_templates`, `get_marketing_publish_history`, publish tools)                                                                                     | Add planner read/write tools in Phase 6.                                                                                                                                                                                 |
 | Plan / RBAC / availability gates     | `planEntitlements.ts`, `propertyTeamPermissions.ts`, `featureAvailabilityCatalog.ts` (`marketing.ai_studio`)                                                                                  | New keys and leaves in §5.7.                                                                                                                                                                                             |
 
-**Already-filed idea this plan implements:** #12 "Marketing strategy suggestions" in [`ai-opportunities-roadmap.md`](./ai-opportunities-roadmap.md), and the "Review-to-marketing content pipeline" item in [`property-management-feature-roadmap.md`](./property-management-feature-roadmap.md).
+**Already-filed idea this plan implements:** #12 "Marketing strategy suggestions" in [`ai-opportunities-roadmap.md`](../planned/ai-opportunities-roadmap.md), and the "Review-to-marketing content pipeline" item in [`property-management-feature-roadmap.md`](../planned/property-management-feature-roadmap.md).
 
 ---
 
@@ -400,7 +405,7 @@ Indexes: `(property_id, scheduled_for)`, `(status, scheduled_for)` for the crons
 
 | Table                    | Change                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `marketing_publications` | `plan_item_id`, `permalink`, `media_items jsonb` (carousel), `request_payload jsonb` (retry), `attempt_count`, `next_attempt_at`, `last_error_code`; status CHECK adds `scheduled`, `publishing`, `held`, `cancelled`; publish_type CHECK adds `carousel`. Coordinate with [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gaps.md) so one migration covers both. |
+| `marketing_publications` | `plan_item_id`, `permalink`, `media_items jsonb` (carousel), `request_payload jsonb` (retry), `attempt_count`, `next_attempt_at`, `last_error_code`; status CHECK adds `scheduled`, `publishing`, `held`, `cancelled`; publish_type CHECK adds `carousel`. Coordinate with [`marketing-meta-publishing-gaps.md`](../planned/marketing-meta-publishing-gaps.md) so one migration covers both. |
 | `guest_submissions`      | `attribution jsonb` (first-touch `utm_source/medium/campaign`, `landing_at`, `plan_item_code`), set by `submit-form` from a client-captured value; no PII                                                                                                                                                                                                                           |
 | `property_page_views`    | Index `(property_id, utm_campaign, viewed_at)` for item results                                                                                                                                                                                                                                                                                                                     |
 | `pricing_plans.features` | New keys `marketingPlanner`, `aiMarketingPlanner` (§5.7)                                                                                                                                                                                                                                                                                                                            |
@@ -637,7 +642,7 @@ Known gaps, deliberately left open rather than half-claimed:
 > nav item shape has no badge slot yet). The Meta publish calls are written against the documented
 > endpoints and stay marked unverified until P0.2 runs.
 
-Depends on [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gaps.md); implement that plan's scope 1 to 4 here if it has not shipped.
+Depends on [`marketing-meta-publishing-gaps.md`](../planned/marketing-meta-publishing-gaps.md); implement that plan's scope 1 to 4 here if it has not shipped.
 
 - [x] **P3.1** Publications migration (§5.2 changes) and `marketing-publish-scheduler-cron` with `SKIP LOCKED` claiming, idempotency key per item + channel, backoff, connection health, publishing-limit check.
 - [x] **P3.2** Pre-publish claim check → `held` + `marketing_publish_held` notification + one-tap **Update the post**.
@@ -764,8 +769,8 @@ Gate before claiming any phase done: `bun run ci:quality` (lint, type-check, uni
 | `docs/archive/operations/migration-runbook.md`                             | Seed and backfill notes                                                                          |
 | `docs/guides/support/faqs.md` + Host-facing knowledge sync                 | Planner FAQs (what to post, Share yourself, why an item was held)                                |
 | `/for-hosts/pricing` via `planPresentation.ts`, `org/plans.md`             | Tier bullets and compare rows                                                                    |
-| [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gaps.md) | Mark items shipped by Phase 3                                                                    |
-| [`ai-opportunities-roadmap.md`](./ai-opportunities-roadmap.md) #12         | Link to this plan                                                                                |
+| [`marketing-meta-publishing-gaps.md`](../planned/marketing-meta-publishing-gaps.md) | Mark items shipped by Phase 3                                                                    |
+| [`ai-opportunities-roadmap.md`](../planned/ai-opportunities-roadmap.md) #12         | Link to this plan                                                                                |
 
 ---
 

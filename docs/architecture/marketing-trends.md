@@ -8,7 +8,7 @@ updated: 2026-11-10
 # Marketing Trends — daily ranked Philippine trending topics
 
 Part of the [`docs/PROJECT.md`](../PROJECT.md) architecture split. Plan of record:
-[`../workflow/in-progress/marketing-trending-topics.md`](../workflow/in-progress/marketing-trending-topics.md).
+[`../workflow/for-testing/marketing-trending-topics.md`](../workflow/in-progress/marketing-trending-topics.md).
 
 ## What it is
 

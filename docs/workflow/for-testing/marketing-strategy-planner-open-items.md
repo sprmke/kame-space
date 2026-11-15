@@ -1,9 +1,9 @@
 ---
-stage: in-progress
+stage: for-testing
 title: 'Marketing Planner — open items I need from the owner'
 status: open
-tags: [workflow, in-progress, marketing, planner, decisions]
-updated: 2026-11-14
+tags: [workflow, for-testing, marketing, planner, decisions]
+updated: 2026-11-16
 kind: checklist
 ---
 
@@ -90,10 +90,8 @@ Tick a box when it is addressed. If an answer changes a shipped default, the pla
 
 ## 4. Approval checkpoints
 
-- [ ] **Merge PR #350** into `develop` when you have reviewed it. Later phases are easier on top of
-      a merged base, but I can keep stacking commits on the branch.
-- [ ] **Deploy gate.** Nothing is deployed. Migrations were applied to the local stack only and the
-      backend deploy remains blocked until you say `kamewave` in the same message.
+- [x] **Merged and deployed.** The planner shipped in #379 and the backend went live with the
+      2026-11-13 `develop` release. The production UI release is still a separate decision.
 
 ---
 
