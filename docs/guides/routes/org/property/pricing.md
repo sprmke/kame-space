@@ -113,7 +113,10 @@ dates that should not be available to guests.
 - **Connected list:** name, health badge, last sync time; icon actions for **Sync now** and **Remove**.
 - **Add another:** outline **Connect Airbnb** expands the same validated form.
 - **Polling:** `calendar-sync-cron` runs every 10 min and syncs a feed at most once per 30 min (2 min claim slack so a feed is not skipped an extra interval). Busy nights land as **synced blocks** (`source='ical_import'`). Each run writes a `calendar_sync_runs` row, which is what makes the real cadence measurable.
-- **Read health:** GET `calendar-sync-settings` returns `export.reads` (last time each channel read the Kame link, from `calendar_export_reads`, recorded on 200 **and** 304) and `lastRun` per feed. The Channel sync list UI for these ships with Phase 2; today they are API/ops data.
+- **Read health:** GET `calendar-sync-settings` returns `export.reads` (last time each channel read the Kame link, from `calendar_export_reads`, recorded on 200 **and** 304), `lastRun` per feed, and `echoWarning` per feed. The Channel sync list UI for these ships with Phase 2; today they are API/ops data.
+- **Hub relay:** a stay imported from channel A is published on the export links for channels B and C, never back to A. A stay that also has a live booking is published once. Imported host blocks are never relayed, so channel-side blocks stay channel-side.
+- **Echo protection:** if a channel sends back nights Kame already published to it (within 72 hours), those nights are kept as blocks but never become bookings, and the sync logs `skipped` with `export_echo`.
+- **Booking.com closed-dates warning:** when two or more events in one pull exactly match nights Kame served Booking.com, the feed records `echoWarning`. The setup fix is to export **reserved dates only** in Booking.com's Sync calendars.
 - **Create bookings:** every connected Airbnb feed has a **Create bookings** switch, **on by default for new feeds**. When on, each `Reserved` event also becomes a real **Pending review** booking in Kame, with no guest email or guest-facing side effect until details exist. Turning it on runs a sync immediately. Existing feeds keep their stored value until the host flips it.
 - **No duplicates:** if the host already entered the same Airbnb stay by hand (same property, dates, and `Airbnb` source), the sync links the existing row instead of creating a second one. Reconnecting a removed feed also re-links the existing row by reservation UID.
 - **Past stays:** reservations whose checkout is already past are skipped, so enabling ingestion does not fill Bookings with old stays.
@@ -149,6 +152,10 @@ If Airbnb reports a night that already has a live Kame booking or manual block, 
   A: Not yet. Airbnb is the only channel you can connect. Agoda and Booking.com support the same kind of calendar link and are next, once their link formats are tested with real listings.
 - Q: How often does Kame check my Airbnb calendar?
   A: About every 30 minutes. Each check is recorded, so support can confirm the real interval when a date looks late.
+- Q: Will a booking from one channel block my other channels?
+  A: Yes, once more than one channel is connected. Kame is the hub: an imported stay is published to the other channels' calendars, never back to the channel it came from. Imported host blocks are not relayed, so block dates in Kame if they should stop every channel.
+- Q: Booking.com shows Kame nights as its own bookings. Why?
+  A: Booking.com is probably set to export closed dates as well as reservations. In Booking.com, open Sync calendars and export **reserved dates only**. Kame ignores those echoes, but your calendar stays cleaner once the setting is fixed.
 - Q: I got a conflict warning after connecting Airbnb. What do I do?
   A: Both calendars kept their nights. Open Notifications or Channel sync → Recent activity for the dates, then remove the booking or block on the side that should not have it.
 - Q: Does connecting Airbnb create bookings in Kame?

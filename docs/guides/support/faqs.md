@@ -1004,6 +1004,24 @@ No. Bookings with saved pricing keep their amounts. Updated rates apply to futur
 
 Open Pricing, then Channel sync. Airbnb is the only provider offered today. Use From Airbnb to paste their export link, and To Airbnb to copy your Kame link back into Airbnb.
 
+### Will a booking on one channel block the others?
+
+- category: Pricing & Availability
+- audience: host
+- source: docs/guides/routes/org/property/pricing.md
+- order: 45
+
+Yes. Kame is the hub between your channels. A stay imported from one channel is shared to the other channels' calendars, and never sent back to the channel it came from. Host blocks created inside a channel are not shared, so block dates in Kame when they should stop every channel.
+
+### Why does another channel show nights that came from Kame?
+
+- category: Pricing & Availability
+- audience: host
+- source: docs/guides/routes/org/property/pricing.md
+- order: 46
+
+A channel that exports closed dates as well as reservations repeats your Kame nights back. Kame recognises those echoes and never turns them into bookings, but the cleaner fix is to export reserved dates only. In Booking.com that setting is under Sync calendars.
+
 ### Can I reopen only part of a blocked range?
 
 - category: Pricing & Availability
