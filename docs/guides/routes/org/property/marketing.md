@@ -110,7 +110,7 @@ it with an optional link.
 
 **Not in this phase:** Prepare handoffs into the editors, scheduling and publishing to Meta,
 reminders, insight snapshots, autopilot. See
-[marketing-strategy-planner.md](../../../workflow/in-progress/marketing-strategy-planner.md).
+[marketing-strategy-planner.md](../../../workflow/for-testing/marketing-strategy-planner.md).
 
 **Plans and permissions**
 

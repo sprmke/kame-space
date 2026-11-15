@@ -2,7 +2,7 @@
 title: 'Workflow docs — superseded copies'
 status: archived
 tags: [archive, workflow, superseded]
-updated: 2026-11-07
+updated: 2026-11-16
 kind: reference
 ---
 
@@ -28,4 +28,6 @@ Stale duplicate copies removed from `docs/workflow/` on 2026-11-04 during the wo
 | [`legacy-prod-to-mt-prod-cutover.md`](./legacy-prod-to-mt-prod-cutover.md)                                     | [`kamespace-02-legacy-prod-to-mt-prod-cutover.md`](../../workflow/done/kamespace-02-legacy-prod-to-mt-prod-cutover.md)                                             |
 | [`rebrand-kame-homes-to-kame-space.md`](./rebrand-kame-homes-to-kame-space.md)                                 | [`kamespace-03-rebrand-kame-homes-to-kame-space.md`](../../workflow/done/kamespace-03-rebrand-kame-homes-to-kame-space.md)                                         |
 
+| [`full-app-test-architecture.md`](./full-app-test-architecture.md) | [`../../workflow/in-progress/full-app-test-architecture.md`](../../workflow/in-progress/full-app-test-architecture.md) |
+| [`app-speed-root-cause-overhaul.md`](./app-speed-root-cause-overhaul.md) | [`../../workflow/in-progress/app-speed-root-cause-overhaul.md`](../../workflow/in-progress/app-speed-root-cause-overhaul.md) |
 Back to [docs index](../README.md).

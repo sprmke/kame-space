@@ -181,7 +181,7 @@ Not shown on dashboard page bodies: hosts accept the Terms at sign-in.
 
 ## Pending / follow-ups
 
-- [ ] Legal counsel review before production marketing launch (rewritten 2026-11-09, see [`legal-and-privacy-coverage.md`](../../workflow/in-progress/legal-and-privacy-coverage.md)) — the only owner decision still open (D3)
+- [ ] Legal counsel review before production marketing launch (rewritten 2026-11-09, see [`legal-and-privacy-coverage.md`](../../workflow/for-testing/legal-and-privacy-coverage.md)) — the only owner decision still open (D3)
 - [x] Cookie consent banner before PostHog loads (D1) — `CookieConsentBanner` + `kh-cookie-consent` gate, 2026-11-09
 - [x] Data Protection Officer contact (D2) — platform email, already the fallback in `privacyContent.ts`; no NPC registration number exists yet
 - [x] P2 notices: Meta connect, data import, marketing AI publish, stay guide / showcase footers, email footer (2026-11-09)

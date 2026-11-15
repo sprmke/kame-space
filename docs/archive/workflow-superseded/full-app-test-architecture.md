@@ -15,10 +15,10 @@ Every page, section, tab, plan tier, team role, and tenancy level (org, property
 
 This plan builds on, and does not redo:
 
-- [`sitewide-automated-testing.md`](../done/sitewide-automated-testing.md) (pyramid, tags, folder basics)
-- [`plan-tier-test-suite.md`](../done/plan-tier-test-suite.md) (golden tier matrix, `GATE_COVERAGE`)
-- [`comprehensive-unit-test-coverage.md`](../done/comprehensive-unit-test-coverage.md) (colocated lib tests)
-- Production readiness [`29-sdlc-testing.md`](../in-progress/production-readiness/checklist/29-sdlc-testing.md). This plan **absorbs** its open rows 1, 2, 4, 5, 6 (risk tiers, handler harness, contract tests, WebKit + Manila TZ, flake policy). Doc 29 links here once Phase 0 lands.
+- [`sitewide-automated-testing.md`](../../workflow/done/sitewide-automated-testing.md) (pyramid, tags, folder basics)
+- [`plan-tier-test-suite.md`](../../workflow/done/plan-tier-test-suite.md) (golden tier matrix, `GATE_COVERAGE`)
+- [`comprehensive-unit-test-coverage.md`](../../workflow/done/comprehensive-unit-test-coverage.md) (colocated lib tests)
+- Production readiness [`29-sdlc-testing.md`](../../workflow/in-progress/production-readiness/checklist/29-sdlc-testing.md). This plan **absorbs** its open rows 1, 2, 4, 5, 6 (risk tiers, handler harness, contract tests, WebKit + Manila TZ, flake policy). Doc 29 links here once Phase 0 lands.
 
 ## What "100% coverage" means here
 

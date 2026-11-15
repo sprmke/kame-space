@@ -9,7 +9,7 @@ updated: 2026-11-09
 
 The planner turns data the app already holds into a dated, ranked list of marketing items, then
 carries each item to a finished post. Full product plan and phase status:
-[marketing-strategy-planner.md](../workflow/in-progress/marketing-strategy-planner.md).
+[marketing-strategy-planner.md](../workflow/for-testing/marketing-strategy-planner.md).
 
 **Shipped:** foundations, the rules engine and Plan tab, the setup wizard, the AI brief pass and
 per-item rewrites, Share it yourself, the publish scheduler cron with claim holds, the planner cron

@@ -1,15 +1,20 @@
 ---
-stage: in-progress
+stage: for-testing
 title: 'Marketing Trends: daily ranked Philippine trending topics that hosts turn into posts'
-status: in-progress
-tags: [workflow, in-progress, marketing, ai, cron, trends, plans-and-permissions, super-admin]
-updated: 2026-11-14
+status: for-testing
+tags: [workflow, for-testing, marketing, ai, cron, trends, plans-and-permissions, super-admin]
+updated: 2026-11-16
 kind: plan
 readiness: audited
 last_verified: 2026-11-10
 ---
 
 # Marketing Trends: daily ranked Philippine trending topics that hosts turn into posts
+
+> **Status 2026-11-16:** implementation shipped in #383 and the backend has been live in
+> production since the 2026-11-13 deploy. The Trends UI is merged into `develop` and not released
+> yet. Before enabling the crons, provision the Vault secret `marketing_trends_cron_secret` and the
+> function env `MARKETING_TRENDS_CRON_SECRET`.
 
 > **Revised 2026-11-10 (execute-plan):** audited every named path, symbol and endpoint against `origin/develop` (baseline `bun run type-check` pass). Fixed the AI Studio tab param (`?tab=ai` → `?tab=generate`), confirmed `marketing_ai_sessions` has no metadata JSONB so `trend_topic_key` is a new flat column, replaced the "advisory lock in JS" publish step with one Postgres RPC (a transaction-scoped lock cannot be held by the Supabase JS client), moved the week/month window computation into that RPC so reads stay one indexed query, dropped `compromise` for a deterministic tokenizer + Jaccard (bundle and cold-start cost), pinned `fast-xml-parser@5.12.0` in `supabase/functions/deno.json`, and pointed the health check at the real seams (`SCHEDULED_JOBS` registry + a content check). Added the `## Decisions` table, per-phase acceptance commands, a `## Rollback` section and a `## Verification results` block. Sources re-probed live on 2026-11-10 and fixtures committed under `supabase/functions/tests/fixtures/marketing-trends/`.
 

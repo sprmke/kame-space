@@ -1,10 +1,10 @@
 ---
 title: 'App speed: root-cause performance overhaul'
-status: planned
+status: in-progress
 stage: in-progress
 kind: plan
-tags: [performance, pwa, supabase, edge-functions, lighthouse, production-readiness, caching]
-updated: 2026-11-12
+tags: [workflow, in-progress, performance, pwa, supabase, edge-functions, lighthouse, production-readiness, caching]
+updated: 2026-11-16
 readiness: unverified
 launch_gate: A
 launch_blocker: true
@@ -12,6 +12,10 @@ last_verified: none
 ---
 
 # App speed: root-cause performance overhaul
+
+> **Status 2026-11-16:** corrected from `planned`. The slow-pages stale time, the boot counting
+> correction and the session bootstrap perf shipped; the bootstrap UI was released on 2026-11-16.
+> The remaining phases need hosted measurement runs or owner access.
 
 ## Goal
 
