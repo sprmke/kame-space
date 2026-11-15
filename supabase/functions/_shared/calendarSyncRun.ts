@@ -27,6 +27,12 @@ import {
 } from './externalBookingIngest.ts';
 import { calendarChannel, type CalendarChannelDefinition } from './calendarChannels.ts';
 import { isOtaPrepaidSource } from './bookingChannel.ts';
+import {
+  classifyExportEcho,
+  EXPORT_ECHO_WINDOW_HOURS,
+  isClosedDatesEchoPull,
+  type ServedRange,
+} from './calendarEchoRules.ts';
 import { resolveOrganizationIdForProperty } from './propertyScope.ts';
 import {
   buildExportCalendar, // re-exported for the ical-export function's convenience
@@ -84,6 +90,85 @@ export interface ExportRangesResult {
  * `excludeProvider` is set, bookings that originated from that OTA are also dropped (loop
  * prevention for the per-provider export URL); bookings from *other* OTAs are still published.
  */
+export interface ImportedReservationRow {
+  feedId: string;
+  feedProvider: CalendarFeedProvider;
+  externalUid: string | null;
+  startDate: string;
+  endDate: string;
+  lastSeenAt: string | null;
+}
+
+export interface LiveBookingKey {
+  feedId: string | null;
+  externalUid: string | null;
+}
+
+/** Keep the UID local part inside RFC-5545-safe characters. */
+function relayUidLocalPart(feedId: string, externalUid: string | null, rowId: string): string {
+  const raw = externalUid || rowId;
+  return `gfm-relay-${feedId}-${raw}`.replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 120);
+}
+
+/**
+ * Hub relay (plan §4.3 rule 3): publish an imported **reservation** to every channel except the
+ * one it came from. A night imported from Airbnb must block Agoda and Booking.com, otherwise a
+ * stay sold on one channel can be sold again on another.
+ *
+ * Never published: imported `block`-kind rows (host blocks, prep time and echoes are
+ * indistinguishable) and anything that came from the channel being served. Ranges already carried
+ * by a live booking are skipped so ingestion-on does not publish the same stay twice.
+ */
+export function relayRangesFor(
+  rows: ImportedReservationRow[],
+  excludeProvider: CalendarFeedProvider | null,
+  liveBookingKeys: Set<string>
+): ExportBusyRange[] {
+  const out: ExportBusyRange[] = [];
+  for (const row of rows) {
+    if (excludeProvider && row.feedProvider === excludeProvider) continue;
+    if (row.externalUid && liveBookingKeys.has(`${row.feedId}|${row.externalUid}`)) continue;
+    if (!row.startDate || !row.endDate || row.endDate < row.startDate) continue;
+    out.push({
+      uidLocalPart: relayUidLocalPart(row.feedId, row.externalUid, `${row.feedId}-${row.startDate}`),
+      startDate: row.startDate,
+      endDate: row.endDate,
+      summary: 'Booked',
+    });
+  }
+  return out;
+}
+
+/**
+ * Ranges served to one channel inside the echo window. Empty when the channel never read our
+ * link, which also means nothing can be an echo.
+ */
+export async function loadServedExportRanges(
+  supabase: SupabaseClient,
+  propertyId: string,
+  provider: CalendarFeedProvider
+): Promise<ServedRange[]> {
+  const since = new Date(Date.now() - EXPORT_ECHO_WINDOW_HOURS * 3_600_000).toISOString();
+  const { data, error } = await supabase
+    .from('calendar_export_reads')
+    .select('ranges')
+    .eq('property_id', propertyId)
+    .eq('channel', provider)
+    .gte('last_read_at', since);
+  if (error) throw new Error(`load served ranges: ${error.message}`);
+  const out: ServedRange[] = [];
+  for (const row of data ?? []) {
+    const ranges = (row as { ranges?: unknown }).ranges;
+    if (!Array.isArray(ranges)) continue;
+    for (const range of ranges) {
+      const start = String((range as { start?: unknown }).start ?? '');
+      const end = String((range as { end?: unknown }).end ?? '');
+      if (start && end && end > start) out.push({ start, end });
+    }
+  }
+  return out;
+}
+
 export async function loadExportRanges(
   supabase: SupabaseClient,
   propertyId: string,
@@ -98,7 +183,9 @@ export async function loadExportRanges(
 
   const { data: bookings, error: bErr } = await supabase
     .from('guest_submissions')
-    .select('id, check_in_date, check_out_date, status, external_source, updated_at')
+    .select(
+      'id, check_in_date, check_out_date, status, external_source, external_feed_id, external_uid, updated_at'
+    )
     .eq('property_id', propertyId)
     .not('status', 'in', '("CANCELLED","IMPORTED")');
   if (bErr) throw new Error(`export bookings: ${bErr.message}`);
@@ -135,6 +222,45 @@ export async function loadExportRanges(
     });
   }
 
+  // Relay: nights imported as a real stay from another channel must block this one too.
+  const { data: imported, error: impErr } = await supabase
+    .from('property_blocked_dates')
+    .select(
+      'id, start_date, end_date, last_seen_at, external_uid, feed_id, property_calendar_feeds!inner(provider)'
+    )
+    .eq('property_id', propertyId)
+    .eq('source', 'ical_import')
+    .eq('external_kind', 'reservation');
+  if (impErr) throw new Error(`export imported reservations: ${impErr.message}`);
+
+  const liveBookingKeys = new Set<string>();
+  for (const b of bookings ?? []) {
+    const feedId = (b as { external_feed_id?: string | null }).external_feed_id;
+    const uid = (b as { external_uid?: string | null }).external_uid;
+    if (feedId && uid) liveBookingKeys.add(`${feedId}|${uid}`);
+  }
+
+  const importedRows: ImportedReservationRow[] = (imported ?? []).map((row) => {
+    const joined = (row as { property_calendar_feeds?: unknown }).property_calendar_feeds;
+    const providerRow = Array.isArray(joined) ? joined[0] : joined;
+    const provider = (providerRow as { provider?: string } | undefined)?.provider;
+    return {
+      feedId: String((row as { feed_id?: string }).feed_id ?? ''),
+      feedProvider: (provider ?? 'other') as CalendarFeedProvider,
+      externalUid:
+        ((row as { external_uid?: string | null }).external_uid ?? null) as string | null,
+      startDate: String((row as { start_date?: string }).start_date ?? ''),
+      endDate: String((row as { end_date?: string }).end_date ?? ''),
+      lastSeenAt: ((row as { last_seen_at?: string | null }).last_seen_at ?? null) as
+        | string
+        | null,
+    };
+  });
+  for (const relayed of relayRangesFor(importedRows, excludeProvider, liveBookingKeys)) {
+    ranges.push(relayed);
+  }
+  for (const row of importedRows) bump(row.lastSeenAt);
+
   return { ranges, lastModifiedIso: newest > 0 ? new Date(newest).toISOString() : null };
 }
 
@@ -159,6 +285,8 @@ export interface CalendarFeedRow {
   last_feed_hash: string | null;
   consecutive_failures: number;
   empty_pull_streak: number;
+  /** Set when a pull looked like Booking.com exporting closed dates as well as reservations. */
+  echo_warning_at?: string | null;
 }
 
 export interface RunFeedResult {
@@ -180,7 +308,7 @@ export interface RunFeedResult {
 }
 
 const FEED_SELECT =
-  'id, property_id, provider, label, ics_url_encrypted, is_active, create_bookings, last_etag, last_modified_header, last_feed_hash, consecutive_failures, empty_pull_streak';
+  'id, property_id, provider, label, ics_url_encrypted, is_active, create_bookings, last_etag, last_modified_header, last_feed_hash, consecutive_failures, empty_pull_streak, echo_warning_at';
 
 export function calendarSyncMinIntervalMinutes(): number {
   const raw = Number(Deno.env.get('CALENDAR_SYNC_MIN_INTERVAL_MINUTES'));
@@ -648,9 +776,44 @@ export async function runFeedSync(
     }
   }
 
+  // 4b. Echo detection — a channel repeating nights we served it must never become a booking.
+  //     Echoes stay as blocks (availability is still protected) and are logged once, on create.
+  const servedRanges = await loadServedExportRanges(
+    supabase,
+    feed.property_id,
+    feed.provider
+  ).catch((err) => {
+    console.error('[calendarSyncRun] served ranges unavailable (non-fatal):', err);
+    return [] as ServedRange[];
+  });
+  const echoUids = new Set<string>();
+  const events = parsed.events.map((ev) => {
+    if (!classifyExportEcho(feed.provider, ev, servedRanges).isEcho) return ev;
+    echoUids.add(ev.uid);
+    return { ...ev, kind: 'block' as const };
+  });
+
+  // Booking.com "reserved and closed dates" tell: the host exported closed nights as well, so
+  // our own exported nights come straight back. Surfaces as a per-channel health warning.
+  const closedDatesEcho = isClosedDatesEchoPull(feed.provider, parsed.events, servedRanges);
+  if (closedDatesEcho !== Boolean(feed.echo_warning_at)) {
+    await supabase
+      .from('property_calendar_feeds')
+      .update({ echo_warning_at: closedDatesEcho ? new Date().toISOString() : null })
+      .eq('id', feed.id);
+    if (closedDatesEcho) {
+      await writeEvent(supabase, {
+        feedId: feed.id,
+        runId,
+        action: 'skipped',
+        detail: { reason: 'booking_com_closed_dates_echo' },
+      });
+    }
+  }
+
   // 5. Diff against current imported blocks for this feed.
   const current = await loadFeedBlocks(supabase, feed.id);
-  const diff = diffFeed(parsed.events, current);
+  const diff = diffFeed(events, current);
   const result = { ...base, status: 'synced' as const };
   const conflictHits: ConflictHit[] = [];
 
@@ -696,6 +859,17 @@ export async function runFeedSync(
       summary: ev.summary,
       blockedDateId: (data?.id as string | undefined) ?? null,
     });
+    if (echoUids.has(ev.uid)) {
+      await writeEvent(supabase, {
+        feedId: feed.id,
+        runId,
+        action: 'skipped',
+        externalUid: ev.uid,
+        startDate: ev.startDate,
+        endDate: ev.endDate,
+        detail: { reason: 'export_echo' },
+      });
+    }
     await runConflictPass(supabase, feed, runId, ev, result, conflictHits);
   }
 
@@ -795,7 +969,7 @@ export async function runFeedSync(
       supabase,
       feed,
       runId,
-      parsed.events,
+      events,
       result,
       actor,
       feed.create_bookings

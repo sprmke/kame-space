@@ -183,6 +183,7 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
           consecutiveFailures: f.consecutive_failures,
           createdAt: f.created_at,
           lastRun: latestRunByFeed.get(f.id as string) ?? null,
+          echoWarning: Boolean(f.echo_warning_at),
         };
       })
     );
