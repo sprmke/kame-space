@@ -551,6 +551,23 @@ Notes:
 - Verify: `\d guest_submissions` shows the 7 new columns; `SELECT conname FROM pg_constraint WHERE conname = 'notifications_type_check'` then check the definition includes the 12 types.
 - No new edge secrets. The completion link reuses `publicGuestAppOrigin` resolution; the token endpoints are `verify_jwt = false` (`config.toml`).
 
+## 11b-2. Additive: multi-channel calendar sync Phase 1a (November 2026)
+
+Plan: [`docs/workflow/in-progress/multi-channel-calendar-sync.md`](../../workflow/in-progress/multi-channel-calendar-sync.md) §5. Additive only; no shipped migration edited. Ship the six migrations **in order** and deploy the edge functions in the same release: the code writes `external_kind` and `calendar_sync_runs`, and reads `calendar_export_reads`.
+
+| Migration                                         | What it does                                                                                                                                                                                             | Rollback                                                                                                              |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `20261342000000_calendar_sync_agoda_provider.sql` | Widens `property_calendar_feeds_provider_check` and `guest_submissions_external_source_check` to include `agoda`. Constraint names verified against local Postgres.                                      | Re-add the previous CHECKs (fails only if `agoda` rows exist).                                                        |
+| `20261342000100_calendar_sync_external_kind.sql`  | `property_blocked_dates.external_kind` (`reservation` \\                                                                                                                                                 | `block`) + backfill of existing `ical_import` rows (`SUMMARY = Reserved` → `reservation`, everything else → `block`). | `ALTER TABLE ... DROP COLUMN external_kind`. |
+| `20261342000200_calendar_export_reads.sql`        | New `calendar_export_reads` (per property + channel served ranges, `ranges_hash`, `first_read_at` / `last_read_at` / `read_count`). RLS on, no policies, `GRANT ALL TO service_role`.                    | `DROP TABLE public.calendar_export_reads`.                                                                            |
+| `20261342000300_calendar_sync_runs.sql`           | New `calendar_sync_runs` (one row per feed run: `status`, `error_code`, `duration_ms`, `started_at`).                                                                                                    | `DROP TABLE public.calendar_sync_runs`.                                                                               |
+| `20261342000400_calendar_sync_retention_cron.sql` | `public.prune_calendar_sync_history()` + daily `pg_cron` job `calendar-sync-retention-daily` (events 90 d, runs 14 d, reads 14 d). Safe no-op without `pg_cron`.                                         | `cron.unschedule('calendar-sync-retention-daily'); DROP FUNCTION public.prune_calendar_sync_history();`               |
+| `20261342000500_calendar_sync_cron_every_10m.sql` | Replaces `sync_calendar_sync_cron_job()` so it schedules **`calendar-sync-every-10m`** (`*/10`) and unschedules `calendar-sync-every-30m`. The 30 min per-feed minimum is unchanged in the edge handler. | Re-run the previous function body from `20261213120500_calendar_sync_cron.sql`.                                       |
+
+Verify after applying: `SELECT cron.jobname FROM cron.job WHERE jobname LIKE 'calendar-sync%'` shows `calendar-sync-every-10m` and `calendar-sync-retention-daily` (with Vault `project_url` + `anon_key` set); `\d property_blocked_dates` shows `external_kind`; `SELECT count(*) FROM calendar_sync_runs` grows after a sweep.
+
+No new edge secrets. No plan-feature change.
+
 ## 11c. Additive: Org Activity & Audit Log (Phase 0 + Phase 1 + Phase 3 net, September 2026)
 
 One append-only `activity_log` table + two narrow triggers. Plan + emitter ledger: [`docs/workflow/in-progress/org-activity-audit-log.md`](../../workflow/for-testing/org-activity-audit-log.md). **All additive; no backfill, no data rewrite.**

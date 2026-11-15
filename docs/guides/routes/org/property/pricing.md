@@ -101,9 +101,9 @@ dates that should not be available to guests.
 
 ## Channel Sync (Airbnb iCal)
 
-**Channel sync** button in the Pricing page header (desktop outline button aligned with the title; mobile hero icon). Below Pro, a corner **Pro** pill signals the plan gate. Opens a **`ResponsiveModal`** (`ChannelSyncDialog`) with two tabs — **From Airbnb** and **To Airbnb**. While settings load, the body is a skeleton of that tab bar, feed rows, and connect button. Product scope is **Airbnb only** (Booking.com / VRBO / Other remain in the DB schema for future work; `calendar-sync-settings` `addFeed` rejects non-Airbnb providers). Plan feature **`calendarSync`** (Pro / `growth` and above) — modal is **preview-open** below Pro (full UI browsable); **Connect** (Pro pill on the button) and turning on **Share with Airbnb** (Pro pill beside the label) open the upgrade modal. Server enforces the feature on writes (`calendar-sync-settings` PATCH, `calendar-sync-cron`).
+**Channel sync** button in the Pricing page header (desktop outline button aligned with the title; mobile hero icon). Below Pro, a corner **Pro** pill signals the plan gate. Opens a **`ResponsiveModal`** (`ChannelSyncDialog`) with two tabs — **From Airbnb** and **To Airbnb**. While settings load, the body is a skeleton of that tab bar, feed rows, and connect button. Product scope is **Airbnb only** today (Agoda, Booking.com and Vrbo are entries in the channel registry `_shared/calendarChannels.ts`; `calendar-sync-settings` `addFeed` accepts only `connectableCalendarProviders()`, which is `airbnb` until Phase 2). A property may have **at most 6 active feeds**, and connecting a URL that is already connected on the same property is refused. Plan feature **`calendarSync`** (Pro / `growth` and above) — modal is **preview-open** below Pro (full UI browsable); **Connect** (Pro pill on the button) and turning on **Share with Airbnb** (Pro pill beside the label) open the upgrade modal. Server enforces the feature on writes (`calendar-sync-settings` PATCH, `calendar-sync-cron`).
 
-**Feature availability (super-admin):** Keys `pricing.channel_sync` (modal panel) and `pricing.channel_sync.import` (feeds, Sync now, cron). **`ical-export` is never gated** so Airbnb keeps receiving booking blocks. Header button stays enabled and opens the dialog with the reason panel when the parent is off (maintenance panel wins over a settings load error).
+**Feature availability (super-admin):** Keys `pricing.channel_sync` (modal panel), `pricing.channel_sync.import` (feeds, Sync now, cron) and per-channel `pricing.channel_sync.airbnb` / `.agoda` / `.booking_com`. A paused channel is skipped by the cron without counting a failure, `addFeed` refuses it, and its export link keeps serving (blocking dates stays safe). **`ical-export` is never gated** so Airbnb keeps receiving booking blocks. Header button stays enabled and opens the dialog with the reason panel when the parent is off (maintenance panel wins over a settings load error).
 
 ### From Airbnb (import)
 
@@ -112,7 +112,8 @@ dates that should not be available to guests.
 - **Optional label removed** — connected feed displays as **Airbnb** (server still accepts an optional label if sent).
 - **Connected list:** name, health badge, last sync time; icon actions for **Sync now** and **Remove**.
 - **Add another:** outline **Connect Airbnb** expands the same validated form.
-- **Polling:** `calendar-sync-cron` every 30 min imports busy nights as **synced blocks** (`source='ical_import'`).
+- **Polling:** `calendar-sync-cron` runs every 10 min and syncs a feed at most once per 30 min (2 min claim slack so a feed is not skipped an extra interval). Busy nights land as **synced blocks** (`source='ical_import'`). Each run writes a `calendar_sync_runs` row, which is what makes the real cadence measurable.
+- **Read health:** GET `calendar-sync-settings` returns `export.reads` (last time each channel read the Kame link, from `calendar_export_reads`, recorded on 200 **and** 304) and `lastRun` per feed. The Channel sync list UI for these ships with Phase 2; today they are API/ops data.
 - **Create bookings:** every connected Airbnb feed has a **Create bookings** switch, **on by default for new feeds**. When on, each `Reserved` event also becomes a real **Pending review** booking in Kame, with no guest email or guest-facing side effect until details exist. Turning it on runs a sync immediately. Existing feeds keep their stored value until the host flips it.
 - **No duplicates:** if the host already entered the same Airbnb stay by hand (same property, dates, and `Airbnb` source), the sync links the existing row instead of creating a second one. Reconnecting a removed feed also re-links the existing row by reservation UID.
 - **Past stays:** reservations whose checkout is already past are skipped, so enabling ingestion does not fill Bookings with old stays.
@@ -144,8 +145,10 @@ If Airbnb reports a night that already has a live Kame booking or manual block, 
   A: No. Channel Sync shares **availability** only. List prices on this page are for Kame guest booking / admin pricing review.
 - Q: Can I edit or unblock a date that came from Airbnb?
   A: No. Synced nights are read-only on the calendar. They clear when Airbnb drops the date or you remove the feed.
-- Q: Can I sync Booking.com or VRBO?
-  A: Not yet — Channel sync is Airbnb-only for now.
+- Q: Can I sync Booking.com, Agoda or VRBO?
+  A: Not yet. Airbnb is the only channel you can connect. Agoda and Booking.com support the same kind of calendar link and are next, once their link formats are tested with real listings.
+- Q: How often does Kame check my Airbnb calendar?
+  A: About every 30 minutes. Each check is recorded, so support can confirm the real interval when a date looks late.
 - Q: I got a conflict warning after connecting Airbnb. What do I do?
   A: Both calendars kept their nights. Open Notifications or Channel sync → Recent activity for the dates, then remove the booking or block on the side that should not have it.
 - Q: Does connecting Airbnb create bookings in Kame?
