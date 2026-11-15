@@ -31,8 +31,14 @@ const initialGzipBytes = [...assetPaths].reduce((total, path) => total + gzipByt
 // about 5% headroom. The previous 500 / 1200 KiB ceilings passed at roughly 2x the real size,
 // which meant the gate could not detect a regression at all. When a change legitimately needs
 // more, raise these deliberately in the same PR and say why.
-const entryBudgetBytes = 260 * 1024;
-const initialBudgetBytes = 660 * 1024;
+//
+// Raised 2026-11-16 (release/2026-11-16-mobile-search): the phone search pill, its summary,
+// recent-search save and the Back-to-close history hook must work at first paint on the
+// landing hero. The full-screen sheet and its steps already ship as a lazy chunk. With them,
+// develop's Vercel build measured entry ~260.4 KiB / initial ~660.7 KiB (main ~259.4 /
+// ~659.4), so the ceilings move to about 3% above that.
+const entryBudgetBytes = 268 * 1024;
+const initialBudgetBytes = 676 * 1024;
 const formatKiB = (bytes) => `${(bytes / 1024).toFixed(1)} KiB`;
 
 console.log(

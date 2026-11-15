@@ -4,10 +4,10 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'framer-motion';
 import { Building2, Car, Compass, Home, Search, X, type LucideIcon } from 'lucide-react';
 
-import {
-  MOBILE_SEARCH_CATEGORIES,
-  type MobileSearchCategory,
-  type MobileSearchStep,
+import { MOBILE_SEARCH_CATEGORIES } from '@/features/guest/marketing/shared/lib/mobileSearchDisplay';
+import type {
+  MobileSearchCategory,
+  MobileSearchStep,
 } from '@/features/guest/marketing/shared/lib/mobileSearchState';
 
 import { cn } from '@/lib/utils';
