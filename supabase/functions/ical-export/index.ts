@@ -50,30 +50,15 @@ async function recordExportRead(
 ): Promise<void> {
   const payload = ranges.map((r) => ({ start: r.startDate, end: r.endDate }));
   const rangesHash = await hashFeedBody(JSON.stringify(payload));
-  const now = new Date().toISOString();
   try {
-    const { data: existing } = await supabase
-      .from('calendar_export_reads')
-      .select('id, read_count')
-      .eq('property_id', propertyId)
-      .eq('channel', channel)
-      .eq('ranges_hash', rangesHash)
-      .maybeSingle();
-    if (existing) {
-      await supabase
-        .from('calendar_export_reads')
-        .update({ last_read_at: now, read_count: (existing.read_count ?? 1) + 1 })
-        .eq('id', existing.id);
-      return;
-    }
-    await supabase.from('calendar_export_reads').insert({
-      property_id: propertyId,
-      channel,
-      ranges_hash: rangesHash,
-      ranges: payload,
-      first_read_at: now,
-      last_read_at: now,
-      read_count: 1,
+    // Atomic upsert (record_calendar_export_read): no lost increments under concurrent polls.
+    // `?as=` is caller-supplied, so per-channel attribution is a hint, not proof. Treat
+    // `all` as the authoritative "someone read this link" signal.
+    await supabase.rpc('record_calendar_export_read', {
+      p_property_id: propertyId,
+      p_channel: channel,
+      p_ranges_hash: rangesHash,
+      p_ranges: payload,
     });
   } catch (err) {
     // Never fail a calendar read because bookkeeping failed.

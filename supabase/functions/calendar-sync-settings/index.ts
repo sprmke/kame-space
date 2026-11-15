@@ -393,8 +393,50 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
         if (typeof body.label === 'string') patch.label = body.label.trim().slice(0, 120) || null;
         if (typeof body.isActive === 'boolean') patch.is_active = body.isActive;
         if (typeof body.createBookings === 'boolean') patch.create_bookings = body.createBookings;
+
+        // Re-activating a feed must not slip past the active-feed cap.
+        if (patch.is_active === true && !existing.is_active) {
+          const { data: activeRows, error: activeError } = await supabase
+            .from('property_calendar_feeds')
+            .select('id')
+            .eq('property_id', property.id)
+            .eq('is_active', true);
+          if (activeError) throw new Error(activeError.message);
+          if ((activeRows ?? []).length >= CALENDAR_FEED_LIMIT) {
+            return jsonError(
+              req,
+              `This listing already has ${CALENDAR_FEED_LIMIT} calendars connected.`,
+              400
+            );
+          }
+        }
+
         if (typeof body.icsUrl === 'string' && body.icsUrl.trim()) {
           const icsUrl = assertExternalIcsUrlShape(body.icsUrl, existing.provider);
+          // Pointing this feed at another connected calendar duplicates the same nights.
+          const normalizedNew = normalizeExternalIcsUrl(body.icsUrl);
+          if (normalizedNew) {
+            const { data: otherFeeds, error: otherError } = await supabase
+              .from('property_calendar_feeds')
+              .select('id, ics_url_encrypted')
+              .eq('property_id', property.id)
+              .neq('id', feedId);
+            if (otherError) throw new Error(otherError.message);
+            for (const other of otherFeeds ?? []) {
+              const encrypted = other.ics_url_encrypted as string | null;
+              if (!encrypted) continue;
+              try {
+                const connectedUrl = normalizeExternalIcsUrl(
+                  await decryptIntegrationSecret(encrypted)
+                );
+                if (connectedUrl && connectedUrl === normalizedNew) {
+                  return jsonError(req, 'This calendar is already connected', 400);
+                }
+              } catch {
+                /* unreadable stored URL: keep going */
+              }
+            }
+          }
           patch.ics_url_encrypted = await encryptIntegrationSecret(icsUrl);
           // A URL change resets health so a previously-failing feed retries cleanly.
           patch.consecutive_failures = 0;

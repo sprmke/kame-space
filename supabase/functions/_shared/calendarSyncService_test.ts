@@ -24,6 +24,7 @@ import {
   ymdToMmDdYyyy,
   type CurrentBlockRow,
 } from './calendarSyncService.ts';
+import { CALENDAR_CHANNELS } from './calendarChannels.ts';
 
 const AIRBNB_RESERVATIONS = [
   'BEGIN:VCALENDAR',
@@ -46,6 +47,24 @@ const AIRBNB_RESERVATIONS = [
   'END:VEVENT',
   'END:VCALENDAR',
 ].join('\r\n');
+
+Deno.test('every registry channel classifies every summary without throwing', () => {
+  const summaries = [
+    'Reserved',
+    'CLOSED - Not available',
+    'Airbnb (Not available)',
+    '',
+    'Owner block',
+  ];
+  for (const channel of CALENDAR_CHANNELS) {
+    for (const summary of summaries) {
+      for (const createBookings of [true, false]) {
+        const kind = classifyEventKind(channel.provider, summary, createBookings);
+        assert(kind === 'reservation' || kind === 'block', `${channel.provider} ${summary}`);
+      }
+    }
+  }
+});
 
 Deno.test('unfoldIcsLines merges folded continuation lines', () => {
   const lines = unfoldIcsLines('DESCRIPTION:line one\n  still line one\nSUMMARY:two');

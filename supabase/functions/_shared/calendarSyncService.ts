@@ -158,6 +158,10 @@ export function classifyEventKind(
     case 'booking_com':
       // "CLOSED - Not available" for everything. When ingesting bookings, treat all as reservations.
       return createBookings ? 'reservation' : 'block';
+    case 'agoda':
+    // Phase 0 pending: Agoda fixtures decide whether its feed distinguishes stays from blocks.
+    // Until then it follows the generic rule, and it is not connectable, so this cannot fire.
+    // Falls through.
     case 'other':
     default:
       // Generic iCal: anything that isn't obviously a "blocked/unavailable/closed" label is a stay.
