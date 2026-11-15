@@ -144,7 +144,7 @@ node scripts/media/generate-hero-variants.mjs # hero AVIF + WebP at 640/960/1280
 bun run test                                     # seoMeta, publicRoutes, siteOrigin, snapshot, middleware
 ```
 
-Reports land in `docs/workflow/in-progress/seo-evidence/`.
+Reports land in `docs/workflow/done/seo-evidence/`.
 
 ## Related
 

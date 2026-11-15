@@ -32,7 +32,7 @@ Record any change of owner here in the same PR that changes access.
       `INDEXNOW_CRON_SECRET`, and a weekly `pg_cron` job hitting `indexnow-submit`.
 - [ ] Rich Results Test and `validator.schema.org` for one URL per type (stay, parking,
       development, place, host, `/for-hosts/pricing`, `/support`). Save screenshots to
-      `docs/workflow/in-progress/seo-evidence/`.
+      `docs/workflow/done/seo-evidence/`.
 
 ## Monthly checklist
 
@@ -71,11 +71,10 @@ crawler snapshot.
 
 ## When something breaks
 
-| Symptom                                       | Likely cause                                          | Fix                                                                                                                                           |
-| --------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Every page shows the SPA shell to bots        | Middleware env missing `VITE_SUPABASE_URL` / anon key | Check the Vercel project env, then `curl -A "GPTBot" https://kamespace.com/about`                                                             |
-| `robots.txt` says `Disallow: /` on production | Host not in `DEFAULT_INDEXABLE_HOSTS`                 | Add the host, or fix the domain                                                                                                               |
-| Canonical points at a preview host            | `VITE_CANONICAL_APP_ORIGIN` set to a preview          | Unset it; the default is the apex                                                                                                             |
-| A renamed listing 404s                        | `listing_slug_redirects` empty                        | Check the trigger exists (`pg_trigger`) and that the rename went through an `UPDATE OF slug`                                                  |
-| Another listing took an old redirected slug   | Reservation missing                                   | Apply `20261340000500_listing_slug_redirect_reservation.sql`; confirm `assert_slug_not_redirect_reserved` on properties/parkings/developments |
-| Sitemap lists a page that is `noindex`        | Registry and page disagree                            | Flip `indexable` in `publicRoutes.ts`, then `bun run check:seo-routes`                                                                        |
+| Symptom                                       | Likely cause                                          | Fix                                                                                          |
+| --------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Every page shows the SPA shell to bots        | Middleware env missing `VITE_SUPABASE_URL` / anon key | Check the Vercel project env, then `curl -A "GPTBot" https://kamespace.com/about`            |
+| `robots.txt` says `Disallow: /` on production | Host not in `DEFAULT_INDEXABLE_HOSTS`                 | Add the host, or fix the domain                                                              |
+| Canonical points at a preview host            | `VITE_CANONICAL_APP_ORIGIN` set to a preview          | Unset it; the default is the apex                                                            |
+| A renamed listing 404s                        | `listing_slug_redirects` empty                        | Check the trigger exists (`pg_trigger`) and that the rename went through an `UPDATE OF slug` |
+| Sitemap lists a page that is `noindex`        | Registry and page disagree                            | Flip `indexable` in `publicRoutes.ts`, then `bun run check:seo-routes`                       |

@@ -894,6 +894,7 @@ Verify with an org that has a pending parking request: open the org Bookings lis
 4. **`resolve_listing_slug_redirect(family, slug)`** — read helper used by `get-public-property`, `get-public-parking` and `list-public-developments`.
 5. **`assert_listing_slug_not_redirect_reserved()`** (`20261340000500_listing_slug_redirect_reservation.sql`) — BEFORE INSERT/UPDATE OF slug backstop so another listing cannot claim a historical slug while its redirect still exists. App allocation (`allocateUniqueListingSlug`) skips reserved slugs first.
 6. **`20261340000600_fix_listing_slug_plpgsql_ambiguity.sql`** — renames PL/pgSQL locals in both slug triggers (`p_family` / `p_next_slug`) so they do not clash with `listing_slug_redirects` column names (that clash blocked renames).
+7. **`20261340000400_marketing_ai_sessions_reel_output.sql`** — widens `marketing_ai_sessions_output_check` to allow `'reel'` so a reel conversation can store its directions in `marketing_ai_post_versions`. Constraint-only; safe to re-run, no backfill.
 
 ---
 
