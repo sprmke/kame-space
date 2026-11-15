@@ -410,6 +410,8 @@ Opening from the Library pushes a history entry (location state `marketingLibrar
 
 Same frame everywhere: **top bar** (Back, inline name, save status, size menu, Undo/Redo on desktop, Download, Publish), **left rail** (72px icons on desktop, bottom sheet on phones), canvas, **right inspector** (desktop) / settings sheet (phones).
 
+On a narrow desktop (1024 to 1279px wide) the Videos editor shows either the media panel or the clip inspector, not both. Picking a photo, video or track from the library opens that clip's inspector; opening the Media tab again closes the inspector.
+
 | Editor   | Rail sections                                                                                   | Inspector                                                                     |
 | -------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Posts    | Templates, Collage, Reviews, AI, then Polotno's Text / Elements / Uploads / Background / Layers | Polotno element toolbar                                                       |

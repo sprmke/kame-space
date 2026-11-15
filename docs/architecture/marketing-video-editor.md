@@ -40,7 +40,7 @@ AI-built videos are saved as v1 scene projects and upgrade on open. The builder 
 
 ## Editor UI
 
-`components/video-editor/VideoEditorV2.tsx` with `v2/` pieces: preview with canvas overlay (move, resize, rotate, snap, safe-area guide), timeline, inspectors, transport, export dialog.
+`components/video-editor/VideoEditorV2.tsx` with `v2/` pieces: preview with canvas overlay (move, resize, rotate, snap, safe-area guide), timeline, inspectors, transport, export dialog. From 1024 to 1279px (`narrowDesktop`) the library rail and the inspector cannot both fit beside the stage, so opening one closes the other, and a clip added from the library opens its inspector and steps the library aside.
 
 - Desktop timeline: ruler, zoom, track headers (hide, mute, lock), drag, trim, snap, split, copy and paste, marquee. Shortcuts: Space, S, Delete, Shift+Delete (ripple), Cmd/Ctrl+D, C, V, A, Z, arrows (Shift = 1 s). A focused slider does not swallow them.
 - Phone (`max-lg`): fixed centre playhead, scrolling the lanes scrubs, pinch zooms, long-press (320 ms) arms a clip drag, 44 px trim handles. A selected clip swaps the dock for an action bar (Edit, Split, Replace, Copy, Delete).

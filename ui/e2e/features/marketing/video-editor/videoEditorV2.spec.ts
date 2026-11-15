@@ -251,3 +251,39 @@ test.describe('@ci marketing video editor v2 on a phone', () => {
     await expect(items).toHaveCount(before + 1);
   });
 });
+
+// Between 1024 and 1279px the library rail and the inspector cannot both fit beside the
+// stage, so the one that was just asked for replaces the other.
+test.describe('@ci marketing video editor v2 narrow desktop', () => {
+  test.setTimeout(120_000);
+  test.use({ viewport: { width: 1100, height: 768 } });
+
+  test.beforeEach(async ({ page }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access');
+    await installTemplateMocks(page);
+  });
+
+  test('picking a library photo shows its inspector and steps the library aside', async ({
+    page,
+  }) => {
+    await installMediaMocks(page, [asset('a1', 'image', 'pool.jpg')]);
+    await openDraft(page);
+    const before = await page.locator('[data-timeline-item]').count();
+    await openMediaPanel(page);
+    await page.getByRole('button', { name: 'Use pool.jpg' }).click();
+    await expect(page.locator('[data-timeline-item]')).toHaveCount(before + 1);
+    await expect(page.getByRole('region', { name: 'Media library' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Replace' })).toBeVisible();
+  });
+
+  test('opening the library closes the inspector', async ({ page }) => {
+    await installMediaMocks(page, [asset('a1', 'image', 'pool.jpg')]);
+    await openDraft(page);
+    await openMediaPanel(page);
+    await page.getByRole('button', { name: 'Use pool.jpg' }).click();
+    await expect(page.getByRole('button', { name: 'Replace' })).toBeVisible();
+    await page.getByRole('tab', { name: 'Media' }).click();
+    await expect(page.getByRole('region', { name: 'Media library' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Replace' })).toBeHidden();
+  });
+});

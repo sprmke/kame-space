@@ -214,7 +214,7 @@ import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate'
 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useIsBelowLg } from '@/hooks/useMediaQuery';
+import { useIsBelowLg, useIsBelowXl } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import { formatMoneyCompact } from '@/utils/format/currency';
 
@@ -281,6 +281,9 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   const generateTemplate = useGenerateMarketingTemplate();
   const duplicate = useDuplicateMarketingItem();
   const isBelowLg = useIsBelowLg();
+  // 1024 to 1279px: the library rail and the inspector cannot both fit beside the stage.
+  const isBelowXl = useIsBelowXl();
+  const narrowDesktop = !isBelowLg && isBelowXl;
 
   const record = document.mode === 'saved' ? document.record : null;
   const initialFormat: VideoFormat =
@@ -635,6 +638,12 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     [setProject]
   );
 
+  /** Show the inspector; where the library cannot sit beside it, the library steps aside. */
+  const openInspector = useCallback(() => {
+    setInspectorOpen(true);
+    if (narrowDesktop) setRailPanel(null);
+  }, [narrowDesktop]);
+
   /** Run an op on the latest project. Refusals and cut-to-fit results tell the host why. */
   const apply = useCallback(
     (build: (current: VideoProjectV2) => OpResult) => {
@@ -648,9 +657,14 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
       }
       if (result.project !== current) commit(result.project);
       if (result.clamped) toast.message(CLAMPED_NOTICE);
-      if (result.itemIds?.length) setSelectedIds(result.itemIds);
+      if (result.itemIds?.length) {
+        setSelectedIds(result.itemIds);
+        // A clip that was just added is selected, and clicking a selected clip does not
+        // reopen the inspector, so a narrow desktop would be left with neither panel.
+        if (narrowDesktop) openInspector();
+      }
     },
-    [canEditContent, commit]
+    [canEditContent, commit, narrowDesktop, openInspector]
   );
 
   const changeProject = useCallback(
@@ -663,25 +677,33 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     [canEditContent, commit]
   );
 
+  const activateRailPanel = useCallback(
+    (key: string | null) => {
+      setRailPanel(key);
+      if (key && narrowDesktop) setInspectorOpen(false);
+    },
+    [narrowDesktop]
+  );
+
   const openEditPanel = useCallback(() => {
     if (isBelowLg) setMobilePanel('edit');
-    else setInspectorOpen(true);
-  }, [isBelowLg]);
+    else openInspector();
+  }, [isBelowLg, openInspector]);
 
   const openRailPanel = useCallback(
     (key: string) => {
       if (isBelowLg) setMobilePanel(key);
-      else setRailPanel(key);
+      else activateRailPanel(key);
     },
-    [isBelowLg]
+    [activateRailPanel, isBelowLg]
   );
 
   const handleSelect = useCallback(
     (ids: string[]) => {
       setSelectedIds(ids);
-      if (ids.length > 0 && !isBelowLg) setInspectorOpen(true);
+      if (ids.length > 0 && !isBelowLg) openInspector();
     },
-    [isBelowLg]
+    [isBelowLg, openInspector]
   );
 
   const handleCanvasSelect = useCallback(
@@ -1496,7 +1518,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
               type="button"
               variant="ghost"
               className="min-h-[44px] gap-1.5 px-2 text-xs"
-              onClick={() => setInspectorOpen(true)}
+              onClick={openInspector}
             >
               <SlidersHorizontal className="size-4" aria-hidden />
               Edit
@@ -1548,7 +1570,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
             layoutKey="video"
             sections={railSections}
             active={railPanel}
-            onActiveChange={setRailPanel}
+            onActiveChange={activateRailPanel}
           />
         )}
 
