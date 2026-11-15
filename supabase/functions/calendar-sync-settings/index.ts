@@ -21,7 +21,7 @@ import {
   normalizeExternalIcsUrl,
   type CalendarFeedProvider,
 } from '../_shared/calendarSyncService.ts';
-import { loadCalendarFeed, runFeedSync } from '../_shared/calendarSyncRun.ts';
+import { loadCalendarFeed, recordFeedRun, runFeedSync } from '../_shared/calendarSyncRun.ts';
 import {
   CALENDAR_FEED_LIMIT,
   calendarChannel,
@@ -345,6 +345,7 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
         let initialSync = null;
         const inserted = await loadCalendarFeed(supabase, data.id as string);
         if (inserted) {
+          const runStartedAt = Date.now();
           try {
             initialSync = await runFeedSync(inserted, {
               runId: crypto.randomUUID(),
@@ -352,6 +353,7 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
               supabase,
               actor,
             });
+            await recordFeedRun(supabase, inserted, initialSync, Date.now() - runStartedAt);
           } catch (syncErr) {
             console.error('[calendar-sync-settings] initial sync failed (non-fatal):', syncErr);
             initialSync = {
@@ -418,6 +420,7 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
         if (patch.create_bookings === true && !existing.create_bookings) {
           const updatedFeed = await loadCalendarFeed(supabase, feedId);
           if (updatedFeed) {
+            const runStartedAt = Date.now();
             try {
               sync = await runFeedSync(updatedFeed, {
                 runId: crypto.randomUUID(),
@@ -425,6 +428,7 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
                 supabase,
                 actor,
               });
+              await recordFeedRun(supabase, updatedFeed, sync, Date.now() - runStartedAt);
             } catch (syncErr) {
               console.error(
                 '[calendar-sync-settings] enable-ingest sync failed (non-fatal):',
@@ -483,12 +487,14 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
         if (!UUID_RE.test(feedId)) return jsonError(req, 'Invalid feedId', 400);
         const feed = await loadCalendarFeed(supabase, feedId);
         if (!feed || feed.property_id !== property.id) return jsonError(req, 'Feed not found', 404);
+        const runStartedAt = Date.now();
         const result = await runFeedSync(feed, {
           runId: crypto.randomUUID(),
           force: true,
           supabase,
           actor,
         });
+        await recordFeedRun(supabase, feed, result, Date.now() - runStartedAt);
         return jsonSuccess(req, { result });
       }
 

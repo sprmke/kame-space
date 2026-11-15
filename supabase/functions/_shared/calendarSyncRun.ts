@@ -572,7 +572,7 @@ export async function runFeedSync(
     return { ...base, status: 'skipped' };
   }
 
-  const feedLabel = feed.label ?? feed.provider;
+  const feedLabel = feed.label ?? calendarChannel(feed.provider).label;
 
   // 1. Fetch (SSRF-guarded)
   let url: string;
@@ -1069,8 +1069,8 @@ async function reconcileExternalBookings(
   actor: ActorContext,
   allowCreate: boolean
 ): Promise<void> {
-  const feedLabel = feed.label ?? feed.provider;
   const channel = calendarChannel(feed.provider);
+  const feedLabel = feed.label ?? channel.label;
   const reservations = events.filter((e) => e.kind === 'reservation');
   const byUid = new Map(reservations.map((e) => [e.uid, e]));
 
