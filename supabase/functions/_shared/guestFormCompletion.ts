@@ -9,6 +9,7 @@
  * Mirrors the stay-guide token mechanism (`guestStayGuide.ts`).
  */
 
+import { isOtaPrepaidSource } from './bookingChannel.ts';
 import { manilaTodayYmd, normalizeBookingDateToYmd } from './calendarAvailabilityManila.ts';
 import { resolveAppSettings } from './appSettings.ts';
 import { createServiceClient } from './orgAuth.ts';
@@ -58,16 +59,14 @@ export type CompletionEligibility =
   { ok: true } | { ok: false; reason: 'not_external' | 'wrong_status' | 'link_expired' };
 
 /**
- * A token may be issued only for an OTA-ingested booking still awaiting review whose stay
- * has not ended. (`external_source` OR `booking_source='Airbnb'` covers rows created before
- * the Phase 2 provenance columns as well.)
+ * A token may be issued only for an OTA-prepaid booking still awaiting review whose stay
+ * has not ended. (`external_source` OR an OTA-prepaid `booking_source` covers rows created
+ * before the Phase 2 provenance columns as well.)
  */
 export function checkCompletionEligibility(booking: GuestSubmission): CompletionEligibility {
   const external =
     !!String((booking as { external_source?: string | null }).external_source ?? '').trim() ||
-    String(booking.booking_source ?? '')
-      .trim()
-      .toLowerCase() === 'airbnb';
+    isOtaPrepaidSource(booking.booking_source);
   if (!external) return { ok: false, reason: 'not_external' };
   // Stay-over / CANCELLED is checked first so the caller maps it to 410 (gone), not 409.
   if (!isCompletionLinkLive(booking)) return { ok: false, reason: 'link_expired' };
