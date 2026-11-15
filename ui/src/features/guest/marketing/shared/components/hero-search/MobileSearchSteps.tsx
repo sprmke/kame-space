@@ -9,17 +9,15 @@ import {
   GuestRow,
 } from '@/features/guest/marketing/shared/components/hero-search/HeroSearchParts';
 import {
-  heroSearchMobileCalendarClassNames,
-  MOBILE_SEARCH_CALENDAR_MONTHS,
-} from '@/features/guest/marketing/shared/lib/heroSearchCalendarClassNames';
-import {
   normalizeStayRange,
   type GuestCounts,
 } from '@/features/guest/marketing/shared/lib/heroSearchState';
 import {
-  formatRecentSearchMeta,
-  type RecentSearch,
-} from '@/features/guest/marketing/shared/lib/mobileSearchState';
+  heroSearchMobileCalendarClassNames,
+  MOBILE_SEARCH_CALENDAR_MONTHS,
+} from '@/features/guest/marketing/shared/lib/mobileSearchCalendarClassNames';
+import { formatRecentSearchMeta } from '@/features/guest/marketing/shared/lib/mobileSearchDisplay';
+import type { RecentSearch } from '@/features/guest/marketing/shared/lib/mobileSearchState';
 import type { SearchFlexDays } from '@/features/guest/marketing/shared/lib/searchFlexDays';
 import {
   SUGGESTION_LABEL_CLASS,

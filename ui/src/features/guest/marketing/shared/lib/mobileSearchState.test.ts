@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   categoryFromPreferType,
-  formatRecentSearchMeta,
   formatStayRangeShort,
   mobilePillSummary,
   preferTypeFromCategory,
@@ -180,14 +179,6 @@ describe('recent searches', () => {
     // The write fails, but the caller still gets this session's list back.
     expect(saveRecentSearch(makati, broken)).toEqual([makati]);
     expect(readRecentSearches(null)).toEqual([]);
-  });
-
-  it('formats the meta line', () => {
-    expect(formatRecentSearchMeta(makati)).toBe('Nov 20 – 22 · 3 guests');
-    expect(formatRecentSearchMeta({ ...makati, checkIn: '', checkOut: '' })).toBe(
-      'Any week · 3 guests'
-    );
-    expect(formatRecentSearchMeta({ ...makati, type: 'parkings' })).toBe('Nov 20 – 22');
   });
 });
 

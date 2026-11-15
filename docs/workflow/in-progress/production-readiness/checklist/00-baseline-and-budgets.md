@@ -2,7 +2,7 @@
 title: 'Baseline and budgets'
 status: active
 tags: [workflow, planned, production-readiness, performance, measurement]
-updated: 2026-11-06
+updated: 2026-11-16
 stage: in-progress
 kind: plan
 origin_stage: planned
@@ -22,13 +22,13 @@ A committed, reproducible baseline for bundle size, page performance, query late
 
 ## Prior art — do not redo
 
-| Already shipped                                                       | Where                                                                                        |
-| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Initial bundle budget (entry ≤ 500 KiB gzip, initial ≤ 1200 KiB gzip) | `scripts/performance/check-initial-bundle-budget.mjs`, wired in `ci.yml`                     |
-| PWA precache budget                                                   | `scripts/pwa/check-precache-budget.mjs`                                                      |
-| Lazy image-optimizer assertion                                        | `scripts/media/assert-lazy-optimizer.mjs`, `ci.yml` step "Assert image optimizer stays lazy" |
-| `manualChunks` vendor split (12 vendor chunks)                        | `ui/vite.config.ts:265-305`                                                                  |
-| Quality gate aggregator                                               | `bun run ci:quality` → `scripts/dev/ci-quality-gate.sh`                                      |
+| Already shipped                                                                                                                         | Where                                                                                        |
+| --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Initial bundle budget (entry ≤ 268 KiB gzip, initial ≤ 676 KiB gzip; raised 2026-11-16 for the phone search pill, reason in the script) | `scripts/performance/check-initial-bundle-budget.mjs`, wired in `ci.yml`                     |
+| PWA precache budget                                                                                                                     | `scripts/pwa/check-precache-budget.mjs`                                                      |
+| Lazy image-optimizer assertion                                                                                                          | `scripts/media/assert-lazy-optimizer.mjs`, `ci.yml` step "Assert image optimizer stays lazy" |
+| `manualChunks` vendor split (12 vendor chunks)                                                                                          | `ui/vite.config.ts:265-305`                                                                  |
+| Quality gate aggregator                                                                                                                 | `bun run ci:quality` → `scripts/dev/ci-quality-gate.sh`                                      |
 
 **Gap:** budgets exist only for _bundle bytes_. There is no baseline for runtime performance (LCP/INP/CLS), no per-route budget, no edge-function latency baseline, and no query-latency baseline. Bundle bytes are the one thing already guarded; everything else in this folder is currently unmeasured.
 

@@ -11,16 +11,6 @@ import type { SearchListingsType } from '@/features/guest/search/types/search';
 export type MobileSearchCategory = 'all' | ListingSearchPreferType;
 export type MobileSearchStep = 'where' | 'when' | 'who';
 
-export const MOBILE_SEARCH_CATEGORIES: ReadonlyArray<{
-  id: MobileSearchCategory;
-  label: string;
-}> = [
-  { id: 'all', label: 'All' },
-  { id: 'properties', label: 'Properties' },
-  { id: 'developments', label: 'Developments' },
-  { id: 'parkings', label: 'Parkings' },
-];
-
 export function categoryFromPreferType(
   preferType: ListingSearchPreferType | null
 ): MobileSearchCategory {
@@ -68,13 +58,6 @@ export function formatStayRangeShort(from: Date | undefined, to: Date | undefine
   if (!isSameYear(from, to)) return `${format(from, 'MMM d, yyyy')} – ${format(to, 'MMM d, yyyy')}`;
   if (isSameMonth(from, to)) return `${format(from, 'MMM d')} – ${format(to, 'd')}`;
   return `${format(from, 'MMM d')} – ${format(to, 'MMM d')}`;
-}
-
-export function formatGuestCountShort(guests: number, pets: number): string {
-  const parts: string[] = [];
-  if (guests > 0) parts.push(`${guests} guest${guests === 1 ? '' : 's'}`);
-  if (pets > 0) parts.push(`${pets} pet${pets === 1 ? '' : 's'}`);
-  return parts.join(', ');
 }
 
 export type MobilePillSummary = { primary: string; secondary: string } | null;
@@ -204,20 +187,4 @@ export function saveRecentSearch(
     // Quota or blocked storage: recents are optional.
   }
   return next;
-}
-
-function parseIso(value: string): Date | undefined {
-  if (!ISO_DATE.test(value)) return undefined;
-  const date = new Date(`${value}T12:00:00`);
-  return Number.isNaN(date.getTime()) ? undefined : date;
-}
-
-/** Second line under a recent search: `Nov 20 – 22 · 2 guests`. */
-export function formatRecentSearchMeta(entry: RecentSearch): string {
-  const dates = formatStayRangeShort(parseIso(entry.checkIn), parseIso(entry.checkOut));
-  const guests =
-    entry.type === 'parkings'
-      ? ''
-      : formatGuestCountShort(entry.adults + entry.children, entry.pets);
-  return [dates || 'Any week', guests].filter(Boolean).join(' · ');
 }
