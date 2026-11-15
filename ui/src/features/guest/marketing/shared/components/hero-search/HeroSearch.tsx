@@ -13,17 +13,8 @@ import {
   SearchSegment,
   type SegmentPillBounds,
 } from '@/features/guest/marketing/shared/components/hero-search/HeroSearchParts';
-import {
-  MobileSearchOverlay,
-  type MobileSearchRow,
-} from '@/features/guest/marketing/shared/components/hero-search/MobileSearchOverlay';
+import type { MobileSearchRow } from '@/features/guest/marketing/shared/components/hero-search/MobileSearchOverlay';
 import { MobileSearchPill } from '@/features/guest/marketing/shared/components/hero-search/MobileSearchPill';
-import {
-  MobileRecentSearches,
-  MobileWhenStep,
-  MobileWhereStep,
-  MobileWhoStep,
-} from '@/features/guest/marketing/shared/components/hero-search/MobileSearchSteps';
 import {
   heroSearchCalendarClassNames,
   heroSearchCalendarMonthCount,
@@ -116,14 +107,46 @@ const PANEL_SPRING = { type: 'spring' as const, stiffness: 400, damping: 38, mas
 const loadCalendar = () => import('@/components/ui/calendar');
 const Calendar = lazy(() => loadCalendar().then((m) => ({ default: m.Calendar })));
 
-function prefetchCalendarWhenIdle(): () => void {
+/**
+ * The phone full-screen search (sheet + steps) is only needed after a tap, so it stays out of
+ * the landing entry chunk too. Prefetched when idle on narrow screens and on pill press/focus.
+ */
+const loadMobileSearchOverlay = () =>
+  import('@/features/guest/marketing/shared/components/hero-search/MobileSearchOverlay');
+const loadMobileSearchSteps = () =>
+  import('@/features/guest/marketing/shared/components/hero-search/MobileSearchSteps');
+const prefetchMobileSearch = () => {
+  void loadMobileSearchOverlay();
+  void loadMobileSearchSteps();
+};
+const MobileSearchOverlay = lazy(() =>
+  loadMobileSearchOverlay().then((m) => ({ default: m.MobileSearchOverlay }))
+);
+const MobileWhereStep = lazy(() =>
+  loadMobileSearchSteps().then((m) => ({ default: m.MobileWhereStep }))
+);
+const MobileWhenStep = lazy(() =>
+  loadMobileSearchSteps().then((m) => ({ default: m.MobileWhenStep }))
+);
+const MobileWhoStep = lazy(() =>
+  loadMobileSearchSteps().then((m) => ({ default: m.MobileWhoStep }))
+);
+const MobileRecentSearches = lazy(() =>
+  loadMobileSearchSteps().then((m) => ({ default: m.MobileRecentSearches }))
+);
+
+function prefetchWhenIdle(load: () => void): () => void {
   if (typeof window === 'undefined') return () => {};
   if ('requestIdleCallback' in window) {
-    const id = window.requestIdleCallback(() => void loadCalendar());
+    const id = window.requestIdleCallback(() => load());
     return () => window.cancelIdleCallback(id);
   }
-  const timer = globalThis.setTimeout(() => void loadCalendar(), 2000);
+  const timer = globalThis.setTimeout(() => load(), 2000);
   return () => globalThis.clearTimeout(timer);
+}
+
+function prefetchCalendarWhenIdle(): () => void {
+  return prefetchWhenIdle(() => void loadCalendar());
 }
 
 interface HeroSearchProps {
@@ -246,6 +269,8 @@ export function HeroSearch({
     categoryFromPreferType(preferType)
   );
   const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
+  /** The lazy sheet mounts on first open and then stays mounted for its exit animation. */
+  const [mobileSheetMounted, setMobileSheetMounted] = useState(false);
   const mobileInputRef = useRef<HTMLInputElement>(null);
   const closeMobile = useCallback(() => setMobileOpen(false), []);
   const overlayHistory = useHistoryBackDismiss(mobileOpen, closeMobile);
@@ -260,6 +285,7 @@ export function HeroSearch({
     setMobileCategory(categoryFromPreferType(preferType));
     setMobileStep('where');
     setRecentSearches(readRecentSearches());
+    setMobileSheetMounted(true);
     setMobileOpen(true);
   };
 
@@ -363,6 +389,11 @@ export function HeroSearch({
     // Opening the sheet is the strongest signal the date step is next.
     if (mobileOpen) void loadCalendar();
   }, [mobileOpen]);
+
+  useEffect(() => {
+    if (!isNarrowViewport) return;
+    return prefetchWhenIdle(prefetchMobileSearch);
+  }, [isNarrowViewport]);
 
   useEffect(() => {
     prevFieldRef.current = activeField;
@@ -953,21 +984,26 @@ export function HeroSearch({
           dockProgress={dockProgress}
           expanded={mobileOpen}
           onOpen={openMobile}
+          onIntent={prefetchMobileSearch}
         />
-        <MobileSearchOverlay
-          open={mobileOpen}
-          onClose={closeMobile}
-          category={categoryTabs ? mobileCategory : null}
-          onCategoryChange={changeMobileCategory}
-          rows={rows}
-          activeStep={mobileStep}
-          onStepChange={setMobileStep}
-          renderStep={renderMobileStep}
-          showFooter={mobileStep !== 'when'}
-          canClear={canClearMobile}
-          onClearAll={clearMobile}
-          onSearch={handleMobileSearch}
-        />
+        {mobileSheetMounted ? (
+          <Suspense fallback={null}>
+            <MobileSearchOverlay
+              open={mobileOpen}
+              onClose={closeMobile}
+              category={categoryTabs ? mobileCategory : null}
+              onCategoryChange={changeMobileCategory}
+              rows={rows}
+              activeStep={mobileStep}
+              onStepChange={setMobileStep}
+              renderStep={renderMobileStep}
+              showFooter={mobileStep !== 'when'}
+              canClear={canClearMobile}
+              onClearAll={clearMobile}
+              onSearch={handleMobileSearch}
+            />
+          </Suspense>
+        ) : null}
       </div>
     );
   }
