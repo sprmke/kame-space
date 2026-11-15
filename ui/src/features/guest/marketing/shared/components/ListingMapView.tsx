@@ -614,7 +614,10 @@ export function ListingMapView({
       )}
 
       <div className="absolute left-3 top-3 z-20 flex flex-wrap items-center gap-2 sm:left-4 sm:top-4">
-        <div className="border-border bg-background/95 flex items-center gap-2 rounded-full border px-3 py-2 text-sm shadow-md backdrop-blur-sm">
+        <div
+          data-map-count
+          className="border-border bg-background/95 flex items-center gap-2 rounded-full border px-3 py-2 text-sm shadow-md backdrop-blur-sm"
+        >
           {loading ? (
             <Skeleton className="size-4 shrink-0 rounded-full" aria-hidden />
           ) : (

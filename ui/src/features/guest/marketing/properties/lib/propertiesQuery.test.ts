@@ -44,3 +44,18 @@ describe('PROPERTIES_SORTS', () => {
     expect(PROPERTIES_SORTS).toBeDefined();
   });
 });
+
+describe('propertiesQuery flexible dates', () => {
+  it('carries flex to the API only with both dates', () => {
+    const query = parsePropertiesQuery(
+      new URLSearchParams('checkIn=2026-12-01&checkOut=2026-12-03&flex=2')
+    );
+    expect(query.flex).toBe(2);
+    expect(writePropertiesQuery(query).get('flex')).toBe('2');
+    expect(writePropertiesQuery({ ...query, checkIn: '' }).has('flex')).toBe(false);
+  });
+
+  it('ignores flex without dates', () => {
+    expect(parsePropertiesQuery(new URLSearchParams('flex=2')).flex).toBe(0);
+  });
+});

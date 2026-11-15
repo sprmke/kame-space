@@ -65,3 +65,14 @@ describe('PARKINGS_SORTS', () => {
     expect(PARKINGS_SORTS).toBeDefined();
   });
 });
+
+describe('parkingsQuery flexible dates', () => {
+  it('carries flex to the API only with both dates', () => {
+    const query = parseParkingsQuery(
+      new URLSearchParams('checkIn=2026-12-01&checkOut=2026-12-03&flex=7')
+    );
+    expect(query.flex).toBe(7);
+    expect(writeParkingsQuery(query).get('flex')).toBe('7');
+    expect(writeParkingsQuery({ ...query, checkOut: '' }).has('flex')).toBe(false);
+  });
+});

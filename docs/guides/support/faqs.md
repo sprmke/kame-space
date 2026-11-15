@@ -1640,3 +1640,43 @@ No. You can mention what people are watching, but do not use a real person's pho
 - source: docs/guides/routes/org/property/marketing.md
 
 It means there is no fresh list right now, so you are seeing Philippine seasonal ideas instead, such as long weekends and the Christmas season. The list rebuilds every morning.
+
+### How do I search for a stay or parking on my phone?
+
+- category: Getting Started
+- audience: public
+- source: docs/guides/routes/search.md
+
+Tap Start your search at the top of the page. Pick All, Properties, Developments or Parkings, then choose where, your dates and who is coming, and tap Search. Parking skips the guest step. You can tap any step again to change it, and the back button closes the search without leaving the page.
+
+### Why do my search results only show one kind of listing?
+
+- category: Getting Started
+- audience: public
+- source: docs/guides/routes/search.md
+
+On a phone, the tab you pick at the top of the search (for example Parkings) limits the results to that kind of listing. Tap All on the results page to see properties, developments and parkings together.
+
+### Where do my recent searches come from?
+
+- category: Getting Started
+- audience: public
+- source: docs/guides/routes/search.md
+
+Your last few searches are kept on this phone or browser only, so you can repeat one with a tap. They are not saved to your account and do not show on other devices. Searches with dates that have already started drop off on their own, and a private window keeps none.
+
+### Can I search with flexible dates?
+
+- category: Getting Started
+- audience: public
+- source: docs/guides/routes/search.md
+
+Yes. After you pick your check-in and check-out, choose ± 1 day, ± 2 days, ± 3 days or ± 7 days under the calendar. Results then include places that are free for the same number of nights starting up to that many days earlier or later, never in the past. Open a listing to see exactly which dates are free before you book.
+
+### How do I see listings on a map on my phone?
+
+- category: Getting Started
+- audience: public
+- source: docs/guides/routes/search.md
+
+Tap Map at the bottom of the list on search results, Properties or Developments. The map fills the screen and you can move or zoom it to update the results. To go back to the list, drag the bar at the bottom up or tap it.

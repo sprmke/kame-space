@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Navigate, Link, useParams } from 'react-router-dom';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { Car, SlidersHorizontal } from 'lucide-react';
+import { Car } from 'lucide-react';
 
 import { useDevelopmentHasParking } from '@/features/guest/marketing/developments/hooks/useDevelopmentHasParking';
 import { usePublicDevelopment } from '@/features/guest/marketing/developments/hooks/usePublicDevelopment';
@@ -32,10 +32,18 @@ import {
 } from '@/features/guest/marketing/properties/lib/propertiesQuery';
 import { ListingFilteredEmpty } from '@/features/guest/marketing/shared/components/ListingFilteredEmpty';
 import { ListingLoadError } from '@/features/guest/marketing/shared/components/ListingLoadError';
+import {
+  ListingMapToggle,
+  ListingMobileMapStage,
+  ListingMobileResultsBar,
+} from '@/features/guest/marketing/shared/components/ListingMobileResults';
 import { ListingResultsPagination } from '@/features/guest/marketing/shared/components/ListingResultsPagination';
 import { useListingUrlQuery } from '@/features/guest/marketing/shared/hooks/useListingUrlQuery';
+import { formatListingCount } from '@/features/guest/marketing/shared/lib/listingCountLabel';
+import { buildPropertyFilterChips } from '@/features/guest/marketing/shared/lib/listingFilterChips';
 
 import { PublicListingBrowseSkeleton } from '@/components/skeletons/GuestMarketingSkeleton';
+import { ListingGridSkeleton } from '@/components/skeletons/ListingGridSkeleton';
 import { Button } from '@/components/ui/button';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { buildPageTitle } from '@/lib/seo/seoMeta';
@@ -87,6 +95,12 @@ export function DevelopmentPropertiesPage() {
     () => (propertiesResult.data?.data ?? []).map(toPropertyCard),
     [propertiesResult.data?.data]
   );
+  // The development comes from the route, so it never counts as a guest filter.
+  const guestFilters = useMemo(() => ({ ...listingQuery, development: [] }), [listingQuery]);
+  const hasGuestFilters = countActivePropertyFilters(guestFilters) > 0;
+  const totalResults = propertiesResult.data?.total ?? properties.length;
+  const countLabel = formatListingCount(totalResults, 'home', 'homes');
+  const setViewMode = (mode: ViewMode) => setViewParam(mode === 'grid' ? null : mode);
 
   if (isLoading) {
     return <PublicListingBrowseSkeleton />;
@@ -110,16 +124,11 @@ export function DevelopmentPropertiesPage() {
     <div className="bg-background min-h-screen">
       <PropertiesHero />
 
-      <div className="border-border bg-background/95 sticky top-[var(--public-nav-h)] z-30 border-b px-4 py-2 backdrop-blur-sm lg:hidden">
-        <Button
-          variant="outline"
-          onClick={() => setMobileFiltersOpen(true)}
-          className="h-10 w-full gap-2"
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          Filters & Sort
-        </Button>
-      </div>
+      <ListingMobileResultsBar
+        countLabel={propertiesResult.data ? countLabel : null}
+        activeFilterCount={buildPropertyFilterChips(guestFilters).length}
+        onOpenFilters={() => setMobileFiltersOpen(true)}
+      />
 
       <div className="flex min-w-0">
         <PropertiesFilters
@@ -138,6 +147,8 @@ export function DevelopmentPropertiesPage() {
           value={listingQuery}
           onChange={setFilters}
           facets={propertiesResult.data?.facets ?? EMPTY_PROPERTIES_FACETS}
+          sortBy={listingQuery.sort}
+          onSortChange={(next) => patchQuery({ sort: next as PropertiesSort })}
         />
 
         <main
@@ -146,10 +157,10 @@ export function DevelopmentPropertiesPage() {
         >
           <PropertiesToolbar
             viewMode={viewMode}
-            onViewModeChange={(mode) => setViewParam(mode === 'grid' ? null : mode)}
+            onViewModeChange={setViewMode}
             sortBy={listingQuery.sort}
             onSortChange={(next) => patchQuery({ sort: next as PropertiesSort })}
-            totalResults={propertiesResult.data?.total ?? properties.length}
+            totalResults={totalResults}
             filtersOpen={filtersOpen}
             onToggleFilters={() => setFiltersOpen(!filtersOpen)}
           />
@@ -180,9 +191,15 @@ export function DevelopmentPropertiesPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="min-w-0 p-4 sm:p-6"
+                className="min-w-0 pt-4 lg:p-6"
               >
-                <PropertiesMap properties={properties} />
+                <ListingMobileMapStage
+                  countLabel={countLabel}
+                  loading={propertiesResult.isFetching}
+                  onShowList={() => setViewMode('grid')}
+                >
+                  <PropertiesMap properties={properties} />
+                </ListingMobileMapStage>
               </motion.div>
             ) : (
               <motion.div
@@ -198,7 +215,12 @@ export function DevelopmentPropertiesPage() {
                     retrying={propertiesResult.isFetching}
                     onRetry={() => void propertiesResult.refetch()}
                   />
-                ) : properties.length === 0 && countActivePropertyFilters(listingQuery) > 0 ? (
+                ) : propertiesResult.isLoading ? (
+                  <ListingGridSkeleton
+                    columnsClassName="grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+                    imageAspectClassName="aspect-[4/3]"
+                  />
+                ) : properties.length === 0 && hasGuestFilters ? (
                   <ListingFilteredEmpty
                     noun="homes"
                     onClearFilters={() => setFilters(clearPropertyFilters(listingQuery))}
@@ -229,6 +251,9 @@ export function DevelopmentPropertiesPage() {
                   onPageChange={goToPage}
                   scrollTargetRef={resultsRef}
                 />
+                {properties.length > 0 ? (
+                  <ListingMapToggle onShowMap={() => setViewMode('map')} />
+                ) : null}
               </motion.div>
             )}
           </AnimatePresence>

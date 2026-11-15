@@ -2,7 +2,7 @@
 title: 'Developments (guest marketing) — operator guide'
 status: active
 tags: [guides, routes, developments]
-updated: 2026-08-27
+updated: 2026-11-15
 ---
 
 # Developments (guest marketing) — operator guide
@@ -28,6 +28,7 @@ Routes:
 | Properties in dev  | —        | —          | Documented | Links to `/properties/:slug`                                                                   |
 | Parking flow       | —        | —          | Documented | Slot list at `…/parking`; Reserve links to `/parkings/:slug` when `detailSlug` is set          |
 | Mobile shell       | —        | —          | Documented | `MarketingLayoutShell` bottom tabs — see [index-landing.md](./index-landing.md) § Mobile shell |
+| Phone results      | —        | —          | Documented | One sticky row (count + filter badge); `Map` pill on `/developments` and `…/properties`        |
 
 ---
 
@@ -51,6 +52,8 @@ Development pages market a whole building or condominium, so guests can browse u
   A: Use it when you manage multiple units or shared parking in one building. Guests see the building first, then pick a unit or slot.
 - Q: How do guests book parking from a development page?
   A: Parking slot cards link to `/parkings/:slug` when the slot is live. Guests reserve through the operational parking form at `/parkings/:slug/form`.
+- Q: What do guests see on a phone when they browse developments?
+  A: One row under the search bar with the number of developments and a filter button that also holds the sort order. On the main Developments page and on a building's homes page, a **Map** button opens a full-screen map.
 
 ---
 
@@ -62,7 +65,9 @@ Development pages market a whole building or condominium, so guests can browse u
 - **List view:** flat **`DevelopmentsGrid`** (list layout).
 - **Map view:** Google Map with price pins for geocoded developments; a guest pan/zoom **automatically** updates `swLat`/`swLng`/`neLat`/`neLng` in the URL after the map settles (same bbox contract as `/properties`), while programmatic framing does not — opening map view leaves the URL clean and **Reset area** clears the bounds. Full map contract: [`search.md`](./search.md) § Map view. Pin preview links to **`/developments/:slug`**. Requires `VITE_GOOGLE_MAPS_API_KEY`. View mode persists via `?view=map|list` (grid omits `view`). Facets (types, cities, developers, price) are **disjunctive**: each is counted with every _other_ filter applied (scoped to the visible map pool in map view), so multi-select options never collapse after a selection. Filtered grid/list views show a **Previous / Next** pager (URL `page`, 24 per page).
 
-On scroll, **`ListingHeroSearch`** morphs into the fixed header center (same behavior as `/properties`).
+**Phone and tablet (below `lg`):** `/developments`, `/developments/in/:location`, `/developments/:slug/properties` and `/developments/:slug/parking` share the `/search` results row (`ListingMobileResultsBar`: count + round filter button with an applied-filter badge); the desktop toolbar and applied-filter chips are `lg+` only. Pages with a map view (`/developments`, `…/properties`) show a floating **Map** pill that opens the full-screen phone map; see [`search.md`](./search.md) § Map view. `/developments/:slug/properties` shows a skeleton while homes load and **No homes listed here yet** when the development has none (the development itself no longer counts as a guest filter).
+
+On scroll, **`ListingHeroSearch`** morphs into the fixed header center (same behavior as `/properties`). On phones and tablets (below 1024px) the bar is a single **Start your search** pill that opens the full-screen search (Where / When / Who, category tabs, recent searches). Full contract: [`search.md`](./search.md) § Phone and tablet search. The sheet opens on the **Developments** tab (parking routes: **Parkings**).
 
 **Where field:** empty on `/developments` (category index — do not prefill the nav label); city name on `/developments/in/:location`; development name on `/developments/:slug`, `/developments/:slug/properties`, and `/developments/:slug/parking` (`listingSearchDefaultLocation.ts`). Placeholder: **Search developments** (`listingSearchFields.ts`). Parking routes omit the **Who** segment.
 

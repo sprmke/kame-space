@@ -923,6 +923,21 @@ curl -sI "http://127.0.0.1:54321/functions/v1/get-public-property?property=<old-
 
 Remote writes need `kamewave`. Backup first.
 
+### Flexible dates in public search (`20261341000000_search_flexible_dates.sql`)
+
+`CREATE OR REPLACE` of `search_public_properties` and `search_public_parkings` only. Both accept an optional `flexDays` (0 to 14, default 0): with dates set, a listing matches when the requested stay, or the same-length stay shifted up to `flexDays` days either way, is free. Shifted windows never start before today (Asia/Manila); the requested stay itself is judged as before, so flexible results always include the exact results. `flexDays = 0` or absent is the previous behavior, so callers that do not send it are unaffected. No schema change, no backfill, grants unchanged.
+
+Order: apply the migration before deploying `search-listings`, `list-public-properties` and `list-public-parkings`. Old functions ignore the extra key, so the UI can ship either side.
+
+Verify locally after apply (everything runs in one transaction that is rolled back):
+
+```bash
+docker exec -i supabase_db_<project> psql -U postgres -d postgres -At \
+  < scripts/data/sql/check-search-flexible-dates.sql
+```
+
+Every row should read `pass`, including the invariant row that counts windows where a flexible search returns fewer listings than the exact one (expected 0). Remote writes need `kamewave`. Backup first.
+
 ### Image and alt-text backfills (SEO item 9 and 13)
 
 - `properties `media[].alt`` is new and optional. Nothing to migrate (JSONB), no backfill required: missing alt falls back to the caption, then to a generated description in `buildListingImageAlt`.

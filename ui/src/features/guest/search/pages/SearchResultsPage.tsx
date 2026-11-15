@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useSearchParams } from 'react-router-dom';
 
-import { SlidersHorizontal } from 'lucide-react';
-
 import { DevelopmentsFilters } from '@/features/guest/marketing/developments/components/DevelopmentsFilters';
 import { ParkingFilters } from '@/features/guest/marketing/developments/components/ParkingFilters';
 import { usePublicDevelopments } from '@/features/guest/marketing/developments/hooks/usePublicDevelopments';
@@ -27,11 +25,22 @@ import { EMPTY_PROPERTIES_FACETS } from '@/features/guest/marketing/properties/l
 import type { PropertiesListingQuery } from '@/features/guest/marketing/properties/lib/propertiesQuery';
 import type { PublicPropertyListItem } from '@/features/guest/marketing/properties/lib/propertiesQuery';
 import {
+  ListingMapToggle,
+  ListingMobileMapStage,
+} from '@/features/guest/marketing/shared/components/ListingMobileResults';
+import { formatListingCount } from '@/features/guest/marketing/shared/lib/listingCountLabel';
+import {
+  buildDevelopmentFilterChips,
+  buildParkingFilterChips,
+  buildPropertyFilterChips,
+} from '@/features/guest/marketing/shared/lib/listingFilterChips';
+import {
   parseBboxFromSearchParams,
   type MapBbox,
 } from '@/features/guest/marketing/shared/lib/listingMapMarkers';
 import { SearchEmptyState } from '@/features/guest/search/components/SearchEmptyState';
 import { SearchErrorState } from '@/features/guest/search/components/SearchErrorState';
+import { SearchMobileResultsBar } from '@/features/guest/search/components/SearchMobileResultsBar';
 import { SearchResultsGrid } from '@/features/guest/search/components/SearchResultsGrid';
 import { SearchResultsHeader } from '@/features/guest/search/components/SearchResultsHeader';
 import { SearchResultsPagination } from '@/features/guest/search/components/SearchResultsPagination';
@@ -66,10 +75,10 @@ import type {
   SearchListingsType,
 } from '@/features/guest/search/types/search';
 
-import { Button } from '@/components/ui/button';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { captureAppEvent } from '@/lib/posthog/capture';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
+import { cn } from '@/lib/utils';
 
 type CategoryId = Exclude<SearchListingsType, 'all'>;
 
@@ -78,6 +87,18 @@ const CATEGORY_NOUN: Record<CategoryId, string> = {
   developments: 'developments',
   parkings: 'parkings',
 };
+
+const COUNT_NOUN: Record<SearchListingsType, [string, string]> = {
+  all: ['result', 'results'],
+  properties: ['property', 'properties'],
+  developments: ['development', 'developments'],
+  parkings: ['parking', 'parkings'],
+};
+
+function resultCountLabel(type: SearchListingsType, total: number): string {
+  const [one, many] = COUNT_NOUN[type];
+  return formatListingCount(total, one, many);
+}
 
 function activeTotal(
   type: SearchListingsType,
@@ -206,6 +227,7 @@ export function SearchResultsPage() {
       where: query.where,
       checkIn: query.checkIn,
       checkOut: query.checkOut,
+      flex: query.flex,
       adults: query.adults,
       children: query.children,
       infants: query.infants,
@@ -221,6 +243,7 @@ export function SearchResultsPage() {
       query.where,
       query.checkIn,
       query.checkOut,
+      query.flex,
       query.adults,
       query.children,
       query.infants,
@@ -628,20 +651,37 @@ export function SearchResultsPage() {
    */
   const isMapView = viewMode === 'map' && effectiveType !== 'all' && !showError;
   const chromeVisible = showResults || isMapView;
+  const mapToggleVisible = chromeVisible && effectiveType !== 'all' && !showError;
+
+  const activeFilterCount =
+    effectiveType === 'properties'
+      ? buildPropertyFilterChips(propertiesListQuery).length
+      : effectiveType === 'developments'
+        ? buildDevelopmentFilterChips(developmentsListQuery).length
+        : effectiveType === 'parkings'
+          ? buildParkingFilterChips(parkingsQueryToFilterState(parkingsListQuery)).length
+          : 0;
 
   return (
     <div className="bg-background min-h-screen">
       <SearchResultsHeader />
 
       {chromeVisible ? (
-        <div className="border-border bg-background/95 sticky top-[var(--public-nav-h)] z-30 border-b px-4 py-2 backdrop-blur-sm lg:hidden">
-          <Button variant="outline" onClick={openMobileFilters} className="h-10 w-full gap-2">
-            <SlidersHorizontal className="h-4 w-4" aria-hidden />
-            {filtersTargetCategory
+        <SearchMobileResultsBar
+          showTabs={showTabStrip}
+          active={effectiveType}
+          totals={searchTotals}
+          focus={query.focus}
+          onTabChange={(type) => patchQuery({ type, page: 1 }, { replace: false })}
+          countLabel={resultCountLabel(effectiveType, toolbarTotal)}
+          filterLabel={
+            filtersTargetCategory
               ? `Filter ${CATEGORY_NOUN[filtersTargetCategory]}`
-              : 'Filters & Sort'}
-          </Button>
-        </div>
+              : 'Filters and sort'
+          }
+          activeFilterCount={activeFilterCount}
+          onOpenFilters={openMobileFilters}
+        />
       ) : null}
 
       <div className="flex min-w-0">
@@ -714,24 +754,32 @@ export function SearchResultsPage() {
 
         <main className="min-w-0 flex-1 overflow-x-hidden">
           {chromeVisible ? (
-            <SearchResultsToolbar
-              category={effectiveType === 'all' ? 'all' : effectiveType}
-              totalResults={toolbarTotal}
-              sortBy={currentSort}
-              onSortChange={patchSort}
-              viewMode={viewMode}
-              onViewModeChange={setViewMode}
-              filtersOpen={filtersOpen && showCategoryFilters}
-              onToggleFilters={openFilters}
-              filtersCategoryLabel={
-                filtersTargetCategory ? CATEGORY_NOUN[filtersTargetCategory] : null
-              }
-            />
+            <div className="hidden lg:block">
+              <SearchResultsToolbar
+                category={effectiveType === 'all' ? 'all' : effectiveType}
+                totalResults={toolbarTotal}
+                sortBy={currentSort}
+                onSortChange={patchSort}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                filtersOpen={filtersOpen && showCategoryFilters}
+                onToggleFilters={openFilters}
+                filtersCategoryLabel={
+                  filtersTargetCategory ? CATEGORY_NOUN[filtersTargetCategory] : null
+                }
+              />
+            </div>
           ) : null}
 
-          <div className="mx-auto w-full max-w-7xl px-4 pb-10 pt-6 sm:px-6 lg:px-8">
+          <div
+            className={cn(
+              'mx-auto w-full max-w-7xl px-4 pt-4 sm:px-6 lg:px-8 lg:pb-10 lg:pt-6',
+              // Phone map view runs edge to edge down to the tab bar.
+              isMapView ? 'max-lg:pb-0' : 'pb-10'
+            )}
+          >
             {showTabStrip ? (
-              <div className="border-border mb-6 border-b pb-4">
+              <div className="border-border mb-6 hidden border-b pb-4 lg:block">
                 <SearchResultsTabs
                   active={effectiveType}
                   totals={searchTotals}
@@ -787,19 +835,27 @@ export function SearchResultsPage() {
             ) : null}
 
             {isMapView ? (
-              <SearchResultsGrid
-                type={effectiveType}
-                properties={properties}
-                developments={developments}
-                parkings={parkings}
-                totals={totals}
-                viewMode="map"
-                focus={query.focus}
-                mapBbox={mapBbox}
-                mapLoading={isFetching || showSkeleton}
-                onViewportChange={applyMapViewport}
-                onResetViewport={mapBboxActive ? clearMapViewport : undefined}
-              />
+              <div className="max-lg:-mx-4 sm:max-lg:-mx-6">
+                <ListingMobileMapStage
+                  countLabel={resultCountLabel(effectiveType, toolbarTotal)}
+                  loading={isFetching || showSkeleton}
+                  onShowList={() => setViewMode('grid')}
+                >
+                  <SearchResultsGrid
+                    type={effectiveType}
+                    properties={properties}
+                    developments={developments}
+                    parkings={parkings}
+                    totals={totals}
+                    viewMode="map"
+                    focus={query.focus}
+                    mapBbox={mapBbox}
+                    mapLoading={isFetching || showSkeleton}
+                    onViewportChange={applyMapViewport}
+                    onResetViewport={mapBboxActive ? clearMapViewport : undefined}
+                  />
+                </ListingMobileMapStage>
+              </div>
             ) : null}
 
             {showResults && !isMapView ? (
@@ -823,6 +879,9 @@ export function SearchResultsPage() {
                       onPageChange={(page) => patchQuery({ page })}
                     />
                   </div>
+                ) : null}
+                {mapToggleVisible ? (
+                  <ListingMapToggle onShowMap={() => setViewMode('map')} />
                 ) : null}
               </div>
             ) : null}

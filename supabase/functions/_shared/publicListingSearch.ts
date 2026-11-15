@@ -54,6 +54,8 @@ export type PropertySearchParams = CommonSearchParams & {
   guests?: number;
   checkIn?: string | null;
   checkOut?: string | null;
+  /** Match the same-length stay shifted up to this many days either way (0 = exact). */
+  flexDays?: number;
   order: 'recommended' | 'rating' | 'reviews' | 'newest' | 'nearest' | 'rank' | 'name';
 };
 
@@ -72,6 +74,8 @@ export type ParkingSearchParams = CommonSearchParams & {
   developmentSlug?: string;
   checkIn?: string | null;
   checkOut?: string | null;
+  /** Match the same-length stay shifted up to this many days either way (0 = exact). */
+  flexDays?: number;
   order: 'tower' | 'nearest' | 'rank' | 'name';
 };
 
@@ -232,6 +236,14 @@ export function parsePageSize(raw: string | null, fallback: number, max: number)
   return Math.min(n, max);
 }
 
+/** Date flexibility guests can pick on `/search` (± days). Anything else means exact dates. */
+export const SEARCH_FLEX_DAYS = [1, 2, 3, 7] as const;
+
+export function parseFlexDays(raw: string | null): number {
+  const n = Number.parseInt(raw ?? '', 10);
+  return (SEARCH_FLEX_DAYS as readonly number[]).includes(n) ? n : 0;
+}
+
 export function parseOptionalNumber(raw: string | null): number | null {
   if (raw == null || raw.trim() === '') return null;
   const n = Number(raw);
@@ -266,7 +278,11 @@ export async function runPagedSearch<F>(
 ): Promise<PagedSearch<F>> {
   const { pageSize, mapMode, mapCap } = options;
   if (mapMode) {
-    return { result: await run({ limit: mapCap, offset: 0, facets: true }), page: 1, pageSize: mapCap };
+    return {
+      result: await run({ limit: mapCap, offset: 0, facets: true }),
+      page: 1,
+      pageSize: mapCap,
+    };
   }
 
   const page = windowedPage(options.page, pageSize);

@@ -7,6 +7,7 @@ import {
   MAX_QUERY_LENGTH,
   MAX_RESULT_WINDOW,
   parseBoundedCsv,
+  parseFlexDays,
   parseNonNegInt,
   parsePageSize,
   readQueryText,
@@ -14,6 +15,18 @@ import {
   windowedPage,
   type SearchResult,
 } from './publicListingSearch.ts';
+
+Deno.test('parseFlexDays accepts only the offered windows', () => {
+  assertEquals(parseFlexDays('1'), 1);
+  assertEquals(parseFlexDays('2'), 2);
+  assertEquals(parseFlexDays('3'), 3);
+  assertEquals(parseFlexDays('7'), 7);
+  assertEquals(parseFlexDays('0'), 0);
+  assertEquals(parseFlexDays('5'), 0);
+  assertEquals(parseFlexDays('-2'), 0);
+  assertEquals(parseFlexDays('abc'), 0);
+  assertEquals(parseFlexDays(null), 0);
+});
 
 Deno.test('readQueryText trims and caps free text', () => {
   assertEquals(readQueryText('  azure  '), 'azure');
@@ -47,8 +60,9 @@ function fakeSearch(total: number) {
   const calls: Array<{ limit: number; offset: number; facets: boolean }> = [];
   const run = (args: { limit: number; offset: number; facets: boolean }) => {
     calls.push(args);
-    const ids = Array.from({ length: Math.max(0, Math.min(args.limit, total - args.offset)) }, (_, i) =>
-      String(args.offset + i)
+    const ids = Array.from(
+      { length: Math.max(0, Math.min(args.limit, total - args.offset)) },
+      (_, i) => String(args.offset + i)
     );
     return Promise.resolve<SearchResult<{ marker: number }>>({
       total,

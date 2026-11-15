@@ -148,10 +148,11 @@ Local env lives in `scripts/marketing/ai-studio-samples/.cache/env.sh` (gitignor
 
 ## Data (`scripts/data/`)
 
-| Script                              | npm script               | Purpose                                   |
-| ----------------------------------- | ------------------------ | ----------------------------------------- |
-| `sync-prod-public-data-to-local.sh` | `bun run sync:prod-data` | Dump prod `public` schema → local DB      |
-| `sql/after-prod-data-restore.sql`   | (called by sync script)  | Legacy status normalization after restore |
+| Script                                | npm script               | Purpose                                                                                                           |
+| ------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `sync-prod-public-data-to-local.sh`   | `bun run sync:prod-data` | Dump prod `public` schema → local DB                                                                              |
+| `sql/after-prod-data-restore.sql`     | (called by sync script)  | Legacy status normalization after restore                                                                         |
+| `sql/check-search-flexible-dates.sql` | (manual, `psql < file`)  | Rolled-back check of `/search` flexible dates (`flexDays`) on properties + parkings; every row should read `pass` |
 
 ## Deploy (`scripts/deploy/`)
 

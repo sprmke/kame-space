@@ -3,7 +3,6 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { SlidersHorizontal } from 'lucide-react';
 
 import {
   DevelopmentsHero,
@@ -31,8 +30,14 @@ import {
 import { ListingActiveFilterChips } from '@/features/guest/marketing/shared/components/ListingActiveFilterChips';
 import { ListingFilteredEmpty } from '@/features/guest/marketing/shared/components/ListingFilteredEmpty';
 import { ListingLoadError } from '@/features/guest/marketing/shared/components/ListingLoadError';
+import {
+  ListingMapToggle,
+  ListingMobileMapStage,
+  ListingMobileResultsBar,
+} from '@/features/guest/marketing/shared/components/ListingMobileResults';
 import { ListingResultsPagination } from '@/features/guest/marketing/shared/components/ListingResultsPagination';
 import { usePublicPlaceGroups } from '@/features/guest/marketing/shared/hooks/usePublicPlaceGroups';
+import { formatListingCount } from '@/features/guest/marketing/shared/lib/listingCountLabel';
 import {
   buildDevelopmentFilterChips,
   removeDevelopmentFilterChip,
@@ -204,21 +209,17 @@ export function DevelopmentsListPage() {
   const totalResults = data?.total ?? 0;
   const filterChips = useMemo(() => buildDevelopmentFilterChips(query, facets), [query, facets]);
   const hasActiveFilters = filterChips.length > 0;
+  const countLabel = formatListingCount(totalResults, 'development', 'developments');
 
   return (
     <div className="bg-background min-h-screen">
       <DevelopmentsHero />
 
-      <div className="border-border bg-background/95 sticky top-[var(--public-nav-h)] z-30 border-b px-4 py-2 backdrop-blur-sm lg:hidden">
-        <Button
-          variant="outline"
-          onClick={() => setMobileFiltersOpen(true)}
-          className="h-10 w-full gap-2"
-        >
-          <SlidersHorizontal className="h-4 w-4" aria-hidden />
-          Filters & Sort
-        </Button>
-      </div>
+      <ListingMobileResultsBar
+        countLabel={data ? countLabel : null}
+        activeFilterCount={filterChips.length}
+        onOpenFilters={() => setMobileFiltersOpen(true)}
+      />
 
       <div className="flex min-w-0">
         <DevelopmentsFilters
@@ -256,7 +257,7 @@ export function DevelopmentsListPage() {
           />
 
           {hasActiveFilters ? (
-            <div className="border-border border-b px-4 py-3 sm:px-6">
+            <div className="border-border hidden border-b px-6 py-3 lg:block">
               <ListingActiveFilterChips
                 chips={filterChips}
                 onRemove={(id) => setFilters(removeDevelopmentFilterChip(query, id))}
@@ -307,16 +308,22 @@ export function DevelopmentsListPage() {
                   initial={reduceMotion ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={reduceMotion ? undefined : { opacity: 0 }}
-                  className="min-w-0 p-4 sm:p-6"
+                  className="min-w-0 lg:p-6"
                 >
-                  <DevelopmentsMap
-                    developments={developments}
-                    totalInView={totalResults}
-                    bbox={mapBbox}
+                  <ListingMobileMapStage
+                    countLabel={countLabel}
                     loading={isFetching}
-                    onViewportChange={applyMapViewport}
-                    onResetViewport={mapBbox ? clearMapViewport : undefined}
-                  />
+                    onShowList={() => setViewMode('grid')}
+                  >
+                    <DevelopmentsMap
+                      developments={developments}
+                      totalInView={totalResults}
+                      bbox={mapBbox}
+                      loading={isFetching}
+                      onViewportChange={applyMapViewport}
+                      onResetViewport={mapBbox ? clearMapViewport : undefined}
+                    />
+                  </ListingMobileMapStage>
                 </motion.div>
               ) : (
                 <motion.div
@@ -377,6 +384,7 @@ export function DevelopmentsListPage() {
                       scrollTargetRef={resultsRef}
                     />
                   )}
+                  <ListingMapToggle onShowMap={() => setViewMode('map')} />
                 </motion.div>
               )}
             </AnimatePresence>

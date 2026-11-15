@@ -2,7 +2,7 @@
  * list-public-properties — Public GET for /properties browse + /search property filters.
  * Auth: anon key (verify_jwt=false).
  * Query: where, type[], minPrice, maxPrice, bedrooms, amenities[], development[],
- *        checkIn, checkOut, adults, children, lat, lng, locationSlug, sort, page, pageSize,
+ *        checkIn, checkOut, flex, adults, children, lat, lng, locationSlug, sort, page, pageSize,
  *        swLat, swLng, neLat, neLng (map viewport — capped markers, page ignored)
  *
  * Filtering, sorting, facets, and pagination run in Postgres (`search_public_properties`
@@ -25,6 +25,7 @@ import { loadPropertyCards } from '../_shared/publicListingCards.ts';
 import { listingCacheKey, withListingCache } from '../_shared/publicListingCache.ts';
 import {
   parseBoundedCsv,
+  parseFlexDays,
   parseNonNegInt,
   parseOptionalNumber,
   parsePage,
@@ -88,6 +89,8 @@ servePublic('list-public-properties', async (req) => {
     neLng: mapBbox?.neLng ?? null,
     checkIn: range?.checkIn ?? null,
     checkOut: range?.checkOut ?? null,
+    // ± days around the stay (`/search` flexible dates); ignored without a range.
+    flexDays: range ? parseFlexDays(sp.get('flex')) || undefined : undefined,
     order: origin != null && !sortExplicit ? 'nearest' : sort,
     facets: true,
   };
@@ -97,9 +100,12 @@ servePublic('list-public-properties', async (req) => {
       listingCacheKey('list-public-properties', { ...base, requestedPage, pageSize, mapMode }),
       { families: ['property'], bypass: range != null },
       async () => {
-        const { result, page, pageSize: effectivePageSize } = await runPagedSearch(
-          ({ limit, offset, facets }) =>
-            searchPublicProperties({ ...base, limit, offset, facets }),
+        const {
+          result,
+          page,
+          pageSize: effectivePageSize,
+        } = await runPagedSearch(
+          ({ limit, offset, facets }) => searchPublicProperties({ ...base, limit, offset, facets }),
           { page: requestedPage, pageSize, mapMode, mapCap: MAP_MARKER_CAP }
         );
 
