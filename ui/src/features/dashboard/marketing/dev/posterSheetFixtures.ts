@@ -1,4 +1,4 @@
-import { showcaseFacts } from '@/features/dashboard/marketing/lib/aiStudioSamples';
+import { AI_STUDIO_SAMPLES_BASE, showcaseFacts } from '@/features/dashboard/marketing/lib/aiStudioSamples';
 import type { PosterFacts } from '@/features/dashboard/marketing/lib/poster/posterSpec';
 
 export type PosterSheetFixture = { id: string; label: string; facts: PosterFacts };
@@ -11,6 +11,10 @@ export type PosterSheetFixture = { id: string; label: string; facts: PosterFacts
 export function posterSheetFixtures(origin: string): PosterSheetFixture[] {
   const base = showcaseFacts(origin);
   const photos = base.photos;
+  // Dark, tilted derivatives of the same credited stock (see `fixtures/makeWeakPhotos.ts`).
+  const weakPhotos = ['261102', '3209045'].map(
+    (id) => `${origin}${AI_STUDIO_SAMPLES_BASE}/fixtures/weak-${id}-960.webp`
+  );
   return [
     {
       id: 'cozy-condo',
@@ -34,7 +38,7 @@ export function posterSheetFixtures(origin: string): PosterSheetFixture[] {
         location: 'Batangas',
         nightlyRate: '₱8,500',
         amenities: ['Pool', 'Jacuzzi', 'Karaoke', 'Kitchen', 'Pet friendly', 'Wi-Fi'],
-        photos,
+        photos: [photos[2], photos[0], photos[1]],
       },
     },
     {
@@ -46,19 +50,19 @@ export function posterSheetFixtures(origin: string): PosterSheetFixture[] {
         location: null,
         nightlyRate: '₱1,800',
         amenities: ['Wi-Fi', 'Air conditioning'],
-        photos: photos.slice(0, 2),
+        photos: [photos[1]],
       },
     },
     {
       id: 'weak-listing',
-      label: 'Weak listing, one photo, no rate',
+      label: 'Weak listing, dark tilted photos, no rate',
       facts: {
         ...base,
         propertyName: 'A Very Long Listing Name For The Garden View Loft Residences',
         location: null,
         nightlyRate: null,
         amenities: [],
-        photos: photos.slice(0, 1),
+        photos: weakPhotos,
       },
     },
     {

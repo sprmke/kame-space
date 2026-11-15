@@ -14,3 +14,9 @@ examples. Pexels License: free for commercial use, attribution not required. Rec
 | 1571460   | Viaceslav Kat       | [Pexels](https://www.pexels.com/photo/1571460/)                                                                   |
 | 7534285   | Max Vakhtbovych     | [Pexels](https://www.pexels.com/photo/chairs-and-coffee-table-placed-in-patio-of-contemporary-apartment-7534285/) |
 | 2507010   | Quark Studio        | [Pexels](https://www.pexels.com/photo/2507010/)                                                                   |
+
+## Contact sheet fixtures
+
+`fixtures/weak-261102-960.webp` and `fixtures/weak-3209045-960.webp` are darkened, rotated and desaturated
+derivatives of Pexels 261102 (Pixabay) and 3209045 (Jason Boyd), made by
+`scripts/marketing/poster-contact-sheet/fixtures/makeWeakPhotos.ts`. They stand in for a weak host listing.
