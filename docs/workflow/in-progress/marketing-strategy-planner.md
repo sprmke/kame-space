@@ -4,7 +4,7 @@ title: 'Marketing Planner: AI strategy, schedule and execution for listing promo
 status: planned
 tags:
   [workflow, planned, marketing, ai, publishing, meta, scheduling, analytics, plans-and-permissions]
-updated: 2026-11-14
+updated: 2026-11-15
 kind: plan
 ---
 

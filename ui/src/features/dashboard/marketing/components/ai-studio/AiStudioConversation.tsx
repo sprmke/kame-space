@@ -7,11 +7,13 @@ import {
   Clapperboard,
   Copy,
   Download,
+  Film,
   History,
   LayoutTemplate,
   Loader2,
   MoreHorizontal,
   PenLine,
+  SlidersHorizontal,
   Send,
   Shuffle,
   Trash2,
@@ -19,6 +21,7 @@ import {
 import { toast } from 'sonner';
 
 import { AI_OUTPUT_ICON } from '@/features/dashboard/marketing/components/ai-studio/AiSessionCard';
+import { AiStudioCaptionCard } from '@/features/dashboard/marketing/components/ai-studio/AiStudioCaptionCard';
 import {
   handoffDescription,
   takePendingPlannerDraft,
@@ -31,6 +34,12 @@ import {
   type AiCreateRequest,
 } from '@/features/dashboard/marketing/components/ai-studio/AiStudioCreate';
 import { useAiOutputAccess } from '@/features/dashboard/marketing/components/ai-studio/AiStudioHome';
+import { AiStudioPostGrid } from '@/features/dashboard/marketing/components/ai-studio/AiStudioPostGrid';
+import type { ReelDirection } from '@/features/dashboard/marketing/lib/video/reelDirection';
+import { isAiQuotaError } from '@/features/dashboard/org/lib/aiQuotaToast';
+import { AiStudioReelSession, directionOfVersion } from '@/features/dashboard/marketing/components/ai-studio/AiStudioReelSession';
+import { AiStudioReelPreview } from '@/features/dashboard/marketing/components/ai-studio/AiStudioReelPreview';
+import { AiStudioQuickEdit } from '@/features/dashboard/marketing/components/ai-studio/AiStudioQuickEdit';
 import { AiStudioRefineBox } from '@/features/dashboard/marketing/components/ai-studio/AiStudioRefineBox';
 import { AiStudioStage } from '@/features/dashboard/marketing/components/ai-studio/AiStudioStage';
 import {
@@ -80,6 +89,8 @@ import {
   isVersionUsable,
   latestVersion,
   postFormatLabel,
+  versionKey,
+  type AiTurn,
   type AiVersion,
 } from '@/features/dashboard/marketing/lib/aiStudioSessions';
 import {
@@ -98,9 +109,15 @@ import {
 } from '@/features/dashboard/marketing/lib/marketingGenerationPricing';
 import type { MarketingGenerationJob } from '@/features/dashboard/marketing/lib/marketingGenerationTypes';
 import { setPendingMarketingPhoto } from '@/features/dashboard/marketing/lib/marketingPhotoHandoff';
+import { useGenerateMarketingCaption } from '@/features/dashboard/marketing/lib/marketingPublishApi';
 import type { AiStudioOutput } from '@/features/dashboard/marketing/lib/marketingStudioRoute';
 import { POSTER_ARCHETYPE_DEFAULT_FONTS } from '@/features/dashboard/marketing/lib/poster/posterArchetypes';
 import { POSTER_GOAL_ARCHETYPES } from '@/features/dashboard/marketing/lib/poster/posterDefaults';
+import {
+  moreLikeThisLayouts,
+  setPosterLayout,
+} from '@/features/dashboard/marketing/lib/poster/posterQuickEdit';
+import { POSTER_ARCHETYPE_FAMILY } from '@/features/dashboard/marketing/lib/poster/posterSpec';
 import {
   POSTER_ARCHETYPE_IDS,
   POSTER_GOALS,
@@ -150,7 +167,16 @@ type Props = {
   onPublish: (payload: { blob: Blob; mediaType: 'image' | 'video' }) => void;
   /** Post → open the saved design in the Posts editor. */
   onOpenInDesign: (templateId: string) => void;
+  /** Reel → open the saved video in the Videos editor. */
+  onOpenInVideo: (templateId: string) => void;
 };
+
+/** Formats exported by Download all sizes: portrait feed, Story and landscape. */
+const ALL_SIZE_FORMATS: DesignTemplateFormat[] = [
+  'instagram-portrait',
+  'instagram-story',
+  'facebook-post',
+];
 
 const POST_ASPECT: Record<string, string> = {
   'instagram-portrait': '4 / 5',
@@ -204,7 +230,7 @@ async function fetchBlob(url: string): Promise<Blob> {
  * conversation, with every version in the thread on the left, the picked version
  * large on the right, and a message box to keep changing it.
  */
-export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
+export function AiStudioConversation({ onPublish, onOpenInDesign, onOpenInVideo }: Props) {
   const {
     item,
     aiOutput,
@@ -227,6 +253,7 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
     post: postGate.isLoading || postGate.allowed,
     image: imageGate.isLoading || imageGate.allowed,
     video: videoGate.isLoading || videoGate.allowed,
+    reel: postGate.isLoading || postGate.allowed,
   };
 
   // ── Which conversation ────────────────────────────────────────────────────
@@ -270,6 +297,11 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<AiVersion | null>(null);
+  const [quickEditOpen, setQuickEditOpen] = useState(false);
+  /** A fresh batch shows as a grid until the host opens one. */
+  const [gridOpen, setGridOpen] = useState(false);
+  /** Set when the AI call failed and the first batch is quick layouts. */
+  const [fallbackRequest, setFallbackRequest] = useState<AiCreateRequest | null>(null);
   const [refineAspect, setRefineAspect] = useState<string | null>(null);
   const [refineCamera, setRefineCamera] = useState<VideoCameraMoveId | null>(null);
 
@@ -411,6 +443,53 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
     [replaceDraftWithItem]
   );
 
+  /**
+   * Reel: one billed director call, saved as a version. When the AI is down for any reason
+   * other than quota, the free reel (ranked photos, default lines) is saved instead.
+   */
+  const directAndSaveReel = async (input: {
+    sessionId: string | null;
+    prompt: string;
+    photoUrls: string[];
+    parentVersionId?: string | null;
+  }): Promise<string | null> => {
+    let direction: ReelDirection | null = null;
+    try {
+      direction = await engine.directReel({ photoUrls: input.photoUrls, prompt: input.prompt });
+    } catch (error) {
+      if (isAiQuotaError(error)) {
+        handleGenerationError(error as Error);
+        return null;
+      }
+    }
+    // Empty picks are fine: the stage ranks the listing photos itself.
+    const photoUrls = direction?.photoUrls ?? input.photoUrls;
+    try {
+      const saved = await savePosts.mutateAsync({
+        output: 'reel',
+        sessionId: input.sessionId,
+        prompt: input.prompt || null,
+        themeKey: engine.themeKey,
+        parentVersionId: input.parentVersionId ?? null,
+        versions: [
+          {
+            spec: {
+              recipe: direction?.recipe ?? 'tour',
+              copy: direction?.copy ?? { headline: '', subheadline: '', ctaLine: '' },
+            },
+            goal: 'vibe',
+            format: 'instagram-story',
+            photoUrls: photoUrls.slice(0, 6),
+            previewDataUrl: null,
+          },
+        ],
+      });
+      return saved.session.id;
+    } catch {
+      return null;
+    }
+  };
+
   const create = async (request: AiCreateRequest) => {
     setStarted(true);
     captureAppEvent('ai_studio_generate_started', {
@@ -418,6 +497,21 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
       sample_id: request.sampleId,
       trend_topic_key: request.trendTopicKey,
     });
+    if (request.output === 'reel') {
+      setPostWork(true);
+      try {
+        const saved = await directAndSaveReel({
+          sessionId: null,
+          prompt: request.prompt,
+          photoUrls: request.photoUrls,
+        });
+        if (saved) openCreated(saved);
+        else setStarted(false);
+      } finally {
+        setPostWork(false);
+      }
+      return;
+    }
     if (request.output === 'post') {
       const turn: AiPendingTurn = {
         key: 'create',
@@ -440,7 +534,7 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
           setStarted(false);
           return;
         }
-        if (!batch.aiDirected) toast.message('AI styling is busy. Showing quick layouts instead.');
+        setFallbackRequest(batch.aiDirected ? null : request);
         const rendered = [];
         for (const spec of batch.specs) {
           try {
@@ -463,7 +557,33 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
             previewDataUrl: post.previewDataUrl,
           })),
         });
+        // Free extra: the best post again as a Story, saved as a second turn.
+        if (request.alsoStory && batch.specs[0]) {
+          try {
+            const story = await engine.render(batch.specs[0], batch.photoUrls, 'instagram-story');
+            await savePosts.mutateAsync({
+              sessionId: saved.session.id,
+              prompt: null,
+              parentVersionId: saved.versions[0]?.id ?? null,
+              versions: [
+                {
+                  spec: story.spec as unknown as Record<string, unknown>,
+                  goal: request.goal,
+                  format: story.format,
+                  photoUrls: story.photoUrls,
+                  previewDataUrl: story.previewDataUrl,
+                },
+              ],
+            });
+          } catch {
+            // The Story is a bonus: the batch is already saved.
+          }
+        }
         setPending([]);
+        setGridOpen(rendered.length > 1);
+        // The grid is the first batch, even when a Story was saved after it.
+        const lead = saved.versions[0];
+        if (lead) setSelectedKey(versionKey('post', lead.id));
         openCreated(saved.session.id);
       } catch (error) {
         setPending([]);
@@ -667,6 +787,22 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
     }
   };
 
+  const quickEdit = async (
+    version: Extract<AiVersion, { kind: 'post' }>,
+    result: { spec: PosterSpec; photoUrls: string[] }
+  ) => {
+    captureAppEvent('ai_post_quick_edit', { layout: result.spec.archetype });
+    return savePostVersion({
+      parent: version,
+      prompt: null,
+      note: 'Edited',
+      run: async () => ({
+        ...result,
+        format: version.post.format as DesignTemplateFormat,
+      }),
+    });
+  };
+
   const shuffle = (version: Extract<AiVersion, { kind: 'post' }>) => {
     const spec = postSpecOf(version);
     const goal = isPosterGoal(version.post.goal) ? version.post.goal : spec.goal;
@@ -695,6 +831,151 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
       }),
     });
   };
+
+  /** Free: three more layouts in the same family, one new turn, no AI call. */
+  const moreLikeThis = async (version: Extract<AiVersion, { kind: 'post' }>) => {
+    if (!sessionId) return;
+    const spec = postSpecOf(version);
+    const used = new Set(
+      versions.flatMap((item) => (item.kind === 'post' ? [String(item.post.spec.archetype)] : []))
+    );
+    const layouts = moreLikeThisLayouts(spec.archetype, used, 3);
+    if (layouts.length === 0) {
+      toast.message('No more layouts like this one');
+      return;
+    }
+    const format = version.post.format as DesignTemplateFormat;
+    setPending([
+      {
+        key: `turn-${Date.now()}`,
+        output: 'post',
+        prompt: null,
+        note: 'More like this',
+        count: layouts.length,
+        aspect: POST_ASPECT[format] ?? '4 / 5',
+      },
+    ]);
+    setPostWork(true);
+    try {
+      const rendered = [];
+      for (const archetype of layouts) {
+        try {
+          rendered.push(
+            await engine.render(
+              setPosterLayout(spec, archetype, { keepFonts: Boolean(detail?.session.themeKey) }),
+              version.post.photoUrls,
+              format
+            )
+          );
+        } catch {
+          // One layout failing to draw drops only that layout.
+        }
+      }
+      if (rendered.length === 0) throw new Error('Could not draw these posts. Try again.');
+      captureAppEvent('ai_post_more_like_this', { layout: spec.archetype, count: rendered.length });
+      const saved = await savePosts.mutateAsync({
+        sessionId,
+        prompt: null,
+        parentVersionId: version.post.id,
+        versions: rendered.map((post) => ({
+          spec: post.spec as unknown as Record<string, unknown>,
+          goal: isPosterGoal(version.post.goal) ? version.post.goal : 'vibe',
+          format: post.format,
+          photoUrls: post.photoUrls,
+          previewDataUrl: post.previewDataUrl,
+        })),
+      });
+      const firstNew = saved.versions[0];
+      if (firstNew) setSelectedKey(versionKey('post', firstNew.id));
+      setGridOpen(true);
+    } catch (error) {
+      if (!(error instanceof GenerationRequestError)) {
+        toast.error(friendlyToastError(error, 'Could not make more posts. Try again.'));
+      }
+    } finally {
+      setPending([]);
+      setPostWork(false);
+    }
+  };
+
+  /** Free: five slides, one style, rendered at 4:5 and saved as one turn. */
+  const makeCarousel = async (version: Extract<AiVersion, { kind: 'post' }>) => {
+    if (!sessionId) return;
+    const format: DesignTemplateFormat = 'instagram-portrait';
+    setPending([
+      {
+        key: `turn-${Date.now()}`,
+        output: 'post',
+        prompt: null,
+        note: 'Carousel',
+        count: 4,
+        aspect: POST_ASPECT[format] ?? '4 / 5',
+      },
+    ]);
+    setPostWork(true);
+    try {
+      const style = POSTER_ARCHETYPE_FAMILY[postSpecOf(version).archetype];
+      const { slides, photoUrls } = await engine.carouselSlides(style);
+      const rendered = [];
+      for (const slide of slides) {
+        try {
+          rendered.push({
+            goal: slide.spec.goal,
+            post: await engine.render(slide.spec, photoUrls, format),
+          });
+        } catch {
+          // One slide failing to draw drops only that slide.
+        }
+      }
+      if (rendered.length < 2) throw new Error('Could not draw the carousel. Try again.');
+      captureAppEvent('ai_post_carousel_made', { slides: rendered.length, family: style });
+      const saved = await savePosts.mutateAsync({
+        sessionId,
+        prompt: null,
+        parentVersionId: version.post.id,
+        versions: rendered.map(({ goal, post }) => ({
+          spec: post.spec as unknown as Record<string, unknown>,
+          goal,
+          format: post.format,
+          photoUrls: post.photoUrls,
+          previewDataUrl: post.previewDataUrl,
+        })),
+      });
+      const firstNew = saved.versions[0];
+      if (firstNew) setSelectedKey(versionKey('post', firstNew.id));
+      setGridOpen(true);
+    } catch (error) {
+      if (!(error instanceof GenerationRequestError)) {
+        toast.error(friendlyToastError(error, 'Could not make the carousel. Try again.'));
+      }
+    } finally {
+      setPending([]);
+      setPostWork(false);
+    }
+  };
+
+  /** The slides of the open set, in order, as numbered files for posting as a carousel. */
+  const downloadCarousel = (version: Extract<AiVersion, { kind: 'post' }>) =>
+    withBusy('carousel', async () => {
+      const turn = turns.find((item) => item.versions.some((v) => v.key === version.key));
+      const slides = (turn?.versions ?? []).filter(
+        (item): item is Extract<AiVersion, { kind: 'post' }> => item.kind === 'post'
+      );
+      for (const [index, slide] of slides.entries()) {
+        downloadBlob(await blobFor(slide), `${title || 'Post'}-slide-${index + 1}.png`);
+      }
+      captureAppEvent('ai_studio_downloaded', { ...trackProps(version), slides: slides.length });
+    });
+
+  const downloadAllSizes = (version: Extract<AiVersion, { kind: 'post' }>) =>
+    withBusy('sizes', async () => {
+      const spec = postSpecOf(version);
+      for (const format of ALL_SIZE_FORMATS) {
+        const blob = await engine.exportBlob(spec, version.post.photoUrls, format);
+        downloadBlob(blob, `${title || 'Post'}-v${version.number}-${format}.png`);
+      }
+      captureAppEvent('ai_studio_downloaded', { ...trackProps(version), all_sizes: true });
+    });
 
   const resizePost = (
     version: Extract<AiVersion, { kind: 'post' }>,
@@ -735,9 +1016,17 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
   };
 
   const title = detail?.session.title ?? '';
+  // Layout id and counts only: never the prompt, copy or listing data.
+  const trackProps = (version: AiVersion) => ({
+    output: version.kind,
+    version: version.number,
+    ...(version.kind === 'post' ? { layout: postSpecOf(version).archetype } : {}),
+  });
+
   const download = (version: AiVersion) =>
     withBusy('download', async () => {
       const blob = await blobFor(version);
+      captureAppEvent('ai_studio_downloaded', trackProps(version));
       const ext =
         version.kind === 'video'
           ? 'mp4'
@@ -749,14 +1038,38 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
 
   const publish = (version: AiVersion) =>
     withBusy('publish', async () => {
+      captureAppEvent('ai_studio_publish_started', trackProps(version));
       onPublish({
         blob: await blobFor(version),
         mediaType: version.kind === 'video' ? 'video' : 'image',
       });
     });
 
+  const generateCaption = useGenerateMarketingCaption();
+  const [captions, setCaptions] = useState<Record<string, string>>({});
+  const writeCaption = async (version: Extract<AiVersion, { kind: 'post' }>) => {
+    const cached = captions[version.key];
+    if (cached) return cached;
+    const spec = postSpecOf(version);
+    const caption = await generateCaption.mutateAsync({
+      platform: 'instagram',
+      postType: version.post.format === 'instagram-story' ? 'story' : 'post',
+      contentHint: [spec.copy.headline, spec.copy.subhead].filter(Boolean).join('. ') || title,
+    });
+    setCaptions((current) => ({ ...current, [version.key]: caption }));
+    return caption;
+  };
+  const copyCaption = (version: Extract<AiVersion, { kind: 'post' }>) =>
+    withBusy('caption', async () => {
+      const caption = await writeCaption(version);
+      await navigator.clipboard.writeText(caption);
+      captureAppEvent('ai_post_caption_copied', { layout: postSpecOf(version).archetype });
+      toast.success('Caption copied');
+    });
+
   const editInPosts = (version: Extract<AiVersion, { kind: 'post' }>) =>
     withBusy('edit', async () => {
+      captureAppEvent('ai_post_edited', trackProps(version));
       const id = await engine.saveToPosts({
         spec: postSpecOf(version),
         photoUrls: version.post.photoUrls,
@@ -765,6 +1078,35 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
         previewUrl: version.post.previewUrl,
       });
       onOpenInDesign(id);
+    });
+
+  const [reelPreviewFor, setReelPreviewFor] = useState<Extract<AiVersion, { kind: 'post' }> | null>(null);
+
+  const makeReel = (
+    version: Extract<AiVersion, { kind: 'post' }>,
+    recipe?: 'tour' | 'highlights',
+    direction?: ReelDirection | null
+  ) =>
+    withBusy('reel', async () => {
+      const id = await engine.saveReel({
+        photoUrls: direction?.photoUrls ?? version.post.photoUrls,
+        name: title ? `${title} reel` : undefined,
+        recipe,
+        copy: direction?.copy,
+      });
+      toast.success('Reel made. Opening it in Videos');
+      onOpenInVideo(id);
+    });
+
+  const reelFromClip = (job: MarketingGenerationJob) =>
+    withBusy('reel', async () => {
+      if (!job.outputUrl) return;
+      const id = await engine.saveReel({
+        leadClipUrl: job.outputUrl,
+        name: title ? `${title} reel` : undefined,
+      });
+      toast.success('Reel made. Opening it in Videos');
+      onOpenInVideo(id);
     });
 
   const putInPost = (job: MarketingGenerationJob) => {
@@ -869,6 +1211,63 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
     );
   }
 
+  if (output === 'reel') {
+    const reelDeleted = Boolean(detail?.session.deletedAt);
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <ConversationTopBar
+          title={detail?.session.title ?? ''}
+          icon={<Film className="text-muted-foreground size-4 shrink-0" aria-hidden />}
+          onBack={closeItem}
+          onRename={
+            access.reel && !reelDeleted && sessionId
+              ? (next) => rename.mutateAsync({ id: sessionId, title: next })
+              : undefined
+          }
+        />
+        {detail ? (
+          <AiStudioReelSession
+            versions={detail.postVersions}
+            engine={engine}
+            canChange={access.reel && !reelDeleted}
+            busy={postWork || savePosts.isPending}
+            onDirect={async (prompt, parent) => {
+              setPostWork(true);
+              try {
+                await directAndSaveReel({
+                  sessionId,
+                  prompt,
+                  photoUrls: directionOfVersion(parent).photoUrls,
+                  parentVersionId: parent.id,
+                });
+              } finally {
+                setPostWork(false);
+              }
+            }}
+            onEdit={async (version) => {
+              const direction = directionOfVersion(version);
+              await withBusy('reel', async () => {
+                const id = await engine.saveReel({
+                  photoUrls: direction.photoUrls,
+                  name: title ? `${title} reel` : undefined,
+                  recipe: direction.recipe,
+                  copy: direction.copy,
+                });
+                toast.success('Reel made. Opening it in Videos');
+                onOpenInVideo(id);
+              });
+            }}
+            onDelete={(version) => deleteVersion.mutate({ kind: 'post', id: version.id })}
+          />
+        ) : (
+          <div className="flex flex-1 items-center justify-center" aria-busy="true">
+            <Loader2 className="size-5 animate-spin" aria-label="Directing your reel" />
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const deleted = Boolean(detail?.session.deletedAt);
   const usable = isVersionUsable(selected);
   const canChange = access[output] && !deleted;
@@ -882,6 +1281,76 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
         icon: <Shuffle className="size-4" aria-hidden />,
         disabled: busy || !canChange,
         onSelect: () => shuffle(selected),
+      },
+      ...(sameTurnPostCount(turns, selected) > 1
+        ? [
+            {
+              key: 'compare',
+              label: 'Compare versions',
+              icon: <LayoutTemplate className="size-4" aria-hidden />,
+              onSelect: () => setGridOpen(true),
+            },
+          ]
+        : []),
+      {
+        key: 'more-like-this',
+        label: 'More like this',
+        icon: <LayoutTemplate className="size-4" aria-hidden />,
+        disabled: busy || !canChange,
+        onSelect: () => void moreLikeThis(selected),
+      },
+      {
+        key: 'carousel',
+        label: 'Make a carousel',
+        icon: <LayoutTemplate className="size-4" aria-hidden />,
+        disabled: busy || !canChange,
+        onSelect: () => void makeCarousel(selected),
+      },
+      ...(sameTurnPostCount(turns, selected) > 2
+        ? [
+            {
+              key: 'carousel-download',
+              label: 'Download this set in order',
+              icon: <Download className="size-4" aria-hidden />,
+              disabled: !usable || busyAction !== null,
+              onSelect: () => void downloadCarousel(selected),
+            },
+          ]
+        : []),
+      {
+        key: 'reel',
+        label: 'Make a reel',
+        icon: <Clapperboard className="size-4" aria-hidden />,
+        disabled: !usable || busyAction !== null || !access.video,
+        onSelect: () => void makeReel(selected, 'tour'),
+      },
+      {
+        key: 'reel-preview',
+        label: 'Preview reel',
+        icon: <Clapperboard className="size-4" aria-hidden />,
+        disabled: !usable || busyAction !== null || !access.video,
+        onSelect: () => setReelPreviewFor(selected),
+      },
+      {
+        key: 'reel-short',
+        label: 'Make a short reel',
+        icon: <Clapperboard className="size-4" aria-hidden />,
+        disabled: !usable || busyAction !== null || !access.video,
+        onSelect: () => void makeReel(selected, 'highlights'),
+      },
+      {
+        key: 'all-sizes',
+        label: 'Download all sizes',
+        icon: <Download className="size-4" aria-hidden />,
+        disabled: !usable || busyAction !== null,
+        onSelect: () => void downloadAllSizes(selected),
+      },
+      {
+        key: 'caption',
+        label: 'Copy caption',
+        icon: <Copy className="size-4" aria-hidden />,
+        disabled: !usable || busyAction !== null,
+        onSelect: () => void copyCaption(selected),
       },
     ]);
   }
@@ -905,6 +1374,17 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
             },
           ]
         : []),
+    ]);
+  }
+  if (selected?.kind === 'video') {
+    actionGroups.push([
+      {
+        key: 'clip-in-reel',
+        label: 'Use in a reel',
+        icon: <Clapperboard className="size-4" aria-hidden />,
+        disabled: !usable || busyAction !== null || !access.video,
+        onSelect: () => void reelFromClip(selected.job),
+      },
     ]);
   }
   if (
@@ -942,6 +1422,18 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
 
   const topActions = selected ? (
     <div className="flex items-center gap-1.5">
+      {selected.kind === 'post' && canChange ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-[44px] gap-2 max-sm:px-3 lg:min-h-9"
+          disabled={busy || !usable}
+          onClick={() => setQuickEditOpen(true)}
+        >
+          <SlidersHorizontal className="size-4" aria-hidden />
+          <span className="max-sm:sr-only">Quick edit</span>
+        </Button>
+      ) : null}
       {selected.kind === 'post' && canChange ? (
         <Button
           type="button"
@@ -1115,7 +1607,25 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
     />
   );
 
-  const stage = (
+  const gridVersions =
+    gridOpen && selected?.kind === 'post' && pending.length === 0
+      ? (turns
+          .find((turn) => turn.versions.some((version) => version.key === selected.key))
+          ?.versions.filter(
+            (version): version is Extract<AiVersion, { kind: 'post' }> => version.kind === 'post'
+          ) ?? [])
+      : [];
+  const showGrid = gridVersions.length > 1;
+
+  const stage = showGrid ? (
+    <AiStudioPostGrid
+      versions={gridVersions}
+      onOpen={(version) => {
+        setSelectedKey(version.key);
+        setGridOpen(false);
+      }}
+    />
+  ) : (
     <AiStudioStage
       version={selected}
       pending={
@@ -1139,6 +1649,17 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
     />
   );
 
+  const captionCard =
+    selected?.kind === 'post' && usable && !showGrid ? (
+      <AiStudioCaptionCard
+        caption={captions[selected.key] ?? null}
+        loading={generateCaption.isPending}
+        disabled={!canChange}
+        onWrite={() => void writeCaption(selected).catch(() => undefined)}
+        onCopy={() => void copyCaption(selected)}
+      />
+    ) : null;
+
   const loadingFirst = sessionQuery.isLoading && !detail && pending.length === 0;
   const OutputIcon = AI_OUTPUT_ICON[output];
 
@@ -1155,6 +1676,30 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
         }
         actions={topActions}
       />
+      {fallbackRequest && !showCreate ? (
+        <div
+          role="status"
+          className="border-border bg-muted/50 flex shrink-0 items-center justify-between gap-3 border-b px-3 py-2 text-xs sm:px-4"
+        >
+          <span className="text-muted-foreground">
+            AI styling was busy, so these are quick layouts.
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-[44px] shrink-0 lg:min-h-9"
+            disabled={busy}
+            onClick={() => {
+              const request = fallbackRequest;
+              setFallbackRequest(null);
+              setCreatedId(null);
+              void create(request);
+            }}
+          >
+            Retry with AI
+          </Button>
+        </div>
+      ) : null}
       {loadingFirst ? (
         <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4" aria-busy="true">
           <Skeleton className="min-h-[16rem] w-full flex-1 rounded-xl" />
@@ -1166,7 +1711,10 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
         </div>
       ) : isBelowLg ? (
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="bg-muted/40 flex min-h-0 flex-1 flex-col">{stage}</div>
+          <div className="bg-muted/40 flex min-h-0 flex-1 flex-col">
+            {stage}
+            {captionCard}
+          </div>
           <div className="border-border space-y-2 border-t p-3">
             <div className="flex items-center gap-2">
               <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
@@ -1214,9 +1762,45 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
           </aside>
           <section className="bg-muted/40 flex min-h-0 flex-col" aria-label="Preview">
             {stage}
+            {captionCard}
           </section>
         </div>
       )}
+
+      {reelPreviewFor ? (
+        <AiStudioReelPreview
+          open
+          onOpenChange={(open) => {
+            if (!open) setReelPreviewFor(null);
+          }}
+          engine={engine}
+          photoUrls={reelPreviewFor.post.photoUrls}
+          onEdit={async (recipe, direction) => {
+            const version = reelPreviewFor;
+            setReelPreviewFor(null);
+            await makeReel(version, recipe, direction);
+          }}
+        />
+      ) : null}
+
+      {quickEditOpen && selected?.kind === 'post' ? (
+        <AiStudioQuickEdit
+          key={selected.key}
+          open
+          onOpenChange={setQuickEditOpen}
+          spec={postSpecOf(selected)}
+          photoUrls={selected.post.photoUrls}
+          libraryPhotos={engine.baseFacts.photos}
+          available={{
+            logo: Boolean(engine.baseFacts.logoUrl),
+            infoBar: Boolean(engine.baseFacts.checkIn || engine.baseFacts.checkOut),
+            location: Boolean(engine.baseFacts.location),
+          }}
+          keepFonts={Boolean(detail?.session.themeKey)}
+          saving={busy}
+          onApply={(result) => quickEdit(selected, result)}
+        />
+      ) : null}
 
       <AlertDialog
         open={Boolean(confirmDelete)}
@@ -1260,6 +1844,11 @@ export function AiStudioConversation({ onPublish, onOpenInDesign }: Props) {
       </AlertDialog>
     </div>
   );
+}
+
+function sameTurnPostCount(turns: AiTurn[], selected: AiVersion): number {
+  const turn = turns.find((item) => item.versions.some((version) => version.key === selected.key));
+  return turn ? turn.versions.filter((version) => version.kind === 'post').length : 0;
 }
 
 function ConversationTopBar({

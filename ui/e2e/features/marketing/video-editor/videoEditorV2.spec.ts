@@ -159,6 +159,22 @@ test.describe('@ci marketing video editor v2', () => {
     await expect(page.locator('[data-timeline-item]')).toHaveCount(before);
   });
 
+  test('the music clip offers Cut to the beat and says so when the track cannot be read', async ({
+    page,
+  }) => {
+    await installMediaMocks(page, [asset('s1', 'audio', 'song.mp3')]);
+    await openDraft(page);
+    await openMediaPanel(page);
+    await page.getByRole('tab', { name: 'Audio' }).click();
+    await page.getByRole('button', { name: 'Use song.mp3' }).click();
+    await page.locator('[data-lane]').first().locator('[data-timeline-item]').first().click();
+    const button = page.getByRole('button', { name: 'Cut to the beat' });
+    await expect(button).toBeVisible();
+    // The mocked file is not audio, so decoding fails and the editor says so.
+    await button.click();
+    await expect(page.getByText('Could not read this track to find the beat.')).toBeVisible();
+  });
+
   test('delete removes the selected clip', async ({ page }) => {
     await installMediaMocks(page, []);
     await openDraft(page);
@@ -233,5 +249,41 @@ test.describe('@ci marketing video editor v2 on a phone', () => {
       .getByRole('button', { name: 'Split' })
       .tap();
     await expect(items).toHaveCount(before + 1);
+  });
+});
+
+// Between 1024 and 1279px the library rail and the inspector cannot both fit beside the
+// stage, so the one that was just asked for replaces the other.
+test.describe('@ci marketing video editor v2 narrow desktop', () => {
+  test.setTimeout(120_000);
+  test.use({ viewport: { width: 1100, height: 768 } });
+
+  test.beforeEach(async ({ page }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access');
+    await installTemplateMocks(page);
+  });
+
+  test('picking a library photo shows its inspector and steps the library aside', async ({
+    page,
+  }) => {
+    await installMediaMocks(page, [asset('a1', 'image', 'pool.jpg')]);
+    await openDraft(page);
+    const before = await page.locator('[data-timeline-item]').count();
+    await openMediaPanel(page);
+    await page.getByRole('button', { name: 'Use pool.jpg' }).click();
+    await expect(page.locator('[data-timeline-item]')).toHaveCount(before + 1);
+    await expect(page.getByRole('region', { name: 'Media library' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Replace' })).toBeVisible();
+  });
+
+  test('opening the library closes the inspector', async ({ page }) => {
+    await installMediaMocks(page, [asset('a1', 'image', 'pool.jpg')]);
+    await openDraft(page);
+    await openMediaPanel(page);
+    await page.getByRole('button', { name: 'Use pool.jpg' }).click();
+    await expect(page.getByRole('button', { name: 'Replace' })).toBeVisible();
+    await page.getByRole('tab', { name: 'Media' }).click();
+    await expect(page.getByRole('region', { name: 'Media library' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Replace' })).toBeHidden();
   });
 });

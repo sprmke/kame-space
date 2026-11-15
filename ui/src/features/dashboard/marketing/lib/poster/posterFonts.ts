@@ -37,6 +37,8 @@ export type PosterFontPairing = {
   body: PosterTypeRole;
   chip: PosterTypeRole;
   displayEffect: PosterDisplayEffect;
+  /** Brand wordmark line. Set by a theme so it uses the theme's face; else the layout default. */
+  wordmark?: PosterTypeRole;
 };
 
 export const POSTER_FONT_PAIRING_IDS = [

@@ -57,6 +57,7 @@ On the **host dashboard**, the sidebar footer account menu shows the same avatar
 ### Sign-in flow (both audiences)
 
 - Single email field → **Continue** → OTP code emailed (unified sign-in/sign-up via `signInWithOtp` + `shouldCreateUser: true`) → 6-digit code entry → **Verify** (auto-submits once all 6 digits are entered)
+- **Spacing:** email and Continue share a 12px gap (`gap-3`). Field errors sit under the input; page-level failures (OAuth return, workspace list miss) sit under Continue so they do not look like email validation
 - **Google** OAuth below the email path — same order as the guest checkout modal: email + Continue, **or** divider, then **Continue with Google** (both audiences). Facebook was removed and is not supported
 - No phone sign-in, no passwords
 - **One page per audience.** Email OTP creates the account on the first verified code, so a separate sign-up screen would render the identical form. Both headings read **Log in or sign up**, and the footer is a cross-audience exit (guest page → **Sign in as host**, host page → **Sign in as guest**) instead of a register link. `/for-hosts/register` and `/for-guests/register` stay as redirects to the matching `/login`, preserving `?redirect=`, so old bookmarks and links keep working
@@ -76,9 +77,9 @@ Resume after OAuth (guest): `sessionStorage` (`guestAuthResume.ts`) restores nav
 
 ### Host sign-in
 
-**Layout (lg+, host routes):** 50/50 split — left **`HostWorkspaceSidePanel`** (`variant="auth"`) shared with onboarding: solid **`bg-primary`**, **`MarketingBrandLogo`** inset `p-4` (same top-left as **`MarketingNav`**), headline + description, compact **`HostDashboardTourPlayer`** (expand modal — the tour film is theme-aware and follows the viewer's light/dark choice; see `for-hosts.md` § Dark mode). No footer links on the panel.
+**Layout (lg+, host routes):** 50/50 split — left **`HostWorkspaceSidePanel`** (`variant="auth"`) shared with onboarding: solid **`bg-primary`**, **`MarketingBrandLogo`** in `.public-brand-bar` (same height as **`MarketingNav`** and the same left inset via `--public-shell-px`), headline + description, compact **`HostDashboardTourPlayer`** (expand modal — the tour film is theme-aware and follows the viewer's light/dark choice; see `for-hosts.md` § Dark mode). No footer links on the panel.
 
-**Shared panel shell:** host and guest left panels both render through **`AuthSidePanelShell`** (`marketing/shared/components`): `aside` on solid **`bg-primary-strong`**, logo link inset top-left, left-aligned title + one-line description, then the audience content. Only that content differs between host and guest. The column has `pt-20` so the heading never runs into the logo on short screens.
+**Shared panel shell:** host and guest left panels both render through **`AuthSidePanelShell`** (`marketing/shared/components`): `aside` on solid **`bg-primary-strong`**, logo in `.public-brand-bar`, left-aligned title + showcase sharing the same `--public-shell-px` gutter (no centered max-width drift). Content column uses `pt-[var(--public-nav-h)]` so the heading clears the logo. Phone auth header uses the same brand bar.
 
 ### Guest sign-in layout
 
@@ -111,7 +112,7 @@ There is no password anywhere in this flow. What used to be `/for-hosts/forgot-p
 
 ---
 
-> **Legal notice:** Sign-in pages end with the shared sign-in legal line (Terms and Privacy Policy, balanced two lines) under the switch prompt; the guest auth modal shows it under Google. Email step only. Pattern and full list: [legal.md](legal.md#in-app-notices).
+> **Legal notice:** Sign-in pages and the guest auth modal show the shared line under Google (“By continuing, you agree to our Terms and Privacy Policy.”). Host/guest switch stays below that. Email step only. Pattern and full list: [legal.md](legal.md#in-app-notices).
 
 ## Host-facing knowledge
 

@@ -273,7 +273,7 @@ Tasks:
 - [x] **4.5** Preserve context across the reload: current route (already), scroll position for list routes, and open drafts (Phase 5 drafts). Query cache rehydrates from IndexedDB.
 - [x] **4.6** Extend `pwa-version.json` with `forceUpdateBelow` (epoch seconds). Builds below it show a blocking but polite sheet ("Update needed to keep going", single Update button) instead of the kill-switch wipe. Keep `disabled` / `minBuild` behavior unchanged.
 - [x] **4.7** Throttle `registration.update()` (foreground + `online` + hourly can stack); at most once per 10 minutes.
-- [x] **4.8** Show app version and "Check for updates" in Help & Support (and super-admin health). Useful for support.
+- [x] **4.8** Show app version and "Check for updates" on Profile → On this device (and super-admin health). Not on Help & Support. Useful for support.
 - [x] **4.9** Edge cases: update arrives while offline (apply after reconnect only if the new precache finished); SW install fails halfway (stay on old, retry next check); new build changes the outbox schema (version the IDB store, migrate or drain first); new build bumps the query persister `buster` (expected cache drop; make sure the UI shows skeletons, not empty states).
 
 ## 8. Phase 5: offline and sync UX

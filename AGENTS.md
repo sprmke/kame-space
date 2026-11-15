@@ -195,7 +195,6 @@ Full index: `.codex/README.md` (Codex) · `.cursor/rules/README.md` (Cursor) · 
 - **Production Supabase/DB deploys without unlock** — `.cursor/rules/no-prod-deploy.mdc`. Never run or recommend `deploy:supabase`, `db push`, `functions deploy`, or remote migrations unless the user said **`kamewave`** in the same message. Shell hooks enforce this.
 - Trusting a skill just because it's in the picker — if `property-management-app` (a separate Next.js/tRPC/Drizzle repo) is also open this session, its skills will appear too; ignore them here.
 
-
 ## Codex compatibility
 
 Before working, read [.codex/README.md](.codex/README.md). It lists this project’s always-on Cursor rules and scoped rules to read for the affected files. Codex skills are discovered in `.agents/skills`; specialist definitions are in `.codex/agents`. Existing Cursor/Claude model aliases are not Codex model settings. Use available Codex tools and preserve project-specific architecture and authorization rules.
@@ -203,10 +202,12 @@ Before working, read [.codex/README.md](.codex/README.md). It lists this project
 Superpowers workflows and subagent delegation remain opt-in; do not start them automatically. Run `python3 .codex/sync.py` after changing project skills, commands or agent definitions. Review/trust hooks through Codex before relying on their enforcement. This repository setup is independent of the hourly job-search task in the personal chat.
 
 <!-- global-agent-skills -->
+
 ## Global agent skills
 
 This machine has 159 shared skills in `~/.agents/skill-library` (Claude Code, Cursor,
-Codex and OpenCode all read them). Only five behaviour skills are always visible.
-For anything else, open `~/.agents/skill-library/agent-skills-index/SKILL.md`, find the
-skill that fits, then read `~/.agents/skill-library/<skill>/SKILL.md`.
-Manage with `~/.agents/bin/agent-stack.sh`. Repo skills and rules always win.
+Codex and OpenCode all read them). Six skills are always visible (five behaviour +
+`humanizer` for AI-tell-free prose). For anything else, open
+`~/.agents/skill-library/agent-skills-index/SKILL.md`, find the skill that fits, then
+read `~/.agents/skill-library/<skill>/SKILL.md`. Manage with
+`~/.agents/bin/agent-stack.sh`. Repo skills and rules always win.

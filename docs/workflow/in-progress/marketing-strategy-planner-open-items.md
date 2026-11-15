@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Marketing Planner — open items I need from the owner'
 status: open
 tags: [workflow, in-progress, marketing, planner, decisions]
-updated: 2026-11-14
+updated: 2026-11-15
 kind: checklist
 ---
 

@@ -36,6 +36,7 @@ const OUTPUT_LABEL: Record<AiStudioOutput, string> = {
   post: 'Posts',
   image: 'Photos',
   video: 'Clips',
+  reel: 'Reels',
 };
 
 function filterStorageKey(propertyId: string | null) {
@@ -112,7 +113,7 @@ export function AiStudioSampleGallery({
   const all = useVisibleSamples(catalog, renderer);
   const outputsWithSamples = useMemo(
     () =>
-      (['post', 'image', 'video'] as const).filter((value) => all.some((s) => s.output === value)),
+      (['post', 'image', 'video', 'reel'] as const).filter((value) => all.some((s) => s.output === value)),
     [all]
   );
   // A remembered filter whose examples are gone falls back to All.

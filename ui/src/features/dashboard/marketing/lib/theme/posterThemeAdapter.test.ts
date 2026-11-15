@@ -34,6 +34,13 @@ describe('posterPaletteInputFromTheme', () => {
 describe('themedPosterFontPairing', () => {
   const pairing = POSTER_FONT_PAIRINGS['cozy-cafe'];
 
+  it('sets the brand wordmark in the theme display face, never a fixed font', () => {
+    const themed = themedPosterFontPairing(pairing, TOKENS);
+    expect(themed.wordmark?.family).toBe('Fraunces');
+    expect(themed.wordmark?.uppercase).toBe(true);
+    expect(pairing.wordmark).toBeUndefined();
+  });
+
   it('keeps the archetype composition and swaps in the theme faces', () => {
     const themed = themedPosterFontPairing(pairing, TOKENS);
 
@@ -45,10 +52,26 @@ describe('themedPosterFontPairing', () => {
     expect(themed.chip.family).toBe('Jost');
   });
 
-  it('leaves sizes, tracking, weights and the script face untouched', () => {
+  it('a sans theme leaves the display role untouched apart from the family', () => {
+    const sans = {
+      ...TOKENS,
+      fonts: { display: 'Sora', body: 'DM Sans', label: 'Jost' },
+    } as MarketingThemeTokens;
+    const themed = themedPosterFontPairing(pairing, sans);
+    expect(themed.display).toEqual({ ...pairing.display, family: 'Sora' });
+  });
+
+  it('a serif theme is never set in tracked capitals', () => {
+    const themed = themedPosterFontPairing(pairing, TOKENS);
+    expect(themed.display.uppercase).toBe(false);
+    expect(themed.display.letterSpacing).toBeLessThanOrEqual(0);
+    expect(themed.display.lineHeight).toBeGreaterThanOrEqual(1.05);
+    expect(themed.displayEffect).not.toBe('outline-shadow');
+  });
+
+  it('leaves body weights and the script face untouched', () => {
     const themed = themedPosterFontPairing(pairing, TOKENS);
 
-    expect(themed.display).toEqual({ ...pairing.display, family: 'Fraunces' });
     expect(themed.body).toEqual({ ...pairing.body, family: 'Plus Jakarta Sans' });
     expect(themed.script).toBe(pairing.script);
   });

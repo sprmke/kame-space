@@ -9,6 +9,7 @@ import type { DesignBinding } from '@/features/dashboard/marketing/lib/designCan
 import { blobToDataUrl } from '@/features/dashboard/marketing/lib/exportVideoMedia';
 import { savedThumbnailPixelRatio } from '@/features/dashboard/marketing/lib/marketingThumbSizing';
 import { ensurePolotnoConfigured } from '@/features/dashboard/marketing/lib/polotno/initPolotno';
+import { startLoadGuard } from '@/features/dashboard/marketing/lib/polotno/polotnoLoadGuard';
 import { buildPolotnoCampaignDocument } from '@/features/dashboard/marketing/lib/polotno/polotnoCampaignDocuments';
 import type { PolotnoStore } from '@/features/dashboard/marketing/lib/polotno/polotnoStore';
 import { syncPolotnoTextBounds } from '@/features/dashboard/marketing/lib/polotno/syncPolotnoTextBounds';
@@ -118,13 +119,18 @@ export async function renderDesignPresetThumbnail(
 
   const store = createThumbnailStore();
   try {
+    const guard = startLoadGuard(doc);
     store.loadJSON(withUniquePageIds(doc));
     store.history.clear();
     await store.waitLoading();
     await syncPolotnoTextBounds(store);
     return await withOffscreenWorkspace(store, async () => {
       await waitForThumbnailPaint();
-      return storeToThumbnailDataUrl(store);
+      await store.waitLoading();
+      // A failed photo draws a red error block; no thumbnail beats a broken one.
+      if (guard.failed().length > 0) return null;
+      const dataUrl = await storeToThumbnailDataUrl(store);
+      return guard.failed().length > 0 ? null : dataUrl;
     });
   } catch {
     return null;
@@ -138,13 +144,17 @@ export async function renderDesignDocumentThumbnail(doc: unknown): Promise<strin
   if (!doc || typeof doc !== 'object') return null;
   const store = createThumbnailStore();
   try {
+    const guard = startLoadGuard(doc);
     store.loadJSON(withUniquePageIds(doc) as Record<string, unknown>);
     store.history.clear();
     await store.waitLoading();
     await syncPolotnoTextBounds(store);
     return await withOffscreenWorkspace(store, async () => {
       await waitForThumbnailPaint();
-      return storeToThumbnailDataUrl(store);
+      await store.waitLoading();
+      if (guard.failed().length > 0) return null;
+      const dataUrl = await storeToThumbnailDataUrl(store);
+      return guard.failed().length > 0 ? null : dataUrl;
     });
   } catch {
     return null;
@@ -162,9 +172,7 @@ export async function renderDesignStoreThumbnail(store: PolotnoStore): Promise<s
 }
 
 /** Stored (Library) thumbnail of the live editor canvas. */
-export async function renderDesignStoreSavedThumbnail(
-  store: PolotnoStore
-): Promise<string | null> {
+export async function renderDesignStoreSavedThumbnail(store: PolotnoStore): Promise<string | null> {
   try {
     await store.waitLoading();
     const size = store as unknown as { width: number; height: number };

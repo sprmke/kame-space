@@ -19,14 +19,18 @@ import {
   type AiStudioChoice,
 } from '@/features/dashboard/marketing/components/ai-studio/AiStudioChoiceGroup';
 import { AiStudioLookPicker } from '@/features/dashboard/marketing/components/ai-studio/AiStudioLookPicker';
+import { AiStudioOfferFields } from '@/features/dashboard/marketing/components/ai-studio/AiStudioOfferFields';
 import { AiStudioPhotoPicker } from '@/features/dashboard/marketing/components/ai-studio/AiStudioPhotoPicker';
+import { AiStudioPostPhotos } from '@/features/dashboard/marketing/components/ai-studio/AiStudioPostPhotos';
 import { AiStudioSampleBanner } from '@/features/dashboard/marketing/components/ai-studio/AiStudioSampleBanner';
 import { AiStudioSampleArt } from '@/features/dashboard/marketing/components/ai-studio/AiStudioSampleCard';
 import { AiStudioSampleGallery } from '@/features/dashboard/marketing/components/ai-studio/AiStudioSampleGallery';
 import { SizeGlyph } from '@/features/dashboard/marketing/components/library/MarketingNewButton';
 import { useOptionalMarketingTheme } from '@/features/dashboard/marketing/components/themes/MarketingThemeProvider';
 import { ThemePostArt } from '@/features/dashboard/marketing/components/themes/ThemePreview';
+import { useAiPosterEngine } from '@/features/dashboard/marketing/hooks/useAiPosterEngine';
 import { useAiStudioPostSampleRenderer } from '@/features/dashboard/marketing/hooks/useAiStudioPostSamples';
+import { useLivePostDraft } from '@/features/dashboard/marketing/hooks/useLivePostDraft';
 import {
   buildAiCreateRequest,
   type AiCreateRequest,
@@ -43,7 +47,11 @@ import {
   sampleToCreateState,
   type AiStudioSample,
 } from '@/features/dashboard/marketing/lib/aiStudioSamples';
-import { START_EXAMPLES } from '@/features/dashboard/marketing/lib/aiStudioSessions';
+import {
+  AI_OUTPUT_LABEL,
+  START_EXAMPLES,
+} from '@/features/dashboard/marketing/lib/aiStudioSessions';
+import { ENHANCE_PRESETS } from '@/features/dashboard/marketing/lib/marketingGenerationOptions';
 import {
   DEFAULT_VIDEO_CAMERA_MOVE,
   DEFAULT_VIDEO_SOUND,
@@ -81,10 +89,21 @@ import type {
   MarketingGenerationTier,
 } from '@/features/dashboard/marketing/lib/marketingGenerationTypes';
 import type { AiStudioOutput } from '@/features/dashboard/marketing/lib/marketingStudioRoute';
+import {
+  EMPTY_OFFER_DRAFT,
+  offerProblem,
+  type OfferDraft,
+} from '@/features/dashboard/marketing/lib/poster/posterOffer';
+import {
+  POSTER_STYLE_CHOICES,
+  type PosterStyleChoice,
+} from '@/features/dashboard/marketing/lib/poster/posterQuickEdit';
+import { posterReadinessHints } from '@/features/dashboard/marketing/lib/poster/posterReadiness';
 import type { PosterGoal } from '@/features/dashboard/marketing/lib/poster/posterSpec';
 import type { DesignTemplateFormat } from '@/features/dashboard/marketing/lib/templateRegistry';
 import type { ResolvedMarketingTheme } from '@/features/dashboard/marketing/lib/theme/marketingTheme';
 import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
+import { propertySectionPath } from '@/features/dashboard/org/lib/tenantPaths';
 import { TierBadgeAnchor } from '@/features/dashboard/plans/components/TierBadge';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import type { PlanFeatureKey } from '@/features/dashboard/plans/lib/planFeatures';
@@ -92,6 +111,7 @@ import type { PlanFeatureKey } from '@/features/dashboard/plans/lib/planFeatures
 import { FeatureAvailabilityButton } from '@/components/feature-availability/FeatureAvailabilityButton';
 import { FeatureUnavailableNotice } from '@/components/feature-availability/FeatureUnavailableNotice';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Label } from '@/components/ui/label';
 import {
@@ -115,6 +135,7 @@ const PLACEHOLDER: Record<AiStudioOutput, string> = {
   post: 'What is the post about? (optional)',
   image: 'Describe the photo you want',
   video: 'What should move? Curtains, water, light',
+  reel: 'What should the reel show? (optional)',
 };
 
 const POST_PROMPT_MAX = 500;
@@ -185,9 +206,11 @@ export function AiStudioCreate({
   const { open: openUpgradeModal } = useUpgradeModal();
   const generateAvailability = useFeatureAvailability('marketing.ai_studio.generate');
   const generateBlocked = !generateAvailability.available && !generateAvailability.isLoading;
-  const { property } = useOrgContext();
+  const { property, org } = useOrgContext();
+  const engine = useAiPosterEngine(null);
   const isPost = output === 'post';
   const isVideo = output === 'video';
+  const isReel = output === 'reel';
   const theme = useOptionalMarketingTheme();
   const themePhotoLook = theme?.active?.tokens.photoLook ?? null;
   const resolvedTheme = theme?.resolved ?? null;
@@ -210,6 +233,13 @@ export function AiStudioCreate({
     return handoff ? [handoff] : [];
   });
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [offer, setOffer] = useState<OfferDraft>(EMPTY_OFFER_DRAFT);
+  const [imageMode, setImageMode] = useState<'enhance' | 'scene'>('enhance');
+  const [enhancePreset, setEnhancePreset] = useState<string>(ENHANCE_PRESETS[0]!.id);
+  const [postPhotos, setPostPhotos] = useState<string[]>([]);
+  const [alsoStory, setAlsoStory] = useState(false);
+  const [family, setFamily] = useState<PosterStyleChoice>('auto');
+  const offerBlocked = isPost && goal === 'promo' && offerProblem(offer) !== null;
   const promptRef = useRef<HTMLTextAreaElement>(null);
 
   // A trend picked in the Trends sheet: the topic key travels with the request,
@@ -337,10 +367,11 @@ export function AiStudioCreate({
     window.setTimeout(() => promptRef.current?.focus({ preventScroll: true }), 0);
   }, [output]);
 
-  const maxChars = isPost
+  const maxChars = isPost || isReel
     ? POST_PROMPT_MAX
     : (isVideo ? MAX_VIDEO_PROMPT_CHARS : MAX_IMAGE_PROMPT_CHARS) - MAX_LOOK_SUFFIX_CHARS;
-  const maxPhotos = isVideo ? VIDEO_MAX_REFERENCES : maxReferencesForTier(tier);
+  const isEnhance = output === 'image' && imageMode === 'enhance';
+  const maxPhotos = isVideo ? VIDEO_MAX_REFERENCES : isEnhance ? 1 : maxReferencesForTier(tier);
   const hasStartFrame = isVideo && references.length > 0;
   const effectiveResolution: VideoResolution =
     tier === 'draft' || !allowHighResolution ? DRAFT_VIDEO_RESOLUTION : resolution;
@@ -379,8 +410,11 @@ export function AiStudioCreate({
   const sizeValue = isPost ? format : aspect;
 
   const tierOptions = isVideo ? videoTierOptions(allowPremium) : imageTierOptions(allowPremium);
-  const hasContent = isPost || text.trim().length > 0 || hasStartFrame;
-  const canSubmit = hasContent && !locked;
+  const hasContent =
+    isPost ||
+    isReel ||
+    (isEnhance ? references.length === 1 : text.trim().length > 0 || hasStartFrame);
+  const canSubmit = hasContent && !locked && !offerBlocked;
   const feature = OUTPUT_FEATURE[output];
 
   const handleTier = (next: MarketingGenerationTier) => {
@@ -426,20 +460,44 @@ export function AiStudioCreate({
         referenceIds: references.map((reference) => reference.id),
         sampleId: sample?.id ?? null,
         preferredArchetype: sample?.output === 'post' ? sample.archetype : null,
+        offerText: offer.text,
+        offerUntil: offer.validUntil,
+        offerCode: offer.code,
+        photoUrls: postPhotos,
+        family,
+        alsoStory,
+        imageMode,
+        enhancePreset,
         trendTopicKey: activeTrend?.topicKey ?? null,
       })
     );
   };
 
-  const advancedSummary = isPost
-    ? null
-    : [
-        tierOptions.find((option) => option.value === tier)?.label,
-        isVideo ? undefined : GENERATION_LOOKS.find((look) => look.id === lookId)?.title,
-        isVideo ? VIDEO_RESOLUTION_LABELS[effectiveResolution].replace(/ \(.+\)/, '') : undefined,
-      ]
-        .filter(Boolean)
-        .join(' · ');
+  const readinessHints = posterReadinessHints(engine.baseFacts);
+  const draftTouched =
+    isPost &&
+    (postPhotos.length > 0 ||
+      goal !== 'vibe' ||
+      family !== 'auto' ||
+      format !== 'instagram-portrait');
+  const draft = useLivePostDraft(engine, {
+    enabled: draftTouched && !sample && !locked,
+    goal,
+    format,
+    picks: postPhotos,
+    offer: { text: offer.text, validUntil: offer.validUntil, code: offer.code },
+  });
+
+  const advancedSummary =
+    isPost || isReel
+      ? null
+      : [
+          tierOptions.find((option) => option.value === tier)?.label,
+          isVideo ? undefined : GENERATION_LOOKS.find((look) => look.id === lookId)?.title,
+          isVideo ? VIDEO_RESOLUTION_LABELS[effectiveResolution].replace(/ \(.+\)/, '') : undefined,
+        ]
+          .filter(Boolean)
+          .join(' · ');
 
   const examples = START_EXAMPLES[output];
   const activeSize = sizeChoices.find((choice) => choice.value === sizeValue);
@@ -472,9 +530,9 @@ export function AiStudioCreate({
             onChange={(next) => onOutputChange(next as AiStudioOutput)}
             size="dense"
             aria-label="What to make"
-            options={(['post', 'image', 'video'] as const).map((value) => ({
+            options={(['post', 'image', 'video', 'reel'] as const).map((value) => ({
               value,
-              label: value === 'post' ? 'Post' : value === 'image' ? 'Photo' : 'Clip',
+              label: AI_OUTPUT_LABEL[value].one,
               icon: AI_OUTPUT_ICON[value],
               disabled: busy,
             }))}
@@ -484,8 +542,9 @@ export function AiStudioCreate({
         <div className="space-y-4 p-3 sm:p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
           {!canStart ? (
             <p className="bg-muted/60 text-muted-foreground rounded-lg px-3 py-2 text-xs">
-              You do not have permission to make {isPost ? 'posts' : isVideo ? 'clips' : 'photos'}{' '}
-              with AI for this property.
+              You do not have permission to make{' '}
+              {isPost ? 'posts' : isVideo ? 'clips' : isReel ? 'reels' : 'photos'} with AI for this
+              property.
             </p>
           ) : null}
 
@@ -504,6 +563,40 @@ export function AiStudioCreate({
               onUse={onApplySample}
               className="lg:hidden"
             />
+          ) : null}
+
+          {output === 'image' ? (
+            <div className="space-y-3">
+              <SegmentedControl
+                value={imageMode}
+                onChange={setImageMode}
+                size="dense"
+                fullWidth
+                aria-label="Photo type"
+                options={[
+                  { value: 'enhance', label: 'Enhance a photo' },
+                  { value: 'scene', label: 'Create a scene' },
+                ]}
+              />
+              {isEnhance ? (
+                <AiStudioChoiceGroup
+                  label="What should change?"
+                  value={enhancePreset}
+                  onChange={setEnhancePreset}
+                  columns={3}
+                  disabled={locked}
+                  options={ENHANCE_PRESETS.map((preset): AiStudioChoice<string> => ({
+                    value: preset.id,
+                    label: preset.title,
+                    hint: preset.hint,
+                  }))}
+                />
+              ) : (
+                <p className="text-muted-foreground text-xs">
+                  Mood imagery, not your listing. Use Enhance to improve your real photos.
+                </p>
+              )}
+            </div>
           ) : null}
 
           {activeTrend ? (
@@ -528,7 +621,9 @@ export function AiStudioCreate({
                 ? 'What is the post about?'
                 : isVideo
                   ? 'Describe the clip'
-                  : 'Describe the photo'}
+                  : isReel
+                    ? 'What should the reel show?'
+                    : 'Describe the photo'}
             </Label>
             <Textarea
               ref={promptRef}
@@ -541,7 +636,7 @@ export function AiStudioCreate({
                   submit();
                 }
               }}
-              placeholder={PLACEHOLDER[output]}
+              placeholder={isEnhance ? 'Anything else to change? (optional)' : PLACEHOLDER[output]}
               rows={3}
               disabled={locked}
               className="min-h-[96px] resize-none border-0 bg-transparent px-1 text-[15px] leading-relaxed shadow-none focus-visible:ring-0"
@@ -574,17 +669,72 @@ export function AiStudioCreate({
           </div>
 
           {isPost ? (
-            <AiStudioChoiceGroup
-              label="What's it about?"
-              value={goal}
-              onChange={setGoal}
-              columns={3}
+            <>
+              <AiStudioChoiceGroup
+                label="What's it about?"
+                value={goal}
+                onChange={setGoal}
+                columns={3}
+                disabled={locked}
+                options={POST_GOALS.map((option): AiStudioChoice<PosterGoal> => ({
+                  value: option.value,
+                  label: option.label,
+                  hint: option.hint,
+                }))}
+              />
+              {goal === 'promo' ? (
+                <AiStudioOfferFields value={offer} onChange={setOffer} disabled={locked} />
+              ) : null}
+              <AiStudioChoiceGroup
+                label="Style"
+                value={family}
+                onChange={setFamily}
+                columns={4}
+                disabled={locked}
+                options={POSTER_STYLE_CHOICES.map((option): AiStudioChoice<PosterStyleChoice> => ({
+                  value: option.value,
+                  label: option.label,
+                  hint: option.hint,
+                }))}
+              />
+              <AiStudioPostPhotos
+                photos={engine.baseFacts.photos}
+                picked={postPhotos}
+                onChange={setPostPhotos}
+                disabled={locked}
+              />
+              {format !== 'instagram-story' ? (
+                <label className="flex min-h-[44px] items-center gap-3 text-sm">
+                  <Checkbox
+                    checked={alsoStory}
+                    disabled={locked}
+                    onCheckedChange={(value) => setAlsoStory(value === true)}
+                  />
+                  Also make a Story
+                </label>
+              ) : null}
+              {readinessHints.length > 0 ? (
+                <ul className="text-muted-foreground space-y-1 text-xs" aria-label="Listing tips">
+                  {readinessHints.map((hint) => (
+                    <li key={hint.id}>
+                      {hint.text}{' '}
+                      <a
+                        className="text-foreground underline underline-offset-2"
+                        href={propertySectionPath(org.slug, property.slug, 'settings')}
+                      >
+                        Open settings
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </>
+          ) : isReel ? (
+            <AiStudioPostPhotos
+              photos={engine.baseFacts.photos}
+              picked={postPhotos}
+              onChange={setPostPhotos}
               disabled={locked}
-              options={POST_GOALS.map((option): AiStudioChoice<PosterGoal> => ({
-                value: option.value,
-                label: option.label,
-                hint: option.hint,
-              }))}
             />
           ) : (
             <AiStudioPhotoPicker
@@ -605,7 +755,7 @@ export function AiStudioCreate({
             />
           )}
 
-          {!isPost ? (
+          {!isPost && !isReel ? (
             <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
               <CollapsibleContent className="border-border/70 space-y-4 rounded-xl border p-3">
                 {isVideo ? (
@@ -767,13 +917,15 @@ export function AiStudioCreate({
             </Collapsible>
           ) : (
             <div className="border-border/70 -mx-3 flex items-center gap-2 border-t px-3 pt-3 sm:-mx-4 sm:px-4">
-              <SizeSelect
-                choices={sizeChoices}
-                value={sizeValue}
-                onChange={(value) => setFormat(value as DesignTemplateFormat)}
-                disabled={locked}
-                className="w-[8.75rem] shrink-0"
-              />
+              {isReel ? null : (
+                <SizeSelect
+                  choices={sizeChoices}
+                  value={sizeValue}
+                  onChange={(value) => setFormat(value as DesignTemplateFormat)}
+                  disabled={locked}
+                  className="w-[8.75rem] shrink-0"
+                />
+              )}
               {generateBlocked ? (
                 <FeatureAvailabilityButton
                   featureKey="marketing.ai_studio.generate"
@@ -785,7 +937,7 @@ export function AiStudioCreate({
                     busy={busy}
                     disabled={locked}
                     dim={false}
-                    label="Generate 4 posts"
+                    label={isReel ? 'Make reel' : 'Generate 4 posts'}
                   />
                 </FeatureAvailabilityButton>
               ) : (
@@ -795,7 +947,7 @@ export function AiStudioCreate({
                   busy={busy}
                   disabled={locked}
                   dim={false}
-                  label="Generate 4 posts"
+                  label={isReel ? 'Make reel' : 'Generate 4 posts'}
                 />
               )}
             </div>
@@ -804,7 +956,10 @@ export function AiStudioCreate({
       </div>
 
       <div className="bg-muted/30 hidden min-h-0 flex-col lg:flex" aria-label="Preview">
-        {!sample && hasExamples && (isPost || references.length === 0) ? (
+        {!sample &&
+        hasExamples &&
+        (isPost || references.length === 0) &&
+        !(draftTouched && draft.url) ? (
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-6 xl:p-8">
             <p className="text-section-title">Pick an example or describe your own</p>
             <AiStudioSampleGallery
@@ -830,6 +985,8 @@ export function AiStudioCreate({
                 propertyName={property.name}
                 references={references}
                 sample={sample}
+                draftUrl={draftTouched ? draft.url : null}
+                draftLoading={draftTouched && draft.loading}
               />
             </div>
           </div>
@@ -846,7 +1003,11 @@ function AiStudioCreatePreview({
   propertyName,
   references,
   sample,
+  draftUrl,
+  draftLoading,
 }: {
+  draftUrl: string | null;
+  draftLoading: boolean;
   output: AiStudioOutput;
   theme: ResolvedMarketingTheme | null;
   coverPhotoUrl: string | undefined;
@@ -856,6 +1017,16 @@ function AiStudioCreatePreview({
 }) {
   if (sample && (sample.output === 'post' || references.length === 0)) {
     return <AiStudioCreateSamplePreview sample={sample} />;
+  }
+  if (output === 'post' && draftUrl) {
+    return (
+      <div className="relative size-full">
+        <img src={draftUrl} alt="Draft of your post" className="size-full object-contain" />
+        <span className="bg-background/90 text-muted-foreground absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-medium">
+          {draftLoading ? 'Updating draft' : 'Draft, free'}
+        </span>
+      </div>
+    );
   }
   if (output === 'post') {
     if (!theme) {
@@ -868,6 +1039,16 @@ function AiStudioCreatePreview({
       );
     }
     return <ThemePostArt theme={theme} title={propertyName} photoUrl={coverPhotoUrl} />;
+  }
+
+  if (output === 'reel') {
+    return (
+      <AiStudioCreatePreviewEmpty
+        icon={AI_OUTPUT_ICON.reel}
+        title="Your reel will appear here"
+        body="The AI picks the best photos and writes the lines. Play it, then edit it in Videos."
+      />
+    );
   }
 
   if (output === 'video') {

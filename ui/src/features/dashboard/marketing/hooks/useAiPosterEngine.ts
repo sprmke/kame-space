@@ -1,6 +1,8 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
+
+import { useFeatureAvailability } from '@/lib/featureAvailability/useFeatureAvailability';
 
 import { usePublicPropertyDetail } from '@/features/guest/marketing/properties/hooks/usePublicPropertyDetail';
 
@@ -15,18 +17,55 @@ import {
   saveMarketingTemplate,
 } from '@/features/dashboard/marketing/hooks/useMarketingTemplates';
 import { orderPosterBatch } from '@/features/dashboard/marketing/lib/aiStudioSamples';
+import { collectDocumentImageUrls } from '@/features/dashboard/marketing/lib/polotno/documentImages';
 import type { PolotnoDesignDocument } from '@/features/dashboard/marketing/lib/polotno/polotnoCampaignDocuments';
 import { POSTER_ARCHETYPE_DEFAULT_FONTS } from '@/features/dashboard/marketing/lib/poster/posterArchetypes';
 import { auditPosterDocument } from '@/features/dashboard/marketing/lib/poster/posterAudit';
-import {
-  compilePosterDocument,
-  type PhotoSizeMap,
-} from '@/features/dashboard/marketing/lib/poster/posterCompiler';
+import { compilePosterDocument } from '@/features/dashboard/marketing/lib/poster/posterCompiler';
 import { buildRuleBasedPosterSpecs } from '@/features/dashboard/marketing/lib/poster/posterDefaults';
 import { buildPosterFacts } from '@/features/dashboard/marketing/lib/poster/posterFacts';
 import { preloadPosterFonts } from '@/features/dashboard/marketing/lib/poster/posterFontLoader';
-import { loadPosterPhotoSizes } from '@/features/dashboard/marketing/lib/poster/posterPhotoSizes';
+import {
+  sanitizePosterOffer,
+  type PosterOffer,
+} from '@/features/dashboard/marketing/lib/poster/posterOffer';
+import {
+  applyPhotoBlobs,
+  photoAnalysisFromPreflight,
+  photoSizesFromPreflight,
+  preflightPosterPhotos,
+  rankPreflightedPhotos,
+  restorePhotoUrls,
+  usablePhotoUrls,
+} from '@/features/dashboard/marketing/lib/poster/posterPhotoPreflight';
+import { checkRenderedPoster } from '@/features/dashboard/marketing/lib/poster/posterPixelCheck';
+import {
+  applyStyleFamily,
+  effectiveStyleChoice,
+  orderPhotosWithPicks,
+  type PosterStyleChoice,
+} from '@/features/dashboard/marketing/lib/poster/posterQuickEdit';
+import {
+  buildCarouselSpecs,
+  type CarouselSlide,
+} from '@/features/dashboard/marketing/lib/poster/posterCarousel';
+import {
+  buildReel,
+  REEL_RECIPE_IDS,
+  withLeadClip,
+  type ReelCopyOverride,
+  type ReelRecipeId,
+} from '@/features/dashboard/marketing/lib/video/reelBuilder';
+import {
+  normalizeReelDirection,
+  type ReelDirection,
+} from '@/features/dashboard/marketing/lib/video/reelDirection';
+import { requestReelDirection } from '@/features/dashboard/marketing/hooks/useGeneratePosters';
 import type { renderPosterDocument as RenderPosterDocument } from '@/features/dashboard/marketing/lib/poster/posterRender';
+import {
+  ensureBatchDiversity,
+  repairBatch,
+} from '@/features/dashboard/marketing/lib/poster/posterRepair';
 import {
   compactPosterPhotos,
   normalizePosterSpec,
@@ -46,14 +85,29 @@ import { useOrgBrandColor } from '@/features/dashboard/org/hooks/useOrgBrandColo
 import { useOrgSettings } from '@/features/dashboard/org/hooks/useOrgSettings';
 import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
 
+import { captureAppEvent } from '@/lib/posthog/capture';
+
 /**
  * The renderer pulls in Konva + OpenPolotno (~1.5 MB). AI Studio is the landing tab,
  * so it loads only when a post renders.
  */
-const renderPosterDocument: typeof RenderPosterDocument = (...args) =>
+const renderGuardedDocument: typeof RenderPosterDocument = (...args) =>
   import('@/features/dashboard/marketing/lib/poster/posterRender').then((m) =>
     m.renderPosterDocument(...args)
   );
+
+/**
+ * Draws with the downscaled photo copies, then puts the real URLs back so a saved or
+ * stored document never holds a `blob:` URL. Throws `PosterRenderError` when a photo
+ * still fails to load; callers never receive a broken frame.
+ */
+async function renderPosterDocument(
+  ...[document, options]: Parameters<typeof RenderPosterDocument>
+): ReturnType<typeof RenderPosterDocument> {
+  const preflight = await preflightPosterPhotos(collectDocumentImageUrls(document));
+  const rendered = await renderGuardedDocument(applyPhotoBlobs(document, preflight), options);
+  return { ...rendered, document: restorePhotoUrls(rendered.document, preflight) };
+}
 
 /** Stored with each version: sharp enough for the stage, small enough for Storage. */
 const PREVIEW_PIXEL_RATIO = 0.75;
@@ -78,6 +132,7 @@ export function useAiPosterEngine(themeKey?: string | null) {
   const propertyId = usePropertyIdParam();
   const queryClient = useQueryClient();
   const studio = useOptionalMarketingTheme();
+  const posterV2Enabled = useFeatureAvailability('marketing.ai_studio.poster_v2').available;
   const { data: publicProperty, isLoading: propertyLoading } = usePublicPropertyDetail(
     property.slug
   );
@@ -111,15 +166,30 @@ export function useAiPosterEngine(themeKey?: string | null) {
     [property.name, org.name, publicProperty, logoUrl]
   );
 
-  const sizesRef = useRef(new Map<string, Promise<PhotoSizeMap>>());
-  const photoSizes = useCallback((urls: string[]) => {
-    const key = urls.join('\n');
-    let pending = sizesRef.current.get(key);
-    if (!pending) {
-      pending = loadPosterPhotoSizes(urls);
-      sizesRef.current.set(key, pending);
-    }
-    return pending;
+  const photoInfo = useCallback(async (urls: string[]) => {
+    const preflight = await preflightPosterPhotos(urls);
+    return {
+      photoSizes: photoSizesFromPreflight(preflight),
+      photoAnalysis: photoAnalysisFromPreflight(preflight),
+    };
+  }, []);
+
+  /**
+   * Drops photos that cannot be loaded before any photo index is resolved, so a spec
+   * never points at a photo that will not draw. Looks at the first 12 (the director
+   * reads at most 6).
+   */
+  const withUsablePhotos = useCallback(async (facts: PosterFacts): Promise<PosterFacts> => {
+    const head = facts.photos.slice(0, 12);
+    if (head.length === 0) return facts;
+    const preflight = await preflightPosterPhotos(head);
+    const usable = usablePhotoUrls(head, preflight);
+    // Best photo first so the rule-based hero picks and the director's photo order agree.
+    const ranked = rankPreflightedPhotos(usable, preflight);
+    const photos = [...ranked, ...facts.photos.slice(12)];
+    const unchanged =
+      photos.length === facts.photos.length && photos.every((url, i) => url === facts.photos[i]);
+    return unchanged ? facts : { ...facts, photos };
   }, []);
 
   const loadFonts = useCallback(
@@ -140,11 +210,11 @@ export function useAiPosterEngine(themeKey?: string | null) {
   const compile = useCallback(
     async (spec: PosterSpec, photoUrls: string[], format: DesignTemplateFormat) =>
       compilePosterDocument(spec, factsFor(photoUrls), format, {
-        photoSizes: await photoSizes(factsFor(photoUrls).photos),
+        ...(await photoInfo(factsFor(photoUrls).photos)),
         brandColor,
         theme: themeTokens,
       }),
-    [factsFor, photoSizes, brandColor, themeTokens]
+    [factsFor, photoInfo, brandColor, themeTokens]
   );
 
   const render = useCallback(
@@ -161,6 +231,11 @@ export function useAiPosterEngine(themeKey?: string | null) {
         pixelRatio: PREVIEW_PIXEL_RATIO,
         mimeType: 'image/jpeg',
       });
+      // Last line of defence: a load-error block must never reach a saved version.
+      const pixelIssues = await checkRenderedPoster(rendered.dataUrl, rendered.document);
+      if (pixelIssues.some((issue) => issue.kind === 'error-placeholder')) {
+        throw new Error('A photo did not load. Try again.');
+      }
       return {
         spec: compact.spec,
         photoUrls: compact.photoUrls,
@@ -179,13 +254,23 @@ export function useAiPosterEngine(themeKey?: string | null) {
       prompt: string;
       format: DesignTemplateFormat;
       preferredArchetype?: PosterArchetypeId | null;
+      offer?: PosterOffer | null;
+      photoUrls?: string[];
+      family?: PosterStyleChoice;
       trendTopicKey?: string | null;
     }) => {
+      // The offer rides on the facts for this request only; it is never stored on the listing.
+      const ranked = await withUsablePhotos(baseFacts);
+      const usableFacts: PosterFacts = {
+        ...ranked,
+        photos: orderPhotosWithPicks(ranked.photos, input.photoUrls ?? []),
+        offer: input.goal === 'promo' ? sanitizePosterOffer(input.offer) : null,
+      };
       const [result] = await Promise.all([
         generatePosters(propertyId, {
           goal: input.goal,
           prompt: input.prompt,
-          facts: baseFacts,
+          facts: usableFacts,
           brandColor,
           preferredArchetype: input.preferredArchetype ?? null,
           trendTopicKey: input.trendTopicKey ?? null,
@@ -193,22 +278,43 @@ export function useAiPosterEngine(themeKey?: string | null) {
         loadFonts(),
       ]);
       const photos = result.facts.photos;
+      const issuesFor = async (spec: PosterSpec) =>
+        auditPosterDocument(await compile(spec, photos, input.format)).length;
+      // Layout QA repair: a failing variant is lightened, then switched to the Clean
+      // layout, then replaced, so four finished posts always arrive.
+      const repaired = await repairBatch(result.specs, issuesFor, { count: result.specs.length });
       const scored = await Promise.all(
-        result.specs.map(async (spec) => ({
-          spec,
-          issues: auditPosterDocument(await compile(spec, photos, input.format)).length,
-        }))
+        repaired.specs.map(async (spec) => ({ spec, issues: await issuesFor(spec) }))
       );
-      // Layout QA: posts with collisions or overflow go last, never first. A layout the
-      // host picked from an example leads when it passes QA.
+      // Posts with leftover issues go last. A layout the host picked from an example
+      // leads when it passes QA.
       const ordered = orderPosterBatch(scored, input.preferredArchetype ?? null);
+      const specsInOrder = ordered.map((item) => item.spec);
+      const family = effectiveStyleChoice(input.family, posterV2Enabled);
+      const finalSpecs = family !== 'auto'
+        ? applyStyleFamily(specsInOrder, family, { keepFonts: Boolean(themeTokens) })
+        : ensureBatchDiversity(specsInOrder);
+      // Counts and layout ids only: no prompt text, copy or property data.
+      captureAppEvent('ai_post_generated', {
+        goal: input.goal,
+        format: input.format,
+        ai_directed: result.aiDirected,
+        variants: finalSpecs.length,
+        layouts: finalSpecs.map((spec) => spec.archetype).join(','),
+        repaired: repaired.repaired,
+        dropped: repaired.dropped,
+        with_issues: ordered.filter((item) => item.issues > 0).length,
+        photos: photos.length,
+        style: family,
+        picked_photos: (input.photoUrls ?? []).length,
+      });
       return {
-        specs: ordered.map((item) => item.spec),
+        specs: finalSpecs,
         photoUrls: photos,
         aiDirected: result.aiDirected,
       };
     },
-    [propertyId, baseFacts, brandColor, loadFonts, compile]
+    [propertyId, baseFacts, brandColor, loadFonts, compile, withUsablePhotos, themeTokens, posterV2Enabled]
   );
 
   /** A refinement: the AI revises the current post; no rule-based fallback. */
@@ -253,9 +359,15 @@ export function useAiPosterEngine(themeKey?: string | null) {
       archetype: PosterArchetypeId;
       format: DesignTemplateFormat;
       facts: PosterFacts;
+      /** Photos the host picked: they lead whatever the ranking says. */
+      picks?: string[];
     }): Promise<string> => {
       await loadFonts();
-      const specs = buildRuleBasedPosterSpecs(input.facts, input.goal, { accent: brandColor });
+      const usable = await withUsablePhotos(input.facts);
+      const sampleFacts = input.picks?.length
+        ? { ...usable, photos: orderPhotosWithPicks(usable.photos, input.picks) }
+        : usable;
+      const specs = buildRuleBasedPosterSpecs(sampleFacts, input.goal, { accent: brandColor });
       const spec = specs.find((item) => item.archetype === input.archetype) ?? specs[0];
       if (!spec) throw new Error('No layout for this example');
       const pinned = normalizePosterSpec(
@@ -264,10 +376,10 @@ export function useAiPosterEngine(themeKey?: string | null) {
           archetype: input.archetype,
           fontPairing: POSTER_ARCHETYPE_DEFAULT_FONTS[input.archetype],
         },
-        input.facts
+        sampleFacts
       );
-      const document = await compilePosterDocument(pinned, input.facts, input.format, {
-        photoSizes: await photoSizes(input.facts.photos),
+      const document = await compilePosterDocument(pinned, sampleFacts, input.format, {
+        ...(await photoInfo(sampleFacts.photos)),
         brandColor,
         theme: themeTokens,
       });
@@ -277,7 +389,7 @@ export function useAiPosterEngine(themeKey?: string | null) {
       });
       return rendered.dataUrl;
     },
-    [loadFonts, brandColor, photoSizes, themeTokens]
+    [loadFonts, brandColor, photoInfo, themeTokens, withUsablePhotos]
   );
 
   /** Full-size PNG for Download / Publish. */
@@ -327,8 +439,112 @@ export function useAiPosterEngine(themeKey?: string | null) {
     [loadFonts, compile, propertyId, themeEntry, themeTokens, queryClient]
   );
 
+  /** Free: a five slide carousel in one style from the ranked listing photos. */
+  const carouselSlides = useCallback(
+    async (family: PosterStyleChoice, picks: string[] = []) => {
+      const ranked = await withUsablePhotos(baseFacts);
+      const photos = orderPhotosWithPicks(ranked.photos, picks);
+      const slides: CarouselSlide[] = buildCarouselSpecs({ ...ranked, photos }, effectiveStyleChoice(family, posterV2Enabled), {
+        accent: brandColor,
+      });
+      return { slides, photoUrls: photos };
+    },
+    [baseFacts, withUsablePhotos, brandColor, posterV2Enabled]
+  );
+
+  /**
+   * Free: builds a 12 to 20 second reel from the best listing photos (picked photos
+   * first), saves it as an editable video and returns its id (Videos editor).
+   */
+  const buildReelFor = useCallback(
+    async (input: { photoUrls?: string[]; recipe?: ReelRecipeId; copy?: ReelCopyOverride }) => {
+      const ranked = await withUsablePhotos(baseFacts);
+      const facts: PosterFacts = {
+        ...ranked,
+        photos: orderPhotosWithPicks(ranked.photos, input.photoUrls ?? []),
+      };
+      // The push-in of each beat lands on the subject the pixel analysis found.
+      const { photoAnalysis } = await photoInfo(facts.photos);
+      const focals = Object.fromEntries(
+        Object.entries(photoAnalysis).map(([url, analysis]) => [url, analysis?.focal ?? null])
+      );
+      const built = buildReel(facts, {
+        format: 'instagram-story',
+        focals,
+        recipe: input.recipe,
+        copy: input.copy,
+      });
+      if (!built) throw new Error('Add listing photos to make a reel.');
+      return built;
+    },
+    [baseFacts, withUsablePhotos, photoInfo]
+  );
+
+  /**
+   * Billed (one director call, like a post): the model looks at the best photos and picks
+   * the recipe, the photo order and the short lines. Null means keep the free reel.
+   */
+  const directReel = useCallback(
+    async (input: { photoUrls?: string[]; prompt?: string }): Promise<ReelDirection | null> => {
+      const ranked = await withUsablePhotos(baseFacts);
+      const photos = orderPhotosWithPicks(ranked.photos, input.photoUrls ?? []).slice(0, 6);
+      const response = await requestReelDirection(propertyId, {
+        facts: { ...ranked, photos },
+        prompt: input.prompt ?? '',
+      });
+      return normalizeReelDirection(
+        response.direction,
+        Array.isArray(response.photoUrls) ? response.photoUrls : [],
+        REEL_RECIPE_IDS
+      );
+    },
+    [baseFacts, withUsablePhotos, propertyId]
+  );
+
+  const saveReel = useCallback(
+    async (input: {
+      photoUrls?: string[];
+      name?: string;
+      leadClipUrl?: string;
+      recipe?: ReelRecipeId;
+      copy?: ReelCopyOverride;
+    }) => {
+      const built = await buildReelFor(input);
+      const reel = input.leadClipUrl
+        ? { ...built, project: withLeadClip(built.project, input.leadClipUrl) }
+        : built;
+      const record = await saveMarketingTemplate(propertyId, {
+        name: input.name?.trim() || reel.tokens.label,
+        contentType: 'video',
+        aspectPreset: reel.project.format,
+        platform: 'instagram',
+        kind: 'design',
+        ...(themeEntry ? { themeKey: themeEntry.key } : {}),
+        designJson: {
+          templateId: reel.project.templateId,
+          format: reel.project.format,
+          category: reel.tokens.category,
+          categoryId: reel.tokens.category,
+          binding: reel.binding,
+          project: reel.project,
+          aiGenerated: true,
+          aiTokens: reel.tokens,
+          ...(themeTokens ? themeStampForSave(themeTokens) : {}),
+        },
+      });
+      invalidateMarketingLibrary(queryClient, propertyId);
+      captureAppEvent('ai_reel_made', { recipe: reel.recipe, seconds: reel.seconds });
+      return record.id;
+    },
+    [buildReelFor, propertyId, themeEntry, themeTokens, queryClient]
+  );
+
   return {
     ready: !propertyLoading,
+    buildReelFor,
+    directReel,
+    saveReel,
+    carouselSlides,
     themeKey: themeEntry?.key ?? null,
     baseFacts,
     generateBatch,

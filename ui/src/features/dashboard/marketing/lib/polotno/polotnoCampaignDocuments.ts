@@ -172,9 +172,35 @@ export type TextOptions = {
   opacity?: number;
 };
 
+/**
+ * Lines a text block will wrap to: its explicit breaks, plus the extra lines its
+ * longest paragraphs need at an average glyph width. A box sized for one line clips
+ * the rest of a long quote, so the height must cover the wrapped count.
+ */
+export function wrappedLineCount(
+  value: string,
+  width: number | undefined,
+  fontSize: number,
+  letterSpacing = 0
+): number {
+  const paragraphs = value.split('\n');
+  if (!width || width <= 0 || fontSize <= 0) return Math.max(1, paragraphs.length);
+  const perChar = fontSize * (0.52 + Math.max(0, letterSpacing));
+  const perLine = Math.max(1, Math.floor(width / perChar));
+  return Math.max(
+    1,
+    paragraphs.reduce((sum, paragraph) => sum + Math.max(1, Math.ceil(paragraph.length / perLine)), 0)
+  );
+}
+
 export function text(rawOptions: TextOptions): PolotnoChild {
   const options = omitUndefined(rawOptions) as TextOptions;
-  const lineCount = Math.max(1, options.text.split('\n').length);
+  const lineCount = wrappedLineCount(
+    options.text,
+    options.width,
+    options.fontSize,
+    (options as { letterSpacing?: number }).letterSpacing
+  );
   const lineHeight = options.lineHeight ?? 1.15;
   const height = options.height ?? textBoxHeight(options.fontSize, lineCount, lineHeight);
   return {
@@ -498,7 +524,7 @@ function buildPromo500OffPoster(
   const v = band(layout, {
     portrait: { eyebrow: 0.1, upTo: 0.165, amount: 0.215, rule: 0.4, detail: 0.44, cta: 0.83 },
     square: { eyebrow: 0.085, upTo: 0.15, amount: 0.195, rule: 0.385, detail: 0.425, cta: 0.83 },
-    wide: { eyebrow: 0.08, upTo: 0.2, amount: 0.26, rule: 0.6, detail: 0.66, cta: 0.8 },
+    wide: { eyebrow: 0.07, upTo: 0.17, amount: 0.255, rule: 0.62, detail: 0.68, cta: 0.8 },
   });
   return [
     eyebrow('Rainy Season Promo', layout, v.eyebrow, palette.cream),
@@ -984,6 +1010,9 @@ function buildGiveawayRaffleTicket(
   ];
 }
 
+/** The sold-out red, lightened so it reads on the darkened photo (the plain red is about 2:1 there). */
+const DANGER_ON_PHOTO = '#fca5a5';
+
 function buildFullyBookedMark(
   binding: DesignBinding,
   layout: CampaignLayout,
@@ -1033,7 +1062,7 @@ function buildFullyBookedMark(
       `For ${binding.monthShort}`,
       layout,
       band(layout, { portrait: 0.58, square: 0.58, wide: 0.68 }),
-      palette.danger
+      DANGER_ON_PHOTO
     ),
     detailText(
       'Watch for next month\u2019s openings.',
@@ -1057,7 +1086,7 @@ function buildFullyBookedWaitlistMark(
     wide: { eyebrow: 0.1, hero: 0.26, rule: 0.54, detail: 0.6, cta: 0.78 },
   });
   return [
-    eyebrow('Fully Booked', layout, v.eyebrow, palette.danger),
+    eyebrow('Fully Booked', layout, v.eyebrow, DANGER_ON_PHOTO),
     heroText(
       'Waitlist',
       layout,

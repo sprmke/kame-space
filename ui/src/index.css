@@ -186,6 +186,11 @@
     @apply scroll-smooth;
     /* Fixed public nav (MarketingNav). Sticky toolbars + morph search read this. */
     --public-nav-h: 3.5rem;
+    /*
+     * Horizontal gutter for marketing chrome (nav, footer, sections via `.public-shell`)
+     * and auth side-panel logo. Keep AuthSidePanelShell / AuthLayout in sync via this token.
+     */
+    --public-shell-px: 1rem;
 
     /*
      * Safe-area insets, as tokens.
@@ -214,6 +219,12 @@
     --mobile-bottom-bar-h: calc(var(--mobile-bottom-bar-row-h) + var(--safe-bottom));
   }
 
+  @media (min-width: 640px) {
+    html {
+      --public-shell-px: 1.5rem;
+    }
+  }
+
   @media (min-width: 768px) {
     html {
       --public-nav-h: 4rem;
@@ -223,6 +234,7 @@
   @media (min-width: 1024px) {
     html {
       --public-nav-h: 5rem;
+      --public-shell-px: 2rem;
     }
   }
 
@@ -2787,19 +2799,18 @@ input.ui-native-datetime[type='datetime-local']::-webkit-calendar-picker-indicat
   margin-inline: auto;
   width: 100%;
   max-width: 84rem;
-  padding-inline: 1rem;
+  padding-inline: var(--public-shell-px);
 }
 
-@media (min-width: 640px) {
-  .public-shell {
-    padding-inline: 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .public-shell {
-    padding-inline: 2rem;
-  }
+/**
+ * Brand mark row: same height and left inset as MarketingNav, without the shell max-width.
+ * Use on auth / onboarding side panels so the logo does not jump vs the landing header.
+ */
+.public-brand-bar {
+  display: flex;
+  height: var(--public-nav-h);
+  align-items: center;
+  padding-inline: var(--public-shell-px);
 }
 
 /* Marketing home hero art — day dissolves into night. No zoom, no pan: the two renders share

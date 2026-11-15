@@ -130,3 +130,33 @@ export function findMarketingFontPairing(fonts: MarketingThemeFonts): MarketingF
 export function marketingThemeFontList(fonts: MarketingThemeFonts): string[] {
   return [...new Set([fonts.display, fonts.body, fonts.label])];
 }
+
+/** Broad class of a theme face: what the poster type system adapts to. */
+export type MarketingFontClass = 'serif' | 'sans' | 'rounded' | 'display';
+
+const FONT_CLASS: Record<MarketingThemeFontFamily, MarketingFontClass> = {
+  Fraunces: 'serif',
+  'Playfair Display': 'serif',
+  'Cormorant Garamond': 'serif',
+  Lora: 'serif',
+  'Instrument Serif': 'display',
+  'DM Sans': 'sans',
+  'Plus Jakarta Sans': 'sans',
+  Outfit: 'rounded',
+  Manrope: 'sans',
+  Sora: 'sans',
+  Jost: 'sans',
+  Figtree: 'rounded',
+  'Nunito Sans': 'rounded',
+  'Inter Tight': 'sans',
+  'Space Grotesk': 'sans',
+  Poppins: 'rounded',
+  Montserrat: 'sans',
+  Lato: 'sans',
+  'Open Sans': 'sans',
+  Inter: 'sans',
+};
+
+export function marketingFontClass(family: string): MarketingFontClass {
+  return isMarketingThemeFontFamily(family) ? FONT_CLASS[family] : 'sans';
+}

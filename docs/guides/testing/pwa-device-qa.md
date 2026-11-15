@@ -31,7 +31,7 @@ Plus **in-app browsers** on both platforms: Facebook, Messenger, Instagram
 
 ## Scenarios
 
-Mark each ✅ / ❌ / N/A and note the build id (Help & Support → App card).
+Mark each ✅ / ❌ / N/A and note the build id (Profile → On this device).
 
 ### 1. Install offer
 

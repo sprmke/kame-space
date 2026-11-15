@@ -58,6 +58,9 @@ Need full parity before a deploy anyway? Run `bun run ci:quality` locally.
 | Playwright CI suite             | `bun run test:e2e:ci`              | develop              |
 | Post-deploy                     | `./scripts/deploy/ci-smoke.sh dev` | after develop deploy |
 | Full local parity               | `bun run ci:quality`               | before push          |
+| Recorded demo (slow, videos)    | `bun run test:e2e:demo`            | local / review only  |
+
+**Recorded demo run.** `bun run test:e2e:demo` replays the mocked marketing, auth and account specs in slow motion at eight viewports (phone-small 360, phone 390, phone-large 430, tablet 768, tablet-landscape 1024, laptop 1280, desktop 1440, wide 1920) and records a video per test to `tmp/e2e-demo/` (gitignored). Then `bun scripts/e2e/demoIndex.ts` writes `tmp/e2e-demo/index.html`, grouped by viewport. Options: `DEMO_VIEWPORTS=phone,desktop`, `DEMO_SPECS=ui/e2e/features/marketing`, `DEMO_SLOW_MO=600`, `DEMO_CUSTOM=probe:1100x768`. Below 1024px the desktop-only editors (collage, library, themes, video editor) are skipped because they have their own phone specs. Not part of CI. Config: `playwright.demo.config.ts`.
 
 Local database fixtures: [`local-seed-data.md`](./local-seed-data.md) — one org, one property, one parking, every module populated.
 

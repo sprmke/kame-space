@@ -152,3 +152,22 @@ Deno.test('refineParentError keeps refinements inside their conversation', () =>
     null
   );
 });
+
+Deno.test('parsePostVersionInputs accepts a reel direction and pins goal and format', () => {
+  const good = {
+    spec: { recipe: 'highlights', copy: { headline: 'Hi' } },
+    photoUrls: ['https://img/a.jpg'],
+  };
+  const parsed = parsePostVersionInputs([good], 'reel');
+  if (typeof parsed === 'string') throw new Error(parsed);
+  assertEquals(parsed[0]!.goal, 'vibe');
+  assertEquals(parsed[0]!.format, 'instagram-story');
+  assertEquals(
+    parsePostVersionInputs([{ ...good, spec: { recipe: 'spin', copy: {} } }], 'reel'),
+    'recipe is not valid'
+  );
+  assertEquals(
+    parsePostVersionInputs([{ ...good, spec: { recipe: 'tour' } }], 'reel'),
+    'copy must be an object'
+  );
+});

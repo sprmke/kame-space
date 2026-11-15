@@ -111,17 +111,12 @@ serveAuthenticated('update-development', async (req) => {
   }
 
   if (typeof body.slug === 'string') {
-    const slug = body.slug.trim();
+    const slug = body.slug.trim().toLowerCase();
     if (!slug) {
       return jsonError(req, 'Slug cannot be empty');
     }
-    const { data: slugConflict } = await supabase
-      .from('developments')
-      .select('id')
-      .eq('slug', slug)
-      .neq('id', developmentId)
-      .maybeSingle();
-    if (slugConflict) {
+    const { isListingSlugAvailable } = await import('../_shared/listingSlugAllocation.ts');
+    if (!(await isListingSlugAvailable(supabase, 'development', slug, developmentId))) {
       return jsonError(req, 'Slug is already in use', 409);
     }
     patch.slug = slug;

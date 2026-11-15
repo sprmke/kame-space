@@ -95,6 +95,19 @@ describe('fadedVolume', () => {
   });
 });
 
+describe('layerMotion template entrance', () => {
+  const template = { type: 'template' as const, durationInFrames: 0 };
+
+  it('fades up over about half a second and is fully visible afterwards', () => {
+    const at = (frame: number) => layerMotion({ ...base, frame, animationIn: template }).opacity;
+    expect(at(0)).toBe(0);
+    expect(at(7)).toBeGreaterThan(0);
+    expect(at(7)).toBeLessThan(1);
+    expect(at(15)).toBe(1);
+    expect(at(60)).toBe(1);
+  });
+});
+
 describe('layerMotion', () => {
   it('template entrance follows the spring offsets', () => {
     const m = layerMotion({

@@ -32,7 +32,10 @@ export interface AuthPageActions {
   verifyEmailOtp: (email: string, code: string) => Promise<AuthError | null>;
   signInWithGoogle: () => void | Promise<void>;
   googleLoading?: boolean;
-  /** Top-of-page banner error, e.g. an OAuth redirect failure surfaced on return. */
+  /**
+   * Page-level failure (OAuth return, workspace list miss). Shown under Continue so it
+   * does not read as an email-field error.
+   */
   bannerError?: string | null;
 }
 
@@ -166,56 +169,51 @@ export function AuthPageContent({ config, actions }: AuthPageContentProps) {
         )}
       </div>
 
-      {actions.bannerError ? (
-        <div className="border-destructive/20 bg-destructive/5 text-destructive mb-4 flex items-start gap-2.5 rounded-xl border p-3.5">
-          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <p className="text-[13px] leading-snug">{actions.bannerError}</p>
-        </div>
-      ) : null}
-
-      <div className="space-y-4">
-        {step === 'email' ? (
-          <div className="space-y-2">
-            <Label htmlFor="auth-email" className="sr-only">
-              Email
-            </Label>
-            <Input
-              id="auth-email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder={FORM_PLACEHOLDERS.email}
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (error) setError(null);
-              }}
+      <div className="flex flex-col gap-3">
+        <div>
+          {step === 'email' ? (
+            <>
+              <Label htmlFor="auth-email" className="sr-only">
+                Email
+              </Label>
+              <Input
+                id="auth-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder={FORM_PLACEHOLDERS.email}
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError(null);
+                }}
+                disabled={busy}
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? 'auth-field-error' : undefined}
+                className="rounded-xl text-base"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void handleContinueEmail();
+                }}
+              />
+            </>
+          ) : (
+            <OtpCodeInput
+              value={code}
+              onChange={setCode}
+              onComplete={(value) => void handleVerifyCode(value)}
+              onEnter={() => void handleVerifyCode()}
               disabled={busy}
-              className="rounded-xl text-base"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void handleContinueEmail();
-              }}
+              error={Boolean(error)}
             />
-          </div>
-        ) : (
-          <OtpCodeInput
-            value={code}
-            onChange={setCode}
-            onComplete={(value) => void handleVerifyCode(value)}
-            onEnter={() => void handleVerifyCode()}
-            disabled={busy}
-            error={Boolean(error)}
-          />
-        )}
-
-        {/* Kept mounted on both steps so Resend (OTP step) still has a fresh single-use token. */}
-        {captcha.widget}
-
-        {error ? (
-          <p className="text-destructive text-center text-sm" role="alert">
-            {error}
-          </p>
-        ) : null}
+          )}
+          {error ? (
+            <p id="auth-field-error" className="text-destructive mt-1.5 text-sm" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {/* Nested in the field group so a collapsed Turnstile does not double flex gap. */}
+          {captcha.widget}
+        </div>
 
         <Button
           type="button"
@@ -232,15 +230,27 @@ export function AuthPageContent({ config, actions }: AuthPageContentProps) {
           )}
         </Button>
 
+        {actions.bannerError ? (
+          <div
+            className="border-destructive/20 bg-destructive/5 text-destructive flex items-start gap-2.5 rounded-xl border px-3 py-2.5"
+            role="alert"
+          >
+            <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <p className="text-[13px] leading-snug">{actions.bannerError}</p>
+          </div>
+        ) : null}
+
         {step === 'email' ? (
-          <>
+          <div className="flex flex-col gap-3 pt-1">
             <AuthDivider text="or" />
             <GoogleSignInButton
               onClick={() => void actions.signInWithGoogle()}
               disabled={busy}
               loading={actions.googleLoading}
             />
-          </>
+            {/* Under Google, next to the actions that bind the user — not under the host switch. */}
+            <SignInLegalNotice />
+          </div>
         ) : (
           <button
             type="button"
@@ -264,9 +274,6 @@ export function AuthPageContent({ config, actions }: AuthPageContentProps) {
           </Link>
         </p>
       ) : null}
-
-      {/* Fine print last, under the primary prompt, so it never competes with it. */}
-      {step === 'email' ? <SignInLegalNotice className="mt-6" /> : null}
     </div>
   );
 }

@@ -2,7 +2,7 @@
 title: 'Full-app test architecture: page-mirrored suites, access matrix, enforced coverage'
 status: planned
 tags: [planning, testing, vitest, playwright, deno, pgtap, ci-cd, rbac, plans, governance]
-updated: 2026-11-13
+updated: 2026-11-15
 stage: in-progress
 kind: plan
 ---

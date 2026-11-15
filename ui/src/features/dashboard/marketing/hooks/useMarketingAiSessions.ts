@@ -152,6 +152,8 @@ export type SavePostVersionsInput = {
   title?: string;
   themeKey?: string | null;
   parentVersionId?: string | null;
+  /** A reel conversation keeps its directions in the same versions table. */
+  output?: 'reel';
   /** Marketing Trends topic this creation came from (stored on the session). */
   trendTopicKey?: string | null;
   versions: Array<{

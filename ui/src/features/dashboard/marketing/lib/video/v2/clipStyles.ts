@@ -121,6 +121,9 @@ function easeOutBack(t: number): number {
   return 1 + c3 * (x - 1) ** 3 + c1 * (x - 1) ** 2;
 }
 
+/** Default fade-up length of the template entrance: 0.5 s at 30 fps. */
+const TEMPLATE_FADE_FRAMES = 15;
+
 /** Combine entrance and exit animations into one transform for a layer item. */
 export function layerMotion(input: LayerMotionInput): LayerMotion {
   const { frame, durationInFrames, animationIn, animationOut } = input;
@@ -133,6 +136,8 @@ export function layerMotion(input: LayerMotionInput): LayerMotion {
     case 'template':
       out.translateX = (1 - input.templateEnter) * input.templateOffsetX;
       out.translateY = (1 - input.templateEnter) * input.templateOffsetY;
+      // Also fade up over about half a second, like the classic composition's entrance.
+      out.opacity *= easeOut(clamp01(frame / (animationIn?.durationInFrames || TEMPLATE_FADE_FRAMES)));
       break;
     case 'fade':
       out.opacity *= inT;

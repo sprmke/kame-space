@@ -269,6 +269,10 @@ describe('recipe → request', () => {
       format: sample.format,
       prompt: sample.prompt,
       preferredArchetype: sample.archetype,
+      offer: null,
+      photoUrls: [],
+      family: 'auto',
+      alsoStory: false,
       sampleId: sample.id,
       trendTopicKey: null,
     });

@@ -329,6 +329,15 @@ Yes, from the next cycle. Archiving removes the property from your plan, so the 
 
 New bookings, calendar imports, the calendar export link, scheduled social posts, Smart Pricing, Telegram digests, inbox AI replies, and the voice receptionist. Refunds, cancellation refunds, and review requests keep running.
 
+### What happens to my public listing link if I rename the property?
+
+- category: Property Settings
+- audience: host
+- source: docs/guides/routes/org/property/settings.md
+- order: 16
+
+The public URL updates from the new name. Guests who still have the old link are sent to this listing. That old address stays reserved so another host cannot take it. You can rename back to the old slug later if you want.
+
 ### Where do I configure which documents guests must submit (GAF, pet approval, etc.)?
 
 - category: Property Settings
@@ -535,6 +544,60 @@ New messages normally appear within seconds. If your role does not include org-w
 - order: 30
 
 Yes. Connect your Facebook Page and Instagram through Guest Inbox first. Without that, you can still design and download assets, just not publish them from here.
+
+### How do I put my own offer on a promo post?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 31
+
+In AI Studio, choose Promo and fill in Your offer, for example "20% off weekdays". You can add a Valid until date and a Code. The post prints your offer exactly as you type it. With no offer, the post shows your nightly rate and never mentions a discount.
+
+### How do I fix one word on an AI post without spending credits?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 32
+
+Open the post in AI Studio and tap Quick edit. Retype any line, choose another photo or layout, or hide the logo, check-in times or location, then tap Apply. It is free and saved as a new version, so the earlier one stays.
+
+### Can I choose which photo an AI post uses?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 33
+
+Yes. In AI Studio, under Photos, tap up to three of your listing photos. The first one you tap is the main photo. If you pick none, AI Studio chooses the clearest ones for you.
+
+### Can AI Studio make a video from my photos?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 34
+
+Yes. Open a post in AI Studio, choose Make a reel in More actions, and a 12 to 20 second Story video is built from your best photos. It opens in Videos, where you can change any scene, line or the music. It is free and uses no credits. In Preview reel you can also tap Direct with AI, which picks the style, orders the photos and writes the lines and counts toward your AI usage like a post does. You can also start a Reel from the AI Studio start screen, without making a post first. In Videos, select the music and tap Cut to the beat to move the cuts onto the song's beats.
+
+### Will Enhance a photo change my room?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 35
+
+Enhance a photo is told to change only the light, color, clutter or sky and to leave your furniture, fixtures and the layout exactly as they are. The app also compares the result with your photo, and if the room's objects or layout changed it does not keep the edit and does not charge you. The result opens with a Before and After slider. Still look before you publish, and use your original if anything looks different from the real room.
+
+### Can AI Studio make a carousel?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 36
+
+Yes. Open a post in AI Studio, choose Make a carousel in More actions, and you get up to five slides in one style. It is free. Save them in order with Download this set in order, then post them as a carousel on Instagram or Meta, because publishing a carousel from AI Studio is not available yet.
 
 ### Can I connect Facebook or Instagram to a parking inbox?
 

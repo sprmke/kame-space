@@ -73,10 +73,42 @@ export async function requestPosterSpecs(
         securityDeposit: input.facts.securityDeposit,
         nightlyRate: input.facts.nightlyRate,
         amenities: input.facts.amenities,
+        ...(input.facts.offer ? { offer: input.facts.offer } : {}),
       },
     }),
   });
   return parseEdgeJsonOrQuota<DirectorResponse>(res);
+}
+
+type ReelDirectorResponse = {
+  contentType: 'reel';
+  direction: { recipe?: unknown; photoIndexes?: unknown; copy?: Record<string, unknown> | null };
+  photoUrls: string[];
+};
+
+/** One billed director call for a reel: recipe, photo order and short lines. */
+export async function requestReelDirection(
+  propertyId: string | null,
+  input: { facts: PosterFacts; prompt: string }
+): Promise<ReelDirectorResponse> {
+  const jwt = await getSessionJwt();
+  const res = await fetch(scopedFunctionsUrl('generate-marketing-template', propertyId), {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contentType: 'reel',
+      prompt: input.prompt,
+      photoUrls: input.facts.photos.slice(0, 6),
+      facts: {
+        propertyName: input.facts.propertyName,
+        brandName: input.facts.brandName,
+        location: input.facts.location,
+        nightlyRate: input.facts.nightlyRate,
+        amenities: input.facts.amenities,
+      },
+    }),
+  });
+  return parseEdgeJsonOrQuota<ReelDirectorResponse>(res);
 }
 
 /**

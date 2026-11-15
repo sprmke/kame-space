@@ -6,7 +6,7 @@ interface AuthDividerProps {
 
 export function AuthDivider({ text = 'or continue with' }: AuthDividerProps) {
   return (
-    <div className="relative my-6">
+    <div className="relative">
       <div className="absolute inset-0 flex items-center">
         <Separator className="w-full" />
       </div>

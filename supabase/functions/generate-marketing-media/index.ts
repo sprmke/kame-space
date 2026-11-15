@@ -107,6 +107,15 @@ import { isMarketingThemeKey } from '../_shared/marketingTheme.ts';
 import { isUuid } from '../_shared/marketingTemplateLibrary.ts';
 import { refineParentError, sessionTitleFromPrompt } from '../_shared/marketingAiSessions.ts';
 import { capturePostHogEvent } from '../_shared/posthog.ts';
+import { checkEnhanceFaithful } from '../_shared/marketingEnhanceHonestyCheck.ts';
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+}
 
 const MAX_REFERENCE_IDS = 14;
 /** Video jobs run for up to ~6 minutes (Veo p99); expire the row if it never finishes. */
@@ -346,6 +355,9 @@ async function handleImageGeneration(req: Request, ctx: GenerationRequestContext
   const enhancementRequested = body.enhancePrompt !== false;
   const propertyContext = await loadPropertyContextForPrompt(sb, propertyId);
 
+  // `intent: 'enhance'` edits the host's own listing photo (first reference) in place.
+  const enhanceIntent = body.intent === 'enhance' && references.length === 1;
+
   // Marketing Trends: the host sends a topic key, the server loads the topic and
   // adds it to the prompt sent to the model. The job row keeps the host's own
   // words so the refine box still shows what they typed.
@@ -361,9 +373,13 @@ async function handleImageGeneration(req: Request, ctx: GenerationRequestContext
     ? `${prompt}\n\n${buildTrendPromptBlock(trendContext)}`
     : prompt;
 
-  const enhancement = plan.parentJobId
+  const enhancement = plan.parentJobId || enhanceIntent
     ? {
-        prompt: buildImageEditPrompt({ instruction: prompt, aspectRatio: options.aspectRatio }),
+        prompt: buildImageEditPrompt({
+          instruction: prompt,
+          aspectRatio: options.aspectRatio,
+          lockStructure: enhanceIntent && !plan.parentJobId,
+        }),
         enhanced: false,
       }
     : enhancementRequested
@@ -408,6 +424,7 @@ async function handleImageGeneration(req: Request, ctx: GenerationRequestContext
     promptEnhanced: enhancement.enhanced,
     generationOptions: {
       ...(sampleId ? { sampleId } : {}),
+      ...(enhanceIntent && !plan.parentJobId ? { aiEdited: true } : {}),
       ...(trendContext ? { trendTopicKey: trendContext.topicKey } : {}),
     },
     model: options.config.model,
@@ -444,6 +461,19 @@ async function handleImageGeneration(req: Request, ctx: GenerationRequestContext
     });
     if (degenerate.degenerate) {
       throw new GenerationOutputError(degenerate.reason);
+    }
+
+    // Honesty guard: an enhance must show the same room. A refusal throws before upload
+    // and billing, like any unusable output.
+    if (enhanceIntent && !plan.parentJobId && inlineReferences[0]) {
+      const verdict = await checkEnhanceFaithful({
+        original: inlineReferences[0],
+        edited: { mimeType: generated.mimeType, data: bytesToBase64(generated.bytes) },
+        organizationId,
+        propertyId,
+        actorUserId,
+      });
+      if (!verdict.ok) throw new GenerationOutputError(verdict.reason);
     }
 
     const storagePath = marketingGenerationStoragePath(

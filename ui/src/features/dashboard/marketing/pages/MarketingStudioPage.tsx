@@ -160,6 +160,7 @@ function MarketingStudioWorkspace() {
                 openPublishWithBlob(payload.blob, payload.mediaType, 'ai-generated')
               }
               onOpenInDesign={(templateId) => openItem(templateId, { tab: 'design' })}
+              onOpenInVideo={(templateId) => openItem(templateId, { tab: 'video' })}
             />
           )}
         </Suspense>

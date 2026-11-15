@@ -369,6 +369,10 @@ function safeScale(profile: VideoMotionProfile, zoom: number): number {
   return Math.max(zoom, 1 + sweep / 100 + 0.02);
 }
 
+function clamp01(value: number): number {
+  return Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0.5));
+}
+
 /**
  * Ken Burns transform for a scene background. `progress` runs 0 → 1 across the
  * scene; the pan sweeps symmetrically so the midpoint stays centred.
@@ -377,12 +381,22 @@ export function backgroundMotionTransform(
   profile: VideoMotionProfile,
   progress: number,
   sceneIndex: number,
-  zoom: number
+  zoom: number,
+  /** Where the push-in lands, 0 to 1 across the photo (the focal estimate). */
+  focal?: { x: number; y: number } | null
 ): string {
   const direction = profile.alternatePan && sceneIndex % 2 === 1 ? -1 : 1;
   const offset = progress - 0.5;
   const x = profile.panXPct * direction * offset;
   const y = profile.panYPct * offset;
   const scale = safeScale(profile, zoom);
+  if (focal) {
+    // Scale about the focal point instead of the centre: translate(o) scale translate(-o).
+    const ox = (clamp01(focal.x) - 0.5) * 100;
+    const oy = (clamp01(focal.y) - 0.5) * 100;
+    if (Math.abs(ox) > 0.5 || Math.abs(oy) > 0.5) {
+      return `translate(${(x + ox).toFixed(3)}%, ${(y + oy).toFixed(3)}%) scale(${scale.toFixed(4)}) translate(${(-ox).toFixed(3)}%, ${(-oy).toFixed(3)}%)`;
+    }
+  }
   return `translate(${x.toFixed(3)}%, ${y.toFixed(3)}%) scale(${scale.toFixed(4)})`;
 }

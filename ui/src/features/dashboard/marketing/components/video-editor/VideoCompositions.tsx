@@ -211,12 +211,23 @@ function SceneLayers({
     extrapolateRight: 'clamp',
   });
   const zoom = motion.zoomFrom + (motion.zoomTo - motion.zoomFrom) * progress;
-  const backgroundTransform = backgroundMotionTransform(motion, progress, sceneIndex, zoom);
+  const backgroundTransform = backgroundMotionTransform(
+    motion,
+    progress,
+    sceneIndex,
+    zoom,
+    scene.focal
+  );
 
   const enter = spring({
     frame,
     fps: config.fps,
     config: { damping: motion.springDamping, stiffness: motion.springStiffness },
+  });
+  // Text entrance: 0.5 s, a mask reveal for the headline and a fade up for the rest.
+  const entranceProgress = interpolate(frame, [0, Math.round(config.fps * 0.5)], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
   });
   const enterOffsetY = (1 - enter) * motion.entryOffsetY;
   const enterOffsetX = (1 - enter) * motion.entryOffsetX;
@@ -256,6 +267,13 @@ function SceneLayers({
             scale={scale}
             enterOffset={enterOffsetY}
             enterOffsetX={enterOffsetX}
+            entrance={
+              layer.kind === 'text' && layer.textStyle === 'headline'
+                ? { kind: 'mask', progress: entranceProgress }
+                : layer.kind === 'text' || layer.kind === 'cta'
+                  ? { kind: 'fade', progress: entranceProgress }
+                  : undefined
+            }
           >
             <VideoLayerBody layer={layer} typography={typography} scale={scale} />
           </PositionedLayer>

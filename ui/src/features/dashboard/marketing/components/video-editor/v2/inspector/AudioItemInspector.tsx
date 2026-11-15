@@ -1,4 +1,5 @@
-import { Replace, Trash2 } from 'lucide-react';
+import { Loader2, Music2, Replace, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 import { NumberSlider } from '@/features/dashboard/marketing/components/calendar-builder/components/controls/NumberSlider';
 import {
@@ -14,6 +15,7 @@ type Props = { item: AudioItem; actions: InspectorActions };
 
 export function AudioItemInspector({ item, actions }: Props) {
   const { fps } = actions.project;
+  const [finding, setFinding] = useState(false);
   const patch = (changes: Partial<AudioItem>) =>
     actions.update(item.id, (current) => ({ ...(current as AudioItem), ...changes }));
   const toSec = (frames: number | undefined) => Math.round(((frames ?? 0) / fps) * 10) / 10;
@@ -51,6 +53,29 @@ export function AudioItemInspector({ item, actions }: Props) {
           ) : null}
         </p>
       ) : null}
+
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-10 w-full gap-1.5"
+        disabled={finding}
+        onClick={async () => {
+          setFinding(true);
+          try {
+            await actions.cutToBeat(item.id);
+          } finally {
+            setFinding(false);
+          }
+        }}
+      >
+        {finding ? (
+          <Loader2 className="size-4 animate-spin" aria-hidden />
+        ) : (
+          <Music2 className="size-4" aria-hidden />
+        )}
+        Cut to the beat
+      </Button>
 
       <TimingFields item={item} actions={actions} />
 

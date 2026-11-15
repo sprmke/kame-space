@@ -186,10 +186,20 @@ export function buildStructuredImagePrompt(input: {
  * The free-form rewrite would describe a new scene and lose the photo, so an edit is
  * a fixed instruction around the host's words instead.
  */
-export function buildImageEditPrompt(input: { instruction: string; aspectRatio: string }): string {
+export function buildImageEditPrompt(input: {
+  instruction: string;
+  aspectRatio: string;
+  /** Enhance a real listing photo: the room itself must not change. */
+  lockStructure?: boolean;
+}): string {
   return [
     'Edit the first reference image. It is the photo being refined.',
     `Change only this: ${input.instruction.trim()}`,
+    ...(input.lockStructure
+      ? [
+          'This is a real listing photo. Do not add, remove, move, resize or restyle any furniture, fixture, decor, window, door or architecture, and do not invent new objects. Only lighting, color, exposure, clutter and sky may change as asked.',
+        ]
+      : []),
     'Keep the room, furniture, layout, camera angle, framing and everything not mentioned exactly as in that image. Photorealistic, natural light, no added text or people.',
     resolvePlatformIntent(input.aspectRatio).framing,
   ].join('\n\n');

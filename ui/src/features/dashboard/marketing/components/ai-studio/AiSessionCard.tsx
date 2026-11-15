@@ -2,6 +2,7 @@ import { memo } from 'react';
 
 import {
   Clapperboard,
+  Film,
   ImageIcon,
   LayoutTemplate,
   Loader2,
@@ -37,6 +38,7 @@ export const AI_OUTPUT_ICON: Record<AiStudioOutput, LucideIcon> = {
   post: LayoutTemplate,
   image: ImageIcon,
   video: Clapperboard,
+  reel: Film,
 };
 
 export type AiSessionCardActions = {

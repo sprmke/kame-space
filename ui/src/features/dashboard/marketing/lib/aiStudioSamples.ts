@@ -30,6 +30,7 @@ import {
   type VideoResolution,
 } from '@/features/dashboard/marketing/lib/marketingGenerationPricing';
 import type { AiStudioOutput } from '@/features/dashboard/marketing/lib/marketingStudioRoute';
+import { isDistinctiveAmenity } from '@/features/dashboard/marketing/lib/poster/posterFacts';
 import type {
   PosterArchetypeId,
   PosterFacts,
@@ -68,7 +69,7 @@ export type PostSample = SampleBase & {
   /** Optional host words sent with the request; '' lets the angle carry it. */
   prompt: string;
   /** Facts a live render needs to look right; the example hides without them. */
-  requires: Array<'amenities' | 'stayTimes'>;
+  requires: Array<'amenities' | 'distinctiveAmenity' | 'stayTimes'>;
 };
 
 export type PhotoSample = SampleBase & {
@@ -105,7 +106,7 @@ export const POST_SAMPLES: PostSample[] = [
     need: 'Uses your listing photos',
     order: 1,
     goal: 'vibe',
-    archetype: 'magazine-cover',
+    archetype: 'arch-frame',
     format: 'instagram-portrait',
     prompt: '',
     requires: [],
@@ -117,7 +118,7 @@ export const POST_SAMPLES: PostSample[] = [
     need: 'Uses your listing photos',
     order: 2,
     goal: 'promo',
-    archetype: 'sky-headline',
+    archetype: 'quote-card',
     format: 'instagram-portrait',
     prompt: 'Book direct for weekday stays',
     requires: [],
@@ -129,7 +130,7 @@ export const POST_SAMPLES: PostSample[] = [
     need: 'Uses your listing photos and amenities',
     order: 3,
     goal: 'amenity-spotlight',
-    archetype: 'feature-sticker',
+    archetype: 'trio-grid',
     format: 'instagram-post',
     prompt: '',
     requires: ['amenities'],
@@ -141,7 +142,7 @@ export const POST_SAMPLES: PostSample[] = [
     need: 'Uses your listing photos',
     order: 4,
     goal: 'promo',
-    archetype: 'night-glass',
+    archetype: 'photo-first',
     format: 'instagram-story',
     prompt: 'Late check-out on weekday stays',
     requires: [],
@@ -153,10 +154,10 @@ export const POST_SAMPLES: PostSample[] = [
     need: 'Uses your listing photos and amenities',
     order: 5,
     goal: 'feature-spotlight',
-    archetype: 'magazine-cover',
+    archetype: 'big-type',
     format: 'instagram-portrait',
     prompt: '',
-    requires: ['amenities'],
+    requires: ['distinctiveAmenity'],
   },
   {
     id: 'post-check-in-guide',
@@ -165,8 +166,8 @@ export const POST_SAMPLES: PostSample[] = [
     need: 'Uses your check-in and check-out times',
     order: 6,
     goal: 'stay-info',
-    archetype: 'minimal-title',
-    format: 'instagram-story',
+    archetype: 'info-card',
+    format: 'instagram-portrait',
     prompt: '',
     requires: ['stayTimes'],
   },
@@ -410,11 +411,11 @@ export function postSampleAvailable(
   sample: PostSample,
   facts: Pick<PosterFacts, 'amenities' | 'checkIn' | 'checkOut'>
 ): boolean {
-  return sample.requires.every((need) =>
-    need === 'amenities'
-      ? facts.amenities.length > 0
-      : Boolean(facts.checkIn?.trim() || facts.checkOut?.trim())
-  );
+  return sample.requires.every((need) => {
+    if (need === 'amenities') return facts.amenities.length > 0;
+    if (need === 'distinctiveAmenity') return facts.amenities.some(isDistinctiveAmenity);
+    return Boolean(facts.checkIn?.trim() || facts.checkOut?.trim());
+  });
 }
 
 // ── Files ────────────────────────────────────────────────────────────────────
@@ -550,10 +551,22 @@ export function showcaseFacts(origin = ''): PosterFacts {
     checkOut: '12:00 PM',
     securityDeposit: null,
     nightlyRate: null,
-    amenities: ['Pool', 'Wi-Fi', 'Balcony', 'Air conditioning'],
+    amenities: ['Netflix', 'Wi-Fi', 'Kitchen', 'Air conditioning'],
     logoUrl: null,
     photos: SHOWCASE_PHOTOS.map((photo) => `${origin}${showcasePhotoUrl(photo.id)}`),
   };
+}
+
+// ── Static post examples ─────────────────────────────────────────────────────
+
+/**
+ * Art-directed post examples shipped as files (`bun run marketing:contact-sheet
+ * --samples` renders them with the stand-in showcase listing). Gallery cards show these,
+ * so the landing tab draws nothing live and never loads Konva; the detail view keeps a
+ * live preview drawn with the host's own photos.
+ */
+export function staticPostSampleUrl(sampleId: string): string {
+  return `/marketing/ai-studio/samples/posts/${sampleId}.jpg`;
 }
 
 // ── Readiness ────────────────────────────────────────────────────────────────
@@ -705,7 +718,7 @@ export function hashString(value: string): string {
 }
 
 /** Bump when the post compiler or sample render changes, so stale previews are redrawn. */
-export const POST_SAMPLE_RENDER_VERSION = 1;
+export const POST_SAMPLE_RENDER_VERSION = 3;
 
 /**
  * IndexedDB key for a live post example: changes whenever the property, theme, listing

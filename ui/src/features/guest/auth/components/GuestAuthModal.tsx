@@ -137,7 +137,7 @@ export function GuestAuthModal({
           </ResponsiveModalTitle>
         </ResponsiveModalHeader>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
           {step === 'otp' && (
             <button
               type="button"
@@ -146,109 +146,119 @@ export function GuestAuthModal({
                 setCode('');
                 setError(null);
               }}
-              className="text-muted-foreground hover:text-foreground flex min-h-[44px] items-center gap-1.5 text-sm font-medium transition-colors"
+              className="text-muted-foreground hover:text-foreground mb-4 flex min-h-[44px] items-center gap-1.5 text-sm font-medium transition-colors"
             >
               <ArrowLeft className="size-4 shrink-0" aria-hidden />
               Back
             </button>
           )}
 
-          {step === 'email' ? (
-            <div className="space-y-2">
-              <Label htmlFor="guest-auth-email" className="sr-only">
-                Email
-              </Label>
-              <Input
-                id="guest-auth-email"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                placeholder={FORM_PLACEHOLDERS.email}
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (error) setError(null);
-                }}
-                disabled={busy}
-                className="rounded-xl text-base"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') void handleContinueEmail();
-                }}
-              />
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-muted-foreground text-center text-sm">{email}</p>
-              <Label htmlFor="guest-auth-code" className="sr-only">
-                Verification code
-              </Label>
-              <Input
-                id="guest-auth-code"
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                placeholder="Enter code"
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value);
-                  if (error) setError(null);
-                }}
-                disabled={busy}
-                className="rounded-xl text-center text-base tracking-widest"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') void handleVerifyCode();
-                }}
-              />
-            </div>
-          )}
-
-          {/* Kept mounted on both steps so Resend (OTP step) still has a fresh single-use token. */}
-          {captcha.widget}
-
-          {error ? (
-            <p className="text-destructive text-center text-sm" role="alert">
-              {error}
-            </p>
-          ) : null}
-
-          <Button
-            type="button"
-            className="h-12 w-full rounded-xl text-[15px] font-semibold sm:h-11 sm:text-sm"
-            disabled={busy}
-            onClick={() => void (step === 'email' ? handleContinueEmail() : handleVerifyCode())}
-          >
-            {isSending || isVerifying ? (
-              <SpinnerIcon className="size-5" />
-            ) : step === 'email' ? (
-              'Continue'
-            ) : (
-              'Verify'
-            )}
-          </Button>
-
-          {step === 'email' ? (
-            <>
-              <AuthDivider text="or" />
-              <GoogleSignInButton
-                onClick={() => void handleGoogleSignIn()}
-                disabled={busy}
-                loading={isSigningInWithGoogle}
-              />
-              <SignInLegalNotice className="pt-2" />
-            </>
-          ) : (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void handleContinueEmail()}
-              className={cn(
-                'text-muted-foreground hover:text-foreground mx-auto flex min-h-[44px] items-center text-sm font-medium transition-colors',
-                busy && 'pointer-events-none opacity-50'
+          <div className="flex flex-col gap-3">
+            <div>
+              {step === 'email' ? (
+                <>
+                  <Label htmlFor="guest-auth-email" className="sr-only">
+                    Email
+                  </Label>
+                  <Input
+                    id="guest-auth-email"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    placeholder={FORM_PLACEHOLDERS.email}
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (error) setError(null);
+                    }}
+                    disabled={busy}
+                    aria-invalid={Boolean(error)}
+                    aria-describedby={error ? 'guest-auth-field-error' : undefined}
+                    className="rounded-xl text-base"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') void handleContinueEmail();
+                    }}
+                  />
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-muted-foreground text-center text-sm">{email}</p>
+                  <Label htmlFor="guest-auth-code" className="sr-only">
+                    Verification code
+                  </Label>
+                  <Input
+                    id="guest-auth-code"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="Enter code"
+                    value={code}
+                    onChange={(e) => {
+                      setCode(e.target.value);
+                      if (error) setError(null);
+                    }}
+                    disabled={busy}
+                    aria-invalid={Boolean(error)}
+                    aria-describedby={error ? 'guest-auth-field-error' : undefined}
+                    className="rounded-xl text-center text-base tracking-widest"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') void handleVerifyCode();
+                    }}
+                  />
+                </div>
               )}
+              {error ? (
+                <p
+                  id="guest-auth-field-error"
+                  className="text-destructive mt-1.5 text-sm"
+                  role="alert"
+                >
+                  {error}
+                </p>
+              ) : null}
+              {/* Nested in the field group so a collapsed Turnstile does not double flex gap. */}
+              {captcha.widget}
+            </div>
+
+            <Button
+              type="button"
+              className="h-12 w-full rounded-xl text-[15px] font-semibold sm:h-11 sm:text-sm"
+              disabled={busy}
+              onClick={() => void (step === 'email' ? handleContinueEmail() : handleVerifyCode())}
             >
-              Resend code
-            </button>
-          )}
+              {isSending || isVerifying ? (
+                <SpinnerIcon className="size-5" />
+              ) : step === 'email' ? (
+                'Continue'
+              ) : (
+                'Verify'
+              )}
+            </Button>
+
+            {step === 'email' ? (
+              <div className="flex flex-col gap-3 pt-1">
+                <AuthDivider text="or" />
+                <GoogleSignInButton
+                  onClick={() => void handleGoogleSignIn()}
+                  disabled={busy}
+                  loading={isSigningInWithGoogle}
+                />
+                <SignInLegalNotice />
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void handleContinueEmail()}
+                className={cn(
+                  'text-muted-foreground hover:text-foreground mx-auto flex min-h-[44px] items-center text-sm font-medium transition-colors',
+                  busy && 'pointer-events-none opacity-50'
+                )}
+              >
+                Resend code
+              </button>
+            )}
+          </div>
         </div>
       </ResponsiveModalContent>
     </ResponsiveModal>

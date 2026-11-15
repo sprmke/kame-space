@@ -28,4 +28,5 @@ export const OUTPUT_FEATURE: Record<AiStudioOutput, PlanFeatureKey> = {
   post: 'aiMarketingGeneration',
   image: 'aiMarketingImageGeneration',
   video: 'aiMarketingVideoGeneration',
+  reel: 'aiMarketingGeneration',
 };

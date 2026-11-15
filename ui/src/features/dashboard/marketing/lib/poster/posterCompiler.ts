@@ -9,6 +9,8 @@ import {
 import { derivePosterPalette } from '@/features/dashboard/marketing/lib/poster/posterColor';
 import { POSTER_FONT_PAIRINGS } from '@/features/dashboard/marketing/lib/poster/posterFonts';
 import { createPosterCanvas } from '@/features/dashboard/marketing/lib/poster/posterModules';
+import type { PhotoAnalysis } from '@/features/dashboard/marketing/lib/poster/posterPhotoAnalysis';
+import { tuneScrims } from '@/features/dashboard/marketing/lib/poster/posterScrimTuning';
 import type { PosterFacts, PosterSpec } from '@/features/dashboard/marketing/lib/poster/posterSpec';
 import {
   DESIGN_FORMAT_DIMENSIONS,
@@ -40,6 +42,8 @@ export function compilePosterDocument(
   format: DesignTemplateFormat,
   options?: {
     photoSizes?: PhotoSizeMap;
+    /** Pixel analysis per photo URL; lets scrims fit the photo instead of its worst case. */
+    photoAnalysis?: Record<string, PhotoAnalysis | null | undefined>;
     brandColor?: string | null;
     /** Marketing theme: palette and type follow it; the archetype keeps its craft. */
     theme?: MarketingThemeTokens | null;
@@ -74,6 +78,9 @@ export function compilePosterDocument(
     palette,
     photos,
   });
+
+  const heroAnalysis = photos[0] ? (options?.photoAnalysis?.[photos[0].url] ?? null) : null;
+  tuneScrims(result.children, heroAnalysis);
 
   return {
     width,

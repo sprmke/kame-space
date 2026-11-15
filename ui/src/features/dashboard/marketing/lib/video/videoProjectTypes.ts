@@ -80,6 +80,8 @@ export type VideoScene = {
   transition: VideoTransition;
   /** Overrides the template's camera motion for this scene only. */
   motion?: VideoMotionOverride;
+  /** Where the photo's subject sits (0 to 1); the push-in lands there. */
+  focal?: { x: number; y: number };
   /** Quiet Coast photo wash — recipe default, host-overridable. */
   overlay?: VideoOverlayMode;
   imageUrl: string | null;

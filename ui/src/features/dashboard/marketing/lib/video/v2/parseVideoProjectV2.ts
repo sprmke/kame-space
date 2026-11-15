@@ -158,6 +158,9 @@ function sanitizeMedia(raw: Rec): MediaItem | null {
     };
   }
   if (raw.motion !== undefined && isVideoMotionOverride(raw.motion)) item.motion = raw.motion;
+  if (isRec(raw.focal)) {
+    item.focal = { x: num(raw.focal.x, 0.5, 0, 1), y: num(raw.focal.y, 0.5, 0, 1) };
+  }
   if (isRec(raw.adjust)) {
     item.adjust = {
       brightness: num(raw.adjust.brightness, 1, 0, 2),

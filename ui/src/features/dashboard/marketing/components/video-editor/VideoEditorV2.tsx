@@ -142,6 +142,9 @@ import {
   cacheJamendoAudioForExport,
   remapAudioUrls,
 } from '@/features/dashboard/marketing/lib/video/v2/exportAudio';
+import { decodeBeatTimes } from '@/features/dashboard/marketing/lib/media/decodeBeats';
+import { beatsOnTimeline, cutToBeats } from '@/features/dashboard/marketing/lib/video/v2/beatCuts';
+import { isJamendoStreamUrl } from '@/features/dashboard/marketing/lib/video/importVideoMusic';
 import { migrateVideoProjectV1 } from '@/features/dashboard/marketing/lib/video/v2/migrateVideoProjectV1';
 import {
   CLAMPED_NOTICE,
@@ -211,7 +214,7 @@ import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate'
 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useIsBelowLg } from '@/hooks/useMediaQuery';
+import { useIsBelowLg, useIsBelowXl } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import { formatMoneyCompact } from '@/utils/format/currency';
 
@@ -278,6 +281,9 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   const generateTemplate = useGenerateMarketingTemplate();
   const duplicate = useDuplicateMarketingItem();
   const isBelowLg = useIsBelowLg();
+  // 1024 to 1279px: the library rail and the inspector cannot both fit beside the stage.
+  const isBelowXl = useIsBelowXl();
+  const narrowDesktop = !isBelowLg && isBelowXl;
 
   const record = document.mode === 'saved' ? document.record : null;
   const initialFormat: VideoFormat =
@@ -632,6 +638,12 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     [setProject]
   );
 
+  /** Show the inspector; where the library cannot sit beside it, the library steps aside. */
+  const openInspector = useCallback(() => {
+    setInspectorOpen(true);
+    if (narrowDesktop) setRailPanel(null);
+  }, [narrowDesktop]);
+
   /** Run an op on the latest project. Refusals and cut-to-fit results tell the host why. */
   const apply = useCallback(
     (build: (current: VideoProjectV2) => OpResult) => {
@@ -645,9 +657,14 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
       }
       if (result.project !== current) commit(result.project);
       if (result.clamped) toast.message(CLAMPED_NOTICE);
-      if (result.itemIds?.length) setSelectedIds(result.itemIds);
+      if (result.itemIds?.length) {
+        setSelectedIds(result.itemIds);
+        // A clip that was just added is selected, and clicking a selected clip does not
+        // reopen the inspector, so a narrow desktop would be left with neither panel.
+        if (narrowDesktop) openInspector();
+      }
     },
-    [canEditContent, commit]
+    [canEditContent, commit, narrowDesktop, openInspector]
   );
 
   const changeProject = useCallback(
@@ -660,25 +677,33 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     [canEditContent, commit]
   );
 
+  const activateRailPanel = useCallback(
+    (key: string | null) => {
+      setRailPanel(key);
+      if (key && narrowDesktop) setInspectorOpen(false);
+    },
+    [narrowDesktop]
+  );
+
   const openEditPanel = useCallback(() => {
     if (isBelowLg) setMobilePanel('edit');
-    else setInspectorOpen(true);
-  }, [isBelowLg]);
+    else openInspector();
+  }, [isBelowLg, openInspector]);
 
   const openRailPanel = useCallback(
     (key: string) => {
       if (isBelowLg) setMobilePanel(key);
-      else setRailPanel(key);
+      else activateRailPanel(key);
     },
-    [isBelowLg]
+    [activateRailPanel, isBelowLg]
   );
 
   const handleSelect = useCallback(
     (ids: string[]) => {
       setSelectedIds(ids);
-      if (ids.length > 0 && !isBelowLg) setInspectorOpen(true);
+      if (ids.length > 0 && !isBelowLg) openInspector();
     },
-    [isBelowLg]
+    [isBelowLg, openInspector]
   );
 
   const handleCanvasSelect = useCallback(
@@ -808,6 +833,42 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     onCommand: handleCommand,
   });
 
+  /** Decode the music, snap the cuts to its beats, then play it from the top so it can be heard. */
+  const cutToBeat = useCallback(
+    async (audioId: string) => {
+      const current = projectRef.current;
+      if (!current || !canEditContent) return;
+      const found = findItem(current, audioId)?.item;
+      if (!found || !isAudioItem(found)) return;
+      try {
+        let url = found.media.url;
+        if (isJamendoStreamUrl(url)) {
+          const audio = await cacheJamendoAudioForExport(current, propertyId);
+          const cachedUrl = audio.cached.get(audioId);
+          if (!cachedUrl) throw new Error('unreadable');
+          url = cachedUrl;
+          amendProject((p) => (p ? remapAudioUrls(p, audio.cached) : p));
+        }
+        const sourceBeats = await decodeBeatTimes(url);
+        const latest = projectRef.current ?? current;
+        const latestAudio = findItem(latest, audioId)?.item;
+        if (!latestAudio || !isAudioItem(latestAudio)) return;
+        const result = cutToBeats(latest, beatsOnTimeline(sourceBeats, latestAudio, latest.fps));
+        if (result.moved === 0) {
+          toast.message('No cuts could move onto a beat in this track.');
+          return;
+        }
+        commit(result.project);
+        toast.success(`Moved ${result.moved} ${result.moved === 1 ? 'cut' : 'cuts'} onto the beat`);
+        playerRef.current?.seekTo(0);
+        playerRef.current?.play();
+      } catch {
+        toast.error('Could not read this track to find the beat.');
+      }
+    },
+    [amendProject, canEditContent, commit, propertyId]
+  );
+
   const inspectorActions = useMemo<InspectorActions | null>(
     () =>
       project
@@ -820,10 +881,11 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
             setRate: (id, rate) => apply((p) => setPlaybackRate(p, id, rate)),
             setTransition: (id, type) => apply((p) => setTransition(p, id, type)),
             replaceMedia: startReplace,
+            cutToBeat,
             remove: (id) => apply((p) => deleteItems(p, [id])),
           }
         : null,
-    [project, templateTypography, apply, startReplace]
+    [project, templateTypography, apply, startReplace, cutToBeat]
   );
 
   // Waveforms come from the audio library's saved peaks.
@@ -1456,7 +1518,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
               type="button"
               variant="ghost"
               className="min-h-[44px] gap-1.5 px-2 text-xs"
-              onClick={() => setInspectorOpen(true)}
+              onClick={openInspector}
             >
               <SlidersHorizontal className="size-4" aria-hidden />
               Edit
@@ -1508,7 +1570,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
             layoutKey="video"
             sections={railSections}
             active={railPanel}
-            onActiveChange={setRailPanel}
+            onActiveChange={activateRailPanel}
           />
         )}
 

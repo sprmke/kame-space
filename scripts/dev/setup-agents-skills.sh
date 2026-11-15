@@ -90,6 +90,13 @@ if [[ ! -f "$AGENTS_SKILLS/design-taste-frontend/SKILL.md" ]]; then
     --skill image-to-code
 fi
 
+# Humanizer (blader/humanizer) — strip AI-sounding product/docs prose
+if [[ ! -f "$AGENTS_SKILLS/humanizer/SKILL.md" ]]; then
+  echo "Installing Humanizer (blader/humanizer) ..."
+  npx skills add https://github.com/blader/humanizer -p -y --agent claude-code cursor \
+    --skill humanizer
+fi
+
 # Playwright CLI skill (binary wired separately by setup-playwright-cli.sh)
 if [[ ! -f "$AGENTS_SKILLS/playwright-cli/SKILL.md" ]]; then
   echo "Installing playwright-cli skill (microsoft/playwright-cli) ..."

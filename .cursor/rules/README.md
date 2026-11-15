@@ -131,6 +131,7 @@ Run **`bun run check:ai-tooling-sync`** after changing hooks, commands, agents, 
 | `booking-workflow`                | Status transitions, orchestrator                   |
 | `admin-dashboard`                 | Bookings list / detail                             |
 | `property-dashboard-qa`           | Deep QA all property dashboard modules + plan/RBAC |
+| `full-app-qa`                     | Full-app QA audit: one page, journey or topic      |
 | `bookings-table`                  | Bookings table UI                                  |
 | `gmail-listener`                  | Gmail approvals                                    |
 | `social-inbox` / `meta-messaging` | Guest Inbox                                        |
