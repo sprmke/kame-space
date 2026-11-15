@@ -17,6 +17,8 @@ type Props = {
   dockProgress?: number;
   expanded: boolean;
   onOpen: () => void;
+  /** Press or focus: the guest is about to open search, so start loading the sheet. */
+  onIntent?: () => void;
   className?: string;
 };
 
@@ -31,6 +33,7 @@ export function MobileSearchPill({
   dockProgress = 0,
   expanded,
   onOpen,
+  onIntent,
   className,
 }: Props) {
   const label = summary ? `${summary.primary}, ${summary.secondary}. Edit search` : emptyLabel;
@@ -42,6 +45,8 @@ export function MobileSearchPill({
     <button
       type="button"
       onClick={onOpen}
+      onPointerDown={onIntent}
+      onFocus={onIntent}
       aria-label={label}
       aria-haspopup="dialog"
       aria-expanded={expanded}

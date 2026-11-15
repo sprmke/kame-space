@@ -11,7 +11,7 @@
 --
 -- Both bodies are copied from 20261316126800_public_listing_search_index.sql with
 -- only the declarations and the availability clause changed. Grants are unchanged
--- (CREATE OR REPLACE keeps the existing REVOKEs).
+-- (service_role only); the REVOKEs at the end restate them.
 
 CREATE OR REPLACE FUNCTION public.search_public_properties(p jsonb)
 RETURNS jsonb
@@ -461,3 +461,8 @@ BEGIN
   RETURN result;
 END;
 $$;
+
+-- Same grants as the original definition: service_role only. CREATE OR REPLACE keeps the
+-- existing privileges; restated so this file stands on its own.
+REVOKE ALL ON FUNCTION public.search_public_properties(jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.search_public_parkings(jsonb) FROM PUBLIC, anon, authenticated;
