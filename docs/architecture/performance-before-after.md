@@ -852,6 +852,10 @@ bootstrap fails, so this degrades to the previous behaviour rather than a blank 
 Not folded in: `app-settings` and `org-plan`. Both are heavier, and `org-plan` reconciles payment
 transactions, which does not belong on every dashboard open.
 
+**Released 2026-11-16.** The server half had been live since the 2026-11-13 `develop` deploy, so the
+UI half completed the loop. The release dry run from `main` passed type-check, lint, 1,356 handler
+tests, 6,196 unit tests, both select guards and the build.
+
 ## Release state
 
 **2026-11-10.** PR #371 synced `main` to `develop`'s tree and shipped the UI side.
