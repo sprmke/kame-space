@@ -20,6 +20,7 @@ import {
   clamp01,
   easeOutCubic,
   lerp,
+  morphTravelDistance,
   smoothstep,
 } from '@/features/guest/marketing/shared/lib/listingScrollSearchEasing';
 import type { ListingSearchPreferType } from '@/features/guest/marketing/shared/lib/listingSearchPreferType';
@@ -29,13 +30,14 @@ const MORPH_DISTANCE = 168;
 const HEADER_HEIGHT_FALLBACK = 56;
 /** Space reserved for logo icon when the wordmark collapses on mobile scroll morph. */
 const MOBILE_MORPH_LOGO_SLOT = 68;
-const MOBILE_MORPH_MENU_SLOT = 72;
+/** The phone header has nothing on the right (menu lives in the bottom tab bar), so only a gutter. */
+const MOBILE_MORPH_MENU_SLOT = 16;
 const TABLET_MORPH_LOGO_SLOT = 84;
-const TABLET_MORPH_MENU_SLOT = 80;
+const TABLET_MORPH_MENU_SLOT = 24;
 /** Prevent the touch-first search control from stretching across tablet headers. */
 const MOBILE_DOCKED_BAR_MAX_WIDTH = 720;
-/** Docked pill height on mobile — centers it in the header row. */
-const MOBILE_DOCKED_BAR_HEIGHT = 46;
+/** Docked pill height on mobile (`MOBILE_SEARCH_PILL_DOCKED_HEIGHT`) — centers it in the header row. */
+const MOBILE_DOCKED_BAR_HEIGHT = 44;
 /** The floater renders at `top-[-3px]`; add it back so the centered value lands true. */
 const FLOATER_TOP_OFFSET = 3;
 /** Above header shell (z-50), below header overlays like account menus (z-60). */
@@ -78,6 +80,12 @@ type ListingScrollSearchContextValue = {
   wherePlaceholder: string;
   whereCompactPlaceholder: string;
   onSearch?: (values: HeroSearchValues) => void;
+  /**
+   * Below `lg`, hold the search fully docked in the header regardless of scroll. The
+   * phone map view owns the whole screen and parks the page where a short hero would
+   * otherwise leave the bar half-morphed over the logo.
+   */
+  setDockLocked: (locked: boolean) => void;
 };
 
 const defaultMorph: MorphBounds = {
@@ -96,7 +104,8 @@ const ListingScrollSearchContext = createContext<ListingScrollSearchContextValue
 function useMorphBounds(
   heroAnchorRef: MutableRefObject<HTMLDivElement | null>,
   headerAnchorRef: MutableRefObject<HTMLDivElement | null>,
-  enabled: boolean
+  enabled: boolean,
+  dockLocked: boolean
 ): MorphBounds {
   const [bounds, setBounds] = useState<MorphBounds>(defaultMorph);
 
@@ -122,8 +131,12 @@ function useMorphBounds(
       const heroRect = hero.getBoundingClientRect();
       const isLg = window.matchMedia('(min-width: 1024px)').matches;
       const headerHeight = readPublicNavHeight();
-      const rawProgress = clamp01((headerHeight - heroRect.top) / MORPH_DISTANCE);
-      const progress = rawProgress;
+      // How far the anchor can travel past the header at max scroll on this page.
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      const reachable = headerHeight - (heroRect.top + window.scrollY - maxScroll);
+      const distance = morphTravelDistance(reachable, MORPH_DISTANCE);
+      const rawProgress = clamp01((headerHeight - heroRect.top) / distance);
+      const progress = dockLocked && !isLg ? 1 : rawProgress;
       const navProgress = smoothstep(0, 0.34, progress);
       const compactProgress = smoothstep(0.2, 0.74, progress);
       const isCompact = compactProgress > 0.88;
@@ -198,13 +211,18 @@ function useMorphBounds(
     const mq = window.matchMedia('(min-width: 1024px)');
     mq.addEventListener('change', schedule);
 
+    // Results loading in changes how far the page can scroll, and so the morph distance.
+    const pageSize = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(schedule) : null;
+    pageSize?.observe(document.body);
+
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);
       mq.removeEventListener('change', schedule);
+      pageSize?.disconnect();
     };
-  }, [enabled, heroAnchorRef, headerAnchorRef]);
+  }, [enabled, dockLocked, heroAnchorRef, headerAnchorRef]);
 
   useLayoutEffect(() => {
     if (!enabled) return;
@@ -303,7 +321,8 @@ export function ListingScrollSearchProvider({
 }: ProviderProps) {
   const heroAnchorRef = useRef<HTMLDivElement | null>(null);
   const headerAnchorRef = useRef<HTMLDivElement | null>(null);
-  const morph = useMorphBounds(heroAnchorRef, headerAnchorRef, enabled);
+  const [dockLocked, setDockLocked] = useState(false);
+  const morph = useMorphBounds(heroAnchorRef, headerAnchorRef, enabled, dockLocked);
 
   const value: ListingScrollSearchContextValue = {
     enabled,
@@ -319,6 +338,7 @@ export function ListingScrollSearchProvider({
     wherePlaceholder,
     whereCompactPlaceholder,
     onSearch,
+    setDockLocked,
   };
 
   return (
@@ -356,6 +376,7 @@ export function useListingScrollSearch(): ListingScrollSearchContextValue {
       whereLabel: 'Where',
       wherePlaceholder: 'Search destinations',
       whereCompactPlaceholder: 'Anywhere',
+      setDockLocked: () => {},
     };
   }
   return ctx;

@@ -2,7 +2,7 @@
 title: 'Guest landing — operator guide'
 status: active
 tags: [guides, routes]
-updated: 2026-11-04
+updated: 2026-11-15
 ---
 
 # Guest landing — operator guide
@@ -45,6 +45,7 @@ Inspired by Airbnb/Agoda search-first patterns, but avoids common pain points:
 - **Visual hierarchy** — photography-led cards, horizontal scroll for stays (scan-friendly)
 - **Optional dates** — guests can search by destination only. Picking a single day counts as a one-night stay, so the calendar never submits a range the edge rejects.
 - **Light + dark** — semantic tokens + theme-aware hero canvas
+- **Phone search** — below 1024px the hero shows one **Start your search** pill that opens a full-screen search: All / Properties / Developments / Parkings tabs, then Where (recent searches + suggestions), When (vertical month calendar) and Who (steppers), with **Clear all** and **Search** pinned at the bottom. Contract: [`search.md`](./search.md) § Phone and tablet search.
 
 ---
 

@@ -3,7 +3,6 @@ import { useMemo, useRef, useState } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { SlidersHorizontal } from 'lucide-react';
 
 import {
   DevelopmentsFilters,
@@ -35,8 +34,11 @@ import {
 } from '@/features/guest/marketing/properties/lib/propertiesQuery';
 import { ListingFilteredEmpty } from '@/features/guest/marketing/shared/components/ListingFilteredEmpty';
 import { ListingLoadError } from '@/features/guest/marketing/shared/components/ListingLoadError';
+import { ListingMobileResultsBar } from '@/features/guest/marketing/shared/components/ListingMobileResults';
 import { ListingResultsPagination } from '@/features/guest/marketing/shared/components/ListingResultsPagination';
 import { useListingUrlQuery } from '@/features/guest/marketing/shared/hooks/useListingUrlQuery';
+import { formatListingCount } from '@/features/guest/marketing/shared/lib/listingCountLabel';
+import { buildDevelopmentFilterChips } from '@/features/guest/marketing/shared/lib/listingFilterChips';
 import { humanizeLocationSlug } from '@/features/guest/marketing/shared/lib/locationSlug';
 import { normalizeCityPlace } from '@/features/guest/marketing/shared/lib/locationSlug';
 
@@ -44,7 +46,6 @@ import {
   ListingLocationRowsSkeleton,
   ListingRowSkeleton,
 } from '@/components/skeletons/ListingGridSkeleton';
-import { Button } from '@/components/ui/button';
 import { usePageTitle } from '@/lib/pageTitle';
 import { buildPageTitle, minNightlyRate, placeDescription, placeTitle } from '@/lib/seo/seoMeta';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
@@ -135,16 +136,15 @@ export function DevelopmentsLocationPage() {
     <div className="bg-background min-h-screen">
       <DevelopmentsHero />
 
-      <div className="border-border bg-background/95 sticky top-[var(--public-nav-h)] z-30 border-b px-4 py-2 backdrop-blur-sm lg:hidden">
-        <Button
-          variant="outline"
-          onClick={() => setMobileFiltersOpen(true)}
-          className="h-10 w-full gap-2"
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          Filters & Sort
-        </Button>
-      </div>
+      <ListingMobileResultsBar
+        countLabel={
+          developmentsResult.data
+            ? formatListingCount(totalDevelopments, 'development', 'developments')
+            : null
+        }
+        activeFilterCount={buildDevelopmentFilterChips(query).length}
+        onOpenFilters={() => setMobileFiltersOpen(true)}
+      />
 
       <div className="flex min-w-0">
         <DevelopmentsFilters

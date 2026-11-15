@@ -7,8 +7,18 @@ import {
   type SuggestedSearchItem,
   useSuggestedCategoryListings,
 } from '@/features/guest/search/hooks/useSuggestedCategoryListings';
+import {
+  SUGGESTION_LABEL_CLASS,
+  SUGGESTION_LIST_CLASS,
+  SUGGESTION_ROW_CLASS,
+  SUGGESTION_SUBTITLE_CLASS,
+  SUGGESTION_TILE_CLASS,
+  SUGGESTION_TITLE_CLASS,
+  type SuggestionLayout,
+} from '@/features/guest/search/lib/suggestionRowStyles';
 
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 const DESTINATION_ICONS: Record<(typeof suggestedDestinations)[number]['icon'], LucideIcon> = {
   nearby: Navigation,
@@ -23,6 +33,11 @@ type Props = {
   onPickNearby: (label: string) => void;
   onPickDestination: (label: string) => void;
   onPickListing: (item: SuggestedSearchItem) => void;
+  /**
+   * `dropdown` (desktop panel): capped height with its own scroll.
+   * `sheet` (phone full-screen search): flows with the page, larger tap rows.
+   */
+  layout?: SuggestionLayout;
 };
 
 /**
@@ -34,14 +49,16 @@ export function SearchSuggestedEmptyPanel({
   onPickNearby,
   onPickDestination,
   onPickListing,
+  layout = 'dropdown',
 }: Props) {
   const { items, isLoading } = useSuggestedCategoryListings(preferType);
   const title = suggestedSectionTitle(preferType);
+  const iconClass = layout === 'sheet' ? 'size-5' : 'h-4 w-4';
 
   if (preferType) {
     return (
       <>
-        <p className="text-foreground mb-3 text-xs font-semibold">{title}</p>
+        <p className={SUGGESTION_TITLE_CLASS[layout]}>{title}</p>
         {isLoading && items.length <= 1 ? (
           <ul
             className="space-y-1"
@@ -50,14 +67,23 @@ export function SearchSuggestedEmptyPanel({
             aria-label="Loading suggestions"
           >
             {Array.from({ length: 4 }).map((_, i) => (
-              <li key={i} className="flex min-h-[44px] items-center gap-3 px-2 py-2" aria-hidden>
-                <Skeleton className="size-10 shrink-0 rounded-xl" />
+              <li
+                key={i}
+                className={cn(
+                  'flex items-center gap-3 px-2 py-2',
+                  layout === 'sheet' ? 'min-h-[60px] gap-4' : 'min-h-[44px]'
+                )}
+                aria-hidden
+              >
+                <Skeleton
+                  className={cn('shrink-0 rounded-xl', layout === 'sheet' ? 'size-12' : 'size-10')}
+                />
                 <Skeleton className="h-4 w-36 max-w-full" />
               </li>
             ))}
           </ul>
         ) : (
-          <ul className="scrollbar-hide max-h-[min(42vh,300px)] space-y-1 overflow-y-auto">
+          <ul className={SUGGESTION_LIST_CLASS[layout]}>
             {items.map((item) => {
               const Icon = item.icon;
               return (
@@ -68,18 +94,14 @@ export function SearchSuggestedEmptyPanel({
                       if (item.kind === 'nearby') onPickNearby(item.label);
                       else onPickListing(item);
                     }}
-                    className="hover:bg-muted flex min-h-[44px] w-full cursor-pointer items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors"
+                    className={SUGGESTION_ROW_CLASS[layout]}
                   >
-                    <span className="bg-muted text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
-                      <Icon className="h-4 w-4" aria-hidden />
+                    <span className={SUGGESTION_TILE_CLASS[layout]}>
+                      <Icon className={iconClass} aria-hidden />
                     </span>
                     <span className="min-w-0">
-                      <span className="text-foreground block text-sm font-medium">
-                        {item.label}
-                      </span>
-                      <span className="text-muted-foreground block truncate text-xs">
-                        {item.subtitle}
-                      </span>
+                      <span className={SUGGESTION_LABEL_CLASS[layout]}>{item.label}</span>
+                      <span className={SUGGESTION_SUBTITLE_CLASS[layout]}>{item.subtitle}</span>
                     </span>
                   </button>
                 </li>
@@ -93,8 +115,8 @@ export function SearchSuggestedEmptyPanel({
 
   return (
     <>
-      <p className="text-foreground mb-3 text-xs font-semibold">{title}</p>
-      <ul className="scrollbar-hide max-h-[min(42vh,300px)] space-y-1 overflow-y-auto">
+      <p className={SUGGESTION_TITLE_CLASS[layout]}>{title}</p>
+      <ul className={SUGGESTION_LIST_CLASS[layout]}>
         {suggestedDestinations.map((destination) => {
           const Icon = DESTINATION_ICONS[destination.icon];
           return (
@@ -105,18 +127,14 @@ export function SearchSuggestedEmptyPanel({
                   if (destination.id === 'nearby') onPickNearby(destination.label);
                   else onPickDestination(destination.label);
                 }}
-                className="hover:bg-muted flex min-h-[44px] w-full cursor-pointer items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors"
+                className={SUGGESTION_ROW_CLASS[layout]}
               >
-                <span className="bg-muted text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
-                  <Icon className="h-4 w-4" aria-hidden />
+                <span className={SUGGESTION_TILE_CLASS[layout]}>
+                  <Icon className={iconClass} aria-hidden />
                 </span>
                 <span className="min-w-0">
-                  <span className="text-foreground block text-sm font-medium">
-                    {destination.label}
-                  </span>
-                  <span className="text-muted-foreground block truncate text-xs">
-                    {destination.subtitle}
-                  </span>
+                  <span className={SUGGESTION_LABEL_CLASS[layout]}>{destination.label}</span>
+                  <span className={SUGGESTION_SUBTITLE_CLASS[layout]}>{destination.subtitle}</span>
                 </span>
               </button>
             </li>
