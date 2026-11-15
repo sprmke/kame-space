@@ -22,6 +22,11 @@ import {
   type CalendarFeedProvider,
 } from '../_shared/calendarSyncService.ts';
 import { loadCalendarFeed, runFeedSync } from '../_shared/calendarSyncRun.ts';
+import {
+  CALENDAR_FEED_LIMIT,
+  calendarChannel,
+  connectableCalendarProviders,
+} from '../_shared/calendarChannels.ts';
 import type { RunFeedResult } from '../_shared/calendarSyncRun.ts';
 import {
   buildCalendarExportUrls,
@@ -100,14 +105,27 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
   if (req.method === 'GET') {
     const { property } = await resolveScopedPropertyAccess(req, 'pricing.channels:view');
     // Preview-open: hosts below Pro can browse the Channel sync UI; writes stay plan-gated.
-    const [{ data: feedRows }, exportRow] = await Promise.all([
-      supabase
-        .from('property_calendar_feeds')
-        .select(FEED_COLUMNS + ', ics_url_encrypted')
-        .eq('property_id', property.id)
-        .order('created_at', { ascending: true }),
-      ensureExportRow(supabase, property.id),
-    ]);
+    const [{ data: feedRows }, exportRow, { data: readRows }, { data: runRows }] =
+      await Promise.all([
+        supabase
+          .from('property_calendar_feeds')
+          .select(FEED_COLUMNS + ', ics_url_encrypted')
+          .eq('property_id', property.id)
+          .order('created_at', { ascending: true }),
+        ensureExportRow(supabase, property.id),
+        supabase
+          .from('calendar_export_reads')
+          .select('channel, last_read_at, read_count')
+          .eq('property_id', property.id)
+          .order('last_read_at', { ascending: false })
+          .limit(60),
+        supabase
+          .from('calendar_sync_runs')
+          .select('feed_id, status, duration_ms, error_code, started_at')
+          .eq('property_id', property.id)
+          .order('started_at', { ascending: false })
+          .limit(100),
+      ]);
 
     const feeds = feedRows ?? [];
     const feedIds = feeds.map((f) => f.id as string);
@@ -121,6 +139,23 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
           .order('created_at', { ascending: false })
           .limit(30)
       : { data: [] };
+
+    // Latest run per feed. `calendar_sync_runs` is retention-pruned, so this is recent only.
+    const latestRunByFeed = new Map<string, Record<string, unknown>>();
+    for (const run of runRows ?? []) {
+      const id = run.feed_id as string;
+      if (!latestRunByFeed.has(id)) latestRunByFeed.set(id, run);
+    }
+    // Most recent read per channel, so the UI can say "Agoda last read your link 40 min ago".
+    const exportReads: Record<string, { lastReadAt: string; readCount: number }> = {};
+    for (const read of readRows ?? []) {
+      const channel = read.channel as string;
+      if (exportReads[channel]) continue;
+      exportReads[channel] = {
+        lastReadAt: read.last_read_at as string,
+        readCount: read.read_count as number,
+      };
+    }
 
     const shapedFeeds = await Promise.all(
       feeds.map(async (f) => {
@@ -147,6 +182,7 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
           lastError: f.last_error,
           consecutiveFailures: f.consecutive_failures,
           createdAt: f.created_at,
+          lastRun: latestRunByFeed.get(f.id as string) ?? null,
         };
       })
     );
@@ -157,6 +193,8 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
         enabled: exportRow.is_enabled,
         rotatedAt: exportRow.rotated_at,
         lastServedAt: exportRow.last_served_at,
+        // Per-channel read health (200 and 304), keyed by channel or `all`.
+        reads: exportReads,
         urls: exportUrls(req, property.slug, exportRow.token),
       },
       recentEvents: events ?? [],
@@ -230,17 +268,51 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
   try {
     switch (action) {
       case 'addFeed': {
-        // Product surface is Airbnb-only for now (Booking.com / VRBO / Other stay in the schema
-        // for existing rows + future expansion, but new connections must be Airbnb).
+        // Product surface is Airbnb-only for now: the registry decides which providers a host
+        // may connect, so enabling Agoda later is one registry flag, not an edit here.
         const provider = String(body.provider ?? 'airbnb') as CalendarFeedProvider;
-        if (provider !== 'airbnb') {
+        if (!connectableCalendarProviders().includes(provider)) {
           return jsonError(req, 'Only Airbnb calendar sync is available right now', 400);
         }
+        const availabilityKey = calendarChannel(provider).availabilityKey;
+        if (availabilityKey) {
+          const channelPaused = await featureUnavailableResponse(req, availabilityKey, { user });
+          if (channelPaused) return channelPaused;
+        }
         const rawUrl = String(body.icsUrl ?? '');
-        if (!normalizeExternalIcsUrl(rawUrl)) {
+        const normalizedUrl = normalizeExternalIcsUrl(rawUrl);
+        if (!normalizedUrl) {
           return jsonError(req, 'Paste the calendar URL', 400);
         }
         const icsUrl = assertExternalIcsUrlShape(rawUrl, provider);
+
+        const { data: existingFeeds, error: existingFeedsError } = await supabase
+          .from('property_calendar_feeds')
+          .select('id, is_active, ics_url_encrypted')
+          .eq('property_id', property.id);
+        if (existingFeedsError) throw new Error(existingFeedsError.message);
+        const activeFeeds = (existingFeeds ?? []).filter((f) => f.is_active);
+        if (activeFeeds.length >= CALENDAR_FEED_LIMIT) {
+          return jsonError(
+            req,
+            `This listing already has ${CALENDAR_FEED_LIMIT} calendars connected.`,
+            400
+          );
+        }
+        for (const existing of existingFeeds ?? []) {
+          const encrypted = existing.ics_url_encrypted as string | null;
+          if (!encrypted) continue;
+          try {
+            const connectedUrl = normalizeExternalIcsUrl(
+              await decryptIntegrationSecret(encrypted)
+            );
+            if (connectedUrl && connectedUrl === normalizedUrl) {
+              return jsonError(req, 'This calendar is already connected', 400);
+            }
+          } catch {
+            /* unreadable stored URL: keep going, the insert will surface the real problem */
+          }
+        }
         const label =
           typeof body.label === 'string' && body.label.trim()
             ? body.label.trim().slice(0, 120)

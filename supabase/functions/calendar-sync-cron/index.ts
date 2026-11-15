@@ -13,11 +13,15 @@
 
 
 import {
+  CALENDAR_SYNC_CLAIM_SLACK_MS,
+  calendarSyncMinIntervalMinutes,
   loadCalendarFeed,
   loadDueCalendarFeeds,
+  recordFeedRun,
   runFeedSync,
   type CalendarFeedRow,
 } from '../_shared/calendarSyncRun.ts';
+import { calendarChannel, type CalendarFeedProvider } from '../_shared/calendarChannels.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { recordJobHeartbeat } from '../_shared/systemHealth/jobHeartbeat.ts';
 import {
@@ -132,9 +136,20 @@ serveHandler('calendar-sync-cron', async (req) => {
         feeds = (data as CalendarFeedRow[] | null) ?? [];
       }
 
+      for (const feed of feeds) {
+        const availabilityKey = calendarChannel(feed.provider).availabilityKey;
+        if (availabilityKey && !(await isFeatureAvailable(availabilityKey))) {
+          const blocked = await featureUnavailableResponse(req, availabilityKey, { user });
+          if (blocked) return blocked;
+        }
+      }
+
       const results = [];
       for (const feed of feeds) {
-        results.push(await runFeedSync(feed, { runId, force: true, supabase }));
+        const startedAt = Date.now();
+        const result = await runFeedSync(feed, { runId, force: true, supabase });
+        await recordFeedRun(supabase, feed, result, Date.now() - startedAt);
+        results.push(result);
       }
       return json(req, {
         success: true,
@@ -155,7 +170,18 @@ serveHandler('calendar-sync-cron', async (req) => {
       return json(req, { success: true, skipped: 'feature_unavailable', runId, scoped: false });
     }
 
-    const feeds = await loadDueCalendarFeeds(supabase, GLOBAL_BATCH);
+    const cutoffIso = new Date(
+      Date.now() - Math.max(0, calendarSyncMinIntervalMinutes() * 60_000 - CALENDAR_SYNC_CLAIM_SLACK_MS)
+    ).toISOString();
+    const feeds = await loadDueCalendarFeeds(supabase, GLOBAL_BATCH, { cutoffIso });
+    // A paused channel is skipped without counting a failure: the whole point of the switch is
+    // to stop hammering a channel whose feed format changed.
+    const pausedChannels = new Set<CalendarFeedProvider>();
+    for (const provider of new Set(feeds.map((f) => f.provider))) {
+      const key = calendarChannel(provider).availabilityKey;
+      if (!key) continue;
+      if (!(await isFeatureAvailable(key))) pausedChannels.add(provider);
+    }
     const startedAt = Date.now();
     const summary = {
       feedsProcessed: 0,
@@ -207,8 +233,14 @@ serveHandler('calendar-sync-cron', async (req) => {
         continue;
       }
 
+      if (pausedChannels.has(feed.provider)) {
+        continue;
+      }
+
+      const feedStartedAt = Date.now();
       try {
         const res = await runFeedSync(feed, { runId, supabase });
+        await recordFeedRun(supabase, feed, res, Date.now() - feedStartedAt);
         summary.feedsProcessed++;
         summary.blocksCreated += res.blocksCreated;
         summary.blocksRemoved += res.blocksRemoved;
@@ -222,6 +254,12 @@ serveHandler('calendar-sync-cron', async (req) => {
       } catch (err) {
         summary.errors++;
         console.error(`[calendar-sync-cron] feed ${feed.id} threw:`, err);
+        await recordFeedRun(
+          supabase,
+          feed,
+          { status: 'error', error: err instanceof Error ? err.message : String(err) },
+          Date.now() - feedStartedAt
+        );
       }
     }
 

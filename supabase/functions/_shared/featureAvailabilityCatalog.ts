@@ -16,6 +16,9 @@ export const FEATURE_AVAILABILITY_KEYS = [
   'inbox.meta.sync',
   'pricing.channel_sync',
   'pricing.channel_sync.import',
+  'pricing.channel_sync.airbnb',
+  'pricing.channel_sync.agoda',
+  'pricing.channel_sync.booking_com',
   'marketing.ai_studio',
   'marketing.ai_studio.generate',
   'marketing.planner',
@@ -50,7 +53,13 @@ export type FeatureAvailabilitySurface =
   | 'background + button'
   | 'button + background';
 
-export type FeatureAvailabilityProvider = 'Meta' | 'Airbnb' | 'Google' | 'Telegram';
+export type FeatureAvailabilityProvider =
+  | 'Meta'
+  | 'Airbnb'
+  | 'Agoda'
+  | 'Booking.com'
+  | 'Google'
+  | 'Telegram';
 
 export interface FeatureAvailabilityCatalogEntry {
   key: FeatureAvailabilityKey;
@@ -131,6 +140,33 @@ export const FEATURE_AVAILABILITY_CATALOG: readonly FeatureAvailabilityCatalogEn
     description:
       'calendar-sync-cron global sweep, "Sync now", add/edit/remove feed, assistant propose_run_channel_sync',
     provider: 'Airbnb',
+  },
+  {
+    key: 'pricing.channel_sync.airbnb',
+    parent: 'pricing.channel_sync',
+    module: 'pricing',
+    surface: 'background + button',
+    label: 'Airbnb calendar sync',
+    description: 'Airbnb feeds: cron import, add feed, Sync now. Export link keeps serving.',
+    provider: 'Airbnb',
+  },
+  {
+    key: 'pricing.channel_sync.agoda',
+    parent: 'pricing.channel_sync',
+    module: 'pricing',
+    surface: 'background + button',
+    label: 'Agoda calendar sync',
+    description: 'Agoda feeds: cron import, add feed, Sync now. Export link keeps serving.',
+    provider: 'Agoda',
+  },
+  {
+    key: 'pricing.channel_sync.booking_com',
+    parent: 'pricing.channel_sync',
+    module: 'pricing',
+    surface: 'background + button',
+    label: 'Booking.com calendar sync',
+    description: 'Booking.com feeds: cron import, add feed, Sync now. Export link keeps serving.',
+    provider: 'Booking.com',
   },
   {
     key: 'marketing.planner',
