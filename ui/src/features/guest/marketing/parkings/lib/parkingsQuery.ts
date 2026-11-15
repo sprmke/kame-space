@@ -18,6 +18,10 @@ import {
 } from '@/features/guest/marketing/shared/lib/listingQueryParams';
 import { normalizeCityPlace } from '@/features/guest/marketing/shared/lib/locationSlug';
 import { resolveListingCoverImage } from '@/features/guest/marketing/shared/lib/mockListingImages';
+import {
+  flexForRange,
+  parseFlexDaysParam,
+} from '@/features/guest/marketing/shared/lib/searchFlexDays';
 
 export const PARKINGS_SORTS = ['tower'] as const;
 
@@ -30,6 +34,8 @@ export type ParkingsListingQuery = {
   maxPrice: number | null;
   checkIn: string;
   checkOut: string;
+  /** ± days around the stay (`/search` flexible dates); 0 = exact. Needs both dates. */
+  flex: number;
   /** Guest coordinates for a Nearby search; scopes results to the nearby radius. */
   lat: number | null;
   lng: number | null;
@@ -55,6 +61,7 @@ export const DEFAULT_PARKINGS_QUERY: ParkingsListingQuery = {
   maxPrice: null,
   checkIn: '',
   checkOut: '',
+  flex: 0,
   lat: null,
   lng: null,
   swLat: null,
@@ -148,6 +155,8 @@ function writeLocationParams(query: ParkingsListingQuery, params: URLSearchParam
 
 export function parseParkingsQuery(sp: URLSearchParams): ParkingsListingQuery {
   const { locations, motorcycle } = parseLocationFilters(sp);
+  const checkIn = parseOptionalYmd(sp.get('checkIn'));
+  const checkOut = parseOptionalYmd(sp.get('checkOut'));
 
   return {
     where: (sp.get('where') ?? '').trim(),
@@ -156,8 +165,9 @@ export function parseParkingsQuery(sp: URLSearchParams): ParkingsListingQuery {
     towers: parseCsvParam(sp.get('towers')),
     minPrice: parseOptionalNumber(sp.get('minPrice')),
     maxPrice: parseOptionalNumber(sp.get('maxPrice')),
-    checkIn: parseOptionalYmd(sp.get('checkIn')),
-    checkOut: parseOptionalYmd(sp.get('checkOut')),
+    checkIn,
+    checkOut,
+    flex: flexForRange(parseFlexDaysParam(sp.get('flex')), checkIn, checkOut),
     lat: parseOptionalNumber(sp.get('lat')),
     lng: parseOptionalNumber(sp.get('lng')),
     swLat: parseOptionalNumber(sp.get('swLat')),
@@ -189,6 +199,7 @@ export function writeParkingsQuery(
     'maxPrice',
     'checkIn',
     'checkOut',
+    'flex',
     'lat',
     'lng',
     'swLat',
@@ -210,6 +221,7 @@ export function writeParkingsQuery(
   setIfNotDefault(next, 'maxPrice', query.maxPrice, null);
   setOrDelete(next, 'checkIn', query.checkIn || null);
   setOrDelete(next, 'checkOut', query.checkOut || null);
+  setIfNotDefault(next, 'flex', flexForRange(query.flex, query.checkIn, query.checkOut), 0);
   setIfNotDefault(next, 'lat', query.lat, null);
   setIfNotDefault(next, 'lng', query.lng, null);
   setIfNotDefault(next, 'swLat', query.swLat, null);

@@ -2,7 +2,7 @@
 title: 'Parkings (guest marketing) — operator guide'
 status: active
 tags: [guides, routes, parking]
-updated: 2026-11-11
+updated: 2026-11-15
 ---
 
 # Parkings (guest marketing) — operator guide
@@ -28,6 +28,7 @@ Routes:
 | Parking form    | Done     | Done       | Documented | Guest-authenticated submit (`submit-parking-booking-request`); zero-candidate 422                                                              |
 | Request status  | —        | —          | Documented | Polling status page (`get-parking-booking-status`, 4s interval); ranked batched search + pay-to-confirm                                        |
 | Mobile shell    | —        | —          | Documented | `MarketingLayoutShell` bottom tabs; Reserve/chat → `ContextualActionBar`/`ResponsiveModal`                                                     |
+| Phone results   | —        | —          | Documented | One sticky row: slot count + round filter button (badge); sort inside the sheet                                                                |
 
 ---
 
@@ -61,6 +62,8 @@ Guests browse standalone parking slots by city or building, open a slot detail p
   A: No. Only if the guest requested one specific listing directly. For an org-wide search, the request goes first to the cheapest few eligible hosts. If none of them respond in time, it automatically moves on to the next few, and so on, until it's matched or every eligible host has had a turn.
 - Q: How does the guest know if a host accepted the request?
   A: After submit, the guest is sent to a request-status page that shows whether the request is still waiting, awaiting the guest's payment, already confirmed, cancelled, or ended with no host available. Once a host accepts, the guest sees a "Pay Now" button and has a time window to pay - the booking is only truly confirmed (and the host's access note shown) once payment succeeds.
+- Q: Can guests search parking with flexible dates?
+  A: Yes. In search they can pick dates and then **± 1, 2, 3 or 7 days**. Your slot shows up if it is free for the same number of nights starting within that window, never in the past.
 - Q: Can a guest change their mind?
   A: Yes, any time before they pay - while still searching or while their payment window is open. Once paid, the reservation is final and not self-service cancellable.
 
@@ -68,14 +71,14 @@ Guests browse standalone parking slots by city or building, open a slot detail p
 
 ## List (`/parkings`)
 
-**`ParkingsListPage`** — hero search, collapsible **`ParkingFilters`** sidebar (location type, tower, price; **closed by default** on desktop — use **Show Filters** in the toolbar), **`ParkingToolbar`** sort (sticky from `lg` up; on mobile it scrolls with the page so it never collides with the sticky **Filters & Sort** bar), location-grouped carousels via **`ParkingsByLocation`**. Filters/sort from URL; tower options from API facets. When Tower is shown but has no options, the section shows **None**.
+**`ParkingsListPage`** — hero search, collapsible **`ParkingFilters`** sidebar (location type, tower, price; **closed by default** on desktop — use **Show Filters** in the toolbar), **`ParkingToolbar`** sort (sticky, `lg+` only; below `lg` the shared `ListingMobileResultsBar` shows the slot count and a round filter button with an applied-filter badge, and sort lives in the filter sheet on every parking list, including `/developments/:slug/parking`), location-grouped carousels via **`ParkingsByLocation`**. Filters/sort from URL; tower options from API facets. When Tower is shown but has no options, the section shows **None**.
 
 - **Mobile filters:** the **`ParkingFilters`** sheet opens as a bottom sheet (flex column, `z-[100]`/`z-[101]` so it clears the scroll-morph search bar). Header and the **Show results** / **Clear all** footer are pinned; only the option list scrolls; the footer carries a safe-area inset.
 
 - **Scale behavior:** Filters, sort, facets, and paging run in Postgres (`search_public_*` RPCs over the trigger-maintained `public_listing_search` index), so there is no catalog-size ceiling; cards are built for the current page only. See [`PROJECT.md`](../../PROJECT.md#public-listing-search-index-browse-search-seo). Prices are the charged rate (parking settings), matching the detail page and checkout. Availability excludes bookings and owner blocks. Default unfiltered `/parkings` additionally uses `list-public-place-groups?family=parkings` for six city rows with eight previews each; **Show more places** appends later groups. Filtered browse stays on `list-public-parkings`. Facets are **disjunctive**: location type, tower and price are each counted with every _other_ filter applied (scoped to the visible map pool when bbox params are present), so picking one tower still lists the others. Filtered views show a **Previous / Next** pager (URL `page`, 24 per page).
 - Each row title: **Parking in {city}** → **View all** → `/parkings/in/:location`
 - Cards: **`ParkingSlotCard`** carousel variant — **Parking in {city}** title + **development name** subtext (matches property carousel pattern); **Reserve** via card link to development form
-- On scroll, **`ListingHeroSearch`** morphs into the fixed header center (same as `/properties`).
+- On scroll, **`ListingHeroSearch`** morphs into the fixed header center (same as `/properties`). On phones and tablets (below 1024px) the bar is a single **Start your search** pill that opens the full-screen search (Where / When / Who, category tabs, recent searches). Full contract: [`search.md`](./search.md) § Phone and tablet search. The sheet opens on the **Parkings** tab, so it skips the guest step.
 
 **Where field:** empty on `/parkings` (category index — do not prefill the nav label); city name on `/parkings/in/:location` (`listingSearchDefaultLocation.ts`). Placeholder: **Search parkings** (`listingSearchFields.ts`).
 

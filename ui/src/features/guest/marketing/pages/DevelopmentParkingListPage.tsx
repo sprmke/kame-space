@@ -3,7 +3,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { Navigate, Link, useParams } from 'react-router-dom';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { Home, SlidersHorizontal } from 'lucide-react';
+import { Home } from 'lucide-react';
 
 import {
   ParkingFilters,
@@ -35,8 +35,11 @@ import {
 import type { HeroSearchValues } from '@/features/guest/marketing/shared/components/hero-search/HeroSearch';
 import { ListingFilteredEmpty } from '@/features/guest/marketing/shared/components/ListingFilteredEmpty';
 import { ListingLoadError } from '@/features/guest/marketing/shared/components/ListingLoadError';
+import { ListingMobileResultsBar } from '@/features/guest/marketing/shared/components/ListingMobileResults';
 import { ListingResultsPagination } from '@/features/guest/marketing/shared/components/ListingResultsPagination';
 import { useListingUrlQuery } from '@/features/guest/marketing/shared/hooks/useListingUrlQuery';
+import { formatListingCount } from '@/features/guest/marketing/shared/lib/listingCountLabel';
+import { buildParkingFilterChips } from '@/features/guest/marketing/shared/lib/listingFilterChips';
 
 import { PublicListingBrowseSkeleton } from '@/components/skeletons/GuestMarketingSkeleton';
 import { Button } from '@/components/ui/button';
@@ -133,16 +136,11 @@ export function DevelopmentParkingListPage() {
         redirectTo={`/developments/${development.slug}/parking`}
       />
 
-      <div className="border-border bg-background/95 sticky top-[var(--public-nav-h)] z-30 border-b px-4 py-2 backdrop-blur-sm lg:hidden">
-        <Button
-          variant="outline"
-          onClick={() => setMobileFiltersOpen(true)}
-          className="h-10 w-full gap-2"
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          Filters & Sort
-        </Button>
-      </div>
+      <ListingMobileResultsBar
+        countLabel={parkingsResult.data ? formatListingCount(totalResults, 'slot', 'slots') : null}
+        activeFilterCount={buildParkingFilterChips(filters).length}
+        onOpenFilters={() => setMobileFiltersOpen(true)}
+      />
 
       <div className="flex">
         <ParkingFilters
@@ -160,6 +158,8 @@ export function DevelopmentParkingListPage() {
           filters={filters}
           onFiltersChange={setFilters}
           towerOptions={towerOptions}
+          sortBy={query.sort}
+          onSortChange={(sort) => patchQuery({ sort: sort as ParkingSortKey })}
         />
 
         <main

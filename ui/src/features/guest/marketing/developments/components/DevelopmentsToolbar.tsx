@@ -43,7 +43,7 @@ export function DevelopmentsToolbar({
   resultsNoun = 'development',
 }: DevelopmentsToolbarProps) {
   return (
-    <div className="border-border bg-background border-b">
+    <div className="border-border bg-background border-b max-lg:hidden">
       <div className="flex items-center justify-between gap-2 px-4 py-2 sm:gap-4 sm:px-6 sm:py-3">
         <div className="flex shrink-0 items-center gap-3 sm:gap-4">
           <Button

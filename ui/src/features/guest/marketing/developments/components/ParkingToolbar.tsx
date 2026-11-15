@@ -35,7 +35,7 @@ export function ParkingToolbar({
     : PARKING_SORT_OPTIONS[0]!.value;
 
   return (
-    <div className="border-border bg-background/95 z-20 border-b backdrop-blur-sm lg:sticky lg:top-[var(--public-nav-h)]">
+    <div className="border-border bg-background/95 sticky top-[var(--public-nav-h)] z-20 border-b backdrop-blur-sm max-lg:hidden">
       <div className="flex items-center justify-between gap-2 px-4 py-2 sm:gap-4 sm:px-6 sm:py-3">
         <div className="flex shrink-0 items-center gap-4">
           <Button

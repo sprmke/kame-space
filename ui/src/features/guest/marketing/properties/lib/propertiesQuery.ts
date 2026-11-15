@@ -11,6 +11,10 @@ import {
   setOrDelete,
 } from '@/features/guest/marketing/shared/lib/listingQueryParams';
 import { resolveListingImages } from '@/features/guest/marketing/shared/lib/mockListingImages';
+import {
+  flexForRange,
+  parseFlexDaysParam,
+} from '@/features/guest/marketing/shared/lib/searchFlexDays';
 
 export const PROPERTIES_SORTS = ['recommended', 'rating', 'reviews', 'newest'] as const;
 
@@ -26,6 +30,8 @@ export type PropertiesListingQuery = {
   development: string[];
   checkIn: string;
   checkOut: string;
+  /** ± days around the stay (`/search` flexible dates); 0 = exact. Needs both dates. */
+  flex: number;
   adults: number;
   children: number;
   /** Guest coordinates for a Nearby search; scopes results to the nearby radius. */
@@ -53,6 +59,7 @@ export const DEFAULT_PROPERTIES_QUERY: PropertiesListingQuery = {
   development: [],
   checkIn: '',
   checkOut: '',
+  flex: 0,
   adults: 0,
   children: 0,
   lat: null,
@@ -132,6 +139,9 @@ export function parsePropertiesQuery(sp: URLSearchParams): PropertiesListingQuer
     adults = guestsLegacy;
   }
 
+  const checkIn = parseOptionalYmd(sp.get('checkIn'));
+  const checkOut = parseOptionalYmd(sp.get('checkOut'));
+
   return {
     where: (sp.get('where') ?? '').trim(),
     type: parseCsvParam(sp.get('type')),
@@ -140,8 +150,9 @@ export function parsePropertiesQuery(sp: URLSearchParams): PropertiesListingQuer
     bedrooms: parseBedrooms(sp.get('bedrooms')),
     amenities: parseCsvParam(sp.get('amenities')),
     development: parseCsvParam(sp.get('development')),
-    checkIn: parseOptionalYmd(sp.get('checkIn')),
-    checkOut: parseOptionalYmd(sp.get('checkOut')),
+    checkIn,
+    checkOut,
+    flex: flexForRange(parseFlexDaysParam(sp.get('flex')), checkIn, checkOut),
     adults,
     children,
     lat: parseOptionalNumber(sp.get('lat')),
@@ -175,6 +186,7 @@ export function writePropertiesQuery(
     'development',
     'checkIn',
     'checkOut',
+    'flex',
     'adults',
     'children',
     'guests',
@@ -200,6 +212,7 @@ export function writePropertiesQuery(
   setCsvOrDelete(next, 'development', query.development);
   setOrDelete(next, 'checkIn', query.checkIn || null);
   setOrDelete(next, 'checkOut', query.checkOut || null);
+  setIfNotDefault(next, 'flex', flexForRange(query.flex, query.checkIn, query.checkOut), 0);
   setIfNotDefault(next, 'adults', query.adults, 0);
   setIfNotDefault(next, 'children', query.children, 0);
   setIfNotDefault(next, 'lat', query.lat, null);

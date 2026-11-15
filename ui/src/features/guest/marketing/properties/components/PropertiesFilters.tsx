@@ -23,14 +23,16 @@ import {
 
 import {
   clearPropertyFilters,
-  countActivePropertyFilters,
   type PropertiesFacets,
   type PropertiesListingQuery,
 } from '@/features/guest/marketing/properties/lib/propertiesQuery';
 import { FilterEmptyLabel } from '@/features/guest/marketing/shared/components/FilterEmptyLabel';
 import { FilterSection } from '@/features/guest/marketing/shared/components/FilterSection';
 import { FilterSheetSort } from '@/features/guest/marketing/shared/components/FilterSheetSort';
-import { PROPERTY_SORT_OPTIONS } from '@/features/guest/marketing/shared/lib/listingFilterChips';
+import {
+  buildPropertyFilterChips,
+  PROPERTY_SORT_OPTIONS,
+} from '@/features/guest/marketing/shared/lib/listingFilterChips';
 import { useListingFilterMotion } from '@/features/guest/marketing/shared/lib/listingFilterMotion';
 
 import { Button } from '@/components/ui/button';
@@ -155,7 +157,8 @@ export function PropertiesFilters({
     onChange(clearPropertyFilters(value));
   };
 
-  const activeFiltersCount = countActivePropertyFilters(value);
+  // Only what this sheet controls (and Clear all resets); dates and guests live in the search bar.
+  const activeFiltersCount = buildPropertyFilterChips(value).length;
   const hasActiveFilters = activeFiltersCount > 0;
   const selectedPrice = selectedPricePresetId(value);
 

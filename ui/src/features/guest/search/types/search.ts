@@ -23,6 +23,8 @@ export type SearchListingsQuery = {
   where: string;
   checkIn: string;
   checkOut: string;
+  /** ± days around the stay (flexible dates); 0 = exact. Only set with both dates. */
+  flex: number;
   adults: number;
   children: number;
   infants: number;

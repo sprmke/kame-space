@@ -3,7 +3,6 @@ import { useMemo, useRef, useState } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { SlidersHorizontal } from 'lucide-react';
 
 import {
   PropertiesFilters,
@@ -31,8 +30,15 @@ import {
 } from '@/features/guest/marketing/properties/lib/propertiesQuery';
 import { ListingFilteredEmpty } from '@/features/guest/marketing/shared/components/ListingFilteredEmpty';
 import { ListingLoadError } from '@/features/guest/marketing/shared/components/ListingLoadError';
+import {
+  ListingMapToggle,
+  ListingMobileMapStage,
+  ListingMobileResultsBar,
+} from '@/features/guest/marketing/shared/components/ListingMobileResults';
 import { ListingResultsPagination } from '@/features/guest/marketing/shared/components/ListingResultsPagination';
 import { useListingUrlQuery } from '@/features/guest/marketing/shared/hooks/useListingUrlQuery';
+import { formatListingCount } from '@/features/guest/marketing/shared/lib/listingCountLabel';
+import { buildPropertyFilterChips } from '@/features/guest/marketing/shared/lib/listingFilterChips';
 import { humanizeLocationSlug } from '@/features/guest/marketing/shared/lib/locationSlug';
 
 import {
@@ -40,7 +46,6 @@ import {
   ListingMapSkeleton,
   ListingRowSkeleton,
 } from '@/components/skeletons/ListingGridSkeleton';
-import { Button } from '@/components/ui/button';
 import { usePageTitle } from '@/lib/pageTitle';
 import { buildPageTitle, minNightlyRate, placeDescription, placeTitle } from '@/lib/seo/seoMeta';
 import { usePageMeta } from '@/lib/seo/usePageMeta';
@@ -91,6 +96,9 @@ export function PropertiesLocationPage() {
             .join(' ')
         : null;
   const totalResults = data?.total ?? 0;
+  const countLabel = formatListingCount(totalResults, 'home', 'homes');
+  const appliedFilterCount = buildPropertyFilterChips(listingQuery).length;
+  const setViewMode = (mode: ViewMode) => setViewParam(mode === 'grid' ? null : mode);
   const placeName = place ?? humanizeLocationSlug(locationSlug);
   usePageTitle(buildPageTitle(placeTitle('property', placeName)));
   usePageMeta({
@@ -117,16 +125,11 @@ export function PropertiesLocationPage() {
     <div className="bg-background min-h-screen">
       <PropertiesHero />
 
-      <div className="border-border bg-background/95 sticky top-[var(--public-nav-h)] z-30 border-b px-4 py-2 backdrop-blur-sm lg:hidden">
-        <Button
-          variant="outline"
-          onClick={() => setMobileFiltersOpen(true)}
-          className="h-10 w-full gap-2"
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          Filters & Sort
-        </Button>
-      </div>
+      <ListingMobileResultsBar
+        countLabel={data ? countLabel : null}
+        activeFilterCount={appliedFilterCount}
+        onOpenFilters={() => setMobileFiltersOpen(true)}
+      />
 
       <div className="flex min-w-0">
         <PropertiesFilters
@@ -145,6 +148,8 @@ export function PropertiesLocationPage() {
           value={listingQuery}
           onChange={setFilters}
           facets={data?.facets ?? EMPTY_PROPERTIES_FACETS}
+          sortBy={listingQuery.sort}
+          onSortChange={(next) => patchQuery({ sort: next as PropertiesSort })}
         />
 
         <main
@@ -153,7 +158,7 @@ export function PropertiesLocationPage() {
         >
           <PropertiesToolbar
             viewMode={viewMode}
-            onViewModeChange={(mode) => setViewParam(mode === 'grid' ? null : mode)}
+            onViewModeChange={setViewMode}
             sortBy={listingQuery.sort}
             onSortChange={(next) => patchQuery({ sort: next as PropertiesSort })}
             totalResults={totalResults}
@@ -193,9 +198,15 @@ export function PropertiesLocationPage() {
                   initial={reduceMotion ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={reduceMotion ? undefined : { opacity: 0 }}
-                  className="min-w-0 p-4 sm:p-6"
+                  className="min-w-0 pt-4 lg:p-6"
                 >
-                  <PropertiesMap properties={properties} />
+                  <ListingMobileMapStage
+                    countLabel={countLabel}
+                    loading={isFetching}
+                    onShowList={() => setViewMode('grid')}
+                  >
+                    <PropertiesMap properties={properties} />
+                  </ListingMobileMapStage>
                 </motion.div>
               ) : (
                 <motion.div
@@ -227,6 +238,7 @@ export function PropertiesLocationPage() {
                     onPageChange={goToPage}
                     scrollTargetRef={resultsRef}
                   />
+                  <ListingMapToggle onShowMap={() => setViewMode('map')} />
                 </motion.div>
               )}
             </AnimatePresence>
