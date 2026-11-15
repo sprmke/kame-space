@@ -1,7 +1,7 @@
 /**
  * list-public-parkings — Public GET for /parkings browse + filters.
  * Auth: anon key (verify_jwt=false).
- * Query: where, location[], towers[], minPrice, maxPrice, checkIn, checkOut, lat, lng,
+ * Query: where, location[], towers[], minPrice, maxPrice, checkIn, checkOut, flex, lat, lng,
  *        locationSlug, developmentSlug, sort, page, pageSize, swLat, swLng, neLat, neLng
  * Legacy: `type` param maps to location[] (inside_tower|outside_tower|motorcycle);
  * legacy `sort=price_*` values are accepted and ignored (tower ordering).
@@ -24,6 +24,7 @@ import { loadParkingCards } from '../_shared/publicListingCards.ts';
 import { listingCacheKey, withListingCache } from '../_shared/publicListingCache.ts';
 import {
   parseBoundedCsv,
+  parseFlexDays,
   parseOptionalNumber,
   parsePage,
   parsePageSize,
@@ -85,6 +86,8 @@ servePublic('list-public-parkings', async (req) => {
     neLng: mapBbox?.neLng ?? null,
     checkIn: range?.checkIn ?? null,
     checkOut: range?.checkOut ?? null,
+    // ± days around the stay (`/search` flexible dates); ignored without a range.
+    flexDays: range ? parseFlexDays(sp.get('flex')) || undefined : undefined,
     order: 'tower',
     facets: true,
   };

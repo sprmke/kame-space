@@ -8,10 +8,22 @@ import { Search } from 'lucide-react';
 
 import {
   ActiveSegmentPill,
+  FlexDateChips,
   GuestRow,
   SearchSegment,
   type SegmentPillBounds,
 } from '@/features/guest/marketing/shared/components/hero-search/HeroSearchParts';
+import {
+  MobileSearchOverlay,
+  type MobileSearchRow,
+} from '@/features/guest/marketing/shared/components/hero-search/MobileSearchOverlay';
+import { MobileSearchPill } from '@/features/guest/marketing/shared/components/hero-search/MobileSearchPill';
+import {
+  MobileRecentSearches,
+  MobileWhenStep,
+  MobileWhereStep,
+  MobileWhoStep,
+} from '@/features/guest/marketing/shared/components/hero-search/MobileSearchSteps';
 import {
   heroSearchCalendarClassNames,
   heroSearchCalendarMonthCount,
@@ -27,15 +39,37 @@ import {
   normalizeStayRange,
   parseDateParam,
   parseGuestBreakdown,
+  parseGuestsParam,
   readWhereParam,
   type DropdownLayout,
   type GuestCounts,
   type HeroSearchValues,
   type SearchField,
 } from '@/features/guest/marketing/shared/lib/heroSearchState';
-import { lerp } from '@/features/guest/marketing/shared/lib/listingScrollSearchEasing';
+import { lerp, smoothstep } from '@/features/guest/marketing/shared/lib/listingScrollSearchEasing';
 import { resolveListingSearchPreferType } from '@/features/guest/marketing/shared/lib/listingScrollSearchPaths';
 import type { ListingSearchPreferType } from '@/features/guest/marketing/shared/lib/listingSearchPreferType';
+import {
+  categoryFromPreferType,
+  formatStayRangeShort,
+  mobilePillSummary,
+  preferTypeFromCategory,
+  readRecentSearches,
+  saveRecentSearch,
+  showsCategoryTabs,
+  stepsForCategory,
+  wherePlaceholderForCategory,
+  whenStepTitle,
+  type MobileSearchCategory,
+  type MobileSearchStep,
+  type RecentSearch,
+} from '@/features/guest/marketing/shared/lib/mobileSearchState';
+import {
+  flexForRange,
+  flexSummarySuffix,
+  parseFlexDaysParam,
+  type SearchFlexDays,
+} from '@/features/guest/marketing/shared/lib/searchFlexDays';
 import { SearchSuggestedEmptyPanel } from '@/features/guest/search/components/SearchSuggestedEmptyPanel';
 import {
   flattenSuggestions,
@@ -59,6 +93,7 @@ import type {
 } from '@/features/guest/search/types/search';
 
 import { Skeleton } from '@/components/ui/skeleton';
+import { useHistoryBackDismiss } from '@/hooks/useHistoryBackDismiss';
 import { cn } from '@/lib/utils';
 
 import type { DateRange } from 'react-day-picker';
@@ -69,6 +104,10 @@ export const HERO_SEARCH_FIELDS = ['where', 'when', 'who'] as const;
 export type HeroSearchField = (typeof HERO_SEARCH_FIELDS)[number];
 
 const DEFAULT_FIELD_ORDER: SearchField[] = ['where', 'when', 'who'];
+
+/** Steppers stop here (matches the phone Who step); capacity is still checked per listing. */
+const GUEST_MAX_PER_ROW = 16;
+const GUEST_MAX_PETS = 5;
 
 /** Panel position + size — keep width/height on the same spring so the calendar does not squash. */
 const PANEL_SPRING = { type: 'spring' as const, stiffness: 400, damping: 38, mass: 0.88 };
@@ -165,6 +204,14 @@ export function HeroSearch({
     if (!from) return undefined;
     return { from, to: to ?? from };
   });
+  /** ± days around the stay; only sent and shown once both dates are picked. */
+  const [dateFlex, setDateFlex] = useState<SearchFlexDays>(() =>
+    flexForRange(
+      parseFlexDaysParam(searchParams.get('flex')),
+      searchParams.get('checkIn'),
+      searchParams.get('checkOut')
+    )
+  );
   const [guests, setGuests] = useState<GuestCounts>(() => parseGuestBreakdown(searchParams));
 
   useEffect(() => {
@@ -191,6 +238,36 @@ export function HeroSearch({
     }
   }, [showWho, activeField]);
 
+  /* Phone full-screen search (below lg). Shares every value with the desktop bar. */
+  const categoryTabs = showsCategoryTabs(pathname);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileStep, setMobileStep] = useState<MobileSearchStep>('where');
+  const [mobileCategory, setMobileCategory] = useState<MobileSearchCategory>(() =>
+    categoryFromPreferType(preferType)
+  );
+  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
+  const mobileInputRef = useRef<HTMLInputElement>(null);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
+  const overlayHistory = useHistoryBackDismiss(mobileOpen, closeMobile);
+  const mobileSteps: MobileSearchStep[] = categoryTabs
+    ? stepsForCategory(mobileCategory)
+    : fieldOrder;
+  const mobilePreferType = categoryTabs ? preferTypeFromCategory(mobileCategory) : preferType;
+  /** Category that typeahead, Nearby and submit honor right now. */
+  const activePreferType = mobileOpen ? mobilePreferType : preferType;
+
+  const openMobile = () => {
+    setMobileCategory(categoryFromPreferType(preferType));
+    setMobileStep('where');
+    setRecentSearches(readRecentSearches());
+    setMobileOpen(true);
+  };
+
+  const changeMobileCategory = (next: MobileSearchCategory) => {
+    setMobileCategory(next);
+    if (!stepsForCategory(next).includes(mobileStep)) setMobileStep('when');
+  };
+
   const isExpanded = activeField !== null;
   const morph = morphProgress ?? (variant === 'compact' ? 1 : 0);
   const layoutWidth =
@@ -213,7 +290,13 @@ export function HeroSearch({
       : lerp(40, 32, segmentMorph)
     : lerp(48, 32, segmentMorph);
   const searchIconSize = lerp(16, 14, segmentMorph);
-  const dateSummary = formatDateRange(dateRange);
+  const hasStaySpan = Boolean(
+    dateRange?.from && dateRange.to && dateRange.to.getTime() > dateRange.from.getTime()
+  );
+  const activeFlex: SearchFlexDays = hasStaySpan ? dateFlex : 0;
+  const flexSuffix = flexSummarySuffix(activeFlex);
+  const rangeSummary = formatDateRange(dateRange);
+  const dateSummary = rangeSummary ? rangeSummary + flexSuffix : '';
   const whenPanelWidth = heroSearchWhenPanelWidth(effectiveCalendarMonths, layoutWidth);
   const segmentPillRounded = useCompactBar ? 'rounded-full' : 'rounded-full';
 
@@ -270,6 +353,16 @@ export function HeroSearch({
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  // Rotating a tablet past `lg` swaps in the desktop bar; never leave a hidden modal behind.
+  useEffect(() => {
+    if (!isNarrowViewport && mobileOpen) setMobileOpen(false);
+  }, [isNarrowViewport, mobileOpen]);
+
+  useEffect(() => {
+    // Opening the sheet is the strongest signal the date step is next.
+    if (mobileOpen) void loadCalendar();
+  }, [mobileOpen]);
 
   useEffect(() => {
     prevFieldRef.current = activeField;
@@ -426,7 +519,7 @@ export function HeroSearch({
     setActiveField(field);
   }, []);
 
-  const suggestionsEnabled = activeField === 'where';
+  const suggestionsEnabled = activeField === 'where' || (mobileOpen && mobileStep === 'where');
   const { data: suggestionData, isFetching: suggestionsLoading } = useSearchSuggestions(
     location,
     suggestionsEnabled
@@ -437,15 +530,29 @@ export function HeroSearch({
     developments: suggestionData?.developments ?? [],
     properties: suggestionData?.properties ?? [],
     parkings: suggestionData?.parkings ?? [],
-    preferType,
+    preferType: activePreferType,
   });
 
   useEffect(() => {
     setSuggestionIndex(-1);
   }, [location, suggestionData]);
 
+  /**
+   * Every navigation out of search goes through here. With the phone search open, the
+   * destination replaces its history entry so Back returns to this page in one step.
+   */
+  const goTo = (href: string) => {
+    navigate(href, { replace: overlayHistory.consume() });
+    setActiveField(null);
+    setMobileOpen(false);
+  };
+
   const selectDestination = (label: string) => {
     setLocation(label);
+    if (mobileOpen) {
+      setMobileStep('when');
+      return;
+    }
     setActiveField('when');
   };
 
@@ -455,9 +562,16 @@ export function HeroSearch({
       clearFocus?: boolean;
       type?: SearchListingsType;
       focus?: ListingSearchPreferType | null;
+      /** Re-running a recent search: state setters have not flushed yet. */
+      dates?: DateRange | undefined;
+      party?: GuestCounts;
     }
   ) => {
-    const values = buildSearchValues(whereValue, dateRange, guests);
+    const preferType = activePreferType;
+    const replaying = Boolean(options && 'dates' in options);
+    const stay = replaying ? options?.dates : dateRange;
+    const party = options?.party ?? guests;
+    const values = buildSearchValues(whereValue, stay, party);
     let lat: number | null = null;
     let lng: number | null = null;
 
@@ -490,22 +604,35 @@ export function HeroSearch({
       ? nearbyDisplayLabel(nearbyCategoryFromQuery(whereValue) ?? nearbyCategory)
       : values.location;
 
-    navigate(
+    setRecentSearches(
+      saveRecentSearch({
+        where: whereParam,
+        checkIn: values.checkIn,
+        checkOut: values.checkOut,
+        adults: party.adults,
+        children: party.children,
+        pets: party.pets,
+        type,
+      })
+    );
+
+    goTo(
       buildSearchHref({
         where: whereParam,
         checkIn: values.checkIn,
         checkOut: values.checkOut,
-        adults: guests.adults,
-        children: guests.children,
+        // A replayed recent search keeps its own exact dates.
+        flex: replaying ? 0 : activeFlex,
+        adults: party.adults,
+        children: party.children,
         infants: 0,
-        pets: guests.pets,
+        pets: party.pets,
         type,
         lat,
         lng,
         focus,
       })
     );
-    setActiveField(null);
   };
 
   const viewSuggestionCategory = (target: SuggestionCategoryTarget) => {
@@ -534,25 +661,22 @@ export function HeroSearch({
       return;
     }
     if (item.id === 'nearby' || (item.kind === 'location' && isNearbyQuery(item.label))) {
-      void navigateToSearch(nearbyDisplayLabel(preferType), {
-        type: preferType ?? 'all',
-        focus: preferType,
+      void navigateToSearch(nearbyDisplayLabel(activePreferType), {
+        type: activePreferType ?? 'all',
+        focus: activePreferType,
       });
       return;
     }
     if (item.kind === 'property' && item.slug) {
-      navigate(`/properties/${item.slug}`);
-      setActiveField(null);
+      goTo(`/properties/${item.slug}`);
       return;
     }
     if (item.kind === 'development' && item.slug) {
-      navigate(`/developments/${item.slug}`);
-      setActiveField(null);
+      goTo(`/developments/${item.slug}`);
       return;
     }
     if (item.kind === 'parking' && item.slug) {
-      navigate(`/parkings/${item.slug}`);
-      setActiveField(null);
+      goTo(`/parkings/${item.slug}`);
       return;
     }
     selectDestination(item.city || item.label);
@@ -564,6 +688,7 @@ export function HeroSearch({
     if (onSearch && !clearFocus) {
       onSearch(values);
       setActiveField(null);
+      setMobileOpen(false);
       return;
     }
 
@@ -575,13 +700,88 @@ export function HeroSearch({
     runSearchNavigation(false);
   };
 
+  /** Phone Search button: the selected tab scopes the results (type + focus). */
+  const handleMobileSearch = () => {
+    if (!categoryTabs || onSearch) {
+      runSearchNavigation(false);
+      return;
+    }
+    void navigateToSearch(location, {
+      type: mobileCategory,
+      focus: preferTypeFromCategory(mobileCategory),
+    });
+  };
+
+  const pickRecentSearch = (entry: RecentSearch) => {
+    const from = parseDateParam(entry.checkIn);
+    const to = parseDateParam(entry.checkOut);
+    const dates = from ? { from, to: to ?? from } : undefined;
+    const party: GuestCounts = {
+      adults: entry.adults,
+      children: entry.children,
+      infants: 0,
+      pets: entry.pets,
+    };
+    setLocation(entry.where);
+    setDateRange(dates);
+    setGuests(party);
+    void navigateToSearch(entry.where, {
+      type: entry.type,
+      focus: entry.type === 'all' ? null : entry.type,
+      dates,
+      party,
+    });
+  };
+
+  const defaultGuests = parseGuestsParam(null);
+  const canClearMobile =
+    location.trim().length > 0 ||
+    Boolean(dateRange?.from) ||
+    guests.adults !== defaultGuests.adults ||
+    guests.children !== defaultGuests.children ||
+    guests.pets !== defaultGuests.pets;
+
+  const clearMobile = () => {
+    setLocation('');
+    setDateRange(undefined);
+    setDateFlex(0);
+    setGuests(defaultGuests);
+    setMobileStep('where');
+  };
+
+  const advanceFromWhen = () => {
+    if (mobileSteps.includes('who')) setMobileStep('who');
+    else handleMobileSearch();
+  };
+
+  /** Phone typeahead keys. Enter without a highlighted row falls through to the form submit. */
+  const onMobileWhereKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (location.trim().length < 2) return;
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setSuggestionIndex((current) =>
+        flatSuggestions.length === 0 ? -1 : Math.min(current + 1, flatSuggestions.length - 1)
+      );
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setSuggestionIndex((current) => Math.max(current - 1, -1));
+      return;
+    }
+    if (event.key === 'Enter' && suggestionIndex >= 0 && flatSuggestions[suggestionIndex]) {
+      event.preventDefault();
+      selectSuggestion(flatSuggestions[suggestionIndex]);
+    }
+  };
+
   /** Typeahead “Search all results for …” — unified /search without page focus. */
   const handleSearchAllResults = () => {
     runSearchNavigation(true);
   };
 
   const pickSuggestedNearby = (label: string) => {
-    const category = nearbyCategoryFromQuery(label) ?? preferType;
+    const category = nearbyCategoryFromQuery(label) ?? activePreferType;
     void navigateToSearch(nearbyDisplayLabel(category), {
       type: category ?? 'all',
       focus: category,
@@ -598,10 +798,9 @@ export function HeroSearch({
 
   const pickSuggestedListing = (item: SuggestedSearchItem) => {
     if (!item.slug || !item.listingType) return;
-    if (item.listingType === 'properties') navigate(`/properties/${item.slug}`);
-    else if (item.listingType === 'developments') navigate(`/developments/${item.slug}`);
-    else navigate(`/parkings/${item.slug}`);
-    setActiveField(null);
+    if (item.listingType === 'properties') goTo(`/properties/${item.slug}`);
+    else if (item.listingType === 'developments') goTo(`/developments/${item.slug}`);
+    else goTo(`/parkings/${item.slug}`);
   };
 
   const onWhereKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
@@ -639,10 +838,139 @@ export function HeroSearch({
 
   const updateGuest = (key: keyof GuestCounts, delta: number) => {
     setGuests((current) => {
-      const next = Math.max(key === 'adults' ? 1 : 0, current[key] + delta);
+      const floor = key === 'adults' ? 1 : 0;
+      const ceiling = key === 'pets' ? GUEST_MAX_PETS : GUEST_MAX_PER_ROW;
+      const next = Math.min(ceiling, Math.max(floor, current[key] + delta));
       return { ...current, [key]: next };
     });
   };
+
+  /** The 2-adult default alone is not "set"; URL guests or a stepper change are. */
+  const hasGuestParams =
+    ['adults', 'children', 'pets', 'guests'].some((key) => searchParams.has(key)) ||
+    guests.adults !== defaultGuests.adults ||
+    guests.children !== defaultGuests.children ||
+    guests.pets !== defaultGuests.pets;
+  const shortRange = formatStayRangeShort(dateRange?.from, dateRange?.to);
+  const shortDates = shortRange ? shortRange + flexSuffix : '';
+
+  if (isNarrowViewport) {
+    const pillSummary = mobilePillSummary({
+      where: location,
+      dateSummary: shortDates,
+      guestSummary: formatGuestSummary(guests),
+      showWho,
+      hasGuestParams,
+    });
+    const dockProgress = variant === 'compact' ? 1 : smoothstep(0.4, 0.95, scrollProgress);
+    const liveSuggestions = location.trim().length >= 2;
+
+    const rows: MobileSearchRow[] = mobileSteps.map((step) => {
+      if (step === 'where') {
+        return {
+          step,
+          label: whereLabel,
+          value: location.trim() || (categoryTabs ? 'Anywhere' : whereCompactPlaceholder),
+        };
+      }
+      if (step === 'when') return { step, label: 'When', value: shortDates || 'Add dates' };
+      return { step, label: 'Who', value: formatGuestSummary(guests) || 'Add guests' };
+    });
+
+    const renderMobileStep = (step: MobileSearchStep) => {
+      if (step === 'where') {
+        return (
+          <MobileWhereStep
+            title={categoryTabs ? 'Where to?' : 'What are you looking for?'}
+            value={location}
+            placeholder={
+              categoryTabs ? wherePlaceholderForCategory(mobileCategory) : wherePlaceholder
+            }
+            inputRef={mobileInputRef}
+            onChange={setLocation}
+            onKeyDown={onMobileWhereKeyDown}
+            onSubmit={handleMobileSearch}
+            activeDescendant={
+              suggestionIndex >= 0 ? `search-suggestion-${suggestionIndex}` : undefined
+            }
+            liveContent={
+              liveSuggestions ? (
+                <SearchSuggestionPanel
+                  locations={suggestionData?.locations ?? []}
+                  developments={suggestionData?.developments ?? []}
+                  properties={suggestionData?.properties ?? []}
+                  parkings={suggestionData?.parkings ?? []}
+                  isLoading={suggestionsLoading}
+                  query={location}
+                  activeIndex={suggestionIndex}
+                  onHighlight={setSuggestionIndex}
+                  onSelect={selectSuggestion}
+                  onSearchAnyway={handleSearchAllResults}
+                  onViewCategory={viewSuggestionCategory}
+                  preferType={mobilePreferType}
+                />
+              ) : null
+            }
+            idleContent={
+              <>
+                <MobileRecentSearches items={recentSearches} onPick={pickRecentSearch} />
+                <div>
+                  <SearchSuggestedEmptyPanel
+                    layout="sheet"
+                    preferType={mobilePreferType}
+                    onPickNearby={pickSuggestedNearby}
+                    onPickDestination={pickSuggestedDestination}
+                    onPickListing={pickSuggestedListing}
+                  />
+                </div>
+              </>
+            }
+          />
+        );
+      }
+      if (step === 'when') {
+        return (
+          <MobileWhenStep
+            title={categoryTabs ? whenStepTitle(mobileCategory) : 'When do you need it?'}
+            range={dateRange}
+            onRangeChange={setDateRange}
+            flex={dateFlex}
+            onFlexChange={setDateFlex}
+            nextLabel={mobileSteps.includes('who') ? 'Next' : 'Search'}
+            onNext={advanceFromWhen}
+            onSkip={advanceFromWhen}
+          />
+        );
+      }
+      return <MobileWhoStep guests={guests} onChange={updateGuest} />;
+    };
+
+    return (
+      <div ref={rootRef} className={cn('relative w-full', className)}>
+        <MobileSearchPill
+          summary={pillSummary}
+          emptyLabel={categoryTabs ? 'Start your search' : wherePlaceholder}
+          dockProgress={dockProgress}
+          expanded={mobileOpen}
+          onOpen={openMobile}
+        />
+        <MobileSearchOverlay
+          open={mobileOpen}
+          onClose={closeMobile}
+          category={categoryTabs ? mobileCategory : null}
+          onCategoryChange={changeMobileCategory}
+          rows={rows}
+          activeStep={mobileStep}
+          onStepChange={setMobileStep}
+          renderStep={renderMobileStep}
+          showFooter={mobileStep !== 'when'}
+          canClear={canClearMobile}
+          onClearAll={clearMobile}
+          onSearch={handleMobileSearch}
+        />
+      </div>
+    );
+  }
 
   return (
     <div ref={rootRef} className={cn('relative z-50 w-full', className)}>
@@ -957,10 +1285,20 @@ export function HeroSearch({
                         />
                       </Suspense>
                     </div>
+                    {hasStaySpan ? (
+                      <FlexDateChips
+                        value={dateFlex}
+                        onChange={setDateFlex}
+                        className="px-4 pb-3 sm:px-5"
+                      />
+                    ) : null}
                     <div className="border-border flex items-center justify-between gap-3 border-t px-4 py-3 sm:px-5">
                       <button
                         type="button"
-                        onClick={() => setDateRange(undefined)}
+                        onClick={() => {
+                          setDateRange(undefined);
+                          setDateFlex(0);
+                        }}
                         className="text-muted-foreground hover:text-foreground text-sm font-medium underline-offset-4 hover:underline"
                       >
                         Clear dates

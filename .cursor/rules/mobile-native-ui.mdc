@@ -32,8 +32,9 @@ Every **UI change** in `ui/src/**` must preserve the **native app** mobile exper
 
 ## Hard rules below `lg` (`max-lg`)
 
-- **No centered `Dialog`** for forms, pickers, or confirms. Use bottom sheets via `ResponsiveModal`. Exceptions: `AlertDialog`, full-screen media/document lightboxes, full-screen video tour.
+- **No centered `Dialog`** for forms, pickers, or confirms. Use bottom sheets via `ResponsiveModal`. Exceptions: `AlertDialog`, full-screen media/document lightboxes, full-screen video tour, phone full-screen search (`MobileSearchOverlay`).
 - **No floating `DropdownMenu` panels** for option lists or overflow actions. Use `MobileChoiceSheet` / `ResponsiveOverflowMenu`.
+- **Guest listing results:** one sticky row via `ListingMobileResultsBar` (count + filter badge); map through `ListingMapToggle` + `ListingMobileMapStage`. No full-width Filters & Sort row.
 - **One bottom nav layer.** Tab bar or `ContextualActionBar`, never both stacked. No second bottom tab bar on `/account/*` (top strip only). No hamburger drawer.
 - **Touch targets** ≥ 44×44px. Hero icons may use invisible hit pads (`MobileHeroActionButton`).
 - **Tab clearance:** `bottomTabBarOffsetClassName()` on the document scrollport or inner fill-main scrollport (not both wrongly).

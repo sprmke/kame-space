@@ -1,13 +1,14 @@
 /**
  * search-listings — Public GET for /search results page.
  * Auth: anon key (verify_jwt=false).
- * Query: where, checkIn, checkOut, adults, children, infants, pets,
+ * Query: where, checkIn, checkOut, flex, adults, children, infants, pets,
  *        type(all|properties|developments|parkings), page, pageSize, lat, lng
  *
  * Smart intents: Nearby (geo), concept (condo/beach/…), literal text, expanded fallback.
  * Candidates, ranking, totals, and paging run in Postgres via the same `search_public_*`
  * RPCs as the browse endpoints; only page rows are mapped to summaries.
- * Availability: properties/parkings exclude booking + owner-block conflicts.
+ * Availability: properties/parkings exclude booking + owner-block conflicts. `flex` (1, 2, 3
+ * or 7) also matches the same-length stay shifted that many days either way, never before today.
  * Developments are catalog-only (date-agnostic). Guest capacity applies to properties only.
  */
 
@@ -31,6 +32,7 @@ import {
   loadPropertySearchSummaries,
 } from '../_shared/publicListingCards.ts';
 import {
+  parseFlexDays,
   readQueryText,
   searchPublicDevelopments,
   searchPublicParkings,
@@ -116,6 +118,7 @@ servePublic('search-listings', async (req) => {
   const where = readQueryText(url.searchParams.get('where') ?? url.searchParams.get('location'));
   const checkIn = url.searchParams.get('checkIn');
   const checkOut = url.searchParams.get('checkOut');
+  const requestedFlex = parseFlexDays(url.searchParams.get('flex'));
   const adults = parseNonNegInt(url.searchParams.get('adults'), 0);
   const children = parseNonNegInt(url.searchParams.get('children'), 0);
   const infants = parseNonNegInt(url.searchParams.get('infants'), 0);
@@ -140,6 +143,9 @@ servePublic('search-listings', async (req) => {
     );
   }
 
+  // Flexibility only means something with a full date range.
+  const flex = range ? requestedFlex : 0;
+
   const resolvedIntent = resolveSearchIntent(where);
   const needsLocation = resolvedIntent.kind === 'nearby' && (lat == null || lng == null);
 
@@ -147,6 +153,7 @@ servePublic('search-listings', async (req) => {
     where,
     checkIn: range?.checkIn ?? checkIn ?? null,
     checkOut: range?.checkOut ?? checkOut ?? null,
+    flex,
     adults,
     children,
     infants,
@@ -200,7 +207,11 @@ servePublic('search-listings', async (req) => {
       activeSearch.mode === 'literal'
         ? { textMode: 'literal' as const, q: activeSearch.query, order: 'rank' as const }
         : activeSearch.mode === 'concept'
-          ? { textMode: 'concept' as const, terms: activeSearch.expandedTerms, order: 'rank' as const }
+          ? {
+              textMode: 'concept' as const,
+              terms: activeSearch.expandedTerms,
+              order: 'rank' as const,
+            }
           : activeSearch.mode === 'nearby'
             ? {
                 textMode: 'none' as const,
@@ -220,6 +231,7 @@ servePublic('search-listings', async (req) => {
             guests: adults + children,
             checkIn: range?.checkIn ?? null,
             checkOut: range?.checkOut ?? null,
+            flexDays: flex || undefined,
             limit,
             offset,
           })
@@ -232,6 +244,7 @@ servePublic('search-listings', async (req) => {
             ...textParams,
             checkIn: range?.checkIn ?? null,
             checkOut: range?.checkOut ?? null,
+            flexDays: flex || undefined,
             limit,
             offset,
           })

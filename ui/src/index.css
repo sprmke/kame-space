@@ -3149,6 +3149,50 @@ input.ui-native-datetime[type='datetime-local']::-webkit-calendar-picker-indicat
   min-height: var(--listing-map-min-height);
 }
 
+/*
+ * Listing map below `lg` (`ListingMobileMapStage`): full-bleed between the sticky results
+ * bar and the bottom tab bar, with the sheet handle under the map (never over it, so the
+ * Google logo and terms stay visible).
+ */
+:root {
+  --listing-mobile-bar-h: 3.75rem;
+}
+
+@media (max-width: 1023px) {
+  .listing-map-stage {
+    --listing-map-min-height: 0px;
+    display: flex;
+    flex-direction: column;
+    /* `vh` first: browsers without `dvh` drop the second declaration and keep this one. */
+    height: calc(
+      100vh - var(--public-nav-h) - var(--listing-mobile-bar-h) - var(--mobile-bottom-bar-h)
+    );
+    height: calc(
+      100dvh - var(--public-nav-h) - var(--listing-mobile-bar-h) - var(--mobile-bottom-bar-h)
+    );
+    min-height: 22rem;
+  }
+
+  .listing-map-stage__map {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .listing-map-stage__map > * {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    border-width: 0;
+    border-radius: 0;
+  }
+
+  /* The sheet handle carries the count on phone. */
+  .listing-map-stage [data-map-count] {
+    display: none;
+  }
+}
+
 /** Dashboard Public Pages iframe thumbnails (`?embed=1`). */
 html.guest-embed-preview,
 html.guest-embed-preview body {

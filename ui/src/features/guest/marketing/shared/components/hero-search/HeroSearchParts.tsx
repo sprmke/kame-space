@@ -5,6 +5,11 @@ import { Minus, Plus } from 'lucide-react';
 
 import type { SearchField } from '@/features/guest/marketing/shared/lib/heroSearchState';
 import { lerp, smoothstep } from '@/features/guest/marketing/shared/lib/listingScrollSearchEasing';
+import {
+  flexOptionLabel,
+  SEARCH_FLEX_DAYS,
+  type SearchFlexDays,
+} from '@/features/guest/marketing/shared/lib/searchFlexDays';
 
 import { cn } from '@/lib/utils';
 
@@ -47,6 +52,9 @@ interface GuestRowProps {
   onDecrement: () => void;
   onIncrement: () => void;
   min?: number;
+  max?: number;
+  /** `lg` = phone full-screen search: 16px labels, 36px circles with a 44px hit area. */
+  size?: 'default' | 'lg';
 }
 
 export function GuestRow({
@@ -56,39 +64,56 @@ export function GuestRow({
   onDecrement,
   onIncrement,
   min = 0,
+  max = 16,
+  size = 'default',
 }: GuestRowProps) {
+  const large = size === 'lg';
+  const stepperClass = cn(
+    'border-border relative flex shrink-0 items-center justify-center rounded-full border',
+    'text-foreground hover:border-foreground/60 transition-[border-color,opacity,transform]',
+    'active:scale-95 disabled:cursor-not-allowed disabled:opacity-25 disabled:active:scale-100',
+    large
+      ? "size-9 before:absolute before:-inset-1 before:content-['']"
+      : 'text-muted-foreground min-h-[44px] min-w-[44px]'
+  );
+
   return (
-    <div className="flex items-center justify-between gap-4 py-4">
+    <div className={cn('flex items-center justify-between gap-4', large ? 'py-5' : 'py-4')}>
       <div className="min-w-0">
-        <p className="text-foreground text-sm font-semibold">{label}</p>
-        {subtitle ? <p className="text-muted-foreground text-xs">{subtitle}</p> : null}
+        <p className={cn('text-foreground font-semibold', large ? 'text-base' : 'text-sm')}>
+          {label}
+        </p>
+        {subtitle ? (
+          <p className={cn('text-muted-foreground', large ? 'text-sm' : 'text-xs')}>{subtitle}</p>
+        ) : null}
       </div>
-      <div className="flex items-center gap-3">
+      <div className={cn('flex items-center', large ? 'gap-4' : 'gap-3')}>
         <button
           type="button"
           onClick={onDecrement}
           disabled={value <= min}
           aria-label={`Decrease ${label}`}
-          className={cn(
-            'border-border flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border',
-            'text-muted-foreground hover:border-foreground/30 transition-colors disabled:opacity-30'
-          )}
+          className={stepperClass}
         >
-          <Minus className="h-4 w-4" />
+          <Minus className="h-4 w-4" aria-hidden />
         </button>
-        <span className="text-foreground w-5 text-center text-sm font-medium tabular-nums">
+        <span
+          className={cn(
+            'text-foreground text-center font-medium tabular-nums',
+            large ? 'w-6 text-base' : 'w-5 text-sm'
+          )}
+          aria-live="polite"
+        >
           {value}
         </span>
         <button
           type="button"
           onClick={onIncrement}
+          disabled={value >= max}
           aria-label={`Increase ${label}`}
-          className={cn(
-            'border-border flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border',
-            'text-muted-foreground hover:border-foreground/30 transition-colors'
-          )}
+          className={stepperClass}
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4" aria-hidden />
         </button>
       </div>
     </div>
@@ -198,3 +223,66 @@ export const SearchSegment = forwardRef<HTMLButtonElement, SearchSegmentProps>(
     );
   }
 );
+
+const FLEX_OPTIONS: SearchFlexDays[] = [0, ...SEARCH_FLEX_DAYS];
+
+/**
+ * "Exact dates / ± 1 day / ± 2 days…" chips under the calendar (Airbnb flexible dates).
+ * One row that scrolls sideways on narrow screens. Only meaningful with a full range,
+ * so callers render it once check-out is picked.
+ */
+export function FlexDateChips({
+  value,
+  onChange,
+  className,
+}: {
+  value: SearchFlexDays;
+  onChange: (next: SearchFlexDays) => void;
+  className?: string;
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Date flexibility"
+      className={cn('scrollbar-hide flex gap-2 overflow-x-auto', className)}
+      onKeyDown={(event) => {
+        // Radio group keys: one tab stop, arrows move and select.
+        const step =
+          event.key === 'ArrowRight' || event.key === 'ArrowDown'
+            ? 1
+            : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+              ? -1
+              : 0;
+        if (step === 0) return;
+        event.preventDefault();
+        const index = FLEX_OPTIONS.indexOf(value);
+        const next = FLEX_OPTIONS[(index + step + FLEX_OPTIONS.length) % FLEX_OPTIONS.length]!;
+        onChange(next);
+        event.currentTarget.querySelector<HTMLButtonElement>(`[data-flex="${next}"]`)?.focus();
+      }}
+    >
+      {FLEX_OPTIONS.map((option) => {
+        const selected = option === value;
+        return (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            data-flex={option}
+            aria-checked={selected}
+            tabIndex={selected ? 0 : -1}
+            onClick={() => onChange(option)}
+            className={cn(
+              "relative h-9 shrink-0 whitespace-nowrap rounded-full border px-4 text-[13px] font-medium transition-colors before:absolute before:-inset-y-1 before:inset-x-0 before:content-['']",
+              selected
+                ? 'border-foreground bg-foreground/[0.04] text-foreground ring-foreground ring-1'
+                : 'border-border text-foreground hover:border-foreground/50'
+            )}
+          >
+            {flexOptionLabel(option)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}

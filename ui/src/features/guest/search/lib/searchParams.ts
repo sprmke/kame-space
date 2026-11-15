@@ -1,4 +1,8 @@
 import { isParkingLocationFilterParam } from '@/features/guest/marketing/parkings/lib/parkingsQuery';
+import {
+  flexForRange,
+  parseFlexDaysParam,
+} from '@/features/guest/marketing/shared/lib/searchFlexDays';
 import { nearbyCategoryFromQuery } from '@/features/guest/search/lib/searchIntents';
 import type { SearchListingsQuery, SearchListingsType } from '@/features/guest/search/types/search';
 
@@ -6,6 +10,7 @@ export const DEFAULT_SEARCH_QUERY: SearchListingsQuery = {
   where: '',
   checkIn: '',
   checkOut: '',
+  flex: 0,
   adults: 0,
   children: 0,
   infants: 0,
@@ -61,6 +66,8 @@ function parseCoord(raw: string | null): number | null {
  * Optional `lat`/`lng` power Nearby geo ranking.
  * Optional `focus` prioritizes a category from the origin listing page.
  * Legacy `infants` is accepted for old URLs but always stored/written as 0 (not offered in UI).
+ * Optional `flex` (1, 2, 3 or 7) widens the dates by that many days either way; ignored
+ * unless both dates are set.
  */
 export function parseSearchParams(sp: URLSearchParams): SearchListingsQuery {
   const whereRaw = (sp.get('where') ?? '').trim();
@@ -70,11 +77,14 @@ export function parseSearchParams(sp: URLSearchParams): SearchListingsQuery {
     (legacyLocation && !isParkingLocationFilterParam(legacyLocation) ? legacyLocation : '');
   const nearbyCategory = nearbyCategoryFromQuery(where);
   const explicitType = parseType(sp.get('type'));
+  const checkIn = (sp.get('checkIn') ?? '').trim();
+  const checkOut = (sp.get('checkOut') ?? '').trim();
 
   return {
     where,
-    checkIn: (sp.get('checkIn') ?? '').trim(),
-    checkOut: (sp.get('checkOut') ?? '').trim(),
+    checkIn,
+    checkOut,
+    flex: flexForRange(parseFlexDaysParam(sp.get('flex')), checkIn, checkOut),
     adults: parseNonNegInt(sp.get('adults')),
     children: parseNonNegInt(sp.get('children')),
     infants: 0,
@@ -102,6 +112,7 @@ export function writeSearchParams(
     'location',
     'checkIn',
     'checkOut',
+    'flex',
     'adults',
     'children',
     'infants',
@@ -119,6 +130,8 @@ export function writeSearchParams(
   if (query.where) next.set('where', query.where);
   if (query.checkIn) next.set('checkIn', query.checkIn);
   if (query.checkOut) next.set('checkOut', query.checkOut);
+  const flex = flexForRange(query.flex, query.checkIn, query.checkOut);
+  if (flex > 0) next.set('flex', String(flex));
   if (query.adults > 0) next.set('adults', String(query.adults));
   if (query.children > 0) next.set('children', String(query.children));
   // infants omitted from public search URLs — not offered in the Who picker
@@ -142,6 +155,7 @@ export function buildSearchHref(input: {
   where?: string;
   checkIn?: string;
   checkOut?: string;
+  flex?: number;
   adults?: number;
   children?: number;
   infants?: number;
@@ -156,6 +170,7 @@ export function buildSearchHref(input: {
     where: input.where?.trim() ?? '',
     checkIn: input.checkIn?.trim() ?? '',
     checkOut: input.checkOut?.trim() ?? '',
+    flex: input.flex ?? 0,
     adults: input.adults ?? 0,
     children: input.children ?? 0,
     infants: input.infants ?? 0,

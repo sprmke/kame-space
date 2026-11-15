@@ -3,7 +3,6 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { SlidersHorizontal } from 'lucide-react';
 
 import { ParkingFilters, ParkingToolbar } from '@/features/guest/marketing/developments/components';
 import type { ParkingSortKey } from '@/features/guest/marketing/developments/lib/parkingSlotFilters';
@@ -28,8 +27,10 @@ import {
 import { ListingActiveFilterChips } from '@/features/guest/marketing/shared/components/ListingActiveFilterChips';
 import { ListingFilteredEmpty } from '@/features/guest/marketing/shared/components/ListingFilteredEmpty';
 import { ListingLoadError } from '@/features/guest/marketing/shared/components/ListingLoadError';
+import { ListingMobileResultsBar } from '@/features/guest/marketing/shared/components/ListingMobileResults';
 import { ListingResultsPagination } from '@/features/guest/marketing/shared/components/ListingResultsPagination';
 import { usePublicPlaceGroups } from '@/features/guest/marketing/shared/hooks/usePublicPlaceGroups';
+import { formatListingCount } from '@/features/guest/marketing/shared/lib/listingCountLabel';
 import {
   buildParkingFilterChips,
   removeParkingFilterChip,
@@ -143,16 +144,11 @@ export function ParkingsListPage() {
     <div className="bg-background min-h-screen">
       <ParkingsHero />
 
-      <div className="border-border bg-background/95 sticky top-[var(--public-nav-h)] z-30 border-b px-4 py-2 backdrop-blur-sm lg:hidden">
-        <Button
-          variant="outline"
-          onClick={() => setMobileFiltersOpen(true)}
-          className="h-10 w-full gap-2"
-        >
-          <SlidersHorizontal className="h-4 w-4" aria-hidden />
-          Filters & Sort
-        </Button>
-      </div>
+      <ListingMobileResultsBar
+        countLabel={data ? formatListingCount(totalResults, 'slot', 'slots') : null}
+        activeFilterCount={filterChips.length}
+        onOpenFilters={() => setMobileFiltersOpen(true)}
+      />
 
       <div className="flex min-w-0">
         <ParkingFilters
@@ -187,7 +183,7 @@ export function ParkingsListPage() {
           />
 
           {hasActiveFilters ? (
-            <div className="border-border border-b px-4 py-3 sm:px-6">
+            <div className="border-border hidden border-b px-6 py-3 lg:block">
               <ListingActiveFilterChips
                 chips={filterChips}
                 onRemove={(id) => setFilters(removeParkingFilterChip(filters, id))}
