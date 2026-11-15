@@ -20,8 +20,12 @@
  * Query: ?orgSlug=slug&propertySlug=slug (both optional; the org shell has no property).
  */
 
+import { buildFeatureAvailabilityEntries } from '../_shared/featureAvailabilityPublicEntries.ts';
+import { getFeatureAvailabilityRows } from '../_shared/featureAvailability.ts';
 import { jsonSuccess, requireHttpMethod } from '../_shared/httpResponse.ts';
-import { createServiceClient } from '../_shared/orgAuth.ts';
+import { buildOrgAccessPayload } from '../_shared/orgAccessPayload.ts';
+import { createServiceClient, verifyOrgAccess } from '../_shared/orgAuth.ts';
+import { loadParkingsPayload } from '../_shared/listParkings.ts';
 import { loadOrganizationsPayload } from '../_shared/listOrganizations.ts';
 import { buildSessionContext } from '../_shared/sessionContext.ts';
 import { loadPropertiesPayload } from '../_shared/listProperties.ts';
@@ -41,6 +45,27 @@ serveAuthenticated('get-session-context', async (req, user) => {
       organizations: () => loadOrganizationsPayload(createServiceClient(), user),
       properties: (slug) => loadPropertiesPayload(req, user, { orgSlug: slug }),
       propertyScoped: (org, property) => loadPropertyEntitlementsBySlug(req, user, org, property),
+      // The shell fetched these three on its own right after this call resolved. They are org
+      // scoped, cheap, and independent, so they ride along instead of costing three more round
+      // trips. Each payload comes from the same builder its dedicated endpoint uses.
+      orgExtras: async (org) => {
+        const ctx = await verifyOrgAccess(req, { orgSlug: org });
+        const now = new Date();
+
+        const [featureRows, parkingsPayload] = await Promise.all([
+          getFeatureAvailabilityRows(),
+          loadParkingsPayload(createServiceClient(), user, ctx),
+        ]);
+
+        return {
+          orgAccess: buildOrgAccessPayload(ctx),
+          featureAvailability: {
+            serverNow: now.toISOString(),
+            entries: buildFeatureAvailabilityEntries(featureRows, now, user),
+          },
+          parkings: parkingsPayload,
+        };
+      },
     }
   );
 

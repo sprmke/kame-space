@@ -12,6 +12,15 @@ export type SessionContextLoaders<OrgPayload, PropertiesPayload, Scoped> = {
   organizations: () => Promise<OrgPayload>;
   properties: (orgSlug: string) => Promise<PropertiesPayload>;
   propertyScoped: (orgSlug: string, propertySlug: string) => Promise<Scoped | null>;
+  /**
+   * Org-scoped reads the shell used to fetch on its own: permissions, feature availability and
+   * the parking list. Optional so the function stays usable without them.
+   */
+  orgExtras?: (orgSlug: string) => Promise<{
+    orgAccess?: unknown;
+    featureAvailability?: unknown;
+    parkings?: unknown;
+  }>;
 };
 
 export type SessionContext<OrgPayload, PropertiesPayload, Scoped> = {
@@ -40,10 +49,11 @@ export async function buildSessionContext<OrgPayload, PropertiesPayload, Scoped>
     return { organizations: await loaders.organizations() };
   }
 
-  const [organizations, properties, scoped] = await Promise.all([
+  const [organizations, properties, scoped, extras] = await Promise.all([
     loaders.organizations(),
     loaders.properties(orgSlug),
     propertySlug ? loaders.propertyScoped(orgSlug, propertySlug) : Promise.resolve(null),
+    loaders.orgExtras ? loaders.orgExtras(orgSlug) : Promise.resolve({}),
   ]);
 
   const scopedPayload = scoped as { propertyAccess?: unknown; entitlements?: unknown } | null;
@@ -53,5 +63,6 @@ export async function buildSessionContext<OrgPayload, PropertiesPayload, Scoped>
     properties,
     propertyAccess: scopedPayload?.propertyAccess ?? null,
     entitlements: scopedPayload?.entitlements ?? null,
+    ...(extras ?? {}),
   };
 }
