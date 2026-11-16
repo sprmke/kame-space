@@ -345,7 +345,7 @@ export function filterPropertyNavSections(
       ...section,
       items: section.items.filter((item) => {
         if (item.disabled || !item.href) return true;
-        if (item.label === 'Pricing') {
+        if (item.label === ADMIN_MODULE_LABEL.pricing) {
           return hasPropertyPermission(granted, 'pricing:view');
         }
         const required = PROPERTY_NAV_VIEW_PERMISSION[item.label];
