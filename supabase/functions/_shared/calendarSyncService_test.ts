@@ -322,6 +322,22 @@ Deno.test('normalizeExternalIcsUrl - webcal to https', () => {
   );
 });
 
+Deno.test('agoda uses the registry allowlist, not a wildcard', () => {
+  assertEquals(
+    assertExternalIcsUrlShape('https://www.agoda.com/ical/abc.ics', 'agoda'),
+    'https://www.agoda.com/ical/abc.ics'
+  );
+  for (const host of ['agoda.com.evil.io', 'evilagoda.com', 'booking.com']) {
+    let threw = false;
+    try {
+      assertExternalIcsUrlShape(`https://${host}/ical/abc.ics`, 'agoda');
+    } catch (err) {
+      threw = err instanceof ExternalFetchError;
+    }
+    assertEquals(threw, true, `${host} must not pass the Agoda allowlist`);
+  }
+});
+
 Deno.test('fetchExternalIcs - SSRF guard rejects non-https and private targets', async () => {
   for (const [url, provider] of [
     ['http://www.airbnb.com/x.ics', 'airbnb'],
