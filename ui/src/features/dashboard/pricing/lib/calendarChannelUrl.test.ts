@@ -18,25 +18,27 @@ describe('validateChannelCalendarUrl', () => {
     ).toBeNull();
   });
 
+  it('does not apply the Airbnb export path rule to other allowlisted hosts', () => {
+    expect(validateChannelCalendarUrl('airbnb', 'https://muscache.com/some/path.ics')).toBeNull();
+  });
+
   it('rejects an Airbnb page that is not an export link', () => {
-    expect(
-      validateChannelCalendarUrl('airbnb', 'https://www.airbnb.com/h/monaco-2604')
-    ).toBe('Use the Export calendar link from Airbnb');
+    expect(validateChannelCalendarUrl('airbnb', 'https://www.airbnb.com/h/monaco-2604')).toBe(
+      'Use the Export calendar link from Airbnb'
+    );
   });
 
   it('rejects the wrong host for the channel', () => {
-    expect(
-      validateChannelCalendarUrl('airbnb', 'https://ical.booking.com/v1/export?t=abc')
-    ).toBe('Paste the Airbnb calendar link');
+    expect(validateChannelCalendarUrl('airbnb', 'https://ical.booking.com/v1/export?t=abc')).toBe(
+      'Paste the Airbnb calendar link'
+    );
   });
 
   it('accepts the documented Booking.com and Agoda hosts', () => {
     expect(
       validateChannelCalendarUrl('booking_com', 'https://ical.booking.com/v1/export?t=abc')
     ).toBeNull();
-    expect(
-      validateChannelCalendarUrl('agoda', 'https://www.agoda.com/ical/abc.ics')
-    ).toBeNull();
+    expect(validateChannelCalendarUrl('agoda', 'https://www.agoda.com/ical/abc.ics')).toBeNull();
   });
 
   it('rejects a lookalike host', () => {
@@ -55,6 +57,15 @@ describe('validateChannelCalendarUrl', () => {
       validateChannelCalendarUrl('airbnb', 'https://user:pass@www.airbnb.com/calendar/ical/x.ics')
     ).toBe('URL must not contain credentials');
     expect(validateChannelCalendarUrl('airbnb', 'https://localhost/x.ics')).toBe(
+      'That host is not allowed'
+    );
+    expect(validateChannelCalendarUrl('airbnb', 'https://10.0.0.5/x.ics')).toBe(
+      'That host is not allowed'
+    );
+    expect(validateChannelCalendarUrl('airbnb', 'https://192.168.1.10/x.ics')).toBe(
+      'That host is not allowed'
+    );
+    expect(validateChannelCalendarUrl('airbnb', 'https://[::1]/x.ics')).toBe(
       'That host is not allowed'
     );
   });

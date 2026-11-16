@@ -11,7 +11,6 @@
  *   feeds immediately (still serialised via the per-feed claim).
  */
 
-
 import {
   CALENDAR_SYNC_CLAIM_SLACK_MS,
   calendarSyncMinIntervalMinutes,
@@ -133,7 +132,7 @@ serveHandler('calendar-sync-cron', async (req) => {
         const { data } = await supabase
           .from('property_calendar_feeds')
           .select(
-            'id, property_id, provider, label, ics_url_encrypted, is_active, create_bookings, last_etag, last_modified_header, last_feed_hash, consecutive_failures, empty_pull_streak'
+            'id, property_id, provider, label, ics_url_encrypted, is_active, create_bookings, last_etag, last_modified_header, last_feed_hash, consecutive_failures, empty_pull_streak, echo_warning_at, export_never_read_at, created_at'
           )
           .eq('property_id', property.id)
           .eq('is_active', true);
@@ -175,7 +174,8 @@ serveHandler('calendar-sync-cron', async (req) => {
     }
 
     const cutoffIso = new Date(
-      Date.now() - Math.max(0, calendarSyncMinIntervalMinutes() * 60_000 - CALENDAR_SYNC_CLAIM_SLACK_MS)
+      Date.now() -
+        Math.max(0, calendarSyncMinIntervalMinutes() * 60_000 - CALENDAR_SYNC_CLAIM_SLACK_MS)
     ).toISOString();
     const feeds = await loadDueCalendarFeeds(supabase, GLOBAL_BATCH, { cutoffIso });
     // A paused channel is skipped without counting a failure: the whole point of the switch is

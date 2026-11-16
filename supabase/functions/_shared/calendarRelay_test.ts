@@ -8,12 +8,15 @@ applyLocalSupabaseTestEnv();
 
 function row(overrides: Partial<ImportedReservationRow>): ImportedReservationRow {
   return {
+    id: 'row-1',
     feedId: 'feed-a',
     feedProvider: 'airbnb',
     externalUid: 'uid-1',
     startDate: '2026-12-01',
     endDate: '2026-12-04',
-    lastSeenAt: '2026-11-16T00:00:00.000Z',
+    lastSeenAt: new Date().toISOString(),
+    feedIsActive: true,
+    feedConsecutiveFailures: 0,
     ...overrides,
   };
 }
@@ -51,9 +54,20 @@ Deno.test('a live booking key only suppresses its own feed and uid pair', () => 
   assertEquals(ranges.length, 1);
 });
 
-Deno.test('relay UIDs are RFC-5545 safe', () => {
-  const ranges = relayRangesFor([row({ externalUid: 'abc/def+ghi==@x' })], 'agoda', new Set());
-  assertEquals(/^[A-Za-z0-9._-]+$/.test(ranges[0].uidLocalPart), true);
+Deno.test('relay UIDs are opaque and never carry the source confirmation code', () => {
+  const ranges = relayRangesFor([row({ externalUid: 'HMABCDEF/123+@x' })], 'agoda', new Set());
+  assertEquals(ranges[0].uidLocalPart, 'gfm-relay-row-1');
+  assertEquals(ranges[0].uidLocalPart.includes('HMABCDEF'), false);
+});
+
+Deno.test('a feed that stopped refreshing stops relaying', () => {
+  const stale = new Date(Date.now() - 49 * 3_600_000).toISOString();
+  assertEquals(relayRangesFor([row({ lastSeenAt: stale })], 'agoda', new Set()), []);
+});
+
+Deno.test('an inactive or failing feed does not relay', () => {
+  assertEquals(relayRangesFor([row({ feedIsActive: false })], 'agoda', new Set()), []);
+  assertEquals(relayRangesFor([row({ feedConsecutiveFailures: 4 })], 'agoda', new Set()), []);
 });
 
 Deno.test('a row with unreadable dates is skipped', () => {

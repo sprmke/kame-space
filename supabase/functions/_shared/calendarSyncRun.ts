@@ -92,23 +92,33 @@ export interface ExportRangesResult {
  * prevention for the per-provider export URL); bookings from *other* OTAs are still published.
  */
 export interface ImportedReservationRow {
+  /** `property_blocked_dates.id` — opaque, stable across date edits, safe to publish. */
+  id: string;
   feedId: string;
   feedProvider: CalendarFeedProvider;
+  /** Only used for dedupe against a live booking; never published. */
   externalUid: string | null;
   startDate: string;
   endDate: string;
   lastSeenAt: string | null;
+  feedIsActive: boolean;
+  feedConsecutiveFailures: number;
 }
+
+/** A relayed stay stops blocking other channels once its feed stops refreshing. */
+export const RELAY_MAX_ROW_AGE_MS = 48 * 3_600_000;
 
 export interface LiveBookingKey {
   feedId: string | null;
   externalUid: string | null;
 }
 
-/** Keep the UID local part inside RFC-5545-safe characters. */
-function relayUidLocalPart(feedId: string, externalUid: string | null, rowId: string): string {
-  const raw = externalUid || rowId;
-  return `gfm-relay-${feedId}-${raw}`.replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 120);
+/**
+ * UID local part for a relayed stay. Uses only the opaque block row id: the source channel's UID
+ * can carry a confirmation code, which must never appear in another channel's calendar.
+ */
+function relayUidLocalPart(rowId: string): string {
+  return `gfm-relay-${rowId}`.replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 120);
 }
 
 /**
@@ -126,12 +136,18 @@ export function relayRangesFor(
   liveBookingKeys: Set<string>
 ): ExportBusyRange[] {
   const out: ExportBusyRange[] = [];
+  const now = Date.now();
   for (const row of rows) {
     if (excludeProvider && row.feedProvider === excludeProvider) continue;
+    if (!row.feedIsActive) continue;
+    if (row.feedConsecutiveFailures >= CALENDAR_SYNC_FAILING_THRESHOLD) continue;
+    // A feed that stopped refreshing must stop blocking other channels.
+    const seen = row.lastSeenAt ? Date.parse(row.lastSeenAt) : NaN;
+    if (!Number.isFinite(seen) || now - seen > RELAY_MAX_ROW_AGE_MS) continue;
     if (row.externalUid && liveBookingKeys.has(`${row.feedId}|${row.externalUid}`)) continue;
     if (!row.startDate || !row.endDate || row.endDate < row.startDate) continue;
     out.push({
-      uidLocalPart: relayUidLocalPart(row.feedId, row.externalUid, `${row.feedId}-${row.startDate}`),
+      uidLocalPart: relayUidLocalPart(row.id),
       startDate: row.startDate,
       endDate: row.endDate,
       summary: 'Booked',
@@ -227,7 +243,7 @@ export async function loadExportRanges(
   const { data: imported, error: impErr } = await supabase
     .from('property_blocked_dates')
     .select(
-      'id, start_date, end_date, last_seen_at, external_uid, feed_id, property_calendar_feeds!inner(provider)'
+      'id, start_date, end_date, last_seen_at, external_uid, feed_id, property_calendar_feeds!inner(provider, is_active, consecutive_failures)'
     )
     .eq('property_id', propertyId)
     .eq('source', 'ical_import')
@@ -243,18 +259,19 @@ export async function loadExportRanges(
 
   const importedRows: ImportedReservationRow[] = (imported ?? []).map((row) => {
     const joined = (row as { property_calendar_feeds?: unknown }).property_calendar_feeds;
-    const providerRow = Array.isArray(joined) ? joined[0] : joined;
-    const provider = (providerRow as { provider?: string } | undefined)?.provider;
+    const providerRow = (Array.isArray(joined) ? joined[0] : joined) as
+      { provider?: string; is_active?: boolean; consecutive_failures?: number } | undefined;
     return {
+      id: String((row as { id?: string }).id ?? ''),
       feedId: String((row as { feed_id?: string }).feed_id ?? ''),
-      feedProvider: (provider ?? 'other') as CalendarFeedProvider,
-      externalUid:
-        ((row as { external_uid?: string | null }).external_uid ?? null) as string | null,
+      feedProvider: (providerRow?.provider ?? 'other') as CalendarFeedProvider,
+      feedIsActive: providerRow?.is_active !== false,
+      feedConsecutiveFailures: Number(providerRow?.consecutive_failures ?? 0),
+      externalUid: ((row as { external_uid?: string | null }).external_uid ?? null) as
+        string | null,
       startDate: String((row as { start_date?: string }).start_date ?? ''),
       endDate: String((row as { end_date?: string }).end_date ?? ''),
-      lastSeenAt: ((row as { last_seen_at?: string | null }).last_seen_at ?? null) as
-        | string
-        | null,
+      lastSeenAt: ((row as { last_seen_at?: string | null }).last_seen_at ?? null) as string | null,
     };
   });
   for (const relayed of relayRangesFor(importedRows, excludeProvider, liveBookingKeys)) {
@@ -339,10 +356,7 @@ export async function loadDueCalendarFeeds(
   limit: number,
   opts: { cutoffIso?: string } = {}
 ): Promise<CalendarFeedRow[]> {
-  let query = supabase
-    .from('property_calendar_feeds')
-    .select(FEED_SELECT)
-    .eq('is_active', true);
+  let query = supabase.from('property_calendar_feeds').select(FEED_SELECT).eq('is_active', true);
   // Filter in SQL, not after loading: a full batch of not-yet-due feeds would starve the tail.
   if (opts.cutoffIso) {
     query = query.or(`last_attempted_at.is.null,last_attempted_at.lt.${opts.cutoffIso}`);
@@ -664,15 +678,13 @@ export async function checkExportNeverRead(
   >
 ): Promise<boolean> {
   try {
-    // Cheap precheck so a flagged or brand-new feed costs no queries.
-    const precheck = shouldFlagExportNeverRead({
-      createdAt: feed.created_at,
-      exportEnabled: true,
-      hasRead: false,
-      alreadyFlagged: Boolean(feed.export_never_read_at),
-    });
-    if (!precheck) return false;
-    const created = Date.parse(String(feed.created_at));
+    const created = feed.created_at ? Date.parse(feed.created_at) : NaN;
+    if (!Number.isFinite(created)) return false;
+    // A flagged feed is always re-checked so the hint can clear once the channel reads the link;
+    // a brand-new feed costs no queries until the grace window has passed.
+    if (!feed.export_never_read_at && Date.now() - created < EXPORT_NEVER_READ_GRACE_MS) {
+      return false;
+    }
 
     const { data: exportRow } = await supabase
       .from('property_calendar_export')
@@ -687,10 +699,19 @@ export async function checkExportNeverRead(
       .gte('last_read_at', new Date(created).toISOString())
       .limit(1);
 
+    const hasRead = (reads ?? []).length > 0;
+    if (hasRead && feed.export_never_read_at) {
+      // The host fixed it (pasted the link, or re-enabled the channel): clear the stale hint.
+      await supabase
+        .from('property_calendar_feeds')
+        .update({ export_never_read_at: null })
+        .eq('id', feed.id);
+      return false;
+    }
     const due = shouldFlagExportNeverRead({
       createdAt: feed.created_at,
       exportEnabled: Boolean(exportRow?.is_enabled),
-      hasRead: (reads ?? []).length > 0,
+      hasRead,
       alreadyFlagged: Boolean(feed.export_never_read_at),
     });
     if (!due) return false;

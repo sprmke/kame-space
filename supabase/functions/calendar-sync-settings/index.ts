@@ -109,7 +109,9 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
       await Promise.all([
         supabase
           .from('property_calendar_feeds')
-          .select(FEED_COLUMNS + ', ics_url_encrypted')
+          .select(
+            'id, property_id, provider, label, is_active, create_bookings, last_attempted_at, last_success_at, last_error, consecutive_failures, echo_warning_at, export_never_read_at, created_at, ics_url_encrypted'
+          )
           .eq('property_id', property.id)
           .order('created_at', { ascending: true }),
         ensureExportRow(supabase, property.id),
