@@ -43,7 +43,8 @@ type Props = {
 /** Match `adminTableCell` horizontal padding so headers sit over their cells. */
 const HEAD_PAD = {
   listing: 'pl-3 pr-2 sm:pl-5 sm:pr-3',
-  body: 'px-2 sm:px-4',
+  body: 'px-2 sm:px-3',
+  money: 'px-2 sm:px-3',
   action: 'pl-1 pr-2 sm:pl-2 sm:pr-4',
 } as const;
 
@@ -86,7 +87,7 @@ export function OrgAnalyticsListingsTable({ rows, orgSlug, sort, onSortChange }:
   const navigate = useNavigate();
 
   return (
-    <AdminDataTable minWidth={960}>
+    <AdminDataTable minWidth={880}>
       <AdminTableHeadRow>
         <SortHead
           label="Listing"
@@ -102,21 +103,21 @@ export function OrgAnalyticsListingsTable({ rows, orgSlug, sort, onSortChange }:
           sortKey="occupancy"
           sort={sort}
           onSortChange={onSortChange}
-          className={HEAD_PAD.body}
+          className={HEAD_PAD.money}
         />
         <SortHead
           label="Revenue"
           sortKey="revenue"
           sort={sort}
           onSortChange={onSortChange}
-          className={HEAD_PAD.body}
+          className={HEAD_PAD.money}
         />
         <SortHead
           label="Bookings"
           sortKey="bookings"
           sort={sort}
           onSortChange={onSortChange}
-          className={HEAD_PAD.body}
+          className={HEAD_PAD.money}
         />
         <SortHead
           label="Outlook"
@@ -148,7 +149,12 @@ export function OrgAnalyticsListingsTable({ rows, orgSlug, sort, onSortChange }:
               }}
             >
               <td className={adminTableCell.status}>
-                <p className={cn(adminTableBodyText.primary, 'max-w-[14rem] truncate')}>{name}</p>
+                <p
+                  className={cn(adminTableBodyText.primary, 'max-w-[16rem] leading-snug')}
+                  title={name}
+                >
+                  {name}
+                </p>
               </td>
               <td className={adminTableCell.body}>
                 <OrgAnalyticsKindBadge kind={kind} />
@@ -159,16 +165,16 @@ export function OrgAnalyticsListingsTable({ rows, orgSlug, sort, onSortChange }:
                 </td>
               ) : (
                 <>
-                  <td className={cn(adminTableCell.body, 'min-w-[12rem] max-w-[18rem]')}>
-                    <OrgAnalyticsAttention row={row} />
+                  <td className={cn(adminTableCell.body, 'min-w-[9rem] max-w-[14rem]')}>
+                    <OrgAnalyticsAttention row={row} hideOutlookReasons />
                   </td>
                   <td className={adminTableCell.money}>
                     <span className={adminTableMoneyClass('text-foreground')}>
                       {row.occupancyRate}%
                     </span>
                   </td>
-                  <td className={adminTableCell.money}>
-                    <div className="flex flex-col items-start">
+                  <td className={cn(adminTableCell.money, 'whitespace-nowrap')}>
+                    <div className="flex flex-col items-start gap-0.5">
                       <span className={adminTableMoneyClass('text-foreground')}>
                         {formatMoney(row.grossRevenue)}
                       </span>
@@ -180,7 +186,7 @@ export function OrgAnalyticsListingsTable({ rows, orgSlug, sort, onSortChange }:
                       {row.reservations}
                     </span>
                   </td>
-                  <td className={adminTableCell.body}>
+                  <td className={cn(adminTableCell.body, 'min-w-[7.5rem]')}>
                     <OrgAnalyticsOutlook row={row} />
                   </td>
                 </>

@@ -111,7 +111,8 @@ function createSectionNavStore(
   };
 
   const scrollToSection = (sectionId: string) => {
-    // Never scrollIntoView the rail itself — that jumps the menu list. Content scrolls only.
+    // Scroll the content column only. The rail keeps the active row in view via
+    // `scrollActiveItemIntoView` on its own overflow port (not window scrollIntoView).
     setActiveSection(sectionId);
     programmaticTarget = sectionId;
     isProgrammaticScroll = true;
@@ -256,9 +257,9 @@ const SectionNavButton = React.forwardRef<
   );
 });
 
-function SectionNavGroupLabel({ label }: { label: string }) {
+function SectionNavGroupLabel({ label, first }: { label: string; first?: boolean }) {
   return (
-    <div className="px-3 py-2">
+    <div className={cn('px-3 pb-1.5', first ? 'pt-1' : 'pt-2.5')}>
       <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">{label}</p>
     </div>
   );
@@ -293,6 +294,7 @@ const SectionNavList = React.memo(function SectionNavList({ className }: { class
     return (
       <nav
         ref={containerRef}
+        data-section-nav-scroll
         className={cn('relative space-y-1', className)}
         aria-label="Page sections"
       >
@@ -302,7 +304,7 @@ const SectionNavList = React.memo(function SectionNavList({ className }: { class
         {sectionGroups.map((group, groupIndex) => (
           <React.Fragment key={group.label}>
             {groupIndex > 0 ? <SectionNavSeparator /> : null}
-            <SectionNavGroupLabel label={group.label} />
+            <SectionNavGroupLabel label={group.label} first={groupIndex === 0} />
             {group.sections.map((section) => (
               <SectionNavButton
                 key={section.id}
@@ -321,6 +323,7 @@ const SectionNavList = React.memo(function SectionNavList({ className }: { class
   return (
     <nav
       ref={containerRef}
+      data-section-nav-scroll
       className={cn('relative space-y-1', className)}
       aria-label="Page sections"
     >
@@ -392,11 +395,13 @@ export function AdminSectionNavLayout({
               className="bg-background relative z-10 hidden w-56 shrink-0 lg:block lg:self-start"
             >
               <Card>
-                <CardContent
-                  data-section-nav-scroll
-                  className="max-h-[calc(100dvh-10rem)] overflow-y-auto overscroll-contain p-2 sm:p-2"
-                >
-                  <SectionNavList />
+                {/*
+                  Overflow lives on the nav (SlidingActivePill container), not this
+                  padding wrapper, so scroll-spy can keep the active row in view on
+                  short laptops without window.scrollIntoView jumping the page.
+                */}
+                <CardContent className="p-2 sm:p-2">
+                  <SectionNavList className="max-h-[calc(100dvh-10rem)] overflow-y-auto overscroll-contain" />
                 </CardContent>
               </Card>
             </aside>

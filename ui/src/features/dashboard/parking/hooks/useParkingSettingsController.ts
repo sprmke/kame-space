@@ -16,7 +16,10 @@ import {
 import { toast } from 'sonner';
 
 import { useAdminBrandColorPreview } from '@/features/dashboard/bookings/components/AdminBrandTheme';
-import type { AdminSectionNavItem } from '@/features/dashboard/bookings/components/AdminSectionNavLayout';
+import type {
+  AdminSectionNavGroup,
+  AdminSectionNavItem,
+} from '@/features/dashboard/bookings/components/AdminSectionNavLayout';
 import { useParkingContext } from '@/features/dashboard/org/components/RequireParkingContext';
 import { useOrgBrandColor } from '@/features/dashboard/org/hooks/useOrgBrandColor';
 import { orgParkingsPath } from '@/features/dashboard/org/lib/tenantPaths';
@@ -79,6 +82,23 @@ const SECTIONS: AdminSectionNavItem[] = [
   { id: 'activity', label: 'Activity', icon: ScrollText },
   { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
 ];
+
+const SETTINGS_SECTION_GROUP_IDS: { label: string; ids: string[] }[] = [
+  { label: 'Listing', ids: ['basic', 'media', 'details', 'features', 'location'] },
+  { label: 'Automations', ids: ['automations'] },
+  { label: 'Connections', ids: ['integrations'] },
+  { label: 'Account', ids: ['activity', 'danger'] },
+];
+
+function buildSettingsSectionGroups(navSections: AdminSectionNavItem[]): AdminSectionNavGroup[] {
+  const byId = new Map(navSections.map((section) => [section.id, section]));
+  return SETTINGS_SECTION_GROUP_IDS.map((group) => ({
+    label: group.label,
+    sections: group.ids
+      .map((id) => byId.get(id))
+      .filter((section): section is AdminSectionNavItem => section != null),
+  })).filter((group) => group.sections.length > 0);
+}
 
 export function useParkingSettingsController() {
   const navigate = useNavigate();
@@ -267,6 +287,8 @@ export function useParkingSettingsController() {
       })),
     [draftCompletion.issueSectionIds]
   );
+
+  const navSectionGroups = useMemo(() => buildSettingsSectionGroups(navSections), [navSections]);
 
   useEffect(() => {
     setParkingSettingsIssueSections(draftCompletion.issueSectionIds);
@@ -517,6 +539,7 @@ export function useParkingSettingsController() {
     savedCompletion,
     resolveFieldError,
     navSections,
+    navSectionGroups,
     scrollToSettingsSection,
     busy,
     saveDisabledByValidation,

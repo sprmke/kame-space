@@ -27,7 +27,6 @@
     "ui/src/features/dashboard/bookings/lib/adminGuestSlots.ts",
     "ui/src/features/dashboard/bookings/lib/adminLayoutFillMain.ts",
     "ui/src/features/dashboard/bookings/lib/adminPageTransitionKey.ts",
-    "ui/src/features/dashboard/bookings/lib/adminSidebarNav.ts",
     "ui/src/features/dashboard/bookings/lib/bookingAiDocumentLinks.ts",
     "ui/src/features/dashboard/bookings/lib/bookingAiReviewProgress.ts",
     "ui/src/features/dashboard/bookings/lib/bookingAiValidations.ts",

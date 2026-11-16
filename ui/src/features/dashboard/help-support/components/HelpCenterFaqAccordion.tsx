@@ -17,7 +17,6 @@ import { sanitizeHelpBody } from '@/features/dashboard/help-support/lib/helpCont
 import {
   availableFaqCategories,
   browseFaqs,
-  pickCommonFaqs,
 } from '@/features/dashboard/help-support/lib/helpFaqModules';
 import { useHelpSupportAdminScope } from '@/features/dashboard/help-support/lib/helpSupportPaths';
 
@@ -32,7 +31,6 @@ export function HelpCenterFaqAccordion() {
 
   const faqs = data?.faqs ?? [];
   const term = search.trim();
-  const commonFaqs = React.useMemo(() => pickCommonFaqs(faqs, scope), [faqs, scope]);
   const categories = React.useMemo(() => availableFaqCategories(faqs, scope), [faqs, scope]);
   const browseResults = React.useMemo(
     () =>
@@ -143,23 +141,22 @@ export function HelpCenterFaqAccordion() {
             label="Search FAQs"
           />
         </div>
-        <div className="mt-3">
-          {renderFaqs(commonFaqs)}
-          {categories.length > 0 ? (
-            <div className="border-border/70 mt-2 border-t pt-2">
-              <HelpTopicList>
-                {categories.map((category) => (
-                  <HelpTopicRow
-                    key={category}
-                    title={category}
-                    description={`${counts.get(category) ?? 0} questions`}
-                    Icon={HelpCircle}
-                    onClick={() => openCategory(category)}
-                  />
-                ))}
-              </HelpTopicList>
-            </div>
-          ) : null}
+        <div className="mt-4">
+          {categories.length === 0 ? (
+            <HelpEmptyState icon={HelpCircle} title="No FAQ topics yet" />
+          ) : (
+            <HelpTopicList>
+              {categories.map((category) => (
+                <HelpTopicRow
+                  key={category}
+                  title={category}
+                  description={`${counts.get(category) ?? 0} questions`}
+                  Icon={HelpCircle}
+                  onClick={() => openCategory(category)}
+                />
+              ))}
+            </HelpTopicList>
+          )}
         </div>
       </div>
     );

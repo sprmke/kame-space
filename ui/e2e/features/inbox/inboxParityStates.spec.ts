@@ -20,7 +20,7 @@ const ALEX = 'Alex Rivera';
 async function openInbox(page: import('@playwright/test').Page) {
   await installPropertyTeamRbacMocks(page, 'full_access');
   await page.goto(INBOX_URL);
-  await expect(page.getByRole('heading', { name: 'Guest Inbox' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible({
     timeout: 20_000,
   });
 }

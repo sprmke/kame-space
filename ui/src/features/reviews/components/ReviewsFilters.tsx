@@ -42,8 +42,7 @@ export function ReviewsRatingFilter({
       pluralUnit="ratings"
       ariaLabel="Rating filter"
       triggerWidthClassName={nestedInPopover ? 'w-full' : 'sm:w-[9.5rem]'}
-      panelAlign={nestedInPopover ? 'left' : 'right'}
-      panelWidthClassName={nestedInPopover ? 'w-full' : 'w-[min(calc(100vw-24px),12rem)]'}
+      panelWidthClassName={nestedInPopover ? 'w-full' : undefined}
       toolbarExclusive={!nestedInPopover}
     />
   );
@@ -64,8 +63,7 @@ export function ReviewsResponseFilter({
       onChange={onChange}
       ariaLabel="Response filter"
       triggerWidthClassName={nestedInPopover ? 'w-full' : 'sm:w-[11rem]'}
-      panelAlign={nestedInPopover ? 'left' : 'right'}
-      panelWidthClassName={nestedInPopover ? 'w-full' : 'w-[min(calc(100vw-24px),13rem)]'}
+      panelWidthClassName={nestedInPopover ? 'w-full' : undefined}
       toolbarExclusive={!nestedInPopover}
     />
   );
@@ -92,8 +90,7 @@ export function ReviewsListingFilter({
       ariaLabel="Listing filter"
       panelScrollable
       triggerWidthClassName={nestedInPopover ? 'w-full' : 'sm:w-[11rem]'}
-      panelAlign={nestedInPopover ? 'left' : 'right'}
-      panelWidthClassName={nestedInPopover ? 'w-full' : 'w-[min(calc(100vw-24px),16rem)]'}
+      panelWidthClassName={nestedInPopover ? 'w-full' : undefined}
       toolbarExclusive={!nestedInPopover}
     />
   );
@@ -114,8 +111,7 @@ export function ReviewsHostAgainFilter({
       onChange={onChange}
       ariaLabel="Would host again filter"
       triggerWidthClassName={nestedInPopover ? 'w-full' : 'sm:w-[12rem]'}
-      panelAlign={nestedInPopover ? 'left' : 'right'}
-      panelWidthClassName={nestedInPopover ? 'w-full' : 'w-[min(calc(100vw-24px),14rem)]'}
+      panelWidthClassName={nestedInPopover ? 'w-full' : undefined}
       toolbarExclusive={!nestedInPopover}
     />
   );

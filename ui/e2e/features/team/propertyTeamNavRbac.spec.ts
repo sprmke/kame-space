@@ -19,7 +19,7 @@ test.describe('@smoke @critical property team RBAC nav smoke', () => {
     await expectNavLinkVisible(page, 'Marketing');
     await expectNavLinkVisible(page, 'Settings');
     await expectNavLinkVisible(page, 'Team');
-    await expectNavLinkVisible(page, 'Inbox');
+    await expectNavLinkVisible(page, 'Messages');
   });
 
   test('Operations shows Marketing and Bookings; hides Finance and Settings', async ({ page }) => {
@@ -29,7 +29,7 @@ test.describe('@smoke @critical property team RBAC nav smoke', () => {
     await expectNavLinkVisible(page, 'Bookings');
     await expectNavLinkVisible(page, 'Maintenance');
     await expectNavLinkVisible(page, 'Marketing');
-    await expectNavLinkVisible(page, 'Inbox');
+    await expectNavLinkVisible(page, 'Messages');
     await expectNavLinkVisible(page, 'Pricing');
 
     await expectNavLinkHidden(page, 'Finance');
@@ -46,7 +46,7 @@ test.describe('@smoke @critical property team RBAC nav smoke', () => {
     await expectNavLinkVisible(page, 'Maintenance');
     await expectNavLinkVisible(page, 'Pricing');
     await expectNavLinkVisible(page, 'Team');
-    await expectNavLinkVisible(page, 'Inbox');
+    await expectNavLinkVisible(page, 'Messages');
 
     await expectNavLinkHidden(page, 'Marketing');
     await expectNavLinkHidden(page, 'Finance');

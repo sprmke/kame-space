@@ -2,7 +2,7 @@
 title: 'Org Bookings List — operator guide'
 status: active
 tags: [guides, routes, org, booking-workflow]
-updated: 2026-08-24
+updated: 2026-11-16
 ---
 
 # Org Bookings List — operator guide
@@ -13,12 +13,13 @@ Route: `/org/:orgSlug/bookings`
 
 ## Progress overview
 
-| Section                       | E2E save | Validation | Docs | Notes                                            |
-| ----------------------------- | -------- | ---------- | ---- | ------------------------------------------------ |
-| Summary stage cards           | —        | —          | Done | Property + parking rows share stage buckets      |
-| Filter bar                    | —        | —          | Done | Includes **Booking type** (property / parking)   |
-| Table / card / calendar views | —        | —          | Done | **Listing** column: property or parking name     |
-| Kanban view                   | —        | —          | N/A  | Hidden at org level (property list keeps kanban) |
+| Section                       | E2E save  | Validation | Docs | Notes                                             |
+| ----------------------------- | --------- | ---------- | ---- | ------------------------------------------------- |
+| Summary stage cards           | —         | —          | Done | Property + parking rows share stage buckets       |
+| Filter bar                    | —         | —          | Done | Includes **Booking type** (property / parking)    |
+| Table / card / calendar views | —         | —          | Done | **Listing** column: property or parking name      |
+| Kanban view                   | —         | —          | N/A  | Hidden at org level (property list keeps kanban)  |
+| New booking                   | via modal | server     | Done | Listing picker → property or parking create modal |
 
 ---
 
@@ -32,7 +33,7 @@ Differences from property list:
 2. **More filters → Booking type** narrows to property stays or parking only.
 3. Property rows open `/org/:orgSlug/property/:propertySlug/bookings/:bookingId`.
 4. Parking rows open `/org/:orgSlug/parking/:parkingSlug/bookings/:bookingId`.
-5. No header actions (date picker, new booking, parking shortcuts) — create stays and parking reservations from each property or parking slot’s bookings page.
+5. **New booking** in the header (desktop) or hero (phone) opens a listing picker, then the same create modal as that listing’s Bookings page. Date range and Import stay on each property page (not here).
 6. Views: table, card, calendar only (no kanban).
 
 Stay-side `need_parking` on property bookings is unchanged — that is nested stay workflow, not standalone parking reservations.
@@ -47,14 +48,31 @@ This page combines every property stay and every parking-slot reservation across
 
 - Q: Why is there no kanban here?
   A: Parking reservations use a simple status path (review → active → completed). Kanban remains on each property’s bookings page for the full stay workflow.
+- Q: How do I add a booking from the org page?
+  A: Tap **New booking**. Choose a property or parking slot, then fill the same form you would on that listing’s Bookings page. If you only have one listing, the form opens right away.
 - Q: How do I add a parking reservation?
-  A: Open the parking slot's bookings page and use **New booking** - it opens that slot's booking form in a dialog, right in the dashboard.
+  A: **New booking** → pick the parking slot, or open that slot’s Bookings page and use **New booking** there.
 - Q: Does opening a row here open the same booking as the property page?
   A: Yes. It is the same booking, so any status change or edit you make here is reflected everywhere.
 - Q: Which bookings appear on this page?
   A: Every property stay and every parking reservation in the organization. Use the **Booking type** filter to show only stays or only parking.
 - Q: Why can't I open the org Bookings page?
   A: It needs organization-wide booking access. Property-only team members use their assigned property's Bookings page instead.
+
+---
+
+## New booking (org)
+
+**Entry:** **New booking** in the page header (`lg+`) or brand-hero icon (`max-lg`).
+
+**Flow:**
+
+1. Sheet/dialog lists **Properties** and **Parking** the signed-in host can see (`list-properties` / `list-parkings`). Archived listings are omitted. Paused properties show a short **Paused** hint.
+2. Choosing a property opens `AdminNewBookingModal` for that `propertySlug`. The modal passes `embed.propertySlug` into `GuestForm` so submit / payment info target the picked listing even on the org route (no `/property/:slug` in the URL).
+3. Choosing a parking slot opens `AdminParkingNewBookingModal` for that `parkingId` / slug (same submit path as the parking Bookings page).
+4. If there is only one creatable listing, the picker is skipped and that create modal opens directly.
+
+**Permissions:** Page access stays `org.bookings:view`. Create still uses the listing’s existing rules (`bookings.create:add` on property submit, parking `bookings:edit` / submit path). Plans: **N/A** (same create path as listing Bookings). Activity-log: **N/A** for the picker; listing create handlers already own audit.
 
 ---
 
@@ -79,6 +97,7 @@ Status changes: `POST transition-parking-booking?parking_id=…` with `{ booking
 | ------------- | ------------------------------------------------------------------------------- |
 | Page          | `ui/src/features/dashboard/org/pages/OrgBookingsPage.tsx`                       |
 | Shared list   | `ui/src/features/dashboard/bookings/pages/BookingsListPage.tsx` (`scope="org"`) |
+| Org new flow  | `ui/src/features/dashboard/bookings/components/OrgNewBookingFlow.tsx`           |
 | Listing label | `ui/src/features/dashboard/bookings/components/BookingResourceLabel.tsx`        |
 | Hook          | `ui/src/features/dashboard/bookings/hooks/useBookings.ts`                       |
 | Edge function | `supabase/functions/list-bookings/index.ts`                                     |
@@ -95,10 +114,12 @@ Status changes: `POST transition-parking-booking?parking_id=…` with `{ booking
 
 ## Testing
 
-| Layer | Path / spec                                                           | Manual            |
-| ----- | --------------------------------------------------------------------- | ----------------- |
-| Unit  | `ui/src/features/dashboard/bookings/lib/workflow.test.ts`             | —                 |
-| E2E   | `ui/e2e/features/org/orgHubSmoke.spec.ts` bookings list shell (`@ci`) | —                 |
-| E2E   | `ui/e2e/features/bookings/propertyBookingProceed.spec.ts` (`@smoke`)  | Host proceed flow |
+| Layer | Path / spec                                               | Manual                                               |
+| ----- | --------------------------------------------------------- | ---------------------------------------------------- |
+| Unit  | `ui/src/features/dashboard/bookings/lib/workflow.test.ts` | —                                                    |
+| E2E   | —                                                         | Org New booking picker → property and parking create |
 
----
+## Related docs
+
+- [Property bookings](./property/bookings.md)
+- [Parking bookings](./parking/bookings.md)

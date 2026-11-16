@@ -123,7 +123,8 @@ export function OrgListingToolbar<TStatus extends string>({
       value={type}
       onChange={onTypeChange}
       ariaLabel="Filter by type"
-      triggerWidthClassName="w-full sm:w-[9.5rem]"
+      triggerWidthClassName="w-full"
+      panelWidthClassName="w-full"
       toolbarExclusive={false}
     />
   );

@@ -142,7 +142,7 @@ export const ACTIVITY_CATEGORY_LABELS: Record<ActivityCategory, string> = {
   finance: 'Finance',
   maintenance: 'Maintenance',
   marketing: 'Marketing',
-  inbox: 'Inbox',
+  inbox: 'Messages',
   property: 'Property',
   parking: 'Parking',
   org: 'Organization',

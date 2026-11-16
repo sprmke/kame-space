@@ -24,7 +24,6 @@ import { PropertyCancellationPolicySection } from '@/features/dashboard/org/comp
 import { PropertyGuestFormSettingsSection } from '@/features/dashboard/org/components/property-settings/PropertyGuestFormSettingsSection';
 import { PropertyHouseRulesManageDialog } from '@/features/dashboard/org/components/property-settings/PropertyHouseRulesManageDialog';
 import { PropertyLocationSettingsBlock } from '@/features/dashboard/org/components/property-settings/PropertyLocationSettingsBlock';
-import { SearchPreviewFields } from '@/components/settings/SearchPreviewFields';
 import { PropertyMediaUpload } from '@/features/dashboard/org/components/property-settings/PropertyMediaUpload';
 import {
   PropertySettingsSectionAlert,
@@ -62,7 +61,6 @@ import {
   type PropertyMediaItem,
 } from '@/features/dashboard/org/lib/propertySettingsConstants';
 import { propertySettingsSectionBanner } from '@/features/dashboard/org/lib/propertySettingsFieldError';
-import { buildPageTitle, listingDescription, propertyTitle } from '@/lib/seo/seoMeta';
 import {
   propertyGuestCapacityTotal,
   type PropertyProfileDraft,
@@ -131,6 +129,8 @@ type ProfileSectionsProps = {
   visibleSectionIds?: readonly PropertySettingsSectionId[];
   /** Inline editors instead of nested Manage modals (Setup Guide). */
   embedded?: boolean;
+  /** Settings page renders Guest Form in the Guest setup group. */
+  omitGuestForm?: boolean;
 };
 
 export function PropertyProfileMainSections({
@@ -161,6 +161,7 @@ export function PropertyProfileMainSections({
   sectionEditLocked = {},
   visibleSectionIds,
   embedded = false,
+  omitGuestForm = false,
 }: ProfileSectionsProps) {
   const sectionIsVisible = (sectionId: PropertySettingsSectionId) =>
     !visibleSectionIds || visibleSectionIds.includes(sectionId);
@@ -367,34 +368,6 @@ export function PropertyProfileMainSections({
               />
             </SettingsField>
           </FieldGrid>
-
-          <SearchPreviewFields
-            title={draft.seoTitle}
-            description={draft.seoDescription}
-            autoTitle={buildPageTitle(
-              propertyTitle({
-                name: draft.name || 'Your property',
-                unitType: draft.type,
-                city: draft.city,
-              })
-            )}
-            autoDescription={listingDescription({
-              name: draft.name || 'Your property',
-              unitType: draft.type,
-              city: draft.city,
-              guests: draft.maxGuests,
-              bedrooms: draft.bedrooms,
-              amenities: draft.enabledAmenities,
-              priceFrom: null,
-            })}
-            breadcrumb={`kamespace.com › properties › ${slugPreview}`}
-            idPrefix="property"
-            disabled={lock('basic')}
-            onChangeTitle={(value) => setField('seoTitle', value, 'property-seo-title')}
-            onChangeDescription={(value) =>
-              setField('seoDescription', value, 'property-seo-description')
-            }
-          />
 
           <BrandColorField
             id="property-brand-color"
@@ -902,18 +875,6 @@ export function PropertyProfileMainSections({
         </AdminSection>
       ) : null}
 
-      {sectionIsVisible('guest-form') ? (
-        <PropertyGuestFormSettingsSection
-          draft={draft}
-          disabled={lock('guest-form')}
-          onChange={onChange}
-          setField={setField}
-          resolveFieldError={fieldError}
-          embedded={embedded}
-          manageNeedsAttention={propertySettingsSectionHasIssue('guest-form', issueSectionIds)}
-        />
-      ) : null}
-
       {sectionIsVisible('cancellation') ? (
         <PropertyCancellationPolicySection
           policy={draft.cancellationPolicy}
@@ -963,6 +924,18 @@ export function PropertyProfileMainSections({
             }}
           />
         </AdminSection>
+      ) : null}
+
+      {!omitGuestForm && sectionIsVisible('guest-form') ? (
+        <PropertyGuestFormSettingsSection
+          draft={draft}
+          disabled={lock('guest-form')}
+          onChange={onChange}
+          setField={setField}
+          resolveFieldError={fieldError}
+          embedded={embedded}
+          manageNeedsAttention={propertySettingsSectionHasIssue('guest-form', issueSectionIds)}
+        />
       ) : null}
     </>
   );

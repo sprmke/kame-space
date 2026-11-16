@@ -63,7 +63,7 @@ test.describe('@ci dashboard module shells', () => {
     );
     await page.goto('/org/sample-stays-ph/property/solea-mactan/pricing');
     await pricingReady;
-    await expect(page.getByRole('heading', { name: 'Pricing' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Pricing & availability' })).toBeVisible({
       timeout: 20_000,
     });
   });

@@ -33,8 +33,10 @@ export function AdminSingleSelectFilter<T extends string>({
   ariaLabel,
   triggerWidthClassName = 'sm:w-[8.75rem]',
   isActive = (v) => v !== ('all' as T),
-  panelAlign = 'right',
-  panelWidthClassName = 'w-[min(calc(100vw-24px),12rem)]',
+  /** Left-align under the trigger so the panel grows right, not over the sidebar. */
+  panelAlign = 'left',
+  /** At least as wide as the trigger; grow for long labels. */
+  panelWidthClassName = 'w-max min-w-full max-w-[min(calc(100vw-24px),18rem)]',
   toolbarExclusive = true,
 }: Props<T>) {
   const [open, setOpen] = useAdminToolbarMenuOpen(undefined, { exclusive: toolbarExclusive });

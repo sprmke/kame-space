@@ -48,29 +48,59 @@ function measureElementBounds(container: HTMLElement, item: HTMLElement): Slidin
   };
 }
 
+/** Keep a little of the neighbour visible so the strip still reads as scrollable. */
+export const SCROLL_ACTIVE_ITEM_GUTTER_PX = 24;
+
 /**
- * Bring the active item into view when the strip scrolls horizontally. Landing on
- * a tab you cannot see — a deep link into the last of four tabs on a phone — reads
- * as the page opening on the wrong tab. No-op when nothing overflows.
+ * Bring the active item into view inside its overflow container.
+ * Horizontal: tab strips / mobile chips. Vertical: settings section nav on short
+ * laptops where the rail scrolls under `max-h`. Uses viewport rects so nested
+ * group labels do not break `offsetTop` math. No-op when nothing overflows or
+ * the item is already in view.
  */
-function scrollItemIntoView(container: HTMLElement, item: HTMLElement, smooth: boolean) {
-  const overflow = container.scrollWidth - container.clientWidth;
-  if (overflow <= 1) return;
+export function scrollActiveItemIntoView(
+  container: HTMLElement,
+  item: HTMLElement,
+  smooth: boolean
+) {
+  const overflowX = container.scrollWidth - container.clientWidth;
+  const overflowY = container.scrollHeight - container.clientHeight;
+  if (overflowX <= 1 && overflowY <= 1) return;
 
-  const itemLeft = item.offsetLeft;
-  const itemRight = itemLeft + item.offsetWidth;
-  const viewLeft = container.scrollLeft;
-  const viewRight = viewLeft + container.clientWidth;
-  // Keep a little of the neighbouring tab visible so the strip still reads as scrollable.
-  const gutter = 24;
+  const containerRect = container.getBoundingClientRect();
+  const itemRect = item.getBoundingClientRect();
+  const gutter = SCROLL_ACTIVE_ITEM_GUTTER_PX;
+  let nextLeft = container.scrollLeft;
+  let nextTop = container.scrollTop;
+  let changed = false;
 
-  let next = viewLeft;
-  if (itemLeft < viewLeft + gutter) next = itemLeft - gutter;
-  else if (itemRight > viewRight - gutter) next = itemRight - container.clientWidth + gutter;
-  else return;
+  if (overflowX > 1) {
+    if (itemRect.left < containerRect.left + gutter) {
+      nextLeft = container.scrollLeft + (itemRect.left - containerRect.left - gutter);
+      changed = true;
+    } else if (itemRect.right > containerRect.right - gutter) {
+      nextLeft = container.scrollLeft + (itemRect.right - containerRect.right + gutter);
+      changed = true;
+    }
+    nextLeft = Math.max(0, Math.min(nextLeft, overflowX));
+  }
+
+  if (overflowY > 1) {
+    if (itemRect.top < containerRect.top + gutter) {
+      nextTop = container.scrollTop + (itemRect.top - containerRect.top - gutter);
+      changed = true;
+    } else if (itemRect.bottom > containerRect.bottom - gutter) {
+      nextTop = container.scrollTop + (itemRect.bottom - containerRect.bottom + gutter);
+      changed = true;
+    }
+    nextTop = Math.max(0, Math.min(nextTop, overflowY));
+  }
+
+  if (!changed) return;
 
   container.scrollTo({
-    left: Math.max(0, Math.min(next, overflow)),
+    left: nextLeft,
+    top: nextTop,
     behavior: smooth ? 'smooth' : 'auto',
   });
 }
@@ -116,6 +146,9 @@ export function useSlidingActivePill(
   const hasMeasuredRef = useRef(false);
 
   const [bounds, setBounds] = useState<SlidingPillBounds | null>(null);
+  /** Only scroll the overflow port when the active key changes — not on every remeasure. */
+  const scrollActiveIntoViewOnMeasureRef = useRef(false);
+  const prevActiveKeyForScrollRef = useRef<string | null | undefined>(undefined);
 
   const measure = useCallback(() => {
     if (!activeKey || !containerRef.current) return;
@@ -125,10 +158,23 @@ export function useSlidingActivePill(
 
     commitSlidingPillBounds(setBounds, measureElementBounds(containerRef.current, item));
 
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    scrollItemIntoView(containerRef.current, item, hasMeasuredRef.current && !prefersReducedMotion);
+    const activeKeyChanged = prevActiveKeyForScrollRef.current !== activeKey;
+    prevActiveKeyForScrollRef.current = activeKey;
+
+    const shouldScroll =
+      scrollActiveIntoViewOnMeasureRef.current || activeKeyChanged || !hasMeasuredRef.current;
+    scrollActiveIntoViewOnMeasureRef.current = false;
+
+    if (shouldScroll) {
+      const prefersReducedMotion =
+        typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      scrollActiveItemIntoView(
+        containerRef.current,
+        item,
+        hasMeasuredRef.current && !prefersReducedMotion
+      );
+    }
     hasMeasuredRef.current = true;
   }, [activeKey]);
 
@@ -151,6 +197,8 @@ export function useSlidingActivePill(
       setBounds((prev) => (prev === null ? prev : null));
       return;
     }
+
+    scrollActiveIntoViewOnMeasureRef.current = true;
 
     // RAF after paint so Framer Motion can interpolate from the previous frame.
     schedule();

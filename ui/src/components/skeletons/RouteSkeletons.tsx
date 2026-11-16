@@ -7,6 +7,10 @@ import type { ReactNode } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 
 import { HOST_ANNOUNCEMENTS_PAGE_SUBTITLE } from '@/features/dashboard/announcements/lib/hostAnnouncementCopy';
+import {
+  ADMIN_MODULE_INBOX_LABEL,
+  ADMIN_MODULE_PRICING_LABEL,
+} from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import { AdminPageHeader } from '@/features/dashboard/bookings/components/AdminPageHeader';
 import { helpSupportSectionFromPath } from '@/features/dashboard/help-support/lib/helpSupportPaths';
 import { isMarketingStudioTab } from '@/features/dashboard/marketing/lib/theme/marketingStudioNav';
@@ -548,7 +552,7 @@ export function PropertyMaintenanceRouteSkeleton() {
 export function PropertyPricingRouteSkeleton() {
   return (
     <AdminMobilePage
-      title="Pricing"
+      title={ADMIN_MODULE_PRICING_LABEL}
       subtitle="Manage pricing and availability."
       titleId="pricing-heading"
       desktopActions={
@@ -685,7 +689,7 @@ export function PropertyReviewsRouteSkeleton() {
 export function PropertyInboxRouteSkeleton() {
   return (
     <AdminMobilePage
-      title="Guest Inbox"
+      title={ADMIN_MODULE_INBOX_LABEL}
       subtitle="View and reply to guest messages from connected channels."
       titleId="inbox-heading"
       desktopActions={
@@ -862,7 +866,7 @@ export function ParkingFinanceRouteSkeleton() {
 export function ParkingPricingRouteSkeleton() {
   return (
     <AdminMobilePage
-      title="Pricing"
+      title={ADMIN_MODULE_PRICING_LABEL}
       subtitle="Manage pricing and availability."
       titleId="parking-pricing-heading"
     >
@@ -916,7 +920,7 @@ export function ParkingSettingsRouteSkeleton() {
 export function ParkingInboxRouteSkeleton() {
   return (
     <AdminMobilePage
-      title="Guest Inbox"
+      title={ADMIN_MODULE_INBOX_LABEL}
       subtitle="View and reply to guest messages from connected channels."
       titleId="inbox-heading"
       desktopActions={

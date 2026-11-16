@@ -93,7 +93,7 @@ export function AdminListPerPageSelect({ limit, onChange }: PerPageProps) {
       >
         <SelectValue className="min-w-[1.25rem] tabular-nums" />
       </SelectTrigger>
-      <SelectContent align="end" className="min-w-[4.5rem] rounded-xl">
+      <SelectContent align="start" className="min-w-[var(--radix-select-trigger-width)] rounded-xl">
         {ADMIN_PAGE_SIZES.map((n) => (
           <SelectItem
             key={n}

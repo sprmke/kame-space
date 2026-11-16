@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 
+import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import {
   FEATURE_AVAILABILITY_CATALOG,
   type FeatureAvailabilityCatalogEntry,
@@ -16,8 +17,8 @@ dayjs.extend(timezone);
 const MANILA = 'Asia/Manila';
 
 export const FEATURE_AVAILABILITY_MODULE_LABELS: Record<FeatureAvailabilityModule, string> = {
-  inbox: 'Inbox',
-  pricing: 'Pricing',
+  inbox: ADMIN_MODULE_LABEL.inbox,
+  pricing: ADMIN_MODULE_LABEL.pricing,
   marketing: 'Marketing',
   analytics: 'Analytics',
   notifications: 'Notifications',

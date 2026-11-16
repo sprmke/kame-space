@@ -14,7 +14,7 @@ import {
 } from '@/features/dashboard/analytics/lib/types';
 
 import { cn } from '@/lib/utils';
-import { formatMoney } from '@/utils/format/currency';
+import { formatMoneyCompact } from '@/utils/format/currency';
 
 type Props = {
   row: OrgPortfolioRow;
@@ -22,15 +22,25 @@ type Props = {
 };
 
 const CARD_CLASS = cn(
-  'surface-card group relative flex min-w-0 flex-col gap-3 p-3.5 transition-colors sm:p-4',
+  'surface-card group relative flex min-w-0 flex-col gap-3.5 p-4 transition-colors',
   'hover:bg-muted/30 focus-within:ring-primary/40 focus-within:ring-2'
 );
 
-function Metric({ label, children }: { label: string; children: React.ReactNode }) {
+function Metric({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="min-w-0">
-      <p className="text-muted-foreground text-[11px]">{label}</p>
-      <div className="text-foreground text-sm font-semibold tabular-nums">{children}</div>
+    <div className={cn('min-w-0', className)}>
+      <p className="text-muted-foreground mb-0.5 text-[11px] font-medium">{label}</p>
+      <div className="text-foreground text-sm font-semibold tabular-nums leading-snug">
+        {children}
+      </div>
     </div>
   );
 }
@@ -38,14 +48,30 @@ function Metric({ label, children }: { label: string; children: React.ReactNode 
 function Header({ row, orgSlug }: Props) {
   const name = orgPortfolioListingName(row);
   return (
-    <div className="min-w-0 space-y-1">
+    <div className="min-w-0 space-y-1.5">
       <OrgAnalyticsKindBadge kind={orgPortfolioListingKind(row)} />
       <Link
         to={orgAnalyticsListingHref(orgSlug, row)}
-        className="text-foreground group-hover:text-primary line-clamp-2 text-sm font-semibold transition-colors after:absolute after:inset-0 after:content-[''] sm:text-base"
+        className="text-foreground group-hover:text-primary block text-sm font-semibold leading-snug transition-colors after:absolute after:inset-0 after:content-[''] sm:text-base"
       >
         {name}
       </Link>
+    </div>
+  );
+}
+
+function MetricsBlock({ row }: { row: Extract<OrgPortfolioRow, { locked: false }> }) {
+  return (
+    <div className="border-separator grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-3.5 sm:grid-cols-4">
+      <Metric label="Occupancy">{row.occupancyRate}%</Metric>
+      <Metric label="Revenue" className="sm:col-span-1">
+        <span className="block whitespace-nowrap">{formatMoneyCompact(row.grossRevenue)}</span>
+        <OrgAnalyticsRevenueChange pct={row.revenueChangePct} />
+      </Metric>
+      <Metric label="Bookings">{row.reservations}</Metric>
+      <Metric label="Outlook">
+        <OrgAnalyticsOutlook row={row} compact />
+      </Metric>
     </div>
   );
 }
@@ -59,19 +85,8 @@ export function OrgAnalyticsListingCard({ row, orgSlug }: Props) {
         <p className="text-muted-foreground text-xs">Unavailable on your plan</p>
       ) : (
         <>
-          <OrgAnalyticsAttention row={row} />
-          <div className="border-separator grid grid-cols-3 gap-2 border-t pt-3">
-            <Metric label="Occupancy">{row.occupancyRate}%</Metric>
-            <Metric label="Revenue">
-              <span className="block truncate">{formatMoney(row.grossRevenue)}</span>
-              <OrgAnalyticsRevenueChange pct={row.revenueChangePct} />
-            </Metric>
-            <Metric label="Bookings">{row.reservations}</Metric>
-          </div>
-          <div className="border-separator border-t pt-3">
-            <p className="text-muted-foreground mb-0.5 text-[11px]">Outlook</p>
-            <OrgAnalyticsOutlook row={row} />
-          </div>
+          <OrgAnalyticsAttention row={row} hideOutlookReasons />
+          <MetricsBlock row={row} />
         </>
       )}
     </article>
@@ -81,27 +96,29 @@ export function OrgAnalyticsListingCard({ row, orgSlug }: Props) {
 /** List view: one wide row per listing. */
 export function OrgAnalyticsListingRow({ row, orgSlug }: Props) {
   return (
-    <article className={cn(CARD_CLASS, 'sm:flex-row sm:items-center sm:gap-4')}>
-      <div className="min-w-0 sm:w-56 sm:shrink-0">
+    <article className={cn(CARD_CLASS, 'lg:flex-row lg:items-start lg:gap-5')}>
+      <div className="min-w-0 lg:w-52 lg:shrink-0">
         <Header row={row} orgSlug={orgSlug} />
       </div>
       {row.locked ? (
         <p className="text-muted-foreground text-xs">Unavailable on your plan</p>
       ) : (
         <>
-          <div className="min-w-0 sm:flex-1">
-            <OrgAnalyticsAttention row={row} />
+          <div className="relative z-[1] min-w-0 lg:max-w-[14rem] lg:flex-1">
+            <OrgAnalyticsAttention row={row} hideOutlookReasons />
           </div>
-          <div className="grid grid-cols-4 gap-3 sm:w-[26rem] sm:shrink-0">
+          <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4 lg:max-w-none lg:shrink-0">
             <Metric label="Occupancy">{row.occupancyRate}%</Metric>
             <Metric label="Revenue">
-              <span className="block truncate">{formatMoney(row.grossRevenue)}</span>
+              <span className="block whitespace-nowrap">
+                {formatMoneyCompact(row.grossRevenue)}
+              </span>
+              <OrgAnalyticsRevenueChange pct={row.revenueChangePct} />
             </Metric>
             <Metric label="Bookings">{row.reservations}</Metric>
-            <div className="min-w-0">
-              <p className="text-muted-foreground text-[11px]">Outlook</p>
-              <OrgAnalyticsOutlook row={row} />
-            </div>
+            <Metric label="Outlook">
+              <OrgAnalyticsOutlook row={row} compact />
+            </Metric>
           </div>
         </>
       )}
