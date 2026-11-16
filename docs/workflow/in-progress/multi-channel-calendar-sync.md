@@ -30,6 +30,12 @@ kind: plan
 > - Added [§18 Execution decisions](#18-execution-decisions-execute-plan) and per-phase
 >   acceptance commands.
 
+> **Scope decision 2026-11-17 (owner):** Kame Space supports **only Airbnb, Agoda and Booking.com**.
+> Vrbo, Tiket.com and "Other calendar link" are removed, not deferred: they are the only platforms
+> that matter to Philippine hosts, and an allowlist-only fetch surface is safer. Every mention of
+> Vrbo or Other below is historical; the code, registry, UI, `?as=` links and CHECK constraints
+> (migration `20261342001000`) no longer accept them. See X15.
+
 > **Revised 2026-11-17 (production-readiness pass):** the other session's uncommitted
 > `ChannelSyncDialog.tsx` and `GuestForm.tsx` work is no longer pending, so the blocked Phase 2
 > items shipped dark: the multi-channel Channel sync UI, per-channel guest-form labels, the
@@ -59,16 +65,16 @@ calendar links Airbnb does, which is what the shipped engine already speaks. **N
 Traveloka or Trip.com** without paying for a certified channel-manager API (Tier 3, [§15](#15-tier-3-track-channel-manager-api-decision-gated)).
 Real-time sync, guest names, prices and messages are Tier 3 only on every channel.
 
-| Platform                            | PH host relevance                       | Calendar link (iCal)                                                                                                                                                                                       | Official API for us                                                                                        | Verdict                     |
-| ----------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------- |
-| Airbnb                              | Largest STR channel                     | Yes, shipped                                                                                                                                                                                               | Closed: "not accepting new access requests for our API" (secondhand, 2026)                                 | Shipped. Generalize         |
-| **Agoda** (Agoda Homes and Partner) | Major in PH and SEA                     | **Yes.** Calendar → Calendar connections: copy Agoda's link, import other links. Only for room types with **exactly 1 room**. "Automatically refresh several times a day", plus a manual Refresh           | YCS API for certified connectivity partners (self-certification, then a pilot). Built for channel managers | **Build (Phase 2)**         |
-| **Booking.com**                     | Major                                   | **Yes, for eligible accounts.** Rates & Availability → Sync calendars. Export option: **only reserved dates** or **reserved and closed dates**. Imported links are removed when a channel manager connects | Connectivity Partner onboarding reported paused                                                            | **Build (Phase 3)**         |
-| Vrbo                                | Small in PH                             | Yes                                                                                                                                                                                                        | Expedia partner program                                                                                    | Optional (Phase 4)          |
-| Traveloka                           | Big for hotels in SEA, smaller for STRs | **No confirmed native link.** Vendors call it "limited and inconsistent, so don't use it"                                                                                                                  | Channel manager only (Channex lists Traveloka)                                                             | **Tier 3 only**             |
-| Trip.com                            | Growing                                 | **None found.** Connects through a channel-manager API, and connecting resets its calendar                                                                                                                 | Channel manager only                                                                                       | **Tier 3 only**             |
-| Tiket.com                           | Indonesia first                         | Yes, for entire-place villas and apartments                                                                                                                                                                | No                                                                                                         | "Other link" (Phase 4), low |
-| Direct (Facebook, Messenger, site)  | Core                                    | Kame Space is the hub                                                                                                                                                                                      | N/A                                                                                                        | Already the source of truth |
+| Platform                            | PH host relevance                       | Calendar link (iCal)                                                                                                                                                                                       | Official API for us                                                                                        | Verdict                                       |
+| ----------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Airbnb                              | Largest STR channel                     | Yes, shipped                                                                                                                                                                                               | Closed: "not accepting new access requests for our API" (secondhand, 2026)                                 | Shipped. Generalize                           |
+| **Agoda** (Agoda Homes and Partner) | Major in PH and SEA                     | **Yes.** Calendar → Calendar connections: copy Agoda's link, import other links. Only for room types with **exactly 1 room**. "Automatically refresh several times a day", plus a manual Refresh           | YCS API for certified connectivity partners (self-certification, then a pilot). Built for channel managers | **Build (Phase 2)**                           |
+| **Booking.com**                     | Major                                   | **Yes, for eligible accounts.** Rates & Availability → Sync calendars. Export option: **only reserved dates** or **reserved and closed dates**. Imported links are removed when a channel manager connects | Connectivity Partner onboarding reported paused                                                            | **Build (Phase 3)**                           |
+| Vrbo                                | Small in PH                             | Yes                                                                                                                                                                                                        | Expedia partner program                                                                                    | **Not supported** (owner decision 2026-11-17) |
+| Traveloka                           | Big for hotels in SEA, smaller for STRs | **No confirmed native link.** Vendors call it "limited and inconsistent, so don't use it"                                                                                                                  | Channel manager only (Channex lists Traveloka)                                                             | **Tier 3 only**                               |
+| Trip.com                            | Growing                                 | **None found.** Connects through a channel-manager API, and connecting resets its calendar                                                                                                                 | Channel manager only                                                                                       | **Tier 3 only**                               |
+| Tiket.com                           | Indonesia first                         | Yes, for entire-place villas and apartments                                                                                                                                                                | No                                                                                                         | **Not supported** (owner decision 2026-11-17) |
+| Direct (Facebook, Messenger, site)  | Core                                    | Kame Space is the hub                                                                                                                                                                                      | N/A                                                                                                        | Already the source of truth                   |
 
 Limits that apply to every iCal channel, already true for Airbnb and surfaced in the UI:
 
@@ -88,7 +94,7 @@ imported nights, and whether Agoda masks our guest-form link in its chat. See [�
 
 ## 2. What exists and what blocks multi-channel
 
-The engine was built channel-agnostic: `provider` already allows `airbnb | booking_com | vrbo | other`,
+The engine was built channel-agnostic: `provider` allowed `airbnb | booking_com | vrbo | other` when written (now narrowed to `airbnb | agoda | booking_com`),
 there is a per-provider export URL (`?as=<provider>`) with loop prevention, and a host allowlist for
 Booking.com and VRBO. The gaps are in what was only ever exercised with Airbnb.
 
@@ -505,7 +511,7 @@ whatever version of that rework lands, it does not restart the dialog.
 
 - **SSRF:** every new host suffix goes through the existing `fetchExternalIcs` guard (https only,
   private IP literal and DNS rejection, per-hop redirect re-validation, 2 MB cap, timeout). Agoda's
-  real host comes from Phase 0, not a guess. No `other` channel in production until Phase 4.
+  real host comes from Phase 0, not a guess. There is no `other` channel at all: every link is host-allowlisted.
 - **Secrets:** imported URLs stay AES-256-GCM encrypted (`ics_url_encrypted`), masked in GET.
 - **Export token:** unchanged (≥32 bytes, constant-time compare, identical 404s, rotatable). Rotating
   breaks every channel's import at once; the rotate dialog lists the connected channels.
@@ -575,7 +581,7 @@ only after conflict plan Phase 1 lands.
 | 1b ✅ | **Conflict-integrated (shipped 2026-11-16 in #493):** relay rule 3 (G6), echo detection (§4.4), bounded concurrency (G9), Booking.com setup warning. Requires conflict plan Phase 1                                                                                                                                                                                       | Relay and echo integration tests green; zero false conflicts on Airbnb-only data                 |
 | 2 ◐   | **Agoda (UI, labels, money rules, rollout gate shipped dark 2026-11-17; adapter facts and fixtures still need Phase 0):** adapter from fixtures, multi-channel Channel sync UI (§7.1), guest-form channel labels, QR/delivery fallback if links are masked, booking detail and calendar copy, support content. Launch to test tenant, then beta orgs                      | Live QA matrix ([§13](#13-live-qa-matrix)) passes for Airbnb + Agoda + Direct                    |
 | 3     | **Booking.com:** adapter, echo rule + setup warning, `uidStrategy` fallback if Phase 0 needs it. Launch to test tenant, then beta                                                                                                                                                                                                                                         | Live QA matrix passes for all three channels + Direct; zero phantom bookings over 7 days on beta |
-| 4     | **Optional:** Vrbo and "Other calendar link" (block-only default, no host allowlist, still SSRF guarded). Only if hosts ask                                                                                                                                                                                                                                               | Same matrix for the added channel                                                                |
+| 4     | ~~Optional: Vrbo and Other calendar link~~ **Removed 2026-11-17.** Only Airbnb, Agoda and Booking.com are supported                                                                                                                                                                                                                                                       | n/a                                                                                              |
 | 5     | **General availability + close-out:** enable for all Pro+ properties, parser drift probe live, docs/support final pass, move plan to `done/`                                                                                                                                                                                                                              | 14 days on GA with drift probe quiet; support FAQ published                                      |
 | 6     | **Decision-gated Tier 3 evaluation** ([§15](#15-tier-3-track-channel-manager-api-decision-gated)). Not started without an explicit go                                                                                                                                                                                                                                     | Written decision                                                                                 |
 
@@ -835,7 +841,7 @@ In the same change as each phase (`documentation-maintenance`, `route-guides`, `
 
 | #   | Decision                                               | Default (recommended)                                                                                             |
 | --- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| D1  | Channels in this plan                                  | Agoda then Booking.com. Vrbo and "Other link" only on request (Phase 4)                                           |
+| D1  | Channels in this plan                                  | **Airbnb, Agoda and Booking.com only.** Vrbo and Other were removed (owner decision 2026-11-17)                   |
 | D2  | Plan gating                                            | Same `calendarSync` key (Pro+) for all iCal channels; no per-channel tier                                         |
 | D3  | Guest pays at the property (Booking.com, Agoda option) | Deferred. v1 treats every OTA as prepaid; host can switch a booking's source to Direct. Revisit if beta hosts ask |
 | D4  | Relay imported reservations to other channels          | Yes (required for correctness)                                                                                    |
@@ -860,7 +866,7 @@ does not need it and shipped first.
 | X3  | Bounded concurrency (G9)                   | Deferred to 1b                                                                                                     | One live channel cannot exhaust a sequential sweep; concurrency only pays once Agoda or Booking.com imports                                                                                                                       |
 | X4  | Relay rule 3 (G6)                          | Deferred to 1b                                                                                                     | Publishing imported reservations before echo detection exists would change Airbnb export output                                                                                                                                   |
 | X5  | Provider CHECK constraint names            | Verified against local Postgres with `\d+` before writing M1                                                       | The migrations declare inline column CHECKs, so names are Postgres-generated                                                                                                                                                      |
-| X6  | `isOtaPrepaidSource` scope                 | True for `Airbnb`, `Agoda`, `Booking.com`, `Vrbo`                                                                  | Matches the plan; no stored row can carry an unsupported OTA source because ingestion writes `Airbnb` today                                                                                                                       |
+| X6  | `isOtaPrepaidSource` scope                 | True for `Airbnb`, `Agoda`, `Booking.com`                                                                          | Matches the plan; no stored row can carry an unsupported OTA source because ingestion writes `Airbnb` today                                                                                                                       |
 | X7  | Unknown booking source handling            | `canonicalBookingSource` preserves unknown values; only the picker is constrained                                  | G4 data loss is worse than an unknown label; `Direct` collapse is what turns an Agoda row into a direct booking                                                                                                                   |
 | X8  | Per-channel availability default           | New channel keys ship **enabled** in code (same as `pricing.channel_sync`), gated by `addFeed` provider allow-list | Phase 2 controls launch by allowing the provider, not by shipping a dark switch                                                                                                                                                   |
 | X9  | Feed cap value                             | 6 active feeds per property (D7)                                                                                   | Unchanged from the plan                                                                                                                                                                                                           |
@@ -870,6 +876,9 @@ does not need it and shipped first.
 | X12 | Host-facing plan, pricing and FAQ copy | Still says Airbnb only; changes at launch, not now | Copy that promises Agoda while the gate is closed is false. The launch checklist (§20) lists every string |
 | X13 | `isAirbnb` rename on guest surfaces | Renamed to `isOta` / `isOtaPrepaid` (guest form flags, trip payment) and `otaLabel` for copy | The flag meant "prepaid by an OTA" all along. Keeping the old name would have made Agoda read as a special case of Airbnb |
 | X14 | Completion link channel | `get-form-completion` already returns the stored `bookingSource`; the form reads it and falls back to Airbnb copy | One link flow for every channel, no new endpoint |
+| X15 | Vrbo and Other removed | Registry, UI, export `?as=`, booking sources, import normalization, CHECKs (M11, guarded), cron query and `runFeedSync` all drop them; a stray row is skipped as `unsupported_provider` | Owner decision. It also removes the only "any public host" fetch path, so every import URL is now host-allowlisted |
+| X16 | Create bookings default | `createBookingsDefault`: Airbnb on, Agoda and Booking.com **off**, with a note under the switch | Neither can tell a stay from a closed date yet. Auto-creating would turn host blocks into placeholder bookings |
+| X17 | UID reuse across channels | `findRelinkableBooking` now requires the row's `external_source` to equal the feed's provider | Found by an integration test: two channels using the same UID string made one channel adopt the other's booking |
 
 ### Acceptance commands per phase
 
@@ -935,6 +944,15 @@ does not need it and shipped first.
 | Money and access | Booking patch, guest trip payment, guest review path, CSV import now use the shared OTA rule (an Agoda stay no longer keeps a down payment after an edit, or shows a balance on the trip page)               |
 | Copy             | Booking detail badge, trip "Paid through {channel}", calendar tooltip "Synced from a connected channel"                                                                                                      |
 
+### Phase 0 findings so far (2026-11-17)
+
+| #             | Booking.com (real feed, test property)                                                                                                                                                                                    | Agoda                                                                 |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| S1            | Host `ical.booking.com`, path `/v1/export?t=<uuid>`. Allowlist `booking.com` covers it (the redundant `admin.` and `ical.` entries were dropped)                                                                          | Waiting: listing created 2026-11-17, Agoda approval takes 1 to 3 days |
+| S2            | `200 text/calendar` from a normal client. **No ETag or Last-Modified**, `cache-control: no-store`, so every pull is a full fetch (304 handling is unused for this channel). Not yet verified from the hosted edge runtime | Waiting                                                               |
+| S3 to S7, S13 | **Open.** The feed is empty (no closed dates, no reservations), so the event format, UID stability and cancellation behaviour are unknown. Needs one closed date and, if possible, one reservation                        | Waiting                                                               |
+| Engine        | Local live run against the real feed: `empty_feed_pull_1` guard fired, second pull `unchanged`, no failures. Fixture: `_shared/__fixtures__/calendar/booking_com_empty.ics`                                               | n/a                                                                   |
+
 ## 20. Launch checklist (what is left)
 
 **Safe to merge and deploy dark now.** Airbnb behaviour is unchanged and the new channels cannot be
@@ -942,10 +960,10 @@ connected until `CALENDAR_CHANNELS_ENABLED` is set.
 
 ### Needs the host (blocked on real listings)
 
-| #   | Item                                                                                           | Why it cannot be done without a listing                                                                                             |
-| --- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| H1  | One Agoda and one Booking.com listing on the test tenant (unlisted, dates 6+ months out)       | An agent cannot create or link OTA listings                                                                                         |
-| H2  | Run the Phase 0 sheet ([§12.1](#121-phase-0-spike-checklist-real-links)) and paste the answers | Public docs do not give the link host, event format or UID stability (re-checked 2026-11-17: partner help describes the steps only) |
+| #   | Item                                                                                                                                                                                                                                         | Why it cannot be done without a listing                                                                                             |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| H1  | **Agoda:** listing created 2026-11-17, waiting on Agoda approval (1 to 3 days). **Booking.com:** link provided and connected on the local seeded property (Monaco 2604); still needs a closed date and a reservation on the Booking.com side | An agent cannot create or link OTA listings                                                                                         |
+| H2  | Run the Phase 0 sheet ([§12.1](#121-phase-0-spike-checklist-real-links)) and paste the answers                                                                                                                                               | Public docs do not give the link host, event format or UID stability (re-checked 2026-11-17: partner help describes the steps only) |
 
 ### Follows H1 and H2 (small, mechanical)
 
@@ -968,9 +986,28 @@ connected until `CALENDAR_CHANNELS_ENABLED` is set.
 | Synthetic load test (§12.7)                      | The pool, ordering and cap are unit-tested. Real p95 per feed comes from `calendar_sync_runs` once a second channel is live                                                    |
 | `addFeed` handler test per channel               | The handler harness only covers the auth contract. The gate logic is a pure function with its own tests; the add path is covered by the DOM and E2E specs against a mocked API |
 | Conflict-plan wiring (`classifyCalendarOverlap`) | Belongs to that plan; relay and echo do not depend on it                                                                                                                       |
-| Vrbo and "Other calendar"                        | On host request only; `other` needs resolved-address pinning first                                                                                                             |
+| Vrbo and "Other calendar"                        | Removed, not deferred (owner decision 2026-11-17)                                                                                                                              |
 
 ### Decisions the host should confirm (defaults chosen)
 
-1. The booking edit source picker lists Agoda, Booking.com and Vrbo after merge. Default: yes, because an unlisted source would turn into Direct on save.
+1. The booking edit source picker lists Agoda and Booking.com after merge. Default: yes, because an unlisted source would turn into Direct on save.
 2. Deploy dark now and light up per environment. Default: yes.
+
+### Hosted rollout runbook (test tenant first)
+
+There is one hosted Supabase project (`fworvijbrwpyngycotbz`, dev and production). Deploys go through
+`.github/workflows/cd-prod.yml` and need the `kamewave` unlock. The code ships dark, so the order is:
+
+1. Merge #493 and let the pipeline deploy it. Nothing changes for hosts: only Airbnb is connectable.
+2. Set the rollout secrets for the test tenant only (Supabase dashboard, Edge Functions, Secrets, or
+   `supabase secrets set ... --project-ref fworvijbrwpyngycotbz`):
+   `CALENDAR_CHANNELS_ENABLED=agoda,booking_com` and
+   `CALENDAR_CHANNELS_BETA_ORG_IDS=<organization id of kame-test-tenant>`.
+   Edge secrets apply to new invocations, no redeploy. Rolling back is clearing the first secret.
+3. In `kame-test-tenant/kame-test-tenant`, Pricing, Channel sync: connect Booking.com (paste the
+   export link), turn on **Share this property's dates**, copy the Booking.com link into Booking.com
+   Sync calendars. Leave **Create bookings** off.
+4. Close one date and make one test reservation on Booking.com, then read the fixture from the feed
+   and fill S3 to S7 and S9 to S11. Repeat for Agoda once approved.
+5. Widen: clear `CALENDAR_CHANNELS_BETA_ORG_IDS` only after the live QA matrix passes and the host copy
+   in "Copy that changes at launch" is published.

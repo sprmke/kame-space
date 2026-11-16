@@ -26,7 +26,7 @@ const exportBase = {
   enabled: true,
   rotatedAt: null,
   lastServedAt: null,
-  urls: { all: '', airbnb: '', agoda: '', booking_com: '', vrbo: '' },
+  urls: { all: '', airbnb: '', agoda: '', booking_com: '' },
 };
 
 describe('buildChannelRows', () => {

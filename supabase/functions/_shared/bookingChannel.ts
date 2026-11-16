@@ -15,7 +15,6 @@ export const BOOKING_SOURCES = [
   'Airbnb',
   'Agoda',
   'Booking.com',
-  'Vrbo',
 ] as const;
 
 export type BookingChannelSource = (typeof BOOKING_SOURCES)[number];
@@ -25,7 +24,6 @@ export const OTA_PREPAID_SOURCES: readonly BookingChannelSource[] = [
   'Airbnb',
   'Agoda',
   'Booking.com',
-  'Vrbo',
 ];
 
 const ALIASES: Record<string, BookingChannelSource> = {
@@ -38,7 +36,6 @@ const ALIASES: Record<string, BookingChannelSource> = {
   booking_com: 'Booking.com',
   bookingcom: 'Booking.com',
   booking: 'Booking.com',
-  vrbo: 'Vrbo',
 };
 
 /**

@@ -14,8 +14,6 @@ export const CALENDAR_PROVIDER_LABELS: Record<CalendarFeedProvider, string> = {
   airbnb: 'Airbnb',
   agoda: 'Agoda',
   booking_com: 'Booking.com',
-  vrbo: 'Vrbo',
-  other: 'Other (iCal URL)',
 };
 
 export type CalendarSyncFeed = {
@@ -62,7 +60,7 @@ export type CalendarSyncExport = {
   lastServedAt: string | null;
   /** Most recent read of our export link per channel (200 and 304), keyed by channel or `all`. */
   reads?: Record<string, { lastReadAt: string; readCount: number }>;
-  urls: { all: string; airbnb: string; agoda: string; booking_com: string; vrbo: string };
+  urls: { all: string; airbnb: string; agoda: string; booking_com: string };
 };
 
 export type CalendarSyncSettings = {

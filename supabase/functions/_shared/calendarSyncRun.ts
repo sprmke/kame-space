@@ -26,7 +26,12 @@ import {
   isPastReservation,
   type IngestBookingRow,
 } from './externalBookingIngest.ts';
-import { calendarChannel, type CalendarChannelDefinition } from './calendarChannels.ts';
+import {
+  CALENDAR_CHANNELS,
+  calendarChannel,
+  isCalendarProvider,
+  type CalendarChannelDefinition,
+} from './calendarChannels.ts';
 import { isOtaPrepaidSource } from './bookingChannel.ts';
 import {
   classifyExportEcho,
@@ -264,7 +269,7 @@ export async function loadExportRanges(
     return {
       id: String((row as { id?: string }).id ?? ''),
       feedId: String((row as { feed_id?: string }).feed_id ?? ''),
-      feedProvider: (providerRow?.provider ?? 'other') as CalendarFeedProvider,
+      feedProvider: (providerRow?.provider ?? 'airbnb') as CalendarFeedProvider,
       feedIsActive: providerRow?.is_active !== false,
       feedConsecutiveFailures: Number(providerRow?.consecutive_failures ?? 0),
       externalUid: ((row as { external_uid?: string | null }).external_uid ?? null) as
@@ -356,7 +361,12 @@ export async function loadDueCalendarFeeds(
   limit: number,
   opts: { cutoffIso?: string } = {}
 ): Promise<CalendarFeedRow[]> {
-  let query = supabase.from('property_calendar_feeds').select(FEED_SELECT).eq('is_active', true);
+  let query = supabase
+    .from('property_calendar_feeds')
+    .select(FEED_SELECT)
+    .eq('is_active', true)
+    // A row from before Vrbo / Other were removed must never reach the engine.
+    .in('provider', CALENDAR_CHANNELS.map((c) => c.provider));
   // Filter in SQL, not after loading: a full batch of not-yet-due feeds would starve the tail.
   if (opts.cutoffIso) {
     query = query.or(`last_attempted_at.is.null,last_attempted_at.lt.${opts.cutoffIso}`);
@@ -791,6 +801,17 @@ export async function runFeedSync(
     conflicts: 0,
   };
 
+  // A stored row from before Vrbo / Other were removed has no registry entry: never run it.
+  if (!isCalendarProvider(feed.provider)) {
+    await writeEvent(supabase, {
+      feedId: feed.id,
+      runId,
+      action: 'skipped',
+      detail: { reason: 'unsupported_provider' },
+    });
+    return { ...base, status: 'skipped' };
+  }
+
   const claimed = await claimFeed(
     supabase,
     feed.id,
@@ -1142,7 +1163,7 @@ async function loadPropertyBookingRows(
   const { data, error } = await supabase
     .from('guest_submissions')
     .select(
-      'id, external_uid, external_feed_id, status, check_in_date, check_out_date, booking_source'
+      'id, external_uid, external_feed_id, external_source, status, check_in_date, check_out_date, booking_source'
     )
     .eq('property_id', propertyId)
     .neq('status', 'CANCELLED')
@@ -1152,6 +1173,7 @@ async function loadPropertyBookingRows(
     id: r.id as string,
     external_uid: typeof r.external_uid === 'string' ? r.external_uid : null,
     external_feed_id: typeof r.external_feed_id === 'string' ? r.external_feed_id : null,
+    external_source: typeof r.external_source === 'string' ? r.external_source : null,
     status: String(r.status ?? ''),
     check_in_date: String(r.check_in_date ?? ''),
     check_out_date: String(r.check_out_date ?? ''),
@@ -1407,7 +1429,7 @@ async function reconcileExternalBookings(
       if (!allowCreate) continue;
 
       // A row already carries this UID but lost its feed (feed removed then reconnected).
-      const relink = findRelinkableBooking(allRows, ev.uid, feed.id);
+      const relink = findRelinkableBooking(allRows, ev.uid, feed.id, feed.provider);
       if (relink) {
         if (relink.external_feed_id) {
           // The same reservation is attached to a different active feed. Never duplicate it.

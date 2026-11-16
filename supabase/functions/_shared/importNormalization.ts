@@ -71,7 +71,6 @@ export function normalizeImportBookingSource(value: string | null | undefined): 
   if (lowered.includes('booking.com') || lowered === 'booking_com' || lowered === 'bookingcom') {
     return 'Booking.com';
   }
-  if (lowered.includes('vrbo')) return 'Vrbo';
   if (lowered.includes('facebook') || lowered === 'fb') return 'Facebook';
   if (KNOWN_BOOKING_SOURCES.includes(lowered as (typeof KNOWN_BOOKING_SOURCES)[number])) {
     if (lowered === 'airbnb') return 'Airbnb';

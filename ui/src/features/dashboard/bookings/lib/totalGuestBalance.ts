@@ -38,7 +38,7 @@ function petAndAdditionalFeesForGuestBalance(booking: BookingFinanceInput): numb
  * Total amount due from the guest before check-in (matches `ReviewPricingForm`
  * live total and `PricingSummaryCard` on the booking detail page).
  *
- * **OTA prepaid (Airbnb, Agoda, Booking.com, Vrbo):** stay rate, down payment, and
+ * **OTA prepaid (Airbnb, Agoda, Booking.com):** stay rate, down payment, and
  * security deposit are excluded — the guest pays the channel. Only pet fee and
  * additional guest fees count.
  *

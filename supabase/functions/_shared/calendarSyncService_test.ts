@@ -153,7 +153,7 @@ Deno.test('parseIcsCalendar - bad single VEVENT is skipped, run continues', () =
     'END:VEVENT',
     'END:VCALENDAR',
   ].join('\r\n');
-  const parsed = parseIcsCalendar(body, 'other', true);
+  const parsed = parseIcsCalendar(body, 'agoda', true);
   assertEquals(parsed.events.length, 1);
   assertEquals(parsed.events[0].uid, 'good@x');
   assert(parsed.warnings.some((w) => w.includes('bad@x')));
@@ -186,8 +186,7 @@ Deno.test('classifyEventKind per provider', () => {
   assertEquals(classifyEventKind('airbnb', 'Airbnb (Not available)', true), 'block');
   assertEquals(classifyEventKind('booking_com', 'CLOSED - Not available', true), 'reservation');
   assertEquals(classifyEventKind('booking_com', 'CLOSED - Not available', false), 'block');
-  assertEquals(classifyEventKind('vrbo', 'Reserved - John', true), 'reservation');
-  assertEquals(classifyEventKind('other', 'Blocked', true), 'block');
+  assertEquals(classifyEventKind('agoda', 'Blocked', true), 'block');
 });
 
 Deno.test('description parsers', () => {
@@ -341,10 +340,10 @@ Deno.test('agoda uses the registry allowlist, not a wildcard', () => {
 Deno.test('fetchExternalIcs - SSRF guard rejects non-https and private targets', async () => {
   for (const [url, provider] of [
     ['http://www.airbnb.com/x.ics', 'airbnb'],
-    ['https://169.254.169.254/latest/meta-data', 'other'],
-    ['https://localhost/cal.ics', 'other'],
-    ['https://10.0.0.5/cal.ics', 'other'],
-    ['https://[::1]/cal.ics', 'other'],
+    ['https://169.254.169.254/latest/meta-data', 'airbnb'],
+    ['https://localhost/cal.ics', 'airbnb'],
+    ['https://10.0.0.5/cal.ics', 'airbnb'],
+    ['https://[::1]/cal.ics', 'airbnb'],
     ['https://evil.example.com/x.ics', 'airbnb'], // host not in Airbnb allowlist
   ] as const) {
     let threw = false;
@@ -355,4 +354,22 @@ Deno.test('fetchExternalIcs - SSRF guard rejects non-https and private targets',
     }
     assert(threw, `expected ${url} to be rejected`);
   }
+});
+
+// Real capture, 2026-11-17: a Booking.com feed with nothing closed or reserved. It carries an
+// escaped PRODID and no events. The host is `ical.booking.com`, the path `/v1/export?t=<token>`,
+// and the response has no ETag or Last-Modified, so every pull is a full fetch.
+Deno.test('Booking.com real empty feed parses as valid and empty', async () => {
+  const body = await Deno.readTextFile(
+    new URL('./__fixtures__/calendar/booking_com_empty.ics', import.meta.url)
+  );
+  const parsed = parseIcsCalendar(body, 'booking_com', true);
+  assertEquals(parsed.valid, true);
+  assertEquals(parsed.empty, true);
+  assertEquals(parsed.events.length, 0);
+});
+
+Deno.test('Booking.com export link shape: ical host accepted, token path kept', () => {
+  const url = 'https://ical.booking.com/v1/export?t=00000000-0000-4000-8000-000000000000';
+  assertEquals(assertExternalIcsUrlShape(url, 'booking_com'), url);
 });

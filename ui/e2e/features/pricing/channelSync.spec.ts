@@ -62,7 +62,6 @@ async function mockCalendarSync(
               airbnb: 'https://example.com/ical/airbnb',
               agoda: 'https://example.com/ical/agoda',
               booking_com: 'https://example.com/ical/booking-com',
-              vrbo: 'https://example.com/ical/vrbo',
             },
           },
           recentEvents: [],

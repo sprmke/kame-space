@@ -7,7 +7,8 @@ Deno.test('CSV import keeps every OTA source instead of collapsing it to Direct'
   assertEquals(normalizeImportBookingSource('agoda homes'), 'Agoda');
   assertEquals(normalizeImportBookingSource('Booking.com'), 'Booking.com');
   assertEquals(normalizeImportBookingSource('booking_com'), 'Booking.com');
-  assertEquals(normalizeImportBookingSource('VRBO'), 'Vrbo');
+  // Vrbo is not a supported channel: it passes through unchanged.
+  assertEquals(normalizeImportBookingSource('VRBO'), 'VRBO');
 });
 
 Deno.test('CSV import still maps the original sources', () => {

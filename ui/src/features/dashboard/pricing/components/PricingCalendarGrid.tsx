@@ -59,7 +59,7 @@ export type PricingDayState = {
   isCustom: boolean;
   isBooked: boolean;
   isBlocked: boolean;
-  /** Blocked by an OTA calendar feed (Airbnb / Booking.com / VRBO) — read-only here. */
+  /** Blocked by an OTA calendar feed (Airbnb / Agoda / Booking.com) — read-only here. */
   isImported: boolean;
   /** Nightly rate came from an applied Smart Pricing recommendation. */
   isSmart?: boolean;

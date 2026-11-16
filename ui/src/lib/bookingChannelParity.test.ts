@@ -27,7 +27,6 @@ describe('booking channel vocabulary parity', () => {
       'booking_com',
       'Booking.com',
       'facebook',
-      'Vrbo',
       'Expedia',
       'Direct',
     ];

@@ -22,11 +22,13 @@ import {
   type CalendarFeedProvider,
 } from '../_shared/calendarSyncService.ts';
 import { loadCalendarFeed, recordFeedRun, runFeedSync } from '../_shared/calendarSyncRun.ts';
-import { CALENDAR_FEED_LIMIT, calendarChannel } from '../_shared/calendarChannels.ts';
 import {
-  connectableProvidersFor,
-  isProviderConnectable,
-} from '../_shared/calendarChannelRollout.ts';
+  CALENDAR_FEED_LIMIT,
+  calendarChannel,
+  isCalendarProvider,
+} from '../_shared/calendarChannels.ts';
+import { connectableProvidersFor } from '../_shared/calendarChannelRollout.ts';
+import { checkAddFeed } from '../_shared/calendarFeedAdd.ts';
 import type { RunFeedResult } from '../_shared/calendarSyncRun.ts';
 import {
   buildCalendarExportUrls,
@@ -274,51 +276,45 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
   try {
     switch (action) {
       case 'addFeed': {
-        // Registry baseline plus the runtime rollout gate (`calendarChannelRollout.ts`): Airbnb
-        // is always connectable, Agoda and Booking.com open per environment or per beta org.
-        const provider = String(body.provider ?? 'airbnb') as CalendarFeedProvider;
-        if (!isProviderConnectable(provider, access.org.id)) {
-          return jsonError(req, 'That calendar is not available yet', 400);
+        // Channel, rollout, URL shape, cap and duplicate checks live in `calendarFeedAdd.ts`.
+        // The paused-channel switch is async (feature availability), so it runs first when the
+        // provider is known.
+        const requested = String(body.provider ?? 'airbnb');
+        if (isCalendarProvider(requested)) {
+          const availabilityKey = calendarChannel(requested).availabilityKey;
+          if (availabilityKey) {
+            const channelPaused = await featureUnavailableResponse(req, availabilityKey, { user });
+            if (channelPaused) return channelPaused;
+          }
         }
-        const availabilityKey = calendarChannel(provider).availabilityKey;
-        if (availabilityKey) {
-          const channelPaused = await featureUnavailableResponse(req, availabilityKey, { user });
-          if (channelPaused) return channelPaused;
-        }
-        const rawUrl = String(body.icsUrl ?? '');
-        const normalizedUrl = normalizeExternalIcsUrl(rawUrl);
-        if (!normalizedUrl) {
-          return jsonError(req, 'Paste the calendar URL', 400);
-        }
-        const icsUrl = assertExternalIcsUrlShape(rawUrl, provider);
-
         const { data: existingFeeds, error: existingFeedsError } = await supabase
           .from('property_calendar_feeds')
           .select('id, is_active, ics_url_encrypted')
           .eq('property_id', property.id);
         if (existingFeedsError) throw new Error(existingFeedsError.message);
-        const activeFeeds = (existingFeeds ?? []).filter((f) => f.is_active);
-        if (activeFeeds.length >= CALENDAR_FEED_LIMIT) {
-          return jsonError(
-            req,
-            `This listing already has ${CALENDAR_FEED_LIMIT} calendars connected.`,
-            400
-          );
-        }
-        for (const existing of existingFeeds ?? []) {
-          const encrypted = existing.ics_url_encrypted as string | null;
-          if (!encrypted) continue;
-          try {
-            const connectedUrl = normalizeExternalIcsUrl(
-              await decryptIntegrationSecret(encrypted)
-            );
-            if (connectedUrl && connectedUrl === normalizedUrl) {
-              return jsonError(req, 'This calendar is already connected', 400);
+        const existingForCheck = await Promise.all(
+          (existingFeeds ?? []).map(async (f) => {
+            const encrypted = f.ics_url_encrypted as string | null;
+            let url: string | null = null;
+            if (encrypted) {
+              try {
+                url = await decryptIntegrationSecret(encrypted);
+              } catch {
+                /* unreadable stored URL: skip it, the insert will surface the real problem */
+              }
             }
-          } catch {
-            /* unreadable stored URL: keep going, the insert will surface the real problem */
-          }
-        }
+            return { isActive: Boolean(f.is_active), url };
+          })
+        );
+        const check = checkAddFeed({
+          provider: body.provider,
+          organizationId: access.org.id,
+          rawUrl: body.icsUrl,
+          existing: existingForCheck,
+        });
+        if (!check.ok) return jsonError(req, check.error, 400);
+        const { provider, icsUrl } = check;
+
         const label =
           typeof body.label === 'string' && body.label.trim()
             ? body.label.trim().slice(0, 120)
@@ -330,7 +326,10 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
             provider,
             label,
             ics_url_encrypted: await encryptIntegrationSecret(icsUrl),
-            create_bookings: body.createBookings !== false,
+            create_bookings:
+              typeof body.createBookings === 'boolean'
+                ? body.createBookings
+                : calendarChannel(provider).createBookingsDefault,
             created_by: user.id,
           })
           .select(FEED_COLUMNS)

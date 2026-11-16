@@ -104,7 +104,6 @@ function settings(over: Partial<CalendarSyncSettings> = {}): CalendarSyncSetting
         airbnb: 'https://x/airbnb',
         agoda: 'https://x/agoda',
         booking_com: 'https://x/booking',
-        vrbo: 'https://x/vrbo',
       },
     },
     recentEvents: [],
@@ -203,5 +202,35 @@ describe('ChannelSyncDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
     expect(screen.queryByRole('button', { name: 'Connect' })).toBeNull();
     expect(screen.getByText('No Agoda calendar')).toBeTruthy();
+  });
+
+  it('asks before leaving the setup view with a typed link, and keeps it on Keep editing', () => {
+    mocks.settings = settings({ connectableProviders: ['airbnb', 'agoda'] });
+    renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
+    const input = screen.getByPlaceholderText('https://…agoda.com/…') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'https://ycs.agoda.com/ical/abc.ics' } });
+    fireEvent.click(screen.getByText('All channels'));
+    expect(screen.getByText('Discard your changes?')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }));
+    expect(input.value).toBe('https://ycs.agoda.com/ical/abc.ics');
+  });
+
+  it('leaves without a prompt when nothing was typed', () => {
+    mocks.settings = settings({ connectableProviders: ['airbnb', 'agoda'] });
+    renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
+    fireEvent.click(screen.getByText('All channels'));
+    expect(screen.getByRole('button', { name: /^Airbnb/ })).toBeTruthy();
+  });
+
+  it('explains why Create bookings is off for Agoda and Booking.com, not Airbnb', () => {
+    mocks.settings = settings({
+      connectableProviders: ['airbnb', 'agoda'],
+      feeds: [feed({ createBookings: false, provider: 'agoda' })],
+    });
+    renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
+    expect(screen.getByText(/Closed dates in Agoda can look like stays/)).toBeTruthy();
   });
 });

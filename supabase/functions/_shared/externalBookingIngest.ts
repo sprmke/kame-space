@@ -16,6 +16,8 @@ export type IngestBookingRow = {
   booking_source: string | null;
   external_uid: string | null;
   external_feed_id: string | null;
+  /** Sync provider identity (`airbnb`, `agoda`, `booking_com`). UIDs are only unique per channel. */
+  external_source?: string | null;
 };
 
 /** Rows the sync must never treat as a live booking to adopt, relink, or cancel. */
@@ -44,18 +46,26 @@ export function isPastReservation(endDateYmd: string, todayYmd: string): boolean
 /**
  * A row already carrying this UID but no longer attached to this feed (the feed was
  * removed and reconnected). Re-link it instead of inserting a duplicate.
+ *
+ * UIDs are only unique inside one channel: two channels may legitimately reuse the same string
+ * (a short numeric id, a date-based id). The row must belong to this feed's channel, or an
+ * Agoda stay could be relinked onto an Airbnb feed.
  */
 export function findRelinkableBooking(
   rows: IngestBookingRow[],
   uid: string,
-  feedId: string
+  feedId: string,
+  provider: string
 ): IngestBookingRow | null {
   const target = String(uid ?? '').trim();
   if (!target) return null;
   return (
     rows.find(
       (row) =>
-        isEligibleIngestRow(row) && row.external_uid === target && row.external_feed_id !== feedId
+        isEligibleIngestRow(row) &&
+        row.external_uid === target &&
+        row.external_feed_id !== feedId &&
+        row.external_source === provider
     ) ?? null
   );
 }

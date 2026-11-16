@@ -8,7 +8,7 @@
 import type { CalendarFeedProvider } from './calendarChannels';
 import type { CalendarSyncFeed, CalendarSyncSettings } from './calendarSyncApi';
 
-/** Channels the dialog can show. Vrbo and "Other" stay off the UI until hosts ask. */
+/** Every channel Kame Space supports. */
 export const DIALOG_CHANNELS = ['airbnb', 'agoda', 'booking_com'] as const;
 export type DialogChannel = (typeof DIALOG_CHANNELS)[number];
 
@@ -26,6 +26,8 @@ export interface ChannelCopy {
   refreshNote: string;
   /** Eligibility facts the host should know before connecting. */
   eligibility: string | null;
+  /** Shown under the Create bookings switch when the channel cannot tell a stay from a closed date. */
+  createBookingsNote: string | null;
 }
 
 export const CHANNEL_COPY: Record<DialogChannel, ChannelCopy> = {
@@ -38,6 +40,7 @@ export const CHANNEL_COPY: Record<DialogChannel, ChannelCopy> = {
       'In Airbnb, open Connect calendars, then Import calendar. Paste this link, name it, and save.',
     refreshNote: 'Airbnb refreshes every few hours.',
     eligibility: null,
+    createBookingsNote: null,
   },
   agoda: {
     label: 'Agoda',
@@ -48,6 +51,8 @@ export const CHANNEL_COPY: Record<DialogChannel, ChannelCopy> = {
       'In Agoda Calendar connections, paste this link under Other website link and tap Import.',
     refreshNote: 'Agoda refreshes several times a day.',
     eligibility: 'Agoda only supports calendar links for room types with exactly 1 room.',
+    createBookingsNote:
+      'Closed dates in Agoda can look like stays. Turn this on only if you never close dates there.',
   },
   booking_com: {
     label: 'Booking.com',
@@ -58,6 +63,8 @@ export const CHANNEL_COPY: Record<DialogChannel, ChannelCopy> = {
     refreshNote: 'Booking.com refreshes on its own schedule.',
     eligibility:
       'Booking.com turns calendar links off for properties connected to a channel manager.',
+    createBookingsNote:
+      'Closed dates in Booking.com look like stays. Turn this on only if you never close dates there.',
   },
 };
 

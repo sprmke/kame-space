@@ -7,7 +7,7 @@ Deno.test('every prepaid channel uses the OTA-prepaid balance rule', () => {
   assertEquals(isOtaPrepaidSource(' Airbnb '), true);
   assertEquals(isOtaPrepaidSource('Agoda'), true);
   assertEquals(isOtaPrepaidSource('booking_com'), true);
-  assertEquals(isOtaPrepaidSource('Vrbo'), true);
+  assertEquals(isOtaPrepaidSource('Vrbo'), false);
   assertFalse(isOtaPrepaidSource('Facebook'));
   assertFalse(isOtaPrepaidSource(null));
 });

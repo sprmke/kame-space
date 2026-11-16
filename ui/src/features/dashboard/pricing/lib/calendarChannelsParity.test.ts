@@ -40,7 +40,9 @@ describe('hostMatchesChannelSuffix', () => {
     expect(hostMatchesChannelSuffix('evilbooking.com', ['booking.com'])).toBe(false);
   });
 
-  it('accepts any host when the channel has no allowlist', () => {
-    expect(hostMatchesChannelSuffix('example.com', null)).toBe(true);
+  it('every channel has a non-empty host allowlist', () => {
+    for (const channel of CALENDAR_CHANNELS) {
+      expect(channel.hostSuffixes.length).toBeGreaterThan(0);
+    }
   });
 });

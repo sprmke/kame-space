@@ -9,7 +9,7 @@ import {
 } from './bookingChannel.ts';
 
 Deno.test('BOOKING_SOURCES holds every channel once', () => {
-  assertEquals(BOOKING_SOURCES, ['Direct', 'Facebook', 'Airbnb', 'Agoda', 'Booking.com', 'Vrbo']);
+  assertEquals(BOOKING_SOURCES, ['Direct', 'Facebook', 'Airbnb', 'Agoda', 'Booking.com']);
   assertEquals(new Set(BOOKING_SOURCES).size, BOOKING_SOURCES.length);
 });
 

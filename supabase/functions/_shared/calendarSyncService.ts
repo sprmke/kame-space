@@ -153,17 +153,13 @@ export function classifyEventKind(
     case 'airbnb':
       // "Reserved" = booking. "Airbnb (Not available)" / "Blocked" / "Not available" = block.
       return s === 'reserved' ? 'reservation' : 'block';
-    case 'vrbo':
-      return s.startsWith('reserved') ? 'reservation' : 'block';
     case 'booking_com':
       // "CLOSED - Not available" for everything. When ingesting bookings, treat all as reservations.
       return createBookings ? 'reservation' : 'block';
     case 'agoda':
-    // Phase 0 pending: Agoda fixtures decide whether its feed distinguishes stays from blocks.
-    // Until then it follows the generic rule, and it is not connectable, so this cannot fire.
-    // Falls through.
-    case 'other':
     default:
+      // Phase 0 pending: Agoda fixtures decide whether its feed distinguishes stays from blocks.
+      // Until then it follows the generic iCal rule, and it is not connectable by default.
       // Generic iCal: anything that isn't obviously a "blocked/unavailable/closed" label is a stay.
       if (/(not available|unavailable|blocked|closed|owner block)/.test(s)) return 'block';
       return createBookings ? 'reservation' : 'block';
@@ -455,7 +451,7 @@ export class ExternalFetchError extends Error {
 }
 
 /** Provider → allowed host suffixes, from the channel registry. */
-function providerHostSuffixes(provider: CalendarFeedProvider): string[] | null {
+function providerHostSuffixes(provider: CalendarFeedProvider): string[] {
   return calendarChannel(provider).hostSuffixes;
 }
 const PRIVATE_IPV4 = [
@@ -557,14 +553,12 @@ export function assertExternalIcsUrlShape(rawUrl: string, provider: CalendarFeed
   if (isPrivateIpLiteral(u.hostname) || u.hostname.toLowerCase() === 'localhost') {
     throw new ExternalFetchError('That host is not allowed', 'private_host');
   }
-  if (provider !== 'other') {
-    const allow = providerHostSuffixes(provider);
-    if (!allow || !hostMatchesChannelSuffix(u.hostname, allow)) {
-      throw new ExternalFetchError(
-        `For ${calendarChannel(provider).label}, the URL must be on ${allow?.[0] ?? provider}`,
-        'host_not_allowed'
-      );
-    }
+  const allow = providerHostSuffixes(provider);
+  if (!hostMatchesChannelSuffix(u.hostname, allow)) {
+    throw new ExternalFetchError(
+      `For ${calendarChannel(provider).label}, the URL must be on ${allow[0]}`,
+      'host_not_allowed'
+    );
   }
   return normalized;
 }
@@ -611,14 +605,12 @@ export async function fetchExternalIcs(
     if (current.username || current.password) {
       throw new ExternalFetchError('refusing URL with embedded credentials', 'has_credentials');
     }
-    if (opts.provider !== 'other') {
-      const allow = providerHostSuffixes(opts.provider);
-      if (!allow || !hostMatchesChannelSuffix(current.hostname, allow)) {
-        throw new ExternalFetchError(
-          `host ${current.hostname} is not allowed for provider ${opts.provider}`,
-          'host_not_allowed'
-        );
-      }
+    // Every channel is allowlisted, on every redirect hop.
+    if (!hostMatchesChannelSuffix(current.hostname, providerHostSuffixes(opts.provider))) {
+      throw new ExternalFetchError(
+        `host ${current.hostname} is not allowed for provider ${opts.provider}`,
+        'host_not_allowed'
+      );
     }
     await assertHostNotPrivate(current.hostname);
 

@@ -6,7 +6,7 @@
  * guest_additional_fee.
  * Computes total guest balance (excludes parking — settled on Parking Request):
  * Facebook: booking_rate - down_payment + security_deposit + pet_fee + guest_additional_fee.
- * OTA prepaid (Airbnb, Agoda, Booking.com, Vrbo): pet_fee + guest_additional_fee only.
+ * OTA prepaid (Airbnb, Agoda, Booking.com): pet_fee + guest_additional_fee only.
  *
  * Plan: docs/planning/NEW_FLOW_PLAN.md §6.1 Q2.1, Q2.3, Q2.4
  */

@@ -8,16 +8,23 @@
 
 import type { FeatureAvailabilityKey } from '@/lib/featureAvailability/featureAvailabilityCatalog';
 
-export type CalendarFeedProvider = 'airbnb' | 'agoda' | 'booking_com' | 'vrbo' | 'other';
+/** The only channels Kame Space supports: the three that matter to Philippine hosts. */
+export type CalendarFeedProvider = 'airbnb' | 'agoda' | 'booking_com';
 
 export interface CalendarChannelDefinition {
   provider: CalendarFeedProvider;
   label: string;
   bookingSource: string;
-  hostSuffixes: string[] | null;
+  hostSuffixes: string[];
   availabilityKey: FeatureAvailabilityKey | null;
   placeholderGuestName: string;
   enabledForNewConnections: boolean;
+  /**
+   * Whether a new feed turns imported stays into bookings. Only Airbnb tells a reservation from
+   * a host block (`Reserved`). Agoda and Booking.com are off until Phase 0 shows they can, so a
+   * closed date never becomes a placeholder booking by surprise.
+   */
+  createBookingsDefault: boolean;
   pendingPhase0: boolean;
 }
 
@@ -27,6 +34,7 @@ export const CALENDAR_FEED_LIMIT = 6;
 export const CALENDAR_CHANNELS: readonly CalendarChannelDefinition[] = [
   {
     provider: 'airbnb',
+    createBookingsDefault: true,
     label: 'Airbnb',
     bookingSource: 'Airbnb',
     hostSuffixes: ['airbnb.com', 'airbnb.co.uk', 'airbnb.ca', 'airbnb.com.au', 'muscache.com'],
@@ -37,6 +45,7 @@ export const CALENDAR_CHANNELS: readonly CalendarChannelDefinition[] = [
   },
   {
     provider: 'agoda',
+    createBookingsDefault: false,
     label: 'Agoda',
     bookingSource: 'Agoda',
     hostSuffixes: ['agoda.com'],
@@ -47,35 +56,21 @@ export const CALENDAR_CHANNELS: readonly CalendarChannelDefinition[] = [
   },
   {
     provider: 'booking_com',
+    createBookingsDefault: false,
     label: 'Booking.com',
     bookingSource: 'Booking.com',
-    hostSuffixes: ['booking.com', 'admin.booking.com', 'ical.booking.com'],
+    hostSuffixes: ['booking.com'],
     availabilityKey: 'pricing.channel_sync.booking_com',
     placeholderGuestName: 'Booking.com guest',
     enabledForNewConnections: false,
     pendingPhase0: true,
   },
-  {
-    provider: 'vrbo',
-    label: 'Vrbo',
-    bookingSource: 'Vrbo',
-    hostSuffixes: ['vrbo.com', 'homeaway.com', 'abritel.fr', 'expediagroup.com'],
-    availabilityKey: null,
-    placeholderGuestName: 'Vrbo guest',
-    enabledForNewConnections: false,
-    pendingPhase0: true,
-  },
-  {
-    provider: 'other',
-    label: 'Other calendar',
-    bookingSource: 'Direct',
-    hostSuffixes: null,
-    availabilityKey: null,
-    placeholderGuestName: 'OTA guest',
-    enabledForNewConnections: false,
-    pendingPhase0: true,
-  },
 ];
+
+/** Narrow an untrusted string (a stored row, a request body) to a supported channel. */
+export function isCalendarProvider(value: unknown): value is CalendarFeedProvider {
+  return CALENDAR_CHANNELS.some((c) => c.provider === value);
+}
 
 export function calendarChannel(provider: CalendarFeedProvider): CalendarChannelDefinition {
   const found = CALENDAR_CHANNELS.find((c) => c.provider === provider);
@@ -87,11 +82,7 @@ export function connectableCalendarProviders(): CalendarFeedProvider[] {
   return CALENDAR_CHANNELS.filter((c) => c.enabledForNewConnections).map((c) => c.provider);
 }
 
-export function hostMatchesChannelSuffix(
-  host: string,
-  suffixes: readonly string[] | null
-): boolean {
-  if (!suffixes) return true;
+export function hostMatchesChannelSuffix(host: string, suffixes: readonly string[]): boolean {
   const h = host.toLowerCase();
   return suffixes.some((s) => h === s || h.endsWith('.' + s));
 }

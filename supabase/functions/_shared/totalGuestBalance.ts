@@ -3,7 +3,7 @@
  * booking_rate − down_payment + security_deposit
  * + (pet_fee when has_pets) + guest_additional_fee.
  *
- * **OTA prepaid (Airbnb, Agoda, Booking.com, Vrbo):** stay rate, down payment, and security
+ * **OTA prepaid (Airbnb, Agoda, Booking.com):** stay rate, down payment, and security
  * deposit are excluded — only pet fee and additional guest fees count toward guest balance
  * settlement.
  *

@@ -200,7 +200,7 @@ Deno.test('Airbnb source implies pricing permission for zeroed deposit fields', 
 });
 
 Deno.test('every OTA-prepaid source implies the zeroed deposit columns, Direct does not', () => {
-  for (const source of ['Agoda', 'Booking.com', 'booking_com', 'Vrbo']) {
+  for (const source of ['Agoda', 'Booking.com', 'booking_com']) {
     assertEquals(impliedBookingPatchColumns({ booking_source: source }).sort(), [
       'down_payment',
       'security_deposit',

@@ -322,10 +322,12 @@ export function ChannelSyncDialog({
     setSelected(provider);
   };
 
+  const [confirmBack, setConfirmBack] = useState(false);
   const handleBack = () => {
+    // A typed link is an unsaved draft: leaving the setup view asks first, same as closing.
     if (icsUrl.trim()) {
-      // Leaving the setup view drops the typed link, same rule as closing.
-      resetAddForm();
+      setConfirmBack(true);
+      return;
     }
     setSelected(null);
   };
@@ -607,6 +609,11 @@ export function ChannelSyncDialog({
                               aria-label={`Create bookings from ${name}`}
                             />
                           </div>
+                          {copy.createBookingsNote ? (
+                            <p className="text-muted-foreground text-xs">
+                              {copy.createBookingsNote}
+                            </p>
+                          ) : null}
                         </div>
                         {!readOnly ? (
                           <div className="flex shrink-0 items-center gap-0.5">
@@ -812,6 +819,16 @@ export function ChannelSyncDialog({
       </ResponsiveModal>
 
       <UnsavedChangesDialog {...guarded.dialogProps} />
+      <UnsavedChangesDialog
+        open={confirmBack}
+        action="leave"
+        onKeepEditing={() => setConfirmBack(false)}
+        onDiscard={() => {
+          resetAddForm();
+          setConfirmBack(false);
+          setSelected(null);
+        }}
+      />
 
       <AlertDialog
         open={!!pendingRemove}

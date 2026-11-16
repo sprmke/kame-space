@@ -1,7 +1,7 @@
 import { isOtaPrepaidSource } from './bookingChannel.ts';
 import { manilaTodayYmd, normalizeBookingDateToYmd } from './calendarAvailabilityManila.ts';
 
-/** OTA-prepaid stay (Airbnb, Agoda, Booking.com, Vrbo) with no security deposit to refund. */
+/** OTA-prepaid stay (Airbnb, Agoda, Booking.com) with no security deposit to refund. */
 export function isOtaZeroSdBooking(row: Record<string, unknown>): boolean {
   if (!isOtaPrepaidSource(row.booking_source)) return false;
   const sd = row.security_deposit != null ? Number(row.security_deposit) : 1500;

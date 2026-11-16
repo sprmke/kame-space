@@ -24,13 +24,6 @@ export interface CalendarRolloutEnv {
   betaOrgIds?: string | null;
 }
 
-/** Providers the rollout env may ever enable. `other` needs resolved-address pinning first. */
-const ROLLOUT_ELIGIBLE: ReadonlySet<CalendarFeedProvider> = new Set([
-  'agoda',
-  'booking_com',
-  'vrbo',
-]);
-
 function splitList(raw: string | null | undefined): string[] {
   return (raw ?? '')
     .split(',')
@@ -61,9 +54,7 @@ export function connectableProvidersFor(
   const extra = inBeta
     ? CALENDAR_CHANNELS.filter(
         (c) =>
-          !c.enabledForNewConnections &&
-          ROLLOUT_ELIGIBLE.has(c.provider) &&
-          requested.has(c.provider)
+          !c.enabledForNewConnections && requested.has(c.provider)
       ).map((c) => c.provider)
     : [];
 
