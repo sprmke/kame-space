@@ -44,7 +44,7 @@ test.describe('parking permissions @ci', () => {
     await installParkingFlowMocks(page, state);
 
     await page.goto(parkingFlowPaths.hostPricing);
-    await expect(page.getByRole('heading', { name: 'Pricing' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Pricing & availability' })).toBeVisible();
     await expect(page.getByLabel(/weekday/i).first()).toBeVisible();
   });
 });

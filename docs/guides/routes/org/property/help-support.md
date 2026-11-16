@@ -15,13 +15,13 @@ Announcements moved to dedicated sidebar route: [Announcements](./announcements.
 
 ## Progress overview
 
-| Section | E2E | Validation | Docs | Notes                                                       |
-| ------- | --- | ---------- | ---- | ----------------------------------------------------------- |
-| FAQs    | Yes | N/A        | Yes  | Up to ten common property FAQs + search and category browse |
-| Guides  | Yes | N/A        | Yes  | Topic tiles, then articles for the chosen topic             |
-| Tickets | Yes | Yes        | Yes  | Fill-height inbox: 400px list, docked composer              |
-| Ask AI  | Yes | N/A        | Yes  | Opens the existing assistant panel, no new UI               |
-| App     | No  | N/A        | Yes  | App version, Check for updates, Install app entry           |
+| Section | E2E | Validation | Docs | Notes                                                           |
+| ------- | --- | ---------- | ---- | --------------------------------------------------------------- |
+| FAQs    | Yes | N/A        | Yes  | Search + category tiles (property-scoped); open a topic for Q&A |
+| Guides  | Yes | N/A        | Yes  | Topic tiles, then articles for the chosen topic                 |
+| Tickets | Yes | Yes        | Yes  | Fill-height inbox: 400px list, docked composer                  |
+| Ask AI  | Yes | N/A        | Yes  | Opens the existing assistant panel, no new UI                   |
+| App     | No  | N/A        | Yes  | App version, Check for updates, Install app entry               |
 
 ## Overview
 

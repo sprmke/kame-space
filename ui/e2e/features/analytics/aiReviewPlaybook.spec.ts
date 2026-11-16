@@ -35,7 +35,7 @@ test.describe('@ci analytics AI review', () => {
     await installAnalyticsAiReviewMocks(page);
     await openAiReviewTab(page);
 
-    const cta = page.getByRole('link', { name: 'Go to Pricing' }).first();
+    const cta = page.getByRole('link', { name: 'Go to Pricing & availability' }).first();
     await expect(cta).toBeVisible();
     await expect(cta).toHaveAttribute('href', analyticsPaths.pricing);
     await expect(page.getByRole('link', { name: 'Go there' })).toHaveCount(0);

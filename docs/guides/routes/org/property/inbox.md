@@ -53,8 +53,8 @@ This is where you read and reply to guest messages for this property: website ch
   A: New messages normally show up within seconds. If you are on a team member account for this property, live updates are not available to your role, so the list refreshes about once a minute while the tab is open. It also refreshes as soon as you come back to the tab. The organization owner and organization admins get live updates.
 - Q: What is the support follow-up toggle?
   A: If a guest messaged within the last 7 days but the normal 24-hour reply window has already closed, the composer can show a support follow-up toggle. Turn it on only for non-promotional follow-ups; it sends with Meta's `HUMAN_AGENT` tag.
-- Q: Why does an Instagram chat say Guest?
-  A: We load the sender’s Instagram username from Meta. Open the thread once (or wait for their next message) if an older conversation still shows Guest.
+- Q: Why does a Facebook or Instagram chat say Guest?
+  A: The name comes from Meta (webhook sender, profile, or the Page conversation list). Open the thread once, or wait for their next message, if an older conversation still shows Guest.
 - Q: What does Disconnect do?
   A: Disconnect removes the Meta connection and deletes synced Facebook/Instagram conversations from this inbox. You can reconnect again to view and load conversations.
 - Q: What should I put in **Tone & rules** under Manage AI response?

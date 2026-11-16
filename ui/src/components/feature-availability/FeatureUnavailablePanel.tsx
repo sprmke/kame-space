@@ -1,3 +1,4 @@
+import { BrandEmptyState } from '@/components/branding/BrandEmptyState';
 import { FeatureAvailabilityReasonIcon } from '@/components/feature-availability/FeatureAvailabilityReasonIcon';
 import { featureAvailabilityReasonIcon } from '@/lib/featureAvailability/featureAvailabilityCopy';
 import type { FeatureAvailabilityTone } from '@/lib/featureAvailability/featureAvailabilityCopy';
@@ -26,36 +27,43 @@ export function FeatureUnavailablePanel({
   const iconName = featureAvailabilityReasonIcon(reason);
   const isAmber = tone === 'amber';
 
+  if (!compact) {
+    return (
+      <div role="status" className={className}>
+        <BrandEmptyState
+          markSize="md"
+          title={label}
+          description={message}
+          className="py-8 sm:py-10"
+        >
+          {expectedBackLabel ? (
+            <p className="text-muted-foreground text-sm">{expectedBackLabel}</p>
+          ) : null}
+        </BrandEmptyState>
+      </div>
+    );
+  }
+
   return (
     <div
       role="status"
-      className={cn(
-        'flex flex-col items-center text-center',
-        compact ? 'gap-2 px-2 py-3' : 'gap-3 px-4 py-8 sm:py-10',
-        className
-      )}
+      className={cn('flex flex-col items-center gap-2 px-2 py-3 text-center', className)}
     >
       <div
         className={cn(
-          'flex items-center justify-center rounded-full',
-          compact ? 'h-10 w-10' : 'h-12 w-12',
+          'flex h-10 w-10 items-center justify-center rounded-full',
           isAmber
             ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
             : 'bg-muted text-muted-foreground'
         )}
       >
-        <FeatureAvailabilityReasonIcon
-          name={iconName}
-          className={compact ? 'h-5 w-5' : 'h-6 w-6'}
-        />
+        <FeatureAvailabilityReasonIcon name={iconName} className="h-5 w-5" />
       </div>
       <div className="max-w-md space-y-1">
-        <p className={cn('font-semibold', compact ? 'text-sm' : 'text-base')}>{label}</p>
-        <p className={cn('text-muted-foreground', compact ? 'text-xs' : 'text-sm')}>{message}</p>
+        <p className="text-sm font-semibold">{label}</p>
+        <p className="text-muted-foreground text-xs">{message}</p>
         {expectedBackLabel ? (
-          <p className={cn('text-muted-foreground', compact ? 'text-xs' : 'text-sm')}>
-            {expectedBackLabel}
-          </p>
+          <p className="text-muted-foreground text-xs">{expectedBackLabel}</p>
         ) : null}
       </div>
     </div>

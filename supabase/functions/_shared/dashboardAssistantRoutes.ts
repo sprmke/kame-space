@@ -6,6 +6,11 @@
  * Docs: docs/workflow/in-progress/ai-chat-mode.md (Phase 5) + docs/architecture/ai-dashboard-assistant.md.
  */
 
+import {
+  ADMIN_MODULE_INBOX_LABEL,
+  ADMIN_MODULE_PRICING_LABEL,
+} from './adminModuleLabels.ts';
+
 export type AssistantRouteScope = 'org' | 'property' | 'parking';
 
 export type AssistantRouteDef = {
@@ -115,7 +120,7 @@ export const ASSISTANT_ROUTES = {
   'property.pricing': {
     scope: 'property',
     path: 'pricing',
-    label: 'Pricing',
+    label: ADMIN_MODULE_PRICING_LABEL,
     permission: 'pricing:view',
   },
   'property.analytics': {
@@ -131,7 +136,12 @@ export const ASSISTANT_ROUTES = {
     label: 'Marketing',
     permission: 'marketing:view',
   },
-  'property.inbox': { scope: 'property', path: 'inbox', label: 'Inbox', permission: 'inbox:view' },
+  'property.inbox': {
+    scope: 'property',
+    path: 'inbox',
+    label: ADMIN_MODULE_INBOX_LABEL,
+    permission: 'inbox:view',
+  },
   'property.reviews': {
     scope: 'property',
     path: 'reviews',
@@ -199,11 +209,16 @@ export const ASSISTANT_ROUTES = {
   'parking.pricing': {
     scope: 'parking',
     path: 'pricing',
-    label: 'Pricing',
+    label: ADMIN_MODULE_PRICING_LABEL,
     permission: 'pricing:view',
   },
   'parking.team': { scope: 'parking', path: 'team', label: 'Team', permission: 'team:view' },
-  'parking.inbox': { scope: 'parking', path: 'inbox', label: 'Inbox', permission: 'inbox:view' },
+  'parking.inbox': {
+    scope: 'parking',
+    path: 'inbox',
+    label: ADMIN_MODULE_INBOX_LABEL,
+    permission: 'inbox:view',
+  },
   'parking.notifications': {
     scope: 'parking',
     path: 'notifications',

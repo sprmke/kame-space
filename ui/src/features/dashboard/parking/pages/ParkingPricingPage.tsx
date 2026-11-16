@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { format, eachDayOfInterval, isSameDay, isBefore, startOfToday } from 'date-fns';
 
+import { ADMIN_MODULE_PRICING_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
 import { ParkingDirectLinkCard } from '@/features/dashboard/parking/components/ParkingDirectLinkCard';
 import { ParkingPricingRatesFormCard } from '@/features/dashboard/parking/components/ParkingPricingRatesFormCard';
@@ -352,7 +353,7 @@ export function ParkingPricingPage() {
   if (isLoading && !hydratedRef.current) {
     return (
       <AdminMobilePage
-        title="Pricing"
+        title={ADMIN_MODULE_PRICING_LABEL}
         subtitle="Manage pricing and availability."
         titleId="parking-pricing-heading"
         titleHint={titleHint}
@@ -365,7 +366,7 @@ export function ParkingPricingPage() {
   if (isError) {
     return (
       <AdminMobilePage
-        title="Pricing"
+        title={ADMIN_MODULE_PRICING_LABEL}
         subtitle="Manage pricing and availability."
         titleId="parking-pricing-heading"
         titleHint={titleHint}
@@ -386,7 +387,7 @@ export function ParkingPricingPage() {
   return (
     <>
       <AdminMobilePage
-        title="Pricing"
+        title={ADMIN_MODULE_PRICING_LABEL}
         subtitle="Manage pricing and availability."
         titleId="parking-pricing-heading"
         titleHint={titleHint}

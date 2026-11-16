@@ -70,10 +70,10 @@ describe('copyPropertySettingsGroups', () => {
     const sections = copyPropertySettingsGroupsByCategory(COPY_PROPERTY_SETTINGS_GROUPS);
     expect(sections.map((s) => s.label)).toEqual([
       'Settings',
-      'Pricing',
+      'Pricing & availability',
       'Team',
       'Marketing',
-      'Inbox',
+      'Messages',
       'Notifications',
       'Templates',
       'Public Pages',

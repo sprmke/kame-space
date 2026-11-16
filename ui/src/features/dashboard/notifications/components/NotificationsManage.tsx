@@ -5,6 +5,7 @@ import { Settings2 } from 'lucide-react';
 import { NotificationPreferencesCard } from '@/features/dashboard/notifications/components/NotificationPreferencesCard';
 import {
   ChannelCardsSkeleton,
+  ChannelSwitchSkeleton,
   DevicePushPausedPanel,
   TelegramDeliverySwitchRow,
   TelegramPausedPanel,
@@ -147,25 +148,33 @@ export function NotificationsManageDialog({
               </TabsList>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 px-4 sm:px-5">
-              <TabsContent value="activity" className="mt-0 space-y-5 focus-visible:outline-none">
-                <div className="space-y-3">
-                  <PushNotificationsRow push={push} />
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2 sm:px-5">
+              <TabsContent value="activity" className="mt-0 focus-visible:outline-none">
+                {/*
+                 * One card for the whole Activity push block: master switch,
+                 * preferences and quiet hours share a border so the sheet does
+                 * not look like a card stacked on a flat list.
+                 */}
+                {!push.ready ? (
+                  <ChannelSwitchSkeleton />
+                ) : (
+                  <div className="border-border bg-card overflow-hidden rounded-xl border">
+                    <PushNotificationsRow push={push} embedded />
 
-                  {/*
-                   * Preferences only matter while this device is opted in. An
-                   * unsupported device gets no panel either: the row above already
-                   * explains it and there is nothing to configure.
-                   */}
-                  {!push.ready ? null : push.subscribed ? (
-                    <>
-                      <NotificationPreferencesCard />
-                      <QuietHoursCard />
-                    </>
-                  ) : push.supported ? (
-                    <DevicePushPausedPanel />
-                  ) : null}
-                </div>
+                    {push.subscribed ? (
+                      <>
+                        <div className="border-border border-t px-3 py-3 sm:px-4">
+                          <NotificationPreferencesCard />
+                        </div>
+                        <div className="border-border border-t px-3 py-3 sm:px-4">
+                          <QuietHoursCard />
+                        </div>
+                      </>
+                    ) : push.supported ? (
+                      <DevicePushPausedPanel className="border-border rounded-none border-0 border-t bg-transparent" />
+                    ) : null}
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="telegram" className="mt-0 focus-visible:outline-none">
@@ -189,7 +198,7 @@ export function NotificationsManageDialog({
             </div>
           </Tabs>
 
-          <ResponsiveModalFooter className="shrink-0 px-4 sm:px-5 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <ResponsiveModalFooter className="shrink-0 px-4 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
             <Button
               type="button"
               className="w-full sm:w-auto"

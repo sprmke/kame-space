@@ -37,8 +37,10 @@ export function AdminMultiSelectFilter<T extends string>({
   triggerWidthClassName = 'sm:w-[9.5rem]',
   panelScrollable = false,
   emptyMessage,
-  panelAlign = 'right',
-  panelWidthClassName = 'w-[min(calc(100vw-24px),12rem)]',
+  /** Left-align under the trigger so the panel grows right, not over the sidebar. */
+  panelAlign = 'left',
+  /** At least as wide as the trigger; grow for long labels. */
+  panelWidthClassName = 'w-max min-w-full max-w-[min(calc(100vw-24px),18rem)]',
   toolbarExclusive = true,
 }: Props<T>) {
   const [open, setOpen] = useAdminToolbarMenuOpen(undefined, { exclusive: toolbarExclusive });

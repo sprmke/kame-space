@@ -110,6 +110,13 @@ describe('propertySettingsSectionDirty', () => {
     const draft = baseProfile({ description: 'Updated listing copy' });
     expect(propertySettingsSectionDirty('basic', draft, baseline, null, null, '')).toBe(true);
   });
+
+  it('marks search dirty when only seoTitle changes', () => {
+    const baseline = baseProfile();
+    const draft = baseProfile({ seoTitle: 'Custom listing title' });
+    expect(propertySettingsSectionDirty('search', draft, baseline, null, null, '')).toBe(true);
+    expect(propertySettingsSectionDirty('basic', draft, baseline, null, null, '')).toBe(false);
+  });
 });
 
 describe('planPropertySettingsSave', () => {
@@ -129,6 +136,26 @@ describe('planPropertySettingsSave', () => {
 
     expect(plan.hasSavableWork).toBe(true);
     expect(plan.profileSections).toContain('basic');
+    expect(plan.blockedSections).toEqual([]);
+  });
+
+  it('enables save when only search preview is dirty', () => {
+    const baseline = baseProfile();
+    const draft = baseProfile({ seoDescription: 'Custom meta description for search.' });
+    const operational = baseOperational();
+
+    const plan = planPropertySettingsSave({
+      profileDraft: draft,
+      profileBaseline: baseline,
+      operationalDraft: operational,
+      operationalBaseline: operational,
+      completion: emptyCompletion(),
+      inheritedBrandColor: '',
+    });
+
+    expect(plan.hasSavableWork).toBe(true);
+    expect(plan.profileSections).toContain('search');
+    expect(plan.profileSections).not.toContain('basic');
     expect(plan.blockedSections).toEqual([]);
   });
 
@@ -193,9 +220,9 @@ describe('cleaning buffer section move', () => {
     const draft = baseProfile({ cleaningBufferMinutes: 120 });
     const operational = baseOperational();
 
-    expect(propertySettingsSectionDirty('details', draft, baseline, operational, operational, '')).toBe(
-      true
-    );
+    expect(
+      propertySettingsSectionDirty('details', draft, baseline, operational, operational, '')
+    ).toBe(true);
     expect(
       propertySettingsSectionDirty('guest-form', draft, baseline, operational, operational, '')
     ).toBe(false);

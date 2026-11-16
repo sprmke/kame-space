@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { toast } from 'sonner';
 
+import { ADMIN_MODULE_INBOX_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import { useAdminLayoutFillMain } from '@/features/dashboard/bookings/lib/adminLayoutFillMain';
 import { InboxConversationView } from '@/features/dashboard/inbox/components/InboxConversationView';
 import { InboxHowItWorksSheet } from '@/features/dashboard/inbox/components/InboxHowItWorksSheet';
@@ -378,7 +379,7 @@ export function InboxPage({
 
   return (
     <AdminMobilePage
-      title="Guest Inbox"
+      title={ADMIN_MODULE_INBOX_LABEL}
       subtitle="View and reply to guest messages from connected channels."
       titleId="inbox-heading"
       heroTrailing={

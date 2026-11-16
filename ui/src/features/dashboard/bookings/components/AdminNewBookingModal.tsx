@@ -164,8 +164,9 @@ export function AdminNewBookingModal({
           />
         ) : open ? (
           <GuestForm
-            key={resetKey}
+            key={`${propertySlug ?? 'none'}-${resetKey}`}
             embed={{
+              propertySlug,
               compactChrome: true,
               skipAuthGate: true,
               onNavChange: setEmbedNav,

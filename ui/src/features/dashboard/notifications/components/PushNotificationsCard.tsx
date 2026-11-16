@@ -15,6 +15,8 @@ const SUBSCRIBED_DESCRIPTION = 'Booking, message and workflow alerts arrive on t
 type RowProps = {
   /** Owned by the Manage sheet so it can also decide what to show underneath. */
   push: PushNotificationsState;
+  /** Nest inside a parent card (Manage Activity block). */
+  embedded?: boolean;
   /** Surface overrides, e.g. `bg-card` when the row sits on a page content area. */
   className?: string;
 };
@@ -28,7 +30,7 @@ type RowProps = {
  * and skeletons until the browser state is read (the first render would
  * otherwise claim push is unsupported).
  */
-export function PushNotificationsRow({ push, className }: RowProps) {
+export function PushNotificationsRow({ push, embedded = false, className }: RowProps) {
   const {
     supported,
     reason,
@@ -42,7 +44,7 @@ export function PushNotificationsRow({ push, className }: RowProps) {
     disable,
   } = push;
 
-  if (!ready) return <ChannelSwitchSkeleton />;
+  if (!ready) return <ChannelSwitchSkeleton embedded={embedded} />;
 
   const blocked = permission === 'denied';
 
@@ -79,6 +81,7 @@ export function PushNotificationsRow({ push, className }: RowProps) {
       title="Push notifications"
       description={description}
       checked={subscribed}
+      embedded={embedded}
       descriptionClassName={descriptionClassName}
       className={className}
       disabled={busy || !supported || needsInstallFirst || blocked}
