@@ -1,16 +1,25 @@
-import { useRef, useState, type FormEvent, type MouseEvent, type ReactElement } from 'react';
+import {
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type MouseEvent,
+  type ReactElement,
+} from 'react';
 
 import {
   AlertTriangle,
+  CalendarOff,
+  CalendarPlus,
   CalendarRange,
   Check,
   ChevronLeft,
   ChevronRight,
   Copy,
   Loader2,
-  Plus,
   RefreshCw,
   Trash2,
+  XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -31,9 +40,12 @@ import {
 import {
   CALENDAR_PROVIDER_LABELS,
   validateChannelCalendarUrl,
-  type CalendarSyncEvent,
   type CalendarSyncFeed,
 } from '@/features/dashboard/pricing/lib/calendarSyncApi';
+import {
+  buildCalendarSyncActivityRows,
+  type CalendarSyncActivityTone,
+} from '@/features/dashboard/pricing/lib/calendarSyncActivity';
 import {
   buildChannelRows,
   CHANNEL_COPY,
@@ -60,7 +72,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import {
   ResponsiveModal,
@@ -76,14 +87,15 @@ import { useFeatureAvailability } from '@/lib/featureAvailability/useFeatureAvai
 import { cn } from '@/lib/utils';
 import { formatRelative } from '@/utils/format/bookingDisplay';
 
-const HEALTH_TONE: Record<
-  CalendarSyncFeed['health'],
-  { label: string; variant: 'secondary' | 'outline' | 'destructive' }
-> = {
-  ok: { label: 'Synced', variant: 'secondary' },
-  warning: { label: 'Retrying', variant: 'outline' },
-  error: { label: 'Needs fix', variant: 'destructive' },
-};
+function feedHealthBadge(feed: CalendarSyncFeed): {
+  label: string;
+  variant: 'secondary' | 'outline' | 'destructive';
+} {
+  if (feed.health === 'error') return { label: 'Needs fix', variant: 'destructive' };
+  if (feed.health === 'warning') return { label: 'Retrying', variant: 'outline' };
+  if (feed.lastSuccessAt) return { label: 'Synced', variant: 'secondary' };
+  return { label: 'Connected', variant: 'outline' };
+}
 
 function ChannelSyncBodySkeleton() {
   return (
@@ -135,36 +147,24 @@ function CopyButton({ value, label }: { value: string; label: string }) {
   );
 }
 
-function eventLine(e: CalendarSyncEvent, channel: string | null): string {
-  const prefix = channel ? `${channel}: ` : '';
-  return prefix + eventText(e);
-}
+const ACTIVITY_TONE_CLASS: Record<CalendarSyncActivityTone, string> = {
+  neutral: 'bg-muted text-muted-foreground',
+  success: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+  warning: 'bg-amber-500/10 text-amber-800 dark:text-amber-400',
+  danger: 'bg-destructive/10 text-destructive',
+};
 
-function eventText(e: CalendarSyncEvent): string {
-  const range = e.start_date && e.end_date ? ` ${e.start_date} → ${e.end_date}` : '';
-  switch (e.action) {
-    case 'block_created':
-      return `Imported reservation${range}`;
-    case 'block_updated':
-      return `Reservation dates changed${range}`;
-    case 'block_removed':
-      return `Reservation removed${range}`;
-    case 'booking_created':
-      return `Booking added${range}`;
-    case 'booking_linked':
-      return `Existing booking linked${range}`;
-    case 'booking_rescheduled':
-      return `Booking dates changed${range}`;
-    case 'booking_cancelled':
-      return `Booking cancelled${range}`;
-    case 'conflict_detected':
-      return `Conflict: overlaps another booking${range}`;
-    case 'error':
-      return `Sync error: ${String(e.detail?.reason ?? 'unknown')}`;
-    case 'skipped':
-      return `Skipped: ${String(e.detail?.reason ?? 'no change')}`;
+function ActivityToneIcon({ tone }: { tone: CalendarSyncActivityTone }) {
+  const className = 'size-3.5 shrink-0';
+  switch (tone) {
+    case 'success':
+      return <CalendarPlus className={className} aria-hidden />;
+    case 'warning':
+      return <CalendarOff className={className} aria-hidden />;
+    case 'danger':
+      return <XCircle className={className} aria-hidden />;
     default:
-      return `${e.action}${range}`;
+      return <RefreshCw className={className} aria-hidden />;
   }
 }
 
@@ -212,11 +212,9 @@ export function ChannelSyncDialog({
   const syncNow = useSyncFeedNow();
 
   const [selected, setSelected] = useState<DialogChannel | null>(null);
-  const [adding, setAdding] = useState(false);
   const [icsUrl, setIcsUrl] = useState('');
   const [urlTouched, setUrlTouched] = useState(false);
   const [pendingRemove, setPendingRemove] = useState<CalendarSyncFeed | null>(null);
-  const [activityOpen, setActivityOpen] = useState(false);
   /** Nested AlertDialog dismiss can bubble and close the parent modal — suppress briefly. */
   const suppressParentCloseRef = useRef(false);
   const nestedConfirmOpen = !!pendingRemove;
@@ -224,7 +222,10 @@ export function ChannelSyncDialog({
   const data = settings.data;
   const feeds = data?.feeds ?? [];
   const exportEnabled = data?.export.enabled ?? false;
-  const recentEvents = data?.recentEvents ?? [];
+  const activityRows = useMemo(
+    () => buildCalendarSyncActivityRows(data?.recentEvents ?? [], formatRelative, 5),
+    [data?.recentEvents]
+  );
   const rows = buildChannelRows(data, {
     airbnb: !airbnbAvailability.available && !airbnbAvailability.isLoading,
     agoda: !agodaAvailability.available && !agodaAvailability.isLoading,
@@ -236,7 +237,7 @@ export function ChannelSyncDialog({
   const copy = selected ? CHANNEL_COPY[selected] : null;
   const exportUrl = selected ? (data?.export.urls?.[selected] ?? '') : '';
   const channelFeeds = row?.feeds ?? [];
-  const showAddForm = !readOnly && !!row?.connectable && (adding || channelFeeds.length === 0);
+  const showAddForm = !readOnly && !!row?.connectable && channelFeeds.length === 0;
   const validationError = selected ? validateChannelCalendarUrl(selected, icsUrl) : null;
   /** Show errors only after the host types/changes the field (not on view switch / blur). */
   const urlError = urlTouched ? validationError : null;
@@ -289,7 +290,6 @@ export function ChannelSyncDialog({
   const resetAddForm = () => {
     setIcsUrl('');
     setUrlTouched(false);
-    setAdding(false);
   };
 
   const closeNestedConfirm = (close: () => void) => {
@@ -304,7 +304,6 @@ export function ChannelSyncDialog({
     if (!next) {
       resetAddForm();
       setSelected(null);
-      setActivityOpen(false);
     }
     onOpenChange(next);
   };
@@ -363,14 +362,7 @@ export function ChannelSyncDialog({
 
   const addForm =
     copy && selected ? (
-      <form
-        className={cn(
-          'space-y-3',
-          channelFeeds.length > 0 && 'border-border rounded-xl border p-3'
-        )}
-        onSubmit={handleAdd}
-        noValidate
-      >
+      <form className="space-y-3" onSubmit={handleAdd} noValidate>
         <div className="space-y-1.5">
           <FieldLabel
             htmlFor="channel-url"
@@ -398,18 +390,7 @@ export function ChannelSyncDialog({
             </p>
           ) : null}
         </div>
-        <div className="flex gap-2 pt-1">
-          {channelFeeds.length > 0 ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="min-h-[44px] flex-1"
-              onClick={resetAddForm}
-              disabled={addFeed.isPending}
-            >
-              Cancel
-            </Button>
-          ) : null}
+        <div className="pt-1">
           {wrapImportAction(
             <Button type="submit" className="min-h-[44px] w-full" disabled={!canConnect}>
               {addFeed.isPending ? <Loader2 className="size-4 animate-spin" /> : 'Connect'}
@@ -423,27 +404,46 @@ export function ChannelSyncDialog({
     feed.label || CALENDAR_PROVIDER_LABELS[feed.provider];
 
   const activityList = (
-    <Collapsible open={activityOpen} onOpenChange={setActivityOpen}>
-      <CollapsibleTrigger className="text-muted-foreground hover:text-foreground flex min-h-[44px] w-full items-center justify-between text-left text-sm font-medium">
-        Recent activity
-        <span className="text-xs tabular-nums">{recentEvents.length}</span>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <ul className="space-y-1.5 pb-1">
-          {recentEvents.slice(0, 8).map((e) => {
-            const feed = feeds.find((f) => f.id === e.feed_id);
-            return (
-              <li key={e.id} className="text-muted-foreground flex justify-between gap-3 text-xs">
-                <span className="truncate">
-                  {eventLine(e, feed ? CALENDAR_PROVIDER_LABELS[feed.provider] : null)}
-                </span>
-                <span className="shrink-0">{formatRelative(e.created_at)}</span>
-              </li>
-            );
-          })}
-        </ul>
-      </CollapsibleContent>
-    </Collapsible>
+    <section className="space-y-2" aria-label="Recent activity">
+      <h3 className="text-foreground text-sm font-medium">Recent activity</h3>
+      <ul className="divide-border divide-y overflow-hidden rounded-xl border">
+        {activityRows.map((row) => {
+          const event = (data?.recentEvents ?? []).find((e) => e.id === row.id);
+          const feed = feeds.find((f) => f.id === event?.feed_id);
+          const channel = feed ? CALENDAR_PROVIDER_LABELS[feed.provider] : null;
+          return (
+            <li key={row.id} className="flex items-start gap-2.5 px-3 py-2.5">
+              <span
+                className={cn(
+                  'mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full',
+                  ACTIVITY_TONE_CLASS[row.tone]
+                )}
+                aria-hidden
+              >
+                <ActivityToneIcon tone={row.tone} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-foreground text-sm leading-snug">
+                  {channel ? `${channel}: ` : ''}
+                  {row.title}
+                </p>
+                {row.rangeLabel ? (
+                  <p className="text-muted-foreground mt-0.5 text-xs leading-snug">
+                    {row.rangeLabel}
+                  </p>
+                ) : null}
+              </div>
+              <time
+                dateTime={row.createdAt}
+                className="text-muted-foreground shrink-0 pt-0.5 text-[11px] tabular-nums"
+              >
+                {row.relativeAt}
+              </time>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 
   const channelList = (
@@ -495,7 +495,7 @@ export function ChannelSyncDialog({
           </li>
         ))}
       </ul>
-      {recentEvents.length > 0 ? activityList : null}
+      {feeds.length > 0 && activityRows.length > 0 ? activityList : null}
     </div>
   );
 
@@ -557,119 +557,112 @@ export function ChannelSyncDialog({
           </h4>
           <p className="text-muted-foreground text-xs">{copy.importStep}</p>
 
-          {channelFeeds.length === 0 && readOnly ? (
-            <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <div className="bg-muted/80 flex size-12 items-center justify-center rounded-full">
-                <CalendarRange className="text-muted-foreground size-5" aria-hidden />
+          {channelFeeds.length === 0 ? (
+            <div className="space-y-4">
+              <div className="flex flex-col items-center gap-3 pt-2 text-center">
+                <div className="bg-muted/80 flex size-12 items-center justify-center rounded-full">
+                  <CalendarRange className="text-muted-foreground size-5" aria-hidden />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-foreground text-sm font-medium">
+                    {readOnly
+                      ? `No ${row.label} calendar`
+                      : `Pull ${row.label} dates into this calendar`}
+                  </p>
+                  <p className="text-muted-foreground mx-auto max-w-[22rem] text-xs leading-relaxed">
+                    {readOnly
+                      ? `No ${row.label} calendar is connected for this property.`
+                      : `Connect once. ${row.label} stays block here within about 30 minutes.`}
+                  </p>
+                </div>
               </div>
-              <p className="text-foreground text-sm font-medium">No {row.label} calendar</p>
-              <p className="text-muted-foreground max-w-[18rem] text-xs">
-                No {row.label} calendar is connected for this property.
-              </p>
+              {showAddForm ? addForm : null}
             </div>
           ) : (
-            <>
-              {channelFeeds.length > 0 ? (
-                <ul className="divide-border divide-y overflow-hidden rounded-xl border">
-                  {channelFeeds.map((feed) => {
-                    const tone = HEALTH_TONE[feed.health];
-                    const name = feedName(feed);
-                    return (
-                      <li key={feed.id} className="flex items-start gap-2 p-3">
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-medium">{name}</span>
-                            <Badge variant={tone.variant}>{tone.label}</Badge>
-                          </div>
-                          <p className="text-muted-foreground text-xs">
-                            {feed.lastSuccessAt
-                              ? `Synced ${formatRelative(feed.lastSuccessAt)}`
-                              : 'Not synced yet'}
-                            {feed.health === 'error' && feed.lastError
-                              ? ` · ${feed.lastError}`
-                              : ''}
-                          </p>
-                          <div className="flex items-center justify-between gap-3 pt-1.5">
-                            <span className="text-muted-foreground text-xs">Create bookings</span>
-                            <Switch
-                              checked={feed.createBookings}
-                              disabled={
-                                readOnly ||
-                                (setCreateBookings.isPending &&
-                                  setCreateBookings.variables?.feedId === feed.id)
-                              }
-                              onCheckedChange={(checked) => {
-                                if (!requireCalendarSyncPlan()) return;
-                                setCreateBookings.mutate({
-                                  feedId: feed.id,
-                                  enabled: checked,
-                                  provider: feed.provider,
-                                });
-                              }}
-                              aria-label={`Create bookings from ${name}`}
-                            />
-                          </div>
-                          {copy.createBookingsNote ? (
-                            <p className="text-muted-foreground text-xs">
-                              {copy.createBookingsNote}
-                            </p>
-                          ) : null}
+            <ul className="space-y-3">
+              {channelFeeds.map((feed) => {
+                const badge = feedHealthBadge(feed);
+                const name = feedName(feed);
+                const statusLine = feed.lastSuccessAt
+                  ? `Synced ${formatRelative(feed.lastSuccessAt)}`
+                  : 'Waiting for first sync';
+                return (
+                  <li key={feed.id} className="overflow-hidden rounded-xl border">
+                    <div className="flex items-start gap-2 px-3 py-3">
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-medium">{name}</span>
+                          <Badge variant={badge.variant}>{badge.label}</Badge>
                         </div>
-                        {!readOnly ? (
-                          <div className="flex shrink-0 items-center gap-0.5">
-                            {wrapImportAction(
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="size-11"
-                                disabled={syncNow.isPending && syncNow.variables === feed.id}
-                                onClick={() => syncNow.mutate(feed.id)}
-                                aria-label={`Sync ${name} now`}
-                              >
-                                {syncNow.isPending && syncNow.variables === feed.id ? (
-                                  <Loader2 className="size-4 animate-spin" />
-                                ) : (
-                                  <RefreshCw className="size-4" />
-                                )}
-                              </Button>
-                            )}
-                            {wrapImportAction(
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="text-muted-foreground hover:text-destructive size-11"
-                                onClick={() => setPendingRemove(feed)}
-                                aria-label={`Remove ${name}`}
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                            )}
-                          </div>
-                        ) : null}
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : null}
-
-              {showAddForm
-                ? addForm
-                : !readOnly && row.connectable
-                  ? wrapImportAction(
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="min-h-[44px] w-full gap-1.5"
-                        onClick={() => setAdding(true)}
-                      >
-                        <Plus className="size-4" aria-hidden />
-                        Connect another {row.label} calendar
-                      </Button>
-                    )
-                  : null}
-            </>
+                        <p className="text-muted-foreground text-xs leading-snug">
+                          {statusLine}
+                          {feed.health === 'error' && feed.lastError ? ` · ${feed.lastError}` : ''}
+                        </p>
+                      </div>
+                      {!readOnly ? (
+                        <div className="-mr-1 flex shrink-0 items-center">
+                          {wrapImportAction(
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="size-11"
+                              disabled={syncNow.isPending && syncNow.variables === feed.id}
+                              onClick={() => syncNow.mutate(feed.id)}
+                              aria-label={`Sync ${name} now`}
+                            >
+                              {syncNow.isPending && syncNow.variables === feed.id ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                <RefreshCw className="size-4" />
+                              )}
+                            </Button>
+                          )}
+                          {wrapImportAction(
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-muted-foreground hover:text-destructive size-11"
+                              onClick={() => setPendingRemove(feed)}
+                              aria-label={`Remove ${name}`}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="border-border/60 flex items-center justify-between gap-3 border-t px-3 py-2.5">
+                      <div className="min-w-0">
+                        <p className="text-foreground text-sm">Create bookings</p>
+                        <p className="text-muted-foreground mt-0.5 text-xs leading-snug">
+                          {copy.createBookingsNote ??
+                            `When on, each ${row.label} reservation becomes a Pending review booking. Dates still block either way.`}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={feed.createBookings}
+                        disabled={
+                          readOnly ||
+                          (setCreateBookings.isPending &&
+                            setCreateBookings.variables?.feedId === feed.id)
+                        }
+                        onCheckedChange={(checked) => {
+                          if (!requireCalendarSyncPlan()) return;
+                          setCreateBookings.mutate({
+                            feedId: feed.id,
+                            enabled: checked,
+                            provider: feed.provider,
+                          });
+                        }}
+                        aria-label={`Create bookings from ${name}`}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </section>
 

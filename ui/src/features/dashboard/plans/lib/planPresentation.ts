@@ -26,6 +26,7 @@ import {
   normalizePlanDiscountPercent,
 } from '@/features/dashboard/plans/lib/planPricing';
 
+import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import { formatManilaLongDate } from '@/utils/format/dates';
 
 /** Matrix section = product page / module hosts already know from the sidebar. */
@@ -51,11 +52,11 @@ export const PLAN_FEATURE_GROUP_LABELS: Record<PlanFeatureGroup, string> = {
   bookings: 'Bookings',
   finance: 'Finance',
   maintenance: 'Maintenance',
-  pricing: 'Pricing',
+  pricing: ADMIN_MODULE_LABEL.pricing,
   analytics: 'Analytics',
   team: 'Team',
   marketing: 'Marketing',
-  inbox: 'Inbox',
+  inbox: ADMIN_MODULE_LABEL.inbox,
   notifications: 'Notifications',
   templates: 'Templates',
   publicPages: 'Public pages',
@@ -426,12 +427,12 @@ export const PLAN_FEATURE_GROUP_ORDER: PlanFeatureGroup[] = [
   'maintenance',
   'pricing',
   'analytics',
-  'team',
-  'marketing',
   'inbox',
   'notifications',
   'templates',
+  'marketing',
   'publicPages',
+  'team',
   'visibility',
   'ai',
   'managed',

@@ -1,4 +1,4 @@
-import { BellRing, Check, Send } from 'lucide-react';
+import { Bell, BellRing, Check, Send } from 'lucide-react';
 
 import { NotificationMasterSwitchRow } from '@/features/dashboard/notifications/components/NotificationMasterSwitchRow';
 import {
@@ -12,9 +12,14 @@ import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 
 /** Matches the master switch rows so the layout does not move when data lands. */
-export function ChannelSwitchSkeleton() {
+export function ChannelSwitchSkeleton({ embedded = false }: { embedded?: boolean }) {
   return (
-    <div className="border-border bg-card flex items-center justify-between gap-3 rounded-xl border px-3 py-3 sm:px-4">
+    <div
+      className={cn(
+        'flex items-center justify-between gap-3 px-3 py-3 sm:px-4',
+        !embedded && 'border-border bg-card rounded-xl border'
+      )}
+    >
       <div className="flex min-w-0 items-center gap-2.5">
         <Skeleton className="size-8 shrink-0 rounded-lg" />
         <div className="min-w-0 space-y-1.5">
@@ -101,7 +106,7 @@ export function ChannelPausedPanel({
 }
 
 /** Paused copy for this device's phone push. */
-export function DevicePushPausedPanel() {
+export function DevicePushPausedPanel({ className }: { className?: string }) {
   return (
     <ChannelPausedPanel
       icon={BellRing}
@@ -112,12 +117,13 @@ export function DevicePushPausedPanel() {
         'Quiet hours in Philippine time',
         'Per device, so your phone and laptop opt in separately',
       ]}
+      className={className}
     />
   );
 }
 
 /** Paused copy for Telegram delivery. */
-export function TelegramPausedPanel() {
+export function TelegramPausedPanel({ className }: { className?: string }) {
   return (
     <ChannelPausedPanel
       icon={Send}
@@ -128,6 +134,47 @@ export function TelegramPausedPanel() {
         'One bot token shared by every module, or one per module',
         'Schedules and message templates per module',
       ]}
+      className={className}
+    />
+  );
+}
+
+/** Empty Activity feed: status first, then where related settings live. */
+export function ActivityEmptyPanel({ className }: { className?: string }) {
+  return (
+    <ChannelPausedPanel
+      icon={Bell}
+      title="No activity yet"
+      description="Booking and message events show up here when they happen."
+      items={[
+        'Unread rows stay marked until you open them',
+        'Phone push is set in Manage',
+        'Telegram sends stay on the Telegram tab',
+      ]}
+      className={className}
+    />
+  );
+}
+
+/** Empty Telegram history while delivery is on. */
+export function TelegramHistoryEmptyPanel({
+  retentionDays = 15,
+  className,
+}: {
+  retentionDays?: number;
+  className?: string;
+}) {
+  return (
+    <ChannelPausedPanel
+      icon={Send}
+      title="Nothing sent yet"
+      description={`Sent alerts from the last ${retentionDays} days show up here.`}
+      items={[
+        'Connect a module in Manage',
+        'Delivery must stay on',
+        'Failed sends show a Failed badge',
+      ]}
+      className={className}
     />
   );
 }
@@ -135,6 +182,8 @@ export function TelegramPausedPanel() {
 type TelegramSwitchProps = {
   /** Render the paused copy under the switch when delivery is off. */
   showPausedPanel?: boolean;
+  /** Nest inside a parent card (hub Telegram tab). */
+  embedded?: boolean;
   className?: string;
 };
 
@@ -144,27 +193,35 @@ type TelegramSwitchProps = {
  */
 export function TelegramDeliverySwitchRow({
   showPausedPanel = false,
+  embedded = false,
   className,
 }: TelegramSwitchProps) {
   const { data, isLoading } = useTelegramDeliveryControl();
   const update = useUpdateTelegramDeliveryControl();
 
-  if (isLoading) return <ChannelSwitchSkeleton />;
+  if (isLoading) return <ChannelSwitchSkeleton embedded={embedded} />;
 
   const enabled = data?.enabled !== false;
 
   return (
-    <div className="space-y-2">
+    <div className={cn(!embedded && showPausedPanel && !enabled && 'space-y-2')}>
       <NotificationMasterSwitchRow
         icon={Send}
         title="Telegram delivery"
         description="Turn every Telegram alert on or off at once. Your module settings stay saved."
         checked={enabled}
         disabled={update.isPending}
+        embedded={embedded}
         onCheckedChange={(next) => update.mutate(next)}
         className={className}
       />
-      {!enabled && showPausedPanel ? <TelegramPausedPanel /> : null}
+      {!enabled && showPausedPanel ? (
+        <TelegramPausedPanel
+          className={
+            embedded ? 'border-border rounded-none border-0 border-t bg-transparent' : undefined
+          }
+        />
+      ) : null}
     </div>
   );
 }

@@ -106,7 +106,7 @@ export const CONTEXT_CATALOG_GROUPS: {
   { type: 'finance_item', label: 'Finance' },
   { type: 'maintenance_item', label: 'Maintenance' },
   { type: 'pricing_date', label: 'Pricing' },
-  { type: 'inbox_conversation', label: 'Inbox' },
+  { type: 'inbox_conversation', label: 'Messages' },
   { type: 'marketing_template', label: 'Marketing' },
   { type: 'marketing_theme', label: 'Themes' },
   { type: 'review', label: 'Reviews' },

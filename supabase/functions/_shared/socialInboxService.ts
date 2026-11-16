@@ -484,7 +484,7 @@ export async function fillMissingMetaParticipantIdentity(
   const guestId = conv.external_participant_id?.trim();
   if (!guestId) return conv;
 
-  const { fetchMetaMessengerParticipantProfile, getPageAccessToken } =
+  const { getPageAccessToken, resolveMetaDmParticipantIdentity } =
     await import('./metaInboxGraph.ts');
   const sb = socialInboxDb();
   const { data: connRow } = await sb
@@ -494,14 +494,21 @@ export async function fillMissingMetaParticipantIdentity(
     .maybeSingle();
   if (!connRow?.encrypted_access_token) return conv;
 
+  const connection = connRow as SocialChannelConnectionRow;
   let token: string;
   try {
-    token = await getPageAccessToken(connRow as SocialChannelConnectionRow);
+    token = await getPageAccessToken(connection);
   } catch {
     return conv;
   }
 
-  const profile = await fetchMetaMessengerParticipantProfile(guestId, token, conv.platform);
+  const profile = await resolveMetaDmParticipantIdentity({
+    guestId,
+    pageAccessToken: token,
+    platform: conv.platform,
+    pageId: connection.meta_page_id,
+    selfIds: metaSelfAccountIds(connection),
+  });
   if (!profile.name && !profile.profilePic) return conv;
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -657,7 +664,8 @@ export async function completeOutboundMetaSend(
     .delete()
     .eq('client_message_id', row.clientMessageId)
     .like('external_message_id', 'kame:%');
-  if (deleteError) console.warn('[completeOutboundMetaSend] placeholder cleanup:', deleteError.message);
+  if (deleteError)
+    console.warn('[completeOutboundMetaSend] placeholder cleanup:', deleteError.message);
 }
 
 /** Mark a send that Meta did not accept. The thread shows "Not sent" with a Retry action. */
@@ -803,9 +811,10 @@ export async function resolveMetaHasMore(orgId: string): Promise<boolean> {
  * The chunk caller fetches the connection for the token, so reading the phase and cursor
  * from that row saves the second lookup `getMetaBackfillState` used to cost.
  */
-export function metaBackfillStateFromConnection(
-  connection: SocialChannelConnectionRow | null
-): { phase: 'messenger' | 'instagram'; nextCursor: string | null } {
+export function metaBackfillStateFromConnection(connection: SocialChannelConnectionRow | null): {
+  phase: 'messenger' | 'instagram';
+  nextCursor: string | null;
+} {
   const phase = connection?.meta_backfill_phase;
   if (phase === 'messenger' || phase === 'instagram') {
     return { phase, nextCursor: connection?.meta_backfill_cursor ?? null };

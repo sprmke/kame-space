@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   changedEssentialsFields,
+  ESSENTIALS_EDITABLE_KEYS,
   ESSENTIALS_FIELDS,
   ESSENTIALS_FIELD_KEYS,
   ESSENTIALS_GROUPS,
   guestEssentialsEqual,
+  summarizeGuestEssentials,
 } from '@/features/dashboard/guest-experience/lib/guestEssentialsFields';
 
 function blank() {
@@ -16,9 +18,11 @@ function blank() {
 }
 
 describe('essentials field catalog', () => {
-  it('lists every field exactly once across the groups', () => {
+  it('lists editable fields once across the groups and keeps quiet hours off the editor', () => {
     const grouped = ESSENTIALS_GROUPS.flatMap((group) => group.fields.map((f) => f.key));
-    expect(grouped.sort()).toEqual([...ESSENTIALS_FIELD_KEYS].sort());
+    expect(grouped.sort()).toEqual([...ESSENTIALS_EDITABLE_KEYS].sort());
+    expect(grouped).not.toContain('quietHours');
+    expect(ESSENTIALS_FIELD_KEYS).toContain('quietHours');
     expect(new Set(grouped).size).toBe(grouped.length);
   });
 
@@ -60,16 +64,43 @@ describe('changedEssentialsFields', () => {
 
 describe('guestEssentialsEqual', () => {
   it('is true for identical drafts', () => {
-    expect(guestEssentialsEqual({ ...blank(), revealLeadHours: 24 }, { ...blank(), revealLeadHours: 24 })).toBe(true);
+    expect(
+      guestEssentialsEqual({ ...blank(), revealLeadHours: 24 }, { ...blank(), revealLeadHours: 24 })
+    ).toBe(true);
   });
 
   it('is false when only the reveal lead differs', () => {
-    expect(guestEssentialsEqual({ ...blank(), revealLeadHours: 24 }, { ...blank(), revealLeadHours: 48 })).toBe(false);
+    expect(
+      guestEssentialsEqual({ ...blank(), revealLeadHours: 24 }, { ...blank(), revealLeadHours: 48 })
+    ).toBe(false);
   });
 
   it('is false when a field differs', () => {
     expect(
-      guestEssentialsEqual({ ...blank(), revealLeadHours: 24 }, { ...blank(), wifiName: 'x', revealLeadHours: 24 })
+      guestEssentialsEqual(
+        { ...blank(), revealLeadHours: 24 },
+        { ...blank(), wifiName: 'x', revealLeadHours: 24 }
+      )
     ).toBe(false);
+  });
+});
+
+describe('summarizeGuestEssentials', () => {
+  it('flags empty when no core arrival fields are set', () => {
+    const summary = summarizeGuestEssentials({ ...blank(), revealLeadHours: 24 });
+    expect(summary.empty).toBe(true);
+    expect(summary.needsAttention).toBe(true);
+  });
+
+  it('lists filled chips and uses the listing unit when essentials unit is blank', () => {
+    const summary = summarizeGuestEssentials(
+      { ...blank(), wifiName: 'Kame_2604', doorCode: '4821', revealLeadHours: 24 },
+      'Monaco 2604'
+    );
+    expect(summary.empty).toBe(false);
+    expect(summary.chips.some((chip) => chip.includes('Wi-Fi'))).toBe(true);
+    expect(summary.chips).toContain('Door code');
+    expect(summary.chips).toContain('Monaco 2604');
+    expect(summary.chips).toContain('Reveal 24h');
   });
 });

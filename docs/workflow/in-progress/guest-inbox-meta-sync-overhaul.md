@@ -18,7 +18,7 @@ tags:
     reliability,
     ux,
   ]
-updated: 2026-11-13
+updated: 2026-11-17
 readiness: phase-1-verified
 last_verified: 2026-11-10
 ---
@@ -233,7 +233,7 @@ Static imports in the entrypoint shrink to config, signature check, and the enqu
 - **Own-app echoes** (`message.app_id` equals our app id) wait 15 seconds before first processing, so the send path's row exists first. The merge handles either order anyway.
 - **Side effects** (in-app and push notification, Telegram, auto-reply) run only when the write reports a newly inserted inbound message. Retries and reconciliation never notify twice. `standby` messages never trigger auto-reply.
 - **Failures:** `attempts + 1`, `status = 'retry'`, backoff of 30 s, 2 min, 10 min, 1 h, 6 h. After 6 attempts the row becomes `dead` with a Sentry capture fingerprinted by error code. Dead rows can be replayed from `/admin/health`.
-- **Guest names and avatars** for new threads are fetched in the same background task (at most 4 in flight), never before the acknowledgement. Meta CDN avatar URLs expire, so they refresh lazily when older than 7 days.
+- **Guest names and avatars** for new threads are resolved in the processor only when the thread has no name yet (never on the webhook acknowledgement). Order: webhook `sender.name` / `username`, then User Profile API, then Page conversations `participants` (same source as import). User Profile alone often returns empty without Advanced Access for Business Asset User Profile Access; conversations participants still work with `pages_messaging`. Opening a nameless thread retries via `fillMissingMetaParticipantIdentity`. Meta CDN avatar URLs expire, so they refresh lazily when older than 7 days.
 
 **`inbox_apply_meta_message(p jsonb)`**, `SECURITY DEFINER`, executable by `service_role` only:
 

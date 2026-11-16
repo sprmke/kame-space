@@ -9,6 +9,7 @@ import { ActivitySettingsSection } from '@/features/dashboard/activity/component
 import {
   AdminSection,
   AdminSectionNavLayout,
+  type AdminSectionNavGroup,
   type AdminSectionNavItem,
 } from '@/features/dashboard/bookings/components/AdminSectionNavLayout';
 import { RequireAdmin } from '@/features/dashboard/bookings/components/RequireAdmin';
@@ -73,6 +74,22 @@ const SETTINGS_SECTIONS: AdminSectionNavItem[] = [
   { id: 'activity', label: 'Activity', icon: ScrollText },
   { id: 'danger', label: 'Danger zone', icon: AlertTriangle },
 ];
+
+const SETTINGS_SECTION_GROUP_IDS: { label: string; ids: string[] }[] = [
+  { label: 'Profile', ids: ['basic', 'branding', 'superhost'] },
+  { label: 'AI', ids: [AI_SETTINGS_SECTION_ID] },
+  { label: 'Account', ids: ['activity', 'danger'] },
+];
+
+function buildSettingsSectionGroups(navSections: AdminSectionNavItem[]): AdminSectionNavGroup[] {
+  const byId = new Map(navSections.map((section) => [section.id, section]));
+  return SETTINGS_SECTION_GROUP_IDS.map((group) => ({
+    label: group.label,
+    sections: group.ids
+      .map((id) => byId.get(id))
+      .filter((section): section is AdminSectionNavItem => section != null),
+  })).filter((group) => group.sections.length > 0);
+}
 
 export function useOrgSettingsController() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
@@ -336,6 +353,8 @@ export function useOrgSettingsController() {
     }));
   }, [settingsCompletion.issueSectionIds, canDeleteOrganization, canViewActivity]);
 
+  const navSectionGroups = useMemo(() => buildSettingsSectionGroups(navSections), [navSections]);
+
   useEffect(() => {
     if (!profileDraft || !operatorDraft) return;
     setOrgSettingsIssueSections(settingsCompletion.issueSectionIds);
@@ -419,6 +438,7 @@ export function useOrgSettingsController() {
     completionInput,
     settingsCompletion,
     navSections,
+    navSectionGroups,
     canViewActivity,
     resolveFieldError,
     orgSlug,
@@ -453,7 +473,7 @@ export function OrgSettingsPage() {
     operatorSources,
     formBusy,
     slugPreview,
-    navSections,
+    navSectionGroups,
     canViewActivity,
     resolveFieldError,
   } = useOrgSettingsController();
@@ -510,7 +530,7 @@ export function OrgSettingsPage() {
         ) : !org || !profileDraft || !operatorDraft || !operatorData ? (
           <p className="text-muted-foreground text-sm">Organization not found.</p>
         ) : (
-          <AdminSectionNavLayout className="min-h-0 flex-1" sections={navSections}>
+          <AdminSectionNavLayout className="min-h-0 flex-1" sectionGroups={navSectionGroups}>
             {operatorError ? (
               <p className="text-destructive text-sm">
                 {(operatorLoadError as Error)?.message ?? 'Could not load organization settings'}

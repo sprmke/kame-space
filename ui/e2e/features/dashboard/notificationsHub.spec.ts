@@ -151,10 +151,10 @@ test.describe('@ci notifications hub', () => {
     });
 
     /* Draft hub: four KPI cards above the tabs. */
-    await expect(page.getByText('Unread', { exact: true })).toBeVisible();
-    await expect(page.getByText('Messages', { exact: true })).toBeVisible();
-    await expect(page.getByText('Telegram on', { exact: true })).toBeVisible();
-    await expect(page.getByText('Connected', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Unread: / })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Messages: / })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Telegram on: / })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Connected: / })).toBeVisible();
 
     await expect(page.getByRole('tab', { name: /Activity/ })).toHaveAttribute(
       'aria-selected',
@@ -279,7 +279,7 @@ test.describe('@ci notifications hub', () => {
     await expect(page.locator('#section-chat')).toBeVisible({ timeout: 20_000 });
   });
 
-  test('the Telegram history tab keeps the delivery switch and drops the paused card', async ({
+  test('the Telegram history tab keeps the delivery switch and shows the paused status', async ({
     page,
   }) => {
     await page.route('**/functions/v1/telegram-delivery-settings**', (route) =>
@@ -299,7 +299,7 @@ test.describe('@ci notifications hub', () => {
 
     /* One master switch on the tab; no second "paused" card repeating it. */
     await expect(page.getByRole('switch', { name: 'Telegram delivery' })).not.toBeChecked();
-    await expect(page.getByText('Telegram is paused')).toHaveCount(0);
+    await expect(page.getByText('Telegram is paused')).toBeVisible();
     /* Past sends stay readable while delivery is paused. */
     await expect(page.getByText('New message from Ana Reyes on Facebook')).toBeVisible();
   });

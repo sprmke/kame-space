@@ -1,3 +1,4 @@
+import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import { expandLegacyPropertyPermissionIds } from '@/features/dashboard/team/lib/legacyPermissionExpansion';
 import type { TeamPermission } from '@/features/dashboard/team/types/propertyTeam';
 
@@ -68,6 +69,8 @@ export const SETTINGS_SECTION_EDIT_PERMISSION = {
   payment: 'settings.payment:edit',
   'building-forms': 'settings.buildingForms:edit',
   'email-automations': 'settings.emailAutomations:edit',
+  // Same leaf as Basic Info: SEO overrides live in `properties.settings` with profile save.
+  search: 'settings.basicInfo:edit',
   integrations: null,
   // Section id stays `danger` for the settings-save pipeline; the leaf is lifecycle-scoped.
   danger: 'settings.listingStatus:edit',
@@ -169,7 +172,7 @@ export const PROPERTY_NAV_VIEW_PERMISSION: Record<string, TeamPermissionId> = {
   Dashboard: 'bookings:view',
   Bookings: 'bookings:view',
   Finance: 'finance:view',
-  Pricing: 'pricing:view',
+  [ADMIN_MODULE_LABEL.pricing]: 'pricing:view',
   Analytics: 'analytics:view',
   Maintenance: 'maintenance:view',
   Marketing: 'marketing:view',
@@ -179,7 +182,7 @@ export const PROPERTY_NAV_VIEW_PERMISSION: Record<string, TeamPermissionId> = {
   'Plans & Billing': 'settings:view',
   Team: 'team:view',
   Settings: 'settings:view',
-  Inbox: 'inbox:view',
+  [ADMIN_MODULE_LABEL.inbox]: 'inbox:view',
   Reviews: 'reviews:view',
   Activity: 'activity:view',
   Announcements: 'bookings:view',

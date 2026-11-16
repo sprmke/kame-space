@@ -7,7 +7,12 @@
  * reconciler can never notify twice.
  */
 
-import { buildDmThreadId, getConnectionForMetaWebhook, metaSelfAccountIds } from './socialInboxService.ts';
+import {
+  buildDmThreadId,
+  getConnectionForMetaWebhook,
+  getConversationByExternalThread,
+  metaSelfAccountIds,
+} from './socialInboxService.ts';
 import { socialInboxDb } from './socialInboxDb.ts';
 import type { SocialChannelConnectionRow } from './socialInboxTypes.ts';
 import { metaMessagingWindowExpiry } from './metaTimestamp.ts';
@@ -16,11 +21,7 @@ import {
   inboxNotificationParticipantLabel,
 } from './notificationService.ts';
 import { inboxNotificationMetadata } from './notificationEnrichment.ts';
-import {
-  fetchMetaMessengerParticipantProfile,
-  formatMetaParticipantDisplayName,
-  getPageAccessToken,
-} from './metaInboxGraph.ts';
+import { getPageAccessToken, resolveMetaDmParticipantIdentity } from './metaInboxGraph.ts';
 import type {
   MetaEventChannel,
   MetaMessagingPlatform,
@@ -336,9 +337,7 @@ export function messageKindFor(
   if (eventType === 'unsupported') return 'unsupported';
 
   const attachments = Array.isArray(message.attachments) ? message.attachments : [];
-  const types = attachments
-    .map((item) => asString(asRecord(item).type))
-    .filter(Boolean);
+  const types = attachments.map((item) => asString(asRecord(item).type)).filter(Boolean);
   if (types.includes('story_mention')) return 'story_reply';
   if (types.includes('share')) return 'share';
   // A message with a body is still readable text even when Meta also marks it unsupported.
@@ -360,9 +359,7 @@ async function applyMetaMessageEvent(
   const selfIds = metaSelfAccountIds(connection, event.entryId);
   const isEcho = event.eventType === 'echo' || asRecord(payload.message).is_echo === true;
   const isFromPage = isEcho || selfIds.has(senderId);
-  const guestId = isFromPage
-    ? asString(asRecord(payload.recipient).id)
-    : senderId;
+  const guestId = isFromPage ? asString(asRecord(payload.recipient).id) : senderId;
 
   if (!guestId) {
     return { status: 'skipped', result: { reason: 'no_participant' } };
@@ -389,7 +386,16 @@ async function applyMetaMessageEvent(
     : asString(message.text);
   const preview = bodyText || '(attachment)';
 
-  const identity = await resolveParticipantIdentity(connection, guestId, platform, isFromPage);
+  const existing = await getConversationByExternalThread(orgId, platform, threadId);
+  const identity = await resolveParticipantIdentity({
+    connection,
+    guestId,
+    platform,
+    isFromPage,
+    selfIds,
+    sender: asRecord(payload.sender),
+    alreadyNamed: Boolean(existing?.participant_name?.trim()),
+  });
 
   const { data, error } = await sb.rpc('inbox_apply_meta_message', {
     p: {
@@ -448,24 +454,36 @@ async function applyMetaMessageEvent(
  * Guest display name and avatar for a new thread.
  *
  * Only fetched when the thread has no name yet, and never before the acknowledgement: this
- * runs in the background task, not on the webhook request.
+ * runs in the background task, not on the webhook request. Prefer webhook sender fields, then
+ * User Profile, then conversations participants (same source as import).
  */
-async function resolveParticipantIdentity(
-  connection: SocialChannelConnectionRow,
-  guestId: string,
-  platform: MetaMessagingPlatform,
-  isFromPage: boolean
-): Promise<{ name: string | null; avatarUrl: string | null }> {
-  if (isFromPage) return { name: null, avatarUrl: null };
+async function resolveParticipantIdentity(opts: {
+  connection: SocialChannelConnectionRow;
+  guestId: string;
+  platform: MetaMessagingPlatform;
+  isFromPage: boolean;
+  selfIds: Set<string>;
+  sender: Record<string, unknown>;
+  alreadyNamed: boolean;
+}): Promise<{ name: string | null; avatarUrl: string | null }> {
+  if (opts.isFromPage || opts.alreadyNamed) return { name: null, avatarUrl: null };
 
   try {
-    const token = await getPageAccessToken(connection);
-    const profile = await fetchMetaMessengerParticipantProfile(guestId, token, platform);
-    return {
-      name: formatMetaParticipantDisplayName({ name: profile.name }) ?? null,
-      avatarUrl: profile.profilePic ?? null,
-    };
-  } catch {
+    const token = await getPageAccessToken(opts.connection);
+    const profile = await resolveMetaDmParticipantIdentity({
+      guestId: opts.guestId,
+      pageAccessToken: token,
+      platform: opts.platform,
+      pageId: opts.connection.meta_page_id,
+      selfIds: opts.selfIds,
+      webhookSender: {
+        name: typeof opts.sender.name === 'string' ? opts.sender.name : null,
+        username: typeof opts.sender.username === 'string' ? opts.sender.username : null,
+      },
+    });
+    return { name: profile.name, avatarUrl: profile.profilePic };
+  } catch (e) {
+    console.warn('[resolveParticipantIdentity]', (e as Error).message);
     return { name: null, avatarUrl: null };
   }
 }

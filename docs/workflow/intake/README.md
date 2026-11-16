@@ -11,11 +11,13 @@ kind: reference
 
 Active design specs (`<slug>-design.md`) and the two permanent scratchpads:
 
-| Doc                                | Purpose                                                                 |
-| ---------------------------------- | ----------------------------------------------------------------------- |
-| [`_to-prompt.md`](./_to-prompt.md) | Prompt-ready backlog with status emojis. Moves to `done/` when shipped. |
-| [`_to-plan.md`](./_to-plan.md)     | Items that need a written plan before implementation.                   |
-| [`_to-dos.md`](./_to-dos.md)       | Priority, pre-release and post-release tasks with status emojis.        |
+| Doc                                                                | Purpose                                                                             |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| [`_to-prompt.md`](./_to-prompt.md)                                 | Prompt-ready backlog with status emojis. Moves to `done/` when shipped.             |
+| [`_to-plan.md`](./_to-plan.md)                                     | Items that need a written plan before implementation.                               |
+| [`_to-dos.md`](./_to-dos.md)                                       | Priority, pre-release and post-release tasks with status emojis.                    |
+| [`ui-improvements-worksheet.md`](./ui-improvements-worksheet.md)   | Claim sheet for open UI polish so sessions do not collide with in-progress modules. |
+| [`mascot-empty-states-design.md`](./mascot-empty-states-design.md) | Design for 404 / feature-unavailable brand empty states (UI-05).                    |
 
 Design specs move with their plan when it starts, ships or is cancelled. Do not leave `stage: done` files here.
 

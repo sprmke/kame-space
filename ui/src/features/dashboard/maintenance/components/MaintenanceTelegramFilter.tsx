@@ -23,8 +23,7 @@ export function MaintenanceTelegramFilter({ value, onChange, nestedInPopover = f
       onChange={onChange}
       ariaLabel="Telegram filter"
       triggerWidthClassName={nestedInPopover ? 'w-full' : 'sm:w-[10.5rem]'}
-      panelAlign={nestedInPopover ? 'left' : 'right'}
-      panelWidthClassName={nestedInPopover ? 'w-full' : 'w-[min(calc(100vw-24px),12rem)]'}
+      panelWidthClassName={nestedInPopover ? 'w-full' : undefined}
       toolbarExclusive={!nestedInPopover}
     />
   );

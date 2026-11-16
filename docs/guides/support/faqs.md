@@ -221,6 +221,15 @@ Yes. Select future available nights on the Pricing calendar and choose Block. Gu
 
 Open Bookings from the organization sidebar. It combines property stays and parking reservations, and the Booking type filter narrows the list to one kind.
 
+### How do I add a booking from the organization Bookings page?
+
+- category: Bookings
+- audience: host
+- source: docs/guides/routes/org/bookings.md
+- order: 65
+
+Tap New booking, choose a property or parking slot, then fill the same form as on that listing. If you only have one listing, the form opens right away.
+
 ### How do I add a parking reservation?
 
 - category: Bookings
@@ -228,7 +237,7 @@ Open Bookings from the organization sidebar. It combines property stays and park
 - source: docs/guides/routes/org/parking/bookings.md
 - order: 70
 
-Open the parking slot's Bookings page and use New booking. It opens the slot's booking form in a dialog without leaving the dashboard.
+Use New booking on the organization Bookings page and pick the parking slot, or open that slot's Bookings page and use New booking there.
 
 ### How do I add a new parking slot?
 
@@ -975,7 +984,7 @@ Yes. On the Calendar card choose Copy link, select the check-in and check-out da
 - source: docs/guides/routes/org/property/settings.md
 - order: 68
 
-Yes. Property Settings and parking Settings have a Search preview card with an optional title and description, next to a live preview of how the result looks and a character counter. Leave both blank and we write them for you from the listing details. If you change your mind later, clear the field and save.
+Yes. On Property Settings open Search preview (above Integrations). Parking keeps the same card under Basic Information. Optional title and description, a live result preview, and a character counter. Leave both blank and we write them from the listing details. Clear a field and save to go back to the generated text.
 
 ### What is alt text and do I need it?
 
@@ -1547,7 +1556,7 @@ Some hosts use an AI assistant to answer common questions quickly. Ask for the h
 - audience: host
 - source: docs/guides/routes/org/property/settings.md
 
-Property Settings, then **Guest experience**. Fill in the Wi-Fi name and password, the door or lock code, the unit and floor, a parking note, and a contact. Guests see these on their trip page and in the stay guide.
+Property Settings, then **Guest experience** → **Manage**. Fill in the Wi-Fi name and password, the door or lock code, a parking tip, and a contact. Unit and floor come from Basic Info when that is already set. Guests see these on their trip page and in the stay guide.
 
 The password and door code stay hidden until a set time before check-in. That is **Reveal codes before check-in**, 24 hours by default. Before then the guest sees "Available" with the date and time, so you can fill them in early without handing out the code.
 
@@ -1583,13 +1592,13 @@ From their trip page, under Payment, with **Send receipt**. It lands on the book
 
 It shows what your guest sees right now: their status in the same words they use, the one thing they are waiting on, and anything still open such as a missing balance receipt or pending documents. It reads from the booking itself, so it cannot disagree with their trip page.
 
-### Why does Guest experience say something is missing?
+### Why does Guest experience ask me to Manage?
 
 - category: Property Settings
 - audience: host
 - source: docs/guides/routes/org/property/settings.md
 
-The readiness list at the top of Guest experience flags what an arriving guest has nothing for: usually the essentials or a payment method. Each row has a Fix action that takes you to the right place. Default check-in and check-out steps are not counted as missing, because they already say something useful.
+Manage opens the arrival essentials editor (Wi-Fi, door code, contacts). Check-in and check-out steps are edited under Templates. Quiet hours are under House rules. Payment methods stay on the Payment card.
 
 ### Can a custom template show up for guests?
 

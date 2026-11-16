@@ -6,6 +6,7 @@
  * Category labels follow property sidebar / Settings section names.
  */
 
+import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import type { PlanFeatureKey } from '@/features/dashboard/plans/lib/planFeatures';
 
 /** Same order as edge `CLONE_GROUP_IDS`. */
@@ -83,11 +84,11 @@ export const COPY_PROPERTY_SETTINGS_CATEGORY_ORDER: CopyPropertySettingsCategory
 export const COPY_PROPERTY_SETTINGS_CATEGORY_LABELS: Record<CopyPropertySettingsCategory, string> =
   {
     settings: 'Settings',
-    pricing: 'Pricing',
+    pricing: ADMIN_MODULE_LABEL.pricing,
     templates: 'Templates',
     publicPages: 'Public Pages',
     marketing: 'Marketing',
-    inbox: 'Inbox',
+    inbox: 'Messages',
     notifications: 'Notifications',
     team: 'Team',
     finance: 'Finance',

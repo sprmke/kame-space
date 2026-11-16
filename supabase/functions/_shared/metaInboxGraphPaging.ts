@@ -48,7 +48,6 @@ export function extractMetaPagingCursor(pagingNext: string | null | undefined): 
   return after ? after : null;
 }
 
-
 /** Conversation head page: ids and updated_time only. The cheap reconcile scan. */
 export function buildMetaConversationHeadUrl(
   pageId: string,
@@ -85,6 +84,28 @@ export function buildMetaConversationsByIdsUrl(
     'fields',
     'id,updated_time,participants{id,name,username},messages.limit(20){id,message,created_time,from,attachments{type,mime_type,name,image_data,video_data,file_url,payload}}'
   );
+  url.searchParams.set('access_token', pageAccessToken);
+  return url.toString();
+}
+
+/**
+ * One conversation for a PSID / IGSID.
+ *
+ * Uses the same `participants{id,name,username}` fields as import. Page admins can read
+ * participant names here even when the User Profile API returns empty (no Business Asset
+ * User Profile Access).
+ */
+export function buildMetaConversationByUserUrl(
+  pageId: string,
+  pageAccessToken: string,
+  platform: 'messenger' | 'instagram',
+  userId: string
+): string {
+  const url = new URL(`${META_GRAPH_BASE}/${pageId}/conversations`);
+  url.searchParams.set('platform', platform);
+  url.searchParams.set('user_id', userId);
+  url.searchParams.set('fields', 'participants{id,name,username}');
+  url.searchParams.set('limit', '1');
   url.searchParams.set('access_token', pageAccessToken);
   return url.toString();
 }

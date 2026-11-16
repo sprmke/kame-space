@@ -7,6 +7,7 @@ import { CalendarPlus, Upload } from 'lucide-react';
 
 import { AdminListPagination } from '@/features/dashboard/bookings/components/AdminListToolbar';
 import { AdminNewBookingModal } from '@/features/dashboard/bookings/components/AdminNewBookingModal';
+import { OrgNewBookingFlow } from '@/features/dashboard/bookings/components/OrgNewBookingFlow';
 import { BookingCalendarView } from '@/features/dashboard/bookings/components/BookingCalendarView';
 import { BookingCardGrid } from '@/features/dashboard/bookings/components/BookingCardGrid';
 import { BookingDateRangeFilter } from '@/features/dashboard/bookings/components/BookingDateRangeFilter';
@@ -160,8 +161,9 @@ export function BookingsListPage({ scope = 'property' }: BookingsListPageProps) 
   const { data: propertyAccess } = usePropertyPermissions();
   const canImport =
     scope !== 'org' && hasPropertyPermission(propertyAccess?.permissions, 'bookings.import:add');
+  /** Property/parking pages need create/edit leaves; org page opens a listing picker first. */
   const canCreateBooking =
-    scope !== 'org' && hasPropertyPermission(propertyAccess?.permissions, 'bookings.create:add');
+    scope === 'org' || hasPropertyPermission(propertyAccess?.permissions, 'bookings.create:add');
   const canMutateWorkflow =
     scope !== 'org' &&
     hasPropertyPermission(propertyAccess?.permissions, 'bookings.detail.workflow:edit');
@@ -412,8 +414,26 @@ export function BookingsListPage({ scope = 'property' }: BookingsListPageProps) 
 
   const dateLabelPending = isLoading && !data && !query.from && !query.to;
 
+  const newBookingButton = canCreateBooking ? (
+    <button
+      type="button"
+      className="native-cta sm:w-auto sm:px-3.5"
+      onClick={() => setNewBookingOpen(true)}
+    >
+      <CalendarPlus className="size-4" aria-hidden />
+      <span className="sm:hidden">New</span>
+      <span className="hidden sm:inline">New booking</span>
+    </button>
+  ) : null;
+
   const bookingActions =
-    scope === 'org' ? undefined : (
+    scope === 'org' ? (
+      canCreateBooking ? (
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:justify-end">
+          {newBookingButton}
+        </div>
+      ) : undefined
+    ) : (
       <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
         <BookingDateRangeFilter
           {...dateNav}
@@ -435,17 +455,7 @@ export function BookingsListPage({ scope = 'property' }: BookingsListPageProps) 
             </Button>
           </TierBadgeAnchor>
         ) : null}
-        {canCreateBooking ? (
-          <button
-            type="button"
-            className="native-cta sm:w-auto sm:px-3.5"
-            onClick={() => setNewBookingOpen(true)}
-          >
-            <CalendarPlus className="size-4" aria-hidden />
-            <span className="sm:hidden">New</span>
-            <span className="hidden sm:inline">New booking</span>
-          </button>
-        ) : null}
+        {newBookingButton}
       </div>
     );
 
@@ -454,7 +464,7 @@ export function BookingsListPage({ scope = 'property' }: BookingsListPageProps) 
     : 'Manage and track all bookings for this property.';
 
   const heroNewBooking =
-    scope === 'org' ? undefined : (
+    canCreateBooking || canImport ? (
       <>
         {canImport ? (
           <span className="relative inline-flex">
@@ -473,7 +483,7 @@ export function BookingsListPage({ scope = 'property' }: BookingsListPageProps) 
           </MobileHeroActionButton>
         ) : null}
       </>
-    );
+    ) : undefined;
 
   /** Mobile float — date only (same pattern as Finance / Maintenance). */
   const overlapControls =
@@ -592,14 +602,20 @@ export function BookingsListPage({ scope = 'property' }: BookingsListPageProps) 
       </AdminMobilePage>
 
       {canImport ? <ImportWizardModal open={importOpen} onOpenChange={setImportOpen} /> : null}
-      {scope !== 'org' ? (
+      {scope === 'org' ? (
+        <OrgNewBookingFlow
+          open={newBookingOpen}
+          onOpenChange={setNewBookingOpen}
+          orgSlug={orgSlug}
+        />
+      ) : (
         <AdminNewBookingModal
           open={newBookingOpen}
           onOpenChange={setNewBookingOpen}
           orgSlug={orgSlug}
           propertySlug={propertySlug}
         />
-      ) : null}
+      )}
 
       <CalendarBookingCelebration trigger={celebration} onDone={() => setCelebration(null)} />
     </>

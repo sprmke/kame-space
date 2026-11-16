@@ -29,7 +29,7 @@ const PAGES = [
   {
     name: 'pricing',
     path: parkingFlowPaths.hostPricing,
-    heading: 'Pricing',
+    heading: 'Pricing & availability',
     ready: '#parking-weekday-rate',
   },
   {

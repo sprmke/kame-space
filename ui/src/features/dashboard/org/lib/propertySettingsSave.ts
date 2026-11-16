@@ -42,8 +42,8 @@ const FIELD_SECTIONS: Record<string, PropertySettingsSectionId> = {
   'property-contact-phone': 'basic',
   'property-contact-email': 'basic',
   'property-brand-color': 'basic',
-  'property-seo-title': 'basic',
-  'property-seo-description': 'basic',
+  'property-seo-title': 'search',
+  'property-seo-description': 'search',
   'property-facebook-page-url': 'branding',
   'property-airbnb-url': 'branding',
   'property-instagram-url': 'branding',
@@ -98,6 +98,7 @@ const PROFILE_SECTIONS: PropertySettingsSectionId[] = [
   'guest-form',
   'cancellation',
   'location',
+  'search',
 ];
 
 function fieldSectionId(fieldId: string): PropertySettingsSectionId | undefined {
@@ -227,6 +228,11 @@ export function propertySettingsSectionDirty(
         profileDraft.address.trim() !== profileBaseline.address.trim() ||
         locationFieldsDirty(profileDraft, profileBaseline)
       );
+    case 'search':
+      return (
+        profileDraft.seoTitle.trim() !== profileBaseline.seoTitle.trim() ||
+        profileDraft.seoDescription.trim() !== profileBaseline.seoDescription.trim()
+      );
     case 'branding':
       return Boolean(
         operationalDraft &&
@@ -327,6 +333,14 @@ function dirtyFieldIdsInSection(
         )
       ) {
         ids.push('property-brand-color');
+      }
+      break;
+    case 'search':
+      if (profileDraft.seoTitle.trim() !== profileBaseline.seoTitle.trim()) {
+        ids.push('property-seo-title');
+      }
+      if (profileDraft.seoDescription.trim() !== profileBaseline.seoDescription.trim()) {
+        ids.push('property-seo-description');
       }
       break;
     case 'branding':
@@ -664,6 +678,7 @@ export function planPropertySettingsSave(input: {
       'payment',
       'building-forms',
       'email-automations',
+      'search',
     ] as PropertySettingsSectionId[]
   ).filter((sectionId) =>
     propertySettingsSectionDirty(
@@ -773,6 +788,9 @@ export function buildProfilePatchForSections(
     settings.contactRole = fullSettings.contactRole;
     settings.contactPhone = fullSettings.contactPhone;
     settings.contactEmail = fullSettings.contactEmail;
+    hasSettings = true;
+  }
+  if (sectionSet.has('search')) {
     // Clearing the override must remove the key, not store an empty string, or the public page
     // would prefer a blank override over the generated title.
     if (fullSettings.seoTitle) settings.seoTitle = fullSettings.seoTitle;
@@ -942,6 +960,11 @@ export function applySavedProfileSections(
       contactRole: saved.contactRole,
       contactPhone: saved.contactPhone,
       contactEmail: saved.contactEmail,
+    };
+  }
+  if (sectionSet.has('search')) {
+    next = {
+      ...next,
       seoTitle: saved.seoTitle,
       seoDescription: saved.seoDescription,
     };

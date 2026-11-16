@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react';
 
+import { ADMIN_MODULE_PRICING_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
+
 import {
   ArrowLeftRight,
   CalendarCheck,
@@ -438,8 +440,8 @@ export function ChannelSyncScene() {
     >
       <FilmShell
         context="property"
-        active="Pricing"
-        title="Pricing"
+        active={ADMIN_MODULE_PRICING_LABEL}
+        title={ADMIN_MODULE_PRICING_LABEL}
         subtitle="Monaco 2604 · October 2026"
         actions={
           <>

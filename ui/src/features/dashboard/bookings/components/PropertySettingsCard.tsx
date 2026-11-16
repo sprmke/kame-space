@@ -18,6 +18,7 @@ import {
   MapPin,
   Save,
   ScrollText,
+  Search,
   Share2,
   Shield,
   Sparkles,
@@ -30,6 +31,7 @@ import { PropertyGuestExperienceSection } from '@/features/dashboard/guest-exper
 import {
   AdminSection,
   AdminSectionNavLayout,
+  type AdminSectionNavGroup,
   type AdminSectionNavItem,
 } from '@/features/dashboard/bookings/components/AdminSectionNavLayout';
 import {
@@ -47,7 +49,9 @@ import {
   operationalSettingsDraftIsDirty,
   PropertyOperationalSettingsSections,
 } from '@/features/dashboard/org/components/property-settings/PropertyOperationalSettingsSections';
+import { PropertyGuestFormSettingsSection } from '@/features/dashboard/org/components/property-settings/PropertyGuestFormSettingsSection';
 import { PropertyProfileMainSections } from '@/features/dashboard/org/components/property-settings/PropertyProfileSettingsSections';
+import { PropertySearchSettingsSection } from '@/features/dashboard/org/components/property-settings/PropertySearchSettingsSection';
 import { PropertyListingStatusSection } from '@/features/dashboard/org/components/property-settings/PropertyListingStatusSection';
 import { PropertySettingsBrandColorPreview } from '@/features/dashboard/org/components/property-settings/PropertySettingsBrandColorPreview';
 import { PropertySocialsSection } from '@/features/dashboard/org/components/property-settings/PropertySocialsBrandingSection';
@@ -119,10 +123,12 @@ const SETTINGS_SECTIONS: AdminSectionNavItem[] = [
   { id: 'media', label: 'Photos & Videos', icon: ImageIcon },
   { id: 'amenities', label: 'Amenities', icon: Sparkles },
   { id: 'house-rules', label: 'House Rules', icon: ListChecks },
-  { id: 'guest-form', label: 'Guest Form', icon: FormInput },
   { id: 'cancellation', label: 'Cancellation', icon: Shield },
   { id: 'location', label: 'Location', icon: MapPin },
   { id: 'branding', label: 'Socials', icon: Share2 },
+  { id: 'search', label: 'Search preview', icon: Search },
+  { id: 'guest-form', label: 'Guest Form', icon: FormInput },
+  { id: 'guest-experience', label: 'Guest experience', icon: KeyRound },
   { id: 'guest-rewards', label: 'Reviews & vouchers', icon: Gift },
   { id: 'payment', label: 'Payment', icon: Wallet },
   { id: 'building-forms', label: 'Building Forms', icon: ClipboardList },
@@ -132,6 +138,46 @@ const SETTINGS_SECTIONS: AdminSectionNavItem[] = [
   { id: 'activity', label: 'Activity', icon: ScrollText },
   { id: 'danger', label: 'Listing status', icon: AlertTriangle },
 ];
+
+const SETTINGS_SECTION_GROUP_IDS: { label: string; ids: string[] }[] = [
+  {
+    label: 'Listing',
+    ids: [
+      'basic',
+      'details',
+      'media',
+      'amenities',
+      'house-rules',
+      'cancellation',
+      'location',
+      'branding',
+      'search',
+    ],
+  },
+  {
+    label: 'Guest setup',
+    ids: [
+      'guest-form',
+      'guest-experience',
+      'guest-rewards',
+      'payment',
+      'building-forms',
+      'email-automations',
+    ],
+  },
+  { label: 'Connections', ids: ['integrations'] },
+  { label: 'Account', ids: ['activity', 'danger'] },
+];
+
+function buildSettingsSectionGroups(navSections: AdminSectionNavItem[]): AdminSectionNavGroup[] {
+  const byId = new Map(navSections.map((section) => [section.id, section]));
+  return SETTINGS_SECTION_GROUP_IDS.map((group) => ({
+    label: group.label,
+    sections: group.ids
+      .map((id) => byId.get(id))
+      .filter((section): section is AdminSectionNavItem => section != null),
+  })).filter((group) => group.sections.length > 0);
+}
 
 function mergeProfileDraftAfterSave(
   current: PropertyProfileDraft,
@@ -469,6 +515,8 @@ export function usePropertySettingsController() {
       ),
     }));
   }, [canViewActivity, settingsCompletion.issueSectionIds]);
+
+  const navSectionGroups = useMemo(() => buildSettingsSectionGroups(navSections), [navSections]);
 
   useEffect(() => {
     setPropertySettingsIssueSections(settingsCompletion.issueSectionIds);
@@ -883,7 +931,7 @@ export function usePropertySettingsController() {
     busy,
     saveDisabled,
     slugPreview,
-    navSections,
+    navSectionGroups,
     canViewActivity,
     scrollToSettingsSection,
     setProfileField,
@@ -909,6 +957,7 @@ export function PropertySettingsCard() {
     navigate,
     property,
     orgSlug,
+    propertySlug,
     canCopyFromOtherProperty,
     sectionEditLocked,
     canDeleteProperty,
@@ -943,7 +992,7 @@ export function PropertySettingsCard() {
     busy,
     saveDisabled,
     slugPreview,
-    navSections,
+    navSectionGroups,
     canViewActivity,
     setProfileField,
     handleMediaPersisted,
@@ -1060,12 +1109,13 @@ export function PropertySettingsCard() {
           navLabels={SETTINGS_SECTIONS.map((section) => section.label)}
         />
       ) : appSettings && operationalDraft ? (
-        <AdminSectionNavLayout className="min-h-0 flex-1" sections={navSections}>
+        <AdminSectionNavLayout className="min-h-0 flex-1" sectionGroups={navSectionGroups}>
           <PropertyProfileMainSections
             draft={profileDraft}
             onChange={setProfileField}
             disabled={busy}
             sectionEditLocked={sectionEditLocked}
+            omitGuestForm
             slugPreview={slugPreview}
             towerConflict={towerConflict}
             nameUnavailable={nameUnavailable}
@@ -1108,6 +1158,42 @@ export function PropertySettingsCard() {
             onChange={setOperationalField}
             sectionMessages={settingsCompletion.sectionMessages}
           />
+
+          <PropertySearchSettingsSection
+            draft={profileDraft}
+            slugPreview={slugPreview}
+            disabled={busy || Boolean(sectionEditLocked.search)}
+            onChangeTitle={(value) => {
+              markFieldInteracted('property-seo-title');
+              setProfileField('seoTitle', value);
+            }}
+            onChangeDescription={(value) => {
+              markFieldInteracted('property-seo-description');
+              setProfileField('seoDescription', value);
+            }}
+          />
+
+          <PropertyGuestFormSettingsSection
+            draft={profileDraft}
+            disabled={busy || Boolean(sectionEditLocked['guest-form'])}
+            onChange={setProfileField}
+            setField={(key, value, fieldId) => {
+              markFieldInteracted(fieldId);
+              setProfileField(key, value);
+            }}
+            resolveFieldError={resolveFieldError}
+            manageNeedsAttention={settingsCompletion.issueSectionIds.includes('guest-form')}
+          />
+
+          <AdminSection id="guest-experience" title="Guest experience" icon={KeyRound}>
+            <PropertyGuestExperienceSection
+              propertyId={property.id}
+              orgSlug={orgSlug}
+              propertySlug={propertySlug}
+              listingUnitLabel={gafTowerUnit}
+              disabled={busy}
+            />
+          </AdminSection>
 
           <PropertyGuestRewardsSection
             draft={operationalDraft}

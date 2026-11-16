@@ -118,11 +118,12 @@ While settings load, the body is a skeleton. A pasted link that has not been con
 
 ### Bring a channel in (import)
 
-- **Empty (editable):** connect form is shown immediately (no extra click). URL is **required**; validates on change as an Airbnb export link (`https://` / `webcal://`, Airbnb host, `/calendar/ical/` path). Invalid → inline error; **Connect** stays disabled until valid. Below Pro, a valid URL + Connect opens the upgrade modal.
-- **?** help on the URL label: Airbnb Calendar → Availability → Connect calendars → Export calendar.
+Progressive disclosure: empty and connected states do not show the same stack of cards.
+
+- **Empty (editable):** one empty state (icon, "Pull {channel} dates into this calendar", a short pitch) and the connect form. The URL is **required** and validates on change against that channel's host rules (Airbnb also needs the `/calendar/ical/` path). Invalid → inline error; **Connect** stays disabled until valid. Below Pro, a valid URL + Connect opens the upgrade modal. **?** help on the label shows that channel's steps.
+- **Empty (view-only):** icon + "No {channel} calendar is connected for this property."
 - **Optional label removed** — a connected feed displays as its channel name (server still accepts an optional label if sent).
-- **Connected list:** name, health badge, last sync time; icon actions for **Sync now** and **Remove**.
-- **Add another:** outline **Connect another {channel} calendar** expands the same validated form.
+- **Connected card:** name + health badge on one row; status line under it (`Synced …` / `Waiting for first sync`); Sync now + Remove icons top-right. **Create bookings** sits on its own bottom row with a helper line and the switch. There is one card per connected calendar and no second Connect button while one is connected (remove, then reconnect).
 - **Polling:** `calendar-sync-cron` runs every 10 min and syncs a feed at most once per 30 min (2 min claim slack so a feed is not skipped an extra interval). Busy nights land as **synced blocks** (`source='ical_import'`). Each run writes a `calendar_sync_runs` row, which is what makes the real cadence measurable.
 - **Read health:** GET `calendar-sync-settings` returns `export.reads` (last time each channel read the Kame link, from `calendar_export_reads`, recorded on 200 **and** 304), `lastRun` per feed, and `echoWarning` per feed. The Channel sync list and setup view render them as the "read your link" line and the warnings above.
 - **Hub relay:** a stay imported from channel A is published on the export links for channels B and C, never back to A. A stay that also has a live booking is published once. Imported host blocks are never relayed, so channel-side blocks stay channel-side.
@@ -133,13 +134,13 @@ While settings load, the body is a skeleton. A pasted link that has not been con
 - **Past stays:** reservations whose checkout is already past are skipped, so enabling ingestion does not fill Bookings with old stays.
 - **Guest form link:** open an imported stay on the Pricing calendar, then **Copy guest form link**. The link opens the guest form with the stay dates locked. Requires `bookings.detail.workflow:edit`. **Open in {channel}** is shown when the feed supplied a reservation URL. The guest form shows the channel's name (`?source=airbnb|agoda|booking`, or the stored channel for a completion link): "Agoda Name", "Message host via Agoda", no payment step.
 - **Info box:** the channel list explains the flow (dates block, bookings appear, dates booked here close elsewhere).
-- **Health:** Synced / Retrying / Needs fix (4+ failures → `calendar_sync_failing` notification).
+- **Health:** Connected (never synced yet) / Synced / Retrying / Needs fix (4+ failures → `calendar_sync_failing` notification). The badge never says Synced when `lastSuccessAt` is null.
 - **Remove:** confirm dialog; optional **Also delete dates this calendar added**.
-- **Recent activity:** collapsed on the channel list when events exist (last ~8) — sync audit (imports, conflicts, errors). Keep it; hosts use it to diagnose sync issues.
+- **Recent activity:** on the channel list, only when a feed is connected and host-facing events exist (last ~5). Each row names the channel, uses plain labels (busy dates, bookings, conflicts), readable stay ranges and tone icons. Rate-limit and no-op skips (`min_interval_or_locked`, `no change`) are hidden.
 
 ### Send Kame Space to a channel (export)
 
-- Modal width ~**36rem** (was ~28rem) for room for help + long URLs.
+- Modal width ~**36rem** for room for help + long URLs.
 - **Share this property's dates** switch (+ **?** help) — one switch for the whole property, **off by default** (opt-in). Enables the token-guarded iCal URL (`…/ical-export/calendar.ics?property=…&token=…&as=airbnb`, always `https://` on hosted) so Kame bookings + manual blocks appear on Airbnb without echoing Airbnb’s own imports. The path ends in `.ics` because Airbnb rejects import URLs that do not. Turning **on** below Pro opens the upgrade modal; turning **off** is always allowed.
 - **Paste into {channel}** (+ **?** help with that channel's steps; Airbnb: Calendar → Availability → Connect calendars → Import calendar) — one URL + **Copy**. Paste the full link into Airbnb’s “Other website link” field.
 
@@ -184,6 +185,8 @@ If Airbnb reports a night that already has a live Kame booking or manual block, 
   A: Booking.com is probably set to export closed dates as well as reservations. In Booking.com, open Sync calendars and export **reserved dates only**. Kame ignores those echoes, but your calendar stays cleaner once the setting is fixed.
 - Q: I got a conflict warning after connecting Airbnb. What do I do?
   A: Both calendars kept their nights. Open Notifications or Channel sync → Recent activity for the dates, then remove the booking or block on the side that should not have it.
+- Q: What does Recent activity show?
+  A: The latest useful sync changes under From Airbnb: busy dates imported or cleared, bookings added or linked, and conflicts. Quiet “already synced” checks are hidden.
 - Q: Does connecting Airbnb create bookings in Kame?
   A: Yes, by default for a new feed. Each reservation appears as a Pending review booking. You can turn **Create bookings** off for a feed at any time. Dates still block either way.
 - Q: I already entered an Airbnb booking by hand. Will the sync duplicate it?

@@ -1,3 +1,5 @@
+import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
+
 export type ParkingAccessPayload = {
   accessKind: string;
   permissions: string[];
@@ -53,11 +55,11 @@ export const PARKING_NAV_VIEW_PERMISSION: Record<string, ParkingPermissionId> = 
   Dashboard: 'bookings:view',
   Bookings: 'bookings:view',
   Finance: 'finance:view',
-  Pricing: 'pricing:view',
+  [ADMIN_MODULE_LABEL.pricing]: 'pricing:view',
   Notifications: 'notifications:view',
   Team: 'team:view',
   Settings: 'settings:view',
-  Inbox: 'inbox:view',
+  [ADMIN_MODULE_LABEL.inbox]: 'inbox:view',
   Activity: 'activity:view',
   Announcements: 'bookings:view',
 };

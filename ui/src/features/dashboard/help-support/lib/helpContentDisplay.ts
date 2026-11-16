@@ -6,7 +6,7 @@ const BARE_ROUTE_PATH =
 
 const ROUTE_TAIL_LABELS: Record<string, string> = {
   messages: 'Messages',
-  inbox: 'Guest Inbox',
+  inbox: 'Messages',
   'help-support': 'Help & Support',
   bookings: 'Bookings',
   calendar: 'Calendar',

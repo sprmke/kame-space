@@ -233,4 +233,39 @@ describe('ChannelSyncDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
     expect(screen.getByText(/Closed dates in Agoda can look like stays/)).toBeTruthy();
   });
+
+  it('shows a never-synced feed as Connected, with no second connect button', () => {
+    mocks.settings = settings({
+      connectableProviders: ['airbnb', 'agoda'],
+      feeds: [feed({ provider: 'agoda', lastSuccessAt: null })],
+    });
+    renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
+    expect(screen.getByText('Connected')).toBeTruthy();
+    expect(screen.getByText('Waiting for first sync')).toBeTruthy();
+    expect(screen.queryByText(/Connect another/)).toBeNull();
+    expect(screen.queryByPlaceholderText('https://…agoda.com/…')).toBeNull();
+  });
+
+  it('names the channel on every recent activity row', () => {
+    mocks.settings = settings({
+      connectableProviders: ['airbnb', 'agoda'],
+      feeds: [feed({ id: 'f-ago', provider: 'agoda' })],
+      recentEvents: [
+        {
+          id: 1,
+          feed_id: 'f-ago',
+          action: 'block_created',
+          external_uid: 'u',
+          start_date: '2027-09-01',
+          end_date: '2027-09-04',
+          summary: 'Reserved',
+          detail: null,
+          created_at: '2026-11-17T01:00:00Z',
+        },
+      ],
+    });
+    renderDialog();
+    expect(screen.getByText(/Agoda: Busy dates imported/)).toBeTruthy();
+  });
 });

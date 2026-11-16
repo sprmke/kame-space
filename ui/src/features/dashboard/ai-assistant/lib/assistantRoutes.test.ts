@@ -14,9 +14,23 @@ const SERVER_ROUTES = path.resolve(
   '../../../../../../supabase/functions/_shared/dashboardAssistantRoutes.ts'
 );
 
+const SERVER_LABELS = path.resolve(
+  __dirname,
+  '../../../../../../supabase/functions/_shared/adminModuleLabels.ts'
+);
+
 /** Parses `'key': { … label: 'X' … }` entries out of the server allowlist source. */
 function serverRouteLabels(): Record<string, string> {
-  const source = readFileSync(SERVER_ROUTES, 'utf8');
+  const constants: Record<string, string> = {};
+  for (const match of readFileSync(SERVER_LABELS, 'utf8').matchAll(
+    /export const (ADMIN_MODULE_[A-Z_]+) = '([^']+)'/g
+  )) {
+    constants[match[1]] = match[2];
+  }
+  const source = readFileSync(SERVER_ROUTES, 'utf8').replace(
+    /ADMIN_MODULE_[A-Z_]+/g,
+    (key) => (constants[key] ? `'${constants[key]}'` : key)
+  );
   const out: Record<string, string> = {};
   const re = /'((?:org|property|parking)\.[a-z-]+)':\s*\{[^}]*?label:\s*'([^']+)'/g;
   for (const match of source.matchAll(re)) out[match[1]] = match[2];

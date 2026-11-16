@@ -256,6 +256,11 @@ export type GuestFormEmbed = {
   checkOutDate?: string | null;
   numberOfAdults?: number;
   numberOfChildren?: number;
+  /**
+   * Host/org New booking: target listing when the URL has no `/properties/:slug`
+   * (e.g. org Bookings). Wins over route/`?property=` for submit and payment info.
+   */
+  propertySlug?: string | null;
   /** Tighter outer padding when hosted inside a dialog. */
   compactChrome?: boolean;
   /** When set, step nav is omitted inline and reported here for a modal footer. */
@@ -298,8 +303,16 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
   const petImageInputRef = useRef<HTMLInputElement>(null);
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const propertySlug = useGuestPropertySlug();
-  const scopedSearchParams = useGuestPropertySearchParams();
+  const routePropertySlug = useGuestPropertySlug();
+  const propertySlug = embed?.propertySlug?.trim() || routePropertySlug;
+  const routeScopedSearchParams = useGuestPropertySearchParams();
+  const scopedSearchParams = useMemo(() => {
+    const override = embed?.propertySlug?.trim();
+    if (!override) return routeScopedSearchParams;
+    const next = new URLSearchParams(routeScopedSearchParams);
+    next.set('property', override);
+    return next;
+  }, [embed?.propertySlug, routeScopedSearchParams]);
   const { data: publicProperty, refetch: refetchPublicProperty } = usePublicPropertyDetail(
     propertySlug ?? ''
   );
