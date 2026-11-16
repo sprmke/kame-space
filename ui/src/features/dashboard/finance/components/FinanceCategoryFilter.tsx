@@ -30,8 +30,7 @@ export function FinanceCategoryFilter({
       pluralUnit="categories"
       ariaLabel="Category filter"
       triggerWidthClassName={nestedInPopover ? 'w-full' : 'sm:w-[10.5rem]'}
-      panelAlign={nestedInPopover ? 'left' : 'right'}
-      panelWidthClassName={nestedInPopover ? 'w-full' : 'w-[min(calc(100vw-24px),14rem)]'}
+      panelWidthClassName={nestedInPopover ? 'w-full' : undefined}
       panelScrollable
       emptyMessage="No categories"
       toolbarExclusive={!nestedInPopover}

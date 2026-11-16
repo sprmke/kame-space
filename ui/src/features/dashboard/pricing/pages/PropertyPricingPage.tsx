@@ -15,6 +15,7 @@ import {
   CalendarBookingCelebration,
   type CalendarBookingCelebrationTrigger,
 } from '@/features/dashboard/bookings/components/calendar/CalendarBookingCelebration';
+import { ADMIN_MODULE_PRICING_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import { buildOccupancyByDay } from '@/features/dashboard/bookings/components/calendar/calendarDateUtils';
 import { FeatureStatusDot } from '@/components/feature-availability/FeatureStatusDot';
 import { TierBadge, TierBadgeAnchor } from '@/features/dashboard/plans/components/TierBadge';
@@ -595,7 +596,7 @@ export function PropertyPricingPage() {
   if (isLoading && !hydratedRef.current) {
     return (
       <AdminMobilePage
-        title="Pricing"
+        title={ADMIN_MODULE_PRICING_LABEL}
         subtitle="Manage pricing and availability."
         titleId="pricing-heading"
         heroTrailing={
@@ -710,7 +711,7 @@ export function PropertyPricingPage() {
   return (
     <>
       <AdminMobilePage
-        title="Pricing"
+        title={ADMIN_MODULE_PRICING_LABEL}
         subtitle="Manage pricing and availability."
         titleId="pricing-heading"
         heroTrailing={heroTrailing}

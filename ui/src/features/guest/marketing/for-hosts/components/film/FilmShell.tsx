@@ -11,19 +11,21 @@ import {
   DollarSign,
   FileText,
   Globe,
+  CalendarRange,
   HelpCircle,
   Home,
-  Inbox,
   LayoutDashboard,
   ListChecks,
   Megaphone,
+  MessageSquare,
   Settings,
-  Tags,
+  Star,
   Users,
   Wrench,
   type LucideIcon,
 } from 'lucide-react';
 
+import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import { cn } from '@/lib/utils';
 
 export type FilmShellContext = 'org' | 'property';
@@ -33,31 +35,33 @@ interface NavItem {
   icon: LucideIcon;
 }
 
-/** Mirrors buildPropertyNavSections() in features/dashboard/bookings/lib/adminSidebarNav.ts */
+/** Mirrors buildPropertyNavSections() item order in adminSidebarNav.ts */
 const PROPERTY_NAV: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard },
   { label: 'Bookings', icon: BookOpen },
   { label: 'Finance', icon: DollarSign },
   { label: 'Maintenance', icon: Wrench },
-  { label: 'Pricing', icon: Tags },
-  { label: 'Analytics', icon: BarChart3 },
-  { label: 'Team', icon: Users },
-  { label: 'Marketing', icon: Megaphone },
-  { label: 'Inbox', icon: Inbox },
+  { label: ADMIN_MODULE_LABEL.pricing, icon: CalendarRange },
+  { label: ADMIN_MODULE_LABEL.inbox, icon: MessageSquare },
+  { label: 'Reviews', icon: Star },
   { label: 'Notifications', icon: Bell },
   { label: 'Templates', icon: FileText },
+  { label: 'Analytics', icon: BarChart3 },
+  { label: 'Marketing', icon: Megaphone },
   { label: 'Public Pages', icon: Globe },
+  { label: 'Team', icon: Users },
   { label: 'Settings', icon: Settings },
   { label: 'Help & Support', icon: HelpCircle },
 ];
 
-/** Mirrors buildOrgNavSections() */
+/** Mirrors buildOrgNavSections() item order */
 const ORG_NAV: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard },
   { label: 'Bookings', icon: BookOpen },
+  { label: 'Reviews', icon: Star },
+  { label: 'Analytics', icon: BarChart3 },
   { label: 'Properties', icon: Building2 },
   { label: 'Parkings', icon: Car },
-  { label: 'Analytics', icon: BarChart3 },
   { label: 'Team', icon: Users },
   { label: 'Plans & Billing', icon: CreditCard },
   { label: 'Announcements', icon: Megaphone },

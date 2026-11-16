@@ -29,7 +29,7 @@ Route: `/org/:orgSlug/parking/:parkingSlug/settings`
 
 **Permissions:** parking team `settings:view` to open; `settings:edit` to save sections and upload media. Archiving/restoring also requires the org-level `org.parkings:manage` permission and cannot be done by a parking member. Delete is org-level and is blocked once the slot has any booking history.
 
-Configure one parking slot: up to 3 photos, dimensions and check-in times, amenities, location, automation emails, integrations status, and delete. Guests pay through PayMongo, so there is no payment method section. Saves update the public listing guests see at `/parkings/:slug` and the admin sidebar for this slot. Aligned with [Property Settings](../property/settings.md): required fields, save-blocking validation, and section red-dot tracking follow the same pattern. Field helpers use a **?** beside the label (`FieldLabel` / `SettingsField` `help`) — not muted text under the control.
+Configure one parking slot: up to 3 photos, dimensions and check-in times, amenities, location, automation emails, integrations status, and delete. Guests pay through PayMongo, so there is no payment method section. Saves update the public listing guests see at `/parkings/:slug` and the admin sidebar for this slot. Aligned with [Property Settings](../property/settings.md): required fields, save-blocking validation, section red-dot tracking, and labelled section nav groups (**Listing** → **Automations** → **Connections** → **Account**) follow the same pattern. Field helpers use a **?** beside the label (`FieldLabel` / `SettingsField` `help`) — not muted text under the control.
 
 ---
 

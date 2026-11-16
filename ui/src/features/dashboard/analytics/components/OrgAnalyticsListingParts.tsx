@@ -31,19 +31,28 @@ export function OrgAnalyticsKindBadge({ kind }: { kind: 'property' | 'parking' }
   );
 }
 
-/** One verdict per listing: a badge when action is needed, plain text when on track. */
+/**
+ * One verdict per listing: badge when action is needed, plain text when on track.
+ * When Outlook is shown nearby, pass `hideOutlookReasons` so "Underbooked" is not repeated.
+ */
 export function OrgAnalyticsAttention({
   row,
   showDetail = true,
+  hideOutlookReasons = false,
   className,
 }: {
   row: OrgAnalyticsUnlockedRow;
   showDetail?: boolean;
+  /** Skip underbooked lines; Outlook owns next-30-nights state. */
+  hideOutlookReasons?: boolean;
   className?: string;
 }) {
-  const reasons = orgAttentionReasons(row);
+  const allReasons = orgAttentionReasons(row);
+  const reasons = hideOutlookReasons
+    ? allReasons.filter((reason) => reason.key !== 'underbooked')
+    : allReasons;
 
-  if (reasons.length === 0) {
+  if (allReasons.length === 0) {
     return (
       <span
         className={cn(
@@ -60,7 +69,7 @@ export function OrgAnalyticsAttention({
     );
   }
 
-  const urgent = reasons[0].severity >= 3;
+  const urgent = allReasons[0].severity >= 3;
 
   return (
     <div className={cn('flex min-w-0 flex-col gap-1', className)}>
@@ -73,14 +82,16 @@ export function OrgAnalyticsAttention({
         <AlertTriangle className="size-3 shrink-0" aria-hidden />
         Needs attention
       </span>
-      <ul className="text-muted-foreground space-y-0.5 text-[11px] leading-snug sm:text-xs">
-        {reasons.map((reason) => (
-          <li key={reason.key}>
-            <span className="text-foreground font-medium">{reason.label}</span>
-            {showDetail ? <span>{`. ${reason.detail}`}</span> : null}
-          </li>
-        ))}
-      </ul>
+      {reasons.length > 0 ? (
+        <ul className="text-muted-foreground space-y-0.5 text-[11px] leading-snug sm:text-xs">
+          {reasons.map((reason) => (
+            <li key={reason.key}>
+              <span className="text-foreground font-medium">{reason.label}</span>
+              {showDetail ? <span>{`. ${reason.detail}`}</span> : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
@@ -96,11 +107,28 @@ const OUTLOOK_TONE: Record<OrgAnalyticsUnlockedRow['forwardOccupancyState30d'], 
 export function OrgAnalyticsOutlook({
   row,
   className,
+  compact = false,
 }: {
   row: OrgAnalyticsUnlockedRow;
   className?: string;
+  /** Single line for tight metric cells. */
+  compact?: boolean;
 }) {
   const rate = row.forwardOccupancyRate30d;
+  const label = ORG_OUTLOOK_LABEL[row.forwardOccupancyState30d];
+  if (compact) {
+    return (
+      <p
+        className={cn('text-xs font-medium leading-snug sm:text-[13px]', className)}
+        title={outlookDetail(row)}
+      >
+        <span className={OUTLOOK_TONE[row.forwardOccupancyState30d]}>{label}</span>
+        {rate !== undefined ? (
+          <span className="text-muted-foreground font-normal tabular-nums"> · {rate}%</span>
+        ) : null}
+      </p>
+    );
+  }
   return (
     <div className={cn('flex flex-col leading-snug', className)} title={outlookDetail(row)}>
       <span
@@ -109,7 +137,7 @@ export function OrgAnalyticsOutlook({
           OUTLOOK_TONE[row.forwardOccupancyState30d]
         )}
       >
-        {ORG_OUTLOOK_LABEL[row.forwardOccupancyState30d]}
+        {label}
       </span>
       {rate !== undefined ? (
         <span className="text-muted-foreground text-[11px] tabular-nums sm:text-xs">

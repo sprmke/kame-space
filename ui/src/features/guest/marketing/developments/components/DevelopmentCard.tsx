@@ -122,7 +122,9 @@ export function DevelopmentCard({
               <span className="font-semibold">₱{development.priceRange.min.toLocaleString()}</span>
               <span className="text-muted-foreground"> / night</span>
               <span className="text-muted-foreground"> · </span>
-              <span className="text-muted-foreground">{development.propertyCount} homes</span>
+              <span className="text-muted-foreground">
+                {development.propertyCount} {development.propertyCount === 1 ? 'home' : 'homes'}
+              </span>
             </p>
           </div>
         </Link>

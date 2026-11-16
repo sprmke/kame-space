@@ -7,12 +7,14 @@ import type {
 
 import type { BottomTabItem } from '@/components/mobile/BottomTabBar';
 import { MORE_TAB_KEY, moreTabItem } from '@/components/mobile/BottomTabBar';
+import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 
 export const ASSISTANT_TAB_KEY = 'assistant';
 export const NOTIFICATIONS_TAB_KEY = 'notifications';
 
 const MAX_PRIMARY_ROUTE_TABS = 3;
-const CORE_ROUTE_LABELS = ['Dashboard', 'Bookings', 'Inbox'] as const;
+
+const CORE_ROUTE_LABELS = ['Dashboard', 'Bookings', ADMIN_MODULE_LABEL.inbox] as const;
 
 export type AdminBottomNavOverlays = {
   onMoreClick: () => void;
@@ -57,16 +59,24 @@ function pickPrimaryRouteTabs(navigable: SidebarNavItem[]): SidebarNavItem[] {
 
 /**
  * Split permission-filtered sidebar nav into primary bottom tabs + full list for the More sheet.
- * Route tabs prefer Dashboard / Bookings / Inbox, then fill from remaining nav.
+ * Route tabs prefer Dashboard / Bookings / Messages, then fill from remaining nav.
  * Notifications then Assistant are overlay actions (not routes) when provided.
  */
 export function splitAdminBottomNav(
   sections: SidebarNavSection[],
   overlays: AdminBottomNavOverlays
-): { tabItems: BottomTabItem[]; moreItems: SidebarNavItem[]; primaryHrefs: string[] } {
+): {
+  tabItems: BottomTabItem[];
+  moreSections: SidebarNavSection[];
+  moreItems: SidebarNavItem[];
+  primaryHrefs: string[];
+} {
   const navigable = flattenNavigableNavItems(sections);
   const primary = pickPrimaryRouteTabs(navigable);
   const moreItems = navigable;
+  const moreSections = sections.filter((section) =>
+    section.items.some((item) => item.href && !item.disabled)
+  );
 
   const tabItems: BottomTabItem[] = [
     ...primary.map((item) => ({
@@ -100,6 +110,7 @@ export function splitAdminBottomNav(
 
   return {
     tabItems,
+    moreSections,
     moreItems,
     primaryHrefs: primary.map((item) => item.href!),
   };

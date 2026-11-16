@@ -28,7 +28,7 @@ Route: `/org/:orgSlug/settings`
 
 **Browser tab title:** `${Org Name} - Settings` (org-scoped); fallback `Kame Space` while loading.
 
-Organization settings uses `AdminSectionNavLayout`. **Save** lives only in the page header (desktop button / phone hero icon) when the form is dirty — no sticky footer bar. Field helpers use a **?** beside the label (`FieldLabel` / `OrgSettingsField` `help`) — not muted text under the control.
+Organization settings uses `AdminSectionNavLayout` with labelled groups **Profile** → **AI** → **Account**. Desktop section nav: idle rows have no fill (main-sidebar style); the active row uses a spring sliding pill. Scroll-spy updates on a short throttle so the pill glides neighbor-to-neighbor. On short laptops the rail scrolls inside its own `max-h` port and keeps the active row in view (vertical keep-in-view); it never calls window `scrollIntoView` on the button. **Save** lives only in the page header (desktop button / phone hero icon) when the form is dirty — no sticky footer bar. Field helpers use a **?** beside the label (`FieldLabel` / `OrgSettingsField` `help`) — not muted text under the control.
 
 Persistence uses **two APIs**:
 

@@ -89,6 +89,7 @@ export type PropertySettingsSectionId =
   | 'payment'
   | 'building-forms'
   | 'email-automations'
+  | 'search'
   | 'integrations'
   | 'danger';
 

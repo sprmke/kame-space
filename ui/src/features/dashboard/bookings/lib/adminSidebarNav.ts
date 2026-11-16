@@ -10,17 +10,18 @@ import {
   DollarSign,
   FileText,
   Globe,
+  CalendarRange,
   HelpCircle,
-  Inbox,
   LayoutDashboard,
   Megaphone,
+  MessageSquare,
   Settings,
   Star,
-  Tags,
   Users,
   Wrench,
 } from 'lucide-react';
 
+import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import {
   orgBookingsPath,
   orgDashboardPath,
@@ -70,7 +71,7 @@ export function buildOrgNavSections(
   const showProperties = options?.showProperties !== false;
   const showParkings = options?.showParkings !== false;
 
-  const items: SidebarNavItem[] = [
+  const overviewItems: SidebarNavItem[] = [
     {
       label: 'Dashboard',
       href: orgDashboardPath(orgSlug),
@@ -86,30 +87,30 @@ export function buildOrgNavSections(
       href: orgSectionPath(orgSlug, 'reviews'),
       Icon: Star,
     },
+    {
+      label: 'Analytics',
+      href: orgSectionPath(orgSlug, 'analytics'),
+      Icon: BarChart3,
+    },
   ];
 
+  const listingItems: SidebarNavItem[] = [];
   if (showProperties) {
-    items.push({
+    listingItems.push({
       label: 'Properties',
       href: orgPropertiesPath(orgSlug),
       Icon: Building2,
     });
   }
-
   if (showParkings) {
-    items.push({
+    listingItems.push({
       label: 'Parkings',
       href: orgParkingsPath(orgSlug),
       Icon: Car,
     });
   }
 
-  items.push(
-    {
-      label: 'Analytics',
-      href: orgSectionPath(orgSlug, 'analytics'),
-      Icon: BarChart3,
-    },
+  const organizationItems: SidebarNavItem[] = [
     {
       label: 'Team',
       href: orgTeamPath(orgSlug),
@@ -130,10 +131,16 @@ export function buildOrgNavSections(
       href: orgSettingsPath(orgSlug),
       Icon: Settings,
     },
-    { label: 'Help & Support', href: orgSectionPath(orgSlug, 'help-support'), Icon: HelpCircle }
-  );
+    { label: 'Help & Support', href: orgSectionPath(orgSlug, 'help-support'), Icon: HelpCircle },
+  ];
 
-  return [{ label: 'Org', items }];
+  const sections: SidebarNavSection[] = [{ label: 'Overview', items: overviewItems }];
+  if (listingItems.length > 0) {
+    sections.push({ label: 'Listings', items: listingItems });
+  }
+  sections.push({ label: 'Organization', items: organizationItems });
+
+  return sections;
 }
 
 /** Property context — guest-form operational sections. */
@@ -143,7 +150,7 @@ export function buildPropertyNavSections(
 ): SidebarNavSection[] {
   return [
     {
-      label: 'Property',
+      label: 'Operations',
       items: [
         {
           label: 'Dashboard',
@@ -166,29 +173,19 @@ export function buildPropertyNavSections(
           Icon: Wrench,
         },
         {
-          label: 'Pricing',
+          label: ADMIN_MODULE_LABEL.pricing,
           href: propertySectionPath(orgSlug, propertySlug, 'pricing'),
-          Icon: Tags,
+          Icon: CalendarRange,
         },
+      ],
+    },
+    {
+      label: 'Guests',
+      items: [
         {
-          label: 'Analytics',
-          href: propertySectionPath(orgSlug, propertySlug, 'analytics'),
-          Icon: BarChart3,
-        },
-        {
-          label: 'Team',
-          href: propertySectionPath(orgSlug, propertySlug, 'team'),
-          Icon: Users,
-        },
-        {
-          label: 'Marketing',
-          href: propertySectionPath(orgSlug, propertySlug, 'marketing'),
-          Icon: Megaphone,
-        },
-        {
-          label: 'Inbox',
+          label: ADMIN_MODULE_LABEL.inbox,
           href: propertySectionPath(orgSlug, propertySlug, 'inbox'),
-          Icon: Inbox,
+          Icon: MessageSquare,
         },
         {
           label: 'Reviews',
@@ -205,10 +202,35 @@ export function buildPropertyNavSections(
           href: propertySectionPath(orgSlug, propertySlug, 'templates'),
           Icon: FileText,
         },
+      ],
+    },
+    {
+      label: 'Growth',
+      items: [
+        {
+          label: 'Analytics',
+          href: propertySectionPath(orgSlug, propertySlug, 'analytics'),
+          Icon: BarChart3,
+        },
+        {
+          label: 'Marketing',
+          href: propertySectionPath(orgSlug, propertySlug, 'marketing'),
+          Icon: Megaphone,
+        },
         {
           label: 'Public Pages',
           href: propertySectionPath(orgSlug, propertySlug, 'public-pages'),
           Icon: Globe,
+        },
+      ],
+    },
+    {
+      label: 'Manage',
+      items: [
+        {
+          label: 'Team',
+          href: propertySectionPath(orgSlug, propertySlug, 'team'),
+          Icon: Users,
         },
         {
           label: 'Settings',
@@ -229,7 +251,7 @@ export function buildPropertyNavSections(
 export function buildParkingNavSections(orgSlug: string, parkingSlug: string): SidebarNavSection[] {
   return [
     {
-      label: 'Parking',
+      label: 'Operations',
       items: [
         {
           label: 'Dashboard',
@@ -247,24 +269,34 @@ export function buildParkingNavSections(orgSlug: string, parkingSlug: string): S
           Icon: DollarSign,
         },
         {
-          label: 'Pricing',
+          label: ADMIN_MODULE_LABEL.pricing,
           href: parkingSectionPath(orgSlug, parkingSlug, 'pricing'),
-          Icon: Tags,
+          Icon: CalendarRange,
         },
+      ],
+    },
+    {
+      label: 'Guests',
+      items: [
         {
-          label: 'Team',
-          href: parkingSectionPath(orgSlug, parkingSlug, 'team'),
-          Icon: Users,
-        },
-        {
-          label: 'Inbox',
+          label: ADMIN_MODULE_LABEL.inbox,
           href: parkingSectionPath(orgSlug, parkingSlug, 'inbox'),
-          Icon: Inbox,
+          Icon: MessageSquare,
         },
         {
           label: 'Notifications',
           href: parkingSectionPath(orgSlug, parkingSlug, 'notifications'),
           Icon: Bell,
+        },
+      ],
+    },
+    {
+      label: 'Manage',
+      items: [
+        {
+          label: 'Team',
+          href: parkingSectionPath(orgSlug, parkingSlug, 'team'),
+          Icon: Users,
         },
         {
           label: 'Settings',

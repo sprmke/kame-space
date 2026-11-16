@@ -54,7 +54,7 @@ export function ParkingSettingsCard() {
     isDirty,
     userEdited,
     draftCompletion,
-    navSections,
+    navSectionGroups,
     busy,
     saveDisabledByValidation,
     saveDisabled,
@@ -115,7 +115,7 @@ export function ParkingSettingsCard() {
         {!settingsReady ? (
           <AppSettingsNavLayoutSkeleton navLabels={SECTIONS.map((section) => section.label)} />
         ) : (
-          <AdminSectionNavLayout className="min-h-0 flex-1" sections={navSections}>
+          <AdminSectionNavLayout className="min-h-0 flex-1" sectionGroups={navSectionGroups}>
             <ParkingBasicInformationSection controller={controller} />
             <ParkingPhotosSection controller={controller} />
             <ParkingDetailsSectionBlock controller={controller} />

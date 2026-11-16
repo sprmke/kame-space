@@ -25,10 +25,14 @@ import {
   metaGraphErrorFromResponse,
   MetaGraphError,
 } from './metaInboxGraphError.ts';
-import { buildMetaConversationsUrl, extractMetaPagingCursor } from './metaInboxGraphPaging.ts';
+import {
+  buildMetaConversationByUserUrl,
+  buildMetaConversationsUrl,
+  extractMetaPagingCursor,
+} from './metaInboxGraphPaging.ts';
 
 export { getPageAccessToken, parseMetaGraphJson, subscribeMetaPageWebhooks };
-export { buildMetaConversationsUrl, extractMetaPagingCursor };
+export { buildMetaConversationByUserUrl, buildMetaConversationsUrl, extractMetaPagingCursor };
 
 export type MetaPageAccount = {
   id: string;
@@ -186,6 +190,91 @@ export async function fetchMetaMessengerParticipantProfile(
     console.warn('[fetchMetaMessengerParticipantProfile]', (e as Error).message);
     return { name: null, profilePic: null };
   }
+}
+
+/**
+ * Guest display name from Page conversations (same source as import / backfill).
+ *
+ * Prefer this when User Profile is empty: conversations `participants.name` works with
+ * `pages_messaging`; User Profile needs Advanced Access for Business Asset User Profile.
+ */
+export async function fetchMetaConversationParticipantName(opts: {
+  pageId: string;
+  pageAccessToken: string;
+  platform: SocialPlatform;
+  guestId: string;
+  selfIds: Set<string>;
+}): Promise<string | null> {
+  const graphPlatform = opts.platform === 'instagram' ? 'instagram' : 'messenger';
+  try {
+    const res = await fetch(
+      buildMetaConversationByUserUrl(opts.pageId, opts.pageAccessToken, graphPlatform, opts.guestId)
+    );
+    const json = await parseMetaGraphJson(res);
+    if (!res.ok) {
+      console.warn(
+        '[fetchMetaConversationParticipantName]',
+        (json.error as { message?: string } | undefined)?.message ?? res.status
+      );
+      return null;
+    }
+    const rows = (json.data as MetaConversationItem[] | undefined) ?? [];
+    const parts = rows[0]?.participants?.data ?? [];
+    const guest =
+      parts.find((p) => p.id && !opts.selfIds.has(p.id)) ??
+      parts.find((p) => p.id === opts.guestId) ??
+      parts[0];
+    return formatMetaParticipantDisplayName({
+      name: guest?.name,
+      username: guest?.username,
+    });
+  } catch (e) {
+    console.warn('[fetchMetaConversationParticipantName]', (e as Error).message);
+    return null;
+  }
+}
+
+/**
+ * Resolve a DM guest label for webhook / fill-missing.
+ *
+ * Order matches the pre-pipeline handler: webhook sender fields, then User Profile, then
+ * conversations participants (import's reliable name source).
+ */
+export async function resolveMetaDmParticipantIdentity(opts: {
+  guestId: string;
+  pageAccessToken: string;
+  platform: SocialPlatform;
+  pageId: string | null | undefined;
+  selfIds: Set<string>;
+  webhookSender?: { name?: string | null; username?: string | null };
+}): Promise<{ name: string | null; profilePic: string | null }> {
+  const webhookName = formatMetaParticipantDisplayName({
+    name: opts.webhookSender?.name,
+    username: opts.webhookSender?.username,
+  });
+  if (webhookName) return { name: webhookName, profilePic: null };
+
+  const profile = await fetchMetaMessengerParticipantProfile(
+    opts.guestId,
+    opts.pageAccessToken,
+    opts.platform
+  );
+  if (profile.name) return profile;
+
+  const pageId = opts.pageId?.trim();
+  if (!pageId) return profile;
+
+  const conversationName = await fetchMetaConversationParticipantName({
+    pageId,
+    pageAccessToken: opts.pageAccessToken,
+    platform: opts.platform,
+    guestId: opts.guestId,
+    selfIds: opts.selfIds,
+  });
+  return {
+    name: conversationName ?? profile.name,
+    profilePic: profile.profilePic,
+  };
 }
 
 export type PersistMetaPageScope = {
@@ -453,7 +542,11 @@ async function postMetaJsonWithRetry(
     const json = (await res.json()) as Record<string, unknown>;
     if (res.ok) return json;
 
-    const graphError = metaGraphErrorFromResponse(json, res.status, `${errorFallback} (${res.status})`);
+    const graphError = metaGraphErrorFromResponse(
+      json,
+      res.status,
+      `${errorFallback} (${res.status})`
+    );
     if (!isMetaRateLimitError(graphError)) {
       throw graphError;
     }

@@ -1,5 +1,6 @@
 import { assertEquals, assertStringIncludes } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import {
+  buildMetaConversationByUserUrl,
   buildMetaConversationsUrl,
   extractMetaPagingCursor,
 } from './metaInboxGraphPaging.ts';
@@ -51,4 +52,13 @@ Deno.test('buildMetaConversationsUrl: no cursor means the first page', () => {
 Deno.test('the Graph version is v26.0', () => {
   const url = new URL(buildMetaConversationsUrl(PAGE_ID, TOKEN, 'messenger'));
   assertStringIncludes(url.pathname, '/v26.0/');
+});
+
+Deno.test('buildMetaConversationByUserUrl: looks up one thread by PSID', () => {
+  const url = new URL(buildMetaConversationByUserUrl(PAGE_ID, TOKEN, 'messenger', 'guest-psid-9'));
+  assertEquals(url.searchParams.get('user_id'), 'guest-psid-9');
+  assertEquals(url.searchParams.get('platform'), 'messenger');
+  assertEquals(url.searchParams.get('fields'), 'participants{id,name,username}');
+  assertEquals(url.searchParams.get('limit'), '1');
+  assertStringIncludes(url.pathname, `/v26.0/${PAGE_ID}/conversations`);
 });

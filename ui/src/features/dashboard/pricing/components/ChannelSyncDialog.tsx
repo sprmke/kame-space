@@ -1,6 +1,23 @@
-import { useRef, useState, type FormEvent, type MouseEvent, type ReactElement } from 'react';
+import {
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type MouseEvent,
+  type ReactElement,
+} from 'react';
 
-import { CalendarRange, Check, Copy, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import {
+  CalendarOff,
+  CalendarPlus,
+  CalendarRange,
+  Check,
+  Copy,
+  Loader2,
+  RefreshCw,
+  Trash2,
+  XCircle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { FeatureAvailabilityButton } from '@/components/feature-availability/FeatureAvailabilityButton';
@@ -18,9 +35,12 @@ import {
   useSyncFeedNow,
 } from '@/features/dashboard/pricing/hooks/useCalendarSync';
 import {
+  buildCalendarSyncActivityRows,
+  type CalendarSyncActivityTone,
+} from '@/features/dashboard/pricing/lib/calendarSyncActivity';
+import {
   CALENDAR_PROVIDER_LABELS,
   validateAirbnbCalendarUrl,
-  type CalendarSyncEvent,
   type CalendarSyncFeed,
 } from '@/features/dashboard/pricing/lib/calendarSyncApi';
 
@@ -37,7 +57,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import {
   ResponsiveModal,
@@ -54,14 +73,15 @@ import { useFeatureAvailability } from '@/lib/featureAvailability/useFeatureAvai
 import { cn } from '@/lib/utils';
 import { formatRelative } from '@/utils/format/bookingDisplay';
 
-const HEALTH_TONE: Record<
-  CalendarSyncFeed['health'],
-  { label: string; variant: 'secondary' | 'outline' | 'destructive' }
-> = {
-  ok: { label: 'Synced', variant: 'secondary' },
-  warning: { label: 'Retrying', variant: 'outline' },
-  error: { label: 'Needs fix', variant: 'destructive' },
-};
+function feedHealthBadge(feed: CalendarSyncFeed): {
+  label: string;
+  variant: 'secondary' | 'outline' | 'destructive';
+} {
+  if (feed.health === 'error') return { label: 'Needs fix', variant: 'destructive' };
+  if (feed.health === 'warning') return { label: 'Retrying', variant: 'outline' };
+  if (feed.lastSuccessAt) return { label: 'Synced', variant: 'secondary' };
+  return { label: 'Connected', variant: 'outline' };
+}
 
 function ChannelSyncBodySkeleton() {
   return (
@@ -98,6 +118,9 @@ const SHARE_WITH_AIRBNB_HELP =
 const PASTE_INTO_AIRBNB_HELP =
   'In Airbnb: listing Calendar → Availability → Connect calendars → Import calendar. Paste this link, name it, and save. Airbnb refreshes every few hours.';
 
+const CREATE_BOOKINGS_HELP =
+  'When on, each Airbnb reservation becomes a Pending review booking. Dates still block either way.';
+
 function CopyButton({ value, label }: { value: string; label: string }) {
   const [copied, setCopied] = useState(false);
   return (
@@ -122,31 +145,24 @@ function CopyButton({ value, label }: { value: string; label: string }) {
   );
 }
 
-function eventLine(e: CalendarSyncEvent): string {
-  const range = e.start_date && e.end_date ? ` ${e.start_date} → ${e.end_date}` : '';
-  switch (e.action) {
-    case 'block_created':
-      return `Imported reservation${range}`;
-    case 'block_updated':
-      return `Reservation dates changed${range}`;
-    case 'block_removed':
-      return `Reservation removed${range}`;
-    case 'booking_created':
-      return `Booking added${range}`;
-    case 'booking_linked':
-      return `Existing booking linked${range}`;
-    case 'booking_rescheduled':
-      return `Booking dates changed${range}`;
-    case 'booking_cancelled':
-      return `Booking cancelled${range}`;
-    case 'conflict_detected':
-      return `Conflict: overlaps another booking${range}`;
-    case 'error':
-      return `Sync error: ${String(e.detail?.reason ?? 'unknown')}`;
-    case 'skipped':
-      return `Skipped: ${String(e.detail?.reason ?? 'no change')}`;
+const ACTIVITY_TONE_CLASS: Record<CalendarSyncActivityTone, string> = {
+  neutral: 'bg-muted text-muted-foreground',
+  success: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+  warning: 'bg-amber-500/10 text-amber-800 dark:text-amber-400',
+  danger: 'bg-destructive/10 text-destructive',
+};
+
+function ActivityToneIcon({ tone }: { tone: CalendarSyncActivityTone }) {
+  const className = 'size-3.5 shrink-0';
+  switch (tone) {
+    case 'success':
+      return <CalendarPlus className={className} aria-hidden />;
+    case 'warning':
+      return <CalendarOff className={className} aria-hidden />;
+    case 'danger':
+      return <XCircle className={className} aria-hidden />;
     default:
-      return `${e.action}${range}`;
+      return <RefreshCw className={className} aria-hidden />;
   }
 }
 
@@ -179,11 +195,9 @@ export function ChannelSyncDialog({
   const syncNow = useSyncFeedNow();
 
   const [tab, setTab] = useState<'import' | 'export'>('import');
-  const [adding, setAdding] = useState(false);
   const [icsUrl, setIcsUrl] = useState('');
   const [urlTouched, setUrlTouched] = useState(false);
   const [pendingRemove, setPendingRemove] = useState<CalendarSyncFeed | null>(null);
-  const [activityOpen, setActivityOpen] = useState(false);
   /** Nested AlertDialog dismiss can bubble and close the parent modal — suppress briefly. */
   const suppressParentCloseRef = useRef(false);
   const nestedConfirmOpen = !!pendingRemove;
@@ -192,8 +206,11 @@ export function ChannelSyncDialog({
   const feeds = data?.feeds ?? [];
   const exportUrl = data?.export.urls?.airbnb ?? '';
   const exportEnabled = data?.export.enabled ?? false;
-  const recentEvents = data?.recentEvents ?? [];
-  const showAddForm = !readOnly && (adding || feeds.length === 0);
+  const activityRows = useMemo(
+    () => buildCalendarSyncActivityRows(data?.recentEvents ?? [], formatRelative, 5),
+    [data?.recentEvents]
+  );
+  const showAddForm = !readOnly && feeds.length === 0;
   const validationError = validateAirbnbCalendarUrl(icsUrl);
   /** Show errors only after the host types/changes the field (not on tab switch / blur). */
   const urlError = urlTouched ? validationError : null;
@@ -233,7 +250,6 @@ export function ChannelSyncDialog({
   const resetAddForm = () => {
     setIcsUrl('');
     setUrlTouched(false);
-    setAdding(false);
   };
 
   const closeNestedConfirm = (close: () => void) => {
@@ -271,11 +287,7 @@ export function ChannelSyncDialog({
   };
 
   const addForm = (
-    <form
-      className={cn('space-y-3', feeds.length > 0 && 'border-border rounded-xl border p-3')}
-      onSubmit={handleAdd}
-      noValidate
-    >
+    <form className="space-y-3" onSubmit={handleAdd} noValidate>
       <div className="space-y-1.5">
         <FieldLabel
           htmlFor="channel-url"
@@ -304,18 +316,7 @@ export function ChannelSyncDialog({
           </p>
         ) : null}
       </div>
-      <div className="flex gap-2 pt-1">
-        {feeds.length > 0 ? (
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-[44px] flex-1"
-            onClick={resetAddForm}
-            disabled={addFeed.isPending}
-          >
-            Cancel
-          </Button>
-        ) : null}
+      <div className="pt-1">
         {wrapImportAction(
           <Button type="submit" className="min-h-[44px] w-full" disabled={!canConnect}>
             {addFeed.isPending ? <Loader2 className="size-4 animate-spin" /> : 'Connect'}
@@ -334,7 +335,6 @@ export function ChannelSyncDialog({
           if (!next) {
             resetAddForm();
             setTab('import');
-            setActivityOpen(false);
           }
           onOpenChange(next);
         }}
@@ -420,11 +420,6 @@ export function ChannelSyncDialog({
                 <TabsList className="grid h-10 w-full grid-cols-2 max-lg:h-9">
                   <TabsTrigger value="import" className="h-8 max-lg:h-7 max-lg:text-xs">
                     From Airbnb
-                    {feeds.length > 0 ? (
-                      <span className="text-muted-foreground ml-1.5 tabular-nums">
-                        {feeds.length}
-                      </span>
-                    ) : null}
                   </TabsTrigger>
                   <TabsTrigger value="export" className="h-8 max-lg:h-7 max-lg:text-xs">
                     To Airbnb
@@ -440,70 +435,77 @@ export function ChannelSyncDialog({
                       tone={importAvailability.tone}
                     />
                   ) : null}
-                  <div className="border-primary/20 bg-primary/5 rounded-xl border p-3">
-                    <p className="text-foreground text-xs font-medium">How Airbnb sync works</p>
-                    <ol className="text-muted-foreground mt-1 list-decimal space-y-0.5 pl-4 text-xs">
-                      <li>Airbnb dates block here within 30 minutes.</li>
-                      <li>New reservations become bookings you can review.</li>
-                      <li>Open one on the calendar to copy its guest form link.</li>
-                    </ol>
-                  </div>
-                  {feeds.length === 0 && readOnly ? (
-                    <div className="flex flex-col items-center gap-3 py-8 text-center">
-                      <div className="bg-muted/80 flex size-12 items-center justify-center rounded-full">
-                        <CalendarRange className="text-muted-foreground size-5" aria-hidden />
+
+                  {feeds.length === 0 ? (
+                    <div className="space-y-4">
+                      <div className="flex flex-col items-center gap-3 pt-2 text-center">
+                        <div className="bg-muted/80 flex size-12 items-center justify-center rounded-full">
+                          <CalendarRange className="text-muted-foreground size-5" aria-hidden />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-foreground text-sm font-medium">
+                            Pull Airbnb dates into this calendar
+                          </p>
+                          <p className="text-muted-foreground mx-auto max-w-[22rem] text-xs leading-relaxed">
+                            {readOnly
+                              ? 'No Airbnb calendar is connected for this property.'
+                              : 'Connect once. Airbnb stays block here, and new reservations can become bookings you review.'}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-foreground text-sm font-medium">No Airbnb calendar</p>
-                      <p className="text-muted-foreground max-w-[18rem] text-xs">
-                        No Airbnb calendar is connected for this property.
-                      </p>
+                      {!readOnly ? (
+                        <ol className="text-muted-foreground space-y-2 rounded-xl border px-3 py-3 text-xs leading-relaxed">
+                          <li className="flex gap-2">
+                            <span className="text-foreground w-4 shrink-0 font-medium tabular-nums">
+                              1
+                            </span>
+                            <span>Paste Airbnb's Export calendar link below.</span>
+                          </li>
+                          <li className="flex gap-2">
+                            <span className="text-foreground w-4 shrink-0 font-medium tabular-nums">
+                              2
+                            </span>
+                            <span>Busy dates appear here within about 30 minutes.</span>
+                          </li>
+                          <li className="flex gap-2">
+                            <span className="text-foreground w-4 shrink-0 font-medium tabular-nums">
+                              3
+                            </span>
+                            <span>
+                              With Create bookings on, each reservation becomes a Pending review
+                              booking.
+                            </span>
+                          </li>
+                        </ol>
+                      ) : null}
+                      {showAddForm ? addForm : null}
                     </div>
                   ) : (
                     <>
-                      {feeds.length > 0 ? (
-                        <ul className="divide-border divide-y overflow-hidden rounded-xl border">
-                          {feeds.map((feed) => {
-                            const tone = HEALTH_TONE[feed.health];
-                            const name = feed.label || CALENDAR_PROVIDER_LABELS[feed.provider];
-                            return (
-                              <li key={feed.id} className="flex items-start gap-2 p-3">
+                      <ul className="space-y-3">
+                        {feeds.map((feed) => {
+                          const badge = feedHealthBadge(feed);
+                          const name = feed.label || CALENDAR_PROVIDER_LABELS[feed.provider];
+                          const statusLine = feed.lastSuccessAt
+                            ? `Synced ${formatRelative(feed.lastSuccessAt)}`
+                            : 'Waiting for first sync';
+                          return (
+                            <li key={feed.id} className="overflow-hidden rounded-xl border">
+                              <div className="flex items-start gap-2 px-3 py-3">
                                 <div className="min-w-0 flex-1 space-y-1">
                                   <div className="flex flex-wrap items-center gap-2">
                                     <span className="text-sm font-medium">{name}</span>
-                                    <Badge variant={tone.variant}>{tone.label}</Badge>
+                                    <Badge variant={badge.variant}>{badge.label}</Badge>
                                   </div>
-                                  <p className="text-muted-foreground text-xs">
-                                    {feed.lastSuccessAt
-                                      ? `Synced ${formatRelative(feed.lastSuccessAt)}`
-                                      : 'Not synced yet'}
+                                  <p className="text-muted-foreground text-xs leading-snug">
+                                    {statusLine}
                                     {feed.health === 'error' && feed.lastError
                                       ? ` · ${feed.lastError}`
                                       : ''}
                                   </p>
-                                  <div className="flex items-center justify-between gap-3 pt-1.5">
-                                    <span className="text-muted-foreground text-xs">
-                                      Create bookings
-                                    </span>
-                                    <Switch
-                                      checked={feed.createBookings}
-                                      disabled={
-                                        readOnly ||
-                                        (setCreateBookings.isPending &&
-                                          setCreateBookings.variables?.feedId === feed.id)
-                                      }
-                                      onCheckedChange={(checked) => {
-                                        if (!requireCalendarSyncPlan()) return;
-                                        setCreateBookings.mutate({
-                                          feedId: feed.id,
-                                          enabled: checked,
-                                        });
-                                      }}
-                                      aria-label={`Create bookings from ${name}`}
-                                    />
-                                  </div>
                                 </div>
                                 {!readOnly ? (
-                                  <div className="flex shrink-0 items-center gap-0.5">
+                                  <div className="-mr-1 flex shrink-0 items-center">
                                     {wrapImportAction(
                                       <Button
                                         type="button"
@@ -537,101 +539,175 @@ export function ChannelSyncDialog({
                                     )}
                                   </div>
                                 ) : null}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      ) : null}
+                              </div>
+                              <div className="border-border/60 flex items-center justify-between gap-3 border-t px-3 py-2.5">
+                                <div className="min-w-0">
+                                  <p className="text-foreground text-sm">Create bookings</p>
+                                  <p className="text-muted-foreground mt-0.5 text-xs leading-snug">
+                                    {CREATE_BOOKINGS_HELP}
+                                  </p>
+                                </div>
+                                <Switch
+                                  checked={feed.createBookings}
+                                  disabled={
+                                    readOnly ||
+                                    (setCreateBookings.isPending &&
+                                      setCreateBookings.variables?.feedId === feed.id)
+                                  }
+                                  onCheckedChange={(checked) => {
+                                    if (!requireCalendarSyncPlan()) return;
+                                    setCreateBookings.mutate({
+                                      feedId: feed.id,
+                                      enabled: checked,
+                                    });
+                                  }}
+                                  aria-label={`Create bookings from ${name}`}
+                                />
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
 
-                      {showAddForm
-                        ? addForm
-                        : !readOnly
-                          ? wrapImportAction(
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="min-h-[44px] w-full gap-1.5"
-                                onClick={() => setAdding(true)}
-                              >
-                                <Plus className="size-4" aria-hidden />
-                                Connect Airbnb
-                              </Button>
-                            )
-                          : null}
+                      {activityRows.length > 0 ? (
+                        <section className="space-y-2" aria-label="Recent activity">
+                          <h3 className="text-foreground text-sm font-medium">Recent activity</h3>
+                          <ul className="divide-border divide-y overflow-hidden rounded-xl border">
+                            {activityRows.map((row) => (
+                              <li key={row.id} className="flex items-start gap-2.5 px-3 py-2.5">
+                                <span
+                                  className={cn(
+                                    'mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full',
+                                    ACTIVITY_TONE_CLASS[row.tone]
+                                  )}
+                                  aria-hidden
+                                >
+                                  <ActivityToneIcon tone={row.tone} />
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-foreground text-sm leading-snug">
+                                    {row.title}
+                                  </p>
+                                  {row.rangeLabel ? (
+                                    <p className="text-muted-foreground mt-0.5 text-xs leading-snug">
+                                      {row.rangeLabel}
+                                    </p>
+                                  ) : null}
+                                </div>
+                                <time
+                                  dateTime={row.createdAt}
+                                  className="text-muted-foreground shrink-0 pt-0.5 text-[11px] tabular-nums"
+                                >
+                                  {row.relativeAt}
+                                </time>
+                              </li>
+                            ))}
+                          </ul>
+                        </section>
+                      ) : null}
                     </>
                   )}
-
-                  {recentEvents.length > 0 ? (
-                    <Collapsible open={activityOpen} onOpenChange={setActivityOpen}>
-                      <CollapsibleTrigger className="text-muted-foreground hover:text-foreground flex min-h-[44px] w-full items-center justify-between text-left text-sm font-medium">
-                        Recent activity
-                        <span className="text-xs tabular-nums">{recentEvents.length}</span>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <ul className="space-y-1.5 pb-1">
-                          {recentEvents.slice(0, 8).map((e) => (
-                            <li
-                              key={e.id}
-                              className="text-muted-foreground flex justify-between gap-3 text-xs"
-                            >
-                              <span className="truncate">{eventLine(e)}</span>
-                              <span className="shrink-0">{formatRelative(e.created_at)}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ) : null}
                 </TabsContent>
 
-                <TabsContent value="export" className="mt-0 space-y-5 focus-visible:ring-0">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <FieldLabel
-                        htmlFor="channel-export-enabled"
-                        label="Share with Airbnb"
-                        help={SHARE_WITH_AIRBNB_HELP}
-                        className="mb-0"
-                      />
-                      {showChannelSyncTierBadge ? <TierBadge feature="calendarSync" /> : null}
-                    </div>
-                    <Switch
-                      id="channel-export-enabled"
-                      checked={exportEnabled}
-                      onCheckedChange={handleExportEnabledChange}
-                      disabled={
-                        readOnly ||
-                        setEnabled.isPending ||
-                        !data?.export.urls ||
-                        (!channelSyncAvailability.available && !channelSyncAvailability.isLoading)
-                      }
-                    />
-                  </div>
-
-                  {exportEnabled && exportUrl ? (
-                    <div className="space-y-1.5">
-                      <FieldLabel
-                        htmlFor="channel-export-url"
-                        label="Paste into Airbnb"
-                        help={PASTE_INTO_AIRBNB_HELP}
-                      />
-                      <div className="flex gap-2">
-                        <Input
-                          id="channel-export-url"
-                          readOnly
-                          value={exportUrl}
-                          className="h-11 min-w-0 flex-1 font-mono text-xs"
-                        />
-                        <CopyButton value={exportUrl} label="Copy Airbnb export link" />
+                <TabsContent value="export" className="mt-0 space-y-4 focus-visible:ring-0">
+                  {!exportEnabled ? (
+                    <div className="space-y-4">
+                      <div className="flex flex-col items-center gap-3 pt-2 text-center">
+                        <div className="bg-muted/80 flex size-12 items-center justify-center rounded-full">
+                          <CalendarOff className="text-muted-foreground size-5" aria-hidden />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-foreground text-sm font-medium">
+                            Block Airbnb when guests book here
+                          </p>
+                          <p className="text-muted-foreground mx-auto max-w-[22rem] text-xs leading-relaxed">
+                            Share a private calendar link so Airbnb learns about Kame bookings and
+                            manual blocks. Airbnb's own nights are not sent back.
+                          </p>
+                        </div>
                       </div>
+                      <ol className="text-muted-foreground space-y-2 rounded-xl border px-3 py-3 text-xs leading-relaxed">
+                        <li className="flex gap-2">
+                          <span className="text-foreground w-4 shrink-0 font-medium tabular-nums">
+                            1
+                          </span>
+                          <span>Turn on Share with Airbnb below.</span>
+                        </li>
+                        <li className="flex gap-2">
+                          <span className="text-foreground w-4 shrink-0 font-medium tabular-nums">
+                            2
+                          </span>
+                          <span>Copy the link into Airbnb → Import calendar.</span>
+                        </li>
+                        <li className="flex gap-2">
+                          <span className="text-foreground w-4 shrink-0 font-medium tabular-nums">
+                            3
+                          </span>
+                          <span>
+                            Airbnb refreshes every few hours. New Kame stays then show as busy
+                            there.
+                          </span>
+                        </li>
+                      </ol>
                     </div>
-                  ) : data?.export.urls ? (
-                    <p className="text-muted-foreground text-sm">
-                      Turn on to copy a link for Airbnb’s import calendar.
-                    </p>
-                  ) : (
-                    <p className="text-muted-foreground text-sm">Export link unavailable.</p>
-                  )}
+                  ) : null}
+
+                  <div className="overflow-hidden rounded-xl border">
+                    <div className="flex items-center justify-between gap-3 px-3 py-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <FieldLabel
+                            htmlFor="channel-export-enabled"
+                            label="Share with Airbnb"
+                            help={SHARE_WITH_AIRBNB_HELP}
+                            className="mb-0"
+                          />
+                          {showChannelSyncTierBadge ? <TierBadge feature="calendarSync" /> : null}
+                        </div>
+                        {!exportEnabled ? (
+                          <p className="text-muted-foreground mt-1 text-xs leading-snug">
+                            Off until you turn it on. No link is shared with Airbnb yet.
+                          </p>
+                        ) : null}
+                      </div>
+                      <Switch
+                        id="channel-export-enabled"
+                        checked={exportEnabled}
+                        onCheckedChange={handleExportEnabledChange}
+                        disabled={
+                          readOnly ||
+                          setEnabled.isPending ||
+                          !data?.export.urls ||
+                          (!channelSyncAvailability.available && !channelSyncAvailability.isLoading)
+                        }
+                      />
+                    </div>
+
+                    {exportEnabled ? (
+                      <div className="border-border/60 space-y-1.5 border-t px-3 py-3">
+                        {exportUrl ? (
+                          <>
+                            <FieldLabel
+                              htmlFor="channel-export-url"
+                              label="Paste into Airbnb"
+                              help={PASTE_INTO_AIRBNB_HELP}
+                            />
+                            <div className="flex gap-2">
+                              <Input
+                                id="channel-export-url"
+                                readOnly
+                                value={exportUrl}
+                                className="h-11 min-w-0 flex-1 font-mono text-xs"
+                              />
+                              <CopyButton value={exportUrl} label="Copy Airbnb export link" />
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-muted-foreground text-sm">Export link unavailable.</p>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
                 </TabsContent>
               </Tabs>
             )}

@@ -23,8 +23,7 @@ export function FinanceTypeFilter({ value, onChange, nestedInPopover = false }: 
       onChange={onChange}
       ariaLabel="Type filter"
       triggerWidthClassName={nestedInPopover ? 'w-full' : 'sm:w-[8.75rem]'}
-      panelAlign={nestedInPopover ? 'left' : 'right'}
-      panelWidthClassName={nestedInPopover ? 'w-full' : 'w-[min(calc(100vw-24px),12rem)]'}
+      panelWidthClassName={nestedInPopover ? 'w-full' : undefined}
       toolbarExclusive={!nestedInPopover}
     />
   );

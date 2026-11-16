@@ -554,7 +554,7 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
     setNotificationsOpen((open) => !open);
   }, []);
 
-  const { tabItems, moreItems, primaryHrefs } = useMemo(
+  const { tabItems, moreSections, moreItems, primaryHrefs } = useMemo(
     () =>
       splitAdminBottomNav(navSections, {
         onMoreClick: openMoreSheet,
@@ -826,7 +826,7 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
                 setNotificationsOpen(false);
               }
             }}
-            moreItems={moreItems}
+            moreSections={moreSections}
             activeNavHref={activeNavHref}
             pathname={location.pathname}
             propertySettingsHasIssues={propertySettingsHasIssues}
@@ -1093,7 +1093,7 @@ function AdminSidebarNav({
   return (
     <>
       <nav
-        className={cn('flex-1 overflow-y-auto py-4', collapsed ? 'px-2' : 'px-3')}
+        className={cn('flex-1 overflow-y-auto py-3', collapsed ? 'px-2' : 'px-3')}
         aria-label="Main menu"
       >
         <div ref={containerRef} className="relative space-y-1.5">
@@ -1107,7 +1107,7 @@ function AdminSidebarNav({
             const showHeading =
               !collapsed && navSections.length > 1 && Boolean(section.label) && !section.hideLabel;
             return (
-              <div key={section.label} className={showHeading ? 'pt-3 first:pt-0' : undefined}>
+              <div key={section.label} className={showHeading ? 'pt-2.5 first:pt-0' : undefined}>
                 {showHeading ? (
                   <p className="text-sidebar-muted px-3 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider">
                     {section.label}

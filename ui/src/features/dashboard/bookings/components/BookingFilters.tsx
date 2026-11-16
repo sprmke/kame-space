@@ -325,10 +325,10 @@ function BookingStatusToolbarMenu({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        align="end"
+        align="start"
         sideOffset={6}
         collisionPadding={12}
-        className="w-[min(calc(100vw-2rem),17.5rem)] overflow-hidden p-0"
+        className="w-max min-w-[var(--radix-popover-trigger-width)] max-w-[min(calc(100vw-2rem),20rem)] overflow-hidden p-0"
       >
         {statusCount > 0 ? (
           <div className="border-border/60 flex items-center justify-end border-b px-2.5 py-1.5">

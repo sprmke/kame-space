@@ -1,4 +1,14 @@
-import { Bell, BookOpen, DollarSign, History, Inbox, Settings, Tags, Users } from 'lucide-react';
+import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
+import {
+  Bell,
+  BookOpen,
+  CalendarRange,
+  DollarSign,
+  History,
+  MessageSquare,
+  Settings,
+  Users,
+} from 'lucide-react';
 
 import type { TeamPermission } from '@/features/dashboard/team/types/propertyTeam';
 
@@ -56,17 +66,17 @@ export const PARKING_TEAM_PERMISSIONS: TeamPermission[] = [
   },
   {
     id: 'pricing:view',
-    name: 'View Pricing',
+    name: 'View pricing & availability',
     description: 'View nightly rates and calendar overrides',
-    category: 'Pricing',
-    icon: Tags,
+    category: ADMIN_MODULE_LABEL.pricing,
+    icon: CalendarRange,
   },
   {
     id: 'pricing:edit',
-    name: 'Edit Pricing',
+    name: 'Edit pricing & availability',
     description: 'Change rates and calendar prices',
-    category: 'Pricing',
-    icon: Tags,
+    category: ADMIN_MODULE_LABEL.pricing,
+    icon: CalendarRange,
   },
   {
     id: 'notifications:view',
@@ -119,24 +129,24 @@ export const PARKING_TEAM_PERMISSIONS: TeamPermission[] = [
   },
   {
     id: 'inbox:view',
-    name: 'View Inbox',
-    description: 'View guest inbox threads',
-    category: 'Inbox',
-    icon: Inbox,
+    name: 'View messages',
+    description: 'View guest message threads',
+    category: ADMIN_MODULE_LABEL.inbox,
+    icon: MessageSquare,
   },
   {
     id: 'inbox:reply',
-    name: 'Reply Inbox',
+    name: 'Reply to messages',
     description: 'Send replies and AI suggest',
-    category: 'Inbox',
-    icon: Inbox,
+    category: ADMIN_MODULE_LABEL.inbox,
+    icon: MessageSquare,
   },
   {
     id: 'inbox:manage',
-    name: 'Manage Inbox',
-    description: 'Connect or disconnect Meta channels',
-    category: 'Inbox',
-    icon: Inbox,
+    name: 'Manage messages',
+    description: 'Website chat settings',
+    category: ADMIN_MODULE_LABEL.inbox,
+    icon: MessageSquare,
   },
   {
     id: 'activity:view',

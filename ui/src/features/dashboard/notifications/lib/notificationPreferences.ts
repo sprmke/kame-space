@@ -46,7 +46,7 @@ export const NOTIFICATION_PREFERENCE_GROUP_LABELS: Record<
   bookings: { label: 'Bookings', hint: 'New requests, check-ins, checkouts, refunds' },
   inbox: { label: 'Messages', hint: 'Guest messages and inbox replies' },
   reviews: { label: 'Reviews', hint: 'New reviews and review reminders' },
-  pricing: { label: 'Pricing', hint: 'Smart pricing and calendar sync' },
+  pricing: { label: 'Pricing & availability', hint: 'Smart pricing and calendar sync' },
   finance: { label: 'Finance', hint: 'Payouts, refunds, and payments' },
   maintenance: { label: 'Maintenance', hint: 'Guest-reported and status changes' },
   analytics: { label: 'Analytics', hint: 'Review rollups and weekly summaries' },
@@ -82,8 +82,7 @@ export function normalizeNotificationPreferences(raw: unknown): NotificationPref
   return {
     mutedGroups: [...new Set(muted)],
     quietHoursEnabled: row.quietHoursEnabled === true,
-    quietHoursStart:
-      typeof row.quietHoursStart === 'string' ? row.quietHoursStart : '22:00',
+    quietHoursStart: typeof row.quietHoursStart === 'string' ? row.quietHoursStart : '22:00',
     quietHoursEnd: typeof row.quietHoursEnd === 'string' ? row.quietHoursEnd : '07:00',
     quietHoursTimezone:
       typeof row.quietHoursTimezone === 'string' ? row.quietHoursTimezone : 'Asia/Manila',

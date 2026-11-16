@@ -2,7 +2,7 @@
 title: 'Parking Help & Support'
 status: active
 tags: [guides, routes, org, parking, help-support]
-updated: 2026-09-05
+updated: 2026-11-16
 ---
 
 # Parking Help & Support
@@ -17,7 +17,7 @@ Announcements: [Announcements](./announcements.md) (`/announcements`). Legacy `/
 
 | Section      | E2E | Validation | Docs | Notes                                              |
 | ------------ | --- | ---------- | ---- | -------------------------------------------------- |
-| FAQs         | Yes | N/A        | Yes  | Up to eight parking-scoped published FAQs          |
+| FAQs         | Yes | N/A        | Yes  | Search + category tiles (parking-scoped)           |
 | All sections | Yes | Yes        | Yes  | Same feature as the property scope, parking-scoped |
 
 ## Overview
@@ -26,7 +26,7 @@ Identical feature to [Property Help & Support](../property/help-support.md), mou
 
 ## FAQs
 
-Common FAQs here are scoped to the **parking** mount: this slot’s settings, rates, finance, and parking team — not organization account FAQs, property bookings, or AI Assistant.
+FAQs home is **search plus category tiles** for this **parking** mount (slot settings, rates, finance, parking team). Opening a tile shows that topic’s Q&A. Organization account FAQs, property bookings, and AI Assistant stay on those Help pages.
 
 ## Host-facing knowledge
 

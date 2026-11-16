@@ -4,78 +4,83 @@ import {
   buildOrgNavSections,
   buildPropertyNavSections,
   buildParkingNavSections,
-  filterOrgNavSections,
-  filterPropertyNavSections,
-  filterParkingNavSections,
-  buildSuperAdminNavSections,
-  isSuperAdminPath,
-  isPropertyAdminPath,
-  isParkingAdminPath,
-  isOrgAdminPath,
 } from '@/features/dashboard/bookings/lib/adminSidebarNav';
+import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 
-describe('buildOrgNavSections', () => {
-  it('buildOrgNavSections is exported', () => {
-    expect(typeof buildOrgNavSections).toBe('function');
+function sectionLabels(sections: ReturnType<typeof buildPropertyNavSections>) {
+  return sections.map((section) => section.label);
+}
+
+function flatItemLabels(sections: ReturnType<typeof buildPropertyNavSections>) {
+  return sections.flatMap((section) => section.items.map((item) => item.label));
+}
+
+describe('buildPropertyNavSections', () => {
+  it('uses grouped section labels and property module order', () => {
+    const sections = buildPropertyNavSections('acme', 'monaco');
+    expect(sectionLabels(sections)).toEqual(['Operations', 'Guests', 'Growth', 'Manage']);
+    expect(flatItemLabels(sections)).toEqual([
+      'Dashboard',
+      'Bookings',
+      'Finance',
+      'Maintenance',
+      ADMIN_MODULE_LABEL.pricing,
+      ADMIN_MODULE_LABEL.inbox,
+      'Reviews',
+      'Notifications',
+      'Templates',
+      'Analytics',
+      'Marketing',
+      'Public Pages',
+      'Team',
+      'Settings',
+      'Help & Support',
+    ]);
   });
 });
 
-describe('buildPropertyNavSections', () => {
-  it('buildPropertyNavSections is exported', () => {
-    expect(typeof buildPropertyNavSections).toBe('function');
+describe('buildOrgNavSections', () => {
+  it('uses grouped section labels and org module order', () => {
+    const sections = buildOrgNavSections('acme');
+    expect(sectionLabels(sections)).toEqual(['Overview', 'Listings', 'Organization']);
+    expect(flatItemLabels(sections)).toEqual([
+      'Dashboard',
+      'Bookings',
+      'Reviews',
+      'Analytics',
+      'Properties',
+      'Parkings',
+      'Team',
+      'Plans & Billing',
+      'Announcements',
+      'Settings',
+      'Help & Support',
+    ]);
+  });
+
+  it('omits the Listings group when properties and parkings are hidden', () => {
+    const sections = buildOrgNavSections('acme', {
+      showProperties: false,
+      showParkings: false,
+    });
+    expect(sectionLabels(sections)).toEqual(['Overview', 'Organization']);
   });
 });
 
 describe('buildParkingNavSections', () => {
-  it('buildParkingNavSections is exported', () => {
-    expect(typeof buildParkingNavSections).toBe('function');
-  });
-});
-
-describe('filterOrgNavSections', () => {
-  it('filterOrgNavSections is exported', () => {
-    expect(typeof filterOrgNavSections).toBe('function');
-  });
-});
-
-describe('filterPropertyNavSections', () => {
-  it('filterPropertyNavSections is exported', () => {
-    expect(typeof filterPropertyNavSections).toBe('function');
-  });
-});
-
-describe('filterParkingNavSections', () => {
-  it('filterParkingNavSections is exported', () => {
-    expect(typeof filterParkingNavSections).toBe('function');
-  });
-});
-
-describe('buildSuperAdminNavSections', () => {
-  it('buildSuperAdminNavSections is exported', () => {
-    expect(typeof buildSuperAdminNavSections).toBe('function');
-  });
-});
-
-describe('isSuperAdminPath', () => {
-  it('isSuperAdminPath is exported', () => {
-    expect(typeof isSuperAdminPath).toBe('function');
-  });
-});
-
-describe('isPropertyAdminPath', () => {
-  it('isPropertyAdminPath is exported', () => {
-    expect(typeof isPropertyAdminPath).toBe('function');
-  });
-});
-
-describe('isParkingAdminPath', () => {
-  it('isParkingAdminPath is exported', () => {
-    expect(typeof isParkingAdminPath).toBe('function');
-  });
-});
-
-describe('isOrgAdminPath', () => {
-  it('isOrgAdminPath is exported', () => {
-    expect(typeof isOrgAdminPath).toBe('function');
+  it('uses grouped section labels and parking module order', () => {
+    const sections = buildParkingNavSections('acme', 'slot-1');
+    expect(sectionLabels(sections)).toEqual(['Operations', 'Guests', 'Manage']);
+    expect(flatItemLabels(sections)).toEqual([
+      'Dashboard',
+      'Bookings',
+      'Finance',
+      ADMIN_MODULE_LABEL.pricing,
+      ADMIN_MODULE_LABEL.inbox,
+      'Notifications',
+      'Team',
+      'Settings',
+      'Help & Support',
+    ]);
   });
 });
