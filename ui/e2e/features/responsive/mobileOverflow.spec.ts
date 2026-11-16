@@ -13,6 +13,7 @@ import { expect, test } from '@playwright/test';
 const ROUTES = [
   '/',
   '/for-hosts',
+  '/for-hosts/v4',
   '/privacy',
   '/terms',
   '/support',
@@ -40,9 +41,10 @@ for (const viewport of VIEWPORTS) {
           () => document.documentElement.scrollWidth - window.innerWidth
         );
 
-        expect(overflow, `${route} overflows ${overflow}px at ${viewport.width}px`).toBeLessThanOrEqual(
-          1
-        );
+        expect(
+          overflow,
+          `${route} overflows ${overflow}px at ${viewport.width}px`
+        ).toBeLessThanOrEqual(1);
       });
     }
   });

@@ -2,14 +2,14 @@
 title: 'For hosts — operator guide'
 status: active
 tags: [guides, routes]
-updated: 2026-10-17
+updated: 2026-11-15
 ---
 
 # For hosts — operator guide
 
-Route: `/for-hosts` · `/for-hosts/pricing` · `/for-hosts/v2` (ground-up redesign, pending swap) · `/for-hosts/v3` (third direction, pending review)
+Route: `/for-hosts` · `/for-hosts/pricing` · `/for-hosts/v2` · `/for-hosts/v3` · `/for-hosts/v4` (redesign previews)
 
-> **Status:** Documented — **Phase 1 (UI only)** for the landing tour; **pricing** is live from the plan catalog. **`/for-hosts/v2`** holds a full redesign of the landing page awaiting sign-off before it replaces `/for-hosts`. **`/for-hosts/v3`** is a third direction for side-by-side comparison.
+> **Status:** Documented. **Phase 1 (UI only)** for the landing tour; **pricing** is live from the plan catalog. **`/for-hosts/v2`**, **`/for-hosts/v3`**, and **`/for-hosts/v4`** remain unlinked redesign previews. V4 is the current outcome-led candidate; `/for-hosts` stays unchanged until promotion is approved.
 
 ## Progress overview
 
@@ -22,6 +22,7 @@ Route: `/for-hosts` · `/for-hosts/pricing` · `/for-hosts/v2` (ground-up redesi
 | Host CTAs        | —        | —          | Documented | → `/for-hosts/login` (Google OAuth / email OTP); Managed → `/contact`                                                     |
 | Preview redesign | —        | —          | Documented | `/for-hosts/v2` — editorial hero, animated workflow rail, sticky feature showcase; swap to `/for-hosts` when approved     |
 | V3 redesign      | —        | —          | Documented | `/for-hosts/v3` — photo hero, pinned six-step workflow, seven-tile bento, guest phones, capability grid, tour, setup, FAQ |
+| V4 redesign      | —        | —          | Documented | `/for-hosts/v4` — host economics, four outcome journey, guest value, capability system, real tour, objections, close      |
 | Mobile shell     | —        | —          | Documented | `MarketingLayoutShell` bottom tabs (host mode) — see [index-landing.md](./index-landing.md) § Mobile shell                |
 
 ---
@@ -113,6 +114,28 @@ All motion is gated on `prefers-reduced-motion` (static strike, no card cycling,
 
 The pinned workflow and sticky FAQ depend on `MarketingLayoutShell` using `overflow-x-clip` (not `overflow-x-hidden`, which turns the shell into a scroll container and silently disables `position: sticky` for every marketing page, including the preview's sticky showcase).
 
+## V4 redesign: `/for-hosts/v4`
+
+The fourth direction is the current conversion-focused candidate. It is served at **`/for-hosts/v4`** and is not linked from navigation. `ForHostsV4Page.tsx` assembles the sections under `for-hosts/v4/components/`; reviewable claims and FAQ copy live in `v4/data/hostLandingV4.ts`. The positioning source is [`docs/product-positioning.md`](../../product-positioning.md).
+
+The story starts with why a host should change, then proves how the product delivers it. It does not promise that every booking is cheaper, that fraud is impossible, or that every OTA is connected.
+
+| Section              | id             | Behavior                                                                                                                                                                                                                   |
+| -------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Outcome hero         | —              | Host-specific local photography, **More direct. Less work.**, **Start free**, and **See how it works**. The floating booking update is decorative proof, not a live notification.                                          |
+| Proof rail           | —              | Three qualified advantages: 0% Kame commission on active property plans, one workflow for direct/Airbnb/manual bookings, and 24/7 AI support for supported questions.                                                      |
+| Direct-booking model | `features`     | Frames marketplaces as useful discovery while showing why hosts need an owned direct channel. The comparison distinguishes subscription pricing from percentage-per-booking marketplace economics.                         |
+| Four-outcome journey | `how-it-works` | Desktop pins for roughly three viewports and advances through Earn, Operate, Serve, and Grow. Each outcome changes the product scene. Phone and tablet layouts become a vertical, tap-selectable sequence without pinning. |
+| Guest experience     | —              | Two phone compositions show the trip hub, stay details, booking progress, and AI help. The point is operational: a prepared guest needs fewer repetitive replies from the host.                                            |
+| Capability system    | —              | Groups tools by host outcome: operate, numbers, service, growth, and control. It avoids a flat feature dump while preserving discoverability.                                                                              |
+| Workspace tour       | `tour`         | Reuses the complete narrated `HostDashboardTourPlayer`, including chapter navigation, reduced-motion behavior, and expand controls.                                                                                        |
+| FAQ                  | `faq`          | Answers replacement, commission, AI limits, teams, mobile access, and verification without absolute claims.                                                                                                                |
+| Closing conversion   | —              | **Start free** and **See plans**, with the existing free-to-start, no-card, and phone-ready facts.                                                                                                                         |
+
+**Motion and access:** scroll reveals and the hero float use compositor-friendly transforms and opacity. `prefers-reduced-motion` removes autoplayed decorative movement and scroll-linked advancement. Interactive targets are at least 44px. The page has no asynchronous values, so known headings and labels render immediately and no section-level skeleton is needed. The route-level lazy fallback remains the shared marketing skeleton.
+
+**Responsive checks:** V4 is designed and manually verified at 375, 768, and 1440px. It has no horizontal page overflow. The host shell supplies the mobile back header and fixed bottom navigation.
+
 ---
 
 ## Host-facing knowledge
@@ -140,7 +163,7 @@ This is the marketing page that introduces the platform to property owners befor
 - Canonical: self on the apex origin.
 - Crawler HTML: static snapshot from `content/staticPageCopy.ts`, including the hero copy the
   page renders. No plan prices are baked into the snapshot (they are live data).
-- Redesign previews (`/for-hosts/v2`, `/for-hosts/v3`, `/for-hosts/preview`) are `noindex` and
+- Redesign previews (`/for-hosts/v2`, `/for-hosts/v3`, `/for-hosts/v4`, `/for-hosts/preview`) are `noindex` and
   robots-disallowed.
 - Reference: [`architecture/seo.md`](../../architecture/seo.md).
 
@@ -160,6 +183,8 @@ This is the marketing page that introduces the platform to property owners befor
 | Preview sections       | `ui/src/features/guest/marketing/for-hosts/preview/components/**` (`HeroEditorial` + `HeroPipelineBoard`, `ProofLine`, `WorkflowSpine`, `FeatureShowcase` + `showcase/**`, `VideoTourSection`, `SetupSteps`, `ClosingCta`, `Eyebrow`, `Reveal`)    |
 | V3 redesign page       | `ui/src/features/guest/marketing/pages/ForHostsV3Page.tsx`                                                                                                                                                                                         |
 | V3 sections + copy     | `ui/src/features/guest/marketing/for-hosts/v3/components/V3{Hero,ReplaceStatement,WorkflowScroll,WorkflowScenes,FeatureBento,GuestScreens,CapabilityGrid,TourSection,SetupSteps,Faq,ClosingCta,SectionHeading}.tsx` · `v3/data/hostLandingV3.ts`   |
+| V4 redesign page       | `ui/src/features/guest/marketing/pages/ForHostsV4Page.tsx`                                                                                                                                                                                         |
+| V4 sections + copy     | `ui/src/features/guest/marketing/for-hosts/v4/components/V4{Hero,ProofRail,Economics,OutcomeJourney,GuestExperience,CapabilitySystem,Tour,Faq,ClosingCta,Reveal}.tsx` · `v4/data/hostLandingV4.ts`                                                 |
 | Preview copy + demos   | `preview/data/hostShowcase.ts` (all copy) · `preview/components/showcase/{ShowcaseDemos,showcaseDemoRegistry,ShowcasePrimitives,BrowserFrame}.tsx` · `preview/hooks/useActiveIndex.ts`                                                             |
 | Tour player            | `ui/src/features/guest/marketing/for-hosts/components/{HostDashboardTour,HostDashboardTourPlayer}.tsx`                                                                                                                                             |
 | Tour composition       | `ui/src/features/guest/marketing/for-hosts/components/HostDashboardFilm.tsx` + `components/film/{FilmShell,FilmPrimitives}.tsx` + `components/film/scenes/Scene{Bookends,Start,Bookings,Money,Guests,Marketing,Team}.tsx` + `scenes/filmScenes.ts` |
@@ -199,4 +224,4 @@ This is the marketing page that introduces the platform to property owners befor
 
 - [ ] Optional public host signup / waitlist if product adds `/register`
 - [ ] Replace static copy with CMS or org-specific marketing settings
-- [ ] Approve `/for-hosts/v2` redesign and swap it into `/for-hosts` (then remove old `Host*` landing components + the `/for-hosts/v2` route)
+- [ ] Review `/for-hosts/v4`, then promote the approved direction to `/for-hosts` and remove superseded preview routes in a separate change

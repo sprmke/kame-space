@@ -1,7 +1,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
-import { installPropertyTeamRbacMocks, orgHubPaths, teamRbacPaths } from '../team/shared/propertyTeamRbacHarness';
+import {
+  installPropertyTeamRbacMocks,
+  orgHubPaths,
+  teamRbacPaths,
+} from '../team/shared/propertyTeamRbacHarness';
 
 /**
  * Accessibility sweep (production-readiness checklist 33).
@@ -19,6 +23,7 @@ const PUBLIC_PATHS = [
   '/developments',
   '/search',
   '/for-hosts',
+  '/for-hosts/v4',
   '/for-hosts/pricing',
   '/for-guests/login',
   '/for-hosts/login',
@@ -59,14 +64,23 @@ const KNOWN_A11Y_EXCEPTIONS: Record<string, string> = {
     'colour contrast on .text-card-description, owned by the notifications restructure (issue #334)',
 };
 
-const ORG_PATHS = [orgHubPaths.dashboard, orgHubPaths.bookings, orgHubPaths.properties, orgHubPaths.team, orgHubPaths.reviews];
+const ORG_PATHS = [
+  orgHubPaths.dashboard,
+  orgHubPaths.bookings,
+  orgHubPaths.properties,
+  orgHubPaths.team,
+  orgHubPaths.reviews,
+];
 
 const GUEST_PATHS = ['/properties/solea-mactan', '/properties/solea-mactan/form'];
 
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 const SERIOUS = new Set(['serious', 'critical']);
 
-function formatViolations(url: string, violations: Awaited<ReturnType<AxeBuilder['analyze']>>['violations']) {
+function formatViolations(
+  url: string,
+  violations: Awaited<ReturnType<AxeBuilder['analyze']>>['violations']
+) {
   return violations
     .filter((violation) => SERIOUS.has(violation.impact ?? ''))
     .map(
@@ -103,11 +117,13 @@ async function audit(page: Page, paths: string[]) {
       window.scrollTo(0, 0);
     });
     // Entrance animations stagger card opacity; axe would read transient colours.
-    await page.waitForFunction(
-      () => document.getAnimations().every((animation) => animation.playState !== 'running'),
-      undefined,
-      { timeout: 2000 }
-    ).catch(() => undefined);
+    await page
+      .waitForFunction(
+        () => document.getAnimations().every((animation) => animation.playState !== 'running'),
+        undefined,
+        { timeout: 2000 }
+      )
+      .catch(() => undefined);
     await page.waitForTimeout(250);
     let results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
     let found = formatViolations(path, results.violations);
