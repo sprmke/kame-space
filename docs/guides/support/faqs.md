@@ -1013,6 +1013,15 @@ Open Pricing, then Channel sync. Airbnb is the only provider offered today. Use 
 
 Yes. Kame is the hub between your channels. A stay imported from one channel is shared to the other channels' calendars, and never sent back to the channel it came from. Host blocks created inside a channel are not shared, so block dates in Kame when they should stop every channel.
 
+### Why does an imported booking have no guest name?
+
+- category: Pricing & Availability
+- audience: host
+- source: docs/guides/routes/org/property/pricing.md
+- order: 47
+
+Channel calendars share dates only, so Kame cannot see the guest's name, email or phone. The stay is created with a placeholder name like Airbnb guest. Open the stay and use Copy guest form link so the guest fills in their details against the same booking.
+
 ### Why does another channel show nights that came from Kame?
 
 - category: Pricing & Availability

@@ -15,6 +15,7 @@
 import {
   CALENDAR_SYNC_CLAIM_SLACK_MS,
   calendarSyncMinIntervalMinutes,
+  checkExportNeverRead,
   loadCalendarFeed,
   loadDueCalendarFeeds,
   recordFeedRun,
@@ -251,6 +252,7 @@ serveHandler('calendar-sync-cron', async (req) => {
           summary.bookingsLinked += res.bookingsLinked;
           summary.conflicts += res.conflicts;
           if (!res.ok) summary.errors++;
+          else await checkExportNeverRead(supabase, feed);
         } catch (err) {
           summary.errors++;
           console.error(`[calendar-sync-cron] feed ${feed.id} threw:`, err);

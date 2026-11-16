@@ -18,6 +18,7 @@ import { resolveAppSettings } from './appSettings.ts';
 import { addDaysYmd, manilaTodayYmd } from './calendarAvailabilityManila.ts';
 import { createServiceClient } from './orgAuth.ts';
 import { createNotification } from './notificationService.ts';
+import { capturePostHogEvent } from './posthog.ts';
 import { buildActorContext, logActivity, type ActorContext } from './activityLog.ts';
 import {
   findAdoptableManualBooking,
@@ -287,6 +288,9 @@ export interface CalendarFeedRow {
   empty_pull_streak: number;
   /** Set when a pull looked like Booking.com exporting closed dates as well as reservations. */
   echo_warning_at?: string | null;
+  /** Set once when a feed older than 24 h has never had its export link read. */
+  export_never_read_at?: string | null;
+  created_at?: string | null;
 }
 
 export interface RunFeedResult {
@@ -308,7 +312,7 @@ export interface RunFeedResult {
 }
 
 const FEED_SELECT =
-  'id, property_id, provider, label, ics_url_encrypted, is_active, create_bookings, last_etag, last_modified_header, last_feed_hash, consecutive_failures, empty_pull_streak, echo_warning_at';
+  'id, property_id, provider, label, ics_url_encrypted, is_active, create_bookings, last_etag, last_modified_header, last_feed_hash, consecutive_failures, empty_pull_streak, echo_warning_at, export_never_read_at, created_at';
 
 export function calendarSyncMinIntervalMinutes(): number {
   const raw = Number(Deno.env.get('CALENDAR_SYNC_MIN_INTERVAL_MINUTES'));
@@ -627,6 +631,88 @@ async function markFeedSuccess(
  * Sync one feed. Never throws for expected failure modes (network, bad body) — those become
  * `{ ok:false, status:'error' }` with feed health updated. Programming errors still throw.
  */
+/** How long a newly connected feed gets before "the channel never read your link" is raised. */
+export const EXPORT_NEVER_READ_GRACE_MS = 24 * 3_600_000;
+
+/** Pure gate for the never-read check, so the rule is testable without a DB. */
+export function shouldFlagExportNeverRead(input: {
+  createdAt: string | null | undefined;
+  exportEnabled: boolean;
+  hasRead: boolean;
+  alreadyFlagged: boolean;
+  now?: number;
+}): boolean {
+  if (input.alreadyFlagged || !input.exportEnabled || input.hasRead) return false;
+  const created = input.createdAt ? Date.parse(input.createdAt) : NaN;
+  if (!Number.isFinite(created)) return false;
+  const now = input.now ?? Date.now();
+  return now - created >= EXPORT_NEVER_READ_GRACE_MS;
+}
+
+/**
+ * "The channel never read your link" check. Runs in the sweep, once per feed: if the feed is
+ * older than 24 h, its property's export is enabled, and no read exists for its channel (or the
+ * all-channels link), flag it and emit one PostHog outcome event.
+ *
+ * Returns true when it fired. Never throws.
+ */
+export async function checkExportNeverRead(
+  supabase: SupabaseClient,
+  feed: Pick<
+    CalendarFeedRow,
+    'id' | 'property_id' | 'provider' | 'export_never_read_at' | 'created_at'
+  >
+): Promise<boolean> {
+  try {
+    // Cheap precheck so a flagged or brand-new feed costs no queries.
+    const precheck = shouldFlagExportNeverRead({
+      createdAt: feed.created_at,
+      exportEnabled: true,
+      hasRead: false,
+      alreadyFlagged: Boolean(feed.export_never_read_at),
+    });
+    if (!precheck) return false;
+    const created = Date.parse(String(feed.created_at));
+
+    const { data: exportRow } = await supabase
+      .from('property_calendar_export')
+      .select('is_enabled')
+      .eq('property_id', feed.property_id)
+      .maybeSingle();
+    const { data: reads } = await supabase
+      .from('calendar_export_reads')
+      .select('id')
+      .eq('property_id', feed.property_id)
+      .in('channel', [feed.provider, 'all'])
+      .gte('last_read_at', new Date(created).toISOString())
+      .limit(1);
+
+    const due = shouldFlagExportNeverRead({
+      createdAt: feed.created_at,
+      exportEnabled: Boolean(exportRow?.is_enabled),
+      hasRead: (reads ?? []).length > 0,
+      alreadyFlagged: Boolean(feed.export_never_read_at),
+    });
+    if (!due) return false;
+
+    const { error } = await supabase
+      .from('property_calendar_feeds')
+      .update({ export_never_read_at: new Date().toISOString() })
+      .eq('id', feed.id);
+    if (error) throw new Error(error.message);
+
+    await capturePostHogEvent('calendar_sync_export_never_read', {
+      logPrefix: 'calendar-sync',
+      system: true,
+      properties: { provider: feed.provider },
+    });
+    return true;
+  } catch (err) {
+    console.error('[calendarSyncRun] export-never-read check failed (non-fatal):', err);
+    return false;
+  }
+}
+
 /**
  * One row per feed run so cadence, duration and per-channel failure rate are measurable.
  * Never throws: instrumentation must not fail a sync.
@@ -792,6 +878,14 @@ export async function runFeedSync(
     echoUids.add(ev.uid);
     return { ...ev, kind: 'block' as const };
   });
+
+  if (echoUids.size > 0) {
+    await capturePostHogEvent('calendar_sync_echo_detected', {
+      logPrefix: 'calendar-sync',
+      system: true,
+      properties: { provider: feed.provider, count: echoUids.size },
+    });
+  }
 
   // Booking.com "reserved and closed dates" tell: the host exported closed nights as well, so
   // our own exported nights come straight back. Surfaces as a per-channel health warning.

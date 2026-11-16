@@ -48,6 +48,28 @@ const AIRBNB_RESERVATIONS = [
   'END:VCALENDAR',
 ].join('\r\n');
 
+Deno.test('the export calendar never carries guest data', () => {
+  const body = buildExportCalendar({
+    calendarName: 'Monaco 2604 (GFM)',
+    uidDomain: 'gfm.test',
+    lastModifiedIso: '2026-12-01T00:00:00.000Z',
+    ranges: [
+      {
+        uidLocalPart: 'gfm-booking-1',
+        startDate: '2026-12-01',
+        endDate: '2026-12-04',
+        summary: 'Booked',
+      },
+    ],
+  });
+  // No confirmation codes, phone numbers, emails or guest names, whatever the range source.
+  assertEquals(/HM[A-Z0-9]{6,}/.test(body), false);
+  assertEquals(/[^\d]\+?\d{10,}/.test(body), false);
+  assertEquals(/@(gmail|yahoo|outlook|hotmail)\./i.test(body), false, 'no guest email domains');
+  assertEquals(/guest|juan|delacruz/i.test(body), false);
+  assertEquals(body.includes('SUMMARY:Booked'), true);
+});
+
 Deno.test('every registry channel classifies every summary without throwing', () => {
   const summaries = [
     'Reserved',

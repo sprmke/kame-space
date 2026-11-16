@@ -521,8 +521,8 @@ whatever version of that rework lands, it does not restart the dialog.
   end in `error` or `skipped(empty)` (minimum 5 feeds). Wire to `ops_alerts` once
   [`production-error-escalation.md`](./production-error-escalation.md) lands; until then, the
   `/admin/health` probe card. Response: pause the channel (§4.9), fix the adapter, unpause.
-- PostHog: `calendar_sync_connected` / `_removed` carry `provider` (they do); add
-  `calendar_sync_echo_detected` and `calendar_sync_export_never_read` with `provider`.
+- PostHog: `calendar_sync_connected` carries `provider`; `calendar_sync_echo_detected` (provider,
+  count) and `calendar_sync_export_never_read` (provider) are shipped and in both catalogs.
 - Notifications keep their dedupe keys, with the channel label in the text.
 - Support runbook in the route guide: "Agoda dates not blocking" decision tree (link failing, never
   read, room type has more than 1 room, channel manager connected, direct channel link left in place).

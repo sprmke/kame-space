@@ -15,6 +15,8 @@ import {
 } from '@/features/dashboard/pricing/lib/importedBooking';
 import type { PropertyPricingCalendarBooking } from '@/features/dashboard/pricing/lib/propertyPricingApi';
 
+import { bookingChannelLabel } from '@/lib/bookingChannel';
+
 import { Button } from '@/components/ui/button';
 import {
   ResponsiveModal,
@@ -48,6 +50,9 @@ export function PricingCalendarBookingModal({
   if (!booking) return null;
 
   const imported = isImportedBooking(booking);
+  const channelLabel = bookingChannelLabel(
+    booking.booking_source || booking.external_source || ''
+  );
   const canCopy =
     canCopyGuestFormLink && isImportedPendingBooking(booking) && isCompletionLinkLive(booking);
   const reservationUrl = booking.reservation_url?.startsWith('https://')
@@ -64,7 +69,7 @@ export function PricingCalendarBookingModal({
         return;
       }
       await navigator.clipboard.writeText(url);
-      toast.success('Guest form link copied. Send it in Airbnb');
+      toast.success(`Guest form link copied. Send it in ${channelLabel}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not copy link');
     } finally {
@@ -119,7 +124,7 @@ export function PricingCalendarBookingModal({
               <Button asChild variant="ghost" className="min-h-[44px] w-full justify-start gap-2">
                 <a href={reservationUrl} target="_blank" rel="noreferrer">
                   <ExternalLink className="size-4" aria-hidden />
-                  Open in Airbnb
+                  Open in {channelLabel}
                 </a>
               </Button>
             ) : null}

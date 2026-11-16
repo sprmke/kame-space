@@ -5,8 +5,10 @@ import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { calendarChannel } from './calendarChannels.ts';
 import {
   CALENDAR_SYNC_CLAIM_SLACK_MS,
+  EXPORT_NEVER_READ_GRACE_MS,
   claimCutoffMs,
   reservationDisplayName,
+  shouldFlagExportNeverRead,
 } from './calendarSyncRun.ts';
 
 applyLocalSupabaseTestEnv();
@@ -63,5 +65,77 @@ Deno.test('other channels get their own placeholder label', () => {
       phoneLast4: null,
     }),
     'Agoda guest'
+  );
+});
+
+Deno.test('never-read fires only after the grace window with no read', () => {
+  const now = Date.parse('2026-12-10T00:00:00.000Z');
+  const created = new Date(now - EXPORT_NEVER_READ_GRACE_MS - 60_000).toISOString();
+  const young = new Date(now - 60_000).toISOString();
+
+  assertEquals(
+    shouldFlagExportNeverRead({
+      createdAt: created,
+      exportEnabled: true,
+      hasRead: false,
+      alreadyFlagged: false,
+      now,
+    }),
+    true
+  );
+  assertEquals(
+    shouldFlagExportNeverRead({
+      createdAt: young,
+      exportEnabled: true,
+      hasRead: false,
+      alreadyFlagged: false,
+      now,
+    }),
+    false,
+    'a new feed gets 24 h'
+  );
+  assertEquals(
+    shouldFlagExportNeverRead({
+      createdAt: created,
+      exportEnabled: true,
+      hasRead: true,
+      alreadyFlagged: false,
+      now,
+    }),
+    false,
+    'a read clears it'
+  );
+  assertEquals(
+    shouldFlagExportNeverRead({
+      createdAt: created,
+      exportEnabled: false,
+      hasRead: false,
+      alreadyFlagged: false,
+      now,
+    }),
+    false,
+    'a disabled export link is not "never read"'
+  );
+  assertEquals(
+    shouldFlagExportNeverRead({
+      createdAt: created,
+      exportEnabled: true,
+      hasRead: false,
+      alreadyFlagged: true,
+      now,
+    }),
+    false,
+    'emitted once per feed'
+  );
+  assertEquals(
+    shouldFlagExportNeverRead({
+      createdAt: null,
+      exportEnabled: true,
+      hasRead: false,
+      alreadyFlagged: false,
+      now,
+    }),
+    false,
+    'no created_at means no claim'
   );
 });

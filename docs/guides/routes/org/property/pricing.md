@@ -154,6 +154,10 @@ If Airbnb reports a night that already has a live Kame booking or manual block, 
   A: About every 30 minutes. Each check is recorded, so support can confirm the real interval when a date looks late.
 - Q: Will a booking from one channel block my other channels?
   A: Yes, once more than one channel is connected. Kame is the hub: an imported stay is published to the other channels' calendars, never back to the channel it came from. Imported host blocks are not relayed, so block dates in Kame if they should stop every channel.
+- Q: Why does an imported booking have no guest name?
+  A: The channel sends dates only, so Kame creates the stay with a placeholder name such as "Airbnb guest". Use Copy guest form link to collect the guest's details against that same booking.
+- Q: Should I link Airbnb and Agoda directly to each other?
+  A: No. Connect each channel only to Kame. Direct links between channels repeat the same nights back and forth, which makes duplicate blocks and false conflict warnings.
 - Q: Booking.com shows Kame nights as its own bookings. Why?
   A: Booking.com is probably set to export closed dates as well as reservations. In Booking.com, open Sync calendars and export **reserved dates only**. Kame ignores those echoes, but your calendar stays cleaner once the setting is fixed.
 - Q: I got a conflict warning after connecting Airbnb. What do I do?

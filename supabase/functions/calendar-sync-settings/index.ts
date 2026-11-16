@@ -45,7 +45,7 @@ import { capturePostHogEvent } from '../_shared/posthog.ts';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const FEED_COLUMNS =
-  'id, property_id, provider, label, is_active, create_bookings, last_attempted_at, last_success_at, last_error, consecutive_failures, created_at';
+  'id, property_id, provider, label, is_active, create_bookings, last_attempted_at, last_success_at, last_error, consecutive_failures, echo_warning_at, export_never_read_at, created_at';
 
 function newToken(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
@@ -184,6 +184,7 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
           createdAt: f.created_at,
           lastRun: latestRunByFeed.get(f.id as string) ?? null,
           echoWarning: Boolean(f.echo_warning_at),
+          exportNeverRead: Boolean(f.export_never_read_at),
         };
       })
     );
