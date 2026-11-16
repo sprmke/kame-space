@@ -132,6 +132,17 @@ dates that should not be available to guests.
 - **Share with Airbnb** switch (+ **?** help) — **off by default** (opt-in). Enables the token-guarded iCal URL (`…/ical-export/calendar.ics?property=…&token=…&as=airbnb`, always `https://` on hosted) so Kame bookings + manual blocks appear on Airbnb without echoing Airbnb’s own imports. The path ends in `.ics` because Airbnb rejects import URLs that do not. Turning **on** below Pro opens the upgrade modal; turning **off** is always allowed.
 - **Paste into Airbnb** (+ **?** help: Calendar → Availability → Connect calendars → Import calendar) — one URL + **Copy**. Paste the full link into Airbnb’s “Other website link” field.
 
+### When dates do not block on a channel
+
+Work through these in order; each one is visible on the page or in Recent activity.
+
+1. **Feed failing?** Health badge shows Retrying or Needs fix, and `lastError` names the cause. Re-paste the channel's export link.
+2. **Never read our link?** The channel row reports `exportNeverRead` after 24 hours. Re-paste the Kame link on the channel side and press **Sync now**.
+3. **Echo warning?** The channel is exporting closed dates as well as reservations. Export **reserved dates only**.
+4. **Channel-specific eligibility?** Agoda needs a room type with exactly one room; Booking.com removes pasted calendar links once a channel manager is connected.
+5. **Direct link left in place?** The host pasted one channel's link into another. Remove it; connect each channel only to Kame.
+6. **Still blocked after the channel's own refresh window?** Check the stay's source: a cancelled or past stay no longer blocks.
+
 ### Conflicts
 
 If Airbnb reports a night that already has a live Kame booking or manual block, the sync still imports the Airbnb busy night, records one `conflict_detected` audit event per overlap, and raises **one** `calendar_conflict` notification for that sync’s conflict set (not one toast per overlap). Connect / Sync now shows a single warning toast with the conflict count; the matching realtime toast is suppressed briefly so it does not double up. Background cron still surfaces one in-app toast when a new conflict set appears. Detail lives under **Recent activity** and the Notifications bell. Kame never overwrites the existing booking or manual block.
