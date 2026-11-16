@@ -15,16 +15,16 @@ Legacy `/calendar` redirects here.
 
 ## Progress overview
 
-| Section                  | E2E save | Validation | Docs | Notes                                                         |
-| ------------------------ | -------- | ---------- | ---- | ------------------------------------------------------------- |
-| Pricing rates and fees   | Done     | Done       | Done | Weekday/weekend defaults + fee sidebar                        |
-| Per-date rates           | Done     | Done       | Done | Future, available nights only                                 |
-| Booked stays on calendar | Done     | Done       | Done | Spanning pills; click for guest modal                         |
-| Block / unblock dates    | Done     | Done       | Done | Checkout-exclusive ranges                                     |
-| Channel sync (iCal)      | Done     | Done       | Done | Airbnb only — Pro+ `calendarSync`                             |
-| Smart Pricing            | Done     | Done       | Done | Pro+ `smartPricing` — Autopilot or Review/Apply, engine + AI  |
-| Guest availability       | Done     | Done       | Done | Blocks are returned as unavailable ranges                     |
-| Permissions              | N/A      | Done       | Done | `pricing:view` / rates + blocks + `pricing.channels:*` leaves |
+| Section                  | E2E save | Validation | Docs | Notes                                                                    |
+| ------------------------ | -------- | ---------- | ---- | ------------------------------------------------------------------------ |
+| Pricing rates and fees   | Done     | Done       | Done | Weekday/weekend defaults + fee sidebar                                   |
+| Per-date rates           | Done     | Done       | Done | Future, available nights only                                            |
+| Booked stays on calendar | Done     | Done       | Done | Spanning pills; click for guest modal                                    |
+| Block / unblock dates    | Done     | Done       | Done | Checkout-exclusive ranges                                                |
+| Channel sync (iCal)      | Done     | Done       | Done | Airbnb connectable; hub relay + echo rules shipped — Pro+ `calendarSync` |
+| Smart Pricing            | Done     | Done       | Done | Pro+ `smartPricing` — Autopilot or Review/Apply, engine + AI             |
+| Guest availability       | Done     | Done       | Done | Blocks are returned as unavailable ranges                                |
+| Permissions              | N/A      | Done       | Done | `pricing:view` / rates + blocks + `pricing.channels:*` leaves            |
 
 ---
 
@@ -443,9 +443,9 @@ bookings calendar module.
 
 ## Testing
 
-| Layer       | Path / spec                                                                                                                                                           | Manual                         |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| Unit        | `supabase/functions/_shared/smartPricingEngine_test.ts`, `calendarSyncService_test.ts`, `externalBookingIngest_test.ts`, `ui/.../pricing/lib/importedBooking.test.ts` | —                              |
-| Integration | `supabase/functions/_shared/calendarSyncRun_integration_test.ts` (local Postgres: create, adoption, relink, past skip)                                                | Local stack required           |
-| E2E         | `ui/e2e/features/dashboard/dashboardModulesSmoke.spec.ts` pricing shell (`@ci`)                                                                                       | AI preview, channel sync OAuth |
-| N/A         | Polotno/canvas internals                                                                                                                                              | Manual calendar sync guide     |
+| Layer       | Path / spec                                                                                                                                                                                                                                                                                                                                                                                                   | Manual                         |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| Unit        | `smartPricingEngine_test.ts`, `calendarSyncService_test.ts` (incl. the PII-free export), `externalBookingIngest_test.ts`, `calendarChannels_test.ts`, `bookingChannel_test.ts`, `calendarEchoRules_test.ts`, `calendarSyncPool_test.ts`, `calendarRelay_test.ts`, `calendarSyncCadence_test.ts`, `ui/.../pricing/lib/importedBooking.test.ts`, `calendarChannelUrl.test.ts`, `calendarChannelsParity.test.ts` | —                              |
+| Integration | `supabase/functions/_shared/calendarSyncRun_integration_test.ts` (local Postgres: create, adoption, relink, past skip, relay own-vs-other channel, relay dedupe, echo creates no booking)                                                                                                                                                                                                                     | Local stack required           |
+| E2E         | `ui/e2e/features/dashboard/dashboardModulesSmoke.spec.ts` pricing shell (`@ci`)                                                                                                                                                                                                                                                                                                                               | AI preview, channel sync OAuth |
+| N/A         | Polotno/canvas internals                                                                                                                                                                                                                                                                                                                                                                                      | Manual calendar sync guide     |
