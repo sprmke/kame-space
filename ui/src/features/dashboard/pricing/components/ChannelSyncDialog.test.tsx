@@ -1,12 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { CalendarSyncFeed, CalendarSyncSettings } from '../lib/calendarSyncApi';
 import { ChannelSyncDialog } from './ChannelSyncDialog';
+
+import type { CalendarSyncFeed, CalendarSyncSettings } from '../lib/calendarSyncApi';
 
 const mocks = vi.hoisted(() => ({
   settings: undefined as unknown,
   addMutate: vi.fn(),
+  shareMutate: vi.fn(),
   paused: new Set<string>(),
   canUse: true,
 }));
@@ -22,7 +24,7 @@ vi.mock('@/features/dashboard/pricing/hooks/useCalendarSync', () => {
     }),
     useAddCalendarFeed: () => ({ mutate: mocks.addMutate, isPending: false }),
     useRemoveCalendarFeed: idle,
-    useSetExportEnabled: idle,
+    useSetExportEnabled: () => ({ mutate: mocks.shareMutate, isPending: false }),
     useSetCreateBookings: idle,
     useSyncFeedNow: idle,
   };
@@ -120,6 +122,7 @@ beforeEach(() => {
   mocks.paused = new Set();
   mocks.canUse = true;
   mocks.addMutate.mockReset();
+  mocks.shareMutate.mockReset();
   mocks.settings = settings();
 });
 
@@ -136,10 +139,10 @@ describe('ChannelSyncDialog', () => {
       feeds: [feed(), feed({ id: 'f2', provider: 'agoda', health: 'error' })],
     });
     renderDialog();
-    expect(screen.getByRole('button', { name: /^Airbnb, Syncing/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Airbnb, Connected/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Agoda, Needs attention/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Booking.com, Not connected/ })).toBeTruthy();
-    expect(screen.getByText('Connect each channel only to Kame Space.')).toBeTruthy();
+    expect(screen.getByText(/Connect each channel to Kame Space only/)).toBeTruthy();
   });
 
   it('shows a paused channel as paused', () => {
@@ -156,9 +159,9 @@ describe('ChannelSyncDialog', () => {
     mocks.settings = settings({ connectableProviders: ['airbnb', 'agoda'] });
     renderDialog();
     fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
-    expect(screen.getByText('1. Bring Agoda in')).toBeTruthy();
-    expect(screen.getByText(/exactly 1 room/)).toBeTruthy();
-    expect(screen.getByText('2. Send Kame Space to Agoda')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'From Agoda' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'To Agoda' })).toBeTruthy();
+    expect(screen.getByPlaceholderText('https://…agoda.com/…')).toBeTruthy();
   });
 
   it('rejects a link from the wrong host and connects a valid one', () => {
@@ -191,7 +194,7 @@ describe('ChannelSyncDialog', () => {
     renderDialog();
     fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
     expect(screen.getByText(/Agoda hasn't read your link yet/)).toBeTruthy();
-    fireEvent.click(screen.getByText('All channels'));
+    fireEvent.click(screen.getByRole('button', { name: 'All channels' }));
     fireEvent.click(screen.getByRole('button', { name: /^Booking.com/ }));
     expect(screen.getByText(/sending back closed dates/)).toBeTruthy();
   });
@@ -201,7 +204,7 @@ describe('ChannelSyncDialog', () => {
     renderDialog(true);
     fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
     expect(screen.queryByRole('button', { name: 'Connect' })).toBeNull();
-    expect(screen.getByText('No Agoda calendar')).toBeTruthy();
+    expect(screen.getByText('No calendar connected')).toBeTruthy();
   });
 
   it('asks before leaving the setup view with a typed link, and keeps it on Keep editing', () => {
@@ -210,7 +213,7 @@ describe('ChannelSyncDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
     const input = screen.getByPlaceholderText('https://…agoda.com/…') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'https://ycs.agoda.com/ical/abc.ics' } });
-    fireEvent.click(screen.getByText('All channels'));
+    fireEvent.click(screen.getByRole('button', { name: 'All channels' }));
     expect(screen.getByText('Discard your changes?')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }));
     expect(input.value).toBe('https://ycs.agoda.com/ical/abc.ics');
@@ -220,7 +223,7 @@ describe('ChannelSyncDialog', () => {
     mocks.settings = settings({ connectableProviders: ['airbnb', 'agoda'] });
     renderDialog();
     fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
-    fireEvent.click(screen.getByText('All channels'));
+    fireEvent.click(screen.getByRole('button', { name: 'All channels' }));
     expect(screen.getByRole('button', { name: /^Airbnb/ })).toBeTruthy();
   });
 
@@ -231,7 +234,8 @@ describe('ChannelSyncDialog', () => {
     });
     renderDialog();
     fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
-    expect(screen.getByText(/Closed dates in Agoda can look like stays/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'About Create bookings' }));
+    expect(screen.getByText(/Closed dates can look like stays in Agoda/)).toBeTruthy();
   });
 
   it('shows a never-synced feed as Connected, with no second connect button', () => {
@@ -241,13 +245,13 @@ describe('ChannelSyncDialog', () => {
     });
     renderDialog();
     fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
-    expect(screen.getByText('Connected')).toBeTruthy();
     expect(screen.getByText('Waiting for first sync')).toBeTruthy();
     expect(screen.queryByText(/Connect another/)).toBeNull();
+    expect(screen.getAllByText('Connected').length).toBeGreaterThan(0);
     expect(screen.queryByPlaceholderText('https://…agoda.com/…')).toBeNull();
   });
 
-  it('names the channel on every recent activity row', () => {
+  it('shows activity for the open channel only, collapsed until opened', () => {
     mocks.settings = settings({
       connectableProviders: ['airbnb', 'agoda'],
       feeds: [feed({ id: 'f-ago', provider: 'agoda' })],
@@ -266,6 +270,63 @@ describe('ChannelSyncDialog', () => {
       ],
     });
     renderDialog();
-    expect(screen.getByText(/Agoda: Busy dates imported/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
+    fireEvent.click(screen.getByText('Recent activity'));
+    expect(screen.getByText('Busy dates imported')).toBeTruthy();
+  });
+
+  it('shows the export link and last read time when sharing is on', () => {
+    mocks.settings = settings({
+      connectableProviders: ['airbnb', 'agoda'],
+      feeds: [feed({ provider: 'agoda' })],
+      export: {
+        ...settings().export,
+        enabled: true,
+        reads: { agoda: { lastReadAt: '2026-11-17T02:00:00Z', readCount: 3 } },
+      },
+    });
+    renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
+    expect((screen.getByLabelText('Agoda export link') as HTMLInputElement).value).toBe(
+      'https://x/agoda'
+    );
+    expect(screen.getByText('Read just now')).toBeTruthy();
+  });
+
+  it('asks before turning sharing off while a channel is connected', () => {
+    mocks.settings = settings({
+      connectableProviders: ['airbnb', 'agoda'],
+      feeds: [feed({ provider: 'agoda' })],
+    });
+    renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Share dates with Agoda' }));
+    expect(screen.getByText('Stop sharing dates?')).toBeTruthy();
+    expect(mocks.shareMutate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Stop sharing' }));
+    expect(mocks.shareMutate).toHaveBeenCalledWith(false, expect.anything());
+  });
+
+  it('turns sharing off without a prompt when nothing is connected', () => {
+    mocks.settings = settings({ connectableProviders: ['airbnb', 'agoda'] });
+    renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Share dates with Agoda' }));
+    expect(screen.queryByText('Stop sharing dates?')).toBeNull();
+    expect(mocks.shareMutate).toHaveBeenCalledWith(false);
+  });
+
+  it('keeps a view-only member from changing anything', () => {
+    mocks.settings = settings({
+      connectableProviders: ['airbnb', 'agoda'],
+      feeds: [feed({ provider: 'agoda' })],
+    });
+    renderDialog(true);
+    fireEvent.click(screen.getByRole('button', { name: /^Agoda/ }));
+    expect(screen.queryByRole('button', { name: /Remove/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Sync .* now/ })).toBeNull();
+    expect(
+      (screen.getByRole('switch', { name: 'Share dates with Agoda' }) as HTMLButtonElement).disabled
+    ).toBe(true);
   });
 });

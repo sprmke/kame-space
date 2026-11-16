@@ -18,53 +18,44 @@ export function isDialogChannel(provider: string): provider is DialogChannel {
 
 export interface ChannelCopy {
   label: string;
-  /** Step 1: bring the channel's dates into Kame Space. */
-  importStep: string;
+  /** Shown in the ? next to "From {channel}": where to find the link, and any eligibility limit. */
+  importHelp: string;
   importPlaceholder: string;
-  /** Step 2: send Kame Space dates to the channel. */
-  exportStep: string;
-  refreshNote: string;
-  /** Eligibility facts the host should know before connecting. */
-  eligibility: string | null;
-  /** Shown under the Create bookings switch when the channel cannot tell a stay from a closed date. */
-  createBookingsNote: string | null;
+  /** Shown in the ? next to "To {channel}": where to paste our link. */
+  exportHelp: string;
+  /** Shown in the ? next to Create bookings. */
+  createBookingsHelp: string;
 }
 
 export const CHANNEL_COPY: Record<DialogChannel, ChannelCopy> = {
   airbnb: {
     label: 'Airbnb',
-    importStep:
-      'In Airbnb, open your listing Calendar, then Availability, then Connect calendars, then Export calendar. Copy the link and paste it here.',
+    importHelp:
+      'In Airbnb, open Calendar, Availability, Connect calendars, then Export calendar. Copy the link.',
     importPlaceholder: 'https://www.airbnb.com/calendar/ical/…',
-    exportStep:
-      'In Airbnb, open Connect calendars, then Import calendar. Paste this link, name it, and save.',
-    refreshNote: 'Airbnb refreshes every few hours.',
-    eligibility: null,
-    createBookingsNote: null,
+    exportHelp:
+      'In Airbnb, open Connect calendars, then Import calendar. Paste this link and save. Airbnb refreshes every few hours.',
+    createBookingsHelp:
+      'Each reservation becomes a Pending review booking. Dates block either way.',
   },
   agoda: {
     label: 'Agoda',
-    importStep:
-      'In Agoda, open Calendar, then Calendar connections. Copy your calendar link and paste it here.',
+    importHelp:
+      'In Agoda, open Calendar, then Calendar connections. Copy your calendar link. Agoda only offers links for room types with exactly 1 room.',
     importPlaceholder: 'https://…agoda.com/…',
-    exportStep:
+    exportHelp:
       'In Agoda Calendar connections, paste this link under Other website link and tap Import.',
-    refreshNote: 'Agoda refreshes several times a day.',
-    eligibility: 'Agoda only supports calendar links for room types with exactly 1 room.',
-    createBookingsNote:
-      'Closed dates in Agoda can look like stays. Turn this on only if you never close dates there.',
+    createBookingsHelp:
+      'Closed dates can look like stays in Agoda. Turn this on only if you never close dates there.',
   },
   booking_com: {
     label: 'Booking.com',
-    importStep:
-      'In Booking.com, open Rates & Availability, then Sync calendars. Export reserved dates only and copy the link.',
+    importHelp:
+      'In Booking.com, open Rates & Availability, then Sync calendars. Export reserved dates only and copy the link. Links are off while a channel manager is connected.',
     importPlaceholder: 'https://ical.booking.com/…',
-    exportStep: 'In Sync calendars, tap Add calendar connection and paste this link.',
-    refreshNote: 'Booking.com refreshes on its own schedule.',
-    eligibility:
-      'Booking.com turns calendar links off for properties connected to a channel manager.',
-    createBookingsNote:
-      'Closed dates in Booking.com look like stays. Turn this on only if you never close dates there.',
+    exportHelp: 'In Sync calendars, tap Add calendar connection and paste this link.',
+    createBookingsHelp:
+      'Closed dates look like stays in Booking.com. Turn this on only if you never close dates there.',
   },
 };
 
@@ -72,7 +63,7 @@ export type ChannelStatus = 'not_connected' | 'syncing' | 'needs_attention' | 'p
 
 export const CHANNEL_STATUS_LABEL: Record<ChannelStatus, string> = {
   not_connected: 'Not connected',
-  syncing: 'Syncing',
+  syncing: 'Connected',
   needs_attention: 'Needs attention',
   paused: 'Paused',
 };
@@ -114,15 +105,13 @@ export function channelWarnings(
   if (feeds.some((f) => f.isActive && f.health === 'error')) {
     out.push({
       kind: 'feed_error',
-      message: `${label} calendar link is failing. Paste a fresh link.`,
+      message: `${label} link is failing. Paste a fresh one.`,
     });
   }
   if (exportEnabled && feeds.some((f) => f.isActive && f.exportNeverRead)) {
     out.push({
       kind: 'never_read',
-      message: `${label} hasn't read your link yet. Check it's pasted in ${
-        provider === 'agoda' ? 'Calendar connections' : 'its calendar settings'
-      }.`,
+      message: `${label} hasn't read your link yet.`,
     });
   }
   if (provider === 'booking_com' && feeds.some((f) => f.isActive && f.echoWarning)) {
@@ -178,8 +167,5 @@ export function showHubChecklist(rows: ChannelRow[]): boolean {
   return rows.filter((r) => r.feeds.some((f) => f.isActive)).length >= 2;
 }
 
-export const HUB_CHECKLIST: readonly string[] = [
-  'Connect each channel only to Kame Space.',
-  'Remove calendar links between Airbnb, Agoda and Booking.com.',
-  'Block dates in Kame Space, not in a channel.',
-];
+/** Shown once two or more channels are connected. */
+export const HUB_TIP = 'Connect each channel to Kame Space only, not to each other.';

@@ -879,6 +879,7 @@ does not need it and shipped first.
 | X15 | Vrbo and Other removed | Registry, UI, export `?as=`, booking sources, import normalization, CHECKs (M11, guarded), cron query and `runFeedSync` all drop them; a stray row is skipped as `unsupported_provider` | Owner decision. It also removes the only "any public host" fetch path, so every import URL is now host-allowlisted |
 | X16 | Create bookings default | `createBookingsDefault`: Airbnb on, Agoda and Booking.com **off**, with a note under the switch | Neither can tell a stay from a closed date yet. Auto-creating would turn host blocks into placeholder bookings |
 | X17 | UID reuse across channels | `findRelinkableBooking` now requires the row's `external_source` to equal the feed's provider | Found by an integration test: two channels using the same UID string made one channel adopt the other's booking |
+| X18 | Channel sync UI model (2026-11-17, owner feedback: cluttered) | Flat channel list (name, meta, status), one compact channel view with **From** and **To** sections, every instruction moved into the **?** help, activity collapsed inside the channel, stop-sharing confirmation, one tip line instead of an info box | Cut visible text by roughly two thirds and removed nested cards. Instructions stay one tap away. Sharing off now confirms because it silently stops every channel |
 
 ### Acceptance commands per phase
 

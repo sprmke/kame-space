@@ -50,9 +50,7 @@ export function PricingCalendarBookingModal({
   if (!booking) return null;
 
   const imported = isImportedBooking(booking);
-  const channelLabel = bookingChannelLabel(
-    booking.booking_source || booking.external_source || ''
-  );
+  const channelLabel = bookingChannelLabel(booking.booking_source || booking.external_source || '');
   const canCopy =
     canCopyGuestFormLink && isImportedPendingBooking(booking) && isCompletionLinkLive(booking);
   const reservationUrl = booking.reservation_url?.startsWith('https://')

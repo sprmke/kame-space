@@ -106,8 +106,8 @@ for (const viewport of [
       const { addBodies } = await mockCalendarSync(page, { connectable: ['airbnb', 'agoda'] });
       const dialog = await openChannelSync(page);
       await dialog.getByRole('button', { name: /^Agoda/ }).click();
-      await expect(dialog.getByText('1. Bring Agoda in')).toBeVisible();
-      await expect(dialog.getByText(/exactly 1 room/)).toBeVisible();
+      await expect(dialog.getByRole('heading', { name: 'From Agoda' })).toBeVisible();
+      await expect(dialog.getByRole('heading', { name: 'To Agoda' })).toBeVisible();
 
       const input = dialog.getByPlaceholder('https://…agoda.com/…');
       await input.fill('https://www.airbnb.com/calendar/ical/1.ics');
@@ -135,8 +135,8 @@ for (const viewport of [
         ],
       });
       const dialog = await openChannelSync(page);
-      await expect(dialog.getByText('Connect each channel only to Kame Space.')).toBeVisible();
-      await expect(dialog.getByRole('button', { name: /^Airbnb, Syncing/ })).toBeVisible();
+      await expect(dialog.getByText(/Connect each channel to Kame Space only/)).toBeVisible();
+      await expect(dialog.getByRole('button', { name: /^Airbnb, Connected/ })).toBeVisible();
       await expect(dialog.getByRole('button', { name: /^Agoda, Needs attention/ })).toBeVisible();
 
       await dialog.getByRole('button', { name: /^Booking.com/ }).click();
