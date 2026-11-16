@@ -9,6 +9,7 @@ import {
   Wrench,
 } from 'lucide-react';
 
+import { BrandEmptyState } from '@/components/branding/BrandEmptyState';
 import { ListingHeroSearch } from '@/features/guest/marketing/shared/components/ListingHeroSearch';
 
 import { cn } from '@/lib/utils';
@@ -57,27 +58,17 @@ export function ServicesPage() {
       </section>
 
       <div className="relative isolate flex min-h-[26rem] items-center justify-center overflow-hidden px-4 py-10 sm:px-6 md:min-h-[40rem] md:py-16 lg:px-8">
-        <div
-          className="bg-primary/10 pointer-events-none absolute left-1/2 top-1/2 -z-10 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl sm:h-80 sm:w-80"
-          aria-hidden
-        />
-        <div
-          className="border-primary/10 pointer-events-none absolute left-1/2 top-1/2 -z-10 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border sm:h-72 sm:w-72"
-          aria-hidden
-        />
-
         <div className="relative z-10 flex w-full max-w-3xl flex-col items-center text-center">
-          <section aria-labelledby="services-title" className="animate-fade-in-up">
-            <span className="public-eyebrow text-brand-ink">Services</span>
-            <h1
-              id="services-title"
-              className="text-foreground mt-3 text-[2rem] font-bold leading-tight tracking-tight md:mt-4 md:text-5xl lg:text-6xl"
-            >
-              Coming Soon
-            </h1>
-            <p className="text-muted-foreground mx-auto mt-4 max-w-sm text-sm leading-6 sm:text-base">
-              Thoughtful extras for every part of your stay.
-            </p>
+          <section aria-labelledby="services-title" className="animate-fade-in-up w-full">
+            <BrandEmptyState
+              markSize="lg"
+              titleAs="h1"
+              titleId="services-title"
+              eyebrow="Services"
+              title="Coming Soon"
+              description="Extras for every part of your stay."
+              className="py-0 sm:py-0"
+            />
           </section>
 
           <ul

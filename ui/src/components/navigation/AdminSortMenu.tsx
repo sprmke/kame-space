@@ -30,7 +30,7 @@ export function AdminSortMenu<T extends string>({
   options,
   ariaLabel,
   fullWidth = false,
-  menuWidthClass = 'w-[min(calc(100vw-24px),14rem)]',
+  menuWidthClass = 'w-max min-w-full max-w-[min(calc(100vw-24px),18rem)]',
   resolveLabel,
 }: Props<T>) {
   const [open, setOpen] = useAdminToolbarMenuOpen();

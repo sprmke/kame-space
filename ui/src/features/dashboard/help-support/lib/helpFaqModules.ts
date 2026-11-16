@@ -15,7 +15,7 @@ export const FAQ_MODULE_IDS = [
   'guest',
 ] as const;
 
-/** Common FAQs shown before a host searches or browses a category. */
+/** Cap for `pickCommonFaqs` helpers/tests. FAQs home uses category tiles, not this list. */
 export const COMMON_FAQ_LIMIT = 10;
 
 export type FaqModuleId = (typeof FAQ_MODULE_IDS)[number];

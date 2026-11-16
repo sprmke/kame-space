@@ -32,7 +32,7 @@ test.describe('@ci @critical feature availability - host surfaces', () => {
       featureAvailabilityOff: ['pricing.channel_sync'],
     });
     await page.goto(propertyPath('pricing'));
-    await expect(page.getByRole('heading', { name: 'Pricing' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Pricing & availability' })).toBeVisible({
       timeout: 20_000,
     });
     await page
@@ -74,7 +74,7 @@ test.describe('@ci @critical feature availability - host surfaces', () => {
       featureAvailabilityOff: ['inbox.meta'],
     });
     await page.goto(propertyPath('inbox'));
-    await expect(page.getByRole('heading', { name: 'Inbox' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible({
       timeout: 20_000,
     });
     await expect(page.getByText('Under maintenance').first()).toBeVisible();

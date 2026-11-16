@@ -107,7 +107,11 @@ export function TemplateLibraryCategoryFilter({ value, onChange }: Props) {
           ) : null}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={6} className="w-44 p-0">
+      <PopoverContent
+        align="start"
+        sideOffset={6}
+        className="w-max min-w-[var(--radix-popover-trigger-width)] max-w-[min(calc(100vw-2rem),14rem)] p-0"
+      >
         <FilterOptions value={value} onChange={onChange} onPick={() => setPopoverOpen(false)} />
       </PopoverContent>
     </Popover>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { ClipboardList, Globe, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
@@ -77,6 +77,10 @@ type Props = {
   visibleSectionIds?: readonly PropertySettingsSectionId[];
   /** Inline payment editor (Setup Guide). */
   embedded?: boolean;
+  /** Rendered above Integrations (Search preview card). */
+  beforeIntegrations?: ReactNode;
+  /** Rendered after Email automations and before Integrations. */
+  afterEmailAutomations?: ReactNode;
 };
 
 export function PropertyOperationalSettingsSections({
@@ -94,6 +98,8 @@ export function PropertyOperationalSettingsSections({
   issueSectionIds = [],
   visibleSectionIds,
   embedded = false,
+  beforeIntegrations,
+  afterEmailAutomations,
 }: Props) {
   const sectionIsVisible = (sectionId: PropertySettingsSectionId) =>
     !visibleSectionIds || visibleSectionIds.includes(sectionId);
@@ -509,6 +515,10 @@ export function PropertyOperationalSettingsSections({
           embedded={embedded}
         />
       ) : null}
+
+      {beforeIntegrations}
+
+      {afterEmailAutomations}
 
       {sectionIsVisible('integrations') ? (
         <AdminSection

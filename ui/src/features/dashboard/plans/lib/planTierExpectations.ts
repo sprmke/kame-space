@@ -66,7 +66,7 @@ export const COMPARE_EXPECTATIONS: CompareGroupExpectation[] = [
     ],
   },
   {
-    label: 'Pricing',
+    label: 'Pricing & availability',
     rows: [
       { label: 'Pricing management', cells: ['off', 'on', 'on', 'on', 'on'] },
       { label: 'Airbnb calendar sync', cells: ['off', 'off', 'on', 'on', 'on'] },
@@ -99,7 +99,7 @@ export const COMPARE_EXPECTATIONS: CompareGroupExpectation[] = [
     ],
   },
   {
-    label: 'Inbox',
+    label: 'Messages',
     rows: [
       { label: 'Inbox quick replies', cells: ['off', 'on', 'on', 'on', 'on'] },
       { label: 'Meta (Facebook/Instagram) chat channel', cells: ['off', 'off', 'off', 'on', 'on'] },

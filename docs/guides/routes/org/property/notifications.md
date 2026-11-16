@@ -2,7 +2,7 @@
 title: 'Notifications — operator guide'
 status: active
 tags: [guides, routes, org, property]
-updated: 2026-11-05
+updated: 2026-11-16
 ---
 
 # Notifications — operator guide
@@ -42,12 +42,12 @@ Page subtitle: "Manage in-app notifications and Telegram alerts for this propert
 
 **Manage sheet.** Header **Manage** (gear icon in the phone hero) opens one sheet with two tabs:
 
-- **Activity** — **Push notifications**, **Push preferences** (one switch per group), and **Quiet hours** (its own section with a From/To window).
+- **Activity** — one bordered card: **Push notifications** (master), then **Push preferences** (one switch per group) and **Quiet hours** (From/To window) as sections inside that same card. No separate nested card around only the master toggle.
 - **Telegram** — the **Telegram delivery** master switch, **Setup Guide**, the shared bot token card and the six module cards (enable, credentials, schedules, templates).
 
 Saving is instant, no Save button. Closing the sheet or leaving the Telegram tab with unsaved card edits prompts Save / Discard / Keep editing. Keeping all of this behind Manage is what lets the page tabs stay read-only.
 
-**Off states.** Both tabs lead with a master switch. While its state is being read the row shows a skeleton instead of "not available"; a browser that cannot receive push says so in red with the switch disabled. When a channel is off, its controls are hidden and replaced with a short panel explaining what turning it back on gives you; both master switches are independent.
+**Off states.** Both tabs lead with a master switch. While its state is being read the row shows a skeleton instead of "not available"; a browser that cannot receive push says so in red with the switch disabled. When a channel is off, its controls are hidden and replaced with a short panel explaining what turning it back on gives you (still inside the Activity card when push is off); both master switches are independent.
 
 **How it works** lives beside the page title (the `?` next to "Notifications"), not inside the sheet. The Telegram bot walkthrough is the **Setup Guide** action in the Telegram group heading.
 
@@ -70,7 +70,7 @@ The page **Telegram** tab is a read-only copy of what each Telegram group receiv
 
 ### This device (PWA)
 
-In the header **Manage** sheet, **Activity** tab:
+In the header **Manage** sheet only (**Activity** tab). The page Activity feed does not repeat this toggle.
 
 - **Push notifications** — a single toggle to receive OS push notifications (booking, message, and workflow alerts) on this device even when the app is closed. Per **device**, not per account. Turning it on asks the browser for permission; turning it off unsubscribes. A toast confirms the switch is on or off (or says permission was not granted, so it stayed off). Delivered for **every** Notification Center event to the org owner + active org team members who opted in.
   - **Desktop Chrome/Edge/Firefox and Android**: works in a normal browser tab too.
@@ -151,13 +151,11 @@ Legacy URLs redirect here — see [previous guide version](./notifications.md) r
 
 **Tabs:** **Activity** (unread count badge) then **Telegram**. Switching tabs replaces the URL `?view=` value and prompts first if a Telegram card has unsaved edits (Save / Discard / Keep editing).
 
-**Activity tab:** the **Activity** card with the bounded feed. Delivery settings live in the header **Manage** sheet, not on the tab.
+**Activity tab:** the **Activity** card with the bounded feed (plus **Offline changes** when needed). No push toggle on the tab. Delivery settings live only in the header **Manage** sheet. An empty feed uses the same status-panel pattern as Manage (title, short line, three bullets), not a bare "No notifications yet."
 
-**Telegram tab:** the **Telegram delivery** master switch (white card, on/off for every module at once) followed by the sent-message history described above.
+**Telegram tab:** one card with the **Telegram delivery** master switch and, below it, either the paused panel (delivery off), the empty status panel (delivery on, nothing sent yet), or the sent-message history.
 
-**Activity tab device card:** a fixed **Push notifications** row sits above the feed. It skeletons while the browser state is read, then shows the live switch. The row only ever talks about push; every unavailable state also says **In-app notifications still arrive in Activity**, so nobody mistakes a push problem for a dead notification center.
-
-**Unavailable push.** When this device cannot subscribe (browser support missing, or a build without the VAPID key) the switch is **disabled** and the reason is shown in red. While a fresh service worker is still starting the row says **"Preparing notifications on this device…"** in muted text; if it does not come up, that becomes **"Notifications are not available on this device right now."** with no reload instruction. The row never invites a click that would fail, and it re-checks by itself once the worker becomes active. The same row and rules apply in the Manage sheet.
+**Unavailable push (Manage → Activity).** When this device cannot subscribe (browser support missing, or a build without the VAPID key) the switch is **disabled** and the reason is shown in red. While a fresh service worker is still starting the row says **"Preparing notifications on this device…"** in muted text; if it does not come up, that becomes **"Notifications are not available on this device right now."** with no reload instruction. The row never invites a click that would fail, and it re-checks by itself once the worker becomes active. Unavailable copy also notes that in-app alerts still arrive in Activity.
 
 **Manage → Telegram:** **Telegram delivery** master switch, then **Telegram notifications** with **Get Help**, the shared bot token card, and one card per module. Cards stack on every screen width; the old desktop-only sidebar is gone.
 
@@ -170,7 +168,7 @@ Notifications is the one place to review in-app alerts and set up Telegram for t
 **Common host questions**
 
 - Q: How do I get alerts on my phone when the app is closed?
-  A: Turn on **Push notifications** at the top of this page. On iPhone/iPad you first need to **Add to Home Screen** (Share → Add to Home Screen), then open the installed app and turn it on there.
+  A: Open **Manage**, stay on **Activity**, and turn on **Push notifications**. On iPhone/iPad you first need to **Add to Home Screen** (Share → Add to Home Screen), then open the installed app and turn it on there.
 - Q: I turned it on but get nothing.
   A: Check the phone's notification settings for the app/site, make sure you didn't block notifications, and confirm you opened the **installed** app (not a browser tab) on iPhone. Each device opts in separately.
 - Q: I replied to a guest with no signal - did it send?
@@ -179,6 +177,8 @@ Notifications is the one place to review in-app alerts and set up Telegram for t
   A: Open **Notifications** from the sidebar or **More** on a phone. The page opens on **Activity**. Or tap **View all** in the bell when you have more than five items.
 - Q: Where did the phone-push settings go?
   A: Tap **Manage** in the Notifications header. The sheet holds **Push notifications**, **Push preferences** and the way into Telegram settings.
+- Q: Why does Activity or Telegram look empty?
+  A: Activity stays empty until a booking or message event lands. On Telegram, if delivery is off you see a paused panel; if delivery is on but nothing was sent yet, you see a short empty panel that points you to Manage.
 - Q: What do the four cards at the top mean?
   A: **Unread** and **Messages** count what is waiting for you. **Telegram on** and **Connected** show how many Telegram modules are switched on and how many have a bot token plus chat ID. Tap a card to jump to that tab.
 - Q: Does the activity list only show this property?
@@ -196,7 +196,7 @@ Notifications is the one place to review in-app alerts and set up Telegram for t
 - Q: Can I turn off just one type of alert?
   A: Yes. **Push preferences** has one switch per group (Bookings, Messages, Reviews, Pricing, Finance, Maintenance, Analytics, System). Muting a group stops the phone buzz; the item still appears in **Activity**. **Quiet hours** is a separate section below it: turn it on, then set **From** and **To**. It uses Asia/Manila time and still lets calendar-sync failures through. The toggles save instantly.
 - Q: Do these preferences follow me to another device?
-  A: Yes. Push preferences belong to your account; the **Push notifications** switch at the top is per device, so turning off one phone does not silence the others.
+  A: Yes. Push preferences belong to your account; the **Push notifications** switch in **Manage** is per device, so turning off one phone does not silence the others.
 - Q: Do I need a different bot for every module?
   A: No, one shared bot token is enough. Save it once at the top and each module can reuse it, or override with its own token if you'd rather. Use different **Chat IDs** so each module posts to the right group.
 - Q: How do I pick a Telegram group?

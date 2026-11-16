@@ -2,7 +2,7 @@
 title: 'Property Settings — operator guide'
 status: active
 tags: [guides, routes, org, property]
-updated: 2026-09-27
+updated: 2026-11-16
 ---
 
 # Property Settings — operator guide
@@ -28,6 +28,8 @@ Route: `/org/:orgSlug/property/:propertySlug/settings`
 | Payment            | Done      | Done       | Done | Compact method rows + Manage modal (account/QR editor)                                                                          |
 | Building Forms     | Done      | Done       | Done | Compact summary + Manage modal (form + live PDF preview)                                                                        |
 | Email automations  | Done      | Done       | Done | Team email + read-only building admin email; check-out timing; automated sends as a summary row + Manage modal                  |
+| Search preview     | Done      | Done       | Done | Own section above Integrations; stacked title/description + Google-style preview                                                |
+| Guest experience   | Done      | Done       | Done | Summary + Manage modal for essentials; Templates link for check-in/out; unit read-only from Basic Info when set                 |
 | Integrations       | Done      | Done       | Done | Telegram + AI optional; GAF/pet via Resend inbound                                                                              |
 | AI features        | Moved     | n/a        | Done | Removed from property settings; configured in org Settings → AI features                                                        |
 | Activity           | Read-only | n/a        | Done | Summary row + **Manage** → modal with full property activity feed (`ActivityLogPanel`). Section shown only with `activity:view` |
@@ -44,6 +46,8 @@ Living operator spec for property settings: what each section does, how data is 
 Many section values can also be **seeded from another property** via org **Properties → Copy settings** (4-step wizard). Payment methods are not included.
 
 **Listing status** is the last section in the page and section nav (after Activity when visible). It is not the first item. Destructive actions stay at the bottom with setup and operational sections above.
+
+Desktop section nav (`AdminSectionNavLayout`): labelled groups **Listing** → **Guest setup** → **Connections** → **Account** (scroll order matches). Scroll-spy highlights the section in view; on short laptops the rail scrolls inside its own `max-h` port and keeps the active row visible (same keep-in-view as horizontal tab strips).
 
 ### Permissions (Phase 5)
 
@@ -87,6 +91,10 @@ Property Settings is where you complete operational setup: basic info, capacity,
   A: In **Property Settings** - Amenities, House Rules, and Cancellation use **Manage** for the full editor - or in **Public Pages → Property → Edit** if you want a live preview. Both save the same data. The Amenities and House Rules cards show your first few picks with a **+N** badge for the rest, so you can see what is on without opening the editor.
 - Q: Where do I fill Building Forms (GAF owner and signature)?
   A: **Property Settings → Building Forms → Manage**. Enter owner and contact details, add the signature, and check the live PDF preview. Save in the modal, then use page **Save Changes** for the text fields.
+- Q: Where do I set Wi-Fi and the door code for guests?
+  A: **Property Settings → Guest experience → Manage**. Add Wi-Fi, the door code, contacts, and when codes appear before check-in. Unit and floor come from Basic Info when that is already filled. Check-in and check-out steps are under Templates. Quiet hours are under House rules.
+- Q: Where do I change what Google shows for my listing?
+  A: **Property Settings → Search preview**. Leave title and description blank to use the generated text, or type your own. The preview updates as you type.
 - Q: Where do I upload listing photos?
   A: **Property Settings → Photos & Videos**, or the listing Page Editor gallery. Photos are shared across the listing, property cards, and Marketing.
 - Q: Where is listing verification?
@@ -163,33 +171,21 @@ property except for the listing-status leaf, so they can restore but not edit ot
 
 ## Basic Information
 
-### Search preview
-
-Under the slug field, **Search preview** shows the listing as it appears in Google and in AI answers, with two optional fields: **Title** and **Description**, each with a character counter that turns amber past the recommended length.
-
-- Empty means automatic: the placeholder shows the exact title and description the page generates from the listing name, unit type, city, guests, bedrooms and amenities, so the host can see what they are overriding.
-- The preview updates as you type and reflects the real result line, title and description.
-- Pasted markup is stripped, and a title that already contains the brand is used verbatim.
-- Rides the normal Basic Information save, so it appears in Activity as a property edit. Leaving the card with unsaved text asks Save / Discard / Keep editing.
-- Parking's Basic Information has the same card with its own generated title (slot name plus residence).
-
 ### Fields
 
-| Field              | Storage                              | Validation                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| ------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Property name      | `properties.name`                    | 2–120 chars; **globally unique** (case-insensitive); **reserved names blocked** (see [onboarding.md](../../onboarding.md) § Reserved organization / property names); availability checked after typing pauses                                                                                                                                                                                                                                        |
-| URL slug           | `properties.slug`                    | Auto-derived from name on save; globally unique. Read-only beside the name on desktop (`sm` 50/50 row); copy button copies the absolute public property URL (`/properties/:slug`). Toast: **Public URL copied**. On rename, the settings URL is updated with `replace: true`, and a **session** old→new remap (`tenantSlugRemap.ts`) rewrites any Back/Forward hit on the old `/property/:slug/…` path to the new slug (avoids "No property access") |
-| Property type      | `properties.type`                    | **Read-only** in settings (set at property creation). Condo enables residence / tower / unit display                                                                                                                                                                                                                                                                                                                                                 |
-| Residence          | `properties.residence_name`          | **Read-only** in settings. Known residences apply defaults at creation (see below)                                                                                                                                                                                                                                                                                                                                                                   |
-| Tower              | `properties.tower`                   | **Read-only** in settings. Options from residence config (Azure North: Monaco, Bali, Barbados)                                                                                                                                                                                                                                                                                                                                                       |
-| Unit               | `properties.unit_number`             | **Read-only** in settings. 4-digit. Unique per tower among **`ACTIVE`** properties only ([#120](https://github.com/sprmke/kame-space/issues/120)); many `INACTIVE` peers allowed (succession). Republish / stay ACTIVE with an ACTIVE peer → **409**.                                                                                                                                                                                                |
-| Contact name       | `properties.settings.contactName`    | Required; full name when non-empty; inline error on blur                                                                                                                                                                                                                                                                                                                                                                                             |
-| Contact role       | `properties.settings.contactRole`    | Required                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Phone              | `properties.settings.contactPhone`   | Required; PH mobile `09XXXXXXXXX`                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Email              | `properties.settings.contactEmail`   | Required; valid email                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Brand color        | `app_settings.brand_color`           | Optional override; empty = inherit org. Preset swatches, **From photos** (enabled after gallery images are uploaded — extracts accent from property photos), custom picker, Reset. Changing it marks Settings dirty and shows **Save Changes** (saved with operational basic section via `PATCH app-settings`)                                                                                                                                       |
-| Search title       | `properties.settings.seoTitle`       | Optional; max 70 characters (60 recommended). Blank removes the key and the generated title is used. A value that already contains the brand is used verbatim, so it is not double-branded                                                                                                                                                                                                                                                           |
-| Search description | `properties.settings.seoDescription` | Optional; max 170 characters (160 recommended). Blank removes the key and the generated description is used                                                                                                                                                                                                                                                                                                                                          |
+| Field         | Storage                            | Validation                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Property name | `properties.name`                  | 2–120 chars; **globally unique** (case-insensitive); **reserved names blocked** (see [onboarding.md](../../onboarding.md) § Reserved organization / property names); availability checked after typing pauses                                                                                                                                                                                                                                        |
+| URL slug      | `properties.slug`                  | Auto-derived from name on save; globally unique. Read-only beside the name on desktop (`sm` 50/50 row); copy button copies the absolute public property URL (`/properties/:slug`). Toast: **Public URL copied**. On rename, the settings URL is updated with `replace: true`, and a **session** old→new remap (`tenantSlugRemap.ts`) rewrites any Back/Forward hit on the old `/property/:slug/…` path to the new slug (avoids "No property access") |
+| Property type | `properties.type`                  | **Read-only** in settings (set at property creation). Condo enables residence / tower / unit display                                                                                                                                                                                                                                                                                                                                                 |
+| Residence     | `properties.residence_name`        | **Read-only** in settings. Known residences apply defaults at creation (see below)                                                                                                                                                                                                                                                                                                                                                                   |
+| Tower         | `properties.tower`                 | **Read-only** in settings. Options from residence config (Azure North: Monaco, Bali, Barbados)                                                                                                                                                                                                                                                                                                                                                       |
+| Unit          | `properties.unit_number`           | **Read-only** in settings. 4-digit. Unique per tower among **`ACTIVE`** properties only ([#120](https://github.com/sprmke/kame-space/issues/120)); many `INACTIVE` peers allowed (succession). Republish / stay ACTIVE with an ACTIVE peer → **409**.                                                                                                                                                                                                |
+| Contact name  | `properties.settings.contactName`  | Required; full name when non-empty; inline error on blur                                                                                                                                                                                                                                                                                                                                                                                             |
+| Contact role  | `properties.settings.contactRole`  | Required                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Phone         | `properties.settings.contactPhone` | Required; PH mobile `09XXXXXXXXX`                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Email         | `properties.settings.contactEmail` | Required; valid email                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Brand color   | `app_settings.brand_color`         | Optional override; empty = inherit org. Preset swatches, **From photos** (enabled after gallery images are uploaded — extracts accent from property photos), custom picker, Reset. Changing it marks Settings dirty and shows **Save Changes** (saved with operational basic section via `PATCH app-settings`)                                                                                                                                       |
 
 ### Save path
 
@@ -279,55 +275,47 @@ Compact card on Property Settings: names the first rules plus **Manage** in the 
 ## Guest experience
 
 The arrival content a guest sees on their trip page and in the stay guide (guest journey plan
-D7). Sits between **Email Automations** and **Activity** in the section rail.
+D7). Compact **summary + Manage** card (same pattern as Payment / Guest Form). Check-in and
+check-out steps stay on **Templates**. Quiet hours stay on **House rules**. Payment and
+cancellation stay on their own settings cards.
 
-### Readiness card
+### Card
 
-First thing in the section. Lists the guest-facing inputs and flags what is missing:
+Summary chips for filled essentials (Wi-Fi, door code, unit, contact, reveal hours) plus
+**Manage**. Empty state: "No arrival essentials yet" with attention on Manage. A one-line note
+links to Templates for check-in / check-out steps.
 
-| Row                               | Ready when                        | Missing means                           |
-| --------------------------------- | --------------------------------- | --------------------------------------- |
-| Check-in steps                    | the host saved their own copy     | the shipped default is doing the work   |
-| Check-out steps                   | the host saved their own copy     | the shipped default is doing the work   |
-| Essentials                        | any essentials field is filled in | the guest has no Wi-Fi, code or contact |
-| Payment methods                   | at least one method               | the guest cannot pay the balance        |
-| House rules / Cancellation policy | —                                 | opens the editor; no status is claimed  |
+### Manage modal
 
-Rows a host can read from the page (`missing`) show **Fix** and scroll to the editor. Rows that
-are only links show **Open**. Readiness never nags about default copy — it has nothing to fix.
+`ResponsiveModal` bottom sheet on phone. Fields:
 
-### Fields
+| Group          | Fields                                                  |
+| -------------- | ------------------------------------------------------- |
+| Wi-Fi          | network name, password (secret)                         |
+| Getting in     | door or lock code (secret), unit and floor, parking tip |
+| Contacts       | emergency contact name + phone, building security phone |
+| Building notes | garbage schedule                                        |
+| Reveal         | hours before check-in (default 24, 0-720)               |
 
-Stored in `property_guest_essentials`, **not** `properties.settings`, because every public
-listing read returns `settings` and a Wi-Fi password must not leak there.
+**Unit and floor:** when Basic Info already has tower/unit (`listingUnitLabel`), the field is
+**read-only** from the listing. Otherwise it is editable. Quiet hours are not edited here.
 
-| Group          | Fields                                                   |
-| -------------- | -------------------------------------------------------- |
-| Wi-Fi          | network name, password (secret)                          |
-| Getting in     | door or lock code (secret), unit and floor, parking slot |
-| Contacts       | emergency contact name + phone, building security phone  |
-| Building notes | garbage schedule, quiet hours                            |
+**Secrets:** password and door code use a masked input with a reveal toggle. Guests see them
+only from check-in minus reveal hours.
 
-**Secrets:** the password and door code render masked with a reveal toggle. They reach a guest
-only from **check-in minus `Reveal codes before check-in` hours** (default 24, 0-720). Before
-then `get-guest-trip` and `get-guest-stay-guide` return `null` for the value and only the
-timestamp, and the guest sees "Available {date, time}".
+Stored in `property_guest_essentials`, **not** `properties.settings`.
 
-A **per-booking** code override lives on the booking detail's Guest view card, for rotating
-locks. It wins over the property default and never changes the reveal timing.
+A **per-booking** door-code override lives on the booking detail Guest view card.
 
 ### Save path
 
-`PATCH property-guest-essentials` with `{ property_id, essentials }`. Sends only the fields that
-changed, so one edit cannot clear the rest. `templates:standard:edit` is required (the same leaf
-as check-in and check-out instructions). `GET` uses `templates:view`.
+`PATCH property-guest-essentials` with `{ property_id, essentials }`. Sends only changed fields.
+`templates.standard:edit` required; `GET` uses `templates:view`.
 
-**Activity:** `settings.updated` with `area: "guest essentials"` and the **field names only**. A
-`changes` diff would put the Wi-Fi password and door code into the activity feed, which hosts
-and org admins can read.
+**Activity:** `settings.updated` with `area: "guest essentials"` and **field names only** (no
+secret values).
 
-The section is guarded by `useUnsavedChangesGuard`: leaving with unsaved edits prompts Save /
-Discard / Keep editing.
+Modal close uses `useGuardedClose` (Save / Discard / Keep editing when dirty).
 
 ---
 
@@ -507,6 +495,29 @@ Per-property operational settings in `app_settings` (below Building Forms in the
 Compact summary row on the Email automations card (`N of 8 on`) with **Manage**. **Manage** opens a `ResponsiveModal` (bottom sheet below `lg`) with the grouped list (`PropertyEmailAutomationTogglePanel`): **Your team**, **Building admin**, **Guest**, **Guest reviews**. Each row shows the recipient and a one-line **When** trigger, for example "When a guest submits the booking form." Toggles edit the page draft live; the modal footer is **Done**, so the save still happens through the page **Save Changes**. Master switches in `app_settings.automation_toggles` (JSONB). Missing keys default to **enabled**, and a stored retired key (`emailParkingBroadcast`) is ignored. Saved via **`app-settings` PATCH**.
 
 Five rows are plan-gated (`emailGafRequest`, `emailBookingAcknowledgement`, `emailPetRequest`, `emailReadyForCheckin`, `emailSdRefundCheckout`): they show a plan pill and a disabled switch that opens the upgrade modal. **New booking alert**, **Review request**, and **Review reminder** stay free.
+
+---
+
+## Search preview
+
+Own nav section above **Integrations** (`PropertySearchSettingsSection`). Stacked **Title** and **Description** (not side-by-side), with a Google-style result preview above the fields so hosts judge the outcome first.
+
+| Field       | Column                               | Notes                                                                                                                                 |
+| ----------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Title       | `properties.settings.seoTitle`       | Optional; max 70 characters (60 recommended). Blank removes the key; generated title is used. No double brand when brand already set. |
+| Description | `properties.settings.seoDescription` | Optional; max 170 characters (160 recommended). Blank removes the key; generated description is used.                                 |
+
+- Placeholders show the exact generated title and description from name, unit type, city, guests, bedrooms, and amenities.
+- Preview updates as you type (result line, title, description). Pasted markup is stripped.
+- Saves with the normal Settings save as section `search` (`settings.basicInfo:edit`). Dirty Search preview alone is enough to enable **Save Changes**.
+- Unsaved leave prompts Save / Discard / Keep editing.
+- Parking still shows the same card under Basic Information (`SearchPreviewFields`).
+
+### Implementation map
+
+- UI: `PropertySearchSettingsSection.tsx`, `SearchPreviewFields.tsx`
+- Save / dirty: `propertySettingsSave.ts` (`search` in `PROFILE_SECTIONS`)
+- Permission: `SETTINGS_SECTION_EDIT_PERMISSION.search` → `settings.basicInfo:edit`
 
 ---
 

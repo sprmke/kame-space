@@ -5,6 +5,7 @@
  * Phase 3–6: Bookings through Team/Notifications/Inbox use leaves.
  */
 
+import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import { planFeatureByPermissionLeaf } from '@/features/dashboard/plans/lib/planFeaturePermissions';
 import type { PlanFeatureKey } from '@/features/dashboard/plans/lib/planFeatures';
 import { TEAM_PERMISSIONS } from '@/features/dashboard/team/lib/propertyTeamConstants';
@@ -48,7 +49,7 @@ const CATEGORY_TO_MODULE: Record<string, string> = {
   Bookings: 'bookings',
   Reviews: 'reviews',
   Finance: 'finance',
-  Pricing: 'pricing',
+  [ADMIN_MODULE_LABEL.pricing]: 'pricing',
   Analytics: 'analytics',
   Maintenance: 'maintenance',
   Marketing: 'marketing',
@@ -57,7 +58,7 @@ const CATEGORY_TO_MODULE: Record<string, string> = {
   'Public Pages': 'publicPages',
   Settings: 'settings',
   Team: 'team',
-  Inbox: 'inbox',
+  [ADMIN_MODULE_LABEL.inbox]: 'inbox',
   'AI Assistant': 'assistant',
   Activity: 'activity',
 };
@@ -66,7 +67,7 @@ const MODULE_LABELS: Record<string, string> = {
   bookings: 'Bookings',
   reviews: 'Reviews',
   finance: 'Finance',
-  pricing: 'Pricing',
+  pricing: ADMIN_MODULE_LABEL.pricing,
   analytics: 'Analytics',
   maintenance: 'Maintenance',
   marketing: 'Marketing',
@@ -75,7 +76,7 @@ const MODULE_LABELS: Record<string, string> = {
   publicPages: 'Public Pages',
   settings: 'Settings',
   team: 'Team',
-  inbox: 'Inbox',
+  inbox: ADMIN_MODULE_LABEL.inbox,
   assistant: 'AI Assistant',
   activity: 'Activity',
 };

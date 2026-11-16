@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { BellOff } from 'lucide-react';
 
 import { PlatformLogo } from '@/features/dashboard/inbox/components/PlatformLogo';
+import { ActivityEmptyPanel } from '@/features/dashboard/notifications/components/NotificationsChannelPanels';
 import { NotificationInboxTitle } from '@/features/dashboard/notifications/components/NotificationInboxTitle';
 import { useEnrichedNotifications } from '@/features/dashboard/notifications/hooks/useEnrichedNotifications';
 import {
@@ -139,6 +140,15 @@ export function InAppNotificationsPanel({
   }
 
   if (notifications.length === 0) {
+    /* Hub feed gets the status panel; bell/sheet stays a short line. */
+    if (variant === 'feed') {
+      return (
+        <div className={cn('px-3 py-4 sm:px-4 sm:py-5', className)}>
+          <ActivityEmptyPanel className="border-0 bg-transparent px-0 py-2 sm:px-0 sm:py-2" />
+        </div>
+      );
+    }
+
     return (
       <div
         className={cn(

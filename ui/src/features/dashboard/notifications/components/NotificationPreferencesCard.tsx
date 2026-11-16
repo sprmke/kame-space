@@ -13,8 +13,8 @@ import { useConnectivity } from '@/hooks/useConnectivity';
 
 /**
  * What gets sent as an OS push. Absence of a row in `notification_preferences`
- * means "everything on", so every switch starts on for a new user. Rendered
- * inside the manage sheet, so it carries no card chrome of its own.
+ * means "everything on", so every switch starts on for a new user. Parent
+ * (Manage sheet card) owns the border; this block stays flush inside it.
  */
 export function NotificationPreferencesCard() {
   const { preferences, loading, saving, update } = useNotificationPreferences();
@@ -53,12 +53,12 @@ export function NotificationPreferencesCard() {
         />
       </p>
 
-      <ul className="mt-2 divide-y">
+      <ul className="mt-1.5 divide-y">
         {NOTIFICATION_PREFERENCE_GROUPS.map((group) => {
           const enabled = !preferences.mutedGroups.includes(group);
           const copy = NOTIFICATION_PREFERENCE_GROUP_LABELS[group];
           return (
-            <li key={group} className="flex items-center justify-between gap-3 py-2">
+            <li key={group} className="flex min-h-11 items-center justify-between gap-3 py-2.5">
               <span className="text-foreground flex items-center gap-1 text-[13px] sm:text-sm">
                 {copy.label}
                 <InfoHint label={copy.label} text={copy.hint} />

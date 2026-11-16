@@ -10,6 +10,11 @@ type Props = {
   checked: boolean;
   disabled?: boolean;
   onCheckedChange: (checked: boolean) => void;
+  /**
+   * Drop the own border when this row sits inside a parent card (Manage sheet
+   * Activity block: master + preferences + quiet hours share one surface).
+   */
+  embedded?: boolean;
   /** Surface overrides, e.g. `bg-card` when the row sits on a page card. */
   className?: string;
   /** Description tone, e.g. `text-destructive` for "this browser can't do it". */
@@ -27,14 +32,16 @@ export function NotificationMasterSwitchRow({
   checked,
   disabled,
   onCheckedChange,
+  embedded = false,
   className,
   descriptionClassName,
 }: Props) {
   return (
     <div
       className={cn(
-        /* Always a card surface: on/off is carried by the switch, not a tint. */
-        'border-border bg-card flex items-center justify-between gap-3 rounded-xl border px-3 py-3 sm:px-4',
+        'flex items-center justify-between gap-3 px-3 py-3 sm:px-4',
+        /* Standalone: own card. Embedded: parent owns the border. */
+        !embedded && 'border-border bg-card rounded-xl border',
         className
       )}
     >

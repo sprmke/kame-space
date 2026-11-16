@@ -10,7 +10,6 @@ const EMPTY: GuestReadinessInput = {
   checkInCustomised: false,
   checkOutCustomised: false,
   hasEssentials: false,
-  paymentMethodCount: 0,
 };
 
 function statusOf(rows: ReturnType<typeof guestReadinessRows>, id: string) {
@@ -18,14 +17,11 @@ function statusOf(rows: ReturnType<typeof guestReadinessRows>, id: string) {
 }
 
 describe('guestReadinessRows', () => {
-  it('lists every guest-facing input', () => {
+  it('lists only arrival rows this section owns or links', () => {
     expect(guestReadinessRows(EMPTY).map((row) => row.id)).toEqual([
       'check-in',
       'check-out',
       'essentials',
-      'payment',
-      'house-rules',
-      'cancellation',
     ]);
   });
 
@@ -41,52 +37,33 @@ describe('guestReadinessRows', () => {
     expect(rows.find((row) => row.id === 'check-in')?.hint).toBeNull();
   });
 
-  it('marks missing essentials and payment methods', () => {
-    const rows = guestReadinessRows(EMPTY);
-    expect(statusOf(rows, 'essentials')).toBe('missing');
-    expect(statusOf(rows, 'payment')).toBe('missing');
+  it('marks missing essentials', () => {
+    expect(statusOf(guestReadinessRows(EMPTY), 'essentials')).toBe('missing');
   });
 
-  it('marks them ready once filled in', () => {
-    const rows = guestReadinessRows({
-      ...EMPTY,
-      hasEssentials: true,
-      paymentMethodCount: 2,
-    });
-    expect(statusOf(rows, 'essentials')).toBe('ready');
-    expect(statusOf(rows, 'payment')).toBe('ready');
-  });
-
-  it('never claims a status for house rules or cancellation policy', () => {
-    const rows = guestReadinessRows({ ...EMPTY, hasEssentials: true, paymentMethodCount: 1 });
-    expect(statusOf(rows, 'house-rules')).toBe('check');
-    expect(statusOf(rows, 'cancellation')).toBe('check');
-  });
-
-  it('every non-ready row carries a hint', () => {
-    for (const row of guestReadinessRows(EMPTY)) {
-      if (row.status === 'missing' || row.status === 'default') {
-        expect(row.hint?.trim().length).toBeGreaterThan(0);
-      }
-    }
+  it('marks essentials ready once filled in', () => {
+    expect(statusOf(guestReadinessRows({ ...EMPTY, hasEssentials: true }), 'essentials')).toBe(
+      'ready'
+    );
   });
 });
 
 describe('guestReadinessGaps', () => {
-  it('returns only the missing rows', () => {
-    const gaps = guestReadinessGaps(guestReadinessRows(EMPTY)).map((row) => row.id);
-    expect(gaps).toEqual(['essentials', 'payment']);
+  it('returns only missing essentials, not default steps', () => {
+    expect(guestReadinessGaps(guestReadinessRows(EMPTY)).map((row) => row.id)).toEqual([
+      'essentials',
+    ]);
   });
 
-  it('returns nothing when everything is filled in', () => {
-    const gaps = guestReadinessGaps(
-      guestReadinessRows({
-        checkInCustomised: true,
-        checkOutCustomised: true,
-        hasEssentials: true,
-        paymentMethodCount: 1,
-      })
-    );
-    expect(gaps).toEqual([]);
+  it('returns nothing when essentials are filled in', () => {
+    expect(
+      guestReadinessGaps(
+        guestReadinessRows({
+          checkInCustomised: false,
+          checkOutCustomised: false,
+          hasEssentials: true,
+        })
+      )
+    ).toEqual([]);
   });
 });

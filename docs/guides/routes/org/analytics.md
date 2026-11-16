@@ -2,7 +2,7 @@
 title: 'Org Portfolio Analytics — operator guide'
 status: active
 tags: [guides, routes, org, analytics]
-updated: 2026-11-05
+updated: 2026-11-16
 ---
 
 # Org Portfolio Analytics — operator guide
@@ -54,12 +54,13 @@ Column order is always: **Listing**, **Type**, **Attention**, **Occupancy**, **R
 **Bookings**, **Outlook**. Header padding matches cell padding (same pattern as Bookings /
 Finance tables).
 
-- **Attention** — booking and demand signals only (no guest-balance / collections copy).
-  Reasons, most urgent first: **Underbooked** (next 30 nights), **No bookings** (zero in the
-  selected period), **Soft occupancy** (under 40% fill this period while still having bookings).
-  Everything else shows "On track".
+- **Attention** — booking and demand signals only (no guest-balance / collections copy). Shows a
+  **Needs attention** badge when any signal fires; detail lines cover **No bookings** and **Soft
+  occupancy**. **Underbooked** (next 30 nights) still counts toward the badge and sort order, but
+  the copy lives in **Outlook** so the same fact is not shown twice.
 - **Outlook** — only the next 30 nights: **Underbooked / Building / Strong / Fully booked** with
-  the % booked.
+  the % booked. Grid and list views put Outlook in the same metric row as Occupancy / Revenue /
+  Bookings (no second footer block).
 - **Revenue** shows the change vs the prior period under the amount.
 - **Order** — needs-attention listings are always first, most urgent on top. Sorting by a column
   header (Listing, Occupancy, Revenue, Bookings, Outlook) orders inside each group. Default is
@@ -130,8 +131,8 @@ first, with a short reason.
   A: Portfolio occupancy weights by nights available, so a busy listing counts more than an
   empty one.
 - Q: What is the difference between Attention and Outlook?
-  A: Attention flags booking or demand problems (gaps ahead, no bookings, soft fill). Outlook
-  only describes how full the next 30 nights are.
+  A: Attention is the action flag (needs attention vs on track), plus period issues like no
+  bookings or soft fill. Outlook is how full the next 30 nights are.
 - Q: Where do unpaid guest balances show?
   A: On Finance and booking detail, not on Analytics.
 - Q: Where do parking rows go when I tap them?

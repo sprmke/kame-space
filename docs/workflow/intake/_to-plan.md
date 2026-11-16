@@ -2,7 +2,7 @@
 title: 'Tasks To Plan'
 status: active
 tags: [planning, intake, backlog]
-updated: 2026-11-11
+updated: 2026-11-17
 stage: intake
 kind: backlog
 ---
@@ -977,6 +977,14 @@ Example:
 📋 Marketing storage: unified org quota, retention, and cost guardrails
 
 → **Planned:** [`../planned/marketing-storage-quotas-and-retention.md`](../planned/marketing-storage-quotas-and-retention.md) — Marketing Studio writes a lot of bytes: host uploads (images, video, music), canvas uploads, AI image and video outputs, every refinement version of an AI session, saved-design thumbnails, and data-URL exports pushed to Meta. We are on...
+
+===
+
+📋 Multi-channel calendar sync — Agoda and Booking.com for Philippine hosts
+
+Sync with other popular platforms that Philippine hosts use, on top of the Airbnb sync we already have (Agoda, Booking.com and others), so a booking on any one blocks the rest automatically.
+
+→ **Planned:** [`../planned/multi-channel-calendar-sync.md`](../planned/multi-channel-calendar-sync.md) — Agoda and Booking.com are doable over iCal with no partnership; Traveloka and Trip.com need a paid channel-manager API (decision-gated). Kame Space as the hub, relay fixes, echo detection, cadence and scale fixes, full test plan.
 
 ===
 

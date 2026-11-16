@@ -19,17 +19,18 @@ If OAuth shows **Invalid Scopes: pages_manage_posts, instagram_content_publish**
 
 On **Org → Inbox → Channels → Connect with Meta**, edge code requests these scopes (`metaInboxConfig.ts` → `getMetaOAuthScopes()`):
 
-| Scope                       | Used for                                                 |
-| --------------------------- | -------------------------------------------------------- |
-| `pages_show_list`           | List Facebook Pages the user manages (Page picker)       |
-| `pages_read_engagement`     | Read Page engagement; dependency for several permissions |
-| `pages_manage_metadata`     | Subscribe Page webhooks, read Page settings              |
-| `pages_messaging`           | **Guest Inbox** — Messenger DMs to the Page              |
-| `pages_manage_posts`        | **Marketing** — publish photo posts to Facebook Page     |
-| `instagram_basic`           | Instagram account ID / profile metadata                  |
-| `instagram_manage_messages` | **Guest Inbox** — Instagram DMs                          |
-| `instagram_content_publish` | **Marketing** — publish IG feed posts, stories, reels    |
-| `business_management`       | Business Manager assets; required when Pages live in BM  |
+| Scope                                        | Used for                                                                                                                                                                             |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pages_show_list`                            | List Facebook Pages the user manages (Page picker)                                                                                                                                   |
+| `pages_read_engagement`                      | Read Page engagement; dependency for several permissions                                                                                                                             |
+| `pages_manage_metadata`                      | Subscribe Page webhooks, read Page settings                                                                                                                                          |
+| `pages_messaging`                            | **Guest Inbox** — Messenger DMs to the Page                                                                                                                                          |
+| Business Asset User Profile Access (feature) | **Guest Inbox** — User Profile API for guest first/last name + avatar. Conversations `participants.name` still works without it; request Advanced Access so profile lookups succeed. |
+| `pages_manage_posts`                         | **Marketing** — publish photo posts to Facebook Page                                                                                                                                 |
+| `instagram_basic`                            | Instagram account ID / profile metadata                                                                                                                                              |
+| `instagram_manage_messages`                  | **Guest Inbox** — Instagram DMs                                                                                                                                                      |
+| `instagram_content_publish`                  | **Marketing** — publish IG feed posts, stories, reels                                                                                                                                |
+| `business_management`                        | Business Manager assets; required when Pages live in BM                                                                                                                              |
 
 **Escape hatch:** set `META_OAUTH_EXCLUDE_PUBLISHING_SCOPES=1` in edge env to request inbox scopes only (temporary workaround while configuring publishing use cases).
 

@@ -71,7 +71,7 @@ kind: backlog
 - Improve quick access on bottom part of the screen to include (Notifications, chat, dark/light switch, AI assistant)
 - Needs manual reload for webapp?
 - Improve performance, slow queries, lighthouse, before & after
-- Refine Channel sync modal
+- Refine Channel sync modal (From/To progressive empty states + feed card)
 - Inbox refinement
 - Refine email templates, refine flows/events or actions that we need to send email
 - Reposition light/dark switch
@@ -97,36 +97,42 @@ kind: backlog
 - Improve ? helper notes from tooltip to a new whole modal with detailed instruction and graphics/images
   - Pricing -> Channel Sync
 - UI Improvements:
+  → **Conflict sheet (claim before touch):** [`ui-improvements-worksheet.md`](./ui-improvements-worksheet.md)
   ✅ Improve cookies/analytics banner to look more good
   ✅ ~~Check if we still need to display Kame Space updates, version on clear offline data on Help & Support page?~~ Done: removed from Help; “On this device” on Profile
   ✅ ~~Fix secondary menu issue on settings~~ Done: idle section-nav items match Card (no gray pill fill)
-  - Fix and address blurred landing page hero image
-  - Address calendar conflicts when we sync from Airbnb. I feel like this end to end flow is broken and we should have better controls here or maybe add the item on needs attention? Clicking this on Notifications page does not do anything
-  - Improve UI/UX on current plan modal. Use mascot?
-  - Add chat icon and relevant or helpful quick actions on bookings list in different view
-  - Address landing page hero UX when we click on our search toolbar
-  - Address and refine more default templates that's applicable to condo
-  - Remove this "Only import guest data you are allowed to use for running your stays" on "AI-Assisted import bookings" modal
-  - Rephrase "No manual updates needed!" on Download Template modal
-  - Refine table/list action buttons, some behavior looks weird there.
-  - Improve edit transaction modal to disable action buttons if required fields are not filled up
-  - Pricing -> Set increment price from 1 to 100?
-  - Analytics -> Fix Playbook UI issues
-  - Fix Marketing AI Studio skeleton loader because it changed the entire layout once data finish loading
-  - Inbox -> Remove Not connected badge
-  - Check privacy policy and legal info/text if it's safe or okay to disclose all technologies that we are using. I feel we become more vulnerable if we disclose them
-  - Fix broken UI on /bookings Kanban view when we click a booking
-  - Refine, critique and improve UI/UX on export PDF on Finance, Maintenance
-  - Refine and address this confusing texts ("Estimate - security deposit pass-through is not included.") on Finance items
-  - Implement skeleton loader on landing page list section
-  - Remove bottom footer, move Install app & All rights reserved from bottom to inside footer content
-  - Improve coming soon, 404 with our new mascot
-  - Fix guest tickets & dashboard support page skeleton loader to match empty and with data states
-  - Improve guest account help UI/UX
-  - Address initial loading on /bookings where after few seconds, the content/list is changed. Maybe because of date range?
-  - Check and refine Reviews -> By Property tab?
-  - Improve Org -> Analytics -> Grid view
-  - Update default pricing
+  🚧 Improve coming soon, 404 with our new mascot → design [`mascot-empty-states-design.md`](./mascot-empty-states-design.md) (UI-05 claimed)
+  🚧 Notifications UX: Manage-only push card; Activity/Telegram empty + off status panels (UI-29 claimed)
+  🚧 Org Bookings: New booking with property/parking picker (UI-30 claimed)
+  🚧 Toolbar filter dropdowns: left-align + width vs trigger (UI-31 claimed)
+  🚧 Org Analytics listings density + readable metrics (UI-18 claimed)
+  🚧 Help FAQ home: category grid only, even tile rows (UI-32 claimed)
+  ✅ Fix and address blurred landing page hero image (UI-01)
+  - Address calendar conflicts when we sync from Airbnb. I feel like this end to end flow is broken and we should have better controls here or maybe add the item on needs attention? Clicking this on Notifications page does not do anything (UI-08)
+  - Improve UI/UX on current plan modal. Use mascot? (UI-06)
+  - Add chat icon and relevant or helpful quick actions on bookings list in different view (UI-09)
+  - Address landing page hero UX when we click on our search toolbar (UI-02)
+  - Address and refine more default templates that's applicable to condo (UI-23)
+  - Remove this "Only import guest data you are allowed to use for running your stays" on "AI-Assisted import bookings" modal (UI-21)
+  - Rephrase "No manual updates needed!" on Download Template modal (UI-22)
+  - Refine table/list action buttons, some behavior looks weird there. (UI-12)
+  - Improve edit transaction modal to disable action buttons if required fields are not filled up (UI-13)
+  - Pricing -> Set increment price from 1 to 100? (UI-16)
+  - Analytics -> Fix Playbook UI issues (UI-17)
+  - Fix Marketing AI Studio skeleton loader because it changed the entire layout once data finish loading (UI-19)
+  - Inbox -> Remove Not connected badge (UI-20)
+  - Check privacy policy and legal info/text if it's safe or okay to disclose all technologies that we are using. I feel we become more vulnerable if we disclose them (UI-24 · blocked by legal module)
+  - Fix broken UI on /bookings Kanban view when we click a booking (UI-10)
+  - Refine, critique and improve UI/UX on export PDF on Finance, Maintenance (UI-15)
+  - Refine and address this confusing texts ("Estimate - security deposit pass-through is not included.") on Finance items (UI-14)
+  - Implement skeleton loader on landing page list section (UI-03)
+  - Remove bottom footer, move Install app & All rights reserved from bottom to inside footer content (UI-04)
+  - Fix guest tickets & dashboard support page skeleton loader to match empty and with data states (UI-25)
+  - Improve guest account help UI/UX (UI-26)
+  - Address initial loading on /bookings where after few seconds, the content/list is changed. Maybe because of date range? (UI-11)
+  - Check and refine Reviews -> By Property tab? (UI-27)
+  - Improve Org -> Analytics -> Grid view (UI-18)
+  - Update default pricing (UI-28)
 
 ## Post-release items
 

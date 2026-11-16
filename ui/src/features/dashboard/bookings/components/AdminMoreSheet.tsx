@@ -6,7 +6,10 @@ import { AccountAvatar } from '@/features/guest/account/components/AccountAvatar
 import { ModeSwitcher } from '@/features/guest/marketing/shared/components/ModeSwitcher';
 
 import { DashboardModeToggle } from '@/features/dashboard/ai-assistant/components/DashboardModeToggle';
-import type { SidebarNavItem } from '@/features/dashboard/bookings/lib/adminSidebarNav';
+import type {
+  SidebarNavItem,
+  SidebarNavSection,
+} from '@/features/dashboard/bookings/lib/adminSidebarNav';
 import {
   isOrgAdminPath,
   isParkingAdminPath,
@@ -33,7 +36,7 @@ import { cn } from '@/lib/utils';
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  moreItems: SidebarNavItem[];
+  moreSections: SidebarNavSection[];
   activeNavHref: string | null;
   pathname: string;
   propertySettingsHasIssues: boolean;
@@ -50,10 +53,57 @@ type Props = {
   superAdmin?: boolean;
 };
 
+function moreNavLink(
+  item: SidebarNavItem,
+  activeNavHref: string | null,
+  pathname: string,
+  propertySettingsHasIssues: boolean,
+  parkingSettingsHasIssues: boolean,
+  orgSettingsHasIssues: boolean,
+  hostAnnouncementsHaveUnread: boolean,
+  onNavigate: () => void
+) {
+  const { label, href, Icon } = item;
+  if (!href) return null;
+  const active = href === activeNavHref;
+  const showSettingsIssue =
+    label === 'Settings' &&
+    ((propertySettingsHasIssues && isPropertyAdminPath(pathname)) ||
+      (parkingSettingsHasIssues && isParkingAdminPath(pathname)) ||
+      (orgSettingsHasIssues && isOrgAdminPath(pathname)));
+  const showAnnouncementsBadge = label === 'Announcements' && hostAnnouncementsHaveUnread;
+
+  return (
+    <Link
+      key={href}
+      to={href}
+      onClick={() => {
+        onNavigate();
+        scrollAdminViewToTop('auto');
+      }}
+      aria-current={active ? 'page' : undefined}
+      className={cn(
+        'flex min-h-[44px] items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium leading-snug transition-colors',
+        active
+          ? 'bg-primary-strong text-primary-foreground'
+          : 'text-foreground hover:bg-muted/60 active:bg-muted'
+      )}
+    >
+      <Icon className="size-4 shrink-0 opacity-90" aria-hidden />
+      <span className="flex min-w-0 flex-1 items-center gap-2">
+        <span className="truncate leading-snug">{label}</span>
+        {showAnnouncementsBadge || showSettingsIssue ? (
+          <SectionNavIssueDot className="ml-auto" />
+        ) : null}
+      </span>
+    </Link>
+  );
+}
+
 export function AdminMoreSheet({
   open,
   onOpenChange,
-  moreItems,
+  moreSections,
   activeNavHref,
   pathname,
   propertySettingsHasIssues,
@@ -99,44 +149,38 @@ export function AdminMoreSheet({
         </BottomSheetHeader>
 
         <nav
-          className="min-h-0 flex-[1_1_0] space-y-0.5 overflow-y-auto overscroll-contain px-3 py-1 [-webkit-overflow-scrolling:touch] sm:px-4"
+          className="min-h-0 flex-[1_1_0] overflow-y-auto overscroll-contain px-3 py-1 [-webkit-overflow-scrolling:touch] sm:px-4"
           aria-label="More"
         >
-          {moreItems.map((item) => {
-            const { label, href, Icon } = item;
-            if (!href) return null;
-            const active = href === activeNavHref;
-            const showSettingsIssue =
-              label === 'Settings' &&
-              ((propertySettingsHasIssues && isPropertyAdminPath(pathname)) ||
-                (parkingSettingsHasIssues && isParkingAdminPath(pathname)) ||
-                (orgSettingsHasIssues && isOrgAdminPath(pathname)));
-            const showAnnouncementsBadge = label === 'Announcements' && hostAnnouncementsHaveUnread;
-
+          {moreSections.map((section, sectionIndex) => {
+            const items = section.items.filter((item) => item.href && !item.disabled);
+            if (items.length === 0) return null;
+            const showHeading = Boolean(section.label) && !section.hideLabel;
             return (
-              <Link
-                key={href}
-                to={href}
-                onClick={() => {
-                  onOpenChange(false);
-                  scrollAdminViewToTop('auto');
-                }}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'flex min-h-[44px] items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium leading-snug transition-colors',
-                  active
-                    ? 'bg-primary-strong text-primary-foreground'
-                    : 'text-foreground hover:bg-muted/60 active:bg-muted'
-                )}
+              <div
+                key={section.label}
+                className={cn(sectionIndex > 0 && 'border-border/60 mt-3 border-t pt-3')}
               >
-                <Icon className="size-4 shrink-0 opacity-90" aria-hidden />
-                <span className="flex min-w-0 flex-1 items-center gap-2">
-                  <span className="truncate leading-snug">{label}</span>
-                  {showAnnouncementsBadge || showSettingsIssue ? (
-                    <SectionNavIssueDot className="ml-auto" />
-                  ) : null}
-                </span>
-              </Link>
+                {showHeading ? (
+                  <p className="text-muted-foreground px-2.5 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider">
+                    {section.label}
+                  </p>
+                ) : null}
+                <div className="space-y-0.5">
+                  {items.map((item) =>
+                    moreNavLink(
+                      item,
+                      activeNavHref,
+                      pathname,
+                      propertySettingsHasIssues,
+                      parkingSettingsHasIssues,
+                      orgSettingsHasIssues,
+                      hostAnnouncementsHaveUnread,
+                      () => onOpenChange(false)
+                    )
+                  )}
+                </div>
+              </div>
             );
           })}
         </nav>
