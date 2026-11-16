@@ -14,7 +14,7 @@ export const CALENDAR_PROVIDER_LABELS: Record<CalendarFeedProvider, string> = {
   airbnb: 'Airbnb',
   agoda: 'Agoda',
   booking_com: 'Booking.com',
-  vrbo: 'VRBO',
+  vrbo: 'Vrbo',
   other: 'Other (iCal URL)',
 };
 
@@ -32,6 +32,16 @@ export type CalendarSyncFeed = {
   lastError: string | null;
   consecutiveFailures: number;
   createdAt: string;
+  /** Booking.com closed-dates warning (`echo_warning_at`). */
+  echoWarning?: boolean;
+  /** The channel has not read our export link after 24 h (`export_never_read_at`). */
+  exportNeverRead?: boolean;
+  lastRun?: {
+    status: string;
+    duration_ms: number;
+    error_code: string | null;
+    started_at: string;
+  } | null;
 };
 
 export type CalendarSyncEvent = {
@@ -50,13 +60,17 @@ export type CalendarSyncExport = {
   enabled: boolean;
   rotatedAt: string | null;
   lastServedAt: string | null;
-  urls: { all: string; airbnb: string; booking_com: string; vrbo: string };
+  /** Most recent read of our export link per channel (200 and 304), keyed by channel or `all`. */
+  reads?: Record<string, { lastReadAt: string; readCount: number }>;
+  urls: { all: string; airbnb: string; agoda: string; booking_com: string; vrbo: string };
 };
 
 export type CalendarSyncSettings = {
   feeds: CalendarSyncFeed[];
   export: CalendarSyncExport;
   recentEvents: CalendarSyncEvent[];
+  /** Providers this org may connect today (Airbnb always; others per rollout). */
+  connectableProviders?: CalendarFeedProvider[];
 };
 
 export type FeedSyncResult = {

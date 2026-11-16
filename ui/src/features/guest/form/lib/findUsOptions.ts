@@ -2,6 +2,8 @@
 export const FIND_US_OPTIONS = [
   'Facebook',
   'Airbnb',
+  'Agoda',
+  'Booking.com',
   'Tiktok',
   'Instagram',
   'Friend',

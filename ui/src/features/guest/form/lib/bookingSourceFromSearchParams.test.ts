@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   normalizeBookingSource,
   bookingSourceFromUrlSearchParams,
+  formSourceFromStoredSource,
   hasStrippedGuestQueryKeys,
   stripLegacyFromQueryParam,
   BOOKING_SOURCE_OPTIONS,
@@ -31,6 +32,23 @@ describe('normalizeBookingSource', () => {
 describe('bookingSourceFromUrlSearchParams', () => {
   it('bookingSourceFromUrlSearchParams is exported', () => {
     expect(typeof bookingSourceFromUrlSearchParams).toBe('function');
+  });
+});
+
+describe('channel sources', () => {
+  it('reads agoda and booking from ?source=', () => {
+    expect(bookingSourceFromUrlSearchParams(new URLSearchParams('source=agoda'))).toBe('Agoda');
+    expect(bookingSourceFromUrlSearchParams(new URLSearchParams('source=BOOKING'))).toBe(
+      'Booking.com'
+    );
+    expect(bookingSourceFromUrlSearchParams(new URLSearchParams('source=expedia'))).toBe('Direct');
+  });
+
+  it('narrows a stored source to a form source, or null when the form has no copy', () => {
+    expect(formSourceFromStoredSource('Agoda')).toBe('Agoda');
+    expect(formSourceFromStoredSource('booking_com')).toBe('Booking.com');
+    expect(formSourceFromStoredSource('Vrbo')).toBeNull();
+    expect(formSourceFromStoredSource('Expedia')).toBeNull();
   });
 });
 

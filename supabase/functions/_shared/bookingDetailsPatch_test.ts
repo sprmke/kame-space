@@ -199,6 +199,17 @@ Deno.test('Airbnb source implies pricing permission for zeroed deposit fields', 
   }
 });
 
+Deno.test('every OTA-prepaid source implies the zeroed deposit columns, Direct does not', () => {
+  for (const source of ['Agoda', 'Booking.com', 'booking_com', 'Vrbo']) {
+    assertEquals(impliedBookingPatchColumns({ booking_source: source }).sort(), [
+      'down_payment',
+      'security_deposit',
+    ]);
+  }
+  assertEquals(impliedBookingPatchColumns({ booking_source: 'Direct' }), []);
+  assertEquals(impliedBookingPatchColumns({}), []);
+});
+
 Deno.test('assertBookingPropertyScope rejects missing and mismatched property_id', () => {
   assertBookingPropertyScope({ property_id: 'prop-1' }, 'prop-1');
   assertThrows(

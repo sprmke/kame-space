@@ -1,0 +1,151 @@
+import { expect, test, type Page, type Route } from '@playwright/test';
+
+import {
+  installPropertyTeamRbacMocks,
+  TEAM_E2E_ORG_SLUG,
+  TEAM_E2E_PROPERTY_SLUG,
+} from '../team/shared/propertyTeamRbacHarness';
+
+const PRICING_PATH = `/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/pricing`;
+
+type Feed = Record<string, unknown>;
+
+function feed(provider: string, over: Feed = {}): Feed {
+  return {
+    id: `feed-${provider}`,
+    provider,
+    label: null,
+    isActive: true,
+    createBookings: true,
+    maskedUrl: '…abc.ics',
+    hasUrl: true,
+    health: 'ok',
+    lastAttemptedAt: null,
+    lastSuccessAt: new Date().toISOString(),
+    lastError: null,
+    consecutiveFailures: 0,
+    createdAt: new Date().toISOString(),
+    ...over,
+  };
+}
+
+/** Overrides the harness default for `calendar-sync-settings` (the later route wins). */
+async function mockCalendarSync(
+  page: Page,
+  opts: { connectable: string[]; feeds?: Feed[] }
+): Promise<{ addBodies: Array<Record<string, unknown>> }> {
+  const addBodies: Array<Record<string, unknown>> = [];
+  await page.route('**/functions/v1/calendar-sync-settings**', async (route: Route) => {
+    const req = route.request();
+    if (req.method() === 'PATCH') {
+      const body = JSON.parse(req.postData() ?? '{}') as Record<string, unknown>;
+      if (body.action === 'addFeed') addBodies.push(body);
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: { feed: {}, initialSync: null } }),
+      });
+      return;
+    }
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: {
+          feeds: opts.feeds ?? [],
+          export: {
+            enabled: true,
+            rotatedAt: null,
+            lastServedAt: null,
+            reads: {},
+            urls: {
+              all: 'https://example.com/ical/all',
+              airbnb: 'https://example.com/ical/airbnb',
+              agoda: 'https://example.com/ical/agoda',
+              booking_com: 'https://example.com/ical/booking-com',
+              vrbo: 'https://example.com/ical/vrbo',
+            },
+          },
+          recentEvents: [],
+          connectableProviders: opts.connectable,
+        },
+      }),
+    });
+  });
+  return { addBodies };
+}
+
+async function openChannelSync(page: Page) {
+  await page.goto(PRICING_PATH);
+  await expect(page.getByRole('heading', { name: 'Pricing' })).toBeVisible({ timeout: 20_000 });
+  await page
+    .getByRole('button', { name: /Channel sync/i })
+    .first()
+    .click();
+  return page.getByRole('dialog');
+}
+
+for (const viewport of [
+  { name: '375', width: 375, height: 812 },
+  { name: '768', width: 768, height: 1024 },
+  { name: '1024', width: 1024, height: 768 },
+]) {
+  test.describe(`@ci channel sync (${viewport.name}px)`, () => {
+    test.beforeEach(async ({ page }) => {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    });
+
+    test('lists only Airbnb until other channels are rolled out', async ({ page }) => {
+      await installPropertyTeamRbacMocks(page, 'full_access');
+      await mockCalendarSync(page, { connectable: ['airbnb'] });
+      const dialog = await openChannelSync(page);
+      await expect(dialog.getByRole('button', { name: /^Airbnb, Not connected/ })).toBeVisible();
+      await expect(dialog.getByRole('button', { name: /^Agoda/ })).toHaveCount(0);
+    });
+
+    test('connects Agoda with a valid link and rejects a wrong-host link', async ({ page }) => {
+      await installPropertyTeamRbacMocks(page, 'full_access');
+      const { addBodies } = await mockCalendarSync(page, { connectable: ['airbnb', 'agoda'] });
+      const dialog = await openChannelSync(page);
+      await dialog.getByRole('button', { name: /^Agoda/ }).click();
+      await expect(dialog.getByText('1. Bring Agoda in')).toBeVisible();
+      await expect(dialog.getByText(/exactly 1 room/)).toBeVisible();
+
+      const input = dialog.getByPlaceholder('https://…agoda.com/…');
+      await input.fill('https://www.airbnb.com/calendar/ical/1.ics');
+      await expect(dialog.getByText('Paste the Agoda calendar link')).toBeVisible();
+      await expect(dialog.getByRole('button', { name: 'Connect' })).toBeDisabled();
+
+      await input.fill('https://ycs.agoda.com/ical/abc.ics');
+      await dialog.getByRole('button', { name: 'Connect' }).click();
+      await expect.poll(() => addBodies.length).toBe(1);
+      expect(addBodies[0]).toMatchObject({
+        action: 'addFeed',
+        provider: 'agoda',
+        icsUrl: 'https://ycs.agoda.com/ical/abc.ics',
+      });
+    });
+
+    test('shows the hub checklist and per-channel warnings', async ({ page }) => {
+      await installPropertyTeamRbacMocks(page, 'full_access');
+      await mockCalendarSync(page, {
+        connectable: ['airbnb', 'agoda', 'booking_com'],
+        feeds: [
+          feed('airbnb'),
+          feed('agoda', { exportNeverRead: true }),
+          feed('booking_com', { echoWarning: true }),
+        ],
+      });
+      const dialog = await openChannelSync(page);
+      await expect(dialog.getByText('Connect each channel only to Kame Space.')).toBeVisible();
+      await expect(dialog.getByRole('button', { name: /^Airbnb, Syncing/ })).toBeVisible();
+      await expect(dialog.getByRole('button', { name: /^Agoda, Needs attention/ })).toBeVisible();
+
+      await dialog.getByRole('button', { name: /^Booking.com/ }).click();
+      await expect(dialog.getByText(/sending back closed dates/)).toBeVisible();
+
+      // No horizontal scroll inside the dialog at any width.
+      const overflow = await dialog.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+      expect(overflow).toBe(false);
+    });
+  });
+}

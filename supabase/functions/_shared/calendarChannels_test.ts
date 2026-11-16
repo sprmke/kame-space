@@ -29,7 +29,7 @@ Deno.test('provider keys match the database CHECK lists', () => {
   assertEquals(CALENDAR_CHANNELS.map((c) => c.provider).sort(), stored.slice().sort());
 });
 
-Deno.test('only Airbnb is connectable until Phase 0 answers the other channels', () => {
+Deno.test('registry baseline: only Airbnb is connectable; the rollout env opens the rest', () => {
   assertEquals(connectableCalendarProviders(), ['airbnb']);
   assertFalse(calendarChannel('agoda').enabledForNewConnections);
 });

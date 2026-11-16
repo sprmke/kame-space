@@ -654,7 +654,7 @@ function PricingDayTooltip({
   isSmart?: boolean;
 }) {
   const tags: string[] = [];
-  if (isImported) tags.push('Synced from Airbnb / OTA');
+  if (isImported) tags.push('Synced from a connected channel');
   else if (isBlocked) tags.push('Blocked');
   else if (isPast) tags.push('Past');
   if (rule) tags.push(rule.name);

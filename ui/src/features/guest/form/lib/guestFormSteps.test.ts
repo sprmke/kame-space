@@ -11,7 +11,7 @@ import type {
 } from '@/features/guest/form/schemas/guestFormSchema';
 
 const flags: GuestFormSchemaOptions & { residenceName: string | null } = {
-  isAirbnb: false,
+  isOta: false,
   allowParking: true,
   allowPets: true,
   allowSurpriseDecor: false,
@@ -50,7 +50,7 @@ function makeStepOneValues(overrides: Partial<GuestFormData> = {}): GuestFormDat
 
 describe('guestFormSteps', () => {
   it('skips payment step for Airbnb bookings', () => {
-    const airbnbFlags = { ...flags, isAirbnb: true };
+    const airbnbFlags = { ...flags, isOta: true };
     const steps = getGuestFormSteps(airbnbFlags);
     expect(steps.some((step) => step.title === 'Payment')).toBe(false);
     expect(getGuestFormStepCount(airbnbFlags)).toBe(4);

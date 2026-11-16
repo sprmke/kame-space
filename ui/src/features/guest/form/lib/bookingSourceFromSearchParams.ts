@@ -2,10 +2,16 @@ import { canonicalBookingSource } from '@/lib/bookingChannel';
 
 /**
  * Public guest-form handoff for OTA-branded copy + `bookingSource` on submit.
- * Use **`?source=airbnb`** (case-insensitive). Legacy **`?from=airbnb`** is migrated in
+ * Use **`?source=airbnb`**, **`agoda`** or **`booking`** (case-insensitive). Legacy **`?from=airbnb`** is migrated in
  * `GuestForm` to `source=airbnb` and stripped from the URL.
  */
-export const BOOKING_SOURCE_OPTIONS = ['Direct', 'Facebook', 'Airbnb'] as const;
+export const BOOKING_SOURCE_OPTIONS = [
+  'Direct',
+  'Facebook',
+  'Airbnb',
+  'Agoda',
+  'Booking.com',
+] as const;
 export type BookingSource = (typeof BOOKING_SOURCE_OPTIONS)[number];
 
 /** Browser URL keys that must never be preserved across guest navigations or share links. */
@@ -32,8 +38,18 @@ export function normalizeBookingSource(value: string | null | undefined): string
 export function bookingSourceFromUrlSearchParams(sp: URLSearchParams): BookingSource {
   const v = sp.get('source')?.trim().toLowerCase();
   if (v === 'airbnb') return 'Airbnb';
+  if (v === 'agoda') return 'Agoda';
+  if (v === 'booking' || v === 'booking_com' || v === 'booking.com') return 'Booking.com';
   if (v === 'facebook') return 'Facebook';
   return 'Direct';
+}
+
+/** Narrow a stored `booking_source` to a form source, or `null` when the form has no copy for it. */
+export function formSourceFromStoredSource(value: string | null | undefined): BookingSource | null {
+  const canonical = canonicalBookingSource(value);
+  return (BOOKING_SOURCE_OPTIONS as readonly string[]).includes(canonical)
+    ? (canonical as BookingSource)
+    : null;
 }
 
 /** True when the URL still carries a deprecated guest/dev control query key. */

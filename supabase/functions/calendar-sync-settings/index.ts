@@ -2,9 +2,9 @@
  * calendar-sync-settings — property Channel sync config (Pricing → Channel sync modal).
  * Plan: docs/workflow/done/airbnb-calendar-sync.md §10
  *
- * GET   ?property=<id|slug>  → { feeds[], export{}, recentEvents[] }   (pricing.channels:view)
+ * GET   ?property=<id|slug>  → { feeds[], export{}, recentEvents[], connectableProviders[] }   (pricing.channels:view)
  * PATCH { action, ... }                                                 (pricing.channels:edit + calendarSync plan)
- *   addFeed         { provider?: 'airbnb', label?, icsUrl, createBookings? }
+ *   addFeed         { provider?: connectable provider, label?, icsUrl, createBookings? }
  *   updateFeed      { feedId, label?, icsUrl?, isActive?, createBookings? }
  *   removeFeed      { feedId, deleteData?: boolean }
  *   setExportEnabled { enabled: boolean }
@@ -22,11 +22,11 @@ import {
   type CalendarFeedProvider,
 } from '../_shared/calendarSyncService.ts';
 import { loadCalendarFeed, recordFeedRun, runFeedSync } from '../_shared/calendarSyncRun.ts';
+import { CALENDAR_FEED_LIMIT, calendarChannel } from '../_shared/calendarChannels.ts';
 import {
-  CALENDAR_FEED_LIMIT,
-  calendarChannel,
-  connectableCalendarProviders,
-} from '../_shared/calendarChannels.ts';
+  connectableProvidersFor,
+  isProviderConnectable,
+} from '../_shared/calendarChannelRollout.ts';
 import type { RunFeedResult } from '../_shared/calendarSyncRun.ts';
 import {
   buildCalendarExportUrls,
@@ -202,6 +202,8 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
         urls: exportUrls(req, property.slug, exportRow.token),
       },
       recentEvents: events ?? [],
+      // What this org may connect today (Airbnb always; Agoda / Booking.com per rollout).
+      connectableProviders: connectableProvidersFor(property.organization_id),
     });
   }
 
@@ -272,11 +274,11 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
   try {
     switch (action) {
       case 'addFeed': {
-        // Product surface is Airbnb-only for now: the registry decides which providers a host
-        // may connect, so enabling Agoda later is one registry flag, not an edit here.
+        // Registry baseline plus the runtime rollout gate (`calendarChannelRollout.ts`): Airbnb
+        // is always connectable, Agoda and Booking.com open per environment or per beta org.
         const provider = String(body.provider ?? 'airbnb') as CalendarFeedProvider;
-        if (!connectableCalendarProviders().includes(provider)) {
-          return jsonError(req, 'Only Airbnb calendar sync is available right now', 400);
+        if (!isProviderConnectable(provider, access.org.id)) {
+          return jsonError(req, 'That calendar is not available yet', 400);
         }
         const availabilityKey = calendarChannel(provider).availabilityKey;
         if (availabilityKey) {

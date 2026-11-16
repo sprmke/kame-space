@@ -561,7 +561,7 @@ export function assertExternalIcsUrlShape(rawUrl: string, provider: CalendarFeed
     const allow = providerHostSuffixes(provider);
     if (!allow || !hostMatchesChannelSuffix(u.hostname, allow)) {
       throw new ExternalFetchError(
-        `For ${provider}, the URL must be on ${allow?.[0] ?? provider}`,
+        `For ${calendarChannel(provider).label}, the URL must be on ${allow?.[0] ?? provider}`,
         'host_not_allowed'
       );
     }

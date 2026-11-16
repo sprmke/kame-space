@@ -46,10 +46,13 @@ import {
 } from '@/features/guest/form/lib/bookingFormatter';
 import {
   bookingSourceFromUrlSearchParams,
+  formSourceFromStoredSource,
+  type BookingSource,
   hasStrippedGuestQueryKeys,
   stripLegacyFromQueryParam,
 } from '@/features/guest/form/lib/bookingSourceFromSearchParams';
 import { FIND_US_OPTIONS } from '@/features/guest/form/lib/findUsOptions';
+import { bookingChannelLabel, isOtaPrepaidSource } from '@/lib/bookingChannel';
 import {
   appendGuestBookingAccess,
   captureGuestBookingAccessFromSearchParams,
@@ -175,33 +178,33 @@ import {
   handleFileUpload,
 } from '@/utils/text/helpers';
 
-function guestContactChannelLabel(isAirbnb: boolean, isFacebook: boolean): string {
-  if (isAirbnb) return 'on Airbnb';
+function guestContactChannelLabel(otaLabel: string | null, isFacebook: boolean): string {
+  if (otaLabel) return `on ${otaLabel}`;
   if (isFacebook) return 'on Facebook';
   return 'to contact us';
 }
 
-function guestNameFieldLabel(isAirbnb: boolean, isFacebook: boolean): string {
-  if (isAirbnb) return 'Airbnb Name';
+function guestNameFieldLabel(otaLabel: string | null, isFacebook: boolean): string {
+  if (otaLabel) return `${otaLabel} Name`;
   if (isFacebook) return 'Facebook Name';
   return 'Full Name';
 }
 
-function guestNamePlaceholder(isAirbnb: boolean, isFacebook: boolean): string {
-  if (isAirbnb || isFacebook) {
-    return `Your exact full name in ${isAirbnb ? 'Airbnb' : 'Facebook'}`;
+function guestNamePlaceholder(otaLabel: string | null, isFacebook: boolean): string {
+  if (otaLabel || isFacebook) {
+    return `Your exact full name in ${otaLabel ?? 'Facebook'}`;
   }
   return 'Your exact full name';
 }
 
-function decorPlatformLabel(isAirbnb: boolean, isFacebook: boolean): string | null {
-  if (isAirbnb) return 'Airbnb';
+function decorPlatformLabel(otaLabel: string | null, isFacebook: boolean): string | null {
+  if (otaLabel) return otaLabel;
   if (isFacebook) return 'Facebook';
   return null;
 }
 
-function guestEarlyLateContactLabel(isAirbnb: boolean, isFacebook: boolean): string {
-  if (isAirbnb) return 'Message host via Airbnb.';
+function guestEarlyLateContactLabel(otaLabel: string | null, isFacebook: boolean): string {
+  if (otaLabel) return `Message host via ${otaLabel}.`;
   if (isFacebook) return 'Message us on Facebook.';
   return 'Contact us to arrange.';
 }
@@ -340,15 +343,21 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
 
   // `?source=airbnb` → Airbnb labels + DB `booking_source`. The completion link (§6.5) is
   // always for an Airbnb/OTA booking → same visibility (no payment step, no receipt).
-  const bookingSource = isCompletionMode
-    ? 'Airbnb'
+  // Completion mode takes the channel from the stored booking (`get-form-completion`), so an
+  // Agoda guest sees Agoda copy. Until it loads, or for a channel the form has no copy for,
+  // it falls back to Airbnb wording, the original completion behaviour.
+  const [completionSource, setCompletionSource] = useState<BookingSource>('Airbnb');
+  const bookingSource: BookingSource = isCompletionMode
+    ? completionSource
     : bookingSourceFromUrlSearchParams(searchParams);
-  const isAirbnb = bookingSource === 'Airbnb';
+  const isOta = isOtaPrepaidSource(bookingSource);
+  const otaLabel = isOta ? bookingChannelLabel(bookingSource) : null;
   const isFacebook = bookingSource === 'Facebook';
 
   const visibilityFlags = useMemo<GuestFormVisibilityFlags>(
     () => ({
-      isAirbnb,
+      isOta,
+      otaLabel,
       allowParking: guestPaymentInfo.allowParking,
       allowPets: guestPaymentInfo.allowPets,
       allowSurpriseDecor: guestPaymentInfo.allowSurpriseDecor,
@@ -360,7 +369,8 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
       currentBookingId,
     }),
     [
-      isAirbnb,
+      isOta,
+      otaLabel,
       guestPaymentInfo.allowParking,
       guestPaymentInfo.allowPets,
       guestPaymentInfo.allowSurpriseDecor,
@@ -414,8 +424,8 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
     if (embed?.numberOfChildren != null && embed.numberOfChildren >= 0) {
       defaults.numberOfChildren = embed.numberOfChildren;
     }
-    if (isAirbnb) {
-      defaults.findUs = 'Airbnb';
+    if (otaLabel) {
+      defaults.findUs = otaLabel;
     }
     seededDefaultsRef.current = defaults;
   }
@@ -648,6 +658,8 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
         if (typeof stay.numberOfNights === 'number' && stay.numberOfNights > 0) {
           form.setValue('numberOfNights', stay.numberOfNights);
         }
+        const storedSource = formSourceFromStoredSource(prefill.bookingSource);
+        if (storedSource) setCompletionSource(storedSource);
         if (prefill.primaryGuestName && !form.getValues('primaryGuestName')) {
           form.setValue('primaryGuestName', prefill.primaryGuestName);
         }
@@ -1036,7 +1048,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
           prefix: 'paymentReceipt',
           file: values.paymentReceipt,
           guestName: values.primaryGuestName,
-          required: !isAirbnb,
+          required: !isOta,
         },
         {
           prefix: 'validId',
@@ -1219,12 +1231,9 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
 
         // Redirect to the trip page with booking data
         runUnguarded(() =>
-          navigate(
-            guestTripWelcomePath(propertySlug, currentBookingId ?? ''),
-            {
-              state: { bookingData },
-            }
-          )
+          navigate(guestTripWelcomePath(propertySlug, currentBookingId ?? ''), {
+            state: { bookingData },
+          })
         );
         return;
       }
@@ -1322,7 +1331,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
       } else if (errorMessage.includes('GUEST_FORM_LOCKED')) {
         toast.error('Booking already reviewed', {
           id: 'guest-form-locked',
-          description: formatGuestLockedChangeHint(isAirbnb, isFacebook),
+          description: formatGuestLockedChangeHint(otaLabel, isFacebook),
           duration: 7000,
         });
         setGuestCanUpdate(false);
@@ -1363,7 +1372,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                 {cleanedMessage}
               </p>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                {formatGuestCopyPasteHint(isAirbnb, isFacebook)}
+                {formatGuestCopyPasteHint(otaLabel, isFacebook)}
               </p>
               <Button
                 type="button"
@@ -1692,7 +1701,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
               </h2>
               <p className="text-muted-foreground max-w-md">
                 Invalid booking link or no form data. Screenshot this and contact us{' '}
-                {guestContactChannelLabel(isAirbnb, isFacebook)}.
+                {guestContactChannelLabel(otaLabel, isFacebook)}.
               </p>
             </div>
             <div className="flex gap-2">
@@ -1732,8 +1741,8 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                 className="text-foreground rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm"
                 role="status"
               >
-                {isAirbnb
-                  ? 'This booking was already reviewed. Contact your host on Airbnb to change details.'
+                {otaLabel
+                  ? `This booking was already reviewed. Contact your host on ${otaLabel} to change details.`
                   : isFacebook
                     ? 'This booking was already reviewed. Contact your host on Facebook to change details.'
                     : 'This booking was already reviewed. Contact your host to change details.'}
@@ -1795,12 +1804,12 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
-                            {guestNameFieldLabel(isAirbnb, isFacebook)}{' '}
+                            {guestNameFieldLabel(otaLabel, isFacebook)}{' '}
                             <span className="text-destructive">*</span>
                           </FormLabel>
                           <FormControl>
                             <Input
-                              placeholder={guestNamePlaceholder(isAirbnb, isFacebook)}
+                              placeholder={guestNamePlaceholder(otaLabel, isFacebook)}
                               {...field}
                               onChange={(e) =>
                                 handleNameInputChange(e, field.onChange, toCapitalCase)
@@ -1925,7 +1934,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                   <div className="space-y-4">
                     {isCompletionMode ? (
                       <div className="border-primary/25 bg-primary/5 dark:border-primary/30 dark:bg-primary/10 space-y-1 rounded-lg border-2 px-4 py-3">
-                        <p className="text-sm font-semibold">Your Airbnb stay</p>
+                        <p className="text-sm font-semibold">Your {otaLabel ?? 'Airbnb'} stay</p>
                         <p className="text-sm">
                           {formatStayDateRange(
                             form.watch('checkInDate'),
@@ -2029,7 +2038,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                             >
                               <p className="text-sm font-medium">
                                 Check-in is {propertyCheckInLabel}. Early arrival needs approval and
-                                may cost extra. {guestEarlyLateContactLabel(isAirbnb, isFacebook)}
+                                may cost extra. {guestEarlyLateContactLabel(otaLabel, isFacebook)}
                               </p>
                             </div>
                           )}
@@ -2132,7 +2141,7 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                               <p className="text-sm font-medium">
                                 Check-out is {propertyCheckOutLabel}. Late departure needs approval
                                 and may cost extra.{' '}
-                                {guestEarlyLateContactLabel(isAirbnb, isFacebook)}
+                                {guestEarlyLateContactLabel(otaLabel, isFacebook)}
                               </p>
                             </div>
                           )}
@@ -2246,11 +2255,11 @@ export function GuestForm({ embed }: GuestFormProps = {}) {
                                     role="status"
                                   >
                                     <p className="text-foreground text-sm leading-relaxed">
-                                      {decorPlatformLabel(isAirbnb, isFacebook) ? (
+                                      {decorPlatformLabel(otaLabel, isFacebook) ? (
                                         <>
                                           You confirm you messaged us on{' '}
                                           <span className="font-semibold">
-                                            {decorPlatformLabel(isAirbnb, isFacebook)}
+                                            {decorPlatformLabel(otaLabel, isFacebook)}
                                           </span>{' '}
                                           and agreed on theme and price before your stay.
                                         </>
