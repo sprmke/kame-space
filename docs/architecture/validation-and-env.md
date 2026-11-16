@@ -302,7 +302,7 @@ When set, matching cron endpoints require the corresponding header. See **`docs/
 
 **Telegram bot tokens + chat IDs:** per-property/parking DB tables — **not** env. Only `*_CRON_SECRET` vars remain env-only.
 
-**Calendar sync (`calendarSync`, Pro+):** `CALENDAR_SYNC_CRON_SECRET` gates the global `calendar-sync-cron` sweep only (scoped "Sync now" is JWT-gated). `CALENDAR_SYNC_MIN_INTERVAL_MINUTES` (default `30`) is the per-feed minimum poll gap. Feed `.ics` URLs are stored encrypted with the existing `GMAIL_OAUTH_TOKEN_ENCRYPTION_KEY` (via `_shared/secretsCrypto.ts`), never a new key.
+**Calendar sync (`calendarSync`, Pro+):** `CALENDAR_SYNC_CRON_SECRET` gates the global `calendar-sync-cron` sweep only (scoped "Sync now" is JWT-gated). `CALENDAR_SYNC_MIN_INTERVAL_MINUTES` (default `30`) is the per-feed minimum poll gap. `CALENDAR_CHANNELS_ENABLED` (comma list, e.g. `agoda,booking_com`; default empty = Airbnb only) and optional `CALENDAR_CHANNELS_BETA_ORG_IDS` (comma list of org ids; empty = everyone) are the runtime rollout gate for **adding** Agoda / Booking.com connections (`_shared/calendarChannelRollout.ts`, fail-closed, read by `calendar-sync-settings` only). Feed `.ics` URLs are stored encrypted with the existing `GMAIL_OAUTH_TOKEN_ENCRYPTION_KEY` (via `_shared/secretsCrypto.ts`), never a new key.
 
 **Marketing AI image generation (`aiMarketingImageGeneration`, Pro+):** no new env var. Reuses the platform `GEMINI_API_KEYS` / `GEMINI_API_KEY` and the shared `ai_platform_*` quota/credit system (feature `marketing_image_generate`), on the same `generativelanguage.googleapis.com/v1beta` host as every other Gemini call. Per-property tuning (`enabled`, `monthly_credit_cap`) lives in `ai_platform_property_settings.feature_configs`, not env.
 

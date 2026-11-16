@@ -3,7 +3,7 @@ title: 'Multi-channel calendar sync: Agoda and Booking.com for Philippine hosts'
 status: in-progress
 tags:
   [workflow, in-progress, calendar, integrations, airbnb, agoda, booking-com, ical, channel-sync]
-updated: 2026-11-16
+updated: 2026-11-17
 stage: in-progress
 kind: plan
 ---
@@ -29,6 +29,12 @@ kind: plan
 >   exists.
 > - Added [§18 Execution decisions](#18-execution-decisions-execute-plan) and per-phase
 >   acceptance commands.
+
+> **Revised 2026-11-17 (production-readiness pass):** the other session's uncommitted
+> `ChannelSyncDialog.tsx` and `GuestForm.tsx` work is no longer pending, so the blocked Phase 2
+> items shipped dark: the multi-channel Channel sync UI, per-channel guest-form labels, the
+> remaining Airbnb-only money and label sites, and a runtime rollout gate (X11). What is left is
+> in [§20](#20-launch-checklist-what-is-left). Nothing else blocks a **dark** deploy.
 
 Follow-up to the shipped [`../done/airbnb-calendar-sync.md`](../done/airbnb-calendar-sync.md).
 Hard dependency: Phase 1 of [`calendar-sync-conflict-resolution.md`](./calendar-sync-conflict-resolution.md)
@@ -566,8 +572,8 @@ only after conflict plan Phase 1 lands.
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | 0     | **Spike with real links** (no product code): one Agoda and one Booking.com listing connected to the test tenant; capture sanitized fixtures; answer [§12.1](#121-phase-0-spike-checklist-real-links); measure G8 cadence from edge logs. **Blocked on host-supplied listings**                                                                                            | Go / no-go per channel recorded in this file; fixtures under `_shared/__fixtures__/calendar/`    |
 | 1a ✅ | **Channel-agnostic foundation, no conflict dependency, Airbnb only visible** (shipped 2026-11-16): registry + UI mirror, `bookingChannel` + `isOtaPrepaidSource`, call-site sweep, M1 to M6, `external_kind`, export reads, runs table, claim slack + SQL-side due filter, feed cap, duplicate guard, retention, per-channel kill switches, `booking-workflow.mdc` rename | Airbnb behaviour unchanged (edge 1884 + UI 6400 tests green); cadence now measurable per run     |
-| 1b    | **Conflict-integrated:** relay rule 3 (G6), echo detection (§4.4), bounded concurrency (G9), Booking.com setup warning. Requires conflict plan Phase 1                                                                                                                                                                                                                    | Relay and echo integration tests green; zero false conflicts on Airbnb-only data                 |
-| 2     | **Agoda:** adapter from fixtures, multi-channel Channel sync UI (§7.1), guest-form channel labels, QR/delivery fallback if links are masked, booking detail and calendar copy, support content. Launch to test tenant, then beta orgs                                                                                                                                     | Live QA matrix ([§13](#13-live-qa-matrix)) passes for Airbnb + Agoda + Direct                    |
+| 1b ✅ | **Conflict-integrated (shipped 2026-11-16 in #493):** relay rule 3 (G6), echo detection (§4.4), bounded concurrency (G9), Booking.com setup warning. Requires conflict plan Phase 1                                                                                                                                                                                       | Relay and echo integration tests green; zero false conflicts on Airbnb-only data                 |
+| 2 ◐   | **Agoda (UI, labels, money rules, rollout gate shipped dark 2026-11-17; adapter facts and fixtures still need Phase 0):** adapter from fixtures, multi-channel Channel sync UI (§7.1), guest-form channel labels, QR/delivery fallback if links are masked, booking detail and calendar copy, support content. Launch to test tenant, then beta orgs                      | Live QA matrix ([§13](#13-live-qa-matrix)) passes for Airbnb + Agoda + Direct                    |
 | 3     | **Booking.com:** adapter, echo rule + setup warning, `uidStrategy` fallback if Phase 0 needs it. Launch to test tenant, then beta                                                                                                                                                                                                                                         | Live QA matrix passes for all three channels + Direct; zero phantom bookings over 7 days on beta |
 | 4     | **Optional:** Vrbo and "Other calendar link" (block-only default, no host allowlist, still SSRF guarded). Only if hosts ask                                                                                                                                                                                                                                               | Same matrix for the added channel                                                                |
 | 5     | **General availability + close-out:** enable for all Pro+ properties, parser drift probe live, docs/support final pass, move plan to `done/`                                                                                                                                                                                                                              | 14 days on GA with drift probe quiet; support FAQ published                                      |
@@ -860,6 +866,11 @@ does not need it and shipped first.
 | X9  | Feed cap value                             | 6 active feeds per property (D7)                                                                                   | Unchanged from the plan                                                                                                                                                                                                           |
 | X10 | Echo inside relayed nights (review #2, M3) | Accepted, not special-cased                                                                                        | §4.4 already accepts a reservation fully inside nights we published: the nights are held in Kame and the conflict pass still notifies. Tagging relay-origin ranges adds a third state to every read row for no revenue protection |
 
+| X11 | How Agoda and Booking.com reach hosts | Runtime gate `_shared/calendarChannelRollout.ts`: secrets `CALENDAR_CHANNELS_ENABLED` (provider list) and optional `CALENDAR_CHANNELS_BETA_ORG_IDS`; GET returns `connectableProviders` | The availability switches are fail-open (no row = on) so they cannot hold a channel back. A code flag needs a deploy per stage. Secrets give test tenant, then beta orgs, then everyone with no deploy, and fail closed on typos |
+| X12 | Host-facing plan, pricing and FAQ copy | Still says Airbnb only; changes at launch, not now | Copy that promises Agoda while the gate is closed is false. The launch checklist (§20) lists every string |
+| X13 | `isAirbnb` rename on guest surfaces | Renamed to `isOta` / `isOtaPrepaid` (guest form flags, trip payment) and `otaLabel` for copy | The flag meant "prepaid by an OTA" all along. Keeping the old name would have made Agoda read as a special case of Airbnb |
+| X14 | Completion link channel | `get-form-completion` already returns the stored `bookingSource`; the form reads it and falls back to Airbnb copy | One link flow for every channel, no new endpoint |
+
 ### Acceptance commands per phase
 
 | Phase | Command that proves it                                                                          |
@@ -911,4 +922,55 @@ does not need it and shipped first.
 | `bun run check:plan-catalog`                                         | not run, no plan feature key changed                                                                                                                                                                                   |
 | Phase 0                                                              | **blocked** on host-supplied Agoda + Booking.com listings                                                                                                                                                              |
 
-**Still open after 1b:** the multi-channel Channel sync UI (Phase 2, builds on another session's uncommitted dialog), guest-form channel labels (Phase 2, touches the uncommitted `GuestForm.tsx`), and wiring `classifyCalendarOverlap` to the channel registry (conflict plan, not this one). Airbnb behaviour for its own nights is unchanged: its reservations are never treated as echoes, and relay never publishes a channel's own nights back to it.
+**Still open:** see [§20](#20-launch-checklist-what-is-left). The multi-channel UI and guest-form labels shipped dark on 2026-11-17; Phase 0 and the adapter facts that follow it are the only blockers to enabling a channel. Wiring `classifyCalendarOverlap` to the channel registry belongs to the conflict plan. Airbnb behaviour for its own nights is unchanged: its reservations are never treated as echoes, and relay never publishes a channel's own nights back to it.
+
+### Phase 2 shipped dark (2026-11-17)
+
+| Area             | Result                                                                                                                                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Rollout gate     | `calendarChannelRollout.ts` + 6 Deno tests; `addFeed` uses it; GET returns `connectableProviders`                                                                                                            |
+| Channel sync UI  | List of channels with status, hub checklist, setup view with the two steps, per-channel warnings, paused state, guarded close; `channelSyncView.ts` (9 tests) and `ChannelSyncDialog.test.tsx` (7 DOM tests) |
+| E2E              | `ui/e2e/features/pricing/channelSync.spec.ts`: 3 cases at 375, 768, 1024 px, 9 passed                                                                                                                        |
+| Guest form       | `?source=agoda\|booking`, completion link takes the stored channel, labels, no payment step, find-us options                                                                                                 |
+| Money and access | Booking patch, guest trip payment, guest review path, CSV import now use the shared OTA rule (an Agoda stay no longer keeps a down payment after an edit, or shows a balance on the trip page)               |
+| Copy             | Booking detail badge, trip "Paid through {channel}", calendar tooltip "Synced from a connected channel"                                                                                                      |
+
+## 20. Launch checklist (what is left)
+
+**Safe to merge and deploy dark now.** Airbnb behaviour is unchanged and the new channels cannot be
+connected until `CALENDAR_CHANNELS_ENABLED` is set.
+
+### Needs the host (blocked on real listings)
+
+| #   | Item                                                                                           | Why it cannot be done without a listing                                                                                             |
+| --- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| H1  | One Agoda and one Booking.com listing on the test tenant (unlisted, dates 6+ months out)       | An agent cannot create or link OTA listings                                                                                         |
+| H2  | Run the Phase 0 sheet ([§12.1](#121-phase-0-spike-checklist-real-links)) and paste the answers | Public docs do not give the link host, event format or UID stability (re-checked 2026-11-17: partner help describes the steps only) |
+
+### Follows H1 and H2 (small, mechanical)
+
+1. Set Agoda `hostSuffixes` and URL shape from S1, and `classifyEventKind('agoda')` from S3 and S4 (both registry copies, parity test).
+2. Capture sanitized fixtures under `_shared/__fixtures__/calendar/` and add the table-driven tests in §12.2.
+3. Build `uidStrategy: 'dateRange'` only if S6 shows unstable UIDs.
+4. QR / WhatsApp fallback only if S12 shows Agoda masks links.
+5. Set `CALENDAR_CHANNELS_ENABLED=agoda,booking_com` and `CALENDAR_CHANNELS_BETA_ORG_IDS=<test tenant>` on the dev project, run the live QA matrix ([§13](#13-live-qa-matrix)), then widen to beta orgs, then clear the beta list.
+6. Zero phantom bookings over 7 days on beta before GA.
+
+### Copy that changes at launch (X12)
+
+`PLAN_FEATURE_LABELS` ("Airbnb, Agoda & Booking.com calendar sync"), `featureGateCopy.ts`, the Pro card bullet in `planPresentation.ts`, `/for-hosts/pricing`, `plans-feature-matrix.md`, `docs/guides/support/faqs.md` ("Does Kame replace Airbnb or Agoda?", "How do I connect Airbnb or another OTA calendar?", the Agoda "not yet" answer), the Host-facing knowledge Q&A, then `check:support-content`, `check:ai-knowledge-coverage` and `check:plan-catalog`.
+
+### Deliberately not built before launch
+
+| Item                                             | Reason                                                                                                                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Parser-drift probe on `/admin/health`            | Needs a change to the shipped system-health RPC and a second live channel to mean anything. Required before GA (Phase 5), not before a dark deploy                             |
+| Synthetic load test (§12.7)                      | The pool, ordering and cap are unit-tested. Real p95 per feed comes from `calendar_sync_runs` once a second channel is live                                                    |
+| `addFeed` handler test per channel               | The handler harness only covers the auth contract. The gate logic is a pure function with its own tests; the add path is covered by the DOM and E2E specs against a mocked API |
+| Conflict-plan wiring (`classifyCalendarOverlap`) | Belongs to that plan; relay and echo do not depend on it                                                                                                                       |
+| Vrbo and "Other calendar"                        | On host request only; `other` needs resolved-address pinning first                                                                                                             |
+
+### Decisions the host should confirm (defaults chosen)
+
+1. The booking edit source picker lists Agoda, Booking.com and Vrbo after merge. Default: yes, because an unlisted source would turn into Direct on save.
+2. Deploy dark now and light up per environment. Default: yes.
