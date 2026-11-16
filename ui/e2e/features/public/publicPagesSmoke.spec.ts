@@ -28,6 +28,34 @@ test.describe('@smoke @critical public marketing pages', () => {
     await expectPublicPageReady(page);
   });
 
+  test('guest landing booking story follows the scroll in both directions', async ({ page }) => {
+    await page.goto('/');
+    const story = page.locator('section[aria-labelledby="home-steps"]');
+    await expect(story).toBeAttached({ timeout: 20_000 });
+
+    /** Scroll to a fraction of the pinned story, then report which scene is showing. */
+    const sceneAt = async (fraction: number) => {
+      await page.evaluate((f) => {
+        const track = document.querySelector<HTMLElement>(
+          'section[aria-labelledby="home-steps"] > div'
+        );
+        if (!track) throw new Error('booking story track not found');
+        const top = track.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo(0, top + (track.offsetHeight - window.innerHeight) * f);
+      }, fraction);
+      return story.locator('[data-step-scene]').evaluateAll((scenes) => {
+        const shown = scenes.filter((el) => Number(getComputedStyle(el).opacity) > 0.95);
+        return shown.map((el) => el.getAttribute('data-step-scene')).join(',');
+      });
+    };
+
+    // No timers: the scene is a function of the scroll position, forward and back.
+    await expect.poll(() => sceneAt(0.1)).toBe('0');
+    await expect.poll(() => sceneAt(0.5)).toBe('2');
+    await expect.poll(() => sceneAt(0.9)).toBe('4');
+    await expect.poll(() => sceneAt(0.1)).toBe('0');
+  });
+
   test('properties list loads from mock API', async ({ page }) => {
     await mockEdgeFunctions(page, [
       { name: 'list-public-properties', body: mockPublicPropertiesListBody },

@@ -2,7 +2,7 @@
 title: 'In progress'
 status: active
 tags: [workflow, in-progress]
-updated: 2026-11-11
+updated: 2026-11-17
 stage: in-progress
 kind: reference
 ---
@@ -16,6 +16,8 @@ Plans with **implementation complete** and only manual QA left live in [`../for-
 **Moved in 2026-11-10:** [`guest-inbox-meta-sync-overhaul.md`](./guest-inbox-meta-sync-overhaul.md) (planned → in progress). Guest Inbox: complete, real-time Facebook and Instagram sync. **Phase 1 shipped** (stop data loss, close the Page-token leak): the Graph paging URL that carried the access token never leaves the server, the webhook no longer marks an event processed before processing it, the platform comes from the webhook object instead of an id prefix, direction comes from the account's own ids so Instagram replies stop filing as guest messages, a guest read receipt no longer clears the host's badge, the thread summary only moves forward, Edit and Unsend are gone from Meta threads, and the list catches up when realtime is unavailable. Phases 2 to 8 (durable outbox, server-owned import and reconciliation, Broadcast realtime, host copy, messaging parity, observability, cleanup) remain.
 
 **Disposition snapshot:** [`MODULE-DISPOSITION.md`](./production-readiness/qa/MODULE-DISPOSITION.md) — what closes vs what needs code.
+
+**Parked 2026-11-17:** [`public-landing-redesign.md`](./public-landing-redesign.md) — home page below the hero. Design is not approved, so the work sits behind a draft PR and the module-label rename in the working tree is unfinished.
 
 **Started 2026-11-07:** [`parking-module-hardening.md`](./parking-module-hardening.md) — payment fulfillment crash, stale checkout reuse, double-booking race, parking-team RBAC break, host cancel/refund review, price shown vs charged, validation, auto-complete and the parking type-check gate. Phase 0 (payment + claim + CI) and the RBAC slice are implemented; host/guest UX coverage and the remaining lifecycle items follow. The three superseded parking plans moved to `done/` / `wont-do/`.
 

@@ -37,7 +37,8 @@ const DEVELOPMENTS_QUERY = { ...DEFAULT_DEVELOPMENTS_QUERY, pageSize: PREVIEW_SI
 
 /**
  * Marketing home. Job: get a visitor into the catalog.
- * Theme-aware hero with the shared search, then the live catalog by type.
+ * Theme-aware hero with the shared search, the live catalog by type, why to book here,
+ * how a booking goes, then the band for owners.
  */
 export function MarketingHomePage() {
   const stays = usePublicProperties(STAYS_QUERY, true, { staleTime: 60_000 });
@@ -119,8 +120,8 @@ export function MarketingHomePage() {
         }}
         cities={places.data?.pages[0]?.groups ?? []}
       />
-      <BookingSteps stay={stayItems[0]} />
       <WhyBookHere />
+      <BookingSteps stay={stayItems[0]} />
       <HostBand />
     </div>
   );
