@@ -28,7 +28,7 @@ export function V4Hero() {
           className="relative z-10 max-w-2xl"
         >
           <motion.div variants={rise} transition={{ duration: 0.55, ease: EASE }}>
-            <span className="border-primary/25 bg-primary/8 text-primary-strong dark:text-primary inline-flex min-h-8 items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold">
+            <span className="border-primary/25 bg-primary/8 text-brand-ink inline-flex min-h-8 items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold">
               <Sparkles className="size-3.5" aria-hidden />
               Built for independent hosts
             </span>
@@ -109,7 +109,7 @@ export function V4Hero() {
                   <BadgeCheck className="size-5" aria-hidden />
                 </span>
                 <div>
-                  <p className="text-xs text-white/55">Booking update</p>
+                  <p className="text-xs text-white/75">Booking update</p>
                   <p className="mt-0.5 text-sm font-semibold">Ready for check-in</p>
                 </div>
               </div>
@@ -117,7 +117,7 @@ export function V4Hero() {
                 On track
               </span>
             </div>
-            <div className="mt-4 flex items-center gap-2 border-t border-white/10 pt-3 text-xs text-white/65">
+            <div className="mt-4 flex items-center gap-2 border-t border-white/10 pt-3 text-xs text-white/75">
               <BellRing className="text-primary size-3.5" aria-hidden />
               Stay details sent to the guest
             </div>

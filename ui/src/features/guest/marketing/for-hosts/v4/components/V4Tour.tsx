@@ -6,7 +6,7 @@ export function V4Tour() {
     <section id="tour" className="bg-muted/35 scroll-mt-24 py-20 sm:py-28 lg:py-36">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <V4Reveal className="mx-auto max-w-3xl text-center">
-          <p className="text-primary-strong dark:text-primary text-sm font-semibold">
+          <p className="text-brand-ink text-sm font-semibold">
             See the real workspace
           </p>
           <h2 className="text-foreground mt-4 text-balance text-4xl font-bold tracking-[-0.045em] sm:text-5xl lg:text-6xl lg:leading-[1]">

@@ -32,20 +32,20 @@ function OutcomeScene({ outcome }: { outcome: V4Outcome }) {
             <div className="bg-white/8 rounded-2xl border border-white/10 p-5 backdrop-blur sm:p-6">
               <div className="flex items-start justify-between gap-5">
                 <div>
-                  <p className="text-xs font-medium text-white/50">Direct booking</p>
+                  <p className="text-xs font-medium text-white/75">Direct booking</p>
                   <p className="mt-2 text-xl font-bold text-white">Monaco City View</p>
-                  <p className="mt-1 text-sm text-white/55">Nov 21 to 24 · 3 nights</p>
+                  <p className="mt-1 text-sm text-white/75">Nov 21 to 24 · 3 nights</p>
                 </div>
-                <span className="bg-primary/20 text-primary flex size-11 items-center justify-center rounded-xl">
+                <span className="bg-primary/20 text-emerald-300 flex size-11 items-center justify-center rounded-xl">
                   <CircleDollarSign className="size-5" aria-hidden />
                 </span>
               </div>
               <div className="mt-8 space-y-4 text-sm">
-                <div className="flex justify-between text-white/65">
+                <div className="flex justify-between text-white/75">
                   <span>Guest total</span>
                   <span>₱12,900</span>
                 </div>
-                <div className="flex justify-between text-white/65">
+                <div className="flex justify-between text-white/75">
                   <span>Kame booking commission</span>
                   <span>₱0</span>
                 </div>
@@ -55,7 +55,7 @@ function OutcomeScene({ outcome }: { outcome: V4Outcome }) {
                 </div>
               </div>
             </div>
-            <p className="mt-4 text-center text-xs text-white/40">
+            <p className="mt-4 text-center text-xs text-white/75">
               Payment provider fees may still apply.
             </p>
           </div>
@@ -84,7 +84,7 @@ function OutcomeScene({ outcome }: { outcome: V4Outcome }) {
                   </div>
                   <div className="pt-1.5">
                     <p className="text-sm font-semibold text-white">{label}</p>
-                    <p className="mt-1 text-xs text-white/45">Connected to the same booking</p>
+                    <p className="mt-1 text-xs text-white/75">Connected to the same booking</p>
                   </div>
                 </div>
               ))}
@@ -103,7 +103,7 @@ function OutcomeScene({ outcome }: { outcome: V4Outcome }) {
               transition={{ delay: 0.15, duration: 0.45, ease: EASE }}
               className="border-primary/20 bg-primary/12 max-w-[92%] rounded-2xl rounded-bl-md border px-4 py-4"
             >
-              <div className="text-primary flex items-center gap-2 text-xs font-semibold">
+              <div className="text-emerald-300 flex items-center gap-2 text-xs font-semibold">
                 <Bot className="size-4" aria-hidden />
                 Kame receptionist
               </div>
@@ -112,7 +112,7 @@ function OutcomeScene({ outcome }: { outcome: V4Outcome }) {
                 to submit the details.
               </p>
             </motion.div>
-            <div className="flex items-center gap-2 px-1 text-xs text-white/40">
+            <div className="flex items-center gap-2 px-1 text-xs text-white/75">
               <MessageSquare className="size-3.5" aria-hidden />
               Answered from property information
             </div>
@@ -124,7 +124,7 @@ function OutcomeScene({ outcome }: { outcome: V4Outcome }) {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="bg-white/8 rounded-2xl border border-white/10 p-5">
                 <Megaphone className="text-primary size-5" aria-hidden />
-                <p className="mt-7 text-xs text-white/45">Social post</p>
+                <p className="mt-7 text-xs text-white/75">Social post</p>
                 <p className="mt-1 text-base font-semibold text-white">Weekend city escape</p>
                 <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
                   <div className="bg-primary h-full w-4/5 rounded-full" />
@@ -132,13 +132,13 @@ function OutcomeScene({ outcome }: { outcome: V4Outcome }) {
               </div>
               <div className="bg-white/8 rounded-2xl border border-white/10 p-5">
                 <span className="text-primary text-3xl font-bold tracking-tight">10%</span>
-                <p className="mt-7 text-xs text-white/45">Return guest voucher</p>
+                <p className="mt-7 text-xs text-white/75">Return guest voucher</p>
                 <p className="mt-1 text-base font-semibold text-white">Ready to share</p>
               </div>
             </div>
             <div className="bg-white/8 mt-3 rounded-2xl border border-white/10 p-4">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-white/50">Direct booking page</span>
+                <span className="text-white/75">Direct booking page</span>
                 <span className="font-semibold text-emerald-300">Live</span>
               </div>
             </div>
@@ -172,7 +172,7 @@ export function V4OutcomeJourney() {
     >
       <div className="container mx-auto px-4 py-20 sm:px-6 sm:py-28 lg:sticky lg:top-0 lg:grid lg:min-h-svh lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:gap-14 lg:px-8 lg:py-16 xl:gap-24">
         <div>
-          <p className="text-primary text-sm font-semibold">One system, four outcomes</p>
+          <p className="text-emerald-300 text-sm font-semibold">One system, four outcomes</p>
           <h2 className="mt-4 max-w-[12ch] text-balance text-4xl font-bold tracking-[-0.045em] text-white sm:text-5xl lg:text-6xl lg:leading-[1]">
             Better hosting compounds.
           </h2>
@@ -194,7 +194,7 @@ export function V4OutcomeJourney() {
                     <span
                       className={cn(
                         'mt-0.5 text-xs font-bold tabular-nums',
-                        active ? 'text-primary' : 'text-white/30'
+                        active ? 'text-emerald-300' : 'text-white/70'
                       )}
                     >
                       {outcome.number}
@@ -203,7 +203,7 @@ export function V4OutcomeJourney() {
                       <p
                         className={cn(
                           'text-sm font-semibold',
-                          active ? 'text-white' : 'text-white/55'
+                          active ? 'text-white' : 'text-white/75'
                         )}
                       >
                         {outcome.kicker}
@@ -219,7 +219,7 @@ export function V4OutcomeJourney() {
                             <h3 className="mt-3 max-w-md text-xl font-bold tracking-tight text-white sm:text-2xl">
                               {outcome.title}
                             </h3>
-                            <p className="mt-3 max-w-lg text-sm leading-6 text-white/55">
+                            <p className="mt-3 max-w-lg text-sm leading-6 text-white/75">
                               {outcome.body}
                             </p>
                           </motion.div>
@@ -235,7 +235,7 @@ export function V4OutcomeJourney() {
 
         <div className="relative mt-10 aspect-[4/3] overflow-hidden rounded-[1.75rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.16),transparent_40%),linear-gradient(145deg,#111827,#020617)] shadow-2xl lg:mt-0 lg:aspect-[1.05/1]">
           <OutcomeScene outcome={v4Outcomes[activeIndex]} />
-          <div className="absolute inset-x-6 bottom-5 flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/40">
+          <div className="absolute inset-x-6 bottom-5 flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/75">
             <span>{v4Outcomes[activeIndex].detail}</span>
             <span className="ml-4 shrink-0 tabular-nums">
               {activeIndex + 1} / {v4Outcomes.length}

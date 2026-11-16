@@ -19,7 +19,7 @@ export function V4ClosingCta() {
             <p className="max-w-[12ch] text-balance text-4xl font-bold tracking-[-0.045em] sm:text-5xl lg:text-6xl lg:leading-[1]">
               Build the hosting business guests come back to.
             </p>
-            <div className="text-primary-foreground/85 mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm">
+            <div className="text-primary-foreground mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm">
               {['Free to start', 'No card needed', 'Works on your phone'].map((fact) => (
                 <span key={fact} className="flex items-center gap-2">
                   <Check className="text-primary size-4" aria-hidden />

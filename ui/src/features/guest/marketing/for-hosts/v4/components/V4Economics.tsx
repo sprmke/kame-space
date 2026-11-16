@@ -25,7 +25,7 @@ export function V4Economics() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid items-end gap-8 lg:grid-cols-[1fr_0.8fr] lg:gap-16">
           <V4Reveal>
-            <p className="text-primary-strong dark:text-primary text-sm font-semibold">
+            <p className="text-brand-ink text-sm font-semibold">
               A better direct-booking model
             </p>
             <h2 className="text-foreground mt-4 max-w-[12ch] text-balance text-4xl font-bold tracking-[-0.045em] sm:text-5xl lg:text-6xl lg:leading-[0.98]">
@@ -39,7 +39,7 @@ export function V4Economics() {
             </p>
             <Link
               to={V4_PRICING_CTA.to}
-              className="text-primary-strong focus-visible:ring-primary dark:text-primary group mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-4"
+              className="text-brand-ink focus-visible:ring-primary group mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-4"
             >
               {V4_PRICING_CTA.label}
               <ArrowRight
@@ -73,7 +73,7 @@ export function V4Economics() {
             className="border-primary/25 bg-primary-strong text-primary-foreground relative overflow-hidden rounded-[1.5rem] border p-6 shadow-[0_30px_80px_-45px_hsl(var(--primary))] sm:p-8 lg:p-10"
           >
             <div className="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full border-[48px] border-white/5" />
-            <p className="text-primary-foreground/85 relative text-sm font-semibold">
+            <p className="text-primary-foreground relative text-sm font-semibold">
               Kame direct channel
             </p>
             <p className="relative mt-5 max-w-md text-3xl font-bold tracking-[-0.035em] sm:text-4xl">
@@ -81,7 +81,7 @@ export function V4Economics() {
             </p>
             <ul className="relative mt-8 grid gap-5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
               {kameRows.map((row) => (
-                <li key={row} className="text-primary-foreground/80 flex gap-3 text-sm leading-6">
+                <li key={row} className="text-primary-foreground flex gap-3 text-sm leading-6">
                   <span className="bg-primary-strong text-primary-foreground mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full">
                     <Check className="size-3" aria-hidden />
                   </span>

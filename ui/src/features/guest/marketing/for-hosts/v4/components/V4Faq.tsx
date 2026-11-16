@@ -27,7 +27,7 @@ export function V4Faq() {
           </p>
           <Link
             to="/contact"
-            className="text-primary-strong focus-visible:ring-primary dark:text-primary group mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-4"
+            className="text-brand-ink focus-visible:ring-primary group mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-4"
           >
             Talk to us
             <ArrowRight
