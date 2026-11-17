@@ -536,6 +536,15 @@ Open Manage, switch to the Telegram tab, and turn off Telegram delivery. Every m
 
 Meta only allows replies within 24 hours of the guest's last message. After that window closes, the guest needs to message you again before you can respond from here.
 
+### What does the chat icon on a booking do?
+
+- category: Guest Communication
+- audience: host
+- source: docs/guides/routes/org/property/bookings.md
+- order: 15
+
+It opens that guest's conversation in Messages. One chat opens straight away, several let you pick the channel, and none shows a message with Search Messages. Website chats linked to the booking match exactly, while Facebook and Instagram chats match by the guest name or Facebook name on the booking and are labeled Name match. You only see the icon if you can view Messages.
+
 ### Where do I set quick replies and automation for Guest Inbox?
 
 - category: Guest Communication

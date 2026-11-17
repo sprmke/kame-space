@@ -986,6 +986,9 @@ verify_jwt = false
 [functions.social-inbox-threads]
 verify_jwt = false
 
+[functions.social-inbox-booking-chats]
+verify_jwt = false
+
 [functions.social-inbox-messages]
 verify_jwt = false
 

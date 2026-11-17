@@ -61,6 +61,7 @@ commit_paths "feat(supabase): enforce feature availability on host edge modules"
   supabase/functions/meta-inbox-oauth-start \
   supabase/functions/meta-inbox-resubscribe \
   supabase/functions/social-inbox-ai-suggest \
+  supabase/functions/social-inbox-booking-chats \
   supabase/functions/social-inbox-messages \
   supabase/functions/social-inbox-send \
   supabase/functions/social-inbox-threads \

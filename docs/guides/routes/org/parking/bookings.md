@@ -2,7 +2,7 @@
 title: 'Parking bookings — operator guide'
 status: active
 tags: [guides, routes, org, parking]
-updated: 2026-08-27
+updated: 2026-11-18
 ---
 
 # Parking bookings — operator guide
@@ -80,6 +80,8 @@ Manage guests who booked **this parking slot only**. If a guest's parking is bun
   A: If they don't pay within the window, the slot is automatically released and the request goes back to searching for another host (or closes if no one else is eligible) - you don't need to do anything.
 - Q: What happens once the guest pays?
   A: The platform automatically sends an endorsement email to your development's PMO (CC'd to the guest) so the guest's vehicle is authorized for entry - you don't need to send anything yourself. Once that's sent, a **Message guest** button appears on the booking detail page linking to this parking's Inbox.
+- Q: What does the chat icon on a booking do?
+  A: It opens that guest's chat in this parking's Inbox. One chat opens directly, several give you a picker, none shows a message with **Search Messages**. Parking Inbox has website Chat only, and matches use the guest name on the booking. The icon needs `inbox:view` on this parking.
 - Q: Is there a way to skip manually accepting requests?
   A: Yes. An **Auto-accept top match** toggle in Settings → Booking Automation. When on, your slot claims the top-ranked request automatically instead of waiting for you to tap Accept; the guest still has to pay before the endorsement fires.
 
@@ -88,6 +90,8 @@ Manage guests who booked **this parking slot only**. If a guest's parking is bun
 ## API
 
 `GET list-bookings?parking_id=…` — parking team `bookings:view`
+
+Chat icon: `GET social-inbox-booking-chats?booking_id=&parking_id=` — parking `inbox:view`; Chat threads only (no Facebook or Instagram).
 
 `POST transition-parking-booking?parking_id=…` — `{ bookingId, toStatus, reason?, note? }` (rejects `PENDING_HOST_ACCEPTANCE` and `PENDING_PAYMENT` — use claim/decline below; `PENDING_PAYMENT` only resolves via guest payment, timeout, or guest cancel). Cancelling a paid booking (`PENDING_REVIEW` / `READY_FOR_CHECKIN`) requires `reason`; the guest is emailed, the ledger row moves to `refund_review`, and the payout is blocked until a super admin records the refund.
 
@@ -127,8 +131,9 @@ Rows live on `guest_submissions` with `parking_id` set (or null while broadcast-
 
 ## Testing
 
-| Layer | Path / spec                                                                  | Manual        |
-| ----- | ---------------------------------------------------------------------------- | ------------- |
-| Unit  | `parkingStatusMachine_test.ts`                                               | —             |
-| E2E   | [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs | PayMongo live |
-| N/A   | Parking host dashboard shell load                                            | —             |
+| Layer | Path / spec                                                                                                           | Manual        |
+| ----- | --------------------------------------------------------------------------------------------------------------------- | ------------- |
+| Unit  | `parkingStatusMachine_test.ts`                                                                                        | —             |
+| E2E   | `ui/e2e/features/parking/host/parkingHostBookingChat.spec.ts` (`@ci`) — chat icon scope + hidden without `inbox:view` | —             |
+| E2E   | [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs                                          | PayMongo live |
+| N/A   | Parking host dashboard shell load                                                                                     | —             |
