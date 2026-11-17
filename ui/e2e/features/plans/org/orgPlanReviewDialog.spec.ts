@@ -92,7 +92,7 @@ test.describe('@ci org plan review dialog, per transition', () => {
     }) => {
       const dialog = await openReview(page, from, to, 'Downgrade');
       await expect(
-        dialog.getByRole('heading', { name: `Move to ${TIER_TITLES[to]}` })
+        dialog.getByRole('heading', { name: `Downgrade to ${TIER_TITLES[to]}` })
       ).toBeVisible();
       await expect(list(dialog, 'Removes')).toHaveText(REMOVES[`${from}>${to}`]);
       await expect(dialog.getByText('Unlocks', { exact: true })).toHaveCount(0);

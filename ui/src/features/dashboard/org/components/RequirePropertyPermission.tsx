@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 
 import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { TenantAccessDenied } from '@/features/dashboard/org/components/TenantAccessDenied';
+import { resolveAccessDenialReason } from '@/features/dashboard/org/lib/accessDenialReason';
 import { propertySectionPath } from '@/features/dashboard/org/lib/tenantPaths';
 import { usePropertyPermissions } from '@/features/dashboard/team/hooks/usePropertyPermissions';
 import {
@@ -20,8 +21,8 @@ type Props = {
 };
 
 export function RequirePropertyPermission({ section, children }: Props) {
-  const { orgSlug, propertySlug } = useOrgContext();
-  const { data, isLoading, isError } = usePropertyPermissions();
+  const { org, orgSlug, propertySlug } = useOrgContext();
+  const { data, isLoading, isError, error } = usePropertyPermissions();
 
   if (isLoading) {
     return <RouteGuardLoading />;
@@ -53,6 +54,11 @@ export function RequirePropertyPermission({ section, children }: Props) {
     return (
       <TenantAccessDenied
         scope="property"
+        reason={resolveAccessDenialReason({
+          planLimited: org.planLimited === true || data?.planLimited === true,
+          checkFailed: isError || !data,
+          error: isError ? error : undefined,
+        })}
         orgSlug={orgSlug}
         propertySlug={propertySlug}
         propertyName={data?.propertyName}

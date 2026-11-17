@@ -672,6 +672,31 @@ export type ViewedWorkflowStep =
   | { kind: 'pipeline'; status: BookingStatus }
   | { kind: 'pending-doc-sub'; sub: PendingDocNestedKey };
 
+/**
+ * Kanban columns and legacy DB statuses use `PENDING_GAF` / pet / parking
+ * literals. Nested Progress / modal content keys are requirement ids (`gaf`,
+ * `pet`) plus the parking sentinel. Map so SubFormHost and mark-complete share
+ * one key space.
+ */
+export function nestedDocKeyFromLegacyOrKanbanStatus(
+  status: string
+): PendingDocNestedKey | null {
+  if (status === 'PENDING_GAF') return 'gaf';
+  if (status === 'PENDING_PET_REQUEST') return 'pet';
+  if (status === 'PENDING_PARKING_REQUEST') return PARKING_NESTED_KEY;
+  return null;
+}
+
+/** Parent Pending Documents plus in-flight legacy nested status rows. */
+export function isPendingDocumentsFamilyStatus(status: string): boolean {
+  return (
+    status === 'PENDING_DOCUMENTS' ||
+    status === 'PENDING_GAF' ||
+    status === 'PENDING_PARKING_REQUEST' ||
+    status === 'PENDING_PET_REQUEST'
+  );
+}
+
 export function initialViewedWorkflowStep(
   status: BookingStatus,
   booking: ConfigurableDocsBooking,
@@ -681,6 +706,8 @@ export function initialViewedWorkflowStep(
     const key = defaultPendingDocNestedKey(booking, documentRequirements);
     if (key) return { kind: 'pending-doc-sub', sub: key };
   }
+  const legacyNested = nestedDocKeyFromLegacyOrKanbanStatus(status);
+  if (legacyNested) return { kind: 'pending-doc-sub', sub: legacyNested };
   return { kind: 'pipeline', status };
 }
 
@@ -691,10 +718,11 @@ export function workflowContentForView(
   documentRequirements: DocumentRequirement[] = DEFAULT_DOCUMENT_REQUIREMENTS
 ): WorkflowViewContent | null {
   if (viewed.kind === 'pending-doc-sub') {
-    if (viewed.sub === PARKING_NESTED_KEY) {
+    const sub = nestedDocKeyFromLegacyOrKanbanStatus(viewed.sub) ?? viewed.sub;
+    if (sub === PARKING_NESTED_KEY) {
       return isSubStatusRequired('PENDING_PARKING_REQUEST', booking) ? 'parking' : null;
     }
-    const req = documentRequirements.find((r) => r.id === viewed.sub);
+    const req = documentRequirements.find((r) => r.id === sub);
     if (!req || !requirementApplies(req, booking)) return null;
     return 'doc_sub_status';
   }
@@ -730,9 +758,9 @@ export function isLiveWorkflowView(
     return viewed.kind === 'pipeline' && viewed.status === currentStatus;
   }
   if (viewed.kind === 'pending-doc-sub') {
-    if (currentStatus === 'PENDING_DOCUMENTS') return true;
+    if (isPendingDocumentsFamilyStatus(currentStatus)) return true;
     return (
-      viewed.sub === 'PENDING_PARKING_REQUEST' &&
+      viewed.sub === PARKING_NESTED_KEY &&
       canNavigatePendingParkingSubStep(booking, currentStatus)
     );
   }

@@ -89,7 +89,7 @@ serveAuthenticated('org-plan', async (req) => {
       current_period_start,
       current_period_end,
       grace_period_ends_at,
-      pricing_plans!inner ( id, code, name )
+      pricing_plans!org_subscriptions_plan_id_fkey!inner ( id, code, name )
     `
     )
     .eq('organization_id', organizationId)

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { TenantAccessDenied } from '@/features/dashboard/org/components/TenantAccessDenied';
+import { resolveAccessDenialReason } from '@/features/dashboard/org/lib/accessDenialReason';
 import { usePropertyPermissions } from '@/features/dashboard/team/hooks/usePropertyPermissions';
 
 import { RouteGuardLoading } from '@/components/skeletons/RouteGuardLoading';
@@ -12,8 +13,8 @@ type Props = {
 
 /** Full-page plan-limit screen before property admin chrome when the user's seat is paused. */
 export function PropertyPlanLimitedGate({ children }: Props) {
-  const { orgSlug } = useOrgContext();
-  const { data, isPending, isError } = usePropertyPermissions();
+  const { org, orgSlug } = useOrgContext();
+  const { data, isPending, isError, error } = usePropertyPermissions();
 
   if (isPending && !data) {
     return <RouteGuardLoading fullScreen />;
@@ -34,7 +35,20 @@ export function PropertyPlanLimitedGate({ children }: Props) {
   }
 
   if (isError || !data) {
-    return <TenantAccessDenied scope="property" orgSlug={orgSlug} fullScreen />;
+    const reason = resolveAccessDenialReason({
+      planLimited: org.planLimited === true,
+      checkFailed: true,
+      error,
+    });
+    return (
+      <TenantAccessDenied
+        scope="property"
+        reason={reason}
+        orgSlug={orgSlug}
+        orgName={org.name}
+        fullScreen
+      />
+    );
   }
 
   return children;

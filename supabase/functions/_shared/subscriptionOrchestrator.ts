@@ -517,7 +517,7 @@ export async function runPlatformBillingCycle(): Promise<Record<string, number>>
       plan_id,
       status,
       current_period_end,
-      pricing_plans!inner ( is_default, name, is_active )
+      pricing_plans!org_subscriptions_plan_id_fkey!inner ( is_default, name, is_active )
     `
     )
     .in('status', ['active', 'past_due'])

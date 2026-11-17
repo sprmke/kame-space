@@ -1,7 +1,14 @@
 import { useState } from 'react';
 
 import { format, parseISO } from 'date-fns';
-import { ArrowDownRight, ArrowUpRight, MoreHorizontal, Pencil, Repeat, Trash2 } from 'lucide-react';
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Eye,
+  Pencil,
+  Repeat,
+  Trash2,
+} from 'lucide-react';
 
 import {
   AdminDataTable,
@@ -204,9 +211,10 @@ export function FinanceLedgerTable({
                       type="button"
                       className={adminTableIconButtonClass}
                       aria-label="Open stay details"
+                      title="Stay details"
                       onClick={() => entry.stay && setDrawerStay(entry.stay)}
                     >
-                      <MoreHorizontal className="size-4" />
+                      <Eye className="size-4" />
                     </button>
                   )}
                 </td>

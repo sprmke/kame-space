@@ -32,6 +32,9 @@ export interface DropdownLayout {
   height: number;
 }
 
+/** Desktop panel side relative to the floating bar. Landing hero uses `above`. */
+export type HeroSearchPanelPlacement = 'below' | 'above';
+
 export function estimatedPanelHeight(field: SearchField, calendarMonths: number) {
   switch (field) {
     case 'where':
@@ -153,7 +156,8 @@ export function computeDropdownLayout(
   barEl: HTMLElement,
   segmentEl: HTMLElement,
   calendarMonths: number,
-  contentHeight: number
+  contentHeight: number,
+  placement: HeroSearchPanelPlacement = 'below'
 ): DropdownLayout {
   const rootRect = rootEl.getBoundingClientRect();
   const barRect = barEl.getBoundingClientRect();
@@ -161,6 +165,7 @@ export function computeDropdownLayout(
   const rootWidth = rootRect.width;
   const width = preferredPanelWidth(field, rootWidth, calendarMonths);
   const isMobile = rootWidth < 640;
+  const gap = 12;
 
   let left = 0;
   if (!isMobile) {
@@ -178,7 +183,10 @@ export function computeDropdownLayout(
     left = Math.max(0, Math.min(left, rootWidth - width));
   }
 
-  const top = barRect.bottom - rootRect.top + 12;
+  const top =
+    placement === 'above'
+      ? barRect.top - rootRect.top - contentHeight - gap
+      : barRect.bottom - rootRect.top + gap;
 
   return {
     left,

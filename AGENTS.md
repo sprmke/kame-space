@@ -57,7 +57,7 @@ Root `bun run *:supabase` wrappers source `ui/.env.development` before invoking 
 
 ### Local dev gotchas
 
-- **502 on `/functions/v1/*`**: Kong stuck on a stale Docker edge-runtime IP after `db:reset`/a partial restart. Fix: `bun run stop:supabase` then `./dev.sh`.
+- **502 / 503 on `/functions/v1/*`**: often a half-up local stack (edge runtime missing) after agent restarts, or Kong on a stale edge IP. **Do not** stop/restart Supabase on your own — ask the user, then use unlock **`localstop`** (`.cursor/rules/local-dev-lifecycle.mdc`). Prefer diagnose: `curl` health + `docker ps`.
 - **Local seed data**: `bun run db:reset` loads one canonical dataset — org `kame-homes`, property `kame-home` (Monaco 2604), parking `monaco-level-2-slot-27`, Business plan. Do not invent slugs. Commands: `seed:local`, `seed:refresh`, `seed:verify`, `seed:attach-admin`, `seed:search-fixtures`. Guide: `docs/guides/testing/local-seed-data.md`.
 - Never run a second `supabase functions serve` in parallel (Docker name conflict).
 - **PWA / service worker**: the SW is **off** under `vite` dev (it would fight HMR). Test it with `bun run build && cd ui && bun run preview`, or set `VITE_PWA_DEV=true`. If a stale SW causes weird caching, DevTools → Application → Service Workers → **Unregister**, then hard-reload. Full reference: `docs/architecture/pwa.md`; rule: `.cursor/rules/pwa.mdc`.
@@ -193,8 +193,8 @@ Full index: `.codex/README.md` (Codex) · `.cursor/rules/README.md` (Cursor) · 
 - `?testing=true` / a test-booking pipeline — use local or staging Supabase.
 - Co-author trailers or AI commit/PR attribution — `.cursor/rules/git-commits.mdc` and **`git-commits`** skill; `.husky/commit-msg` strips `Co-authored-by` lines automatically.
 - **Production Supabase/DB deploys without unlock** — `.cursor/rules/no-prod-deploy.mdc`. Never run or recommend `deploy:supabase`, `db push`, `functions deploy`, or remote migrations unless the user said **`kamewave`** in the same message. Shell hooks enforce this.
+- **Local stack stop/kill/restart without unlock** — `.cursor/rules/local-dev-lifecycle.mdc`. Never `stop:supabase`, `pkill` Vite/`dev.sh`, or bounce Docker while the user is working unless they asked; unlock word **`localstop`** in the command. Shell hooks enforce this.
 - Trusting a skill just because it's in the picker — if `property-management-app` (a separate Next.js/tRPC/Drizzle repo) is also open this session, its skills will appear too; ignore them here.
-
 
 ## Codex compatibility
 
@@ -203,6 +203,7 @@ Before working, read [.codex/README.md](.codex/README.md). It lists this project
 Superpowers workflows and subagent delegation remain opt-in; do not start them automatically. Run `python3 .codex/sync.py` after changing project skills, commands or agent definitions. Review/trust hooks through Codex before relying on their enforcement. This repository setup is independent of the hourly job-search task in the personal chat.
 
 <!-- global-agent-skills -->
+
 ## Global agent skills
 
 This machine has 159 shared skills in `~/.agents/skill-library` (Claude Code, Cursor,

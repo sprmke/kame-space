@@ -59,7 +59,7 @@ Visiting the organization hub does not show a list of organizations to pick from
 ## Behavior / edge cases
 
 - **Property-only members** who land on an org dashboard are redirected by **`PropertyMemberOrgRedirect`** to an assigned property. If that org has no properties, try another accessible org; otherwise show access denied (never loop back to `/org` forever).
-- Access denied / **Access paused** (**`TenantAccessDenied`**) always offers **Home** → **`/org`**, which re-resolves the landing path (other usable org, or **`/onboarding`** when only plan-limited seats remain).
+- Access denied / **Access paused** / **Can't verify access** (**`TenantAccessDenied`**) always offers **Home** → **`/org`**, which re-resolves the landing path (other usable org, or **`/onboarding`** when only plan-limited seats remain). **Access paused** is for plan-limited seats; **Can't verify access** is for transport / edge failures (with **Try again**).
 - Other failed context guards (`RequireOrgContext`, `RequireParkingContext`, delete-org) still navigate to **`/org`**, which re-resolves the landing path.
 - Post-sign-in with redirect **`/org`** uses the same **`resolveOrgLandingPath`** helper as this page.
 

@@ -14,6 +14,8 @@ type WizardModalActionsProps = {
   submitLabel: string;
   pendingLabel?: string;
   canGoNext?: boolean;
+  /** When false, the final Save / submit control stays disabled. */
+  canSubmit?: boolean;
   className?: string;
 };
 
@@ -32,6 +34,7 @@ export function WizardModalActions({
   submitLabel,
   pendingLabel,
   canGoNext = true,
+  canSubmit = true,
   className,
 }: WizardModalActionsProps) {
   return (
@@ -73,7 +76,7 @@ export function WizardModalActions({
             type="button"
             className="gradient-primary text-primary-foreground shadow-soft min-h-[44px]"
             onClick={onSubmit}
-            disabled={submitPending}
+            disabled={submitPending || !canSubmit}
           >
             {submitPending ? <Loader2 className="mr-1.5 size-4 animate-spin" aria-hidden /> : null}
             {submitPending ? (pendingLabel ?? submitLabel) : submitLabel}

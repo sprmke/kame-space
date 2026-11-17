@@ -130,11 +130,13 @@ export function MetaConnectLegalNotice({ className, align = 'start' }: PresetPro
   );
 }
 
-/** Data import wizard, before a host uploads a guest/booking spreadsheet. */
+/**
+ * Data import host-data link (standalone).
+ * Upload step copy inlines `LegalLink` instead; keep this for other call sites.
+ */
 export function DataImportLegalNotice({ className, align = 'start' }: PresetProps) {
   return (
     <LegalNotice align={align} className={className}>
-      Only import guest data you are allowed to use for running your stays.{' '}
       <LegalLink doc="terms" section="host-data">
         Host data terms
       </LegalLink>

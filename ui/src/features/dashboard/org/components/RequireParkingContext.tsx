@@ -5,6 +5,7 @@ import { Navigate, useParams } from 'react-router-dom';
 import { TenantAccessDenied } from '@/features/dashboard/org/components/TenantAccessDenied';
 import { useOrganizations } from '@/features/dashboard/org/hooks/useOrganizations';
 import { useParkings } from '@/features/dashboard/org/hooks/useParkings';
+import { resolveAccessDenialReason } from '@/features/dashboard/org/lib/accessDenialReason';
 import { setLastParkingContext } from '@/features/dashboard/org/lib/tenantPaths';
 import type { Organization, Parking } from '@/features/dashboard/org/types';
 
@@ -78,21 +79,34 @@ export function RequireParkingContext({ children }: Props) {
   }
 
   if (orgsQuery.isError) {
-    return <TenantAccessDenied scope="org" orgSlug={orgSlug} />;
+    return (
+      <TenantAccessDenied
+        scope="org"
+        reason={resolveAccessDenialReason({ checkFailed: true, error: orgsQuery.error })}
+        orgSlug={orgSlug}
+        fullScreen
+      />
+    );
   }
 
   const org = orgsQuery.data?.organizations.find((o) => o.slug === orgSlug);
   if (!org) {
-    return <TenantAccessDenied scope="org" orgSlug={orgSlug} />;
+    return <TenantAccessDenied scope="org" orgSlug={orgSlug} fullScreen />;
   }
 
   if (parkingsQuery.isError) {
     return (
       <TenantAccessDenied
         scope="property"
+        reason={resolveAccessDenialReason({
+          planLimited: org.planLimited === true,
+          checkFailed: true,
+          error: parkingsQuery.error,
+        })}
         orgSlug={orgSlug}
         orgName={org.name}
         propertySlug={parkingSlug}
+        fullScreen
       />
     );
   }
@@ -102,9 +116,11 @@ export function RequireParkingContext({ children }: Props) {
     return (
       <TenantAccessDenied
         scope="property"
+        reason={resolveAccessDenialReason({ planLimited: org.planLimited === true })}
         orgSlug={orgSlug}
         orgName={org.name}
         propertySlug={parkingSlug}
+        fullScreen
       />
     );
   }

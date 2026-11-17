@@ -17,6 +17,7 @@ Keep this list **small**. Heavy domain specs use globs.
 | `superpowers-opt-in.mdc`        | Superpowers opt-in only (see `/superpowers-*`)                                      |
 | `git-commits.mdc`               | Human-only commits; no co-author trailers; hook strips AI attribution               |
 | `no-prod-deploy.mdc`            | Block prod Supabase/DB deploys (unlock: **kamewave**)                               |
+| `local-dev-lifecycle.mdc`       | Never stop/restart local Supabase/Vite unless asked (unlock: **localstop**)         |
 | `markitdown-mcp.mdc`            | Convert PDF/Office attachments via MarkItDown MCP                                   |
 | `route-guides.mdc`              | Page behavior docs must stay in sync                                                |
 | `plans-and-permissions.mdc`     | New features must decide Plans + Team RBAC (or N/A)                                 |
@@ -198,15 +199,15 @@ Do **not** spawn Explore / Plan subagents by default — see `ai-usage.mdc`.
 
 ## Hooks (`.cursor/hooks.json`)
 
-| Hook                   | Script                                                                                           |
-| ---------------------- | ------------------------------------------------------------------------------------------------ |
-| `beforeSubmitPrompt`   | `superpowers-lean-mode.sh` (activates lean mode for any `/superpowers-*` command)                |
-| `subagentStart`        | `guard-superpowers-subagents.sh` (denies subagents while lean mode active)                       |
-| `stop`                 | `superpowers-lean-cleanup.sh` (clears lean mode marker)                                          |
-| `sessionStart`         | `session-superpowers-opt-in.sh`, `session-ai-tooling-sync.sh`, `session-workflow-in-progress.sh` |
-| `afterFileEdit`        | `format-edited-file.sh`, `check-stack-terminology.sh`                                            |
-| `beforeShellExecution` | `guard-shell.sh` (denies prod Supabase deploy unless **`kamewave`** in command)                  |
-| `preToolUse`           | `guard-shipped-migrations.sh` (StrReplace), impeccable hook when installed                       |
+| Hook                   | Script                                                                                                     |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `beforeSubmitPrompt`   | `superpowers-lean-mode.sh` (activates lean mode for any `/superpowers-*` command)                          |
+| `subagentStart`        | `guard-superpowers-subagents.sh` (denies subagents while lean mode active)                                 |
+| `stop`                 | `superpowers-lean-cleanup.sh` (clears lean mode marker)                                                    |
+| `sessionStart`         | `session-superpowers-opt-in.sh`, `session-ai-tooling-sync.sh`, `session-workflow-in-progress.sh`           |
+| `afterFileEdit`        | `format-edited-file.sh`, `check-stack-terminology.sh`                                                      |
+| `beforeShellExecution` | `guard-shell.sh` (denies prod deploy unless **`kamewave`**; denies local stop/kill unless **`localstop`**) |
+| `preToolUse`           | `guard-shipped-migrations.sh` (StrReplace), impeccable hook when installed                                 |
 
 Lean mode lib: `scripts/dev/superpowers-lean-lib.sh`. See `.agent/skills/superpowers/SKILL.md` § Lean mode.
 
