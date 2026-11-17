@@ -1,4 +1,5 @@
 import type {
+  BookingChatMatch,
   ChatTemplateListItem,
   GuestRequestDto,
   GuestRequestStatus,
@@ -327,6 +328,23 @@ export async function fetchInboxThreads(
     metaHasMore: !!payload.metaHasMore,
     realtimeSupported: payload.realtimeSupported !== false,
   };
+}
+
+/** Inbox threads for one booking: linked thread first, then name matches. Never throws on "none". */
+export async function fetchBookingChats(
+  orgSlug: string | null,
+  orgId: string | null,
+  bookingId: string,
+  scope: InboxApiScope
+): Promise<BookingChatMatch[]> {
+  const jwt = await getJwt();
+  const base = withInboxScope(orgUrl('/social-inbox-booking-chats', orgSlug, orgId), scope);
+  const res = await fetch(`${base}&${new URLSearchParams({ booking_id: bookingId })}`, {
+    headers: { Authorization: `Bearer ${jwt}` },
+  });
+  const json = (await res.json()) as EdgeJson;
+  const payload = unwrapEdgePayload(json, res.status);
+  return (payload.conversations as BookingChatMatch[] | undefined) ?? [];
 }
 
 export async function fetchInboxMessages(

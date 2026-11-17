@@ -3,6 +3,7 @@ import type { KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminTableFlagsCell } from '@/features/dashboard/bookings/components/AdminDataTable';
+import { BookingListQuickActions } from '@/features/dashboard/bookings/components/BookingListQuickActions';
 import { BookingResourceLabel } from '@/features/dashboard/bookings/components/BookingResourceLabel';
 import { GuestAvatar } from '@/features/dashboard/bookings/components/GuestAvatar';
 import { ParkingBroadcastCountdown } from '@/features/dashboard/bookings/components/ParkingBroadcastCountdown';
@@ -122,10 +123,11 @@ function BookingCard({
           className="mt-0.5 shrink-0"
         />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <p className="text-foreground min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight">
               {name}
             </p>
+            <BookingListQuickActions row={row} className="-mr-1" />
             {row.booking_rate != null ? (
               <span className="text-foreground shrink-0 text-[13px] font-semibold tabular-nums leading-none">
                 {formatMoney(row.booking_rate)}
@@ -211,9 +213,12 @@ function BookingCard({
               <span className="text-caption text-muted-foreground/50">No flags</span>
             )}
           </div>
-          {row.booking_rate != null && (
-            <span className="text-table-amount shrink-0">{formatMoney(row.booking_rate)}</span>
-          )}
+          <div className="flex shrink-0 items-center gap-1">
+            <BookingListQuickActions row={row} />
+            {row.booking_rate != null ? (
+              <span className="text-table-amount">{formatMoney(row.booking_rate)}</span>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>

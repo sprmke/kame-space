@@ -36,6 +36,12 @@ export type PropertyTeamRbacMockOpts = {
   customTemplateSeeded?: boolean;
   /** Inbox cross-property switcher: seed a booking on the second property (needs multiProperty) matching the mock "Maria Santos" Facebook thread. */
   crossPropertyBookingSeeded?: boolean;
+  /** `social-inbox-booking-chats` answer for the bookings list chat shortcut (default: none). */
+  bookingChats?: Array<Record<string, unknown>>;
+  /** Make `social-inbox-booking-chats` fail with this status (default: succeed). */
+  bookingChatsFailure?: { status: number; message: string };
+  /** Permission ids removed from the template, to test a member who lacks one. */
+  omitPermissions?: string[];
   /** AI chat mode platform switch (dashboard-assistant-settings `aiModeEnabled`). */
   aiModeEnabled?: boolean;
   /** Server-saved dashboard mode returned by user-ui-preferences GET. */
@@ -1202,7 +1208,9 @@ export async function installPropertyTeamRbacMocks(
   template: TeamRbacTemplate,
   opts?: PropertyTeamRbacMockOpts
 ) {
-  const permissions = permissionsForTemplate(template);
+  const permissions = permissionsForTemplate(template).filter(
+    (id) => !(opts?.omitPermissions ?? []).includes(id)
+  );
   const freePlan = Boolean(opts?.freePlan);
   const assistantEnabled = Boolean(opts?.assistantEnabled);
   const videoPlanAllowed = opts?.videoPlanAllowed ?? !freePlan;
@@ -1419,6 +1427,20 @@ export async function installPropertyTeamRbacMocks(
         await fulfillJson(route, { success: true, data: rows, total: rows.length });
         return;
       }
+      case 'social-inbox-booking-chats':
+        if (opts?.bookingChatsFailure) {
+          await fulfillJson(
+            route,
+            { success: false, error: opts.bookingChatsFailure.message },
+            opts.bookingChatsFailure.status
+          );
+          return;
+        }
+        await fulfillJson(route, {
+          success: true,
+          data: { conversations: opts?.bookingChats ?? [] },
+        });
+        return;
       case 'list-property-reviews': {
         const tab = url.searchParams.get('tab') ?? 'received';
         await fulfillJson(route, { success: true, data: propertyReviewsPage(tab as ReviewsTab) });
