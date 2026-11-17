@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Download, Smartphone } from 'lucide-react';
+import { ChevronRight, Download, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { InstallGuideSheet } from '@/components/pwa/InstallGuideSheet';
@@ -17,10 +17,11 @@ import { PLATFORM_APP_NAME } from '@/lib/platformBranding';
 import { canPromptInstall, promptInstall } from '@/lib/pwa/installPrompt';
 import { installGuideFor } from '@/lib/pwa/platform';
 import { pwaTelemetry } from '@/lib/pwa/pwaTelemetry';
+import { cn } from '@/lib/utils';
 
 type InstallAppEntryProps = {
-  /** `button` for footers/menus, `menu-item` for a full-width row in a sheet. */
-  variant?: 'button' | 'menu-item';
+  /** `button` default, `menu-item` for sheets, `footer` for marketing brand column. */
+  variant?: 'button' | 'menu-item' | 'footer';
   className?: string;
   label?: string;
 };
@@ -62,28 +63,8 @@ export function InstallAppEntry({
     setInAppOpen(true);
   };
 
-  const content = (
+  const sheets = (
     <>
-      {variant === 'menu-item' ? (
-        <Smartphone className="text-muted-foreground size-4 shrink-0" aria-hidden />
-      ) : (
-        <Download className="size-3.5" aria-hidden />
-      )}
-      <span>{label}</span>
-    </>
-  );
-
-  return (
-    <>
-      <Button
-        type="button"
-        variant={variant === 'menu-item' ? 'ghost' : 'outline'}
-        className={className}
-        onClick={() => void open()}
-      >
-        {content}
-      </Button>
-
       {guideOpen && guide ? (
         <InstallGuideSheet
           open={guideOpen}
@@ -106,6 +87,61 @@ export function InstallAppEntry({
           </Button>
         </ResponsiveModalContent>
       </ResponsiveModal>
+    </>
+  );
+
+  if (variant === 'footer') {
+    return (
+      <>
+        <button
+          type="button"
+          className={cn(
+            'border-border/70 bg-background hover:border-primary/35 hover:bg-background group inline-flex min-h-[44px] w-full max-w-[16rem] items-center gap-3 rounded-2xl border px-3 py-2.5 text-left shadow-sm transition-colors',
+            className
+          )}
+          onClick={() => void open()}
+        >
+          <span
+            className="bg-primary/12 text-primary flex size-9 shrink-0 items-center justify-center rounded-xl"
+            aria-hidden
+          >
+            <Smartphone className="size-4" strokeWidth={1.75} />
+          </span>
+          <span className="text-foreground min-w-0 flex-1 text-sm font-medium leading-none">
+            {label}
+          </span>
+          <ChevronRight
+            className="text-muted-foreground group-hover:text-foreground size-4 shrink-0 transition-colors"
+            aria-hidden
+          />
+        </button>
+        {sheets}
+      </>
+    );
+  }
+
+  const content = (
+    <>
+      {variant === 'menu-item' ? (
+        <Smartphone className="text-muted-foreground size-4 shrink-0" aria-hidden />
+      ) : (
+        <Download className="size-3.5" aria-hidden />
+      )}
+      <span>{label}</span>
+    </>
+  );
+
+  return (
+    <>
+      <Button
+        type="button"
+        variant={variant === 'menu-item' ? 'ghost' : 'outline'}
+        className={className}
+        onClick={() => void open()}
+      >
+        {content}
+      </Button>
+      {sheets}
     </>
   );
 }

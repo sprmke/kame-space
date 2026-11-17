@@ -40,8 +40,8 @@ export function OrgPropertyReviewsTable({ rows, orgSlug, onShowReviews, onShowTo
     return (
       <ReviewsEmptyState
         icon={Building2}
-        title="No listings match your search"
-        description="Clear the search to see every listing in this organization."
+        title="No listings to show"
+        description="Try another search, or add a property to this organization."
       />
     );
   }
@@ -148,8 +148,8 @@ export function OrgPropertyReviewsCardGrid({ rows, orgSlug, onShowReviews, onSho
     return (
       <ReviewsEmptyState
         icon={Building2}
-        title="No listings match your search"
-        description="Clear the search to see every listing in this organization."
+        title="No listings to show"
+        description="Try another search, or add a property to this organization."
       />
     );
   }
@@ -168,6 +168,7 @@ export function OrgPropertyReviewsCardGrid({ rows, orgSlug, onShowReviews, onSho
               onShowReviews(row);
             }
           }}
+          aria-label={`Show reviews for ${row.propertyName}`}
           className="surface-card native-press focus-visible:ring-primary/40 flex min-h-[8.5rem] cursor-pointer flex-col gap-2 p-3.5 text-left outline-none focus-visible:ring-2"
         >
           <div className="flex items-start justify-between gap-2">
@@ -177,10 +178,11 @@ export function OrgPropertyReviewsCardGrid({ rows, orgSlug, onShowReviews, onSho
             <Link
               to={propertySectionPath(orgSlug, row.propertySlug, 'reviews')}
               onClick={(event) => event.stopPropagation()}
-              className="admin-overflow-trigger shrink-0"
-              aria-label={`Open ${row.propertyName} reviews`}
+              className={cn(adminTableIconButtonClass, 'size-9 shrink-0')}
+              aria-label={`Open ${row.propertyName} reviews page`}
+              title="Open listing reviews"
             >
-              <ArrowUpRight className="size-3.5" aria-hidden />
+              <ArrowUpRight className="size-4" aria-hidden />
             </Link>
           </div>
 
@@ -191,24 +193,28 @@ export function OrgPropertyReviewsCardGrid({ rows, orgSlug, onShowReviews, onSho
               <RatingStars value={row.avgOverall ?? 0} />
               <p className="text-data-secondary">
                 {formatReviewAverage(row.avgOverall)} · {row.count} review
-                {row.count === 1 ? '' : 's'} · {responseLabel(row)} responded
+                {row.count === 1 ? '' : 's'}
+                {row.count > 0 ? ` · ${responseLabel(row)} responded` : null}
               </p>
             </div>
           )}
 
-          <div className="mt-auto pt-1" onClick={(event) => event.stopPropagation()}>
-            {row.dueCount > 0 ? (
-              <button
-                type="button"
-                onClick={() => onShowToWrite(row)}
-                className="focus-visible:ring-ring rounded-full focus-visible:outline-none focus-visible:ring-2"
-              >
-                <Badge variant="outline" className="font-medium">
-                  <PencilLine className="size-3" aria-hidden />
-                  {row.dueCount} to write
-                </Badge>
-              </button>
-            ) : null}
+          <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+            <span className="text-caption text-muted-foreground">Tap for guest reviews</span>
+            <div onClick={(event) => event.stopPropagation()}>
+              {row.dueCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => onShowToWrite(row)}
+                  className="focus-visible:ring-ring min-h-[36px] rounded-full focus-visible:outline-none focus-visible:ring-2"
+                >
+                  <Badge variant="outline" className="font-medium">
+                    <PencilLine className="size-3" aria-hidden />
+                    {row.dueCount} to write
+                  </Badge>
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
       ))}

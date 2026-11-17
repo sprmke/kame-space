@@ -53,8 +53,8 @@ serveSuperAdmin('list-organizations-admin', async (req) => {
   const hasPlanFilter = planFilter.length > 0 && planFilter !== 'all';
   const subscriptionsSelect =
     hasPlanFilter && planFilter !== 'none'
-      ? `org_subscriptions!inner ( id, status, price_php_snapshot, pricing_plans!inner ( code, name ) )`
-      : `org_subscriptions ( id, status, price_php_snapshot, pricing_plans ( code, name ) )`;
+      ? `org_subscriptions!inner ( id, status, price_php_snapshot, pricing_plans!org_subscriptions_plan_id_fkey!inner ( code, name ) )`
+      : `org_subscriptions ( id, status, price_php_snapshot, pricing_plans!org_subscriptions_plan_id_fkey ( code, name ) )`;
 
   let query = supabase
     .from('organizations')

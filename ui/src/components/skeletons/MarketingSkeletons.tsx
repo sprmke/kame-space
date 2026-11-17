@@ -179,10 +179,19 @@ export function MarketingTemplateBrowserSkeleton() {
 }
 
 /** One AI Studio example card: 4:5 art + title/meta footer. */
-function AiSampleCardSkeleton({ index = 0 }: { index?: number }) {
+function AiSampleCardSkeleton({
+  index = 0,
+  layout = 'row',
+}: {
+  index?: number;
+  layout?: 'row' | 'grid';
+}) {
   return (
     <li
-      className="w-[44vw] shrink-0 snap-start sm:w-48 lg:w-52"
+      className={cn(
+        layout === 'row' && 'w-[44vw] shrink-0 snap-start sm:w-48 lg:w-52',
+        layout === 'grid' && 'min-w-0'
+      )}
       style={{ opacity: 1 - Math.min(index, 4) * 0.05 }}
     >
       <div className="border-border bg-card flex w-full flex-col overflow-hidden rounded-xl border">
@@ -197,8 +206,9 @@ function AiSampleCardSkeleton({ index = 0 }: { index?: number }) {
 }
 
 /**
- * AI Studio home: create buttons, horizontal example row, library toolbar, then the
- * saved-creation tile grid.
+ * AI Studio home first paint. Mirrors the empty start layout (`What do you want to make?`
+ * + three output cards + example grid) so hosts without creations do not jump from a
+ * library chrome skeleton into the centered empty state.
  */
 export function MarketingAiStudioHomeSkeleton() {
   return (
@@ -208,40 +218,34 @@ export function MarketingAiStudioHomeSkeleton() {
       aria-busy="true"
       aria-label="Loading AI Studio"
     >
-      <div className="mx-auto w-full max-w-[100rem] space-y-4 p-3 sm:p-4 lg:p-6">
-        <div className="flex flex-wrap items-center gap-2" aria-hidden>
-          {['New post', 'New photo', 'New clip'].map((label, index) => (
-            <span
-              key={label}
-              className={cn(
-                'inline-flex h-11 items-center rounded-lg px-3 text-sm font-semibold lg:h-10',
-                index === 0
-                  ? 'bg-primary-strong text-primary-foreground'
-                  : 'border-border text-foreground border'
-              )}
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center gap-5 p-4 py-8 sm:p-6 lg:py-12">
+        <h2 className="text-admin-page-title text-center">What do you want to make?</h2>
+        <div className="mx-auto grid w-full max-w-4xl gap-3 sm:grid-cols-3" aria-hidden>
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={index}
+              className="border-border bg-card overflow-hidden rounded-2xl border"
+              style={{ opacity: 1 - index * 0.04 }}
             >
-              {label}
-            </span>
+              <Skeleton className="aspect-[4/3] w-full rounded-none" />
+              <div className="space-y-2 p-4">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            </div>
           ))}
         </div>
-
-        <section className="min-w-0 space-y-2.5" aria-hidden>
+        <section className="mt-4 min-w-0 space-y-2.5" aria-hidden>
           <div className="flex min-h-9 flex-wrap items-center gap-x-3 gap-y-2">
             <h3 className="text-section-title mr-auto">Start from an example</h3>
-            <Skeleton className="h-8 w-40 rounded-lg" />
-            <span className="text-muted-foreground inline-flex h-11 items-center px-3 text-sm font-medium">
-              See all
-            </span>
           </div>
-          <ul className="-mx-3 flex gap-3 overflow-hidden px-3 pb-1 sm:-mx-4 sm:px-4 lg:mx-0 lg:px-0">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <AiSampleCardSkeleton key={index} index={index} />
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <AiSampleCardSkeleton key={index} index={index} layout="grid" />
             ))}
           </ul>
         </section>
-
-        <MarketingLibraryToolbarSkeleton title="Your creations" withStartActions={false} />
-        <MarketingLibraryGridSkeleton count={12} label="Loading your creations" />
       </div>
     </div>
   );

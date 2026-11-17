@@ -48,7 +48,7 @@ Same slash commands as Cursor / Claude Code (wired via symlinks):
 `.opencode/plugins/gfm-ai-tooling.ts` reinjects the same session + tool guards:
 
 - Superpowers opt-in context, AI tooling sync status, workflow in-progress list
-- Shell: prod Supabase deploy blocked unless **`kamewave`** (via `.claude/hooks/guard-shell.sh` + `prod-deploy-guard-lib.sh`)
+- Shell: prod Supabase deploy blocked unless **`kamewave`**; local stop/kill/restart blocked unless **`localstop`** (via `.claude/hooks/guard-shell.sh` + `prod-deploy-guard-lib.sh` / `local-dev-guard-lib.sh`)
 - Edit: no modifying existing files under `supabase/migrations/`
 - After edit: Prettier format + wrong-stack (Next.js / tRPC / Drizzle) warning
 

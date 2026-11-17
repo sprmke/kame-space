@@ -4,6 +4,7 @@ import { Navigate, useParams } from 'react-router-dom';
 
 import { TenantAccessDenied } from '@/features/dashboard/org/components/TenantAccessDenied';
 import { useOrganizations, useProperties } from '@/features/dashboard/org/hooks/useOrganizations';
+import { resolveAccessDenialReason } from '@/features/dashboard/org/lib/accessDenialReason';
 import { setLastTenantContext } from '@/features/dashboard/org/lib/tenantPaths';
 import type { Organization, Property } from '@/features/dashboard/org/types';
 
@@ -77,21 +78,34 @@ export function RequireOrgContext({ children }: Props) {
   }
 
   if (orgsQuery.isError) {
-    return <TenantAccessDenied scope="org" orgSlug={orgSlug} />;
+    return (
+      <TenantAccessDenied
+        scope="org"
+        reason={resolveAccessDenialReason({ checkFailed: true, error: orgsQuery.error })}
+        orgSlug={orgSlug}
+        fullScreen
+      />
+    );
   }
 
   const org = orgsQuery.data?.organizations.find((o) => o.slug === orgSlug);
   if (!org) {
-    return <TenantAccessDenied scope="org" orgSlug={orgSlug} />;
+    return <TenantAccessDenied scope="org" orgSlug={orgSlug} fullScreen />;
   }
 
   if (propsQuery.isError) {
     return (
       <TenantAccessDenied
         scope="property"
+        reason={resolveAccessDenialReason({
+          planLimited: org.planLimited === true,
+          checkFailed: true,
+          error: propsQuery.error,
+        })}
         orgSlug={orgSlug}
         orgName={org.name}
         propertySlug={propertySlug}
+        fullScreen
       />
     );
   }
@@ -101,9 +115,11 @@ export function RequireOrgContext({ children }: Props) {
     return (
       <TenantAccessDenied
         scope="property"
+        reason={resolveAccessDenialReason({ planLimited: org.planLimited === true })}
         orgSlug={orgSlug}
         orgName={org.name}
         propertySlug={propertySlug}
+        fullScreen
       />
     );
   }

@@ -44,6 +44,7 @@ import { TierBadge, TierBadgeAnchor } from '@/features/dashboard/plans/component
 import type { PlanFeatureKey } from '@/features/dashboard/plans/lib/planFeatures';
 
 import { MarketingLibraryGridSkeleton } from '@/components/skeletons/AdminSkeletons';
+import { MarketingAiStudioHomeSkeleton } from '@/components/skeletons/MarketingSkeletons';
 import { useTheme } from '@/components/theme/ThemeProvider';
 import {
   AlertDialog,
@@ -213,6 +214,12 @@ export function AiStudioHome() {
         </div>
       </div>
     );
+  }
+
+  // Hold the route/home skeleton until the first page resolves so we do not paint the
+  // library chrome and then swap to the empty start layout (or the reverse).
+  if (loading) {
+    return <MarketingAiStudioHomeSkeleton />;
   }
 
   if (isFresh) {

@@ -7,19 +7,21 @@ import {
 } from '@/features/dashboard/team/lib/planLimitedTeamCopy';
 
 describe('planLimitedTeamBannerMessage', () => {
-  it('planLimitedTeamBannerMessage is exported', () => {
-    expect(typeof planLimitedTeamBannerMessage).toBe('function');
+  it('explains seat limit for one or many members', () => {
+    expect(planLimitedTeamBannerMessage(1)).toContain('1 member is paused');
+    expect(planLimitedTeamBannerMessage(3)).toContain('3 members are paused');
   });
 });
 
 describe('planLimitedAccessDeniedTitle', () => {
-  it('planLimitedAccessDeniedTitle is exported', () => {
-    expect(typeof planLimitedAccessDeniedTitle).toBe('function');
+  it('uses Access paused', () => {
+    expect(planLimitedAccessDeniedTitle()).toBe('Access paused');
   });
 });
 
 describe('planLimitedAccessDeniedMessage', () => {
-  it('planLimitedAccessDeniedMessage is exported', () => {
-    expect(typeof planLimitedAccessDeniedMessage).toBe('function');
+  it('explains plan limit or downgrade without leaking other tenants', () => {
+    expect(planLimitedAccessDeniedMessage('property')).toContain('plan limit or downgrade');
+    expect(planLimitedAccessDeniedMessage('org')).toContain('organization owner');
   });
 });

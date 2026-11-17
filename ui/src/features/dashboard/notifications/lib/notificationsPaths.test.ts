@@ -12,8 +12,44 @@ import {
 } from '@/features/dashboard/notifications/lib/notificationsPaths';
 
 describe('resolveNotificationPath', () => {
+  const scope = {
+    orgSlug: 'acme',
+    propertySlugById: new Map([['prop-1', 'solea']]),
+    parkingSlugById: new Map<string, string>(),
+  };
+
   it('resolveNotificationPath is exported', () => {
     expect(typeof resolveNotificationPath).toBe('function');
+  });
+
+  it('routes calendar conflict notifications to pricing channel sync', () => {
+    expect(
+      resolveNotificationPath(
+        {
+          type: 'calendar_conflict',
+          booking_id: null,
+          conversation_id: null,
+          property_id: 'prop-1',
+          parking_id: null,
+        },
+        scope
+      )
+    ).toBe('/org/acme/property/solea/pricing?channelSync=1');
+  });
+
+  it('routes calendar sync failing notifications to pricing channel sync', () => {
+    expect(
+      resolveNotificationPath(
+        {
+          type: 'calendar_sync_failing',
+          booking_id: null,
+          conversation_id: null,
+          property_id: 'prop-1',
+          parking_id: null,
+        },
+        scope
+      )
+    ).toBe('/org/acme/property/solea/pricing?channelSync=1');
   });
 });
 
