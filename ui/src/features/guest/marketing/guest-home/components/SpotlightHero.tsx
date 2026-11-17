@@ -105,7 +105,7 @@ export function SpotlightHero() {
             {STATIC_PAGE_COPY.home.intro}
           </p>
           <div className="mt-6 lg:mt-8">
-            <ListingHeroSearch className="mx-0 lg:mx-0" />
+            <ListingHeroSearch className="mx-0 lg:mx-0" panelPlacement="above" />
           </div>
         </motion.div>
       </div>

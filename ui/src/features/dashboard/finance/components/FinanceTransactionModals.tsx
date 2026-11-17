@@ -42,6 +42,7 @@ const INITIAL_WIZARD: OperatingLineItemFormWizardState = {
   stepLabels: ['Details', 'Repeat', 'Reminders', 'Preview'],
   isFirstStep: true,
   isLastStep: false,
+  canProceed: false,
 };
 
 type Props = {
@@ -267,6 +268,8 @@ export function FinanceTransactionModals({
               isFirstStep={wizard.isFirstStep}
               isLastStep={wizard.isLastStep}
               submitPending={submitPending}
+              canGoNext={wizard.canProceed}
+              canSubmit={wizard.canProceed}
               submitLabel={editingItem ? 'Save' : 'Add transaction'}
               pendingLabel={editingItem ? 'Saving…' : 'Adding…'}
             />

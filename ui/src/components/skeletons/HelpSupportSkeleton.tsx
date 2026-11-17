@@ -72,16 +72,27 @@ export function HelpSupportSectionSkeleton({ section }: { section: HelpSupportSe
       >
         <div className="border-border/80 flex w-full flex-col lg:w-[min(100%,400px)] lg:border-r">
           <div className="flex items-center justify-between gap-3 border-b px-3 py-2.5">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-11 w-16 rounded-md sm:h-9" />
+            <p className="text-sm font-semibold">Tickets</p>
+            <span className="border-border inline-flex h-11 items-center rounded-md border px-3 text-sm font-medium sm:h-9">
+              New
+            </span>
           </div>
-          <div className="space-y-1 p-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full" style={{ opacity: 1 - i * 0.08 }} />
+          <div className="space-y-2 p-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="border-border/60 space-y-2 rounded-xl border p-3"
+                style={{ opacity: 1 - i * 0.08 }}
+              >
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-1/3" />
+              </div>
             ))}
           </div>
         </div>
-        <div className="hidden flex-1 lg:block" />
+        <div className="text-muted-foreground hidden flex-1 items-center justify-center p-8 text-sm lg:flex">
+          Select a ticket
+        </div>
       </div>
     );
   }

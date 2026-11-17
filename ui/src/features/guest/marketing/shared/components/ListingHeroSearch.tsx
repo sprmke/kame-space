@@ -15,6 +15,7 @@ import {
   useListingSearchWhereSegment,
 } from '@/features/guest/marketing/shared/lib/listingSearchFields';
 import type { ListingSearchPreferType } from '@/features/guest/marketing/shared/lib/listingSearchPreferType';
+import type { HeroSearchPanelPlacement } from '@/features/guest/marketing/shared/lib/heroSearchState';
 
 import { cn } from '@/lib/utils';
 
@@ -30,6 +31,8 @@ interface ListingHeroSearchProps {
   whereLabel?: string;
   wherePlaceholder?: string;
   whereCompactPlaceholder?: string;
+  /** Landing hero passes `above`; listing pages keep default `below`. */
+  panelPlacement?: HeroSearchPanelPlacement;
 }
 
 export function ListingHeroSearch({
@@ -41,6 +44,7 @@ export function ListingHeroSearch({
   whereLabel: whereLabelProp,
   wherePlaceholder: wherePlaceholderProp,
   whereCompactPlaceholder: whereCompactPlaceholderProp,
+  panelPlacement = 'below',
 }: ListingHeroSearchProps) {
   const { pathname } = useLocation();
   const scrollSearch = useListingScrollSearchOptional();
@@ -89,6 +93,7 @@ export function ListingHeroSearch({
         whereLabel={whereLabel}
         wherePlaceholder={wherePlaceholder}
         whereCompactPlaceholder={whereCompactPlaceholder}
+        panelPlacement={panelPlacement}
       />
     </motion.div>
   );

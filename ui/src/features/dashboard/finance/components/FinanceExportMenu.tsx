@@ -201,42 +201,73 @@ export function FinanceExportMenu({
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          disabled={busy}
-          className={cn(outlineBtnClass, 'relative gap-1.5 px-3')}
-          aria-label="Export report"
-        >
-          {busy ? (
-            <Loader2 className="text-muted-foreground size-4 shrink-0 animate-spin" aria-hidden />
-          ) : (
-            <FileText className="text-muted-foreground size-4 shrink-0" aria-hidden />
-          )}
-          <span className="hidden sm:inline">Export report</span>
-          <span className="sm:hidden">Report</span>
-          <TierBadge
-            feature="financeReporting"
-            placement="corner"
-            className="hidden sm:inline-flex"
-          />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
-        {exportItems.map((opt) => (
-          <DropdownMenuItem
-            key={opt.type}
+    <>
+      {/* Phone: bottom sheet. Desktop: dropdown. Matches mobile-native overflow menus. */}
+      <button
+        type="button"
+        disabled={busy}
+        className={cn(outlineBtnClass, 'relative gap-1.5 px-3 lg:hidden')}
+        aria-label="Export report"
+        aria-expanded={sheetOpen}
+        aria-haspopup="dialog"
+        onClick={() => setSheetOpen(true)}
+      >
+        {busy ? (
+          <Loader2 className="text-muted-foreground size-4 shrink-0 animate-spin" aria-hidden />
+        ) : (
+          <FileText className="text-muted-foreground size-4 shrink-0" aria-hidden />
+        )}
+        <span>Report</span>
+      </button>
+      <MobileChoiceSheet open={sheetOpen} onOpenChange={setSheetOpen} title="Export report">
+        <div role="listbox" aria-label="Export report">
+          {exportItems.map((opt) => (
+            <MobileChoiceItem
+              key={opt.type}
+              label={loading === opt.type ? 'Preparing…' : opt.label}
+              disabled={busy}
+              icon={<FileText className="size-5" aria-hidden />}
+              onSelect={() => {
+                void handlePdfExport(opt.type);
+                setSheetOpen(false);
+              }}
+            />
+          ))}
+        </div>
+      </MobileChoiceSheet>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
             disabled={busy}
-            onSelect={() => void handlePdfExport(opt.type)}
-            className="min-h-[44px] gap-2"
+            className={cn(outlineBtnClass, 'relative hidden gap-1.5 px-3 lg:inline-flex')}
+            aria-label="Export report"
           >
-            <FileText className="size-4 shrink-0" aria-hidden />
-            {loading === opt.type ? 'Preparing…' : opt.label}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            {busy ? (
+              <Loader2 className="text-muted-foreground size-4 shrink-0 animate-spin" aria-hidden />
+            ) : (
+              <FileText className="text-muted-foreground size-4 shrink-0" aria-hidden />
+            )}
+            <span>Export report</span>
+            <TierBadge feature="financeReporting" placement="corner" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          {exportItems.map((opt) => (
+            <DropdownMenuItem
+              key={opt.type}
+              disabled={busy}
+              onSelect={() => void handlePdfExport(opt.type)}
+              className="min-h-[44px] gap-2"
+            >
+              <FileText className="size-4 shrink-0" aria-hidden />
+              {loading === opt.type ? 'Preparing…' : opt.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
   );
 }
 

@@ -84,6 +84,9 @@ export function MarketingFooter() {
                 </div>
               ) : null}
             </div>
+            <div className="border-border/60 mt-5 border-t pt-5">
+              <InstallAppEntry variant="footer" />
+            </div>
           </div>
 
           <div>
@@ -146,12 +149,10 @@ export function MarketingFooter() {
 
       <div className="border-border border-t">
         <div className="public-shell py-6">
-          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="text-muted-foreground text-sm">{platformCopyrightLine()}</p>
-              <InstallAppEntry />
-            </div>
-            <div className="flex items-center gap-4">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+            <div aria-hidden />
+            <p className="text-muted-foreground text-center text-xs">{platformCopyrightLine()}</p>
+            <div className="flex items-center justify-end gap-4">
               {marketingSocialLinks.map((social) => {
                 const Icon = socialIcons[social.label];
                 return (

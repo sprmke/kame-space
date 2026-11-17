@@ -1,10 +1,10 @@
-import type { Ref } from 'react';
+import type { ReactNode, Ref } from 'react';
 
 import { cn } from '@/lib/utils';
 
 type WizardStepHeadingProps = {
   title: string;
-  description?: string;
+  description?: ReactNode;
   headingRef?: Ref<HTMLHeadingElement>;
   className?: string;
 };

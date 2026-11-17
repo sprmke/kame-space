@@ -97,7 +97,7 @@ serveSuperAdmin('org-subscriptions-admin', async (req, admin) => {
           current_period_end,
           created_at,
           organizations ( id, name, slug ),
-          pricing_plans ( code, name )
+          pricing_plans!org_subscriptions_plan_id_fkey ( code, name )
         `
         )
         .eq('source', 'reward')
@@ -173,7 +173,7 @@ serveSuperAdmin('org-subscriptions-admin', async (req, admin) => {
           status,
           price_php_snapshot,
           updated_at,
-          pricing_plans!inner ( code, name )
+          pricing_plans!org_subscriptions_plan_id_fkey!inner ( code, name )
         )`
       : `org_subscriptions (
           id,
@@ -182,7 +182,7 @@ serveSuperAdmin('org-subscriptions-admin', async (req, admin) => {
           status,
           price_php_snapshot,
           updated_at,
-          pricing_plans ( code, name )
+          pricing_plans!org_subscriptions_plan_id_fkey ( code, name )
         )`;
 
     let query = supabase

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { endOfMonth, format, startOfMonth } from 'date-fns';
-import { CalendarPlus, Upload } from 'lucide-react';
+import { CalendarPlus, Download } from 'lucide-react';
 
 import { AdminListPagination } from '@/features/dashboard/bookings/components/AdminListToolbar';
 import { AdminNewBookingModal } from '@/features/dashboard/bookings/components/AdminNewBookingModal';
@@ -262,6 +262,21 @@ export function BookingsListPage({ scope = 'property' }: BookingsListPageProps) 
       initialFromDate && initialToDate ? { from: initialFromDate, to: initialToDate } : null,
   });
 
+  // Seed this-month into the URL once when neither bound is set, so the first
+  // list fetch matches the Month picker (avoids an unfiltered list that swaps later).
+  const didSeedDefaultDates = useRef(false);
+  useEffect(() => {
+    if (didSeedDefaultDates.current) return;
+    didSeedDefaultDates.current = true;
+    if (query.from || query.to) return;
+    const from = format(dateNav.dateRange.from, 'yyyy-MM-dd');
+    const to = format(dateNav.dateRange.to, 'yyyy-MM-dd');
+    setSearchParams(
+      (prev) => writeQueryToParams({ ...query, from, to, page: 1 }, prev),
+      { replace: true }
+    );
+  }, [dateNav.dateRange.from, dateNav.dateRange.to, query, setSearchParams]);
+
   const { data, isLoading, isFetching, dataUpdatedAt, error, refetch } = useBookings(listQuery, {
     scope,
   });
@@ -450,7 +465,7 @@ export function BookingsListPage({ scope = 'property' }: BookingsListPageProps) 
               className="native-cta-secondary sm:w-auto sm:px-3.5"
               onClick={() => setImportOpen(true)}
             >
-              <Upload className="size-4" aria-hidden />
+              <Download className="size-4" aria-hidden />
               Import
             </Button>
           </TierBadgeAnchor>
@@ -472,7 +487,7 @@ export function BookingsListPage({ scope = 'property' }: BookingsListPageProps) 
               aria-label="Import bookings"
               onClick={() => setImportOpen(true)}
             >
-              <Upload className="size-5" aria-hidden />
+              <Download className="size-5" aria-hidden />
             </MobileHeroActionButton>
             <TierBadge feature="bookingImport" placement="corner" />
           </span>
