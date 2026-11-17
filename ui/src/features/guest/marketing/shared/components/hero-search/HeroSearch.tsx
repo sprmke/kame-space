@@ -1019,7 +1019,7 @@ export function HeroSearch({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-40 bg-black/25"
             onClick={() => setActiveField(null)}
           />
         ) : null}
@@ -1028,9 +1028,11 @@ export function HeroSearch({
       <div
         ref={barRef}
         className={cn(
-          'border-border bg-muted/80 relative z-50 overflow-hidden rounded-full border shadow-sm',
-          isExpanded && 'shadow-md',
-          morph > 0.55 && 'shadow-md',
+          'border-border relative z-50 overflow-hidden rounded-full border',
+          isExpanded
+            ? 'bg-card shadow-lg ring-1 ring-black/5'
+            : 'bg-card/95 shadow-sm backdrop-blur-sm',
+          morph > 0.55 && !isExpanded && 'shadow-md',
           !isExpanded && useCompactBar && 'overflow-hidden'
         )}
         style={{

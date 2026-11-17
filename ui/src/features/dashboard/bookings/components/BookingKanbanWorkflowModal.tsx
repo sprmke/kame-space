@@ -155,7 +155,7 @@ export function BookingKanbanWorkflowModal({
               !shellVisible && 'sr-only'
             )}
           >
-            {isLoading && !displayRow ? (
+            {isLoading && !booking ? (
               <div className="flex-1 p-4 sm:p-5">
                 <WorkflowSheetSkeleton />
               </div>
@@ -167,7 +167,11 @@ export function BookingKanbanWorkflowModal({
               </div>
             ) : null}
 
-            {workflowPanel}
+            {workflowPanel ? (
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                {workflowPanel}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

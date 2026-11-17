@@ -22,6 +22,7 @@ import {
 } from '@/features/dashboard/plans/lib/planPricing';
 import { computeMidCycleProration } from '@/features/dashboard/plans/lib/planProration';
 
+import { KameSpaceBrandIcon } from '@/components/branding/KameSpaceBrandIcon';
 import { PlanBillingLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -248,10 +249,17 @@ export function PlanReviewDialog({
         aria-describedby="plan-review-description"
       >
         <ResponsiveModalHeader className="border-border shrink-0 space-y-1 border-b px-4 pb-3 pr-14 pt-5 text-left sm:px-5">
-          <ResponsiveModalTitle>{title}</ResponsiveModalTitle>
-          <ResponsiveModalDescription id="plan-review-description">
-            {description}
-          </ResponsiveModalDescription>
+          <div className="flex items-start gap-3">
+            <div className="bg-primary/10 flex size-11 shrink-0 items-center justify-center rounded-2xl">
+              <KameSpaceBrandIcon className="size-7" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-1">
+              <ResponsiveModalTitle>{title}</ResponsiveModalTitle>
+              <ResponsiveModalDescription id="plan-review-description">
+                {description}
+              </ResponsiveModalDescription>
+            </div>
+          </div>
         </ResponsiveModalHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [-webkit-overflow-scrolling:touch] sm:px-5">

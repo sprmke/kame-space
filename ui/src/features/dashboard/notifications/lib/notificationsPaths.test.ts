@@ -12,8 +12,44 @@ import {
 } from '@/features/dashboard/notifications/lib/notificationsPaths';
 
 describe('resolveNotificationPath', () => {
+  const scope = {
+    orgSlug: 'kame-homes',
+    propertySlugById: new Map([['prop-1', 'kame-home']]),
+    parkingSlugById: new Map<string, string>(),
+  };
+
   it('resolveNotificationPath is exported', () => {
     expect(typeof resolveNotificationPath).toBe('function');
+  });
+
+  it('routes calendar conflict notifications to pricing channel sync', () => {
+    expect(
+      resolveNotificationPath(
+        {
+          type: 'calendar_conflict',
+          booking_id: null,
+          conversation_id: null,
+          property_id: 'prop-1',
+          parking_id: null,
+        },
+        scope
+      )
+    ).toBe('/org/kame-homes/property/kame-home/pricing?channelSync=1');
+  });
+
+  it('routes calendar sync failing notifications to pricing channel sync', () => {
+    expect(
+      resolveNotificationPath(
+        {
+          type: 'calendar_sync_failing',
+          booking_id: null,
+          conversation_id: null,
+          property_id: 'prop-1',
+          parking_id: null,
+        },
+        scope
+      )
+    ).toBe('/org/kame-homes/property/kame-home/pricing?channelSync=1');
   });
 });
 

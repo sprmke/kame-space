@@ -1154,11 +1154,10 @@ export function ImportWizardModal({ open, onOpenChange }: Props) {
           className="pointer-events-auto z-[111] max-w-[min(calc(100vw-1.5rem),35rem)]"
         >
           <AlertDialogHeader>
-            <AlertDialogTitle>No manual updates needed!</AlertDialogTitle>
+            <AlertDialogTitle>Template is optional</AlertDialogTitle>
             <AlertDialogDescription>
-              Upload your existing CSV or spreadsheet as-is. We automatically recognizes and
-              attempts to match and map your columns to our template. No need for any manual
-              updates! Our template is available for reference only.
+              You can upload your existing CSV or spreadsheet as-is. We match columns when we can.
+              Download the template only if you want a blank reference file.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

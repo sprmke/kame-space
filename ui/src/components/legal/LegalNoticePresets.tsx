@@ -134,7 +134,6 @@ export function MetaConnectLegalNotice({ className, align = 'start' }: PresetPro
 export function DataImportLegalNotice({ className, align = 'start' }: PresetProps) {
   return (
     <LegalNotice align={align} className={className}>
-      Only import guest data you are allowed to use for running your stays.{' '}
       <LegalLink doc="terms" section="host-data">
         Host data terms
       </LegalLink>

@@ -9,6 +9,7 @@ import {
   getDaysInMonth,
 } from 'date-fns';
 import { CalendarRange, Wand2 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import {
@@ -27,6 +28,7 @@ import { PricingRatesFormCard } from '@/features/dashboard/pricing/components/Pr
 import { PricingSaveDialog } from '@/features/dashboard/pricing/components/PricingSaveDialog';
 import { PricingStatsRow } from '@/features/dashboard/pricing/components/PricingStatsRow';
 import { useFeatureAvailability } from '@/lib/featureAvailability/useFeatureAvailability';
+import { CHANNEL_SYNC_OPEN_PARAM } from '@/features/dashboard/notifications/lib/notificationsPaths';
 import { pricingCalendarFormGridClassName } from '@/features/dashboard/pricing/lib/pricingCalendarLayout';
 import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
 import { SmartPricingDialog } from '@/features/dashboard/pricing/components/SmartPricingDialog';
@@ -85,6 +87,7 @@ const BUSY_MONTH_CELEBRATION_THRESHOLD = 20;
 
 export function PropertyPricingPage() {
   const compactChrome = useDashboardCompactChrome();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: access } = usePropertyPermissions();
   const permissions = access?.permissions;
   const canEditRates = hasPropertyPermission(permissions, 'pricing.rates:edit');
@@ -101,6 +104,16 @@ export function PropertyPricingPage() {
 
   const [channelSyncOpen, setChannelSyncOpen] = useState(false);
   const [smartPricingOpen, setSmartPricingOpen] = useState(false);
+
+  // Deep link from calendar_conflict / calendar_sync_failing notifications.
+  useEffect(() => {
+    if (!canViewChannels) return;
+    if (searchParams.get(CHANNEL_SYNC_OPEN_PARAM) !== '1') return;
+    setChannelSyncOpen(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete(CHANNEL_SYNC_OPEN_PARAM);
+    setSearchParams(next, { replace: true });
+  }, [canViewChannels, searchParams, setSearchParams]);
 
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const { data: pricingData, isLoading, isError, error } = usePropertyPricing(currentMonth);

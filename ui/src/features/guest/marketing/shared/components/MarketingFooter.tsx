@@ -84,6 +84,10 @@ export function MarketingFooter() {
                 </div>
               ) : null}
             </div>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <p className="text-muted-foreground text-sm">{platformCopyrightLine()}</p>
+              <InstallAppEntry />
+            </div>
           </div>
 
           <div>
@@ -146,28 +150,22 @@ export function MarketingFooter() {
 
       <div className="border-border border-t">
         <div className="public-shell py-6">
-          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="text-muted-foreground text-sm">{platformCopyrightLine()}</p>
-              <InstallAppEntry />
-            </div>
-            <div className="flex items-center gap-4">
-              {marketingSocialLinks.map((social) => {
-                const Icon = socialIcons[social.label];
-                return (
-                  <a
-                    key={social.label}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-secondary text-muted-foreground hover:bg-accent hover:text-foreground flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full transition-colors"
-                    aria-label={social.label}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </a>
-                );
-              })}
-            </div>
+          <div className="flex items-center justify-center gap-4 md:justify-end">
+            {marketingSocialLinks.map((social) => {
+              const Icon = socialIcons[social.label];
+              return (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-secondary text-muted-foreground hover:bg-accent hover:text-foreground flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full transition-colors"
+                  aria-label={social.label}
+                >
+                  <Icon className="h-5 w-5" />
+                </a>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -262,6 +262,21 @@ export function BookingsListPage({ scope = 'property' }: BookingsListPageProps) 
       initialFromDate && initialToDate ? { from: initialFromDate, to: initialToDate } : null,
   });
 
+  // Seed this-month into the URL once when neither bound is set, so the first
+  // list fetch matches the Month picker (avoids an unfiltered list that swaps later).
+  const didSeedDefaultDates = useRef(false);
+  useEffect(() => {
+    if (didSeedDefaultDates.current) return;
+    didSeedDefaultDates.current = true;
+    if (query.from || query.to) return;
+    const from = format(dateNav.dateRange.from, 'yyyy-MM-dd');
+    const to = format(dateNav.dateRange.to, 'yyyy-MM-dd');
+    setSearchParams(
+      (prev) => writeQueryToParams({ ...query, from, to, page: 1 }, prev),
+      { replace: true }
+    );
+  }, [dateNav.dateRange.from, dateNav.dateRange.to, query, setSearchParams]);
+
   const { data, isLoading, isFetching, dataUpdatedAt, error, refetch } = useBookings(listQuery, {
     scope,
   });
