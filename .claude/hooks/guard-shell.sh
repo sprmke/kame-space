@@ -7,6 +7,8 @@ set -e
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # shellcheck source=scripts/dev/prod-deploy-guard-lib.sh
 source "$ROOT/scripts/dev/prod-deploy-guard-lib.sh"
+# shellcheck source=scripts/dev/local-dev-guard-lib.sh
+source "$ROOT/scripts/dev/local-dev-guard-lib.sh"
 
 input=$(cat)
 if command -v jq >/dev/null 2>&1; then
@@ -21,6 +23,9 @@ reason=""
 if prod_deploy_is_blocked "$command_str"; then
   decision="deny"
   reason=$(prod_deploy_block_reason)
+elif local_dev_stop_is_blocked "$command_str"; then
+  decision="deny"
+  reason=$(local_dev_stop_block_reason)
 else
   case "$command_str" in
     *"rm -rf /"*|*"rm -rf /*"*|*"rm -rf ~"*)
@@ -30,10 +35,6 @@ else
     *"drop table"*|*"DROP TABLE"*)
       decision="ask"
       reason="This command may drop database tables. Confirm before running."
-      ;;
-    *"stop:supabase:clean"*)
-      decision="ask"
-      reason="stop:supabase:clean deletes local Docker data volumes (nuclear local reset per docs/PROJECT.md). Confirm this is intended before running."
       ;;
     *"push --force"*|*"push -f "*|*"push -f"*)
       decision="ask"

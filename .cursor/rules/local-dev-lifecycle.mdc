@@ -1,0 +1,48 @@
+---
+description: Never stop or restart local Supabase/Vite unless the user explicitly asks
+alwaysApply: true
+---
+
+# Local dev lifecycle — leave the stack running
+
+**Non-negotiable:** do **not** stop, kill, or bounce the local Kame Space stack while the user is working, unless they **explicitly** ask to stop or restart it in that message.
+
+Local Supabase Docker project **`guest-form-management`** is **shared** across Orca worktrees. Stopping it from one worktree takes down API/edge for every other worktree on this machine.
+
+## What keeps going wrong
+
+Agents “fix” edge 503 / Access denied / stale env by running:
+
+- `bun run stop:supabase` then `./dev.sh`
+- `pkill` Vite / `dev.sh` / listeners on port 5173
+- Concurrent restarts from multiple agent terminals
+
+That often leaves **Kong/DB up but `supabase_edge_runtime_*` missing** (functions **503**), Vite dead, and the dashboard showing access errors. Docker Hub **rate limits** during restarts make half-up stacks worse.
+
+## Default behavior (every session)
+
+| Do                                                                          | Do not                                       |
+| --------------------------------------------------------------------------- | -------------------------------------------- |
+| `curl` `http://127.0.0.1:54321/functions/v1/health`, `docker ps`, read logs | `bun run stop:supabase`, `supabase stop`     |
+| Reuse the already-running `./dev.sh` / Vite                                 | `pkill` vite / `dev.sh` / kill `:5173`       |
+| Tell the user the stack looks down and **ask** before restart               | Restart “while we’re here” or to pick up env |
+| Prefer code/config fixes that hot-reload                                    | Bounce Docker to clear a UI bug              |
+
+## When stop / restart is allowed
+
+Only if the **same user message** clearly asks to stop, start-from-scratch, or restart local Supabase/Vite/dev.
+
+Then:
+
+1. Put unlock word **`localstop`** in the shell command so hooks allow it  
+   (example: `LOCALSTOP=localstop bun run stop:supabase`).
+2. Prefer **one** controlled restart, not parallel `./dev.sh` sessions.
+3. After restart, verify **functions health 200** and Vite before claiming the stack is up.
+
+Hooks: `.cursor/hooks/guard-shell.sh` + `.claude/hooks/guard-shell.sh` via  
+`scripts/dev/local-dev-guard-lib.sh`.
+
+## Related
+
+- Prod deploys stay behind **`kamewave`** (`.cursor/rules/no-prod-deploy.mdc`)
+- Local seed / stack: `docs/guides/testing/local-seed-data.md`, `./dev.sh`
