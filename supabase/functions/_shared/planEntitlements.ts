@@ -149,6 +149,7 @@ export async function getActiveOrgSubscription(
   organizationId: string
 ): Promise<OrgSubscriptionRow | null> {
   const sb = db();
+  // Hint plan_id FK — org_subscriptions also FKs pricing_plans via scheduled_plan_id (PGRST201).
   const { data, error } = await sb
     .from('org_subscriptions')
     .select(
@@ -162,7 +163,7 @@ export async function getActiveOrgSubscription(
       current_period_start,
       current_period_end,
       feature_overrides,
-      pricing_plans!inner (${PLAN_SELECT_FIELDS})
+      pricing_plans!org_subscriptions_plan_id_fkey!inner (${PLAN_SELECT_FIELDS})
     `
     )
     .eq('organization_id', organizationId)
@@ -194,7 +195,7 @@ export async function getOrgSubscriptionForSelfServeDowngrade(
       current_period_start,
       current_period_end,
       feature_overrides,
-      pricing_plans!inner (${PLAN_SELECT_FIELDS})
+      pricing_plans!org_subscriptions_plan_id_fkey!inner (${PLAN_SELECT_FIELDS})
     `
     )
     .eq('organization_id', organizationId)
@@ -235,7 +236,7 @@ export async function getActiveOrgSubscriptionForProperty(
       current_period_start,
       current_period_end,
       feature_overrides,
-      pricing_plans!inner (${PLAN_SELECT_FIELDS})
+      pricing_plans!org_subscriptions_plan_id_fkey!inner (${PLAN_SELECT_FIELDS})
     `
     )
     .eq('id', slot.org_subscription_id as string)

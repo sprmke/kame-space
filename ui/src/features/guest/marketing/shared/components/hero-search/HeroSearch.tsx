@@ -34,6 +34,7 @@ import {
   readWhereParam,
   type DropdownLayout,
   type GuestCounts,
+  type HeroSearchPanelPlacement,
   type HeroSearchValues,
   type SearchField,
 } from '@/features/guest/marketing/shared/lib/heroSearchState';
@@ -175,6 +176,11 @@ interface HeroSearchProps {
   scrollProgress?: number;
   /** Compact header-docked style (instant; used when `morphProgress` is omitted). */
   variant?: 'default' | 'compact';
+  /**
+   * Desktop panel side relative to the bar. Landing hero (`/`) uses `above` so
+   * Where/When/Who are not clipped under the photo. Listing pages keep `below`.
+   */
+  panelPlacement?: HeroSearchPanelPlacement;
 }
 
 export function HeroSearch({
@@ -190,6 +196,7 @@ export function HeroSearch({
   morphProgress,
   scrollProgress = 0,
   variant = 'default',
+  panelPlacement = 'below',
 }: HeroSearchProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -369,10 +376,11 @@ export function HeroSearch({
         barRef.current,
         segmentEl,
         effectiveCalendarMonths,
-        height
+        height,
+        panelPlacement
       )
     );
-  }, [activeField, effectiveCalendarMonths]);
+  }, [activeField, effectiveCalendarMonths, panelPlacement]);
 
   useEffect(() => {
     const onResize = () => setViewportWidth(window.innerWidth);
@@ -472,7 +480,8 @@ export function HeroSearch({
           barRef.current,
           segmentEl,
           effectiveCalendarMonths,
-          estimate
+          estimate,
+          panelPlacement
         )
       );
     }
@@ -482,7 +491,15 @@ export function HeroSearch({
       window.requestAnimationFrame(updateDropdownLayout);
     });
     return () => window.cancelAnimationFrame(measureId);
-  }, [activeField, effectiveCalendarMonths, morph, dateRange, guests, updateDropdownLayout]);
+  }, [
+    activeField,
+    effectiveCalendarMonths,
+    morph,
+    dateRange,
+    guests,
+    panelPlacement,
+    updateDropdownLayout,
+  ]);
 
   useEffect(() => {
     if (!activeField) return;
@@ -1028,11 +1045,9 @@ export function HeroSearch({
       <div
         ref={barRef}
         className={cn(
-          'border-border relative z-50 overflow-hidden rounded-full border',
-          isExpanded
-            ? 'bg-card shadow-lg ring-1 ring-black/5'
-            : 'bg-card/95 shadow-sm backdrop-blur-sm',
-          morph > 0.55 && !isExpanded && 'shadow-md',
+          'border-border bg-muted/80 relative z-50 overflow-hidden rounded-full border shadow-sm',
+          isExpanded && 'shadow-md',
+          morph > 0.55 && 'shadow-md',
           !isExpanded && useCompactBar && 'overflow-hidden'
         )}
         style={{

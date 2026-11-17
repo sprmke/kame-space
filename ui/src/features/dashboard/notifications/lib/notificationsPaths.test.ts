@@ -13,8 +13,8 @@ import {
 
 describe('resolveNotificationPath', () => {
   const scope = {
-    orgSlug: 'kame-homes',
-    propertySlugById: new Map([['prop-1', 'kame-home']]),
+    orgSlug: 'acme',
+    propertySlugById: new Map([['prop-1', 'solea']]),
     parkingSlugById: new Map<string, string>(),
   };
 
@@ -34,7 +34,7 @@ describe('resolveNotificationPath', () => {
         },
         scope
       )
-    ).toBe('/org/kame-homes/property/kame-home/pricing?channelSync=1');
+    ).toBe('/org/acme/property/solea/pricing?channelSync=1');
   });
 
   it('routes calendar sync failing notifications to pricing channel sync', () => {
@@ -49,7 +49,7 @@ describe('resolveNotificationPath', () => {
         },
         scope
       )
-    ).toBe('/org/kame-homes/property/kame-home/pricing?channelSync=1');
+    ).toBe('/org/acme/property/solea/pricing?channelSync=1');
   });
 });
 

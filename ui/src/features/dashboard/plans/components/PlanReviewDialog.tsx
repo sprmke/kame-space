@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { ArrowRight, Check, Loader2, Minus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Loader2, Minus } from 'lucide-react';
 
 import { PlanTierIconWell } from '@/features/dashboard/plans/components/PlanTierIconWell';
 import type {
@@ -22,7 +22,6 @@ import {
 } from '@/features/dashboard/plans/lib/planPricing';
 import { computeMidCycleProration } from '@/features/dashboard/plans/lib/planProration';
 
-import { KameSpaceBrandIcon } from '@/components/branding/KameSpaceBrandIcon';
 import { PlanBillingLegalNotice } from '@/components/legal/LegalNoticePresets';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -124,6 +123,19 @@ function PlanStub({
   );
 }
 
+/** Circular chip. Downgrade ← (toward To on the left). Upgrade → (toward New on the right). */
+function PlanCompareArrow({ direction }: { direction: 'forward' | 'back' }) {
+  const Icon = direction === 'back' ? ArrowLeft : ArrowRight;
+  return (
+    <span
+      className="border-border bg-background text-foreground flex size-8 shrink-0 items-center justify-center rounded-full border shadow-sm"
+      aria-hidden
+    >
+      <Icon className="size-3.5" strokeWidth={2.25} />
+    </span>
+  );
+}
+
 function ChangeList({
   title,
   items,
@@ -196,13 +208,11 @@ export function PlanReviewDialog({
 
   const planTitle = planDisplayName(plan);
   const isSamePlan = Boolean(currentPlan && plan.id === currentPlan.id);
-  const title = !currentPlan
-    ? `Choose ${planTitle}`
-    : isSamePlan
-      ? 'Update billing'
-      : isDownscale || isDowngrade
-        ? `Move to ${planTitle}`
-        : `Upgrade to ${planTitle}`;
+  const title = isSamePlan
+    ? 'Update billing'
+    : isDownscale || isDowngrade
+      ? `Downgrade to ${planTitle}`
+      : `Upgrade to ${planTitle}`;
 
   const description = isFree
     ? downgradeBlockedReason && isDowngrade
@@ -249,26 +259,44 @@ export function PlanReviewDialog({
         aria-describedby="plan-review-description"
       >
         <ResponsiveModalHeader className="border-border shrink-0 space-y-1 border-b px-4 pb-3 pr-14 pt-5 text-left sm:px-5">
-          <div className="flex items-start gap-3">
-            <div className="bg-primary/10 flex size-11 shrink-0 items-center justify-center rounded-2xl">
-              <KameSpaceBrandIcon className="size-7" />
-            </div>
-            <div className="min-w-0 flex-1 space-y-1">
-              <ResponsiveModalTitle>{title}</ResponsiveModalTitle>
-              <ResponsiveModalDescription id="plan-review-description">
-                {description}
-              </ResponsiveModalDescription>
-            </div>
-          </div>
+          <ResponsiveModalTitle>{title}</ResponsiveModalTitle>
+          <ResponsiveModalDescription id="plan-review-description">
+            {description}
+          </ResponsiveModalDescription>
         </ResponsiveModalHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [-webkit-overflow-scrolling:touch] sm:px-5">
           <div className="space-y-5">
             {currentPlan && !isSamePlan ? (
-              <div className="border-border bg-muted/30 flex items-center gap-3 rounded-xl border p-3">
-                <PlanStub plan={currentPlan} totalPhp={currentTotalPhp} muted />
-                <ArrowRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
-                <PlanStub plan={plan} totalPhp={targetTotalPhp} />
+              <div
+                className="border-border bg-muted/30 rounded-xl border p-3"
+                aria-label={
+                  isDowngrade || isDownscale
+                    ? `Downgrade to ${planDisplayName(plan)} from ${planDisplayName(currentPlan)}`
+                    : `Upgrade from ${planDisplayName(currentPlan)} to ${planDisplayName(plan)}`
+                }
+              >
+                {isDowngrade || isDownscale ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <PlanStub plan={plan} totalPhp={targetTotalPhp} />
+                    </div>
+                    <PlanCompareArrow direction="back" />
+                    <div className="min-w-0">
+                      <PlanStub plan={currentPlan} totalPhp={currentTotalPhp} muted />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <PlanStub plan={currentPlan} totalPhp={currentTotalPhp} muted />
+                    </div>
+                    <PlanCompareArrow direction="forward" />
+                    <div className="min-w-0">
+                      <PlanStub plan={plan} totalPhp={targetTotalPhp} />
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="border-border bg-muted/30 rounded-xl border p-3">

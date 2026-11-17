@@ -33,8 +33,10 @@ import {
   getPendingDocumentsNestedCompletion,
   isSubStatusCompleted,
   isSubStatusRequired,
+  nestedDocKeyFromLegacyOrKanbanStatus,
   nextStep,
   previousStep,
+  type PendingDocNestedKey,
   type PendingDocumentSubStatus,
 } from '@/features/dashboard/bookings/lib/workflow';
 
@@ -492,11 +494,11 @@ export function kanbanDropIntentNestedKey(
   booking: BookingRow,
   targetColumn: BookingStatus,
   requirements: DocumentRequirement[] = DEFAULT_DOCUMENT_REQUIREMENTS
-): PendingDocumentSubStatus | null {
+): PendingDocNestedKey | null {
   if (!canKanbanDropTo(booking, targetColumn, requirements)) return null;
   if (resolveKanbanDropTransition(booking, targetColumn, requirements)) return null;
   if (!isKanbanDocSubColumn(targetColumn)) return null;
-  return targetColumn;
+  return nestedDocKeyFromLegacyOrKanbanStatus(targetColumn);
 }
 
 /** Legend rows — mirrors PMA layout with guest-form statuses. */

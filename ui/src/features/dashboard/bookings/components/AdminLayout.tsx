@@ -1103,11 +1103,14 @@ function AdminSidebarNav({
               className="bg-primary-strong rounded-xl shadow-sm"
             />
           ) : null}
-          {navSections.map((section) => {
+          {navSections.map((section, sectionIndex) => {
             const showHeading =
               !collapsed && navSections.length > 1 && Boolean(section.label) && !section.hideLabel;
             return (
-              <div key={section.label} className={showHeading ? 'pt-2.5 first:pt-0' : undefined}>
+              <div
+                key={section.label}
+                className={showHeading && sectionIndex > 0 ? 'pt-2.5' : undefined}
+              >
                 {showHeading ? (
                   <p className="text-sidebar-muted px-3 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider">
                     {section.label}

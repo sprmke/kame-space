@@ -119,7 +119,8 @@ export function BookingKanbanWorkflowModal({
           className={cn(
             'bg-card flex w-full flex-col overflow-hidden border',
             shellVisible
-              ? 'shadow-elevated-lg max-h-[min(92dvh,40rem)] max-w-[min(calc(100vw-1.5rem),32rem)] rounded-t-2xl sm:max-w-lg sm:rounded-xl'
+              ? // Explicit height so flex-1 body (WorkflowPanel) does not collapse to 0 under max-h-only.
+                'shadow-elevated-lg h-[min(92dvh,40rem)] max-h-[min(92dvh,40rem)] max-w-[min(calc(100vw-1.5rem),32rem)] rounded-t-2xl sm:max-w-lg sm:rounded-xl'
               : 'max-h-0 max-w-0 border-0 shadow-none'
           )}
           onClick={(e) => e.stopPropagation()}

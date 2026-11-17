@@ -24,7 +24,7 @@ serveSuperAdmin('get-organization-admin', async (req) => {
   const orgQuery = supabase.from('organizations').select(
     `id, name, slug, owner_id, created_at, settings,
        org_subscriptions ( id, status, price_php_snapshot, current_period_end,
-         pricing_plans ( code, name ) )`
+         pricing_plans!org_subscriptions_plan_id_fkey ( code, name ) )`
   );
   const { data: org, error } = await (
     slug ? orgQuery.eq('slug', slug) : orgQuery.eq('id', orgId)

@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Download,
   Loader2,
-  Upload,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -59,7 +58,7 @@ import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeMo
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 
 import { UnsavedChangesDialog } from '@/components/forms/UnsavedChangesDialog';
-import { DataImportLegalNotice } from '@/components/legal/LegalNoticePresets';
+import { LegalLink } from '@/components/legal/LegalLink';
 import { ImportCommitStepSkeleton } from '@/components/skeletons/ImportWizardSkeleton';
 import {
   AlertDialog,
@@ -109,7 +108,7 @@ const STEP_COPY: Record<Step, { title: string; description: string }> = {
   upload: {
     title: 'Add your file & let us do the work',
     description:
-      'Upload a CSV or Excel spreadsheet of existing bookings. We’ll automatically recognize and attempt to match and map your columns to our template.',
+      'Upload a CSV or Excel spreadsheet of existing bookings. We’ll automatically recognize and attempt to match and map your columns to our template. Only import guest data you are allowed to use (host data terms).',
   },
   automap: {
     title: 'Match your columns',
@@ -125,6 +124,24 @@ const STEP_COPY: Record<Step, { title: string; description: string }> = {
     description: 'Confirm what will be added before completing the import.',
   },
 };
+
+const TEMPLATE_INLINE_LINK_CLASS =
+  'text-foreground hover:text-primary focus-visible:ring-ring decoration-muted-foreground/40 hover:decoration-primary rounded-sm font-medium underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2';
+
+function UploadStepDescription({ onOpenTemplate }: { onOpenTemplate: () => void }) {
+  return (
+    <>
+      Upload a CSV or Excel spreadsheet of existing bookings. We’ll automatically recognize and
+      attempt to match and map your columns to our{' '}
+      <button type="button" onClick={onOpenTemplate} className={TEMPLATE_INLINE_LINK_CLASS}>
+        template
+      </button>
+      . Only import guest data you are allowed to use (
+      <LegalLink doc="terms" section="host-data">host data terms</LegalLink>
+      ).
+    </>
+  );
+}
 
 // ── Upload step ───────────────────────────────────────────────────────────────
 
@@ -149,7 +166,6 @@ function UploadStep({ parseResult, onParsed, onReplace, isBusy }: UploadStepProp
       ) : (
         <ImportFileDropzone onParsed={onParsed} disabled={isBusy} />
       )}
-      <DataImportLegalNotice />
     </div>
   );
 }
@@ -1033,7 +1049,7 @@ export function ImportWizardModal({ open, onOpenChange }: Props) {
           }}
         >
           <ImportModalHeader
-            icon={<Upload className="size-4" aria-hidden />}
+            icon={<Download className="size-4" aria-hidden />}
             title="AI-Assisted import bookings"
             closeDisabled={isBusy}
             onClose={requestClose}
@@ -1055,7 +1071,13 @@ export function ImportWizardModal({ open, onOpenChange }: Props) {
 
             <ImportStepHeading
               title={copy.title}
-              description={copy.description}
+              description={
+                step === 'upload' ? (
+                  <UploadStepDescription onOpenTemplate={() => setTemplateConfirmOpen(true)} />
+                ) : (
+                  copy.description
+                )
+              }
               headingRef={stepHeadingRef}
               className={parseResult && step !== 'upload' ? 'mb-3' : 'mb-4'}
             />

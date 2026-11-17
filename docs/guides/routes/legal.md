@@ -118,24 +118,24 @@ The choice is `localStorage` key `kh-cookie-consent` (`accepted` / `declined`). 
 
 One pattern everywhere: a short muted line at the moment of action, with policy links. A plain tap opens the policy in **`LegalDocumentSheet`** (bottom sheet below `lg`, dialog at `lg+`) scrolled to the linked section. It uses the canonical modal chrome (see [`architecture/modal-chrome.md`](../../architecture/modal-chrome.md)): a compact header with the title, last-updated note, and inline **Open full page** and close actions; a scrolling body; and a single primary **Done** footer, full-width on phone with safe-area padding. The header gutter matches every other modal (16px phone / 20px desktop) and the close glyph sits on the title baseline. **Open full page** closes the sheet and navigates to the public policy route in the same tab. The link is a real `<a href="/terms#section">`, so cmd/ctrl/middle-click and long-press open the page in a new tab. Checkboxes stay only where a record matters: the cancellation policy, identity check consent, and the Free downgrade acknowledgment.
 
-| Surface                                            | Preset                        | Links to                | Hidden when                 |
-| -------------------------------------------------- | ----------------------------- | ----------------------- | --------------------------- |
-| Host and guest sign-in pages (bottom, last item)   | `SignInLegalNotice`           | Terms, Privacy          | OTP step                    |
-| Guest auth modal (under Google)                    | `SignInLegalNotice`           | Terms, Privacy          | OTP step                    |
-| Booking form, last step (above Submit)             | `BookingSubmitLegalNotice`    | Terms#bookings, Privacy | Host-entered booking, edits |
-| Booking form, payment step (under receipt)         | `StayPaymentLegalNotice`      | Terms#payments          | Host-entered booking        |
-| Parking request, last step and linked-stay confirm | `ParkingRequestLegalNotice`   | Terms#parking, Privacy  | Host-entered request        |
-| Parking status, Pay now                            | `ParkingPaymentLegalNotice`   | Terms#parking           | Not in payment state        |
-| Plans & Billing review dialog                      | `PlanBillingLegalNotice`      | Terms#billing           | Never                       |
-| SD form refund step, trip cancellation refund      | `RefundDetailsLegalNotice`    | Privacy#payments        | Cash pickup chosen          |
-| Guest chat composer                                | `GuestChatLegalNotice`        | Privacy#ai              | After the first message     |
-| Guest review, host review of a guest               | `ReviewLegalNotice`           | Terms#reviews           | Never                       |
-| Host Get verified (submit step)                    | `HostVerificationLegalNotice` | Privacy#identity        | Nothing to submit           |
-| Identity check consent step                        | inline `LegalLink`            | Privacy#identity        | Never                       |
-| Voice receptionist (before the call)               | inline `LegalLink`            | Privacy#voice           | Never                       |
-| Inbox Channels tab, Meta row                       | `MetaConnectLegalNotice`      | Privacy#sharing         | Already connected           |
-| Data import wizard, Upload step                    | `DataImportLegalNotice`       | Terms#host-data         | Never                       |
-| Marketing Studio Publish dialog                    | `MarketingAiLegalNotice`      | Terms#ai                | No connected channel        |
+| Surface                                            | Preset                                                                        | Links to                | Hidden when                 |
+| -------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------------- | --------------------------- |
+| Host and guest sign-in pages (bottom, last item)   | `SignInLegalNotice`                                                           | Terms, Privacy          | OTP step                    |
+| Guest auth modal (under Google)                    | `SignInLegalNotice`                                                           | Terms, Privacy          | OTP step                    |
+| Booking form, last step (above Submit)             | `BookingSubmitLegalNotice`                                                    | Terms#bookings, Privacy | Host-entered booking, edits |
+| Booking form, payment step (under receipt)         | `StayPaymentLegalNotice`                                                      | Terms#payments          | Host-entered booking        |
+| Parking request, last step and linked-stay confirm | `ParkingRequestLegalNotice`                                                   | Terms#parking, Privacy  | Host-entered request        |
+| Parking status, Pay now                            | `ParkingPaymentLegalNotice`                                                   | Terms#parking           | Not in payment state        |
+| Plans & Billing review dialog                      | `PlanBillingLegalNotice`                                                      | Terms#billing           | Never                       |
+| SD form refund step, trip cancellation refund      | `RefundDetailsLegalNotice`                                                    | Privacy#payments        | Cash pickup chosen          |
+| Guest chat composer                                | `GuestChatLegalNotice`                                                        | Privacy#ai              | After the first message     |
+| Guest review, host review of a guest               | `ReviewLegalNotice`                                                           | Terms#reviews           | Never                       |
+| Host Get verified (submit step)                    | `HostVerificationLegalNotice`                                                 | Privacy#identity        | Nothing to submit           |
+| Identity check consent step                        | inline `LegalLink`                                                            | Privacy#identity        | Never                       |
+| Voice receptionist (before the call)               | inline `LegalLink`                                                            | Privacy#voice           | Never                       |
+| Inbox Channels tab, Meta row                       | `MetaConnectLegalNotice`                                                      | Privacy#sharing         | Already connected           |
+| Data import wizard, Upload step description        | Inline `LegalLink` (host data terms); **template** opens Template is optional | Terms#host-data         | Never                       |
+| Marketing Studio Publish dialog                    | `MarketingAiLegalNotice`                                                      | Terms#ai                | No connected channel        |
 
 Passive links (`LegalFooterLinks`): every `MainLayout` page footer (calendar, form, success, trip, SD form, guest review, parking pages, verification), the dashboard account menu and phone More sheet (Terms, Privacy), guest **Account > Profile** (**Privacy and data** card under Identity, with a mailto for data requests), and the booking-document "not available" screen. Marketing footer and More sheet are unchanged. The stay guide and property showcase pages (bespoke templates, no shared footer) get a small floating `ShowcaseLegalFooterLink` pill instead, hidden only in the dashboard's inline editor preview. Every transactional email sent through `fragments/configurable-template-send.html` carries a Privacy Policy link next to the copyright line (`emailLegalFooter.ts#buildEmailLegalFooterHtml`).
 

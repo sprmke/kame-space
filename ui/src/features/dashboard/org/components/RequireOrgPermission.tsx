@@ -8,6 +8,7 @@ import { useAdminSession } from '@/features/dashboard/bookings/hooks/useAdminSes
 import { PropertyMemberOrgRedirect } from '@/features/dashboard/org/components/PropertyMemberOrgRedirect';
 import { TenantAccessDenied } from '@/features/dashboard/org/components/TenantAccessDenied';
 import { useOrgSlugParam } from '@/features/dashboard/org/lib/adminApiScope';
+import { resolveAccessDenialReason } from '@/features/dashboard/org/lib/accessDenialReason';
 import { isPropertyOnlyOrgAccess } from '@/features/dashboard/org/lib/orgAccessKind';
 import { useOrgPermissions } from '@/features/dashboard/team/hooks/useOrgPermissions';
 import {
@@ -28,7 +29,7 @@ export function RequireOrgPermission({ section, children }: Props) {
   const location = useLocation();
   const orgSlug = useOrgSlugParam();
   const { status: sessionStatus } = useAdminSession();
-  const { data, isPending, isError } = useOrgPermissions();
+  const { data, isPending, isError, error } = useOrgPermissions();
   const required = ORG_SECTION_VIEW_PERMISSION[section];
 
   if (sessionStatus === 'loading' || (isPending && !data)) {
@@ -63,7 +64,16 @@ export function RequireOrgPermission({ section, children }: Props) {
       }
     }
     return (
-      <TenantAccessDenied scope="org" orgSlug={orgSlug ?? undefined} orgName={data?.orgName} />
+      <TenantAccessDenied
+        scope="org"
+        reason={resolveAccessDenialReason({
+          planLimited: data?.planLimited === true,
+          checkFailed: isError || !data,
+          error: isError ? error : undefined,
+        })}
+        orgSlug={orgSlug ?? undefined}
+        orgName={data?.orgName}
+      />
     );
   }
 

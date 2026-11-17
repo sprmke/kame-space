@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { endOfMonth, format, startOfMonth } from 'date-fns';
-import { CalendarPlus, Upload } from 'lucide-react';
+import { CalendarPlus, Download } from 'lucide-react';
 
 import { AdminListPagination } from '@/features/dashboard/bookings/components/AdminListToolbar';
 import { AdminNewBookingModal } from '@/features/dashboard/bookings/components/AdminNewBookingModal';
@@ -465,7 +465,7 @@ export function BookingsListPage({ scope = 'property' }: BookingsListPageProps) 
               className="native-cta-secondary sm:w-auto sm:px-3.5"
               onClick={() => setImportOpen(true)}
             >
-              <Upload className="size-4" aria-hidden />
+              <Download className="size-4" aria-hidden />
               Import
             </Button>
           </TierBadgeAnchor>
@@ -487,7 +487,7 @@ export function BookingsListPage({ scope = 'property' }: BookingsListPageProps) 
               aria-label="Import bookings"
               onClick={() => setImportOpen(true)}
             >
-              <Upload className="size-5" aria-hidden />
+              <Download className="size-5" aria-hidden />
             </MobileHeroActionButton>
             <TierBadge feature="bookingImport" placement="corner" />
           </span>
