@@ -69,6 +69,8 @@ export async function fulfillOrgSubscriptionPayment(input: {
   providerReference?: string | null;
   paymentMethodType?: string | null;
   paidAt?: string | null;
+  /** PayMongo payment id (pay_...). Taken from the payload when omitted; reconcile passes it. */
+  providerPaymentId?: string | null;
   rawPayload?: Record<string, unknown>;
   assignedByUserId?: string | null;
   allowReopen?: boolean;
@@ -111,7 +113,9 @@ export async function fulfillOrgSubscriptionPayment(input: {
       provider_reference: input.providerReference ?? row.provider_reference,
       payment_method_type: input.paymentMethodType ?? null,
       raw_webhook_payload: input.rawPayload ?? null,
-      provider_payment_id: input.rawPayload ? extractPaidPaymentId(input.rawPayload) : null,
+      provider_payment_id:
+        input.providerPaymentId ??
+        (input.rawPayload ? extractPaidPaymentId(input.rawPayload) : null),
       failure_reason: null,
       applied: null,
       review_reason: null,
