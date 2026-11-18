@@ -76,7 +76,7 @@ Platform net as a function of `H`: `net(H) = slope × H + intercept` with `slope
 
 ## Phases
 
-### Phase 1 — Money path (server)
+### Phase 1 — Money path (server) ✓
 
 - Migration `<ts>_parking_guest_fee.sql`: add `guest_fee_pct NUMERIC(5,4) NOT NULL DEFAULT 0.05`, `guest_fee_fixed NUMERIC(12,2) NOT NULL DEFAULT 15` to `platform_parking_settings` (CHECK `0..1`, `>= 0`); add `parking_payment_transactions.guest_fee_total`.
 - `parkingPlatformSettings.ts`: add `guestFeePct`, `guestFeeFixed`; delete `resolveParkingGuestNightlyRate` and the `guestRate*` fields.
@@ -85,7 +85,7 @@ Platform net as a function of `H`: `net(H) = slope × H + intercept` with `slope
 - Dashboard ledger reads (`dashboardService`, `parking-payments`, `parking-payouts`) expose `guestFeeTotal`.
 - **Acceptance:** `cd supabase/functions && deno test` on `parkingSettlement_test.ts`, `parkingGuestFee_test.ts`, `parkingPaymentOrchestrator_test.ts` pass; guest charge `= H + F`, host net `= H × (1 − c)`, platform net `> 0` at ₱100 for both channels.
 
-### Phase 2 — Public price + ranking
+### Phase 2 — Public price + ranking ✓
 
 - `parkingBroadcastRanking.ts`: remove `isPriceCappedOut` and the platform-settings read; keep rank + dedupe.
 - `parkingScope.ts`, `publicListingCards.ts`: `ratePerNight` and pricing DTO from host `weekday/weekendNightlyRate`.
@@ -93,7 +93,7 @@ Platform net as a function of `H`: `net(H) = slope × H + intercept` with `slope
 - Update `parkingHardeningGates.test.ts` (it asserts the old `pls_refresh_parking` shape).
 - **Acceptance:** Deno ranking test keeps a ₱5,000 candidate and orders cheapest-first; public card test shows host weekday rate; `parkingHardeningGates.test.ts` passes.
 
-### Phase 3 — Host rate validation
+### Phase 3 — Host rate validation ✓
 
 - `parkingPricing.ts`: `validateMoneyField` gets a `{ min }` option; base rates and every override must be `>= 100` (`"Weekday rate must be at least ₱100"`); remove `assertWithinGuestRateCap`, `isWeekendRateDay`; keep the `999_999_999` ceiling. Also validate **step 50 is a UI hint only** (server accepts any ≥ ₱100 so existing ₱325 rates and API clients do not break).
 - `parking-pricing/index.ts`: use the shared validator for base rates (drop the inline `>= 0` check).
@@ -101,7 +101,7 @@ Platform net as a function of `H`: `net(H) = slope × H + intercept` with `slope
 - **Existing host rates below ₱100:** do not mutate data. Reads return the stored value; the form shows it, flags "Minimum ₱100", and disables Save until fixed. Checkout still charges the stored rate, so no in-flight booking breaks.
 - **Acceptance:** handler test: PATCH 99 → 400, 100 → 200, override 99 → 400, no max rejection at ₱50,000.
 
-### Phase 4 — Host Pricing UI
+### Phase 4 — Host Pricing UI ✓
 
 - `ParkingPricingRatesFormCard.tsx`: `min={100}`, `step={50}`, clearable draft, empty draft never saves, Save disabled if empty or `< 100`. Preview rows: **Guests pay** (`H + F`), **Platform fee** (commission on host rate), **You receive** (`H − C`). Remove the amber above-guest warning and `guestRate*` props.
 - `ParkingDirectLinkCard.tsx`: 5% vs 10% comparison on the host weekday rate.
@@ -110,20 +110,20 @@ Platform net as a function of `H`: `net(H) = slope × H + intercept` with `slope
 - Unsaved-changes guard stays on the form; verify at 375 / 768 / 1024px.
 - **Acceptance:** `bun run test` (Vitest) for `parkingPayout.test.ts`; Playwright `@ci` host pricing spec sets ₱350, sees guests pay ₱15 + 5% on top, sees ₱99 blocked.
 
-### Phase 5 — Super admin
+### Phase 5 — Super admin ✓
 
 - `platform-parking-settings/index.ts`: remove guest-rate fields; add `guestFeePct` (0..1) and `guestFeeFixed` (≥ 0); run `checkParkingNoLoss` on the merged settings and return 400 with the shortfall if it fails.
 - `SuperAdminParkingPayoutsPage.tsx`, `usePlatformParkingSettings.ts`: fee inputs, preview table, inline no-loss warning.
 - Emit `activity_log` for the settings save if the handler already does; otherwise `activity-log: N/A — platform-level config, not an org/property/parking mutation` (verify during build).
 - **Acceptance:** handler test: settings with `commission 0.01, fee 0` → 400; defaults → 200. Playwright `@ci`: payouts page has no guest-rate inputs and shows the fee inputs.
 
-### Phase 6 — Guest-visible totals
+### Phase 6 — Guest-visible totals ✓
 
 - Anywhere a guest sees a payable parking total (status page, pay page, form summary, receipt/email) shows **rent + service fee = total** from the snapshotted `guest_fee_total`, never re-derived.
 - Public cards / detail show the **host nightly rate** as "from ₱X / night" with a "service fee at checkout" hint (no fee in the headline).
 - **Acceptance:** Playwright `@ci` (mocked edges): card shows the host rate; pay page shows the fee line and the total equals PayMongo `amountCentavos`.
 
-### Phase 7 — Docs, FAQ, cleanup
+### Phase 7 — Docs, FAQ, cleanup ✓
 
 - `docs/guides/routes/org/parking/pricing.md`, `docs/guides/routes/admin/parking-payouts.md`, finance guide, FAQ parking price Qs + host-facing knowledge Q&A, `docs/PROJECT.md` (Phase 3/4 payment blurb), `docs/architecture/data-model.md`, `.cursor/rules/parking-workflow.mdc` (L164, 261, 281, 560 cap references), `docs/archive/operations/migration-runbook.md`.
 - Run `check:support-content` and `check:ai-knowledge-coverage`.
@@ -200,3 +200,19 @@ bun run check:support-content && bun run check:ai-knowledge-coverage
 - **Prod deploy** needs the user's `kamewave`; everything is built and verified locally first. Deploy order: migrations, then functions, then UI.
 - The platform estimates processor cost (`payment_fee_*`); if PayMongo changes its rate, super admin must update it or the no-loss guard checks stale numbers.
 - Guests now see a service fee line; FAQ and copy must say so plainly.
+
+## Verification results
+
+Branch `feat/host-set-parking-pricing`, run on the worktree with `supabase/.env.local` moved aside (it injects `TURNSTILE_SECRET_KEY`, which makes five unrelated handler tests demand human verification; develop passes the same way).
+
+| Gate                                                                                                           | Result                                                                                       |
+| -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| type-check, lint (0 errors)                                                                                    | pass                                                                                         |
+| Vitest (6460) and dom tests                                                                                    | pass                                                                                         |
+| Deno `_shared` (2065) and handlers (1448)                                                                      | pass                                                                                         |
+| support-content, ai-knowledge-coverage, migration security and version guards                                  | pass                                                                                         |
+| Playwright smoke                                                                                               | 267 pass, 2 flaky under load (voice consent, guest form submit); both pass when re-run alone |
+| Playwright `@ci` (407 pass, 34 skipped), build, bundle budgets, preload, source-map and blocking-script guards | pass                                                                                         |
+| Phase 7 acceptance grep                                                                                        | pass (only tests, historical migrations and workflow docs remain)                            |
+
+Not done: no production deploy (needs `kamewave`); `geoduck` stale soft-cap edits untouched.
