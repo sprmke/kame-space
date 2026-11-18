@@ -25,6 +25,7 @@ import { SendCustomTemplateDialog } from '@/features/dashboard/bookings/componen
 import { TemplateSectionImageField } from '@/features/dashboard/bookings/components/property-templates/TemplateSectionImageField';
 import {
   usePropertyTemplatePreview,
+  useSendPropertyTemplateTestEmail,
   type GuestTemplatePhase,
 } from '@/features/dashboard/bookings/hooks/usePropertyTemplates';
 import { useUploadPropertyTemplateAsset } from '@/features/dashboard/bookings/hooks/useUploadPropertyTemplateAsset';
@@ -52,6 +53,7 @@ import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate'
 import { bottomTabBarOffsetClassName } from '@/components/mobile/BottomTabBar';
 import { ResponsiveOverflowMenu } from '@/components/mobile/ResponsiveOverflowMenu';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   ResponsiveModal,
   ResponsiveModalContent,
@@ -97,6 +99,7 @@ type Props = {
     sectionImageUrl?: string | null;
     guestVisible?: boolean;
     guestPhase?: GuestTemplatePhase;
+    subject?: string | null;
   }) => Promise<void>;
   onReset?: () => Promise<void> | void;
   onDelete?: () => void;
@@ -132,6 +135,7 @@ export function PropertyTemplateEditorPane({
   const [sectionImageUrl, setSectionImageUrl] = React.useState(template.sectionImageUrl);
   const [guestVisible, setGuestVisible] = React.useState(template.guestVisible);
   const [guestPhase, setGuestPhase] = React.useState<GuestTemplatePhase>(template.guestPhase);
+  const [subject, setSubject] = React.useState(template.subject ?? '');
   const [sectionImagePreviewBust, setSectionImagePreviewBust] = React.useState(() =>
     template.updatedAt ? Date.parse(template.updatedAt) || 0 : 0
   );
@@ -144,6 +148,7 @@ export function PropertyTemplateEditorPane({
   const editorRef = React.useRef<RichTextEditorHandle>(null);
   const previewIframeRef = React.useRef<HTMLIFrameElement>(null);
   const { mutateAsync: fetchPreview, isPending: previewPending } = usePropertyTemplatePreview();
+  const { mutateAsync: sendTestEmail, isPending: sendingTest } = useSendPropertyTemplateTestEmail();
   const { canUse: canUseCustomTemplates, isLoading: customTemplatesLoading } =
     useFeatureGate('customTemplates');
   const { open: openUpgradeModal } = useUpgradeModal();
@@ -162,12 +167,14 @@ export function PropertyTemplateEditorPane({
     setSectionImageUrl(template.sectionImageUrl);
     setGuestVisible(template.guestVisible);
     setGuestPhase(template.guestPhase);
+    setSubject(template.subject ?? '');
     setSectionImagePreviewBust(template.updatedAt ? Date.parse(template.updatedAt) || 0 : 0);
   }, [
     baselineContent,
     template.sectionImageUrl,
     template.guestVisible,
     template.guestPhase,
+    template.subject,
     template.updatedAt,
   ]);
 
@@ -184,8 +191,9 @@ export function PropertyTemplateEditorPane({
     content !== baselineContent ||
     sectionImageUrl !== template.sectionImageUrl ||
     guestVisible !== template.guestVisible ||
-    guestPhase !== template.guestPhase;
-  const isEmail = template.category === 'email';
+    guestPhase !== template.guestPhase ||
+    subject !== (template.subject ?? '');
+  const isEmail = template.category === 'email' || template.category === 'message';
   const isCustom = template.category === 'custom';
   const isStandard = template.category === 'standard';
   /** Email + custom saves need Starter+; standard templates are free. */
@@ -210,7 +218,13 @@ export function PropertyTemplateEditorPane({
     onSave: async () => {
       if (openStarterUpgradeIfNeeded()) return false;
       try {
-        await onSave({ content, sectionImageUrl, guestVisible, guestPhase });
+        await onSave({
+          content,
+          sectionImageUrl,
+          guestVisible,
+          guestPhase,
+          subject: subject.trim() || null,
+        });
         return true;
       } catch {
         return false;
@@ -260,6 +274,16 @@ export function PropertyTemplateEditorPane({
     },
     [activeTab]
   );
+
+  const handleSendTest = React.useCallback(() => {
+    void sendTestEmail({
+      templateKey: template.templateKey,
+      category: template.category,
+      content,
+      subject: subject.trim() || null,
+      name: template.name,
+    });
+  }, [content, sendTestEmail, subject, template.category, template.name, template.templateKey]);
 
   const loadPreview = React.useCallback(async () => {
     if (!isEmail) return;
@@ -356,6 +380,63 @@ export function PropertyTemplateEditorPane({
             ) : null}
           </div>
         </div>
+
+        {isEmail ? (
+          <div className="border-separator space-y-2 border-t px-3 py-2 sm:px-4">
+            <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+              {template.recipient ? (
+                <span>
+                  To:{' '}
+                  {template.recipient === 'guest'
+                    ? 'Guest'
+                    : template.recipient === 'team'
+                      ? 'Your team'
+                      : 'Building admin'}
+                </span>
+              ) : null}
+              {template.trigger ? <span>When: {template.trigger}</span> : null}
+              {template.automationToggleKey ? (
+                <span>
+                  Automation:{' '}
+                  {template.automationPlanBlocked
+                    ? 'Needs plan'
+                    : template.automationEnabled
+                      ? 'On'
+                      : 'Off'}
+                </span>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor={`template-subject-${template.templateKey}`}
+                className="text-xs font-medium"
+              >
+                Subject
+              </label>
+              <Input
+                id={`template-subject-${template.templateKey}`}
+                value={subject}
+                onChange={(event) => setSubject(event.target.value)}
+                placeholder={template.defaultSubject ?? ''}
+                disabled={!canEdit || template.subjectLocked}
+                className="h-8 text-xs"
+              />
+              {template.subjectLocked ? (
+                <span className="text-muted-foreground shrink-0 text-[11px]">Fixed</span>
+              ) : null}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={handleSendTest}
+                disabled={!canEdit || sendingTest}
+              >
+                {sendingTest ? 'Sending…' : 'Send test'}
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         {/* Wraps rather than clips: at `lg` the pane can be ~400px wide, which is
          * not enough for the view switch and every action on one row. */}
@@ -456,9 +537,13 @@ export function PropertyTemplateEditorPane({
                     disabled={saving}
                     onClick={() => {
                       if (openStarterUpgradeIfNeeded()) return;
-                      void onSave({ content, sectionImageUrl, guestVisible, guestPhase }).catch(
-                        () => undefined
-                      );
+                      void onSave({
+                        content,
+                        sectionImageUrl,
+                        guestVisible,
+                        guestPhase,
+                        subject: subject.trim() || null,
+                      }).catch(() => undefined);
                     }}
                     aria-label={saving ? 'Saving' : 'Save'}
                     title={saving ? 'Saving…' : 'Save'}
@@ -537,7 +622,7 @@ export function PropertyTemplateEditorPane({
           )
         ) : (
           <>
-            {isCustom ? (
+            {isCustom || isStandard ? (
               <div className="border-border bg-muted/20 space-y-3 rounded-xl border p-3">
                 <label
                   htmlFor="template-guest-visible"

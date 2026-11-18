@@ -297,18 +297,20 @@ One server module, `_shared/propertyTemplateCatalog.ts`, exports every token wit
 
 ### Phase 3: Groups, guide visibility, subjects, test send
 
-- [ ] Migration `supabase/migrations/<ts>_property_template_contents_v2.sql`: add `subject TEXT NULL`, `default_hash TEXT NULL`; widen `category` CHECK to include `message`; data step converts host-owned `email` rows to `message`. Grants unchanged (edge-only table).
-- [ ] `upsertPropertyTemplateRow` / `updateCustomTemplateRow`: allow `guest_visible` / `guest_phase` on `standard` rows; persist `subject` for unlocked email templates; write `default_hash` on save.
-- [ ] Stay guide + trip page: read built-in guide visibility (row or registry default), apply `condition`, render by `chapter` (stay guide) and `defaultPhase` / row phase (trip page "From your host" area, built-ins before custom). `guestStayGuide.ts`, `guestTripContent.ts`, `mapStayGuideData.ts`, admin preview `buildSampleStayGuide`.
-- [ ] Host-owned `standard` templates: chapter picker (default Make yourself at home) + Show to guests.
-- [ ] Rail + filters: `TemplateLibraryRail.tsx`, `TemplateLibraryCategoryFilter.tsx`, `templateLibrary.ts` (group order, chapter sub-labels, Not shown to guests badge, Building admin hidden when not applicable).
-- [ ] `AddCustomTemplateDialog.tsx`: targets Stay guide, Guest messages, folders, Custom (D4).
-- [ ] Email header in `PropertyTemplateEditorPane.tsx`: To, When, Automation status link, Subject field (read-only with a lock note for GAF/pet), Send test. Phone: header collapses into one "Details" row opening a bottom sheet; Send test and Reset move into the overflow menu.
-- [ ] Settings → Email automations: **Edit template** link per row; new rows for Arrival reminder and Parking reminder. `ui/src/features/dashboard/org/lib/propertyEmailAutomation.ts`, `PropertyEmailAutomationsSection.tsx`.
-- [ ] New edge function `send-property-template-test-email` (`serveAdmin`): renders the draft (content + subject) with a sample booking and real property data, sends to the caller's own account email with subject prefix `[Test]`, checks suppression, 10 sends per user per hour. Add `static_files` for `_shared/email-templates/**` in `supabase/config.toml`.
-- [ ] Preview: `property-templates-preview` renders standard and message templates server-side too (same var pipeline as send), and returns the rendered subject.
-- [ ] Dirty state includes subject and visibility (`propertyTemplateEditorHasChanges`), so the existing unsaved-changes guard covers them.
-- [ ] Tests: settings function handler tests (create targets, visibility on built-ins, subject lock, validation), Vitest for rail grouping, Playwright `dashboardModulesSmoke.spec.ts` updated (groups, cancellation templates visible, subject edit, test send mocked).
+- [x] Migration `supabase/migrations/20261343001100_property_template_contents_v2.sql`: `subject TEXT NULL`, `default_hash TEXT NULL`, `message` added to the category check, host-owned email rows converted to message.
+- [x] `upsertPropertyTemplateRow` / `updateCustomTemplateRow`: `guest_visible` / `guest_phase` now allowed on standard rows, `subject` persisted (locked subjects ignored), `default_hash` written from the current default.
+- [x] Stay guide reads built-in guide visibility from the row, falling back to the registry default; `chapter` returned per section and the guest page groups by it.
+- [ ] Trip page phase filtering for built-in sections. Check-in and check-out instructions remain status-driven.
+- [x] Show to guests on host-owned and built-in standard templates. The chapter is derived from the registry, so a separate chapter picker was not needed.
+- [x] Rail + filters: five registry groups, Messages filter, not-organisable built-ins, Building admin hidden when not applicable.
+- [ ] Not shown to guests rail badge and the New default available badge with compare. Both are Phase 5 UI.
+- [x] Add template targets: Stay guide, folders, Custom. Guest emails, Building admin and Team alerts are not targets; Guest messages targets arrive with Phase 6.
+- [x] Email header: To, When, Automation (On / Off / Needs plan), Subject (read-only with a Fixed note for GAF and pet) and Send test.
+- [x] Settings -> Email automations: **Edit template** link per row. Arrival and parking reminder rows arrive with Phase 4.
+- [x] New edge function `send-property-template-test-email`: renders the draft with real property data, sends to the caller's own address with a `[Test]` subject, checks suppression, 10 sends per user per hour, requires the edit leaf of that template's category.
+- [x] Preview returns the rendered subject; the card and the test send use it.
+- [x] Dirty state includes subject and visibility, so the unsaved-changes guard covers them.
+- [ ] Tests: settings handler tests and the Playwright templates shell update for subject edit and test send.
 
 ### Phase 4: Move hardcoded emails into templates
 

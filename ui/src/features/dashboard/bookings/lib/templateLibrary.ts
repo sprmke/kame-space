@@ -34,7 +34,7 @@ import type { LucideIcon } from 'lucide-react';
  */
 export type TemplateLibraryGroupKind = 'builtin' | 'folder' | 'ungrouped';
 
-export type TemplateCategoryFilter = 'all' | 'standard' | 'email' | 'custom';
+export type TemplateCategoryFilter = 'all' | 'standard' | 'messages' | 'email' | 'custom';
 
 export type TemplatePlacement = {
   category: PropertyTemplateCategory;
@@ -263,6 +263,7 @@ function effectiveGroup(template: PropertyTemplateDto): PropertyTemplateGroup | 
   if (!isHostOwnedTemplateKey(template.templateKey)) return null;
   if (template.category === 'standard') return 'stay-guide';
   if (template.category === 'email') return 'guest-emails';
+  if (template.category === 'message') return 'guest-messages';
   return null;
 }
 

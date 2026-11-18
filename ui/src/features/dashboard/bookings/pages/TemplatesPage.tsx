@@ -203,6 +203,7 @@ export function TemplatesPage() {
       sectionImageUrl?: string | null;
       guestVisible?: boolean;
       guestPhase?: GuestTemplatePhase;
+      subject?: string | null;
     }
   ) => {
     await requestVerifiedWrite(async (settingsVerificationToken) => {

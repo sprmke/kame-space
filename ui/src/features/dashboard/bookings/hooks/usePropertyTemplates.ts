@@ -6,7 +6,7 @@ import { scopedFunctionsUrl, usePropertyIdParam } from '@/features/dashboard/org
 import { friendlyToastError } from '@/lib/feedback/toastMessages';
 import { supabase } from '@/lib/supabase/client';
 
-export type PropertyTemplateCategory = 'standard' | 'email' | 'custom';
+export type PropertyTemplateCategory = 'standard' | 'email' | 'message' | 'custom';
 
 export type PropertyTemplateGroup =
   'stay-guide' | 'guest-messages' | 'guest-emails' | 'building-admin' | 'team-alerts';
@@ -63,6 +63,10 @@ export type PropertyTemplateDto = {
   requiresEdit: boolean;
   appliesWhen: 'gaf-or-pet-required' | null;
   placeholderKeys: string[];
+  subject: string | null;
+  newDefaultAvailable: boolean;
+  automationEnabled: boolean | null;
+  automationPlanBlocked: boolean;
 };
 
 /** Mirrors `GUEST_TEMPLATE_PHASES` in `_shared/propertyTemplates.ts`. */
@@ -84,6 +88,42 @@ export type PropertyTemplatesData = {
   /** Save-time token warnings from the server. */
   warnings?: string[];
 };
+
+export function useSendPropertyTemplateTestEmail() {
+  const propertyId = usePropertyIdParam();
+
+  return useMutation({
+    mutationFn: async (input: {
+      templateKey: string;
+      category: PropertyTemplateCategory;
+      content: string;
+      subject?: string | null;
+      name?: string;
+    }) => {
+      const headers = await authHeaders();
+      const res = await fetch(
+        scopedFunctionsUrl('/send-property-template-test-email', propertyId),
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(input),
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? 'Could not send test email');
+      }
+      const json = (await res.json()) as { data?: { sentTo?: string } };
+      return { sentTo: json.data?.sentTo ?? '' };
+    },
+    onSuccess: (data) => {
+      toast.success(data.sentTo ? `Test sent to ${data.sentTo}` : 'Test sent');
+    },
+    onError: (error: Error) => {
+      toast.error(friendlyToastError(error, 'Could not send test email'));
+    },
+  });
+}
 
 export const PROPERTY_TEMPLATES_QUERY_KEY = ['property-templates'] as const;
 
@@ -187,6 +227,7 @@ export function usePropertyTemplateMutations() {
       /** Custom templates only: show it to guests, and at which trip stage. */
       guestVisible?: boolean;
       guestPhase?: GuestTemplatePhase;
+      subject?: string | null;
       silent?: boolean;
       publicPagesAutosaveGate?: boolean;
       settingsVerificationToken?: string;
@@ -202,6 +243,7 @@ export function usePropertyTemplateMutations() {
           sectionImageUrl: input.sectionImageUrl,
           ...(input.guestVisible === undefined ? {} : { guestVisible: input.guestVisible }),
           ...(input.guestPhase === undefined ? {} : { guestPhase: input.guestPhase }),
+          ...(input.subject === undefined ? {} : { subject: input.subject }),
           ...(input.publicPagesAutosaveGate ? { publicPagesAutosaveGate: true } : {}),
           ...(input.settingsVerificationToken
             ? { settingsVerificationToken: input.settingsVerificationToken }

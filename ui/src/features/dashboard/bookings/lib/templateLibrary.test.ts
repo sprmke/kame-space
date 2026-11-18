@@ -47,6 +47,10 @@ function template(overrides: Partial<PropertyTemplateDto> = {}): PropertyTemplat
     requiresEdit: false,
     appliesWhen: null,
     placeholderKeys: [],
+    subject: null,
+    newDefaultAvailable: false,
+    automationEnabled: null,
+    automationPlanBlocked: false,
     ...overrides,
   };
   if (merged.group || merged.category === 'custom') return merged;

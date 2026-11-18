@@ -12,8 +12,9 @@ import { condoTemplateDefault } from './propertyTemplateDefaults/index.ts';
 import { propertyTemplatePlaceholderKeys } from './propertyTemplateCatalog.ts';
 import { resolveDocumentRequirements } from './documentRequirements.ts';
 import { buildPropertyPlaceholderVars } from './propertyTemplatePropertyVars.ts';
+import { resolvePropertyAutomationState } from './propertyAutomationToggles.ts';
 
-export type PropertyTemplateCategory = 'standard' | 'email' | 'custom';
+export type PropertyTemplateCategory = 'standard' | 'email' | 'message' | 'custom';
 
 /**
  * Rail group. `category` stays the behaviour (guide section, automated email, host-owned);
@@ -137,10 +138,14 @@ export type PropertyTemplateRow = {
   content: string;
   section_image_url: string | null;
   folder_id: string | null;
-  /** Custom templates only: render this template on the guest trip page and stay guide. */
+  /** Guide sections and custom templates: render this template for guests. */
   guest_visible?: boolean | null;
-  /** Custom templates only: which trip stage shows it. Null means `always`. */
+  /** Guide sections and custom templates: which trip stage shows it. Null means `always`. */
   guest_phase?: string | null;
+  /** Email subject override. Null falls through to the shipped default. */
+  subject?: string | null;
+  /** Hash of the shipped default at save time, for the "new default available" badge. */
+  default_hash?: string | null;
   updated_at: string;
 };
 
@@ -195,6 +200,14 @@ export type PropertyTemplateDto = {
   condition: PropertyTemplateCondition | null;
   requiresEdit: boolean;
   appliesWhen: 'gaf-or-pet-required' | null;
+  /** Saved subject override, or null when the shipped default applies. */
+  subject: string | null;
+  /** True when the shipped default changed after this row was customized. */
+  newDefaultAvailable: boolean;
+  /** Automation master switch state, or null for templates that never fire automatically. */
+  automationEnabled: boolean | null;
+  /** Would be on per the property's setting but forced off by the plan tier. */
+  automationPlanBlocked: boolean;
 };
 
 type BuiltinTemplateContent = {
@@ -667,6 +680,26 @@ export function normalizeTemplateContentForCompare(content: string, templateKey?
     .trim();
 }
 
+/**
+ * Stable hash of a shipped default (content + subject). FNV-1a 32-bit is enough to notice a
+ * default changed; it is not a security primitive.
+ */
+export function hashTemplateDefault(content: string, subject?: string | null): string {
+  const source = `${normalizeTemplateContentForCompare(content)}\n${(subject ?? '').trim()}`;
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16);
+}
+
+export function templateDefaultHash(templateKey: string): string | null {
+  const builtin = getBuiltinPropertyTemplate(templateKey);
+  if (!builtin) return null;
+  return hashTemplateDefault(builtin.defaultContent, builtin.defaultSubject);
+}
+
 export function validateCustomTemplateName(name: string): string | null {
   const trimmed = name.trim();
   if (!trimmed) return 'Template name is required';
@@ -721,14 +754,17 @@ export async function upsertPropertyTemplateRow(input: {
   category: PropertyTemplateCategory;
   name?: string | null;
   content: string;
+  /** Email subject override. Locked subjects (GAF, pet) ignore it. */
+  subject?: string | null;
   sectionImageUrl?: string | null;
-  /** Custom templates only; built-ins always live in their fixed section. */
+  /** Guide sections and custom templates; ignored for email and message rows. */
   folderId?: string | null;
-  /** Custom templates only: render it for guests. Built-ins are never guest-visible here. */
+  /** Guide sections and custom templates: render it for guests. */
   guestVisible?: boolean;
-  /** Custom templates only: the trip stage that shows it. */
+  /** Guide sections and custom templates: the trip stage that shows it. */
   guestPhase?: GuestTemplatePhase;
 }): Promise<PropertyTemplateRow> {
+  const builtin = getBuiltinPropertyTemplate(input.templateKey);
   const patch: Record<string, unknown> = {
     property_id: input.propertyId,
     template_key: input.templateKey,
@@ -736,6 +772,9 @@ export async function upsertPropertyTemplateRow(input: {
     content: normalizeStoredTemplateContent(input.content, input.templateKey),
     updated_at: new Date().toISOString(),
   };
+  if (builtin) {
+    patch.default_hash = hashTemplateDefault(builtin.defaultContent, builtin.defaultSubject);
+  }
   /*
    * Only write `name` when the caller supplied one. An unconditional
    * `name: input.name ?? null` wiped the stored name on every content save,
@@ -744,19 +783,21 @@ export async function upsertPropertyTemplateRow(input: {
   if (input.name !== undefined) {
     patch.name = input.name?.trim() || null;
   }
+  if (input.subject !== undefined && !builtin?.subjectLocked) {
+    patch.subject = input.subject?.trim() || null;
+  }
   if (input.sectionImageUrl !== undefined) {
     patch.section_image_url = input.sectionImageUrl?.trim() || null;
   }
   if (input.folderId !== undefined) {
     patch.folder_id = input.category === 'custom' ? input.folderId : null;
   }
-  // Guest visibility only means anything for a custom template: built-ins already reach the
-  // guest through the trip page's own sections.
+  const allowsGuestVisibility = input.category === 'custom' || input.category === 'standard';
   if (input.guestVisible !== undefined) {
-    patch.guest_visible = input.category === 'custom' ? input.guestVisible : false;
+    patch.guest_visible = allowsGuestVisibility ? input.guestVisible : false;
   }
   if (input.guestPhase !== undefined) {
-    patch.guest_phase = input.category === 'custom' ? input.guestPhase : null;
+    patch.guest_phase = allowsGuestVisibility ? input.guestPhase : null;
   }
 
   const { data, error } = await supabaseAdmin()
@@ -879,15 +920,19 @@ function rowToDto(
   builtin?: PropertyTemplateDefinition
 ): PropertyTemplateDto {
   const defaultContent = builtin?.defaultContent ?? '';
+  const isDefault =
+    normalizeTemplateContentForCompare(row.content, row.template_key) ===
+    normalizeTemplateContentForCompare(defaultContent, row.template_key);
+  const currentDefaultHash = builtin
+    ? hashTemplateDefault(builtin.defaultContent, builtin.defaultSubject)
+    : null;
   return {
     templateKey: row.template_key,
     name: row.name?.trim() || builtin?.label || row.template_key,
     category: row.category,
     content: normalizeStoredTemplateContent(row.content, row.template_key),
     defaultContent,
-    isDefault:
-      normalizeTemplateContentForCompare(row.content, row.template_key) ===
-      normalizeTemplateContentForCompare(defaultContent, row.template_key),
+    isDefault,
     description: builtin?.description ?? null,
     previewTemplateSlug: builtin?.previewTemplateSlug ?? null,
     sectionImageUrl: String(row.section_image_url ?? '').trim() || null,
@@ -909,6 +954,16 @@ function rowToDto(
     requiresEdit: builtin?.requiresEdit ?? false,
     appliesWhen: builtin?.appliesWhen ?? null,
     placeholderKeys: [...propertyTemplatePlaceholderKeys(row.template_key, row.category)],
+    subject: builtin?.subjectLocked ? null : row.subject?.trim() || null,
+    newDefaultAvailable: Boolean(
+      builtin &&
+      !isDefault &&
+      row.default_hash &&
+      currentDefaultHash &&
+      row.default_hash !== currentDefaultHash
+    ),
+    automationEnabled: null,
+    automationPlanBlocked: false,
   };
 }
 
@@ -941,6 +996,10 @@ function builtinToDto(builtin: PropertyTemplateDefinition): PropertyTemplateDto 
     requiresEdit: builtin.requiresEdit,
     appliesWhen: builtin.appliesWhen,
     placeholderKeys: [...propertyTemplatePlaceholderKeys(builtin.key, builtin.category)],
+    subject: null,
+    newDefaultAvailable: false,
+    automationEnabled: null,
+    automationPlanBlocked: false,
   };
 }
 
@@ -951,11 +1010,12 @@ export async function serializePropertyTemplatesForAdmin(propertyId: string): Pr
   /** Property-data tokens that are empty for this property, for the editor hint row. */
   propertyEmptyPlaceholders: string[];
 }> {
-  const [rows, folderRows, needsBuildingAdmin, propertyVars] = await Promise.all([
+  const [rows, folderRows, needsBuildingAdmin, propertyVars, automation] = await Promise.all([
     listPropertyTemplateRows(propertyId),
     listPropertyTemplateFolders(propertyId),
     propertyAppliesBuildingAdminTemplates(propertyId),
     buildPropertyPlaceholderVars({ propertyId }),
+    resolvePropertyAutomationState(propertyId).catch(() => null),
   ]);
   const rowByKey = new Map(rows.map((r) => [r.template_key, r]));
 
@@ -970,6 +1030,15 @@ export async function serializePropertyTemplatesForAdmin(propertyId: string): Pr
   for (const row of rows) {
     if (!isCustomTemplateKey(row.template_key)) continue;
     templates.push(rowToDto(row));
+  }
+
+  if (automation) {
+    for (const template of templates) {
+      const key = template.automationToggleKey;
+      if (!key) continue;
+      template.automationEnabled = automation.toggles[key] ?? null;
+      template.automationPlanBlocked = automation.planBlockedKeys.includes(key);
+    }
   }
 
   const countByFolder = new Map<string, number>();
@@ -1154,9 +1223,11 @@ export async function updateCustomTemplateRow(input: {
   folderId?: string | null;
   guestVisible?: boolean;
   guestPhase?: GuestTemplatePhase;
+  subject?: string | null;
 }): Promise<PropertyTemplateRow | null> {
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (input.name !== undefined) patch.name = input.name.trim();
+  if (input.subject !== undefined) patch.subject = input.subject?.trim() || null;
   if (input.category !== undefined) {
     patch.category = input.category;
     if (input.category !== 'custom') {

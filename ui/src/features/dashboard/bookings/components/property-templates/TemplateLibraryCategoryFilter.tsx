@@ -12,8 +12,9 @@ import { cn } from '@/lib/utils';
 
 const FILTER_OPTIONS: { value: TemplateCategoryFilter; label: string }[] = [
   { value: 'all', label: 'All types' },
-  { value: 'email', label: 'Emails' },
   { value: 'standard', label: 'Stay guide' },
+  { value: 'messages', label: 'Messages' },
+  { value: 'email', label: 'Emails' },
   { value: 'custom', label: 'Custom' },
 ];
 

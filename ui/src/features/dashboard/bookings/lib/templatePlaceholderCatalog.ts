@@ -235,7 +235,7 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
 
 export function propertyPlaceholderKeysForTemplate(
   templateKey: string,
-  category: 'standard' | 'email' | 'custom'
+  category: 'standard' | 'email' | 'message' | 'custom'
 ): readonly string[] {
   if (category === 'custom') return PROPERTY_CUSTOM_TEMPLATE_KEYS;
   return PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE[templateKey] ?? PROPERTY_CUSTOM_TEMPLATE_KEYS;
@@ -243,7 +243,7 @@ export function propertyPlaceholderKeysForTemplate(
 
 export function propertyPlaceholderLinesForTemplate(
   templateKey: string,
-  category: 'standard' | 'email' | 'custom'
+  category: 'standard' | 'email' | 'message' | 'custom'
 ): string[] {
   return placeholderLinesFromKeys(propertyPlaceholderKeysForTemplate(templateKey, category));
 }
@@ -254,7 +254,7 @@ export function propertyPlaceholderLinesForTemplate(
  */
 export function propertyPlaceholderLinesForDto(template: {
   templateKey: string;
-  category: 'standard' | 'email' | 'custom';
+  category: 'standard' | 'email' | 'message' | 'custom';
   placeholderKeys?: readonly string[] | null;
 }): string[] {
   if (template.placeholderKeys && template.placeholderKeys.length > 0) {

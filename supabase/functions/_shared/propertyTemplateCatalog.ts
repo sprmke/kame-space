@@ -183,9 +183,11 @@ const CUSTOM_TEMPLATE_KEYS = unique(
 
 export function propertyTemplatePlaceholderKeys(
   templateKey: string,
-  category: 'standard' | 'email' | 'custom'
+  category: 'standard' | 'email' | 'message' | 'custom'
 ): readonly string[] {
-  if (category === 'custom') return CUSTOM_TEMPLATE_KEYS;
+  if (category === 'custom' || category === 'message') {
+    return PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE[templateKey] ?? CUSTOM_TEMPLATE_KEYS;
+  }
   return PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE[templateKey] ?? CUSTOM_TEMPLATE_KEYS;
 }
 
@@ -229,7 +231,7 @@ function tokenKeysOf(html: string): string[] {
  */
 export function validatePropertyTemplateTokens(input: {
   templateKey: string;
-  category: 'standard' | 'email' | 'custom';
+  category: 'standard' | 'email' | 'message' | 'custom';
   group?: string | null;
   content: string;
   subject?: string | null;

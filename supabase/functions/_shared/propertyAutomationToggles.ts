@@ -96,7 +96,7 @@ async function loadAutomationTogglesRaw(propertyId: string): Promise<unknown> {
   return data?.automation_toggles ?? null;
 }
 
-async function resolvePropertyAutomationState(propertyId: string): Promise<{
+export async function resolvePropertyAutomationState(propertyId: string): Promise<{
   toggles: PropertyAutomationToggles;
   /** Plan-gated keys that would be on per the property's own setting but are forced off by tier. */
   planBlockedKeys: PropertyAutomationToggleKey[];

@@ -6,6 +6,7 @@ import { resolveAppSettings } from './appSettings.ts';
 import { buildGuestFacingPlaceholderVars, loadGuestFacingContactInfo } from './guestContactInfo.ts';
 import { loadPropertyEmailBranding } from './propertyEmailBranding.ts';
 import {
+  applyPropertyTemplatePlaceholders,
   renderPropertyTemplateSendEmail,
   type PropertyEmailTemplateKey,
 } from './propertyTemplateEmail.ts';
@@ -22,7 +23,9 @@ export async function renderPropertyTemplatePreview(input: {
   category: PropertyTemplateCategory;
   content: string;
   name?: string;
-}): Promise<{ html: string; mode: 'standard' | 'email-shell' }> {
+  /** Draft subject. Falls back to the shipped default. */
+  subject?: string | null;
+}): Promise<{ html: string; mode: 'standard' | 'email-shell'; subject: string }> {
   if (input.category === 'standard') {
     let resolvedContent = input.content;
     for (const [key, value] of Object.entries(PROPERTY_TEMPLATE_SAMPLE_VARS)) {
@@ -30,6 +33,7 @@ export async function renderPropertyTemplatePreview(input: {
     }
     return {
       mode: 'standard',
+      subject: '',
       html: `<!doctype html><html><head><meta charset="utf-8"/><style>
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:24px;color:#333;line-height:1.65;max-width:720px;margin:0 auto;font-size:15px}
         h1{font-size:1.875rem;font-weight:700;margin:1.5rem 0 .5rem}h2{font-size:1.5rem;font-weight:600;margin:1.25rem 0 .5rem}h3{font-size:1.25rem;font-weight:600;margin:1rem 0 .5rem}
@@ -78,5 +82,11 @@ export async function renderPropertyTemplatePreview(input: {
     contentOverride: previewContent,
   });
 
-  return { mode: 'email-shell', html };
+  const rawSubject =
+    input.subject?.trim() || getBuiltinPropertyTemplate(input.templateKey)?.defaultSubject || '';
+  const subject = applyPropertyTemplatePlaceholders(rawSubject, placeholderVars)
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return { mode: 'email-shell', html, subject };
 }

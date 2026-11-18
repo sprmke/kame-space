@@ -28,6 +28,7 @@ import { normalizeBlockLevelPlaceholdersInHtml } from './normalizeBlockLevelPlac
 import { normalizeEmailCalloutPlaceholders } from './normalizeEmailCalloutPlaceholders.ts';
 import {
   getBuiltinPropertyTemplate,
+  getPropertyTemplateRow,
   resolvePropertyTemplateContent,
   type PropertyTemplateKey,
 } from './propertyTemplates.ts';
@@ -150,6 +151,36 @@ function decorFlags(booking: {
     decor_flag: hasDecor ? '🎉 Has decor' : '',
     pet_flag: hasPets ? '🐶 Has pets' : '',
   };
+}
+
+/**
+ * Subject for an automated email: the host's override, else the shipped default, rendered with
+ * the same plain placeholders as the body. GAF and pet subjects stay locked because inbound
+ * approval parses them.
+ */
+export async function resolvePropertyTemplateSubject(input: {
+  propertyId?: string | null;
+  templateKey: string;
+  vars: Record<string, string>;
+  fallback: string;
+}): Promise<string> {
+  const builtin = getBuiltinPropertyTemplate(input.templateKey);
+  if (builtin?.subjectLocked) return input.fallback;
+
+  let rowSubject: string | null | undefined;
+  if (input.propertyId) {
+    try {
+      const row = await getPropertyTemplateRow(input.propertyId, input.templateKey);
+      rowSubject = row?.subject ?? null;
+    } catch (err) {
+      console.warn('[propertyTemplateEmail] subject lookup failed:', err);
+    }
+  }
+
+  const raw = rowSubject?.trim() || builtin?.defaultSubject?.trim() || '';
+  if (!raw) return input.fallback;
+  const rendered = applyPropertyTemplatePlaceholders(raw, input.vars).replace(/\s+/g, ' ').trim();
+  return rendered || input.fallback;
 }
 
 export function buildBookingPlaceholderVars(

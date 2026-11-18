@@ -43,6 +43,8 @@ export type PropertyAutomationToggleGroup = {
     label: string;
     recipient: string;
     trigger: string;
+    /** Template this email renders from. */
+    templateKey: string;
   }>;
 };
 
@@ -54,6 +56,7 @@ export const PROPERTY_AUTOMATION_TOGGLE_GROUPS: PropertyAutomationToggleGroup[] 
       {
         key: 'emailNewBookingRequest',
         label: 'New booking alert',
+        templateKey: 'email-new-booking-request',
         recipient: 'Team email',
         trigger: 'When a guest submits the booking form.',
       },
@@ -66,12 +69,14 @@ export const PROPERTY_AUTOMATION_TOGGLE_GROUPS: PropertyAutomationToggleGroup[] 
       {
         key: 'emailGafRequest',
         label: 'GAF request',
+        templateKey: 'email-gaf-request',
         recipient: 'Building admin email',
         trigger: 'When you approve a booking that needs building documents.',
       },
       {
         key: 'emailPetRequest',
         label: 'Pet request',
+        templateKey: 'email-pet-request',
         recipient: 'Building admin email',
         trigger: 'When you approve a booking that includes a pet.',
       },
@@ -84,24 +89,28 @@ export const PROPERTY_AUTOMATION_TOGGLE_GROUPS: PropertyAutomationToggleGroup[] 
       {
         key: 'emailBookingRequestReceived',
         label: 'Booking request received',
+        templateKey: 'email-booking-request-received',
         recipient: 'Guest email',
         trigger: 'When a guest submits the booking form.',
       },
       {
         key: 'emailBookingAcknowledgement',
         label: 'Booking acknowledgement',
+        templateKey: 'email-booking-acknowledgement',
         recipient: 'Guest email',
         trigger: 'When you approve the booking.',
       },
       {
         key: 'emailReadyForCheckin',
         label: 'Ready for check-in',
+        templateKey: 'email-ready-for-checkin',
         recipient: 'Guest email',
         trigger: 'When all required documents are approved.',
       },
       {
         key: 'emailSdRefundCheckout',
         label: 'Check-out and deposit refund',
+        templateKey: 'email-sd-refund-form-request',
         recipient: 'Guest email',
         trigger: 'Before check-out, using the timing above.',
       },
@@ -114,12 +123,14 @@ export const PROPERTY_AUTOMATION_TOGGLE_GROUPS: PropertyAutomationToggleGroup[] 
       {
         key: 'emailReviewRequest',
         label: 'Review request',
+        templateKey: 'email-review-request',
         recipient: 'Guest email',
         trigger: 'After check-out when the review window opens.',
       },
       {
         key: 'emailReviewReminder',
         label: 'Review reminder',
+        templateKey: 'email-review-reminder',
         recipient: 'Guest email',
         trigger: 'If the guest has not reviewed before the window closes.',
       },

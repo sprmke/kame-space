@@ -312,6 +312,8 @@ export type StayGuideSectionDto = {
   displayHeading: string;
   html: string;
   imageUrl: string | null;
+  /** Registry chapter, so the guest page can group new sections without a UI list. */
+  chapter: string | null;
   /** ISO timestamp from template row — used to cache-bust fixed storage paths. */
   imageUpdatedAt: string | null;
 };
@@ -658,9 +660,23 @@ async function buildGuestStayGuidePayload(
   const publicOrigin = settings.publicGuestAppOrigin;
   const contact = await loadGuestFacingContactInfo(propertyId, settings);
 
+  const { data: standardRows } = await supabaseAdmin()
+    .from('property_template_contents')
+    .select('template_key, guest_visible')
+    .eq('property_id', propertyId)
+    .eq('category', 'standard');
+  const visibilityByKey = new Map(
+    ((standardRows ?? []) as Array<{ template_key: string; guest_visible: boolean | null }>).map(
+      (row) => [String(row.template_key), row.guest_visible === true]
+    )
+  );
+
   const sectionKeys: StayGuideSectionKey[] = STAY_GUIDE_STANDARD_SECTION_KEYS.filter((key) => {
     if (options?.includeAllStandardSections) return true;
     if (key === 'parking-reminders') return Boolean(booking.need_parking);
+    const builtin = getBuiltinPropertyTemplate(key);
+    if (visibilityByKey.get(key) === false) return false;
+    if (!visibilityByKey.has(key) && builtin?.defaultGuestVisible === false) return false;
     return true;
   });
 
@@ -686,6 +702,7 @@ async function buildGuestStayGuidePayload(
       displayHeading: resolved.displayHeading,
       html: resolved.html,
       imageUrl: resolved.sectionImageUrl?.trim() || null,
+      chapter: builtin?.chapter ?? null,
       imageUpdatedAt: resolved.updatedAt,
     });
   }
