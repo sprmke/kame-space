@@ -23,23 +23,20 @@ import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 import { cn } from '@/lib/utils';
 import { formatStayBoundaryDateShort, formatTimeToAMPM } from '@/utils/format/dates';
 
-/** The section kinds that only Stay Guide produces (Showcase never emits these). */
-export function isStayGuideOnlySectionKind(kind: string): boolean {
-  return (
-    kind === 'passCard' || kind === 'checkInDocuments' || kind === 'chapter' || kind === 'quickNav'
-  );
-}
-
 type SharedProps = {
   data: ShowcaseData;
   section: ShowcaseResolvedSection;
   alt?: boolean;
   /** Template display-font class for the section heading (e.g. `font-fraunces`). */
   headingClassName?: string;
+  /** Template section-title size, so Stay Guide titles match that template's Showcase titles. */
+  headingSizeClassName?: string;
   containerClassName?: string;
   /** Small pill/eyebrow rendered above the heading, template-styled. */
   eyebrow?: ReactNode;
 };
+
+const DEFAULT_HEADING_SIZE = '@sm:text-3xl text-2xl font-semibold';
 
 const DEFAULT_CONTAINER = 'mx-auto max-w-4xl px-5 @md:px-8';
 
@@ -59,7 +56,7 @@ function DefaultEyebrow({ section }: { section: ShowcaseResolvedSection }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em]',
+        'inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em]',
         tokens.cardBorder,
         tokens.muted
       )}
@@ -82,7 +79,7 @@ function DocStatus({ status }: { status: 'ready' | 'pending' }) {
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em]',
+        'inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.1em]',
         tokens.cardBorder,
         status === 'ready' ? 'text-[hsl(var(--showcase-accent,var(--primary)))]' : tokens.muted
       )}
@@ -92,7 +89,13 @@ function DocStatus({ status }: { status: 'ready' | 'pending' }) {
   );
 }
 
-function StayGuidePassCard({ data, section, headingClassName, containerClassName }: SharedProps) {
+function StayGuidePassCard({
+  data,
+  section,
+  headingClassName,
+  headingSizeClassName,
+  containerClassName,
+}: SharedProps) {
   const { tokens } = useShowcaseTheme();
   const pass = data.stayGuide?.pass;
   if (!pass) return null;
@@ -122,7 +125,7 @@ function StayGuidePassCard({ data, section, headingClassName, containerClassName
         <ShowcaseReveal>
           <ShowcaseSectionHeading
             heading={section.heading}
-            headingClassName={cn('@sm:text-3xl text-2xl font-semibold', headingClassName)}
+            headingClassName={cn(headingSizeClassName ?? DEFAULT_HEADING_SIZE, headingClassName)}
             usesPreviewMock={section.usesPreviewMock}
           />
           {section.subheading ? (
@@ -136,7 +139,7 @@ function StayGuidePassCard({ data, section, headingClassName, containerClassName
             )}
           >
             <div className={cn('@sm:px-7 border-b px-5 py-4', tokens.cardBorder)}>
-              <p className={cn('text-[11px] font-bold uppercase tracking-[0.2em]', tokens.muted)}>
+              <p className={cn('text-xs font-bold uppercase tracking-[0.2em]', tokens.muted)}>
                 Guest
               </p>
               <p className="@sm:text-2xl mt-1 text-xl font-semibold">{pass.guestName || 'Guest'}</p>
@@ -152,7 +155,7 @@ function StayGuidePassCard({ data, section, headingClassName, containerClassName
                     tokens.cardBorder
                   )}
                 >
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--showcase-accent,var(--primary)))]">
+                  <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.18em] text-[hsl(var(--showcase-accent,var(--primary)))]">
                     <Icon className="size-3" aria-hidden />
                     {label}
                   </span>
@@ -204,6 +207,7 @@ function StayGuideCheckInDocs({
   section,
   alt,
   headingClassName,
+  headingSizeClassName,
   containerClassName,
   eyebrow,
 }: SharedProps) {
@@ -221,7 +225,7 @@ function StayGuideCheckInDocs({
           <div className="mb-3">{eyebrow ?? <DefaultEyebrow section={section} />}</div>
           <ShowcaseSectionHeading
             heading={section.heading}
-            headingClassName={cn('@sm:text-3xl text-2xl font-semibold', headingClassName)}
+            headingClassName={cn(headingSizeClassName ?? DEFAULT_HEADING_SIZE, headingClassName)}
             usesPreviewMock={section.usesPreviewMock}
           />
           {section.subheading ? (
@@ -250,7 +254,7 @@ function StayGuideCheckInDocs({
                       />
                       <span className="min-w-0 truncate text-sm font-medium">{doc.label}</span>
                       {doc.isPreviewSample ? (
-                        <span className={cn('shrink-0 text-[11px]', tokens.muted)}>Sample</span>
+                        <span className={cn('shrink-0 text-xs', tokens.muted)}>Sample</span>
                       ) : null}
                     </span>
                     <DocStatus status={doc.status} />
@@ -294,6 +298,7 @@ function StayGuideChapter({
   section,
   alt,
   headingClassName,
+  headingSizeClassName,
   containerClassName,
   eyebrow,
 }: SharedProps) {
@@ -312,11 +317,20 @@ function StayGuideChapter({
           <div className="mb-3">{eyebrow ?? <DefaultEyebrow section={section} />}</div>
           <ShowcaseSectionHeading
             heading={section.heading}
-            headingClassName={cn('@sm:text-3xl text-2xl font-semibold', headingClassName)}
+            headingClassName={cn(headingSizeClassName ?? DEFAULT_HEADING_SIZE, headingClassName)}
             usesPreviewMock={section.usesPreviewMock}
           />
         </ShowcaseReveal>
-        <div className="mt-6 space-y-8">
+        <div
+          className={cn(
+            'mt-6',
+            // One block keeps a readable measure; several sit side by side on wide screens so
+            // cards do not stretch to 130+ characters per line.
+            blocks.length > 1
+              ? '@3xl:grid-cols-2 @3xl:items-start grid grid-cols-1 gap-6'
+              : 'max-w-3xl'
+          )}
+        >
           {blocks.map((block, i) => {
             const content = (
               <>
@@ -360,6 +374,7 @@ function StayGuideNeedHelp({
   section,
   alt,
   headingClassName,
+  headingSizeClassName,
   containerClassName,
   eyebrow,
 }: SharedProps) {
@@ -379,7 +394,7 @@ function StayGuideNeedHelp({
           <div className="mb-3">{eyebrow ?? <DefaultEyebrow section={section} />}</div>
           <ShowcaseSectionHeading
             heading={section.heading}
-            headingClassName={cn('@sm:text-3xl text-2xl font-semibold', headingClassName)}
+            headingClassName={cn(headingSizeClassName ?? DEFAULT_HEADING_SIZE, headingClassName)}
           />
           {section.subheading ? (
             <p className={cn('mt-2 text-sm', tokens.muted)}>{section.subheading}</p>
@@ -405,9 +420,7 @@ function StayGuideNeedHelp({
                 </span>
               )}
               <div className="min-w-0">
-                <p
-                  className={cn('text-[11px] font-bold uppercase tracking-[0.18em]', tokens.muted)}
-                >
+                <p className={cn('text-xs font-bold uppercase tracking-[0.18em]', tokens.muted)}>
                   Your host
                 </p>
                 <p className="truncate text-lg font-semibold">

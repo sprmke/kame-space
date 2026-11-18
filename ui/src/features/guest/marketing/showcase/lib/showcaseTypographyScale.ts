@@ -19,10 +19,6 @@ export function showcaseScaledClampExpr(clampExpr: string): string {
   return `calc(${clampExpr} * ${SHOWCASE_DISPLAY_SCALE_VAR})`;
 }
 
-export function showcaseScaledClampClass(minRem: number, vw: number, maxRem: number): string {
-  return `text-[clamp(calc(${minRem}rem*var(--showcase-display-scale,1)),calc(${vw}vw*var(--showcase-display-scale,1)),calc(${maxRem}rem*var(--showcase-display-scale,1)))]`;
-}
-
 /** Section h2 — aurora / haven default band. */
 export const showcaseSectionHeadingClass =
   '@sm:text-[calc(2.25rem*var(--showcase-display-scale,1))] text-[calc(1.875rem*var(--showcase-display-scale,1))] font-semibold tracking-tight';
@@ -33,7 +29,7 @@ export const showcaseSectionHeadingLgClass =
 
 /** Editorial template section titles (Cormorant). */
 export const showcaseEditorialSectionHeadingClass =
-  'font-cormorant @sm:text-[calc(3rem*var(--showcase-display-scale,1))] text-[calc(1.875rem*var(--showcase-display-scale,1))] tracking-tight';
+  'font-cormorant @lg:text-[calc(3rem*var(--showcase-display-scale,1))] @sm:text-[calc(2.25rem*var(--showcase-display-scale,1))] text-[calc(1.875rem*var(--showcase-display-scale,1))] tracking-tight';
 
 /** Body copy tied to Scale — use instead of bare `text-base` in showcase sections. */
 export const showcaseBodyTextClass =

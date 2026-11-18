@@ -283,7 +283,7 @@ export function MonolithHostSection({
             <div className="min-w-0 space-y-5">
               <div>
                 <p
-                  className={cn('font-mono text-[11px] uppercase tracking-[0.28em]', tokens.muted)}
+                  className={cn('font-mono text-xs uppercase tracking-[0.28em]', tokens.muted)}
                 >
                   {host.host.organizationName}
                 </p>
@@ -298,7 +298,7 @@ export function MonolithHostSection({
                 {host.badge ? (
                   <HostBadge
                     label={host.badge}
-                    className="mt-3 block font-mono text-[10px] uppercase tracking-[0.24em]"
+                    className="mt-3 block font-mono text-xs uppercase tracking-[0.24em]"
                   />
                 ) : null}
               </div>
@@ -426,7 +426,7 @@ export function VersoHostSection({
             />
             <div className="min-w-0 space-y-4">
               <div>
-                <p className={cn('text-[11px] uppercase tracking-[0.24em]', tokens.muted)}>
+                <p className={cn('text-xs uppercase tracking-[0.24em]', tokens.muted)}>
                   {host.host.organizationName}
                 </p>
                 <p className="@sm:text-3xl mt-2 text-2xl font-semibold uppercase tracking-tight">
@@ -435,7 +435,7 @@ export function VersoHostSection({
                 {host.badge ? (
                   <HostBadge
                     label={host.badge.toUpperCase()}
-                    className="mt-2 block text-[10px] tracking-[0.22em]"
+                    className="mt-2 block text-xs tracking-[0.22em]"
                   />
                 ) : null}
               </div>
@@ -447,11 +447,11 @@ export function VersoHostSection({
               <HostActions
                 {...host}
                 primaryClass={cn(
-                  'rounded-none px-5 text-[11px] uppercase tracking-[0.2em]',
+                  'rounded-none px-5 text-xs uppercase tracking-[0.2em]',
                   tokens.primaryBtn
                 )}
                 secondaryClass={cn(
-                  'rounded-none text-[11px] uppercase tracking-[0.2em]',
+                  'rounded-none text-xs uppercase tracking-[0.2em]',
                   tokens.secondaryBtn
                 )}
                 contactLabel="Message host"
@@ -581,7 +581,7 @@ export function HavenHostSection({
                   fallbackClassName={cn('rounded-full text-3xl', tokens.brandFallback)}
                 />
                 {host.badge ? (
-                  <span className="bg-primary-strong text-primary-foreground absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                  <span className="bg-primary-strong text-primary-foreground absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide">
                     {host.badge}
                   </span>
                 ) : null}

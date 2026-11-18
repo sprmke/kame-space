@@ -2,7 +2,7 @@
 title: 'Property Showcase — operator guide'
 status: active
 tags: [guides, routes, showcase, public-pages]
-updated: 2026-09-03
+updated: 2026-11-19
 ---
 
 # Property Showcase — operator guide
@@ -81,6 +81,18 @@ Showcase is a one-page link you can send to guests with your property’s photos
 - Body copy ≥16px; section titles sit close to content (`mt-5`)
 - `?embed=1` / `?preview=1`: host preview when unpublished (placeholders + contained chrome). Canvas, parallax, and kinetic motion follow Style toggles (not forced off by embed). With `?embed=1`, global `guest-embed-preview` CSS clips document scroll (iframe thumbnails); showcase wraps content in a **`100dvh` overflow-y-auto** root so the page still scrolls when opened in a full browser tab from Public Pages.
 - Unpublished + no preview: “Not available”
+
+## Type hierarchy and responsive rules
+
+Applies to all 6 templates on Showcase and Stay Guide (checked at 320, 375, 414, 512, 768, 1024, 1280, 1440 and 1920 px).
+
+- The hero title is always larger than every section title, and every section title is larger than body text (16px). Phone sizes start at 36px or more for the hero and 30px for section titles, and step up with the container, so a title never falls back to body size.
+- Each template keeps its own scale: Monolith and Editorial run a size up because their serif faces are condensed. Stay Guide section titles use the same size classes as the template's Showcase titles.
+- Labels and chips are never below 11px (11px for tracked uppercase eyebrows, 12px for status chips and the Terms / Privacy pill).
+- Amenity and highlight lists use two columns from about 360px; wider layouts add a third or fourth. Long words wrap instead of widening the page.
+- The shared footer keeps extra bottom padding so the fixed Terms / Privacy pill does not cover the last row.
+- No horizontal scroll at any width.
+- **Authoring rule:** Tailwind only builds classes it can read as whole strings in source. Never build a size with `${}` (a test fails on it), and never `@apply text-*` in the base `h1` to `h4` rules in `ui/src/index.css`: that copies `.showcase-scope .text-base` and forces every showcase heading to body size.
 
 ## Editor
 

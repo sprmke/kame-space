@@ -60,7 +60,7 @@ import { buildListingImageAlt } from '@/lib/seo/listingImageAlt';
 import { cn } from '@/lib/utils';
 
 const DISPLAY = 'font-jost font-medium tracking-[-0.02em]';
-const LABEL = 'font-jost text-[11px] font-semibold uppercase tracking-[0.36em]';
+const LABEL = 'font-jost text-xs font-semibold uppercase tracking-[0.36em]';
 const CONTAINER = 'mx-auto max-w-6xl px-5 @md:px-8';
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -540,6 +540,7 @@ export function VersoSections({ data }: { data: ShowcaseData }) {
               section={section}
               alt={index % 2 === 1}
               headingClassName={DISPLAY}
+              headingSizeClassName={versoChapterTitleClass}
               containerClassName={CONTAINER}
             />
           );
@@ -568,7 +569,7 @@ export function VersoSections({ data }: { data: ShowcaseData }) {
                 }
                 frameClassName="rounded-none border"
                 mapAspectClassName="aspect-[16/10] @md:aspect-[21/9]"
-                actionClassName="rounded-none text-[11px] uppercase tracking-[0.24em]"
+                actionClassName="rounded-none text-xs uppercase tracking-[0.24em]"
               />
             </div>
           );
