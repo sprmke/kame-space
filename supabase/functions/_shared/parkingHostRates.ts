@@ -33,7 +33,8 @@ export async function loadParkingHostRates(ids: string[]): Promise<Map<string, P
     const { data, error } = await supabase
       .from('parking_settings')
       .select('parking_id, weekday_nightly_rate, weekend_nightly_rate')
-      .in('parking_id', ids.slice(i, i + CHUNK));
+      .in('parking_id', ids.slice(i, i + CHUNK))
+      .limit(CHUNK);
     if (error) throw new Error(`Failed to load parking rates: ${error.message}`);
     for (const row of data ?? []) {
       const weekday = money(row.weekday_nightly_rate, DEFAULT_PUBLIC_PARKING_WEEKDAY);

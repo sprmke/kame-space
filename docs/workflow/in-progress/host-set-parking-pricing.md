@@ -1,7 +1,7 @@
 ---
 stage: in-progress
 title: 'Host-set parking pricing — hosts set the nightly rate, platform adds a guest service fee'
-status: planned
+status: in-progress
 tags: [planning, parking, pricing, payments, super-admin]
 updated: 2026-11-19
 ---
@@ -131,17 +131,22 @@ Platform net as a function of `H`: `net(H) = slope × H + intercept` with `slope
 
 ## Decisions
 
-| Decision                    | Choice                                                                | Why                                                                                                                  |
-| --------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Where the platform earns    | Host commission **and** a guest service fee                           | Commission alone loses money below about ₱218 (std) and ₱800 (direct); the fee fixes the floor without capping hosts |
-| Fee shape                   | `% of host gross + fixed per booking`                                 | The processor's fixed ₱15 is per transaction, so the fixed part must be per booking, not per night                   |
-| Fee on direct-link bookings | Same fee, lower host commission                                       | Processor cost is identical; the host incentive stays in the 5%                                                      |
-| No-loss enforcement         | Hard reject on super-admin save                                       | The user wants a guarantee, not a warning. Reversible (one validation)                                               |
-| Step 50                     | UI hint only, server accepts any value ≥ ₱100                         | Existing rates and API clients are not broken                                                                        |
-| Existing rates < ₱100       | Left as is, host blocked from saving until fixed                      | No silent data change; in-flight bookings keep charging the stored rate                                              |
-| `guest_rate_*` columns      | Left in place, unread                                                 | Avoids prod DDL risk; drop after one release                                                                         |
-| Refund cap                  | Whole guest charge including fee                                      | Refunds already cap at `guest_charge_total`; fee-retention policy is a separate product call                         |
-| Plans / RBAC                | `N/A — reuses existing parking pricing:edit and the super-admin gate` | No new capability                                                                                                    |
+| Decision                         | Choice                                                                                                                                                 | Why                                                                                                                  |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Where the platform earns         | Host commission **and** a guest service fee                                                                                                            | Commission alone loses money below about ₱218 (std) and ₱800 (direct); the fee fixes the floor without capping hosts |
+| Fee shape                        | `% of host gross + fixed per booking`                                                                                                                  | The processor's fixed ₱15 is per transaction, so the fixed part must be per booking, not per night                   |
+| Fee on direct-link bookings      | Same fee, lower host commission                                                                                                                        | Processor cost is identical; the host incentive stays in the 5%                                                      |
+| No-loss enforcement              | Hard reject on super-admin save                                                                                                                        | The user wants a guarantee, not a warning. Reversible (one validation)                                               |
+| Step 50                          | UI hint only, server accepts any value ≥ ₱100                                                                                                          | Existing rates and API clients are not broken                                                                        |
+| Existing rates < ₱100            | Left as is, host blocked from saving until fixed                                                                                                       | No silent data change; in-flight bookings keep charging the stored rate                                              |
+| `guest_rate_*` columns           | Left in place, unread                                                                                                                                  | Avoids prod DDL risk; drop after one release                                                                         |
+| Refund cap                       | Whole guest charge including fee                                                                                                                       | Refunds already cap at `guest_charge_total`; fee-retention policy is a separate product call                         |
+| Host preview wording             | "Guests see ₱X / night" + one line about the guest fee, not "Guests pay ₱X + fee"                                                                      | The fixed part is per booking, so a per-night "guests pay" figure would mislead on multi-night stays                 |
+| Guest-visible total              | Public detail card adds a **Service fee** line; `loadPublicParkingBySlug` now returns `guestFeePct`/`guestFeeFixed` and the host's real date overrides | Otherwise the card total is lower than the PayMongo charge, and overrides priced differently from checkout           |
+| Host revenue in analytics/ledger | `host_gross_total` (not `guest_charge_total`)                                                                                                          | The guest fee belongs to the platform; host dashboards must never count it as host income                            |
+| Search index                     | New migration re-reads host weekday rate; platform trigger dropped                                                                                     | Host edits already refresh via `pls_parking_settings_sync`                                                           |
+| Commit scope                     | `feat(supabase)` / `feat(ui)`                                                                                                                          | commitlint only allows a fixed scope list                                                                            |
+| Plans / RBAC                     | `N/A — reuses existing parking pricing:edit and the super-admin gate`                                                                                  | No new capability                                                                                                    |
 
 ## Edge cases
 
