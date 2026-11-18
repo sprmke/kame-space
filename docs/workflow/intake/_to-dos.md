@@ -82,7 +82,9 @@ kind: backlog
 - Improve backend performance
 - Toolchain upgrade wave: TypeScript 7, Tailwind 4, Zod 4, @hookform/resolvers 7, @types/node 26, @vitest/coverage-v8 5, eslint-plugin-react-hooks 7, @blueprintjs/core 6, framer-motion 14. Each needs a code migration, not a version bump, so the Dependabot majors are closed until it is planned.
 - Pricing plans refinement
+  → **In progress:** [`../in-progress/plans-billing-lifecycle-hardening.md`](../in-progress/plans-billing-lifecycle-hardening.md)
 - Payment e2e and management from super admin
+  → **In progress:** [`../in-progress/plans-billing-lifecycle-hardening.md`](../in-progress/plans-billing-lifecycle-hardening.md) (Phases 7 and 9)
 - Improve QR design to include our logo?
 - Select turtle character and add it on their templates
 - Super admin - playbook articles?

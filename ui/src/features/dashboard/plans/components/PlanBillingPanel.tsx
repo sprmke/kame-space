@@ -1,11 +1,25 @@
-import { ArrowRight, ArrowUpRight, Receipt, Settings, Sparkles } from 'lucide-react';
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Info,
+  Loader2,
+  Receipt,
+  Settings,
+  WalletCards,
+} from 'lucide-react';
 
 import { OrgPlanTransactions } from '@/features/dashboard/plans/components/OrgPlanTransactions';
 import { PlanTierIconWell } from '@/features/dashboard/plans/components/PlanTierIconWell';
+import {
+  describeBillingState,
+  type BillingStripAction,
+  type BillingTone,
+} from '@/features/dashboard/plans/lib/billingState';
 import type {
   OrgBundlePlanDto,
   OrgPaymentTransactionDto,
   OrgSubscriptionDto,
+  OrgUpcomingPaymentDto,
 } from '@/features/dashboard/plans/lib/orgPlanApi';
 import {
   planDisplayName,
@@ -13,38 +27,44 @@ import {
   planPrice,
   PLANS_TAB_SECTION_TITLES,
   planTabCardHeadingClass,
-  subscriptionGraceLabel,
-  subscriptionRenewalLabel,
-  subscriptionStatusMeta,
   upgradeBannerActionLabel,
 } from '@/features/dashboard/plans/lib/planPresentation';
 
+import { FloatingPanel } from '@/components/mobile/FloatingPanel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FloatingPanel } from '@/components/mobile/FloatingPanel';
 import { cn } from '@/lib/utils';
+import { formatMoneyCompact } from '@/utils/format/currency';
 import { formatManilaLongDate } from '@/utils/format/dates';
 
 const BILLING_ALERT_ROW =
   'mt-3 flex flex-col gap-2 border-t pt-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3';
 
+const STRIP_TONE: Record<BillingTone, { border: string; text: string; dot: string }> = {
+  danger: { border: 'border-destructive/25', text: 'text-destructive', dot: 'bg-current' },
+  warning: { border: 'border-warning/40', text: 'text-foreground', dot: 'bg-warning' },
+  info: { border: 'border-primary/15', text: 'text-muted-foreground', dot: 'bg-primary' },
+  neutral: { border: 'border-border', text: 'text-muted-foreground', dot: 'bg-muted-foreground' },
+};
+
+export type PlanBillingActions = Partial<Record<BillingStripAction, () => void>>;
+
 type PlanBillingSummaryProps = {
   plan: OrgBundlePlanDto | null;
   subscription: OrgSubscriptionDto | null;
+  upcomingPayment?: OrgUpcomingPaymentDto | null;
+  accountCreditPhp?: number;
+  amountOwedPhp?: number;
   canManage?: boolean;
-  pendingCheckoutUrl?: string | null;
-  onPayNow?: () => void;
-  onResumePayment?: () => void;
-  isPaying?: boolean;
+  /** An unpaid PayMongo checkout exists for this org. */
+  openCheckout?: { purpose: string | null } | null;
+  /** Strip actions the page wires up (pay, keep, resume, cancel, ...). */
+  actions?: PlanBillingActions;
+  /** A billing request is in flight: disable the strip actions. */
+  isBusy?: boolean;
   upgradePlan?: OrgBundlePlanDto | null;
   onManagePlans?: () => void;
   onUpgrade?: (plan: OrgBundlePlanDto) => void;
-  uncoveredPropertyCount?: number;
-  onCoverUncoveredProperties?: () => void;
-};
-
-type PlanBillingPanelProps = PlanBillingSummaryProps & {
-  transactions: OrgPaymentTransactionDto[];
 };
 
 function BillingEmptyState() {
@@ -91,52 +111,68 @@ function resolveBillingPrice(
   });
 }
 
+/** Label and style of each strip action. The page decides what each one does. */
+function actionConfig(
+  action: BillingStripAction,
+  planName: string,
+  renewalReady: boolean,
+  waiting: boolean
+): { label: string; variant: 'default' | 'outline' | 'ghost'; showArrow?: boolean } {
+  switch (action) {
+    case 'pay_now':
+      return {
+        label: renewalReady ? 'Pay renewal' : waiting ? 'Resume payment' : 'Pay now',
+        variant: 'default',
+        showArrow: true,
+      };
+    case 'keep_plan':
+      return { label: `Keep ${planName}`, variant: 'outline' };
+    case 'resume_plan':
+      return { label: 'Resume plan', variant: 'outline' };
+    case 'keep_after_trial':
+      return { label: `Keep ${planName}`, variant: 'default', showArrow: true };
+    case 'cancel_now':
+      return { label: 'Cancel plan', variant: 'ghost' };
+    case 'switch_to_free':
+      return { label: 'Switch to Free', variant: 'ghost' };
+  }
+}
+
 /** Subscription summary — pinned above Plans tabs (tab label covers section context). */
 export function PlanBillingSummaryCard({
   plan,
   subscription,
+  upcomingPayment,
+  accountCreditPhp = 0,
+  amountOwedPhp = 0,
   canManage = false,
-  pendingCheckoutUrl,
-  onPayNow,
-  onResumePayment,
-  isPaying = false,
+  openCheckout = null,
+  actions = {},
+  isBusy = false,
   upgradePlan,
   onManagePlans,
   onUpgrade,
-  uncoveredPropertyCount = 0,
-  onCoverUncoveredProperties,
 }: PlanBillingSummaryProps) {
   if (!plan && !subscription) return null;
 
   const name = plan ? planDisplayName(plan) : planDisplayNameFromSubscription(subscription);
   const price = resolveBillingPrice(plan, subscription);
-  const status = subscription ? subscriptionStatusMeta(subscription.status) : null;
-  const renewal = subscriptionRenewalLabel(subscription);
+  const state = describeBillingState({
+    subscription,
+    upcoming: upcomingPayment,
+    openCheckout,
+    canManage,
+    formatDate: formatManilaLongDate,
+    formatPhp: formatMoneyCompact,
+  });
   const periodStart = subscription?.currentPeriodStart
     ? formatManilaLongDate(subscription.currentPeriodStart)
     : null;
-  const needsAttention = status?.tone === 'destructive';
-  const showPayNow =
-    canManage &&
-    Boolean(onPayNow || onResumePayment) &&
-    subscription &&
-    !plan?.isDefault &&
-    (subscription.status === 'past_due' ||
-      subscription.status === 'suspended' ||
-      Boolean(pendingCheckoutUrl));
-  const showResume = canManage && !needsAttention && Boolean(pendingCheckoutUrl);
   const showActions = canManage && (Boolean(onManagePlans) || (upgradePlan && onUpgrade));
-
-  const openCheckout = () => {
-    if (pendingCheckoutUrl) {
-      onResumePayment?.();
-      return;
-    }
-    onPayNow?.();
-  };
-
-  const periodLabel = renewal ? 'Next renewal' : 'Billing period';
-  const periodValue = renewal ?? periodStart ?? null;
+  const strip = state.strip;
+  const stripStyle = strip ? STRIP_TONE[strip.tone] : null;
+  const renewalReady = state.key === 'renewal_ready';
+  const waiting = state.key === 'payment_waiting';
 
   return (
     <section
@@ -152,18 +188,22 @@ export function PlanBillingSummaryCard({
               <p id="billing-summary-heading" className="text-card-title truncate">
                 {name} plan
               </p>
-              {status ? (
+              <Badge
+                variant={state.badgeTone}
+                className="h-5 shrink-0 px-1.5 text-[10px] leading-none"
+              >
+                {state.badge}
+              </Badge>
+              {accountCreditPhp > 0 ? (
                 <Badge
-                  variant={status.tone}
-                  className="h-5 shrink-0 px-1.5 text-[10px] leading-none"
+                  variant="secondary"
+                  className="h-5 shrink-0 gap-1 px-1.5 text-[10px] leading-none"
+                  title="Comes off your next payment. It is never paid out as cash."
                 >
-                  {status.label}
+                  <WalletCards className="size-3" aria-hidden />
+                  {formatMoneyCompact(accountCreditPhp)} credit
                 </Badge>
-              ) : (
-                <Badge variant="default" className="h-5 shrink-0 px-1.5 text-[10px] leading-none">
-                  Current
-                </Badge>
-              )}
+              ) : null}
             </div>
 
             {price ? (
@@ -177,14 +217,19 @@ export function PlanBillingSummaryCard({
               </p>
             ) : null}
 
-            {periodValue ? (
+            {state.periodLine ? (
               <p className="text-meta mt-0.5 line-clamp-2 sm:line-clamp-1">
-                <span className="font-medium">{periodLabel}</span>
-                <span aria-hidden> · </span>
-                <span className="tabular-nums">{periodValue}</span>
-                {periodStart && renewal ? (
+                <span className="tabular-nums">{state.periodLine}</span>
+                {periodStart && state.key === 'active' ? (
                   <span className="text-muted-foreground/80"> · Since {periodStart}</span>
                 ) : null}
+              </p>
+            ) : null}
+
+            {amountOwedPhp > 0 ? (
+              <p className="text-meta mt-0.5">
+                {formatMoneyCompact(amountOwedPhp)} for new properties is added to your next
+                payment.
               </p>
             ) : null}
           </div>
@@ -221,93 +266,72 @@ export function PlanBillingSummaryCard({
         ) : null}
       </div>
 
-      {needsAttention ? (
-        <div className={cn(BILLING_ALERT_ROW, 'border-destructive/25')}>
-          <p className="text-destructive flex items-start gap-2 text-xs sm:text-sm">
-            <span className="mt-1 size-1.5 shrink-0 rounded-full bg-current" aria-hidden />
-            {subscription?.status === 'suspended'
-              ? 'Dashboard access is limited until payment is received.'
-              : `Payment is past due. Pay by ${subscriptionGraceLabel(subscription) ?? 'soon'} to keep full access.`}
+      {strip && stripStyle ? (
+        <div className={cn(BILLING_ALERT_ROW, stripStyle.border)}>
+          <p className={cn('flex items-start gap-2 text-xs sm:text-sm', stripStyle.text)}>
+            <span
+              className={cn('mt-1.5 size-1.5 shrink-0 rounded-full', stripStyle.dot)}
+              aria-hidden
+            />
+            {strip.message}
           </p>
-          {showPayNow ? (
-            <Button
-              type="button"
-              size="sm"
-              className="min-h-[44px] shrink-0"
-              disabled={isPaying}
-              onClick={openCheckout}
-            >
-              {isPaying ? 'Opening…' : 'Pay now'}
-              <ArrowRight className="size-4" aria-hidden />
-            </Button>
+          {strip.actions.length > 0 ? (
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {strip.actions.map((action) => {
+                const handler = actions[action];
+                if (!handler) return null;
+                const config = actionConfig(action, name, renewalReady, waiting);
+                return (
+                  <Button
+                    key={action}
+                    type="button"
+                    size="sm"
+                    variant={config.variant}
+                    className="min-h-[44px] shrink-0"
+                    disabled={isBusy}
+                    onClick={handler}
+                  >
+                    {isBusy && config.variant === 'default' ? (
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                    ) : null}
+                    {config.label}
+                    {config.showArrow && !isBusy ? (
+                      <ArrowRight className="size-4" aria-hidden />
+                    ) : null}
+                  </Button>
+                );
+              })}
+            </div>
           ) : null}
-        </div>
-      ) : showResume ? (
-        <div className={cn(BILLING_ALERT_ROW, 'border-primary/15')}>
-          <p className="text-muted-foreground flex items-start gap-2 text-xs sm:text-sm">
-            <Sparkles className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />A plan payment
-            is waiting to be completed.
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="min-h-[44px] shrink-0"
-            disabled={isPaying}
-            onClick={openCheckout}
-          >
-            Resume payment
-            <ArrowRight className="size-4" aria-hidden />
-          </Button>
         </div>
       ) : null}
 
-      {uncoveredPropertyCount > 0 && onCoverUncoveredProperties ? (
-        <div className={cn(BILLING_ALERT_ROW, 'border-primary/15')}>
-          <p className="text-muted-foreground text-xs sm:text-sm">
-            {uncoveredPropertyCount}{' '}
-            {uncoveredPropertyCount === 1 ? 'property is' : 'properties are'} not on your plan yet.
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="min-h-[44px] shrink-0"
-            onClick={onCoverUncoveredProperties}
-          >
-            Update billing
-            <ArrowRight className="size-4" aria-hidden />
-          </Button>
-        </div>
+      {state.readOnlyNote && subscription ? (
+        <p className="text-meta mt-3 flex items-start gap-2 border-t pt-3">
+          <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+          {state.readOnlyNote}
+        </p>
       ) : null}
     </section>
   );
 }
 
-/** Billing tab body — payment history below the pinned summary card. */
-export function PlanBillingHistory({
-  transactions,
-  plans = [],
-}: {
+type PlanBillingHistoryProps = {
+  orgId: string | null;
   transactions: OrgPaymentTransactionDto[];
   plans?: OrgBundlePlanDto[];
-}) {
-  if (transactions.length > 0) {
-    return <OrgPlanTransactions transactions={transactions} plans={plans} />;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
+  showIncomplete?: boolean;
+  onShowIncompleteChange?: (next: boolean) => void;
+};
+
+/** Billing tab body — payment history below the pinned summary card. */
+export function PlanBillingHistory({ transactions, ...rest }: PlanBillingHistoryProps) {
+  if (transactions.length > 0 || rest.showIncomplete) {
+    return <OrgPlanTransactions transactions={transactions} {...rest} />;
   }
 
   return <BillingEmptyState />;
-}
-
-/** Billing tab — summary card plus payment history (legacy single-column layout). */
-export function PlanBillingPanel({ transactions, ...summaryProps }: PlanBillingPanelProps) {
-  const hasSummary = Boolean(summaryProps.plan || summaryProps.subscription);
-  const plans = summaryProps.plan ? [summaryProps.plan] : [];
-
-  return (
-    <div className="flex min-w-0 flex-col gap-5 sm:gap-6">
-      {hasSummary ? <PlanBillingSummaryCard {...summaryProps} /> : null}
-      <PlanBillingHistory transactions={transactions} plans={plans} />
-    </div>
-  );
 }

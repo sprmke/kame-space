@@ -877,6 +877,156 @@ export const ACTIVITY_ACTION_CATALOG = {
     targetType: 'subscription',
     summary: (c) => str(c.metadata, 'message') ?? `A subscription payment failed`,
   },
+  'billing.change_scheduled': {
+    category: 'plans_billing',
+    severity: 'notice',
+    targetType: 'subscription',
+    summary: (c) =>
+      `${c.actorName} scheduled a move to ${
+        str(c.metadata, 'to_plan_name') ?? 'a lower plan'
+      } at the end of the billing period`,
+  },
+  'billing.cancel_scheduled': {
+    category: 'plans_billing',
+    severity: 'destructive',
+    targetType: 'subscription',
+    summary: (c) => `${c.actorName} scheduled the plan to end at the end of the billing period`,
+  },
+  'billing.scheduled_change_cleared': {
+    category: 'plans_billing',
+    severity: 'notice',
+    targetType: 'subscription',
+    summary: (c) => `${c.actorName} kept the current plan and removed the scheduled change`,
+  },
+  'billing.plan_changed': {
+    category: 'plans_billing',
+    severity: 'notice',
+    targetType: 'subscription',
+    summary: (c) =>
+      `The plan moved to ${str(c.metadata, 'to_plan_name') ?? 'a new plan'}${
+        str(c.metadata, 'reason') ? ` (${str(c.metadata, 'reason')})` : ''
+      }`,
+  },
+  'billing.payment_received': {
+    category: 'plans_billing',
+    severity: 'info',
+    targetType: 'subscription',
+    summary: (c) =>
+      `Payment received${num(c.metadata, 'amount') ? ` (₱${num(c.metadata, 'amount')})` : ''}${
+        str(c.metadata, 'purpose') ? ` for ${str(c.metadata, 'purpose')}` : ''
+      }`,
+  },
+  'billing.payment_credited': {
+    category: 'plans_billing',
+    severity: 'warning',
+    targetType: 'subscription',
+    summary: (c) =>
+      `A payment${
+        num(c.metadata, 'amount') ? ` of ₱${num(c.metadata, 'amount')}` : ''
+      } could not be applied and was added to the account credit`,
+  },
+  'billing.checkout_expired': {
+    category: 'plans_billing',
+    severity: 'info',
+    targetType: 'subscription',
+    summary: () => 'An unpaid checkout expired',
+  },
+  'billing.renewal_link_sent': {
+    category: 'plans_billing',
+    severity: 'info',
+    targetType: 'subscription',
+    summary: () => 'A renewal payment link was sent to the owner',
+  },
+  'billing.subscription_renewed': {
+    category: 'plans_billing',
+    severity: 'info',
+    targetType: 'subscription',
+    summary: (c) =>
+      `Subscription renewed on the ${str(c.metadata, 'plan_name') ?? 'current'} plan${
+        str(c.metadata, 'via') === 'credit' ? ' using account credit' : ''
+      }`,
+  },
+  'billing.subscription_past_due': {
+    category: 'plans_billing',
+    severity: 'warning',
+    targetType: 'subscription',
+    summary: () => 'The renewal payment is past due',
+  },
+  'billing.subscription_suspended': {
+    category: 'plans_billing',
+    severity: 'destructive',
+    targetType: 'subscription',
+    summary: () => 'Paid features were paused because the payment is overdue',
+  },
+  'billing.subscription_canceled': {
+    category: 'plans_billing',
+    severity: 'destructive',
+    targetType: 'subscription',
+    summary: (c) => {
+      const reason = str(c.metadata, 'ended_reason');
+      const why =
+        reason === 'nonpayment'
+          ? 'after a long overdue payment'
+          : reason === 'trial_ended'
+            ? 'because the trial ended'
+            : reason === 'no_properties'
+              ? 'because there were no properties to bill'
+              : reason === 'host_canceled'
+                ? 'as requested'
+                : '';
+      return `The subscription ended and the organization moved to Free${why ? ` ${why}` : ''}`;
+    },
+  },
+  'billing.subscription_reactivated': {
+    category: 'plans_billing',
+    severity: 'notice',
+    targetType: 'subscription',
+    summary: () => 'Paid features were turned back on after payment',
+  },
+  'billing.property_covered': {
+    category: 'plans_billing',
+    severity: 'info',
+    targetType: 'subscription',
+    summary: (c) =>
+      `${label(c, 'A property')} was added to the plan${
+        num(c.metadata, 'true_up_php') ? ` (₱${num(c.metadata, 'true_up_php')} added to the next payment)` : ''
+      }`,
+  },
+  'billing.property_uncovered': {
+    category: 'plans_billing',
+    severity: 'info',
+    targetType: 'subscription',
+    summary: (c) => `${label(c, 'A property')} was removed from the plan`,
+  },
+  'billing.details_updated': {
+    category: 'plans_billing',
+    severity: 'info',
+    targetType: 'subscription',
+    summary: (c) => `${c.actorName} updated the billing details`,
+  },
+  'billing.credit_adjusted': {
+    category: 'plans_billing',
+    severity: 'warning',
+    targetType: 'subscription',
+    summary: (c) =>
+      `${c.actorName} adjusted the account credit${
+        num(c.metadata, 'amount') ? ` by ₱${num(c.metadata, 'amount')}` : ''
+      }`,
+  },
+  'billing.refund_recorded': {
+    category: 'plans_billing',
+    severity: 'warning',
+    targetType: 'subscription',
+    summary: (c) => `${c.actorName} recorded a refund${
+      num(c.metadata, 'amount') ? ` of ₱${num(c.metadata, 'amount')}` : ''
+    }`,
+  },
+  'billing.price_change_scheduled': {
+    category: 'plans_billing',
+    severity: 'notice',
+    targetType: 'subscription',
+    summary: (c) => `A new plan price takes effect on ${str(c.metadata, 'effective_on') ?? 'a set date'}`,
+  },
 
   // ── Verification & trust ────────────────────────────────────────────────
   'verification.submitted': {

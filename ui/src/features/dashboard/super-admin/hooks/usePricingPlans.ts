@@ -196,3 +196,59 @@ export function useRevokeHostVerificationReward() {
     onError: (error: Error) => toast.error(error.message || 'Could not revoke reward'),
   });
 }
+
+export type PriceMigrationPreview = {
+  planName: string;
+  affectedCount: number;
+  /** Combined monthly change across the affected subscriptions (can be negative). */
+  monthlyChangePhp: number;
+  scheduled: { id: string; effectiveOn: string; notifiedCount: number; createdAt: string }[];
+};
+
+export function usePriceMigrationPreview(planId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: [...PRICING_PLANS_QUERY_KEY, 'price-migration', planId],
+    enabled: enabled && Boolean(planId),
+    staleTime: 0,
+    queryFn: () =>
+      callEdgeFunction<PriceMigrationPreview>(
+        `pricing-plans?planId=${encodeURIComponent(planId!)}&priceMigration=preview`
+      ),
+  });
+}
+
+export function useSchedulePriceMigration(planId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (effectiveOn: string) =>
+      callEdgeFunction<{ affected: number; notified: number }>('pricing-plans', {
+        method: 'PATCH',
+        body: JSON.stringify({ planId, action: 'schedule_price_migration', effectiveOn }),
+      }),
+    onSuccess: async (result) => {
+      await qc.invalidateQueries({ queryKey: PRICING_PLANS_QUERY_KEY });
+      toast.success(
+        result.affected === 0
+          ? 'Nobody is on an older price. Nothing to move.'
+          : `Scheduled. ${result.notified} of ${result.affected} owners were told.`
+      );
+    },
+    onError: (error: Error) => toast.error(error.message || 'Could not schedule the price change'),
+  });
+}
+
+export function useCancelPriceMigration(planId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (migrationId: string) =>
+      callEdgeFunction('pricing-plans', {
+        method: 'PATCH',
+        body: JSON.stringify({ planId, action: 'cancel_price_migration', migrationId }),
+      }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: PRICING_PLANS_QUERY_KEY });
+      toast.success('Price change canceled');
+    },
+    onError: (error: Error) => toast.error(error.message || 'Could not cancel'),
+  });
+}

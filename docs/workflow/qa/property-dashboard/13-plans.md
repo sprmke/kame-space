@@ -1,7 +1,7 @@
 ---
 title: 'QA — Property Plans & Billing'
 status: active
-updated: 2026-08-29
+updated: 2026-11-18
 ---
 
 # 13 — Plans & Billing (property mirror)
@@ -12,7 +12,7 @@ Route: `/org/:orgSlug/property/:propertySlug/plans`
 
 - Same UI as org Plans; payment continues at org scope — correct for org-level billing.
 - Feature compare matrix groups follow property sidebar order.
-- Suspended orgs keep Plans + Help accessible (`RequirePropertySubscriptionAccess`).
+- A suspended org keeps its whole dashboard and works like Free; a billing banner (`BillingStatusBanner`) carries the Pay now action for the owner and the "ask the owner" copy for members. The old redirect to Plans (`RequirePropertySubscriptionAccess`) is gone.
 
 ## Issues
 
@@ -32,4 +32,4 @@ Route: `/org/:orgSlug/property/:propertySlug/plans`
 
 ## Evidence
 
-Live Plans title; `RequirePropertySubscriptionAccess`; matrix.
+Live Plans title; `BillingStatusBanner`; matrix.

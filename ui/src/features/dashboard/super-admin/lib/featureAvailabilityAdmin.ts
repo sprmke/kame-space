@@ -3,6 +3,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 
 import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
+
 import {
   FEATURE_AVAILABILITY_CATALOG,
   type FeatureAvailabilityCatalogEntry,

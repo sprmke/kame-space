@@ -10,6 +10,7 @@ import {
 import { goldenPlanId } from '../../../../src/features/dashboard/plans/lib/planTierGolden';
 import { installPlansCheckoutMocks, plansE2ePaths } from '../shared/orgPlanCheckoutHarness';
 import {
+  bringTierCardIntoView,
   expectCompareTable,
   expectTierCards,
   readCompareTable,
@@ -44,9 +45,9 @@ function expectedAction(current: TierCode, target: TierCode): string {
   const title = TIER_TITLES[target];
   if (target === current) return `${title} is your current plan`;
   if (target === 'managed') return `Contact sales to ${title}`;
-  const direction =
-    TIER_ORDER.indexOf(target) > TIER_ORDER.indexOf(current) ? 'Upgrade' : 'Downgrade';
-  return `${direction} to ${title}`;
+  if (TIER_ORDER.indexOf(target) > TIER_ORDER.indexOf(current)) return `Upgrade to ${title}`;
+  // Paid to Free ends the plan at the period end; paid to paid switches at renewal.
+  return target === 'free' ? `Cancel plan to ${title}` : `Switch at renewal to ${title}`;
 }
 
 test.describe('@ci org Plans page, per current tier', () => {
@@ -121,10 +122,13 @@ test.describe('@ci org Plans page, per current tier', () => {
   }) => {
     await installPlansCheckoutMocks(page, { subscriptionPlanId: goldenPlanId('managed') });
     await openTab(page, 'plans');
-    await tierCard(page, 'pro').getByRole('button', { name: 'Downgrade to Business' }).click();
+    await bringTierCardIntoView(page, 'pro');
+    await tierCard(page, 'pro')
+      .getByRole('button', { name: 'Switch at renewal to Business' })
+      .click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByText('Contact support to change your Managed plan.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Confirm downgrade' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: /^Switch on / })).toHaveCount(0);
   });
 
   test('tabs switch between Plans, Compare and FAQs with the right section title', async ({

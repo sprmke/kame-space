@@ -1,9 +1,14 @@
 /**
- * delete-organization — DELETE an organization (owner only). Blocked when bookings exist.
+ * delete-organization — DELETE an organization (owner only). Blocked when bookings exist or a
+ * paid plan is still live (Plans & Billing lifecycle E22).
  */
 
 import { createServiceClient, verifyOrgOwner } from '../_shared/orgAuth.ts';
 import { buildActorContext, logActivity } from '../_shared/activityLog.ts';
+import { toSubscriptionState } from '../_shared/orgBillingContext.ts';
+import { expireAllPendingOrgCheckouts } from '../_shared/orgPaymentReconcile.ts';
+import { validateOrgDeletion } from '../_shared/orgSubscriptionStateMachine.ts';
+import { getActiveOrgSubscription } from '../_shared/planEntitlements.ts';
 import { PROPERTY_MEDIA_BUCKET } from '../_shared/propertyMedia.ts';
 import {
   jsonError,
@@ -24,6 +29,10 @@ serveAuthenticated('delete-organization', async (req) => {
 
   const { user, org } = await verifyOrgOwner(req, orgId);
   const supabase = createServiceClient();
+
+  const subscription = await getActiveOrgSubscription(org.id);
+  const deletion = validateOrgDeletion(subscription ? toSubscriptionState(subscription) : null);
+  if (!deletion.ok) return jsonError(req, deletion.message, 409);
 
   const { data: properties, error: propertiesError } = await supabase
     .from('properties')
@@ -80,6 +89,13 @@ serveAuthenticated('delete-organization', async (req) => {
         console.warn('[delete-organization] storage cleanup:', storageError.message);
       }
     }
+  }
+
+  // Close any open checkout first: the rows go with the org, but the PayMongo link would stay payable.
+  try {
+    await expireAllPendingOrgCheckouts(org.id);
+  } catch (err) {
+    console.warn('[delete-organization] checkout expiry:', err);
   }
 
   const { error: deleteError } = await supabase.from('organizations').delete().eq('id', org.id);

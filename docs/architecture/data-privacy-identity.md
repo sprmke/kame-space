@@ -2,7 +2,7 @@
 title: 'Data privacy — identity verification'
 status: active
 tags: [architecture, privacy, dpa, identity]
-updated: 2026-11-07
+updated: 2026-11-18
 kind: reference
 ---
 
@@ -82,3 +82,16 @@ product stores _more structure_ and _less raw imagery_.
   serves it — that bucket is out of scope for this plan and unchanged.
 - **Backfilling or deleting existing `valid-ids` objects** is a separate migration with its
   own legal review.
+
+## Related: organization billing details
+
+Separate from identity verification, org owners can add **billing details** (legal name, address, TIN, billing email) that are printed on payment receipts. They are business contact data, but a sole proprietor's address and TIN are personal data, so they are handled like it.
+
+| Item                       | Where                                                               | Rule                                                                                                                |
+| -------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Legal name, address, email | `org_billing_details` (one row per org, service-role access only)   | Owner edits; members with `org.plans:view` read. `org-plan` returns them only to `org.plans:view` holders.          |
+| TIN                        | `org_billing_details.tin`, format-checked, optional                 | Printed on that org's receipts only. Not logged: the activity log records `billing.details_updated` without values. |
+| Receipts                   | `org_payment_transactions.receipt_number` + PDF rendered on request | Payment receipts, not BIR official receipts. The PDF is generated per download and not stored.                      |
+| Retention                  | Life of the organization                                            | Deleted with the org (`ON DELETE CASCADE`). Receipt numbers on payment rows follow the payment records.             |
+
+The Privacy Policy states this in its payments section (`privacyContent.ts`).

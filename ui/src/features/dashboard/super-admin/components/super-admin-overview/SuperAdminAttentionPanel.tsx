@@ -39,6 +39,16 @@ export function SuperAdminAttentionPanel({
       to: superAdminPaths.parkingPayouts,
     },
     {
+      label: 'Payments held for review',
+      count: attention.heldPayments ?? 0,
+      to: superAdminPaths.propertySubscriptions,
+    },
+    {
+      label: 'Orgs with paid features paused for over a week',
+      count: attention.suspendedOverWeek ?? 0,
+      to: superAdminPaths.propertySubscriptions,
+    },
+    {
       label: 'Orgs with no live subscription',
       count: attention.unassignedSubscriptions,
       to: superAdminPaths.propertySubscriptions,

@@ -43,6 +43,10 @@ export type SuperAdminOverview = {
     openTickets: number;
     undisbursedParkingPayouts: number;
     unassignedSubscriptions: number;
+    /** Payments collected but not applied to a plan. */
+    heldPayments?: number;
+    /** Orgs whose paid features have been paused for more than a week. */
+    suspendedOverWeek?: number;
   };
   recent: {
     organizations: { id: string; name: string; slug: string; createdAt: string }[];

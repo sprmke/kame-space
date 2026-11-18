@@ -215,7 +215,7 @@ export function PlanFeatureMatrix({
                 >
                   <span className="sr-only">Change plan</span>
                 </th>
-                {tiers.map(({ plan, isCurrent, direction }) => (
+                {tiers.map(({ plan, isCurrent, direction, scheduledStart }) => (
                   <td
                     key={plan.id}
                     className={cn(
@@ -227,18 +227,24 @@ export function PlanFeatureMatrix({
                       type="button"
                       size="sm"
                       variant={planSelectButtonVariant(isCurrent, direction, plan.code)}
-                      disabled={isCurrent}
+                      disabled={isCurrent || Boolean(scheduledStart)}
                       onClick={() => onSelectPlan(plan)}
                       aria-label={
                         isCurrent
                           ? `${planDisplayName(plan)} is your current plan`
-                          : `${planActionLabel(direction, hasCurrentPlan, plan.code)} to ${planDisplayName(plan)}`
+                          : scheduledStart
+                            ? `${planDisplayName(plan)} is scheduled. ${scheduledStart}`
+                            : `${planActionLabel(direction, hasCurrentPlan, plan.code, { isFree: plan.isDefault })} to ${planDisplayName(plan)}`
                       }
                       className="settings-action w-full"
                     >
                       {isCurrent
                         ? 'Current'
-                        : planActionLabel(direction, hasCurrentPlan, plan.code)}
+                        : scheduledStart
+                          ? scheduledStart
+                          : planActionLabel(direction, hasCurrentPlan, plan.code, {
+                              isFree: plan.isDefault,
+                            })}
                     </Button>
                   </td>
                 ))}
