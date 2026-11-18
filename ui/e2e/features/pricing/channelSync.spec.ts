@@ -120,7 +120,8 @@ for (const viewport of [
       await expect(dialog.getByRole('button', { name: 'Connect' })).toBeDisabled();
 
       await input.fill('https://ycs.agoda.com/ical/abc.ics');
-      await dialog.getByRole('button', { name: 'Connect' }).click();
+      // Enter, not a click: the pointer can still rest on the step help and a tooltip covers Connect.
+      await input.press('Enter');
       await expect.poll(() => addBodies.length).toBe(1);
       expect(addBodies[0]).toMatchObject({
         action: 'addFeed',
