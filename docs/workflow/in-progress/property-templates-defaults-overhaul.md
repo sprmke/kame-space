@@ -286,14 +286,14 @@ One server module, `_shared/propertyTemplateCatalog.ts`, exports every token wit
 
 ### Phase 2: Placeholder engine
 
-- [ ] New `_shared/propertyTemplatePropertyVars.ts#buildPropertyPlaceholderVars(propertyId, booking?)`: property, essentials (non-secret), contact, money, links, blocks. Reuses `publicPropertyService` house rules / amenities / times resolution, `guestEssentials.ts`, `guestContactInfo.ts`, booking `cancellation_policy_snapshot` for `cancellation_policy_section`.
-- [ ] Merge it into every render path: `renderPropertyTemplateSendEmail` callers, `guestStayGuide.ts#resolveSectionHtml`, `guestTripContent.ts`, `chatTemplateMessage.ts`, custom send, preview.
-- [ ] Secrets: `guestStayGuide.ts` / `guestTripContent.ts` fill `wifi_password` / `door_code` from the reveal-gated essentials DTO (value or "Available Dec 9, 2:00 PM"); every other path fills "on your trip page".
-- [ ] Section builders in `propertyTemplateEmailSections.ts`: `contact_section`, `emergency_contacts_section`, `house_rules_list`, `amenities_list`, `*_instructions_section` and `house_rules_section` (render the guide template body inside a neutral card, through the same placeholder pass, guarding Gmail clipping by capping embedded length), `balance_due_section`, `arrival_access_note_section` (only when the property has secrets and a reveal time), `review_cta_section`, `parking_cta_section`, `map_cta_section`, `messages_cta_section`, `cancellation_policy_section`. Each has a sample builder.
-- [ ] Save validation in `property-templates-settings`: reject secrets outside Stay guide, tokenized links in Building admin / Team alerts (400 with the token name); return `warnings[]` for unknown or not-allowed tokens and for removed `requiredBlocks`.
-- [ ] Missing data: GET returns `emptyPlaceholders` per template (plain tokens empty for this property). Editor shows a compact chip row ("Wi-Fi name is empty. Add it in Guest experience.") linking to the setting.
-- [ ] Placeholders dialog (`PropertyTemplatePlaceholdersDialog.tsx`): grouped list, search, real values, kind badges, block tokens insert on their own line (existing behavior).
-- [ ] Tests: var builder unit tests; secret gating tests (before/after reveal, chat path never prints a secret); validation tests.
+- [x] New `_shared/propertyTemplatePropertyVars.ts#buildPropertyPlaceholderVars(propertyId, booking?)`: property, essentials (non-secret), contact, money, links and blocks. Reuses `loadPublicPropertyById` house rules / amenities / address / maps, `guestEssentials.ts`, `guestContactInfo.ts`, `resolveGuestFormSettings`, and builds `cancellation_policy_section` from the property policy.
+- [x] Merged into every render path: `renderPropertyTemplateSendEmail` (covers email, custom send and preview), `guestStayGuide.ts#resolveSectionHtml`, `guestTripContent.ts`, `chatTemplateMessage.ts`. Guide and trip pass `revealSecrets: true`; email, chat and preview never do.
+- [x] Secrets: guide and trip fill `wifi_password` / `door_code` from the reveal-gated essentials DTO (value or "Available ..."); every other path fills "on your trip page". Save rejects secrets outside Stay guide.
+- [x] Blocks built: `contact_section`, `emergency_contacts_section`, `house_rules_list`, `amenities_list`, `check_in_instructions_section`, `check_out_instructions_section`, `house_rules_section` (guide body embedded, dropped above 8 000 chars), `balance_due_section`, `arrival_access_note_section`, `review_cta_section`, `parking_cta_section`, `map_cta_section`, `messages_cta_section`, `cancellation_policy_section`. The four CTA blocks render from real URLs at send time.
+- [x] Save validation in `property-templates-settings`: errors for secrets outside Stay guide, tokenized links in Building admin / Team alerts, and block tokens in a subject; `warnings[]` for unknown tokens and removed `requiredBlocks`.
+- [x] Missing data: GET returns `propertyEmptyPlaceholders` for the property. The per-template chip row in the editor is still open (Phase 3 UI).
+- [ ] Placeholders dialog grouped list with kind badges and real values. The dialog already groups and searches; the kind badge and real-value columns remain.
+- [x] Tests: `propertyTemplateCatalog_test.ts` covers secret gating, link gating by group, unknown-token warnings, subject block rejection and required-block warnings.
 
 ### Phase 3: Groups, guide visibility, subjects, test send
 

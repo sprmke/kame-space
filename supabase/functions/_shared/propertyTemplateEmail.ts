@@ -6,6 +6,7 @@ import type { AppSettingsResolved } from './appSettings.ts';
 import { resolveAppSettings } from './appSettings.ts';
 import { buildEmailLegalFooterHtml } from './emailLegalFooter.ts';
 import {
+  formatEmailDateRange,
   loadPropertyEmailBranding,
   resolveEmailUnitLabel,
   type PropertyEmailBranding,
@@ -32,6 +33,14 @@ import {
 } from './propertyTemplates.ts';
 import { computeTotalGuestBalanceFromBooking } from './totalGuestBalance.ts';
 import { resolveGuestFormSettings } from './guestFormSettings.ts';
+import { REVIEW_WINDOW_DAYS } from './reviewWindow.ts';
+import { PENDING_REVIEW_CHASE_LEAD_DAYS } from './pendingReviewPolicy.ts';
+import {
+  buildPropertyPlaceholderVars,
+  type PropertyPlaceholderBooking,
+} from './propertyTemplatePropertyVars.ts';
+import { buildEmailCtaHtml } from './brandedEmailShell.ts';
+import { resolveGuestParkingCtaAbsoluteUrl } from './ownerDefaultParking.ts';
 import type { GuestFormData, GuestSubmission } from './types.ts';
 import { countStayNights, formatDateForEmail, formatTimeForDisplay } from './utils.ts';
 
@@ -176,11 +185,16 @@ export function buildBookingPlaceholderVars(
     (bookingId && propertySlug ? guestTripPath(appOrigin, propertySlug, bookingId) : '');
   const totalBalance =
     computeTotalGuestBalanceFromBooking(booking as unknown as Record<string, unknown>) ?? 0;
+  const guestDisplayName = String(
+    booking.primary_guest_name || booking.guest_facebook_name || ''
+  ).trim();
+  const guestFirstName = guestDisplayName.split(/\s+/)[0] || 'there';
 
   const flags = decorFlags(booking);
 
   return {
     primary_guest_name: escapeHtml(booking.primary_guest_name),
+    guest_first_name: escapeHtml(guestFirstName),
     guest_name: escapeHtml(booking.primary_guest_name || booking.guest_facebook_name),
     guest_email: escapeHtml(booking.guest_email),
     guest_phone: escapeHtml(booking.guest_phone_number),
@@ -189,8 +203,17 @@ export function buildBookingPlaceholderVars(
     check_out_date: escapeHtml(displayCheckOut),
     check_in_time: escapeHtml(formatTimeForDisplay(booking.check_in_time)),
     check_out_time: escapeHtml(formatTimeForDisplay(booking.check_out_time)),
+    stay_dates: escapeHtml(formatEmailDateRange(displayCheckIn, displayCheckOut)),
     nights: String(nights),
+    nights_label: escapeHtml(`${nights} ${nights === 1 ? 'night' : 'nights'}`),
     pax: String(pax),
+    guests_label: escapeHtml(`${pax} ${pax === 1 ? 'guest' : 'guests'}`),
+    review_window_days: String(REVIEW_WINDOW_DAYS),
+    expires_in_days: String(PENDING_REVIEW_CHASE_LEAD_DAYS),
+    balance_due_section:
+      totalBalance > 0
+        ? `<p style="margin:0 0 16px 0;">Your remaining balance is <strong>${escapeHtml(formatPeso(totalBalance))}</strong>.</p>`
+        : '',
     tower_and_unit_number: escapeHtml(unitLabel),
     unit_number: escapeHtml(unitLabel),
     property_name: escapeHtml(propertyName),
@@ -237,9 +260,14 @@ export function buildGuestFormPlaceholderVars(
   const propertyName = branding?.propertyName ?? 'Property';
   const hasDecor = Boolean(formData.guestRequestsSurpriseDecor);
   const hasPets = Boolean(formData.hasPets);
+  const guestDisplayName = String(
+    formData.primaryGuestName || formData.guestFacebookName || ''
+  ).trim();
+  const guestFirstName = guestDisplayName.split(/\s+/)[0] || 'there';
 
   return {
     primary_guest_name: escapeHtml(formData.primaryGuestName),
+    guest_first_name: escapeHtml(guestFirstName),
     guest_name: escapeHtml(formData.primaryGuestName || formData.guestFacebookName),
     guest_email: escapeHtml(formData.guestEmail),
     guest_phone: escapeHtml(formData.guestPhoneNumber),
@@ -248,8 +276,11 @@ export function buildGuestFormPlaceholderVars(
     check_out_date: escapeHtml(displayCheckOut),
     check_in_time: escapeHtml(formatTimeForDisplay(formData.checkInTime)),
     check_out_time: escapeHtml(formatTimeForDisplay(formData.checkOutTime)),
+    stay_dates: escapeHtml(formatEmailDateRange(displayCheckIn, displayCheckOut)),
     nights: String(nights),
+    nights_label: escapeHtml(`${nights} ${nights === 1 ? 'night' : 'nights'}`),
     pax: String(pax),
+    guests_label: escapeHtml(`${pax} ${pax === 1 ? 'guest' : 'guests'}`),
     tower_and_unit_number: escapeHtml(unitLabel),
     unit_number: escapeHtml(unitLabel),
     property_name: escapeHtml(propertyName),
@@ -273,6 +304,39 @@ export function buildGuestFormPlaceholderVars(
   };
 }
 
+const GUIDE_SECTION_KEYS = [
+  { placeholder: 'check_in_instructions_section', templateKey: 'check-in-instructions' },
+  { placeholder: 'check_out_instructions_section', templateKey: 'check-out-instructions' },
+  { placeholder: 'house_rules_section', templateKey: 'house-rules' },
+] as const satisfies readonly {
+  placeholder: string;
+  templateKey: PropertyTemplateKey;
+}[];
+
+/** Past this, the embed is dropped rather than risk Gmail clipping the whole email. */
+const MAX_EMBEDDED_GUIDE_CHARS = 8_000;
+
+/**
+ * Embeds a guide template body in an email so a host writes check-in, check-out or house rules
+ * once. Placeholders are already resolved in `vars`.
+ */
+async function buildGuideSectionHtml(
+  propertyId: string | undefined,
+  templateKey: PropertyTemplateKey,
+  vars: Record<string, string>
+): Promise<string> {
+  if (!propertyId) return '';
+  try {
+    const resolved = await resolvePropertyTemplateContent(propertyId, templateKey);
+    const html = applyPropertyTemplatePlaceholders(resolved.content, vars).trim();
+    if (!html || html.length > MAX_EMBEDDED_GUIDE_CHARS) return '';
+    return `<div class="guide-embed" style="margin:0 0 18px 0;">${html}</div>`;
+  } catch (err) {
+    console.warn('[propertyTemplateEmail] guide embed failed:', err);
+    return '';
+  }
+}
+
 export async function renderPropertyTemplateSendEmail(input: {
   propertyId: string | undefined;
   /** Custom (`custom-*`) keys are only valid together with `contentOverride`. */
@@ -285,6 +349,8 @@ export async function renderPropertyTemplateSendEmail(input: {
   branding?: PropertyEmailBranding;
   /** When set (preview), use this body instead of DB/default content. */
   contentOverride?: string;
+  /** Enables booking-dependent blocks (parking CTA, review CTA, guide embeds). */
+  booking?: PropertyPlaceholderBooking | null;
 }): Promise<string> {
   const settings = await resolveAppSettings(input.propertyId);
   const branding = input.branding ?? (await loadPropertyEmailBranding(input.propertyId));
@@ -331,6 +397,45 @@ export async function renderPropertyTemplateSendEmail(input: {
     } catch (err) {
       console.warn('[propertyTemplateEmail] guest form settings lookup failed:', err);
     }
+  }
+
+  const propertyVars = await buildPropertyPlaceholderVars({
+    propertyId: input.propertyId,
+    booking: input.booking ?? null,
+  });
+  // Booking-specific values win over property defaults (unit, name, links).
+  vars = { ...propertyVars.vars, ...vars };
+
+  const brandColor = settings.brandColor;
+  if (vars.messages_url) {
+    vars.messages_cta_section = buildEmailCtaHtml(
+      'Message your host',
+      vars.messages_url,
+      brandColor
+    );
+  }
+  if (vars.review_url) {
+    vars.review_cta_section = buildEmailCtaHtml('Leave a review', vars.review_url, brandColor);
+  }
+  if (input.booking?.id) {
+    try {
+      const parkingUrl = await resolveGuestParkingCtaAbsoluteUrl({
+        propertyBookingId: input.booking.id,
+        publicGuestAppOrigin: settings.publicGuestAppOrigin,
+      });
+      vars.parking_cta_section = buildEmailCtaHtml('Find parking', parkingUrl, brandColor);
+    } catch (err) {
+      console.warn('[propertyTemplateEmail] parking CTA failed:', err);
+    }
+  }
+
+  for (const guideKey of GUIDE_SECTION_KEYS) {
+    if (!rawContent.includes(`{{${guideKey.placeholder}}}`)) continue;
+    vars[guideKey.placeholder] = await buildGuideSectionHtml(
+      input.propertyId,
+      guideKey.templateKey,
+      vars
+    );
   }
 
   let body = applyPropertyTemplatePlaceholders(rawContent, vars);

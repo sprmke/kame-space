@@ -12,6 +12,7 @@ import { createServiceClient } from './orgAuth.ts';
 import { loadGuestFacingContactInfo } from './guestContactInfo.ts';
 import { escapeHtml } from './renderEmailHtml.ts';
 import { loadPropertyEmailBranding } from './propertyEmailBranding.ts';
+import { buildPropertyPlaceholderVars } from './propertyTemplatePropertyVars.ts';
 import {
   applyPropertyTemplatePlaceholders,
   buildBookingPlaceholderVars,
@@ -120,8 +121,15 @@ export async function buildChatTemplateVars(input: {
     airbnb_url: escapeHtml(contact.airbnbUrl),
   };
 
+  const propertyVars = await buildPropertyPlaceholderVars({
+    propertyId: input.propertyId,
+    booking: input.booking ?? null,
+    revealSecrets: false,
+  });
+
   if (input.booking) {
     return {
+      ...propertyVars.vars,
       ...buildBookingPlaceholderVars(input.booking, settings, {}, branding),
       ...contactVars,
     };
@@ -129,6 +137,7 @@ export async function buildChatTemplateVars(input: {
 
   const guestName = input.conversation?.participant_name?.trim() || 'Guest';
   return {
+    ...propertyVars.vars,
     guest_name: escapeHtml(guestName),
     primary_guest_name: escapeHtml(guestName),
     guest_email: '',

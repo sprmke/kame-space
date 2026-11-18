@@ -79,6 +79,10 @@ export type PropertyTemplatesData = {
   templates: PropertyTemplateDto[];
   placeholdersReference: string[];
   folders: PropertyTemplateFolderDto[];
+  /** Property-data tokens that are empty for this property. */
+  propertyEmptyPlaceholders: string[];
+  /** Save-time token warnings from the server. */
+  warnings?: string[];
 };
 
 export const PROPERTY_TEMPLATES_QUERY_KEY = ['property-templates'] as const;
@@ -121,6 +125,8 @@ export function usePropertyTemplates() {
         templates: json.data.templates,
         placeholdersReference: json.data.placeholdersReference ?? [],
         folders: json.data.folders ?? [],
+        propertyEmptyPlaceholders: json.data.propertyEmptyPlaceholders ?? [],
+        warnings: json.data.warnings,
       };
     },
     enabled: Boolean(propertyId),
@@ -210,9 +216,15 @@ export function usePropertyTemplateMutations() {
     },
     onSuccess: (_data, variables) => {
       invalidate();
-      if (!variables.silent) {
-        toast.success('Template saved');
+      if (variables.silent) return;
+      const warnings = (_data as { data?: { warnings?: string[] } } | null)?.data?.warnings ?? [];
+      if (warnings.length > 0) {
+        toast.warning(warnings[0]!, {
+          description: warnings.length > 1 ? warnings.slice(1).join(' ') : undefined,
+        });
+        return;
       }
+      toast.success('Template saved');
     },
     onError: (error: Error, variables) => {
       // Silent autosave still surfaces via Page Editor Unsaved/Save failed; toast on failure only.

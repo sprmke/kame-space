@@ -183,7 +183,25 @@ Full-width dynamic blocks (tables, CTAs, urgent/update callouts, signatures, etc
 
 Block-level keys include: `urgent_notice`, `update_notice`, `new_booking_detail_tables`, `downpayment_receipt_ai_section`, `booking_link_cta`, `pet_details_section`, `pet_attachments_section`, `booking_vehicle_copy`, `parking_reply_callout_section`, `booking_acknowledgement_flow_section`, all ready-for-check-in sections, `sd_refund_checklist_section`, `sd_refund_details_section`, and `email_signature_section`.
 
-**`{{urgent_notice}}`** — GAF, pet, parking, and new booking request templates only (empty when check-in is not same-day in Asia/Manila). **`{{update_notice}}`** — GAF, pet, and parking request templates only (empty on first send; amber callout on resubmit). **Preview** shows sample HTML for both when those placeholders are in the saved body.
+**`{{urgent_notice}}`** — GAF, pet, and new booking request templates only (empty when check-in is not same-day in Asia/Manila). **`{{update_notice}}`** — GAF and pet request templates only (empty on first send; amber callout on resubmit). **Preview** shows sample HTML for both when those placeholders are in the saved body.
+
+### Placeholder context rules
+
+The server catalog (`_shared/propertyTemplateCatalog.ts`) decides what each template may use. Saving enforces it:
+
+| Token kind                             | Stay guide | Guest messages | Guest emails | Building admin | Team alerts |
+| -------------------------------------- | ---------- | -------------- | ------------ | -------------- | ----------- |
+| Guest, stay, property, contact         | Yes        | Yes            | Yes          | Yes            | Yes         |
+| Arrival essentials (non-secret)        | Yes        | Yes            | Yes          | No             | Yes         |
+| Secrets (`wifi_password`, `door_code`) | Yes        | No             | No           | No             | No          |
+| Tokenized guest links and CTA blocks   | Yes        | Yes            | Yes          | No             | No          |
+| `booking_link`, `booking_link_cta`     | No         | No             | No           | No             | Yes         |
+
+Secrets save only in Stay guide templates and render reveal-gated. Everywhere else they read "on your trip page". A secret or guest link in a forbidden template returns **400** naming the token. Unknown tokens save but return warnings, and the editor shows them.
+
+`GET property-templates-settings` also returns `propertyEmptyPlaceholders`, the property-data tokens that are empty for this property, so the editor can point at the setting that fills them.
+
+**New blocks:** `contact_section`, `emergency_contacts_section`, `house_rules_list`, `amenities_list`, `check_in_instructions_section`, `check_out_instructions_section`, `house_rules_section`, `balance_due_section`, `arrival_access_note_section`, `review_cta_section`, `parking_cta_section`, `map_cta_section`, `messages_cta_section`, `cancellation_policy_section`.
 
 ## WYSIWYG in real email
 

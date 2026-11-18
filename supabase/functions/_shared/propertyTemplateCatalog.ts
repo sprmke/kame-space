@@ -188,3 +188,80 @@ export function propertyTemplatePlaceholderKeys(
   if (category === 'custom') return CUSTOM_TEMPLATE_KEYS;
   return PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE[templateKey] ?? CUSTOM_TEMPLATE_KEYS;
 }
+
+/** Tokens that carry a booking access token in the URL. Never for building admin or team mail. */
+export const TOKENIZED_LINK_PLACEHOLDER_KEYS: readonly string[] = [
+  'trip_url',
+  'sd_form_url',
+  'review_url',
+  'form_url',
+  'stay_guide_url',
+  'messages_url',
+  'trip_cta_section',
+  'stay_guide_cta_section',
+  'sd_refund_details_section',
+  'review_cta_section',
+  'parking_cta_section',
+  'messages_cta_section',
+];
+
+export const SECRET_PLACEHOLDER_KEYS: readonly string[] = ['wifi_password', 'door_code'];
+
+/** Blocks a template cannot save without, because a side effect lives inside them. */
+export const REQUIRED_BLOCKS_BY_TEMPLATE: Record<string, readonly string[]> = {
+  'email-sd-refund-form-request': ['sd_refund_details_section'],
+};
+
+export type PropertyTemplateTokenValidation = {
+  errors: string[];
+  warnings: string[];
+};
+
+function tokenKeysOf(html: string): string[] {
+  return [...html.matchAll(/\{\{([\w-]+)\}\}/g)].map((match) => match[1].replace(/-/g, '_'));
+}
+
+/**
+ * Context rules from the plan, enforced server-side on save.
+ *
+ * `errors` block the save. `warnings` let the save through but tell the editor what will not
+ * render, so a typo is visible before a guest sees an empty sentence.
+ */
+export function validatePropertyTemplateTokens(input: {
+  templateKey: string;
+  category: 'standard' | 'email' | 'custom';
+  group?: string | null;
+  content: string;
+  subject?: string | null;
+}): PropertyTemplateTokenValidation {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const allowed = new Set(propertyTemplatePlaceholderKeys(input.templateKey, input.category));
+  const tokens = tokenKeysOf(input.content);
+  const subjectTokens = input.subject ? tokenKeysOf(input.subject) : [];
+  const guideOnly = input.category === 'standard';
+  const noGuestLinks = input.group === 'building-admin' || input.group === 'team-alerts';
+
+  for (const token of new Set([...tokens, ...subjectTokens])) {
+    if (SECRET_PLACEHOLDER_KEYS.includes(token) && !guideOnly) {
+      errors.push(`{{${token}}} is only allowed in Stay guide templates`);
+    }
+    if (TOKENIZED_LINK_PLACEHOLDER_KEYS.includes(token) && noGuestLinks) {
+      errors.push(`{{${token}}} carries a guest link and cannot be used in this email`);
+    }
+    if (subjectTokens.includes(token) && isBlockLevelPropertyPlaceholder(token)) {
+      errors.push(`{{${token}}} is a block and cannot be used in a subject`);
+    }
+    if (!allowed.has(token) && input.category !== 'custom') {
+      warnings.push(`Unknown placeholder {{${token}}}`);
+    }
+  }
+
+  for (const required of REQUIRED_BLOCKS_BY_TEMPLATE[input.templateKey] ?? []) {
+    if (!tokens.includes(required)) {
+      warnings.push(`{{${required}}} was removed, so part of this email will not send`);
+    }
+  }
+
+  return { errors: [...new Set(errors)], warnings: [...new Set(warnings)] };
+}

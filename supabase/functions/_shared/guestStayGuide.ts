@@ -7,7 +7,12 @@ import { createClient } from './supabaseJs.ts';
 import { resolveAppSettings } from './appSettings.ts';
 import { loadAuthUserProfile } from './authUserProfile.ts';
 import { mintGuestBookingAccessToken } from './guestBookingAccessToken.ts';
-import { buildGuestEssentialsHtml, loadGuestEssentials } from './guestEssentials.ts';
+import {
+  buildGuestEssentialsHtml,
+  loadGuestEssentials,
+  type GuestEssentialsDto,
+} from './guestEssentials.ts';
+import { buildPropertyPlaceholderVars } from './propertyTemplatePropertyVars.ts';
 import { guestTripStage, loadGuestTripContent } from './guestTripContent.ts';
 import { linkGuestBookingsByEmail } from './guestProfileService.ts';
 import type { AuthenticatedUser } from './orgAuth.ts';
@@ -385,7 +390,9 @@ async function resolveSectionHtml(
   propertyId: string,
   templateKey: StayGuideSectionKey,
   booking: GuestSubmission,
-  publicOrigin: string
+  publicOrigin: string,
+  essentials: GuestEssentialsDto | null,
+  revealLabel: string | null
 ): Promise<{
   label: string;
   displayHeading: string;
@@ -416,7 +423,16 @@ async function resolveSectionHtml(
           trip_url: '',
         };
 
-  const placeholderVars = buildBookingPlaceholderVars(booking, settings, guestLinkExtras, branding);
+  const bookingVars = buildBookingPlaceholderVars(booking, settings, guestLinkExtras, branding);
+  // Secrets render here (guide only), reveal-gated by the essentials DTO.
+  const propertyVars = await buildPropertyPlaceholderVars({
+    propertyId,
+    booking,
+    essentials,
+    revealSecrets: true,
+    revealLabel,
+  });
+  const placeholderVars = { ...propertyVars.vars, ...bookingVars };
 
   const withPlaceholders = applyPropertyTemplatePlaceholders(content, placeholderVars);
   const prepared = prepareConfigurableEmailBodyHtml(withPlaceholders, publicOrigin);
@@ -650,10 +666,20 @@ async function buildGuestStayGuidePayload(
 
   const images = property.images.length > 0 ? property.images : property.media.map((m) => m.url);
 
+  const essentials = await loadGuestEssentials({ propertyId, booking });
+  const revealLabel = essentials?.revealAt != null ? formatRevealLabel(essentials.revealAt) : null;
+
   const sections: StayGuideSectionDto[] = [];
   for (const key of sectionKeys) {
     const builtin = getBuiltinPropertyTemplate(key);
-    const resolved = await resolveSectionHtml(propertyId, key, booking, publicOrigin);
+    const resolved = await resolveSectionHtml(
+      propertyId,
+      key,
+      booking,
+      publicOrigin,
+      essentials,
+      revealLabel
+    );
     sections.push({
       key,
       label: resolved.label || builtin?.label || key,
@@ -691,13 +717,7 @@ async function buildGuestStayGuidePayload(
     checkInYmd <= nowYmd && nowYmd < checkOutYmd
   );
 
-  const [essentials, tripContent] = await Promise.all([
-    loadGuestEssentials({ propertyId, booking }),
-    loadGuestTripContent({ propertyId, booking, publicOrigin, stage }),
-  ]);
-
-  const revealLabel =
-    essentials?.revealAt != null ? formatRevealLabel(essentials.revealAt) : null;
+  const tripContent = await loadGuestTripContent({ propertyId, booking, publicOrigin, stage });
 
   return {
     property: {

@@ -28,6 +28,7 @@ import {
   type GuestTemplatePhase,
 } from '../_shared/propertyTemplates.ts';
 import { jsonError, jsonSuccess, readJsonBody } from '../_shared/httpResponse.ts';
+import { validatePropertyTemplateTokens } from '../_shared/propertyTemplateCatalog.ts';
 import { catchPlanFeatureError, requirePropertyFeature } from '../_shared/planEntitlements.ts';
 import { resolveScopedPropertyAccess } from '../_shared/propertyScope.ts';
 import type { TeamPermissionId } from '../_shared/propertyTeamPermissions.ts';
@@ -374,6 +375,14 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
       }
     }
 
+    const tokenCheck = validatePropertyTemplateTokens({
+      templateKey: 'custom-create',
+      category,
+      group: category === 'standard' ? 'stay-guide' : null,
+      content,
+    });
+    if (tokenCheck.errors.length > 0) return jsonError(req, tokenCheck.errors[0]!, 400);
+
     const otpGate = await requireTemplateContentOtp({
       req,
       body,
@@ -398,7 +407,7 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
       ...(folderId ? { folder_id: folderId } : {}),
     });
     const data = await serializePropertyTemplatesForAdmin(property.id);
-    return jsonSuccess(req, data);
+    return jsonSuccess(req, { ...data, warnings: tokenCheck.warnings });
   }
 
   const templateKey = typeof body.templateKey === 'string' ? body.templateKey.trim() : '';
@@ -455,6 +464,14 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
         ? existingRow.category
         : 'custom';
 
+    const tokenCheck = validatePropertyTemplateTokens({
+      templateKey,
+      category: existingCategory,
+      group: existingCategory === 'standard' ? 'stay-guide' : null,
+      content,
+    });
+    if (tokenCheck.errors.length > 0) return jsonError(req, tokenCheck.errors[0]!, 400);
+
     const otpGate = await requireTemplateContentOtp({
       req,
       body,
@@ -481,7 +498,7 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
       ...(guestPhase === undefined ? {} : { guest_phase: guestPhase }),
     });
     const data = await serializePropertyTemplatesForAdmin(property.id);
-    return jsonSuccess(req, data);
+    return jsonSuccess(req, { ...data, warnings: tokenCheck.warnings });
   }
 
   if (isBuiltinPropertyTemplateKey(templateKey)) {
@@ -501,6 +518,14 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
         throw err;
       }
     }
+    const tokenCheck = validatePropertyTemplateTokens({
+      templateKey,
+      category: builtin.category,
+      group: builtin.group,
+      content,
+    });
+    if (tokenCheck.errors.length > 0) return jsonError(req, tokenCheck.errors[0]!, 400);
+
     const otpGate = await requireTemplateContentOtp({
       req,
       body,
@@ -522,7 +547,7 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
       operation: 'edit',
     });
     const data = await serializePropertyTemplatesForAdmin(property.id);
-    return jsonSuccess(req, data);
+    return jsonSuccess(req, { ...data, warnings: tokenCheck.warnings });
   }
 
   return jsonError(req, 'Unknown template key', 400);

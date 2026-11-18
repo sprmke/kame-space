@@ -11,6 +11,7 @@ import type { PropertyAutomationToggleKey } from './propertyAutomationToggles.ts
 import { condoTemplateDefault } from './propertyTemplateDefaults/index.ts';
 import { propertyTemplatePlaceholderKeys } from './propertyTemplateCatalog.ts';
 import { resolveDocumentRequirements } from './documentRequirements.ts';
+import { buildPropertyPlaceholderVars } from './propertyTemplatePropertyVars.ts';
 
 export type PropertyTemplateCategory = 'standard' | 'email' | 'custom';
 
@@ -947,11 +948,14 @@ export async function serializePropertyTemplatesForAdmin(propertyId: string): Pr
   templates: PropertyTemplateDto[];
   placeholdersReference: string[];
   folders: PropertyTemplateFolderDto[];
+  /** Property-data tokens that are empty for this property, for the editor hint row. */
+  propertyEmptyPlaceholders: string[];
 }> {
-  const [rows, folderRows, needsBuildingAdmin] = await Promise.all([
+  const [rows, folderRows, needsBuildingAdmin, propertyVars] = await Promise.all([
     listPropertyTemplateRows(propertyId),
     listPropertyTemplateFolders(propertyId),
     propertyAppliesBuildingAdminTemplates(propertyId),
+    buildPropertyPlaceholderVars({ propertyId }),
   ]);
   const rowByKey = new Map(rows.map((r) => [r.template_key, r]));
 
@@ -977,6 +981,7 @@ export async function serializePropertyTemplatesForAdmin(propertyId: string): Pr
   return {
     templates,
     placeholdersReference: [...PROPERTY_TEMPLATE_PLACEHOLDERS_REFERENCE],
+    propertyEmptyPlaceholders: propertyVars.emptyPlaceholders,
     folders: folderRows.map((row) => ({
       id: row.id,
       name: row.name,
