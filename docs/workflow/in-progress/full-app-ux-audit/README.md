@@ -26,30 +26,35 @@ caching, AI cost, and a 320-2560px responsive matrix.
 
 ## Module reports
 
-| #   | Report                                                                | Scope                                                                                                                  |
-| --- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| 01  | [Guest experience](./01-guest-experience.md)                          | Calendar, GAF form, trip, stay guide, showcase, SD form, parking request                                               |
-| 02  | [Host dashboard](./02-host-dashboard.md)                              | Org + property dashboards, finance, pricing, maintenance, analytics, templates, public pages, inbox, settings, reviews |
-| 03  | [Booking workflow](./03-booking-workflow.md)                          | List, detail, transitions, side effects, activity log                                                                  |
-| 04  | [Platform admin](./04-platform-admin.md)                              | `/admin/*`, AI console, health, control coverage                                                                       |
-| 05  | [Org + parking host](./05-org-and-parking.md)                         | Org-level modules and the parking vertical                                                                             |
-| 06  | [Cross-cutting](./06-cross-cutting.md)                                | Responsive, accessibility, loading, copy, consistency                                                                  |
-| 07  | [Marketing site + guest account](./07-marketing-and-account.md)       | Public marketing pages and `/account/*`                                                                                |
-| 08  | [Local dev + seed fidelity](./08-local-dev-and-seed.md)               | What a fresh clone cannot do out of the box                                                                            |
-| 09  | [Roles and permissions](./09-roles-and-permissions.md)                | Six role shapes, route matrix, escalation tests, plan enforcement                                                      |
-| 10  | [Billing and payments](./10-billing-and-payments.md)                  | Pricing, checkout, plan changes, renewals, payouts, refunds, reconciliation                                            |
-| 11  | [Listing lifecycle](./11-listings-lifecycle.md)                       | Create, verify, publish, pause, archive, restore, delete                                                               |
-| 12  | [Settings and configuration](./12-settings-and-configuration.md)      | Every settings card, platform config, validation                                                                       |
-| 13  | [Public pages and SEO](./13-public-pages-and-seo.md)                  | Gallery, editor, publish states, meta, sitemap, soft 404s                                                              |
-| 14  | [Codebase architecture](./14-codebase-architecture.md)                | Scale, schema drift, god files, edge-function sprawl, bundle, types                                                    |
-| 15  | [Security review](./15-security-review.md)                            | RLS write bypass, PII exposure, buckets, webhooks, config gaps                                                         |
-| 16  | [Performance, caching and cost](./16-performance-caching-and-cost.md) | Bundle, API volume, payloads, caching, AI unit economics, third parties                                                |
-| 17  | [Responsive and interaction](./17-responsive-design-matrix.md)        | 320-2560px, zoom, touch targets, sheets vs dialogs                                                                     |
-| 18  | [Remediation backlog](./18-remediation-backlog.md)                    | Every P0/P1 sequenced by risk, with effort and the test that should gate each fix                                      |
-| 19  | [Dashboard page inventory](./19-dashboard-page-inventory.md)          | Tier gate matrix, access matrix, cross-cutting dashboard findings                                                      |
-| 20  | [Property dashboard pages](./20-property-dashboard-pages.md)          | Every property page, control, filter and save flow                                                                     |
-| 21  | [Org dashboard pages](./21-org-dashboard-pages.md)                    | Every org page, control, filter and save flow                                                                          |
-| 22  | [Parking dashboard pages](./22-parking-dashboard-pages.md)            | Every parking page, control, filter and save flow                                                                      |
+| #   | Report                                                                  | Scope                                                                                                                  |
+| --- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 01  | [Guest experience](./01-guest-experience.md)                            | Calendar, GAF form, trip, stay guide, showcase, SD form, parking request                                               |
+| 02  | [Host dashboard](./02-host-dashboard.md)                                | Org + property dashboards, finance, pricing, maintenance, analytics, templates, public pages, inbox, settings, reviews |
+| 03  | [Booking workflow](./03-booking-workflow.md)                            | List, detail, transitions, side effects, activity log                                                                  |
+| 04  | [Platform admin](./04-platform-admin.md)                                | `/admin/*`, AI console, health, control coverage                                                                       |
+| 05  | [Org + parking host](./05-org-and-parking.md)                           | Org-level modules and the parking vertical                                                                             |
+| 06  | [Cross-cutting](./06-cross-cutting.md)                                  | Responsive, accessibility, loading, copy, consistency                                                                  |
+| 07  | [Marketing site + guest account](./07-marketing-and-account.md)         | Public marketing pages and `/account/*`                                                                                |
+| 08  | [Local dev + seed fidelity](./08-local-dev-and-seed.md)                 | What a fresh clone cannot do out of the box                                                                            |
+| 09  | [Roles and permissions](./09-roles-and-permissions.md)                  | Six role shapes, route matrix, escalation tests, plan enforcement                                                      |
+| 10  | [Billing and payments](./10-billing-and-payments.md)                    | Pricing, checkout, plan changes, renewals, payouts, refunds, reconciliation                                            |
+| 11  | [Listing lifecycle](./11-listings-lifecycle.md)                         | Create, verify, publish, pause, archive, restore, delete                                                               |
+| 12  | [Settings and configuration](./12-settings-and-configuration.md)        | Every settings card, platform config, validation                                                                       |
+| 13  | [Public pages and SEO](./13-public-pages-and-seo.md)                    | Gallery, editor, publish states, meta, sitemap, soft 404s                                                              |
+| 14  | [Codebase architecture](./14-codebase-architecture.md)                  | Scale, schema drift, god files, edge-function sprawl, bundle, types                                                    |
+| 15  | [Security review](./15-security-review.md)                              | RLS write bypass, PII exposure, buckets, webhooks, config gaps                                                         |
+| 16  | [Performance, caching and cost](./16-performance-caching-and-cost.md)   | Bundle, API volume, payloads, caching, AI unit economics, third parties                                                |
+| 17  | [Responsive and interaction](./17-responsive-design-matrix.md)          | 320-2560px, zoom, touch targets, sheets vs dialogs                                                                     |
+| 18  | [Remediation backlog](./18-remediation-backlog.md)                      | Every P0/P1 sequenced by risk, with effort and the test that should gate each fix                                      |
+| 19  | [Dashboard page inventory](./19-dashboard-page-inventory.md)            | Tier gate matrix, access matrix, cross-cutting dashboard findings                                                      |
+| 20  | [Property dashboard pages](./20-property-dashboard-pages.md)            | Every property page, control, filter and save flow                                                                     |
+| 21  | [Org dashboard pages](./21-org-dashboard-pages.md)                      | Every org page, control, filter and save flow                                                                          |
+| 22  | [Parking dashboard pages](./22-parking-dashboard-pages.md)              | Every parking page, control, filter and save flow                                                                      |
+| 23  | [Design system critique](./23-design-system-critique.md)                | Measured type scale, contrast, radius, icons, motion, a11y, copy; 21 systemic changes                                  |
+| 24  | [Public and guest design critique](./24-public-guest-design.md)         | Marketing, guest booking, account: page-by-page redesign list                                                          |
+| 25  | [Host dashboard design critique](./25-host-dashboard-design.md)         | Org and property dashboards: hierarchy, density, mobile, copy                                                          |
+| 26  | [Parking and super admin design critique](./26-parking-admin-design.md) | Parking workspace and the platform panel                                                                               |
+| 27  | [Design remediation backlog](./27-design-remediation-backlog.md)        | Every design change, sequenced by impact, with the mobile removals called out                                          |
 
 Screenshots: [`screenshots/`](./screenshots), plus `/tmp/audit/*-screens/` for module captures.
 
@@ -65,6 +70,102 @@ Screenshots: [`screenshots/`](./screenshots), plus `/tmp/audit/*-screens/` for m
 | **P3** | Polish: spacing, copy, minor consistency.                                                       |
 
 ---
+
+## Phase 4 findings (design and UX critique)
+
+A senior-designer pass over the whole product using the design skills in this repo plus the Vercel Web
+Interface Guidelines: `ui-ux-pro-max` (priority order and anti-patterns), `design-taste-frontend` (anti-slop
+quality bar), `mobile-responsive` (the repo's native gate), `accessibility`, `human-copy`,
+`minimal-ui-copy`, and root `DESIGN.md` as the spec to audit against. Four parallel passes (public site and
+guest flows, host dashboards, parking and super admin, plus a measured design-system audit), every finding
+re-verified in the running app before it was kept.
+
+Detail: [23 design system](./23-design-system-critique.md) · [24 public and guest](./24-public-guest-design.md)
+· [25 host dashboards](./25-host-dashboard-design.md) · [26 parking and super admin](./26-parking-admin-design.md)
+· [27 design backlog](./27-design-remediation-backlog.md) (65 items).
+
+### The headline
+
+The product is well styled and badly ranked. On the property dashboard there are **48 bordered surfaces,
+38 of them above the fold, and zero section headings above the fold**. Type, colour and radius all drift a
+little, but the dominant problem is that every card has the same weight, so the number or action that
+matters never wins the eye.
+
+### P0
+
+**P4-1. The booking form is behind a sign-in sheet you cannot dismiss, while the home page says "No account
+needed."** `/properties/kame-home/form` opens "Log in or sign up" over a blurred form: no close button, no
+guest path, Escape does nothing. The home page's booking step says "No account needed."
+
+**P4-2. The guest form pre-fills a different stranger on every load.** Signed in as the demo guest, two
+consecutive loads produced "David H. Jones / davidhjones@example.com" and "Chris A. Miller /
+chrisamiller@example.com". The form says it will email the GAF to that address, which cannot receive mail.
+
+### P1
+
+**P4-3. Two primary screens cannot be saved or completed on a phone.** Property Settings has no Save,
+Discard or saved indicator at 390 (verified twice), on a page nine screens tall with no section nav.
+Parking Settings is the same at 4,454px.
+
+**P4-4. The map shows Google's error string to guests.** "Oops! Something went wrong. This page didn't load
+Google Maps correctly. See the JavaScript console for technical details." on every listing.
+
+**P4-5. The guest payment numbers do not add up.** Trip: stay ₱7,000 + deposit ₱2,000, paid ₱5,000, no
+balance, no refund date. Parking pricing prints `400 − 30 = 270`.
+
+**P4-6. The org bookings table loses its action column at 1440.** Table 1162px in a 1094px wrapper;
+`ACTIONS` sits at x=1385-1475.
+
+**P4-7. The Revenue Overview chart is missing below 1024px.** Two chart surfaces at 1440, one at 390.
+
+**P4-8. Chart colours leave the brand.** Property Analytics paints in raw Tailwind sky/emerald/violet/pink;
+the rest of the product is teal tokens.
+
+**P4-9. Dark mode was never contrast-audited.** Teal text links measure 3.1:1 on dark cards; the required
+marker is 3.4:1 in dark, 3.8:1 in light.
+
+**P4-10. Long pages drop their section navigation on mobile.** Parking Settings 4,454px, admin org detail
+6,428px, development detail 7,758px, FAQs 8,728px, all with the rail removed and nothing replacing it.
+
+**P4-11. The mobile More sheet hides destinations.** Messages, Reviews, Notifications, Templates, Analytics,
+Marketing, Public Pages, Team, Settings and Help sit below the sheet's visible area with no internal scroll
+affordance; the visible sheet ends at the plan card.
+
+**P4-12. Search results look broken.** "From ₱0 / night", "1 homes available", a 404'd card image whose alt
+text bleeds across the card, and "Parking in Other".
+
+**P4-13. The guest form's sticky bar covers the pill the guest must tap.** On steps 3 and 4 the Continue bar
+sits over "Yes, reserve paid parking" and "Yes, I'm bringing a pet".
+
+### P2 highlights
+
+- 9px and 10px text in 310 places; nine type sizes in one viewport.
+- Eyebrows implemented as `<h3>`, so screen readers hear "TELEGRAM, Telegram, AI SERVICES, AI services".
+- Every dashboard page carries a subtitle that restates its title.
+- Form errors are visible but not announced (`aria-invalid` 0, `aria-describedby` 0).
+- No skip link on any page.
+- Tables lose their action column at 1024 across bookings and admin.
+- The super admin overview is 12 equal KPI cards, three of which are duplicated immediately below.
+- Admin org detail is a 70-surface, 3,831-character page at 1440 and a 6,428px stack at 390.
+- `Invalid Date` renders in the Approvals table.
+- 13 near-identical calendar-conflict notifications with raw `itest-*` ids.
+- Property Analytics donuts have no legend and no text alternative.
+- Maintenance status shows "-" for 12 of 18 rows (badge gated on Telegram, not completion).
+- Raw engineering strings in human UI: `GEMINI_API_KEYS`, `meta-inbox-oauth-*`, `u:<userId>`.
+
+### What holds up
+
+One type family, one teal palette with a tested fill/text split, real focus rings, motion that honours
+`prefers-reduced-motion`, no horizontal overflow at 320 on any route measured, layout-matched skeletons,
+actionable empty states, and copy with zero AI tells, zero apology language and no em dashes across 3,300
+strings.
+
+### Mobile removals recommended
+
+The month grid on the property/parking dashboard, the `Card | Calendar` toggle on mobile bookings, the guest
+form's theme toggle and avatar, the third label per form step, duplicate account tiles, `FLAGS` and
+`Pending 0`, the duplicate rating in the listing sticky bar, the six unlabelled workflow dots, and the
+decorative KPI icon wells. Full list in [27](./27-design-remediation-backlog.md#mobile-removals-explicit).
 
 ## Phase 3 findings (dashboard deep dive)
 
@@ -489,49 +590,68 @@ renders, 0 unhandled JS exceptions, 54 curated screenshots kept in
 Strongest surfaces and the clearest visual defects. Every image is a 1440x900 desktop capture unless
 the filename says mobile.
 
-| Image                                                                                        | What it shows                                                                      |
-| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| [06-booking-detail-review.png](./screenshots/06-booking-detail-review.png)                   | Booking detail, Pending Review gate, step deck, guest view                         |
-| [07-property-finance-desktop.png](./screenshots/07-property-finance-desktop.png)             | Property finance: KPIs, cash flow, donut with legend (the pattern the others lack) |
-| [08-property-pricing-desktop.png](./screenshots/08-property-pricing-desktop.png)             | Pricing calendar with rate pills and the fees rail                                 |
-| [09-property-maintenance-desktop.png](./screenshots/09-property-maintenance-desktop.png)     | Maintenance list: mixed status pills and dashes                                    |
-| [11-property-templates.png](./screenshots/11-property-templates.png)                         | Templates editor before dirty state (no Save visible)                              |
-| [13-inbox-thread.png](./screenshots/13-inbox-thread.png)                                     | Inbox thread, composer, "7h 17m left" reply window                                 |
-| [17-guest-form-desktop.png](./screenshots/17-guest-form-desktop.png)                         | Guest form step 1 at 1440 (narrow card, empty margins)                             |
-| [19-guest-trip-after-submit.png](./screenshots/19-guest-trip-after-submit.png)               | Trip page immediately after a real submit                                          |
-| [20-guest-home-mobile.png](./screenshots/20-guest-home-mobile.png)                           | Marketing home at 390                                                              |
-| [22-guest-form-mobile.png](./screenshots/22-guest-form-mobile.png)                           | Guest form at 390 with "Guest 1/5" progress                                        |
-| [23-bookings-mobile.png](./screenshots/23-bookings-mobile.png)                               | Bookings list at 390: 2x2 stage cards, card view                                   |
-| [24-booking-detail-mobile.png](./screenshots/24-booking-detail-mobile.png)                   | Booking detail at 390: stacked chrome                                              |
-| [30-404.png](./screenshots/30-404.png)                                                       | Branded 404                                                                        |
-| [31-dark-mode-bookings.png](./screenshots/31-dark-mode-bookings.png)                         | Dark theme on a dense table                                                        |
-| [32-page-editor-showcase.png](./screenshots/32-page-editor-showcase.png)                     | Page editor: templates, live preview, device toggle                                |
-| [34-onboarding.png](./screenshots/34-onboarding.png)                                         | New host onboarding, step 1 of 3                                                   |
-| [46-admin-org-hub-mobile.png](./screenshots/46-admin-org-hub-mobile.png)                     | Org hub at 390 with no section rail                                                |
-| [47-admin-edit-pro-dialog.png](./screenshots/47-admin-edit-pro-dialog.png)                   | "Edit pro" dialog for the Business plan                                            |
-| [49-parking-detail-blank-hero.png](./screenshots/49-parking-detail-blank-hero.png)           | Public parking detail with the 404 hero                                            |
-| [50-host-profile-seed-copy.png](./screenshots/50-host-profile-seed-copy.png)                 | Public host profile showing "Hosted by seed-owner"                                 |
-| [51-guest-help-empty.png](./screenshots/51-guest-help-empty.png)                             | Guest help empty state                                                             |
-| [52-account-trips.png](./screenshots/52-account-trips.png)                                   | Account trips list                                                                 |
-| [54-parking-bookings.png](./screenshots/54-parking-bookings.png)                             | Parking bookings with marketplace statuses                                         |
-| [56-org-settings.png](./screenshots/56-org-settings.png)                                     | Org settings with disabled AI entries                                              |
-| [57-notifications-panel.png](./screenshots/57-notifications-panel.png)                       | Notification panel                                                                 |
-| [66-team-counts.png](./screenshots/66-team-counts.png)                                       | Team KPIs that do not reconcile                                                    |
-| [67-org-plans-discount.png](./screenshots/67-org-plans-discount.png)                         | Plans page with the unapplied 20% promo                                            |
-| [68-org-bookings-no-kanban.png](./screenshots/68-org-bookings-no-kanban.png)                 | Org bookings view switcher without a board                                         |
-| [75-checkout-503.png](./screenshots/75-checkout-503.png)                                     | Checkout with no provider configured: generic toast, failed row                    |
-| [77-more-sheet-320.png](./screenshots/77-more-sheet-320.png)                                 | More sheet at 320: 3 of 15 modules in a 151px window                               |
-| [78-admin-org-1024.png](./screenshots/78-admin-org-1024.png)                                 | Admin org hub at 1024: MRR truncated                                               |
-| [79-bookings-1024.png](./screenshots/79-bookings-1024.png)                                   | Bookings table at 1024 with hidden horizontal scroll                               |
-| [80-home-320-overflow.png](./screenshots/80-home-320-overflow.png)                           | Guest home at 320: showcase clipped                                                |
-| [81-analytics-export-error.png](./screenshots/81-analytics-export-error.png)                 | Analytics Export PDF: raw JS error toast                                           |
-| [82-parking-dashboard-empty-cards.png](./screenshots/82-parking-dashboard-empty-cards.png)   | Parking dashboard: hardcoded empty cards                                           |
-| [83-parking-inbox-empty.png](./screenshots/83-parking-inbox-empty.png)                       | Parking inbox: hidden Facebook thread                                              |
-| [84-parking-settings-save-disabled.png](./screenshots/84-parking-settings-save-disabled.png) | Parking settings: global Save disabled with 0 amenities                            |
-| [85-setup-guide-overlay.png](./screenshots/85-setup-guide-overlay.png)                       | Setup Guide blocking a dashboard deep link                                         |
-| [86-template-save-otp-error.png](./screenshots/86-template-save-otp-error.png)               | Template save: "Email is not configured"                                           |
-| [87-free-tier-analytics-visible.png](./screenshots/87-free-tier-analytics-visible.png)       | Free tier: full analytics visible, export gated                                    |
-| [88-mobile-plans-upgrade-ticket.png](./screenshots/88-mobile-plans-upgrade-ticket.png)       | Mobile Plans: "Upgrade" opens a support ticket                                     |
+| Image                                                                                                    | What it shows                                                                      |
+| -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [06-booking-detail-review.png](./screenshots/06-booking-detail-review.png)                               | Booking detail, Pending Review gate, step deck, guest view                         |
+| [07-property-finance-desktop.png](./screenshots/07-property-finance-desktop.png)                         | Property finance: KPIs, cash flow, donut with legend (the pattern the others lack) |
+| [08-property-pricing-desktop.png](./screenshots/08-property-pricing-desktop.png)                         | Pricing calendar with rate pills and the fees rail                                 |
+| [09-property-maintenance-desktop.png](./screenshots/09-property-maintenance-desktop.png)                 | Maintenance list: mixed status pills and dashes                                    |
+| [11-property-templates.png](./screenshots/11-property-templates.png)                                     | Templates editor before dirty state (no Save visible)                              |
+| [13-inbox-thread.png](./screenshots/13-inbox-thread.png)                                                 | Inbox thread, composer, "7h 17m left" reply window                                 |
+| [17-guest-form-desktop.png](./screenshots/17-guest-form-desktop.png)                                     | Guest form step 1 at 1440 (narrow card, empty margins)                             |
+| [19-guest-trip-after-submit.png](./screenshots/19-guest-trip-after-submit.png)                           | Trip page immediately after a real submit                                          |
+| [20-guest-home-mobile.png](./screenshots/20-guest-home-mobile.png)                                       | Marketing home at 390                                                              |
+| [22-guest-form-mobile.png](./screenshots/22-guest-form-mobile.png)                                       | Guest form at 390 with "Guest 1/5" progress                                        |
+| [23-bookings-mobile.png](./screenshots/23-bookings-mobile.png)                                           | Bookings list at 390: 2x2 stage cards, card view                                   |
+| [24-booking-detail-mobile.png](./screenshots/24-booking-detail-mobile.png)                               | Booking detail at 390: stacked chrome                                              |
+| [30-404.png](./screenshots/30-404.png)                                                                   | Branded 404                                                                        |
+| [31-dark-mode-bookings.png](./screenshots/31-dark-mode-bookings.png)                                     | Dark theme on a dense table                                                        |
+| [32-page-editor-showcase.png](./screenshots/32-page-editor-showcase.png)                                 | Page editor: templates, live preview, device toggle                                |
+| [34-onboarding.png](./screenshots/34-onboarding.png)                                                     | New host onboarding, step 1 of 3                                                   |
+| [46-admin-org-hub-mobile.png](./screenshots/46-admin-org-hub-mobile.png)                                 | Org hub at 390 with no section rail                                                |
+| [47-admin-edit-pro-dialog.png](./screenshots/47-admin-edit-pro-dialog.png)                               | "Edit pro" dialog for the Business plan                                            |
+| [49-parking-detail-blank-hero.png](./screenshots/49-parking-detail-blank-hero.png)                       | Public parking detail with the 404 hero                                            |
+| [50-host-profile-seed-copy.png](./screenshots/50-host-profile-seed-copy.png)                             | Public host profile showing "Hosted by seed-owner"                                 |
+| [51-guest-help-empty.png](./screenshots/51-guest-help-empty.png)                                         | Guest help empty state                                                             |
+| [52-account-trips.png](./screenshots/52-account-trips.png)                                               | Account trips list                                                                 |
+| [54-parking-bookings.png](./screenshots/54-parking-bookings.png)                                         | Parking bookings with marketplace statuses                                         |
+| [56-org-settings.png](./screenshots/56-org-settings.png)                                                 | Org settings with disabled AI entries                                              |
+| [57-notifications-panel.png](./screenshots/57-notifications-panel.png)                                   | Notification panel                                                                 |
+| [66-team-counts.png](./screenshots/66-team-counts.png)                                                   | Team KPIs that do not reconcile                                                    |
+| [67-org-plans-discount.png](./screenshots/67-org-plans-discount.png)                                     | Plans page with the unapplied 20% promo                                            |
+| [68-org-bookings-no-kanban.png](./screenshots/68-org-bookings-no-kanban.png)                             | Org bookings view switcher without a board                                         |
+| [75-checkout-503.png](./screenshots/75-checkout-503.png)                                                 | Checkout with no provider configured: generic toast, failed row                    |
+| [77-more-sheet-320.png](./screenshots/77-more-sheet-320.png)                                             | More sheet at 320: 3 of 15 modules in a 151px window                               |
+| [78-admin-org-1024.png](./screenshots/78-admin-org-1024.png)                                             | Admin org hub at 1024: MRR truncated                                               |
+| [79-bookings-1024.png](./screenshots/79-bookings-1024.png)                                               | Bookings table at 1024 with hidden horizontal scroll                               |
+| [80-home-320-overflow.png](./screenshots/80-home-320-overflow.png)                                       | Guest home at 320: showcase clipped                                                |
+| [81-analytics-export-error.png](./screenshots/81-analytics-export-error.png)                             | Analytics Export PDF: raw JS error toast                                           |
+| [82-parking-dashboard-empty-cards.png](./screenshots/82-parking-dashboard-empty-cards.png)               | Parking dashboard: hardcoded empty cards                                           |
+| [83-parking-inbox-empty.png](./screenshots/83-parking-inbox-empty.png)                                   | Parking inbox: hidden Facebook thread                                              |
+| [84-parking-settings-save-disabled.png](./screenshots/84-parking-settings-save-disabled.png)             | Parking settings: global Save disabled with 0 amenities                            |
+| [85-setup-guide-overlay.png](./screenshots/85-setup-guide-overlay.png)                                   | Setup Guide blocking a dashboard deep link                                         |
+| [86-template-save-otp-error.png](./screenshots/86-template-save-otp-error.png)                           | Template save: "Email is not configured"                                           |
+| [87-free-tier-analytics-visible.png](./screenshots/87-free-tier-analytics-visible.png)                   | Free tier: full analytics visible, export gated                                    |
+| [88-mobile-plans-upgrade-ticket.png](./screenshots/88-mobile-plans-upgrade-ticket.png)                   | Mobile Plans: "Upgrade" opens a support ticket                                     |
+| [89-mobile-dashboard-calendar-pills.png](./screenshots/89-mobile-dashboard-calendar-pills.png)           | Mobile dashboard: calendar pills truncate to `• R…`                                |
+| [90-mobile-bookings-stage-cards.png](./screenshots/90-mobile-bookings-stage-cards.png)                   | Mobile bookings: 300px of stage cards before the first row                         |
+| [91-guest-form-redundant-labels.png](./screenshots/91-guest-form-redundant-labels.png)                   | Guest form: three labels for one step, host chrome in the header                   |
+| [92-listing-host-truncated.png](./screenshots/92-listing-host-truncated.png)                             | Listing: `Hosted by Kame Spa…` truncates mid-word                                  |
+| [93-admin-twelve-cards-usd.png](./screenshots/93-admin-twelve-cards-usd.png)                             | Admin overview: 12 equal KPI cards, USD mixed into PHP                             |
+| [94-dark-mode-link-contrast.png](./screenshots/94-dark-mode-link-contrast.png)                           | Dark mode: teal "View" links at 3.1:1                                              |
+| [95-parking-dashboard-desktop.png](./screenshots/95-parking-dashboard-desktop.png)                       | Parking dashboard: attention band (good) above two empty panels                    |
+| [96-admin-overview-mobile-twelve-cards.png](./screenshots/96-admin-overview-mobile-twelve-cards.png)     | Admin overview at 390: six rows of KPI cards                                       |
+| [97-admin-approvals-invalid-date.png](./screenshots/97-admin-approvals-invalid-date.png)                 | Approvals: `Invalid Date` and two status pairs in one cell                         |
+| [98-admin-organizations-mobile-truncated.png](./screenshots/98-admin-organizations-mobile-truncated.png) | Organizations at 390: description cut to `approvals, an…`                          |
+| [99-parking-settings-390-no-save.png](./screenshots/99-parking-settings-390-no-save.png)                 | Parking settings at 390: no Save, no section nav                                   |
+| [100-bookings-1024-clipped-actions.png](./screenshots/100-bookings-1024-clipped-actions.png)             | Bookings at 1024: `ACTIONS` off-screen                                             |
+| [101-guest-form-auth-wall.png](./screenshots/101-guest-form-auth-wall.png)                               | Guest form: non-dismissible sign-in sheet                                          |
+| [102-listing-map-error.png](./screenshots/102-listing-map-error.png)                                     | Listing: Google Maps error text shown to guests                                    |
+| [103-host-tour-mock.png](./screenshots/103-host-tour-mock.png)                                           | `/for-hosts` tour mock with blank panels                                           |
+| [104-pricing-carousel-opens-on-business.png](./screenshots/104-pricing-carousel-opens-on-business.png)   | Pricing carousel opens on Business, no counter                                     |
+| [105-account-profile-duplicate-nav.png](./screenshots/105-account-profile-duplicate-nav.png)             | Account: dual navigation, no h1, summary + form duplicating data                   |
+| [106-mobile-more-sheet-truncated.png](./screenshots/106-mobile-more-sheet-truncated.png)                 | Mobile More sheet: 9 destinations below the visible sheet                          |
+| [107-revenue-chart-missing-390.png](./screenshots/107-revenue-chart-missing-390.png)                     | Org dashboard at 390: Revenue Overview chart card is header-only                   |
 
 ## How to reproduce
 
