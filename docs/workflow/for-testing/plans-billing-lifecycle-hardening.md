@@ -16,14 +16,34 @@ Make org subscription billing production ready. A host who downgrades or cancels
 
 ## Status (2026-11-18)
 
-Phases 0 to 8 are implemented and verified locally; only the external steps of Phase 9 remain.
+Phases 0 to 8 are implemented and **deployed to production**. What remains is manual QA against PayMongo and three owner-only follow-ups.
 
-| Phase              | State                                                                                                              |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| 0 to 8             | Done. See the task notes for the four deliberate deviations (0.8, 1.3, 3.4 and where docs differ from the sketch). |
-| 9.1 sandbox matrix | **Open.** Needs PayMongo sandbox credentials.                                                                      |
-| 9.5 dev deploy     | **Open.** Not run; deploying is the owner's decision.                                                              |
-| 9.6 move to done   | After 9.1 and 9.5. The plan sits in `for-testing/` because only manual QA and the deploy remain.                   |
+| Phase              | State                                                                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 0 to 8             | Done. See the task notes for the deliberate deviations (0.8, 1.3, 3.4).                                                              |
+| 9.5 deploy         | **Done 2026-11-18.** Backend via #513 (squash `6c97cc7ff`) and the `cd-prod` pipeline, UI via release #514 (`7b22aa9c0`). See below. |
+| 9.1 sandbox matrix | **Open.** Needs PayMongo sandbox credentials and an operator, now unblocked because the webhook endpoint is deployed.                |
+| 9.6 move to done   | After 9.1 and the follow-ups below.                                                                                                  |
+
+### Production deployment record
+
+There is one Supabase project (`fwor…`) behind both `develop` and production, so the backend deploys from `develop` through `cd-prod.yml`; the UI ships from `main` through Vercel.
+
+| Step                                                                                                   | Result                                                                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Quality gate, pre-deploy backup (schema, data, roles; artifact `pre-deploy-backup-6c97cc7ff…`, 7 days) | pass                                                                                                                                                                                                                |
+| Migrations `20261342000000` to `20261342000500`                                                        | applied                                                                                                                                                                                                             |
+| Functions deploy                                                                                       | first attempt cut off after 120 of 371 by an `esm.sh` connection reset while bundling; re-run of the failed job completed. Migrations were already applied, and old code ran fine against the new schema in between |
+| Smoke, migration parity                                                                                | pass                                                                                                                                                                                                                |
+| Anon lock-down probed on production with random UUIDs                                                  | `cancel_org_subscription_to_free`, `org_billing_balance`, `assign_org_payment_receipt`, `sync_platform_billing_cron_job` and the four new tables all refuse `anon` (401)                                            |
+| New endpoints on production                                                                            | present (401 without a session), cron refuses callers without its secret                                                                                                                                            |
+| UI release #514 to `main`                                                                              | merged; live Plans bundle carries the new copy                                                                                                                                                                      |
+
+### Owner-only follow-ups
+
+1. **Remove the orphaned function.** `apply-org-plan-downgrade` is still deployed (CD never deletes functions). It runs the old immediate-downgrade code. Delete it with `supabase functions delete apply-org-plan-downgrade --project-ref <ref>` after a `supabase login`.
+2. **PayMongo dashboard:** add the `payment.refunded` webhook event.
+3. **Confirm the hourly cron exists.** In the SQL editor: `SELECT jobname, schedule FROM cron.job WHERE jobname LIKE 'platform-billing%';` should show only `platform-billing-hourly` (minute 7). If it shows `platform-billing-daily` or nothing, run `SELECT public.sync_platform_billing_cron_job();` as `service_role`.
 
 Security review (2026-11-18): the billing `SECURITY DEFINER` functions were executable by `anon` through `/rest/v1/rpc`. Fixed in `20261342000500`, proven by the endpoint integration test, and the migration gate now blocks it. Older functions with the same exposure are tracked as PR-096.
 
@@ -438,7 +458,7 @@ Each phase ships its docs, tests and activity-log entries in the same change. Ph
 - [x] 9.2 Time-travel script for local QA (`scripts/billing-time-travel.ts`, local only): shifts `current_period_end` / `grace_period_ends_at` and runs the cron, so every rollover path can be walked in minutes. `bun run billing:time-travel -- --org <slug> --days 31 --run` (local only; the script lives in `scripts/dev/billing-time-travel.ts`).
 - [x] 9.3 `bun run ci:quality`, `bun run test:edge`, `bun run test:edge:handlers`, `bun run test:e2e:plans`. Run 2026-11-18: type-check, lint (0 errors), UI unit 6282 + DOM 40, Deno shared 1718, handlers 1360, local-DB lifecycle 18, `test:e2e:plans` 128 (one unrelated booking-detail gate spec flaked once on a cold dev server and passed 4/4 on two re-runs).
 - [x] 9.4 Mobile pass (375 / 768 / 1024+) of every billing state; a11y check on dialogs and banners. Mobile pass done with 0.10. Dialogs are `ResponsiveModal` sheets; banners and strips stack under 640px.
-- [ ] 9.5 **Not done, deploys are the owner's call.** Dev deploy (`bun run deploy:supabase:dev`), sandbox run, then prod only with `kamewave`. Deploy order and the `payment.refunded` webhook event are in the migration runbook.
+- [x] 9.5 Deployed to production 2026-11-18 (see the deployment record in Status). One Supabase project serves dev and prod, so there is no separate dev deploy.
 - [ ] 9.6 Move this plan through `for-testing/` → `done/`; update `production-readiness/LEDGER.md` PR-033.
 
 ## Docs to update
