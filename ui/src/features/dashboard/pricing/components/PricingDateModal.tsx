@@ -158,7 +158,7 @@ export function PricingDateModal({
                 placeholder={String(suggestedPrice)}
                 onChange={(e) => onNewPriceChange(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
                     e.preventDefault();
                     if (newPrice.trim()) onApply();
                   }

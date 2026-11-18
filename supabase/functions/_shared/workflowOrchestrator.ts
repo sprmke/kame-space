@@ -889,22 +889,24 @@ export class WorkflowOrchestrator {
         shouldGenerateGafRequestPdf
           ? generatePDF(fd, propertyId).catch((err) => {
               console.error('[orchestrator] GAF PDF generation failed:', err);
-          void captureSideEffectFailure('pdf:gaf', err, { bookingStatusTo: toStatus });
+              void captureSideEffectFailure('pdf:gaf', err, { bookingStatusTo: toStatus });
               throw new Error(
                 `GAF request PDF could not be generated. Ensure templates/guest-form-template.pdf exists in Storage. ${
                   err instanceof Error ? err.message : String(err)
-                }`
+                }`,
+                { cause: err }
               );
             })
           : Promise.resolve(null),
         shouldGeneratePetRequestPdf
           ? generatePetPDF(fd, propertyId).catch((err) => {
               console.error('[orchestrator] Pet request PDF generation failed:', err);
-          void captureSideEffectFailure('pdf:pet_request', err, { bookingStatusTo: toStatus });
+              void captureSideEffectFailure('pdf:pet_request', err, { bookingStatusTo: toStatus });
               throw new Error(
                 `Pet request PDF could not be generated. Ensure templates/pet-form-template.pdf exists in Storage. ${
                   err instanceof Error ? err.message : String(err)
-                }`
+                }`,
+                { cause: err }
               );
             })
           : Promise.resolve(null),
@@ -1317,7 +1319,10 @@ export class WorkflowOrchestrator {
             dedupeKey: `${bookingId}:cancelled`,
           });
         } catch (notifyError) {
-          console.error('[orchestrator] Cancellation notification failed (non-fatal):', notifyError);
+          console.error(
+            '[orchestrator] Cancellation notification failed (non-fatal):',
+            notifyError
+          );
         }
       }
 

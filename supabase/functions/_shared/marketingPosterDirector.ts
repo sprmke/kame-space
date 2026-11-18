@@ -486,10 +486,11 @@ export async function loadPosterPhotos(
     .slice(0, POSTER_MAX_PHOTOS);
   const loaded = await Promise.all(
     candidates.map(async (url) => {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), PHOTO_FETCH_TIMEOUT_MS);
       try {
-        const response = await fetch(url, { signal: controller.signal, redirect: 'follow' });
+        const response = await fetch(url, {
+          signal: AbortSignal.timeout(PHOTO_FETCH_TIMEOUT_MS),
+          redirect: 'follow',
+        });
         const mimeType = (response.headers.get('content-type') ?? '').split(';')[0]!.trim();
         if (!response.ok || !/^image\/(jpeg|png|webp)$/.test(mimeType)) return null;
         const bytes = new Uint8Array(await response.arrayBuffer());
@@ -497,8 +498,6 @@ export async function loadPosterPhotos(
         return { url, mimeType, data: bytesToBase64(bytes) };
       } catch {
         return null;
-      } finally {
-        clearTimeout(timer);
       }
     })
   );
