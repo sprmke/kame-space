@@ -81,6 +81,11 @@ bug cannot return.
 | 63  | Decide and enforce paid-data visibility on Free (page/read gates or documented action-only gating)                                               | 19             | M      |
 | 64  | Make "Ask AI" and Guides functional (or disabled with reason), and fix the Guides link                                                           | 21             | S      |
 | 65  | Show a retry/error state when the edge runtime is unreachable instead of a silent Loading hang                                                   | 22-P2-23       | S      |
+| 66  | Clear `showCompletedBookings`/`limit` when leaving calendar or kanban                                                                            | 20             | S      |
+| 67  | Gate the maintenance status pill on completion, not telegram_reminder_enabled                                                                    | 20             | S      |
+| 68  | Add rate bounds + formatting to pricing (reject absurd/zero values)                                                                              | 20             | S      |
+| 69  | Implement `?module=` on Notifications or remove the documented deep links                                                                        | 20             | S      |
+| 70  | Add a Cancel/keep-editing path to the template OTP modal                                                                                         | 19-D3-10       | S      |
 
 ## Structural (plan, do not rush)
 

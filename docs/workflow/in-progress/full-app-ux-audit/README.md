@@ -118,6 +118,25 @@ Inbox and Calendar Sync read APIs all return 200 on Free/Starter; only export/im
 `upgradeHook`. If those capabilities are meant to be paid-only, the pages and reads need the gate.
 [19 tier matrix](./19-dashboard-page-inventory.md)
 
+**P3-12. Switching to Calendar or Kanban changes the Bookings table's scope permanently.**
+Entering those views writes `showCompletedBookings=true&limit=100`, nothing removes it on return, and
+the table then shows completed rows with no control to hide them. [20](./20-property-dashboard-pages.md)
+
+**P3-13. The maintenance status badge is gated on Telegram, not completion.** 12 of 18 rows render "-"
+including completed items, while the KPI says "Completed 4". [20](./20-property-dashboard-pages.md)
+
+**P3-14. Nightly rates have no upper bound.** `46004500` is accepted and saved. [20](./20-property-dashboard-pages.md)
+
+**P3-15. `?module=` deep links on Notifications do nothing.** All five values render identical content.
+[20](./20-property-dashboard-pages.md)
+
+**P3-16. The template Save modal has no Cancel.** When OTP email is unavailable the only other button
+is "Discard changes", so the draft can only be lost. [19-D3-10]
+
+**P3-17. Intermittent provider-context crash under HMR.** Public Pages (and once Notifications) hit the
+global boundary with `useOrgContext must be used within RequireOrgContext`; not reproduced in eight cold
+loads, but the shared settings-completion component uses the non-optional hook. [20](./20-property-dashboard-pages.md)
+
 ### P2 highlights
 
 - Review respond with an empty box silently deletes the response ("Response removed"), no confirm.

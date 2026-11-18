@@ -35,6 +35,11 @@ transactions all render real data; Recent Bookings and Maintenance rows open the
 Pills are readable, but a host cannot tell a checked-in stay from a pending request by colour alone
 (the booking list has a legend, the calendar does not).
 
+### P2 (new). The mini calendar promises an interaction it does not support
+
+The card says "Tap a date to open booking details", but free dates are disabled and clicking a booked
+day cell does nothing; only the name pill navigates. The copy is inherited from the full calendar view.
+
 ### P3
 
 - Cash-flow and breakdown cards are fine here, which makes the parking dashboard's empty copies more
@@ -60,6 +65,18 @@ calls `import-ai-map-columns` twice. See 12-S18.
 
 Action Required 5 / Pending Docs 0 / Confirmed Stays 1 / History 0 while the default list shows six
 Pending Review rows. See 02-H7.
+
+### P2 (new). Switching to Calendar or Kanban silently changes the table's scope
+
+Entering Calendar or Kanban patches `showCompletedBookings=true&limit=100&page=1` into the URL and
+nothing removes them when you switch back to Table. The table then shows completed bookings and 100
+rows per page (measured 23 → 37 rows) with no visible control to turn completed rows off again, so the
+list no longer matches the stage card you had selected.
+
+### P2 (new). The status filter's checkboxes have no accessible name
+
+Each option is a `<button role="checkbox">` inside an unassociated `<label>`, so `getByRole('checkbox')`
+matches nothing and a screen reader announces eleven unnamed checkboxes.
 
 ### P2 (new). No bulk actions
 
@@ -88,6 +105,12 @@ no visible "retry PDF" action.
 
 See 03-B3.
 
+### P2 (new). The tab set changes with status, with no explanation
+
+PENDING_REVIEW shows Stay / Guests / Parking / Files / Activity but no Pricing; PENDING_DOCUMENTS
+shows Pricing but no Parking; CANCELLED shows both. A host cannot learn one stable page shape, and the
+missing tab looks like a permission problem.
+
 ### P2 (new). Files tab is text-only
 
 Documents render as buttons ("Downpayment receipt", "Valid ID") with an external-link icon: no
@@ -98,6 +121,25 @@ are only visible in the activity log / AI review.
 
 The only communication paths are the workflow emails and "Open trip". A host answering a question must
 go to Inbox and search.
+
+### P2 (new). Intermittent context crash on cold loads (not reproduced in 8 retries)
+
+Two parallel passes saw a full "Something went wrong" boundary on Public Pages and once on
+Notifications with `useOrgContext must be used within RequireOrgContext` from
+`PropertySettingsIssuesSync → useSavedPropertySettingsCompletion`. Eight cold loads in this pass did
+not reproduce it, so it is most likely a dev-HMR/provider-mount race, but the component calls the
+non-optional context hook from a shared settings-completion path. Use an optional hook or mount it
+inside the provider.
+
+### P2 (new). "Mark GAF as complete" clips at 1440
+
+The two-button action row does not wrap; the label renders as "compLete" at 1440 because the right
+button overflows its container.
+
+### P2 (new). A negative amount silently disables the primary CTA
+
+New booking / transaction: a valid label and category plus amount `-500` leaves Next disabled with no
+inline error or explanation.
 
 ### P3
 
@@ -148,6 +190,12 @@ The sheet exposes strength/limits/update mode and a Preview button, but with no 
 returns "AI features are temporarily unavailable" and nothing explains that Smart Pricing needs the
 platform AI switch. The control looks available on a Business plan.
 
+### P2 (new). No upper bound on nightly rates
+
+Entering `46004500` as the weekday rate is accepted and saved ("Pricing saved", KPI ₱46,004,500). There
+is no max, no confirmation and no formatting check, so a slipped keystroke creates a nonsense rate that
+propagates to the calendar and guest form. Restored during the audit.
+
 ### P3
 
 - Money inputs are unformatted (`4500`) while read-only values are `₱4,500.00`.
@@ -164,6 +212,12 @@ filters, search, sort, pagination, Export report (valid PDF), Telegram toggle.
 ### P2 (carried). Status column shows "-" for most rows
 
 The KPI says Pending 14 while the table prints a dash for most items. See 02-H12.
+
+### P2 (new). The status badge is gated on Telegram, not completion
+
+`MaintenanceRemindersTab.tsx:390-397` shows the DONE/PENDING pill only when
+`telegram_reminder_enabled` is true, so 12 of 18 rows render "-" including completed items while the KPI
+says "Completed 4". Cross-checked against the DB.
 
 ### P3
 
@@ -257,10 +311,12 @@ See 02-H16.
 **Works:** email and stay-guide groups, editor, preview, placeholders, reset, dirty pill, unsaved
 guard, custom template gating, send-to-guest entry.
 
-### P1 (new). Templates cannot be saved when email is unavailable
+### P1 (new). Templates cannot be saved when email is unavailable, and the modal only offers Discard
 
-Save opens "Verify template changes" → **Send OTP** returns **"Email is not configured"** verbatim and
-the modal stays open; no alternate path. See 19-D3-10.
+Save opens **Verify template changes**. **Send OTP** returns **"Email is not configured"** verbatim,
+and the modal's only other control is **Discard changes** (no Cancel, no keep-editing). A host whose
+mail provider is down can therefore only lose the draft or leave the modal open. See 19-D3-10.
+[screenshots/86](./screenshots/86-template-save-otp-error.png)
 
 ### P3
 
@@ -324,6 +380,12 @@ See 19-D3-10.
 
 **Works:** five modules (marketing, staff, operations, finance, maintenance), save/reset, Telegram
 delivery state, push state.
+
+### P2 (new). `?module=` deep links do nothing
+
+`/notifications?module=marketing|staff|operations|finance|maintenance` renders byte-identical content
+for all five values (measured), so the documented deep links and the sidebar/Telegram links do not land
+on the module they name. Module settings live behind **Manage**.
 
 ### P2 (new). Independent save buttons on one long page
 
