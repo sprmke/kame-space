@@ -95,7 +95,14 @@ export type PropertyTemplateKey =
   | 'email-booking-cancelled-guest'
   | 'email-booking-cancelled-host'
   | 'email-cancellation-request-guest'
-  | 'email-refund-sent-guest';
+  | 'email-refund-sent-guest'
+  | 'email-pre-arrival-reminder'
+  | 'email-parking-reminder'
+  | 'email-review-request'
+  | 'email-review-reminder'
+  | 'email-request-expired-guest'
+  | 'email-request-expiring-host'
+  | 'email-building-admin-cancellation';
 
 export type PropertyTemplateDefinition = {
   key: PropertyTemplateKey;
@@ -429,11 +436,56 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
     label: 'Refund Sent (Guest)',
     description: 'Guest email when the host marks a refund as sent.',
     category: 'email',
-    defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
-<p>Your refund has been sent.</p>
-<p>{{cancellation_detail_section}}</p>
-<p>{{trip_cta_section}}</p>
-<p>{{email_signature_section}}</p>`,
+    defaultContent: '',
+  },
+  {
+    key: 'email-pre-arrival-reminder',
+    label: 'Arrival reminder',
+    description: 'Guest email two days before check-in.',
+    category: 'email',
+    defaultContent: '',
+  },
+  {
+    key: 'email-parking-reminder',
+    label: 'Parking reminder',
+    description: 'Guest email when they asked for parking but have no slot yet.',
+    category: 'email',
+    defaultContent: '',
+  },
+  {
+    key: 'email-review-request',
+    label: 'Review request',
+    description: 'Guest email when the review window opens.',
+    category: 'email',
+    defaultContent: '',
+  },
+  {
+    key: 'email-review-reminder',
+    label: 'Review reminder',
+    description: 'Guest email before the review window closes.',
+    category: 'email',
+    defaultContent: '',
+  },
+  {
+    key: 'email-request-expired-guest',
+    label: 'Request expired',
+    description: 'Guest email when a pending request expires.',
+    category: 'email',
+    defaultContent: '',
+  },
+  {
+    key: 'email-request-expiring-host',
+    label: 'Request expiring',
+    description: 'Team alert before a pending request expires.',
+    category: 'email',
+    defaultContent: '',
+  },
+  {
+    key: 'email-building-admin-cancellation',
+    label: 'GAF cancellation',
+    description: 'Building admin notice to cancel a GAF for a cancelled booking.',
+    category: 'email',
+    defaultContent: '',
   },
 ];
 
@@ -597,6 +649,54 @@ const BUILTIN_META: Record<PropertyTemplateKey, BuiltinMeta> = {
     recipient: 'team',
     trigger: 'Guest cancels or asks to cancel',
     iconId: 'ban',
+  }),
+  'email-pre-arrival-reminder': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: '2 days before check-in',
+    iconId: 'log-in',
+    toggle: 'emailPreArrivalReminder',
+  }),
+  'email-parking-reminder': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Guest asked for parking and has no slot yet',
+    iconId: 'car',
+    toggle: 'emailParkingReminder',
+  }),
+  'email-review-request': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Review window opens',
+    iconId: 'send',
+    toggle: 'emailReviewRequest',
+  }),
+  'email-review-reminder': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Review window closes soon',
+    iconId: 'send',
+    toggle: 'emailReviewReminder',
+  }),
+  'email-request-expired-guest': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Pending request expires',
+    iconId: 'x-circle',
+  }),
+  'email-request-expiring-host': emailMeta({
+    group: 'team-alerts',
+    recipient: 'team',
+    trigger: 'Request still pending 2 days before expiry',
+    iconId: 'ban',
+  }),
+  'email-building-admin-cancellation': emailMeta({
+    group: 'building-admin',
+    recipient: 'building-admin',
+    trigger: 'A booking whose GAF was sent is cancelled',
+    iconId: 'file-text',
+    toggle: 'emailBuildingAdminCancellation',
+    appliesWhen: 'gaf-or-pet-required',
   }),
 };
 

@@ -25,6 +25,7 @@ export type PropertyTemplatePlaceholder = {
 const PLAIN_CORE: string[] = [
   'primary_guest_name',
   'guest_name',
+  'guest_first_name',
   'guest_phone',
   'guest_email',
   'guest_facebook_name',
@@ -66,6 +67,14 @@ const PLAIN_CONTACT: string[] = [
   'social_contact_mentions',
 ];
 const PLAIN_BOOKING_META: string[] = ['booking_link'];
+const PLAIN_WORKFLOW: string[] = [
+  'review_window_days',
+  'expires_in_days',
+  'cancellation_request_title',
+  'cancellation_request_message',
+  'cancellation_host_intro',
+  'cancellation_host_title',
+];
 const PLAIN_GUEST_LINKS: string[] = ['trip_url'];
 
 /** Block tokens the editor must insert on their own paragraph. */
@@ -79,7 +88,7 @@ function unique(...groups: readonly (readonly string[])[]): string[] {
   return [...new Set(groups.flat())];
 }
 
-const CORE = unique(PLAIN_CORE, PLAIN_STAY, PLAIN_FLAGS);
+const CORE = unique(PLAIN_CORE, PLAIN_STAY, PLAIN_FLAGS, PLAIN_WORKFLOW);
 
 export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly string[]> = {
   'house-rules': CORE,
@@ -169,6 +178,33 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
     'trip_cta_section',
     'email_signature_section',
   ]),
+  'email-pre-arrival-reminder': unique(CORE, PLAIN_PAYMENT, PLAIN_CONTACT, PLAIN_GUEST_LINKS, [
+    'balance_due_section',
+    'trip_cta_section',
+    'email_signature_section',
+  ]),
+  'email-parking-reminder': unique(CORE, PLAIN_VEHICLE, PLAIN_CONTACT, PLAIN_GUEST_LINKS, [
+    'parking_cta_section',
+    'email_signature_section',
+  ]),
+  'email-review-request': unique(
+    CORE,
+    PLAIN_CONTACT,
+    ['review_url'],
+    ['review_cta_section', 'email_signature_section']
+  ),
+  'email-review-reminder': unique(
+    CORE,
+    PLAIN_CONTACT,
+    ['review_url'],
+    ['review_cta_section', 'email_signature_section']
+  ),
+  'email-request-expired-guest': unique(CORE, PLAIN_CONTACT, PLAIN_GUEST_LINKS, [
+    'trip_cta_section',
+    'email_signature_section',
+  ]),
+  'email-request-expiring-host': unique(CORE, ['booking_link_cta']),
+  'email-building-admin-cancellation': unique(CORE, ['email_signature_section']),
 };
 
 const CUSTOM_TEMPLATE_KEYS = unique(

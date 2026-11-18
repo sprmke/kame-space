@@ -58,6 +58,13 @@ export const PROPERTY_EMAIL_TEMPLATE_KEYS = [
   'email-booking-cancelled-host',
   'email-cancellation-request-guest',
   'email-refund-sent-guest',
+  'email-pre-arrival-reminder',
+  'email-parking-reminder',
+  'email-review-request',
+  'email-review-reminder',
+  'email-request-expired-guest',
+  'email-request-expiring-host',
+  'email-building-admin-cancellation',
 ] as const;
 
 export type PropertyEmailTemplateKey = (typeof PROPERTY_EMAIL_TEMPLATE_KEYS)[number];

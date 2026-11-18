@@ -8,6 +8,9 @@ export const PROPERTY_AUTOMATION_TOGGLE_KEYS = [
   'emailSdRefundCheckout',
   'emailReviewRequest',
   'emailReviewReminder',
+  'emailPreArrivalReminder',
+  'emailParkingReminder',
+  'emailBuildingAdminCancellation',
 ] as const;
 
 export type PropertyAutomationToggleKey = (typeof PROPERTY_AUTOMATION_TOGGLE_KEYS)[number];
@@ -24,6 +27,9 @@ export const DEFAULT_PROPERTY_AUTOMATION_TOGGLES: PropertyAutomationToggles = {
   emailSdRefundCheckout: true,
   emailReviewRequest: true,
   emailReviewReminder: true,
+  emailPreArrivalReminder: true,
+  emailParkingReminder: true,
+  emailBuildingAdminCancellation: true,
 };
 
 /** Mirrors `_shared/propertyAutomationToggles.ts#PLAN_GATED_AUTOMATION_TOGGLE_KEYS`. */
@@ -33,6 +39,8 @@ export const PLAN_GATED_AUTOMATION_TOGGLE_KEYS: ReadonlySet<PropertyAutomationTo
   'emailPetRequest',
   'emailReadyForCheckin',
   'emailSdRefundCheckout',
+  'emailPreArrivalReminder',
+  'emailBuildingAdminCancellation',
 ]);
 
 export type PropertyAutomationToggleGroup = {
@@ -80,6 +88,13 @@ export const PROPERTY_AUTOMATION_TOGGLE_GROUPS: PropertyAutomationToggleGroup[] 
         recipient: 'Building admin email',
         trigger: 'When you approve a booking that includes a pet.',
       },
+      {
+        key: 'emailBuildingAdminCancellation',
+        label: 'GAF cancellation',
+        templateKey: 'email-building-admin-cancellation',
+        recipient: 'Building admin email',
+        trigger: 'When a booking with an approved GAF is cancelled.',
+      },
     ],
   },
   {
@@ -113,6 +128,20 @@ export const PROPERTY_AUTOMATION_TOGGLE_GROUPS: PropertyAutomationToggleGroup[] 
         templateKey: 'email-sd-refund-form-request',
         recipient: 'Guest email',
         trigger: 'Before check-out, using the timing above.',
+      },
+      {
+        key: 'emailPreArrivalReminder',
+        label: 'Arrival reminder',
+        templateKey: 'email-pre-arrival-reminder',
+        recipient: 'Guest email',
+        trigger: 'Two days before check-in.',
+      },
+      {
+        key: 'emailParkingReminder',
+        label: 'Parking reminder',
+        templateKey: 'email-parking-reminder',
+        recipient: 'Guest email',
+        trigger: 'When the guest asked for parking and has no slot yet.',
       },
     ],
   },

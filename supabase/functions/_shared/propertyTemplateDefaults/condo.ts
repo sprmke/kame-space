@@ -168,6 +168,62 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
 <p>{{email_signature_section}}</p>`,
     subject: '{{tower_and_unit_number}} - Refund sent',
   },
+  'email-pre-arrival-reminder': {
+    content: `<p>Hi {{guest_first_name}},</p>
+<p>Your stay at <strong>{{tower_and_unit_number}}</strong> starts on <strong>{{check_in_date}}</strong>. Check-in is from {{check_in_time}}, and check-out is by {{check_out_time}} on {{check_out_date}}.</p>
+<p>{{balance_due_section}}</p>
+<p>Directions, house rules and your arrival steps are on your trip page.</p>
+<p>{{trip_cta_section}}</p>
+<p>{{email_signature_section}}</p>`,
+    subject: '{{tower_and_unit_number}} - Check-in on {{check_in_date}}',
+  },
+  'email-parking-reminder': {
+    content: `<p>Hi {{guest_first_name}},</p>
+<p>You mentioned you need parking for your stay at <strong>{{tower_and_unit_number}}</strong> on {{check_in_date}}, and you have not reserved a slot yet.</p>
+<p>Slots are limited, so book one before you arrive.</p>
+<p>{{parking_cta_section}}</p>
+<p>{{email_signature_section}}</p>`,
+    subject: '{{tower_and_unit_number}} - Reserve parking for your stay',
+  },
+  'email-review-request': {
+    content: `<p>Hi {{guest_first_name}},</p>
+<p>Thank you for staying at <strong>{{property_name}}</strong>. We hope you had a good stay.</p>
+<p>Would you leave a short review? It helps future guests and helps us improve. You have {{review_window_days}} days to write it.</p>
+<p>We will not see your review until we have reviewed your stay too, or until the window closes.</p>
+<p>{{review_cta_section}}</p>
+<p>{{email_signature_section}}</p>`,
+    subject: 'How was your stay at {{property_name}}?',
+  },
+  'email-review-reminder': {
+    content: `<p>Hi {{guest_first_name}},</p>
+<p>The review window for your stay at <strong>{{property_name}}</strong> closes soon. If you have a minute, we would like to hear how it went.</p>
+<p>{{review_cta_section}}</p>
+<p>{{email_signature_section}}</p>`,
+    subject: 'Reminder: review your stay at {{property_name}}',
+  },
+  'email-request-expired-guest': {
+    content: `<p>Hi {{guest_first_name}},</p>
+<p>Your booking request for <strong>{{property_name}}</strong> from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong> expired because it was not confirmed in time. Nothing was charged.</p>
+<p>We are sorry about that. If the dates are still open, you can send the request again from your trip page.</p>
+<p>{{trip_cta_section}}</p>
+<p>{{email_signature_section}}</p>`,
+    subject: '{{tower_and_unit_number}} - Request expired {{stay_dates}}',
+  },
+  'email-request-expiring-host': {
+    content: `<p>Hi,</p>
+<p><strong>{{guest_name}}</strong> asked for <strong>{{tower_and_unit_number}}</strong> from {{check_in_date}} to {{check_out_date}}, and the request is still waiting for your decision.</p>
+<p>If no one answers it, it expires in {{expires_in_days}} days. The dates are released and the guest is told. Nothing has been charged, so there is nothing to refund.</p>
+<p>{{booking_link_cta}}</p>`,
+    subject:
+      '{{tower_and_unit_number}} - Request expires in {{expires_in_days}} days {{stay_dates}}',
+  },
+  'email-building-admin-cancellation': {
+    content: `<p>Good day,</p>
+<p>Please cancel the GAF we sent for <strong>{{tower_and_unit_number}}</strong> for the stay from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong>. The booking was cancelled, and these guests will not check in.</p>
+<p>Thank you.</p>
+<p>{{email_signature_section}}</p>`,
+    subject: '{{tower_and_unit_number}} - GAF cancellation {{stay_dates}}',
+  },
 };
 
 export function condoTemplateDefault(key: string): CondoTemplateDefault | undefined {

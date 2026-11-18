@@ -53,6 +53,20 @@ export const EMAIL_DYNAMIC_SECTION_KEYS = [
   'booking_vehicle_copy',
   'cancellation_intro',
   'cancellation_detail_section',
+  'contact_section',
+  'emergency_contacts_section',
+  'house_rules_list',
+  'amenities_list',
+  'house_rules_section',
+  'check_in_instructions_section',
+  'check_out_instructions_section',
+  'balance_due_section',
+  'arrival_access_note_section',
+  'review_cta_section',
+  'parking_cta_section',
+  'map_cta_section',
+  'messages_cta_section',
+  'cancellation_policy_section',
 ] as const;
 
 export type EmailDynamicSectionKey = (typeof EMAIL_DYNAMIC_SECTION_KEYS)[number];
@@ -1002,6 +1016,24 @@ export function buildSampleDynamicSections(input: {
     switch (key) {
       case 'cancellation_intro':
         out.cancellation_intro = 'Your booking was cancelled.';
+        break;
+      case 'balance_due_section':
+        out.balance_due_section =
+          '<p style="margin:0 0 16px 0;">Your remaining balance is <strong>₱3,599.00</strong>.</p>';
+        break;
+      case 'parking_cta_section':
+        out.parking_cta_section = buildBookingLinkCtaHtml(
+          `${input.settings.publicGuestAppOrigin.replace(/\/+$/, '')}/parkings`,
+          brandColor
+        );
+        break;
+      case 'cancellation_policy_section':
+        out.cancellation_policy_section =
+          '<p style="margin:0 0 6px 0;font-weight:700;">Flexible</p><p style="margin:0;">Cancel before check-in for a full refund.</p>';
+        break;
+      case 'arrival_access_note_section':
+        out.arrival_access_note_section =
+          '<p style="margin:0 0 16px 0;">Your Wi-Fi and door details are under Essentials on your trip page.</p>';
         break;
       case 'cancellation_detail_section':
         out.cancellation_detail_section = sampleCancellationDetailSection(brandColor);

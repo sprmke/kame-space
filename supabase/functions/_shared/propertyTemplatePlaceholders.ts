@@ -112,6 +112,9 @@ export const PROPERTY_TEMPLATE_SAMPLE_VARS: Record<string, string> = {
     'https://kamespace.com/properties/azure-north/guest-review?bookingId=00000000-0000-4000-8000-000000000001',
   trip_url:
     'https://kamespace.com/properties/azure-north/trip?bookingId=00000000-0000-4000-8000-000000000001',
+  messages_url:
+    'https://kamespace.com/properties/azure-north/messages?bookingId=00000000-0000-4000-8000-000000000001',
+  stay_guide_url: 'https://kamespace.com/properties/azure-north/stay-guide?token=sample-token',
   security_deposit: '₱3,000.00',
   facebook_page_url: 'https://www.facebook.com/example',
   airbnb_url: 'https://www.airbnb.com/rooms/example',

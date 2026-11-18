@@ -22,6 +22,9 @@ export const PROPERTY_AUTOMATION_TOGGLE_KEYS = [
   'emailSdRefundCheckout',
   'emailReviewRequest',
   'emailReviewReminder',
+  'emailPreArrivalReminder',
+  'emailParkingReminder',
+  'emailBuildingAdminCancellation',
 ] as const;
 
 /** Subset of PROPERTY_AUTOMATION_TOGGLE_KEYS gated by the `automatedBookingFlow` plan feature. */
@@ -31,6 +34,8 @@ export const PLAN_GATED_AUTOMATION_TOGGLE_KEYS: readonly PropertyAutomationToggl
   'emailPetRequest',
   'emailReadyForCheckin',
   'emailSdRefundCheckout',
+  'emailPreArrivalReminder',
+  'emailBuildingAdminCancellation',
 ];
 
 export type PropertyAutomationToggleKey = (typeof PROPERTY_AUTOMATION_TOGGLE_KEYS)[number];
@@ -47,6 +52,9 @@ export const DEFAULT_PROPERTY_AUTOMATION_TOGGLES: PropertyAutomationToggles = {
   emailSdRefundCheckout: true,
   emailReviewRequest: true,
   emailReviewReminder: true,
+  emailPreArrivalReminder: true,
+  emailParkingReminder: true,
+  emailBuildingAdminCancellation: true,
 };
 
 export function mergePropertyAutomationToggles(raw: unknown): PropertyAutomationToggles {
@@ -59,6 +67,14 @@ export function mergePropertyAutomationToggles(raw: unknown): PropertyAutomation
     if (typeof record[key] === 'boolean') {
       merged[key] = record[key];
     }
+  }
+  // A property that turned off the ready-for-check-in email before this key existed should
+  // not start getting the arrival reminder.
+  if (
+    typeof record.emailPreArrivalReminder !== 'boolean' &&
+    typeof record.emailReadyForCheckin === 'boolean'
+  ) {
+    merged.emailPreArrivalReminder = record.emailReadyForCheckin;
   }
   return merged;
 }

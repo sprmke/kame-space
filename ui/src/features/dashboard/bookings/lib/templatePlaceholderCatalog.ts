@@ -92,6 +92,20 @@ const PROPERTY_SECTION_KEYS = [
   'booking_vehicle_copy',
   'cancellation_intro',
   'cancellation_detail_section',
+  'contact_section',
+  'emergency_contacts_section',
+  'house_rules_list',
+  'amenities_list',
+  'house_rules_section',
+  'check_in_instructions_section',
+  'check_out_instructions_section',
+  'balance_due_section',
+  'arrival_access_note_section',
+  'review_cta_section',
+  'parking_cta_section',
+  'map_cta_section',
+  'messages_cta_section',
+  'cancellation_policy_section',
 ] as const;
 
 /** Block-level placeholders — each must sit on its own `<p>` line in email templates. */

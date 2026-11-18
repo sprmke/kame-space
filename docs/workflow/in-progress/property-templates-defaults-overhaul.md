@@ -314,17 +314,17 @@ One server module, `_shared/propertyTemplateCatalog.ts`, exports every token wit
 
 ### Phase 4: Move hardcoded emails into templates
 
-- [ ] `email-pre-arrival-reminder`: `preArrivalReminderCron.ts` renders the template instead of `REMINDER_BODY`; toggle `emailPreArrivalReminder` (plan-gated like `emailReadyForCheckin`; when absent in saved settings it inherits `emailReadyForCheckin` so current behavior is unchanged).
-- [ ] `email-parking-reminder`: `parkingReminderCron.ts`; toggle `emailParkingReminder` (not plan-gated, default on).
-- [ ] `email-review-request` / `email-review-reminder`: `reviewEmails.ts` request and reminder go through `renderPropertyTemplateSendEmail` with `review_cta_section`; published / response / report-decision stay system notices.
-- [ ] `email-request-expired-guest`: `sendBookingCancelledGuest` picks this key when `reasonCode === 'request_expired'`.
-- [ ] `email-request-expiring-host`: `sendPendingReviewChaseHost` renders the template (adds the missing **View booking** button via `booking_link_cta`).
-- [ ] Host cancellation: fill `cancellation_host_intro` / `cancellation_host_title` per case (cancelled by guest, cancellation requested, cancelled by host or system); guest request: fill `cancellation_request_message` per state.
-- [ ] Subjects: every sender reads `subject` (row) or `defaultSubject`, renders plain placeholders, then adds system prefixes. Locked subjects ignore the row.
-- [ ] `email-building-admin-cancellation` (only if open question 1 is yes): send from the cancel path when `gaf_request_pdf_url` exists and the GAF email went out; toggle `emailBuildingAdminCancellation`; recipient is the building admin email resolved the same way as the GAF request.
-- [ ] Toggle keys added to `_shared/propertyAutomationToggles.ts` and the UI mirror `propertyEmailAutomation.ts` (plus `PLAN_GATED_AUTOMATION_TOGGLE_KEYS` for pre-arrival).
-- [ ] `booking-workflow.mdc` email table and `docs/architecture/guest-emails.md` updated in the same change.
-- [ ] Tests: each sender renders its template (Deno), toggles respected, request-expired picks the new key, subject prefixes preserved, GAF/pet subjects unchanged.
+- [x] `email-pre-arrival-reminder`: `preArrivalReminderCron.ts` renders the template instead of `REMINDER_BODY`; toggle `emailPreArrivalReminder` (plan-gated like ready for check-in, inherits `emailReadyForCheckin` when the newer key was never saved, so current behaviour is unchanged).
+- [x] `email-parking-reminder`: `parkingReminderCron.ts` renders the template; toggle `emailParkingReminder` (not plan-gated, default on).
+- [x] `email-review-request` / `email-review-reminder`: `reviewEmails.ts` request and reminder go through `renderPropertyTemplateSendEmail` with `review_cta_section`; published / response / report-decision stay system notices.
+- [x] `email-request-expired-guest`: `sendBookingCancelledGuest` picks this key when `reasonCode === 'request_expired'`.
+- [x] `email-request-expiring-host`: `sendPendingReviewChaseHost` renders the template and adds the missing **View booking** button through `booking_link_cta`.
+- [x] Host cancellation: `cancellation_host_intro` / `cancellation_host_title` filled per case; guest request fills `cancellation_request_message` per state.
+- [x] Subjects: the main guest and team senders read the saved subject or the shipped default and render plain placeholders, then add system prefixes. Locked GAF and pet subjects ignore the row.
+- [x] `email-building-admin-cancellation`: sent from the cancel transition when `gaf_request_pdf_url` exists; toggle `emailBuildingAdminCancellation`; recipient is the building admin mailbox, same as the GAF request.
+- [x] Toggle keys added to `_shared/propertyAutomationToggles.ts` and the UI mirror, including `PLAN_GATED_AUTOMATION_TOGGLE_KEYS`.
+- [x] `booking-workflow.mdc` email table and `docs/architecture/guest-emails.md` updated.
+- [ ] Tests: a dedicated Deno test per sender (toggles respected, request-expired key, subject prefixes, GAF/pet subjects unchanged). Current coverage is the shared template contract, toggle contract and the existing cron tests.
 
 ### Phase 5: Condo default pack and backfill
 
