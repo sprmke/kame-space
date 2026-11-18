@@ -17,11 +17,11 @@ Not a dependency. It is an agent skill plus a CLI that returns expert-curated we
 
 ## Install (machine level, one copy)
 
-| Surface        | Location                                                                                                       |
-| -------------- | -------------------------------------------------------------------------------------------------------------- |
-| Real files     | `~/.agents/skill-library/modern-web-guidance`                                                                  |
-| Universal face | `~/.agents/skills/modern-web-guidance` → symlink                                                               |
-| Agent faces    | `~/.claude/skills`, `~/.cursor/skills`, `~/.config/opencode/skills` (symlinks); Codex reads the universal face |
+| Surface | Location |
+| --- | --- |
+| Real files | `~/.agents/skill-library/modern-web-guidance` |
+| Universal face | `~/.agents/skills/modern-web-guidance` → symlink |
+| Agent faces | `~/.claude/skills`, `~/.cursor/skills`, `~/.config/opencode/skills` (symlinks); Codex reads the universal face |
 
 Registered in `~/.agents/skill-catalog/manifest.json` as `visible: true`, and added to `SOURCES` in `~/.agents/bin/agent-stack.sh` so `agent-stack.sh update` keeps it current. `agent-stack.sh verify` reports all four providers resolving the same visible set.
 
@@ -35,16 +35,16 @@ Because it is user-level, every project under `~/Projects` picks it up with no p
 
 `legacy-scan` was run across all eight repos with a remote: 235 findings.
 
-| Repo                      | Findings | Outcome          |
-| ------------------------- | -------- | ---------------- |
-| `kame-homes` (kame-space) | 181      | 38 applied       |
-| `kame-lends`              | 26       | none safe        |
-| `kame-finance`            | 11       | none safe        |
-| `kame-desk`               | 7        | none safe        |
-| `kame-pick`               | 6        | 3 applied        |
-| `kame-apply`              | 3        | none safe        |
-| `kame-crew`               | 1        | 1 applied        |
-| `kame-hunt`               | 0        | clean, no remote |
+| Repo | Findings | Outcome |
+| --- | --- | --- |
+| `kame-homes` (kame-space) | 181 | 38 applied |
+| `kame-lends` | 26 | none safe |
+| `kame-finance` | 11 | none safe |
+| `kame-desk` | 7 | none safe |
+| `kame-pick` | 6 | 3 applied |
+| `kame-apply` | 3 | none safe |
+| `kame-crew` | 1 | 1 applied |
+| `kame-hunt` | 0 | clean, no remote |
 
 `kame-shop` and `kame-tools` are not git repos. `kame-apply-ind-01`, `kame-apply-ind-review` and `kame-apply-setup-merge` are clones of `kame-apply`, so one branch covers all four.
 
@@ -52,28 +52,28 @@ The CLI truncates text output to five examples per rule. Always use `--json` whe
 
 ## Shipped
 
-| Repo         | PR                                                               | Contents                                                                                                        |
-| ------------ | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `kame-space` | [#516](https://github.com/sprmke/kame-space/pull/516)            | 38 fixes: IME-safe Enter handlers, `{ cause }` on rethrown errors, `AbortSignal.timeout()`, `structuredClone()` |
-| `kame-space` | [#518](https://github.com/sprmke/kame-space/pull/518)            | Release to `main`: 11 PRs, Vercel production and Supabase backend both deployed                                 |
-| `kame-pick`  | [#2](https://github.com/sprmke/kame-pick/pull/2)                 | 3 fixes: password `autoComplete` hints, IME guard                                                               |
-| `kame-crew`  | [#2](https://github.com/sprmke/ai-personal-assistant-app/pull/2) | IME guard, plus an unrelated type error that blocked its production build                                       |
+| Repo | PR | Contents |
+| --- | --- | --- |
+| `kame-space` | [#516](https://github.com/sprmke/kame-space/pull/516) | 38 fixes: IME-safe Enter handlers, `{ cause }` on rethrown errors, `AbortSignal.timeout()`, `structuredClone()` |
+| `kame-space` | [#518](https://github.com/sprmke/kame-space/pull/518) | Release to `main`: 11 PRs, Vercel production and Supabase backend both deployed |
+| `kame-pick` | [#2](https://github.com/sprmke/kame-pick/pull/2) | 3 fixes: password `autoComplete` hints, IME guard |
+| `kame-crew` | [#2](https://github.com/sprmke/ai-personal-assistant-app/pull/2) | IME guard, plus an unrelated type error that blocked its production build |
 
 ## Deliberately not changed
 
 Re-run `legacy-scan --json` and apply these only if the tradeoff changes.
 
-| Rule                                              | Count | Why                                                                                                                                           |
-| ------------------------------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `js/copying-array-methods`                        | 177   | Needs `lib: ES2023` per repo and touches over 100 files. Mechanical and type-check catches misuse, but it was declined to keep reviews small. |
-| `dark-mode`, `dark-mode-toggle`                   | 6     | One is the Supabase auth email template; the rest change the theme mechanism. Both alter rendering.                                           |
-| `form-fields-automatically-fit-contents`          | 3     | `field-sizing: content` is not safe on the mobile Safari versions guests use.                                                                 |
-| `dynamic-sibling-animations`                      | 1     | `sibling-index()` is not Baseline yet.                                                                                                        |
-| `switch`                                          | 1     | The native `switch` attribute is not Baseline yet.                                                                                            |
-| `js/text-decoder`                                 | 1     | The helper only decodes short ASCII magic bytes; changing encoding risks MIME sniffing for no gain.                                           |
-| `js/object-group-by`, `js/promise-with-resolvers` | 2     | Need `lib: ES2024`.                                                                                                                           |
-| `js/structured-clone` in `planPricing_test.ts`    | 1     | The JSON round-trip there intentionally simulates a database read.                                                                            |
-| `js/error-cause` in `ui/src/lib/pwa/push.ts`      | 1     | `ErrorOptions` needs `lib: ES2022`.                                                                                                           |
+| Rule | Count | Why |
+| --- | --- | --- |
+| `js/copying-array-methods` | 177 | Needs `lib: ES2023` per repo and touches over 100 files. Mechanical and type-check catches misuse, but it was declined to keep reviews small. |
+| `dark-mode`, `dark-mode-toggle` | 6 | One is the Supabase auth email template; the rest change the theme mechanism. Both alter rendering. |
+| `form-fields-automatically-fit-contents` | 3 | `field-sizing: content` is not safe on the mobile Safari versions guests use. |
+| `dynamic-sibling-animations` | 1 | `sibling-index()` is not Baseline yet. |
+| `switch` | 1 | The native `switch` attribute is not Baseline yet. |
+| `js/text-decoder` | 1 | The helper only decodes short ASCII magic bytes; changing encoding risks MIME sniffing for no gain. |
+| `js/object-group-by`, `js/promise-with-resolvers` | 2 | Need `lib: ES2024`. |
+| `js/structured-clone` in `planPricing_test.ts` | 1 | The JSON round-trip there intentionally simulates a database read. |
+| `js/error-cause` in `ui/src/lib/pwa/push.ts` | 1 | `ErrorOptions` needs `lib: ES2022`. |
 
 ## Known open item
 
