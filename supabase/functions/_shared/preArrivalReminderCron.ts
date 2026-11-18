@@ -14,7 +14,10 @@ import { manilaTodayYmd, normalizeBookingDateToYmd } from './calendarAvailabilit
 import { verifyCronSecret } from './cronSecretGate.ts';
 import { propertyAutomationEnabled } from './propertyAutomationToggles.ts';
 import { resolveAppSettings } from './appSettings.ts';
-import { buildBookingPlaceholderVars, renderPropertyTemplateSendEmail } from './propertyTemplateEmail.ts';
+import {
+  buildBookingPlaceholderVars,
+  renderPropertyTemplateSendEmail,
+} from './propertyTemplateEmail.ts';
 import { loadBookingEmailDisplayContext } from './emailBookingContext.ts';
 import { formatEmailDateRange, formatResendFromAddress } from './propertyEmailBranding.ts';
 import { createServiceClient } from './orgAuth.ts';
@@ -22,6 +25,7 @@ import { isEmailSuppressed } from './emailSuppression.ts';
 import { sendResendEmail } from './sendResendEmail.ts';
 import { recordCronItemFailure, reportCronPartialFailure } from './sentryCron.ts';
 import { guestBookingEmailLinkPlaceholderExtras } from './guestBookingEmailLinks.ts';
+import { computeTotalGuestBalanceFromBooking } from './totalGuestBalance.ts';
 import type { GuestSubmission } from './types.ts';
 
 export function verifyPreArrivalReminderCronSecret(req: Request): boolean {
@@ -109,10 +113,22 @@ export async function loadPreArrivalCandidates(
   );
 }
 
-const REMINDER_BODY = `<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;">Hi <strong>{{guest_facebook_name}}</strong>, your stay at <strong>{{tower_and_unit_number}}</strong> starts in two days, on {{check_in_date}}.</p>
-<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;">Check-in is from {{check_in_time}} and check-out is by {{check_out_time}}.</p>
-<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;">Your balance is {{total_guest_balance}}. Everything else - directions, house rules, and your arrival steps - is on your trip page.</p>
+const REMINDER_PARAGRAPH_STYLE = 'margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;';
+
+/**
+ * The balance line only appears when the guest still owes something. Printing
+ * "Your balance is ₱0.00" to a guest who has paid in full reads as a mistake.
+ */
+function buildReminderBody(totalBalance: number): string {
+  const balanceLine =
+    totalBalance > 0
+      ? `<p style="${REMINDER_PARAGRAPH_STYLE}">Your balance is {{total_guest_balance}}. Everything else - directions, house rules, and your arrival steps - is on your trip page.</p>`
+      : `<p style="${REMINDER_PARAGRAPH_STYLE}">Directions, house rules, and your arrival steps are on your trip page.</p>`;
+  return `<p style="${REMINDER_PARAGRAPH_STYLE}">Hi <strong>{{guest_facebook_name}}</strong>, your stay at <strong>{{tower_and_unit_number}}</strong> starts in two days, on {{check_in_date}}.</p>
+<p style="${REMINDER_PARAGRAPH_STYLE}">Check-in is from {{check_in_time}} and check-out is by {{check_out_time}}.</p>
+${balanceLine}
 <p>{{trip_cta_section}}</p>`;
+}
 
 async function sendReminder(row: PreArrivalCandidate): Promise<boolean> {
   const email = String(row.guest_email ?? '').trim();
@@ -143,7 +159,9 @@ async function sendReminder(row: PreArrivalCandidate): Promise<boolean> {
     propertyId: row.property_id,
     templateKey: 'email-booking-acknowledgement',
     emailTitle: `Check-in in ${PRE_ARRIVAL_LEAD_DAYS} days`,
-    contentOverride: REMINDER_BODY,
+    contentOverride: buildReminderBody(
+      computeTotalGuestBalanceFromBooking(booking.data as unknown as Record<string, unknown>) ?? 0
+    ),
     branding,
     placeholderVars: buildBookingPlaceholderVars(
       booking.data as GuestSubmission,
@@ -154,7 +172,10 @@ async function sendReminder(row: PreArrivalCandidate): Promise<boolean> {
   });
 
   await sendResendEmail({
-    from: formatResendFromAddress(`${unitLabel} - ${branding.organizationName}`, branding.fromEmail),
+    from: formatResendFromAddress(
+      `${unitLabel} - ${branding.organizationName}`,
+      branding.fromEmail
+    ),
     to: [email],
     reply_to: settings.emailReplyTo,
     subject: `${unitLabel} - Check-in in ${PRE_ARRIVAL_LEAD_DAYS} days ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,

@@ -50,6 +50,8 @@ export const EMAIL_DYNAMIC_SECTION_KEYS = [
   /** @deprecated Combined checklist + details — use split placeholders. */
   'sd_refund_footer_section',
   'booking_vehicle_copy',
+  'cancellation_intro',
+  'cancellation_detail_section',
 ] as const;
 
 export type EmailDynamicSectionKey = (typeof EMAIL_DYNAMIC_SECTION_KEYS)[number];
@@ -62,13 +64,6 @@ export const DYNAMIC_SECTIONS_BY_TEMPLATE: Record<string, EmailDynamicSectionKey
     'update_notice',
     'pet_details_section',
     'pet_attachments_section',
-    'email_signature_section',
-  ],
-  'email-parking-request': [
-    'urgent_notice',
-    'update_notice',
-    'booking_vehicle_copy',
-    'parking_reply_callout_section',
     'email_signature_section',
   ],
   'email-new-booking-request': [
@@ -86,9 +81,23 @@ export const DYNAMIC_SECTIONS_BY_TEMPLATE: Record<string, EmailDynamicSectionKey
     'booking_request_received_flow_section',
     'email_signature_section',
   ],
-  'email-booking-cancelled-guest': ['trip_cta_section', 'email_signature_section'],
-  'email-cancellation-request-guest': ['trip_cta_section', 'email_signature_section'],
-  'email-refund-sent-guest': ['trip_cta_section', 'email_signature_section'],
+  'email-booking-cancelled-guest': [
+    'cancellation_intro',
+    'cancellation_detail_section',
+    'trip_cta_section',
+    'email_signature_section',
+  ],
+  'email-cancellation-request-guest': [
+    'cancellation_detail_section',
+    'trip_cta_section',
+    'email_signature_section',
+  ],
+  'email-refund-sent-guest': [
+    'cancellation_detail_section',
+    'trip_cta_section',
+    'email_signature_section',
+  ],
+  'email-booking-cancelled-host': ['cancellation_detail_section', 'email_signature_section'],
   'email-ready-for-checkin': [
     'trip_cta_section',
     'ready_for_checkin_booking_summary_section',
@@ -223,11 +232,6 @@ export function buildPetUpdateNoticeHtml(unitLabel: string): string {
   return buildUpdateNoticeCalloutHtml(body);
 }
 
-export function buildParkingUpdateNoticeHtml(unitLabel: string): string {
-  const body = `The parking registration details for <strong>${escapeHtml(unitLabel)}</strong> have been updated. Please disregard the previous parking request email for the same dates and unit.`;
-  return buildUpdateNoticeCalloutHtml(body);
-}
-
 /** Amber resubmit callout — matches legacy `.callout-warn` with inlined styles for Gmail. */
 export function buildUpdateNoticeCalloutHtml(bodyHtml: string): string {
   const tdStyle =
@@ -251,7 +255,6 @@ export function buildUrgentSameDayCallout(isUrgent: boolean): string {
 export const EMAIL_TEMPLATES_WITH_URGENT_CALLOUT = new Set([
   'email-gaf-request',
   'email-pet-request',
-  'email-parking-request',
   'email-new-booking-request',
 ]);
 
@@ -259,7 +262,6 @@ export const EMAIL_TEMPLATES_WITH_URGENT_CALLOUT = new Set([
 export const EMAIL_TEMPLATES_WITH_UPDATE_NOTICE = new Set([
   'email-gaf-request',
   'email-pet-request',
-  'email-parking-request',
 ]);
 
 export function sampleUpdateNoticeHtml(templateKey: string, unitLabel: string): string {
@@ -268,9 +270,6 @@ export function sampleUpdateNoticeHtml(templateKey: string, unitLabel: string): 
   }
   if (templateKey === 'email-pet-request') {
     return buildPetUpdateNoticeHtml(unitLabel);
-  }
-  if (templateKey === 'email-parking-request') {
-    return buildParkingUpdateNoticeHtml(unitLabel);
   }
   return '';
 }
@@ -406,11 +405,13 @@ export function buildBookingAcknowledgementFlowSectionHtml(input: {
   const socialMentions = buildSocialContactMentionsHtml(input.contact, input.brandColor);
   const summary = `<table role="presentation" class="summary-surface" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:separate;border-spacing:0;background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;margin:0 0 4px 0;"><tr><td class="summary-inner" style="padding:18px 20px;"><p style="margin:0;font-size:16px;line-height:1.65;color:#333333;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">Your booking request for <strong style="color:#111827;font-weight:700;">${unit} from ${checkIn} to ${checkOut}</strong> is confirmed.</p></td></tr></table>`;
 
-  const documents = (input.requiredDocuments ?? [])
-    .map((label) => label.trim())
-    .filter(Boolean);
+  const documents = (input.requiredDocuments ?? []).map((label) => label.trim()).filter(Boolean);
   const documentList = documents.length
-    ? documents.map((label) => `<strong style="color:#111827;font-weight:700;">${escapeHtml(label)}</strong>`).join(', ')
+    ? documents
+        .map(
+          (label) => `<strong style="color:#111827;font-weight:700;">${escapeHtml(label)}</strong>`
+        )
+        .join(', ')
     : '';
 
   const steps: string[] = [];
@@ -824,6 +825,18 @@ export function computeReadyForCheckinTotalDue(booking: GuestSubmission): number
   );
 }
 
+function sampleCancellationDetailSection(brandColor?: string | null): string {
+  const tblStyle = notifyDetailTableStyle();
+  return [
+    notifySectionTitle('Cancellation summary', brandColor),
+    `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="${tblStyle}">
+      ${notifyRow('Stay', 'July 10, 2026 to July 12, 2026', true)}
+      ${notifyRow('Reason', 'Changed plans', true)}
+      ${notifyRow('Refund', '₱0.00', false)}
+    </table>`,
+  ].join('\n');
+}
+
 function sampleDownpaymentAiSection(brandColor?: string | null): string {
   const tblStyle = notifyDetailTableStyle();
   return [
@@ -845,14 +858,19 @@ function sdRefundChecklistRow(label: string, valueHtml: string, last = false): s
 
 export function buildSdRefundChecklistSectionHtml(input: {
   unitLabel: string;
+  /** Booking check-out time, already in display form. Falls back to no time claim. */
+  checkOutTime?: string | null;
   brandColor?: string | null;
 }): string {
   const unit = escapeHtml(input.unitLabel);
+  const checkOutTime = String(input.checkOutTime ?? '').trim();
   const tblStyle = notifyDetailTableStyle();
   const checklistRows = [
     sdRefundChecklistRow(
       '1. Check-out time',
-      'Check-out time is strictly on or before <strong style="color:#111827;font-weight:700;">11:00 AM</strong>.',
+      checkOutTime
+        ? `Check-out time is by <strong style="color:#111827;font-weight:700;">${escapeHtml(checkOutTime)}</strong>.`
+        : 'Please check out by the time shown on your booking.',
       false
     ),
     sdRefundChecklistRow(
@@ -915,6 +933,7 @@ export function buildSdRefundDetailsSectionHtml(input: {
 /** @deprecated Use `buildSdRefundChecklistSectionHtml` + `buildSdRefundDetailsSectionHtml`. */
 export function buildSdRefundFooterSectionHtml(input: {
   unitLabel: string;
+  checkOutTime?: string | null;
   securityDepositFormatted: string;
   sdFormUrl: string;
   brandColor: string;
@@ -922,6 +941,7 @@ export function buildSdRefundFooterSectionHtml(input: {
   return [
     buildSdRefundChecklistSectionHtml({
       unitLabel: input.unitLabel,
+      checkOutTime: input.checkOutTime,
       brandColor: input.brandColor,
     }),
     buildSdRefundDetailsSectionHtml({
@@ -980,6 +1000,12 @@ export function buildSampleDynamicSections(input: {
 
   for (const key of keys) {
     switch (key) {
+      case 'cancellation_intro':
+        out.cancellation_intro = 'Your booking was cancelled.';
+        break;
+      case 'cancellation_detail_section':
+        out.cancellation_detail_section = sampleCancellationDetailSection(brandColor);
+        break;
       case 'urgent_notice':
         out.urgent_notice = buildUrgentSameDayCallout(true);
         break;
@@ -1022,6 +1048,7 @@ export function buildSampleDynamicSections(input: {
       case 'sd_refund_checklist_section':
         out.sd_refund_checklist_section = buildSdRefundChecklistSectionHtml({
           unitLabel: input.branding.unitLabel,
+          checkOutTime: '12:00 PM',
           brandColor,
         });
         break;
@@ -1035,6 +1062,7 @@ export function buildSampleDynamicSections(input: {
       case 'sd_refund_footer_section':
         out.sd_refund_footer_section = buildSdRefundFooterSectionHtml({
           unitLabel: input.branding.unitLabel,
+          checkOutTime: '12:00 PM',
           securityDepositFormatted: '₱3,000.00',
           sdFormUrl: `${input.settings.publicGuestAppOrigin.replace(/\/+$/, '')}/properties/sample-property/sd-form?bookingId=sample`,
           brandColor,
@@ -1088,13 +1116,12 @@ export function buildSampleDynamicSections(input: {
         });
         break;
       case 'booking_request_received_flow_section':
-        out.booking_request_received_flow_section =
-          buildBookingRequestReceivedFlowSectionHtml({
-            brandColor,
-            reviewExpectation: 'Most hosts reply within a day',
-            contact: sampleContact,
-            tripUrl: `${input.settings.publicGuestAppOrigin}/properties/sample-unit/trip?bookingId=sample`,
-          });
+        out.booking_request_received_flow_section = buildBookingRequestReceivedFlowSectionHtml({
+          brandColor,
+          reviewExpectation: 'Most hosts reply within a day',
+          contact: sampleContact,
+          tripUrl: `${input.settings.publicGuestAppOrigin}/properties/sample-unit/trip?bookingId=sample`,
+        });
         break;
       case 'trip_cta_section':
         out.trip_cta_section = buildGuestTripCtaHtml(

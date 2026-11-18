@@ -1,4 +1,5 @@
 import {
+  Ban,
   Car,
   ClipboardList,
   FileCheck,
@@ -8,7 +9,10 @@ import {
   LogOut,
   Mail,
   PawPrint,
+  Receipt,
   Send,
+  Undo2,
+  XCircle,
 } from 'lucide-react';
 
 import type { PropertyTemplateCategory } from '@/features/dashboard/bookings/hooks/usePropertyTemplates';
@@ -58,12 +62,6 @@ export const EMAIL_TEMPLATE_SECTIONS: PropertyTemplateSectionMeta[] = [
     category: 'email',
   },
   {
-    templateKey: 'email-parking-request',
-    label: 'Parking Request',
-    icon: Car,
-    category: 'email',
-  },
-  {
     templateKey: 'email-new-booking-request',
     label: 'New Booking Request',
     icon: Mail,
@@ -91,6 +89,30 @@ export const EMAIL_TEMPLATE_SECTIONS: PropertyTemplateSectionMeta[] = [
     templateKey: 'email-sd-refund-form-request',
     label: 'SD Refund Form Request',
     icon: FileText,
+    category: 'email',
+  },
+  {
+    templateKey: 'email-booking-cancelled-guest',
+    label: 'Booking Cancelled (Guest)',
+    icon: XCircle,
+    category: 'email',
+  },
+  {
+    templateKey: 'email-booking-cancelled-host',
+    label: 'Booking Cancelled (Host)',
+    icon: Ban,
+    category: 'email',
+  },
+  {
+    templateKey: 'email-cancellation-request-guest',
+    label: 'Cancellation Request',
+    icon: Undo2,
+    category: 'email',
+  },
+  {
+    templateKey: 'email-refund-sent-guest',
+    label: 'Refund Sent',
+    icon: Receipt,
     category: 'email',
   },
 ];

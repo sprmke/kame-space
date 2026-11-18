@@ -361,6 +361,31 @@ function normalizeStoredTemplateContent(content: string, templateKey?: string): 
   return out;
 }
 
+/**
+ * Canonical form for comparing a saved row against its shipped default.
+ *
+ * TipTap round-trips the same HTML in a different shape: `<li>text</li>` comes back as
+ * `<li><p>text</p></li>`, and formatting newlines disappear. A raw string compare made an
+ * untouched default read as Customized after one open-and-save, so both sides are normalized.
+ */
+function canonicalizeTiptapListItems(html: string): string {
+  return html.replace(
+    /<li(\s[^>]*)?>([\s\S]*?)<\/li>/gi,
+    (match, attrs: string | undefined, inner: string) => {
+      const body = String(inner ?? '').trim();
+      if (!body || /^<(p|ul|ol|table|h[1-6])\b/i.test(body)) return match;
+      return `<li${attrs ?? ''}><p>${body}</p></li>`;
+    }
+  );
+}
+
+export function normalizeTemplateContentForCompare(content: string, templateKey?: string): string {
+  if (!content) return '';
+  return canonicalizeTiptapListItems(normalizeStoredTemplateContent(content, templateKey))
+    .replace(/\s*\n\s*/g, '')
+    .trim();
+}
+
 export function validateCustomTemplateName(name: string): string | null {
   const trimmed = name.trim();
   if (!trimmed) return 'Template name is required';
@@ -579,7 +604,9 @@ function rowToDto(
     category: row.category,
     content: normalizeStoredTemplateContent(row.content, row.template_key),
     defaultContent,
-    isDefault: row.content === defaultContent,
+    isDefault:
+      normalizeTemplateContentForCompare(row.content, row.template_key) ===
+      normalizeTemplateContentForCompare(defaultContent, row.template_key),
     description: builtin?.description ?? null,
     previewTemplateSlug: builtin?.previewTemplateSlug ?? null,
     sectionImageUrl: String(row.section_image_url ?? '').trim() || null,

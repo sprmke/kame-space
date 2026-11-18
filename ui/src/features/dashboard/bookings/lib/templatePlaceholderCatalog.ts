@@ -90,6 +90,8 @@ const PROPERTY_SECTION_KEYS = [
   'sd_refund_checklist_section',
   'sd_refund_details_section',
   'booking_vehicle_copy',
+  'cancellation_intro',
+  'cancellation_detail_section',
 ] as const;
 
 /** Block-level placeholders — each must sit on its own `<p>` line in email templates. */
@@ -146,18 +148,6 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
       'email_signature_section',
     ]
   ),
-  'email-parking-request': uniqueKeys(
-    PROPERTY_EMAIL_CORE,
-    PROPERTY_VEHICLE_KEYS,
-    PROPERTY_BOOKING_META_KEYS,
-    [
-      'urgent_notice',
-      'update_notice',
-      'booking_vehicle_copy',
-      'parking_reply_callout_section',
-      'email_signature_section',
-    ]
-  ),
   'email-new-booking-request': uniqueKeys(
     PROPERTY_EMAIL_CORE,
     PROPERTY_BOOKING_META_KEYS,
@@ -209,14 +199,30 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
     PROPERTY_BOOKING_META_KEYS,
     PROPERTY_GUEST_CONTACT_KEYS,
     PROPERTY_GUEST_LINK_KEYS,
-    ['cancellation_detail_section', 'trip_cta_section', 'email_signature_section']
+    [
+      'cancellation_intro',
+      'cancellation_detail_section',
+      'trip_cta_section',
+      'email_signature_section',
+    ]
+  ),
+  'email-booking-cancelled-host': uniqueKeys(
+    PROPERTY_EMAIL_CORE,
+    PROPERTY_BOOKING_META_KEYS,
+    PROPERTY_GUEST_CONTACT_KEYS,
+    ['cancellation_detail_section', 'booking_link_cta', 'email_signature_section']
   ),
   'email-cancellation-request-guest': uniqueKeys(
     PROPERTY_EMAIL_CORE,
     PROPERTY_BOOKING_META_KEYS,
     PROPERTY_GUEST_CONTACT_KEYS,
     PROPERTY_GUEST_LINK_KEYS,
-    ['cancellation_detail_section', 'trip_cta_section', 'email_signature_section']
+    [
+      'cancellation_request_title',
+      'cancellation_detail_section',
+      'trip_cta_section',
+      'email_signature_section',
+    ]
   ),
   'email-refund-sent-guest': uniqueKeys(
     PROPERTY_EMAIL_CORE,

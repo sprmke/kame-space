@@ -28,7 +28,7 @@ import {
   buildUrgentSameDayCallout,
   computeReadyForCheckinTotalDue,
 } from './propertyTemplateEmailSections.ts';
-import { formatDateForEmail } from './utils.ts';
+import { formatDateForEmail, formatTimeForDisplay } from './utils.ts';
 import { guestJourneyReviewExpectation } from './guestJourneyCopy.ts';
 import { resolvePropertyMedianFirstResponseHours } from './guestResponseTime.ts';
 import { resolveDocumentRequirements } from './documentRequirements.ts';
@@ -1121,6 +1121,7 @@ export async function sendSdRefundFormRequest(booking: GuestSubmission) {
   const sdRefundSections = {
     sd_refund_checklist_section: buildSdRefundChecklistSectionHtml({
       unitLabel,
+      checkOutTime: formatTimeForDisplay(booking.check_out_time, settings.checkOutTime),
       brandColor: settings.brandColor,
     }),
     sd_refund_details_section: buildSdRefundDetailsSectionHtml({
@@ -1131,6 +1132,7 @@ export async function sendSdRefundFormRequest(booking: GuestSubmission) {
     /** Backward compat for saved templates still using the combined placeholder. */
     sd_refund_footer_section: buildSdRefundFooterSectionHtml({
       unitLabel,
+      checkOutTime: formatTimeForDisplay(booking.check_out_time, settings.checkOutTime),
       securityDepositFormatted,
       sdFormUrl,
       brandColor: settings.brandColor,
@@ -1563,7 +1565,9 @@ export async function sendBookingCancelledGuest(
       { label: 'Stay', value: `${c.displayCheckInDate} to ${c.displayCheckOutDate}` },
       ...(expired ? [] : [{ label: 'Reason', value: cancellationReasonLabel(ctx.reasonCode) }]),
       ...(ctx.policyTitle ? [{ label: 'Policy', value: ctx.policyTitle }] : []),
-      ...(ctx.refundPercent != null ? [{ label: 'Policy refund', value: `${ctx.refundPercent}% of paid` }] : []),
+      ...(ctx.refundPercent != null
+        ? [{ label: 'Policy refund', value: `${ctx.refundPercent}% of paid` }]
+        : []),
       ...(nothingPaid ? [] : [{ label: 'Refund', value: cancellationPeso(ctx.refundDuePhp) }]),
     ],
     note: ctx.reasonNote ?? null,
@@ -1581,7 +1585,10 @@ export async function sendBookingCancelledGuest(
         ...buildGuestFacingPlaceholderVars(c.guestContact),
         cancellation_intro: who,
         cancellation_detail_section: detail,
-        email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
+        email_signature_section: buildEmailSignatureSectionHtml(
+          c.settings.gafUnitOwner,
+          c.unitLabel
+        ),
       },
       c.branding
     ),
@@ -1589,7 +1596,10 @@ export async function sendBookingCancelledGuest(
   });
 
   return sendResendEmail({
-    from: formatResendFromAddress(`${c.unitLabel} - ${c.branding.organizationName}`, c.branding.fromEmail),
+    from: formatResendFromAddress(
+      `${c.unitLabel} - ${c.branding.organizationName}`,
+      c.branding.fromEmail
+    ),
     to: [booking.guest_email],
     reply_to: c.EMAIL_REPLY_TO,
     subject: `${c.unitLabel} - ${expired ? 'Request expired' : 'Booking Cancelled'} ${formatEmailDateRange(c.displayCheckInDate, c.displayCheckOutDate)}`,
@@ -1630,7 +1640,10 @@ export async function sendPendingReviewChaseHost(booking: GuestSubmission) {
       {
         ...c.guestLinkExtras,
         ...buildGuestFacingPlaceholderVars(c.guestContact),
-        email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
+        email_signature_section: buildEmailSignatureSectionHtml(
+          c.settings.gafUnitOwner,
+          c.unitLabel
+        ),
       },
       c.branding
     ),
@@ -1638,7 +1651,10 @@ export async function sendPendingReviewChaseHost(booking: GuestSubmission) {
   });
 
   return sendResendEmail({
-    from: formatResendFromAddress(`${c.unitLabel} - ${c.branding.organizationName}`, c.branding.fromEmail),
+    from: formatResendFromAddress(
+      `${c.unitLabel} - ${c.branding.organizationName}`,
+      c.branding.fromEmail
+    ),
     to: [to],
     reply_to: c.EMAIL_REPLY_TO,
     subject: `${c.unitLabel} - Request expires in ${PENDING_REVIEW_CHASE_LEAD_DAYS} days ${formatEmailDateRange(c.displayCheckInDate, c.displayCheckOutDate)}`,
@@ -1686,7 +1702,10 @@ export async function sendBookingCancelledHost(
         ...c.guestLinkExtras,
         ...buildGuestFacingPlaceholderVars(c.guestContact),
         cancellation_detail_section: detail,
-        email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
+        email_signature_section: buildEmailSignatureSectionHtml(
+          c.settings.gafUnitOwner,
+          c.unitLabel
+        ),
       },
       c.branding
     ),
@@ -1694,7 +1713,10 @@ export async function sendBookingCancelledHost(
   });
 
   return sendResendEmail({
-    from: formatResendFromAddress(`${c.unitLabel} - ${c.branding.organizationName}`, c.branding.fromEmail),
+    from: formatResendFromAddress(
+      `${c.unitLabel} - ${c.branding.organizationName}`,
+      c.branding.fromEmail
+    ),
     to: [to],
     reply_to: c.EMAIL_REPLY_TO,
     subject: `${c.unitLabel} - ${ctx.requestOnly ? 'Cancellation requested' : 'Cancellation'} ${formatEmailDateRange(c.displayCheckInDate, c.displayCheckOutDate)}`,
@@ -1749,7 +1771,10 @@ export async function sendCancellationRequestGuest(
         ...buildGuestFacingPlaceholderVars(c.guestContact),
         cancellation_request_title: title,
         cancellation_detail_section: detail,
-        email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
+        email_signature_section: buildEmailSignatureSectionHtml(
+          c.settings.gafUnitOwner,
+          c.unitLabel
+        ),
       },
       c.branding
     ),
@@ -1757,7 +1782,10 @@ export async function sendCancellationRequestGuest(
   });
 
   return sendResendEmail({
-    from: formatResendFromAddress(`${c.unitLabel} - ${c.branding.organizationName}`, c.branding.fromEmail),
+    from: formatResendFromAddress(
+      `${c.unitLabel} - ${c.branding.organizationName}`,
+      c.branding.fromEmail
+    ),
     to: [booking.guest_email],
     reply_to: c.EMAIL_REPLY_TO,
     subject: `${c.unitLabel} - ${title}`,
@@ -1794,7 +1822,10 @@ export async function sendRefundSentGuest(
         ...c.guestLinkExtras,
         ...buildGuestFacingPlaceholderVars(c.guestContact),
         cancellation_detail_section: detail,
-        email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
+        email_signature_section: buildEmailSignatureSectionHtml(
+          c.settings.gafUnitOwner,
+          c.unitLabel
+        ),
       },
       c.branding
     ),
@@ -1802,7 +1833,10 @@ export async function sendRefundSentGuest(
   });
 
   return sendResendEmail({
-    from: formatResendFromAddress(`${c.unitLabel} - ${c.branding.organizationName}`, c.branding.fromEmail),
+    from: formatResendFromAddress(
+      `${c.unitLabel} - ${c.branding.organizationName}`,
+      c.branding.fromEmail
+    ),
     to: [booking.guest_email],
     reply_to: c.EMAIL_REPLY_TO,
     subject: `${c.unitLabel} - Refund sent`,

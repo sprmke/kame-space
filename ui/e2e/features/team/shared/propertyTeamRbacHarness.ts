@@ -828,7 +828,7 @@ function propertyTemplatesSettingsPayload(customTemplateSeeded = false) {
       template('parking-reminders', 'Parking Reminders', 'standard'),
       template('email-gaf-request', 'GAF Request', 'email'),
       template('email-pet-request', 'Pet Request', 'email'),
-      template('email-parking-request', 'Parking Request', 'email'),
+      template('email-booking-cancelled-guest', 'Booking Cancelled (Guest)', 'email'),
       template('email-new-booking-request', 'New Booking Request', 'email'),
       template('email-booking-acknowledgement', 'Booking Acknowledgement', 'email'),
       template('email-ready-for-checkin', 'Ready for Check-in', 'email'),

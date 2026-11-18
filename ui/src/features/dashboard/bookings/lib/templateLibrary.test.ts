@@ -74,6 +74,21 @@ describe('buildTemplateLibrary', () => {
     expect(groups[1]!.entries.map((entry) => entry.templateKey)).toEqual(['house-rules']);
   });
 
+  it('lists the four cancellation emails in the Emails group', () => {
+    const cancellationKeys = [
+      'email-booking-cancelled-guest',
+      'email-booking-cancelled-host',
+      'email-cancellation-request-guest',
+      'email-refund-sent-guest',
+    ];
+    const groups = buildTemplateLibrary(
+      cancellationKeys.map((templateKey) => template({ templateKey, category: 'email' }))
+    );
+
+    expect(groups[0]!.id).toBe('email');
+    expect(groups[0]!.entries.map((entry) => entry.templateKey)).toEqual(cancellationKeys);
+  });
+
   it('separates email and custom groups and marks email as gated', () => {
     const groups = buildTemplateLibrary([
       template({ templateKey: 'house-rules' }),

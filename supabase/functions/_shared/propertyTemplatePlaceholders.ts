@@ -30,11 +30,14 @@ export const PROPERTY_TEMPLATE_PLACEHOLDERS_REFERENCE: readonly string[] = [
   '{{pet_name}}: pet name',
   '{{pet_type}}: pet type',
   '{{pet_breed}}: pet breed',
+  '{{pet_age}}: pet age',
   '{{car_brand_model}}: vehicle make/model',
   '{{car_color}}: vehicle color',
   '{{car_plate_number}}: plate number',
   '{{total_guest_balance}}: guest balance due (₱ formatted)',
   '{{sd_form_url}}: guest SD refund form URL',
+  '{{form_url}}: guest booking form URL',
+  '{{review_url}}: guest review URL',
   '{{trip_url}}: guest trip page URL (booking, documents, chat)',
   '{{security_deposit}}: security deposit (₱ formatted)',
   '{{facebook_page_url}}: Facebook page URL (property → org)',
@@ -61,6 +64,7 @@ export const PROPERTY_TEMPLATE_PLACEHOLDERS_REFERENCE: readonly string[] = [
   '{{document_reminders_section}}: GAF/parking/pet reminder card (ready for check-in)',
   '{{payment_breakdown_section}}: payment table (empty when total balance is 0)',
   '{{gcash_payment_section}}: payment accounts (+ QR when uploaded; empty when total balance is 0)',
+  '{{stay_guide_cta_section}}: “Open Stay Guide” button',
   '{{sd_refund_checklist_section}}: check-out checklist table (SD refund email)',
   '{{sd_refund_details_section}}: SD refund amount + form CTA (SD refund email)',
   '{{cancellation_intro}}: cancellation intro line (guest cancellation email)',
@@ -102,6 +106,10 @@ export const PROPERTY_TEMPLATE_SAMPLE_VARS: Record<string, string> = {
   total_guest_balance: '₱3,599',
   sd_form_url:
     'https://kamespace.com/properties/azure-north/sd-form?bookingId=00000000-0000-4000-8000-000000000001',
+  form_url:
+    'https://kamespace.com/properties/azure-north/form?bookingId=00000000-0000-4000-8000-000000000001',
+  review_url:
+    'https://kamespace.com/properties/azure-north/guest-review?bookingId=00000000-0000-4000-8000-000000000001',
   trip_url:
     'https://kamespace.com/properties/azure-north/trip?bookingId=00000000-0000-4000-8000-000000000001',
   security_deposit: '₱3,000.00',
@@ -112,6 +120,8 @@ export const PROPERTY_TEMPLATE_SAMPLE_VARS: Record<string, string> = {
   contact_email: 'host@example.com',
   social_contact_mentions:
     'message us on <a href="https://www.facebook.com/example">Facebook</a> or <a href="https://www.airbnb.com/rooms/example">Airbnb</a>',
+  cancellation_intro: 'Your booking was cancelled.',
+  cancellation_request_title: 'Cancellation request received',
 };
 
 export function applyPropertyTemplateSamplePlaceholders(html: string): string {

@@ -38,7 +38,6 @@ import { countStayNights, formatDateForEmail, formatTimeForDisplay } from './uti
 export const PROPERTY_EMAIL_TEMPLATE_KEYS = [
   'email-gaf-request',
   'email-pet-request',
-  'email-parking-request',
   'email-new-booking-request',
   'email-booking-request-received',
   'email-booking-acknowledgement',
@@ -177,6 +176,10 @@ export function buildBookingPlaceholderVars(
   const totalBalance =
     computeTotalGuestBalanceFromBooking(booking as unknown as Record<string, unknown>) ?? 0;
 
+  // Fall back to this property's own times, never a fixed string that can contradict Settings.
+  const propertyCheckInTime = formatTimeForDisplay(settings.checkInTime);
+  const propertyCheckOutTime = formatTimeForDisplay(settings.checkOutTime);
+
   const flags = decorFlags(booking);
 
   return {
@@ -187,8 +190,8 @@ export function buildBookingPlaceholderVars(
     guest_facebook_name: escapeHtml(booking.guest_facebook_name),
     check_in_date: escapeHtml(displayCheckIn),
     check_out_date: escapeHtml(displayCheckOut),
-    check_in_time: escapeHtml(formatTimeForDisplay(booking.check_in_time, '2:00 PM')),
-    check_out_time: escapeHtml(formatTimeForDisplay(booking.check_out_time, '11:00 AM')),
+    check_in_time: escapeHtml(formatTimeForDisplay(booking.check_in_time, propertyCheckInTime)),
+    check_out_time: escapeHtml(formatTimeForDisplay(booking.check_out_time, propertyCheckOutTime)),
     nights: String(nights),
     pax: String(pax),
     tower_and_unit_number: escapeHtml(unitLabel),
@@ -237,6 +240,8 @@ export function buildGuestFormPlaceholderVars(
   const propertyName = branding?.propertyName ?? 'Property';
   const hasDecor = Boolean(formData.guestRequestsSurpriseDecor);
   const hasPets = Boolean(formData.hasPets);
+  const propertyCheckInTime = formatTimeForDisplay(settings.checkInTime);
+  const propertyCheckOutTime = formatTimeForDisplay(settings.checkOutTime);
 
   return {
     primary_guest_name: escapeHtml(formData.primaryGuestName),
@@ -246,8 +251,8 @@ export function buildGuestFormPlaceholderVars(
     guest_facebook_name: escapeHtml(formData.guestFacebookName),
     check_in_date: escapeHtml(displayCheckIn),
     check_out_date: escapeHtml(displayCheckOut),
-    check_in_time: escapeHtml(formatTimeForDisplay(formData.checkInTime, '2:00 PM')),
-    check_out_time: escapeHtml(formatTimeForDisplay(formData.checkOutTime, '11:00 AM')),
+    check_in_time: escapeHtml(formatTimeForDisplay(formData.checkInTime, propertyCheckInTime)),
+    check_out_time: escapeHtml(formatTimeForDisplay(formData.checkOutTime, propertyCheckOutTime)),
     nights: String(nights),
     pax: String(pax),
     tower_and_unit_number: escapeHtml(unitLabel),
