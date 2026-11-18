@@ -16,6 +16,14 @@ export type ParkingBookingStatusValue =
 
 export type ParkingHostContact = { name: string; email: string; phone: string | null };
 
+/** Rent + service fee. Snapshotted once paid; a read-only preview before that (never re-derived client-side). */
+export type ParkingPaymentPreview = {
+  nights: number;
+  hostGrossTotal: number;
+  guestFeeTotal: number;
+  guestChargeTotal: number;
+};
+
 export type ParkingBookingStatus = {
   status: ParkingBookingStatusValue;
   checkInDate: string;
@@ -42,6 +50,8 @@ export type ParkingBookingStatus = {
   supportEscalationPhone: string | null;
   /** False for a signed-out visitor or a signed-in account that does not own this request. */
   viewerOwnsBooking: boolean;
+  /** Null while searching for a host (no rate assigned yet) or on a terminal/no-host status. */
+  payment: ParkingPaymentPreview | null;
 };
 
 const TERMINAL_STATUSES: ReadonlySet<string> = new Set([

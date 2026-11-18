@@ -129,3 +129,9 @@ Deno.test('assistant parking rate proposals reject rates under the minimum', asy
   const override = src.slice(src.indexOf('async function toolProposeSetParkingDateRateOverride'));
   assert(override.slice(0, 1400).includes('PARKING_MIN_NIGHTLY_RATE'));
 });
+
+Deno.test('two nights at 1,200 charge 2,535: the numbers the guest pay-screen spec shows', () => {
+  const b = breakdown(2400);
+  assertEquals(b.guestFeeTotal, 135);
+  assertEquals(b.guestChargeTotal, 2535);
+});
