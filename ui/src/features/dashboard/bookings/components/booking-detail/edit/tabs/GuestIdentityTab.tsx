@@ -5,7 +5,7 @@
 
 import { Info, Plus, UserRound, Users } from 'lucide-react';
 
-import { BOOKING_SOURCE_OPTIONS } from '@/features/guest/form/lib/bookingSourceFromSearchParams';
+import { BOOKING_SOURCES } from '@/lib/bookingChannel';
 import {
   FIND_US_OPTIONS,
   findUsRequiresDetails,
@@ -359,7 +359,7 @@ export function GuestIdentityTab({
                 <SelectValue placeholder="Select platform" />
               </SelectTrigger>
               <SelectContent>
-                {BOOKING_SOURCE_OPTIONS.map((source) => (
+                {BOOKING_SOURCES.map((source) => (
                   <SelectItem key={source} value={source}>
                     {source}
                   </SelectItem>

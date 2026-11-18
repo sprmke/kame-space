@@ -1,5 +1,6 @@
 import { Calendar, Edit2, Users } from 'lucide-react';
 
+import { isOtaPrepaidSource } from '@/lib/bookingChannel';
 import { BookingDetailActionsMenu } from '@/features/dashboard/bookings/components/booking-detail/BookingDetailActionsMenu';
 import { BookingDetailShellHeader } from '@/features/dashboard/bookings/components/booking-detail/primitives/BookingDetailShell';
 import { occupiedNightsFromStay } from '@/features/dashboard/bookings/components/calendar/calendarStayAmounts';
@@ -40,7 +41,7 @@ export function BookingDetailHeader({
   const heading = fb || primary || 'Booking';
   const showPrimarySubtitle = Boolean(fb && primary && fb.toLowerCase() !== primary.toLowerCase());
   const source = booking.booking_source?.trim() || 'Direct';
-  const isAirbnb = source === 'Airbnb';
+  const isOta = isOtaPrepaidSource(source);
 
   return (
     <BookingDetailShellHeader as="header" className={className}>
@@ -57,9 +58,7 @@ export function BookingDetailHeader({
             <span
               className={cn(
                 'inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-                isAirbnb
-                  ? toneBadgeClasses('orange')
-                  : 'border-primary/25 bg-primary/10 text-primary'
+                isOta ? toneBadgeClasses('orange') : 'border-primary/25 bg-primary/10 text-primary'
               )}
             >
               {source}

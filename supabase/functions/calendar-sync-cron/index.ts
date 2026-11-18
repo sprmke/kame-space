@@ -11,13 +11,18 @@
  *   feeds immediately (still serialised via the per-feed claim).
  */
 
-
 import {
+  CALENDAR_SYNC_CLAIM_SLACK_MS,
+  calendarSyncMinIntervalMinutes,
+  checkExportNeverRead,
   loadCalendarFeed,
   loadDueCalendarFeeds,
+  recordFeedRun,
   runFeedSync,
   type CalendarFeedRow,
 } from '../_shared/calendarSyncRun.ts';
+import { calendarChannel, type CalendarFeedProvider } from '../_shared/calendarChannels.ts';
+import { groupFeedsByProperty, runFeedPool } from '../_shared/calendarSyncPool.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { recordJobHeartbeat } from '../_shared/systemHealth/jobHeartbeat.ts';
 import {
@@ -38,6 +43,8 @@ import { serveHandler } from '../_shared/serveEdge.ts';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GLOBAL_BATCH = 100;
 const TIME_BUDGET_MS = 55_000;
+/** Properties swept in parallel. Feeds of one property stay serial (see calendarSyncPool.ts). */
+const SWEEP_CONCURRENCY = 4;
 
 function json(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -125,16 +132,27 @@ serveHandler('calendar-sync-cron', async (req) => {
         const { data } = await supabase
           .from('property_calendar_feeds')
           .select(
-            'id, property_id, provider, label, ics_url_encrypted, is_active, create_bookings, last_etag, last_modified_header, last_feed_hash, consecutive_failures, empty_pull_streak'
+            'id, property_id, provider, label, ics_url_encrypted, is_active, create_bookings, last_etag, last_modified_header, last_feed_hash, consecutive_failures, empty_pull_streak, echo_warning_at, export_never_read_at, created_at'
           )
           .eq('property_id', property.id)
           .eq('is_active', true);
         feeds = (data as CalendarFeedRow[] | null) ?? [];
       }
 
+      for (const feed of feeds) {
+        const availabilityKey = calendarChannel(feed.provider).availabilityKey;
+        if (availabilityKey && !(await isFeatureAvailable(availabilityKey))) {
+          const blocked = await featureUnavailableResponse(req, availabilityKey, { user });
+          if (blocked) return blocked;
+        }
+      }
+
       const results = [];
       for (const feed of feeds) {
-        results.push(await runFeedSync(feed, { runId, force: true, supabase }));
+        const startedAt = Date.now();
+        const result = await runFeedSync(feed, { runId, force: true, supabase });
+        await recordFeedRun(supabase, feed, result, Date.now() - startedAt);
+        results.push(result);
       }
       return json(req, {
         success: true,
@@ -155,7 +173,19 @@ serveHandler('calendar-sync-cron', async (req) => {
       return json(req, { success: true, skipped: 'feature_unavailable', runId, scoped: false });
     }
 
-    const feeds = await loadDueCalendarFeeds(supabase, GLOBAL_BATCH);
+    const cutoffIso = new Date(
+      Date.now() -
+        Math.max(0, calendarSyncMinIntervalMinutes() * 60_000 - CALENDAR_SYNC_CLAIM_SLACK_MS)
+    ).toISOString();
+    const feeds = await loadDueCalendarFeeds(supabase, GLOBAL_BATCH, { cutoffIso });
+    // A paused channel is skipped without counting a failure: the whole point of the switch is
+    // to stop hammering a channel whose feed format changed.
+    const pausedChannels = new Set<CalendarFeedProvider>();
+    for (const provider of new Set(feeds.map((f) => f.provider))) {
+      const key = calendarChannel(provider).availabilityKey;
+      if (!key) continue;
+      if (!(await isFeatureAvailable(key))) pausedChannels.add(provider);
+    }
     const startedAt = Date.now();
     const summary = {
       feedsProcessed: 0,
@@ -176,54 +206,80 @@ serveHandler('calendar-sync-cron', async (req) => {
       feeds.map((feed) => feed.property_id)
     );
 
-    for (const feed of feeds) {
-      if (Date.now() - startedAt > TIME_BUDGET_MS) {
-        console.log('[calendar-sync-cron] time budget hit - remaining feeds pick up next tick');
-        break;
-      }
-
-      // Archived / suspended / unverified listings stop importing. Paused keeps syncing.
-      const lifecycleState = lifecycleStates.get(feed.property_id) ?? 'archived';
-      if (!automationAllowed(lifecycleState, 'ical_import')) {
-        summary.skippedLifecycle++;
-        continue;
-      }
-
-      let entitled = entitlementCache.get(feed.property_id);
-      if (entitled === undefined) {
-        try {
-          entitled = isFeatureEnabled(
-            await resolvePropertyEntitlements(feed.property_id),
-            'calendarSync'
-          );
-        } catch (err) {
-          console.error('[calendar-sync-cron] entitlement check failed:', err);
-          entitled = false;
+    let budgetHit = false;
+    await runFeedPool(
+      groupFeedsByProperty(feeds),
+      SWEEP_CONCURRENCY,
+      async (feed) => {
+        // Archived / suspended / unverified listings stop importing. Paused keeps syncing.
+        const lifecycleState = lifecycleStates.get(feed.property_id) ?? 'archived';
+        if (!automationAllowed(lifecycleState, 'ical_import')) {
+          summary.skippedLifecycle++;
+          return feed.id;
         }
-        entitlementCache.set(feed.property_id, entitled);
-      }
-      if (!entitled) {
-        summary.skippedNoEntitlement++;
-        continue;
-      }
 
-      try {
-        const res = await runFeedSync(feed, { runId, supabase });
-        summary.feedsProcessed++;
-        summary.blocksCreated += res.blocksCreated;
-        summary.blocksRemoved += res.blocksRemoved;
-        summary.blocksUpdated += res.blocksUpdated;
-        summary.bookingsCreated += res.bookingsCreated;
-        summary.bookingsUpdated += res.bookingsUpdated;
-        summary.bookingsCancelled += res.bookingsCancelled;
-        summary.bookingsLinked += res.bookingsLinked;
-        summary.conflicts += res.conflicts;
-        if (!res.ok) summary.errors++;
-      } catch (err) {
-        summary.errors++;
-        console.error(`[calendar-sync-cron] feed ${feed.id} threw:`, err);
+        let entitled = entitlementCache.get(feed.property_id);
+        if (entitled === undefined) {
+          try {
+            entitled = isFeatureEnabled(
+              await resolvePropertyEntitlements(feed.property_id),
+              'calendarSync'
+            );
+          } catch (err) {
+            console.error('[calendar-sync-cron] entitlement check failed:', err);
+            entitled = false;
+          }
+          entitlementCache.set(feed.property_id, entitled);
+        }
+        if (!entitled) {
+          summary.skippedNoEntitlement++;
+          return feed.id;
+        }
+
+        if (pausedChannels.has(feed.provider)) return feed.id;
+
+        const feedStartedAt = Date.now();
+        try {
+          const res = await runFeedSync(feed, { runId, supabase });
+          await recordFeedRun(supabase, feed, res, Date.now() - feedStartedAt);
+          summary.feedsProcessed++;
+          summary.blocksCreated += res.blocksCreated;
+          summary.blocksRemoved += res.blocksRemoved;
+          summary.blocksUpdated += res.blocksUpdated;
+          summary.bookingsCreated += res.bookingsCreated;
+          summary.bookingsUpdated += res.bookingsUpdated;
+          summary.bookingsCancelled += res.bookingsCancelled;
+          summary.bookingsLinked += res.bookingsLinked;
+          summary.conflicts += res.conflicts;
+          if (!res.ok) summary.errors++;
+          else await checkExportNeverRead(supabase, feed);
+        } catch (err) {
+          summary.errors++;
+          console.error(`[calendar-sync-cron] feed ${feed.id} threw:`, err);
+          await recordFeedRun(
+            supabase,
+            feed,
+            { status: 'error', error: err instanceof Error ? err.message : String(err) },
+            Date.now() - feedStartedAt
+          );
+        }
+        return feed.id;
+      },
+      {
+        shouldStop: () => {
+          if (Date.now() - startedAt > TIME_BUDGET_MS) {
+            if (!budgetHit) {
+              budgetHit = true;
+              console.log(
+                '[calendar-sync-cron] time budget hit - remaining feeds pick up next tick'
+              );
+            }
+            return true;
+          }
+          return false;
+        },
       }
-    }
+    );
 
     console.log('[calendar-sync-cron]', JSON.stringify({ runId, ...summary }));
     await reportCronPartialFailure({

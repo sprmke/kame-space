@@ -1,5 +1,6 @@
 import { Calendar, ChevronDown, Edit2, PencilLine, Users, X } from 'lucide-react';
 
+import { isOtaPrepaidSource } from '@/lib/bookingChannel';
 import { BookingDetailActionsMenu } from '@/features/dashboard/bookings/components/booking-detail/BookingDetailActionsMenu';
 import { occupiedNightsFromStay } from '@/features/dashboard/bookings/components/calendar/calendarStayAmounts';
 import { StatusBadge } from '@/features/dashboard/bookings/components/StatusBadge';
@@ -47,7 +48,7 @@ export function BookingDetailMobileSummary({
   const primary = booking.primary_guest_name?.trim() ?? '';
   const heading = fb || primary || 'Booking';
   const source = booking.booking_source?.trim() || 'Direct';
-  const isAirbnb = source === 'Airbnb';
+  const isOta = isOtaPrepaidSource(source);
 
   return (
     <section
@@ -75,7 +76,7 @@ export function BookingDetailMobileSummary({
           <span
             className={cn(
               'inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
-              isAirbnb ? toneBadgeClasses('orange') : 'border-primary/25 bg-primary/10 text-primary'
+              isOta ? toneBadgeClasses('orange') : 'border-primary/25 bg-primary/10 text-primary'
             )}
           >
             {source}

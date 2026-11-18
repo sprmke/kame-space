@@ -18,14 +18,27 @@ import { resolveAppSettings } from './appSettings.ts';
 import { addDaysYmd, manilaTodayYmd } from './calendarAvailabilityManila.ts';
 import { createServiceClient } from './orgAuth.ts';
 import { createNotification } from './notificationService.ts';
+import { capturePostHogEvent } from './posthog.ts';
 import { buildActorContext, logActivity, type ActorContext } from './activityLog.ts';
 import {
   findAdoptableManualBooking,
   findRelinkableBooking,
-  isAirbnbBookingSource,
   isPastReservation,
   type IngestBookingRow,
 } from './externalBookingIngest.ts';
+import {
+  CALENDAR_CHANNELS,
+  calendarChannel,
+  isCalendarProvider,
+  type CalendarChannelDefinition,
+} from './calendarChannels.ts';
+import { isOtaPrepaidSource } from './bookingChannel.ts';
+import {
+  classifyExportEcho,
+  EXPORT_ECHO_WINDOW_HOURS,
+  isClosedDatesEchoPull,
+  type ServedRange,
+} from './calendarEchoRules.ts';
 import { resolveOrganizationIdForProperty } from './propertyScope.ts';
 import {
   buildExportCalendar, // re-exported for the ical-export function's convenience
@@ -54,6 +67,22 @@ import { buildCancellationPolicySnapshot } from './cancellationPolicy.ts';
 
 export { buildExportCalendar };
 
+/**
+ * Placeholder guest name for a channel that sends dates only. Airbnb keeps its exact previous
+ * output (`Airbnb HM…`, `Airbnb guest ··1234`, `Airbnb guest`) so existing rows and search
+ * results do not shift.
+ */
+export function reservationDisplayName(
+  channel: CalendarChannelDefinition,
+  ev: Pick<ParsedCalendarEvent, 'confirmationCode' | 'phoneLast4'>
+): string {
+  if (channel.provider === 'airbnb' && ev.confirmationCode) {
+    return `${channel.label} ${ev.confirmationCode}`;
+  }
+  if (ev.phoneLast4) return `${channel.placeholderGuestName} ··${ev.phoneLast4}`;
+  return channel.placeholderGuestName;
+}
+
 // ─── Outbound feed (GFM → OTA) ───────────────────────────────────────────────
 
 export interface ExportRangesResult {
@@ -67,6 +96,101 @@ export interface ExportRangesResult {
  * `excludeProvider` is set, bookings that originated from that OTA are also dropped (loop
  * prevention for the per-provider export URL); bookings from *other* OTAs are still published.
  */
+export interface ImportedReservationRow {
+  /** `property_blocked_dates.id` — opaque, stable across date edits, safe to publish. */
+  id: string;
+  feedId: string;
+  feedProvider: CalendarFeedProvider;
+  /** Only used for dedupe against a live booking; never published. */
+  externalUid: string | null;
+  startDate: string;
+  endDate: string;
+  lastSeenAt: string | null;
+  feedIsActive: boolean;
+  feedConsecutiveFailures: number;
+}
+
+/** A relayed stay stops blocking other channels once its feed stops refreshing. */
+export const RELAY_MAX_ROW_AGE_MS = 48 * 3_600_000;
+
+export interface LiveBookingKey {
+  feedId: string | null;
+  externalUid: string | null;
+}
+
+/**
+ * UID local part for a relayed stay. Uses only the opaque block row id: the source channel's UID
+ * can carry a confirmation code, which must never appear in another channel's calendar.
+ */
+function relayUidLocalPart(rowId: string): string {
+  return `gfm-relay-${rowId}`.replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 120);
+}
+
+/**
+ * Hub relay (plan §4.3 rule 3): publish an imported **reservation** to every channel except the
+ * one it came from. A night imported from Airbnb must block Agoda and Booking.com, otherwise a
+ * stay sold on one channel can be sold again on another.
+ *
+ * Never published: imported `block`-kind rows (host blocks, prep time and echoes are
+ * indistinguishable) and anything that came from the channel being served. Ranges already carried
+ * by a live booking are skipped so ingestion-on does not publish the same stay twice.
+ */
+export function relayRangesFor(
+  rows: ImportedReservationRow[],
+  excludeProvider: CalendarFeedProvider | null,
+  liveBookingKeys: Set<string>
+): ExportBusyRange[] {
+  const out: ExportBusyRange[] = [];
+  const now = Date.now();
+  for (const row of rows) {
+    if (excludeProvider && row.feedProvider === excludeProvider) continue;
+    if (!row.feedIsActive) continue;
+    if (row.feedConsecutiveFailures >= CALENDAR_SYNC_FAILING_THRESHOLD) continue;
+    // A feed that stopped refreshing must stop blocking other channels.
+    const seen = row.lastSeenAt ? Date.parse(row.lastSeenAt) : NaN;
+    if (!Number.isFinite(seen) || now - seen > RELAY_MAX_ROW_AGE_MS) continue;
+    if (row.externalUid && liveBookingKeys.has(`${row.feedId}|${row.externalUid}`)) continue;
+    if (!row.startDate || !row.endDate || row.endDate < row.startDate) continue;
+    out.push({
+      uidLocalPart: relayUidLocalPart(row.id),
+      startDate: row.startDate,
+      endDate: row.endDate,
+      summary: 'Booked',
+    });
+  }
+  return out;
+}
+
+/**
+ * Ranges served to one channel inside the echo window. Empty when the channel never read our
+ * link, which also means nothing can be an echo.
+ */
+export async function loadServedExportRanges(
+  supabase: SupabaseClient,
+  propertyId: string,
+  provider: CalendarFeedProvider
+): Promise<ServedRange[]> {
+  const since = new Date(Date.now() - EXPORT_ECHO_WINDOW_HOURS * 3_600_000).toISOString();
+  const { data, error } = await supabase
+    .from('calendar_export_reads')
+    .select('ranges')
+    .eq('property_id', propertyId)
+    .eq('channel', provider)
+    .gte('last_read_at', since);
+  if (error) throw new Error(`load served ranges: ${error.message}`);
+  const out: ServedRange[] = [];
+  for (const row of data ?? []) {
+    const ranges = (row as { ranges?: unknown }).ranges;
+    if (!Array.isArray(ranges)) continue;
+    for (const range of ranges) {
+      const start = String((range as { start?: unknown }).start ?? '');
+      const end = String((range as { end?: unknown }).end ?? '');
+      if (start && end && end > start) out.push({ start, end });
+    }
+  }
+  return out;
+}
+
 export async function loadExportRanges(
   supabase: SupabaseClient,
   propertyId: string,
@@ -81,7 +205,9 @@ export async function loadExportRanges(
 
   const { data: bookings, error: bErr } = await supabase
     .from('guest_submissions')
-    .select('id, check_in_date, check_out_date, status, external_source, updated_at')
+    .select(
+      'id, check_in_date, check_out_date, status, external_source, external_feed_id, external_uid, updated_at'
+    )
     .eq('property_id', propertyId)
     .not('status', 'in', '("CANCELLED","IMPORTED")');
   if (bErr) throw new Error(`export bookings: ${bErr.message}`);
@@ -118,11 +244,56 @@ export async function loadExportRanges(
     });
   }
 
+  // Relay: nights imported as a real stay from another channel must block this one too.
+  const { data: imported, error: impErr } = await supabase
+    .from('property_blocked_dates')
+    .select(
+      'id, start_date, end_date, last_seen_at, external_uid, feed_id, property_calendar_feeds!inner(provider, is_active, consecutive_failures)'
+    )
+    .eq('property_id', propertyId)
+    .eq('source', 'ical_import')
+    .eq('external_kind', 'reservation');
+  if (impErr) throw new Error(`export imported reservations: ${impErr.message}`);
+
+  const liveBookingKeys = new Set<string>();
+  for (const b of bookings ?? []) {
+    const feedId = (b as { external_feed_id?: string | null }).external_feed_id;
+    const uid = (b as { external_uid?: string | null }).external_uid;
+    if (feedId && uid) liveBookingKeys.add(`${feedId}|${uid}`);
+  }
+
+  const importedRows: ImportedReservationRow[] = (imported ?? []).map((row) => {
+    const joined = (row as { property_calendar_feeds?: unknown }).property_calendar_feeds;
+    const providerRow = (Array.isArray(joined) ? joined[0] : joined) as
+      { provider?: string; is_active?: boolean; consecutive_failures?: number } | undefined;
+    return {
+      id: String((row as { id?: string }).id ?? ''),
+      feedId: String((row as { feed_id?: string }).feed_id ?? ''),
+      feedProvider: (providerRow?.provider ?? 'airbnb') as CalendarFeedProvider,
+      feedIsActive: providerRow?.is_active !== false,
+      feedConsecutiveFailures: Number(providerRow?.consecutive_failures ?? 0),
+      externalUid: ((row as { external_uid?: string | null }).external_uid ?? null) as
+        string | null,
+      startDate: String((row as { start_date?: string }).start_date ?? ''),
+      endDate: String((row as { end_date?: string }).end_date ?? ''),
+      lastSeenAt: ((row as { last_seen_at?: string | null }).last_seen_at ?? null) as string | null,
+    };
+  });
+  for (const relayed of relayRangesFor(importedRows, excludeProvider, liveBookingKeys)) {
+    ranges.push(relayed);
+  }
+  for (const row of importedRows) bump(row.lastSeenAt);
+
   return { ranges, lastModifiedIso: newest > 0 ? new Date(newest).toISOString() : null };
 }
 
 export const CALENDAR_SYNC_FAILING_THRESHOLD = 4;
 export const CALENDAR_SYNC_MIN_INTERVAL_MINUTES_DEFAULT = 30;
+/**
+ * A feed claimed a few seconds into a sweep must still be claimable at the next cadence mark,
+ * otherwise it silently skips a whole interval (observed as ~60 min syncs on a 30 min interval).
+ */
+export const CALENDAR_SYNC_CLAIM_SLACK_MS = 2 * 60_000;
 
 export interface CalendarFeedRow {
   id: string;
@@ -137,6 +308,11 @@ export interface CalendarFeedRow {
   last_feed_hash: string | null;
   consecutive_failures: number;
   empty_pull_streak: number;
+  /** Set when a pull looked like Booking.com exporting closed dates as well as reservations. */
+  echo_warning_at?: string | null;
+  /** Set once when a feed older than 24 h has never had its export link read. */
+  export_never_read_at?: string | null;
+  created_at?: string | null;
 }
 
 export interface RunFeedResult {
@@ -158,7 +334,7 @@ export interface RunFeedResult {
 }
 
 const FEED_SELECT =
-  'id, property_id, provider, label, ics_url_encrypted, is_active, create_bookings, last_etag, last_modified_header, last_feed_hash, consecutive_failures, empty_pull_streak';
+  'id, property_id, provider, label, ics_url_encrypted, is_active, create_bookings, last_etag, last_modified_header, last_feed_hash, consecutive_failures, empty_pull_streak, echo_warning_at, export_never_read_at, created_at';
 
 export function calendarSyncMinIntervalMinutes(): number {
   const raw = Number(Deno.env.get('CALENDAR_SYNC_MIN_INTERVAL_MINUTES'));
@@ -182,16 +358,33 @@ export async function loadCalendarFeed(
 /** Active feeds for the global sweep, oldest-attempted first (guarantees progress under a time budget). */
 export async function loadDueCalendarFeeds(
   supabase: SupabaseClient,
-  limit: number
+  limit: number,
+  opts: { cutoffIso?: string } = {}
 ): Promise<CalendarFeedRow[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from('property_calendar_feeds')
     .select(FEED_SELECT)
     .eq('is_active', true)
+    // A row from before Vrbo / Other were removed must never reach the engine.
+    .in('provider', CALENDAR_CHANNELS.map((c) => c.provider));
+  // Filter in SQL, not after loading: a full batch of not-yet-due feeds would starve the tail.
+  if (opts.cutoffIso) {
+    query = query.or(`last_attempted_at.is.null,last_attempted_at.lt.${opts.cutoffIso}`);
+  }
+  const { data, error } = await query
     .order('last_attempted_at', { ascending: true, nullsFirst: true })
     .limit(limit);
   if (error) throw new Error(`load due feeds: ${error.message}`);
   return (data as CalendarFeedRow[] | null) ?? [];
+}
+
+/**
+ * How long after its last attempt a feed may be claimed. Forced "Sync now" keeps the original
+ * 5 s serialisation window; a normal sweep subtracts the slack so a feed claimed at `:00:07` is
+ * claimable again at `:30:00` instead of slipping to `:40`.
+ */
+export function claimCutoffMs(minIntervalMs: number, force: boolean): number {
+  return force ? 5_000 : Math.max(0, minIntervalMs - CALENDAR_SYNC_CLAIM_SLACK_MS);
 }
 
 /**
@@ -206,7 +399,7 @@ async function claimFeed(
   minIntervalMs: number,
   force: boolean
 ): Promise<boolean> {
-  const cutoffIso = new Date(Date.now() - (force ? 5_000 : minIntervalMs)).toISOString();
+  const cutoffIso = new Date(Date.now() - claimCutoffMs(minIntervalMs, force)).toISOString();
   const { data, error } = await supabase
     .from('property_calendar_feeds')
     .update({ last_attempted_at: new Date().toISOString() })
@@ -462,6 +655,119 @@ async function markFeedSuccess(
  * Sync one feed. Never throws for expected failure modes (network, bad body) — those become
  * `{ ok:false, status:'error' }` with feed health updated. Programming errors still throw.
  */
+/** How long a newly connected feed gets before "the channel never read your link" is raised. */
+export const EXPORT_NEVER_READ_GRACE_MS = 24 * 3_600_000;
+
+/** Pure gate for the never-read check, so the rule is testable without a DB. */
+export function shouldFlagExportNeverRead(input: {
+  createdAt: string | null | undefined;
+  exportEnabled: boolean;
+  hasRead: boolean;
+  alreadyFlagged: boolean;
+  now?: number;
+}): boolean {
+  if (input.alreadyFlagged || !input.exportEnabled || input.hasRead) return false;
+  const created = input.createdAt ? Date.parse(input.createdAt) : NaN;
+  if (!Number.isFinite(created)) return false;
+  const now = input.now ?? Date.now();
+  return now - created >= EXPORT_NEVER_READ_GRACE_MS;
+}
+
+/**
+ * "The channel never read your link" check. Runs in the sweep, once per feed: if the feed is
+ * older than 24 h, its property's export is enabled, and no read exists for its channel (or the
+ * all-channels link), flag it and emit one PostHog outcome event.
+ *
+ * Returns true when it fired. Never throws.
+ */
+export async function checkExportNeverRead(
+  supabase: SupabaseClient,
+  feed: Pick<
+    CalendarFeedRow,
+    'id' | 'property_id' | 'provider' | 'export_never_read_at' | 'created_at'
+  >
+): Promise<boolean> {
+  try {
+    const created = feed.created_at ? Date.parse(feed.created_at) : NaN;
+    if (!Number.isFinite(created)) return false;
+    // A flagged feed is always re-checked so the hint can clear once the channel reads the link;
+    // a brand-new feed costs no queries until the grace window has passed.
+    if (!feed.export_never_read_at && Date.now() - created < EXPORT_NEVER_READ_GRACE_MS) {
+      return false;
+    }
+
+    const { data: exportRow } = await supabase
+      .from('property_calendar_export')
+      .select('is_enabled')
+      .eq('property_id', feed.property_id)
+      .maybeSingle();
+    const { data: reads } = await supabase
+      .from('calendar_export_reads')
+      .select('id')
+      .eq('property_id', feed.property_id)
+      .in('channel', [feed.provider, 'all'])
+      .gte('last_read_at', new Date(created).toISOString())
+      .limit(1);
+
+    const hasRead = (reads ?? []).length > 0;
+    if (hasRead && feed.export_never_read_at) {
+      // The host fixed it (pasted the link, or re-enabled the channel): clear the stale hint.
+      await supabase
+        .from('property_calendar_feeds')
+        .update({ export_never_read_at: null })
+        .eq('id', feed.id);
+      return false;
+    }
+    const due = shouldFlagExportNeverRead({
+      createdAt: feed.created_at,
+      exportEnabled: Boolean(exportRow?.is_enabled),
+      hasRead,
+      alreadyFlagged: Boolean(feed.export_never_read_at),
+    });
+    if (!due) return false;
+
+    const { error } = await supabase
+      .from('property_calendar_feeds')
+      .update({ export_never_read_at: new Date().toISOString() })
+      .eq('id', feed.id);
+    if (error) throw new Error(error.message);
+
+    await capturePostHogEvent('calendar_sync_export_never_read', {
+      logPrefix: 'calendar-sync',
+      system: true,
+      properties: { provider: feed.provider },
+    });
+    return true;
+  } catch (err) {
+    console.error('[calendarSyncRun] export-never-read check failed (non-fatal):', err);
+    return false;
+  }
+}
+
+/**
+ * One row per feed run so cadence, duration and per-channel failure rate are measurable.
+ * Never throws: instrumentation must not fail a sync.
+ */
+export async function recordFeedRun(
+  supabase: SupabaseClient,
+  feed: Pick<CalendarFeedRow, 'id' | 'property_id' | 'provider'>,
+  result: Pick<RunFeedResult, 'status' | 'error'>,
+  durationMs: number
+): Promise<void> {
+  try {
+    await supabase.from('calendar_sync_runs').insert({
+      feed_id: feed.id,
+      property_id: feed.property_id,
+      provider: feed.provider,
+      status: result.status,
+      error_code: result.error ? result.error.slice(0, 120) : null,
+      duration_ms: Math.max(0, Math.round(durationMs)),
+    });
+  } catch (err) {
+    console.error('[calendarSyncRun] run log failed (non-fatal):', err);
+  }
+}
+
 export async function runFeedSync(
   feed: CalendarFeedRow,
   opts: {
@@ -495,6 +801,17 @@ export async function runFeedSync(
     conflicts: 0,
   };
 
+  // A stored row from before Vrbo / Other were removed has no registry entry: never run it.
+  if (!isCalendarProvider(feed.provider)) {
+    await writeEvent(supabase, {
+      feedId: feed.id,
+      runId,
+      action: 'skipped',
+      detail: { reason: 'unsupported_provider' },
+    });
+    return { ...base, status: 'skipped' };
+  }
+
   const claimed = await claimFeed(
     supabase,
     feed.id,
@@ -511,7 +828,7 @@ export async function runFeedSync(
     return { ...base, status: 'skipped' };
   }
 
-  const feedLabel = feed.label ?? feed.provider;
+  const feedLabel = feed.label ?? calendarChannel(feed.provider).label;
 
   // 1. Fetch (SSRF-guarded)
   let url: string;
@@ -587,9 +904,52 @@ export async function runFeedSync(
     }
   }
 
+  // 4b. Echo detection — a channel repeating nights we served it must never become a booking.
+  //     Echoes stay as blocks (availability is still protected) and are logged once, on create.
+  const servedRanges = await loadServedExportRanges(
+    supabase,
+    feed.property_id,
+    feed.provider
+  ).catch((err) => {
+    console.error('[calendarSyncRun] served ranges unavailable (non-fatal):', err);
+    return [] as ServedRange[];
+  });
+  const echoUids = new Set<string>();
+  const events = parsed.events.map((ev) => {
+    if (!classifyExportEcho(feed.provider, ev, servedRanges).isEcho) return ev;
+    echoUids.add(ev.uid);
+    return { ...ev, kind: 'block' as const };
+  });
+
+  if (echoUids.size > 0) {
+    await capturePostHogEvent('calendar_sync_echo_detected', {
+      logPrefix: 'calendar-sync',
+      system: true,
+      properties: { provider: feed.provider, count: echoUids.size },
+    });
+  }
+
+  // Booking.com "reserved and closed dates" tell: the host exported closed nights as well, so
+  // our own exported nights come straight back. Surfaces as a per-channel health warning.
+  const closedDatesEcho = isClosedDatesEchoPull(feed.provider, parsed.events, servedRanges);
+  if (closedDatesEcho !== Boolean(feed.echo_warning_at)) {
+    await supabase
+      .from('property_calendar_feeds')
+      .update({ echo_warning_at: closedDatesEcho ? new Date().toISOString() : null })
+      .eq('id', feed.id);
+    if (closedDatesEcho) {
+      await writeEvent(supabase, {
+        feedId: feed.id,
+        runId,
+        action: 'skipped',
+        detail: { reason: 'booking_com_closed_dates_echo' },
+      });
+    }
+  }
+
   // 5. Diff against current imported blocks for this feed.
   const current = await loadFeedBlocks(supabase, feed.id);
-  const diff = diffFeed(parsed.events, current);
+  const diff = diffFeed(events, current);
   const result = { ...base, status: 'synced' as const };
   const conflictHits: ConflictHit[] = [];
 
@@ -606,6 +966,7 @@ export async function runFeedSync(
         feed_id: feed.id,
         external_uid: ev.uid,
         external_summary: ev.summary || null,
+        external_kind: ev.kind,
         last_seen_at: new Date().toISOString(),
       })
       .select('id')
@@ -634,6 +995,17 @@ export async function runFeedSync(
       summary: ev.summary,
       blockedDateId: (data?.id as string | undefined) ?? null,
     });
+    if (echoUids.has(ev.uid)) {
+      await writeEvent(supabase, {
+        feedId: feed.id,
+        runId,
+        action: 'skipped',
+        externalUid: ev.uid,
+        startDate: ev.startDate,
+        endDate: ev.endDate,
+        detail: { reason: 'export_echo' },
+      });
+    }
     await runConflictPass(supabase, feed, runId, ev, result, conflictHits);
   }
 
@@ -645,6 +1017,7 @@ export async function runFeedSync(
         start_date: ev.startDate,
         end_date: ev.endDate,
         external_summary: ev.summary || null,
+        external_kind: ev.kind,
         note: `${feedLabel} - ${ev.summary || ev.kind}`,
         last_seen_at: new Date().toISOString(),
       })
@@ -732,7 +1105,7 @@ export async function runFeedSync(
       supabase,
       feed,
       runId,
-      parsed.events,
+      events,
       result,
       actor,
       feed.create_bookings
@@ -790,7 +1163,7 @@ async function loadPropertyBookingRows(
   const { data, error } = await supabase
     .from('guest_submissions')
     .select(
-      'id, external_uid, external_feed_id, status, check_in_date, check_out_date, booking_source'
+      'id, external_uid, external_feed_id, external_source, status, check_in_date, check_out_date, booking_source'
     )
     .eq('property_id', propertyId)
     .neq('status', 'CANCELLED')
@@ -800,6 +1173,7 @@ async function loadPropertyBookingRows(
     id: r.id as string,
     external_uid: typeof r.external_uid === 'string' ? r.external_uid : null,
     external_feed_id: typeof r.external_feed_id === 'string' ? r.external_feed_id : null,
+    external_source: typeof r.external_source === 'string' ? r.external_source : null,
     status: String(r.status ?? ''),
     check_in_date: String(r.check_in_date ?? ''),
     check_out_date: String(r.check_out_date ?? ''),
@@ -975,13 +1349,15 @@ async function logBookingIngestActivity(
   try {
     const organizationId = await resolveOrganizationIdForProperty(feed.property_id);
     if (!organizationId) return;
+    const channel = calendarChannel(feed.provider);
     await logActivity({
       action: 'system.cron_run',
       organizationId,
       propertyId: feed.property_id,
       actor,
       metadata: {
-        message: 'Airbnb calendar sync updated bookings',
+        message: `${channel.label} calendar sync updated bookings`,
+        provider: feed.provider,
         count,
         bookings_created: result.bookingsCreated,
         bookings_updated: result.bookingsUpdated,
@@ -1004,7 +1380,8 @@ async function reconcileExternalBookings(
   actor: ActorContext,
   allowCreate: boolean
 ): Promise<void> {
-  const feedLabel = feed.label ?? feed.provider;
+  const channel = calendarChannel(feed.provider);
+  const feedLabel = feed.label ?? channel.label;
   const reservations = events.filter((e) => e.kind === 'reservation');
   const byUid = new Map(reservations.map((e) => [e.uid, e]));
 
@@ -1016,8 +1393,10 @@ async function reconcileExternalBookings(
   if (!allowCreate && current.length === 0) return;
 
   const currentByUid = new Map(current.map((r) => [r.external_uid, r]));
+  // Only rows for this channel can be adopted: a manual Agoda stay must never be claimed by
+  // an Airbnb feed (and vice versa).
   const manualCandidates = allRows.filter(
-    (row) => !row.external_uid && isAirbnbBookingSource(row.booking_source)
+    (row) => !row.external_uid && isOtaPrepaidSource(row.booking_source)
   );
   const today = manilaTodayYmd();
 
@@ -1050,7 +1429,7 @@ async function reconcileExternalBookings(
       if (!allowCreate) continue;
 
       // A row already carries this UID but lost its feed (feed removed then reconnected).
-      const relink = findRelinkableBooking(allRows, ev.uid, feed.id);
+      const relink = findRelinkableBooking(allRows, ev.uid, feed.id, feed.provider);
       if (relink) {
         if (relink.external_feed_id) {
           // The same reservation is attached to a different active feed. Never duplicate it.
@@ -1084,7 +1463,7 @@ async function reconcileExternalBookings(
       const adoptable = findAdoptableManualBooking(manualCandidates, {
         checkInYmd: ev.startDate,
         checkOutYmd: ev.endDate,
-        bookingSource: 'Airbnb',
+        bookingSource: channel.bookingSource,
       });
       if (adoptable) {
         const adopted = await adoptManualBooking(supabase, feed, runId, ev, adoptable);
@@ -1118,18 +1497,14 @@ async function reconcileExternalBookings(
         continue;
       }
 
-      const displayName = ev.confirmationCode
-        ? `Airbnb ${ev.confirmationCode}`
-        : ev.phoneLast4
-          ? `Airbnb guest ··${ev.phoneLast4}`
-          : 'Airbnb guest';
+      const displayName = reservationDisplayName(channel, ev);
       const { data, error } = await supabase
         .from('guest_submissions')
         .insert({
           property_id: feed.property_id,
           status: 'PENDING_REVIEW',
           status_updated_at: new Date().toISOString(),
-          booking_source: 'Airbnb',
+          booking_source: channel.bookingSource,
           external_source: feed.provider,
           external_uid: ev.uid,
           external_feed_id: feed.id,
@@ -1145,7 +1520,7 @@ async function reconcileExternalBookings(
           guest_email: null,
           guest_phone_number: '',
           guest_address: '',
-          find_us: 'Airbnb',
+          find_us: channel.bookingSource,
           payment_receipt_url: '',
           check_in_date: startMdy,
           check_out_date: endMdy,

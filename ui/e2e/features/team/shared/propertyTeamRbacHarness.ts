@@ -1697,7 +1697,6 @@ export async function installPropertyTeamRbacMocks(
                 all: 'https://example.com/ical/all',
                 airbnb: 'https://example.com/ical/airbnb',
                 booking_com: 'https://example.com/ical/booking-com',
-                vrbo: 'https://example.com/ical/vrbo',
               },
             },
             recentEvents: [],

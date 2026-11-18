@@ -30,7 +30,7 @@ Intake item: "Airbnb conflict" in [`../intake/_to-dos.md`](../intake/_to-dos.md)
 - Fix the upstream causes so fewer duplicates are created in the first place.
 
 Non-goals: changing Airbnb from our side (iCal is read-only), payouts reconciliation, Booking.com /
-VRBO (still Airbnb-only in the UI), parking (calendar sync is property-only: `N/A`).
+Agoda and Booking.com (built but dark in the UI; Vrbo and other platforms are not supported), parking (calendar sync is property-only: `N/A`).
 
 ---
 

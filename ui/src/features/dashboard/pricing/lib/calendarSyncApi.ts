@@ -1,3 +1,4 @@
+import { validateChannelCalendarUrl } from './calendarChannelUrl';
 import { scopedFunctionsUrl } from '@/features/dashboard/org/lib/adminApiScope';
 import type { PlanFeatureKey } from '@/features/dashboard/plans/lib/planFeatures';
 
@@ -5,13 +6,14 @@ import { throwIfFeatureUnavailableBody } from '@/lib/featureAvailability/feature
 
 import { supabase } from '@/lib/supabase/client';
 
-export type CalendarFeedProvider = 'airbnb' | 'booking_com' | 'vrbo' | 'other';
+import type { CalendarFeedProvider } from './calendarChannels';
+
+export type { CalendarFeedProvider };
 
 export const CALENDAR_PROVIDER_LABELS: Record<CalendarFeedProvider, string> = {
   airbnb: 'Airbnb',
+  agoda: 'Agoda',
   booking_com: 'Booking.com',
-  vrbo: 'VRBO',
-  other: 'Other (iCal URL)',
 };
 
 export type CalendarSyncFeed = {
@@ -28,6 +30,16 @@ export type CalendarSyncFeed = {
   lastError: string | null;
   consecutiveFailures: number;
   createdAt: string;
+  /** Booking.com closed-dates warning (`echo_warning_at`). */
+  echoWarning?: boolean;
+  /** The channel has not read our export link after 24 h (`export_never_read_at`). */
+  exportNeverRead?: boolean;
+  lastRun?: {
+    status: string;
+    duration_ms: number;
+    error_code: string | null;
+    started_at: string;
+  } | null;
 };
 
 export type CalendarSyncEvent = {
@@ -46,13 +58,17 @@ export type CalendarSyncExport = {
   enabled: boolean;
   rotatedAt: string | null;
   lastServedAt: string | null;
-  urls: { all: string; airbnb: string; booking_com: string; vrbo: string };
+  /** Most recent read of our export link per channel (200 and 304), keyed by channel or `all`. */
+  reads?: Record<string, { lastReadAt: string; readCount: number }>;
+  urls: { all: string; airbnb: string; agoda: string; booking_com: string };
 };
 
 export type CalendarSyncSettings = {
   feeds: CalendarSyncFeed[];
   export: CalendarSyncExport;
   recentEvents: CalendarSyncEvent[];
+  /** Providers this org may connect today (Airbnb always; others per rollout). */
+  connectableProviders?: CalendarFeedProvider[];
 };
 
 export type FeedSyncResult = {
@@ -156,55 +172,9 @@ export function syncFeedNow(propertyId: string, feedId: string) {
 
 export const CALENDAR_SYNC_QUERY_KEY = 'calendar-sync';
 
-/** Hosts accepted by the edge `assertExternalIcsUrlShape` Airbnb allowlist. */
-const AIRBNB_ICS_HOST_SUFFIXES = [
-  'airbnb.com',
-  'airbnb.co.uk',
-  'airbnb.ca',
-  'airbnb.com.au',
-  'muscache.com',
-] as const;
+export { validateChannelCalendarUrl } from './calendarChannelUrl';
 
-function hostMatchesAirbnbSuffix(hostname: string): boolean {
-  const host = hostname.toLowerCase();
-  return AIRBNB_ICS_HOST_SUFFIXES.some((suffix) => host === suffix || host.endsWith(`.${suffix}`));
-}
-
-/**
- * Client-side Airbnb calendar URL check (mirrors edge shape rules for Airbnb).
- * Returns an error message, or `null` when the URL is valid.
- */
+/** Airbnb-only alias kept for callers that predate the channel registry. */
 export function validateAirbnbCalendarUrl(rawUrl: string): string | null {
-  const trimmed = rawUrl.trim();
-  if (!trimmed) return 'Required';
-
-  const normalized = /^webcal:\/\//i.test(trimmed)
-    ? `https://${trimmed.slice('webcal://'.length)}`
-    : trimmed;
-
-  let parsed: URL;
-  try {
-    parsed = new URL(normalized);
-  } catch {
-    return 'Enter a valid URL';
-  }
-
-  if (parsed.protocol !== 'https:') {
-    return 'URL must start with https://';
-  }
-  if (parsed.username || parsed.password) {
-    return 'URL must not contain credentials';
-  }
-  const host = parsed.hostname.toLowerCase();
-  if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
-    return 'That host is not allowed';
-  }
-  if (!hostMatchesAirbnbSuffix(host)) {
-    return 'Must be an Airbnb calendar URL';
-  }
-  // Airbnb export links look like /calendar/ical/<id>.ics — reject random Airbnb pages.
-  if (host.includes('airbnb') && !/\/calendar\/ical\//i.test(parsed.pathname)) {
-    return 'Use the Export calendar link from Airbnb';
-  }
-  return null;
+  return validateChannelCalendarUrl('airbnb', rawUrl);
 }
