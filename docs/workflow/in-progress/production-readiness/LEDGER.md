@@ -2,7 +2,7 @@
 title: 'Production readiness ledger'
 status: active
 tags: [workflow, in-progress, production-readiness]
-updated: 2026-11-06
+updated: 2026-11-18
 stage: in-progress
 kind: reference
 ---
@@ -152,15 +152,15 @@ Top blockers for launch: restore drill (PR-024), Turnstile enforce on hosted UI 
 
 ## Gate C — Money
 
-| ID     | Item                                                                | Sev     | Owner    | Tag | Sources                                                         |
-| ------ | ------------------------------------------------------------------- | ------- | -------- | --- | --------------------------------------------------------------- |
-| PR-030 | PayMongo sandbox E2E: checkout → webhook → endorsement              | blocker | operator | ⛔  | parking-e2e-production-readiness; paymongo-subscription-billing |
-| PR-031 | Admin parking refund/override path                                  | high    | product  | 🧭  | parking readiness (deferred by design until decided)            |
-| PR-032 | DB exclusion constraint vs double-booking + concurrency test        | high    | product  | 🧭  | 19                                                              |
-| PR-033 | Org PayMongo subscription: live sandbox subscribe/renew/fail/cancel | high    | operator | ⛔  | done/paymongo-subscription-billing leftover QA                  |
-| PR-034 | Default plan code for new orgs (`default_plan_code`)                | medium  | product  | ⏸️  | D-4 Unset (free via UI)                                         |
-| PR-035 | Parking payout manual-disbursement scale limit                      | medium  | product  | 🧭  | parking open Q2                                                 |
-| PR-036 | Webhook replay same event id → no double fulfill                    | high    | agent    | 🟡  | cost-abuse §6.2                                                 |
+| ID     | Item                                                                | Sev     | Owner    | Tag | Sources                                                                                                                                                                                                                                                                                            |
+| ------ | ------------------------------------------------------------------- | ------- | -------- | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PR-030 | PayMongo sandbox E2E: checkout → webhook → endorsement              | blocker | operator | ⛔  | parking-e2e-production-readiness; paymongo-subscription-billing                                                                                                                                                                                                                                    |
+| PR-031 | Admin parking refund/override path                                  | high    | product  | 🧭  | parking readiness (deferred by design until decided)                                                                                                                                                                                                                                               |
+| PR-032 | DB exclusion constraint vs double-booking + concurrency test        | high    | product  | 🧭  | 19                                                                                                                                                                                                                                                                                                 |
+| PR-033 | Org PayMongo subscription: live sandbox subscribe/renew/fail/cancel | high    | operator | ⛔  | Lifecycle code, mocked E2E and local-DB tests done in `plans-billing-lifecycle-hardening` (Phase 9.1 sandbox matrix still to run: subscribe, upgrade, scheduled downgrade, cancel and resume, renewal early / on time / grace / after suspension, stale link, double pay, refund, delayed webhook) |
+| PR-034 | Default plan code for new orgs (`default_plan_code`)                | medium  | product  | ⏸️  | D-4 Unset (free via UI)                                                                                                                                                                                                                                                                            |
+| PR-035 | Parking payout manual-disbursement scale limit                      | medium  | product  | 🧭  | parking open Q2                                                                                                                                                                                                                                                                                    |
+| PR-036 | Webhook replay same event id → no double fulfill                    | high    | agent    | 🟡  | cost-abuse §6.2                                                                                                                                                                                                                                                                                    |
 
 ---
 

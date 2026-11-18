@@ -7,10 +7,13 @@ import { createServiceClient } from './orgAuth.ts';
 import { chunkIds } from './postgrestInChunks.ts';
 import { parsePlanFeatures } from './planFeatures.ts';
 import {
+  cancelOrgSubscriptionToFree,
   reconcileTeamSeatsForProperty,
   syncAiCreditsFromPlan,
 } from './planEntitlements.ts';
 import { orgHasLivePaidSubscription } from './planEntitlements.ts';
+import { listBillablePropertyIds } from './orgBillableProperties.ts';
+import { notifyOrgBillingOnce } from './orgBillingNotify.ts';
 
 const PLAN_SELECT =
   'id, code, name, pricing_model, price_php, discount_percent, volume_discount_tiers, volume_ramp_floor_php, volume_ramp_at_count, commission_rate_percent, features, is_default';
@@ -99,14 +102,9 @@ async function countRewardGrants(organizationId: string): Promise<number> {
   return total;
 }
 
+/** Archived listings are never part of a subscription. */
 async function listOrgPropertyIds(organizationId: string): Promise<string[]> {
-  const { data, error } = await db()
-    .from('properties')
-    .select('id')
-    .eq('organization_id', organizationId)
-    .order('created_at', { ascending: true });
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => row.id as string);
+  return await listBillablePropertyIds(organizationId);
 }
 
 async function writeEvent(input: {
@@ -165,13 +163,15 @@ async function cancelRewardToFree(input: {
   note: string;
 }): Promise<void> {
   const free = await loadFreePlan();
-  const { error: rpcError } = await db().rpc('cancel_org_subscription_to_free', {
-    p_org_subscription_id: input.orgSubscriptionId,
-    p_target_plan_id: free.id,
-    p_previous_status: input.previousStatus,
-    p_changed_by: input.changedBy,
+  // Same path as every other move to Free: records why, settles AI credits and team seats.
+  await cancelOrgSubscriptionToFree({
+    orgSubscriptionId: input.orgSubscriptionId,
+    organizationId: input.organizationId,
+    previousStatus: input.previousStatus,
+    endedReason: input.eventType === 'reward_expired' ? 'trial_ended' : 'admin',
+    note: input.note,
+    changedBy: input.changedBy,
   });
-  if (rpcError) throw new Error(rpcError.message);
 
   await writeEvent({
     orgSubscriptionId: input.orgSubscriptionId,
@@ -183,6 +183,20 @@ async function cancelRewardToFree(input: {
     note: input.note,
     createdBy: input.changedBy,
   });
+
+  if (input.eventType === 'reward_expired') {
+    try {
+      await notifyOrgBillingOnce({
+        organizationId: input.organizationId,
+        orgSubscriptionId: input.orgSubscriptionId,
+        kind: 'plan_ended',
+        periodKey: `${input.orgSubscriptionId}:trial_ended`,
+        params: { endedReason: 'trial_ended' },
+      });
+    } catch (err) {
+      console.error('[hostVerificationReward] trial ended notice failed', err);
+    }
+  }
 }
 
 /** True when Free hosts may submit Recommended without the Pro feature gate. */
@@ -249,7 +263,7 @@ export async function grantOrgSubscriptionReward(
     .from('org_subscriptions')
     .select('id')
     .eq('organization_id', organizationId)
-    .in('status', ['active', 'trialing', 'past_due'])
+    .in('status', ['active', 'trialing', 'past_due', 'suspended'])
     .maybeSingle();
   if (existingError) throw new Error(existingError.message);
   if (existing) throw new Error('Organization already has a live subscription');
@@ -309,7 +323,7 @@ export async function grantOrgSubscriptionReward(
       organizationId,
       String(plan.code),
       features.aiMonthlyCreditAllowance,
-      input.assignedBy ?? 'system',
+      input.assignedBy,
     );
     if (propertyIds.length > 0) {
       await reconcileTeamSeatsForProperty(propertyIds[0]);
@@ -349,14 +363,15 @@ export async function maybeGrantHostVerificationReward(
 
   const { data: liveSub, error: liveError } = await sb
     .from('org_subscriptions')
-    .select('id, status, source, current_period_end, plan_id')
+    .select('id, status, source, current_period_end, plan_id, scheduled_plan_id')
     .eq('organization_id', organizationId)
-    .in('status', ['active', 'trialing', 'past_due'])
+    .in('status', ['active', 'trialing', 'past_due', 'suspended'])
     .maybeSingle();
   if (liveError) throw new Error(liveError.message);
 
   if (liveSub) {
-    if (settings.applyToPaidOrg !== 'extend') {
+    // An overdue or suspended plan is not extended for free: pay first.
+    if (settings.applyToPaidOrg !== 'extend' || liveSub.status === 'past_due' || liveSub.status === 'suspended') {
       return { outcome: 'skipped', reason: 'already_subscribed' };
     }
     const base = liveSub.current_period_end
@@ -367,7 +382,11 @@ export async function maybeGrantHostVerificationReward(
     const nextEnd = new Date(from.getTime() + settings.durationDays * 24 * 60 * 60 * 1000);
     const { error: extendError } = await sb
       .from('org_subscriptions')
-      .update({ current_period_end: nextEnd.toISOString() })
+      .update({
+        current_period_end: nextEnd.toISOString(),
+        // A pending downgrade moves with the period so it does not fire early.
+        ...(liveSub.scheduled_plan_id ? { scheduled_change_at: nextEnd.toISOString() } : {}),
+      })
       .eq('id', liveSub.id);
     if (extendError) throw new Error(extendError.message);
     await writeEvent({

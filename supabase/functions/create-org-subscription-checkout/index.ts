@@ -1,12 +1,17 @@
 /**
- * create-org-subscription-checkout — Org owner creates a PayMongo Hosted Checkout Session
- * subscription at the chosen tier. Billing covers every property in the organization automatically.
- * This is the only subscription checkout in the system (billing is org-level only) — handles first
- * purchase, renewal, and mid-cycle changes (property count and/or tier) via the same function; see
- * _shared/orgSubscriptionCheckout.ts.
+ * create-org-subscription-checkout — Org owner pays for the org's plan through a PayMongo
+ * Hosted Checkout Session: first purchase, upgrade, renewal, retry or reactivation. Billing
+ * covers every billable property in the organization. The amount comes from the shared quote;
+ * a change fully covered by account credit is applied on the spot with no checkout.
+ * See _shared/orgSubscriptionCheckout.ts.
+ *
+ * Body: { organizationId, planId?, expectedChargePhp?, idempotencyKey?, resume? }
+ *  - planId omitted: pay what is due (renewal of the current or scheduled plan)
+ *  - expectedChargePhp: the amount the host reviewed; a higher fresh amount returns 409
  */
 
 import { verifyOrgOwner } from '../_shared/orgAuth.ts';
+import { billingErrorResponse } from '../_shared/billingHttp.ts';
 import { createOrgSubscriptionCheckoutLink } from '../_shared/orgSubscriptionCheckout.ts';
 import {
   jsonError,
@@ -23,12 +28,18 @@ serveAuthenticated('create-org-subscription-checkout', async (req, user) => {
   const body = await readJsonBody(req);
   const organizationId = typeof body.organizationId === 'string' ? body.organizationId.trim() : '';
   const planId = typeof body.planId === 'string' ? body.planId.trim() : '';
+  const idempotencyKey =
+    typeof body.idempotencyKey === 'string' && body.idempotencyKey.trim().length >= 8
+      ? body.idempotencyKey.trim().slice(0, 80)
+      : null;
+  const expectedChargePhp =
+    typeof body.expectedChargePhp === 'number' && Number.isFinite(body.expectedChargePhp)
+      ? body.expectedChargePhp
+      : null;
+  const resume = body.resume === true;
 
   if (!organizationId) {
     return jsonError(req, 'organizationId is required');
-  }
-  if (!planId) {
-    return jsonError(req, 'planId is required');
   }
 
   const { org } = await verifyOrgOwner(req, organizationId);
@@ -36,29 +47,35 @@ serveAuthenticated('create-org-subscription-checkout', async (req, user) => {
   try {
     const result = await createOrgSubscriptionCheckoutLink({
       organizationId,
-      planId,
+      planId: planId || null,
       initiatedBy: user.id,
+      expectedChargePhp,
+      idempotencyKey,
+      resume,
     });
-    await logActivity({
-      action: 'billing.checkout_started',
-      organizationId,
-      scope: 'org',
-      actor: buildActorContext(
-        'dashboard',
-        { authUser: user, actorType: 'org_owner', role: 'owner' },
-        req
-      ),
-      targetType: 'subscription',
-      targetId: organizationId,
-      targetLabel: org.name ?? 'the organization',
-      metadata: { plan: planId },
-    });
+    if (!result.reused) {
+      await logActivity({
+        action: 'billing.checkout_started',
+        organizationId,
+        scope: 'org',
+        actor: buildActorContext(
+          'dashboard',
+          { authUser: user, actorType: 'org_owner', role: 'owner' },
+          req
+        ),
+        targetType: 'subscription',
+        targetId: organizationId,
+        targetLabel: org.name ?? 'the organization',
+        metadata: {
+          plan: result.planName || planId,
+          purpose: result.purpose,
+          amount: Math.round(result.chargePhp),
+          paid_with_credit: result.paidWithCredit,
+        },
+      });
+    }
     return jsonSuccess(req, result);
   } catch (err) {
-    return jsonError(
-      req,
-      (err as Error).message,
-      err instanceof Error && err.message.includes('not configured') ? 503 : 502
-    );
+    return billingErrorResponse(req, err);
   }
 });

@@ -1,7 +1,7 @@
 ---
 title: 'Prod env matrix (Phase 9.3)'
 status: active
-updated: 2026-11-06
+updated: 2026-11-18
 launch_gate: G
 readiness: partial
 ---
@@ -82,7 +82,7 @@ A cron posts with the Vault secret and the function compares it to the edge secr
 | `meta-inbox-webhook-healthcheck-every-10m`            | supabase/migrations/20261101120000_meta_inbox_webhook_health.sql               |
 | `parking-broadcast-expire-every-5m`                   | supabase/migrations/20261018120001_parking_broadcast_expire_cron.sql           |
 | `parking-reminder-daily`                              | supabase/migrations/20261201120200_parking_reminder_cron.sql                   |
-| `platform-billing-daily`                              | supabase/migrations/20261024140000_platform_billing_cron.sql                   |
+| `platform-billing-hourly`                             | supabase/migrations/20261342000200_platform_billing_cron_hourly.sql            |
 | `property-page-views-prune-monthly-manila`            | supabase/migrations/20261313120000_property_page_views_prune_cron.sql          |
 | `query-cache-sweep-nightly`                           | supabase/migrations/20261316121700_query_cache_table.sql                       |
 | `sd-refund-cron-every-5m-managed`                     | supabase/migrations/20261301130000_sd_refund_cron_secret_schedule.sql          |

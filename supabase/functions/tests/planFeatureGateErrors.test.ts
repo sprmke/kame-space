@@ -7,7 +7,7 @@ import {
   catchPlanFeatureError,
   PlanFeatureRequiredError,
 } from "../_shared/planEntitlements.ts";
-import { subscriptionStatusBlocksFeatureGates } from "../_shared/orgPlanDowngrade.ts";
+import { subscriptionStatusBlocksFeatureGates } from "../_shared/orgSubscriptionStateMachine.ts";
 
 const req = new Request("https://example.test/fn", { method: "POST" });
 

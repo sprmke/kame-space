@@ -21,6 +21,8 @@ function serialize(row: Record<string, unknown>) {
     enabledBanks: Array.isArray(row.enabled_banks) ? row.enabled_banks : [],
     renewalLinkLeadDays: Number(row.renewal_link_lead_days ?? 5),
     gracePeriodDays: Number(row.grace_period_days ?? 5),
+    suspensionCancelDays: Number(row.suspension_cancel_days ?? 30),
+    pendingCheckoutTtlHours: Number(row.pending_checkout_ttl_hours ?? 24),
     updatedAt: row.updated_at as string,
   };
 }
@@ -68,6 +70,20 @@ serveSuperAdmin('platform-payment-settings', async (req, user) => {
         return jsonError(req, 'gracePeriodDays must be 0–30');
       }
       patch.grace_period_days = days;
+    }
+    if (body.suspensionCancelDays != null) {
+      const days = Number(body.suspensionCancelDays);
+      if (!Number.isInteger(days) || days < 1 || days > 365) {
+        return jsonError(req, 'suspensionCancelDays must be 1–365');
+      }
+      patch.suspension_cancel_days = days;
+    }
+    if (body.pendingCheckoutTtlHours != null) {
+      const hours = Number(body.pendingCheckoutTtlHours);
+      if (!Number.isInteger(hours) || hours < 1 || hours > 168) {
+        return jsonError(req, 'pendingCheckoutTtlHours must be 1–168');
+      }
+      patch.pending_checkout_ttl_hours = hours;
     }
 
     const { data, error } = await supabase

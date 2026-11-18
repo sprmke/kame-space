@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Car, Home, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { AddPropertyBillingNote } from '@/features/dashboard/org/components/AddPropertyBillingNote';
 import { TowerUnitConflictAlert } from '@/features/dashboard/org/components/TowerUnitConflictAlert';
 import { useCheckPropertyName } from '@/features/dashboard/org/hooks/useCheckPropertyName';
 import { useCreateParking } from '@/features/dashboard/org/hooks/useCreateParking';
@@ -38,7 +39,7 @@ import {
 } from '@/features/dashboard/org/lib/propertyTowerUnit';
 import { orgPlansPath } from '@/features/dashboard/org/lib/tenantPaths';
 import type { Parking, Property } from '@/features/dashboard/org/types';
-import { useOrgPlan } from '@/features/dashboard/plans/hooks/useOrgPlan';
+import { useAddPropertyPreview } from '@/features/dashboard/plans/hooks/useOrgPlan';
 
 import { AdminDialogShell } from '@/components/AdminDialogShell';
 import { AvailabilityCheckInput } from '@/components/AvailabilityCheckInput';
@@ -62,6 +63,7 @@ import {
 } from '@/lib/availabilityCheckState';
 import { FORM_PLACEHOLDERS } from '@/lib/constants/formPlaceholders';
 import { cn } from '@/lib/utils';
+import { formatMoneyCompact } from '@/utils/format/currency';
 
 type AssetKind = 'property' | 'parking';
 
@@ -145,8 +147,6 @@ export function AddEntityDialog({
   const runUnguarded = useRunUnguarded();
   const createProperty = useCreateProperty();
   const createParking = useCreateParking();
-  const { data: orgPlan } = useOrgPlan(orgId);
-
   const showKindToggle = canAddProperty && canAddParking;
   const [kind, setKind] = useState<AssetKind>(defaultKind);
 
@@ -218,6 +218,8 @@ export function AddEntityDialog({
   const isPending = createProperty.isPending || createParking.isPending;
   const activeKind: AssetKind = showKindToggle ? kind : canAddProperty ? 'property' : 'parking';
   const canSubmit = activeKind === 'property' ? propertyCanSubmit : parkingCanSubmit;
+  // What this property adds to the bill (paid plans), fetched fresh each time the dialog opens.
+  const { data: addPreview } = useAddPropertyPreview(orgId, open && activeKind === 'property');
 
   useEffect(() => {
     if (!open) return;
@@ -309,14 +311,21 @@ export function AddEntityDialog({
         runUnguarded(() => {
           onOpenChange(false);
           onPropertyCreated?.(result.property);
-          if (result.billingRequired) {
-            toast.message('Cover this property on your plan');
-            const planId = orgPlan?.subscription?.planId;
-            navigate(
-              planId
-                ? `${orgPlansPath(orgSlug)}?reviewPlan=${encodeURIComponent(planId)}`
-                : orgPlansPath(orgSlug)
-            );
+          const billing = result.billing;
+          if (billing?.status === 'covered') {
+            toast.success('Property added to your plan', {
+              description:
+                billing.trueUpPhp > 0
+                  ? `${formatMoneyCompact(billing.trueUpPhp)} for the rest of this period is added to your next payment. From then on the plan is ${formatMoneyCompact(billing.nextRenewalPhp)} a month.`
+                  : `The plan is ${formatMoneyCompact(billing.nextRenewalPhp)} a month from your next payment.`,
+            });
+          } else if (billing?.status === 'overdue' || result.billingRequired) {
+            toast.message('Pay your overdue plan to turn paid features on for this property', {
+              action: {
+                label: 'Pay now',
+                onClick: () => navigate(`${orgPlansPath(orgSlug)}?tab=billing`),
+              },
+            });
           }
         });
         return true;
@@ -473,6 +482,8 @@ export function AddEntityDialog({
                   </p>
                 ) : null}
               </div>
+
+              <AddPropertyBillingNote preview={addPreview} />
             </>
           ) : (
             <>

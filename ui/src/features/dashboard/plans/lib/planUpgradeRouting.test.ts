@@ -122,7 +122,9 @@ describe('CTA labels', () => {
     expect(planActionLabel('downgrade', true, 'managed')).toBe('Contact sales');
     expect(planActionLabel('upgrade', false, 'growth')).toBe('Choose plan');
     expect(planActionLabel('upgrade', true, 'growth')).toBe('Upgrade');
-    expect(planActionLabel('downgrade', true, 'starter')).toBe('Downgrade');
+    expect(planActionLabel('downgrade', true, 'starter')).toBe('Switch at renewal');
+    expect(planActionLabel('downgrade', true, 'free', { isFree: true })).toBe('Cancel plan');
+    expect(planActionLabel('upgrade', true, 'growth', { scheduled: true })).toBe('Scheduled');
   });
 
   it('button variants', () => {

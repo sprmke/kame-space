@@ -723,7 +723,7 @@ Free, Starter, Pro, Business, and Managed. Pro adds Marketing Content Studio, Ai
 - source: docs/guides/routes/org/plans.md
 - order: 30
 
-Yes. Owners can switch tiers, or change how many properties are covered, from Plans and Billing. Paid upgrades open PayMongo checkout and take effect once payment clears. Moving to Free applies immediately.
+Yes. Owners change plans from Plans and Billing. An upgrade starts right away: you pay the difference for the rest of the period and get a new billing period from today. Moving to a lower plan, or canceling, waits for the end of the period you already paid for. You keep every feature until then and can undo it with one click.
 
 ### What happens when I add a property on a paid plan?
 
@@ -732,7 +732,7 @@ Yes. Owners can switch tiers, or change how many properties are covered, from Pl
 - source: docs/guides/routes/org/plans.md
 - order: 40
 
-The new property joins your subscription at the next checkout, or is enrolled right away when you already have an active plan. Billing always covers every property in the organization.
+On a paid plan in good standing the new property joins your plan right away. The share of its cost for the rest of the period is added to your next payment. If a payment is overdue, the property stays on Free until you pay. Billing covers every property in the organization except archived ones.
 
 ### What happens if I miss a payment?
 
@@ -741,7 +741,43 @@ The new property joins your subscription at the next checkout, or is enrolled ri
 - source: docs/guides/routes/org/plans.md
 - order: 50
 
-The organization becomes past due and keeps full access during the grace period. After that it is suspended until you pay, and only Plans and Billing and Help and Support stay reachable.
+The organization becomes past due and keeps every paid feature during the grace period. After that, paid features pause and the organization works like the Free plan until you pay. Your data and guest booking pages are not affected. If the payment stays missing for 30 more days, the plan ends and the organization stays on Free.
+
+### What happens when I downgrade or cancel?
+
+- category: Plans & Billing
+- audience: host
+- source: docs/guides/routes/org/plans.md
+- order: 52
+
+Nothing changes until the period you paid for ends. You keep every feature until then, and you can keep your plan from the Billing tab before that date. After the date, features that are not in the new plan turn off. Your data and past results are kept. Unused time is not paid back in cash.
+
+### Can I get a receipt for my payments?
+
+- category: Plans & Billing
+- audience: host
+- source: docs/guides/routes/org/plans.md
+- order: 54
+
+Yes. Every payment on the Billing tab has a numbered receipt you can download. Add your legal name, address, TIN and a billing email under Billing details and they are printed on it. It is a payment receipt, not a BIR official receipt.
+
+### What is account credit?
+
+- category: Plans & Billing
+- audience: host
+- source: docs/guides/routes/org/plans.md
+- order: 56
+
+When an upgrade credits you more than the new plan costs, or a payment arrives after your plan already changed, the amount stays on your account as credit. It comes off your next payment automatically. It is not paid out as cash. Ask support if you would rather have a refund.
+
+### Why can't I delete my organization?
+
+- category: Plans & Billing
+- audience: host
+- source: docs/guides/routes/org/plans.md
+- order: 58
+
+While a paid plan is active you can't delete the organization, because you have already paid for the period. Cancel the plan from Plans & Billing, then delete the organization once the plan has ended. A free trial or a plan given by our team doesn't block deletion. Organizations with booking history also can't be deleted: archive the properties instead.
 
 ### How do I get the Managed plan?
 
