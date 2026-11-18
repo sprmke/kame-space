@@ -8,7 +8,7 @@ updated: 2026-08-30
 
 # Phase 5 — Endorsement Automation & Communication
 
-Part of [Parking E2E Phase 2+ overview](../planned/parking-e2e-later-phases.md). Depends on Phase 3 (payment) and Phase 4 (needed for payout-aware host status, not strictly blocking).
+Part of [Parking E2E Phase 2+ overview](./parking-e2e-later-phases.md). Depends on Phase 3 (payment) and Phase 4 (needed for payout-aware host status, not strictly blocking).
 
 ## Problem
 

@@ -1,9 +1,9 @@
 ---
 title: 'Guest sign-in: shared auth shell + animated feature showcase'
-status: active
-tags: [workflow, planned, auth, guest, marketing]
-updated: 2026-11-08
-stage: planned
+status: for-testing
+tags: [workflow, for-testing, auth, guest, marketing]
+updated: 2026-11-18
+stage: for-testing
 kind: plan
 ---
 
@@ -96,3 +96,12 @@ Feedback: some scenes looked broken or static, and the comparison table under th
 - **Chat** gains a voice act: the real 3D turtle receptionist (`ReceptionistAvatar`) in the booth ring, with captions. Lazy-loaded; WebGL probe + error boundary fall back to the idle image (headless Chrome hit a WebGL crash that took down the route before this guard).
 - **Perks** is the real voucher wheel (same prize pool and colors as the after-stay reveal), landing on 15% off, then **Book again** and the deposit payout.
 - **Compare** maps five moments of one trip row by row (usual chore vs the trip page), matched with a cross, a link across the divider and a check, then a tally. Keeps the draggable wipe.
+
+## Manual QA (2026-11-18)
+
+Phase 4 and Phase 5 are the only open items. Code, scenes and the route guide (`docs/guides/routes/auth.md`) are in place.
+
+- [ ] `/for-guests/login` at 375, 768, 1024x768 and 1440x900: seven chapters autoplay, pause on hover and focus, arrow keys jump, reduced motion renders final states.
+- [ ] Light and dark: brand fills use `bg-primary-strong`, shadows stay neutral, the voucher wheel notches read as cut-outs.
+- [ ] Phone: "Why sign in" section under the form, no side panel, host routes unchanged.
+- [ ] WebGL blocked or headless: the receptionist chapter falls back to the idle image without taking down the route.

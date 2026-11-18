@@ -1,7 +1,7 @@
 ---
-stage: planned
+stage: wont-do
 title: 'AI Assistant — parking broadcast fan-out'
-status: planned
+status: cancelled
 tags: [workflow, planned, ai, parking, safety]
 updated: 2026-09-02
 kind: plan

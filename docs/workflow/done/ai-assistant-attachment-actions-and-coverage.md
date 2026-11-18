@@ -318,7 +318,7 @@ Highest host value; closes the GAF story end-to-end.
 
 - [x] Import CSV — `guide_import_bookings` deep-link; parse/preview/commit stay in Import UI (no chat auto-commit).
 - [ ] Bulk pricing with explicit diff preview — **deferred** → [`../planned/ai-assistant-bulk-pricing-chat.md`](../planned/ai-assistant-bulk-pricing-chat.md)
-- [ ] Parking broadcast fan-out — **deferred** → [`../planned/ai-assistant-parking-broadcast-chat.md`](../planned/ai-assistant-parking-broadcast-chat.md)
+- [ ] Parking broadcast fan-out — **deferred** → [`../planned/ai-assistant-parking-broadcast-chat.md`](../wont-do/ai-assistant-parking-broadcast-chat.md)
 - [x] Marketing: `propose_publish_to_meta` optional `attachmentPath`; canvas edit stays deep-link.
 
 ### Phase 7 — Continuous parity process
