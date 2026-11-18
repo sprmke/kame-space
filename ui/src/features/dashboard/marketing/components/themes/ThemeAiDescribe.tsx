@@ -69,7 +69,7 @@ export function ThemeAiDescribe({
           disabled={generate.isPending}
           onChange={(event) => setPrompt(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
               event.preventDefault();
               void run();
             }

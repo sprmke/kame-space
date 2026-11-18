@@ -86,7 +86,7 @@ function StringListEditor({
           className="h-10"
           disabled={disabled}
           onKeyDown={(event) => {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
               event.preventDefault();
               addValue();
             }
