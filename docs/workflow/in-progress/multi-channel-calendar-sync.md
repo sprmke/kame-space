@@ -1013,8 +1013,9 @@ There is one hosted Supabase project (`fworvijbrwpyngycotbz`, dev and production
 3. In `kame-test-tenant` / `kame-test-property`, Pricing, Channel sync: connect Booking.com (paste the
    export link; sending dates turns on by itself), copy the Booking.com link into Booking.com
    Sync calendars. Leave **Create bookings** off.
-   That property is `INACTIVE` on purpose, so its export link answers `410` and the channel cannot
-   reach **Two-way** there. Use it to prove the connect path only; prove the send side on a live
+   Connecting needs the Pro `calendarSync` feature, and the test tenant has no subscription, so put it
+   on Pro first. Its property is `INACTIVE` on purpose, so the export link answers `410` and the channel
+   cannot reach **Two-way** there. Use it to prove the connect path only; prove the send side on a live
    property.
 4. Close one date and make one test reservation on Booking.com, then read the fixture from the feed
    and fill S3 to S7 and S9 to S11. Repeat for Agoda once approved.
