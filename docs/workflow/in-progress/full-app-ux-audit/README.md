@@ -1,20 +1,27 @@
 ---
 title: 'Full app UX/UI and functional audit'
-status: active
+status: complete
 tags: [audit, ux, ui, qa, security, billing]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # Full app UX/UI and functional audit
 
-Two exploration passes across the running app (local Supabase + Vite). **No product code was
+**Status: complete (2026-11-19).** Five passes, 29 reports, 412 screenshots, 181 open issues in
+[29](./29-issue-register.md). Nothing here is a fix; this folder is the evidence base for the work that
+follows. Start at [29-issue-register.md](./29-issue-register.md) if you are picking up the work, or
+[route-inventory.md](./route-inventory.md) if you are an agent looking for a file.
+
+Five passes across the running app (local Supabase + Vite). **No product code was
 changed.** Local test data, env files and configuration were adjusted only to unblock testing
 (documented in [`08-local-dev-and-seed.md`](./08-local-dev-and-seed.md)).
 
 **Phase 1** (breadth): 136 route variants x 2 viewports, every module, both roles, plan tiers,
 dark mode, axe-core. **Phase 2** (depth): roles and escalation, billing and payments, listing
 lifecycle, settings effectiveness, public pages/SEO, codebase architecture, security, performance,
-caching, AI cost, and a 320-2560px responsive matrix.
+caching, AI cost, and a 320-2560px responsive matrix. **Phase 3**: every dashboard page across five
+plan tiers and six access shapes. **Phase 4**: a design and UX critique with the repo design skills.
+**Phase 5**: every remaining public surface (78 routes, 271 captures) plus a ranked issue register.
 
 - App: `http://localhost:5173`, local Supabase `127.0.0.1:54321`, 169 tables, canonical seed
 - Accounts: org owner + platform super admin, scoped org admin, property operations, view-only
