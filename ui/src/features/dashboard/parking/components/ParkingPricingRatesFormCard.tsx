@@ -1,11 +1,18 @@
-import { AlertTriangle, Loader2, Save } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
+import { computeParkingNightlyPayout } from '@/features/dashboard/parking/lib/parkingPayout';
 import {
   STUB_COMMISSION_PCT,
-  STUB_GUEST_PARKING_RATE_WEEKDAY,
-  STUB_GUEST_PARKING_RATE_WEEKEND,
+  STUB_GUEST_FEE_FIXED,
+  STUB_GUEST_FEE_PCT,
 } from '@/features/dashboard/parking/lib/parkingPricingDefaults';
+import {
+  isValidParkingRate,
+  PARKING_MIN_NIGHTLY_RATE,
+  PARKING_RATE_STEP,
+} from '@/features/dashboard/parking/lib/parkingRateRules';
 import {
   pricingRatesFormStackClassName,
   pricingRatesFormSurfaceClassName,
@@ -21,18 +28,16 @@ import { cn } from '@/lib/utils';
 type Props = {
   weekdayRate: number;
   weekendRate: number;
-  /** Live super-admin-configured guest rates — what riders actually pay. */
-  guestRateWeekday?: number;
-  guestRateWeekend?: number;
-  /** Live super-admin-configured values — fall back to the stub defaults until loaded. */
-  guestRateCapWeekday?: number;
-  guestRateCapWeekend?: number;
+  /** Live super-admin-configured values; fall back to the stub defaults until loaded. */
   commissionPct?: number;
+  guestFeePct?: number;
+  guestFeeFixed?: number;
   readOnly?: boolean;
   hasChanges?: boolean;
   saving?: boolean;
   /** Hide the card footer save button (Setup Guide uses modal footer save). */
   embedded?: boolean;
+  /** A cleared field reports NaN, which is never saved. */
   onWeekdayChange: (value: number) => void;
   onWeekendChange: (value: number) => void;
   onSaveClick: () => void;
@@ -50,8 +55,6 @@ function MoneyInput({
   id,
   label,
   value,
-  guestRate,
-  cap,
   commissionPct,
   readOnly,
   onChange,
@@ -59,15 +62,22 @@ function MoneyInput({
   id: string;
   label: string;
   value: number;
-  guestRate: number;
-  cap: number;
   commissionPct: number;
   readOnly?: boolean;
   onChange: (value: number) => void;
 }) {
-  const overCap = value > cap;
-  const commissionAmount = Math.round(value * commissionPct);
-  const netPayout = value - commissionAmount;
+  // Keep what the host types as text so the field can be cleared and retyped.
+  const [draft, setDraft] = useState(Number.isFinite(value) ? String(value) : '');
+  useEffect(() => {
+    if (!Number.isFinite(value)) return;
+    setDraft((current) => (Number(current) === value ? current : String(value)));
+  }, [value]);
+
+  const invalid = !isValidParkingRate(value);
+  const { commissionAmount, hostNet } = computeParkingNightlyPayout({
+    hostRate: value,
+    commissionPct,
+  });
 
   return (
     <div className="space-y-2">
@@ -81,28 +91,33 @@ function MoneyInput({
         <Input
           id={id}
           type="number"
-          min={0}
-          step={1}
-          value={value}
+          inputMode="decimal"
+          min={PARKING_MIN_NIGHTLY_RATE}
+          step={PARKING_RATE_STEP}
+          value={draft}
           disabled={readOnly}
-          aria-invalid={overCap}
-          onChange={(e) => onChange(Number(e.target.value))}
+          aria-invalid={invalid || undefined}
+          aria-describedby={`${id}-help`}
+          onChange={(e) => {
+            const raw = e.target.value;
+            setDraft(raw);
+            onChange(raw.trim() === '' ? NaN : Number(raw));
+          }}
           className={cn(
             'h-10 pl-8 text-sm tabular-nums',
-            overCap && 'border-destructive focus-visible:ring-destructive'
+            invalid && 'border-destructive focus-visible:ring-destructive'
           )}
         />
       </div>
-      {overCap ? (
-        <p className="text-destructive flex items-start gap-1.5 text-xs">
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-          Above max {formatPhp(cap)} - lower to save and offer to guests.
+      {invalid ? (
+        <p id={`${id}-help`} className="text-destructive text-xs">
+          Enter at least {formatPhp(PARKING_MIN_NIGHTLY_RATE)}.
         </p>
       ) : (
-        <dl className="space-y-1 text-xs">
+        <dl id={`${id}-help`} className="space-y-1 text-xs">
           <div className="flex items-baseline justify-between gap-3">
-            <dt className="text-muted-foreground">Guests pay</dt>
-            <dd className="text-foreground tabular-nums">{formatPhp(guestRate)} / night</dd>
+            <dt className="text-muted-foreground">Guests see</dt>
+            <dd className="text-foreground tabular-nums">{formatPhp(value)} / night</dd>
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <dt className="text-muted-foreground">Platform fee ({formatPct(commissionPct)})</dt>
@@ -111,7 +126,7 @@ function MoneyInput({
           <div className="border-border/60 flex items-baseline justify-between gap-3 border-t pt-1">
             <dt className="text-foreground font-medium">You receive</dt>
             <dd className="text-foreground font-semibold tabular-nums">
-              {formatPhp(netPayout)} / night
+              {formatPhp(hostNet)} / night
             </dd>
           </div>
         </dl>
@@ -123,11 +138,9 @@ function MoneyInput({
 export function ParkingPricingRatesFormCard({
   weekdayRate,
   weekendRate,
-  guestRateWeekday = STUB_GUEST_PARKING_RATE_WEEKDAY,
-  guestRateWeekend = STUB_GUEST_PARKING_RATE_WEEKEND,
-  guestRateCapWeekday = STUB_GUEST_PARKING_RATE_WEEKDAY,
-  guestRateCapWeekend = STUB_GUEST_PARKING_RATE_WEEKEND,
   commissionPct = STUB_COMMISSION_PCT,
+  guestFeePct = STUB_GUEST_FEE_PCT,
+  guestFeeFixed = STUB_GUEST_FEE_FIXED,
   readOnly = false,
   hasChanges = false,
   saving = false,
@@ -137,7 +150,7 @@ export function ParkingPricingRatesFormCard({
   onSaveClick,
 }: Props) {
   const compactChrome = useDashboardCompactChrome();
-  const capExceeded = weekdayRate > guestRateCapWeekday || weekendRate > guestRateCapWeekend;
+  const ratesInvalid = !isValidParkingRate(weekdayRate) || !isValidParkingRate(weekendRate);
 
   return (
     <section className={pricingRatesFormSurfaceClassName(compactChrome)}>
@@ -156,8 +169,6 @@ export function ParkingPricingRatesFormCard({
               id="parking-weekday-rate"
               label="Weekday / night"
               value={weekdayRate}
-              guestRate={guestRateWeekday}
-              cap={guestRateCapWeekday}
               commissionPct={commissionPct}
               readOnly={readOnly}
               onChange={onWeekdayChange}
@@ -166,12 +177,14 @@ export function ParkingPricingRatesFormCard({
               id="parking-weekend-rate"
               label="Fri–Sun / night"
               value={weekendRate}
-              guestRate={guestRateWeekend}
-              cap={guestRateCapWeekend}
               commissionPct={commissionPct}
               readOnly={readOnly}
               onChange={onWeekendChange}
             />
+            <p className="text-muted-foreground text-xs">
+              Guests also pay a service fee at checkout ({formatPct(guestFeePct)} +{' '}
+              {formatPhp(guestFeeFixed)} per booking). It does not reduce your payout.
+            </p>
           </div>
         </div>
 
@@ -181,7 +194,7 @@ export function ParkingPricingRatesFormCard({
             <Button
               type="button"
               className="min-h-[44px] w-full"
-              disabled={saving || capExceeded}
+              disabled={saving || ratesInvalid}
               onClick={onSaveClick}
             >
               {saving ? (

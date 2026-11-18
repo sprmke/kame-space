@@ -12,6 +12,7 @@ import {
   verifyParkingTeamAccess,
 } from './orgAuth.ts';
 import { loadParkingHostRates } from './parkingHostRates.ts';
+import { resolveParkingPlatformSettings } from './parkingPlatformSettings.ts';
 import { loadResolvedBrandColorByParkingId } from './parkingBranding.ts';
 import {
   readParkingHeightClearanceM,
@@ -232,7 +233,20 @@ export async function loadPublicParkingBySlug(slug: string) {
   if (error || !data) return null;
 
   const parkingId = data.id as string;
-  const hostRate = (await loadParkingHostRates([parkingId])).get(parkingId)!;
+  const [hostRates, platformSettings, overrideRows] = await Promise.all([
+    loadParkingHostRates([parkingId]),
+    resolveParkingPlatformSettings(),
+    supabase
+      .from('parking_pricing_date_overrides')
+      .select('pricing_date, nightly_rate')
+      .eq('parking_id', parkingId)
+      .gte('pricing_date', new Date().toISOString().slice(0, 10)),
+  ]);
+  const hostRate = hostRates.get(parkingId)!;
+  const dateOverrides: Record<string, number> = {};
+  for (const row of overrideRows.data ?? []) {
+    dateOverrides[String(row.pricing_date).slice(0, 10)] = Number(row.nightly_rate);
+  }
 
   const org = data.organizations as { slug: string; name: string; settings?: unknown };
   const orgSettings =
@@ -289,7 +303,10 @@ export async function loadPublicParkingBySlug(slug: string) {
     pricing: {
       weekdayNightlyRate: hostRate.weekday,
       weekendNightlyRate: hostRate.weekend,
-      dateOverrides: {} as Record<string, number>,
+      dateOverrides,
+      // Guests pay the host rate plus this service fee at checkout (fee is once per booking).
+      guestFeePct: platformSettings.guestFeePct,
+      guestFeeFixed: platformSettings.guestFeeFixed,
       currency: 'PHP',
     },
     coverImage: media.find((item) => item.isPrimary)?.url ?? images[0] ?? null,
