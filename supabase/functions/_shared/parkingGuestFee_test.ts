@@ -78,19 +78,22 @@ Deno.test('a lower direct commission is checked on its own channel', () => {
   if (!result.ok) assertEquals(result.channel, 'direct_link');
 });
 
-Deno.test('host nightly rate: below ₱100 is rejected, ₱100 and very high rates are accepted', async () => {
-  Deno.env.set('SUPABASE_URL', 'http://127.0.0.1:54321');
-  Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role');
-  const { validateMoneyField } = await import('./parkingPricing.ts');
-  assertEquals(validateMoneyField(99, 'Weekday rate'), 'Weekday rate must be at least ₱100');
-  assertEquals(validateMoneyField(0, 'Weekday rate'), 'Weekday rate must be at least ₱100');
-  assertEquals(validateMoneyField(-5, 'Weekday rate'), 'Weekday rate must be at least ₱100');
-  assertEquals(validateMoneyField('abc', 'Weekday rate'), 'Weekday rate must be a number');
-  assertEquals(validateMoneyField(100, 'Weekday rate'), 100);
-  assertEquals(validateMoneyField(325, 'Weekday rate'), 325);
-  assertEquals(validateMoneyField(50_000, 'Weekday rate'), 50_000);
-  assertEquals(validateMoneyField(undefined, 'Weekday rate'), null);
-});
+Deno.test(
+  'host nightly rate: below ₱100 is rejected, ₱100 and very high rates are accepted',
+  async () => {
+    Deno.env.set('SUPABASE_URL', 'http://127.0.0.1:54321');
+    Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role');
+    const { validateMoneyField } = await import('./parkingPricing.ts');
+    assertEquals(validateMoneyField(99, 'Weekday rate'), 'Weekday rate must be at least ₱100');
+    assertEquals(validateMoneyField(0, 'Weekday rate'), 'Weekday rate must be at least ₱100');
+    assertEquals(validateMoneyField(-5, 'Weekday rate'), 'Weekday rate must be at least ₱100');
+    assertEquals(validateMoneyField('abc', 'Weekday rate'), 'Weekday rate must be a number');
+    assertEquals(validateMoneyField(100, 'Weekday rate'), 100);
+    assertEquals(validateMoneyField(325, 'Weekday rate'), 325);
+    assertEquals(validateMoneyField(50_000, 'Weekday rate'), 50_000);
+    assertEquals(validateMoneyField(undefined, 'Weekday rate'), null);
+  }
+);
 
 Deno.test('the PayMongo amount equals host gross plus the guest fee, to the centavo', async () => {
   Deno.env.set('SUPABASE_URL', 'http://127.0.0.1:54321');
@@ -106,4 +109,23 @@ Deno.test('the PayMongo amount equals host gross plus the guest fee, to the cent
     );
     assertEquals(b.hostGrossTotal + b.guestFeeTotal, b.guestChargeTotal, `sum ${hostGross}`);
   }
+});
+
+Deno.test('a new parking never starts below the host minimum', async () => {
+  Deno.env.set('SUPABASE_URL', 'http://127.0.0.1:54321');
+  Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role');
+  const { resolveSeedRates } = await import('./parkingSettingsSeed.ts');
+  assertEquals(resolveSeedRates(350), { weekday: 350, weekend: 350 });
+  assertEquals(resolveSeedRates(100), { weekday: 100, weekend: 100 });
+  for (const bad of [0, 50, 99, -1, NaN, null, undefined]) {
+    assertEquals(resolveSeedRates(bad), { weekday: 300, weekend: 400 }, String(bad));
+  }
+});
+
+Deno.test('assistant parking rate proposals reject rates under the minimum', async () => {
+  const src = await Deno.readTextFile(new URL('./dashboardAssistantTools.ts', import.meta.url));
+  const base = src.slice(src.indexOf('async function toolProposeUpdateParkingBaseRate'));
+  assert(base.slice(0, 1400).includes('PARKING_MIN_NIGHTLY_RATE'));
+  const override = src.slice(src.indexOf('async function toolProposeSetParkingDateRateOverride'));
+  assert(override.slice(0, 1400).includes('PARKING_MIN_NIGHTLY_RATE'));
 });
