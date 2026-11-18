@@ -268,7 +268,6 @@
     "ui/src/features/guest/calendar/lib/guestCalendarAvailability.ts",
     "ui/src/features/guest/chat/lib/guestChatInsertItems.ts",
     "ui/src/features/guest/form/lib/bookingFormatter.ts",
-    "ui/src/features/guest/form/lib/bookingSourceFromSearchParams.ts",
     "ui/src/features/guest/form/lib/guestCounts.ts",
     "ui/src/features/guest/form/lib/guestFormBranding.ts",
     "ui/src/features/guest/form/lib/guestPropertyScope.ts",

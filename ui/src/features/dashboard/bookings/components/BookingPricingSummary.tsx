@@ -12,8 +12,8 @@ import { buildBookingRateRows } from '@/features/dashboard/bookings/lib/bookingP
 import {
   computeTotalGuestBalance,
   guestBalancePaidRecorded,
-  isAirbnbBookingSource,
 } from '@/features/dashboard/bookings/lib/totalGuestBalance';
+import { bookingChannelLabel, isOtaPrepaidSource } from '@/lib/bookingChannel';
 import type { BookingRow } from '@/features/dashboard/bookings/lib/types';
 
 import { cn } from '@/lib/utils';
@@ -111,13 +111,13 @@ export function BookingPricingSummary({
   }
 
   const hasParking = booking.need_parking === true;
-  const isAirbnb = isAirbnbBookingSource(booking.booking_source);
+  const isOtaPrepaid = isOtaPrepaidSource(booking.booking_source);
   const hasSecurityDeposit = Number(booking.security_deposit ?? 0) > 0;
 
   /**
    * Ledger order: what the stay costs, how it was split, then the optional add-ons.
-   * Airbnb bookings skip down payment and security deposit, which are handled on
-   * the platform. Rows with no recorded amount are dropped rather than shown as ₱0.00.
+   * OTA prepaid bookings skip down payment and security deposit, which are handled
+   * on the platform. Rows with no recorded amount are dropped rather than shown as ₱0.00.
    */
   const rateRows = buildBookingRateRows(booking);
 
@@ -152,7 +152,7 @@ export function BookingPricingSummary({
               <BookingDetailRow numeric key={row.key} label={row.label} value={row.value} />
             ))}
           </BookingDetailRowGroup>
-          {isAirbnb ? <p className="text-caption mt-1.5">Stay paid through Airbnb.</p> : null}
+          {isOtaPrepaid ? <p className="text-caption mt-1.5">Stay paid through {bookingChannelLabel(booking.booking_source)}.</p> : null}
         </PricingSection>
       ) : null}
 

@@ -9,6 +9,7 @@ import type { GuestPaymentMethod } from '@/features/guest/form/hooks/useGuestPay
 import { guestSdFormPath } from '@/features/guest/lib/guestPublicPaths';
 import { GuestTripReceiptSheet } from '@/features/guest/trip/components/GuestTripReceiptSheet';
 import { GuestTripRow, GuestTripSection } from '@/features/guest/trip/components/GuestTripSection';
+import { bookingChannelLabel } from '@/lib/bookingChannel';
 import type { GuestTrip } from '@/features/guest/trip/lib/guestTripApi';
 import { guestTripMessageHostPath } from '@/features/guest/trip/lib/guestTripLinks';
 import { isGuestTripActive, type GuestTripPhase } from '@/features/guest/trip/lib/guestTripPhase';
@@ -75,7 +76,7 @@ function PaymentMethodRow({ method }: { method: GuestPaymentMethod }) {
 
 /** Where the security deposit stands, in the guest's words. */
 function depositStatus(trip: GuestTrip, phase: GuestTripPhase): string | null {
-  if (trip.payment.isAirbnb || !positive(trip.payment.securityDeposit)) return null;
+  if (trip.payment.isOtaPrepaid || !positive(trip.payment.securityDeposit)) return null;
   if (trip.refund.amount != null) return `Refunded ${formatMoney(trip.refund.amount)}`;
   if (phase === 'refund_pending') return 'Deposit refund';
   if (phase === 'checked_out') {
@@ -105,10 +106,10 @@ export function GuestTripPaymentSection({
   // Rates are set by the host during review; nothing meaningful to show yet.
   if (phase === 'requested' || !payment.ratesConfirmed) return null;
 
-  const deposit = payment.isAirbnb ? 0 : (payment.securityDeposit ?? 0);
-  const stay = payment.isAirbnb ? 0 : (payment.bookingRate ?? 0);
+  const deposit = payment.isOtaPrepaid ? 0 : (payment.securityDeposit ?? 0);
+  const stay = payment.isOtaPrepaid ? 0 : (payment.bookingRate ?? 0);
   const fees = (payment.petFee ?? 0) + (payment.additionalFee ?? 0);
-  const down = payment.isAirbnb ? 0 : (payment.downPayment ?? 0);
+  const down = payment.isOtaPrepaid ? 0 : (payment.downPayment ?? 0);
   const paid = down + payment.balancePaid;
   const amountDue = payment.amountDue ?? 0;
   const active = isGuestTripActive(phase);
@@ -141,8 +142,10 @@ export function GuestTripPaymentSection({
       ) : null}
 
       <dl className="divide-border/70 divide-y">
-        {payment.isAirbnb ? (
-          <GuestTripRow label="Stay">Paid through Airbnb</GuestTripRow>
+        {payment.isOtaPrepaid ? (
+          <GuestTripRow label="Stay">
+            Paid through {bookingChannelLabel(trip.bookingSource)}
+          </GuestTripRow>
         ) : positive(stay) && !cancelled ? (
           <GuestTripRow label="Stay">{formatMoney(stay)}</GuestTripRow>
         ) : null}

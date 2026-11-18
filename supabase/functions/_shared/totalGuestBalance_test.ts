@@ -1,12 +1,15 @@
 import { assertEquals, assertFalse } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 
-import { computeTotalGuestBalanceFromBooking, isAirbnbBookingSource } from './totalGuestBalance.ts';
+import { isOtaPrepaidSource } from './bookingChannel.ts';
+import { computeTotalGuestBalanceFromBooking } from './totalGuestBalance.ts';
 
-Deno.test('isAirbnbBookingSource is trimmed and case insensitive', () => {
-  assertEquals(isAirbnbBookingSource(' Airbnb '), true);
-  assertEquals(isAirbnbBookingSource('airbnb'), true);
-  assertFalse(isAirbnbBookingSource('Facebook'));
-  assertFalse(isAirbnbBookingSource(null));
+Deno.test('every prepaid channel uses the OTA-prepaid balance rule', () => {
+  assertEquals(isOtaPrepaidSource(' Airbnb '), true);
+  assertEquals(isOtaPrepaidSource('Agoda'), true);
+  assertEquals(isOtaPrepaidSource('booking_com'), true);
+  assertEquals(isOtaPrepaidSource('Vrbo'), false);
+  assertFalse(isOtaPrepaidSource('Facebook'));
+  assertFalse(isOtaPrepaidSource(null));
 });
 
 Deno.test('Airbnb total excludes rate, down payment, and security deposit', () => {

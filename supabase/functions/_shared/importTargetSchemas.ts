@@ -21,7 +21,7 @@ export const BOOKING_IMPORT_TARGET_FIELDS: readonly ImportTargetField[] = [
     id: 'guest_display_name',
     type: 'string',
     required: true,
-    description: 'Guest display name (Direct, Facebook, or Airbnb)',
+    description: 'Guest display name (Direct, Facebook, Airbnb, Agoda, Booking.com)',
   },
   {
     id: 'primary_guest_name',

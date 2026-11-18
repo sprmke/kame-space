@@ -3,6 +3,8 @@
  * Event-driven (SD form submit) + instant + hourly cron (new booking, pending docs, balance receipt, SD refund).
  */
 
+import { bookingChannelLabel } from './bookingChannel.ts';
+
 import {
   isTelegramFeatureUnavailableError,
   mapTelegramSendErrorToNotifySkip,
@@ -281,9 +283,8 @@ function notifyYesNo(v: unknown): string {
 
 function formatBookingSourceLabel(raw: unknown): string {
   const s = String(raw ?? '').trim();
-  if (/^airbnb$/i.test(s)) return 'Airbnb';
-  if (/^facebook$/i.test(s)) return 'Facebook';
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Facebook';
+  if (!s) return 'Facebook';
+  return bookingChannelLabel(s);
 }
 
 function buildUrgentNotice(checkInDate: unknown): string {

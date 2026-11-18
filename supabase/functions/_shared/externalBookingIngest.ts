@@ -5,6 +5,7 @@
  * Kept free of DB access so the adoption / relink / past-stay decisions are unit tested.
  */
 
+import { canonicalBookingSource } from './bookingChannel.ts';
 import { normalizeBookingDateToYmd } from './calendarAvailabilityManila.ts';
 
 export type IngestBookingRow = {
@@ -15,20 +16,13 @@ export type IngestBookingRow = {
   booking_source: string | null;
   external_uid: string | null;
   external_feed_id: string | null;
+  /** Sync provider identity (`airbnb`, `agoda`, `booking_com`). UIDs are only unique per channel. */
+  external_source?: string | null;
 };
 
 /** Rows the sync must never treat as a live booking to adopt, relink, or cancel. */
 export function isEligibleIngestRow(row: IngestBookingRow): boolean {
   return row.status !== 'CANCELLED' && row.status !== 'IMPORTED';
-}
-
-/** True for a source label we are allowed to adopt into an OTA feed (Airbnb today). */
-export function isAirbnbBookingSource(source: string | null | undefined): boolean {
-  return (
-    String(source ?? '')
-      .trim()
-      .toLowerCase() === 'airbnb'
-  );
 }
 
 /** `YYYY-MM-DD|YYYY-MM-DD` for exact-date matching; null when either date is unparseable. */
@@ -52,25 +46,34 @@ export function isPastReservation(endDateYmd: string, todayYmd: string): boolean
 /**
  * A row already carrying this UID but no longer attached to this feed (the feed was
  * removed and reconnected). Re-link it instead of inserting a duplicate.
+ *
+ * UIDs are only unique inside one channel: two channels may legitimately reuse the same string
+ * (a short numeric id, a date-based id). The row must belong to this feed's channel, or an
+ * Agoda stay could be relinked onto an Airbnb feed.
  */
 export function findRelinkableBooking(
   rows: IngestBookingRow[],
   uid: string,
-  feedId: string
+  feedId: string,
+  provider: string
 ): IngestBookingRow | null {
   const target = String(uid ?? '').trim();
   if (!target) return null;
   return (
     rows.find(
       (row) =>
-        isEligibleIngestRow(row) && row.external_uid === target && row.external_feed_id !== feedId
+        isEligibleIngestRow(row) &&
+        row.external_uid === target &&
+        row.external_feed_id !== feedId &&
+        row.external_source === provider
     ) ?? null
   );
 }
 
 /**
- * A manually entered Airbnb row with the exact same stay. Hosts who already re-key
- * Airbnb reservations should get provenance attached, not a second booking.
+ * A manually entered row for the *same channel* with the exact same stay. Hosts who already
+ * re-key OTA reservations should get provenance attached, not a second booking. A manual Agoda
+ * stay must never be adopted by an Airbnb feed.
  */
 export function findAdoptableManualBooking(
   rows: IngestBookingRow[],
@@ -83,8 +86,8 @@ export function findAdoptableManualBooking(
       (row) =>
         isEligibleIngestRow(row) &&
         !row.external_uid &&
-        isAirbnbBookingSource(row.booking_source) &&
-        isAirbnbBookingSource(input.bookingSource) &&
+        canonicalBookingSource(row.booking_source) ===
+          canonicalBookingSource(input.bookingSource) &&
         bookingDateKey(row.check_in_date, row.check_out_date) === key
     ) ?? null
   );

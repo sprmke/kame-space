@@ -10,7 +10,13 @@
  * `property_blocked_dates` and Airbnb's own `DTEND`. No ±1 fudge anywhere.
  */
 
-export type CalendarFeedProvider = 'airbnb' | 'booking_com' | 'vrbo' | 'other';
+import {
+  calendarChannel,
+  hostMatchesChannelSuffix,
+  type CalendarFeedProvider,
+} from './calendarChannels.ts';
+
+export type { CalendarFeedProvider };
 
 /** Reservation = a real stay; block = host-blocked / unavailable-gap night. */
 export type CalendarEventKind = 'reservation' | 'block';
@@ -147,13 +153,13 @@ export function classifyEventKind(
     case 'airbnb':
       // "Reserved" = booking. "Airbnb (Not available)" / "Blocked" / "Not available" = block.
       return s === 'reserved' ? 'reservation' : 'block';
-    case 'vrbo':
-      return s.startsWith('reserved') ? 'reservation' : 'block';
     case 'booking_com':
       // "CLOSED - Not available" for everything. When ingesting bookings, treat all as reservations.
       return createBookings ? 'reservation' : 'block';
-    case 'other':
+    case 'agoda':
     default:
+      // Phase 0 pending: Agoda fixtures decide whether its feed distinguishes stays from blocks.
+      // Until then it follows the generic iCal rule, and it is not connectable by default.
       // Generic iCal: anything that isn't obviously a "blocked/unavailable/closed" label is a stay.
       if (/(not available|unavailable|blocked|closed|owner block)/.test(s)) return 'block';
       return createBookings ? 'reservation' : 'block';
@@ -444,18 +450,10 @@ export class ExternalFetchError extends Error {
   }
 }
 
-/** Provider → allowed host suffixes. `other` allows any public host (still IP-guarded). */
-const PROVIDER_HOST_ALLOWLIST: Record<Exclude<CalendarFeedProvider, 'other'>, string[]> = {
-  airbnb: ['airbnb.com', 'airbnb.co.uk', 'airbnb.ca', 'airbnb.com.au', 'muscache.com'],
-  booking_com: ['booking.com', 'admin.booking.com', 'ical.booking.com'],
-  vrbo: ['vrbo.com', 'homeaway.com', 'abritel.fr', 'expediagroup.com'],
-};
-
-function hostMatchesSuffix(host: string, suffixes: string[]): boolean {
-  const h = host.toLowerCase();
-  return suffixes.some((s) => h === s || h.endsWith('.' + s));
+/** Provider → allowed host suffixes, from the channel registry. */
+function providerHostSuffixes(provider: CalendarFeedProvider): string[] {
+  return calendarChannel(provider).hostSuffixes;
 }
-
 const PRIVATE_IPV4 = [
   /^0\./,
   /^10\./,
@@ -555,14 +553,12 @@ export function assertExternalIcsUrlShape(rawUrl: string, provider: CalendarFeed
   if (isPrivateIpLiteral(u.hostname) || u.hostname.toLowerCase() === 'localhost') {
     throw new ExternalFetchError('That host is not allowed', 'private_host');
   }
-  if (provider !== 'other') {
-    const allow = PROVIDER_HOST_ALLOWLIST[provider];
-    if (!hostMatchesSuffix(u.hostname, allow)) {
-      throw new ExternalFetchError(
-        `For ${provider}, the URL must be on ${allow[0]}`,
-        'host_not_allowed'
-      );
-    }
+  const allow = providerHostSuffixes(provider);
+  if (!hostMatchesChannelSuffix(u.hostname, allow)) {
+    throw new ExternalFetchError(
+      `For ${calendarChannel(provider).label}, the URL must be on ${allow[0]}`,
+      'host_not_allowed'
+    );
   }
   return normalized;
 }
@@ -609,14 +605,12 @@ export async function fetchExternalIcs(
     if (current.username || current.password) {
       throw new ExternalFetchError('refusing URL with embedded credentials', 'has_credentials');
     }
-    if (opts.provider !== 'other') {
-      const allow = PROVIDER_HOST_ALLOWLIST[opts.provider];
-      if (!hostMatchesSuffix(current.hostname, allow)) {
-        throw new ExternalFetchError(
-          `host ${current.hostname} is not allowed for provider ${opts.provider}`,
-          'host_not_allowed'
-        );
-      }
+    // Every channel is allowlisted, on every redirect hop.
+    if (!hostMatchesChannelSuffix(current.hostname, providerHostSuffixes(opts.provider))) {
+      throw new ExternalFetchError(
+        `host ${current.hostname} is not allowed for provider ${opts.provider}`,
+        'host_not_allowed'
+      );
     }
     await assertHostNotPrivate(current.hostname);
 

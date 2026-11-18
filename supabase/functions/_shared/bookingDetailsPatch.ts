@@ -4,6 +4,7 @@
  */
 
 import dayjs from 'dayjs';
+import { isOtaPrepaidSource } from './bookingChannel.ts';
 import type { DocumentRequirement, DocumentRequirementCompletion } from './documentRequirements.ts';
 import { parseDocRejectionReason, resolveDocumentRequirements } from './documentRequirements.ts';
 import { createServiceClient } from './orgAuth.ts';
@@ -253,7 +254,7 @@ export function bookingAssetClearPatch(assetType: BookingAssetType): Record<stri
 /** Columns the server writes in addition to the client payload. */
 export function impliedBookingPatchColumns(patch: Record<string, unknown>): string[] {
   const extra: string[] = [];
-  if (patch.booking_source === 'Airbnb') {
+  if (isOtaPrepaidSource(patch.booking_source)) {
     extra.push('down_payment', 'security_deposit');
     if (patch.booking_rate != null && patch.balance === undefined) {
       extra.push('balance');
@@ -944,19 +945,19 @@ export async function applyBookingDetailsPatch(
 
   let patch = sanitizeBookingPatchPayload(body.payload);
 
-  if (patch.booking_source === 'Airbnb') {
+  if (isOtaPrepaidSource(patch.booking_source)) {
     patch.down_payment = 0;
     patch.security_deposit = 0;
   }
 
   if (
     patch.booking_rate != null &&
-    (patch.down_payment != null || patch.booking_source === 'Airbnb') &&
+    (patch.down_payment != null || isOtaPrepaidSource(patch.booking_source)) &&
     patch.balance === undefined
   ) {
     patch.balance = computeBalance(
       patch.booking_rate as number,
-      patch.booking_source === 'Airbnb' ? 0 : (patch.down_payment as number)
+      isOtaPrepaidSource(patch.booking_source) ? 0 : (patch.down_payment as number)
     );
   }
 
