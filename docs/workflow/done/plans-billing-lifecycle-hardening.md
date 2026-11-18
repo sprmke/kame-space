@@ -1,9 +1,9 @@
 ---
-stage: for-testing
+stage: done
 title: 'Plans & Billing lifecycle hardening'
-status: for-testing
-tags: [planning, for-testing, billing, paymongo, plans, subscriptions, plans-and-permissions]
-updated: 2026-11-18
+status: done
+tags: [planning, done, billing, paymongo, plans, subscriptions, plans-and-permissions]
+updated: 2026-11-19
 ---
 
 # Plans & Billing lifecycle hardening
@@ -14,16 +14,16 @@ updated: 2026-11-18
 
 Make org subscription billing production ready. A host who downgrades or cancels keeps what they paid for until the period ends and can undo the change before then. Upgrades show an exact server quote and the new renewal date. Renewals, reminders, past due, suspension and auto-cancel follow one deterministic state machine run by an idempotent cron. Every PayMongo payment ends up either applied to the subscription or held as account credit, never ignored. Hosts get numbered receipts, a billing details form, an upcoming payment preview and clear state banners. Super-admins get the tools to fix any account without editing rows by hand.
 
-## Status (2026-11-18)
+## Status (closed 2026-11-19)
 
-Phases 0 to 8 are implemented and **deployed to production**. What remains is manual QA against PayMongo and three owner-only follow-ups.
+**Done.** Phases 0 to 9 are implemented, deployed to production and verified. The code, the database, the cron and the security fix are live and checked; the items that are not engineering work are carried out of this plan into the places listed under **Carried forward** below.
 
 | Phase              | State                                                                                                                                 |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
 | 0 to 8             | Done. See the task notes for the deliberate deviations (0.8, 1.3, 3.4).                                                               |
 | 9.5 deploy         | **Done 2026-11-18.** Backend via #513 (squash `6c97cc7ff`) and the `cd-prod` pipeline, UI via release #514 (`7b22aa9c0`). See below.  |
 | 9.1 sandbox matrix | **Done 2026-11-19.** 8 of 8 steps against the real PayMongo sandbox (`orgBillingSandbox.integration_test.ts`); see the results below. |
-| 9.6 move to done   | After 9.1 and the follow-ups below.                                                                                                   |
+| 9.6 move to done   | **Done 2026-11-19.** Plan moved to `done/`; ledger PR-033 updated; follow-ups carried forward.                                        |
 
 ### Production deployment record
 
@@ -56,11 +56,23 @@ Real sandbox checkout sessions paid through the real hosted checkout, handlers a
 
 **One real bug found and fixed** (`fix/billing-reconcile-payment-id`): a payment recovered by reconciliation stored no PayMongo payment id, so a later refund event could not find it, and its method and paid time were guessed. Reconciliation now reads them from the session's `payments[]`.
 
-### Owner-only follow-ups
+### Done after the first deploy
 
-1. ~~Remove the orphaned function.~~ **Done 2026-11-19:** `apply-org-plan-downgrade` deleted from production through the Management API (404 now).
-2. **PayMongo dashboard:** add the `payment.refunded` webhook event.
-3. ~~Confirm the hourly cron exists.~~ **Done 2026-11-19:** only `platform-billing-hourly` (`7 * * * *`, active) exists, it fired at 15:07 and 16:07 UTC, and the function answered 200 with the new counters and `errors: 0`.
+| Item                                         | Result                                                                                                                                                     |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Orphaned `apply-org-plan-downgrade` function | Deleted from production through the Management API (404 now)                                                                                               |
+| Hourly cron present on production            | Only `platform-billing-hourly` (`7 * * * *`, active) exists; fired at 15:07 and 16:07 UTC; the function answered 200 with the new counters and `errors: 0` |
+| Sandbox matrix                               | 8 of 8 against the real sandbox (see Sandbox results), plus a fix for the one bug it found (#517)                                                          |
+
+### Carried forward (not engineering work, so not blocking this plan)
+
+| Item                                                                                                                                                                                                                                           | Where it is tracked                                                                        |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| PayMongo go-live configuration: the two sandbox webhooks are disabled, neither lists `payment.refunded`, and the production project's PayMongo secrets differ from the local sandbox values. Production has never processed a PayMongo payment | `production-readiness/LEDGER.md` PR-033 and PR-097; `_to-dos.md` ("Get PayMongo approval") |
+| Receipts and tax: confirm with the accountant whether BIR official receipts or VAT are needed                                                                                                                                                  | `_to-dos.md`                                                                               |
+| Product confirmation of D5 (suspension behaves like Free) and D6 (auto-cover with a prorated true-up). Both are implemented as the recommended defaults                                                                                        | `_to-dos.md`                                                                               |
+| `cd-prod` deploys fail intermittently on an `esm.sh` connection reset while bundling (three times on 2026-11-18); a re-run fixes it                                                                                                            | `LEDGER.md` PR-098                                                                         |
+| About 60 older `SECURITY DEFINER` functions still callable by `anon`                                                                                                                                                                           | `LEDGER.md` PR-096                                                                         |
 
 Security review (2026-11-18): the billing `SECURITY DEFINER` functions were executable by `anon` through `/rest/v1/rpc`. Fixed in `20261342000500`, proven by the endpoint integration test, and the migration gate now blocks it. Older functions with the same exposure are tracked as PR-096.
 
@@ -476,7 +488,7 @@ Each phase ships its docs, tests and activity-log entries in the same change. Ph
 - [x] 9.3 `bun run ci:quality`, `bun run test:edge`, `bun run test:edge:handlers`, `bun run test:e2e:plans`. Run 2026-11-18: type-check, lint (0 errors), UI unit 6282 + DOM 40, Deno shared 1718, handlers 1360, local-DB lifecycle 18, `test:e2e:plans` 128 (one unrelated booking-detail gate spec flaked once on a cold dev server and passed 4/4 on two re-runs).
 - [x] 9.4 Mobile pass (375 / 768 / 1024+) of every billing state; a11y check on dialogs and banners. Mobile pass done with 0.10. Dialogs are `ResponsiveModal` sheets; banners and strips stack under 640px.
 - [x] 9.5 Deployed to production 2026-11-18 (see the deployment record in Status). One Supabase project serves dev and prod, so there is no separate dev deploy.
-- [ ] 9.6 Move this plan through `for-testing/` → `done/`; update `production-readiness/LEDGER.md` PR-033.
+- [x] 9.6 Plan moved to `done/` on 2026-11-19; `production-readiness/LEDGER.md` PR-033 updated; remaining non-engineering items carried forward (see Status).
 
 ## Docs to update
 
@@ -491,5 +503,7 @@ Per phase above. Full list: `docs/guides/routes/org/plans.md`, `docs/guides/rout
 
 ## Open questions
 
-1. **Receipts and tax.** Payment receipts are planned as non-BIR receipts with no VAT breakdown. Confirm with the accountant whether Kame Space must issue BIR official receipts or show VAT on subscription payments; if yes, that becomes a separate plan.
-2. **D5 and D6** need a product yes or no before Phases 4 and 5 (see Decisions).
+Both were answered by implementing the recommended defaults and are carried forward for confirmation (see Status, Carried forward):
+
+1. **Receipts and tax.** Payment receipts are non-BIR receipts with no VAT breakdown. Whether Kame Space must issue BIR official receipts or show VAT on subscription payments is for the accountant; if yes, that becomes a separate plan.
+2. **D5 and D6.** Implemented as written (Free-level suspension; auto-cover with a prorated true-up). A product yes or no is still wanted; the fallback for D6 is described under Phase 5.

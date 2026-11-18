@@ -24,7 +24,7 @@ kind: backlog
   Brand verification approved and published 2026-11-03. Remaining hardening is post-launch.
   → **Done:** [`../done/kamespace-05-google-services-verification.md`](../done/kamespace-05-google-services-verification.md) · hardening: [`../in-progress/google-services-production-hardening.md`](../in-progress/google-services-production-hardening.md)
 - 🔵 **Get PayMongo approval**
-  Business account approval and split payouts are still with PayMongo.
+  Business account approval and split payouts are still with PayMongo. Billing is built and sandbox-verified; the webhook and key configuration for go-live is PR-097.
 
 ## Pre-release items
 
@@ -86,10 +86,12 @@ kind: backlog
 - 🚧 Improve backend performance
   → **In progress:** [`../in-progress/app-speed-root-cause-overhaul.md`](../in-progress/app-speed-root-cause-overhaul.md) · capacity: [`../in-progress/supabase-capacity-and-operational-readiness.md`](../in-progress/supabase-capacity-and-operational-readiness.md)
 - 🔵 Toolchain upgrade wave: TypeScript 7, Tailwind 4, Zod 4, @hookform/resolvers 7, @types/node 26, @vitest/coverage-v8 5, eslint-plugin-react-hooks 7, @blueprintjs/core 6, framer-motion 14. Each needs a code migration, not a version bump, so the Dependabot majors are closed until it is planned.
-- 🧪 Pricing plans refinement
-  → **For testing:** [`../for-testing/plans-billing-lifecycle-hardening.md`](../for-testing/plans-billing-lifecycle-hardening.md)
-- 🧪 Payment e2e and management from super admin
-  → **For testing:** [`../for-testing/plans-billing-lifecycle-hardening.md`](../for-testing/plans-billing-lifecycle-hardening.md) (sandbox matrix still to run)
+- ✅ Pricing plans refinement
+  → **Done 2026-11-19:** [`../done/plans-billing-lifecycle-hardening.md`](../done/plans-billing-lifecycle-hardening.md)
+- ✅ Payment e2e and management from super admin
+  → **Done 2026-11-19:** [`../done/plans-billing-lifecycle-hardening.md`](../done/plans-billing-lifecycle-hardening.md) (sandbox matrix passed, super-admin billing panel shipped)
+- 🔵 Billing follow-ups from the lifecycle plan
+  Confirm with the accountant whether BIR official receipts or VAT are needed. Confirm the product defaults D5 (suspension behaves like Free) and D6 (auto-cover with a prorated true-up). PayMongo go-live configuration is PR-097 and the deploy flake is PR-098 in [`../in-progress/production-readiness/LEDGER.md`](../in-progress/production-readiness/LEDGER.md).
 - 🔵 Improve QR design to include our logo?
 - 🔵 Select turtle character and add it on their templates
 - 🔵 Super admin - playbook articles?
