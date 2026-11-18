@@ -32,40 +32,55 @@ bug cannot return.
 
 ## Next (P1, high impact)
 
-| #   | Fix                                                                                                                                              | Report      | Effort |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | ------ |
-| 14  | Billing: one price source (per-property label + computed total), and a price-migration path for snapshots                                        | 10-B4/B5    | M      |
-| 15  | Billing: carry or collect the overdue balance on upgrade; block plan changes while past due                                                      | 10-B2       | M      |
-| 16  | Billing: prevent archiving a plan with live subscribers; notify and migrate                                                                      | 10-B3       | S      |
-| 17  | Billing: write `purpose`, period bounds, `receipt_number`, `period_paid_php`; use the ledger for credits/refunds                                 | 10-B8       | M      |
-| 18  | Billing: add cancel-at-period-end and explicit proration (or state "no proration" in the dialog)                                                 | 10-B9/B10   | M      |
-| 19  | Billing: expire pending checkouts (TTL + sweeper) and stop reusing unverified links; map the unique-constraint error to a friendly state         | 10-B6       | S      |
-| 20  | Billing: fix payout processor fee / platform net columns and the direct-link 5% rate                                                             | 05 / 10-B12 | S      |
-| 21  | Enforce plan features on `finance-*`, `analytics-summary`, `maintenance-items`, `social-inbox-threads`                                           | 09-R5       | S      |
-| 22  | Parking member permission presets (role fallback when `permissions` is empty)                                                                    | 09-R6       | S      |
-| 23  | Stop treating `ADMIN_ALLOWED_EMAILS` as tenant membership; add a platform-staff audit trail                                                      | 09-R4       | M      |
-| 24  | Expose `feature_overrides` per org and add global switches for booking intake, email and checkout                                                | 04          | M      |
-| 25  | Trim `list-bookings` / inbox list DTOs to rendered columns                                                                                       | 16          | M      |
-| 26  | Add a cached `workspace-bootstrap` endpoint and remove duplicate query keys (`dashboard-assistant-settings`, `list-bookings`)                    | 16          | M      |
-| 27  | Lazy-load Sentry and PostHog out of the initial bundle                                                                                           | 16          | S      |
-| 28  | Verify `VITE_SUPABASE_IMAGE_TRANSFORMS=true` in production (egress)                                                                              | 16          | S      |
-| 29  | Make payment receipts private and serve signed URLs                                                                                              | 15-S3       | S      |
-| 30  | Add the three missing `config.toml` function entries (notification-preferences, telegram-delivery-settings, telegram-message-log) and a CI check | 15-S4       | S      |
-| 31  | Hash invitation tokens                                                                                                                           | 15-S5       | S      |
-| 32  | Add idempotency to checkout creation and submit-form                                                                                             | 15-S9       | S      |
-| 33  | Delete, or add migrations for, the 7 orphan tables; add a schema-drift CI check                                                                  | 14-C2       | M      |
-| 34  | Generate and use `database.types.ts`                                                                                                             | 14-C1       | M      |
-| 35  | Add a publish/unpublish control for public pages                                                                                                 | 13-P1       | S      |
-| 36  | Remove the duplicate Guest experience section and the dead client validator; wire field-level validation                                         | 12-S5/S6    | S      |
-| 37  | Add mobile section navigation to org/property/parking settings                                                                                   | 06-X2       | M      |
-| 38  | Fix the AI video unit economics and bill timed-out provider jobs                                                                                 | 16          | M      |
-| 39  | Make the notification count badge pass AA contrast; fix `aria-label` on role-less elements; name the unnamed switch and tab strips               | 06-A / 04   | S      |
-| 40  | Add an empty state to the feature-availability "Off only" filter                                                                                 | 04-A20      | S      |
-| 46  | Give the mobile More sheet nav the flexible height (151px scroll hole at 320)                                                                    | 17-V2       | S      |
-| 47  | Collapse the admin org sub-nav below `xl` and step the KPI grid 4 → 2 (MRR truncation at 1024)                                                   | 17-V3       | S      |
-| 48  | Add an affordance or column drop for the bookings table at 1024                                                                                  | 17-V4       | S      |
-| 49  | Fix the 320px home showcase overflow and the above-the-fold booking rows                                                                         | 17-V5/V6    | S      |
-| 50  | Raise touch targets to 44px (calendar cells, 24px icon buttons)                                                                                  | 17-V7       | M      |
+| #   | Fix                                                                                                                                              | Report         | Effort |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------- | ------ |
+| 14  | Billing: one price source (per-property label + computed total), and a price-migration path for snapshots                                        | 10-B4/B5       | M      |
+| 15  | Billing: carry or collect the overdue balance on upgrade; block plan changes while past due                                                      | 10-B2          | M      |
+| 16  | Billing: prevent archiving a plan with live subscribers; notify and migrate                                                                      | 10-B3          | S      |
+| 17  | Billing: write `purpose`, period bounds, `receipt_number`, `period_paid_php`; use the ledger for credits/refunds                                 | 10-B8          | M      |
+| 18  | Billing: add cancel-at-period-end and explicit proration (or state "no proration" in the dialog)                                                 | 10-B9/B10      | M      |
+| 19  | Billing: expire pending checkouts (TTL + sweeper) and stop reusing unverified links; map the unique-constraint error to a friendly state         | 10-B6          | S      |
+| 20  | Billing: fix payout processor fee / platform net columns and the direct-link 5% rate                                                             | 05 / 10-B12    | S      |
+| 21  | Enforce plan features on `finance-*`, `analytics-summary`, `maintenance-items`, `social-inbox-threads`                                           | 09-R5          | S      |
+| 22  | Parking member permission presets (role fallback when `permissions` is empty)                                                                    | 09-R6          | S      |
+| 23  | Stop treating `ADMIN_ALLOWED_EMAILS` as tenant membership; add a platform-staff audit trail                                                      | 09-R4          | M      |
+| 24  | Expose `feature_overrides` per org and add global switches for booking intake, email and checkout                                                | 04             | M      |
+| 25  | Trim `list-bookings` / inbox list DTOs to rendered columns                                                                                       | 16             | M      |
+| 26  | Add a cached `workspace-bootstrap` endpoint and remove duplicate query keys (`dashboard-assistant-settings`, `list-bookings`)                    | 16             | M      |
+| 27  | Lazy-load Sentry and PostHog out of the initial bundle                                                                                           | 16             | S      |
+| 28  | Verify `VITE_SUPABASE_IMAGE_TRANSFORMS=true` in production (egress)                                                                              | 16             | S      |
+| 29  | Make payment receipts private and serve signed URLs                                                                                              | 15-S3          | S      |
+| 30  | Add the three missing `config.toml` function entries (notification-preferences, telegram-delivery-settings, telegram-message-log) and a CI check | 15-S4          | S      |
+| 31  | Hash invitation tokens                                                                                                                           | 15-S5          | S      |
+| 32  | Add idempotency to checkout creation and submit-form                                                                                             | 15-S9          | S      |
+| 33  | Delete, or add migrations for, the 7 orphan tables; add a schema-drift CI check                                                                  | 14-C2          | M      |
+| 34  | Generate and use `database.types.ts`                                                                                                             | 14-C1          | M      |
+| 35  | Add a publish/unpublish control for public pages                                                                                                 | 13-P1          | S      |
+| 36  | Remove the duplicate Guest experience section and the dead client validator; wire field-level validation                                         | 12-S5/S6       | S      |
+| 37  | Add mobile section navigation to org/property/parking settings                                                                                   | 06-X2          | M      |
+| 38  | Fix the AI video unit economics and bill timed-out provider jobs                                                                                 | 16             | M      |
+| 39  | Make the notification count badge pass AA contrast; fix `aria-label` on role-less elements; name the unnamed switch and tab strips               | 06-A / 04      | S      |
+| 40  | Add an empty state to the feature-availability "Off only" filter                                                                                 | 04-A20         | S      |
+| 46  | Give the mobile More sheet nav the flexible height (151px scroll hole at 320)                                                                    | 17-V2          | S      |
+| 47  | Collapse the admin org sub-nav below `xl` and step the KPI grid 4 → 2 (MRR truncation at 1024)                                                   | 17-V3          | S      |
+| 48  | Add an affordance or column drop for the bookings table at 1024                                                                                  | 17-V4          | S      |
+| 49  | Fix the 320px home showcase overflow and the above-the-fold booking rows                                                                         | 17-V5/V6       | S      |
+| 50  | Raise touch targets to 44px (calendar cells, 24px icon buttons)                                                                                  | 17-V7          | M      |
+| 51  | Wire the parking dashboard cards to real data (cash flow, breakdown, transactions, calendar)                                                     | 22-P1-2        | M      |
+| 52  | Build parking attention hrefs from the parking scope; filter parking notifications to parking events                                             | 22-P1-1/6      | S      |
+| 53  | Add a confirmation + undo to parking approve/complete                                                                                            | 22-P1-3        | S      |
+| 54  | Handle a live offer without a broadcast row ("no longer available") and stop showing a countdown                                                 | 22-P1-4        | S      |
+| 55  | Fix parking-scoped Meta conversation resolution in `social-inbox-threads`                                                                        | 22-P1-5        | M      |
+| 56  | Fix the Analytics PDF exporter for the stored review payload shape                                                                               | 19-D3-1        | S      |
+| 57  | Show a human "email unavailable" path for OTP-gated saves instead of the raw error                                                               | 19-D3-10       | S      |
+| 58  | Give the Setup Guide a visible dismiss and remember it; do not block deep links                                                                  | 19-D3-2        | S      |
+| 59  | Render the org bookings date control (or a range chip) at org scope                                                                              | 21             | S      |
+| 60  | Fix the review "empty save deletes" behaviour with validation + confirm                                                                          | 21             | S      |
+| 61  | Reject zero rates and add a Booked state to the parking pricing calendar                                                                         | 22-P2-11/13    | S      |
+| 62  | Fix parking settings: Maps fallback, per-field validation instead of a global Save disable, editable identity                                    | 22-P2-17/18/19 | M      |
+| 63  | Decide and enforce paid-data visibility on Free (page/read gates or documented action-only gating)                                               | 19             | M      |
+| 64  | Make "Ask AI" and Guides functional (or disabled with reason), and fix the Guides link                                                           | 21             | S      |
+| 65  | Show a retry/error state when the edge runtime is unreachable instead of a silent Loading hang                                                   | 22-P2-23       | S      |
 
 ## Structural (plan, do not rush)
 

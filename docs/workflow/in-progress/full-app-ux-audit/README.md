@@ -46,6 +46,10 @@ caching, AI cost, and a 320-2560px responsive matrix.
 | 16  | [Performance, caching and cost](./16-performance-caching-and-cost.md) | Bundle, API volume, payloads, caching, AI unit economics, third parties                                                |
 | 17  | [Responsive and interaction](./17-responsive-design-matrix.md)        | 320-2560px, zoom, touch targets, sheets vs dialogs                                                                     |
 | 18  | [Remediation backlog](./18-remediation-backlog.md)                    | Every P0/P1 sequenced by risk, with effort and the test that should gate each fix                                      |
+| 19  | [Dashboard page inventory](./19-dashboard-page-inventory.md)          | Tier gate matrix, access matrix, cross-cutting dashboard findings                                                      |
+| 20  | [Property dashboard pages](./20-property-dashboard-pages.md)          | Every property page, control, filter and save flow                                                                     |
+| 21  | [Org dashboard pages](./21-org-dashboard-pages.md)                    | Every org page, control, filter and save flow                                                                          |
+| 22  | [Parking dashboard pages](./22-parking-dashboard-pages.md)            | Every parking page, control, filter and save flow                                                                      |
 
 Screenshots: [`screenshots/`](./screenshots), plus `/tmp/audit/*-screens/` for module captures.
 
@@ -61,6 +65,71 @@ Screenshots: [`screenshots/`](./screenshots), plus `/tmp/audit/*-screens/` for m
 | **P3** | Polish: spacing, copy, minor consistency.                                                       |
 
 ---
+
+## Phase 3 findings (dashboard deep dive)
+
+Scoped to dashboard pages: every org, property and parking page, every listing, five plan tiers and
+six access shapes. Detail: [19](./19-dashboard-page-inventory.md), [20](./20-property-dashboard-pages.md),
+[21](./21-org-dashboard-pages.md), [22](./22-parking-dashboard-pages.md).
+
+### P0
+
+**P3-1. Parking-only teammates cannot use the parking dashboard at all.** The seeded STAFF/VIEWER
+parking members have no org membership, and the parking shell resolves through `list-parkings`, which
+requires `org.parkings:view`, so every parking route shows "No organization access" (403). See
+[22-P0-1](./22-parking-dashboard-pages.md).
+
+### P1
+
+**P3-2. The parking dashboard is hardcoded to empty.** Cash flow, breakdown, transactions and the
+calendar are fed `[]` in `ParkingDashboardCalendarSection.tsx` while Finance holds ₱1,400 and 14
+bookings. A paying host is told they have no money. [22-P1-2](./22-parking-dashboard-pages.md)
+
+**P3-3. The org bookings list is silently month-scoped.** The org scope renders no date control, no
+chip and no label, yet always applies the current month. Bookings outside it are unreachable without
+editing the URL. [21](./21-org-dashboard-pages.md)
+
+**P3-4. Parking attention chips and notifications leak property context.** "Pending review" opens
+property bookings; the parking feed lists property check-ins, checkouts and refunds. [22-P1-1/6]
+
+**P3-5. Parking approve and complete fire on one click** with no confirmation and no undo, while
+cancel and decline do confirm. [22-P1-3]
+
+**P3-6. A live "Finding host" offer cannot be opened** because the booking has no broadcast row; the
+list still shows a countdown. [22-P1-4]
+
+**P3-7. A parking Facebook thread is invisible** in the parking inbox (`social-inbox-threads` returns
+empty for a conversation that exists). [22-P1-5]
+
+**P3-8. Analytics "Export PDF" is broken** and shows a raw JS error ("Cannot read properties of
+undefined (reading 'length')") because the exporter reads `strengths/improvements/avoid` while the
+stored review uses `wins/risks/actions`. [19-D3-1](./19-dashboard-page-inventory.md)
+
+**P3-9. OTP-gated saves are blocked when email is unavailable.** Saving a template opens "Verify
+template changes", Send OTP returns "Email is not configured" verbatim, and the change cannot be saved.
+The same step-up flow guards other sensitive saves. [19-D3-10](./19-dashboard-page-inventory.md)
+
+**P3-10. A new listing's Setup Guide takes over every deep link.** Opening Finance, Bookings or
+Analytics on a fresh listing shows the full-page Setup Guide with no visible close; Escape dismisses it
+but nothing remembers that. [19-D3-2](./19-dashboard-page-inventory.md)
+
+**P3-11. Paid data is visible on Free; only actions are gated.** Finance, Analytics, Maintenance,
+Inbox and Calendar Sync read APIs all return 200 on Free/Starter; only export/import/sync writes carry
+`upgradeHook`. If those capabilities are meant to be paid-only, the pages and reads need the gate.
+[19 tier matrix](./19-dashboard-page-inventory.md)
+
+### P2 highlights
+
+- Review respond with an empty box silently deletes the response ("Response removed"), no confirm.
+- Parking pricing accepts and saves a ₱0 nightly rate; book nights have no "Booked" state; base-rate
+  maths does not add up.
+- Parking settings: Google Maps error panel blocks the map pin; Save is globally disabled when 0
+  amenities are selected; slot identity fields are readonly yet marked required.
+- Org parkings list still reports 0/₱0/0% for a slot with 7 bookings (server hardcodes zeros).
+- Org dashboard revenue (₱44,740) disagrees with Analytics (₱46,550).
+- "Ask AI" and Guides are dead ends in Help; Guides tile is mislinked.
+- The mobile More sheet gives the module list a 151px window at 320.
+- Dashboard exports behave three different ways (chooser + PDF, direct CSV, crash).
 
 ## Phase 2 findings (deep dive)
 
@@ -401,41 +470,49 @@ renders, 0 unhandled JS exceptions, 54 curated screenshots kept in
 Strongest surfaces and the clearest visual defects. Every image is a 1440x900 desktop capture unless
 the filename says mobile.
 
-| Image                                                                                    | What it shows                                                                      |
-| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| [06-booking-detail-review.png](./screenshots/06-booking-detail-review.png)               | Booking detail, Pending Review gate, step deck, guest view                         |
-| [07-property-finance-desktop.png](./screenshots/07-property-finance-desktop.png)         | Property finance: KPIs, cash flow, donut with legend (the pattern the others lack) |
-| [08-property-pricing-desktop.png](./screenshots/08-property-pricing-desktop.png)         | Pricing calendar with rate pills and the fees rail                                 |
-| [09-property-maintenance-desktop.png](./screenshots/09-property-maintenance-desktop.png) | Maintenance list: mixed status pills and dashes                                    |
-| [11-property-templates.png](./screenshots/11-property-templates.png)                     | Templates editor before dirty state (no Save visible)                              |
-| [13-inbox-thread.png](./screenshots/13-inbox-thread.png)                                 | Inbox thread, composer, "7h 17m left" reply window                                 |
-| [17-guest-form-desktop.png](./screenshots/17-guest-form-desktop.png)                     | Guest form step 1 at 1440 (narrow card, empty margins)                             |
-| [19-guest-trip-after-submit.png](./screenshots/19-guest-trip-after-submit.png)           | Trip page immediately after a real submit                                          |
-| [20-guest-home-mobile.png](./screenshots/20-guest-home-mobile.png)                       | Marketing home at 390                                                              |
-| [22-guest-form-mobile.png](./screenshots/22-guest-form-mobile.png)                       | Guest form at 390 with "Guest 1/5" progress                                        |
-| [23-bookings-mobile.png](./screenshots/23-bookings-mobile.png)                           | Bookings list at 390: 2x2 stage cards, card view                                   |
-| [24-booking-detail-mobile.png](./screenshots/24-booking-detail-mobile.png)               | Booking detail at 390: stacked chrome                                              |
-| [30-404.png](./screenshots/30-404.png)                                                   | Branded 404                                                                        |
-| [31-dark-mode-bookings.png](./screenshots/31-dark-mode-bookings.png)                     | Dark theme on a dense table                                                        |
-| [32-page-editor-showcase.png](./screenshots/32-page-editor-showcase.png)                 | Page editor: templates, live preview, device toggle                                |
-| [34-onboarding.png](./screenshots/34-onboarding.png)                                     | New host onboarding, step 1 of 3                                                   |
-| [46-admin-org-hub-mobile.png](./screenshots/46-admin-org-hub-mobile.png)                 | Org hub at 390 with no section rail                                                |
-| [47-admin-edit-pro-dialog.png](./screenshots/47-admin-edit-pro-dialog.png)               | "Edit pro" dialog for the Business plan                                            |
-| [49-parking-detail-blank-hero.png](./screenshots/49-parking-detail-blank-hero.png)       | Public parking detail with the 404 hero                                            |
-| [50-host-profile-seed-copy.png](./screenshots/50-host-profile-seed-copy.png)             | Public host profile showing "Hosted by seed-owner"                                 |
-| [51-guest-help-empty.png](./screenshots/51-guest-help-empty.png)                         | Guest help empty state                                                             |
-| [52-account-trips.png](./screenshots/52-account-trips.png)                               | Account trips list                                                                 |
-| [54-parking-bookings.png](./screenshots/54-parking-bookings.png)                         | Parking bookings with marketplace statuses                                         |
-| [56-org-settings.png](./screenshots/56-org-settings.png)                                 | Org settings with disabled AI entries                                              |
-| [57-notifications-panel.png](./screenshots/57-notifications-panel.png)                   | Notification panel                                                                 |
-| [66-team-counts.png](./screenshots/66-team-counts.png)                                   | Team KPIs that do not reconcile                                                    |
-| [67-org-plans-discount.png](./screenshots/67-org-plans-discount.png)                     | Plans page with the unapplied 20% promo                                            |
-| [68-org-bookings-no-kanban.png](./screenshots/68-org-bookings-no-kanban.png)             | Org bookings view switcher without a board                                         |
-| [75-checkout-503.png](./screenshots/75-checkout-503.png)                                 | Checkout with no provider configured: generic toast, failed row                    |
-| [77-more-sheet-320.png](./screenshots/77-more-sheet-320.png)                             | More sheet at 320: 3 of 15 modules in a 151px window                               |
-| [78-admin-org-1024.png](./screenshots/78-admin-org-1024.png)                             | Admin org hub at 1024: MRR truncated                                               |
-| [79-bookings-1024.png](./screenshots/79-bookings-1024.png)                               | Bookings table at 1024 with hidden horizontal scroll                               |
-| [80-home-320-overflow.png](./screenshots/80-home-320-overflow.png)                       | Guest home at 320: showcase clipped                                                |
+| Image                                                                                        | What it shows                                                                      |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [06-booking-detail-review.png](./screenshots/06-booking-detail-review.png)                   | Booking detail, Pending Review gate, step deck, guest view                         |
+| [07-property-finance-desktop.png](./screenshots/07-property-finance-desktop.png)             | Property finance: KPIs, cash flow, donut with legend (the pattern the others lack) |
+| [08-property-pricing-desktop.png](./screenshots/08-property-pricing-desktop.png)             | Pricing calendar with rate pills and the fees rail                                 |
+| [09-property-maintenance-desktop.png](./screenshots/09-property-maintenance-desktop.png)     | Maintenance list: mixed status pills and dashes                                    |
+| [11-property-templates.png](./screenshots/11-property-templates.png)                         | Templates editor before dirty state (no Save visible)                              |
+| [13-inbox-thread.png](./screenshots/13-inbox-thread.png)                                     | Inbox thread, composer, "7h 17m left" reply window                                 |
+| [17-guest-form-desktop.png](./screenshots/17-guest-form-desktop.png)                         | Guest form step 1 at 1440 (narrow card, empty margins)                             |
+| [19-guest-trip-after-submit.png](./screenshots/19-guest-trip-after-submit.png)               | Trip page immediately after a real submit                                          |
+| [20-guest-home-mobile.png](./screenshots/20-guest-home-mobile.png)                           | Marketing home at 390                                                              |
+| [22-guest-form-mobile.png](./screenshots/22-guest-form-mobile.png)                           | Guest form at 390 with "Guest 1/5" progress                                        |
+| [23-bookings-mobile.png](./screenshots/23-bookings-mobile.png)                               | Bookings list at 390: 2x2 stage cards, card view                                   |
+| [24-booking-detail-mobile.png](./screenshots/24-booking-detail-mobile.png)                   | Booking detail at 390: stacked chrome                                              |
+| [30-404.png](./screenshots/30-404.png)                                                       | Branded 404                                                                        |
+| [31-dark-mode-bookings.png](./screenshots/31-dark-mode-bookings.png)                         | Dark theme on a dense table                                                        |
+| [32-page-editor-showcase.png](./screenshots/32-page-editor-showcase.png)                     | Page editor: templates, live preview, device toggle                                |
+| [34-onboarding.png](./screenshots/34-onboarding.png)                                         | New host onboarding, step 1 of 3                                                   |
+| [46-admin-org-hub-mobile.png](./screenshots/46-admin-org-hub-mobile.png)                     | Org hub at 390 with no section rail                                                |
+| [47-admin-edit-pro-dialog.png](./screenshots/47-admin-edit-pro-dialog.png)                   | "Edit pro" dialog for the Business plan                                            |
+| [49-parking-detail-blank-hero.png](./screenshots/49-parking-detail-blank-hero.png)           | Public parking detail with the 404 hero                                            |
+| [50-host-profile-seed-copy.png](./screenshots/50-host-profile-seed-copy.png)                 | Public host profile showing "Hosted by seed-owner"                                 |
+| [51-guest-help-empty.png](./screenshots/51-guest-help-empty.png)                             | Guest help empty state                                                             |
+| [52-account-trips.png](./screenshots/52-account-trips.png)                                   | Account trips list                                                                 |
+| [54-parking-bookings.png](./screenshots/54-parking-bookings.png)                             | Parking bookings with marketplace statuses                                         |
+| [56-org-settings.png](./screenshots/56-org-settings.png)                                     | Org settings with disabled AI entries                                              |
+| [57-notifications-panel.png](./screenshots/57-notifications-panel.png)                       | Notification panel                                                                 |
+| [66-team-counts.png](./screenshots/66-team-counts.png)                                       | Team KPIs that do not reconcile                                                    |
+| [67-org-plans-discount.png](./screenshots/67-org-plans-discount.png)                         | Plans page with the unapplied 20% promo                                            |
+| [68-org-bookings-no-kanban.png](./screenshots/68-org-bookings-no-kanban.png)                 | Org bookings view switcher without a board                                         |
+| [75-checkout-503.png](./screenshots/75-checkout-503.png)                                     | Checkout with no provider configured: generic toast, failed row                    |
+| [77-more-sheet-320.png](./screenshots/77-more-sheet-320.png)                                 | More sheet at 320: 3 of 15 modules in a 151px window                               |
+| [78-admin-org-1024.png](./screenshots/78-admin-org-1024.png)                                 | Admin org hub at 1024: MRR truncated                                               |
+| [79-bookings-1024.png](./screenshots/79-bookings-1024.png)                                   | Bookings table at 1024 with hidden horizontal scroll                               |
+| [80-home-320-overflow.png](./screenshots/80-home-320-overflow.png)                           | Guest home at 320: showcase clipped                                                |
+| [81-analytics-export-error.png](./screenshots/81-analytics-export-error.png)                 | Analytics Export PDF: raw JS error toast                                           |
+| [82-parking-dashboard-empty-cards.png](./screenshots/82-parking-dashboard-empty-cards.png)   | Parking dashboard: hardcoded empty cards                                           |
+| [83-parking-inbox-empty.png](./screenshots/83-parking-inbox-empty.png)                       | Parking inbox: hidden Facebook thread                                              |
+| [84-parking-settings-save-disabled.png](./screenshots/84-parking-settings-save-disabled.png) | Parking settings: global Save disabled with 0 amenities                            |
+| [85-setup-guide-overlay.png](./screenshots/85-setup-guide-overlay.png)                       | Setup Guide blocking a dashboard deep link                                         |
+| [86-template-save-otp-error.png](./screenshots/86-template-save-otp-error.png)               | Template save: "Email is not configured"                                           |
+| [87-free-tier-analytics-visible.png](./screenshots/87-free-tier-analytics-visible.png)       | Free tier: full analytics visible, export gated                                    |
+| [88-mobile-plans-upgrade-ticket.png](./screenshots/88-mobile-plans-upgrade-ticket.png)       | Mobile Plans: "Upgrade" opens a support ticket                                     |
 
 ## How to reproduce
 
