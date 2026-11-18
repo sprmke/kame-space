@@ -90,7 +90,9 @@ test.describe('@ci booking chat shortcut', () => {
       omitPermissions: ['inbox:view'],
     });
     await page.goto(ORG_BOOKINGS);
-    await expect(page.getByText('Jane Guest').first()).toBeVisible({ timeout: 20_000 });
+    await expect(
+      page.getByRole('button', { name: /Open booking for Jane Guest/i }).first()
+    ).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole('button', { name: /Open chat with/i })).toHaveCount(0);
   });
 
@@ -106,7 +108,10 @@ test.describe('@ci booking chat shortcut', () => {
 
   test('clicking the row still opens the booking, not the chat', async ({ page }) => {
     await openBookings(page, [chat()]);
-    await page.getByText('Jane Guest').first().click();
+    await page
+      .getByRole('button', { name: /Open booking for Jane Guest/i })
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/bookings\/booking-team-e2e-001/);
   });
 
@@ -153,7 +158,14 @@ test.describe('@ci booking chat shortcut', () => {
       chat({ id: 'conv-fb-1', platform: 'facebook', match: 'name' }),
     ]);
     await chatButton.click();
-    await expect(page.getByRole('dialog')).toBeVisible();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    // The sheet fades in; axe would sample the mid-animation colour blend and flag contrast.
+    await dialog.evaluate(async (el) => {
+      await Promise.all(
+        el.getAnimations({ subtree: true }).map((animation) => animation.finished.catch(() => {}))
+      );
+    });
     const results = await new AxeBuilder({ page })
       .include('[role="dialog"]')
       .withTags(['wcag2a', 'wcag2aa'])
