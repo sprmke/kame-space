@@ -1,9 +1,11 @@
 /**
- * Monolith display sizes — fluid clamps anchored to 16px body (`text-base`).
+ * Monolith display sizes — fluid clamps anchored to 16px body (`text-base`). Instrument Serif is
+ * a condensed face, so each step runs about one size up from a regular serif to hold its hierarchy.
  * Scales with editor **Scale** via `--showcase-display-scale` on `.showcase-scope`.
+ *
+ * Every class below is a complete literal on purpose: Tailwind's scanner cannot see a class built
+ * with `${}`, so an interpolated version never produced CSS and the titles fell back to ~24px.
  */
-
-import { showcaseScaledClampExpr } from '@/features/guest/marketing/showcase/lib/showcaseTypographyScale';
 
 /** Template display face — Instrument Serif for hero/section titles (not editor Cormorant). */
 export const monolithDisplayFontClass = 'font-instrument';
@@ -12,22 +14,22 @@ export const monolithDisplayFontClass = 'font-instrument';
 export const monolithHeaderChromeClass = 'font-sans antialiased';
 
 export const monolithHeroTitleClass = [
-  `text-[${showcaseScaledClampExpr('clamp(1.75rem,1.35rem+2.2vw,2.75rem)')}]`,
-  `@md:text-[${showcaseScaledClampExpr('clamp(2rem,1.25rem+2.8vw,3.25rem)')}]`,
-  `@lg:text-[${showcaseScaledClampExpr('clamp(2.25rem,1.5rem+2.2vw,3.5rem)')}]`,
+  'text-[length:calc(clamp(2.5rem,1.9rem_+_3vw,3.5rem)*var(--showcase-display-scale,1))]',
+  '@md:text-[length:calc(clamp(3rem,1.5rem_+_4vw,4.5rem)*var(--showcase-display-scale,1))]',
+  '@lg:text-[length:calc(clamp(3.5rem,1.5rem_+_3.4vw,5.25rem)*var(--showcase-display-scale,1))]',
   'leading-[1.02] tracking-[-0.03em]',
 ].join(' ');
 
 export const monolithSectionTitleClass = [
-  `text-[${showcaseScaledClampExpr('clamp(1.375rem,1.1rem+1.4vw,1.75rem)')}]`,
-  `@md:text-[${showcaseScaledClampExpr('clamp(1.5rem,1.15rem+1.2vw,2rem)')}]`,
-  `@lg:text-[${showcaseScaledClampExpr('clamp(1.625rem,1.25rem+1vw,2.25rem)')}]`,
+  'text-[length:calc(clamp(1.875rem,1.5rem_+_1.6vw,2.25rem)*var(--showcase-display-scale,1))]',
+  '@md:text-[length:calc(clamp(2.125rem,1.4rem_+_1.6vw,2.75rem)*var(--showcase-display-scale,1))]',
+  '@lg:text-[length:calc(clamp(2.5rem,1.5rem_+_1.6vw,3.25rem)*var(--showcase-display-scale,1))]',
   'leading-tight tracking-tight',
 ].join(' ');
 
 export const monolithStatValueClass = [
-  `text-[${showcaseScaledClampExpr('clamp(1.5rem,1.1rem+1.8vw,2rem)')}]`,
-  `@md:text-[${showcaseScaledClampExpr('clamp(1.75rem,1.25rem+1.5vw,2.25rem)')}]`,
+  'text-[length:calc(clamp(1.875rem,1.4rem_+_1.8vw,2.5rem)*var(--showcase-display-scale,1))]',
+  '@md:text-[length:calc(clamp(2.25rem,1.5rem_+_1.5vw,3rem)*var(--showcase-display-scale,1))]',
   'leading-tight tracking-tight',
 ].join(' ');
 

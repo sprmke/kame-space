@@ -10,7 +10,7 @@ export function ShowcaseLegalFooterLink() {
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center pb-[max(0.5rem,env(safe-area-inset-bottom))]">
       <div className="border-border/60 bg-background/80 supports-[backdrop-filter]:bg-background/60 pointer-events-auto rounded-full border px-3 py-1 shadow-sm backdrop-blur-sm">
-        <LegalFooterLinks includeCookies={false} className="text-[11px]" />
+        <LegalFooterLinks includeCookies={false} className="text-xs" />
       </div>
     </div>
   );

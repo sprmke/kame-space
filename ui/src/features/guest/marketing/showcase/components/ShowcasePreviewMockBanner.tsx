@@ -20,7 +20,7 @@ export function ShowcasePreviewMockBanner({ className, variant = 'auto' }: Props
     <span
       role="status"
       className={cn(
-        'showcase-mock-badge inline-flex shrink-0 items-center rounded-md border px-2.5 py-1 text-[11px] font-semibold uppercase leading-none tracking-[0.12em]',
+        'showcase-mock-badge inline-flex shrink-0 items-center rounded-md border px-2.5 py-1 text-xs font-semibold uppercase leading-none tracking-[0.12em]',
         forceOnDark && 'showcase-mock-badge--on-dark',
         forceOnLight && 'showcase-mock-badge--on-light',
         className
