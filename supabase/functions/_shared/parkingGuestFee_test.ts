@@ -91,3 +91,19 @@ Deno.test('host nightly rate: below ₱100 is rejected, ₱100 and very high rat
   assertEquals(validateMoneyField(50_000, 'Weekday rate'), 50_000);
   assertEquals(validateMoneyField(undefined, 'Weekday rate'), null);
 });
+
+Deno.test('the PayMongo amount equals host gross plus the guest fee, to the centavo', async () => {
+  Deno.env.set('SUPABASE_URL', 'http://127.0.0.1:54321');
+  Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role');
+  const { phpToCentavos } = await import('./paymongoClient.ts');
+  // One night, multi-night totals and an odd host rate.
+  for (const hostGross of [100, 325, 900, 1_237, 4_800, 50_000]) {
+    const b = breakdown(hostGross);
+    assertEquals(
+      phpToCentavos(b.guestChargeTotal),
+      phpToCentavos(b.hostGrossTotal) + phpToCentavos(b.guestFeeTotal),
+      `charge ${hostGross}`
+    );
+    assertEquals(b.hostGrossTotal + b.guestFeeTotal, b.guestChargeTotal, `sum ${hostGross}`);
+  }
+});
