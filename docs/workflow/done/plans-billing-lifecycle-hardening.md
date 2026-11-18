@@ -72,6 +72,8 @@ The file was then renamed to `20261343001100` to avoid the ordering problem. Tha
 
 Fixed in #528 by restoring the applied version name (the SQL never changed; the rename was 100% similarity). The runbook now says never to rename an applied migration and to use the `include_all` dispatch instead. `fresh-local-replay` with the privilege probe passes on the restored ordering.
 
+The deploy that followed (#528, merge `29ecd7fd6`, run 44418101494) reported `Remote database is up to date`, redeployed all 345 functions (PR #522 changed `_shared/**`, which forces a full deploy), and passed smoke and migration parity. #522's function fixes are live as of 23:40 UTC on 2026-11-18.
+
 ### Carried forward (not engineering work, so not blocking this plan)
 
 | Item                                                                                                                                                                                                                                                                                                  | Where it is tracked                                                                                   |
