@@ -10,6 +10,9 @@ kind: plan
 
 # Multi-channel calendar sync: Agoda and Booking.com
 
+> **Released dark 2026-11-19.** Implementation is complete. What remains is live verification and the staged
+> rollout, tracked in [`../for-testing/multi-channel-calendar-sync-live-verification.md`](../for-testing/multi-channel-calendar-sync-live-verification.md).
+
 > **Revised 2026-11-16 (execute-plan):** audited against `develop` before building.
 >
 > - **Ordering:** the hard prerequisite (conflict plan Phase 1) is **not shipped** —
