@@ -66,6 +66,7 @@ run_step "unit test quality (no new export-only tests)" node scripts/dev/check-u
 run_step "edge handler coverage ratchet" node scripts/dev/check-edge-test-coverage.mjs
 run_step "route guides point at real specs" node scripts/dev/check-guide-spec-refs.mjs
 run_step "migration versions do not collide" bash scripts/dev/check-migration-version-collisions.sh
+run_step "deploy retry helper self-test" bash scripts/dev/test-deploy-retry.sh
 run_step "vercel cache/security headers" bash scripts/dev/check-vercel-headers.sh
 run_step "CSP theme script hash (production-readiness doc 22)" bash scripts/dev/check-csp-theme-hash.sh
 run_step "storage upload cacheControl" node scripts/dev/check-storage-cache-control.mjs
