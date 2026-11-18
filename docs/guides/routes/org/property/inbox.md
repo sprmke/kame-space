@@ -2,7 +2,7 @@
 title: 'Property Guest Inbox'
 status: active
 tags: [guides, routes, org, property]
-updated: 2026-09-21
+updated: 2026-11-18
 ---
 
 # Property Guest Inbox
@@ -108,6 +108,7 @@ trip page.
 
 ## Behavior
 
+- **Deep links:** `?conversationId=` opens a thread and `?platform=web|facebook|instagram` selects its tab (used by the bookings list chat icon). `?search=` starts with the search box filled (used by **Search Messages**).
 - **Manage actions:** Desktop (`lg+`) shows separate header buttons — **Channels**, **Quick replies**, **Automation** — each opening its modal. Mobile (`max-lg`) groups them in the hero **Inbox actions** menu (bottom sheet).
 - **List / thread layout:** driven by the inbox card width (container query), not the viewport, so AI mode canvas and narrow desktops behave like tablets. Below 42rem card width: one pane at a time (list, then thread with a back button). From 42rem: side-by-side with a 17rem list. From 56rem: 400px list.
 - **Channel order:** Inbox tabs, quick-reply filters/groups, and automation platform toggles use **All** (when present), then **Chat**, **Facebook**, **Instagram**.
@@ -143,20 +144,21 @@ trip page.
 
 ## API reference
 
-| Function                             | Notes                                                                                                                                                                                                   |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `meta-inbox-*`                       | OAuth / status / disconnect / backfill — require `property_id`; channel connect uses `inbox.channels:add` (`meta-inbox-oauth-start` / `meta-inbox-oauth-pages` / complete) + `metaChatChannel` on start |
-| `meta-inbox-resubscribe`             | Re-verify + repair Page webhook in place (`inbox.channels:add`)                                                                                                                                         |
-| `social-inbox-threads`               | Scoped list                                                                                                                                                                                             |
-| `social-inbox-messages`              | Messages / mark read / edit / unsend                                                                                                                                                                    |
-| `social-inbox-send`                  | Replies; optional `useHumanAgentTag` for 24h–7d Meta DMs                                                                                                                                                |
-| `social-inbox-templates`             | Quick reply CRUD (`inbox.quickReplies:*` + `property_id`); POST/PATCH also require `quickReplies` — GET/DELETE stay ungated                                                                             |
-| `chat-templates`                     | Read-only property templates for the composer. List excludes email; `template_key` renders one preview (optional `conversation_id` / `booking_id`). Requires `inbox:view`.                              |
-| `social-inbox-settings`              | Automation GET/PATCH (`inbox.automation:edit` + `property_id`)                                                                                                                                          |
-| `social-inbox-ai-suggest`            | AI draft (`inbox.messages:edit` + `property_id`)                                                                                                                                                        |
-| `issue-booking-document-share-token` | Issue/reuse the GAF/Pet share token for a booking (`bookings.detail.workflow:edit` + `property_id`)                                                                                                     |
-| `upload-inbox-chat-asset`            | Host web-chat attachment upload (`inbox.messages:edit` + scope)                                                                                                                                         |
-| `get-guest-booking-document`         | Public GET — resolves `?token=&doc=gaf\|pet` to a fresh signed URL                                                                                                                                      |
+| Function                             | Notes                                                                                                                                                                                                    |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `meta-inbox-*`                       | OAuth / status / disconnect / backfill — require `property_id`; channel connect uses `inbox.channels:add` (`meta-inbox-oauth-start` / `meta-inbox-oauth-pages` / complete) + `metaChatChannel` on start  |
+| `meta-inbox-resubscribe`             | Re-verify + repair Page webhook in place (`inbox.channels:add`)                                                                                                                                          |
+| `social-inbox-threads`               | Scoped list                                                                                                                                                                                              |
+| `social-inbox-booking-chats`         | Threads for one booking (`booking_id` + `property_id`/`parking_id`, `inbox:view`). Tiers: linked `booking_id`, same signed-in guest, name match (Chat/Facebook/Instagram; Chat only for parking). Max 10 |
+| `social-inbox-messages`              | Messages / mark read / edit / unsend                                                                                                                                                                     |
+| `social-inbox-send`                  | Replies; optional `useHumanAgentTag` for 24h–7d Meta DMs                                                                                                                                                 |
+| `social-inbox-templates`             | Quick reply CRUD (`inbox.quickReplies:*` + `property_id`); POST/PATCH also require `quickReplies` — GET/DELETE stay ungated                                                                              |
+| `chat-templates`                     | Read-only property templates for the composer. List excludes email; `template_key` renders one preview (optional `conversation_id` / `booking_id`). Requires `inbox:view`.                               |
+| `social-inbox-settings`              | Automation GET/PATCH (`inbox.automation:edit` + `property_id`)                                                                                                                                           |
+| `social-inbox-ai-suggest`            | AI draft (`inbox.messages:edit` + `property_id`)                                                                                                                                                         |
+| `issue-booking-document-share-token` | Issue/reuse the GAF/Pet share token for a booking (`bookings.detail.workflow:edit` + `property_id`)                                                                                                      |
+| `upload-inbox-chat-asset`            | Host web-chat attachment upload (`inbox.messages:edit` + scope)                                                                                                                                          |
+| `get-guest-booking-document`         | Public GET — resolves `?token=&doc=gaf\|pet` to a fresh signed URL                                                                                                                                       |
 
 **Unsaved changes.** Closing with unsaved edits (X, Esc, outside click, Cancel, or leaving the page) asks to **Save & close**, **Discard**, or **Keep editing**. Shared guard: [`unsaved-changes.md`](../../../../architecture/unsaved-changes.md).
 
@@ -185,6 +187,7 @@ trip page.
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
 | Unit  | `supabase/functions/_shared/inboxAiSafetyGuard_test.ts`                                                                                                                       | —                     |
 | E2E   | `ui/e2e/features/inbox/inboxThreadListSmoke.spec.ts` (`@ci`) — "open Facebook thread shows org Meta badge", "cross-property match suggests switching to the matched property" | Meta OAuth, live send |
+| E2E   | `ui/e2e/features/inbox/inboxDeepLink.spec.ts` (`@ci`) — `?conversationId`, `?search`, unknown `?platform`                                                                     | —                     |
 | E2E   | `ui/e2e/features/dashboard/inboxChatTemplates.spec.ts` (`@ci`) — Insert → Templates, preview → Send body, email templates hidden, 375px sheet                                 | Live Meta flattening  |
 | N/A   | —                                                                                                                                                                             | Meta connect manual   |
 

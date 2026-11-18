@@ -140,6 +140,8 @@ export type ParkingFlowState = {
   endorsementSendFails: boolean;
   /** Another host wins the claim race; this host gets 409 already_claimed. */
   claimFailsAlreadyClaimed: boolean;
+  /** Last `social-inbox-booking-chats` request URL (the bookings list chat icon). */
+  lastBookingChatsUrl: string | null;
   /** Guest taps Pay now after the payment window closed; checkout returns 409. */
   paymentWindowExpiredOnCheckout: boolean;
   /** Archive/delete warnings from parking-settings. */
@@ -188,6 +190,7 @@ export function createParkingFlowState(): ParkingFlowState {
     complimentaryOwnerParking: false,
     endorsementSendFails: false,
     claimFailsAlreadyClaimed: false,
+    lastBookingChatsUrl: null,
     paymentWindowExpiredOnCheckout: false,
   };
 }
@@ -871,6 +874,27 @@ export async function installParkingFlowMocks(page: Page, state: ParkingFlowStat
             orgSlug: 'sample-stays-ph',
             parkingSlug: 'slot-12a',
             parkingName: 'Tower 1 · B2 · 12A',
+          },
+        });
+        return;
+      case 'social-inbox-booking-chats':
+        state.lastBookingChatsUrl = route.request().url();
+        await fulfillJson(route, {
+          success: true,
+          data: {
+            conversations: [
+              {
+                id: 'conv-parking-1',
+                platform: 'web',
+                participant_name: 'Jamie Park',
+                participant_avatar_url: null,
+                last_message_at: '2026-08-24T16:30:00.000Z',
+                last_message_preview: 'Is the slot still free?',
+                unread_count: 1,
+                booking_id: null,
+                match: 'name',
+              },
+            ],
           },
         });
         return;
