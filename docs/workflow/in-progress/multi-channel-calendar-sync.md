@@ -1008,9 +1008,14 @@ There is one hosted Supabase project (`fworvijbrwpyngycotbz`, dev and production
    `CALENDAR_CHANNELS_ENABLED=agoda,booking_com` and
    `CALENDAR_CHANNELS_BETA_ORG_IDS=<organization id of kame-test-tenant>`.
    Edge secrets apply to new invocations, no redeploy. Rolling back is clearing the first secret.
-3. In `kame-test-tenant/kame-test-tenant`, Pricing, Channel sync: connect Booking.com (paste the
+   The test tenant id is `f50a7039-365c-4ef9-a80e-867d51ed5372`. Live verification status and the
+   verified cron and database state: [`../for-testing/multi-channel-calendar-sync-live-verification.md`](../for-testing/multi-channel-calendar-sync-live-verification.md).
+3. In `kame-test-tenant` / `kame-test-property`, Pricing, Channel sync: connect Booking.com (paste the
    export link; sending dates turns on by itself), copy the Booking.com link into Booking.com
    Sync calendars. Leave **Create bookings** off.
+   That property is `INACTIVE` on purpose, so its export link answers `410` and the channel cannot
+   reach **Two-way** there. Use it to prove the connect path only; prove the send side on a live
+   property.
 4. Close one date and make one test reservation on Booking.com, then read the fixture from the feed
    and fill S3 to S7 and S9 to S11. Repeat for Agoda once approved.
 5. Widen: clear `CALENDAR_CHANNELS_BETA_ORG_IDS` only after the live QA matrix passes and the host copy
