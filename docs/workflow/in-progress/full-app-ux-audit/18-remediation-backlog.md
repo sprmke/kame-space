@@ -11,6 +11,11 @@ Every P0 and P1 from both phases, sequenced by risk and dependency. Effort is a 
 one engineer including a test, not a commitment. "Gate" means a test that should exist so the class of
 bug cannot return.
 
+> **Since this list was written:** the public surface got its own pass. 181 newer issues, ranked and
+> grouped with a UI-impact flag for each, live in [29-issue-register.md](./29-issue-register.md) (details in
+> [29b](./29-issue-details.md)). Treat 18 as the functional/security backlog and 29 as the current
+> product-wide list; where they overlap, the ids cross-reference.
+
 ## Stop-the-line (P0)
 
 | #   | Fix                                                                                                                                                  | Report   | Effort | Gate                                                                           |

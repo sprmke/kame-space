@@ -55,8 +55,13 @@ caching, AI cost, and a 320-2560px responsive matrix.
 | 25  | [Host dashboard design critique](./25-host-dashboard-design.md)         | Org and property dashboards: hierarchy, density, mobile, copy                                                          |
 | 26  | [Parking and super admin design critique](./26-parking-admin-design.md) | Parking workspace and the platform panel                                                                               |
 | 27  | [Design remediation backlog](./27-design-remediation-backlog.md)        | Every design change, sequenced by impact, with the mobile removals called out                                          |
+| 28  | [Public surface audit](./28-public-surface-audit.md)                    | Marketing, listings, guest flows, auth, account: narrative + page inventory + verification                             |
+| 29  | [Issue register](./29-issue-register.md)                                | 182 issues ranked and grouped, each flagged for UI impact, with a route index                                          |
+| 29b | [Issue details](./29-issue-details.md)                                  | Full text for every registered issue                                                                                   |
+| —   | [Route inventory](./route-inventory.md)                                 | Route → component file → screenshot id, for agents                                                                     |
+| —   | [Screenshot library](./screenshots/public/README.md)                    | 271 full-page captures + 34 interaction captures + manifest                                                            |
 
-Screenshots: [`screenshots/`](./screenshots), plus `/tmp/audit/*-screens/` for module captures.
+Screenshots: [`screenshots/`](./screenshots) for the curated set, [`screenshots/public/`](./screenshots/public/) for the full public-surface library (per route × viewport, with `manifest.json`).
 
 ---
 
@@ -165,6 +170,74 @@ The month grid on the property/parking dashboard, the `Card | Calendar` toggle o
 form's theme toggle and avatar, the third label per form step, duplicate account tiles, `FLAGS` and
 `Pending 0`, the duplicate rating in the listing sticky bar, the six unlabelled workflow dots, and the
 decorative KPI icon wells. Full list in [27](./27-design-remediation-backlog.md#mobile-removals-explicit).
+
+## Phase 5 findings (every remaining public surface)
+
+The pass that opened every marketing page, listing surface, guest flow, auth screen, account page and the
+dashboard screens the earlier phases never reached: **78 routes, 271 full-page captures, 34 interaction
+captures, 3,230 strings**.
+
+Deliverables: [28 narrative](./28-public-surface-audit.md) · [29 ranked register](./29-issue-register.md)
+(182 issues) · [29b details](./29-issue-details.md) · [route inventory](./route-inventory.md) ·
+[screenshot library](./screenshots/public/README.md) · `issue-register.json` for agents.
+
+### P0
+
+**P5-1. The auth gate is a dead end on every gated intent.** `/contact`, the property booking form and the
+parking form each open a "Log in or sign up" sheet with two buttons, **no close**, no guest path; Escape
+and the backdrop do nothing. The home page says "No account needed."
+
+**P5-2. The guest payment step never shows what the stay costs.** Five steps, and the only figures are
+"Downpayment ₱2,000 / 2 nights stay ₱2,000 / Total due now ₱2,000": no nightly rate, no stay total, no
+balance, and the voucher from step 2 is gone. The guest transfers money to a phone number with nothing to
+reconcile against.
+
+### P1
+
+- **Trip links cannot be opened.** The emailed link shows "Sign in to see your trip", whose copy tells the
+  guest to open the link they are on; a signed-in guest who did not book gets "Booking not found".
+- **The calendar does not distinguish past from booked.** 23 of 30 days are disabled, 22 of them render in
+  the same faint grey, and the disabled CTA explains nothing. Only 19-22 and 25-27 are selectable.
+- **The contact page cannot be used without an account** and has no email form.
+- **Search suggests destinations the catalogue does not have.** Manila, Boracay, Baguio, Cebu and Palawan
+  all lead to zero results.
+- **Parking images all 404.** One Unsplash URL backs every parking card, so alt text draws over empty
+  cards on `/parkings`, the detail page, the development tab and `/hosts`.
+- **The showcase hero has no scrim.** White name, tagline and CTAs on a bright interior photograph.
+- **The showcase publishes the demo host** (`manager.demo@example.com`), and `/hosts/kame-homes` publishes
+  `seed-owner` plus "Local demo host for the canonical seed dataset".
+- **The super-admin sidebar hides 7 of 21 destinations** at 1440x900 inside a 679px box with an invisible
+  scrollbar.
+- **At 1024 the header nav overlaps the theme toggle** by ~39px, with the moon glyph drawn over "Services".
+- **Four browse pages have no h1** (`/search`, `/properties`, `/parkings`, `/developments`); `/for-hosts`
+  has three, two of them from the embedded dashboard mock.
+
+### P2 highlights
+
+- Three plans each carry a recommendation badge ("Best value" / "Most popular" / "Recommended") and the
+  carousel opens on Business.
+- The Free plan advertises "Finance management", a Starter-gated capability.
+- `/services` is a "Coming Soon" stub in the primary nav, with an "Add dates" filter on it.
+- "Reviews" in the host nav points at `#reviews`, which does not exist.
+- One result renders in a four-column grid; `/search` shows "From ₱0 / night" and "1 homes available".
+- Accept-invite renders one sentence with zero links and zero buttons.
+- The account area has no h1 on any of nine pages, two navigations, and a profile that shows the same data
+  twice.
+- Support has 36 answers and no search; `/account/help` has none of them.
+- The public contact address is a Gmail account.
+
+### What holds up
+
+The internal link graph (83 links, all resolve), the 404 page, property detail, development detail, the
+stay guide and showcase content, and the copy tone: zero AI tells, zero em dashes across 3,230 strings. No
+horizontal overflow at 320 on any route measured.
+
+### Corrected after verification
+
+An independent verifier falsified three of eighteen parent claims and they were re-scoped rather than
+published: the random prefill is signed-in-and-dev-build only, the map error appears on scroll, and
+`/accept-invite` is a one-sentence dead end rather than a blank page. Details in
+[28 § Verification](./28-public-surface-audit.md#verification).
 
 ## Phase 3 findings (dashboard deep dive)
 
