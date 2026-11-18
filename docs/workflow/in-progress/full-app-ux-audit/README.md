@@ -157,8 +157,7 @@ sits over "Yes, reserve paid parking" and "Yes, I'm bringing a pet".
 
 One type family, one teal palette with a tested fill/text split, real focus rings, motion that honours
 `prefers-reduced-motion`, no horizontal overflow at 320 on any route measured, layout-matched skeletons,
-actionable empty states, and copy with zero AI tells, zero apology language and no em dashes across 3,300
-strings.
+actionable empty states, and copy with zero AI tells and no em dashes across 3,230 strings.
 
 ### Mobile removals recommended
 

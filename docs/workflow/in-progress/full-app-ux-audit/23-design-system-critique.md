@@ -11,7 +11,7 @@ The parent pass over the design system itself: measured tokens, type scale, cont
 motion, loading, and copy. This is the foundation the page-level critiques in 24-26 sit on. Every number
 below was measured in the running app with Playwright at 320, 390, 768 and 1440, in light and dark.
 
-**Method.** Computed styles sampled across 19-46 routes per viewport; contrast computed against the
+**Method.** Computed styles sampled across 19-45 routes per viewport; contrast computed against the
 resolved background (walking up for the first opaque layer, with gradient fallbacks); tap targets from
 `getBoundingClientRect` (pseudo-element hit pads checked by hand so they are not double-counted); copy
 extracted from leaf text nodes and scanned for length, AI tells, apologies, exclamation marks and em
@@ -266,9 +266,10 @@ Measured (excluding pseudo-element hit pads, which correctly pass — `InfoHint`
 
 ## 5. Copy
 
-The copy audit across 46 routes found **zero** AI-tell phrases, zero apologies ("Oops", "Something went
-wrong") in normal states, one exclamation mark (a mock chat bubble on the home page), and zero em
-dashes. That is a genuine pass. The issues are structural rather than tonal.
+The copy audit across 45 routes found **zero** AI-tell phrases, zero em dashes, and one exclamation mark
+(a mock chat bubble on the home page). The only apology language is Google's own map error string
+("Oops! Something went wrong…"), which the product should never surface (24-P24-3). That is a genuine
+pass. The issues are structural rather than tonal.
 
 ### S18 (P2). Page subtitles and eyebrows are the main redundancy (see S4, S2)
 
@@ -372,7 +373,7 @@ region, so a screen reader says "polite region" with no context.
   that fails on white-on-`bg-primary`.
 - Three shadow tokens, used consistently; no neon stacks.
 - Breakpoint discipline: 320/390/768/1024/1440 all measured clean.
-- Copy free of AI tells, em dashes, and apology language.
+- Copy free of AI tells and em dashes (the one apology string on screen is Google's, not ours).
 - Reduced motion honoured globally.
 
 ---
@@ -411,5 +412,4 @@ region, so a screen reader says "polite region" with no context.
 | 768      | 14              | 1,918              | 1,918          | 344           |
 | 1440     | 17              | 2,222              | 2,222          | 553           |
 
-Themes: light and dark on 5 dashboard/admin routes. Motion: `no-preference` vs `reduce`. Copy: 46 routes,
-3,300 strings.
+Themes: light and dark on 5 dashboard/admin routes. Motion: `no-preference` vs `reduce`. Copy: 45 routes, 3,230 strings.
