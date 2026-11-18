@@ -3,7 +3,6 @@ import { Suspense, type ReactNode } from 'react';
 import { RequireOrgPermission } from '@/features/dashboard/org/components/RequireOrgPermission';
 import { RequireParkingPermission } from '@/features/dashboard/org/components/RequireParkingPermission';
 import { RequirePropertyPermission } from '@/features/dashboard/org/components/RequirePropertyPermission';
-import { RequirePropertySubscriptionAccess } from '@/features/dashboard/plans/components/RequirePropertySubscriptionAccess';
 import type { ORG_SECTION_VIEW_PERMISSION } from '@/features/dashboard/team/lib/orgPermissions';
 import type { ParkingSection } from '@/features/dashboard/team/lib/parkingPermissions';
 import type { PropertySection } from '@/features/dashboard/team/lib/propertyPermissions';
@@ -35,9 +34,7 @@ export function propertyRoute(section: PropertySection, element: ReactNode, skel
   return (
     <RouteSkeletonProvider skeleton={skeleton}>
       <RequirePropertyPermission section={section}>
-        <RequirePropertySubscriptionAccess section={section}>
-          <Suspense fallback={skeleton}>{element}</Suspense>
-        </RequirePropertySubscriptionAccess>
+        <Suspense fallback={skeleton}>{element}</Suspense>
       </RequirePropertyPermission>
     </RouteSkeletonProvider>
   );

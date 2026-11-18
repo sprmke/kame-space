@@ -306,3 +306,33 @@ export async function getPaymongoProviderPaymentState(
 
   return 'unknown';
 }
+
+/**
+ * Expires an open Hosted Checkout Session so a superseded link can no longer be paid. Best effort:
+ * a session that is already paid, expired or unknown is left alone and never throws (the caller
+ * still expires the local transaction, and a late payment is turned into account credit).
+ */
+export async function expirePaymongoCheckoutSession(
+  providerReference: string | null | undefined
+): Promise<'expired' | 'skipped' | 'failed'> {
+  const ref = providerReference?.trim();
+  if (!ref || !isPaymongoCheckoutSessionRef(ref)) return 'skipped';
+  try {
+    const secretKey = getSecretKey();
+    const res = await fetch(
+      `${PAYMONGO_API_V1}/checkout_sessions/${encodeURIComponent(ref)}/expire`,
+      {
+        method: 'POST',
+        headers: { Authorization: authHeader(secretKey), Accept: 'application/json' },
+      }
+    );
+    if (res.ok) return 'expired';
+    // 404 / 400: already expired, paid or not found. Nothing more to do.
+    if (res.status === 404 || res.status === 400 || res.status === 422) return 'skipped';
+    console.error('[paymongoClient] expire checkout session failed', res.status);
+    return 'failed';
+  } catch (err) {
+    console.error('[paymongoClient] expire checkout session threw', err);
+    return 'failed';
+  }
+}

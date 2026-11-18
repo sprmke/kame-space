@@ -1,162 +1,76 @@
 /**
- * Org subscription billing state machine — webhook + cron side effects only.
- * Mutates org_subscriptions + org_payment_transactions; never inline in handlers.
+ * Org subscription billing: PayMongo webhook handling and the hourly billing cycle.
+ * State changes live in orgPaymentFulfillment.ts (payments) and orgBillingLifecycle.ts
+ * (transitions); this module decides which one runs and when. Never inline in handlers.
  */
 
-import { createClient } from './supabaseJs.ts';
-import { capturePostHogEvent } from './posthog.ts';
-
+import { createServiceClient } from './orgAuth.ts';
+import { buildActorContext, logActivity } from './activityLog.ts';
+import { formatManilaDateLabel } from './billingPeriod.ts';
+import { getPaymongoProviderPaymentState, isPaymongoTestMode } from './paymongoClient.ts';
+import { handleParkingPaymentWebhookEvent } from './parkingPaymentOrchestrator.ts';
 import {
-  changeOrgSubscription,
-  createOrgSubscription,
-  reconcileTeamSeatsForProperty,
-} from './planEntitlements.ts';
-import { isPaymongoTestMode, getPaymongoProviderPaymentState } from './paymongoClient.ts';
-import { createOrgSubscriptionCheckoutLink } from './orgSubscriptionCheckout.ts';
-import {
-  getPlatformPaymentSettings,
-  type PlatformPaymentSettings,
-} from './platformPaymentSettings.ts';
-import {
-  sendOrgSubscriptionPastDueEmail,
-  sendOrgSubscriptionPaymentFailedEmail,
-  sendOrgSubscriptionReceiptEmail,
-  sendOrgSubscriptionRenewalReminderEmail,
-  sendOrgSubscriptionSuspendedEmail,
-} from './subscriptionBillingEmail.ts';
-import { resolvePublicGuestAppOrigin } from './publicAppOrigin.ts';
-import {
+  extractRefundedPaymentId,
   extractWebhookInner,
   readMetadataString,
   readWebhookKind,
 } from './paymongoWebhookMetadata.ts';
-import { handleParkingPaymentWebhookEvent } from './parkingPaymentOrchestrator.ts';
+import { listBillablePropertyIds } from './orgBillableProperties.ts';
+import { loadQuotePlan, toSubscriptionState } from './orgBillingContext.ts';
+import {
+  applyScheduledPlan,
+  endAtPeriodEnd,
+  endForNonPayment,
+  endWithoutProperties,
+  markPastDue,
+  suspendSubscription,
+} from './orgBillingLifecycle.ts';
+import { addLedgerEntry, getLedgerBalancePhp } from './orgBillingLedger.ts';
+import { computePaymentQuote } from './orgBillingQuote.ts';
+import {
+  loadOrgBillingOrgContext,
+  notifyOrgBilling,
+  notifyOrgBillingOnce,
+} from './orgBillingNotify.ts';
+import { createOrgSubscriptionCheckoutLink } from './orgSubscriptionCheckout.ts';
+import {
+  fulfillOrgSubscriptionPayment,
+  retryUnappliedOrgPayments,
+} from './orgPaymentFulfillment.ts';
+import { sweepOrgPayments } from './orgPaymentReconcile.ts';
+import {
+  type BillingContext,
+  type BillingTransition,
+  dueReminders,
+  nextBillingTransition,
+} from './orgSubscriptionStateMachine.ts';
+import {
+  changeOrgSubscription,
+  getActiveOrgSubscription,
+  loadOrgEligiblePlan,
+  type OrgSubscriptionRow,
+  reconcileTeamSeatsForProperty,
+  resolveSubscriptionTotalPhp,
+  writeOrgSubscriptionEvent,
+} from './planEntitlements.ts';
+import {
+  getPlatformPaymentSettings,
+  type PlatformPaymentSettings,
+} from './platformPaymentSettings.ts';
 import { expireHostVerificationRewards } from './hostVerificationReward.ts';
 
-export { getPlatformPaymentSettings, type PlatformPaymentSettings };
-function db() {
-  const url = Deno.env.get('SUPABASE_URL');
-  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!url || !key) throw new Error('Supabase env not configured');
-  return createClient(url, key);
+export { fulfillOrgSubscriptionPayment, getPlatformPaymentSettings, type PlatformPaymentSettings };
+
+const db = () => createServiceClient();
+const DAY_MS = 24 * 60 * 60 * 1000;
+const cronActor = () => buildActorContext('cron', { cron: 'platform-billing-cron' });
+const webhookActor = () => buildActorContext('webhook', { webhook: 'paymongo' });
+
+export function paymongoLivemodeFromEnv(): boolean {
+  return !isPaymongoTestMode();
 }
 
-async function assertOrgPaymentTransactionPending(transactionId: string): Promise<boolean> {
-  const sb = db();
-  const { data, error } = await sb
-    .from('org_payment_transactions')
-    .select('status')
-    .eq('id', transactionId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  return data?.status === 'pending';
-}
-
-function addOneMonth(from: Date): Date {
-  const end = new Date(from);
-  end.setMonth(end.getMonth() + 1);
-  return end;
-}
-
-function formatManilaDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString('en-PH', {
-      timeZone: 'Asia/Manila',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  } catch {
-    return iso.slice(0, 10);
-  }
-}
-
-async function loadOrgBillingContext(organizationId: string) {
-  const sb = db();
-  const { data, error } = await sb
-    .from('organizations')
-    .select('id, owner_id, slug, name')
-    .eq('id', organizationId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error('Organization not found');
-  return {
-    organizationId: data.id as string,
-    ownerId: data.owner_id as string,
-    orgSlug: String(data.slug ?? ''),
-    orgName: String(data.name ?? 'Organization'),
-  };
-}
-
-function orgPlansUrl(orgSlug: string): string {
-  const appOrigin = resolvePublicGuestAppOrigin(null);
-  return `${appOrigin}/org/${orgSlug}/plans`;
-}
-
-export async function markOrgPaymentFailed(
-  transactionId: string,
-  failureReason: string,
-  rawPayload?: Record<string, unknown>
-): Promise<void> {
-  const sb = db();
-  const { error } = await sb
-    .from('org_payment_transactions')
-    .update({
-      status: 'failed',
-      failure_reason: failureReason.slice(0, 500),
-      raw_webhook_payload: rawPayload ?? null,
-    })
-    .eq('id', transactionId)
-    .eq('status', 'pending');
-  if (error) throw new Error(error.message);
-}
-
-/** When fulfillment partially applied (plan changed) but the txn row was left pending/failed. */
-async function tryRepairOrgPaymentLedger(input: {
-  transactionId: string;
-  organizationId: string;
-  planId: string;
-  providerReference?: string | null;
-  paymentMethodType?: string | null;
-  paidAt?: string | null;
-  rawPayload?: Record<string, unknown>;
-}): Promise<boolean> {
-  const sb = db();
-  const { data: sub } = await sb
-    .from('org_subscriptions')
-    .select('id, plan_id, status')
-    .eq('organization_id', input.organizationId)
-    .in('status', ['active', 'trialing'])
-    .maybeSingle();
-  if (!sub || String(sub.plan_id) !== input.planId) return false;
-
-  const providerRef = input.providerReference?.trim() ?? '';
-  if (providerRef) {
-    const paymongoState = await getPaymongoProviderPaymentState(providerRef);
-    if (paymongoState !== 'paid') return false;
-  } else if (!input.paidAt) {
-    return false;
-  }
-
-  const paidAt = input.paidAt ?? new Date().toISOString();
-  const { data: paidRow, error } = await sb
-    .from('org_payment_transactions')
-    .update({
-      status: 'paid',
-      org_subscription_id: sub.id as string,
-      provider_reference: input.providerReference ?? null,
-      payment_method_type: input.paymentMethodType ?? null,
-      paid_at: paidAt,
-      failure_reason: null,
-      raw_webhook_payload: input.rawPayload ?? null,
-    })
-    .eq('id', input.transactionId)
-    .in('status', ['pending', 'failed'])
-    .select('id')
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  return Boolean(paidRow);
-}
+// ─── Webhook ─────────────────────────────────────────────────────────────────────
 
 type OrgPaymentTransactionRow = {
   id: string;
@@ -169,184 +83,21 @@ type OrgPaymentTransactionRow = {
   amount: number;
 };
 
-/**
- * Fulfills a paid org subscription checkout — fresh purchase, renewal, or a mid-cycle change
- * (property count and/or tier). Detects which by whether the org already has a live subscription
- * and whether the plan/enrolled-property set actually changed: a genuine change starts a fresh
- * billing period (the credit already bought back the unused old-plan time — extending from the
- * old period's end would double-count it); a same-plan-same-properties renewal extends from any
- * remaining time, same as before.
- */
-export async function fulfillOrgSubscriptionPayment(input: {
-  transactionId: string;
-  providerReference?: string | null;
-  paymentMethodType?: string | null;
-  paidAt?: string | null;
-  rawPayload?: Record<string, unknown>;
-  assignedByUserId?: string | null;
-}): Promise<void> {
-  const sb = db();
-
-  const { data: txn, error: txnError } = await sb
+export async function markOrgPaymentFailed(
+  transactionId: string,
+  failureReason: string,
+  rawPayload?: Record<string, unknown>
+): Promise<void> {
+  const { error } = await db()
     .from('org_payment_transactions')
-    .select('*')
-    .eq('id', input.transactionId)
-    .maybeSingle();
-  if (txnError) throw new Error(txnError.message);
-  if (!txn) throw new Error('Org payment transaction not found');
-  if (txn.status === 'paid') return;
-  if (txn.status !== 'pending') return;
-
-  const organizationId = txn.organization_id as string;
-  const planId = txn.plan_id as string;
-  const propertyIds = (txn.property_ids as string[] | null) ?? [];
-  const assignedBy = input.assignedByUserId ?? null;
-  const amountPhp = Number(txn.amount ?? 0);
-
-  // PayMongo has already collected payment by the time this runs — a thrown error here must not
-  // leave the transaction stuck `pending` forever (indistinguishable from "webhook hasn't arrived
-  // yet"). Mark it `failed` with the real reason so it surfaces for manual reconciliation instead.
-  try {
-    const stillPending = await assertOrgPaymentTransactionPending(input.transactionId);
-    if (!stillPending) return;
-
-    const { data: existingSub, error: existingSubError } = await sb
-      .from('org_subscriptions')
-      .select('id, plan_id, current_period_end, status')
-      .eq('organization_id', organizationId)
-      .in('status', ['active', 'trialing', 'past_due', 'suspended'])
-      .maybeSingle();
-    if (existingSubError) throw new Error(existingSubError.message);
-
-    let orgSubscriptionId: string;
-    let isChange = false;
-
-    if (!existingSub) {
-      const created = await createOrgSubscription(organizationId, planId, propertyIds, assignedBy);
-      orgSubscriptionId = created.orgSubscriptionId;
-    } else {
-      orgSubscriptionId = existingSub.id as string;
-      const { data: currentSlots, error: slotsError } = await sb
-        .from('org_subscription_properties')
-        .select('property_id')
-        .eq('org_subscription_id', orgSubscriptionId);
-      if (slotsError) throw new Error(slotsError.message);
-      const currentPropertyIds = new Set((currentSlots ?? []).map((r) => r.property_id as string));
-      const nextPropertyIds = new Set(propertyIds);
-      isChange =
-        String(existingSub.plan_id) !== planId ||
-        currentPropertyIds.size !== nextPropertyIds.size ||
-        [...nextPropertyIds].some((id) => !currentPropertyIds.has(id));
-
-      await changeOrgSubscription(orgSubscriptionId, planId, propertyIds, assignedBy);
-    }
-
-    const now = new Date();
-    const existingEnd =
-      existingSub?.current_period_end != null
-        ? new Date(String(existingSub.current_period_end))
-        : null;
-    const periodStart =
-      existingSub && !isChange && existingEnd && existingEnd.getTime() > now.getTime()
-        ? existingEnd
-        : now;
-    const periodEnd = addOneMonth(periodStart);
-
-    const { error: subUpdateError } = await sb
-      .from('org_subscriptions')
-      .update({
-        current_period_start: periodStart.toISOString(),
-        current_period_end: periodEnd.toISOString(),
-        grace_period_ends_at: null,
-        status: 'active',
-        source: 'purchase',
-      })
-      .eq('id', orgSubscriptionId);
-    if (subUpdateError) throw new Error(subUpdateError.message);
-
-    const paidAt = input.paidAt ?? new Date().toISOString();
-    const { data: paidRow, error: txnUpdateError } = await sb
-      .from('org_payment_transactions')
-      .update({
-        status: 'paid',
-        org_subscription_id: orgSubscriptionId,
-        provider_reference: input.providerReference ?? txn.provider_reference,
-        payment_method_type: input.paymentMethodType ?? null,
-        paid_at: paidAt,
-        raw_webhook_payload: input.rawPayload ?? null,
-      })
-      .eq('id', input.transactionId)
-      .eq('status', 'pending')
-      .select('id')
-      .maybeSingle();
-    if (txnUpdateError) throw new Error(txnUpdateError.message);
-    if (!paidRow) return;
-
-    // The checkout completed on the server, so the browser's old event is deliberately not
-    // re-emitted: one outcome, one source (plan F-22).
-    await capturePostHogEvent('org_plan_checkout_completed', {
-      logPrefix: 'subscription-orchestrator',
-      distinctId: assignedBy ?? undefined,
-      groups: { organization: organizationId },
-      properties: {
-        plan_id: planId,
-        interval: 'monthly',
-        is_upgrade: !existingSub,
-      },
-    });
-    if (!existingSub || String(existingSub.plan_id) !== planId) {
-      await capturePostHogEvent('org_plan_changed', {
-        logPrefix: 'subscription-orchestrator',
-        distinctId: assignedBy ?? undefined,
-        groups: { organization: organizationId },
-        properties: {
-          from_plan: existingSub ? String(existingSub.plan_id) : 'free',
-          to_plan: planId,
-          cause: 'upgrade',
-        },
-      });
-    }
-
-    try {
-      const { data: planRow } = await sb
-        .from('pricing_plans')
-        .select('name')
-        .eq('id', planId)
-        .maybeSingle();
-      const ctx = await loadOrgBillingContext(organizationId);
-      await sendOrgSubscriptionReceiptEmail({
-        supabase: sb,
-        ownerId: ctx.ownerId,
-        orgName: ctx.orgName,
-        planName: String(planRow?.name ?? 'Plan'),
-        propertyCount: propertyIds.length,
-        amountPhp,
-        orgSlug: ctx.orgSlug,
-      });
-    } catch (err) {
-      console.error('[subscriptionOrchestrator] receipt email failed', err);
-    }
-  } catch (err) {
-    const repaired = await tryRepairOrgPaymentLedger({
-      transactionId: input.transactionId,
-      organizationId,
-      planId,
-      providerReference: input.providerReference ?? (txn.provider_reference as string | null),
-      paymentMethodType: input.paymentMethodType ?? null,
-      paidAt: input.paidAt ?? null,
-      rawPayload: input.rawPayload,
-    });
-    if (repaired) {
-      console.error('[subscriptionOrchestrator] fulfillment error recovered', err);
-      return;
-    }
-    await markOrgPaymentFailed(
-      input.transactionId,
-      `Fulfillment error (payment was collected - needs manual review): ${(err as Error).message}`,
-      input.rawPayload
-    );
-    throw err;
-  }
+    .update({
+      status: 'failed',
+      failure_reason: failureReason.slice(0, 500),
+      raw_webhook_payload: rawPayload ?? null,
+    })
+    .eq('id', transactionId)
+    .eq('status', 'pending');
+  if (error) throw new Error(error.message);
 }
 
 export async function resolveOrgTransactionFromWebhookPayload(
@@ -397,6 +148,12 @@ export async function resolveOrgTransactionFromWebhookPayload(
   return (data as OrgPaymentTransactionRow | null) ?? null;
 }
 
+function paymentMethodFromPayload(payload: Record<string, unknown>): string | null {
+  const { innerAttrs } = extractWebhookInner(payload);
+  const source = innerAttrs?.source as Record<string, unknown> | undefined;
+  return typeof source?.type === 'string' ? source.type : null;
+}
+
 export async function handlePaymongoWebhookEvent(
   eventType: string,
   payload: Record<string, unknown>
@@ -405,8 +162,7 @@ export async function handlePaymongoWebhookEvent(
 
   // Dispatch by metadata.kind first — without this, a parking-payment webhook would fall
   // through into the org-subscription lookup below and silently no-op (different table, no
-  // match found). 'org_subscription' or absent kind (older links, all pre-Phase-3) both take
-  // the existing org path unchanged.
+  // match found). 'org_subscription' or absent kind (older links) both take the org path.
   const kind = readWebhookKind(payload);
   if (kind === 'parking_booking') {
     return handleParkingPaymentWebhookEvent(normalized, payload);
@@ -416,31 +172,32 @@ export async function handlePaymongoWebhookEvent(
     const orgTxn = await resolveOrgTransactionFromWebhookPayload(payload);
     if (!orgTxn || orgTxn.status !== 'pending') return { handled: false };
 
+    // A stale "failed" event can arrive after the host paid on a retry.
     const paymongoState = await getPaymongoProviderPaymentState(orgTxn.provider_reference);
     if (paymongoState === 'paid') {
-      const { innerAttrs, metadata } = extractWebhookInner(payload);
-      const initiatedBy = readMetadataString(metadata, 'initiated_by');
-      const source = innerAttrs?.source as Record<string, unknown> | undefined;
-      const paymentMethodType = typeof source?.type === 'string' ? source.type : null;
+      const { metadata, innerAttrs } = extractWebhookInner(payload);
       await fulfillOrgSubscriptionPayment({
         transactionId: orgTxn.id,
         providerReference: orgTxn.provider_reference,
-        paymentMethodType,
+        paymentMethodType: paymentMethodFromPayload(payload),
         paidAt: new Date().toISOString(),
         rawPayload: payload,
-        assignedByUserId: initiatedBy,
+        assignedByUserId: readMetadataString(metadata, 'initiated_by'),
+        allowReopen: true,
       });
-      return { handled: true, action: 'fulfilled_org_subscription_after_stale_failed_event' };
+      void innerAttrs;
+      return {
+        handled: true,
+        action: 'fulfilled_org_subscription_after_stale_failed_event',
+      };
     }
 
     await markOrgPaymentFailed(orgTxn.id, 'Payment failed', payload);
     try {
-      const ctx = await loadOrgBillingContext(orgTxn.organization_id);
-      await sendOrgSubscriptionPaymentFailedEmail({
-        supabase: db(),
-        ownerId: ctx.ownerId,
-        orgName: ctx.orgName,
-        plansUrl: orgPlansUrl(ctx.orgSlug),
+      await notifyOrgBilling({
+        organizationId: orgTxn.organization_id,
+        kind: 'payment_failed',
+        periodKey: orgTxn.id,
       });
     } catch (err) {
       console.error('[subscriptionOrchestrator] payment failed email', err);
@@ -454,10 +211,6 @@ export async function handlePaymongoWebhookEvent(
     normalized === 'checkout_session.payment.paid'
   ) {
     const { innerAttrs, metadata } = extractWebhookInner(payload);
-    const initiatedBy = readMetadataString(metadata, 'initiated_by');
-    const source = innerAttrs?.source as Record<string, unknown> | undefined;
-    const paymentMethodType = typeof source?.type === 'string' ? source.type : null;
-
     const paidAtEpoch = innerAttrs?.paid_at;
     const paidAt =
       typeof paidAtEpoch === 'number'
@@ -465,192 +218,406 @@ export async function handlePaymongoWebhookEvent(
         : new Date().toISOString();
 
     const orgTxn = await resolveOrgTransactionFromWebhookPayload(payload);
-    if (!orgTxn || orgTxn.status !== 'pending') return { handled: false };
+    if (!orgTxn) return { handled: false };
+    // Already paid (a second event for the same payment): nothing to do.
+    if (orgTxn.status === 'paid' || orgTxn.status === 'refunded') {
+      return { handled: false };
+    }
 
-    await fulfillOrgSubscriptionPayment({
+    // pending, or a checkout we had already closed (expired, replaced, failed): money arrived, so
+    // it goes through the same validated path. A stale one becomes account credit.
+    const result = await fulfillOrgSubscriptionPayment({
       transactionId: orgTxn.id,
       providerReference: orgTxn.provider_reference,
-      paymentMethodType,
+      paymentMethodType: paymentMethodFromPayload(payload),
       paidAt,
       rawPayload: payload,
-      assignedByUserId: initiatedBy,
+      assignedByUserId: readMetadataString(metadata, 'initiated_by'),
+      allowReopen: true,
     });
-    return { handled: true, action: 'fulfilled_org_subscription' };
+    return {
+      handled: true,
+      action: result.applied ? 'fulfilled_org_subscription' : 'payment_kept_as_credit',
+    };
+  }
+
+  if (normalized === 'payment.refunded') {
+    // A refund event's resource is the refund itself: it names the payment, not our checkout.
+    let orgTxn = await resolveOrgTransactionFromWebhookPayload(payload);
+    const refundedPaymentId = extractRefundedPaymentId(payload);
+    if (!orgTxn && refundedPaymentId) {
+      const { data } = await db()
+        .from('org_payment_transactions')
+        .select('*')
+        .eq('provider_payment_id', refundedPaymentId)
+        .maybeSingle();
+      orgTxn = (data as OrgPaymentTransactionRow | null) ?? null;
+    }
+    if (!orgTxn || orgTxn.status !== 'paid') return { handled: false };
+    await db()
+      .from('org_payment_transactions')
+      .update({ status: 'refunded', review_reason: 'refunded_in_paymongo' })
+      .eq('id', orgTxn.id)
+      .eq('status', 'paid');
+    if (orgTxn.org_subscription_id) {
+      await writeOrgSubscriptionEvent({
+        orgSubscriptionId: orgTxn.org_subscription_id,
+        eventType: 'ledger_entry',
+        note: `Payment refunded in PayMongo (₱${Math.round(
+          Number(orgTxn.amount)
+        )}). Review the period.`,
+      }).catch(() => undefined);
+    }
+    const ctx = await loadOrgBillingOrgContext(orgTxn.organization_id);
+    await logActivity({
+      action: 'billing.refund_recorded',
+      organizationId: orgTxn.organization_id,
+      scope: 'org',
+      actor: webhookActor(),
+      targetType: 'subscription',
+      targetId: orgTxn.organization_id,
+      targetLabel: ctx.orgName,
+      metadata: {
+        amount: Math.round(Number(orgTxn.amount)),
+        transaction_id: orgTxn.id,
+      },
+    });
+    return { handled: true, action: 'marked_org_refunded' };
   }
 
   return { handled: false };
 }
 
-export function paymongoLivemodeFromEnv(): boolean {
-  return !isPaymongoTestMode();
-}
+// ─── Billing cycle ───────────────────────────────────────────────────────────────
 
-type LiveOrgSubscriptionRow = {
-  id: string;
-  organization_id: string;
-  plan_id: string;
-  status: string;
-  current_period_end: string | null;
-  pricing_plans: { is_default: boolean; name: string; is_active: boolean };
+type Counters = {
+  subscriptionsChecked: number;
+  renewalLinks: number;
+  reminders: number;
+  pastDue: number;
+  suspended: number;
+  canceled: number;
+  scheduledApplied: number;
+  renewedFromCredit: number;
+  paymentsRecovered: number;
+  paymentsRetried: number;
+  checkoutsExpired: number;
+  errors: number;
 };
 
-export async function runPlatformBillingCycle(): Promise<Record<string, number>> {
-  const sb = db();
-  const settings = await getPlatformPaymentSettings();
-  const now = new Date();
-  const counters = {
-    renewalLinks: 0,
-    pastDue: 0,
-    suspended: 0,
-    graceRetries: 0,
-    errors: 0,
+async function loadCronContext(
+  sub: OrgSubscriptionRow,
+  now: Date,
+  settings: PlatformPaymentSettings
+): Promise<BillingContext> {
+  const billable = await listBillablePropertyIds(sub.organizationId);
+  let covered = false;
+  const end = sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null;
+  const relevant =
+    end != null && end.getTime() - now.getTime() <= settings.renewalLinkLeadDays * DAY_MS;
+  if (billable.length > 0 && relevant) {
+    const ledger = await getLedgerBalancePhp(sub.organizationId);
+    if (ledger < 0) {
+      const nextPlanId = sub.scheduledPlanId ?? sub.planId;
+      const plan = await loadOrgEligiblePlan(nextPlanId, {
+        allowInactive: true,
+      });
+      const total = resolveSubscriptionTotalPhp(
+        nextPlanId === sub.planId ? sub.priceOverridePhp : null,
+        plan,
+        billable.length,
+        nextPlanId === sub.planId ? sub.pricingSnapshot : null
+      );
+      covered =
+        total > 0 &&
+        computePaymentQuote({
+          targetTotalPhp: total,
+          unusedCreditPhp: 0,
+          ledgerBalancePhp: ledger,
+          planLabel: '',
+        }).coveredByCredit;
+    }
+  }
+  return {
+    billablePropertyCount: billable.length,
+    renewalCoveredByCredit: covered,
   };
+}
 
-  const leadMs = settings.renewalLinkLeadDays * 24 * 60 * 60 * 1000;
+async function applyTransition(
+  transition: BillingTransition,
+  sub: OrgSubscriptionRow,
+  settings: PlatformPaymentSettings,
+  counters: Counters
+): Promise<'continue' | 'stop'> {
+  switch (transition.type) {
+    case 'apply_scheduled_plan':
+      await applyScheduledPlan(sub);
+      counters.scheduledApplied += 1;
+      return 'continue';
+    case 'cancel_at_period_end':
+      await endAtPeriodEnd(sub);
+      counters.canceled += 1;
+      return 'continue';
+    case 'end_no_properties':
+      await endWithoutProperties(sub);
+      counters.canceled += 1;
+      return 'continue';
+    case 'auto_cancel':
+      await endForNonPayment(sub);
+      counters.canceled += 1;
+      return 'continue';
+    case 'mark_past_due': {
+      const changed = await markPastDue(sub, transition.graceEndsAt);
+      if (changed) counters.pastDue += 1;
+      return 'continue';
+    }
+    case 'suspend': {
+      const changed = await suspendSubscription(sub, settings);
+      if (changed) counters.suspended += 1;
+      return 'continue';
+    }
+    case 'renew_from_credit': {
+      const result = await createOrgSubscriptionCheckoutLink({
+        organizationId: sub.organizationId,
+        planId: null,
+        ignoreRenewalWindow: true,
+      });
+      if (!result.paidWithCredit) {
+        // Credit no longer covers the renewal (the estimate was off): treat it as unpaid.
+        if (sub.status === 'active' && sub.currentPeriodEnd) {
+          const graceEndsAt = new Date(
+            new Date(sub.currentPeriodEnd).getTime() + settings.gracePeriodDays * DAY_MS
+          );
+          if (await markPastDue(sub, graceEndsAt)) counters.pastDue += 1;
+        }
+        return 'stop';
+      }
+      if (result.paidWithCredit) {
+        counters.renewedFromCredit += 1;
+        const ctx = await loadOrgBillingOrgContext(sub.organizationId);
+        await logActivity({
+          action: 'billing.subscription_renewed',
+          organizationId: sub.organizationId,
+          scope: 'org',
+          actor: cronActor(),
+          targetType: 'subscription',
+          targetId: sub.organizationId,
+          targetLabel: ctx.orgName,
+          metadata: { plan_name: result.planName, via: 'credit' },
+        });
+        await notifyOrgBillingOnce({
+          organizationId: sub.organizationId,
+          orgSubscriptionId: sub.id,
+          kind: 'renewed_from_credit',
+          periodKey: result.transactionId,
+          params: {
+            planName: result.planName,
+            dateLabel: result.periodEnd
+              ? formatManilaDateLabel(new Date(result.periodEnd))
+              : undefined,
+          },
+        });
+      }
+      return 'continue';
+    }
+    case 'trial_ended':
+      // Reward trials are closed by expireHostVerificationRewards at the end of the cycle.
+      return 'stop';
+  }
+}
 
-  const { data: subs, error: subsError } = await sb
-    .from('org_subscriptions')
-    .select(
-      `
-      id,
-      organization_id,
-      plan_id,
-      status,
-      current_period_end,
-      pricing_plans!org_subscriptions_plan_id_fkey!inner ( is_default, name, is_active )
-    `
-    )
-    .in('status', ['active', 'past_due'])
-    .not('current_period_end', 'is', null);
-  if (subsError) throw new Error(subsError.message);
+async function sendReminders(
+  sub: OrgSubscriptionRow,
+  now: Date,
+  settings: PlatformPaymentSettings,
+  ctx: BillingContext,
+  counters: Counters
+): Promise<void> {
+  const reminders = dueReminders(toSubscriptionState(sub), now, settings, ctx);
+  if (reminders.length === 0) return;
 
-  for (const raw of subs ?? []) {
-    const sub = raw as unknown as LiveOrgSubscriptionRow;
-    if (!sub.pricing_plans?.is_active || sub.pricing_plans.is_default) continue;
+  const nextPlanId = sub.scheduledPlanId ?? sub.planId;
 
-    const periodEnd = new Date(String(sub.current_period_end));
-    const ctxPromise = loadOrgBillingContext(sub.organization_id);
+  for (const reminder of reminders) {
+    const periodKey = `${reminder.periodKey}:${nextPlanId}`;
+    let checkoutUrl: string | null = null;
+    let planName = sub.scheduledPlanId ? '' : sub.planName;
+    let amountPhp: number | undefined;
+    let periodEnd = sub.currentPeriodEnd;
 
-    const { data: enrolledRows, error: enrolledError } = await sb
-      .from('org_subscription_properties')
-      .select('property_id')
-      .eq('org_subscription_id', sub.id);
-    if (enrolledError) {
+    // Every payment reminder carries a live link. Reuses the open checkout when there is one.
+    try {
+      const checkout = await createOrgSubscriptionCheckoutLink({
+        organizationId: sub.organizationId,
+        planId: null,
+        ignoreRenewalWindow: true,
+      });
+      checkoutUrl = checkout.checkoutUrl;
+      planName = checkout.planName || planName;
+      amountPhp = checkout.chargePhp;
+      if (reminder.kind === 'renewal_link' && !checkout.reused) {
+        counters.renewalLinks += 1;
+      }
+    } catch (err) {
+      console.error(
+        '[platform-billing-cron] reminder link',
+        sub.organizationId,
+        reminder.kind,
+        err
+      );
       counters.errors += 1;
       continue;
     }
-    const enrolledPropertyIds = (enrolledRows ?? []).map((r) => r.property_id as string);
 
-    if (sub.status === 'active') {
-      const msUntilEnd = periodEnd.getTime() - now.getTime();
-      if (msUntilEnd <= leadMs && msUntilEnd > 0) {
-        try {
-          const checkout = await createOrgSubscriptionCheckoutLink({
-            organizationId: sub.organization_id,
-            planId: sub.plan_id,
-            propertyIds: enrolledPropertyIds,
-            purpose: 'renewal',
-          });
-          const ctx = await ctxPromise;
-          await sendOrgSubscriptionRenewalReminderEmail({
-            supabase: sb,
-            ownerId: ctx.ownerId,
-            orgName: ctx.orgName,
-            planName: sub.pricing_plans.name,
-            periodEndLabel: formatManilaDate(periodEnd.toISOString()),
-            checkoutUrl: checkout.checkoutUrl,
-          });
-          counters.renewalLinks += 1;
-        } catch (err) {
-          console.error('[platform-billing-cron] renewal link', sub.organization_id, err);
-          counters.errors += 1;
-        }
-      }
-
-      if (periodEnd.getTime() <= now.getTime()) {
-        const graceEnd = new Date(now);
-        graceEnd.setDate(graceEnd.getDate() + settings.gracePeriodDays);
-        const { error } = await sb
-          .from('org_subscriptions')
-          .update({
-            status: 'past_due',
-            grace_period_ends_at: graceEnd.toISOString(),
-          })
-          .eq('id', sub.id)
-          .eq('status', 'active');
-        if (error) {
-          counters.errors += 1;
-          continue;
-        }
-        try {
-          const checkout = await createOrgSubscriptionCheckoutLink({
-            organizationId: sub.organization_id,
-            planId: sub.plan_id,
-            propertyIds: enrolledPropertyIds,
-            purpose: 'retry',
-            forceNew: true,
-          });
-          const ctx = await ctxPromise;
-          await sendOrgSubscriptionPastDueEmail({
-            supabase: sb,
-            ownerId: ctx.ownerId,
-            orgName: ctx.orgName,
-            graceEndLabel: formatManilaDate(graceEnd.toISOString()),
-            checkoutUrl: checkout.checkoutUrl,
-          });
-          counters.pastDue += 1;
-        } catch (err) {
-          console.error('[platform-billing-cron] past due', sub.organization_id, err);
-          counters.errors += 1;
-        }
-      }
-      continue;
+    if (!planName) {
+      const plan = await loadQuotePlan(nextPlanId, { allowInactive: true });
+      planName = plan.name;
     }
+    const dateLabel = periodEnd ? formatManilaDateLabel(new Date(periodEnd)) : undefined;
+    const trialDays = sub.currentPeriodEnd
+      ? Math.max(1, Math.ceil((new Date(sub.currentPeriodEnd).getTime() - now.getTime()) / DAY_MS))
+      : 1;
 
-    if (sub.status === 'past_due') {
-      const { data: graceRow } = await sb
-        .from('org_subscriptions')
-        .select('grace_period_ends_at')
-        .eq('id', sub.id)
-        .maybeSingle();
-      const graceEndRaw = graceRow?.grace_period_ends_at as string | null;
-      if (graceEndRaw && new Date(graceEndRaw).getTime() <= now.getTime()) {
-        const { error } = await sb
-          .from('org_subscriptions')
-          .update({ status: 'suspended' })
-          .eq('id', sub.id)
-          .eq('status', 'past_due');
-        if (error) {
-          counters.errors += 1;
-          continue;
-        }
-        // Every previously-enrolled property individually falls back to Free now — reconcile
-        // each (their pool is no longer the org's, since the subscription is no longer live).
-        for (const propertyId of enrolledPropertyIds) {
-          try {
-            await reconcileTeamSeatsForProperty(propertyId);
-          } catch (err) {
-            console.error('[platform-billing-cron] team seat reconciliation', propertyId, err);
-            counters.errors += 1;
-          }
-        }
-        try {
-          const ctx = await ctxPromise;
-          await sendOrgSubscriptionSuspendedEmail({
-            supabase: sb,
-            ownerId: ctx.ownerId,
-            orgName: ctx.orgName,
-            plansUrl: orgPlansUrl(ctx.orgSlug),
-          });
-          counters.suspended += 1;
-        } catch (err) {
-          console.error('[platform-billing-cron] suspended email', sub.organization_id, err);
-          counters.errors += 1;
-        }
+    const outcome = await notifyOrgBillingOnce({
+      organizationId: sub.organizationId,
+      orgSubscriptionId: sub.id,
+      kind:
+        reminder.kind === 'trial_ending_3' || reminder.kind === 'trial_ending_1'
+          ? 'trial_ending'
+          : reminder.kind,
+      periodKey: `${reminder.kind}:${periodKey}`,
+      params: {
+        planName,
+        amountPhp,
+        dateLabel,
+        daysLeft: reminder.kind === 'trial_ending_1' ? 1 : trialDays,
+        graceEndLabel: sub.graceEndsAt
+          ? formatManilaDateLabel(new Date(sub.graceEndsAt))
+          : undefined,
+        checkoutUrl,
+      },
+    });
+    if (outcome === 'sent') {
+      counters.reminders += 1;
+      if (reminder.kind === 'renewal_link') {
+        const orgCtx = await loadOrgBillingOrgContext(sub.organizationId);
+        await logActivity({
+          action: 'billing.renewal_link_sent',
+          organizationId: sub.organizationId,
+          scope: 'org',
+          actor: cronActor(),
+          targetType: 'subscription',
+          targetId: sub.organizationId,
+          targetLabel: orgCtx.orgName,
+          metadata: { plan_name: planName },
+        });
       }
     }
   }
+}
 
+/**
+ * Hourly job. Idempotent: every transition is a compare-and-set, every notification is
+ * send-once, so overlapping runs and multi-day outages catch up in order without doubling up.
+ */
+export async function runPlatformBillingCycle(
+  options: { organizationIds?: string[] } = {}
+): Promise<Record<string, number>> {
+  const sb = db();
+  // Scoped runs (tests, a support "run for this org") touch only these orgs: no global payment
+  // sweeps and no reward sweep.
+  const scope = options.organizationIds?.length ? new Set(options.organizationIds) : null;
+  const settings = await getPlatformPaymentSettings();
+  const now = new Date();
+  const counters: Counters = {
+    subscriptionsChecked: 0,
+    renewalLinks: 0,
+    reminders: 0,
+    pastDue: 0,
+    suspended: 0,
+    canceled: 0,
+    scheduledApplied: 0,
+    renewedFromCredit: 0,
+    paymentsRecovered: 0,
+    paymentsRetried: 0,
+    checkoutsExpired: 0,
+    errors: 0,
+  };
+
+  // 1. Money first: reconcile missed webhooks, close expired checkouts, retry unapplied payments.
+  if (!scope) {
+    try {
+      const sweep = await sweepOrgPayments({
+        pendingTtlHours: settings.pendingCheckoutTtlHours,
+      });
+      counters.paymentsRecovered = sweep.fulfilled + sweep.recovered;
+      counters.checkoutsExpired = sweep.expired;
+      counters.errors += sweep.errors;
+    } catch (err) {
+      console.error('[platform-billing-cron] payment sweep', err);
+      counters.errors += 1;
+    }
+    try {
+      const retry = await retryUnappliedOrgPayments();
+      counters.paymentsRetried = retry.retried;
+      counters.errors += retry.errors;
+    } catch (err) {
+      console.error('[platform-billing-cron] unapplied retry', err);
+      counters.errors += 1;
+    }
+  }
+
+  // 2. Subscriptions that can have something due.
+  const horizon = new Date(now.getTime() + Math.max(settings.renewalLinkLeadDays, 3) * DAY_MS);
+  const orgIds = new Set<string>();
+  const queries = [
+    sb.from('org_subscriptions').select('organization_id').in('status', ['past_due', 'suspended']),
+    sb
+      .from('org_subscriptions')
+      .select('organization_id')
+      .in('status', ['active', 'trialing'])
+      .not('current_period_end', 'is', null)
+      .lte('current_period_end', horizon.toISOString()),
+    sb
+      .from('org_subscriptions')
+      .select('organization_id')
+      .eq('status', 'active')
+      .not('scheduled_plan_id', 'is', null),
+  ];
+  for (const query of queries) {
+    const { data, error } = await query.limit(1000);
+    if (error) throw new Error(error.message);
+    for (const row of data ?? []) {
+      const id = row.organization_id as string;
+      if (!scope || scope.has(id)) orgIds.add(id);
+    }
+  }
+
+  for (const organizationId of orgIds) {
+    try {
+      let sub = await getActiveOrgSubscription(organizationId);
+      if (!sub) continue;
+      counters.subscriptionsChecked += 1;
+      const ctx = await loadCronContext(sub, now, settings);
+
+      for (let step = 0; step < 6 && sub; step += 1) {
+        const transition = nextBillingTransition(toSubscriptionState(sub), now, settings, ctx);
+        if (!transition) break;
+        const control = await applyTransition(transition, sub, settings, counters);
+        if (control === 'stop') break;
+        sub = await getActiveOrgSubscription(organizationId);
+      }
+
+      if (sub) await sendReminders(sub, now, settings, ctx, counters);
+    } catch (err) {
+      console.error('[platform-billing-cron] subscription', organizationId, err);
+      counters.errors += 1;
+    }
+  }
+
+  // 3. Reward trials that reached their end.
+  if (scope) return counters as unknown as Record<string, number>;
   try {
     const rewardSweep = await expireHostVerificationRewards();
     (counters as Record<string, number>).rewardExpired = rewardSweep.expired;
@@ -660,9 +627,15 @@ export async function runPlatformBillingCycle(): Promise<Record<string, number>>
     counters.errors += 1;
   }
 
-  return counters;
+  return counters as unknown as Record<string, number>;
 }
 
+// ─── Super-admin helpers ─────────────────────────────────────────────────────────
+
+/**
+ * Manual period extension (goodwill, bank transfer received outside PayMongo). Moves the
+ * scheduled-change date with the period so a pending downgrade does not fire early.
+ */
 export async function adminExtendOrgSubscription(input: {
   organizationId: string;
   periodEndIso: string;
@@ -673,7 +646,7 @@ export async function adminExtendOrgSubscription(input: {
   const sb = db();
   const { data: sub, error } = await sb
     .from('org_subscriptions')
-    .select('id')
+    .select('id, status, plan_id, scheduled_plan_id')
     .eq('organization_id', input.organizationId)
     .in('status', ['active', 'trialing', 'past_due', 'suspended'])
     .maybeSingle();
@@ -683,19 +656,41 @@ export async function adminExtendOrgSubscription(input: {
   const patch: Record<string, unknown> = {
     current_period_end: input.periodEndIso,
     grace_period_ends_at: null,
+    suspended_at: null,
   };
+  if (sub.scheduled_plan_id) patch.scheduled_change_at = input.periodEndIso;
   if (input.status) patch.status = input.status;
+  else if (sub.status === 'past_due' || sub.status === 'suspended') {
+    patch.status = 'active';
+  }
 
   const { error: updateError } = await sb.from('org_subscriptions').update(patch).eq('id', sub.id);
   if (updateError) throw new Error(updateError.message);
 
-  await sb.from('org_subscription_events').insert({
-    org_subscription_id: sub.id,
-    event_type: 'status_changed',
-    new_status: input.status ?? 'active',
+  await writeOrgSubscriptionEvent({
+    orgSubscriptionId: sub.id as string,
+    eventType: 'status_changed',
+    previousStatus: sub.status as string,
+    newStatus: (patch.status as string | undefined) ?? (sub.status as string),
     note: input.note ?? 'Super-admin manual billing extension',
-    created_by: input.adminUserId,
+    createdBy: input.adminUserId,
   });
+
+  const restoredFromSuspension =
+    sub.status === 'suspended' && ((patch.status as string | undefined) ?? 'active') === 'active';
+  if (restoredFromSuspension) {
+    // Paid allowances (AI credits, team seats) come back with the plan.
+    const billable = await listBillablePropertyIds(input.organizationId);
+    if (billable.length > 0) {
+      await changeOrgSubscription(
+        sub.id as string,
+        sub.plan_id as string,
+        billable,
+        input.adminUserId
+      );
+    }
+    return;
+  }
 
   const { data: enrolledRows } = await sb
     .from('org_subscription_properties')
@@ -704,4 +699,24 @@ export async function adminExtendOrgSubscription(input: {
   for (const row of enrolledRows ?? []) {
     await reconcileTeamSeatsForProperty(row.property_id as string);
   }
+}
+
+/** Super-admin credit adjustment: positive adds credit, negative removes it. Always audited. */
+export async function adminAdjustOrgCredit(input: {
+  organizationId: string;
+  creditPhp: number;
+  note: string;
+  adminUserId: string;
+}): Promise<{ balancePhp: number }> {
+  const amount = Math.round(input.creditPhp);
+  if (!amount) throw new Error('Enter an amount other than zero');
+  // Ledger sign: negative = credit to the org.
+  await addLedgerEntry({
+    organizationId: input.organizationId,
+    amountPhp: -amount,
+    kind: 'admin_adjustment',
+    note: input.note,
+    createdBy: input.adminUserId,
+  });
+  return { balancePhp: await getLedgerBalancePhp(input.organizationId) };
 }

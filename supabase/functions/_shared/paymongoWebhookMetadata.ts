@@ -31,3 +31,29 @@ export function readWebhookKind(payload: Record<string, unknown>): string | null
   const { metadata } = extractWebhookInner(payload);
   return readMetadataString(metadata, 'kind');
 }
+
+/**
+ * The collected payment's id (`pay_...`): the inner resource of `payment.paid`, or the first
+ * entry of a checkout session's `payments`. Null when the payload does not carry one.
+ */
+export function extractPaidPaymentId(payload: Record<string, unknown>): string | null {
+  const { inner, innerAttrs } = extractWebhookInner(payload);
+  if (inner?.type === 'payment' && typeof inner.id === 'string' && inner.id.trim()) {
+    return inner.id.trim();
+  }
+  const payments = innerAttrs?.payments;
+  if (Array.isArray(payments)) {
+    for (const entry of payments) {
+      const id = (entry as Record<string, unknown> | null)?.id;
+      if (typeof id === 'string' && id.trim()) return id.trim();
+    }
+  }
+  return null;
+}
+
+/** A refund event's inner resource is a refund; it names the payment it refunded. */
+export function extractRefundedPaymentId(payload: Record<string, unknown>): string | null {
+  const { innerAttrs } = extractWebhookInner(payload);
+  const id = innerAttrs?.payment_id;
+  return typeof id === 'string' && id.trim() ? id.trim() : null;
+}

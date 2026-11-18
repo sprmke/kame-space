@@ -31,7 +31,6 @@ from 1,970 findings to 0.
 
 Three edges are lazily imported on purpose, to keep module graphs acyclic:
 
-- `planEntitlements.ts` → `subscriptionBillingEmail.ts` (downgrade email)
 - `planEntitlements.ts` → `aiUsageService.ts` (plan credit sync)
 - `dashboardAssistantDeferredWrites.ts` → `dashboardAssistantTools.ts` (deferred tool execution)
 - `orgPaymentReconcile.ts` → `subscriptionOrchestrator.ts` (payment fulfilment)

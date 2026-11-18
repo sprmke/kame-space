@@ -86,8 +86,10 @@ kind: backlog
 - 🚧 Improve backend performance
   → **In progress:** [`../in-progress/app-speed-root-cause-overhaul.md`](../in-progress/app-speed-root-cause-overhaul.md) · capacity: [`../in-progress/supabase-capacity-and-operational-readiness.md`](../in-progress/supabase-capacity-and-operational-readiness.md)
 - 🔵 Toolchain upgrade wave: TypeScript 7, Tailwind 4, Zod 4, @hookform/resolvers 7, @types/node 26, @vitest/coverage-v8 5, eslint-plugin-react-hooks 7, @blueprintjs/core 6, framer-motion 14. Each needs a code migration, not a version bump, so the Dependabot majors are closed until it is planned.
-- 🔵 Pricing plans refinement
-- 🔵 Payment e2e and management from super admin
+- 🧪 Pricing plans refinement
+  → **For testing:** [`../for-testing/plans-billing-lifecycle-hardening.md`](../for-testing/plans-billing-lifecycle-hardening.md)
+- 🧪 Payment e2e and management from super admin
+  → **For testing:** [`../for-testing/plans-billing-lifecycle-hardening.md`](../for-testing/plans-billing-lifecycle-hardening.md) (sandbox matrix still to run)
 - 🔵 Improve QR design to include our logo?
 - 🔵 Select turtle character and add it on their templates
 - 🔵 Super admin - playbook articles?

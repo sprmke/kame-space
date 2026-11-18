@@ -286,7 +286,10 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
     'propose_update_automation_toggles',
     'propose_update_property_settings'
   ) /* payment methods: OTP handoff */,
-  'apply-org-plan-downgrade': handoff('org.plans', 'Plan change with billing impact'),
+  'org-subscription-change': handoff('org.plans', 'Plan change with billing impact'),
+  'preview-org-plan-change': read,
+  'org-billing-details': handoff('org.plans', 'Billing details form'),
+  'get-org-payment-receipt': read,
   'booking-ai-review': tool('get_booking_ai_review', 'propose_run_booking_ai_review'),
   'cancel-parking-booking': handoff('parking.booking', 'Parking cancellation flow'),
   'create-org-subscription-checkout': handoff('org.plans', 'Checkout'),

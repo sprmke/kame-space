@@ -26,6 +26,12 @@ import { serveSuperAdmin } from '../_shared/serveEdge.ts';
 import { logSuperAdminAction } from '../_shared/superAdminAudit.ts';
 import { requireSuperAdminStepUp } from '../_shared/superAdminVerification.ts';
 import { capturePostHogEvent } from '../_shared/posthog.ts';
+import { billingErrorResponse } from '../_shared/billingHttp.ts';
+import {
+  cancelPriceMigration,
+  previewPriceMigration,
+  schedulePriceMigration,
+} from '../_shared/orgPriceMigration.ts';
 
 function serializePlan(row: Record<string, unknown>) {
   return {
@@ -78,6 +84,36 @@ serveSuperAdmin('pricing-plans', async (req, user) => {
   const planId = url.searchParams.get('planId')?.trim() || null;
 
   if (req.method === 'GET') {
+    // Price migration: who would move, and the migrations already scheduled for the plan.
+    if (planId && url.searchParams.get('priceMigration') === 'preview') {
+      try {
+        const preview = await previewPriceMigration(planId);
+        const { data: scheduled } = await supabase
+          .from('plan_price_migrations')
+          .select('id, effective_on, notified_count, created_at')
+          .eq('plan_id', planId)
+          .is('canceled_at', null)
+          .order('effective_on', { ascending: true })
+          .limit(50);
+        return jsonSuccess(req, {
+          planName: preview.planName,
+          affectedCount: preview.affected.length,
+          monthlyChangePhp: preview.affected.reduce(
+            (sum, row) => sum + (row.newTotalPhp - row.oldTotalPhp),
+            0
+          ),
+          scheduled: (scheduled ?? []).map((row) => ({
+            id: row.id as string,
+            effectiveOn: row.effective_on as string,
+            notifiedCount: Number(row.notified_count ?? 0),
+            createdAt: row.created_at as string,
+          })),
+        });
+      } catch (err) {
+        return billingErrorResponse(req, err);
+      }
+    }
+
     if (planId) {
       const { data, error } = await supabase
         .from('pricing_plans')
@@ -201,6 +237,41 @@ serveSuperAdmin('pricing-plans', async (req, user) => {
     const body = await readJsonBody(req);
     const id = typeof body.planId === 'string' ? body.planId.trim() : planId;
     if (!id) return jsonError(req, 'planId is required');
+
+    if (body.action === 'schedule_price_migration') {
+      try {
+        const effectiveOn = new Date(String(body.effectiveOn ?? ''));
+        const result = await schedulePriceMigration({
+          planId: id,
+          effectiveOn,
+          adminUserId: user.id,
+        });
+        await logSuperAdminAction(user, {
+          action: 'pricing_plans.price_migration_scheduled',
+          targetType: 'pricing_plan',
+          targetId: id,
+          summary: `Scheduled subscribers to move to the current price on ${effectiveOn.toISOString().slice(0, 10)}`,
+          metadata: { affected: result.affected, notified: result.notified },
+        });
+        return jsonSuccess(req, result);
+      } catch (err) {
+        return billingErrorResponse(req, err);
+      }
+    }
+
+    if (body.action === 'cancel_price_migration') {
+      const migrationId = typeof body.migrationId === 'string' ? body.migrationId.trim() : '';
+      if (!migrationId) return jsonError(req, 'migrationId is required');
+      await cancelPriceMigration(migrationId);
+      await logSuperAdminAction(user, {
+        action: 'pricing_plans.price_migration_canceled',
+        targetType: 'pricing_plan',
+        targetId: id,
+        summary: 'Canceled a scheduled price migration',
+        metadata: { migrationId },
+      });
+      return jsonSuccess(req, { canceled: true });
+    }
 
     const { data: existing, error: existingError } = await supabase
       .from('pricing_plans')

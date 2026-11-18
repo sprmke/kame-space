@@ -453,7 +453,7 @@ export async function upsertAiPlatformOrgSettings(input: {
   planCreditAllowance?: number | null;
   planTier?: string;
   overrideReason?: string | null;
-  updatedBy: string;
+  updatedBy: string | null;
 }): Promise<AiPlatformOrgSettings> {
   const sb = db();
   const row: Record<string, unknown> = {

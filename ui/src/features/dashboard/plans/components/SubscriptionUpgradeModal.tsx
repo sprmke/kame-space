@@ -3,7 +3,10 @@ import { useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { usePropertyIdParam, useResolvedOrgId } from '@/features/dashboard/org/lib/adminApiScope';
-import { PlanReviewDialog } from '@/features/dashboard/plans/components/PlanReviewDialog';
+import {
+  PlanReviewDialog,
+  type CheckoutRequest,
+} from '@/features/dashboard/plans/components/PlanReviewDialog';
 import { useCreateOrgPlanCheckout, useOrgPlan } from '@/features/dashboard/plans/hooks/useOrgPlan';
 import { usePropertyEntitlements } from '@/features/dashboard/plans/hooks/usePropertyEntitlements';
 import { openOrgPlanCheckout } from '@/features/dashboard/plans/lib/openOrgPlanCheckout';
@@ -35,7 +38,6 @@ export function SubscriptionUpgradeModal({ open, onOpenChange, feature }: Props)
 
   const plans = useMemo(() => data?.plans ?? [], [data?.plans]);
   const subscription = data?.subscription ?? null;
-  const propertyCount = data?.properties?.length ?? 0;
 
   const currentPlanId = useMemo(
     () => resolveEffectiveCurrentPlanId(plans, subscription?.planId),
@@ -67,34 +69,40 @@ export function SubscriptionUpgradeModal({ open, onOpenChange, feature }: Props)
     onOpenChange(false);
   }, [open, feature, targetPlan, onOpenChange]);
 
-  const handleContinueToPayment = async (planId: string) => {
+  const handleContinueToPayment = async (request: CheckoutRequest) => {
     if (!orgId) return;
     if (feature) {
       captureAppEvent('upgrade_modal_cta_clicked', {
         feature_key: feature,
-        target_plan_id: planId,
+        target_plan_id: request.planId,
       });
     }
-    const checkout = await createCheckout.mutateAsync({ planId });
+    const checkout = await createCheckout.mutateAsync({
+      planId: request.planId,
+      expectedChargePhp: request.expectedChargePhp,
+      idempotencyKey: request.idempotencyKey,
+    });
     onOpenChange(false);
+    // Fully covered by account credit: applied already, nothing to pay.
+    if (!checkout.checkoutUrl) return;
     openOrgPlanCheckout({
       orgId,
       transactionId: checkout.transactionId,
       checkoutUrl: checkout.checkoutUrl,
       previousPlanId: currentPlanId ?? null,
-      targetPlanId: planId,
+      targetPlanId: request.planId,
     });
   };
 
   return (
     <PlanReviewDialog
       open={open && Boolean(targetPlan)}
+      orgId={orgId}
       plan={targetPlan}
       currentPlan={currentPlan}
-      propertyCount={propertyCount}
       subscription={subscription}
       onOpenChange={onOpenChange}
-      onConfirmDowngrade={async () => {
+      onScheduleDowngrade={async () => {
         onOpenChange(false);
       }}
       onCheckoutPaid={handleContinueToPayment}

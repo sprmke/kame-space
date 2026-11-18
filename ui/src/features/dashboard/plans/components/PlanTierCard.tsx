@@ -31,7 +31,12 @@ export function PlanTierCard({
   onSelect,
   featureAreaMinHeight,
 }: PlanTierCardProps) {
-  const { plan, isCurrent, direction, gains, inheritsFrom } = tier;
+  const { plan, isCurrent, direction, gains, inheritsFrom, scheduledStart } = tier;
+  const isScheduled = Boolean(scheduledStart);
+  const actionLabel = planActionLabel(direction, hasCurrentPlan, plan.code, {
+    isFree: plan.isDefault,
+    scheduled: isScheduled,
+  });
   const price = planPrice(plan);
   const title = planDisplayName(plan);
   const headingId = `plan-tier-${plan.code}`;
@@ -77,6 +82,12 @@ export function PlanTierCard({
             {isCurrent ? (
               <Badge variant="success" className="shrink-0 whitespace-nowrap text-[11px]">
                 Current
+              </Badge>
+            ) : null}
+
+            {scheduledStart ? (
+              <Badge variant="secondary" className="shrink-0 whitespace-nowrap text-[11px]">
+                {scheduledStart}
               </Badge>
             ) : null}
 
@@ -137,19 +148,28 @@ export function PlanTierCard({
         <div className="shrink-0 pt-8">
           <Button
             type="button"
-            variant={isCurrent ? 'soft' : planSelectButtonVariant(isCurrent, direction, plan.code)}
-            aria-disabled={isCurrent || undefined}
-            tabIndex={isCurrent ? -1 : 0}
-            onClick={isCurrent ? undefined : onSelect}
+            variant={
+              isCurrent || isScheduled
+                ? 'soft'
+                : planSelectButtonVariant(isCurrent, direction, plan.code)
+            }
+            aria-disabled={isCurrent || isScheduled || undefined}
+            tabIndex={isCurrent || isScheduled ? -1 : 0}
+            onClick={isCurrent || isScheduled ? undefined : onSelect}
             aria-label={
               isCurrent
                 ? `${title} is your current plan`
-                : `${planActionLabel(direction, hasCurrentPlan, plan.code)} to ${title}`
+                : isScheduled
+                  ? `${title} is scheduled. ${scheduledStart}`
+                  : `${actionLabel} to ${title}`
             }
-            className={cn('group h-11 w-full text-sm', isCurrent && 'pointer-events-none')}
+            className={cn(
+              'group h-11 w-full text-sm',
+              (isCurrent || isScheduled) && 'pointer-events-none'
+            )}
           >
-            {planActionLabel(direction, hasCurrentPlan, plan.code)}
-            {!isCurrent ? (
+            {actionLabel}
+            {!isCurrent && !isScheduled ? (
               direction === 'downgrade' ? (
                 <ArrowDown
                   className="size-4 transition-transform duration-200 group-hover:translate-y-0.5"

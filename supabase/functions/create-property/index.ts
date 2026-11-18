@@ -32,10 +32,7 @@ import {
 import { seedPropertySettings } from '../_shared/propertySettingsSeed.ts';
 import { seedPropertyTeamTemplates } from '../_shared/propertyTeamTemplates.ts';
 import { ensureOrgHostMode } from '../_shared/parkingSlotUnit.ts';
-import {
-  autoEnrollPropertyInOrgSubscription,
-  orgHasLivePaidSubscription,
-} from '../_shared/planEntitlements.ts';
+import { autoEnrollPropertyInOrgSubscription } from '../_shared/planEntitlements.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 
 serveAuthenticated('create-property', async (req, user) => {
@@ -140,11 +137,23 @@ serveAuthenticated('create-property', async (req, user) => {
     return jsonError(req, 'Property created but settings seed failed', 500);
   }
 
-  let billingRequired = false;
+  // D6: on a paid plan the new property is covered right away and the prorated share of the
+  // added cost for the rest of the period joins the next payment. While a payment is overdue it
+  // stays on Free until the host pays.
+  let billing:
+    | { status: 'covered'; trueUpPhp: number; nextRenewalPhp: number }
+    | { status: 'overdue' }
+    | { status: 'free' } = { status: 'free' };
   try {
-    billingRequired = await orgHasLivePaidSubscription(orgId);
-    if (!billingRequired) {
-      await autoEnrollPropertyInOrgSubscription(orgId, data.id as string, user.id);
+    const coverage = await autoEnrollPropertyInOrgSubscription(orgId, data.id as string, user.id);
+    if (coverage.covered) {
+      billing = {
+        status: 'covered',
+        trueUpPhp: coverage.trueUpPhp,
+        nextRenewalPhp: coverage.nextRenewalPhp,
+      };
+    } else if (coverage.reason === 'payment_overdue') {
+      billing = { status: 'overdue' };
     }
   } catch (e) {
     console.error('[create-property] subscription auto-enroll:', e);
@@ -161,8 +170,24 @@ serveAuthenticated('create-property', async (req, user) => {
     targetLabel: (data.name as string | undefined) ?? name,
   });
 
+  if (billing.status === 'covered') {
+    await logActivity({
+      action: 'billing.property_covered',
+      organizationId: orgId,
+      propertyId: data.id as string,
+      scope: 'property',
+      actor: buildActorContext('dashboard', { orgAccess }, req),
+      targetType: 'property',
+      targetId: data.id as string,
+      targetLabel: (data.name as string | undefined) ?? name,
+      metadata: { true_up_php: billing.trueUpPhp, via: 'create' },
+    });
+  }
+
   return jsonSuccess(req, {
     property: serializeProperty(data),
-    billingRequired,
+    billing,
+    // Kept for older clients: true when the host still has to pay before the property is covered.
+    billingRequired: billing.status === 'overdue',
   });
 });

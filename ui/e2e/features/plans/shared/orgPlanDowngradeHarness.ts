@@ -1,5 +1,7 @@
 /**
- * Mocked org Plans downgrade harness — PlanReviewDialog + apply-org-plan-downgrade.
+ * Mocked org Plans scheduled-change harness: PlanReviewDialog, PlanCancelDialog and
+ * org-subscription-change. A downgrade or cancel is recorded as pending intent on the
+ * subscription (nothing changes until the period ends), like the real endpoint.
  */
 
 import { expect, type Page } from '@playwright/test';
@@ -10,19 +12,21 @@ import {
   installPlansE2eSession,
   organizationList,
   orgAccessPayload,
-  PLAN_FREE,
   PLAN_GROWTH,
-  PLAN_PRO,
-  PLAN_STARTER,
   PLANS_E2E_CATALOG,
   PLANS_E2E_ORG_ID,
-  PLANS_E2E_ORG_SLUG,
   PLANS_E2E_PROPERTY_ID,
   PLANS_E2E_PROPERTY_SLUG,
   plansE2ePaths,
   planChargedPhp,
+  planPreviewPayload,
   emptyPlanFeatures,
 } from './orgPlanHarnessShared';
+import { bringTierCardIntoView } from './planPageAssertions';
+import {
+  TIER_ORDER,
+  TIER_TITLES,
+} from '../../../../src/features/dashboard/plans/lib/planTierExpectations';
 
 export {
   PLANS_E2E_ORG_SLUG,
@@ -38,19 +42,28 @@ export type PlansDowngradeHarnessOptions = {
   accessKind?: 'owner' | 'member';
   subscriptionStatus?: 'active' | 'past_due' | 'suspended';
   subscriptionPlanId?: string;
+  scheduledPlanId?: string | null;
+  cancelAtPeriodEnd?: boolean;
 };
+
+export type ChangeCall = { action: string; planId?: string; reason?: string | null };
 
 type HarnessState = {
   accessKind: 'owner' | 'member';
   subscriptionStatus: 'active' | 'past_due' | 'suspended';
   subscriptionPlanId: string | null;
   subscriptionId: string | null;
-  downgradeCalls: string[];
+  scheduledPlanId: string | null;
+  cancelAtPeriodEnd: boolean;
+  changeCalls: ChangeCall[];
 };
+
+const PERIOD_END = '2026-09-01T00:00:00.000Z';
 
 function orgPlanPayload(state: HarnessState) {
   const currentPlan =
     PLANS_E2E_CATALOG.find((plan) => plan.id === state.subscriptionPlanId) ?? null;
+  const scheduledPlan = PLANS_E2E_CATALOG.find((plan) => plan.id === state.scheduledPlanId) ?? null;
   return {
     plans: PLANS_E2E_CATALOG,
     properties: [
@@ -69,16 +82,32 @@ function orgPlanPayload(state: HarnessState) {
           planName: currentPlan.name,
           pricingModel: 'subscription',
           status: state.subscriptionStatus,
+          source: 'purchase',
           pricePhpSnapshot: planChargedPhp(currentPlan),
           currentPeriodStart: '2026-08-01T00:00:00.000Z',
-          currentPeriodEnd: '2026-09-01T00:00:00.000Z',
-          gracePeriodEndsAt: null,
+          currentPeriodEnd: PERIOD_END,
+          gracePeriodEndsAt:
+            state.subscriptionStatus === 'past_due' ? '2026-09-06T00:00:00.000Z' : null,
+          suspendedAt: state.subscriptionStatus === 'suspended' ? '2026-08-10T00:00:00.000Z' : null,
+          autoCancelAt:
+            state.subscriptionStatus === 'suspended' ? '2026-09-09T00:00:00.000Z' : null,
+          cancelAtPeriodEnd: state.cancelAtPeriodEnd,
+          scheduledPlanId: state.scheduledPlanId,
+          scheduledPlanName: scheduledPlan?.name ?? null,
+          scheduledChangeAt: state.scheduledPlanId ? PERIOD_END : null,
+          isPriceOverridden: false,
         }
       : null,
     assignedPropertyIds: currentPlan ? [PLANS_E2E_PROPERTY_ID] : [],
+    upcomingPayment: null,
+    accountCreditPhp: 0,
+    amountOwedPhp: 0,
+    billingDetails: null,
     pendingCheckoutUrl: null,
     pendingCheckoutPlanId: null,
+    pendingCheckoutPurpose: null,
     transactions: [],
+    transactionsNextCursor: null,
   };
 }
 
@@ -95,7 +124,9 @@ export async function installPlansDowngradeMocks(
     subscriptionStatus: options.subscriptionStatus ?? 'active',
     subscriptionPlanId: options.subscriptionPlanId ?? PLAN_GROWTH,
     subscriptionId: 'sub-plans-downgrade-e2e',
-    downgradeCalls: [],
+    scheduledPlanId: options.scheduledPlanId ?? null,
+    cancelAtPeriodEnd: options.cancelAtPeriodEnd ?? false,
+    changeCalls: [],
   };
 
   await installPlansE2eSession(page);
@@ -138,10 +169,7 @@ export async function installPlansDowngradeMocks(
         await fulfillJson(route, { success: true, data: { parkings: [] } });
         return;
       case 'org-access':
-        await fulfillJson(route, {
-          success: true,
-          data: orgAccessPayload(state.accessKind),
-        });
+        await fulfillJson(route, { success: true, data: orgAccessPayload(state.accessKind) });
         return;
       case 'dashboard-stats':
         await fulfillJson(route, { success: true, data: dashboardStatsPayload() });
@@ -163,27 +191,42 @@ export async function installPlansDowngradeMocks(
           },
         });
         return;
-      case 'org-plan': {
+      case 'org-plan':
         await fulfillJson(route, { success: true, data: orgPlanPayload(state) });
         return;
-      }
-      case 'apply-org-plan-downgrade': {
-        const body = route.request().postDataJSON() as { planId?: string };
-        const targetPlanId = String(body.planId ?? '');
-        state.downgradeCalls.push(targetPlanId);
-        if (targetPlanId === PLAN_FREE) {
-          state.subscriptionPlanId = null;
-          state.subscriptionId = null;
-        } else {
-          state.subscriptionPlanId = targetPlanId;
-        }
+      case 'preview-org-plan-change': {
+        const body = route.request().postDataJSON() as {
+          kind?: 'pay' | 'schedule' | 'cancel';
+          planId?: string;
+        };
         await fulfillJson(route, {
           success: true,
-          data: {
-            orgSubscriptionId: state.subscriptionId,
-            toFree: targetPlanId === PLAN_FREE,
-          },
+          data: planPreviewPayload({
+            kind: body.kind ?? 'pay',
+            planId: body.planId ?? null,
+            currentPlanId: state.subscriptionPlanId,
+          }),
         });
+        return;
+      }
+      case 'org-subscription-change': {
+        const body = route.request().postDataJSON() as ChangeCall;
+        state.changeCalls.push({ action: body.action, planId: body.planId, reason: body.reason });
+        if (body.action === 'schedule_downgrade') {
+          state.scheduledPlanId = String(body.planId ?? '');
+          state.cancelAtPeriodEnd = false;
+        } else if (body.action === 'cancel_at_period_end') {
+          state.cancelAtPeriodEnd = true;
+          state.scheduledPlanId = null;
+        } else if (body.action === 'clear_intent') {
+          state.cancelAtPeriodEnd = false;
+          state.scheduledPlanId = null;
+        } else if (body.action === 'cancel_now') {
+          state.subscriptionPlanId = null;
+          state.subscriptionId = null;
+          state.subscriptionStatus = 'active';
+        }
+        await fulfillJson(route, { success: true, data: { effectiveAt: PERIOD_END } });
         return;
       }
       case 'property-entitlements':
@@ -215,17 +258,21 @@ export async function installPlansDowngradeMocks(
   return state;
 }
 
-export async function openOrgPlansPage(page: Page) {
-  await page.goto(plansE2ePaths.orgPlans('plans'));
+export async function openOrgPlansPage(page: Page, tab: 'plans' | 'billing' = 'plans') {
+  await page.goto(plansE2ePaths.orgPlans(tab));
   await expect(page.getByRole('heading', { name: 'Plans & Billing' }).first()).toBeVisible({
     timeout: 25_000,
   });
   await expect(page.getByRole('tab', { name: 'Plans' })).toBeVisible({ timeout: 15_000 });
 }
 
-export async function openDowngradeReview(page: Page, targetPlanName: string) {
+/** Clicks the card action for `targetPlanName` (Switch at renewal / Cancel plan / Upgrade). */
+export async function openPlanChange(page: Page, targetPlanName: string, actionLabel: string) {
+  // The tier rail is a carousel: page to the card so the sidebar is not on top of its button.
+  const code = TIER_ORDER.find((tier) => TIER_TITLES[tier] === targetPlanName);
+  if (code) await bringTierCardIntoView(page, code);
   await page
-    .getByRole('button', { name: new RegExp(`Downgrade to ${targetPlanName}`, 'i') })
+    .getByRole('button', { name: new RegExp(`^${actionLabel} to ${targetPlanName}$`, 'i') })
     .click();
   await expect(page.getByRole('dialog')).toBeVisible();
 }

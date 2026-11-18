@@ -4,7 +4,7 @@
  * gate sees exactly the golden features for the tier under test.
  */
 
-import { fulfillJson, planChargedPhp } from './orgPlanHarnessShared';
+import { fulfillJson, planChargedPhp, planPreviewPayload } from './orgPlanHarnessShared';
 import {
   goldenPlanId,
   goldenSoldPlanDtos,
@@ -54,6 +54,21 @@ export async function installTierGateMocks(
       },
     })
   );
+
+  await page.route('**/functions/v1/preview-org-plan-change*', (route) => {
+    const body = route.request().postDataJSON() as {
+      kind?: 'pay' | 'schedule' | 'cancel';
+      planId?: string;
+    };
+    return fulfillJson(route, {
+      success: true,
+      data: planPreviewPayload({
+        kind: body.kind ?? 'pay',
+        planId: body.planId ?? null,
+        currentPlanId: tier === 'free' ? null : goldenPlanId(tier),
+      }),
+    });
+  });
 
   await page.route('**/functions/v1/org-plan*', (route) =>
     fulfillJson(route, {

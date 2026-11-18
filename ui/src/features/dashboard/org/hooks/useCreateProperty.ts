@@ -5,6 +5,12 @@ import { callEdgeFunction } from '@/features/dashboard/org/lib/edgeClient';
 import type { Property } from '@/features/dashboard/org/types';
 import { orgPlanQueryKey } from '@/features/dashboard/plans/hooks/useOrgPlan';
 
+/** What billing did with the new property. `covered` joins the plan now; `overdue` waits for payment. */
+export type CreatePropertyBilling =
+  | { status: 'covered'; trueUpPhp: number; nextRenewalPhp: number }
+  | { status: 'overdue' }
+  | { status: 'free' };
+
 export type CreatePropertyInput = {
   orgId: string;
   orgSlug: string;
@@ -19,7 +25,11 @@ export function useCreateProperty() {
 
   return useMutation({
     mutationFn: (input: CreatePropertyInput) =>
-      callEdgeFunction<{ property: Property; billingRequired?: boolean }>('create-property', {
+      callEdgeFunction<{
+        property: Property;
+        billing?: CreatePropertyBilling;
+        billingRequired?: boolean;
+      }>('create-property', {
         method: 'POST',
         body: JSON.stringify({
           orgId: input.orgId,
@@ -46,7 +56,12 @@ export function useCreateProperty() {
         queryKey: ['properties', input.orgSlug],
       });
       void queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY });
-      if (data.billingRequired) {
+      // A covered property changes the plan total, the next payment and the credit/owed lines.
+      if (
+        data.billing?.status === 'covered' ||
+        data.billing?.status === 'overdue' ||
+        data.billingRequired
+      ) {
         void queryClient.invalidateQueries({ queryKey: orgPlanQueryKey(input.orgId) });
       }
     },

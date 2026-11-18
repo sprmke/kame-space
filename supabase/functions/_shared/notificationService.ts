@@ -40,7 +40,8 @@ export type NotificationType =
   | 'marketing_item_due'
   | 'marketing_opportunity_urgent'
   | 'marketing_publish_held'
-  | 'marketing_publish_failed';
+  | 'marketing_publish_failed'
+  | 'billing_notice';
 
 /** Legacy inbox rows stored this generic title before participant names shipped. */
 export const LEGACY_INBOX_NOTIFICATION_TITLE = 'New guest message';

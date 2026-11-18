@@ -116,6 +116,7 @@ import {
   hasParkingSettingsIssues,
   subscribeParkingSettingsIssues,
 } from '@/features/dashboard/parking/lib/parkingSettingsIssuesStore';
+import { BillingStatusBanner } from '@/features/dashboard/plans/components/BillingStatusBanner';
 import { OrgPlanSidebarEntry } from '@/features/dashboard/plans/components/OrgPlanSidebarEntry';
 import { UpgradeModalProvider } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { SetupGuideProvider } from '@/features/dashboard/setup-guide/components/SetupGuideProvider';
@@ -278,6 +279,7 @@ export function AdminLayout({ children, fillMain: fillMainProp = false }: Props)
 export function AdminLayoutOutlet() {
   return (
     <AdminLayout>
+      <BillingStatusBanner />
       <PropertyLifecycleBannerSlot />
       <Outlet />
     </AdminLayout>

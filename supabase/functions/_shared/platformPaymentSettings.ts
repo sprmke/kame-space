@@ -10,6 +10,10 @@ export type PlatformPaymentSettings = {
   enabledBanks: string[];
   renewalLinkLeadDays: number;
   gracePeriodDays: number;
+  /** Days a suspended subscription waits for payment before it ends and the org moves to Free. */
+  suspensionCancelDays: number;
+  /** Hours an unpaid checkout stays payable before it is closed. */
+  pendingCheckoutTtlHours: number;
 };
 
 function db() {
@@ -40,5 +44,7 @@ export async function getPlatformPaymentSettings(): Promise<PlatformPaymentSetti
       : [],
     renewalLinkLeadDays: Number(data?.renewal_link_lead_days ?? 5),
     gracePeriodDays: Number(data?.grace_period_days ?? 5),
+    suspensionCancelDays: Number(data?.suspension_cancel_days ?? 30),
+    pendingCheckoutTtlHours: Number(data?.pending_checkout_ttl_hours ?? 24),
   };
 }
