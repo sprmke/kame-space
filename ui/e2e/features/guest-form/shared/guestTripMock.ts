@@ -53,7 +53,7 @@ export function guestTripMock(overrides: Partial<GuestTrip> = {}): GuestTrip {
       totalBalance: null,
       balancePaid: 0,
       amountDue: null,
-      isAirbnb: false,
+      isOtaPrepaid: false,
     },
     refund: { amount: null, settledAt: null },
     cancellation: {

@@ -60,7 +60,7 @@ function buildVisibleSteps(flags: GuestFormVisibilityFlags): GuestFormStepConfig
   return ALL_GUEST_FORM_STEPS.filter((step) => {
     if (step.id === 3) return flags.allowParking;
     if (step.id === 4) return flags.allowPets;
-    if (step.id === 5) return !flags.isAirbnb;
+    if (step.id === 5) return !flags.isOta;
     return true;
   });
 }

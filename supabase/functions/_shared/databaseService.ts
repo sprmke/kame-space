@@ -13,6 +13,7 @@ import { UploadService } from './uploadService.ts';
 import { assertWithinUploadLimit } from './uploadLimits.ts';
 import { hashIdentityEmail } from './identityVerification.ts';
 import { assertPropertyGuestPartyRules, guestPartySlotsFromFormData } from './guestCounts.ts';
+import { isOtaPrepaidSource } from './bookingChannel.ts';
 import { resolveGuestFormSettings } from './guestFormSettings.ts';
 import { getDefaultPropertyId } from './propertyScope.ts';
 import { createNotification } from './notificationService.ts';
@@ -316,8 +317,8 @@ export class DatabaseService {
       };
 
       // Get the downpayment receipt file (FormData: paymentReceipt → payment_receipt_url)
-      // Airbnb bookings skip the payment step — receipt is not required.
-      const isAirbnbSource = (formData.get('bookingSource') as string)?.trim() === 'Airbnb';
+      // OTA-prepaid bookings skip the payment step — receipt is not required.
+      const isPrepaidSource = isOtaPrepaidSource(formData.get('bookingSource') as string);
       const paymentReceipt = formData.get('paymentReceipt') as File;
       if (paymentReceipt instanceof File && paymentReceipt.size > 0) {
         assertWithinUploadLimit(paymentReceipt, 'document');
@@ -338,7 +339,7 @@ export class DatabaseService {
         }
         if (existingBooking) return existingBooking.payment_receipt_url;
         if (!saveImagesToStorage) return 'dev-mode-skipped';
-        if (isAirbnbSource) return '';
+        if (isPrepaidSource) return '';
         throw new Error('Downpayment receipt is required');
       };
 
@@ -605,8 +606,8 @@ export class DatabaseService {
 
       console.log('Form data processed successfully');
 
-      // Transform data for database — Airbnb bookings may have no receipt
-      if (!paymentReceiptUrl && !isAirbnbSource) {
+      // Transform data for database — OTA-prepaid bookings may have no receipt
+      if (!paymentReceiptUrl && !isPrepaidSource) {
         throw new Error('Failed to upload downpayment receipt');
       }
 

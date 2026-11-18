@@ -1,8 +1,9 @@
+import { isOtaPrepaidSource } from './bookingChannel.ts';
 import { manilaTodayYmd, normalizeBookingDateToYmd } from './calendarAvailabilityManila.ts';
 
-export function isAirbnbZeroSdBooking(row: Record<string, unknown>): boolean {
-  const source = String(row.booking_source ?? '').trim();
-  if (source !== 'Airbnb') return false;
+/** OTA-prepaid stay (Airbnb, Agoda, Booking.com) with no security deposit to refund. */
+export function isOtaZeroSdBooking(row: Record<string, unknown>): boolean {
+  if (!isOtaPrepaidSource(row.booking_source)) return false;
   const sd = row.security_deposit != null ? Number(row.security_deposit) : 1500;
   return sd === 0;
 }
@@ -16,7 +17,7 @@ export function checkoutOnOrBeforeTodayManila(checkOutDate: string | null | unde
 export type GuestReviewPath = 'sd_refund' | 'airbnb_post_stay';
 
 export function resolveGuestReviewPath(row: Record<string, unknown>): GuestReviewPath | null {
-  if (isAirbnbZeroSdBooking(row)) return 'airbnb_post_stay';
+  if (isOtaZeroSdBooking(row)) return 'airbnb_post_stay';
 
   const emailedAt =
     typeof row.sd_refund_form_emailed_at === 'string' ? row.sd_refund_form_emailed_at.trim() : '';
@@ -45,7 +46,7 @@ export function canAccessGuestReview(row: Record<string, unknown>): boolean {
 }
 
 export function canClaimGuestReviewVoucher(row: Record<string, unknown>): boolean {
-  if (isAirbnbZeroSdBooking(row)) {
+  if (isOtaZeroSdBooking(row)) {
     const status = String(row.status ?? '');
     return status === 'READY_FOR_CHECKOUT' || status === 'COMPLETED';
   }

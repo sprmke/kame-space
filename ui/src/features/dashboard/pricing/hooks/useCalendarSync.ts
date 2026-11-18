@@ -9,6 +9,7 @@ import {
 } from '@/features/dashboard/plans/lib/upgradeModalBridge';
 import {
   addCalendarFeed,
+  CALENDAR_PROVIDER_LABELS,
   CALENDAR_SYNC_QUERY_KEY,
   fetchCalendarSyncSettings,
   removeCalendarFeed,
@@ -160,27 +161,28 @@ export function useSetCreateBookings() {
   const queryClient = useQueryClient();
   const invalidate = useInvalidateCalendarSync();
   return useMutation({
-    mutationFn: (input: { feedId: string; enabled: boolean }) =>
+    mutationFn: (input: { feedId: string; enabled: boolean; provider?: CalendarFeedProvider }) =>
       updateCalendarFeed(propertyId!, { feedId: input.feedId, createBookings: input.enabled }),
     onSuccess: (data, variables) => {
       invalidate();
+      const name = CALENDAR_PROVIDER_LABELS[variables.provider ?? 'airbnb'];
       if (!variables.enabled) {
-        toast.success('Airbnb stays will stop creating bookings');
+        toast.success(`${name} stays will stop creating bookings`);
         return;
       }
       const sync = data.sync;
       if (sync?.ok && sync.bookingsCreated > 0) {
-        toast.success(`${sync.bookingsCreated} Airbnb bookings imported`);
+        toast.success(`${sync.bookingsCreated} ${name} bookings imported`);
         return;
       }
       if (sync?.ok && sync.bookingsLinked > 0) {
-        toast.success(`${sync.bookingsLinked} Airbnb bookings linked`);
+        toast.success(`${sync.bookingsLinked} ${name} bookings linked`);
         return;
       }
-      toast.success('Airbnb bookings on');
+      toast.success(`${name} bookings on`);
     },
     onError: (error: Error) =>
-      handleCalendarSyncError(error, 'Could not update Airbnb bookings', queryClient),
+      handleCalendarSyncError(error, 'Could not update bookings', queryClient),
   });
 }
 

@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Live Identity Verification — guided capture, phone handoff, PhilSys QR, liveness'
 status: in-progress
 tags: [planning, in-progress, identity, verification, guest, host, super-admin, trust-safety]
-updated: 2026-11-07
+updated: 2026-11-19
 ---
 
 # Live Identity Verification
@@ -715,7 +715,7 @@ Per `testing.mdc`; same-change requirement applies to each phase.
 | Camera access denied or unavailable                                                       | **Medium**                                                    | Visible upload fallback at every capture step; cross-device handoff; the legacy path is never removed, only demoted                                                                        |
 | Low-end Android performance on the landmark loop                                          | **Medium**                                                    | Frame-rate cap, downscaled inference, a time-boxed challenge with a graceful `unverified` exit rather than a hang                                                                          |
 | GAF workflow regression (building stops receiving ID attachments)                         | **High** — breaks a live operational dependency               | Phase 4.7 is explicit: generated verification-summary PDF when no card photo exists; `gafRequestSendBlockReason` learns the new shape; covered by handler tests                            |
-| Scope creep into general trust & safety                                                   | **Medium**                                                    | Reporting, enforcement, and appeals stay in [`./guest-trust-safety-reporting.md`](../planned/guest-trust-safety-reporting.md). This plan verifies identity and stops there                          |
+| Scope creep into general trust & safety                                                   | **Medium**                                                    | Reporting, enforcement, and appeals stay in [`./guest-trust-safety-reporting.md`](../planned/guest-trust-safety-reporting.md). This plan verifies identity and stops there                 |
 | Guest abandons a longer flow and bookings drop                                            | **Medium**                                                    | Two challenges not six; PhilSys QR path is faster than today's upload; Phase 1 PostHog funnel measures it from day one; the upload fallback stays                                          |
 | Didit's free allowance shrank on 2026-11-01 ($10/mo credit replaced 500-free-per-feature) | **Low** — Track A does not depend on it                       | Phase 7 is a measured gate, and the provider interface keeps Stripe Identity, Persona, and PSA eVerify as alternates                                                                       |
 | Storing more biometric data increases DPA exposure                                        | **Medium**                                                    | Phase 0 PIA, 7-day capture retention, hashed document numbers, on-device-only landmarks, wired deletion right. Net exposure should **fall** versus today's indefinitely-retained ID images |
@@ -732,7 +732,7 @@ Per `testing.mdc`; same-change requirement applies to each phase.
 | NFC / ePassport chip read                            | Requires native code; Web NFC cannot reach the secure element                                                                                              | —                                                                                       |
 | Realtime broadcast                                   | Polling is the contract; a service-role-only table cannot be read by an anonymous desktop client without weakening RLS                                     | Polling                                                                                 |
 | Backfilling or deleting existing `valid-ids` objects | Separate data-migration plan with its own legal review                                                                                                     | —                                                                                       |
-| Trust & safety reporting / enforcement               | [`./guest-trust-safety-reporting.md`](../planned/guest-trust-safety-reporting.md)                                                                                   | —                                                                                       |
+| Trust & safety reporting / enforcement               | [`./guest-trust-safety-reporting.md`](../planned/guest-trust-safety-reporting.md)                                                                          | —                                                                                       |
 
 ---
 

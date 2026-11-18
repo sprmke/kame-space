@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   normalizeBookingSource,
   bookingSourceFromUrlSearchParams,
+  formSourceFromStoredSource,
   hasStrippedGuestQueryKeys,
   stripLegacyFromQueryParam,
   BOOKING_SOURCE_OPTIONS,
@@ -13,11 +14,41 @@ describe('normalizeBookingSource', () => {
   it('normalizeBookingSource is exported', () => {
     expect(typeof normalizeBookingSource).toBe('function');
   });
+
+  it('keeps an OTA source that is not in the picker yet', () => {
+    // G4 regression: saving the edit form must not turn an Agoda stay into a direct booking.
+    expect(normalizeBookingSource('Agoda')).toBe('Agoda');
+    expect(normalizeBookingSource(' booking_com ')).toBe('Booking.com');
+    expect(normalizeBookingSource('Expedia')).toBe('Expedia');
+  });
+
+  it('still folds known aliases and blank values', () => {
+    expect(normalizeBookingSource('airbnb')).toBe('Airbnb');
+    expect(normalizeBookingSource('')).toBe('Direct');
+    expect(normalizeBookingSource(null)).toBe('Direct');
+  });
 });
 
 describe('bookingSourceFromUrlSearchParams', () => {
   it('bookingSourceFromUrlSearchParams is exported', () => {
     expect(typeof bookingSourceFromUrlSearchParams).toBe('function');
+  });
+});
+
+describe('channel sources', () => {
+  it('reads agoda and booking from ?source=', () => {
+    expect(bookingSourceFromUrlSearchParams(new URLSearchParams('source=agoda'))).toBe('Agoda');
+    expect(bookingSourceFromUrlSearchParams(new URLSearchParams('source=BOOKING'))).toBe(
+      'Booking.com'
+    );
+    expect(bookingSourceFromUrlSearchParams(new URLSearchParams('source=expedia'))).toBe('Direct');
+  });
+
+  it('narrows a stored source to a form source, or null when the form has no copy', () => {
+    expect(formSourceFromStoredSource('Agoda')).toBe('Agoda');
+    expect(formSourceFromStoredSource('booking_com')).toBe('Booking.com');
+    expect(formSourceFromStoredSource('Vrbo')).toBeNull();
+    expect(formSourceFromStoredSource('Expedia')).toBeNull();
   });
 });
 
