@@ -1,0 +1,748 @@
+[
+  {
+    "href": "/",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/",
+    "notFound": false,
+    "len": 2585,
+    "label": "KameSpace",
+    "from": ["/", "/for-hosts", "/for-hosts/pricing"]
+  },
+  {
+    "href": "/developments",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/developments",
+    "notFound": false,
+    "len": 871,
+    "label": "Developments",
+    "from": ["/", "/for-hosts", "/for-hosts/pricing"]
+  },
+  {
+    "href": "/properties",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/properties",
+    "notFound": false,
+    "len": 919,
+    "label": "Properties",
+    "from": ["/", "/for-hosts", "/for-hosts/pricing"]
+  },
+  {
+    "href": "/parkings",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/parkings",
+    "notFound": false,
+    "len": 676,
+    "label": "Parkings",
+    "from": ["/", "/for-hosts", "/for-hosts/pricing"]
+  },
+  {
+    "href": "/services",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/services",
+    "notFound": false,
+    "len": 825,
+    "label": "Services",
+    "from": ["/", "/for-hosts", "/for-hosts/pricing"]
+  },
+  {
+    "href": "/for-guests/login",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-guests/login",
+    "notFound": false,
+    "len": 660,
+    "label": "Sign In",
+    "from": ["/", "/search", "/services"]
+  },
+  {
+    "href": "/properties/kame-home",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/properties/kame-home",
+    "notFound": false,
+    "len": 2564,
+    "label": "New Condo Monaco 2604 4.50 (10) San Fernando, Azur",
+    "from": ["/", "/search", "/properties"]
+  },
+  {
+    "href": "/properties/in/san-fernando",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/properties/in/san-fernando",
+    "notFound": false,
+    "len": 725,
+    "label": "San Fernando 1",
+    "from": ["/", "/properties"]
+  },
+  {
+    "href": "/for-hosts",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts",
+    "notFound": false,
+    "len": 2314,
+    "label": "Become a host",
+    "from": ["/", "/for-hosts", "/for-hosts/pricing"]
+  },
+  {
+    "href": "/for-hosts/pricing",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/pricing",
+    "notFound": false,
+    "len": 6901,
+    "label": "See pricing",
+    "from": ["/", "/for-hosts", "/for-hosts/pricing"]
+  },
+  {
+    "href": "/about",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/about",
+    "notFound": false,
+    "len": 1900,
+    "label": "About us",
+    "from": ["/", "/for-hosts", "/for-hosts/pricing"]
+  },
+  {
+    "href": "/contact",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/contact",
+    "notFound": false,
+    "len": 1003,
+    "label": "Contact",
+    "from": ["/", "/for-hosts", "/for-hosts/pricing"]
+  },
+  {
+    "href": "/support",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/support",
+    "notFound": false,
+    "len": 3813,
+    "label": "Support",
+    "from": ["/", "/for-hosts", "/for-hosts/pricing"]
+  },
+  {
+    "href": "/privacy",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/privacy",
+    "notFound": false,
+    "len": 9984,
+    "label": "Privacy policy",
+    "from": ["/", "/for-hosts", "/for-hosts/pricing"]
+  },
+  {
+    "href": "/terms",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/terms",
+    "notFound": false,
+    "len": 8497,
+    "label": "Terms of service",
+    "from": ["/", "/for-hosts", "/for-hosts/pricing"]
+  },
+  {
+    "href": "/cookies",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/cookies",
+    "notFound": false,
+    "len": 3006,
+    "label": "Cookie policy",
+    "from": ["/", "/for-hosts", "/for-hosts/pricing"]
+  },
+  {
+    "href": "/for-hosts/login",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login",
+    "notFound": false,
+    "len": 1243,
+    "label": "Sign In",
+    "from": ["/for-hosts", "/for-hosts/pricing"]
+  },
+  {
+    "href": "/for-hosts#features",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts#features",
+    "notFound": false,
+    "len": 2314,
+    "label": "Features",
+    "from": ["/for-hosts/pricing"]
+  },
+  {
+    "href": "/for-hosts#how-it-works",
+    "status": 0,
+    "finalUrl": "http://localhost:5173/for-hosts#how-it-works",
+    "notFound": false,
+    "len": 2314,
+    "label": "How It Works",
+    "from": ["/for-hosts/pricing"]
+  },
+  {
+    "href": "/for-hosts#reviews",
+    "status": 0,
+    "finalUrl": "http://localhost:5173/for-hosts#reviews",
+    "notFound": false,
+    "len": 2314,
+    "label": "Reviews",
+    "from": ["/for-hosts/pricing"]
+  },
+  {
+    "href": "/developments/azure-north-residences",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/developments/azure-north-residences",
+    "notFound": false,
+    "len": 956,
+    "label": "Condominium 1 homes available Century Properties A",
+    "from": ["/search", "/properties/kame-home", "/parkings/monaco-level-2-slot-27"]
+  },
+  {
+    "href": "/parkings/monaco-level-2-slot-27",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/parkings/monaco-level-2-slot-27",
+    "notFound": false,
+    "len": 1024,
+    "label": "Reserve slot",
+    "from": ["/search", "/parkings", "/developments/azure-north-residences"]
+  },
+  {
+    "href": "/hosts/kame-homes",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/hosts/kame-homes",
+    "notFound": false,
+    "len": 1543,
+    "label": "Kame Space",
+    "from": ["/properties/kame-home", "/parkings/monaco-level-2-slot-27"]
+  },
+  {
+    "href": "/parkings/in/other",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/parkings/in/other",
+    "notFound": false,
+    "len": 679,
+    "label": "Parking in Other View all",
+    "from": ["/parkings"]
+  },
+  {
+    "href": "/developments/in/san-fernando",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/developments/in/san-fernando",
+    "notFound": false,
+    "len": 723,
+    "label": "Developments in San Fernando View all",
+    "from": ["/developments"]
+  },
+  {
+    "href": "/developments/azure-north-residences/properties",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/developments/azure-north-residences/properties",
+    "notFound": false,
+    "len": 745,
+    "label": "View Homes",
+    "from": ["/developments/azure-north-residences"]
+  },
+  {
+    "href": "/developments/azure-north-residences/parking",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/developments/azure-north-residences/parking",
+    "notFound": false,
+    "len": 653,
+    "label": "View Parking",
+    "from": ["/developments/azure-north-residences"]
+  },
+  {
+    "href": "/properties/kame-home/calendar",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/properties/kame-home/calendar",
+    "notFound": false,
+    "len": 463,
+    "label": "Calendar",
+    "from": ["/properties/kame-home/calendar"]
+  },
+  {
+    "href": "/properties/kame-home?pickDates=contactHost",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/properties/kame-home",
+    "notFound": false,
+    "len": 2695,
+    "label": "Messages",
+    "from": ["/properties/kame-home/calendar"]
+  },
+  {
+    "href": "/account/profile",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/account/profile",
+    "notFound": false,
+    "len": 749,
+    "label": "Profile",
+    "from": ["/account/profile", "/account/trips"]
+  },
+  {
+    "href": "/account/trips",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/account/trips",
+    "notFound": false,
+    "len": 749,
+    "label": "Trips",
+    "from": ["/account/profile", "/account/trips"]
+  },
+  {
+    "href": "/account/reviews",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/account/reviews",
+    "notFound": false,
+    "len": 749,
+    "label": "Reviews",
+    "from": ["/account/profile", "/account/trips"]
+  },
+  {
+    "href": "/account/messages",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/account/messages",
+    "notFound": false,
+    "len": 749,
+    "label": "Messages",
+    "from": ["/account/profile", "/account/trips"]
+  },
+  {
+    "href": "/account/vouchers",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/account/vouchers",
+    "notFound": false,
+    "len": 749,
+    "label": "Vouchers",
+    "from": ["/account/profile", "/account/trips"]
+  },
+  {
+    "href": "/account/favorites",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/account/favorites",
+    "notFound": false,
+    "len": 749,
+    "label": "Favorites",
+    "from": ["/account/profile", "/account/trips"]
+  },
+  {
+    "href": "/account/tickets",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/account/tickets",
+    "notFound": false,
+    "len": 749,
+    "label": "Tickets",
+    "from": ["/account/profile", "/account/trips"]
+  },
+  {
+    "href": "/account/help",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/account/help",
+    "notFound": false,
+    "len": 749,
+    "label": "Help",
+    "from": ["/account/profile", "/account/trips"]
+  },
+  {
+    "href": "/properties/kame-home/trip?bookingId=5eed1000-0000-4000-8000-000000000030",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/properties/kame-home/trip?bookingId=5eed1000-0000-4000-8000-000000000030",
+    "notFound": false,
+    "len": 252,
+    "label": "Monaco 2604 Nov 18-19, 2026 Request sent",
+    "from": ["/account/trips"]
+  },
+  {
+    "href": "/parkings/requests/74fe0973-0b45-4977-96fd-8b898c051e48",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/parkings/requests/74fe0973-0b45-4977-96fd-8b898c051e48",
+    "notFound": false,
+    "len": 395,
+    "label": "Azure Monaco - Level 2 - Slot 27 Nov 20-21, 2026 R",
+    "from": ["/account/trips"]
+  },
+  {
+    "href": "/properties/kame-home/trip?bookingId=5eed1000-0000-4000-8000-000000000035",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/properties/kame-home/trip?bookingId=5eed1000-0000-4000-8000-000000000035",
+    "notFound": false,
+    "len": 252,
+    "label": "Monaco 2604 Dec 13-16, 2026 Confirmed",
+    "from": ["/account/trips"]
+  },
+  {
+    "href": "/properties/kame-home/trip?bookingId=5eed1000-0000-4000-8000-000000000045",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/properties/kame-home/trip?bookingId=5eed1000-0000-4000-8000-000000000045",
+    "notFound": false,
+    "len": 259,
+    "label": "Monaco 2604 Feb 1-2, 2027 Completed",
+    "from": ["/account/trips"]
+  },
+  {
+    "href": "/properties/kame-home/trip?bookingId=5eed1000-0000-4000-8000-000000000025",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/properties/kame-home/trip?bookingId=5eed1000-0000-4000-8000-000000000025",
+    "notFound": false,
+    "len": 252,
+    "label": "Monaco 2604 Oct 24-26, 2026 Ready for check-in",
+    "from": ["/account/trips"]
+  },
+  {
+    "href": "/org/kame-homes/dashboard",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fdashboard",
+    "notFound": false,
+    "len": 416,
+    "label": "Dashboard",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/bookings",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fbookings",
+    "notFound": false,
+    "len": 416,
+    "label": "Bookings",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/reviews",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Freviews",
+    "notFound": false,
+    "len": 416,
+    "label": "Reviews",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/analytics",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fanalytics",
+    "notFound": false,
+    "len": 416,
+    "label": "Analytics",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/properties",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperties",
+    "notFound": false,
+    "len": 416,
+    "label": "Properties",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/parkings",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fparkings",
+    "notFound": false,
+    "len": 416,
+    "label": "Parkings",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/team",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fteam",
+    "notFound": false,
+    "len": 416,
+    "label": "Team",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/plans",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fplans",
+    "notFound": false,
+    "len": 416,
+    "label": "Plans & Billing",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/announcements",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fannouncements",
+    "notFound": false,
+    "len": 416,
+    "label": "Announcements",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/settings",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fsettings",
+    "notFound": false,
+    "len": 416,
+    "label": "Settings",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/help-support",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fhelp-support",
+    "notFound": false,
+    "len": 416,
+    "label": "Help & Support",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/parking/monaco-level-2-slot-27/bookings/5eed1100-0000-4000-8000-000000000008",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fparking%2Fmonaco-level-2-slot-27%2Fbookings%2F5eed1100-0000-4000-8000-000000000008",
+    "notFound": false,
+    "len": 416,
+    "label": "Icko Finding host Azure Monaco - Level 2 - Slot 27",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/bookings/5eed1000-0000-4000-8000-000000000032",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fbookings%2F5eed1000-0000-4000-8000-000000000032",
+    "notFound": false,
+    "len": 416,
+    "label": "Vera Pending Review Monaco 2604 · Nov 28-Dec 1, 20",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/parking/monaco-level-2-slot-27/bookings/5eed1100-0000-4000-8000-000000000007",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fparking%2Fmonaco-level-2-slot-27%2Fbookings%2F5eed1100-0000-4000-8000-000000000007",
+    "notFound": false,
+    "len": 416,
+    "label": "Hazel No host Azure Monaco - Level 2 - Slot 27 · N",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/bookings/5eed1000-0000-4000-8000-000000000031",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fbookings%2F5eed1000-0000-4000-8000-000000000031",
+    "notFound": false,
+    "len": 416,
+    "label": "Ursula Pending Review Monaco 2604 · Nov 23-25, 202",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/bookings/5eed1000-0000-4000-8000-000000000030",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fbookings%2F5eed1000-0000-4000-8000-000000000030",
+    "notFound": false,
+    "len": 416,
+    "label": "Tomas Pending Review Monaco 2604 · Nov 18-19, 2026",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/bookings?status=PENDING_REVIEW&from=2026-11-01&to=2026-11-30",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fbookings%3Fstatus%3DPENDING_REVIEW%26from%3D2026-11-01%26to%3D2026-11-30",
+    "notFound": false,
+    "len": 416,
+    "label": "Pending review 6",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/bookings?from=2026-11-18&to=2026-11-18",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fbookings%3Ffrom%3D2026-11-18%26to%3D2026-11-18",
+    "notFound": false,
+    "len": 416,
+    "label": "Check-ins today 2",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/bookings?from=2026-11-01&to=2026-11-30",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fbookings%3Ffrom%3D2026-11-01%26to%3D2026-11-30",
+    "notFound": false,
+    "len": 416,
+    "label": "Unpaid guest balance 6",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home",
+    "notFound": false,
+    "len": 416,
+    "label": "PROPERTY Monaco 2604 · San Fernando, Pampanga 6 bo",
+    "from": ["/org/kame-homes/dashboard", "/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/parking/monaco-level-2-slot-27",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fparking%2Fmonaco-level-2-slot-27",
+    "notFound": false,
+    "len": 416,
+    "label": "PARKING Azure Monaco - Level 2 - Slot 27 · Azure N",
+    "from": ["/org/kame-homes/dashboard"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/bookings",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fbookings",
+    "notFound": false,
+    "len": 416,
+    "label": "Bookings",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/finance",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Ffinance",
+    "notFound": false,
+    "len": 416,
+    "label": "Finance",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/maintenance",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fmaintenance",
+    "notFound": false,
+    "len": 416,
+    "label": "Maintenance",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/pricing",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fpricing",
+    "notFound": false,
+    "len": 416,
+    "label": "Pricing & availability",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/inbox",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Finbox",
+    "notFound": false,
+    "len": 416,
+    "label": "Messages",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/reviews",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Freviews",
+    "notFound": false,
+    "len": 416,
+    "label": "Reviews",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/notifications",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fnotifications",
+    "notFound": false,
+    "len": 416,
+    "label": "Notifications",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/templates",
+    "status": 0,
+    "finalUrl": "http://localhost:5173/org/kame-homes/property/kame-home/templates",
+    "error": "TimeoutError: page.innerText: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waitin",
+    "label": "Templates",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/analytics",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fanalytics",
+    "notFound": false,
+    "len": 416,
+    "label": "Analytics",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/marketing",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fmarketing",
+    "notFound": false,
+    "len": 416,
+    "label": "Marketing",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/public-pages",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fpublic-pages",
+    "notFound": false,
+    "len": 416,
+    "label": "Public Pages",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/team",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fteam",
+    "notFound": false,
+    "len": 416,
+    "label": "Team",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/settings",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fsettings",
+    "notFound": false,
+    "len": 416,
+    "label": "Settings",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/help-support",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fhelp-support",
+    "notFound": false,
+    "len": 416,
+    "label": "Help & Support",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/bookings?from=2026-11-01&to=2026-11-30",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fbookings%3Ffrom%3D2026-11-01%26to%3D2026-11-30",
+    "notFound": false,
+    "len": 416,
+    "label": "Total Bookings: 12 / 30",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/bookings?status=PENDING_REVIEW&from=2026-11-01&to=2026-11-30",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fbookings%3Fstatus%3DPENDING_REVIEW%26from%3D2026-11-01%26to%3D2026-11-30",
+    "notFound": false,
+    "len": 416,
+    "label": "Pending review 5",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/bookings?from=2026-11-18&to=2026-11-18",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fbookings%3Ffrom%3D2026-11-18%26to%3D2026-11-18",
+    "notFound": false,
+    "len": 416,
+    "label": "Check-ins today 1",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/finance?from=2026-11-01&to=2026-11-30",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Ffinance%3Ffrom%3D2026-11-01%26to%3D2026-11-30",
+    "notFound": false,
+    "len": 416,
+    "label": "Unpaid guest balance 6",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/analytics?from=2026-11-01&to=2026-11-30",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fanalytics%3Ffrom%3D2026-11-01%26to%3D2026-11-30",
+    "notFound": false,
+    "len": 416,
+    "label": "Low occupancy next 30 days 40",
+    "from": ["/org/kame-homes/property/kame-home"]
+  },
+  {
+    "href": "/org/kame-homes/property/kame-home/maintenance?from=2026-11-01&to=2026-11-30",
+    "status": 200,
+    "finalUrl": "http://localhost:5173/for-hosts/login?redirect=%2Forg%2Fkame-homes%2Fproperty%2Fkame-home%2Fmaintenance%3Ffrom%3D2026-11-01%26to%3D2026-11-30",
+    "notFound": false,
+    "len": 416,
+    "label": "View",
+    "from": ["/org/kame-homes/property/kame-home"]
+  }
+]
