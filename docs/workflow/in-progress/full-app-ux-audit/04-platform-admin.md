@@ -158,6 +158,46 @@ All nine jobs show a grey "Unknown" dot and a header pill "Unknown", yet each ri
 | A40 | Development photo tiles put five ~24px icon buttons over the image, including "Remove photo" next to "Edit alt text" with no confirmation or undo.                                                |
 | A41 | `#fa-off-only` switch has no accessible name (see X/A6 in cross-cutting).                                                                                                                         |
 
+## Super-admin control coverage (phase 2)
+
+Question: can a super admin turn off, cap, or fix every host-facing capability? Inventory against
+the code:
+
+| Capability                                 | Plan gate                                                          | Global kill switch                | Per-org override                     | Verdict              |
+| ------------------------------------------ | ------------------------------------------------------------------ | --------------------------------- | ------------------------------------ | -------------------- |
+| Booking workflow + statuses                | Starter (`automatedBookingFlow`)                                   | none                              | none                                 | plan only            |
+| Booking import / calendar sync             | `bookingImport`, `calendarSync`                                    | `pricing.channel_sync*` (partial) | none                                 | plan only for import |
+| Finance / maintenance reporting            | `financeReporting`, `maintenanceReporting`                         | none                              | none                                 | plan only            |
+| Smart pricing                              | `smartPricing`                                                     | none                              | none                                 | plan only            |
+| Reviews automation                         | `reviewAutomation`                                                 | none                              | none                                 | plan only            |
+| Public pages + showcase + autosave         | `customPages`, `propertyShowcase`, `publicPagesAutosave`           | none                              | none                                 | plan only            |
+| Templates (custom / email)                 | `customTemplates`                                                  | none                              | none                                 | plan only            |
+| Team management + custom roles             | `teamManagement`, `customRoles`                                    | none                              | none                                 | plan only            |
+| Meta inbox (FB/IG)                         | `metaChatChannel`                                                  | ✅ `inbox.meta*` (4 keys)         | none                                 | good                 |
+| AI assistant / receptionist / validations  | `aiDashboardAssistant`, `aiReceptionist`, `aiValidations`          | ✅ platform AI switch + allowlist | ✅ org/property AI settings + limits | good                 |
+| Marketing studio / image / video / publish | `marketingStudio`, `aiMarketing*`, `marketingPublishLimitPerGroup` | ✅ `marketing.*` (4 keys)         | ✅ AI only                           | good                 |
+| Analytics insights / AI review             | `analyticsInsights`                                                | ✅ `analytics.ai_review*`         | none                                 | good                 |
+| Telegram notifications                     | `telegramNotifications`                                            | ✅ `notifications.telegram*`      | none                                 | good                 |
+| Payments / checkout                        | n/a                                                                | none                              | none                                 | **gap**              |
+| Email sending (global)                     | n/a                                                                | none (env only)                   | none                                 | **gap**              |
+| Guest form / booking intake                | n/a                                                                | none (maintenance mode only)      | none                                 | **gap**              |
+
+Two structural gaps:
+
+- **`org_subscriptions.feature_overrides` exists and is read by `planEntitlements`, but nothing
+  writes it.** There is no admin surface to grant or deny one feature to one org, so support cannot
+  fix a mis-tiered host without changing their plan for everyone on it.
+- **The global switch covers 17 keys in 5 modules.** Payments, email, booking intake, templates,
+  public pages and the workflow have no platform-level off switch. A bad deploy of the guest form can
+  only be stopped by maintenance mode, which also takes down the rest of the site.
+
+Recommended: expose `feature_overrides` in the org hub (per-key on/off with a reason and expiry), and
+add global switches for booking intake, outbound email and checkout. Both should reuse the existing
+`feature_availability_overrides` machinery (reason, message, expected back date, auto-restore, banner)
+rather than inventing a second mechanism.
+
+---
+
 ## Confirmed working
 
 - Mobile shell: bottom tabs (Overview / Organizations / Hosts / More) plus a complete More sheet;

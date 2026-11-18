@@ -1,3 +1,208 @@
+---
+title: 'Full app UX/UI and functional audit'
+status: active
+tags: [audit, ux, ui, qa, security, billing]
+updated: 2026-11-18
+---
+
+# Full app UX/UI and functional audit
+
+Two exploration passes across the running app (local Supabase + Vite). **No product code was
+changed.** Local test data, env files and configuration were adjusted only to unblock testing
+(documented in [`08-local-dev-and-seed.md`](./08-local-dev-and-seed.md)).
+
+**Phase 1** (breadth): 136 route variants x 2 viewports, every module, both roles, plan tiers,
+dark mode, axe-core. **Phase 2** (depth): roles and escalation, billing and payments, listing
+lifecycle, settings effectiveness, public pages/SEO, codebase architecture, security, performance,
+caching, AI cost, and a 320-2560px responsive matrix.
+
+- App: `http://localhost:5173`, local Supabase `127.0.0.1:54321`, 169 tables, canonical seed
+- Accounts: org owner + platform super admin, scoped org admin, property operations, view-only
+  viewer, parking staff, parking full, bookings-only custom role, demo guest, brand-new host
+- Plans: Business, Free, Starter, Pro, suspended and past-due states
+- Viewports: 320, 375, 390, 430, 768, 1024, 1280, 1440, 1920, 2560 plus zoom
+- Evidence: 272 automated page loads, 300+ targeted screenshots, axe-core on 12 routes, direct API
+  probes, and DB inspection for every money/permission claim
+
+## Module reports
+
+| #   | Report                                                                | Scope                                                                                                                  |
+| --- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 01  | [Guest experience](./01-guest-experience.md)                          | Calendar, GAF form, trip, stay guide, showcase, SD form, parking request                                               |
+| 02  | [Host dashboard](./02-host-dashboard.md)                              | Org + property dashboards, finance, pricing, maintenance, analytics, templates, public pages, inbox, settings, reviews |
+| 03  | [Booking workflow](./03-booking-workflow.md)                          | List, detail, transitions, side effects, activity log                                                                  |
+| 04  | [Platform admin](./04-platform-admin.md)                              | `/admin/*`, AI console, health, control coverage                                                                       |
+| 05  | [Org + parking host](./05-org-and-parking.md)                         | Org-level modules and the parking vertical                                                                             |
+| 06  | [Cross-cutting](./06-cross-cutting.md)                                | Responsive, accessibility, loading, copy, consistency                                                                  |
+| 07  | [Marketing site + guest account](./07-marketing-and-account.md)       | Public marketing pages and `/account/*`                                                                                |
+| 08  | [Local dev + seed fidelity](./08-local-dev-and-seed.md)               | What a fresh clone cannot do out of the box                                                                            |
+| 09  | [Roles and permissions](./09-roles-and-permissions.md)                | Six role shapes, route matrix, escalation tests, plan enforcement                                                      |
+| 10  | [Billing and payments](./10-billing-and-payments.md)                  | Pricing, checkout, plan changes, renewals, payouts, refunds, reconciliation                                            |
+| 11  | [Listing lifecycle](./11-listings-lifecycle.md)                       | Create, verify, publish, pause, archive, restore, delete                                                               |
+| 12  | [Settings and configuration](./12-settings-and-configuration.md)      | Every settings card, platform config, validation                                                                       |
+| 13  | [Public pages and SEO](./13-public-pages-and-seo.md)                  | Gallery, editor, publish states, meta, sitemap, soft 404s                                                              |
+| 14  | [Codebase architecture](./14-codebase-architecture.md)                | Scale, schema drift, god files, edge-function sprawl, bundle, types                                                    |
+| 15  | [Security review](./15-security-review.md)                            | RLS write bypass, PII exposure, buckets, webhooks, config gaps                                                         |
+| 16  | [Performance, caching and cost](./16-performance-caching-and-cost.md) | Bundle, API volume, payloads, caching, AI unit economics, third parties                                                |
+| 17  | [Responsive and interaction](./17-responsive-design-matrix.md)        | 320-2560px, zoom, touch targets, sheets vs dialogs                                                                     |
+| 18  | [Remediation backlog](./18-remediation-backlog.md)                    | Every P0/P1 sequenced by risk, with effort and the test that should gate each fix                                      |
+
+Screenshots: [`screenshots/`](./screenshots), plus `/tmp/audit/*-screens/` for module captures.
+
+---
+
+## Severity model
+
+| Level  | Meaning                                                                                         |
+| ------ | ----------------------------------------------------------------------------------------------- |
+| **P0** | Blocks a core task, corrupts data, leaks internals, or loses money. Fix before the next deploy. |
+| **P1** | Wrong or misleading information, a dead end in a real flow, or a permission/entitlement gap.    |
+| **P2** | Real UX debt: confusing labels, missing states, duplicated or unreadable data.                  |
+| **P3** | Polish: spacing, copy, minor consistency.                                                       |
+
+---
+
+## Phase 2 findings (deep dive)
+
+### P0
+
+**D0. The guest form's mobile Continue bar is off-screen.**
+On `/properties/:slug/form` the primary action renders **2,100px below the fold** at 390x844 (and
+1,300px below at 320x568) because a `transform` left live by `.guest-inner-enter`'s
+`animation-fill-mode: both` becomes the containing block for `position: fixed`. The money path has no
+visible way to advance on a phone. It only looks correct under `prefers-reduced-motion`, which
+disables the animation. See [17-V1](./17-responsive-design-matrix.md).
+[screenshots/76](./screenshots/76-guest-form-mobile-bar-offscreen.png)
+
+**D1. Property settings cannot be saved at all on the seeded listing.**
+A load-time effect force-syncs capacity to the `2br` unit template (8 adults, 3 children, 1 bathroom),
+which violates the Azure North cap (6 adults) on every save. Changing only the description returns
+400 "Max adults must be between 1 and 6"; nothing persists, and the effect silently rewrites the
+host's saved values. Reproduced directly. Where: `PropertyProfileSettingsSections.tsx:218`.
+[screenshots/70](./screenshots/70-settings-save-blocked.png)
+
+**D2. Any team member can read, rewrite or delete bookings through PostgREST.**
+The `guest_submissions` RLS policies check membership only, never the permission leaves. A view-only
+member PATCHed a booking's `status` to `CANCELLED` and back (204), bypassing the workflow, emails,
+PDFs and audit log. The same policies grant DELETE. See [15-S1](./15-security-review.md).
+
+**D3. Every listing authorization action returns 500 after committing.**
+Submit, approve and reject all reference `context.user.id`, which does not exist on the listing
+context. The state change and activation are already saved, then the handler throws, so hosts and
+admins see an error on every successful verification action and a retry answers "not pending review".
+See [11-L1](./11-listings-lifecycle.md).
+[screenshots/74](./screenshots/74-approval-500-after-commit.png)
+
+**D4. Archived properties are billed but excluded from the quote.**
+Checkout selects every property in the org while the quote (and the downgrade path) excludes archived
+rows. Reproduced: quote ₱1,378, charge ₱2,400 for the same click. See [10-B1](./10-billing-and-payments.md).
+[screenshots/71](./screenshots/71-archived-overcharge-quote.png)
+
+**D5. Property members can promote themselves to Full Access, and scoped org admins can lift their own listing scope.**
+`property-team-members` accepts a self `roleId` change to the Full Access template (96 permissions);
+`org-team-members` accepts a self `allListings: true`. Both verified as 200 + full permissions.
+See [09-R1/R2](./09-roles-and-permissions.md).
+
+**D6. Parking-only teammates cannot reach the parking dashboard.**
+`parking-access` returns 200 with all 16 leaves, but the shell resolves through `list-parkings`, which
+requires `org.parkings:view`. Every parking route renders "No organization access". See
+[09-R3](./09-roles-and-permissions.md).
+[screenshots/72](./screenshots/72-parking-rbac-lockout.png)
+
+**D7. The platform "self-serve signups" switch is not enforced.**
+With signups off, a new address still creates an account and reaches onboarding. The flag is stored,
+displayed and read but never gates signup. See [12-S2](./12-settings-and-configuration.md).
+
+**D8. Renaming a listing breaks every old link.**
+The redirect returns a relative `Location`, so the SPA fetch follows it onto the API origin and lands
+on the generic list. The UI explicitly promises "Old links keep working". See
+[11-L2](./11-listings-lifecycle.md).
+[screenshots/73](./screenshots/73-old-slug-broken.png)
+
+**D9. Guest PII is readable by anyone with a booking UUID when access enforcement is off.**
+`get-form/:bookingId` returned 48 fields including document URLs to an anonymous caller with only the
+anon key. Enforcement is an opt-in env var. See [15-S2](./15-security-review.md).
+
+### P1 highlights
+
+**D10. Prices are per property but shown as a flat monthly price.** Business reads ₱1,439/month;
+a 3-property org pays ₱3,690. The current-plan banner and the same plan's card also disagree
+(₱1,799 vs ₱1,439), and renewals use the stale snapshot. [10-B4/B5](./10-billing-and-payments.md)
+
+**D11. Past-due orgs can upgrade and the overdue balance disappears.** Fulfillment reactivates and
+starts a new period without collecting or carrying the debt. [10-B2](./10-billing-and-payments.md)
+
+**D12. Archiving a plan silently downgrades every subscriber to Free** with no notice and no renewal,
+because the cron skips inactive plans. [10-B3](./10-billing-and-payments.md)
+
+**D13. There is no cancel-at-period-end and no proration.** Stopping means an immediate downgrade that
+forfeits prepaid time; a mid-cycle change reprices the snapshot with no credit. [10-B9/B10](./10-billing-and-payments.md)
+
+**D14. Payments cannot be traced to what they covered.** No purpose, period, receipt number or
+`period_paid_php`; `org_billing_ledger` has zero rows and zero code references. [10-B8](./10-billing-and-payments.md)
+
+**D15. Plan entitlements are not enforced on finance, analytics, maintenance and inbox APIs.** A Free
+host can call them directly and get 200. [09-R5](./09-roles-and-permissions.md)
+
+**D16. `ADMIN_ALLOWED_EMAILS` is implicit membership on every tenant.** A test address read a tenant
+it never joined, with 96 permissions and no cross-tenant audit row. [09-R4](./09-roles-and-permissions.md)
+
+**D17. Tenant-level overrides exist but cannot be used.** `org_subscriptions.feature_overrides` is read
+by entitlements and never written; only 17 global switches exist (payments, email, booking intake and
+templates have none). [04 control coverage](./04-platform-admin.md)
+
+**D18. Settings and public pages have no publish control** and no way to take a page offline, while
+`config.published` is already in the data model. [13-P1](./13-public-pages-and-seo.md)
+
+**D19. Signups aside, the canonical dataset hides core flows:** a new listing cannot start
+verification from the UI (`accessKind === 'owner'` gate), the 2br preset blocks saves (D1), and the
+seeded parking members have empty permission arrays. [11-L3, 09-R6](./11-listings-lifecycle.md)
+
+**D20. Performance and cost:** 22 edge calls per property dashboard (with two duplicate keys),
+`list-bookings` returns 179 columns (171 KiB for 31 rows), Sentry+PostHog are 90 KiB of the initial
+bundle, and Business AI credits can consume 78% of plan revenue. [16](./16-performance-caching-and-cost.md)
+
+**D21. Schema and architecture drift:** 7 tables exist with no migration, there are no generated DB
+types, 368 edge functions (151 under 80 lines), and two sources of truth for super admin.
+[14](./14-codebase-architecture.md)
+
+**D22. A public payment-receipts bucket** exposes uploaded receipts by URL; invitation tokens are
+stored in plaintext. [15-S3/S5](./15-security-review.md)
+
+**D23. Booking import falls back to 100% manual column mapping.** Without a Gemini key the wizard matches 0 of 8 obvious headers and forces manual mapping for every column. [12-S18](./12-settings-and-configuration.md)
+
+---
+
+## Phase 1 findings (baseline)
+
+### P0
+
+1. **Booking transition commits the status even when a required side effect fails.**
+   `PENDING_REVIEW → PENDING_DOCUMENTS` returned HTTP 400 ("GAF request PDF could not be generated")
+   to the admin, yet `guest_submissions.status` was already `PENDING_DOCUMENTS`. The admin sees an
+   error, the guest pipeline has moved, and no GAF PDF and no `booking.status_changed` activity row
+   exist. Evidence: edge log 22:43:23 (status write, then `pdfService` failure, then 400). Where:
+   `_shared/workflowOrchestrator.ts` around the `generatePDF` + `updateBooking` ordering.
+
+2. **Guest submit leaks internal env var names.** With a missing `IDENTITY_HASH_PEPPER` the toast reads
+   "Failed to process form data: IDENTITY_HASH_PEPPER is required".
+   [screenshots/18](./screenshots/18-guest-form-submit-internal-error.png)
+
+3. **A fresh local checkout cannot complete the two most important flows.** Two edge secrets are hard
+   requirements with no fallback (the `.env.example` comment is wrong) and the `templates` Storage
+   bucket is not seeded, so guest submit and every PDF transition fail. See
+   [08](./08-local-dev-and-seed.md).
+
+4. **The org Parkings list hardcodes every metric to zero.** `stats: emptyParkingStats()` in
+   `_shared/listParkings.ts:44` for a slot with 7 bookings and ₱4,900 revenue.
+   [screenshots/60](./screenshots/60-org-parkings-zero-stats.png)
+
+5. **The org dashboard "Total Revenue" is net income** and no two surfaces agree (₱44,390 dashboard,
+   ₱46,900 analytics, ₱1,890 parking dashboard, ₱1,400 parking finance).
+   [screenshots/61](./screenshots/61-org-analytics-revenue.png)
+
+6. **The Booking Status donut silently drops statuses** (`Total Bookings 13`, donut centre 10).
+
 ### P1
 
 7. **Opening a booking detail page writes a fake "copied a guest trip link" audit event.** Merely
@@ -226,6 +431,11 @@ the filename says mobile.
 | [66-team-counts.png](./screenshots/66-team-counts.png)                                   | Team KPIs that do not reconcile                                                    |
 | [67-org-plans-discount.png](./screenshots/67-org-plans-discount.png)                     | Plans page with the unapplied 20% promo                                            |
 | [68-org-bookings-no-kanban.png](./screenshots/68-org-bookings-no-kanban.png)             | Org bookings view switcher without a board                                         |
+| [75-checkout-503.png](./screenshots/75-checkout-503.png)                                 | Checkout with no provider configured: generic toast, failed row                    |
+| [77-more-sheet-320.png](./screenshots/77-more-sheet-320.png)                             | More sheet at 320: 3 of 15 modules in a 151px window                               |
+| [78-admin-org-1024.png](./screenshots/78-admin-org-1024.png)                             | Admin org hub at 1024: MRR truncated                                               |
+| [79-bookings-1024.png](./screenshots/79-bookings-1024.png)                               | Bookings table at 1024 with hidden horizontal scroll                               |
+| [80-home-320-overflow.png](./screenshots/80-home-320-overflow.png)                       | Guest home at 320: showcase clipped                                                |
 
 ## How to reproduce
 
