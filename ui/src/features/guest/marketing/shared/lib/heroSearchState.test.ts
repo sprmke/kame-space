@@ -9,6 +9,7 @@ import {
   parseDateParam,
   parseGuestBreakdown,
   readWhereParam,
+  computeDropdownLayout,
 } from '@/features/guest/marketing/shared/lib/heroSearchState';
 
 describe('heroSearchState', () => {
@@ -65,5 +66,48 @@ describe('heroSearchState', () => {
     expect(normalizeStayRange({ from: new Date(2026, 10, 12) })).toEqual({
       from: new Date(2026, 10, 12),
     });
+  });
+});
+
+
+describe('computeDropdownLayout', () => {
+  function rect(partial: Partial<DOMRect> & { top: number; left: number; width: number; height: number }): DOMRect {
+    const right = partial.left + partial.width;
+    const bottom = partial.top + partial.height;
+    return {
+      x: partial.left,
+      y: partial.top,
+      top: partial.top,
+      left: partial.left,
+      width: partial.width,
+      height: partial.height,
+      right,
+      bottom,
+      toJSON() {
+        return this;
+      },
+    };
+  }
+
+  function el(box: DOMRect): HTMLElement {
+    return { getBoundingClientRect: () => box } as HTMLElement;
+  }
+
+  it('places the panel below the bar by default', () => {
+    const root = el(rect({ top: 100, left: 40, width: 800, height: 80 }));
+    const bar = el(rect({ top: 100, left: 40, width: 800, height: 64 }));
+    const segment = el(rect({ top: 108, left: 48, width: 220, height: 48 }));
+    const layout = computeDropdownLayout('where', root, bar, segment, 1, 380);
+    expect(layout.top).toBe(76); // bar bottom (164) - root top (100) + 12
+    expect(layout.height).toBe(380);
+  });
+
+  it('places the panel above the bar when placement is above', () => {
+    const root = el(rect({ top: 400, left: 40, width: 800, height: 80 }));
+    const bar = el(rect({ top: 400, left: 40, width: 800, height: 64 }));
+    const segment = el(rect({ top: 408, left: 48, width: 220, height: 48 }));
+    const layout = computeDropdownLayout('where', root, bar, segment, 1, 380, 'above');
+    expect(layout.top).toBe(-392); // 0 - 380 - 12
+    expect(layout.height).toBe(380);
   });
 });

@@ -55,7 +55,7 @@ export function MarketingInlineName({ name, onRename, className }: Props) {
         onChange={(event) => setValue(event.target.value)}
         onBlur={commit}
         onKeyDown={(event) => {
-          if (event.key === 'Enter') {
+          if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
             event.preventDefault();
             inputRef.current?.blur();
           } else if (event.key === 'Escape') {

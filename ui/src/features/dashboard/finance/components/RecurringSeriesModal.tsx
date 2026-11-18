@@ -89,6 +89,7 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
     stepLabels: ['Details', 'Repeat', 'Reminders', 'Preview'],
     isFirstStep: true,
     isLastStep: false,
+    canProceed: false,
   });
   const [editDirty, setEditDirty] = useState(false);
   const formRef = useRef<OperatingLineItemFormHandle>(null);
@@ -105,6 +106,7 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
         stepLabels: ['Details', 'Repeat', 'Reminders', 'Preview'],
         isFirstStep: true,
         isLastStep: false,
+        canProceed: false,
       });
     }
   }, [editing]);
@@ -423,6 +425,8 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
               isFirstStep={wizard.isFirstStep}
               isLastStep={wizard.isLastStep}
               submitPending={update.isPending}
+              canGoNext={wizard.canProceed}
+              canSubmit={wizard.canProceed}
               submitLabel="Save"
               pendingLabel="Saving…"
             />

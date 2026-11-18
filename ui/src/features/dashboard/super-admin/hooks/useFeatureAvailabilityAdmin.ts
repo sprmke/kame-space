@@ -2,13 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { callEdgeFunction } from '@/features/dashboard/org/lib/edgeClient';
+
 import type {
   FeatureAvailabilityCatalogEntry,
   FeatureAvailabilityKey,
   FeatureAvailabilityReason,
 } from '@/lib/featureAvailability/featureAvailabilityCatalog';
-import { invalidateFeatureAvailability } from '@/lib/featureAvailability/useFeatureAvailability';
 import type { ResolvedFeatureAvailability } from '@/lib/featureAvailability/resolveFeatureAvailability';
+import { invalidateFeatureAvailability } from '@/lib/featureAvailability/useFeatureAvailability';
 
 export type FeatureAvailabilityAdminOverride = {
   feature_key: string;

@@ -6,6 +6,8 @@ set -e
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # shellcheck source=scripts/dev/prod-deploy-guard-lib.sh
 source "$ROOT/scripts/dev/prod-deploy-guard-lib.sh"
+# shellcheck source=scripts/dev/local-dev-guard-lib.sh
+source "$ROOT/scripts/dev/local-dev-guard-lib.sh"
 
 input=$(cat)
 if command -v jq >/dev/null 2>&1; then
@@ -22,6 +24,10 @@ if prod_deploy_is_blocked "$command_str"; then
   permission="deny"
   user_message="Blocked: production Supabase/database deploy. Say unlock word kamewave in chat, then rerun with kamewave in the command."
   agent_message=$(prod_deploy_block_reason)
+elif local_dev_stop_is_blocked "$command_str"; then
+  permission="deny"
+  user_message="Blocked: local stack stop/kill/restart. Say you want local stopped or restarted, then rerun with unlock word localstop in the command."
+  agent_message=$(local_dev_stop_block_reason)
 else
   case "$command_str" in
     *"rm -rf /"*|*"rm -rf /*"*|*"rm -rf ~"*)
@@ -33,11 +39,6 @@ else
       permission="ask"
       user_message="This command may drop database tables. Confirm before running."
       agent_message="The command contains DROP TABLE. The user must confirm before running."
-      ;;
-    *"stop:supabase:clean"*)
-      permission="ask"
-      user_message="stop:supabase:clean deletes local Docker data volumes. Confirm before running."
-      agent_message="Local-only nuclear reset — confirm with the user first."
       ;;
     *"push --force"*|*"push -f "*|*"push -f"*)
       permission="ask"

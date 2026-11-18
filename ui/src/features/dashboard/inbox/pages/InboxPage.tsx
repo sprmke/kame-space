@@ -385,11 +385,14 @@ export function InboxPage({
       titleId="inbox-heading"
       heroTrailing={
         <div className="flex items-center gap-2">
-          <InboxSyncStatusPill
-            status={syncStatus}
-            onAction={handleSyncAction}
-            onHowItWorks={() => setHowItWorksOpen(true)}
-          />
+          {/* Hide the idle "Not connected" badge; Channels manage still covers connect. */}
+          {syncStatus.state !== 'needs-attention' || syncStatus.action !== 'reconnect' ? (
+            <InboxSyncStatusPill
+              status={syncStatus}
+              onAction={handleSyncAction}
+              onHowItWorks={() => setHowItWorksOpen(true)}
+            />
+          ) : null}
           <InboxManageToolbar
             canManage={canManage}
             canManageChannels={allowChannels}
@@ -404,11 +407,13 @@ export function InboxPage({
       }
       desktopActions={
         <div className="flex items-center gap-2">
-          <InboxSyncStatusPill
-            status={syncStatus}
-            onAction={handleSyncAction}
-            onHowItWorks={() => setHowItWorksOpen(true)}
-          />
+          {syncStatus.state !== 'needs-attention' || syncStatus.action !== 'reconnect' ? (
+            <InboxSyncStatusPill
+              status={syncStatus}
+              onAction={handleSyncAction}
+              onHowItWorks={() => setHowItWorksOpen(true)}
+            />
+          ) : null}
           <InboxManageToolbar
             canManage={canManage}
             canManageChannels={allowChannels}

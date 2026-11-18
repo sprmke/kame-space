@@ -515,7 +515,7 @@ function LinkPopover({ editor }: { editor: Editor }) {
               defaultValue={currentLink}
               className="h-10"
               onKeyDown={(event) => {
-                if (event.key === 'Enter') {
+                if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
                   setLink((event.target as HTMLInputElement).value);
                 }
               }}
@@ -634,7 +634,7 @@ function ImagePopover({
                 placeholder="https://example.com/image.jpg"
                 className="h-10"
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
+                  if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
                     addImage((event.target as HTMLInputElement).value);
                   }
                 }}

@@ -30,20 +30,22 @@ function PlaybookCard({
   return (
     <li
       id={playbookArticleElementId(article.slug)}
-      className="border-border/60 scroll-mt-20 overflow-hidden rounded-lg border"
+      className="border-border/60 scroll-mt-20 overflow-hidden rounded-xl border"
     >
       <Collapsible open={open} onOpenChange={onOpenChange}>
         <CollapsibleTrigger asChild>
           <button
             type="button"
             {...{ [PLAYBOOK_ARTICLE_TRIGGER_ATTR]: '' }}
-            className="hover:bg-muted/40 focus-visible:ring-ring flex w-full items-center justify-between gap-2 p-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset"
+            className="hover:bg-muted/40 focus-visible:ring-ring flex min-h-[52px] w-full items-center justify-between gap-3 p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset sm:min-h-0 sm:p-3.5"
           >
             <span className="min-w-0">
-              <span className="text-muted-foreground block text-[11px] uppercase tracking-wide">
+              <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wide">
                 {article.category}
               </span>
-              <span className="text-foreground block text-sm font-medium">{article.title}</span>
+              <span className="text-foreground mt-0.5 block text-sm font-semibold leading-snug">
+                {article.title}
+              </span>
             </span>
             <ChevronDown
               className={cn(
@@ -55,9 +57,11 @@ function PlaybookCard({
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <p className="text-muted-foreground border-border/60 whitespace-pre-line border-t p-2.5 pt-2 text-sm leading-relaxed">
-            {article.bodyMd}
-          </p>
+          <div className="border-border/60 border-t px-3 py-3 sm:px-3.5">
+            <p className="text-muted-foreground whitespace-pre-line text-sm leading-relaxed">
+              {article.bodyMd}
+            </p>
+          </div>
         </CollapsibleContent>
       </Collapsible>
     </li>
@@ -79,7 +83,7 @@ export function PlaybookList({ articles, openSlug, onOpenSlugChange, className }
         iconClassName="bg-muted/80"
       />
       {articles.length > 0 ? (
-        <ul className="space-y-2">
+        <ul className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-0.5">
           {articles.map((article) => (
             <PlaybookCard
               key={article.slug}
@@ -90,8 +94,8 @@ export function PlaybookList({ articles, openSlug, onOpenSlugChange, className }
           ))}
         </ul>
       ) : (
-        <p className="text-muted-foreground text-sm">
-          Nothing matched right now - check back as your numbers change.
+        <p className="text-muted-foreground mt-3 text-sm">
+          Nothing matched right now. Check back as your numbers change.
         </p>
       )}
     </section>

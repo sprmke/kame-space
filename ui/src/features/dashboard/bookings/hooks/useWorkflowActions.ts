@@ -31,6 +31,8 @@ import {
   defaultPendingDocNestedKey,
   getPendingDocumentsNestedCompletion,
   isLiveWorkflowView,
+  isPendingDocumentsFamilyStatus,
+  nestedDocKeyFromLegacyOrKanbanStatus,
   nestedKeyLabel,
   nextStep,
   pendingDocumentsNestedItems,
@@ -53,7 +55,7 @@ export function useWorkflowActions(
 
   const activePendingDocSubStatus: PendingDocNestedKey =
     viewedStep.kind === 'pending-doc-sub'
-      ? viewedStep.sub
+      ? (nestedDocKeyFromLegacyOrKanbanStatus(viewedStep.sub) ?? viewedStep.sub)
       : (defaultPendingDocNestedKey(booking, documentRequirements) ?? '');
   const activePendingDocLabel = nestedKeyLabel(activePendingDocSubStatus, documentRequirements);
 
@@ -61,7 +63,9 @@ export function useWorkflowActions(
   const pipeline = bookingPipeline(booking, status, documentRequirements);
   const next = !isTerminal ? nextStep(booking, status, documentRequirements) : null;
   const prev = !isTerminal ? previousStep(booking, status, documentRequirements) : null;
-  const inPendingDocuments = status === 'PENDING_DOCUMENTS';
+  // Legacy PENDING_GAF / parking / pet rows are the same docs family as PENDING_DOCUMENTS
+  // for Mark complete / Proceed gating (Kanban + modal have no stage deck).
+  const inPendingDocuments = isPendingDocumentsFamilyStatus(status);
 
   const nestedCompletion = getPendingDocumentsNestedCompletion(booking, documentRequirements);
   const pendingDocumentsComplete =

@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { FileSpreadsheet, Loader2, Upload } from 'lucide-react';
+import { Download, FileSpreadsheet, Loader2 } from 'lucide-react';
 
 import { ImportAlert } from '@/features/dashboard/import/components/ImportModalChrome';
 import { useImportParseFile } from '@/features/dashboard/import/hooks/useImportParseFile';
@@ -167,7 +167,7 @@ export function ImportFileDropzone({
             )}
           >
             <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-full">
-              <Upload className="size-5" aria-hidden />
+              <Download className="size-5" aria-hidden />
             </span>
             <span className="text-foreground text-sm font-medium">
               Drop a CSV or Excel file here or browse

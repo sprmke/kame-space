@@ -8,6 +8,7 @@ import {
   useSyncDateRangeWithQuery,
 } from '@/features/dashboard/bookings/hooks/useDateNavigation';
 import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
+import { usePropertyCalendarConflictAttentionItem } from '@/features/dashboard/org/hooks/usePropertyCalendarConflictAttentionItem';
 import { usePropertyRejectedExternalReviewsAttentionItem } from '@/features/dashboard/org/hooks/usePropertyRejectedExternalReviewsAttentionItem';
 import { DashboardFinanceCalendarSection } from '@/features/dashboard/property/components/DashboardFinanceCalendarSection';
 import { DashboardStatCards } from '@/features/dashboard/property/components/DashboardStatCards';
@@ -84,14 +85,15 @@ export function DashboardPage() {
   }, [dateNav]);
 
   const rejectedReviewsAttentionItem = usePropertyRejectedExternalReviewsAttentionItem();
+  const calendarConflictAttentionItem = usePropertyCalendarConflictAttentionItem();
 
   const attentionItems = useMemo(() => {
-    const clientItems = [rejectedReviewsAttentionItem].filter(
+    const clientItems = [calendarConflictAttentionItem, rejectedReviewsAttentionItem].filter(
       (item): item is DashboardAttentionItem => item != null
     );
     if (!data) return clientItems;
     return [...clientItems, ...data.attention];
-  }, [data, rejectedReviewsAttentionItem]);
+  }, [calendarConflictAttentionItem, data, rejectedReviewsAttentionItem]);
 
   const dashboardActions = (
     <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">

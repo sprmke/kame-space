@@ -14,7 +14,7 @@ Plan: [`docs/workflow/done/paymongo-subscription-billing.md`](../../workflow/don
 4. **Developers → Webhooks** — create a test endpoint:
    - URL (local via ngrok): `https://<your-ngrok-subdomain>.ngrok-free.dev/functions/v1/paymongo-webhook` — **must include** `/functions/v1/paymongo-webhook` (not the ngrok root alone). ngrok forwards to `http://127.0.0.1:54321` (local Supabase Kong).
    - URL (hosted dev): `https://<project-ref>.supabase.co/functions/v1/paymongo-webhook`
-   - Events: `payment.paid`, `payment.failed`, `link.payment.paid`, **`checkout_session.payment.paid`** (enable all payment/link/checkout-session events available).
+   - Events: `payment.paid`, `payment.failed`, **`payment.refunded`**, `link.payment.paid`, **`checkout_session.payment.paid`** (enable all payment/link/checkout-session events available). `payment.refunded` marks the transaction `refunded` and records `billing.refund_recorded`; the super-admin then decides whether the period stands.
    - Copy the endpoint **signing secret** → `PAYMONGO_WEBHOOK_SECRET` in `supabase/.env.local` and hosted dev secrets.
 5. Paid checkout from **Org → Plans & Billing** creates a **Hosted Checkout Session** (`/v2/checkout_sessions`) via **`create-org-subscription-checkout`**. After payment, PayMongo redirects to `/org/:orgSlug/plans?tab=billing&checkout=success` and **`paymongo-webhook`** fulfills the subscription.
 
@@ -22,7 +22,7 @@ Plan: [`docs/workflow/done/paymongo-subscription-billing.md`](../../workflow/don
 
 1. Open ngrok inspector: `http://127.0.0.1:4040` — you should see `POST /functions/v1/paymongo-webhook` with `200` after a test payment.
 2. Edge logs should show `serving the request with supabase/functions/paymongo-webhook` (not only `org-plan`).
-3. If payment succeeded on PayMongo but the plan is still Free, the webhook never reached your backend — fix the endpoint URL and signing secret, then refresh Plans & Billing (reconciliation will activate paid checkouts on load; wrongly expired `cs_…` sessions are recovered automatically).
+3. If payment succeeded on PayMongo but the plan did not change, the webhook never reached your backend. Fix the endpoint URL and signing secret. Meanwhile the hourly `platform-billing-cron` reconciles checkouts older than 10 minutes against PayMongo, and the Plans page reconciles only the one checkout this browser started (at most one PayMongo lookup per 15 seconds). A payment that arrives for a checkout that was already expired or replaced is **never ignored**: it is applied when it still fits the subscription, otherwise it becomes account credit and the host is told.
 
 ## Live (production)
 
@@ -44,13 +44,16 @@ See also [`docs/architecture/validation-and-env.md`](../../architecture/validati
 
 ## Edge functions
 
-| Function                           | Role                                                                                                                                              |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `create-org-subscription-checkout` | Org owner creates PayMongo Hosted Checkout Session + pending `org_payment_transactions` row (first purchase, tier switch, or property add/remove) |
-| `paymongo-webhook`                 | Signature verify, dedupe, fulfill subscription on `payment.paid` / `checkout_session.payment.paid` / `link.payment.paid`                          |
-| `platform-payment-settings`        | Super-admin dunning config (singleton `platform_payment_settings`)                                                                                |
-| `platform-billing-cron`            | Daily renewal links + past-due/suspend sweep + pooled seat clawback (see scheduled-jobs doc)                                                      |
-| `org-plan`                         | Host Plans & Billing page — subscription status, transactions, pending checkout URL                                                               |
+| Function                                          | Role                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `create-org-subscription-checkout`                | Org owner creates the PayMongo Hosted Checkout Session + pending `org_payment_transactions` row (first purchase, upgrade, renewal, retry, reactivation). Needs the reviewed `expectedChargePhp` (409 `price_changed` with the fresh amount if it moved) and an `idempotencyKey`. One open checkout per org: a new one expires the old session at PayMongo. Net due of zero is applied from account credit with no PayMongo call |
+| `preview-org-plan-change`                         | Read-only server quote and impact for `pay`, `schedule`, `cancel` and `add_property`                                                                                                                                                                                                                                                                                                                                            |
+| `org-subscription-change`                         | Owner schedules a downgrade or cancel at the period end, undoes it, or ends an overdue plan now                                                                                                                                                                                                                                                                                                                                 |
+| `org-billing-details` / `get-org-payment-receipt` | Billing details form and numbered receipt PDF (`org.plans:view` to read)                                                                                                                                                                                                                                                                                                                                                        |
+| `paymongo-webhook`                                | Signature verify, dedupe, fulfill subscription on `payment.paid` / `checkout_session.payment.paid` / `link.payment.paid`; `payment.refunded` marks the payment refunded                                                                                                                                                                                                                                                         |
+| `platform-payment-settings`                       | Super-admin dunning config (singleton `platform_payment_settings`): renewal lead, grace, suspension window, checkout expiry                                                                                                                                                                                                                                                                                                     |
+| `platform-billing-cron`                           | **Hourly**, idempotent: period-end transitions, renewal links and reminders (sent once), past due, suspension, auto-cancel, checkout expiry and webhook reconciliation (see scheduled-jobs doc)                                                                                                                                                                                                                                 |
+| `org-plan`                                        | Host Plans & Billing page: subscription state and pending intent, upcoming payment, account credit, payment history with receipts (history and billing details need `org.plans:view`), pending checkout URL                                                                                                                                                                                                                     |
 
 ## PayMongo rails note
 
@@ -67,3 +70,28 @@ Org subscription checkout uses **Hosted Checkout Sessions** (`/v2/checkout_sessi
 
 - Multi-tenant dev (`fwor…`): configure test keys on dev Supabase before QA.
 - Legacy prod: separate live keys when cutover ships — see [`docs/architecture/deployment.md`](../../architecture/deployment.md).
+
+## API facts verified for the lifecycle plan
+
+Verified against the real PayMongo **sandbox** on 2026-11-19 by `orgBillingSandbox.integration_test.ts` (real checkout sessions, real hosted-checkout payments, a real refund). Not yet observed on a live-mode account.
+
+| Item                      | Finding                                                                                                                                                                                           | In the code                                                                                                        |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Expire a checkout session | `POST /v1/checkout_sessions/{id}/expire` closes it. The session reads `expired` and the hosted page shows "invalid or has already expired", so a superseded link cannot take a payment            | `expirePaymongoCheckoutSession`; scheduling a change expires the open checkout                                     |
+| A paid session            | Stays `status: "active"`. The payment exists only in `payments[]` (`id`, `attributes.status = "paid"`, `attributes.source.type`, `attributes.paid_at` in epoch seconds)                           | `getPaymongoProviderPaymentState` and `paidPaymentFromCheckoutSession` read `payments[]`, never the session status |
+| Missed webhook            | Reconciliation recovers the payment with PayMongo's own paid time and method, and stores the `pay_...` id so a later refund finds it                                                              | `getPaymongoPaidPayment` in `orgPaymentReconcile.ts`                                                               |
+| Refund                    | `POST /v1/refunds` with `payment_id` returns a `refund` resource whose `attributes.payment_id` names the payment, and a refund starts `pending`. The `payment.refunded` event wraps that resource | The refund handler matches `provider_payment_id`                                                                   |
+| Minimum amount            | PHP 1.00 floor for payment intents in the docs. No per-method minimum was found                                                                                                                   | `MINIMUM_CHARGE_PHP = 20`, deliberately above the floor; the excess becomes account credit                         |
+| Methods on our sessions   | QR Ph and the e-wallets enabled in `platform_payment_settings` (the sandbox showed Maya and Online Banking)                                                                                       | `mapPlatformMethodsToPaymongoCheckout`                                                                             |
+
+**Webhook registration (sandbox account, checked 2026-11-19):** two sandbox webhooks exist and both are **disabled**: one to a local ngrok URL and one to the production project's `paymongo-webhook`. Neither lists `payment.refunded`. Enable the production-project hook and add `payment.refunded` before relying on webhooks; until then payments are recovered by the hourly reconciliation. The production project's `PAYMONGO_SECRET_KEY` and `PAYMONGO_WEBHOOK_SECRET` digests differ from the local `.env.dev.local` values, so confirm which PayMongo account and mode production uses before enabling it.
+
+**Run the sandbox matrix locally:**
+
+```bash
+PAYMONGO_SANDBOX=1 PAYMONGO_SECRET_KEY=sk_test_... TZ=Asia/Manila deno test \
+  --config supabase/functions/deno.json --allow-net --allow-env --allow-read --allow-run \
+  --allow-import supabase/functions/tests/orgBillingSandbox.integration_test.ts
+```
+
+It refuses any key that is not `sk_test_`, needs the local stack and Playwright, and takes about three minutes (seven real sandbox payments).

@@ -2,14 +2,14 @@
 title: 'Local seed dataset: one org, one property, one parking'
 status: in-progress
 tags: [dev, seed, testing, local, fixtures]
-updated: 2026-11-08
+updated: 2026-11-19
 stage: in-progress
 kind: plan
 ---
 
 # Local seed dataset: one org, one property, one parking
 
-> **Implementation status (2026-11-08):** core scope shipped in `scripts/dev/seed/` — identity, subscription, settings, team, bookings (property + parking), finance, maintenance, pricing, marketing, reviews, inbox, public pages, support, notifications, activity, analytics, AI, super admin, guest portal, verification, plus `seed:local` / `seed:refresh` / `seed:verify` / `seed:verify-ui` / `seed:attach-admin` / `seed:search-fixtures` / `seed:plan` / `seed:feature-flags` / `seed:integrations` and `check:seed-identity`. A clean `bun run db:reset` produces 1 org / 1 property / 1 parking, passes `99-verify`, and the UI walk passes all 196 route loads at 375 and 1280 with no hard failures. Operator guide: [`../guides/testing/local-seed-data.md`](../guides/testing/local-seed-data.md). Fixes found by the walk: org Reviews boot error (`resolvePropertyIdsWithPermissionForOrgUser` missing), `/pricing/calendar` legacy redirect, and a `<div>` inside `<p>` hydration error on `/admin/rate-limits`.
+> **Implementation status (2026-11-08):** core scope shipped in `scripts/dev/seed/` — identity, subscription, settings, team, bookings (property + parking), finance, maintenance, pricing, marketing, reviews, inbox, public pages, support, notifications, activity, analytics, AI, super admin, guest portal, verification, plus `seed:local` / `seed:refresh` / `seed:verify` / `seed:verify-ui` / `seed:attach-admin` / `seed:search-fixtures` / `seed:plan` / `seed:feature-flags` / `seed:integrations` and `check:seed-identity`. A clean `bun run db:reset` produces 1 org / 1 property / 1 parking, passes `99-verify`, and the UI walk passes all 196 route loads at 375 and 1280 with no hard failures. Operator guide: [`../guides/testing/local-seed-data.md`](../../guides/testing/local-seed-data.md). Fixes found by the walk: org Reviews boot error (`resolvePropertyIdsWithPermissionForOrgUser` missing), `/pricing/calendar` legacy redirect, and a `<div>` inside `<p>` hydration error on `/admin/rate-limits`.
 
 Plan to replace the current pile of overlapping local seeds (`supabase/seed.sql` + 10 `scripts/dev/seed-*.sql` files) with **one canonical local dataset** that exercises every supported module at every level: org, property, parking, super admin, public, and guest portal.
 

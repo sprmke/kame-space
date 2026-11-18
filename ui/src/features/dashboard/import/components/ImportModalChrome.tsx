@@ -108,7 +108,7 @@ export function ImportStepHeading({
   className,
 }: {
   title: string;
-  description: string;
+  description: React.ReactNode;
   headingRef?: React.Ref<HTMLHeadingElement>;
   className?: string;
 }) {

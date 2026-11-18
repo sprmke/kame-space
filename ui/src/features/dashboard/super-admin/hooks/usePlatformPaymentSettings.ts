@@ -8,6 +8,8 @@ export type PlatformPaymentSettings = {
   enabledBanks: string[];
   renewalLinkLeadDays: number;
   gracePeriodDays: number;
+  suspensionCancelDays: number;
+  pendingCheckoutTtlHours: number;
   updatedAt?: string;
 };
 
@@ -49,8 +51,21 @@ export function useRunPlatformBillingCron() {
         body: JSON.stringify({ action: 'run_billing_cron' }),
       }).then((data) => data.result),
     onSuccess: (result) => {
+      const part = (count: number | undefined, label: string) =>
+        count ? `${count} ${label}` : null;
+      const summary = [
+        part(result.renewalLinks, 'renewal links'),
+        part(result.reminders, 'reminders'),
+        part(result.scheduledApplied, 'plan changes applied'),
+        part(result.renewedFromCredit, 'renewed from credit'),
+        part(result.pastDue, 'past due'),
+        part(result.suspended, 'suspended'),
+        part(result.canceled, 'ended'),
+        part(result.paymentsRecovered, 'payments recovered'),
+        part(result.errors, 'errors'),
+      ].filter(Boolean);
       toast.success(
-        `Billing cron: ${result.renewalLinks ?? 0} renewals, ${result.pastDue ?? 0} past due, ${result.suspended ?? 0} suspended`
+        summary.length > 0 ? `Billing run: ${summary.join(', ')}` : 'Billing run: nothing was due'
       );
     },
     onError: (error: Error) => {

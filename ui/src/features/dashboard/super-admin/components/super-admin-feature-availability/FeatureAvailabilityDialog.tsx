@@ -2,12 +2,12 @@ import * as React from 'react';
 
 import { toast } from 'sonner';
 
+import type { UpdateFeatureAvailabilityInput } from '@/features/dashboard/super-admin/hooks/useFeatureAvailabilityAdmin';
 import {
   isoToManilaDateTimeParts,
   isFutureIso,
   manilaDateTimeToIso,
 } from '@/features/dashboard/super-admin/lib/featureAvailabilityAdmin';
-import type { UpdateFeatureAvailabilityInput } from '@/features/dashboard/super-admin/hooks/useFeatureAvailabilityAdmin';
 
 import { FeatureUnavailablePanel } from '@/components/feature-availability/FeatureUnavailablePanel';
 import { UnsavedChangesDialog } from '@/components/forms/UnsavedChangesDialog';

@@ -449,3 +449,23 @@ describe('resolveUpgradeCelebrationGains', () => {
     expect(labels).toContain('Up to 3 team members');
   });
 });
+
+describe('buildPlanTiers scheduled change', () => {
+  it('marks the plan the subscription moves to and the Free tier when ending', () => {
+    const plans = goldenSoldPlanDtos();
+    const current = goldenPlanId('growth');
+    const scheduled = buildPlanTiers(plans, current, {
+      scheduledPlanId: goldenPlanId('starter'),
+      scheduledOnLabel: 'Dec 3',
+    });
+    expect(scheduled.find((t) => t.plan.code === 'starter')?.scheduledStart).toBe('Starts Dec 3');
+    expect(scheduled.find((t) => t.plan.code === 'growth')?.scheduledStart).toBeNull();
+
+    const ending = buildPlanTiers(plans, current, {
+      cancelScheduled: true,
+      scheduledOnLabel: 'Dec 3',
+    });
+    expect(ending.find((t) => t.plan.code === 'free')?.scheduledStart).toBe('Starts Dec 3');
+    expect(ending.find((t) => t.plan.code === 'starter')?.scheduledStart).toBeNull();
+  });
+});

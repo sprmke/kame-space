@@ -69,6 +69,7 @@ export const privacyDocument: LegalDocument = {
       title: 'Payments',
       paragraphs: [
         'Parking payments and host subscriptions are processed by PayMongo on its own secure pages. PayMongo collects your card or e-wallet details. We receive the payment status, amount, method type, and reference, never your full card number.',
+        "Hosts can add billing details (legal name, address, TIN and a billing email) to their payment receipts. We keep them with the organization, show them only to its members and our support team, and print them on that organization's receipts.",
         'Stay payments go directly to the host. The receipt you upload is stored privately and shown only to the host and, when needed, to our support team. Refund payout details are used only to send that refund.',
       ],
     },

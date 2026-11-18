@@ -189,3 +189,62 @@ export const plansE2ePaths = {
   /** Legacy property URL — redirects to `orgPlans`. */
   propertyPlansRedirect: `/org/${PLANS_E2E_ORG_SLUG}/property/${PLANS_E2E_PROPERTY_SLUG}/plans`,
 } as const;
+
+/**
+ * Server quote for `preview-org-plan-change`, shaped like the edge function: one property, no
+ * proration, so the amounts are the golden per-property totals. Specs that need a credit or a
+ * price change build their own payload.
+ */
+export function planPreviewPayload(input: {
+  kind: 'pay' | 'schedule' | 'cancel';
+  planId: string | null;
+  currentPlanId: string | null;
+  propertyCount?: number;
+}) {
+  const plan = PLANS_E2E_CATALOG.find((entry) => entry.id === input.planId);
+  const current = PLANS_E2E_CATALOG.find((entry) => entry.id === input.currentPlanId);
+  const propertyCount = input.propertyCount ?? 1;
+
+  if (input.kind === 'pay') {
+    const total = plan ? planChargedPhp(plan) * propertyCount : 0;
+    return {
+      kind: 'pay',
+      purpose: current && !current.isDefault ? 'change' : 'initial',
+      planId: plan?.id ?? input.planId,
+      planName: plan?.name ?? 'Plan',
+      propertyCount,
+      chargePhp: total,
+      coveredByCredit: false,
+      targetTotalPhp: total,
+      unusedCreditPhp: 0,
+      ledgerDebtPhp: 0,
+      ledgerCreditAppliedPhp: 0,
+      newCreditPhp: 0,
+      lineItems: [
+        {
+          kind: 'plan',
+          label: `${plan?.name ?? 'Plan'} plan (${propertyCount} ${propertyCount === 1 ? 'property' : 'properties'})`,
+          amountPhp: total,
+        },
+      ],
+      periodStart: '2026-08-28T00:00:00.000Z',
+      periodEnd: '2026-09-28T00:00:00.000Z',
+      startsNewPeriod: true,
+      nextRenewalPhp: total,
+      currentPeriodRemainingDays: null,
+    };
+  }
+
+  const target =
+    input.kind === 'cancel' ? PLANS_E2E_CATALOG.find((entry) => entry.isDefault) : plan;
+  return {
+    kind: input.kind,
+    fromPlanName: current?.name ?? 'Plan',
+    toPlanName: target?.name ?? 'Free',
+    effectiveAt: '2026-09-01T00:00:00.000Z',
+    nextRenewalPhp: input.kind === 'cancel' || !target ? 0 : planChargedPhp(target) * propertyCount,
+    currentTotalPhp: current ? planChargedPhp(current) * propertyCount : null,
+    propertyCount,
+    impact: [],
+  };
+}

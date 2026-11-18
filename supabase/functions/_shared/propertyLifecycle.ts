@@ -698,6 +698,13 @@ export type PropertyLifecycleActionResult = {
   property: LifecyclePropertyRow;
   previousState: PropertyLifecycleState;
   state: PropertyLifecycleState;
+  /** Set on restore: whether the property went back onto the plan and any true-up added. */
+  billing?: {
+    covered: boolean;
+    reason?: 'no_subscription' | 'payment_overdue' | 'archived';
+    trueUpPhp: number;
+    alreadyCovered: boolean;
+  };
 };
 
 function assertState(
@@ -953,9 +960,17 @@ export async function restoreProperty(propertyId: string): Promise<PropertyLifec
     throw new PropertyLifecycleError('Could not restore this property', 500, 'WRITE_FAILED');
   }
 
+  let billing: PropertyLifecycleActionResult['billing'];
   try {
     const { autoEnrollPropertyInOrgSubscription } = await import('./planEntitlements.ts');
-    await autoEnrollPropertyInOrgSubscription(row.organization_id, propertyId, null);
+    const covered = await autoEnrollPropertyInOrgSubscription(
+      row.organization_id,
+      propertyId,
+      null
+    );
+    billing = covered.covered
+      ? { covered: true, trueUpPhp: covered.trueUpPhp, alreadyCovered: covered.alreadyCovered }
+      : { covered: false, reason: covered.reason, trueUpPhp: 0, alreadyCovered: false };
   } catch (error) {
     console.warn(
       '[propertyLifecycle] subscription reslot failed:',
@@ -964,7 +979,7 @@ export async function restoreProperty(propertyId: string): Promise<PropertyLifec
   }
 
   const property = await loadLifecycleProperty(propertyId);
-  return { property, previousState, state: resolvePropertyLifecycleState(property) };
+  return { property, previousState, state: resolvePropertyLifecycleState(property), billing };
 }
 
 // ─── System setters (contract cron, unit handoff, approvals) ─────────────────

@@ -155,6 +155,33 @@ serveAuthenticated('property-lifecycle', async (req) => {
     });
   }
 
+  if (changed && action === 'restore' && result.billing?.covered && !result.billing.alreadyCovered) {
+    await logActivity({
+      action: 'billing.property_covered',
+      organizationId: access.org.id,
+      propertyId,
+      scope: 'property',
+      actor: buildActorContext('dashboard', { propertyAccess: access }, req),
+      targetType: 'property',
+      targetId: propertyId,
+      targetLabel: property.name ?? null,
+      metadata: { true_up_php: result.billing.trueUpPhp, via: 'restore' },
+    });
+  }
+  if (changed && action === 'archive' && impactBefore?.subscription.billed) {
+    await logActivity({
+      action: 'billing.property_uncovered',
+      organizationId: access.org.id,
+      propertyId,
+      scope: 'property',
+      actor: buildActorContext('dashboard', { propertyAccess: access }, req),
+      targetType: 'property',
+      targetId: propertyId,
+      targetLabel: property.name ?? null,
+      metadata: { via: 'archive' },
+    });
+  }
+
   const refreshed = await loadLifecycleProperty(propertyId);
   const lifecycle = await buildPropertyLifecycleDto(refreshed, {
     canDelete: access.accessKind === 'owner' || access.accessKind === 'platform_admin',
@@ -172,5 +199,6 @@ serveAuthenticated('property-lifecycle', async (req) => {
     property: serializeLifecycleProperty(refreshed),
     state: resolvePropertyLifecycleState(refreshed),
     impact,
+    billing: result.billing ?? null,
   });
 });

@@ -1237,7 +1237,16 @@ verify_jwt = false
 [functions.create-org-subscription-checkout]
 verify_jwt = false
 
-[functions.apply-org-plan-downgrade]
+[functions.org-subscription-change]
+verify_jwt = false
+
+[functions.preview-org-plan-change]
+verify_jwt = false
+
+[functions.org-billing-details]
+verify_jwt = false
+
+[functions.get-org-payment-receipt]
 verify_jwt = false
 
 [functions.paymongo-webhook]

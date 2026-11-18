@@ -171,7 +171,7 @@ export function PropertyLandingHouseRulesControl({
                       }))
                     }
                     onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
+                      if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
                         event.preventDefault();
                         addCustomHouseRule(category.id);
                       }

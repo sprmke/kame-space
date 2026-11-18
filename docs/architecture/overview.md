@@ -218,6 +218,8 @@ Entry: `ui/src/main.tsx` → `App.tsx` → `ui/src/routes/index.tsx` merges `gue
 
 **Billing is org-level only** (`org_subscriptions`). A property left out of enrollment resolves to Free. Plans UI: `/org/:orgSlug/plans`. Matrix: [`plans-feature-matrix.md`](plans-feature-matrix.md).
 
+**Billing lifecycle.** One pure state machine, `_shared/orgSubscriptionStateMachine.ts` (`nextBillingTransition`, `dueReminders`, validators), decides what happens next; `platform-billing-cron` runs it **hourly** and every write is a compare-and-set, so overlapping runs and multi-day outages catch up in order without doubling up. A downgrade or cancel is **pending intent on the row** (`scheduled_plan_id`, `cancel_at_period_end`) applied at the period end, undoable until then. Upgrades are immediate with a server quote (`orgBillingQuote`, `preview-org-plan-change`) and credit from what was actually paid (`period_paid_php`). There is **one open checkout per org**; a payment that arrives for a closed or superseded checkout is validated against its intent snapshot and, if stale, kept as **account credit** in `org_billing_ledger` instead of being dropped. **Suspended behaves like Free** (`resolveSubscriptionFeatures`), never as a dashboard lockout, and ends on its own after `suspension_cancel_days`. Reminders are send-once per period (`org_billing_notifications`). Receipts are numbered `KS-R-YYYY-NNNNNN`. Plan: [`plans-billing-lifecycle-hardening`](../workflow/done/plans-billing-lifecycle-hardening.md).
+
 ---
 
 ## 6. Identity and access

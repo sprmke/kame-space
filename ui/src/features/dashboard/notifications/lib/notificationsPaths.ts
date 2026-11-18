@@ -11,14 +11,23 @@ import {
   parkingNotificationsPath,
   propertyInboxPath,
   propertyNotificationsPath,
+  propertySectionPath,
 } from '@/features/dashboard/org/lib/tenantPaths';
 
 type NotificationLike = {
+  type?: string | null;
   booking_id: string | null;
   conversation_id: string | null;
   property_id: string | null;
   parking_id: string | null;
 };
+
+/** Opens Pricing with Channel sync ready (calendar conflict / sync failing). */
+export const CHANNEL_SYNC_OPEN_PARAM = 'channelSync';
+
+export function propertyChannelSyncPath(orgSlug: string, propertySlug: string): string {
+  return `${propertySectionPath(orgSlug, propertySlug, 'pricing')}?${CHANNEL_SYNC_OPEN_PARAM}=1`;
+}
 
 export type NotificationPathScope = {
   orgSlug: string | null;
@@ -51,6 +60,15 @@ export function resolveNotificationPath(
   if (notification.conversation_id && notification.parking_id) {
     const slug = parkingSlugById.get(notification.parking_id);
     if (slug) return parkingInboxPath(orgSlug, slug);
+  }
+
+  // Calendar sync rows have property_id but no booking/conversation.
+  if (
+    notification.property_id &&
+    (notification.type === 'calendar_conflict' || notification.type === 'calendar_sync_failing')
+  ) {
+    const slug = propertySlugById.get(notification.property_id);
+    if (slug) return propertyChannelSyncPath(orgSlug, slug);
   }
 
   return null;

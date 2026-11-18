@@ -39,6 +39,7 @@
     "check:test-coverage": "bun scripts/dev/check-test-coverage.ts",
     "check:e2e-lane-tags": "node scripts/dev/check-e2e-lane-tags.mjs",
     "check:plan-catalog": "bun scripts/dev/check-plan-catalog.ts",
+    "billing:time-travel": "bun scripts/dev/billing-time-travel.ts",
     "audit:auth-matrix": "node scripts/dev/audit-auth-matrix.mjs",
     "check:auth-matrix": "node scripts/dev/audit-auth-matrix.mjs --check",
     "branch:audit": "bash scripts/dev/branch-audit.sh",

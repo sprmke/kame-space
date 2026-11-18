@@ -15,7 +15,6 @@ import { VerificationDocThumbnail } from '@/features/dashboard/org/components/ve
 import { VerificationStatusBadge } from '@/features/dashboard/org/components/verification/VerificationStatusBadge';
 import { ORG_SOCIAL_PROOF_PLATFORMS } from '@/features/dashboard/org/lib/orgVerification';
 import { VERIFICATION_TIER2_DOC_LABELS } from '@/features/dashboard/org/lib/verificationCopy';
-import { IdentityPreScreenBlock } from '@/features/verification/components/IdentityPreScreenBlock';
 import {
   formatSuperAdminApprovalDate,
   superAdminApprovalDialogBodyClass,
@@ -53,6 +52,8 @@ import type {
   OrgApprovalSummary,
   OrgApprovalVerification,
 } from '@/features/dashboard/super-admin/types/approval';
+
+import { IdentityPreScreenBlock } from '@/features/verification/components/IdentityPreScreenBlock';
 
 import { ReviewDialogSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { Button } from '@/components/ui/button';

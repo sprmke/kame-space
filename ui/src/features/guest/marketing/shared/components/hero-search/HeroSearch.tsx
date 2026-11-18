@@ -34,6 +34,7 @@ import {
   readWhereParam,
   type DropdownLayout,
   type GuestCounts,
+  type HeroSearchPanelPlacement,
   type HeroSearchValues,
   type SearchField,
 } from '@/features/guest/marketing/shared/lib/heroSearchState';
@@ -175,6 +176,11 @@ interface HeroSearchProps {
   scrollProgress?: number;
   /** Compact header-docked style (instant; used when `morphProgress` is omitted). */
   variant?: 'default' | 'compact';
+  /**
+   * Desktop panel side relative to the bar. Landing hero (`/`) uses `above` so
+   * Where/When/Who are not clipped under the photo. Listing pages keep `below`.
+   */
+  panelPlacement?: HeroSearchPanelPlacement;
 }
 
 export function HeroSearch({
@@ -190,6 +196,7 @@ export function HeroSearch({
   morphProgress,
   scrollProgress = 0,
   variant = 'default',
+  panelPlacement = 'below',
 }: HeroSearchProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -369,10 +376,11 @@ export function HeroSearch({
         barRef.current,
         segmentEl,
         effectiveCalendarMonths,
-        height
+        height,
+        panelPlacement
       )
     );
-  }, [activeField, effectiveCalendarMonths]);
+  }, [activeField, effectiveCalendarMonths, panelPlacement]);
 
   useEffect(() => {
     const onResize = () => setViewportWidth(window.innerWidth);
@@ -472,7 +480,8 @@ export function HeroSearch({
           barRef.current,
           segmentEl,
           effectiveCalendarMonths,
-          estimate
+          estimate,
+          panelPlacement
         )
       );
     }
@@ -482,7 +491,15 @@ export function HeroSearch({
       window.requestAnimationFrame(updateDropdownLayout);
     });
     return () => window.cancelAnimationFrame(measureId);
-  }, [activeField, effectiveCalendarMonths, morph, dateRange, guests, updateDropdownLayout]);
+  }, [
+    activeField,
+    effectiveCalendarMonths,
+    morph,
+    dateRange,
+    guests,
+    panelPlacement,
+    updateDropdownLayout,
+  ]);
 
   useEffect(() => {
     if (!activeField) return;
@@ -1019,7 +1036,7 @@ export function HeroSearch({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-40 bg-black/25"
             onClick={() => setActiveField(null)}
           />
         ) : null}

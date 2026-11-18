@@ -158,19 +158,15 @@ function unregisterThenReload(reload: () => void): void {
 /** True when a tiny same-origin request actually completes (Wi-Fi can be up with no route). */
 async function canReachNetwork(): Promise<boolean> {
   if (typeof fetch !== 'function') return false;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 2500);
   try {
     const response = await fetch(`${PWA_VERSION_URL}?t=${Date.now()}`, {
       cache: 'no-store',
       credentials: 'same-origin',
-      signal: controller.signal,
+      signal: AbortSignal.timeout(2500),
     });
     return response.ok;
   } catch {
     return false;
-  } finally {
-    clearTimeout(timer);
   }
 }
 

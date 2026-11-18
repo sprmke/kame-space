@@ -10,39 +10,47 @@ import {
 } from '@/features/dashboard/help-support/lib/helpSupportPaths';
 import { useOrganizations } from '@/features/dashboard/org/hooks/useOrganizations';
 import { canManageOrgBilling } from '@/features/dashboard/org/lib/orgAccessKind';
+import { OrgBillingDetailsCard } from '@/features/dashboard/plans/components/OrgBillingDetailsCard';
 import {
   PlanBillingHistory,
   PlanBillingSummaryCard,
+  type PlanBillingActions,
 } from '@/features/dashboard/plans/components/PlanBillingPanel';
+import { PlanCancelDialog } from '@/features/dashboard/plans/components/PlanCancelDialog';
 import { PlanCheckoutConfirmationBanner } from '@/features/dashboard/plans/components/PlanCheckoutConfirmationBanner';
 import { PlanFaqSection } from '@/features/dashboard/plans/components/PlanFaqSection';
 import { PlanFeatureMatrix } from '@/features/dashboard/plans/components/PlanFeatureMatrix';
-import { PlanReviewDialog } from '@/features/dashboard/plans/components/PlanReviewDialog';
+import {
+  PlanReviewDialog,
+  type CheckoutRequest,
+} from '@/features/dashboard/plans/components/PlanReviewDialog';
 import { PlanTierRail } from '@/features/dashboard/plans/components/PlanTierRail';
 import { PlanUpgradeSuccessModal } from '@/features/dashboard/plans/components/PlanUpgradeSuccessModal';
+import { useOrgPaymentHistory } from '@/features/dashboard/plans/hooks/useOrgPaymentHistory';
 import {
+  useChangeOrgSubscriptionPlan,
   useCreateOrgPlanCheckout,
-  useApplyOrgPlanDowngrade,
   useOrgPlan,
 } from '@/features/dashboard/plans/hooks/useOrgPlan';
 import { useOrgPlanCheckoutConfirmation } from '@/features/dashboard/plans/hooks/useOrgPlanCheckoutConfirmation';
+import { resolvePlanChange } from '@/features/dashboard/plans/lib/billingState';
 import { openOrgPlanCheckout } from '@/features/dashboard/plans/lib/openOrgPlanCheckout';
-import type { OrgBundlePlanDto } from '@/features/dashboard/plans/lib/orgPlanApi';
+import type { CancelReason, OrgBundlePlanDto } from '@/features/dashboard/plans/lib/orgPlanApi';
 import { parseOrgPlanCheckoutReturn } from '@/features/dashboard/plans/lib/orgPlanCheckoutParams';
 import { consumeOrgPlanUpgradeCelebration } from '@/features/dashboard/plans/lib/orgPlanCheckoutSession';
 import type { PlanFeatureKey } from '@/features/dashboard/plans/lib/planFeatures';
 import {
   buildPlanTiers,
-  isManagedSalesPlan,
   MANAGED_PLAN_INQUIRY_SUBJECT,
   nextUpgradePlan,
+  planDisplayName,
+  planFeatureLosses,
+  resolveDefaultPlan,
   PLANS_PAGE_SUBTITLE,
   type PLANS_TAB_SECTION_TITLES,
   resolveEffectiveCurrentPlan,
   resolveEffectiveCurrentPlanId,
-  resolveDowngradeBlockedReason,
   resolveMinimumPlanForFeature,
-  isPlanDowngrade,
 } from '@/features/dashboard/plans/lib/planPresentation';
 
 import { FloatingPanel } from '@/components/mobile/FloatingPanel';
@@ -51,8 +59,15 @@ import { PlansPageSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { orgPageTitle, usePageTitle } from '@/lib/pageTitle';
+import { formatManilaLongDate } from '@/utils/format/dates';
 
 type PlansTab = keyof typeof PLANS_TAB_SECTION_TITLES;
+
+/** "Dec 3" for card badges. */
+function formatShortManilaDate(iso: string | null | undefined): string | null {
+  const long = formatManilaLongDate(iso);
+  return long ? long.replace(/,\s*\d{4}$/, '') : null;
+}
 
 /**
  * Org subscription hub — one plan covers every property in the org, priced per property with
@@ -80,7 +95,8 @@ export function OrgPlansPage() {
     pollWhileCheckoutPending: true,
   });
   const createCheckout = useCreateOrgPlanCheckout(org?.id ?? null);
-  const applyDowngrade = useApplyOrgPlanDowngrade(org?.id ?? null);
+  const changePlan = useChangeOrgSubscriptionPlan(org?.id ?? null);
+  const history = useOrgPaymentHistory(org?.id ?? null, data);
   const checkoutConfirmation = useOrgPlanCheckoutConfirmation({
     orgId: org?.id ?? null,
     data,
@@ -92,19 +108,12 @@ export function OrgPlansPage() {
   const [activeTab, setActiveTab] = useState<PlansTab>('billing');
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [cancelMode, setCancelMode] = useState<'period_end' | 'now' | null>(null);
   const [upgradeCelebrationOpen, setUpgradeCelebrationOpen] = useState(false);
   const [celebrationPreviousPlanId, setCelebrationPreviousPlanId] = useState<string | null>(null);
   const [celebrationTargetPlanId, setCelebrationTargetPlanId] = useState<string | null>(null);
 
   const plans = data?.plans ?? [];
-  const properties = data?.properties ?? [];
-  const assignedPropertyIds = data?.assignedPropertyIds ?? [];
-  // Archived listings are off the bill from the next cycle, so they do not count here.
-  const archivedPropertyCount = properties.filter(
-    (property) => property.inactiveReason === 'archived'
-  ).length;
-  const propertyCount = properties.length - archivedPropertyCount;
-  const uncoveredPropertyCount = Math.max(0, propertyCount - assignedPropertyIds.length);
   const subscription = data?.subscription ?? null;
 
   const effectiveCurrentPlanId = useMemo(
@@ -124,21 +133,42 @@ export function OrgPlansPage() {
 
   const canManageBilling = canManageOrgBilling(org?.accessKind);
 
-  const resumePendingCheckout = async () => {
-    const pendingTxn = data?.transactions.find(
-      (txn) => txn.status === 'pending' && txn.checkoutUrl
-    );
-    const planId = data?.pendingCheckoutPlanId ?? pendingTxn?.planId;
-    if (!planId || !org?.id) return;
+  const cancelLosses = useMemo(() => {
+    const free = resolveDefaultPlan(plans);
+    return currentPlan && free ? planFeatureLosses(currentPlan.features, free.features) : [];
+  }, [plans, currentPlan]);
 
-    const checkout = await createCheckout.mutateAsync({ planId });
+  /** Sends the host to PayMongo, or finishes in place when account credit covered the payment. */
+  const startPayment = async (
+    input: Parameters<typeof createCheckout.mutateAsync>[0],
+    targetPlanId: string
+  ) => {
+    if (!org?.id) return;
+    const checkout = await createCheckout.mutateAsync(input);
+    if (!checkout.checkoutUrl) {
+      setActiveTab('billing');
+      return;
+    }
     openOrgPlanCheckout({
       orgId: org.id,
       transactionId: checkout.transactionId,
       checkoutUrl: checkout.checkoutUrl,
       previousPlanId: effectiveCurrentPlanId ?? null,
-      targetPlanId: planId,
+      targetPlanId,
     });
+  };
+
+  /** Pay what is due: reopen the open checkout, or start the renewal / reactivation payment. */
+  const payNow = async () => {
+    const targetPlanId =
+      data?.pendingCheckoutPlanId ??
+      subscription?.scheduledPlanId ??
+      subscription?.planId ??
+      effectiveCurrentPlanId;
+    if (!targetPlanId) return;
+    await startPayment({ resume: Boolean(data?.pendingCheckoutUrl) }, targetPlanId).catch(
+      () => undefined
+    );
   };
 
   const celebrationPreviousPlan = useMemo(
@@ -162,36 +192,69 @@ export function OrgPlansPage() {
   useEffect(() => {
     setPendingPlanId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subscription?.id, subscription?.planId, propertyCount]);
+  }, [subscription?.id, subscription?.planId, subscription?.scheduledPlanId]);
 
   const selectedPlan = useMemo(
-    () => plans.find((plan) => plan.id === pendingPlanId) ?? currentPlan,
-    [plans, pendingPlanId, currentPlan]
+    () => plans.find((plan) => plan.id === pendingPlanId) ?? null,
+    [plans, pendingPlanId]
   );
 
-  const downgradeBlockedReason = useMemo(() => {
-    if (!selectedPlan || !isPlanDowngrade(currentPlan, selectedPlan)) return null;
-    return resolveDowngradeBlockedReason({
-      subscriptionStatus: subscription?.status,
-      currentPlanCode: currentPlan?.code,
-      targetPlan: selectedPlan,
-    });
-  }, [selectedPlan, currentPlan, subscription?.status]);
+  const billingActions: PlanBillingActions = {
+    pay_now: () => void payNow(),
+    keep_plan: () => void changePlan.mutateAsync({ action: 'clear_intent' }).catch(() => undefined),
+    resume_plan: () =>
+      void changePlan.mutateAsync({ action: 'clear_intent' }).catch(() => undefined),
+    cancel_now: () => setCancelMode('now'),
+    switch_to_free: () => setCancelMode('now'),
+    keep_after_trial: () => {
+      if (!subscription) return;
+      void startPayment({ planId: subscription.planId }, subscription.planId).catch(
+        () => undefined
+      );
+    },
+  };
 
   const tiers = useMemo(
-    () => buildPlanTiers(plans, effectiveCurrentPlanId),
-    [plans, effectiveCurrentPlanId]
+    () =>
+      buildPlanTiers(plans, effectiveCurrentPlanId, {
+        scheduledPlanId: subscription?.scheduledPlanId ?? null,
+        cancelScheduled: subscription?.cancelAtPeriodEnd === true,
+        scheduledOnLabel: formatShortManilaDate(
+          subscription?.scheduledChangeAt ?? subscription?.currentPeriodEnd
+        ),
+      }),
+    [
+      plans,
+      effectiveCurrentPlanId,
+      subscription?.scheduledPlanId,
+      subscription?.cancelAtPeriodEnd,
+      subscription?.scheduledChangeAt,
+      subscription?.currentPeriodEnd,
+    ]
   );
   const hasPlans = plans.length > 0;
 
   const handleSelectPlan = (plan: OrgBundlePlanDto) => {
     if (!canManageBilling) return;
-    if (isManagedSalesPlan(plan.code) && helpSupportBase) {
-      navigate(
-        helpSupportNewTicketPath(helpSupportBase, { subject: MANAGED_PLAN_INQUIRY_SUBJECT })
-      );
+    const change = resolvePlanChange({ subscription, currentPlan, target: plan });
+    if (change.kind === 'sales') {
+      if (helpSupportBase) {
+        navigate(
+          helpSupportNewTicketPath(helpSupportBase, { subject: MANAGED_PLAN_INQUIRY_SUBJECT })
+        );
+      }
       return;
     }
+    if (change.kind === 'same') return;
+    if (change.kind === 'cancel') {
+      setCancelMode('period_end');
+      return;
+    }
+    if (change.kind === 'cancel_now') {
+      setCancelMode('now');
+      return;
+    }
+    // pay, schedule and blocked all open the review dialog (blocked explains why).
     setPendingPlanId(plan.id);
     setReviewOpen(true);
   };
@@ -286,26 +349,25 @@ export function OrgPlansPage() {
           <PlanCheckoutConfirmationBanner
             state={checkoutConfirmation}
             pendingCheckoutUrl={data?.pendingCheckoutUrl}
-            onResumePayment={canManageBilling ? resumePendingCheckout : undefined}
+            onResumePayment={canManageBilling ? () => void payNow() : undefined}
           />
 
           {currentPlan || subscription ? (
             <PlanBillingSummaryCard
               plan={currentPlan}
               subscription={subscription}
+              upcomingPayment={data?.upcomingPayment}
+              accountCreditPhp={data?.accountCreditPhp ?? 0}
+              amountOwedPhp={data?.amountOwedPhp ?? 0}
               canManage={canManageBilling}
-              pendingCheckoutUrl={data?.pendingCheckoutUrl}
-              onResumePayment={canManageBilling ? resumePendingCheckout : undefined}
-              isPaying={createCheckout.isPending}
+              openCheckout={
+                data?.pendingCheckoutUrl ? { purpose: data.pendingCheckoutPurpose ?? null } : null
+              }
+              actions={billingActions}
+              isBusy={createCheckout.isPending || changePlan.isPending}
               upgradePlan={upgradeTarget}
               onUpgrade={handleSelectPlan}
               onManagePlans={() => setActiveTab('plans')}
-              uncoveredPropertyCount={uncoveredPropertyCount}
-              onCoverUncoveredProperties={
-                subscription && currentPlan && uncoveredPropertyCount > 0
-                  ? () => handleSelectPlan(currentPlan)
-                  : undefined
-              }
             />
           ) : null}
 
@@ -345,10 +407,25 @@ export function OrgPlansPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="billing" className="mt-3" aria-labelledby="plans-billing-heading">
+            <TabsContent
+              value="billing"
+              className="mt-3 space-y-4"
+              aria-labelledby="plans-billing-heading"
+            >
               <PlanBillingHistory
-                transactions={data?.transactions ?? []}
+                orgId={org.id}
+                transactions={history.transactions}
                 plans={data?.plans ?? []}
+                hasMore={history.hasMore}
+                isLoadingMore={history.isLoadingMore}
+                onLoadMore={() => void history.loadMore()}
+                showIncomplete={history.showIncomplete}
+                onShowIncompleteChange={history.setShowIncomplete}
+              />
+              <OrgBillingDetailsCard
+                orgId={org.id}
+                details={data?.billingDetails}
+                canEdit={canManageBilling}
               />
             </TabsContent>
 
@@ -380,30 +457,46 @@ export function OrgPlansPage() {
 
       <PlanReviewDialog
         open={reviewOpen && Boolean(selectedPlan)}
+        orgId={org.id}
         plan={selectedPlan}
         currentPlan={currentPlan}
-        propertyCount={propertyCount}
         subscription={subscription}
-        downgradeBlockedReason={downgradeBlockedReason}
         onOpenChange={setReviewOpen}
-        onConfirmDowngrade={async (planId) => {
-          if (!org?.id) return;
-          await applyDowngrade.mutateAsync({ planId });
+        onScheduleDowngrade={async (planId) => {
+          await changePlan.mutateAsync({ action: 'schedule_downgrade', planId });
         }}
-        onCheckoutPaid={async (planId) => {
-          if (!org?.id) return;
-          const checkout = await createCheckout.mutateAsync({ planId });
-          openOrgPlanCheckout({
-            orgId: org.id,
-            transactionId: checkout.transactionId,
-            checkoutUrl: checkout.checkoutUrl,
-            previousPlanId: effectiveCurrentPlanId ?? null,
-            targetPlanId: planId,
-          });
+        onCheckoutPaid={async (request: CheckoutRequest) => {
+          await startPayment(
+            {
+              planId: request.planId,
+              expectedChargePhp: request.expectedChargePhp,
+              idempotencyKey: request.idempotencyKey,
+            },
+            request.planId
+          );
           setReviewOpen(false);
           setActiveTab('billing');
         }}
-        isSubmitting={createCheckout.isPending || applyDowngrade.isPending}
+        isSubmitting={createCheckout.isPending || changePlan.isPending}
+      />
+
+      <PlanCancelDialog
+        open={cancelMode !== null}
+        orgId={org.id}
+        planName={currentPlan ? planDisplayName(currentPlan) : 'plan'}
+        losses={cancelLosses}
+        mode={cancelMode ?? 'period_end'}
+        onOpenChange={(next) => {
+          if (!next) setCancelMode(null);
+        }}
+        onConfirm={async (reason: CancelReason | null) => {
+          await changePlan.mutateAsync(
+            cancelMode === 'now'
+              ? { action: 'cancel_now', reason }
+              : { action: 'cancel_at_period_end', reason }
+          );
+        }}
+        isSubmitting={changePlan.isPending}
       />
 
       <PlanUpgradeSuccessModal

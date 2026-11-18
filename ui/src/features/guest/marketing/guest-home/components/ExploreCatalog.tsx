@@ -132,12 +132,26 @@ function FeedState<T>({
 }) {
   if (feed.isLoading) {
     return (
-      <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-4" aria-busy="true">
+      <div
+        className="grid gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-4"
+        aria-busy="true"
+        aria-label={`Loading ${noun}`}
+      >
         {Array.from({ length: 4 }, (_, i) => (
-          <div key={i} className={i > 0 ? 'hidden sm:block' : undefined}>
+          <div
+            key={i}
+            className={i > 0 ? 'hidden sm:block' : undefined}
+            style={{ opacity: 1 - i * 0.04 }}
+          >
             <div className="bg-muted aspect-[4/3] animate-pulse rounded-2xl" />
-            <div className="bg-muted mt-3 h-4 w-2/3 animate-pulse rounded" />
-            <div className="bg-muted mt-2 h-3 w-1/3 animate-pulse rounded" />
+            <div className="mt-3 space-y-2">
+              <div className="bg-muted h-4 w-3/4 animate-pulse rounded" />
+              <div className="bg-muted h-3 w-1/2 animate-pulse rounded" />
+              <div className="flex items-center gap-2 pt-1">
+                <div className="bg-muted h-3 w-16 animate-pulse rounded" />
+                <div className="bg-muted h-3 w-12 animate-pulse rounded" />
+              </div>
+            </div>
           </div>
         ))}
       </div>

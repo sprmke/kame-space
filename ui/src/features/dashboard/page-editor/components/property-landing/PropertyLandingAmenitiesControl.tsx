@@ -163,7 +163,7 @@ export function PropertyLandingAmenitiesControl({
                       }))
                     }
                     onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
+                      if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
                         event.preventDefault();
                         addCustomAmenity(category.id);
                       }

@@ -32,6 +32,8 @@ export function SuperAdminPaymentSettingsPage() {
   const [methods, setMethods] = useState<string[]>([]);
   const [leadDays, setLeadDays] = useState('5');
   const [graceDays, setGraceDays] = useState('5');
+  const [suspensionDays, setSuspensionDays] = useState('30');
+  const [ttlHours, setTtlHours] = useState('24');
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
@@ -39,6 +41,8 @@ export function SuperAdminPaymentSettingsPage() {
     setMethods(data.enabledPaymentMethods ?? []);
     setLeadDays(String(data.renewalLinkLeadDays ?? 5));
     setGraceDays(String(data.gracePeriodDays ?? 5));
+    setSuspensionDays(String(data.suspensionCancelDays ?? 30));
+    setTtlHours(String(data.pendingCheckoutTtlHours ?? 24));
     setInitialized(true);
   }, [data, initialized]);
 
@@ -52,6 +56,8 @@ export function SuperAdminPaymentSettingsPage() {
     enabledPaymentMethods: methods,
     renewalLinkLeadDays: Number(leadDays),
     gracePeriodDays: Number(graceDays),
+    suspensionCancelDays: Number(suspensionDays),
+    pendingCheckoutTtlHours: Number(ttlHours),
   };
   const sameMethods = (a: string[], b: string[]) =>
     a.length === b.length && a.every((value) => b.includes(value));
@@ -60,7 +66,9 @@ export function SuperAdminPaymentSettingsPage() {
     initialized &&
     (!sameMethods(methods, data.enabledPaymentMethods ?? []) ||
       input.renewalLinkLeadDays !== Number(data.renewalLinkLeadDays ?? 5) ||
-      input.gracePeriodDays !== Number(data.gracePeriodDays ?? 5));
+      input.gracePeriodDays !== Number(data.gracePeriodDays ?? 5) ||
+      input.suspensionCancelDays !== Number(data.suspensionCancelDays ?? 30) ||
+      input.pendingCheckoutTtlHours !== Number(data.pendingCheckoutTtlHours ?? 24));
 
   const saveSettings = async (): Promise<boolean> => {
     try {
@@ -126,7 +134,7 @@ export function SuperAdminPaymentSettingsPage() {
             stacked
             label="Grace period (days)"
             htmlFor="grace-period-days"
-            description="Days a lapsed subscription keeps access before suspension."
+            description="Days after the period end a lapsed subscription keeps every paid feature."
           >
             <Input
               id="grace-period-days"
@@ -135,6 +143,36 @@ export function SuperAdminPaymentSettingsPage() {
               max={30}
               value={graceDays}
               onChange={(event) => setGraceDays(event.target.value)}
+            />
+          </SuperAdminSettingsRow>
+          <SuperAdminSettingsRow
+            stacked
+            label="Suspension window (days)"
+            htmlFor="suspension-cancel-days"
+            description="Days a suspended subscription waits for payment before it ends and the org moves to Free."
+          >
+            <Input
+              id="suspension-cancel-days"
+              type="number"
+              min={1}
+              max={365}
+              value={suspensionDays}
+              onChange={(event) => setSuspensionDays(event.target.value)}
+            />
+          </SuperAdminSettingsRow>
+          <SuperAdminSettingsRow
+            stacked
+            label="Checkout expiry (hours)"
+            htmlFor="pending-checkout-ttl"
+            description="How long an unpaid checkout link stays payable before it is closed."
+          >
+            <Input
+              id="pending-checkout-ttl"
+              type="number"
+              min={1}
+              max={168}
+              value={ttlHours}
+              onChange={(event) => setTtlHours(event.target.value)}
             />
           </SuperAdminSettingsRow>
         </div>

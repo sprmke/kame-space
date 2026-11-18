@@ -26,6 +26,7 @@ Navigation for **guest-form-management**.
 | [`workflow/in-progress/`](./workflow/in-progress/)                                                    | Active implementation. Shipped audits: [`tier-feature-alignment-audit.md`](./workflow/done/tier-feature-alignment-audit.md), [`pricing-portfolio-bundling.md`](./workflow/done/pricing-portfolio-bundling.md). |
 | [`workflow/done/`](./workflow/done/)                                                                  | Verified shipped plans                                                                                                                                                                                         |
 | [`workflow/in-progress/production-readiness/`](./workflow/in-progress/production-readiness/README.md) | Launch readiness: checklist 00–38, audits, QA batch, operator inputs, evidence, ledger                                                                                                                         |
+| [`workflow/in-progress/full-app-ux-audit/`](./workflow/in-progress/full-app-ux-audit/README.md)       | Full app UX/UI + functional audit (Nov 2026): every route, module reports, prioritized findings, screenshots. Exploration only, no code changes                                                                |
 
 ## Product backlog (GitHub Issues)
 
