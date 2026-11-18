@@ -67,12 +67,14 @@ export function PlanBillingLegalNotice({
   kind,
   className,
   align = 'start',
-}: PresetProps & { kind: 'checkout' | 'downgrade' }) {
+}: PresetProps & { kind: 'checkout' | 'downgrade' | 'cancel' }) {
   return (
     <LegalNotice align={align} className={className}>
       {kind === 'checkout'
-        ? 'Paid through PayMongo. Renews monthly by payment link. Unused time is not refunded.'
-        : 'This applies right away. Unused time is not refunded.'}{' '}
+        ? 'Paid through PayMongo. Renews monthly by payment link. Unused time on a plan change is credited to you, never paid back in cash.'
+        : kind === 'downgrade'
+          ? 'Takes effect at the end of the billing period. Paid time is not refunded.'
+          : 'Your plan ends at the end of the billing period. Paid time is not refunded.'}{' '}
       <LegalLink doc="terms" section="billing">
         Billing terms
       </LegalLink>

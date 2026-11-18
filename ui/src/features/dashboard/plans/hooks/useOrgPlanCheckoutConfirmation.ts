@@ -49,7 +49,9 @@ export function useOrgPlanCheckoutConfirmation({
     pollWhileConfirming &&
     Boolean(
       orgId &&
-      (session || pendingCheckoutUrl || checkoutReturn === 'success') &&
+      // Only a checkout this browser started (or just returned from) is "being confirmed". An
+      // open checkout left over from another device shows on the summary card instead.
+      (session || checkoutReturn === 'success') &&
       state !== 'success' &&
       state !== 'cancelled' &&
       state !== 'timed_out'
@@ -103,16 +105,35 @@ export function useOrgPlanCheckoutConfirmation({
       return;
     }
 
+    // A payment that arrived after the plan had changed is kept as account credit, not applied:
+    // say so instead of celebrating a plan change that did not happen.
+    const creditedTransaction = data.transactions.find(
+      (txn) => txn.status === 'paid' && txn.keptAsCredit && sessionNow?.transactionId === txn.id
+    );
+    if (creditedTransaction && sessionNow) {
+      clearOrgPlanCheckoutSession(orgId);
+      hadPendingCheckoutRef.current = false;
+      setState('idle');
+      toast.message('Payment received and added to your account credit', {
+        description:
+          'Your plan had already changed, so it was not applied. It comes off your next payment.',
+      });
+      void queryClient.invalidateQueries({ queryKey: ['org', orgId] });
+      return;
+    }
+
     const paidTransaction = data.transactions.find(
-      (txn) => txn.status === 'paid' && (!sessionNow || txn.id === sessionNow.transactionId)
+      (txn) =>
+        txn.status === 'paid' &&
+        txn.applied !== false &&
+        (!sessionNow || txn.id === sessionNow.transactionId)
     );
     const subscriptionLive =
       data.subscription != null && LIVE_SUBSCRIPTION_STATUSES.has(data.subscription.status);
     const checkoutCleared = !pendingCheckoutUrl && hadPendingCheckoutRef.current;
-    const fulfilled =
-      Boolean(paidTransaction) ||
-      (checkoutCleared && subscriptionLive) ||
-      (sessionNow && !pendingCheckoutUrl && subscriptionLive);
+    // A paid transaction is the proof. "Checkout closed and the plan is live" only counts once
+    // this page has actually seen the checkout open, so a stale cache cannot fake a success.
+    const fulfilled = Boolean(paidTransaction) || (checkoutCleared && subscriptionLive);
 
     if (fulfilled && !successHandledRef.current) {
       successHandledRef.current = true;
@@ -122,12 +143,18 @@ export function useOrgPlanCheckoutConfirmation({
           previous_plan_id: checkoutSession.previousPlanId ?? 'none',
           target_plan_id: checkoutSession.targetPlanId,
         });
-        writeOrgPlanUpgradeCelebration({
-          orgId,
-          previousPlanId: checkoutSession.previousPlanId,
-          targetPlanId: checkoutSession.targetPlanId,
-          fulfilledAt: Date.now(),
-        });
+        // Paying for the plan you are already on (a renewal, or turning it back on) is not an
+        // upgrade: a quiet confirmation, not confetti.
+        if (checkoutSession.previousPlanId === checkoutSession.targetPlanId) {
+          toast.success('Payment received');
+        } else {
+          writeOrgPlanUpgradeCelebration({
+            orgId,
+            previousPlanId: checkoutSession.previousPlanId,
+            targetPlanId: checkoutSession.targetPlanId,
+            fulfilledAt: Date.now(),
+          });
+        }
       }
       clearOrgPlanCheckoutSession(orgId);
       hadPendingCheckoutRef.current = false;
@@ -140,16 +167,23 @@ export function useOrgPlanCheckoutConfirmation({
       return;
     }
 
-    if (sessionNow || pendingCheckoutUrl || checkoutReturn === 'success') {
+    if (sessionNow || checkoutReturn === 'success') {
       setState((current) =>
         current === 'success' || current === 'cancelled' || current === 'timed_out'
           ? current
           : 'confirming'
       );
-    } else if (state !== 'success' && state !== 'timed_out' && state !== 'cancelled') {
-      setState('idle');
+    } else {
+      // Functional update: with cached data this effect runs in the same commit as the
+      // return-param effect above, so the `state` it closed over is stale and must not
+      // overwrite a `cancelled` / `success` / `timed_out` that was just set.
+      setState((current) =>
+        current === 'success' || current === 'cancelled' || current === 'timed_out'
+          ? current
+          : 'idle'
+      );
     }
-  }, [checkoutReturn, data, orgId, pendingCheckoutUrl, queryClient, state]);
+  }, [checkoutReturn, data, orgId, pendingCheckoutUrl, queryClient]);
 
   return confirming ? 'confirming' : state;
 }

@@ -7,6 +7,7 @@ import {
   SuperAdminSettingsCard,
   SuperAdminSettingsRow,
 } from '@/features/dashboard/super-admin/components/shared/SuperAdminSettingsCard';
+import { SuperAdminOrgBillingPanel } from '@/features/dashboard/super-admin/components/super-admin-orgs/SuperAdminOrgBillingPanel';
 import { useSuperAdminOrgContext } from '@/features/dashboard/super-admin/components/super-admin-orgs/superAdminOrgContext';
 import {
   useAssignOrgPlan,
@@ -48,55 +49,58 @@ export function SuperAdminOrgSubscriptionSection() {
   };
 
   return (
-    <SuperAdminSettingsCard
-      title="Subscription"
-      description="Assign or override this organization's plan. Covers every property the org owns. Billing history and cron runs stay on the platform Subscriptions page."
-    >
-      <SuperAdminSettingsRow label="Current plan">
-        <span className="text-sm font-medium">
-          {org.plan?.name ?? 'None'}
-          {org.plan ? (
-            <span className="text-muted-foreground ml-1 font-normal capitalize">
-              · {org.plan.status}
-            </span>
-          ) : null}
-        </span>
-      </SuperAdminSettingsRow>
-
-      <SuperAdminSettingsRow label="MRR">
-        <span className="text-sm tabular-nums">
-          ₱{(org.plan?.mrrPhp ?? 0).toLocaleString('en-PH')}
-        </span>
-      </SuperAdminSettingsRow>
-
-      <SuperAdminSettingsRow
-        stacked
-        label="Assign a different plan"
-        description="Takes effect immediately for all of the org's properties."
+    <div className="space-y-4">
+      <SuperAdminSettingsCard
+        title="Subscription"
+        description="Assign or override this organization's plan. Covers every property the org owns. Billing history and cron runs stay on the platform Subscriptions page."
       >
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Select value={planId} onValueChange={setPlanId}>
-            <SelectTrigger className="h-10 sm:w-64" aria-label="Plan">
-              <SelectValue placeholder="Choose a plan" />
-            </SelectTrigger>
-            <SelectContent>
-              {activePlans.map((plan) => (
-                <SelectItem key={plan.id} value={plan.id}>
-                  {plan.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            type="button"
-            className="min-h-[44px]"
-            disabled={!planId || assignPlan.isPending}
-            onClick={() => void handleAssign()}
-          >
-            {assignPlan.isPending ? 'Assigning…' : 'Assign plan'}
-          </Button>
-        </div>
-      </SuperAdminSettingsRow>
-    </SuperAdminSettingsCard>
+        <SuperAdminSettingsRow label="Current plan">
+          <span className="text-sm font-medium">
+            {org.plan?.name ?? 'None'}
+            {org.plan ? (
+              <span className="text-muted-foreground ml-1 font-normal capitalize">
+                · {org.plan.status}
+              </span>
+            ) : null}
+          </span>
+        </SuperAdminSettingsRow>
+
+        <SuperAdminSettingsRow label="MRR">
+          <span className="text-sm tabular-nums">
+            ₱{(org.plan?.mrrPhp ?? 0).toLocaleString('en-PH')}
+          </span>
+        </SuperAdminSettingsRow>
+
+        <SuperAdminSettingsRow
+          stacked
+          label="Assign a different plan"
+          description="Takes effect immediately for all of the org's properties."
+        >
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Select value={planId} onValueChange={setPlanId}>
+              <SelectTrigger className="h-10 sm:w-64" aria-label="Plan">
+                <SelectValue placeholder="Choose a plan" />
+              </SelectTrigger>
+              <SelectContent>
+                {activePlans.map((plan) => (
+                  <SelectItem key={plan.id} value={plan.id}>
+                    {plan.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              className="min-h-[44px]"
+              disabled={!planId || assignPlan.isPending}
+              onClick={() => void handleAssign()}
+            >
+              {assignPlan.isPending ? 'Assigning…' : 'Assign plan'}
+            </Button>
+          </div>
+        </SuperAdminSettingsRow>
+      </SuperAdminSettingsCard>
+      <SuperAdminOrgBillingPanel organizationId={org.id} />
+    </div>
   );
 }

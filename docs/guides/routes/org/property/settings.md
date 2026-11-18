@@ -2,7 +2,7 @@
 title: 'Property Settings — operator guide'
 status: active
 tags: [guides, routes, org, property]
-updated: 2026-11-16
+updated: 2026-11-18
 ---
 
 # Property Settings — operator guide
@@ -160,8 +160,8 @@ Logic: `ui/src/features/dashboard/org/lib/propertySettingsCompletion.ts`, `ui/sr
 **Actions**
 
 - **Pause / Resume** → `POST property-lifecycle { action: "pause" | "resume" }`
-- **Archive** → `POST property-lifecycle { action: "archive" }`. Blocked (409 `ARCHIVE_BLOCKED`) while a booking is in `PENDING_REVIEW`, `PENDING_DOCUMENTS`, `PENDING_GAF`, `PENDING_PARKING_REQUEST`, `PENDING_PET_REQUEST`, `READY_FOR_CHECKIN`, `READY_FOR_CHECKOUT`, or `PENDING_SD_REFUND`, or while a cancellation request or refund is open. The 409 `details` carry the booking list. On success it disables iCal feeds and export, cancels scheduled publications, and un-slots the property from the org subscription.
-- **Restore** → `POST property-lifecycle { action: "restore" }`. Re-runs `canHostActivate` (listing authorization approved, contract not locked, no active tower/unit peer) and re-slots the property into the subscription. Automations and iCal stay off until the host turns them back on.
+- **Archive** → `POST property-lifecycle { action: "archive" }`. Blocked (409 `ARCHIVE_BLOCKED`) while a booking is in `PENDING_REVIEW`, `PENDING_DOCUMENTS`, `PENDING_GAF`, `PENDING_PARKING_REQUEST`, `PENDING_PET_REQUEST`, `READY_FOR_CHECKIN`, `READY_FOR_CHECKOUT`, or `PENDING_SD_REFUND`, or while a cancellation request or refund is open. The 409 `details` carry the booking list. On success it disables iCal feeds and export, cancels scheduled publications, and un-slots the property from the org subscription. There is no credit for the unused part of the period; the next renewal is priced on the new count.
+- **Restore** → `POST property-lifecycle { action: "restore" }`. Re-runs `canHostActivate` (listing authorization approved, contract not locked, no active tower/unit peer) and re-covers the property on the org subscription the same way a new property is covered: at once, with the prorated share for the rest of the period added to the next payment as a true-up (`billing.property_covered`). While the plan is overdue or suspended it stays on Free until paid. Automations and iCal stay off until the host turns them back on.
 - **Delete** → owner only, `DELETE delete-property { propertyId, confirmName }`.
 
 `update-property` rejects `status` with 400. Team members are read-only on an archived

@@ -188,6 +188,9 @@ export async function resolveNotificationClickPath(
   const orgSlug = org?.slug as string | undefined;
   if (!orgSlug) return '/app';
 
+  // Billing notices are org-level and always land on Plans & Billing.
+  if (n.type === 'billing_notice') return `/org/${orgSlug}/plans?tab=billing`;
+
   if (n.property_id) {
     const { data: p } = await sb
       .from('properties')

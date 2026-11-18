@@ -64,9 +64,10 @@ export const termsDocument: LegalDocument = {
       id: 'billing',
       title: 'Host plans and billing',
       paragraphs: [
-        'Paid plans are billed monthly in Philippine pesos for each property your organization covers, through PayMongo. Prices, volume discounts, and what each plan includes are shown on the Pricing page and in Plans & Billing.',
-        'Renewal is a payment link, not an automatic charge. If a payment is late, your organization becomes past due and keeps access during a grace period. After that, paid features are suspended until you pay. Guest booking pages keep working.',
-        'Upgrading starts a new billing period today, with credit for unused time on your current plan. Downgrades and switching to Free apply right away. Unused time is never refunded in cash. We may change prices for future periods with advance notice.',
+        'Paid plans are billed monthly in Philippine pesos for each property your organization covers, through PayMongo. Prices, volume discounts, and what each plan includes are shown on the Pricing page and in Plans & Billing. Archived properties are not billed.',
+        'Renewal is a payment link, not an automatic charge. If a payment is late, your organization becomes past due and keeps access during a grace period. After that, paid features pause and the organization works like the Free plan until you pay. Guest booking pages keep working. If the payment stays missing, the plan ends and the organization stays on Free. Your data is kept.',
+        'Upgrading starts a new billing period today, with credit for unused time on your current plan. Credit that is larger than the new price stays on your account and comes off your next payment. Moving to a lower plan, or canceling, takes effect at the end of the period you already paid for, and you can undo it before then. Unused time is never refunded in cash.',
+        'A property you add during a period joins your plan right away, and its share of the cost for the rest of the period is added to your next payment. We may change the price of a plan. Subscribers keep the price they bought until a change takes effect, and we tell you at least 30 days before it does.',
       ],
     },
     {

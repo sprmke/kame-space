@@ -21,6 +21,8 @@ type Stub = {
   features: Partial<PlanFeatures> | null;
   status?: string;
   overrides?: Record<string, unknown> | null;
+  /** Features of the Free plan row (what a suspended subscription falls back to). */
+  freeFeatures?: Partial<PlanFeatures>;
   /** Row returned for `guest_submissions` lookups (stay guide token reads). */
   guestSubmission?: Record<string, unknown> | null;
 };
@@ -80,7 +82,9 @@ async function withStubbedDb(stub: Stub, run: () => Promise<void>) {
       return Promise.resolve(json(stub.guestSubmission ?? null));
     }
     if (url.pathname.endsWith('/pricing_plans')) {
-      return Promise.resolve(json(planRow('free', DEFAULT_PLAN_FEATURES)));
+      return Promise.resolve(
+        json(planRow('free', { ...DEFAULT_PLAN_FEATURES, ...stub.freeFeatures }))
+      );
     }
     return Promise.resolve(new Response('unexpected ' + url.pathname, { status: 500 }));
   };
@@ -147,6 +151,25 @@ Deno.test('a suspended subscription is denied even a key its plan includes', asy
         PlanFeatureRequiredError
       );
       assertEquals((err as PlanFeatureRequiredError).message.includes('suspended'), true);
+    }
+  );
+});
+
+Deno.test('a suspended subscription still gets the Free plan features', async () => {
+  await withStubbedDb(
+    {
+      features: { ...featuresWith('smartPricing', true), financeReporting: true },
+      freeFeatures: { financeReporting: true },
+      status: 'suspended',
+    },
+    async () => {
+      // Free features keep working while paid features are paused.
+      await requirePropertyFeature('prop-1', 'financeReporting');
+      await requireOrgFeature('org-1', 'financeReporting');
+      await assertRejects(
+        () => requireOrgFeature('org-1', 'smartPricing'),
+        PlanFeatureRequiredError
+      );
     }
   );
 });

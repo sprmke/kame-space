@@ -322,10 +322,7 @@ export const superAdminRoutes: ReactNode = (
     />
     <Route
       path="ops-reports"
-      element={superAdminRoute(
-        <SuperAdminOpsReportsPage />,
-        <SuperAdminOpsReportsRouteSkeleton />
-      )}
+      element={superAdminRoute(<SuperAdminOpsReportsPage />, <SuperAdminOpsReportsRouteSkeleton />)}
     />
     <Route
       path="ops-reports/:reportId"

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { SUPER_ADMIN_NAV_GROUPS } from '@/features/dashboard/super-admin/lib/superAdminPlatformNav';
 import { superAdminPaths } from '@/features/dashboard/super-admin/lib/superAdminPaths';
+import { SUPER_ADMIN_NAV_GROUPS } from '@/features/dashboard/super-admin/lib/superAdminPlatformNav';
 
 describe('superAdminPlatformNav', () => {
   it('includes feature availability under Platform', () => {

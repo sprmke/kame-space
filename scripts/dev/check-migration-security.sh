@@ -32,7 +32,23 @@ count_public_function_revokes() {
   fi
 }
 
+# Revoking only FROM PUBLIC is not enough on Supabase: default privileges grant EXECUTE on new
+# public functions to anon and authenticated explicitly. From this version on, a SECURITY
+# DEFINER function must also be revoked from anon (see 20261342000500_billing_lock_down_grants.sql).
+count_anon_function_revokes() {
+  awk '
+    /REVOKE (ALL|EXECUTE) ON FUNCTION/ { in_revoke = 1; stmt = "" }
+    in_revoke { stmt = stmt " " $0 }
+    in_revoke && /;/ {
+      if (stmt ~ /FROM[^;]*anon/) count += 1
+      in_revoke = 0
+    }
+    END { print count + 0 }
+  ' "$1"
+}
+
 BASELINE_VERSION=20261316121200
+ANON_REVOKE_BASELINE=20261342000500
 failed=0
 
 for path in supabase/migrations/*.sql; do
@@ -58,6 +74,14 @@ for path in supabase/migrations/*.sql; do
     fi
     if (( definer_count > revoke_count + inherited )); then
       echo "MISSING PUBLIC revoke for SECURITY DEFINER function: $path" >&2
+      failed=1
+    fi
+  fi
+
+  if (( 10#$version >= 10#$ANON_REVOKE_BASELINE )); then
+    anon_revoke_count="$(count_anon_function_revokes "$path")"
+    if (( definer_count > anon_revoke_count )); then
+      echo "MISSING anon revoke for SECURITY DEFINER function (REVOKE ... FROM PUBLIC, anon, authenticated): $path" >&2
       failed=1
     fi
   fi
