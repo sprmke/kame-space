@@ -146,7 +146,7 @@ When a stage is active, the list query sends the matching `status[]` values to `
 
 ## Chat shortcut
 
-Table rows and cards carry a **chat icon** (`BookingListQuickActions`). Kanban has none.
+Table rows (beside the guest, so it stays in view when the table scrolls sideways) and cards carry a **chat icon** (`BookingListQuickActions`). Kanban has none.
 
 | Matches for the booking | Result                                                                                                                                                                                                                              |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -230,14 +230,14 @@ Kanban card open still works without workflow permission (Progress rail read-onl
 
 ## Testing
 
-| Layer | Path / spec                                                                                                                                                            | Manual |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| Unit  | `workflow.test.ts`                                                                                                                                                     | —      |
-| Unit  | `lib/bookingChatLink.test.ts`, `supabase/functions/_shared/inboxBookingChats_test.ts`                                                                                  | —      |
-| DOM   | `components/BookingListQuickActions.test.tsx` — visibility, one/several/none, errors, busy, cache, row click isolation                                                 | —      |
-| Live  | `supabase/functions/tests/inboxBookingChatsLocal.integration_test.ts` — real handler + Postgres (`bun run test:booking-chats:live`, needs `./dev.sh`)                  | —      |
-| E2E   | `ui/e2e/features/bookings/bookingChatShortcut.spec.ts` (`@ci`) — one / several / none, property + org lists, no `inbox:view`, 403, row click, Escape, 375px sheet, axe | —      |
-| E2E   | `dashboardModulesSmoke.spec.ts` bookings shell (`@ci`)                                                                                                                 | —      |
+| Layer | Path / spec                                                                                                                                                                                         | Manual |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Unit  | `workflow.test.ts`                                                                                                                                                                                  | —      |
+| Unit  | `lib/bookingChatLink.test.ts`, `supabase/functions/_shared/inboxBookingChats_test.ts`                                                                                                               | —      |
+| DOM   | `components/BookingListQuickActions.test.tsx` — visibility, one/several/none, errors, busy, cache, row click isolation                                                                              | —      |
+| Live  | `supabase/functions/tests/inboxBookingChatsLocal.integration_test.ts` — real handler + Postgres (`bun run test:booking-chats:live`, needs `./dev.sh`)                                               | —      |
+| E2E   | `ui/e2e/features/bookings/bookingChatShortcut.spec.ts` (`@ci`) — one / several / none, property + org lists, no `inbox:view`, 403, row click, Escape, 375px sheet, icon in view at 1024/1280px, axe | —      |
+| E2E   | `dashboardModulesSmoke.spec.ts` bookings shell (`@ci`)                                                                                                                                              | —      |
 
 ---
 
