@@ -2,7 +2,7 @@
 title: 'Bookings List — operator guide'
 status: active
 tags: [guides, routes, org, property]
-updated: 2026-11-05
+updated: 2026-11-18
 ---
 
 # Bookings List — operator guide
@@ -53,6 +53,8 @@ This page is your main dashboard for all bookings at this property. Summary card
   A: Yes on **tablet and desktop** (Kanban view). Drag bookings between columns - the board auto-scrolls near the edges, and status chips above the board stay visible (valid ones highlight green while you drag). You can also click a card to open a quick workflow panel with the same actions as the full booking page. On phone, use card or table (desktop) and open a booking for workflow actions.
 - Q: How do I create a new booking?
   A: Use **New booking** in the page header. It opens the same guest booking form in a dialog, right in the dashboard - fill it out on the guest's behalf. After you submit, you can add another booking or jump straight to the new booking's detail page.
+- Q: What does the chat icon on a booking do?
+  A: It opens that guest's conversation in **Messages**. If the guest has one chat, you land right in it. If they have several (website Chat plus Facebook or Instagram), you pick which one. If nothing matches yet, a message says so and **Search Messages** opens the inbox with the guest's name typed in. Website chats linked to the booking match exactly. Facebook and Instagram chats match by the guest name or Facebook name on the booking, so they are labeled **Name match**. When the only match is a one-word name, the picker asks you to confirm it first. The icon only shows if you can view Messages.
 - Q: Can I bulk-import bookings from a spreadsheet?
   A: Yes on **Starter and above**. Use **Import** beside **New booking** (property bookings only). You can open the wizard and upload a file on Free to try it, but continuing past the first step asks you to upgrade. On a paid plan, confirm column mapping, then review the rows. Select **Need fixing** to see problem rows; **Fix** opens the complete row so you can correct every invalid value together. **Skipped** rows stay openable the same way, so use **Restore** to bring them back, or **Fix** to correct them. Past stays commit as **Imported**; today and future stays show **Pending Review** but still appear when you filter by **Imported**. No new-booking emails or calendar events on import.
 - Q: How do Airbnb bookings appear here?
@@ -142,6 +144,23 @@ When a stage is active, the list query sends the matching `status[]` values to `
 
 ---
 
+## Chat shortcut
+
+Table rows (beside the guest, so it stays in view when the table scrolls sideways) and cards carry a **chat icon** (`BookingListQuickActions`). Kanban has none.
+
+| Matches for the booking | Result                                                                                                                                                                                                                              |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| One                     | Navigates to this property's Messages with `?conversationId=&platform=` so that thread is open. A lone **name-only** match with a one-word name (a Page called "Cruz") asks first in the picker (**Is this …?**) instead of opening |
+| Several                 | **Open chat** picker (bottom sheet below `lg`, dialog on desktop): channel icon, name, channel, last activity, unread count                                                                                                         |
+| None                    | Toast **No chat for this booking yet** with **Search Messages** (opens Messages with `?search=<guest name>`)                                                                                                                        |
+
+- The icon is hidden unless the viewer has `inbox:view` for that property (parking rows: parking `inbox:view`). It shows a spinner while the lookup runs; a second tap within 15 seconds reuses the answer.
+- Matching (`social-inbox-booking-chats`), strongest first: thread linked to the booking (`booking_id`), the booking's signed-in guest, then guest name or Facebook name (whole-name tokens only, Chat, Facebook, Instagram). Up to 10, never outside this property.
+- Always opens Messages inside Guest Inbox, never facebook.com. Linking a Facebook or Instagram thread to a booking by hand is not built yet.
+- Errors: no access to Messages (403) and a missing booking (404) show a toast and stay on the list.
+
+---
+
 ## Kanban
 
 - **Availability:** property bookings only, viewport **`md` and up** (tablet → desktop). The view toggle omits Kanban on phone; `?view=kanban` redirects to card when the viewport is below `md`.
@@ -168,6 +187,7 @@ New: `stage` (see above).
 ## API
 
 - `list-bookings` edge function — admin JWT; see [[PROJECT|Guest Form Management — Project Documentation]] API table. Filtering, sorting, and pagination run in Postgres via `list_bookings_page` (`supabase/migrations/20261318171000_list_bookings_page_rpc.sql`), so a tenant's full history never loads into the edge isolate. The legacy PostgREST paths remain as a fallback if the RPC is unavailable.
+- Chat icon: `GET social-inbox-booking-chats?booking_id=&property_id=` (or `parking_id=`) — `inbox:view`, read-only, returns `{ conversations: [{ id, platform, participant_name, last_message_at, last_message_preview, unread_count, booking_id, match }] }`.
 - CSV import: `import-parse-file`, `import-ai-map-columns`, `import-save-mapping`, `import-preview`, `import-update-row`, `import-commit`, `import-cancel` — all require **`bookings.import:add`** (or org owner/admin) + `?property_id=`. Match / preview / commit paths also require plan **`bookingImport`** (Starter+).
 
 ---
@@ -186,33 +206,38 @@ Kanban card open still works without workflow permission (Progress rail read-onl
 
 ## Implementation map
 
-| Concern               | Path                                                                                                           |
-| --------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Page                  | `ui/src/features/dashboard/bookings/pages/BookingsListPage.tsx`                                                |
-| New booking modal     | `ui/src/features/dashboard/bookings/components/AdminNewBookingModal.tsx`                                       |
-| Success summary       | `ui/src/features/dashboard/bookings/components/AdminBookingSuccessSummary.tsx`                                 |
-| Guest form (embedded) | `ui/src/features/guest/form/components/GuestForm.tsx` (`embed.skipAuthGate`, `embed.onSubmitSuccess`)          |
-| Import wizard modal   | `ui/src/features/dashboard/import/components/ImportWizardModal.tsx`                                            |
-| Shared modal chrome   | `ui/src/features/dashboard/import/components/ImportModalChrome.tsx`                                            |
-| Import hooks / types  | `ui/src/features/dashboard/import/hooks/`, `lib/`, `types/`                                                    |
-| Stage mapping         | `ui/src/features/dashboard/bookings/lib/bookingStages.ts`                                                      |
-| Copy guest form link  | `ui/src/features/dashboard/bookings/lib/bookingDetailActions.ts`, `hooks/useBookingGuestFormCompletionLink.ts` |
-| Summary cards         | `ui/src/features/dashboard/bookings/components/BookingsSummaryCards.tsx`                                       |
-| Kanban board          | `ui/src/features/dashboard/bookings/components/BookingKanban.tsx`                                              |
-| Kanban workflow modal | `ui/src/features/dashboard/bookings/components/BookingKanbanWorkflowModal.tsx`                                 |
-| Workflow (reused)     | `ui/src/features/dashboard/bookings/components/WorkflowPanel.tsx`                                              |
-| Filters               | `ui/src/features/dashboard/bookings/components/BookingFilters.tsx`                                             |
-| Mobile page shell     | `ui/src/components/mobile/MobileBrandHero.tsx` (`AdminMobilePage`)                                             |
-| Routes                | `ui/src/features/dashboard/routes/index.tsx`                                                                   |
+| Concern               | Path                                                                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Page                  | `ui/src/features/dashboard/bookings/pages/BookingsListPage.tsx`                                                                      |
+| New booking modal     | `ui/src/features/dashboard/bookings/components/AdminNewBookingModal.tsx`                                                             |
+| Success summary       | `ui/src/features/dashboard/bookings/components/AdminBookingSuccessSummary.tsx`                                                       |
+| Guest form (embedded) | `ui/src/features/guest/form/components/GuestForm.tsx` (`embed.skipAuthGate`, `embed.onSubmitSuccess`)                                |
+| Import wizard modal   | `ui/src/features/dashboard/import/components/ImportWizardModal.tsx`                                                                  |
+| Shared modal chrome   | `ui/src/features/dashboard/import/components/ImportModalChrome.tsx`                                                                  |
+| Import hooks / types  | `ui/src/features/dashboard/import/hooks/`, `lib/`, `types/`                                                                          |
+| Stage mapping         | `ui/src/features/dashboard/bookings/lib/bookingStages.ts`                                                                            |
+| Copy guest form link  | `ui/src/features/dashboard/bookings/lib/bookingDetailActions.ts`, `hooks/useBookingGuestFormCompletionLink.ts`                       |
+| Summary cards         | `ui/src/features/dashboard/bookings/components/BookingsSummaryCards.tsx`                                                             |
+| Kanban board          | `ui/src/features/dashboard/bookings/components/BookingKanban.tsx`                                                                    |
+| Kanban workflow modal | `ui/src/features/dashboard/bookings/components/BookingKanbanWorkflowModal.tsx`                                                       |
+| Workflow (reused)     | `ui/src/features/dashboard/bookings/components/WorkflowPanel.tsx`                                                                    |
+| Filters               | `ui/src/features/dashboard/bookings/components/BookingFilters.tsx`                                                                   |
+| Chat shortcut         | `ui/src/features/dashboard/bookings/components/BookingListQuickActions.tsx`, `BookingChatPickerDialog.tsx`, `lib/bookingChatLink.ts` |
+| Mobile page shell     | `ui/src/components/mobile/MobileBrandHero.tsx` (`AdminMobilePage`)                                                                   |
+| Routes                | `ui/src/features/dashboard/routes/index.tsx`                                                                                         |
 
 ---
 
 ## Testing
 
-| Layer | Path / spec                                            | Manual |
-| ----- | ------------------------------------------------------ | ------ |
-| Unit  | `workflow.test.ts`                                     | —      |
-| E2E   | `dashboardModulesSmoke.spec.ts` bookings shell (`@ci`) | —      |
+| Layer | Path / spec                                                                                                                                                                                         | Manual |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Unit  | `workflow.test.ts`                                                                                                                                                                                  | —      |
+| Unit  | `lib/bookingChatLink.test.ts`, `supabase/functions/_shared/inboxBookingChats_test.ts`                                                                                                               | —      |
+| DOM   | `components/BookingListQuickActions.test.tsx` — visibility, one/several/none, errors, busy, cache, row click isolation                                                                              | —      |
+| Live  | `supabase/functions/tests/inboxBookingChatsLocal.integration_test.ts` — real handler + Postgres (`bun run test:booking-chats:live`, needs `./dev.sh`)                                               | —      |
+| E2E   | `ui/e2e/features/bookings/bookingChatShortcut.spec.ts` (`@ci`) — one / several / none, property + org lists, no `inbox:view`, 403, row click, Escape, 375px sheet, icon in view at 1024/1280px, axe | —      |
+| E2E   | `dashboardModulesSmoke.spec.ts` bookings shell (`@ci`)                                                                                                                                              | —      |
 
 ---
 

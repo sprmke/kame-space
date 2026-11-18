@@ -107,7 +107,8 @@ export function InboxPage({
     // Parking has Chat only — skip the aggregating "All" filter.
     return showChannelsTab ? 'all' : 'web';
   });
-  const [searchInput, setSearchInput] = useState('');
+  // `?search=` lets other screens (bookings list) open the inbox with the guest name typed in.
+  const [searchInput, setSearchInput] = useState(() => searchParams.get('search') ?? '');
   const debouncedSearchInput = useDebouncedValue(searchInput, 300);
   const search = debouncedSearchInput.trim();
 
