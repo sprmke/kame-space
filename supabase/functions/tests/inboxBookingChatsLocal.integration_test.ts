@@ -2,7 +2,7 @@
  * Bookings list chat shortcut against the live local stack (`./dev.sh` database + auth).
  * Calls the real `social-inbox-booking-chats` handler in process with a real session, real
  * PostgREST filters (`or`, `ilike`, `in`) and real Meta scope resolution. Seeds throwaway rows
- * on the seeded `kame-home` property and always cleans up. Skipped unless
+ * on the seeded property that has a connected Facebook Page and always cleans up. Skipped unless
  * LOCAL_BOOKING_CHATS_LIVE=1.
  *
  *   LOCAL_BOOKING_CHATS_LIVE=1 bun run test:booking-chats:live
@@ -20,7 +20,7 @@ const enabled = Deno.env.get('LOCAL_BOOKING_CHATS_LIVE') === '1';
 const ANON_KEY =
   Deno.env.get('SUPABASE_ANON_KEY') ??
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
-const PROPERTY_SLUG = Deno.env.get('BOOKING_CHATS_LIVE_PROPERTY_SLUG') ?? 'kame-home';
+const PROPERTY_SLUG = Deno.env.get('BOOKING_CHATS_LIVE_PROPERTY_SLUG');
 const GUEST = 'Zed Livetestguest';
 
 const service = {
@@ -91,8 +91,19 @@ Deno.test({
     assert(handler, 'handler must mount');
 
     await purge();
-    const [property] = await rest(`properties?slug=eq.${PROPERTY_SLUG}&select=id,organization_id`);
-    assert(property, `fixture property ${PROPERTY_SLUG} missing; run ./dev.sh seed`);
+    // The seeded property that owns a connected Facebook Page (override with the env slug).
+    let propertyQuery = PROPERTY_SLUG
+      ? `properties?slug=eq.${PROPERTY_SLUG}&select=id,organization_id`
+      : null;
+    if (!propertyQuery) {
+      const [fb] = await rest(
+        'social_channel_connections?platform=eq.facebook&status=eq.connected&property_id=not.is.null&select=property_id&limit=1'
+      );
+      assert(fb, 'no property with a connected Facebook Page; run ./dev.sh seed');
+      propertyQuery = `properties?id=eq.${fb.property_id}&select=id,organization_id`;
+    }
+    const [property] = await rest(propertyQuery);
+    assert(property, 'fixture property missing; run ./dev.sh seed');
     const [org] = await rest(`organizations?id=eq.${property.organization_id}&select=owner_id`);
     const owner = await adminUser(`users/${org.owner_id}`);
     const token = await sessionToken(owner.email as string);
@@ -206,7 +217,7 @@ Deno.test({
       const res = await handler(
         new Request(`${LOCAL_SUPABASE_URL}/social-inbox-booking-chats?${query}`, {
           method,
-          headers: { Authorization: `Bearer ${token}`, Origin: 'https://kamespace.com' },
+          headers: { Authorization: `Bearer ${token}` },
         })
       );
       return { status: res.status, json: (await res.json()) as Record<string, any> };

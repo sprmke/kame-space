@@ -111,4 +111,21 @@ describe('bookingChatOutcome', () => {
       'choose'
     );
   });
+
+  it('opens a lone name match only when the name is a full name', () => {
+    const name = (participant_name: string | null) =>
+      bookingChatOutcome([match({ match: 'name', participant_name })]).kind;
+    expect(name('Maria Santos')).toBe('open');
+    expect(name('Cruz')).toBe('choose');
+    expect(name('jane.guest')).toBe('choose');
+    expect(name(null)).toBe('choose');
+    expect(name('  ')).toBe('choose');
+  });
+
+  it('never second-guesses a thread linked to the booking or its signed-in guest', () => {
+    expect(bookingChatOutcome([match({ participant_name: 'Cruz' })]).kind).toBe('open');
+    expect(bookingChatOutcome([match({ match: 'guest', participant_name: null })]).kind).toBe(
+      'open'
+    );
+  });
 });
