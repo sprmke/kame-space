@@ -2,7 +2,7 @@
 title: 'Audit 01: guest experience'
 status: active
 tags: [audit, guest, ux]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 01: Guest experience (operational flows)

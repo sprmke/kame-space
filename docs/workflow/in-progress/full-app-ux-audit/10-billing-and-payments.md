@@ -2,7 +2,7 @@
 title: 'Audit 10: billing, plans and payments'
 status: active
 tags: [audit, billing, payments, money]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 10: Billing, plans and payments

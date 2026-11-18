@@ -13,6 +13,8 @@
  *   when that section's inputs are unchanged.
  */
 
+import { isOtaPrepaidSource } from './bookingChannel.ts';
+
 import { z } from 'zod';
 
 import { createClient } from './supabaseJs.ts';
@@ -1287,7 +1289,7 @@ export async function runPricingSection(
 }> {
   const receiptUrl = String(booking.payment_receipt_url || '');
   const bookingSource = String(booking.booking_source || 'Direct');
-  const isAirbnb = /airbnb/i.test(bookingSource);
+  const isPrepaid = isOtaPrepaidSource(bookingSource);
 
   const inputs = pricingFingerprintInputs(booking);
   const fingerprint = await computeSectionFingerprint(inputs);
@@ -1308,11 +1310,11 @@ export async function runPricingSection(
     });
   }
 
-  if (isAirbnb || isBlankUrl(receiptUrl)) {
-    const summary = isAirbnb
-      ? 'Airbnb booking - no downpayment receipt expected.'
+  if (isPrepaid || isBlankUrl(receiptUrl)) {
+    const summary = isPrepaid
+      ? `${bookingSource} booking - no downpayment receipt expected.`
       : 'Downpayment receipt not uploaded yet.';
-    const flags: AiReviewFlag[] = isAirbnb ? [] : [missingFileFlag('Downpayment receipt')];
+    const flags: AiReviewFlag[] = isPrepaid ? [] : [missingFileFlag('Downpayment receipt')];
     return withBalanceReceiptPricing(booking, {
       result: buildSectionResult(summary, flags, fingerprint, false),
       extractedAmount: null,

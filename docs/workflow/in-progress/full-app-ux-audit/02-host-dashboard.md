@@ -2,7 +2,7 @@
 title: 'Audit 02: host dashboard'
 status: active
 tags: [audit, host, ux, ui]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 02: Host dashboard (org + property modules)

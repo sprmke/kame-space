@@ -2,7 +2,7 @@
 title: 'Audit 24: public site and guest flow design critique'
 status: active
 tags: [audit, design, public, guest, mobile, copy]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 24: Public site and guest flow design critique

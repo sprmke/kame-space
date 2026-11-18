@@ -2,7 +2,7 @@
 title: 'Audit 25: host dashboard design critique'
 status: active
 tags: [audit, design, dashboard, org, property, mobile]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 25: Host dashboard design critique

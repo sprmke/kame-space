@@ -2,7 +2,7 @@
 title: 'Audit 09: roles, permissions and access control'
 status: active
 tags: [audit, rbac, security, permissions]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 09: Roles, permissions and access control

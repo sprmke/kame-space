@@ -2,7 +2,7 @@
 title: 'Audit 17: responsive and interaction matrix'
 status: active
 tags: [audit, responsive, mobile, accessibility]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 17: Responsive and interaction matrix

@@ -79,28 +79,28 @@ export function formatPayParkingLastMinuteWarning(residenceName: string | null):
   return `Last-minute parking may take longer. Paid slots inside ${place} are limited.`;
 }
 
-export function formatGuestContactHelp(isAirbnb: boolean, isFacebook: boolean): string {
-  if (isAirbnb) return 'Contact your host on Airbnb for help.';
+export function formatGuestContactHelp(otaLabel: string | null, isFacebook: boolean): string {
+  if (otaLabel) return `Contact your host on ${otaLabel} for help.`;
   if (isFacebook) return 'Contact your host on Facebook for help.';
   return 'Contact your host for help.';
 }
 
-export function formatGuestMessengerReturn(isAirbnb: boolean, isFacebook: boolean): string {
-  if (isAirbnb) return 'Kindly return to our conversation on Airbnb';
+export function formatGuestMessengerReturn(otaLabel: string | null, isFacebook: boolean): string {
+  if (otaLabel) return `Kindly return to our conversation on ${otaLabel}`;
   if (isFacebook) return 'Kindly return to our conversation on Facebook Messenger';
   return 'Kindly return to your conversation with your host';
 }
 
-export function formatGuestCopyPasteHint(isAirbnb: boolean, isFacebook: boolean): string {
-  if (isAirbnb) return 'Copy your form below and share with your host so we can help. Sorry!';
+export function formatGuestCopyPasteHint(otaLabel: string | null, isFacebook: boolean): string {
+  if (otaLabel) return 'Copy your form below and share with your host so we can help. Sorry!';
   if (isFacebook) {
     return 'Copy your form below and paste on Facebook Messenger so we can help. Sorry!';
   }
   return 'Copy your form below and share with your host so we can help. Sorry!';
 }
 
-export function formatGuestLockedChangeHint(isAirbnb: boolean, isFacebook: boolean): string {
-  if (isAirbnb) return 'Contact your host on Airbnb to request changes.';
+export function formatGuestLockedChangeHint(otaLabel: string | null, isFacebook: boolean): string {
+  if (otaLabel) return `Contact your host on ${otaLabel} to request changes.`;
   if (isFacebook) return 'Contact your host on Facebook to request changes.';
   return 'Contact your host to request changes.';
 }

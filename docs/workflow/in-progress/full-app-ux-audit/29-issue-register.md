@@ -2,7 +2,7 @@
 title: 'Audit 29: issue register'
 status: active
 tags: [audit, register, priority, ui-change, public]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 29: Issue register

@@ -2,7 +2,7 @@
 title: 'Audit 29b: issue details'
 status: active
 tags: [audit, register, details]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 29b: Issue details

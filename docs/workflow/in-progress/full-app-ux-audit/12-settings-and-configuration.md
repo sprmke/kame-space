@@ -2,7 +2,7 @@
 title: 'Audit 12: settings and configuration'
 status: active
 tags: [audit, settings, configuration, validation]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 12: Settings and configuration

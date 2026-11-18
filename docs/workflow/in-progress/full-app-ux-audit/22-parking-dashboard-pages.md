@@ -2,7 +2,7 @@
 title: 'Audit 22: parking dashboard pages'
 status: active
 tags: [audit, dashboard, parking]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 22: Parking dashboard pages

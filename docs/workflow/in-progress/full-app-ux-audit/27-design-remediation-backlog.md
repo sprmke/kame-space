@@ -2,7 +2,7 @@
 title: 'Audit 27: design remediation backlog'
 status: active
 tags: [audit, design, backlog, mobile, copy, accessibility]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 27: Design remediation backlog

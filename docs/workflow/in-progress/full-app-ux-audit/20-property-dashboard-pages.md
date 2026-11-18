@@ -2,7 +2,7 @@
 title: 'Audit 20: property dashboard pages'
 status: active
 tags: [audit, dashboard, property]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 20: Property dashboard pages

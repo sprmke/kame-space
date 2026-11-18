@@ -59,7 +59,10 @@ const PARTY_AGE_FIELD_BY_POSITION = [
 ] as const;
 
 export type GuestFormSchemaOptions = {
-  isAirbnb: boolean;
+  /** OTA-prepaid stay (Airbnb, Agoda, Booking.com): no payment step. */
+  isOta: boolean;
+  /** Channel name for copy, e.g. `Agoda`. `null` for direct and Facebook. */
+  otaLabel?: string | null;
   allowParking: boolean;
   allowPets: boolean;
   allowSurpriseDecor: boolean;
@@ -74,11 +77,12 @@ export type GuestFormSchemaOptions = {
 };
 
 function buildGuestFormSchema(options: GuestFormSchemaOptions) {
-  const { isAirbnb, allowParking, allowPets, allowSurpriseDecor, maxAdults, maxChildren } = options;
+  const { isOta, otaLabel, allowParking, allowPets, allowSurpriseDecor, maxAdults, maxChildren } =
+    options;
   const guestCapacity = { maxAdults, maxChildren };
   const adultLimitMessage = buildGuestLimitMessage(guestCapacity, MAX_GUESTS);
-  const guestFacebookNameMessage = isAirbnb
-    ? 'Your Airbnb name is required'
+  const guestFacebookNameMessage = isOta
+    ? `Your ${otaLabel ?? 'booking'} name is required`
     : 'Your name is required';
 
   return z
@@ -334,7 +338,7 @@ function buildGuestFormSchema(options: GuestFormSchemaOptions) {
         }
       });
 
-      if (!isAirbnb && !data.paymentReceipt) {
+      if (!isOta && !data.paymentReceipt) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'Please upload a copy of your downpayment receipt',

@@ -56,6 +56,9 @@ describe('feature availability catalog', () => {
     ]);
     expect(getFeatureAvailabilityChildren('pricing.channel_sync')).toEqual([
       'pricing.channel_sync.import',
+      'pricing.channel_sync.airbnb',
+      'pricing.channel_sync.agoda',
+      'pricing.channel_sync.booking_com',
     ]);
   });
 

@@ -27,6 +27,8 @@ export const POSTHOG_EVENTS = [
   'meta_inbox_connected',
   'meta_inbox_disconnected',
   'calendar_sync_connected',
+  'calendar_sync_echo_detected',
+  'calendar_sync_export_never_read',
   'review_draft_ai_used',
   'sd_form_submitted',
   'sd_voucher_claimed',

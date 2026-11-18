@@ -2,7 +2,7 @@
 title: 'Audit 08: local dev and seed fidelity'
 status: active
 tags: [audit, dev-experience, seed]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 08: Local dev and seed fidelity

@@ -22,6 +22,7 @@ import { useForm, useWatch, type FieldErrors, type SubmitErrorHandler } from 're
 import { toast } from 'sonner';
 
 import { normalizeBookingSource } from '@/features/guest/form/lib/bookingSourceFromSearchParams';
+import { isOtaPrepaidSource } from '@/lib/bookingChannel';
 import {
   computeGuestCounts,
   getActivePartySize,
@@ -450,9 +451,9 @@ export function BookingEditForm({
     };
 
     const newSource = normalizeBookingSource(values.booking_source);
-    const wasAirbnb = normalizeBookingSource(booking.booking_source) === 'Airbnb';
-    const isNowAirbnb = newSource === 'Airbnb';
-    if (isNowAirbnb) {
+    const wasPrepaid = isOtaPrepaidSource(booking.booking_source);
+    const isNowPrepaid = isOtaPrepaidSource(newSource);
+    if (isNowPrepaid) {
       payload.down_payment = 0;
       payload.security_deposit = 0;
       const rate =
@@ -462,7 +463,7 @@ export function BookingEditForm({
         payload.balance = Math.round(rate * 100) / 100;
       }
     }
-    if (isNowAirbnb && !wasAirbnb) {
+    if (isNowPrepaid && !wasPrepaid) {
       payload.guest_balance_paid_amount = null;
       payload.guest_balance_payment_receipt_url = null;
       payload.balance_receipt_ai_verdict = null;

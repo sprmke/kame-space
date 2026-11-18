@@ -2,7 +2,7 @@
 title: 'Audit 13: public pages and SEO'
 status: active
 tags: [audit, public-pages, seo, editor]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 13: Public pages and SEO

@@ -2,7 +2,7 @@
 title: 'Audit 26: parking and super admin design critique'
 status: active
 tags: [audit, design, parking, super-admin, mobile]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 26: Parking and super admin design critique

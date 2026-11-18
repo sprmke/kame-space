@@ -2,7 +2,7 @@
 title: 'Audit 15: security review'
 status: active
 tags: [audit, security]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 15: Security review

@@ -2,7 +2,7 @@
 title: 'Audit 05: org and parking host surfaces'
 status: active
 tags: [audit, org, parking, ux]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 05: Org-level modules and the parking vertical

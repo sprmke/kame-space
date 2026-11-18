@@ -2,7 +2,7 @@
 title: 'Audit 07: marketing site and guest account'
 status: active
 tags: [audit, marketing, guest-account, ux]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 07: Marketing site, auth and guest account

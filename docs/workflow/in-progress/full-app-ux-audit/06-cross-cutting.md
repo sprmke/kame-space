@@ -2,7 +2,7 @@
 title: 'Audit 06: cross-cutting'
 status: active
 tags: [audit, responsive, accessibility, performance]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 06: Cross-cutting findings

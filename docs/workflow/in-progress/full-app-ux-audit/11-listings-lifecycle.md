@@ -2,7 +2,7 @@
 title: 'Audit 11: listing lifecycle (property, parking, development)'
 status: active
 tags: [audit, listings, properties, parkings, developments]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 11: Listing lifecycle

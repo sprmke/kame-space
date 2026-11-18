@@ -2,7 +2,7 @@
 title: 'Route inventory for agents'
 status: active
 tags: [audit, routes, inventory, agents]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # Route inventory

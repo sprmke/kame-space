@@ -2,7 +2,7 @@
 title: 'Audit 03: booking workflow'
 status: active
 tags: [audit, bookings, workflow]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 03: Booking workflow (list → detail → transitions → side effects)

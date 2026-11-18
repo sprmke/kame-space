@@ -2,7 +2,7 @@
 title: 'Audit 04: platform admin'
 status: active
 tags: [audit, admin, super-admin]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 04: Platform admin (`/admin/*`)

@@ -2,7 +2,7 @@
 title: 'Audit 28: public surface audit'
 status: active
 tags: [audit, marketing, listings, guest, auth, account, mobile]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 28: Public surface audit

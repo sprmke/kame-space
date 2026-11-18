@@ -5,7 +5,7 @@ import { formatStayDateRange } from '@/utils/format/dates';
 export type CalendarSyncActivityTone = 'neutral' | 'success' | 'warning' | 'danger';
 
 export type CalendarSyncActivityRow = {
-  id: number;
+  id: number | string;
   title: string;
   rangeLabel: string | null;
   relativeAt: string;
@@ -35,7 +35,7 @@ function skipTitle(reason: string): string {
     case 'past_checkin_feed_drop':
       return 'Past booking left as is';
     case 'reschedule_after_review':
-      return 'Airbnb dates changed after review';
+      return 'Dates changed after review';
     case 'uid_on_other_feed':
       return 'Already on another feed';
     case 'adopt_race':
@@ -130,4 +130,34 @@ export function buildCalendarSyncActivityRows(
     if (rows.length >= limit) break;
   }
   return rows;
+}
+
+/**
+ * The send side of the sync: the channel reading our link. We keep the latest read per channel,
+ * not a history, so this is one row that sorts in with the import events.
+ */
+export function buildChannelReadActivityRow(
+  label: string,
+  lastReadAt: string | null | undefined,
+  formatRelative: (iso: string) => string
+): CalendarSyncActivityRow | null {
+  if (!lastReadAt) return null;
+  return {
+    id: 'channel-read',
+    title: `${label} read your dates`,
+    rangeLabel: null,
+    relativeAt: formatRelative(lastReadAt),
+    tone: 'neutral',
+    createdAt: lastReadAt,
+  };
+}
+
+/** Import events plus the latest read of our link, newest first. */
+export function mergeChannelActivity(
+  importRows: CalendarSyncActivityRow[],
+  readRow: CalendarSyncActivityRow | null,
+  limit = 5
+): CalendarSyncActivityRow[] {
+  const all = readRow ? [...importRows, readRow] : importRows;
+  return [...all].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limit);
 }

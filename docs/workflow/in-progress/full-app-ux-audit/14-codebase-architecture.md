@@ -2,7 +2,7 @@
 title: 'Audit 14: codebase architecture and implementation quality'
 status: active
 tags: [audit, architecture, code-quality]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 14: Codebase architecture and implementation quality

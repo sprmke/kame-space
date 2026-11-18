@@ -2,7 +2,7 @@
 title: 'Audit 23: design system critique'
 status: active
 tags: [audit, design, tokens, typography, contrast, mobile, copy]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 23: Design system critique

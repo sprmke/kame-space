@@ -2,7 +2,7 @@
 title: 'Audit 18: remediation backlog'
 status: active
 tags: [audit, backlog, remediation]
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # 18: Remediation backlog
