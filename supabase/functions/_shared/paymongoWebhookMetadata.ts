@@ -4,6 +4,8 @@
  * shape isn't duplicated per orchestrator.
  */
 
+import { paidPaymentFromCheckoutSession } from './paymongoClient.ts';
+
 export type PaymongoWebhookInner = {
   inner: Record<string, unknown> | undefined;
   innerAttrs: Record<string, unknown> | undefined;
@@ -56,4 +58,17 @@ export function extractRefundedPaymentId(payload: Record<string, unknown>): stri
   const { innerAttrs } = extractWebhookInner(payload);
   const id = innerAttrs?.payment_id;
   return typeof id === 'string' && id.trim() ? id.trim() : null;
+}
+
+/**
+ * The payment method (`card`, `gcash`, `paymaya`, `qrph`...) behind a paid event. A `payment.paid`
+ * event carries it as the payment's own `source`; a `checkout_session.payment.paid` event carries
+ * it inside `payments[]`. Both events arrive for one payment and either can be processed first,
+ * so reading only the first shape left the method empty about half the time.
+ */
+export function paymentMethodFromWebhookPayload(payload: Record<string, unknown>): string | null {
+  const { innerAttrs } = extractWebhookInner(payload);
+  const source = innerAttrs?.source as Record<string, unknown> | undefined;
+  if (typeof source?.type === 'string' && source.type) return source.type;
+  return paidPaymentFromCheckoutSession(innerAttrs)?.methodType ?? null;
 }

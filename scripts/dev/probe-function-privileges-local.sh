@@ -4,7 +4,7 @@
 # Hosted production: functions created by postgres in `public` are owner-only, `anon` can run no
 # SECURITY DEFINER function, and `authenticated` only the allowlist below. Standard Supabase
 # defaults grant EXECUTE on every new public function to anon and authenticated, so without
-# migration 20261342000600 a fresh database exposes dozens of definer functions through
+# migration 20261343001100 a fresh database exposes dozens of definer functions through
 # /rest/v1/rpc. Run after `bun run db:reset` (the migration-replay workflow does).
 set -euo pipefail
 

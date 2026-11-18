@@ -866,3 +866,56 @@ Deno.test({
       assertEquals(again.handled, false);
     }),
 });
+
+Deno.test({
+  ...opts,
+  name: 'a paid checkout_session webhook records the payment method and payment id, whichever event comes first',
+  fn: () =>
+    withOrg(1, async (s, m) => {
+      const checkout = await m.checkout.createOrgSubscriptionCheckoutLink({
+        organizationId: s.orgId,
+        planId: PLAN.growth,
+        initiatedBy: s.userId,
+      });
+      const row = await txn(checkout.transactionId);
+      // Shape of a real sandbox event: the session stays "active" and the payment, with its
+      // source, is listed in payments[].
+      const result = await m.orchestrator.handlePaymongoWebhookEvent(
+        'checkout_session.payment.paid',
+        {
+          data: {
+            id: 'evt_paid',
+            type: 'event',
+            attributes: {
+              type: 'checkout_session.payment.paid',
+              livemode: false,
+              data: {
+                id: row.provider_reference,
+                type: 'checkout_session',
+                attributes: {
+                  status: 'active',
+                  payments: [
+                    {
+                      id: 'pay_from_session_event',
+                      type: 'payment',
+                      attributes: {
+                        status: 'paid',
+                        paid_at: Math.floor(Date.now() / 1000),
+                        source: { type: 'paymaya' },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        }
+      );
+      assertEquals(result.handled, true);
+      const paid = await txn(checkout.transactionId);
+      assertEquals(paid.status, 'paid');
+      assertEquals(paid.payment_method_type, 'paymaya');
+      assertEquals(paid.provider_payment_id, 'pay_from_session_event');
+      assertEquals((await sub(s.orgId)).status, 'active');
+    }),
+});
