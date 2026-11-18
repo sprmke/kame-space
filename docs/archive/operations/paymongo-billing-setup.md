@@ -71,12 +71,27 @@ Org subscription checkout uses **Hosted Checkout Sessions** (`/v2/checkout_sessi
 - Multi-tenant dev (`fwor…`): configure test keys on dev Supabase before QA.
 - Legacy prod: separate live keys when cutover ships — see [`docs/architecture/deployment.md`](../../architecture/deployment.md).
 
-## API facts checked for the lifecycle plan
+## API facts verified for the lifecycle plan
 
-Checked against the PayMongo docs on 2026-11-18. Re-check in the sandbox run (plan task 9.1) because these are documentation reads, not live calls.
+Verified against the real PayMongo **sandbox** on 2026-11-19 by `orgBillingSandbox.integration_test.ts` (real checkout sessions, real hosted-checkout payments, a real refund). Not yet observed on a live-mode account.
 
-| Item                      | Finding                                                                                                                                                                  | In the code                                                                                                                                                                                                 |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Expire a checkout session | `POST /v1/checkout_sessions/{id}/expire`, secret key, empty `{}` on success, `400` when it cannot be expired                                                             | `expirePaymongoCheckoutSession` treats 200 as expired and 400/404/422 as already closed                                                                                                                     |
-| Minimum amount            | PHP 1.00 floor for payment intents. No per-method minimum (QRPH, GCash, Maya) was found in the docs                                                                      | `MINIMUM_CHARGE_PHP = 20` in `orgBillingQuote.ts`. Deliberately above the floor; anything charged above the net due becomes account credit                                                                  |
-| `payment.refunded`        | Fires when a payment is refunded. The event's resource is the **refund** (`ref_...`) and names the payment in `payment_id`; `payment.refund.updated` is a separate event | The paid webhook stores `provider_payment_id`; the refund handler matches on it. Subscribe to `payment.refunded` only. A missed refund event can be recorded from the org billing panel (**Mark refunded**) |
+| Item                      | Finding                                                                                                                                                                                           | In the code                                                                                                        |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Expire a checkout session | `POST /v1/checkout_sessions/{id}/expire` closes it. The session reads `expired` and the hosted page shows "invalid or has already expired", so a superseded link cannot take a payment            | `expirePaymongoCheckoutSession`; scheduling a change expires the open checkout                                     |
+| A paid session            | Stays `status: "active"`. The payment exists only in `payments[]` (`id`, `attributes.status = "paid"`, `attributes.source.type`, `attributes.paid_at` in epoch seconds)                           | `getPaymongoProviderPaymentState` and `paidPaymentFromCheckoutSession` read `payments[]`, never the session status |
+| Missed webhook            | Reconciliation recovers the payment with PayMongo's own paid time and method, and stores the `pay_...` id so a later refund finds it                                                              | `getPaymongoPaidPayment` in `orgPaymentReconcile.ts`                                                               |
+| Refund                    | `POST /v1/refunds` with `payment_id` returns a `refund` resource whose `attributes.payment_id` names the payment, and a refund starts `pending`. The `payment.refunded` event wraps that resource | The refund handler matches `provider_payment_id`                                                                   |
+| Minimum amount            | PHP 1.00 floor for payment intents in the docs. No per-method minimum was found                                                                                                                   | `MINIMUM_CHARGE_PHP = 20`, deliberately above the floor; the excess becomes account credit                         |
+| Methods on our sessions   | QR Ph and the e-wallets enabled in `platform_payment_settings` (the sandbox showed Maya and Online Banking)                                                                                       | `mapPlatformMethodsToPaymongoCheckout`                                                                             |
+
+**Webhook registration (sandbox account, checked 2026-11-19):** two sandbox webhooks exist and both are **disabled**: one to a local ngrok URL and one to the production project's `paymongo-webhook`. Neither lists `payment.refunded`. Enable the production-project hook and add `payment.refunded` before relying on webhooks; until then payments are recovered by the hourly reconciliation. The production project's `PAYMONGO_SECRET_KEY` and `PAYMONGO_WEBHOOK_SECRET` digests differ from the local `.env.dev.local` values, so confirm which PayMongo account and mode production uses before enabling it.
+
+**Run the sandbox matrix locally:**
+
+```bash
+PAYMONGO_SANDBOX=1 PAYMONGO_SECRET_KEY=sk_test_... TZ=Asia/Manila deno test \
+  --config supabase/functions/deno.json --allow-net --allow-env --allow-read --allow-run \
+  --allow-import supabase/functions/tests/orgBillingSandbox.integration_test.ts
+```
+
+It refuses any key that is not `sk_test_`, needs the local stack and Playwright, and takes about three minutes (seven real sandbox payments).

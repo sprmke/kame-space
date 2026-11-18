@@ -47,4 +47,4 @@ bun x playwright test ui/e2e/features/plans --project=chromium-ci
 
 ## Manual gaps
 
-Real PayMongo settlement, webhook delivery and refunds: the sandbox matrix in the lifecycle plan (task 9.1).
+Webhook _delivery_ from PayMongo to the deployed project (the sandbox webhooks are disabled; see `paymongo-billing-setup.md`).

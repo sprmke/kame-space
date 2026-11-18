@@ -257,6 +257,55 @@ function checkoutSessionHasPaidPayment(attrs: Record<string, unknown> | undefine
   });
 }
 
+export type PaymongoPaidPayment = {
+  paymentId: string;
+  /** `card`, `gcash`, `qrph`, ... from the payment's source. */
+  methodType: string | null;
+  paidAt: string | null;
+};
+
+/**
+ * The collected payment inside a checkout session's attributes. A paid session keeps
+ * `status: "active"` and lists the payment in `payments[]`, so this is the only place the
+ * payment id, its method and its paid time exist when a webhook was missed.
+ */
+export function paidPaymentFromCheckoutSession(
+  attrs: Record<string, unknown> | undefined
+): PaymongoPaidPayment | null {
+  const payments = attrs?.payments;
+  if (!Array.isArray(payments)) return null;
+  for (const entry of payments) {
+    const row = entry as Record<string, unknown>;
+    const paymentAttrs = row.attributes as Record<string, unknown> | undefined;
+    const status =
+      typeof paymentAttrs?.status === 'string' ? paymentAttrs.status.toLowerCase() : '';
+    if (status !== 'paid' && status !== 'succeeded') continue;
+    if (typeof row.id !== 'string' || !row.id.trim()) continue;
+    const source = paymentAttrs?.source as Record<string, unknown> | undefined;
+    const paidAtEpoch = paymentAttrs?.paid_at;
+    return {
+      paymentId: row.id.trim(),
+      methodType: typeof source?.type === 'string' ? source.type : null,
+      paidAt: typeof paidAtEpoch === 'number' ? new Date(paidAtEpoch * 1000).toISOString() : null,
+    };
+  }
+  return null;
+}
+
+/** The paid payment behind a checkout session reference, or null (not paid, not a session). */
+export async function getPaymongoPaidPayment(
+  providerReference: string | null | undefined
+): Promise<PaymongoPaidPayment | null> {
+  const ref = providerReference?.trim();
+  if (!ref || !isPaymongoCheckoutSessionRef(ref)) return null;
+  try {
+    return paidPaymentFromCheckoutSession(await fetchPaymongoCheckoutSession(ref));
+  } catch (err) {
+    console.error('[paymongoClient] paid payment lookup failed', err);
+    return null;
+  }
+}
+
 async function fetchPaymongoCheckoutSession(
   sessionId: string
 ): Promise<Record<string, unknown> | undefined> {
