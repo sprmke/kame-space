@@ -2,7 +2,7 @@
 title: 'Guest stay guide (token-gated brochure)'
 status: active
 tags: [guides, routes]
-updated: 2026-11-10
+updated: 2026-11-19
 ---
 
 # Guest stay guide (token-gated brochure)
@@ -180,6 +180,15 @@ before **`sendReadyForCheckin`** (`{{stay_guide_cta_section}}` when token + slug
 The preview shares `useShowcaseContainedChrome` / `useShowcaseConfigControlled` with Showcase
 (both accept the `stay-guide` preview-override kind) so the template chrome stays inside the
 editor frame and palette/motion follow the config live.
+
+## Type and layout
+
+Stay Guide uses the same type hierarchy and responsive rules as Showcase (see **Type hierarchy and responsive rules** in [[property-showcase|Property Showcase]]). Stay-Guide-only parts:
+
+- Section titles take their size from the active template, so a Monolith or Editorial guide no longer shows small 24 to 30px titles.
+- Chapter text uses a readable line length: one block stays under 48rem, several blocks sit in two columns from a 768px container.
+- Host-written rich text styles `h1` to `h4`, quotes and dividers, with no stray margin at the top or bottom of a block.
+- The Editorial hero shows only the photos that exist, so a single photo fills the row instead of leaving empty tiles.
 
 ## Implementation map
 

@@ -42,18 +42,18 @@ function clampColumns(columns: number | undefined, fallback: number): 1 | 2 | 3 
 export function resolveShowcaseGridColsClass(columns: number | undefined, fallback = 3): string {
   const cols = clampColumns(columns, fallback);
   if (cols === 1) return 'grid grid-cols-1 gap-3';
-  if (cols === 2) return 'grid grid-cols-1 gap-3 @sm:grid-cols-2';
-  if (cols === 3) return 'grid grid-cols-1 gap-3 @sm:grid-cols-2 @lg:grid-cols-3';
-  return 'grid grid-cols-1 gap-3 @sm:grid-cols-2 @lg:grid-cols-4';
+  if (cols === 2) return 'grid grid-cols-1 gap-3 @[22rem]:grid-cols-2';
+  if (cols === 3) return 'grid grid-cols-1 gap-3 @[22rem]:grid-cols-2 @lg:grid-cols-3';
+  return 'grid grid-cols-1 gap-3 @[22rem]:grid-cols-2 @lg:grid-cols-4';
 }
 
 /** CSS multi-column flow (Editorial amenities). */
 export function resolveShowcaseCssColumnsClass(columns: number | undefined, fallback = 3): string {
   const cols = clampColumns(columns, fallback);
   if (cols === 1) return 'columns-1 gap-8';
-  if (cols === 2) return 'columns-1 gap-8 @sm:columns-2';
-  if (cols === 3) return 'columns-1 gap-8 @sm:columns-2 @lg:columns-3';
-  return 'columns-1 gap-8 @sm:columns-2 @lg:columns-4';
+  if (cols === 2) return 'columns-1 gap-8 @[22rem]:columns-2';
+  if (cols === 3) return 'columns-1 gap-8 @[22rem]:columns-2 @lg:columns-3';
+  return 'columns-1 gap-8 @[22rem]:columns-2 @lg:columns-4';
 }
 
 const CTA_TARGET_FORM = 'form';
