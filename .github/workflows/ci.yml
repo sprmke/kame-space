@@ -44,6 +44,9 @@ jobs:
           bash scripts/dev/check-migration-versions.sh
           bash scripts/dev/check-migration-security.sh
 
+      - name: Deploy retry helper self-test (transient network errors only)
+        run: bash scripts/dev/test-deploy-retry.sh
+
       - name: servePublic rate-limit coverage
         run: bash scripts/dev/check-serve-public-rate-limit.sh
 
