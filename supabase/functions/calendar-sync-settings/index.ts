@@ -10,6 +10,8 @@
  *   setExportEnabled { enabled: boolean }
  *   syncNow         { feedId }
  *
+ * addFeed also turns date sharing on (when it is off and not paused), so every channel is two-way
+ * (it gets our dates, we get its dates) without a second step.
  * New Airbnb feeds create booking rows by default (`create_bookings = true`). Existing
  * feeds keep their stored value until the host flips the toggle.
  */
@@ -29,6 +31,7 @@ import {
 } from '../_shared/calendarChannels.ts';
 import { connectableProvidersFor } from '../_shared/calendarChannelRollout.ts';
 import { checkAddFeed } from '../_shared/calendarFeedAdd.ts';
+import { enableExportOnConnect } from '../_shared/calendarExportEnable.ts';
 import type { RunFeedResult } from '../_shared/calendarSyncRun.ts';
 import {
   buildCalendarExportUrls,
@@ -133,16 +136,22 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
 
     const feeds = feedRows ?? [];
     const feedIds = feeds.map((f) => f.id as string);
-    const { data: events } = feedIds.length
-      ? await supabase
+    // Per feed, so one busy channel cannot push a quiet channel's activity out of the list.
+    const perFeedEvents = await Promise.all(
+      feedIds.map((feedId) =>
+        supabase
           .from('calendar_sync_events')
           .select(
             'id, feed_id, action, external_uid, start_date, end_date, summary, detail, created_at'
           )
-          .in('feed_id', feedIds)
+          .eq('feed_id', feedId)
           .order('created_at', { ascending: false })
-          .limit(30)
-      : { data: [] };
+          .limit(20)
+      )
+    );
+    const events = perFeedEvents
+      .flatMap((r) => r.data ?? [])
+      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
 
     // Latest run per feed. `calendar_sync_runs` is retention-pruned, so this is recent only.
     const latestRunByFeed = new Map<string, Record<string, unknown>>();
@@ -335,6 +344,37 @@ serveAuthenticated('calendar-sync-settings', async (req) => {
           .select(FEED_COLUMNS)
           .single();
         if (error) throw new Error(error.message);
+
+        // Two-way from the first minute: connecting a channel also starts sending our dates to
+        // it. Skipped (never fails the connect) when the host already turned sharing on, or the
+        // module is paused by the super-admin switch.
+        try {
+          const exportRow = await ensureExportRow(supabase, property.id);
+          await enableExportOnConnect({
+            isEnabled: () => Promise.resolve(Boolean(exportRow.is_enabled)),
+            isPaused: async () =>
+              Boolean(await featureUnavailableResponse(req, 'pricing.channel_sync', { user })),
+            enable: async () => {
+              const { error: enableError } = await supabase
+                .from('property_calendar_export')
+                .update({ is_enabled: true })
+                .eq('property_id', property.id);
+              if (enableError) throw new Error(enableError.message);
+            },
+            record: () =>
+              emitCalendarActivity('integrations.config_changed', {
+                setting: 'export_enabled',
+                enabled: true,
+                auto: 'channel_connected',
+                feed_provider: provider,
+              }),
+          });
+        } catch (enableErr) {
+          console.error(
+            '[calendar-sync-settings] auto-enable sharing failed (non-fatal):',
+            enableErr
+          );
+        }
 
         await capturePostHogEvent('calendar_sync_connected', {
           logPrefix: 'calendar-sync-settings',
