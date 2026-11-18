@@ -250,11 +250,19 @@ test.describe('@ci marketing trends', () => {
     await installPropertyTeamRbacMocks(page, 'full_access', {
       featureAvailabilityOff: ['marketing.trends'],
     });
-    await mockTrends(page, trendsBody());
+    // The server enforces the leaf: marketing-trends answers `disabled` when it is off, and the
+    // rail renders nothing for that. Mocking a normal body here would only pass while the rail's
+    // lazy chunk had not loaded yet, which is a race, not a check.
+    await mockTrends(page, { success: true, data: { disabled: true } });
+    const trendsAnswered = page.waitForResponse((res) =>
+      res.url().includes('/functions/v1/marketing-trends')
+    );
     await openCreateForm(page);
 
     await expect(page.getByLabel('What is the post about?')).toBeVisible({ timeout: 20_000 });
+    await trendsAnswered;
     await expect(page.getByText('Trending today')).toHaveCount(0);
+    await expect(page.getByText('Seasonal ideas')).toHaveCount(0);
   });
 
   test('the sheet is a bottom sheet on a phone and does not overflow', async ({ page }) => {
