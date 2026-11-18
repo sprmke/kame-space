@@ -129,3 +129,6 @@ docs/workflow/in-progress/local-seed-dataset.md  # documents the canonical seed 
 docs/guides/routes/org/property/analytics.md:kame-home  # local seed property slug
 AGENTS.md:local seed  # documents the canonical seed slugs
 .cursor/rules/project-context.mdc:local seed  # documents the canonical seed slugs
+
+# K-12 audit evidence quotes the canonical local seed slugs in routes and screenshots
+docs/workflow/in-progress/full-app-ux-audit/**  # audit quotes canonical seed slugs (kame-homes / kame-home)

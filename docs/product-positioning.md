@@ -188,7 +188,7 @@ Two-way Airbnb iCal sync can import availability, create reviewable reservation 
 
 **Approved claim:** "Keep Airbnb availability and reservations connected to the same booking workflow."
 
-Airbnb sync does not sync rates, payments, or messages. Agoda, Booking.com, and Vrbo sync are not offered in the host UI today.
+Airbnb sync does not sync rates, payments, or messages. Agoda and Booking.com sync are built but not offered in the host UI yet. Kame Space supports only Airbnb, Agoda and Booking.com.
 
 ### 6. One inbox and better guest coverage
 

@@ -59,7 +59,7 @@ export type PricingDayState = {
   isCustom: boolean;
   isBooked: boolean;
   isBlocked: boolean;
-  /** Blocked by an OTA calendar feed (Airbnb / Booking.com / VRBO) — read-only here. */
+  /** Blocked by an OTA calendar feed (Airbnb / Agoda / Booking.com) — read-only here. */
   isImported: boolean;
   /** Nightly rate came from an applied Smart Pricing recommendation. */
   isSmart?: boolean;
@@ -654,7 +654,7 @@ function PricingDayTooltip({
   isSmart?: boolean;
 }) {
   const tags: string[] = [];
-  if (isImported) tags.push('Synced from Airbnb / OTA');
+  if (isImported) tags.push('Synced from a connected channel');
   else if (isBlocked) tags.push('Blocked');
   else if (isPast) tags.push('Past');
   if (rule) tags.push(rule.name);

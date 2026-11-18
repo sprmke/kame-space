@@ -1,13 +1,12 @@
 import type { PropertyPricingCalendarBooking } from '@/features/dashboard/pricing/lib/propertyPricingApi';
+import { isOtaPrepaidSource } from '@/lib/bookingChannel';
 
 /** True when the booking carries OTA provenance, whatever its workflow status. */
 export function isImportedBooking(
   booking: PropertyPricingCalendarBooking | null | undefined
 ): boolean {
   if (!booking) return false;
-  return (
-    !!booking.external_source || (booking.booking_source ?? '').trim().toLowerCase() === 'airbnb'
-  );
+  return !!booking.external_source || isOtaPrepaidSource(booking.booking_source);
 }
 
 /**

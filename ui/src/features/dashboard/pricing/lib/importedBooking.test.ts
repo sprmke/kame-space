@@ -34,6 +34,11 @@ describe('isImportedBooking', () => {
     expect(isImportedBooking(booking({ booking_source: 'Airbnb' }))).toBe(true);
   });
 
+  it('accepts a manual Agoda or Booking.com row', () => {
+    expect(isImportedBooking(booking({ booking_source: 'Agoda' }))).toBe(true);
+    expect(isImportedBooking(booking({ booking_source: 'Booking.com' }))).toBe(true);
+  });
+
   it('rejects direct bookings and missing rows', () => {
     expect(isImportedBooking(booking({ booking_source: 'Direct' }))).toBe(false);
     expect(isImportedBooking(null)).toBe(false);

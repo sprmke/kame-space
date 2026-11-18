@@ -8,6 +8,7 @@ on:
       - 'supabase/seed.sql'
       - 'scripts/dev/seed-*.sql'
       - 'scripts/dev/probe-rls-anon-local.sh'
+      - 'scripts/dev/probe-function-privileges-local.sh'
   workflow_dispatch:
   schedule:
     - cron: '0 20 * * 0'
@@ -50,6 +51,9 @@ jobs:
 
       - name: Probe RLS deny-by-default as anon (production-readiness doc 22)
         run: bash scripts/dev/probe-rls-anon-local.sh
+
+      - name: Probe function privileges match production (PR-096)
+        run: bash scripts/dev/probe-function-privileges-local.sh
 
       - name: Stop local Supabase
         if: always()

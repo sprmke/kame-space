@@ -22,8 +22,10 @@
 
 
 import { buildExportCalendar, loadExportRanges } from '../_shared/calendarSyncRun.ts';
+import { CALENDAR_CHANNELS } from '../_shared/calendarChannels.ts';
 import type { CalendarFeedProvider } from '../_shared/calendarSyncService.ts';
 import { corsHeaders } from '../_shared/cors.ts';
+import { hashFeedBody } from '../_shared/calendarSyncService.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
 import { automationAllowed, loadPropertyLifecycleStates } from '../_shared/propertyLifecycle.ts';
 import { readPropertySlugFromUrl, resolvePropertyIdBySlug } from '../_shared/propertyScope.ts';
@@ -31,7 +33,38 @@ import { captureSentryException } from '../_shared/sentry.ts';
 import { publicGetRateLimitGate } from '../_shared/publicEndpointRateLimit.ts';
 import { serveHandler } from '../_shared/serveEdge.ts';
 
-const PROVIDERS: readonly CalendarFeedProvider[] = ['airbnb', 'booking_com', 'vrbo', 'other'];
+const PROVIDERS: readonly CalendarFeedProvider[] = CALENDAR_CHANNELS.map((c) => c.provider);
+
+type ExportChannel = CalendarFeedProvider | 'all';
+
+/**
+ * Remember what we served and when, per channel. 200 and 304 both count: most channel reads are
+ * 304s, which is why `property_calendar_export.last_served_at` could not answer "did Agoda read
+ * our link". Date ranges only, never guest data.
+ */
+async function recordExportRead(
+  supabase: ReturnType<typeof createServiceClient>,
+  propertyId: string,
+  channel: ExportChannel,
+  ranges: { startDate: string; endDate: string }[]
+): Promise<void> {
+  const payload = ranges.map((r) => ({ start: r.startDate, end: r.endDate }));
+  const rangesHash = await hashFeedBody(JSON.stringify(payload));
+  try {
+    // Atomic upsert (record_calendar_export_read): no lost increments under concurrent polls.
+    // `?as=` is caller-supplied, so per-channel attribution is a hint, not proof. Treat
+    // `all` as the authoritative "someone read this link" signal.
+    await supabase.rpc('record_calendar_export_read', {
+      p_property_id: propertyId,
+      p_channel: channel,
+      p_ranges_hash: rangesHash,
+      p_ranges: payload,
+    });
+  } catch (err) {
+    // Never fail a calendar read because bookkeeping failed.
+    console.error('[ical-export] read log failed (non-fatal):', err);
+  }
+}
 
 function notFound(req: Request): Response {
   return new Response('Not found', {
@@ -130,6 +163,9 @@ serveHandler('ical-export', async (req) => {
       ranges,
       lastModifiedIso,
     });
+
+    const readChannel: ExportChannel = excludeProvider ?? 'all';
+    await recordExportRead(supabase, propertyId, readChannel, ranges);
 
     const etag = await weakEtag(body);
     const lastModifiedHttp = lastModifiedIso ? new Date(lastModifiedIso).toUTCString() : undefined;

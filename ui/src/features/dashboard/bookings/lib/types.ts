@@ -178,7 +178,7 @@ export type BookingRow = {
   settled_at?: string | null;
 
   // Calendar sync — OTA-ingested reservation provenance + guest-form completion link (Phase 2)
-  external_source?: 'airbnb' | 'booking_com' | 'vrbo' | 'other' | null;
+  external_source?: 'airbnb' | 'agoda' | 'booking_com' | null;
   external_uid?: string | null;
   external_feed_id?: string | null;
   guest_form_token?: string | null;

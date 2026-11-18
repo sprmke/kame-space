@@ -10,6 +10,7 @@ import { resolveAppSettings } from './appSettings.ts';
 import { ensureBookingDocumentShareToken } from './bookingDocumentShareToken.ts';
 import { manilaTodayYmd, normalizeBookingDateToYmd } from './calendarAvailabilityManila.ts';
 import { mintGuestBookingAccessToken } from './guestBookingAccessToken.ts';
+import { isOtaPrepaidSource } from './bookingChannel.ts';
 import { loadGuestFacingContactInfo } from './guestContactInfo.ts';
 import { canAccessGuestReview, resolveGuestReviewPath } from './guestReviewEligibility.ts';
 import { guestCanReview } from './reviewEligibility.ts';
@@ -119,7 +120,7 @@ export type GuestTripDetailDto = {
     balancePaid: number;
     /** `totalBalance − balancePaid`, never below 0 (matches admin "Total unpaid"). */
     amountDue: number | null;
-    isAirbnb: boolean;
+    isOtaPrepaid: boolean;
   };
   refund: {
     amount: number | null;
@@ -299,7 +300,7 @@ export async function buildGuestTripPayload(input: {
   if (expectedSlug && expectedSlug !== property.slug) return null;
 
   const status = str(row.status);
-  const isAirbnb = str(row.booking_source) === 'Airbnb';
+  const isOtaPrepaid = isOtaPrepaidSource(row.booking_source);
   const cancelled = status === 'CANCELLED';
   const settings = await resolveAppSettings(propertyId);
 
@@ -447,7 +448,7 @@ export async function buildGuestTripPayload(input: {
       petFee: row.has_pets === true ? numOrNull(row.pet_fee) : null,
       additionalFee: numOrNull(row.guest_additional_fee),
       ...guestBalanceAmounts(row),
-      isAirbnb,
+      isOtaPrepaid,
     },
     refund: {
       amount: numOrNull(row.sd_refund_amount),

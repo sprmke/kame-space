@@ -10,11 +10,10 @@ function bookingFlagTrue(value: boolean | string | null | undefined): boolean {
   return value === true || value === 'true';
 }
 
-export function isAirbnbBookingSource(source: string | null | undefined): boolean {
-  return source?.trim().toLowerCase() === 'airbnb';
-}
-
 /** Pet fee counts toward guest balance only when the guest is bringing pets. */
+
+import { isOtaPrepaidSource } from '@/lib/bookingChannel';
+
 function petFeeForGuestBalance(booking: BookingFinanceInput): number {
   return bookingFlagTrue(booking.has_pets) ? toMoneyNumber(booking.pet_fee) : 0;
 }
@@ -39,8 +38,9 @@ function petAndAdditionalFeesForGuestBalance(booking: BookingFinanceInput): numb
  * Total amount due from the guest before check-in (matches `ReviewPricingForm`
  * live total and `PricingSummaryCard` on the booking detail page).
  *
- * **Airbnb:** stay rate, down payment, and security deposit are excluded — the
- * guest pays the host on Airbnb. Only pet fee and additional guest fees count.
+ * **OTA prepaid (Airbnb, Agoda, Booking.com):** stay rate, down payment, and
+ * security deposit are excluded — the guest pays the channel. Only pet fee and
+ * additional guest fees count.
  *
  * Excludes parking — pay parking is recorded and verified on the Parking Request
  * sub-step. `guest_submissions.balance` is the recorded “balance” line item only.
@@ -54,7 +54,7 @@ export function computeTotalGuestBalance(booking: BookingFinanceInput): number |
   if (booking.booking_rate == null || booking.booking_rate === '') return null;
 
   const petAndAdditional = petAndAdditionalFeesForGuestBalance(booking);
-  if (isAirbnbBookingSource(booking.booking_source)) {
+  if (isOtaPrepaidSource(booking.booking_source)) {
     return petAndAdditional;
   }
 

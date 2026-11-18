@@ -85,7 +85,7 @@ async function assertChannelSyncImportAvailable(
     ok: false,
     error:
       availability['pricing.channel_sync.import'].message ??
-      'Imports from Airbnb are temporarily unavailable.',
+      'Calendar imports are temporarily unavailable.',
   };
 }
 

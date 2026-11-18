@@ -1,6 +1,6 @@
 import { CalendarRange } from 'lucide-react';
 
-import { normalizeBookingSource } from '@/features/guest/form/lib/bookingSourceFromSearchParams';
+import { isOtaPrepaidSource } from '@/lib/bookingChannel';
 
 import {
   Field,
@@ -49,8 +49,9 @@ export function StayDetailsTab({
   onPreview,
 }: Props) {
   const watchCheckInDate = formSnapshot?.check_in_date ?? '';
-  const isAirbnb =
-    normalizeBookingSource(formSnapshot?.booking_source ?? booking.booking_source) === 'Airbnb';
+  const isPrepaid = isOtaPrepaidSource(
+    formSnapshot?.booking_source ?? booking.booking_source
+  );
 
   return (
     <BookingDetailCard title="Stay details" icon={CalendarRange} tone="edit">
@@ -188,7 +189,7 @@ export function StayDetailsTab({
           </Row3>
         </Section>
 
-        {!isAirbnb ? (
+        {!isPrepaid ? (
           <Section title="Payment">
             <BookingGuestDocReplacer
               bookingId={booking.id}
