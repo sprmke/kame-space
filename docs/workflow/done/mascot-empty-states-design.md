@@ -1,9 +1,9 @@
 ---
-stage: intake
+stage: done
 title: 'Mascot empty states — 404 and feature unavailable'
-status: active
-tags: [workflow, intake, ui, design, brand]
-updated: 2026-11-16
+status: done
+tags: [workflow, done, ui, design, brand]
+updated: 2026-11-18
 kind: design
 worksheet: ui-improvements-worksheet.md
 item: UI-05
@@ -11,7 +11,7 @@ item: UI-05
 
 # Mascot empty states design
 
-**Claim.** UI-05 on [`ui-improvements-worksheet.md`](./ui-improvements-worksheet.md).
+**Claim.** UI-05 on [`ui-improvements-worksheet.md`](../intake/ui-improvements-worksheet.md).
 
 **Goal.** One calm, on-brand empty composition for “nothing here” and “not available yet,” using the **platform mark** (not the heavy 3D social `Kame` Three.js scene).
 

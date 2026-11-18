@@ -1,9 +1,9 @@
 ---
 title: 'Mobile search and browse: full-screen search flow'
-status: in-progress
-tags: [workflow, in-progress, mobile, guest, search, ui]
-updated: 2026-11-16
-stage: in-progress
+status: for-testing
+tags: [workflow, for-testing, mobile, guest, search, ui]
+updated: 2026-11-18
+stage: for-testing
 kind: plan
 ---
 

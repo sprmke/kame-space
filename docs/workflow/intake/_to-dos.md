@@ -2,7 +2,7 @@
 title: 'Tasks To Do'
 status: active
 tags: [planning, intake, backlog]
-updated: 2026-11-07
+updated: 2026-11-18
 stage: intake
 kind: backlog
 ---
@@ -22,7 +22,7 @@ kind: backlog
   → **Done:** [`../done/kamespace-04-domain-move-kamespace-com.md`](../done/kamespace-04-domain-move-kamespace-com.md)
 - ✅ **Get Google services approval**
   Brand verification approved and published 2026-11-03. Remaining hardening is post-launch.
-  → **Done:** [`../done/kamespace-05-google-services-verification.md`](../done/kamespace-05-google-services-verification.md) · hardening: [`../planned/google-services-production-hardening.md`](../in-progress/google-services-production-hardening.md)
+  → **Done:** [`../done/kamespace-05-google-services-verification.md`](../done/kamespace-05-google-services-verification.md) · hardening: [`../in-progress/google-services-production-hardening.md`](../in-progress/google-services-production-hardening.md)
 - 🔵 **Get PayMongo approval**
   Business account approval and split payouts are still with PayMongo.
 
@@ -31,16 +31,16 @@ kind: backlog
 - ✅ Update property settings and photos.
 - ✅ iCal sync to Airbnb
   → **Done:** [`../done/airbnb-calendar-sync.md`](../done/airbnb-calendar-sync.md)
-- 📋 Live identity verification to simplify real identity checks
+- 🚧 Live identity verification to simplify real identity checks
   → **In progress:** [`../in-progress/live-identity-verification.md`](../in-progress/live-identity-verification.md)
 - 🚧 Booking detail: email sent history, quick resend, and view sent email content.
 - 🚧 Cleanup tasks
   - ✅ Cleanup unused settings and email templates related to Parking.
-  - Clean up unused env variables.
-  - Store env variables and keep a current backup per environment.
-  - Update and clean CI/CD after the legacy to multi-tenant migration.
-  - List every third-party service. Add monitoring and alerts for errors, plus cost and limit tracking.
-  - Able to sync data from hosting to local. → **Done:** `bun run sync:prod-data` (prod → local only).
+  - ✅ Clean up unused env variables. → **Done:** [`../done/env-variables-cleanup.md`](../done/env-variables-cleanup.md)
+  - ✅ Store env variables and keep a current backup per environment. → `bun run env:backup`
+  - ✅ Update and clean CI/CD after the legacy to multi-tenant migration. → **Done:** [`../done/ci-cd-environments/README.md`](../done/ci-cd-environments/README.md)
+  - 🚧 List every third-party service. Add monitoring and alerts for errors, plus cost and limit tracking. → **In progress:** [`../in-progress/super-admin-system-health.md`](../in-progress/super-admin-system-health.md) · cost limits: [`../planned/super-admin-service-cost-monitoring.md`](../planned/super-admin-service-cost-monitoring.md)
+  - ✅ Able to sync data from hosting to local. → **Done:** `bun run sync:prod-data` (prod to local only).
 - 📋 AI-supported marketing scheduling and strategy
   → **Planned:** [`../planned/marketing-meta-publishing-gaps.md`](../planned/marketing-meta-publishing-gaps.md)
 - 🚧 Refine the archive and delete property flow.
@@ -55,53 +55,59 @@ kind: backlog
 - ✅ Fix issue where google map is not rendering properly on both dashboard and public page
 - ✅ Display warning message if user refresh the page when editing on a page (ex. Settings). Right now, we only display the default browser warning and not our custom popup modal warning
 - ✅ Cleanup usages of "—" on email templates and across the app. If we need to use it, then please ensure that we use the normal "-". But please analyze carefully if it's good UX to use - at all. Then make sure to apply all usages across the entire app that it's still using it. From UI, email templates and other locations that we are using it from our app.
-- Refine templates
+- 🔵 Refine templates
 - ✅ Improve activity modal from settings to be the same modal size or I think it's better if we have navigation here to view the activity detail and we can back to it instead of opening it on a new modal
 - ✅ Fix super admin UI issue on this: https://kamespace.com/admin/orgs/kame-homes
 - ✅ Why stay guide and showcase public page editor is not loading at all (root cause: `public-page-configs` edge function boot error from a duplicate `const row`; also added error states so a failed config no longer leaves the skeleton up forever)
 - ✅ Why "Save Changes" button on settings page is showing when we have new changes but disabled
 - ✅ Improve marketing landing page to not use dynamic image on "What do you want to make?" and have our fixed static assets. Also please address and remove the accent color that looks ugly specially on dark mode
 - ✅ Require OTP when we save any changes from Templates page/module
-- Refine and further improve the marketing default generated marketing materials/examples/templates. They all look very ugly!
-- Refine landing page
+- 🔵 Refine and further improve the marketing default generated marketing materials/examples/templates. They all look very ugly!
+- 🔵 Refine landing page
 - ✅ Optional Resend hygiene: send From a dedicated subdomain (e.g. `notify.kamespace.com`) instead of apex `mail@kamespace.com`. Requires new Resend domain + DNS, then `RESEND_FROM_EMAIL` flip (`kamewave`). Image-hosting insight is already fixed in code via CID inlining (`sendResendEmail`).
 - ✅ Refine mascot
-- Airbnb conflict
+- 📋 Airbnb conflict
   → **Planned:** [`../planned/calendar-sync-conflict-resolution.md`](../planned/calendar-sync-conflict-resolution.md)
-- Improve quick access on bottom part of the screen to include (Notifications, chat, dark/light switch, AI assistant)
-- Needs manual reload for webapp?
-- Improve performance, slow queries, lighthouse, before & after
-- Refine Channel sync modal (From/To progressive empty states + feed card)
-- Inbox refinement
-- Refine email templates, refine flows/events or actions that we need to send email
-- Reposition light/dark switch
-- Improve paid/pro subscription badge/flow
-- Control for auto transition to ready for check-in status?
-- Refine edit booking detail page
-- App performance improvements and make the app very fast on both desktop and pwa
-- Improve backend performance
-- Toolchain upgrade wave: TypeScript 7, Tailwind 4, Zod 4, @hookform/resolvers 7, @types/node 26, @vitest/coverage-v8 5, eslint-plugin-react-hooks 7, @blueprintjs/core 6, framer-motion 14. Each needs a code migration, not a version bump, so the Dependabot majors are closed until it is planned.
-- Pricing plans refinement
-- Payment e2e and management from super admin
-- Improve QR design to include our logo?
-- Select turtle character and add it on their templates
-- Super admin - playbook articles?
-- Super admin -> System health warnings & errors
-- AI usage, estimates, cost and profits? Implement buy more credits
-- Refine super admin pages, sections, etc
-- Make sure updated with new changes and features that we have
+- 🚧 Improve quick access on bottom part of the screen to include (Notifications, chat, dark/light switch, AI assistant)
+  → **In progress:** [`../in-progress/mobile-app-chrome-header-and-tab-bar.md`](../in-progress/mobile-app-chrome-header-and-tab-bar.md) — notifications moved to the top-bar bell
+- 🔵 Needs manual reload for webapp?
+- 🚧 Improve performance, slow queries, lighthouse, before & after
+  → **In progress:** [`../in-progress/app-speed-root-cause-overhaul.md`](../in-progress/app-speed-root-cause-overhaul.md)
+- ✅ Refine Channel sync modal (From/To progressive empty states + feed card) (UI-36)
+- 🔵 Inbox refinement
+- 🔵 Refine email templates, refine flows/events or actions that we need to send email
+- ❌ Reposition light/dark switch
+  → **Won't do:** [`../wont-do/dashboard-top-header-bar.md`](../wont-do/dashboard-top-header-bar.md) — profile, theme toggle and mode switch stay in the sidebar footer
+- 🔵 Improve paid/pro subscription badge/flow
+- 🔵 Control for auto transition to ready for check-in status?
+- 🔵 Refine edit booking detail page
+- 🚧 App performance improvements and make the app very fast on both desktop and pwa
+  → **In progress:** [`../in-progress/app-speed-root-cause-overhaul.md`](../in-progress/app-speed-root-cause-overhaul.md)
+- 🚧 Improve backend performance
+  → **In progress:** [`../in-progress/app-speed-root-cause-overhaul.md`](../in-progress/app-speed-root-cause-overhaul.md) · capacity: [`../in-progress/supabase-capacity-and-operational-readiness.md`](../in-progress/supabase-capacity-and-operational-readiness.md)
+- 🔵 Toolchain upgrade wave: TypeScript 7, Tailwind 4, Zod 4, @hookform/resolvers 7, @types/node 26, @vitest/coverage-v8 5, eslint-plugin-react-hooks 7, @blueprintjs/core 6, framer-motion 14. Each needs a code migration, not a version bump, so the Dependabot majors are closed until it is planned.
+- 🔵 Pricing plans refinement
+- 🔵 Payment e2e and management from super admin
+- 🔵 Improve QR design to include our logo?
+- 🔵 Select turtle character and add it on their templates
+- 🔵 Super admin - playbook articles?
+- 🚧 Super admin -> System health warnings & errors
+  → **In progress:** [`../in-progress/super-admin-system-health.md`](../in-progress/super-admin-system-health.md)
+- 📋 AI usage, estimates, cost and profits? Implement buy more credits
+  → **Planned:** [`../planned/ai-credits-topup-purchase.md`](../planned/ai-credits-topup-purchase.md) · provider and quotas: [`../planned/ai-paid-provider-and-production-quotas.md`](../planned/ai-paid-provider-and-production-quotas.md)
+- 📋 Refine super admin pages, sections, etc
+  → **Planned:** [`../planned/super-admin-console-followups.md`](../planned/super-admin-console-followups.md)
+- 🔵 Make sure updated with new changes and features that we have
   - Subscriptions tier & validation
   - Team access
   - Updated tests (unit, e2e, integration)
   - Updated guide docs for support Q/A and guides
-- Improve ? helper notes from tooltip to a new whole modal with detailed instruction and graphics/images
-  - Pricing -> Channel Sync
 - UI Improvements:
   - **Conflict sheet (claim before touch):** [`ui-improvements-worksheet.md`](./ui-improvements-worksheet.md)
   - ✅ Improve cookies/analytics banner to look more good
   - ✅ ~~Check if we still need to display Kame Space updates, version on clear offline data on Help & Support page?~~ Done: removed from Help; “On this device” on Profile
   - ✅ ~~Fix secondary menu issue on settings~~ Done: idle section-nav items match Card (no gray pill fill)
-  - ✅ Improve coming soon, 404 with our new mascot (UI-05) → [`mascot-empty-states-design.md`](./mascot-empty-states-design.md)
+  - ✅ Improve coming soon, 404 with our new mascot (UI-05) → [`mascot-empty-states-design.md`](../done/mascot-empty-states-design.md)
   - ✅ Notifications UX: Manage-only push card; Activity/Telegram empty + off status panels (UI-29)
   - ✅ Org Bookings: New booking with property/parking picker (UI-30)
   - ✅ Toolbar filter dropdowns: left-align + width vs trigger (UI-31)

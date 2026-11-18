@@ -10,7 +10,7 @@ updated: 2026-11-07
 
 Replace today's "pick a file from your gallery" identity capture — on both the **guest booking form** and the **host/org verification** flow — with one shared **guided live capture** module: desktop starts it, a QR hands it to the phone, the phone auto-captures the document, reads the **PhilSys QR** or passport **MRZ** cryptographically where available, runs an **on-device active liveness** check, and submits a structured verdict instead of a bare image. Hosts and super admins then review a decision, not a photo.
 
-Resolves the intake line in [`../intake/_to-dos.md`](../intake/_to-dos.md): _"Implement quick and live verification to simplify real identity verification for the safety of the clients/bookings."_ Supersedes roadmap items **#3** (ID-photo verification at booking submit), **#17** (org verification pre-check), and **#18** (approvals queue pre-screening) in [`./ai-opportunities-roadmap.md`](./ai-opportunities-roadmap.md).
+Resolves the intake line in [`../intake/_to-dos.md`](../intake/_to-dos.md): _"Implement quick and live verification to simplify real identity verification for the safety of the clients/bookings."_ Supersedes roadmap items **#3** (ID-photo verification at booking submit), **#17** (org verification pre-check), and **#18** (approvals queue pre-screening) in [`./ai-opportunities-roadmap.md`](../planned/ai-opportunities-roadmap.md).
 
 ## Goal
 
@@ -715,7 +715,7 @@ Per `testing.mdc`; same-change requirement applies to each phase.
 | Camera access denied or unavailable                                                       | **Medium**                                                    | Visible upload fallback at every capture step; cross-device handoff; the legacy path is never removed, only demoted                                                                        |
 | Low-end Android performance on the landmark loop                                          | **Medium**                                                    | Frame-rate cap, downscaled inference, a time-boxed challenge with a graceful `unverified` exit rather than a hang                                                                          |
 | GAF workflow regression (building stops receiving ID attachments)                         | **High** — breaks a live operational dependency               | Phase 4.7 is explicit: generated verification-summary PDF when no card photo exists; `gafRequestSendBlockReason` learns the new shape; covered by handler tests                            |
-| Scope creep into general trust & safety                                                   | **Medium**                                                    | Reporting, enforcement, and appeals stay in [`./guest-trust-safety-reporting.md`](./guest-trust-safety-reporting.md). This plan verifies identity and stops there                          |
+| Scope creep into general trust & safety                                                   | **Medium**                                                    | Reporting, enforcement, and appeals stay in [`./guest-trust-safety-reporting.md`](../planned/guest-trust-safety-reporting.md). This plan verifies identity and stops there                          |
 | Guest abandons a longer flow and bookings drop                                            | **Medium**                                                    | Two challenges not six; PhilSys QR path is faster than today's upload; Phase 1 PostHog funnel measures it from day one; the upload fallback stays                                          |
 | Didit's free allowance shrank on 2026-11-01 ($10/mo credit replaced 500-free-per-feature) | **Low** — Track A does not depend on it                       | Phase 7 is a measured gate, and the provider interface keeps Stripe Identity, Persona, and PSA eVerify as alternates                                                                       |
 | Storing more biometric data increases DPA exposure                                        | **Medium**                                                    | Phase 0 PIA, 7-day capture retention, hashed document numbers, on-device-only landmarks, wired deletion right. Net exposure should **fall** versus today's indefinitely-retained ID images |
@@ -732,14 +732,14 @@ Per `testing.mdc`; same-change requirement applies to each phase.
 | NFC / ePassport chip read                            | Requires native code; Web NFC cannot reach the secure element                                                                                              | —                                                                                       |
 | Realtime broadcast                                   | Polling is the contract; a service-role-only table cannot be read by an anonymous desktop client without weakening RLS                                     | Polling                                                                                 |
 | Backfilling or deleting existing `valid-ids` objects | Separate data-migration plan with its own legal review                                                                                                     | —                                                                                       |
-| Trust & safety reporting / enforcement               | [`./guest-trust-safety-reporting.md`](./guest-trust-safety-reporting.md)                                                                                   | —                                                                                       |
+| Trust & safety reporting / enforcement               | [`./guest-trust-safety-reporting.md`](../planned/guest-trust-safety-reporting.md)                                                                                   | —                                                                                       |
 
 ---
 
 ## Explicitly out of scope
 
-- Reporting, enforcement ladder, and appeals — [`./guest-trust-safety-reporting.md`](./guest-trust-safety-reporting.md)
-- Host payout KYC for PayMongo — separate compliance track in [`./property-management-feature-roadmap.md`](./property-management-feature-roadmap.md)
+- Reporting, enforcement ladder, and appeals — [`./guest-trust-safety-reporting.md`](../planned/guest-trust-safety-reporting.md)
+- Host payout KYC for PayMongo — separate compliance track in [`./property-management-feature-roadmap.md`](../planned/property-management-feature-roadmap.md)
 - AML / PEP / sanctions screening — not applicable; we are not a financial institution
 - NFC chip reading (ePassport BAC/PACE) — needs native, and Web NFC does not reach the chip
 - Backfilling or deleting existing `valid-ids` objects — a separate data-migration plan with its own legal review
