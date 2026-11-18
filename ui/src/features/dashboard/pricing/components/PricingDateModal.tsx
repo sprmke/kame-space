@@ -152,13 +152,13 @@ export function PricingDateModal({
                 id="custom-nightly-price"
                 type="number"
                 min={0}
-                step={1}
+                step={100}
                 inputMode="numeric"
                 value={newPrice}
                 placeholder={String(suggestedPrice)}
                 onChange={(e) => onNewPriceChange(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
                     e.preventDefault();
                     if (newPrice.trim()) onApply();
                   }

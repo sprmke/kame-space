@@ -134,6 +134,8 @@ export type OperatingLineItemFormWizardState = {
   stepLabels: string[];
   isFirstStep: boolean;
   isLastStep: boolean;
+  /** Current step fields are valid enough to advance (or submit on the last step). */
+  canProceed: boolean;
 };
 
 export type OperatingLineItemFormHandle = {
@@ -241,15 +243,6 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
     }, [safeStepIndex]);
 
     useEffect(() => {
-      onWizardStateChange?.({
-        stepIndex: safeStepIndex,
-        stepLabels,
-        isFirstStep,
-        isLastStep,
-      });
-    }, [safeStepIndex, stepLabels, isFirstStep, isLastStep, onWizardStateChange]);
-
-    useEffect(() => {
       onDirtyChange?.(isDirty);
     }, [isDirty, onDirtyChange]);
 
@@ -261,6 +254,38 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
     const telegramDaysBefore = watch('telegram_days_before');
     const telegramReminderInterval = watch('telegram_reminder_interval');
     const previewValues = watch();
+
+    const canProceed = useMemo(() => {
+      const stepKind = activeStep?.kind ?? 'details';
+      if (stepKind === 'preview' || isLastStep) {
+        return schema.safeParse(previewValues).success;
+      }
+      if (stepKind === 'details') {
+        const label = String(previewValues.label ?? '').trim();
+        const category = String(previewValues.category ?? '').trim();
+        const amount = Number(previewValues.amount);
+        const dateOk = /^\d{4}-\d{2}-\d{2}$/.test(String(previewValues.occurred_on ?? ''));
+        return label.length > 0 && category.length > 0 && Number.isFinite(amount) && amount > 0 && dateOk;
+      }
+      if (stepKind === 'repeat') {
+        const interval = previewValues.recurrence_interval;
+        if (interval === 'none') return true;
+        const until = String(previewValues.recurrence_until ?? '');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(until)) return false;
+        return until >= String(previewValues.occurred_on ?? '');
+      }
+      return true;
+    }, [activeStep?.kind, isLastStep, previewValues]);
+
+    useEffect(() => {
+      onWizardStateChange?.({
+        stepIndex: safeStepIndex,
+        stepLabels,
+        isFirstStep,
+        isLastStep,
+        canProceed,
+      });
+    }, [safeStepIndex, stepLabels, isFirstStep, isLastStep, canProceed, onWizardStateChange]);
 
     const scheduleDirty = isRecurrenceScheduleDirty({
       isRecurringEdit,
@@ -321,10 +346,12 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
           stepLabels,
           isFirstStep,
           isLastStep,
+          canProceed,
         }),
       }),
       [
         activeStep?.kind,
+        canProceed,
         handleSubmit,
         isFirstStep,
         isLastStep,

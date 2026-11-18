@@ -7,6 +7,7 @@ import { Check } from 'lucide-react';
 import { useResolvedOrgId, useOrgSlugParam } from '@/features/dashboard/org/lib/adminApiScope';
 import { PlanTierIconWell } from '@/features/dashboard/plans/components/PlanTierIconWell';
 import { useOrgPlan } from '@/features/dashboard/plans/hooks/useOrgPlan';
+import { describeSidebarCaption } from '@/features/dashboard/plans/lib/billingState';
 import {
   planDisplayName,
   planDisplayNameFromSubscription,
@@ -35,6 +36,14 @@ import {
 } from '@/components/ui/responsive-modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { formatManilaLongDate } from '@/utils/format/dates';
+
+/** "Dec 3" for the tight sidebar caption. */
+function formatManilaShortDate(iso: string): string {
+  const long = formatManilaLongDate(iso);
+  // "Dec 3, 2026" -> "Dec 3"
+  return long.replace(/,\s*\d{4}$/, '');
+}
 
 type Props = {
   collapsed?: boolean;
@@ -86,6 +95,7 @@ export function OrgPlanSidebarEntry({
   const planCode = currentPlan?.code ?? data.subscription?.planCode ?? 'free';
   const pitch = currentPlan ? planTierPitch(currentPlan) : null;
   const status = data.subscription ? subscriptionStatusMeta(data.subscription.status) : null;
+  const caption = describeSidebarCaption(data.subscription, formatManilaShortDate);
   const needsAttention = status?.tone === 'destructive';
   const isFree = currentPlan?.isDefault ?? planCode === 'free';
   const chipLabel = `${planName} plan`;
@@ -260,7 +270,7 @@ export function OrgPlanSidebarEntry({
               needsAttention ? 'text-destructive' : 'text-muted-foreground'
             )}
           >
-            {needsAttention && status ? status.label : 'Current plan'}
+            {caption?.text ?? (needsAttention && status ? status.label : 'Current plan')}
           </span>
         </span>
       </button>

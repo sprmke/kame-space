@@ -14,7 +14,7 @@ updated: 2026-08-28
 
 **Updated 2026-08-27:** feature access must check **both** axes from now on — the team member's granular permission grant **and** the org's plan/subscription entitlement, wherever a plan feature key already exists for that surface. See "Plan (subscription) entitlement alignment" below (D16–D20) and the updated task lists in Phases 0–7.
 
-**Scope:** Property-level team permissions only, this round. Org level gets a **docs-accuracy fix only** in Phase 8 (it already satisfies Owner | Admin and keeps its current fixed-preset, non-customizable model — no schema/UI RBAC changes to org this round). Parking is explicitly deferred to **Phase 9 (stub)**, to be picked up once the parking E2E flow ([`../planned/parking-e2e-later-phases.md`](../planned/parking-e2e-later-phases.md)) is finalized.
+**Scope:** Property-level team permissions only, this round. Org level gets a **docs-accuracy fix only** in Phase 8 (it already satisfies Owner | Admin and keeps its current fixed-preset, non-customizable model — no schema/UI RBAC changes to org this round). Parking is explicitly deferred to **Phase 9 (stub)**, to be picked up once the parking E2E flow ([`../planned/parking-e2e-later-phases.md`](./parking-e2e-later-phases.md)) is finalized.
 
 ## Why this exists
 
@@ -608,7 +608,7 @@ Used by each module phase when that old umbrella is retired. Until a module phas
 
 ## Phase 9 — Future: Parking Parity (stub, deferred)
 
-**Do not start until the parking E2E flow is finalized** ([`../planned/parking-e2e-later-phases.md`](../planned/parking-e2e-later-phases.md)).
+**Do not start until the parking E2E flow is finalized** ([`../planned/parking-e2e-later-phases.md`](./parking-e2e-later-phases.md)).
 
 Parking already mirrors today's property RBAC shape almost exactly (`parking_members`, `parking_custom_roles`, `_shared/parkingTeamPermissions.ts`, `MANAGER`/`STAFF`/`VIEWER`). Once parking's own product surface stabilizes, re-run this same plan's shape against it: role simplification to Owner|Admin, granular catalog per parking page/section, same server+client-together module rollout discipline. Re-derive the parking page/section inventory fresh at that time rather than assuming this doc's property inventory transfers directly — parking's page set (bookings, dashboard, finance, notifications, pricing, settings, team, inbox, help-support) is similar but not identical.
 

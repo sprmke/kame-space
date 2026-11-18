@@ -1,14 +1,14 @@
 ---
-stage: planned
+stage: wont-do
 title: 'Parking E2E Phase 6 — Behavioral Ranking, Transparency & Trust/Safety'
-status: planned
+status: cancelled
 tags: [planning, planned-modules, parking]
 updated: 2026-08-26
 ---
 
 # Phase 6 — Ranking Transparency & Trust/Safety
 
-Part of [Parking E2E Phase 2+ overview](./parking-e2e-later-phases.md). Depends on Phase 2 (price ranking baseline) and Phase 5 (chat/response-time signal source) having run in production long enough to accumulate real data — this phase is explicitly sequenced _after_ the others ship, not bundled into Phase 2.
+Part of [Parking E2E Phase 2+ overview](../done/parking-e2e-later-phases.md). Depends on Phase 2 (price ranking baseline) and Phase 5 (chat/response-time signal source) having run in production long enough to accumulate real data — this phase is explicitly sequenced _after_ the others ship, not bundled into Phase 2.
 
 ## Problem
 

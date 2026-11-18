@@ -15,7 +15,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { GripVertical, MoveRight } from 'lucide-react';
+import { GripVertical } from 'lucide-react';
 
 import { AdminTableFlagsCell } from '@/features/dashboard/bookings/components/AdminDataTable';
 import { BookingKanbanWorkflowModal } from '@/features/dashboard/bookings/components/BookingKanbanWorkflowModal';
@@ -42,12 +42,6 @@ import {
 import type { BookingRow } from '@/features/dashboard/bookings/lib/types';
 
 import { BookingsKanbanSkeleton } from '@/components/skeletons/BookingsExtrasSkeleton';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { formatBookingDate, formatBookingDateShort } from '@/utils/format/bookingDisplay';
 import { formatMoney } from '@/utils/format/currency';
@@ -107,9 +101,6 @@ type KanbanCardBodyProps = {
   isOverlay?: boolean;
   dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
   onOpen: (row: BookingRow) => void;
-  /** Keyboard/screen-reader equivalent of a drag-drop — omit to hide the menu. */
-  onMoveTo?: (row: BookingRow, targetStatus: BookingStatus) => void;
-  moveTargets?: BookingStatus[];
 };
 
 function KanbanCardBody({
@@ -119,8 +110,6 @@ function KanbanCardBody({
   isOverlay,
   dragHandleProps,
   onOpen,
-  onMoveTo,
-  moveTargets = [],
 }: KanbanCardBodyProps) {
   const name = guestName(row);
   const pax = guestPax(row);
@@ -152,35 +141,6 @@ function KanbanCardBody({
         isOverlay && 'border-sidebar-primary/50 shadow-elevated-lg ring-sidebar-primary/30 ring-2'
       )}
     >
-      {onMoveTo && moveTargets.length > 0 ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/80 absolute right-8 top-1 z-10 flex size-7 items-center justify-center rounded-md opacity-70 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
-              aria-label={`Move ${name} to another status`}
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => {
-                // Stop the card's own Enter/Space "open workflow" handler from
-                // also firing when this trigger is activated via keyboard —
-                // Radix's own menu key handling (Enter/Space/Arrows/Escape) is
-                // attached to this same element and still runs regardless.
-                e.stopPropagation();
-              }}
-            >
-              <MoveRight className="size-3.5" aria-hidden />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {moveTargets.map((target) => (
-              <DropdownMenuItem key={target} onSelect={() => onMoveTo(row, target)}>
-                {statusLabel(target)}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : null}
-
       {dragHandleProps ? (
         <button
           type="button"
@@ -246,27 +206,14 @@ type KanbanCardProps = {
   showProperty: boolean;
   onOpen: (row: BookingRow) => void;
   disabled?: boolean;
-  onMoveTo?: (row: BookingRow, targetStatus: BookingStatus) => void;
-  documentRequirements: DocumentRequirement[];
 };
 
-function KanbanCard({
-  row,
-  showProperty,
-  onOpen,
-  disabled,
-  onMoveTo,
-  documentRequirements,
-}: KanbanCardProps) {
+function KanbanCard({ row, showProperty, onOpen, disabled }: KanbanCardProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: row.id,
     data: { row },
     disabled,
   });
-  const moveTargets = useMemo(
-    () => kanbanValidDropTargets(row, documentRequirements),
-    [row, documentRequirements]
-  );
 
   return (
     <div ref={setNodeRef}>
@@ -276,8 +223,6 @@ function KanbanCard({
         isPlaceholder={isDragging}
         dragHandleProps={{ ...listeners, ...attributes }}
         onOpen={onOpen}
-        onMoveTo={disabled ? undefined : onMoveTo}
-        moveTargets={moveTargets}
       />
     </div>
   );
@@ -288,7 +233,6 @@ type KanbanColumnProps = {
   rows: BookingRow[];
   showProperty: boolean;
   onOpen: (row: BookingRow) => void;
-  onMoveTo?: (row: BookingRow, targetStatus: BookingStatus) => void;
   draggedRow: BookingRow | null;
   documentRequirements: DocumentRequirement[];
   columnRef?: (status: BookingStatus, el: HTMLDivElement | null) => void;
@@ -301,7 +245,6 @@ function KanbanColumn({
   rows,
   showProperty,
   onOpen,
-  onMoveTo,
   draggedRow,
   documentRequirements,
   columnRef,
@@ -350,8 +293,6 @@ function KanbanColumn({
             row={row}
             showProperty={showProperty}
             onOpen={onOpen}
-            onMoveTo={onMoveTo}
-            documentRequirements={documentRequirements}
             disabled={dragDisabled || Boolean(draggedRow && draggedRow.id !== row.id)}
           />
         ))}
@@ -516,16 +457,6 @@ export function BookingKanban({
     [openWorkflow]
   );
 
-  /** Keyboard/screen-reader equivalent of a successful drag-drop onto a column. */
-  const handleMoveTo = useCallback(
-    (row: BookingRow, targetStatus: BookingStatus) => {
-      if (!canMutateWorkflow) return;
-      if (!canKanbanDropTo(row, targetStatus, documentRequirements)) return;
-      openWorkflow(row, targetStatus);
-    },
-    [canMutateWorkflow, documentRequirements, openWorkflow]
-  );
-
   const scrollColumnIntoView = useCallback((status: BookingStatus) => {
     const el = columnElsRef.current[status];
     const scroller = boardScrollRef.current;
@@ -634,7 +565,6 @@ export function BookingKanban({
                 rows={rowsByStatus[status] ?? []}
                 showProperty={showProperty}
                 onOpen={handleCardOpen}
-                onMoveTo={canMutateWorkflow ? handleMoveTo : undefined}
                 draggedRow={draggedRow}
                 documentRequirements={documentRequirements}
                 columnRef={setColumnEl}

@@ -34,7 +34,7 @@ kind: plan
 > Vrbo, Tiket.com and "Other calendar link" are removed, not deferred: they are the only platforms
 > that matter to Philippine hosts, and an allowlist-only fetch surface is safer. Every mention of
 > Vrbo or Other below is historical; the code, registry, UI, `?as=` links and CHECK constraints
-> (migration `20261342001000`) no longer accept them. See X15.
+> (migration `20261343001000`) no longer accept them. See X15.
 
 > **Revised 2026-11-17 (production-readiness pass):** the other session's uncommitted
 > `ChannelSyncDialog.tsx` and `GuestForm.tsx` work is no longer pending, so the blocked Phase 2

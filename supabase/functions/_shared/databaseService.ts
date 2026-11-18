@@ -690,7 +690,8 @@ export class DatabaseService {
     } catch (error) {
       console.error('Error processing form data:', error);
       throw new Error(
-        'Failed to process form data: ' + (error instanceof Error ? error.message : String(error))
+        'Failed to process form data: ' + (error instanceof Error ? error.message : String(error)),
+        { cause: error }
       );
     }
   }

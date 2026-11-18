@@ -353,7 +353,7 @@ function HostNetBreakdownCard({
       <PricingMiniRow label="Net" bold value={formatMoney(breakdown.net)} valueClass={netClass} />
       {breakdown.isEstimate ? (
         <p className="text-caption text-muted-foreground px-4 pb-2.5 pt-0">
-          Estimate - security deposit pass-through is not included.
+          Estimate. Security deposit is held separately and not in this total.
         </p>
       ) : null}
     </div>

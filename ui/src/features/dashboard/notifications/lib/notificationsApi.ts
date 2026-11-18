@@ -31,7 +31,8 @@ export type NotificationType =
   | 'maintenance_guest_reported'
   | 'guest_request_submitted'
   | 'booking_receipt_uploaded'
-  | 'booking_trip_viewed';
+  | 'booking_trip_viewed'
+  | 'billing_notice';
 
 export type NotificationRecord = {
   id: string;

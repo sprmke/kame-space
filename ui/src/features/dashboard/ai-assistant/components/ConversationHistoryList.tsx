@@ -134,7 +134,12 @@ export function ConversationHistoryList({
   let body;
   if (isLoading) {
     body = (
-      <div role="status" className="space-y-2 p-2" aria-busy="true" aria-label="Loading conversations">
+      <div
+        role="status"
+        className="space-y-2 p-2"
+        aria-busy="true"
+        aria-label="Loading conversations"
+      >
         {[0, 1, 2, 3].map((i) => (
           <Skeleton key={i} className={cn('w-full rounded-lg', rail ? 'h-9' : 'h-16 rounded-xl')} />
         ))}
@@ -150,7 +155,7 @@ export function ConversationHistoryList({
     body = searching ? (
       <p className="text-muted-foreground px-4 py-8 text-center text-sm">No conversations</p>
     ) : (
-      <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 px-4 sm:px-6 py-8 sm:py-12 text-center text-sm">
+      <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 px-4 py-8 text-center text-sm sm:px-6 sm:py-12">
         <MessageCircle className="size-6" aria-hidden />
         <p>No conversations yet</p>
       </div>
@@ -186,7 +191,7 @@ export function ConversationHistoryList({
                         onChange={(event) => setRenameValue(event.target.value)}
                         onBlur={() => commitRename(row)}
                         onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
+                          if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
                             event.preventDefault();
                             commitRename(row);
                           }

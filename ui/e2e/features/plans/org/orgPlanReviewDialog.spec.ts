@@ -27,7 +27,12 @@ async function openReview(page: Page, current: TierCode, target: TierCode, verb:
 }
 
 const list = (dialog: ReturnType<Page['getByRole']>, heading: 'Unlocks' | 'Removes') =>
-  dialog.locator(`p:text-is("${heading}") + ul > li`);
+  dialog.locator(
+    heading === 'Unlocks'
+      ? 'p:text-is("Unlocks") + ul > li'
+      : // A scheduled change says when each feature turns off: "Turns off on Sep 1, 2026".
+        'p:text-matches("^Turns off on ") + ul > li'
+  );
 
 test.describe('@ci org plan review dialog, per transition', () => {
   // First hit on a route compiles it in the Vite dev server; parallel workers make that slow.
@@ -46,11 +51,12 @@ test.describe('@ci org plan review dialog, per transition', () => {
       ).toBeVisible();
       await expect(list(dialog, 'Unlocks')).toHaveText(UNLOCKS[`${from}>${to}`]);
       await expect(dialog.getByText('Removes', { exact: true })).toHaveCount(0);
-      await expect(dialog.locator('[aria-live="polite"]')).toContainText(
-        `${ONE_PROPERTY_MONTHLY_TOTAL[to]}/month`
-      );
+      await expect(
+        dialog.getByText(`${ONE_PROPERTY_MONTHLY_TOTAL[to]}/month`).first()
+      ).toBeVisible();
+      await expect(dialog.getByText('Due today')).toBeVisible();
       await expect(dialog.getByRole('button', { name: 'Continue to payment' })).toBeEnabled();
-      await expect(dialog.getByRole('button', { name: 'Confirm downgrade' })).toHaveCount(0);
+      await expect(dialog.getByRole('button', { name: /^Switch on / })).toHaveCount(0);
     });
   }
 
@@ -76,38 +82,45 @@ test.describe('@ci org plan review dialog, per transition', () => {
     ];
     for (const label of rolled) expected.delete(label);
     expect([...shown].sort()).toEqual([...expected].sort());
-    await expect(dialog.locator('[aria-live="polite"]')).toContainText(
-      `${ONE_PROPERTY_MONTHLY_TOTAL.pro}/month`
-    );
+    await expect(dialog.getByText(`${ONE_PROPERTY_MONTHLY_TOTAL.pro}/month`).first()).toBeVisible();
   });
 
+  // Paid to a lower paid plan is scheduled for the period end. Nothing is charged or turned off
+  // today, so there is no payment step and no acknowledgement checkbox.
   const downgrades: Array<[TierCode, TierCode]> = [
-    ['starter', 'free'],
     ['growth', 'starter'],
     ['pro', 'growth'],
   ];
   for (const [from, to] of downgrades) {
-    test(`downgrade ${TIER_TITLES[from]} to ${TIER_TITLES[to]} lists exactly what it removes`, async ({
+    test(`downgrade ${TIER_TITLES[from]} to ${TIER_TITLES[to]} is scheduled and lists exactly what it turns off`, async ({
       page,
     }) => {
-      const dialog = await openReview(page, from, to, 'Downgrade');
+      const dialog = await openReview(page, from, to, 'Switch at renewal');
       await expect(
-        dialog.getByRole('heading', { name: `Move to ${TIER_TITLES[to]}` })
+        dialog.getByRole('heading', { name: `Downgrade to ${TIER_TITLES[to]}` })
       ).toBeVisible();
       await expect(list(dialog, 'Removes')).toHaveText(REMOVES[`${from}>${to}`]);
       await expect(dialog.getByText('Unlocks', { exact: true })).toHaveCount(0);
       await expect(dialog.getByRole('button', { name: 'Continue to payment' })).toHaveCount(0);
-      const confirm = dialog.getByRole('button', { name: 'Confirm downgrade' });
-      if (to === 'free') {
-        await expect(confirm).toBeDisabled();
-        await dialog.getByRole('checkbox').click();
-      }
-      await expect(confirm).toBeEnabled();
+      await expect(dialog.getByText(/You keep .* until then/)).toBeVisible();
+      await expect(dialog.getByRole('button', { name: /^Switch on / })).toBeEnabled();
+      await expect(dialog.getByRole('checkbox')).toHaveCount(0);
     });
   }
 
-  test('Business to Free lists every paid capability it removes', async ({ page }) => {
-    const dialog = await openReview(page, 'pro', 'free', 'Downgrade');
-    await expect(list(dialog, 'Removes')).toHaveText(REMOVES['pro>free']);
-  });
+  // Paid to Free is a cancel at the period end, with its own dialog.
+  const cancels: Array<[TierCode, string]> = [
+    ['starter', 'starter>free'],
+    ['pro', 'pro>free'],
+  ];
+  for (const [from, key] of cancels) {
+    test(`cancel ${TIER_TITLES[from]} lists every paid capability it turns off`, async ({
+      page,
+    }) => {
+      const dialog = await openReview(page, from, 'free', 'Cancel plan');
+      await expect(dialog.getByRole('heading', { name: /^Cancel / })).toBeVisible();
+      await expect(list(dialog, 'Removes')).toHaveText(REMOVES[key]);
+      await expect(dialog.getByRole('button', { name: /^Cancel on / })).toBeEnabled();
+    });
+  }
 });

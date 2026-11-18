@@ -13,6 +13,7 @@ import {
   adminTableMoneyClass,
   adminTableRowClass,
 } from '@/features/dashboard/bookings/components/AdminDataTable';
+import { BookingListQuickActions } from '@/features/dashboard/bookings/components/BookingListQuickActions';
 import { BookingResourceLabel } from '@/features/dashboard/bookings/components/BookingResourceLabel';
 import { BookingStayDatesCell } from '@/features/dashboard/bookings/components/BookingStayDatesCell';
 import { BookingStaySortControl } from '@/features/dashboard/bookings/components/BookingStaySortControl';
@@ -223,9 +224,12 @@ function BookingTableRow({
         </span>
       </td>
 
-      {/* Action - chevron only, click is handled by the whole row */}
+      {/* Actions: chat shortcut + row affordance. Row click still opens the booking. */}
       <td className={adminTableCell.action}>
-        <AdminTableRowAffordance />
+        <div className="flex items-center justify-end gap-0.5">
+          <BookingListQuickActions row={row} />
+          <AdminTableRowAffordance />
+        </div>
       </td>
     </tr>
   );

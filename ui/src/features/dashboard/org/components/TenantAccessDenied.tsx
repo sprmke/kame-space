@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 
-import { ShieldX, Sparkles } from 'lucide-react';
+import { ShieldAlert, ShieldX, Sparkles } from 'lucide-react';
 
 import { RequireAdminSignOutButton } from '@/features/dashboard/bookings/components/RequireAdmin';
+import type { AccessDenialReason } from '@/features/dashboard/org/lib/accessDenialReason';
 import { orgPropertiesPath } from '@/features/dashboard/org/lib/tenantPaths';
 import {
   planLimitedAccessDeniedMessage,
@@ -12,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-export type TenantAccessDeniedReason = 'default' | 'plan_limited';
+export type TenantAccessDeniedReason = AccessDenialReason;
 
 type Props = {
   scope: 'org' | 'property';
@@ -34,26 +35,33 @@ export function TenantAccessDenied({
   fullScreen = false,
 }: Props) {
   const planLimited = reason === 'plan_limited';
+  const unavailable = reason === 'unavailable';
 
   const title = planLimited
     ? planLimitedAccessDeniedTitle()
-    : scope === 'property'
-      ? 'No property access'
-      : 'No organization access';
+    : unavailable
+      ? "Can't verify access"
+      : scope === 'property'
+        ? 'No property access'
+        : 'No organization access';
 
   const message = planLimited
     ? planLimitedAccessDeniedMessage(scope)
-    : scope === 'property'
-      ? propertyName
-        ? `You don't have access to ${propertyName}.`
-        : "You don't have access to this property."
-      : orgName
-        ? `You don't have access to ${orgName}.`
-        : "You don't have access to this organization.";
+    : unavailable
+      ? 'We could not reach the server. Try again in a moment.'
+      : scope === 'property'
+        ? propertyName
+          ? `You don't have access to ${propertyName}.`
+          : "You don't have access to this property."
+        : orgName
+          ? `You don't have access to ${orgName}.`
+          : "You don't have access to this organization.";
 
   const orgFallbackHref =
-    !planLimited && scope === 'property' && orgSlug ? orgPropertiesPath(orgSlug) : null;
-  const Icon = planLimited ? Sparkles : ShieldX;
+    !planLimited && !unavailable && scope === 'property' && orgSlug
+      ? orgPropertiesPath(orgSlug)
+      : null;
+  const Icon = planLimited ? Sparkles : unavailable ? ShieldAlert : ShieldX;
 
   return (
     <div
@@ -74,6 +82,15 @@ export function TenantAccessDenied({
         <h1 className="text-foreground text-lg font-semibold">{title}</h1>
         <p className="text-muted-foreground mt-2 text-sm">{message}</p>
         <div className="mt-6 space-y-2">
+          {unavailable ? (
+            <Button
+              type="button"
+              className="min-h-[44px] w-full"
+              onClick={() => window.location.reload()}
+            >
+              Try again
+            </Button>
+          ) : null}
           {orgFallbackHref ? (
             <Button asChild className="min-h-[44px] w-full">
               <Link to={orgFallbackHref}>Organization properties</Link>
@@ -81,7 +98,7 @@ export function TenantAccessDenied({
           ) : null}
           <Button
             asChild
-            variant={orgFallbackHref ? 'outline' : 'default'}
+            variant={orgFallbackHref || unavailable ? 'outline' : 'default'}
             className="min-h-[44px] w-full"
           >
             <Link to="/org">Home</Link>

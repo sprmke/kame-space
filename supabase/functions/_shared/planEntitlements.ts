@@ -22,17 +22,18 @@ import { capturePostHogEvent } from './posthog.ts';
 import type { TelegramAssetScope } from './telegramAssetScope.ts';
 import { upsertAiPlatformOrgSettings } from './aiUsageService.ts';
 import {
-  computeOrgSubscriptionTotalPhp,
-  discountedPlanPricePhp,
-  normalizeVolumeDiscountTiers,
+  computeTotalFromPricingParams,
+  parsePricingSnapshot,
+  pricingParamsFromPlan,
+  type PlanPricingParams,
 } from './planPricing.ts';
 import { normalizePermissionIds } from './propertyTeamPermissions.ts';
 import { chunkIds, countInIdChunks, selectInIdChunks } from './postgrestInChunks.ts';
-import {
-  validateOrgPlanDowngradeRequest,
-  subscriptionStatusBlocksFeatureGates,
-} from './orgPlanDowngrade.ts';
-import { sendOrgSubscriptionPlanChangedEmail } from './subscriptionBillingEmail.ts';
+import { subscriptionStatusBlocksFeatureGates } from './orgSubscriptionStateMachine.ts';
+import { listBillablePropertyIds } from './orgBillableProperties.ts';
+import { computeUnusedCreditPhp, periodRemaining } from './billingPeriod.ts';
+import { addLedgerEntry } from './orgBillingLedger.ts';
+import { computePropertyTrueUpPhp } from './orgBillingQuote.ts';
 
 export class PlanFeatureRequiredError extends Error {
   readonly upgradeHook = true;
@@ -61,7 +62,41 @@ export type OrgSubscriptionRow = {
   planCode: string;
   planName: string;
   planFeatures: PlanFeatures;
+  planSortOrder: number;
+  planIsDefault: boolean;
+  source: string;
+  graceEndsAt: string | null;
+  suspendedAt: string | null;
+  cancelAtPeriodEnd: boolean;
+  scheduledPlanId: string | null;
+  scheduledChangeAt: string | null;
+  periodPaidPhp: number;
+  priceOverridePhp: number | null;
+  billingAnchorDay: number | null;
+  /** Pricing the subscription bought (grandfathered until a price migration moves it). */
+  pricingSnapshot: PlanPricingParams | null;
 };
+
+export const ORG_SUBSCRIPTION_SELECT = `
+      id,
+      organization_id,
+      plan_id,
+      pricing_model,
+      price_php_snapshot,
+      status,
+      source,
+      current_period_start,
+      current_period_end,
+      grace_period_ends_at,
+      suspended_at,
+      cancel_at_period_end,
+      scheduled_plan_id,
+      scheduled_change_at,
+      period_paid_php,
+      price_override_php,
+      billing_anchor_day,
+      pricing_snapshot,
+      feature_overrides`;
 
 export type ResolvedPropertyEntitlements = PlanFeatures & {
   planCode: string;
@@ -87,6 +122,8 @@ type PricingPlanRow = {
   commission_rate_percent: number | null;
   features: unknown;
   is_default: boolean;
+  sort_order?: number | null;
+  is_active?: boolean | null;
 };
 
 function db() {
@@ -116,11 +153,23 @@ function serializeOrgSubscription(
     planCode: plan.code,
     planName: plan.name,
     planFeatures: parsePlanFeatures(plan.features),
+    planSortOrder: Number(plan.sort_order ?? 0),
+    planIsDefault: Boolean(plan.is_default),
+    source: String(sub.source ?? 'purchase'),
+    graceEndsAt: (sub.grace_period_ends_at as string | null) ?? null,
+    suspendedAt: (sub.suspended_at as string | null) ?? null,
+    cancelAtPeriodEnd: Boolean(sub.cancel_at_period_end),
+    scheduledPlanId: (sub.scheduled_plan_id as string | null) ?? null,
+    scheduledChangeAt: (sub.scheduled_change_at as string | null) ?? null,
+    periodPaidPhp: Number(sub.period_paid_php ?? 0),
+    priceOverridePhp: sub.price_override_php == null ? null : Number(sub.price_override_php),
+    billingAnchorDay: sub.billing_anchor_day == null ? null : Number(sub.billing_anchor_day),
+    pricingSnapshot: parsePricingSnapshot(sub.pricing_snapshot),
   };
 }
 
 const PLAN_SELECT_FIELDS =
-  'id, code, name, pricing_model, price_php, discount_percent, volume_discount_tiers, volume_ramp_floor_php, volume_ramp_at_count, commission_rate_percent, features, is_default';
+  'id, code, name, pricing_model, price_php, discount_percent, volume_discount_tiers, volume_ramp_floor_php, volume_ramp_at_count, commission_rate_percent, features, is_default, sort_order, is_active';
 
 export async function getDefaultPricingPlan(): Promise<PricingPlanRow> {
   const sb = db();
@@ -149,52 +198,13 @@ export async function getActiveOrgSubscription(
   organizationId: string
 ): Promise<OrgSubscriptionRow | null> {
   const sb = db();
+  // Hint plan_id FK: org_subscriptions also FKs pricing_plans via scheduled_plan_id (PGRST201).
   const { data, error } = await sb
     .from('org_subscriptions')
     .select(
       `
-      id,
-      organization_id,
-      plan_id,
-      pricing_model,
-      price_php_snapshot,
-      status,
-      current_period_start,
-      current_period_end,
-      feature_overrides,
-      pricing_plans!inner (${PLAN_SELECT_FIELDS})
-    `
-    )
-    .eq('organization_id', organizationId)
-    .in('status', ['active', 'trialing', 'past_due', 'suspended'])
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) return null;
-
-  const plan = (data as Record<string, unknown>).pricing_plans as PricingPlanRow;
-  const { pricing_plans: _planJoin, ...sub } = data as Record<string, unknown>;
-  return serializeOrgSubscription(sub, plan);
-}
-
-/** Subscription row eligible for self-serve downgrade (includes suspended for cancel-to-Free). */
-export async function getOrgSubscriptionForSelfServeDowngrade(
-  organizationId: string
-): Promise<OrgSubscriptionRow | null> {
-  const sb = db();
-  const { data, error } = await sb
-    .from('org_subscriptions')
-    .select(
-      `
-      id,
-      organization_id,
-      plan_id,
-      pricing_model,
-      price_php_snapshot,
-      status,
-      current_period_start,
-      current_period_end,
-      feature_overrides,
-      pricing_plans!inner (${PLAN_SELECT_FIELDS})
+${ORG_SUBSCRIPTION_SELECT},
+      pricing_plans!org_subscriptions_plan_id_fkey!inner (${PLAN_SELECT_FIELDS})
     `
     )
     .eq('organization_id', organizationId)
@@ -226,16 +236,8 @@ export async function getActiveOrgSubscriptionForProperty(
     .from('org_subscriptions')
     .select(
       `
-      id,
-      organization_id,
-      plan_id,
-      pricing_model,
-      price_php_snapshot,
-      status,
-      current_period_start,
-      current_period_end,
-      feature_overrides,
-      pricing_plans!inner (${PLAN_SELECT_FIELDS})
+${ORG_SUBSCRIPTION_SELECT},
+      pricing_plans!org_subscriptions_plan_id_fkey!inner (${PLAN_SELECT_FIELDS})
     `
     )
     .eq('id', slot.org_subscription_id as string)
@@ -250,6 +252,22 @@ export async function getActiveOrgSubscriptionForProperty(
 }
 
 export type ResolvedOrgEntitlements = ResolvedPropertyEntitlements;
+
+/**
+ * What a subscription lets the org do right now. A suspended subscription (grace ended, payment
+ * still missing) keeps its plan identity for billing screens but works like Free: every paid
+ * feature is off on every read path (crons, guest pages, AI, sync), and Free features keep
+ * working. Paying restores the plan's features.
+ */
+async function resolveSubscriptionFeatures(
+  subscription: OrgSubscriptionRow
+): Promise<PlanFeatures> {
+  if (subscriptionStatusBlocksFeatureGates(subscription.status)) {
+    const defaultPlan = await getDefaultPricingPlan();
+    return parsePlanFeatures(defaultPlan.features);
+  }
+  return mergePlanFeatures(subscription.planFeatures, subscription.featureOverrides);
+}
 
 /** Org-wide entitlements — live org subscription features or Free default when none. */
 export async function resolveOrgEntitlements(
@@ -271,7 +289,7 @@ export async function resolveOrgEntitlements(
     };
   }
 
-  const merged = mergePlanFeatures(subscription.planFeatures, subscription.featureOverrides);
+  const merged = await resolveSubscriptionFeatures(subscription);
 
   return {
     ...merged,
@@ -311,10 +329,22 @@ export async function resolvePropertyEntitlements(
       planCode: defaultPlan.code,
       planName: defaultPlan.name,
       planFeatures: parsePlanFeatures(defaultPlan.features),
+      planSortOrder: Number(defaultPlan.sort_order ?? 0),
+      planIsDefault: true,
+      source: 'purchase',
+      graceEndsAt: null,
+      suspendedAt: null,
+      cancelAtPeriodEnd: false,
+      scheduledPlanId: null,
+      scheduledChangeAt: null,
+      periodPaidPhp: 0,
+      priceOverridePhp: null,
+      billingAnchorDay: null,
+      pricingSnapshot: null,
     };
   }
 
-  const merged = mergePlanFeatures(subscription.planFeatures, subscription.featureOverrides);
+  const merged = await resolveSubscriptionFeatures(subscription);
 
   return {
     ...merged,
@@ -327,16 +357,18 @@ export async function resolvePropertyEntitlements(
   };
 }
 
-function assertSubscriptionAllowsPaidFeatures(
+/** The error for a feature the plan does not include. A suspended org sees why, not an upsell. */
+function featureBlockedError(
   entitlements: ResolvedPropertyEntitlements,
   feature: PlanFeatureKey
-): void {
+): PlanFeatureRequiredError {
   if (subscriptionStatusBlocksFeatureGates(entitlements.status)) {
-    throw new PlanFeatureRequiredError(
+    return new PlanFeatureRequiredError(
       feature,
-      'Subscription suspended - pay from Plans & Billing to restore access'
+      'Subscription suspended: paid features are paused until the overdue payment is made. Pay from Plans & Billing to turn them back on.'
     );
   }
+  return new PlanFeatureRequiredError(feature);
 }
 
 export async function requirePropertyFeature(
@@ -344,9 +376,8 @@ export async function requirePropertyFeature(
   feature: PlanFeatureKey
 ): Promise<ResolvedPropertyEntitlements> {
   const entitlements = await resolvePropertyEntitlements(propertyId);
-  assertSubscriptionAllowsPaidFeatures(entitlements, feature);
   if (!isFeatureEnabled(entitlements, feature)) {
-    throw new PlanFeatureRequiredError(feature);
+    throw featureBlockedError(entitlements, feature);
   }
   return entitlements;
 }
@@ -365,9 +396,8 @@ export async function requireOrgFeature(
   feature: PlanFeatureKey
 ): Promise<ResolvedOrgEntitlements> {
   const entitlements = await resolveOrgEntitlements(organizationId);
-  assertSubscriptionAllowsPaidFeatures(entitlements, feature);
   if (!isFeatureEnabled(entitlements, feature)) {
-    throw new PlanFeatureRequiredError(feature);
+    throw featureBlockedError(entitlements, feature);
   }
   return entitlements;
 }
@@ -1037,33 +1067,53 @@ export function patchEnablesInboxAutoSend(
   return willAutoSend && !currentlyAutoSend;
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function syncAiCreditsFromPlan(
   organizationId: string,
   planCode: string,
   monthlyCreditAllowance: number,
-  assignedBy: string
+  assignedBy: string | null
 ): Promise<void> {
+  // `updated_by` is a uuid: system-driven changes (cron, webhook) pass no user. A placeholder
+  // string such as 'system' would fail the write and abort the whole plan change.
+  const updatedBy = assignedBy && UUID_PATTERN.test(assignedBy) ? assignedBy : null;
   // Plan allowance is its own layer in aiLimitResolver (below profiles), not an override:
   // `monthly_credit_limit` stays reserved for super-admin overrides.
   await upsertAiPlatformOrgSettings({
     organizationId,
     planTier: planCode,
     planCreditAllowance: monthlyCreditAllowance,
-    updatedBy: assignedBy,
+    updatedBy,
   });
 }
 
-async function writeOrgSubscriptionEvent(input: {
+export type OrgSubscriptionEventType =
+  | 'assigned'
+  | 'plan_changed'
+  | 'status_changed'
+  | 'property_added'
+  | 'property_removed'
+  | 'reward_granted'
+  | 'reward_expired'
+  | 'reward_revoked'
+  | 'change_scheduled'
+  | 'change_canceled'
+  | 'change_applied'
+  | 'cancel_scheduled'
+  | 'cancel_reverted'
+  | 'renewed'
+  | 'past_due'
+  | 'suspended'
+  | 'canceled'
+  | 'reactivated'
+  | 'ledger_entry'
+  | 'payment_unapplied'
+  | 'price_migrated';
+
+export async function writeOrgSubscriptionEvent(input: {
   orgSubscriptionId: string;
-  eventType:
-    | 'assigned'
-    | 'plan_changed'
-    | 'status_changed'
-    | 'property_added'
-    | 'property_removed'
-    | 'reward_granted'
-    | 'reward_expired'
-    | 'reward_revoked';
+  eventType: OrgSubscriptionEventType;
   previousPlanId?: string | null;
   newPlanId?: string | null;
   previousStatus?: string | null;
@@ -1089,14 +1139,19 @@ async function writeOrgSubscriptionEvent(input: {
 
 type OrgEligiblePlanRow = PricingPlanRow;
 
-async function loadOrgEligiblePlan(planId: string): Promise<OrgEligiblePlanRow> {
+/**
+ * Loads a plan for a subscription write. A subscription that already sits on a plan keeps working
+ * after that plan is retired from the catalog (renewals, property changes, scheduled moves), so
+ * callers that act on an existing subscription pass `allowInactive`.
+ */
+export async function loadOrgEligiblePlan(
+  planId: string,
+  options: { allowInactive?: boolean } = {}
+): Promise<OrgEligiblePlanRow> {
   const sb = db();
-  const { data: plan, error: planError } = await sb
-    .from('pricing_plans')
-    .select(PLAN_SELECT_FIELDS)
-    .eq('id', planId)
-    .eq('is_active', true)
-    .maybeSingle();
+  let query = sb.from('pricing_plans').select(PLAN_SELECT_FIELDS).eq('id', planId);
+  if (!options.allowInactive) query = query.eq('is_active', true);
+  const { data: plan, error: planError } = await query.maybeSingle();
   if (planError) throw new Error(planError.message);
   if (!plan) throw new Error('Pricing plan not found or inactive');
   if (plan.pricing_model === 'commission') {
@@ -1106,32 +1161,32 @@ async function loadOrgEligiblePlan(planId: string): Promise<OrgEligiblePlanRow> 
 }
 
 function orgSubscriptionTotalForPlan(plan: OrgEligiblePlanRow, propertyCount: number): number {
-  const ratePhp = discountedPlanPricePhp(plan.price_php, plan.discount_percent);
-  return computeOrgSubscriptionTotalPhp(
-    ratePhp,
-    normalizeVolumeDiscountTiers(plan.volume_discount_tiers),
-    propertyCount,
-    {
-      volumeRampFloorPhp: plan.volume_ramp_floor_php,
-      volumeRampAtCount: plan.volume_ramp_at_count,
-    }
-  );
+  return computeTotalFromPricingParams(pricingParamsFromPlan(plan), propertyCount);
 }
 
-/** Every property in the org — billing always covers the full count (mirrors checkout). */
-async function listOrganizationPropertyIds(organizationId: string): Promise<string[]> {
-  const sb = db();
-  const { data, error } = await sb
-    .from('properties')
-    .select('id')
-    .eq('organization_id', organizationId)
-    // Archived listings are off the bill from the next cycle (D3). They must not be re-slotted
-    // by a plan change either. `is.null` keeps live properties, because `neq` alone drops NULLs.
-    .or('inactive_reason.is.null,inactive_reason.neq.archived')
-    .order('created_at', { ascending: true });
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => row.id as string);
+/**
+ * Recurring total for a subscription: a super-admin price override (sales-assisted tiers) wins,
+ * then the pricing the subscription bought (grandfathered), then the plan's current pricing.
+ */
+export function resolveSubscriptionTotalPhp(
+  priceOverridePhp: unknown,
+  plan: OrgEligiblePlanRow,
+  propertyCount: number,
+  pricingSnapshot: unknown = null
+): number {
+  if (priceOverridePhp != null && Number.isFinite(Number(priceOverridePhp))) {
+    return Number(priceOverridePhp);
+  }
+  const params = parsePricingSnapshot(pricingSnapshot) ?? pricingParamsFromPlan(plan);
+  return computeTotalFromPricingParams(params, propertyCount);
 }
+
+/** Every billable property in the org (archived listings are off the bill). */
+async function listOrganizationPropertyIds(organizationId: string): Promise<string[]> {
+  return await listBillablePropertyIds(organizationId);
+}
+
+const LIVE_STATUSES = ['active', 'trialing', 'past_due', 'suspended'];
 
 /** Creates a new org subscription and slots the given properties into it. No property-count cap
  * — price scales with volume-discounted rate x count (see orgSubscriptionTotalForPlan). */
@@ -1170,7 +1225,7 @@ export async function createOrgSubscription(
     .from('org_subscriptions')
     .select('id')
     .eq('organization_id', organizationId)
-    .in('status', ['active', 'trialing', 'past_due'])
+    .in('status', LIVE_STATUSES)
     .maybeSingle();
   if (existingOrgSubError) throw new Error(existingOrgSubError.message);
   if (existingOrgSub) {
@@ -1188,6 +1243,7 @@ export async function createOrgSubscription(
       plan_id: planId,
       pricing_model: 'subscription',
       price_php_snapshot: totalPricePhp,
+      pricing_snapshot: pricingParamsFromPlan(plan),
       status: 'active',
     })
     .select('id')
@@ -1196,11 +1252,9 @@ export async function createOrgSubscription(
   const orgSubscriptionId = inserted.id as string;
 
   // supabase-js REST calls aren't wrapped in a real DB transaction, so a failure partway through
-  // property assignment (e.g. a property got slotted by a concurrent request between the
-  // existingSlots check above and this loop — the DB unique index rejects it, this doesn't
-  // silently corrupt state, but does throw) must not leave a live `active` org_subscriptions row
-  // covering fewer properties than were paid for. Clean up on any failure here so the caller sees
-  // one clear error instead of an orphaned, half-slotted subscription.
+  // property assignment must not leave a live `active` org_subscriptions row covering fewer
+  // properties than were paid for. Clean up on any failure here so the caller sees one clear
+  // error instead of an orphaned, half-slotted subscription.
   try {
     await writeOrgSubscriptionEvent({
       orgSubscriptionId,
@@ -1236,7 +1290,7 @@ export async function createOrgSubscription(
       organizationId,
       plan.code,
       features.aiMonthlyCreditAllowance,
-      assignedBy ?? 'system'
+      assignedBy
     );
     // Every property just slotted shares one pool — one reconciliation call covers all of them.
     await reconcileTeamSeatsForProperty(uniquePropertyIds[0]);
@@ -1249,21 +1303,150 @@ export async function createOrgSubscription(
   return { orgSubscriptionId };
 }
 
-/** Adds a newly created property to the org's live subscription, if any. */
+/**
+ * What covering one more property costs on a live subscription: the new monthly total and the
+ * prorated share of the increase for the rest of the current period (added to the next payment).
+ * Only a period the host actually paid for creates a true-up (not trials, admin grants or
+ * price-overridden sales-assisted plans). Pure, so the preview and the real enrol cannot drift.
+ */
+export function computeAddPropertyQuote(input: {
+  priceOverridePhp: unknown;
+  pricingSnapshot: unknown;
+  plan: OrgEligiblePlanRow;
+  enrolledCount: number;
+  periodPaidPhp: unknown;
+  periodStart: string | null;
+  periodEnd: string | null;
+  now?: Date;
+}): { totalBeforePhp: number; totalAfterPhp: number; trueUpPhp: number } {
+  const totalBeforePhp = resolveSubscriptionTotalPhp(
+    input.priceOverridePhp,
+    input.plan,
+    input.enrolledCount,
+    input.pricingSnapshot
+  );
+  const totalAfterPhp = resolveSubscriptionTotalPhp(
+    input.priceOverridePhp,
+    input.plan,
+    input.enrolledCount + 1,
+    input.pricingSnapshot
+  );
+
+  let trueUpPhp = 0;
+  const paid = Number(input.periodPaidPhp ?? 0) > 0;
+  if (paid && input.priceOverridePhp == null && input.periodStart && input.periodEnd) {
+    const remaining = periodRemaining(
+      new Date(input.periodStart),
+      new Date(input.periodEnd),
+      input.now ?? new Date()
+    );
+    trueUpPhp = computePropertyTrueUpPhp({
+      totalBeforePhp,
+      totalAfterPhp,
+      fractionRemaining: remaining.fraction,
+    });
+  }
+  return { totalBeforePhp, totalAfterPhp, trueUpPhp };
+}
+
+export type AddPropertyPreview = {
+  /** covered: joins the paid plan now. free: no paid plan. overdue: stays on Free until paid. */
+  status: 'covered' | 'free' | 'overdue';
+  planName: string | null;
+  propertyCount: number;
+  addsMonthlyPhp: number;
+  trueUpPhp: number;
+  nextRenewalPhp: number;
+  renewsAt: string | null;
+};
+
+/** Read-only: what adding a property would do to the bill. Mirrors autoEnrollPropertyInOrgSubscription. */
+export async function previewAddPropertyBilling(
+  organizationId: string
+): Promise<AddPropertyPreview> {
+  const empty: AddPropertyPreview = {
+    status: 'free',
+    planName: null,
+    propertyCount: 0,
+    addsMonthlyPhp: 0,
+    trueUpPhp: 0,
+    nextRenewalPhp: 0,
+    renewsAt: null,
+  };
+  const { data: liveSub, error } = await db()
+    .from('org_subscriptions')
+    .select(
+      'id, plan_id, status, price_override_php, pricing_snapshot, current_period_start, current_period_end, period_paid_php'
+    )
+    .eq('organization_id', organizationId)
+    .in('status', LIVE_STATUSES)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!liveSub) return empty;
+
+  const plan = await loadOrgEligiblePlan(liveSub.plan_id as string, { allowInactive: true });
+  if (plan.is_default) return empty;
+  const enrolledCount = await countEnrolled(liveSub.id as string);
+  const quote = computeAddPropertyQuote({
+    priceOverridePhp: liveSub.price_override_php,
+    pricingSnapshot: liveSub.pricing_snapshot,
+    plan,
+    enrolledCount,
+    periodPaidPhp: liveSub.period_paid_php,
+    periodStart: (liveSub.current_period_start as string | null) ?? null,
+    periodEnd: (liveSub.current_period_end as string | null) ?? null,
+  });
+  const overdue = liveSub.status === 'past_due' || liveSub.status === 'suspended';
+  return {
+    status: overdue ? 'overdue' : 'covered',
+    planName: String(plan.name),
+    propertyCount: enrolledCount,
+    addsMonthlyPhp: Math.max(0, quote.totalAfterPhp - quote.totalBeforePhp),
+    // Nothing is added while the plan is overdue: the property stays on Free until paid.
+    trueUpPhp: overdue ? 0 : quote.trueUpPhp,
+    nextRenewalPhp: quote.totalAfterPhp,
+    renewsAt: (liveSub.current_period_end as string | null) ?? null,
+  };
+}
+
+export type CoverPropertyResult =
+  | { covered: true; trueUpPhp: number; nextRenewalPhp: number; alreadyCovered: boolean }
+  | { covered: false; reason: 'no_subscription' | 'payment_overdue' | 'archived' };
+
+/**
+ * Covers a newly created or restored property on the org's live subscription and records the
+ * prorated share of the added monthly cost for the rest of the period as a true-up that is added
+ * to the next payment (account ledger). While a payment is overdue the property stays on Free
+ * until the host pays, so an overdue plan never gets bigger for free.
+ */
 export async function autoEnrollPropertyInOrgSubscription(
   organizationId: string,
   propertyId: string,
   assignedBy: string | null
-): Promise<void> {
+): Promise<CoverPropertyResult> {
   const sb = db();
   const { data: liveSub, error: liveSubError } = await sb
     .from('org_subscriptions')
-    .select('id')
+    .select(
+      'id, plan_id, status, source, price_override_php, price_php_snapshot, pricing_snapshot, current_period_start, current_period_end, period_paid_php'
+    )
     .eq('organization_id', organizationId)
-    .in('status', ['active', 'trialing', 'past_due'])
+    .in('status', LIVE_STATUSES)
     .maybeSingle();
   if (liveSubError) throw new Error(liveSubError.message);
-  if (!liveSub) return;
+  if (!liveSub) return { covered: false, reason: 'no_subscription' };
+  if (liveSub.status === 'past_due' || liveSub.status === 'suspended') {
+    return { covered: false, reason: 'payment_overdue' };
+  }
+
+  const { data: property, error: propertyError } = await sb
+    .from('properties')
+    .select('id, organization_id, inactive_reason, name')
+    .eq('id', propertyId)
+    .maybeSingle();
+  if (propertyError) throw new Error(propertyError.message);
+  if (!property) throw new Error('Property not found');
+  if (property.inactive_reason === 'archived') return { covered: false, reason: 'archived' };
 
   const { data: existingSlot, error: slotError } = await sb
     .from('org_subscription_properties')
@@ -1271,9 +1454,58 @@ export async function autoEnrollPropertyInOrgSubscription(
     .eq('property_id', propertyId)
     .maybeSingle();
   if (slotError) throw new Error(slotError.message);
-  if (existingSlot) return;
 
+  const plan = await loadOrgEligiblePlan(liveSub.plan_id as string, { allowInactive: true });
+
+  if (existingSlot) {
+    const count = await countEnrolled(liveSub.id as string);
+    return {
+      covered: true,
+      trueUpPhp: 0,
+      nextRenewalPhp: resolveSubscriptionTotalPhp(
+        liveSub.price_override_php,
+        plan,
+        count,
+        liveSub.pricing_snapshot
+      ),
+      alreadyCovered: true,
+    };
+  }
+
+  const countBefore = await countEnrolled(liveSub.id as string);
   await assignPropertyToOrgSubscription(liveSub.id as string, propertyId, assignedBy);
+
+  const { totalAfterPhp: totalAfter, trueUpPhp } = computeAddPropertyQuote({
+    priceOverridePhp: liveSub.price_override_php,
+    pricingSnapshot: liveSub.pricing_snapshot,
+    plan,
+    enrolledCount: countBefore,
+    periodPaidPhp: liveSub.period_paid_php,
+    periodStart: (liveSub.current_period_start as string | null) ?? null,
+    periodEnd: (liveSub.current_period_end as string | null) ?? null,
+  });
+  if (trueUpPhp > 0) {
+    await addLedgerEntry({
+      organizationId,
+      amountPhp: trueUpPhp,
+      kind: 'true_up',
+      orgSubscriptionId: liveSub.id as string,
+      note: `Added ${String(property.name ?? 'a property')} mid-period`,
+      createdBy: assignedBy,
+    });
+  }
+
+  return { covered: true, trueUpPhp, nextRenewalPhp: totalAfter, alreadyCovered: false };
+}
+
+async function countEnrolled(orgSubscriptionId: string): Promise<number> {
+  const sb = db();
+  const { count, error } = await sb
+    .from('org_subscription_properties')
+    .select('id', { count: 'exact', head: true })
+    .eq('org_subscription_id', orgSubscriptionId);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
 }
 
 /** Adds one more property to an existing live org subscription and recomputes the total price
@@ -1287,7 +1519,7 @@ export async function assignPropertyToOrgSubscription(
 
   const { data: orgSub, error: orgSubError } = await sb
     .from('org_subscriptions')
-    .select('id, organization_id, plan_id')
+    .select('id, organization_id, plan_id, price_override_php')
     .eq('id', orgSubscriptionId)
     .in('status', ['active', 'trialing', 'past_due'])
     .maybeSingle();
@@ -1320,19 +1552,7 @@ export async function assignPropertyToOrgSubscription(
   });
   if (insertError) throw new Error(insertError.message);
 
-  const { count: newCount, error: countError } = await sb
-    .from('org_subscription_properties')
-    .select('id', { count: 'exact', head: true })
-    .eq('org_subscription_id', orgSubscriptionId);
-  if (countError) throw new Error(countError.message);
-
-  const plan = await loadOrgEligiblePlan(orgSub.plan_id as string);
-  const totalPricePhp = orgSubscriptionTotalForPlan(plan, newCount ?? 0);
-  const { error: updateError } = await sb
-    .from('org_subscriptions')
-    .update({ price_php_snapshot: totalPricePhp })
-    .eq('id', orgSubscriptionId);
-  if (updateError) throw new Error(updateError.message);
+  await syncOrgSubscriptionPrice(orgSubscriptionId);
 
   await writeOrgSubscriptionEvent({
     orgSubscriptionId,
@@ -1343,9 +1563,36 @@ export async function assignPropertyToOrgSubscription(
   await reconcileTeamSeatsForProperty(propertyId);
 }
 
+/** Recomputes price_php_snapshot from the plan, enrolled count and any admin override. */
+export async function syncOrgSubscriptionPrice(orgSubscriptionId: string): Promise<number> {
+  const sb = db();
+  const { data: orgSub, error } = await sb
+    .from('org_subscriptions')
+    .select('plan_id, price_override_php, pricing_snapshot')
+    .eq('id', orgSubscriptionId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!orgSub) throw new Error('Org subscription not found');
+  const plan = await loadOrgEligiblePlan(orgSub.plan_id as string, { allowInactive: true });
+  const count = await countEnrolled(orgSubscriptionId);
+  const total = resolveSubscriptionTotalPhp(
+    orgSub.price_override_php,
+    plan,
+    count,
+    orgSub.pricing_snapshot
+  );
+  const { error: updateError } = await sb
+    .from('org_subscriptions')
+    .update({ price_php_snapshot: total })
+    .eq('id', orgSubscriptionId);
+  if (updateError) throw new Error(updateError.message);
+  return total;
+}
+
 /** Removes a property from its org subscription and recomputes the total price for the
  * remaining property count — falls back to Free for the removed property via the usual
- * resolvePropertyEntitlements fallback. */
+ * resolvePropertyEntitlements fallback. Works on any subscription, including one on a retired
+ * plan or a suspended one, so archive and delete never fail on billing state. */
 export async function removePropertyFromOrgSubscription(
   propertyId: string,
   removedBy: string | null
@@ -1374,23 +1621,7 @@ export async function removePropertyFromOrgSubscription(
     .eq('org_subscription_id', orgSubscriptionId);
   if (remainingError) throw new Error(remainingError.message);
 
-  const { data: orgSub, error: orgSubError } = await sb
-    .from('org_subscriptions')
-    .select('plan_id')
-    .eq('id', orgSubscriptionId)
-    .maybeSingle();
-  if (orgSubError) throw new Error(orgSubError.message);
-  if (orgSub) {
-    // Recompute even for a now-suspended/canceled subscription's price_php_snapshot — harmless,
-    // and keeps the stored total consistent if it's ever reactivated without a fresh checkout.
-    const plan = await loadOrgEligiblePlan(orgSub.plan_id as string);
-    const totalPricePhp = orgSubscriptionTotalForPlan(plan, remaining?.length ?? 0);
-    const { error: updateError } = await sb
-      .from('org_subscriptions')
-      .update({ price_php_snapshot: totalPricePhp })
-      .eq('id', orgSubscriptionId);
-    if (updateError) throw new Error(updateError.message);
-  }
+  await syncOrgSubscriptionPrice(orgSubscriptionId);
 
   await writeOrgSubscriptionEvent({
     orgSubscriptionId,
@@ -1409,25 +1640,26 @@ export async function removePropertyFromOrgSubscription(
   }
 }
 
-/** Changes an already-active org subscription's plan and/or enrolled property set in one write —
- * the mid-cycle "add/remove properties and/or switch tiers" path (as opposed to
+/** Changes an already-live org subscription's plan and/or enrolled property set in one write —
+ * the "switch tiers and/or re-sync the billable properties" path (as opposed to
  * createOrgSubscription's first-purchase-only path). Diffs org_subscription_properties, updates
  * plan_id/price_php_snapshot, and reconciles pooled team seats once for the changed pool. Pricing
- * (proration/credit for the change) is computed by the caller (checkout) — this function just
- * records the resulting state and the new authoritative total. */
+ * (what was charged) is decided by the caller; this records the resulting state and the new
+ * authoritative recurring total. A plan change clears any admin price override. */
 export async function changeOrgSubscription(
   orgSubscriptionId: string,
   newPlanId: string,
   newPropertyIds: string[],
-  changedBy: string | null
+  changedBy: string | null,
+  options: { refreshPricing?: boolean } = {}
 ): Promise<void> {
   const sb = db();
 
   const { data: orgSub, error: orgSubError } = await sb
     .from('org_subscriptions')
-    .select('id, organization_id, plan_id')
+    .select('id, organization_id, plan_id, price_override_php, pricing_snapshot')
     .eq('id', orgSubscriptionId)
-    .in('status', ['active', 'trialing', 'past_due', 'suspended'])
+    .in('status', LIVE_STATUSES)
     .maybeSingle();
   if (orgSubError) throw new Error(orgSubError.message);
   if (!orgSub) throw new Error('Org subscription not found or not active');
@@ -1472,13 +1704,32 @@ export async function changeOrgSubscription(
   const toAdd = uniquePropertyIds.filter((id) => !currentPropertyIds.has(id));
   const toRemove = [...currentPropertyIds].filter((id) => !nextPropertyIds.has(id));
 
-  const plan = await loadOrgEligiblePlan(newPlanId);
-  const totalPricePhp = orgSubscriptionTotalForPlan(plan, uniquePropertyIds.length);
+  // The subscription may already sit on a plan that has since left the catalog (scheduled
+  // downgrade target, renewal of a retired plan): that must keep working.
+  const plan = await loadOrgEligiblePlan(newPlanId, { allowInactive: true });
   const planChanged = newPlanId !== (orgSub.plan_id as string);
+  const priceOverridePhp = planChanged ? null : orgSub.price_override_php;
+  // A new plan, or a fresh purchase of the same one, buys today's pricing. A plain re-sync of
+  // properties keeps the grandfathered pricing the subscription already has.
+  const nextPricing =
+    planChanged || options.refreshPricing || !parsePricingSnapshot(orgSub.pricing_snapshot)
+      ? pricingParamsFromPlan(plan)
+      : parsePricingSnapshot(orgSub.pricing_snapshot);
+  const totalPricePhp = resolveSubscriptionTotalPhp(
+    priceOverridePhp,
+    plan,
+    uniquePropertyIds.length,
+    nextPricing
+  );
 
   const { error: updateError } = await sb
     .from('org_subscriptions')
-    .update({ plan_id: newPlanId, price_php_snapshot: totalPricePhp })
+    .update({
+      plan_id: newPlanId,
+      price_php_snapshot: totalPricePhp,
+      price_override_php: priceOverridePhp,
+      pricing_snapshot: nextPricing,
+    })
     .eq('id', orgSubscriptionId);
   if (updateError) throw new Error(updateError.message);
 
@@ -1535,7 +1786,7 @@ export async function changeOrgSubscription(
     organizationId,
     plan.code,
     features.aiMonthlyCreditAllowance,
-    changedBy ?? 'system'
+    changedBy
   );
 
   // Reconcile the new pool (any surviving/added property represents it) and each removed
@@ -1547,172 +1798,48 @@ export async function changeOrgSubscription(
 }
 
 /**
- * Host self-serve downgrade — no PayMongo. Paid→paid: `changeOrgSubscription` immediately
- * (period bounds kept; next renewal uses the new total) for every org property. Paid→Free:
- * unenrolls properties then cancels the subscription row. Only `active` / `trialing` /
- * `suspended` (Free only) qualify — `past_due` must pay first. Managed is sales-assisted.
+ * Atomic paid-to-Free move (RPC): unenrolls every property, clears pending intent, cancels the
+ * subscription and records why. Then settles AI credits and team seats for the whole org.
  */
-export async function applyOrgPlanDowngrade(
-  organizationId: string,
-  targetPlanId: string,
-  changedBy: string | null
-): Promise<{ orgSubscriptionId: string | null; toFree: boolean; planName: string }> {
-  const sb = db();
-
-  const live = await getOrgSubscriptionForSelfServeDowngrade(organizationId);
-  if (!live) {
-    throw new Error('No active subscription to change');
-  }
-
-  const { data: currentPlan, error: currentPlanError } = await sb
-    .from('pricing_plans')
-    .select('id, code, sort_order, is_default')
-    .eq('id', live.planId)
-    .maybeSingle();
-  if (currentPlanError) throw new Error(currentPlanError.message);
-  if (!currentPlan) throw new Error('Current plan not found');
-
-  const { data: targetPlan, error: targetPlanError } = await sb
-    .from('pricing_plans')
-    .select('id, code, name, sort_order, is_default, is_active, pricing_model, features')
-    .eq('id', targetPlanId)
-    .maybeSingle();
-  if (targetPlanError) throw new Error(targetPlanError.message);
-  if (!targetPlan || !targetPlan.is_active) throw new Error('Plan not found');
-  if (targetPlan.pricing_model !== 'subscription') {
-    throw new Error('Only subscription plans can be selected');
-  }
-
-  const validation = validateOrgPlanDowngradeRequest({
-    currentPlanId: live.planId,
-    currentPlanCode: String(currentPlan.code),
-    currentPlanSortOrder: Number(currentPlan.sort_order ?? 0),
-    currentPlanIsDefault: Boolean(currentPlan.is_default),
-    subscriptionStatus: live.status,
-    targetPlanId,
-    targetPlanCode: String(targetPlan.code),
-    targetPlanSortOrder: Number(targetPlan.sort_order ?? 0),
-    targetPlanIsDefault: Boolean(targetPlan.is_default),
-  });
-  if (!validation.ok) {
-    throw new Error(validation.message);
-  }
-  const toFree = validation.toFree;
-
-  const allOrgPropertyIds = await listOrganizationPropertyIds(organizationId);
-
-  await sb
-    .from('org_payment_transactions')
-    .update({ status: 'expired' })
-    .eq('organization_id', organizationId)
-    .eq('status', 'pending');
-
-  const fromPlanName = live.planName;
-  const toPlanName = String(targetPlan.name);
-
-  // Emitted here rather than in the HTTP handler so every downgrade path reports the same
-  // pair, including a future system-driven one. Cause is always 'downgrade': upgrades go
-  // through checkout and report from the payment webhook.
-  const reportDowngrade = () =>
-    capturePostHogEvent('org_plan_changed', {
-      logPrefix: 'plan-entitlements',
-      distinctId: changedBy ?? undefined,
-      groups: { organization: organizationId },
-      properties: {
-        from_plan: live.planId,
-        to_plan: targetPlanId,
-        cause: 'downgrade',
-      },
-    });
-
-  if (toFree) {
-    await cancelOrgSubscriptionToFree({
-      orgSubscriptionId: live.id,
-      organizationId,
-      previousPlanId: live.planId,
-      targetPlanId,
-      previousStatus: live.status,
-      targetPlanFeatures: targetPlan.features,
-      targetPlanCode: String(targetPlan.code),
-      allOrgPropertyIds,
-      changedBy,
-    });
-    await notifyOrgPlanDowngradeEmail({
-      organizationId,
-      fromPlanName,
-      toPlanName,
-      toFree: true,
-    });
-    await reportDowngrade();
-    return { orgSubscriptionId: live.id, toFree: true, planName: toPlanName };
-  }
-
-  if (allOrgPropertyIds.length === 0) {
-    throw new Error('Add at least one property to your organization before changing plans');
-  }
-
-  await changeOrgSubscription(live.id, targetPlanId, allOrgPropertyIds, changedBy);
-  await notifyOrgPlanDowngradeEmail({
-    organizationId,
-    fromPlanName,
-    toPlanName,
-    toFree: false,
-  });
-  await reportDowngrade();
-  return { orgSubscriptionId: live.id, toFree: false, planName: toPlanName };
-}
-
-async function cancelOrgSubscriptionToFree(input: {
+export async function cancelOrgSubscriptionToFree(input: {
   orgSubscriptionId: string;
   organizationId: string;
-  previousPlanId: string;
-  targetPlanId: string;
   previousStatus: string;
-  targetPlanFeatures: unknown;
-  targetPlanCode: string;
-  allOrgPropertyIds: string[];
+  endedReason:
+    | 'host_canceled'
+    | 'nonpayment'
+    | 'trial_ended'
+    | 'no_properties'
+    | 'admin'
+    | 'downgraded_to_free';
+  note?: string | null;
   changedBy: string | null;
-}): Promise<void> {
+}): Promise<{ freePlanName: string }> {
   const sb = db();
+  const freePlan = await getDefaultPricingPlan();
+  const propertyIds = await listOrganizationPropertyIds(input.organizationId);
 
   const { error: rpcError } = await sb.rpc('cancel_org_subscription_to_free', {
     p_org_subscription_id: input.orgSubscriptionId,
-    p_target_plan_id: input.targetPlanId,
+    p_target_plan_id: freePlan.id,
     p_previous_status: input.previousStatus,
     p_changed_by: input.changedBy,
+    p_ended_reason: input.endedReason,
+    p_note: input.note ?? null,
   });
   if (rpcError) throw new Error(rpcError.message);
 
-  const freeFeatures = parsePlanFeatures(input.targetPlanFeatures);
+  const freeFeatures = parsePlanFeatures(freePlan.features);
   await syncAiCreditsFromPlan(
     input.organizationId,
-    input.targetPlanCode,
+    freePlan.code,
     freeFeatures.aiMonthlyCreditAllowance,
-    input.changedBy ?? 'system'
+    input.changedBy
   );
-
-  for (const propertyId of input.allOrgPropertyIds) {
+  for (const propertyId of propertyIds) {
     await reconcileTeamSeatsForProperty(propertyId);
   }
-}
-
-async function notifyOrgPlanDowngradeEmail(input: {
-  organizationId: string;
-  fromPlanName: string;
-  toPlanName: string;
-  toFree: boolean;
-}): Promise<void> {
-  try {
-    await sendOrgSubscriptionPlanChangedEmail({
-      supabase: db(),
-      organizationId: input.organizationId,
-      fromPlanName: input.fromPlanName,
-      toPlanName: input.toPlanName,
-      toFree: input.toFree,
-    });
-  } catch (err) {
-    console.error('[planEntitlements] downgrade email failed', err);
-  }
+  return { freePlanName: freePlan.name };
 }
 
 export async function countMarketingPublications(propertyId: string): Promise<number> {

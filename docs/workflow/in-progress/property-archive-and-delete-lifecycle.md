@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Property archive and delete: lifecycle, guardrails, and clear host UX'
 status: in-progress
 tags: [workflow, planned, property, settings, lifecycle, billing, guest, ux-copy]
-updated: 2026-11-07
+updated: 2026-11-19
 kind: plan
 ---
 
@@ -199,11 +199,11 @@ New edge function `property-lifecycle` (`serveAuthenticated`, `verifyPropertyAcc
 
 **Pause.** Allowed when Live. No booking pre-check. Blocks new submissions only.
 
-**Archive.** Allowed from Live, Paused or Suspended. **Blocked** while any booking is in `PENDING_REVIEW`, `PENDING_DOCUMENTS`, `READY_FOR_CHECKIN`, `READY_FOR_CHECKOUT`, `PENDING_SD_REFUND` or a legacy nested pending status, or while a cancellation request or refund is open. The block lists each booking with a link. (Airbnb model. Simpler and safer than auto-cancel.) On success: disable iCal feeds and export, cancel scheduled publications, turn off Smart Pricing / Telegram / Voice / Inbox AI auto-reply, keep team access read-only, unslot from the org subscription at next cycle.
+**Archive.** Allowed from Live, Paused or Suspended. **Blocked** while any booking is in `PENDING_REVIEW`, `PENDING_DOCUMENTS`, `READY_FOR_CHECKIN`, `READY_FOR_CHECKOUT`, `PENDING_SD_REFUND` or a legacy nested pending status, or while a cancellation request or refund is open. The block lists each booking with a link. (Airbnb model. Simpler and safer than auto-cancel.) On success: disable iCal feeds and export, cancel scheduled publications, turn off Smart Pricing / Telegram / Voice / Inbox AI auto-reply, keep team access read-only, unslot from the org subscription now (no credit for the unused part; the next renewal is priced on the new count).
 
-**Restore (from Archived).** Re-runs `canHostActivate` and the tower/unit check. Does **not** re-enable automations or iCal automatically; the success sheet lists what to turn back on. Re-slots into the subscription (may trigger `billingRequired`, same as `create-property`).
+**Restore (from Archived).** Re-runs `canHostActivate` and the tower/unit check. Does **not** re-enable automations or iCal automatically; the success sheet lists what to turn back on. Re-covers the property on the org subscription exactly like `create-property`: at once on a paid plan in good standing, with the prorated share added to the next payment as a true-up; while the plan is overdue or suspended it stays on Free until paid (`billing.status = overdue`; the old `billingRequired` flag only mirrors that).
 
-**Delete.** Owner only. Server returns every blocker by name ("3 finance entries, 1 maintenance item"). Confirmation lists what will be removed (inbox threads, reviews, payment history, team access, marketing records) and requires typing the property name. Blocked while a listing verification is `pending` (avoid orphaned review rows) Delete is allowed mid-period with no refund; the subscription slot drops next cycle. Cleans every per-property storage prefix, not just `property-media`. Notifies removed team members by email. Writes `property.deleted` with the impact snapshot in metadata.
+**Delete.** Owner only. Server returns every blocker by name ("3 finance entries, 1 maintenance item"). Confirmation lists what will be removed (inbox threads, reviews, payment history, team access, marketing records) and requires typing the property name. Blocked while a listing verification is `pending` (avoid orphaned review rows) Delete is allowed mid-period with no refund; the property leaves the subscription at once and the next renewal is priced on the new count. Cleans every per-property storage prefix, not just `property-media`. Notifies removed team members by email. Writes `property.deleted` with the impact snapshot in metadata.
 
 ### 4.5 Guest-side behavior
 

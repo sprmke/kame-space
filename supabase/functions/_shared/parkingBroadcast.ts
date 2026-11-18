@@ -214,7 +214,8 @@ export async function findParkingBroadcastCandidates(input: {
     );
   } catch (err) {
     throw new Error(
-      `findParkingBroadcastCandidates (occupancy): ${err instanceof Error ? err.message : err}`
+      `findParkingBroadcastCandidates (occupancy): ${err instanceof Error ? err.message : err}`,
+      { cause: err }
     );
   }
 

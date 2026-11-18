@@ -1,10 +1,10 @@
 import { Pencil } from 'lucide-react';
 
+import type { FeatureAvailabilityAdminOverride } from '@/features/dashboard/super-admin/hooks/useFeatureAvailabilityAdmin';
 import {
   catalogEntryDepth,
   isoToManilaDateTimeParts,
 } from '@/features/dashboard/super-admin/lib/featureAvailabilityAdmin';
-import type { FeatureAvailabilityAdminOverride } from '@/features/dashboard/super-admin/hooks/useFeatureAvailabilityAdmin';
 
 import { FeatureStatusDot } from '@/components/feature-availability/FeatureStatusDot';
 import { Button } from '@/components/ui/button';

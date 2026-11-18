@@ -70,6 +70,9 @@ export const APP_ANALYTICS_EVENTS = [
   'org_plan_checkout_started',
   'org_plan_checkout_completed',
   'org_plan_checkout_cancelled',
+  'org_plan_change_scheduled',
+  'org_plan_cancel_scheduled',
+  'org_plan_intent_cleared',
   'org_plan_checkout_failed',
   // Host adoption
   'inbox_reply_sent',

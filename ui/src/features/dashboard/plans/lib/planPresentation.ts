@@ -12,6 +12,7 @@
  * Canonical matrix: `docs/architecture/plans-feature-matrix.md`.
  */
 
+import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import type {
   OrgBundlePlanDto,
   OrgSubscriptionDto,
@@ -26,7 +27,6 @@ import {
   normalizePlanDiscountPercent,
 } from '@/features/dashboard/plans/lib/planPricing';
 
-import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import { formatManilaLongDate } from '@/utils/format/dates';
 
 /** Matrix section = product page / module hosts already know from the sidebar. */
@@ -564,6 +564,17 @@ export type PlanTier = {
   gains: PlanFeatureChange[];
   /** False when the tier below adds nothing, so the card skips the "everything in …" line. */
   inheritsFrom: string | null;
+  /** This tier is what the plan moves to at the end of the period ("Starts Dec 3"). */
+  scheduledStart: string | null;
+};
+
+/** Pending change on the current subscription, so cards can show what is coming. */
+export type PlanTierContext = {
+  scheduledPlanId?: string | null;
+  /** The plan is set to end and move to Free. */
+  cancelScheduled?: boolean;
+  /** Already formatted for the host, e.g. "Dec 3". */
+  scheduledOnLabel?: string | null;
 };
 
 export type PlanChangeDirection = 'current' | 'upgrade' | 'downgrade';
@@ -590,24 +601,6 @@ export const MANAGED_PLAN_INQUIRY_SUBJECT = 'Managed plan inquiry';
 
 export function isManagedSalesPlan(code: string): boolean {
   return code === MANAGED_PLAN_CODE;
-}
-
-/** UI gate for self-serve downgrade confirm — mirrors server `validateOrgPlanDowngradeRequest`. */
-export function resolveDowngradeBlockedReason(input: {
-  subscriptionStatus?: string | null;
-  currentPlanCode?: string | null;
-  targetPlan: OrgBundlePlanDto;
-}): string | null {
-  if (input.currentPlanCode === MANAGED_PLAN_CODE) {
-    return 'Contact support to change your Managed plan.';
-  }
-  if (input.subscriptionStatus === 'past_due') {
-    return 'Pay the overdue balance from Billing before downgrading.';
-  }
-  if (input.subscriptionStatus === 'suspended' && !input.targetPlan.isDefault) {
-    return 'Pay to restore access before switching to a different paid plan.';
-  }
-  return null;
 }
 
 /** Free tier row — every org is on this plan when there is no live org subscription. */
@@ -638,7 +631,8 @@ export function resolveEffectiveCurrentPlan(
 /** Sorted ladder with each tier's position relative to the active subscription. */
 export function buildPlanTiers(
   plans: OrgBundlePlanDto[],
-  currentPlanId: string | undefined
+  currentPlanId: string | undefined,
+  context: PlanTierContext = {}
 ): PlanTier[] {
   const ordered = [...plans].sort((a, b) => a.sortOrder - b.sortOrder);
   const currentIndex = ordered.findIndex((plan) => plan.id === currentPlanId);
@@ -661,6 +655,12 @@ export function buildPlanTiers(
       direction,
       gains: cardGains,
       inheritsFrom: previous && plan.code !== 'free' ? planDisplayName(previous) : null,
+      scheduledStart:
+        !isCurrent &&
+        ((context.scheduledPlanId != null && context.scheduledPlanId === plan.id) ||
+          (context.cancelScheduled === true && plan.isDefault))
+          ? `Starts ${context.scheduledOnLabel ?? 'at renewal'}`
+          : null,
     };
   });
 }
@@ -752,12 +752,15 @@ export function upgradeBannerActionLabel(plan: OrgBundlePlanDto): string {
 export function planActionLabel(
   direction: PlanChangeDirection,
   hasCurrent: boolean,
-  planCode?: string
+  planCode?: string,
+  options: { isFree?: boolean; scheduled?: boolean } = {}
 ): string {
   if (direction === 'current') return 'Current plan';
+  if (options.scheduled) return 'Scheduled';
   if (planCode && isManagedSalesPlan(planCode)) return 'Contact sales';
   if (!hasCurrent) return 'Choose plan';
-  return direction === 'downgrade' ? 'Downgrade' : 'Upgrade';
+  if (direction === 'downgrade') return options.isFree ? 'Cancel plan' : 'Switch at renewal';
+  return 'Upgrade';
 }
 
 export type PlanPrice = {
@@ -929,32 +932,42 @@ export const PLAN_FAQ_ITEMS: PlanFaqItem[] = [
   {
     question: 'Can I change my plan at any time?',
     answer:
-      'Yes. Organization owners can switch tiers or add/remove properties from Plans & Billing at any time. Paid changes open PayMongo checkout and take effect once payment clears. Moving to Free applies immediately.',
+      'Yes. Upgrades start right away: you pay the difference for the rest of the period and get a new billing period from today. Moving to a lower plan or canceling waits for the end of the period you already paid for, and you can undo it before then.',
   },
   {
     question: 'Is pricing per property or per organization?',
     answer:
-      'Billing is per organization, priced per enrolled property. Your total is the tier’s per-property rate times how many properties you enroll, with the rate dropping at volume breakpoints. A property left out of your subscription stays on Free.',
+      'You pay once for the whole organization, priced per property. Your total is the plan rate times the number of properties, with the rate dropping as you add more. Archived properties are not billed.',
   },
   {
     question: 'How does monthly billing work?',
     answer:
-      'Paid plans renew every month. Before each renewal you’ll get a payment link by email and on the Billing tab. Pay with QRPH, Maya, or online banking through PayMongo. We never store card or bank details on our platform.',
+      'Paid plans renew every month. A few days before each renewal you get a payment link by email and on the Billing tab. Pay with QR Ph, Maya or online banking through PayMongo. We never store card or bank details.',
   },
   {
     question: 'What happens if I miss a renewal payment?',
     answer:
-      'Your organization becomes past due. You keep full dashboard access during the grace period. If payment is still missing after grace ends, access across your properties is limited to Plans & Billing and Help & Support until you pay. Guest forms and bookings keep working.',
+      'Your organization becomes past due and keeps full access during the grace period. If payment is still missing after that, paid features pause and the organization works like the Free plan. Guest booking pages and your data are not affected. If it stays unpaid for 30 more days, the plan ends.',
   },
   {
-    question: 'What happens when I downgrade or remove a property?',
+    question: 'What happens when I downgrade or cancel?',
     answer:
-      'Downgrades take effect immediately while your subscription is active or in trial, not while past due (pay from Billing first). If suspended, you can move to Free to cancel; other downgrades require paying to restore access first. Features above your new tier turn off org-wide. Removing a property credits its remaining value toward your next bill; unused time on a downgrade is not refunded as cash.',
+      'Nothing changes until the period you paid for ends. You keep every feature until then and can keep your plan with one click. After that, features that are not in the new plan turn off. Your data and past results are kept. Unused time is not paid back in cash.',
+  },
+  {
+    question: 'What happens when I add or archive a property?',
+    answer:
+      'A new property is added to your plan right away. The share of its cost for the rest of the period is added to your next payment. An archived property drops off the bill from the next renewal.',
+  },
+  {
+    question: 'Do I get a receipt?',
+    answer:
+      'Yes. Every payment on the Billing tab has a numbered receipt you can download. Add your legal name, address and TIN under Billing details to have them printed on it. It is a payment receipt, not a BIR official receipt.',
   },
   {
     question: 'How do AI credits work?',
     answer:
-      'Higher tiers include a monthly AI credit allowance for tools like receipt validation, the dashboard assistant, and marketing generation. Your allowance updates when you change plans. Free and Starter do not include AI credits.',
+      'Higher tiers include a monthly AI credit allowance for tools like receipt validation, the dashboard assistant, and marketing generation. Your allowance updates when your plan changes. Free and Starter do not include AI credits.',
   },
   {
     question: 'How do I get the Managed plan?',

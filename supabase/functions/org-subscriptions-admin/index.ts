@@ -7,12 +7,26 @@ import {
   changeOrgSubscription,
   createOrgSubscription,
   getActiveOrgSubscription,
+  writeOrgSubscriptionEvent,
 } from '../_shared/planEntitlements.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
 import {
+  adminAdjustOrgCredit,
   adminExtendOrgSubscription,
   runPlatformBillingCycle,
 } from '../_shared/subscriptionOrchestrator.ts';
+import { billingErrorResponse } from '../_shared/billingHttp.ts';
+import { listBillablePropertyIds } from '../_shared/orgBillableProperties.ts';
+import { getLedgerBalancePhp, addLedgerEntry } from '../_shared/orgBillingLedger.ts';
+import {
+  applyScheduledPlan,
+  cancelOrgSubscriptionNow,
+  clearOrgScheduledChange,
+  scheduleOrgCancel,
+} from '../_shared/orgBillingLifecycle.ts';
+import { applyPaidTransaction } from '../_shared/orgPaymentFulfillment.ts';
+import { expireAllPendingOrgCheckouts } from '../_shared/orgPaymentReconcile.ts';
+import { cancelOrgSubscriptionToFree } from '../_shared/planEntitlements.ts';
 import { revokeHostVerificationReward } from '../_shared/hostVerificationReward.ts';
 import {
   jsonError,
@@ -97,7 +111,7 @@ serveSuperAdmin('org-subscriptions-admin', async (req, admin) => {
           current_period_end,
           created_at,
           organizations ( id, name, slug ),
-          pricing_plans ( code, name )
+          pricing_plans!org_subscriptions_plan_id_fkey ( code, name )
         `
         )
         .eq('source', 'reward')
@@ -134,15 +148,24 @@ serveSuperAdmin('org-subscriptions-admin', async (req, admin) => {
             .select('*')
             .eq('org_subscription_id', subscription.id)
             .order('created_at', { ascending: false })
-            .limit(20)
+            .limit(40)
         : { data: [] };
 
       const { data: transactions } = await supabase
         .from('org_payment_transactions')
-        .select('id, amount, currency, status, created_at, paid_at, checkout_url')
+        .select(
+          'id, plan_id, amount, currency, status, created_at, paid_at, checkout_url, purpose, applied, review_reason, receipt_number, payment_method_type, period_start, period_end'
+        )
         .eq('organization_id', organizationIdParam)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(30);
+
+      const { data: ledger } = await supabase
+        .from('org_billing_ledger')
+        .select('id, amount_php, kind, note, transaction_id, created_at')
+        .eq('organization_id', organizationIdParam)
+        .order('created_at', { ascending: false })
+        .limit(30);
 
       return jsonSuccess(req, {
         subscription,
@@ -151,6 +174,8 @@ serveSuperAdmin('org-subscriptions-admin', async (req, admin) => {
           : [],
         recentEvents: events.data ?? [],
         transactions: transactions ?? [],
+        ledger: ledger ?? [],
+        ledgerBalancePhp: await getLedgerBalancePhp(organizationIdParam),
       });
     }
 
@@ -173,7 +198,7 @@ serveSuperAdmin('org-subscriptions-admin', async (req, admin) => {
           status,
           price_php_snapshot,
           updated_at,
-          pricing_plans!inner ( code, name )
+          pricing_plans!org_subscriptions_plan_id_fkey!inner ( code, name )
         )`
       : `org_subscriptions (
           id,
@@ -182,7 +207,7 @@ serveSuperAdmin('org-subscriptions-admin', async (req, admin) => {
           status,
           price_php_snapshot,
           updated_at,
-          pricing_plans ( code, name )
+          pricing_plans!org_subscriptions_plan_id_fkey ( code, name )
         )`;
 
     let query = supabase
@@ -269,12 +294,7 @@ serveSuperAdmin('org-subscriptions-admin', async (req, admin) => {
       ? body.propertyIds.filter((id: unknown): id is string => typeof id === 'string')
       : [];
     if (propertyIds.length === 0) {
-      const { data: allProperties, error: allPropertiesError } = await supabase
-        .from('properties')
-        .select('id')
-        .eq('organization_id', organizationId);
-      if (allPropertiesError) return jsonError(req, allPropertiesError.message, 500);
-      propertyIds = (allProperties ?? []).map((p) => p.id as string);
+      propertyIds = await listBillablePropertyIds(organizationId);
     }
     if (propertyIds.length === 0) {
       return jsonError(req, 'Organization has no properties to enroll');
@@ -297,7 +317,7 @@ serveSuperAdmin('org-subscriptions-admin', async (req, admin) => {
       await changeOrgSubscription(orgSubscriptionId, planId, propertyIds, admin.id);
     }
 
-    const planChanged = !existing || String(existing.plan_id) !== planId;
+    const planChanged = !existing || existing.planId !== planId;
     if (planChanged) {
       await capturePostHogEvent('org_plan_changed', {
         logPrefix: 'org-subscriptions-admin',
@@ -305,19 +325,30 @@ serveSuperAdmin('org-subscriptions-admin', async (req, admin) => {
         distinctId: admin.id,
         groups: { organization: organizationId },
         properties: {
-          from_plan: existing ? String(existing.plan_id) : 'free',
+          from_plan: existing ? existing.planId : 'free',
           to_plan: planId,
           cause: 'admin',
         },
       });
     }
 
+    // An admin override is stored as price_override_php so property changes and renewals keep it
+    // (they never recompute a sales-assisted price). Clearing it returns to the formula.
     if (overridePricePhp != null) {
       const { error: overrideError } = await supabase
         .from('org_subscriptions')
-        .update({ price_php_snapshot: overridePricePhp })
+        .update({
+          price_override_php: overridePricePhp,
+          price_php_snapshot: overridePricePhp,
+          ...(existing ? {} : { source: 'admin' }),
+        })
         .eq('id', orgSubscriptionId);
       if (overrideError) return jsonError(req, overrideError.message, 500);
+    } else if (!existing) {
+      await supabase
+        .from('org_subscriptions')
+        .update({ source: 'admin' })
+        .eq('id', orgSubscriptionId);
     }
 
     const subscription = await getActiveOrgSubscription(organizationId);
@@ -413,6 +444,17 @@ serveSuperAdmin('org-subscriptions-admin', async (req, admin) => {
         adminUserId: admin.id,
       });
 
+      await logSuperAdminAction(admin, {
+        action: 'org_subscription.extend_period',
+        targetType: 'organization',
+        targetId: organizationId,
+        summary: `Extended the billing period to ${periodEnd}`,
+        metadata: {
+          periodEnd,
+          status,
+          note: typeof body.note === 'string' ? body.note : undefined,
+        },
+      });
       const subscription = await getActiveOrgSubscription(organizationId);
       return jsonSuccess(req, { subscription });
     }
@@ -438,6 +480,268 @@ serveSuperAdmin('org-subscriptions-admin', async (req, admin) => {
 
       const subscription = await getActiveOrgSubscription(organizationId);
       return jsonSuccess(req, { subscription });
+    }
+
+    const note = typeof body.note === 'string' ? body.note.trim().slice(0, 300) : '';
+    const org = await supabase
+      .from('organizations')
+      .select('name')
+      .eq('id', organizationId)
+      .maybeSingle();
+    const orgName = (org.data?.name as string | undefined) ?? organizationId;
+    const audit = (
+      auditAction: string,
+      summary: string,
+      metadata: Record<string, unknown>,
+      mirror?: Parameters<typeof logSuperAdminAction>[1]['mirrorToOrgActivity']
+    ) =>
+      logSuperAdminAction(admin, {
+        action: auditAction,
+        targetType: 'organization',
+        targetId: organizationId,
+        summary,
+        metadata,
+        mirrorToOrgActivity: mirror,
+      });
+
+    try {
+      if (action === 'clear_intent') {
+        const result = await clearOrgScheduledChange({ organizationId, clearedBy: admin.id });
+        await audit(
+          'org_subscription.clear_scheduled_change',
+          `Cleared a scheduled plan change for ${orgName}`,
+          {
+            note,
+          }
+        );
+        return jsonSuccess(req, {
+          subscription: await getActiveOrgSubscription(organizationId),
+          ...result,
+        });
+      }
+
+      if (action === 'cancel_at_period_end') {
+        const result = await scheduleOrgCancel({
+          organizationId,
+          reason: 'other',
+          scheduledBy: admin.id,
+        });
+        await audit(
+          'org_subscription.cancel_at_period_end',
+          `Scheduled ${orgName} to end at the period end`,
+          {
+            note,
+          }
+        );
+        return jsonSuccess(req, {
+          subscription: await getActiveOrgSubscription(organizationId),
+          ...result,
+        });
+      }
+
+      if (action === 'apply_intent_now') {
+        const sub = await getActiveOrgSubscription(organizationId);
+        if (!sub) return jsonError(req, 'No live subscription for organization');
+        if (sub.scheduledPlanId) {
+          await expireAllPendingOrgCheckouts(organizationId);
+          await applyScheduledPlan(sub);
+          await audit(
+            'org_subscription.apply_scheduled_change',
+            `Applied the scheduled plan change for ${orgName} now`,
+            { note }
+          );
+        } else if (sub.cancelAtPeriodEnd) {
+          await expireAllPendingOrgCheckouts(organizationId);
+          await cancelOrgSubscriptionToFree({
+            orgSubscriptionId: sub.id,
+            organizationId,
+            previousStatus: sub.status,
+            endedReason: 'admin',
+            note: note || 'Ended early by platform admin',
+            changedBy: admin.id,
+          });
+          await audit('org_subscription.apply_cancel', `Ended ${orgName}'s plan now`, { note });
+        } else {
+          return jsonError(req, 'Nothing is scheduled');
+        }
+        return jsonSuccess(req, { subscription: await getActiveOrgSubscription(organizationId) });
+      }
+
+      if (action === 'cancel_now') {
+        const sub = await getActiveOrgSubscription(organizationId);
+        if (!sub) return jsonError(req, 'No live subscription for organization');
+        await expireAllPendingOrgCheckouts(organizationId);
+        await cancelOrgSubscriptionToFree({
+          orgSubscriptionId: sub.id,
+          organizationId,
+          previousStatus: sub.status,
+          endedReason: 'admin',
+          note: note || 'Ended by platform admin',
+          changedBy: admin.id,
+        });
+        await audit(
+          'org_subscription.cancel_now',
+          `Moved ${orgName} to Free`,
+          { note },
+          {
+            organizationId,
+            action: 'billing.subscription_canceled',
+            targetType: 'subscription',
+            targetId: organizationId,
+            targetLabel: orgName,
+            metadata: { ended_reason: 'admin' },
+            req,
+          }
+        );
+        return jsonSuccess(req, { subscription: null });
+      }
+
+      if (action === 'adjust_credit') {
+        const creditPhp = Number(body.creditPhp);
+        if (!Number.isFinite(creditPhp) || creditPhp === 0 || Math.abs(creditPhp) > 1_000_000) {
+          return jsonError(req, 'Enter a credit amount other than zero');
+        }
+        if (!note) return jsonError(req, 'A note is required for a credit adjustment');
+        const result = await adminAdjustOrgCredit({
+          organizationId,
+          creditPhp,
+          note,
+          adminUserId: admin.id,
+        });
+        await audit(
+          'org_subscription.adjust_credit',
+          `Adjusted ${orgName}'s account credit by ₱${Math.round(creditPhp)}`,
+          { creditPhp: Math.round(creditPhp), note },
+          {
+            organizationId,
+            action: 'billing.credit_adjusted',
+            targetType: 'subscription',
+            targetId: organizationId,
+            targetLabel: orgName,
+            metadata: { amount: Math.abs(Math.round(creditPhp)) },
+            req,
+          }
+        );
+        return jsonSuccess(req, result);
+      }
+
+      if (action === 'record_refund') {
+        const transactionId =
+          typeof body.transactionId === 'string' ? body.transactionId.trim() : '';
+        if (!transactionId) return jsonError(req, 'transactionId is required');
+        const { data: txn, error: txnError } = await supabase
+          .from('org_payment_transactions')
+          .select('id, status, amount, org_subscription_id')
+          .eq('id', transactionId)
+          .eq('organization_id', organizationId)
+          .maybeSingle();
+        if (txnError) return jsonError(req, txnError.message, 500);
+        if (!txn || txn.status !== 'paid')
+          return jsonError(req, 'Only a paid payment can be marked refunded');
+        await supabase
+          .from('org_payment_transactions')
+          .update({ status: 'refunded', review_reason: note ? `refunded: ${note}` : 'refunded' })
+          .eq('id', transactionId)
+          .eq('status', 'paid');
+        if (txn.org_subscription_id) {
+          await writeOrgSubscriptionEvent({
+            orgSubscriptionId: txn.org_subscription_id as string,
+            eventType: 'ledger_entry',
+            note: `Refund recorded (₱${Math.round(Number(txn.amount))})${note ? `: ${note}` : ''}`,
+            createdBy: admin.id,
+          });
+        }
+        await audit(
+          'org_subscription.record_refund',
+          `Recorded a ₱${Math.round(Number(txn.amount))} refund for ${orgName}`,
+          { transactionId, note },
+          {
+            organizationId,
+            action: 'billing.refund_recorded',
+            targetType: 'subscription',
+            targetId: organizationId,
+            targetLabel: orgName,
+            metadata: { amount: Math.round(Number(txn.amount)) },
+            req,
+          }
+        );
+        return jsonSuccess(req, { refunded: true });
+      }
+
+      if (action === 'resolve_payment') {
+        const transactionId =
+          typeof body.transactionId === 'string' ? body.transactionId.trim() : '';
+        const resolution =
+          body.resolution === 'apply'
+            ? 'apply'
+            : body.resolution === 'keep_credit'
+              ? 'keep_credit'
+              : '';
+        if (!transactionId || !resolution)
+          return jsonError(req, 'transactionId and resolution are required');
+        const { data: txn, error: txnError } = await supabase
+          .from('org_payment_transactions')
+          .select('id, status, amount, applied, review_reason')
+          .eq('id', transactionId)
+          .eq('organization_id', organizationId)
+          .maybeSingle();
+        if (txnError) return jsonError(req, txnError.message, 500);
+        if (!txn || txn.status !== 'paid' || txn.applied === true) {
+          return jsonError(req, 'This payment is already resolved');
+        }
+        if (resolution === 'apply') {
+          // Forget a previous "kept as credit" verdict so the apply path runs again.
+          await supabase
+            .from('org_payment_transactions')
+            .update({ applied: null, review_reason: null, apply_attempts: 0 })
+            .eq('id', transactionId);
+          if (String(txn.review_reason ?? '').startsWith('stale:')) {
+            // The payment was kept as credit earlier: take that credit back before applying it.
+            await addLedgerEntry({
+              organizationId,
+              amountPhp: Math.round(Number(txn.amount)),
+              kind: 'admin_adjustment',
+              note: 'Reversed credit so the payment can be applied',
+              createdBy: admin.id,
+            });
+          }
+          const result = await applyPaidTransaction(transactionId, admin.id);
+          await audit('org_subscription.resolve_payment', `Applied a held payment for ${orgName}`, {
+            transactionId,
+            resolution,
+            applied: result.applied,
+            note,
+          });
+          return jsonSuccess(req, result);
+        }
+        if (String(txn.review_reason ?? '').startsWith('stale:')) {
+          return jsonSuccess(req, { applied: false, reason: 'already_credit' });
+        }
+        await addLedgerEntry({
+          organizationId,
+          amountPhp: -Math.round(Number(txn.amount)),
+          kind: 'stale_payment',
+          transactionId,
+          note: note || 'Kept as account credit by platform admin',
+          createdBy: admin.id,
+        });
+        await supabase
+          .from('org_payment_transactions')
+          .update({ applied: false, review_reason: 'stale: kept as credit by admin' })
+          .eq('id', transactionId);
+        await audit(
+          'org_subscription.resolve_payment',
+          `Kept a held payment as credit for ${orgName}`,
+          {
+            transactionId,
+            resolution,
+            note,
+          }
+        );
+        return jsonSuccess(req, { applied: false, reason: 'kept_credit' });
+      }
+    } catch (err) {
+      return billingErrorResponse(req, err);
     }
 
     return jsonError(req, 'Unknown action', 400);

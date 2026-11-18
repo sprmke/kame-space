@@ -155,7 +155,7 @@ export const useCalendarBuilderStore = create<CalendarBuilderStore>()(
           const normalized = normalizeCalendarStyles(styles);
           state.styles = normalized;
           state.lockedPaths = [...new Set(lockedPaths)];
-          state.history = [JSON.parse(JSON.stringify(normalized))];
+          state.history = [structuredClone(normalized)];
           state.historyIndex = 0;
           state.isDirty = false;
         }),
@@ -255,7 +255,7 @@ export const useCalendarBuilderStore = create<CalendarBuilderStore>()(
         set((state) => {
           // Remove any future history if we're not at the end
           const newHistory = state.history.slice(0, state.historyIndex + 1);
-          newHistory.push(JSON.parse(JSON.stringify(state.styles)));
+          newHistory.push(structuredClone(state.styles));
 
           // Limit history to 50 entries
           if (newHistory.length > 50) {

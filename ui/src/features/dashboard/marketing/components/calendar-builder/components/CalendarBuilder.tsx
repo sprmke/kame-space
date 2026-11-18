@@ -414,7 +414,7 @@ export function CalendarBuilder({
       ? sourceTemplateId.slice('preset:'.length)
       : 'custom';
     return {
-      styles: JSON.parse(JSON.stringify(normalized)),
+      styles: structuredClone(normalized),
       sourcePresetId: presetId,
       ...(record?.designJson.aiGenerated === true
         ? {
@@ -659,7 +659,7 @@ export function CalendarBuilder({
         id,
         sameGroup: true,
         aspectPreset: size,
-        designJson: { ...designJson, styles: JSON.parse(JSON.stringify(nextStyles)) },
+        designJson: { ...designJson, styles: structuredClone(nextStyles) },
       });
       nav.openItem(copy.id, { replace: true });
     },
@@ -721,7 +721,7 @@ export function CalendarBuilder({
           themeKey: theme.key,
           kind: 'design',
           designJson: {
-            styles: JSON.parse(JSON.stringify(aiStyles)),
+            styles: structuredClone(aiStyles),
             sourcePresetId: 'custom',
             aiGenerated: true,
             aiGenerationId,

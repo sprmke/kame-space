@@ -52,7 +52,7 @@ function MoneyInput({
           id={id}
           type="number"
           min={0}
-          step={1}
+          step={100}
           value={value}
           disabled={readOnly}
           onChange={(e) => onChange(Number(e.target.value))}

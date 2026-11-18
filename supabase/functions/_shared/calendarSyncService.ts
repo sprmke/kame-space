@@ -614,8 +614,7 @@ export async function fetchExternalIcs(
     }
     await assertHostNotPrivate(current.hostname);
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const signal = AbortSignal.timeout(timeoutMs);
     let resp: Response;
     try {
       const headers: Record<string, string> = {
@@ -627,17 +626,15 @@ export async function fetchExternalIcs(
       resp = await fetch(current.toString(), {
         method: 'GET',
         redirect: 'manual',
-        signal: controller.signal,
+        signal,
         headers,
       });
     } catch (err) {
-      clearTimeout(timer);
       throw new ExternalFetchError(
         `fetch failed: ${err instanceof Error ? err.message : String(err)}`,
         'fetch_failed'
       );
     }
-    clearTimeout(timer);
 
     if (resp.status === 304) {
       return {

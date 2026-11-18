@@ -193,7 +193,7 @@ export function AuthPageContent({ config, actions }: AuthPageContentProps) {
               disabled={busy}
               className="rounded-xl text-base"
               onKeyDown={(e) => {
-                if (e.key === 'Enter') void handleContinueEmail();
+                if (e.key === 'Enter' && !e.nativeEvent.isComposing) void handleContinueEmail();
               }}
             />
           </div>

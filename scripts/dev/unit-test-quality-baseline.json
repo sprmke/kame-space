@@ -249,7 +249,6 @@
     "ui/src/features/dashboard/team/lib/orgTeamTemplates.ts",
     "ui/src/features/dashboard/team/lib/parkingPermissions.ts",
     "ui/src/features/dashboard/team/lib/permissionTreeState.ts",
-    "ui/src/features/dashboard/team/lib/planLimitedTeamCopy.ts",
     "ui/src/features/dashboard/team/lib/propertyTeamConstants.ts",
     "ui/src/features/dashboard/team/lib/propertyTeamRoles.ts",
     "ui/src/features/dashboard/team/lib/propertyTeamTemplates.ts",

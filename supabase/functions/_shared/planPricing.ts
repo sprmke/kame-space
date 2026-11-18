@@ -159,3 +159,69 @@ export function computeOrgSubscriptionTotalPhp(
   );
   return discountedPlanPricePhp(extended, volumeDiscountPercent);
 }
+
+export type PricedPlanRow = {
+  price_php: number | null;
+  discount_percent: number | null;
+  volume_discount_tiers: unknown;
+  volume_ramp_floor_php: number | null;
+  volume_ramp_at_count: number | null;
+};
+
+/** The pricing a subscription bought. Stored on org_subscriptions.pricing_snapshot. */
+export type PlanPricingParams = {
+  pricePhp: number;
+  discountPercent: number;
+  volumeDiscountTiers: VolumeDiscountTier[];
+  volumeRampFloorPhp: number;
+  volumeRampAtCount: number;
+};
+
+export function pricingParamsFromPlan(plan: PricedPlanRow): PlanPricingParams {
+  return {
+    pricePhp: Math.max(0, Math.floor(Number(plan.price_php ?? 0))),
+    discountPercent: normalizePlanDiscountPercent(plan.discount_percent),
+    volumeDiscountTiers: normalizeVolumeDiscountTiers(plan.volume_discount_tiers),
+    volumeRampFloorPhp: normalizeVolumeRampFloorPhp(plan.volume_ramp_floor_php),
+    volumeRampAtCount: normalizeVolumeRampAtCount(plan.volume_ramp_at_count),
+  };
+}
+
+/** Reads a stored snapshot defensively; null when missing or malformed. */
+export function parsePricingSnapshot(value: unknown): PlanPricingParams | null {
+  if (!value || typeof value !== 'object') return null;
+  const raw = value as Record<string, unknown>;
+  const price = Number(raw.pricePhp);
+  if (!Number.isFinite(price) || price < 0) return null;
+  return {
+    pricePhp: Math.floor(price),
+    discountPercent: normalizePlanDiscountPercent(Number(raw.discountPercent)),
+    volumeDiscountTiers: normalizeVolumeDiscountTiers(raw.volumeDiscountTiers),
+    volumeRampFloorPhp: normalizeVolumeRampFloorPhp(Number(raw.volumeRampFloorPhp)),
+    volumeRampAtCount: normalizeVolumeRampAtCount(Number(raw.volumeRampAtCount)),
+  };
+}
+
+export function computeTotalFromPricingParams(
+  params: PlanPricingParams,
+  propertyCount: number
+): number {
+  return computeOrgSubscriptionTotalPhp(
+    discountedPlanPricePhp(params.pricePhp, params.discountPercent),
+    params.volumeDiscountTiers,
+    propertyCount,
+    {
+      volumeRampFloorPhp: params.volumeRampFloorPhp,
+      volumeRampAtCount: params.volumeRampAtCount,
+    }
+  );
+}
+
+/** Monthly total for a plan at a property count: promo rate, ramp, volume discount. */
+export function computePlanTotalPhp(plan: PricedPlanRow, propertyCount: number): number {
+  return computeTotalFromPricingParams(pricingParamsFromPlan(plan), propertyCount);
+}
+
+export function pricingParamsEqual(a: PlanPricingParams, b: PlanPricingParams): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}

@@ -2,7 +2,7 @@
 title: 'Workflow docs'
 status: active
 tags: [workflow, docs]
-updated: 2026-11-04
+updated: 2026-11-18
 kind: reference
 ---
 
@@ -21,6 +21,8 @@ kind: reference
 **Scratchpad emojis:** ✅ done · 🧪 for testing · 🚧 in progress · 📋 planned · 🔵 open · ❌ cancelled — [`.agent/skills/workflow-intake-scratchpads/SKILL.md`](../../.agent/skills/workflow-intake-scratchpads/SKILL.md). Validated by `scripts/dev/check-workflow-scratchpads.sh` on commit when scratchpads are staged.
 
 **Folder = stage.** Partial phases or v1 slices in `done/` do **not** close the parent plan — keep the parent in `in-progress/` until remaining scope is finished. Do not leave `stage: done` files in `intake/`. Update frontmatter **and** move the file when status changes.
+
+**Each folder README lists only the docs that live in that folder.** No move changelogs there; git history and the frontmatter carry that. A doc listed in one folder must not appear in another.
 
 **No `YYYY-MM-DD-` filename prefixes** — use frontmatter `updated:` instead.
 

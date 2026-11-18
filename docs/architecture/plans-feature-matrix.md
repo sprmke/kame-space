@@ -13,7 +13,7 @@ Source of truth for tier assignments: `pricing_plans` seed migrations under `sup
 
 ## Tier ladder
 
-**Billing is org-level only** (see [`org-level-billing-migration.md`](../workflow/done/org-level-billing-migration.md)) — there is no `property_subscriptions` table anymore. An org picks one tier and enrolls however many properties it wants covered; the total is `price_php` (per-property rate) × enrolled count, promo-discounted by `discount_percent` then volume-discounted by `volume_discount_tiers`. A property left out of the org's subscription resolves to Free. **Archived properties are not billed**: archiving un-slots the property (`property_removed` event) so it drops off the next cycle, and plan changes never re-slot an archived listing. Paused and suspended listings stay billed.
+**Billing is org-level only** (see [`org-level-billing-migration.md`](../workflow/done/org-level-billing-migration.md)) — there is no `property_subscriptions` table anymore. An org picks one tier and enrolls however many properties it wants covered; the total is `price_php` (per-property rate) × enrolled count, promo-discounted by `discount_percent` then volume-discounted by `volume_discount_tiers`. A property left out of the org's subscription resolves to Free. **Archived properties are not billed**: archiving un-slots the property (`property_removed` event) so it drops off the next cycle, and plan changes never re-slot an archived listing. Paused and suspended listings stay billed. **A downgrade or cancel never takes effect before the period the org already paid for ends** (Phase 13), and a **suspended** subscription (payment overdue past grace) resolves to **Free features on every read path** while keeping its plan identity for the billing screens.
 
 Internal `code` and current display `name` were swapped once during migration history — **use `code` when reading code, `name` when talking to a host.**
 
@@ -358,7 +358,9 @@ Repurposed the existing (previously uncalled) `automatedBookingFlow` key — alr
 
 **Reconciled with the host first:** the checkout flow already had an implicit proration mechanism — mid-cycle plan changes extended the period from the old leftover end date (bonus days at full price) rather than crediting a price discount. The plan's literal formula would have double-counted that leftover time layered on top. Confirmed with the host: replaced time-extension with the price-credit model — a switch now starts a fresh period from today, charging (new price − credit for unused old-plan time).
 
-`_shared/subscriptionProration.ts` (client preview mirror: `plans/lib/planProration.ts`) computes credit/net-due from the subscription's actual period bounds (calendar-month arithmetic, not a fixed 30 days). `propertySubscriptionCheckout.ts` charges the prorated amount for genuine plan switches (not same-plan renewals), floored at ₱20 — PayMongo's practical minimum, since a same-day downgrade can produce a credit exceeding the new plan's price and a true zero-dollar bypass would need its own finance-reporting reconciliation (out of scope here, documented not silently dropped). `subscriptionOrchestrator.ts` starts the new period fresh (not extended) specifically for plan switches.
+> **Superseded in Phase 13:** the credit basis is now what was actually paid for the period (`org_subscriptions.period_paid_php`), the amount comes from `preview-org-plan-change` / `_shared/orgBillingQuote.ts` (no client mirror), leftover credit and the ₱20 floor excess go to the account credit ledger, and downgrades are scheduled for the period end instead of prorated. Original notes follow.
+
+`_shared/subscriptionProration.ts` (removed) computes credit/net-due from the subscription's actual period bounds (calendar-month arithmetic, not a fixed 30 days). `propertySubscriptionCheckout.ts` charges the prorated amount for genuine plan switches (not same-plan renewals), floored at ₱20 — PayMongo's practical minimum, since a same-day downgrade can produce a credit exceeding the new plan's price and a true zero-dollar bypass would need its own finance-reporting reconciliation (out of scope here, documented not silently dropped). `subscriptionOrchestrator.ts` starts the new period fresh (not extended) specifically for plan switches.
 
 `UpgradeModalProvider` navigates to org **Plans & Billing** with `?feature=<key>` (or `?reviewPlan=` after property create) and opens `PlanReviewDialog` on the Plans tab — one checkout path for feature gates and mid-cycle changes. `PlanReviewDialog` gained an optional `subscription` prop and a proration summary block (days left → credit → due today) shown whenever a switch qualifies.
 
@@ -423,6 +425,38 @@ Full detail in [`org-level-billing-migration.md`](../workflow/done/org-level-bil
 - Business Plus's exclusion logic from Phase 9 (`property-plan/index.ts`'s `.neq('code', 'business_plus')`) is moot — that whole edge function is deleted; `business_plus` is simply `is_active: false` now, excluded by the same `is_active` filter every other inactive plan already uses.
 
 **AI limit profiles:** `aiMonthlyCreditAllowance` stays the plan-facing number and feeds `aiLimitResolver` as the `plan_allowance` layer. Every other AI limit comes from the plan's `ai_limit_profile_id` (bound in `/admin/ai` → Profiles). See [`ai-platform.md`](ai-platform.md) section 5.
+
+## Phase 13 — Billing lifecycle hardening — ✅ shipped 2026-11-18
+
+Plan: [`plans-billing-lifecycle-hardening.md`](../workflow/for-testing/plans-billing-lifecycle-hardening.md). The route guide ([`org/plans.md`](../guides/routes/org/plans.md)) is the host-facing behavior; this section records what it means for entitlements.
+
+**When a plan's features change.**
+
+| Event                                       | Features change                                         | Seats and AI credits                                              |
+| ------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------- |
+| Upgrade paid                                | Immediately, new period from today                      | Reconciled on payment                                             |
+| Downgrade scheduled                         | **At the old period end** (cron `apply_scheduled_plan`) | Reconciled when the plan changes                                  |
+| Cancel at period end                        | At the period end, org moves to Free                    | Reconciled when the plan ends                                     |
+| Payment overdue, inside grace (`past_due`)  | **No change** (every paid feature stays on)             | Unchanged                                                         |
+| Overdue past grace (`suspended`)            | Free features on every read path                        | Seats reconcile to Free, AI allowance drops to the Free allowance |
+| Paid after suspension                       | Plan features return                                    | Both restored with the plan                                       |
+| Suspended for `suspension_cancel_days` (30) | Plan ends, org on Free                                  | As Free                                                           |
+
+`planEntitlements.ts#resolveSubscriptionFeatures` is the single place a suspended subscription becomes Free, so crons (auto-reply, Smart Pricing, calendar sync, review automation, analytics AI), guest pages (stay guide, showcase) and the gates all agree. `requirePropertyFeature` / `requireOrgFeature` still say "Subscription suspended: paid features are paused" for a feature the plan has but Free does not.
+
+**Per-feature downgrade policy** (rule from Phase 1-9 stays: keep past data and output, block new paid actions, never delete). What the host is told before confirming comes from `_shared/planChangeImpact.ts`.
+
+| Feature                                 | At the effective date                                                                                     | Preview shows                     |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| Team seats over the new limit           | Newest members paused with `plan_limited`, nothing deleted, restored on upgrade                           | Seats allowed vs in use           |
+| Airbnb / OTA calendar sync              | Feeds stop importing (gate in `calendar-sync-cron`); feeds, bookings and blocked dates are kept           | Connected feeds                   |
+| Marketing Studio / Meta publishing      | New publishing blocked (`requireMarketingPublishAllowed`); posts already live stay up; creations viewable | Posts scheduled for later         |
+| Smart Pricing                           | Stops applying (`smartPricingRead` re-checks the entitlement); saved settings and rates kept              | Properties with it on             |
+| AI credits                              | Allowance changes to the new plan's (`syncAiCreditsFromPlan`); credits bought separately untouched        | Old vs new monthly credits        |
+| Search visibility                       | Tier drops to the new plan's                                                                              | Old vs new tier                   |
+| Booking emails, public pages, templates | Gates close for new edits and automation; existing published output stays                                 | Feature on/off list in the dialog |
+
+**Ledger and quotes.** Money math lives in `_shared/orgBillingQuote.ts` (pure), state in `orgBillingContext.ts`. Account credit is `org_billing_ledger` (signed, positive = owed, negative = credit, never cash). A payment is applied only if its stored intent still fits the subscription (`orgPaymentIntent.ts`); otherwise it is kept as credit.
 
 ## Cancellation policy & refunds — no plan gate (2026-11-05)
 

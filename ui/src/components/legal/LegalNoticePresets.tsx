@@ -67,12 +67,14 @@ export function PlanBillingLegalNotice({
   kind,
   className,
   align = 'start',
-}: PresetProps & { kind: 'checkout' | 'downgrade' }) {
+}: PresetProps & { kind: 'checkout' | 'downgrade' | 'cancel' }) {
   return (
     <LegalNotice align={align} className={className}>
       {kind === 'checkout'
-        ? 'Paid through PayMongo. Renews monthly by payment link. Unused time is not refunded.'
-        : 'This applies right away. Unused time is not refunded.'}{' '}
+        ? 'Paid through PayMongo. Renews monthly by payment link. Unused time on a plan change is credited to you, never paid back in cash.'
+        : kind === 'downgrade'
+          ? 'Takes effect at the end of the billing period. Paid time is not refunded.'
+          : 'Your plan ends at the end of the billing period. Paid time is not refunded.'}{' '}
       <LegalLink doc="terms" section="billing">
         Billing terms
       </LegalLink>
@@ -130,11 +132,13 @@ export function MetaConnectLegalNotice({ className, align = 'start' }: PresetPro
   );
 }
 
-/** Data import wizard, before a host uploads a guest/booking spreadsheet. */
+/**
+ * Data import host-data link (standalone).
+ * Upload step copy inlines `LegalLink` instead; keep this for other call sites.
+ */
 export function DataImportLegalNotice({ className, align = 'start' }: PresetProps) {
   return (
     <LegalNotice align={align} className={className}>
-      Only import guest data you are allowed to use for running your stays.{' '}
       <LegalLink doc="terms" section="host-data">
         Host data terms
       </LegalLink>

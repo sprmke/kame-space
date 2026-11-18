@@ -3,9 +3,10 @@ import { useEffect } from 'react';
 import { usePropertyIdParam, useResolvedOrgId } from '@/features/dashboard/org/lib/adminApiScope';
 import { useOrgPlan } from '@/features/dashboard/plans/hooks/useOrgPlan';
 import { usePropertyEntitlements } from '@/features/dashboard/plans/hooks/usePropertyEntitlements';
-import { deriveOrgEntitlementsFromPlan } from '@/features/dashboard/plans/lib/orgEntitlements';
 import { resolveFeatureGateState } from '@/features/dashboard/plans/lib/featureGateState';
+import { deriveOrgEntitlementsFromPlan } from '@/features/dashboard/plans/lib/orgEntitlements';
 import type { PlanFeatureKey } from '@/features/dashboard/plans/lib/planFeatures';
+
 import { captureAppEvent } from '@/lib/posthog/capture';
 
 /**
