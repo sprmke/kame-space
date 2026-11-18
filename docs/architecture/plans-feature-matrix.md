@@ -428,7 +428,7 @@ Full detail in [`org-level-billing-migration.md`](../workflow/done/org-level-bil
 
 ## Phase 13 — Billing lifecycle hardening — ✅ shipped 2026-11-18
 
-Plan: [`plans-billing-lifecycle-hardening.md`](../workflow/for-testing/plans-billing-lifecycle-hardening.md). The route guide ([`org/plans.md`](../guides/routes/org/plans.md)) is the host-facing behavior; this section records what it means for entitlements.
+Plan: [`plans-billing-lifecycle-hardening.md`](../workflow/done/plans-billing-lifecycle-hardening.md). The route guide ([`org/plans.md`](../guides/routes/org/plans.md)) is the host-facing behavior; this section records what it means for entitlements.
 
 **When a plan's features change.**
 
