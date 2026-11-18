@@ -25,6 +25,20 @@ export type InboxConnection = {
   isPreview?: boolean;
 };
 
+/** One inbox thread that belongs to a booking (`social-inbox-booking-chats`). */
+export type BookingChatMatch = {
+  id: string;
+  platform: SocialPlatform;
+  participant_name: string | null;
+  participant_avatar_url: string | null;
+  last_message_at: string;
+  last_message_preview: string | null;
+  unread_count: number;
+  booking_id: string | null;
+  /** `booking` = linked to this booking, `guest` = same signed-in guest, `name` = name match only. */
+  match: 'booking' | 'guest' | 'name';
+};
+
 export type InboxConversation = {
   id: string;
   organization_id: string;

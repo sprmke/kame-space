@@ -120,6 +120,7 @@ Before every AI call, `suggestInboxReply` builds a guest-safe facts bundle via *
 | `meta-inbox-status` / `disconnect`                   | JWT + org       |
 | `meta-inbox-webhook`                                 | Public (signed) |
 | `social-inbox-threads` / `messages` / `send`         | JWT + org       |
+| `social-inbox-booking-chats`                         | JWT + org       |
 | `guest-web-chat-start` / `guest-web-chat-messages`   | JWT (guest)     |
 | `social-inbox-templates` / `settings` / `ai-suggest` | JWT + org       |
 
