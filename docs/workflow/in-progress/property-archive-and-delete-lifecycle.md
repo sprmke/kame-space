@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Property archive and delete: lifecycle, guardrails, and clear host UX'
 status: in-progress
 tags: [workflow, planned, property, settings, lifecycle, billing, guest, ux-copy]
-updated: 2026-11-18
+updated: 2026-11-19
 kind: plan
 ---
 

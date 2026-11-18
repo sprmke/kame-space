@@ -65,7 +65,7 @@ export type PlanFeatures = {
   customTemplates: boolean;
   publicPagesAutosave: boolean;
   bookingImport: boolean;
-  /** Connect external OTA calendars (Airbnb / Booking.com / VRBO) for two-way iCal sync. */
+  /** Connect external OTA calendars (Airbnb / Agoda / Booking.com) for two-way iCal sync. */
   calendarSync: boolean;
   /** Auto-review guests after check-out and AI review drafts. Pro (`growth`) and above. */
   reviewAutomation: boolean;

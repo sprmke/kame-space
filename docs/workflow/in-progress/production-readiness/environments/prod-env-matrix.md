@@ -1,7 +1,7 @@
 ---
 title: 'Prod env matrix (Phase 9.3)'
 status: active
-updated: 2026-11-18
+updated: 2026-11-19
 launch_gate: G
 readiness: partial
 ---

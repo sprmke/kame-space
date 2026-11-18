@@ -1083,7 +1083,34 @@ No. Bookings with saved pricing keep their amounts. Updated rates apply to futur
 - source: docs/guides/routes/org/property/pricing.md
 - order: 40
 
-Open Pricing, then Channel sync. Airbnb is the only provider offered today. Use From Airbnb to paste their export link, and To Airbnb to copy your Kame link back into Airbnb.
+Open Pricing, then Channel sync. Airbnb is the only provider offered to most hosts today. Each channel syncs both ways. In step 1, Get dates from Airbnb, paste their export link. In step 2, Send dates to Airbnb, copy your Kame link into Airbnb. A channel shows Two-way once Airbnb has read your link.
+
+### Will a booking on one channel block the others?
+
+- category: Pricing & Availability
+- audience: host
+- source: docs/guides/routes/org/property/pricing.md
+- order: 45
+
+Yes. Kame is the hub between your channels. A stay imported from one channel is shared to the other channels' calendars, and never sent back to the channel it came from. Host blocks created inside a channel are not shared, so block dates in Kame when they should stop every channel.
+
+### Why does an imported booking have no guest name?
+
+- category: Pricing & Availability
+- audience: host
+- source: docs/guides/routes/org/property/pricing.md
+- order: 47
+
+Channel calendars share dates only, so Kame cannot see the guest's name, email or phone. The stay is created with a placeholder name like Airbnb guest. Open the stay and use Copy guest form link so the guest fills in their details against the same booking.
+
+### Why does another channel show nights that came from Kame?
+
+- category: Pricing & Availability
+- audience: host
+- source: docs/guides/routes/org/property/pricing.md
+- order: 46
+
+A channel that exports closed dates as well as reservations repeats your Kame nights back. Kame recognises those echoes and never turns them into bookings, but the cleaner fix is to export reserved dates only. In Booking.com that setting is under Sync calendars.
 
 ### Can I reopen only part of a blocked range?
 

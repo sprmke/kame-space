@@ -2,7 +2,7 @@
 title: 'Local seed dataset: one org, one property, one parking'
 status: in-progress
 tags: [dev, seed, testing, local, fixtures]
-updated: 2026-11-08
+updated: 2026-11-19
 stage: in-progress
 kind: plan
 ---

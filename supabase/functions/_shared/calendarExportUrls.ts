@@ -10,8 +10,8 @@
 export type CalendarExportUrlMap = {
   all: string;
   airbnb: string;
+  agoda: string;
   booking_com: string;
-  vrbo: string;
 };
 
 /** Path segment Airbnb validates as "ends in .ics". Extra segments still hit `ical-export`. */
@@ -54,7 +54,7 @@ export function buildCalendarExportUrls(
   return {
     all: base,
     airbnb: `${base}&as=airbnb`,
+    agoda: `${base}&as=agoda`,
     booking_com: `${base}&as=booking_com`,
-    vrbo: `${base}&as=vrbo`,
   };
 }

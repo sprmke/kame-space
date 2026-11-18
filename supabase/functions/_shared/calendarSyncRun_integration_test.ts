@@ -14,7 +14,12 @@ import { assertEquals, assert } from 'https://deno.land/std@0.208.0/assert/mod.t
 
 import { createServiceClient } from './orgAuth.ts';
 import { encryptIntegrationSecret } from './secretsCrypto.ts';
-import { runFeedSync, type CalendarFeedRow, type IcsFetcher } from './calendarSyncRun.ts';
+import {
+  loadExportRanges,
+  runFeedSync,
+  type CalendarFeedRow,
+  type IcsFetcher,
+} from './calendarSyncRun.ts';
 import type { FetchIcsResult } from './calendarSyncService.ts';
 
 const sb = createServiceClient();
@@ -66,13 +71,17 @@ async function firstPropertyId(): Promise<string> {
   return data!.id as string;
 }
 
-async function seedFeed(propertyId: string, createBookings: boolean): Promise<CalendarFeedRow> {
+async function seedFeed(
+  propertyId: string,
+  createBookings: boolean,
+  provider: 'airbnb' | 'booking_com' | 'agoda' = 'airbnb'
+): Promise<CalendarFeedRow> {
   const enc = await encryptIntegrationSecret('https://example.com/calendar.ics');
   const { data, error } = await sb
     .from('property_calendar_feeds')
     .insert({
       property_id: propertyId,
-      provider: 'airbnb',
+      provider,
       label: `itest-${crypto.randomUUID().slice(0, 8)}`,
       ics_url_encrypted: enc,
       create_bookings: createBookings,
@@ -694,5 +703,494 @@ Deno.test('Phase 2: reconnecting the same feed relinks the existing booking', as
   } finally {
     await cleanupFeed(feedA.id);
     await cleanupFeed(feedB.id);
+  }
+});
+
+Deno.test(
+  'Phase 1b: an imported reservation is relayed to other channels, never to its own',
+  async () => {
+    const propertyId = await firstPropertyId();
+    const airbnb = await seedFeed(propertyId, false, 'airbnb');
+    const agoda = await seedFeed(propertyId, false, 'agoda');
+    const start = '2027-06-01';
+    const end = '2027-06-04';
+    const icsStart = '20270601';
+    const icsEnd = '20270604';
+    try {
+      const body = ics([
+        vevent(
+          'relay-stay-1',
+          icsStart,
+          icsEnd,
+          'Reserved',
+          'Reservation URL: https://www.airbnb.com/reservations/details/HMRELAY1'
+        ),
+      ]);
+      const run = await runFeedSync(airbnb, {
+        runId: crypto.randomUUID(),
+        force: true,
+        fetchIcs: stubFetch(body),
+      });
+      assertEquals(run.status, 'synced');
+
+      const toAgoda = await loadExportRanges(sb, propertyId, 'agoda');
+      assertEquals(
+        toAgoda.ranges.filter((r) => r.startDate === start && r.endDate === end).length,
+        1,
+        'the stay blocks Agoda'
+      );
+
+      const toAirbnb = await loadExportRanges(sb, propertyId, 'airbnb');
+      assertEquals(
+        toAirbnb.ranges.filter((r) => r.startDate === start && r.endDate === end).length,
+        0,
+        'the source channel never gets its own stay back'
+      );
+
+      const all = await loadExportRanges(sb, propertyId, null);
+      assertEquals(
+        all.ranges.filter((r) => r.startDate === start && r.endDate === end).length,
+        1,
+        'the all-channels link publishes it'
+      );
+    } finally {
+      await cleanupFeed(airbnb.id);
+      await cleanupFeed(agoda.id);
+    }
+  }
+);
+
+Deno.test(
+  'Phase 1b: a stay already carried by a live booking is relayed once, not twice',
+  async () => {
+    const propertyId = await firstPropertyId();
+    const airbnb = await seedFeed(propertyId, true, 'airbnb');
+    const agoda = await seedFeed(propertyId, false, 'agoda');
+    const start = '2027-06-10';
+    const end = '2027-06-13';
+    const icsStart = '20270610';
+    const icsEnd = '20270613';
+    try {
+      const body = ics([
+        vevent(
+          'relay-dedupe-1',
+          icsStart,
+          icsEnd,
+          'Reserved',
+          'Reservation URL: https://www.airbnb.com/reservations/details/HMRELAY2'
+        ),
+      ]);
+      const run = await runFeedSync(airbnb, {
+        runId: crypto.randomUUID(),
+        force: true,
+        fetchIcs: stubFetch(body),
+      });
+      assertEquals(run.bookingsCreated, 1);
+
+      const toAgoda = await loadExportRanges(sb, propertyId, 'agoda');
+      assertEquals(
+        toAgoda.ranges.filter((r) => r.startDate === start && r.endDate === end).length,
+        1,
+        'rule 1 and rule 3 must not publish the same stay twice'
+      );
+    } finally {
+      await cleanupFeed(airbnb.id);
+      await cleanupFeed(agoda.id);
+    }
+  }
+);
+
+Deno.test(
+  'Phase 1b: a Booking.com echo creates no booking and raises the closed-dates warning',
+  async () => {
+    const propertyId = await firstPropertyId();
+    const feed = await seedFeed(propertyId, true, 'booking_com');
+    const first = { start: '2027-07-01', end: '2027-07-04' };
+    const second = { start: '2027-07-10', end: '2027-07-12' };
+    const hashes = [`itest-${crypto.randomUUID()}`, `itest-${crypto.randomUUID()}`];
+    try {
+      await sb.from('calendar_export_reads').insert([
+        {
+          property_id: propertyId,
+          channel: 'booking_com',
+          ranges_hash: hashes[0],
+          ranges: [first],
+        },
+        {
+          property_id: propertyId,
+          channel: 'booking_com',
+          ranges_hash: hashes[1],
+          ranges: [second],
+        },
+      ]);
+
+      const body = ics([
+        vevent('echo-1', '20270701', '20270704', 'CLOSED - Not available'),
+        vevent('echo-2', '20270710', '20270712', 'CLOSED - Not available'),
+      ]);
+      const run = await runFeedSync(feed, {
+        runId: crypto.randomUUID(),
+        force: true,
+        fetchIcs: stubFetch(body),
+      });
+
+      assertEquals(run.bookingsCreated, 0, 'an echo must never become a placeholder booking');
+      assertEquals((await bookings(feed.id)).length, 0);
+
+      const kept = await blocks(feed.id);
+      assertEquals(kept.length, 2, 'echoes still block availability');
+
+      const logged = await events(feed.id);
+      assertEquals(
+        logged.some(
+          (e) =>
+            e.action === 'skipped' && (e.detail as { reason?: string })?.reason === 'export_echo'
+        ),
+        true,
+        'the echo is logged for support'
+      );
+
+      const row = await feedRow(feed.id);
+      assert(row.echo_warning_at, 'two exact matches raise the closed-dates warning');
+    } finally {
+      await sb.from('calendar_export_reads').delete().in('ranges_hash', hashes);
+      await cleanupFeed(feed.id);
+    }
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Multi-channel hardening (Agoda and Booking.com). Dates are 2027-09 to 2027-12 so they never
+// overlap the Airbnb cases above.
+
+async function bookingRows(feedId: string) {
+  const { data } = await sb
+    .from('guest_submissions')
+    .select('id,status,booking_source,external_source,find_us,primary_guest_name,guest_email')
+    .eq('external_feed_id', feedId);
+  return data ?? [];
+}
+
+function rangeCount(
+  ranges: Array<{ startDate: string; endDate: string }>,
+  start: string,
+  end: string
+) {
+  return ranges.filter((r) => r.startDate === start && r.endDate === end).length;
+}
+
+Deno.test('Agoda: a reservation becomes an Agoda booking with channel provenance', async () => {
+  const propertyId = await firstPropertyId();
+  const feed = await seedFeed(propertyId, true, 'agoda');
+  try {
+    const run = await runFeedSync(feed, {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(ics([vevent('agoda-1', '20270901', '20270904', 'Reserved')])),
+    });
+    assertEquals(run.bookingsCreated, 1);
+    const [row] = await bookingRows(feed.id);
+    assertEquals(row.booking_source, 'Agoda');
+    assertEquals(row.external_source, 'agoda');
+    assertEquals(row.find_us, 'Agoda');
+    assertEquals(row.status, 'PENDING_REVIEW');
+    assert(String(row.primary_guest_name).toLowerCase().includes('agoda'), 'placeholder names Agoda');
+    assert(!row.guest_email, 'no guest email, so no guest-facing side effects');
+    const [block] = await blocks(feed.id);
+    assertEquals(block.source, 'ical_import');
+  } finally {
+    await cleanupFeed(feed.id);
+  }
+});
+
+Deno.test('Booking.com: a real reservation outside served nights becomes a Booking.com booking', async () => {
+  const propertyId = await firstPropertyId();
+  const feed = await seedFeed(propertyId, true, 'booking_com');
+  try {
+    const run = await runFeedSync(feed, {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(ics([vevent('bcom-1', '20270910', '20270913', 'CLOSED - Not available')])),
+    });
+    assertEquals(run.bookingsCreated, 1);
+    const [row] = await bookingRows(feed.id);
+    assertEquals(row.booking_source, 'Booking.com');
+    assertEquals(row.external_source, 'booking_com');
+    assertEquals(row.find_us, 'Booking.com');
+    assertEquals((await feedRow(feed.id)).echo_warning_at, null, 'no echo, no warning');
+  } finally {
+    await cleanupFeed(feed.id);
+  }
+});
+
+Deno.test('Booking.com with Create bookings off imports blocks only', async () => {
+  const propertyId = await firstPropertyId();
+  const feed = await seedFeed(propertyId, false, 'booking_com');
+  try {
+    const run = await runFeedSync(feed, {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(ics([vevent('bcom-off', '20270915', '20270917', 'CLOSED - Not available')])),
+    });
+    assertEquals(run.bookingsCreated, 0);
+    assertEquals((await blocks(feed.id)).length, 1);
+    assertEquals((await bookingRows(feed.id)).length, 0);
+  } finally {
+    await cleanupFeed(feed.id);
+  }
+});
+
+Deno.test('Relay follows the source: removed and rescheduled stays update the other channels', async () => {
+  const propertyId = await firstPropertyId();
+  const airbnb = await seedFeed(propertyId, false, 'airbnb');
+  try {
+    const keep = vevent('relay-keep', '20271001', '20271003', 'Reserved');
+    const move = (s: string, e: string) => vevent('relay-move', s, e, 'Reserved');
+    await runFeedSync(airbnb, {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(ics([keep, move('20271010', '20271013')])),
+    });
+    let toAgoda = (await loadExportRanges(sb, propertyId, 'agoda')).ranges;
+    assertEquals(rangeCount(toAgoda, '2027-10-10', '2027-10-13'), 1);
+
+    // reschedule: the export moves with it
+    await runFeedSync(await refetch(airbnb), {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(ics([keep, move('20271020', '20271023')])),
+    });
+    toAgoda = (await loadExportRanges(sb, propertyId, 'agoda')).ranges;
+    assertEquals(rangeCount(toAgoda, '2027-10-10', '2027-10-13'), 0, 'old dates freed');
+    assertEquals(rangeCount(toAgoda, '2027-10-20', '2027-10-23'), 1, 'new dates held');
+
+    // cancellation: the stay vanishes from the next pull and from the export
+    await runFeedSync(await refetch(airbnb), {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(ics([keep])),
+    });
+    toAgoda = (await loadExportRanges(sb, propertyId, 'agoda')).ranges;
+    assertEquals(rangeCount(toAgoda, '2027-10-20', '2027-10-23'), 0, 'cancelled stay freed');
+    assertEquals(rangeCount(toAgoda, '2027-10-01', '2027-10-03'), 1, 'untouched stay still held');
+  } finally {
+    await cleanupFeed(airbnb.id);
+  }
+});
+
+Deno.test('Relay never publishes a channel-side block, only reservations', async () => {
+  const propertyId = await firstPropertyId();
+  const airbnb = await seedFeed(propertyId, false, 'airbnb');
+  try {
+    await runFeedSync(airbnb, {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(
+        ics([
+          vevent('blk-1', '20271105', '20271108', 'Airbnb (Not available)'),
+          vevent('res-1', '20271110', '20271112', 'Reserved'),
+        ])
+      ),
+    });
+    const toBcom = (await loadExportRanges(sb, propertyId, 'booking_com')).ranges;
+    assertEquals(rangeCount(toBcom, '2027-11-05', '2027-11-08'), 0, 'host block stays on its channel');
+    assertEquals(rangeCount(toBcom, '2027-11-10', '2027-11-12'), 1, 'reservation is relayed');
+  } finally {
+    await cleanupFeed(airbnb.id);
+  }
+});
+
+Deno.test('Relay: a one-night stay occupies exactly that night on the other channels', async () => {
+  const propertyId = await firstPropertyId();
+  const airbnb = await seedFeed(propertyId, false, 'airbnb');
+  try {
+    await runFeedSync(airbnb, {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(ics([vevent('one-night', '20271115', '20271116', 'Reserved')])),
+    });
+    const toAgoda = (await loadExportRanges(sb, propertyId, 'agoda')).ranges;
+    assertEquals(rangeCount(toAgoda, '2027-11-15', '2027-11-16'), 1);
+  } finally {
+    await cleanupFeed(airbnb.id);
+  }
+});
+
+Deno.test('Removing one channel keeps the relay from the others intact', async () => {
+  const propertyId = await firstPropertyId();
+  const airbnb = await seedFeed(propertyId, false, 'airbnb');
+  const agoda = await seedFeed(propertyId, false, 'agoda');
+  try {
+    await runFeedSync(airbnb, {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(ics([vevent('stay-air', '20271120', '20271123', 'Reserved')])),
+    });
+    await runFeedSync(agoda, {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(ics([vevent('stay-ago', '20271125', '20271128', 'Reserved')])),
+    });
+    await cleanupFeed(agoda.id);
+    const toBcom = (await loadExportRanges(sb, propertyId, 'booking_com')).ranges;
+    assertEquals(rangeCount(toBcom, '2027-11-20', '2027-11-23'), 1, 'Airbnb stay still relayed');
+    assertEquals(rangeCount(toBcom, '2027-11-25', '2027-11-28'), 0, 'removed channel stay is gone');
+  } finally {
+    await cleanupFeed(airbnb.id);
+    await cleanupFeed(agoda.id);
+  }
+});
+
+Deno.test('Echo window: nights served 48 h ago are echoes, 73 h ago are real channel stays', async () => {
+  const propertyId = await firstPropertyId();
+  const ghost = await seedFeed(propertyId, true, 'booking_com');
+  const stale = await seedFeed(propertyId, true, 'booking_com');
+  const hashes = [`itest-${crypto.randomUUID()}`, `itest-${crypto.randomUUID()}`];
+  const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
+  try {
+    await sb.from('calendar_export_reads').insert([
+      {
+        property_id: propertyId,
+        channel: 'booking_com',
+        ranges_hash: hashes[0],
+        ranges: [{ start: '2027-12-01', end: '2027-12-04' }],
+        first_read_at: hoursAgo(48),
+        last_read_at: hoursAgo(48),
+      },
+      {
+        property_id: propertyId,
+        channel: 'booking_com',
+        ranges_hash: hashes[1],
+        ranges: [{ start: '2027-12-10', end: '2027-12-13' }],
+        first_read_at: hoursAgo(73),
+        last_read_at: hoursAgo(73),
+      },
+    ]);
+    const inside = await runFeedSync(ghost, {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(ics([vevent('ghost-1', '20271201', '20271204', 'CLOSED - Not available')])),
+    });
+    assertEquals(inside.bookingsCreated, 0, 'inside 72 h: ghost of a Kame booking, never a booking');
+
+    const outside = await runFeedSync(stale, {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(ics([vevent('ghost-2', '20271210', '20271213', 'CLOSED - Not available')])),
+    });
+    assertEquals(outside.bookingsCreated, 1, 'past 72 h: treated as a real channel stay');
+  } finally {
+    await sb.from('calendar_export_reads').delete().in('ranges_hash', hashes);
+    await cleanupFeed(ghost.id);
+    await cleanupFeed(stale.id);
+  }
+});
+
+Deno.test('A partly covered range is not an echo', async () => {
+  const propertyId = await firstPropertyId();
+  const feed = await seedFeed(propertyId, true, 'booking_com');
+  const hash = `itest-${crypto.randomUUID()}`;
+  try {
+    await sb.from('calendar_export_reads').insert({
+      property_id: propertyId,
+      channel: 'booking_com',
+      ranges_hash: hash,
+      ranges: [{ start: '2027-12-20', end: '2027-12-22' }],
+    });
+    const run = await runFeedSync(feed, {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(ics([vevent('partial-1', '20271220', '20271224', 'CLOSED - Not available')])),
+    });
+    assertEquals(run.bookingsCreated, 1, 'only part of the stay was ours, so it is a real stay');
+  } finally {
+    await sb.from('calendar_export_reads').delete().eq('ranges_hash', hash);
+    await cleanupFeed(feed.id);
+  }
+});
+
+Deno.test('Adoption stays inside the feed channel: an Agoda stay is never adopted by an Airbnb feed', async () => {
+  const propertyId = await firstPropertyId();
+  const agoda = await seedFeed(propertyId, true, 'agoda');
+  const airbnb = await seedFeed(propertyId, true, 'airbnb');
+  let detachedId: string | null = null;
+  try {
+    const body = ics([vevent('adopt-x', '20271210', '20271212', 'Reserved')]);
+    await runFeedSync(agoda, { runId: crypto.randomUUID(), force: true, fetchIcs: stubFetch(body) });
+    const [made] = await bookingRows(agoda.id);
+    detachedId = made.id as string;
+    // A host-entered Agoda stay: provenance removed, source kept.
+    await sb
+      .from('guest_submissions')
+      .update({ external_source: null, external_uid: null, external_feed_id: null })
+      .eq('id', detachedId);
+
+    const air = await runFeedSync(airbnb, {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(body),
+    });
+    assertEquals(air.bookingsLinked, 0, 'Airbnb must not adopt an Agoda row');
+    assertEquals(air.bookingsCreated, 1);
+
+    await sb
+      .from('property_calendar_feeds')
+      .update({ last_feed_hash: null })
+      .eq('id', agoda.id);
+    const ago = await runFeedSync(await refetch(agoda), {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(body),
+    });
+    assertEquals(ago.bookingsLinked, 1, 'the Agoda feed adopts its own channel row');
+  } finally {
+    if (detachedId) await sb.from('guest_submissions').delete().eq('id', detachedId);
+    await cleanupFeed(airbnb.id);
+    await cleanupFeed(agoda.id);
+  }
+});
+
+Deno.test('Two channels reporting the same nights raise a conflict and keep both stays', async () => {
+  const propertyId = await firstPropertyId();
+  const airbnb = await seedFeed(propertyId, true, 'airbnb');
+  const agoda = await seedFeed(propertyId, true, 'agoda');
+  try {
+    await runFeedSync(airbnb, {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(ics([vevent('dbl-a', '20271215', '20271218', 'Reserved')])),
+    });
+    const run = await runFeedSync(agoda, {
+      runId: crypto.randomUUID(),
+      force: true,
+      fetchIcs: stubFetch(ics([vevent('dbl-b', '20271216', '20271219', 'Reserved')])),
+    });
+    assertEquals(run.bookingsCreated, 1, 'both stays are kept, never silently dropped');
+    assert(run.conflicts >= 1, 'the overlap is flagged for a human');
+    assertEquals((await bookingRows(airbnb.id)).length, 1);
+    assertEquals((await bookingRows(agoda.id)).length, 1);
+  } finally {
+    await cleanupFeed(airbnb.id);
+    await cleanupFeed(agoda.id);
+  }
+});
+
+Deno.test('A feed whose provider is no longer supported is skipped, never run', async () => {
+  const propertyId = await firstPropertyId();
+  const feed = await seedFeed(propertyId, true, 'airbnb');
+  try {
+    const run = await runFeedSync(
+      { ...feed, provider: 'vrbo' as never },
+      { runId: crypto.randomUUID(), force: true, fetchIcs: stubFetch(ics([])) }
+    );
+    assertEquals(run.status, 'skipped');
+    assertEquals(run.ok, true);
+    const logged = await events(feed.id);
+    assertEquals(
+      logged.some((e) => (e.detail as { reason?: string })?.reason === 'unsupported_provider'),
+      true
+    );
+  } finally {
+    await cleanupFeed(feed.id);
   }
 });
