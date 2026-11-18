@@ -38,7 +38,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /properties/kame-home/form step 5
 - **Section/element:** "Payment breakdown"
 - **Viewports:** 390, 768, 1024, 1440
-- **Evidence:** `step-05-payment.jpg` and `.json`
+- **Evidence:** `./screenshots/public/live/step-05-payment.jpg` and `.json`
 
 **What happens.** The breakdown is three lines: "Downpayment / 2 nights stay ₱2,000.00 / Total due now ₱2,000.00". There is no nightly rate, no stay total, no balance due on arrival, and the ₱10 voucher applied on step 2 does not appear. The listing says ₱4,500/night, so a 2-night stay is ₱9,000 and the guest cannot reconcile any of it.
 
@@ -58,7 +58,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /accept-invite
 - **Section/element:** whole page, empty-token state
 - **Viewports:** 390, 1440
-- **Evidence:** `./screenshots/public/auth__accept-invite__m390.jpg`, `auth__accept-invite__d1440.jpg`; live: `probe-p4b.json → acceptInvite` (`links: []`, body text `"Kame | Space"`)
+- **Evidence:** `./screenshots/public/auth__accept-invite__m390.jpg`, `./screenshots/public/auth__accept-invite__d1440.jpg`; live: `probe-p4b.json → acceptInvite` (`links: []`, body text `"Kame | Space"`)
 
 **What happens.** The page renders a bare grey canvas with one centred card reading "This invitation link is invalid." There is no logo, no header, no footer, no navigation, and the DOM contains **zero** links or buttons. A host who clicks an expired or already-used invite from their email has nothing to do next.
 
@@ -78,7 +78,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /account/profile
 - **Section/element:** bottom card — Version / Local build / Check updates / Offline / 144 KB used / Keep data / Clear saved data
 - **Viewports:** all
-- **Evidence:** `account__profile__m390.jpg`, `account__profile__d1440.jpg`
+- **Evidence:** `./screenshots/public/account__profile__m390.jpg`, `./screenshots/public/account__profile__d1440.jpg`
 
 **What happens.** A card exposes "Version: **Local build**", "Offline 144 KB used", "Check updates", "Keep data", "Clear saved data". "Local build" is a developer string. "Keep data" and "Clear saved data" do not say _which_ data (cached pages? drafts? the booking form you were filling?).
 
@@ -98,7 +98,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /account/help
 - **Section/element:** whole page
 - **Viewports:** all
-- **Evidence:** `account__help__m390.jpg`; live `probe-p4b-3.json → help1440` = `No help topics yet | Contact support if you need a hand with your stay. | Contact support`, `inputs: 0`
+- **Evidence:** `./screenshots/public/account__help__m390.jpg`; live `probe-p4b-3.json → help1440` = `No help topics yet | Contact support if you need a hand with your stay. | Contact support`, `inputs: 0`
 
 **What happens.** The Help destination contains one empty-state card with a brand mark, "No help topics yet", and a "Contact support" button. There is no search field, no topic list, no FAQ, no link to the help-centre content that does exist on the marketing site.
 
@@ -118,7 +118,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /onboarding, /verification-rejected
 - **Section/element:** whole page
 - **Viewports:** all
-- **Evidence:** `admin-gap__onboarding__d1440.jpg` and `admin-gap__verification-rejected__d1440.jpg` are pixel-identical to the org Dashboard; live `probe-p4b.json` — both land on `http://localhost:5173/org/kame-homes/dashboard` with `h1: "Dashboard"`
+- **Evidence:** `./screenshots/public/admin-gap__onboarding__d1440.jpg` and `./screenshots/public/admin-gap__verification-rejected__d1440.jpg` are pixel-identical to the org Dashboard; live `probe-p4b.json` — both land on `http://localhost:5173/org/kame-homes/dashboard` with `h1: "Dashboard"`
 
 **What happens.** Both routes resolve to the ordinary org Dashboard. The onboarding entry point has no onboarding content, and the verification-rejected state has no UI at all: a host whose verification was rejected sees a normal dashboard, with a "Verification" item that looks half-selected in the sidebar and no explanation anywhere.
 
@@ -159,7 +159,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Verified note:** Re-measured: 21 links, 7 outside the viewport (System health, Operations reports, AI, Rate limits, Audit log, Platform settings, Feature availability); the scroll container is 1119px tall in a 679px box with no visible scrollbar.
 - **Section/element:** left nav
 - **Viewports:** 900px-tall laptop (1440×900, 1280×800), 1024
-- **Evidence:** live `probe-p4b-6.json → adminNav` — 21 links, `scrollHeight 1119` vs `clientHeight 679`, `overflowY: auto`, first hidden item "System health" at y=880, last "Feature availability" at y=1144; visible in `admin-gap__admin-playbook__d1440.jpg` (list stops at "Announcements" above the plan card)
+- **Evidence:** live `probe-p4b-6.json → adminNav` — 21 links, `scrollHeight 1119` vs `clientHeight 679`, `overflowY: auto`, first hidden item "System health" at y=880, last "Feature availability" at y=1144; visible in `./screenshots/public/admin-gap__admin-playbook__d1440.jpg` (list stops at "Announcements" above the plan card)
 
 **What happens.** The nav scrolls but macOS overlay scrollbars show nothing, and the pinned plan card cuts the list with a hard edge. Items below the cut: System health, Operations reports, AI, Rate limits, Audit log, Platform settings, Feature availability, plus any later additions.
 
@@ -199,7 +199,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /org/:orgSlug/property/:propertySlug/help-support/docs
 - **Section/element:** main card
 - **Viewports:** all
-- **Evidence:** `admin-gap__prop-docs__d1440.jpg` / `..._m390.jpg` — hub "Guides · How each page works" above a giant card reading "No guides yet"
+- **Evidence:** `./screenshots/public/admin-gap__prop-docs__d1440.jpg` / `..._m390.jpg` — hub "Guides · How each page works" above a giant card reading "No guides yet"
 
 **What happens.** One of the four prominent Help hub tiles lands on an empty page whose subtitle is "Walkthroughs for each page in the dashboard". The hub tile is styled identically to the working ones.
 
@@ -219,7 +219,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /org/:orgSlug/team
 - **Section/element:** paused member rows
 - **Viewports:** all
-- **Evidence:** manifest `org-team` — 21 contrast failures, sample: `Demo Manager` 2.4:1, `manager.demo@example.com` 2.4:1, avatar initials `DM` 2.4:1, `Full Access` 2.8:1, `Plan limit` 2.9:1 (need 4.5); visible in `admin-gap__org-team__d1440.jpg` and `..._m390.jpg`
+- **Evidence:** manifest `org-team` — 21 contrast failures, sample: `Demo Manager` 2.4:1, `manager.demo@example.com` 2.4:1, avatar initials `DM` 2.4:1, `Full Access` 2.8:1, `Plan limit` 2.9:1 (need 4.5); visible in `./screenshots/public/admin-gap__org-team__d1440.jpg` and `..._m390.jpg`
 
 **What happens.** Three of five rows are dimmed to roughly 40% opacity to signal "paused". Names, emails and role chips all drop to ~2.3–2.9:1.
 
@@ -239,7 +239,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /org/.../parking/monaco-level-2-slot-27/notifications
 - **Section/element:** "Calendar conflicts" alert
 - **Viewports:** all
-- **Evidence:** `admin-gap__parking-notifications__d1440.jpg` — body begins `test-14a390de: 2 imported reservations overlap existing bookings or blocks.`
+- **Evidence:** `./screenshots/public/admin-gap__parking-notifications__d1440.jpg` — body begins `test-14a390de: 2 imported reservations overlap existing bookings or blocks.`
 
 **What happens.** The alert's body is prefixed with an internal identifier and continues with developer phrasing ("resolve on the platform that should not have them").
 
@@ -260,7 +260,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Verified note:** Re-verified visually: white name/tagline/CTAs sit directly on a bright interior photograph with no overlay, so the text nearly disappears. The 1.1:1 figure is measured against the bright ceiling area, which is the worst case, not the average.
 - **Section/element:** preview hero overlay
 - **Viewports:** all
-- **Evidence:** manifest `prop-public-page-edit` — 147 contrast failures, sample: `Azure North Residences` 1.1:1 (16px), `Monaco 2604` 1.1:1 (20px), `A place made for arriving well` 1.1:1 (18px), `Check dates` 1.1:1 (16px), plus `BEDROOMS / BATHS / GUESTS / CHECK-IN` at 4.3:1; visible in `admin-gap__prop-public-page-edit__d1440.jpg` and `..._m390.jpg`
+- **Evidence:** manifest `prop-public-page-edit` — 147 contrast failures, sample: `Azure North Residences` 1.1:1 (16px), `Monaco 2604` 1.1:1 (20px), `A place made for arriving well` 1.1:1 (18px), `Check dates` 1.1:1 (16px), plus `BEDROOMS / BATHS / GUESTS / CHECK-IN` at 4.3:1; visible in `./screenshots/public/admin-gap__prop-public-page-edit__d1440.jpg` and `..._m390.jpg`
 
 **What happens.** White text and a ghost CTA sit directly on a bright interior photo with no scrim. The preview renders the real template, so this is what guests get on the published page, not a mock artefact.
 
@@ -280,7 +280,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** showcase editor
 - **Section/element:** editor toolbar
 - **Viewports:** 320, 390
-- **Evidence:** `admin-gap__prop-public-page-edit__m390.jpg` ("Open p" cut at the screen edge); live `probe-p4b-2.json → editor390.overlapping` = `{t: "Open page", l: 296, r: 411}` with `vw: 390`, plus four preview tiles extending to x=1593
+- **Evidence:** `./screenshots/public/admin-gap__prop-public-page-edit__m390.jpg` ("Open p" cut at the screen edge); live `probe-p4b-2.json → editor390.overlapping` = `{t: "Open page", l: 296, r: 411}` with `vw: 390`, plus four preview tiles extending to x=1593
 
 **What happens.** The toolbar row (Saved · Copy link · Open page) overflows the 390px viewport; the last button runs 21px past the edge and cannot be fully hit. The preview tiles also overflow to 1593px.
 
@@ -400,7 +400,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /properties/kame-home/calendar
 - **Section/element:** Month grid, day cells
 - **Viewports:** 320, 390, 768, 1024, 1440
-- **Evidence:** `shots/guest-flow__calendar__d1440.jpg` (days 1 to 17 nearly invisible, 23/24/28/29/30 faint mint), `manifest.json` `calendar` `contrastCount: 27-28`, `calendar-cells.json` (1 to 18 `disabled: true`, 19 to 22 open, 23/24 closed, 25 to 27 open, 28 to 30 closed)
+- **Evidence:** `shots/guest-flow__calendar__d1440.jpg` (days 1 to 17 nearly invisible, 23/24/28/29/30 faint mint), `./screenshots/public/manifest.json` `calendar` `contrastCount: 27-28`, `calendar-cells.json` (1 to 18 `disabled: true`, 19 to 22 open, 23/24 closed, 25 to 27 open, 28 to 30 closed)
 
 **What happens.** Past days, blocked days and today all render in variants of near-white. Only open days are legible. There is no legend, no "unavailable" label, and the current day (18) is a pale mint block that looks like a blocked day. Nothing communicates which days are clickable.
 
@@ -641,7 +641,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /
 - **Section/element:** Hero background image (day + night variants)
 - **Viewports:** 320/390/768/1024/1440
-- **Evidence:** `./screenshots/public/marketing__home__d1440.jpg`, `marketing__home__m390.jpg`, live file `/marketing/home/hero-day-1280.avif`
+- **Evidence:** `./screenshots/public/marketing__home__d1440.jpg`, `./screenshots/public/marketing__home__m390.jpg`, live file `/marketing/home/hero-day-1280.avif`
 
 **What happens.** The hero shows a multi-tower resort complex with a large colourful water-park slide array. The marketplace's only bookable stay is a studio in Azure North Residences, San Fernando, Pampanga. Nothing on the page is a water park.
 
@@ -661,7 +661,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /
 - **Section/element:** "Find your next stay, home, or parking" listing band
 - **Viewports:** 768/1024/1440 (390 less severe)
-- **Evidence:** `marketing__home__d1440.jpg`, `marketing__t768.jpg`, `marketing__l1024.jpg`; live: section height 838px at 1440 with exactly one property card
+- **Evidence:** `./screenshots/public/marketing__home__d1440.jpg`, `marketing__t768.jpg`, `marketing__l1024.jpg`; live: section height 838px at 1440 with exactly one property card
 
 **What happens.** A 838px-tall section contains a single ~250px card pinned to the left, with roughly 1,100px of empty canvas to its right. Under the card, the location chip "San Fernando 1" and the "Browse stays" button are centred on the full-width row, detached from the card they relate to. The tab row above offers "Stays 1 / Residences 1 / Parking 1" — filters over a population of one.
 
@@ -702,7 +702,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Verified note:** Verified at 1024: the "Services" link occupies x644-702 and the theme toggle x663-707, a ~39px overlap. The moon glyph draws on top of the word.
 - **Section/element:** Primary nav last item "Services" vs theme toggle button
 - **Viewports:** 1024 only (verified clean at 1152; mobile nav renders below ~1000)
-- **Evidence:** `marketing__home__l1024.jpg`; live measurement at 1024 → "Services" right edge 702px, toggle left edge 663px, **39px overlap**; at 1152 the gap is −25px (clean)
+- **Evidence:** `./screenshots/public/marketing__home__l1024.jpg`; live measurement at 1024 → "Services" right edge 702px, toggle left edge 663px, **39px overlap**; at 1152 the gap is −25px (clean)
 
 **What happens.** The word "Services" is painted underneath the 44px theme toggle circle, producing a garbled "Servic◐s" glyph collision. The overlap persists across the whole ~1024–1130px band.
 
@@ -842,7 +842,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /for-hosts
 - **Section/element:** Whole page content width
 - **Viewports:** 1024/1440
-- **Evidence:** `for-hosts__for-hosts__d1440.jpg` — hero, video panel and step cards all sit in a ~740px column centred in 1440, with ~350px of empty margin each side; `/about` by comparison uses ~1120px
+- **Evidence:** `./screenshots/public/for-hosts__for-hosts__d1440.jpg` — hero, video panel and step cards all sit in a ~740px column centred in 1440, with ~350px of empty margin each side; `/about` by comparison uses ~1120px
 
 **What happens.** The page reads as a tablet layout on a desktop monitor. The H1 wraps to two lines at 60px inside 740px, the 4-step row is cramped, and the "HOW IT WORKS" cards are ~170px wide each.
 
@@ -882,7 +882,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /for-hosts/pricing
 - **Section/element:** "Compare features" table
 - **Viewports:** 320/390/768
-- **Evidence:** `for-hosts__for-hosts-pricing__m390.jpg`, `pricing-390-bottom.png`; live at 390 → table content 755px inside a 326px scroller, first column sticky, header row **not** sticky, 62 rows, 5 plan columns ≈ 90px each
+- **Evidence:** `./screenshots/public/for-hosts__for-hosts-pricing__m390.jpg`, `pricing-390-bottom.png`; live at 390 → table content 755px inside a 326px scroller, first column sticky, header row **not** sticky, 62 rows, 5 plan columns ≈ 90px each
 
 **What happens.** Feature names wrap to 3–4 lines, each plan column is a narrow strip of "—", and once you scroll past the header you can no longer tell which column is which. The final "Choose plan" buttons are clipped by the horizontal scroll edge.
 
@@ -922,7 +922,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /contact
 - **Section/element:** Four category cards (Broken / Idea / Question / Business) and page heading
 - **Viewports:** all
-- **Evidence:** `marketing__contact__d1440.jpg`; live signed-out click on "Broken" → shows a bare "Log in or sign up" modal (`contact-authgate.png`) with no explanation, no category context, and no email fallback. Signed-in click opens a "New ticket" modal instead.
+- **Evidence:** `./screenshots/public/marketing__contact__d1440.jpg`; live signed-out click on "Broken" → shows a bare "Log in or sign up" modal (`contact-authgate.png`) with no explanation, no category context, and no email fallback. Signed-in click opens a "New ticket" modal instead.
 
 **What happens.** The page is titled "Send us a message" and offers four choices, but the email address is the only action that works without an account. A signed-out visitor who picks a category is dropped into an unexplained auth wall.
 
@@ -942,7 +942,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /about
 - **Section/element:** Hero and six capability cards
 - **Viewports:** all
-- **Evidence:** `marketing__about__d1440.jpg`; copy inventory long strings: "Guests book through property calendars and forms. Hosts and teams run each stay through a status workflow with email automation where configured.", "Run multiple listings with team roles and permission-scoped dashboards", "IDs, receipts, and stay papers go through structured review, including AI checks where you enable them."
+- **Evidence:** `./screenshots/public/marketing__about__d1440.jpg`; copy inventory long strings: "Guests book through property calendars and forms. Hosts and teams run each stay through a status workflow with email automation where configured.", "Run multiple listings with team roles and permission-scoped dashboards", "IDs, receipts, and stay papers go through structured review, including AI checks where you enable them."
 
 **What happens.** The page describes internal architecture to a public audience. "One operating system", "status workflow", "permission-scoped dashboards", "where you enable them" and "structured review" are engineering phrases; there is no story, no team, no photographs, no numbers, and the only human detail is a one-line "Based in Manila".
 
@@ -962,7 +962,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /services (linked from every header and footer)
 - **Section/element:** Whole page
 - **Viewports:** all
-- **Evidence:** `marketing__services__d1440.jpg`; live snapshot: `region "Coming Soon"` + a `list[aria-hidden]` of 7 chips
+- **Evidence:** `./screenshots/public/marketing__services__d1440.jpg`; live snapshot: `region "Coming Soon"` + a `list[aria-hidden]` of 7 chips
 
 **What happens.** One of four primary nav items resolves to a centred "Coming Soon" with ~700px of empty space above and below at 1440. The page also keeps a live search bar ("What / When") for services that do not exist.
 
@@ -1062,7 +1062,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /properties/kame-home/showcase
 - **Section/element:** "Your host", footer contact
 - **Viewports:** 390, 768, 1440
-- **Evidence:** screenshot `guest-flow__showcase__m390.jpg`: "Your host / Demo Manager / VERIFIED / manager.demo@example.com / Contact", repeated in the footer; the page repeats gallery, about, amenities and two booking CTAs already on `/properties/kame-home`.
+- **Evidence:** screenshot `./screenshots/public/guest-flow__showcase__m390.jpg`: "Your host / Demo Manager / VERIFIED / manager.demo@example.com / Contact", repeated in the footer; the page repeats gallery, about, amenities and two booking CTAs already on `/properties/kame-home`.
 
 **What happens.** a marketing page for hosts is publicly reachable and publishes a demo identity and email to guests; it also duplicates the listing detail with less information.
 
@@ -1142,7 +1142,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /for-hosts/login vs /for-guests/login
 - **Section/element:** hero / "WHY SIGN IN" block
 - **Viewports:** 390 (1440 unaffected)
-- **Evidence:** `auth__host-login__m390.jpg` (bare form, then footer) vs `auth__guest-login__m390.jpg` (form, then a full "WHY SIGN IN" panel with app mock)
+- **Evidence:** `./screenshots/public/auth__host-login__m390.jpg` (bare form, then footer) vs `./screenshots/public/auth__guest-login__m390.jpg` (form, then a full "WHY SIGN IN" panel with app mock)
 
 **What happens.** At 390 the host login is a naked form with ~370px of empty space below the terms before the footer. The guest login stacks the same form and then a 900px marketing panel underneath it. Same component, two different content decisions.
 
@@ -1162,7 +1162,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /for-guests/login, /for-guests/register
 - **Section/element:** hero mock ("Search the way you talk")
 - **Viewports:** 390, 1440
-- **Evidence:** `auth__guest-login__d1440.jpg`; live `probe-p4b.json → guestLoginAfterEmail.text`
+- **Evidence:** `./screenshots/public/auth__guest-login__d1440.jpg`; live `probe-p4b.json → guestLoginAfterEmail.text`
 
 **What happens.** The mock shows a natural-language search ("beach condo for 4"), three invented listings (Sunset 1BR Condo Boracay ₱3,200, Shoreline Studio La Union, Bayside Loft Cebu), and a seven-tab app nav: **Search, Book, Chat, Trip, Guide, Perks, Compare**. The shipped site nav is Developments, Properties, Parkings, Services, and the only seeded listing is Monaco 2604 at ₱4,500.
 
@@ -1182,7 +1182,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /account/profile
 - **Section/element:** identity card + form
 - **Viewports:** 320, 390, 768
-- **Evidence:** `account__profile__s320.jpg`, `account__profile__m390.jpg`; manifest `profile m390 height 1909`
+- **Evidence:** `./screenshots/public/account__profile__s320.jpg`, `./screenshots/public/account__profile__m390.jpg`; manifest `profile m390 height 1909`
 
 **What happens.** The card shows avatar, name, email, location, phone and bio. Immediately below, the form repeats Display name, Bio, Phone, Location. At 320 the header block alone is ~430px, so the first editable field starts around y≈700 and Save is around y≈1250. Total mobile page height 1909px for four fields.
 
@@ -1202,7 +1202,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /account/profile
 - **Section/element:** "Alerts on this device" card
 - **Viewports:** all
-- **Evidence:** `account__profile__m390.jpg` and `account__profile__d1440.jpg` both show a disabled switch and "Checking this device…"
+- **Evidence:** `./screenshots/public/account__profile__m390.jpg` and `./screenshots/public/account__profile__d1440.jpg` both show a disabled switch and "Checking this device…"
 
 **What happens.** The card renders "Checking this device…" with the switch disabled. It is still in that state in every captured viewport and after full page load.
 
@@ -1222,7 +1222,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /account/trips
 - **Section/element:** PAST group
 - **Viewports:** all
-- **Evidence:** `account__trips__m390.jpg`, `account__trips__d1440.jpg`; live `probe-p4b-3.json → tripRows` = `Monaco 2604Feb 1-2, 2027Completed`
+- **Evidence:** `./screenshots/public/account__trips__m390.jpg`, `./screenshots/public/account__trips__d1440.jpg`; live `probe-p4b-3.json → tripRows` = `Monaco 2604Feb 1-2, 2027Completed`
 
 **What happens.** With today at 18 Nov 2026, "Monaco 2604 · Feb 1–2, 2027 · Completed" sits in the PAST group, above an Oct 24–26, 2026 trip that is labelled "Ready for check-in".
 
@@ -1242,7 +1242,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /account/trips
 - **Section/element:** "Azure Monaco – Level 2 - Slot 27" row thumbnail
 - **Viewports:** 390, 768, 1024, 1440
-- **Evidence:** `account__trips__m390.jpg` (broken-image glyph); live `probe-p4b-3.json → tripImgs` — `es.unsplash.com/photo-1590674899484-...` returns `naturalWidth: 0`
+- **Evidence:** `./screenshots/public/account__trips__m390.jpg` (broken-image glyph); live `probe-p4b-3.json → tripImgs` — `es.unsplash.com/photo-1590674899484-...` returns `naturalWidth: 0`
 
 **What happens.** The parking booking's thumbnail is a broken image (the host is `es.unsplash.com`, a malformed variant of `images.unsplash.com`). The other rows fall back to a suitcase icon.
 
@@ -1262,7 +1262,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /account/trips, host Dashboard recent bookings
 - **Section/element:** listing title
 - **Viewports:** all
-- **Evidence:** `admin-gap__onboarding__d1440.jpg` shows "Azure Monoco – Level 2 - Slot 27"; `account__trips__d1440.jpg` and live `tripRows` show "Azure Monaco - Level 2 - Slot 27"
+- **Evidence:** `./screenshots/public/admin-gap__onboarding__d1440.jpg` shows "Azure Monoco – Level 2 - Slot 27"; `./screenshots/public/account__trips__d1440.jpg` and live `tripRows` show "Azure Monaco - Level 2 - Slot 27"
 
 **What happens.** One listing renders as **Monoco** with an en dash and a hyphen in the host surface, and **Monaco** with two hyphens in the guest surface.
 
@@ -1282,7 +1282,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /account/messages
 - **Section/element:** conversation list
 - **Viewports:** 390, 768
-- **Evidence:** `account__messages__m390.jpg`; live `probe-p4b-3.json → msgs` (main text is one row; tall box 652px, `scrollH 955`)
+- **Evidence:** `./screenshots/public/account__messages__m390.jpg`; live `probe-p4b-3.json → msgs` (main text is one row; tall box 652px, `scrollH 955`)
 
 **What happens.** The card holds a single conversation row ("Monaco 2604 / **seed-owner** / about 3 hours ago / AUDIT-MESSAGE please ignore") and then ~600px of empty white. At 390 there is no thread pane and no empty-state copy for it. The sender is rendered as the raw account handle `seed-owner`.
 
@@ -1302,7 +1302,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /account/vouchers
 - **Section/element:** voucher card "STAY10 / ₱10 off"
 - **Viewports:** all
-- **Evidence:** `account__vouchers__m390.jpg`; live `probe-p4b.json → vouchers` (no toast on tapping the code, button list contains no per-voucher action), `probe-p4b-3.json → vouchers1440`
+- **Evidence:** `./screenshots/public/account__vouchers__m390.jpg`; live `probe-p4b.json → vouchers` (no toast on tapping the code, button list contains no per-voucher action), `probe-p4b-3.json → vouchers1440`
 
 **What happens.** One card: "READY TO USE / STAY10 / ₱10 off / Monaco 2604 · Awarded 10 days ago / Book again". There is no expiry, no minimum spend, no copy-code control (tapping the code does nothing), and no Used/Expired section. "₱10 off" is 0.2% of a ₱4,500 stay.
 
@@ -1322,7 +1322,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /account/favorites
 - **Section/element:** listing card
 - **Viewports:** 320, 390, 768
-- **Evidence:** `account__favorites__m390.jpg`; live `probe-p4b-3.json → fav` — card 156px inside a 324px `grid-cols-2` parent, title renders "CONDO in San…"
+- **Evidence:** `./screenshots/public/account__favorites__m390.jpg`; live `probe-p4b-3.json → fav` — card 156px inside a 324px `grid-cols-2` parent, title renders "CONDO in San…"
 
 **What happens.** The grid is `grid-cols-2` below `sm`, so each card is 156px wide and the title truncates to "CONDO in San…". With one favourite, the right half of the row is empty.
 
@@ -1342,7 +1342,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /account/tickets/new
 - **Section/element:** bottom sheet, first paint
 - **Viewports:** 390
-- **Evidence:** `account__tickets-new__m390.jpg`, `shots/live-ticket-390.png`; live `probe-p4b.json → ticketNew` (dialog 704px tall at y=140, textarea at y=794, Submit at y=788)
+- **Evidence:** `./screenshots/public/account__tickets-new__m390.jpg`, `shots/live-ticket-390.png`; live `probe-p4b.json → ticketNew` (dialog 704px tall at y=140, textarea at y=794, Submit at y=788)
 
 **What happens.** On first open, the sheet's scroll region ends behind the sticky Submit bar: the "Details *" label is half visible and the textarea sits under the footer. Scrolling reaches it (textarea moves to y=437 once scrolled), so it is recoverable, but the first frame shows a form that looks clipped.
 
@@ -1362,7 +1362,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /admin/playbook
 - **Section/element:** article card subtitle
 - **Viewports:** all
-- **Evidence:** `admin-gap__admin-playbook__d1440.jpg` — `audit-blocked-dates`, `extend-your-calendar`, `collect-outstanding-balances`, `highlight-amenities-in-title`, `publish-public-page-updates`
+- **Evidence:** `./screenshots/public/admin-gap__admin-playbook__d1440.jpg` — `audit-blocked-dates`, `extend-your-calendar`, `collect-outstanding-balances`, `highlight-amenities-in-title`, `publish-public-page-updates`
 
 **What happens.** Under each human title, the raw key renders in monospace-ish muted text, at the same visual level as the body copy.
 
@@ -1402,7 +1402,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /admin/playbook
 - **Section/element:** article description at 390
 - **Viewports:** 320, 390
-- **Evidence:** `admin-gap__admin-playbook__m390.jpg`; live `probe-p4b-3.json → playbookClamp` = `webkitLineClamp: "2", scrollHeight 114, clientHeight 46`
+- **Evidence:** `./screenshots/public/admin-gap__admin-playbook__m390.jpg`; live `probe-p4b-3.json → playbookClamp` = `webkitLineClamp: "2", scrollHeight 114, clientHeight 46`
 
 **What happens.** The description is clamped to 2 lines and ends mid-sentence ("Review your calendar each…"). There is no expand affordance and the card is not tappable except for the toggle and the pencil/trash.
 
@@ -1422,7 +1422,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /admin/support/faqs
 - **Section/element:** list toolbar
 - **Viewports:** all
-- **Evidence:** `admin-gap__admin-faqs__d1440.jpg` (stat cards: Total 31, Published 31, Unpublished 0, Categories 9); live `probe-p4b.json → faqs` = `inputs: []`, `combobox: []`
+- **Evidence:** `./screenshots/public/admin-gap__admin-faqs__d1440.jpg` (stat cards: Total 31, Published 31, Unpublished 0, Categories 9); live `probe-p4b.json → faqs` = `inputs: []`, `combobox: []`
 
 **What happens.** The page has no input of any kind. Categories are headings only. To find one FAQ among 31 in 9 groups the user scrolls a 5,000px list.
 
@@ -1442,7 +1442,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /admin/ops-reports
 - **Section/element:** report rows
 - **Viewports:** 390, 1440
-- **Evidence:** `admin-gap__admin-ops-report__d1440.jpg`, `..._m390.jpg`; live manifest contrast sample (HIGH 0 at 3.6:1 ×3)
+- **Evidence:** `./screenshots/public/admin-gap__admin-ops-report__d1440.jpg`, `..._m390.jpg`; live manifest contrast sample (HIGH 0 at 3.6:1 ×3)
 
 **What happens.** Every row carries four pills. "CRITICAL 0" is red on all four rows, including the three healthy ones, so the loudest colour on the page means zero. Row labels mix conventions: "Current week · Nov 16–23", "Week of · Nov 11–18", "Current week · Nov 15–18" (two rows both claim "Current week" with different ranges). Timestamps have no timezone.
 
@@ -1482,7 +1482,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /admin/ai?tab=usage (from /admin/ai-usage)
 - **Section/element:** KPI row and "Cost by feature" chart
 - **Viewports:** all
-- **Evidence:** `admin-gap__admin-ai-usage__d1440.jpg`
+- **Evidence:** `./screenshots/public/admin-gap__admin-ai-usage__d1440.jpg`
 
 **What happens.** "Spend $1.13" beside "Projected this month **$1**" (a projection lower than spend to date, and formatted without cents). "Cost by feature" renders an empty plot: axis $0.00–$4.00, no bars, with the single series label "Dashboard assistant (complex turn)" floating in the middle of the plot area. "Feature health" reports Calls 0, Credits 0, Errors 2 (100%).
 
@@ -1502,7 +1502,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /admin/pricing/payment-settings
 - **Section/element:** rail rows
 - **Viewports:** 320, 390
-- **Evidence:** `admin-gap__admin-payment-settings__m390.jpg` — "QR Ph" with the switch on the next line, left-aligned
+- **Evidence:** `./screenshots/public/admin-gap__admin-payment-settings__m390.jpg` — "QR Ph" with the switch on the next line, left-aligned
 
 **What happens.** Below `sm` the label and its switch stack vertically, so the control sits under the text at the left edge instead of opposite it. Each rail consumes two lines.
 
@@ -1522,7 +1522,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /admin/developments/azure-north-residences
 - **Section/element:** section rail
 - **Viewports:** 1440 (truncation), 320/390 (missing)
-- **Evidence:** `admin-gap__admin-development__d1440.jpg` ("Document Requirem…" with no tooltip); `admin-gap__admin-development__m390.jpg` (no rail at all)
+- **Evidence:** `./screenshots/public/admin-gap__admin-development__d1440.jpg` ("Document Requirem…" with no tooltip); `./screenshots/public/admin-gap__admin-development__m390.jpg` (no rail at all)
 
 **What happens.** At desktop the rail truncates "Document Requirements" with no `title`/tooltip. At 390 the rail disappears, leaving a page of 12 stacked sections with no in-page navigation, so reaching "Danger Zone" means scrolling the entire form.
 
@@ -1542,7 +1542,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /admin/developments/azure-north-residences
 - **Section/element:** photo tiles (star / edit / trash overlays)
 - **Viewports:** all
-- **Evidence:** manifest `admin-development` — `unnamedControls: 15`, `smallCount: 89` (1440) / `65` (390); `admin-gap__admin-development__d1440.jpg` (three ~28px circular buttons over the cover photo)
+- **Evidence:** manifest `admin-development` — `unnamedControls: 15`, `smallCount: 89` (1440) / `65` (390); `./screenshots/public/admin-gap__admin-development__d1440.jpg` (three ~28px circular buttons over the cover photo)
 
 **What happens.** The image action buttons are ~28–32px and carry no accessible name; the same overlay repeats on every photo tile.
 
@@ -1562,7 +1562,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /org/:orgSlug/property/:propertySlug/*
 - **Section/element:** left nav, bottom edge
 - **Viewports:** 900px-tall laptop, 1024
-- **Evidence:** `admin-gap__prop-tickets__d1440.jpg`, `admin-gap__prop-docs__d1440.jpg`, `admin-gap__public-page-edit__d1440.jpg` — "Public Pages" sliced horizontally behind the plan card; live `probe-p4b-2.json → sidebar1024` = nav `scrollHeight 810` / `clientHeight 613`, `overflow: auto`
+- **Evidence:** `./screenshots/public/admin-gap__prop-tickets__d1440.jpg`, `./screenshots/public/admin-gap__prop-docs__d1440.jpg`, `admin-gap__public-page-edit__d1440.jpg` — "Public Pages" sliced horizontally behind the plan card; live `probe-p4b-2.json → sidebar1024` = nav `scrollHeight 810` / `clientHeight 613`, `overflow: auto`
 
 **What happens.** The nav scrolls, but the last visible row is clipped by the pinned plan card with no fade, so it looks like a rendering bug rather than a scroll region.
 
@@ -1582,7 +1582,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /org/.../announcements, /org/.../parking/.../announcements
 - **Section/element:** item rows + stat tiles
 - **Viewports:** all
-- **Evidence:** `admin-gap__prop-announcement__d1440.jpg`
+- **Evidence:** `./screenshots/public/admin-gap__prop-announcement__d1440.jpg`
 
 **What happens.** Every item (payout reminder, Meta reconnect, a maintenance window, a pool cleaning notice) carries a red dot and a coloured left rail. The KPI row offers four overlapping categories: Active 4, Action required 1, Attention 1, Updates 2. "Read all" appears twice, once per section. The payout item's body says "Open Finance if you see a banner."
 
@@ -1602,7 +1602,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /org/:orgSlug/team
 - **Section/element:** stat row
 - **Viewports:** all
-- **Evidence:** `admin-gap__org-team__d1440.jpg`; live `probe-p4b-3.json → teamKpi` = `Total Members 5 | Full Access 1 | Operations 5 | Read Only 0`
+- **Evidence:** `./screenshots/public/admin-gap__org-team__d1440.jpg`; live `probe-p4b-3.json → teamKpi` = `Total Members 5 | Full Access 1 | Operations 5 | Read Only 0`
 
 **What happens.** 1 + 5 + 0 = 6 against a total of 5, while the member list shows 1 Full Access and 4 Operations. Whatever the extra Operations member is (paused? invited?), the row contradicts itself.
 
@@ -1622,7 +1622,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /org/:orgSlug/team
 - **Section/element:** Members / Invitations / Permissions tabs
 - **Viewports:** 320, 390
-- **Evidence:** `admin-gap__org-team__m390.jpg`; live `probe-p4b-3.json → teamTabs` = three tabs `36×32`, label text visually hidden, accessible name present
+- **Evidence:** `./screenshots/public/admin-gap__org-team__m390.jpg`; live `probe-p4b-3.json → teamTabs` = three tabs `36×32`, label text visually hidden, accessible name present
 
 **What happens.** Below `lg` the tab labels collapse to icons only: a people icon, an envelope, a shield. The selected state is not visually distinguishable, and the targets are 36×32.
 
@@ -1642,7 +1642,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** parking notifications (Activity)
 - **Section/element:** first activity row
 - **Viewports:** all
-- **Evidence:** `admin-gap__parking-notifications__d1440.jpg` — title "Rafa Mercado", body "June Vale requested 3 nights at Monaco 2604."
+- **Evidence:** `./screenshots/public/admin-gap__parking-notifications__d1440.jpg` — title "Rafa Mercado", body "June Vale requested 3 nights at Monaco 2604."
 
 **What happens.** The row header is one guest's name; the description attributes the request to another.
 
@@ -1662,7 +1662,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** parking notifications
 - **Section/element:** Unread / Messages / Telegram on / Connected tiles
 - **Viewports:** all
-- **Evidence:** `admin-gap__parking-notifications__d1440.jpg` (rose icon chips on all four, all values 0 or 0/3)
+- **Evidence:** `./screenshots/public/admin-gap__parking-notifications__d1440.jpg` (rose icon chips on all four, all values 0 or 0/3)
 
 **What happens.** All four tiles use a rose/pink chip and icon, including "Unread 0" and "Messages 0". The pink family is the platform's destructive tint.
 
@@ -1682,7 +1682,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** parking notifications
 - **Section/element:** top-right action
 - **Viewports:** 320, 390
-- **Evidence:** `admin-gap__parking-notifications__m390.jpg` (single circular arrow icon in the green hero, no label) vs `..._d1440.jpg` ("Manage" button)
+- **Evidence:** `./screenshots/public/admin-gap__parking-notifications__m390.jpg` (single circular arrow icon in the green hero, no label) vs `..._d1440.jpg` ("Manage" button)
 
 **What happens.** The page's only settings entry point becomes an icon that reads as "share" or "export", with no label at mobile widths.
 
@@ -1842,7 +1842,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /services
 - **Section/element:** page + header search bar
 - **Viewports:** 390, 768, 1440
-- **Evidence:** screenshot `marketing__services__d1440.jpg`: "SERVICES / Coming Soon" with seven chips, a search bar with "What / Search services" and "When / Add dates", and ~40% empty space above and below.
+- **Evidence:** screenshot `./screenshots/public/marketing__services__d1440.jpg`: "SERVICES / Coming Soon" with seven chips, a search bar with "What / Search services" and "When / Add dates", and ~40% empty space above and below.
 
 **What happens.** a nav item that promises a capability leads to a placeholder; the search bar offers a date range for a service that has no dates; the chips look interactive.
 
@@ -1904,7 +1904,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /properties, /parkings, /developments, /parking-form, /parking-request, /calendar, /form, /guest-review, /document
 - **Section/element:** Document outline
 - **Viewports:** All
-- **Evidence:** `manifest.json` `h1: []` for each of those ids at 390/768/1024/1440
+- **Evidence:** `./screenshots/public/manifest.json` `h1: []` for each of those ids at 390/768/1024/1440
 
 **What happens.** The page title is an `h2` ("Check Availability", "Guest Advise Form", "Guest Review", "Pay to confirm") or missing entirely (listings start at "Homes in San Fernando" as an h2).
 
@@ -1964,7 +1964,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /parkings
 - **Section/element:** Floating search pill
 - **Viewports:** 1024, 1440
-- **Evidence:** `shots` live `live-parkings-scrolled.jpg` (nav links hidden behind the pill), `live3.json` (`bar top: 17, height: 46`, class `fixed left-0 top-[-3px] z-[55]`; header `0-81, z-50`)
+- **Evidence:** `shots` live `./screenshots/public/live/live-parkings-scrolled.jpg` (nav links hidden behind the pill), `live3.json` (`bar top: 17, height: 46`, class `fixed left-0 top-[-3px] z-[55]`; header `0-81, z-50`)
 
 **What happens.** After any scroll, the search pill fixes to the top of the viewport at a higher z-index than the header, covering Developments / Properties / Parkings / Services. Its labels also change from "Where / Search parkings / When / Add dates" to "Parkings / Anytime".
 
@@ -2124,7 +2124,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /properties/kame-home (sidebar and policy block), /properties/kame-home/form step 5
 - **Section/element:** Cancellation summary
 - **Viewports:** 390, 768, 1024, 1440
-- **Evidence:** `copy.json` property-detail ("Moderate", "Full refund of what you paid up to 3 days before check-in.", "100% of paid at least 3 days before check-in."), `shots/listings__property-detail__m390.jpg` ("Free cancelation until you've paid up to 3 days before check-in."), `step-05-payment.jpg` ("Moderate / Full refund of what you paid up to 3 days before check-in. / Percentages apply to what you have paid. / 100% of paid until Nov 22, 2026")
+- **Evidence:** `copy.json` property-detail ("Moderate", "Full refund of what you paid up to 3 days before check-in.", "100% of paid at least 3 days before check-in."), `shots/listings__property-detail__m390.jpg` ("Free cancelation until you've paid up to 3 days before check-in."), `./screenshots/public/live/step-05-payment.jpg` ("Moderate / Full refund of what you paid up to 3 days before check-in. / Percentages apply to what you have paid. / 100% of paid until Nov 22, 2026")
 
 **What happens.** The same policy is stated three ways across two screens, with "cancelation" (one l) on mobile and "cancellation" on desktop, and "until you've paid up to" is not parseable.
 
@@ -2324,7 +2324,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /for-hosts, /for-hosts/v2, /for-hosts/v3, /for-hosts/login
 - **Section/element:** Video/preview panel + caption + chapter chips
 - **Viewports:** 320/390/1024/1440
-- **Evidence:** `for-hosts__for-hosts__d1440.jpg` (dashboard mock inside the panel is cut at both edges with empty white KPI cards; chip row ends "Fin…"), `for-hosts__for-hosts__s320.jpg` caption reads "Everyt…" and "Bookin…", `host-login2.png` left panel sidebar clipped ("…board", "ngs", "ws")
+- **Evidence:** `./screenshots/public/for-hosts__for-hosts__d1440.jpg` (dashboard mock inside the panel is cut at both edges with empty white KPI cards; chip row ends "Fin…"), `./screenshots/public/for-hosts__for-hosts__s320.jpg` caption reads "Everyt…" and "Bookin…", `host-login2.png` left panel sidebar clipped ("…board", "ngs", "ws")
 
 **What happens.** The embedded product screenshot is a fixed-width image placed inside a narrower frame, so it is cropped on every edge; the caption and chapter strip are ellipsized mid-word at small widths.
 
@@ -2344,7 +2344,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /for-hosts
 - **Section/element:** Stats strip under the hero
 - **Viewports:** all
-- **Evidence:** `for-hosts__for-hosts__d1440.jpg` and `..._s320.jpg` — "14 connected modules · 1 booking workflow · AI assisted review · 24/7 background automation"
+- **Evidence:** `./screenshots/public/for-hosts__for-hosts__d1440.jpg` and `..._s320.jpg` — "14 connected modules · 1 booking workflow · AI assisted review · 24/7 background automation"
 
 **What happens.** Three of the four stats are impressive-scale (14, 24/7, AI); the second is "1", which reads as either a typo or a joke.
 
@@ -2364,7 +2364,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /for-hosts, /for-hosts/pricing, /for-hosts/v2, /for-hosts/v3
 - **Section/element:** Header nav
 - **Viewports:** 1024/1440
-- **Evidence:** `for-hosts__for-hosts__d1440.jpg` header = Features / How It Works / Reviews / Pricing / Explore / Sign In; `marketing__home__d1440.jpg` header = Developments / Properties / Parkings / Services / Become a host? / Sign In
+- **Evidence:** `./screenshots/public/for-hosts__for-hosts__d1440.jpg` header = Features / How It Works / Reviews / Pricing / Explore / Sign In; `./screenshots/public/marketing__home__d1440.jpg` header = Developments / Properties / Parkings / Services / Become a host? / Sign In
 
 **What happens.** Two unrelated top-level navs share one logo and one footer. The four guest nouns are replaced by four host nouns, and the primary CTA flips from "Become a host?" to "Explore".
 
@@ -2384,7 +2384,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /for-hosts/pricing
 - **Section/element:** Plan price blocks and compare-table headers
 - **Viewports:** all
-- **Evidence:** `for-hosts__for-hosts-pricing__d1440.jpg`, `pricing-initial.png`, copy inventory: ₱499→₱399, ₱999→₱799, ₱1,799→₱1,439, ₱4,999→₱3,999, each with a "20% off" pill
+- **Evidence:** `./screenshots/public/for-hosts__for-hosts-pricing__d1440.jpg`, `pricing-initial.png`, copy inventory: ₱499→₱399, ₱999→₱799, ₱1,799→₱1,439, ₱4,999→₱3,999, each with a "20% off" pill
 
 **What happens.** All four paid tiers show the identical 20% discount, with no end date, no strike-through rationale, and no qualifying condition.
 
@@ -2444,7 +2444,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /support
 - **Section/element:** FAQ list and "Show all 36"
 - **Viewports:** all
-- **Evidence:** `marketing__support__d1440.jpg`; live: 0 search inputs, 0 `details`, 0 `#` anchor links, 0 `h3`; after clicking "Show all 36" the document height is 5,903px
+- **Evidence:** `./screenshots/public/marketing__support__d1440.jpg`; live: 0 search inputs, 0 `details`, 0 `#` anchor links, 0 `h3`; after clicking "Show all 36" the document height is 5,903px
 
 **What happens.** Twelve answers render fully expanded; the rest are hidden behind one button that dumps 24 more paragraphs into a single column. There is no way to filter, jump to a topic, or link to an answer.
 
@@ -2464,7 +2464,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /support
 - **Section/element:** "Hosts" FAQ block
 - **Viewports:** all
-- **Evidence:** `marketing__support__d1440.jpg`; copy inventory shows 4 guest questions vs ~12 host questions before "Show all 36", covering "Export report", "New booking", "Import beside New booking", "Pending Review", "GAF"
+- **Evidence:** `./screenshots/public/marketing__support__d1440.jpg`; copy inventory shows 4 guest questions vs ~12 host questions before "Show all 36", covering "Export report", "New booking", "Import beside New booking", "Pending Review", "GAF"
 
 **What happens.** A guest landing on `/support` (the footer link a guest is most likely to use) sees a majority of answers about a dashboard they cannot access, written in internal vocabulary (GAF, Pending Review, SD refund).
 
@@ -2484,7 +2484,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /contact
 - **Section/element:** Page subtitle
 - **Viewports:** all
-- **Evidence:** `marketing__contact__d1440.jpg` subtitle: "Pick what your message is about. Sign in with your explore account to open a ticket."
+- **Evidence:** `./screenshots/public/marketing__contact__d1440.jpg` subtitle: "Pick what your message is about. Sign in with your explore account to open a ticket."
 
 **What happens.** "Explore account" is not a product concept anywhere on the site. The account is a guest account (`/for-guests/login`); "Explore" is also the label of a bottom-nav tab, so the sentence points at two different things.
 
@@ -2524,7 +2524,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /services
 - **Section/element:** Seven category pills (Become a property manager, Maintenance, Food & Essentials, Supplies, Transportation…)
 - **Viewports:** all
-- **Evidence:** live snapshot → `list [aria-hidden]` containing `listitem` text only, no buttons or links; `marketing__services__d1440.jpg` shows pill-shaped chips with icons and hover-ready styling
+- **Evidence:** live snapshot → `list [aria-hidden]` containing `listitem` text only, no buttons or links; `./screenshots/public/marketing__services__d1440.jpg` shows pill-shaped chips with icons and hover-ready styling
 
 **What happens.** The page's only content block looks exactly like a set of filter buttons, is not interactive, and is explicitly removed from the accessibility tree.
 
@@ -2544,7 +2544,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /terms, /privacy, /cookies
 - **Section/element:** Long-form legal layout
 - **Viewports:** all
-- **Evidence:** `marketing__terms__d1440.jpg`; live on /terms: 21 `<h2>` sections, 5,862px tall, **0** in-page `#` links, 16px/26px text at a 768px measure
+- **Evidence:** `./screenshots/public/marketing__terms__d1440.jpg`; live on /terms: 21 `<h2>` sections, 5,862px tall, **0** in-page `#` links, 16px/26px text at a 768px measure
 
 **What happens.** Terms is a single 21-section column with no way to jump to "Cancellation", "Security deposits" or "AI features". The "last updated 9 November 2026" line is buried in the third sentence of the first section.
 
@@ -2725,7 +2725,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /for-hosts/login, /for-guests/login
 - **Section/element:** right-hand panel
 - **Viewports:** 768, 1024, 1440
-- **Evidence:** screenshots `auth__host-login__d1440.jpg` (admin mock preview) and `auth__guest-login__d1440.jpg` (fake listing carousel "Sunset 1BR Condo / Boracay / /night").
+- **Evidence:** screenshots `./screenshots/public/auth__host-login__d1440.jpg` (admin mock preview) and `./screenshots/public/auth__guest-login__d1440.jpg` (fake listing carousel "Sunset 1BR Condo / Boracay / /night").
 
 **What happens.** each login invents its own marketing panel; the guest one shows listing cards with the price missing.
 
@@ -2765,7 +2765,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /services
 - **Section/element:** whole page
 - **Viewports:** all
-- **Evidence:** screenshot `marketing__services__d1440.jpg`: "Coming Soon", seven chips, search bar with "What / Search services" and "When / Add dates", ~40% empty.
+- **Evidence:** screenshot `./screenshots/public/marketing__services__d1440.jpg`: "Coming Soon", seven chips, search bar with "What / Search services" and "When / Add dates", ~40% empty.
 
 **What happens.** a promised capability is a stub, and the search asks for dates it cannot use.
 
@@ -2805,7 +2805,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /properties/kame-home
 - **Section/element:** host card, sticky booking bar
 - **Viewports:** 390
-- **Evidence:** screenshot `390-listing.png` (earlier pass) and `listings__property-detail__m390.jpg`: "Hosted by Kame Spa…", and the bar reads "₱4,500 / night · 4.5 ★ · 10 reviews" 200px below the same rating.
+- **Evidence:** screenshot `390-listing.png` (earlier pass) and `./screenshots/public/listings__property-detail__m390.jpg`: "Hosted by Kame Spa…", and the bar reads "₱4,500 / night · 4.5 ★ · 10 reviews" 200px below the same rating.
 
 **What happens.** the trust anchor is cut off, and the bar repeats information instead of adding the total.
 
@@ -2905,7 +2905,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /org/:org/property/:slug/public-pages/:pageId/edit
 - **Section/element:** sidebar, toolbar, template thumbnails
 - **Viewports:** 1440, 390
-- **Evidence:** screenshot `admin-gap__prop-public-page-edit__d1440.jpg`: "Public Pages" is half hidden behind the plan card at 900px height; 8 h1s come from the template thumbnails; 106 targets under 44px at 390.
+- **Evidence:** screenshot `./screenshots/public/admin-gap__prop-public-page-edit__d1440.jpg`: "Public Pages" is half hidden behind the plan card at 900px height; 8 h1s come from the template thumbnails; 106 targets under 44px at 390.
 
 **What happens.** a nav item is unreachable at a common laptop height, and the template thumbnails inject document headings.
 
@@ -2965,7 +2965,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /org/:org/property/:slug/_, /admin/_, editor
 - **Section/element:** left sidebar
 - **Viewports:** 1440x900, 1280x800
-- **Evidence:** screenshots `1440-prop-dashboard.png` and `admin-gap__prop-public-page-edit__d1440.jpg`: "Public Pages" clipped behind the plan card; Team/Settings/Help below the fold with no scroll cue.
+- **Evidence:** screenshots `1440-prop-dashboard.png` and `./screenshots/public/admin-gap__prop-public-page-edit__d1440.jpg`: "Public Pages" clipped behind the plan card; Team/Settings/Help below the fold with no scroll cue.
 
 **What happens.** the sidebar list continues under the plan card and the account block.
 
@@ -3025,7 +3025,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /for-hosts/login, /for-guests/login, /accept-invite siblings
 - **Section/element:** right column vertical rhythm
 - **Viewports:** 1440, 1024
-- **Evidence:** `auth__host-login__d1440.jpg` (form block occupies y≈265–760 in a 900 viewport; nothing anchors the bottom)
+- **Evidence:** `./screenshots/public/auth__host-login__d1440.jpg` (form block occupies y≈265–760 in a 900 viewport; nothing anchors the bottom)
 
 **What happens.** The form is roughly centred but the card has no container, so the right half reads as floating text over a large empty field. The left hero ends at y≈735 and the right column continues to the footer with a 140px gap.
 
@@ -3045,7 +3045,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /account/profile
 - **Section/element:** `Bio` label row, right side
 - **Viewports:** all
-- **Evidence:** `account__profile__d1440.jpg` shows "465"; live `probe-p4b.json → profile` shows the value dropping to "464" after typing one character
+- **Evidence:** `./screenshots/public/account__profile__d1440.jpg` shows "465"; live `probe-p4b.json → profile` shows the value dropping to "464" after typing one character
 
 **What happens.** The counter shows remaining characters as an unlabelled `465`. Nothing says whether it is a limit, a count, or remaining.
 
@@ -3065,7 +3065,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /account/trips
 - **Section/element:** trip list card
 - **Viewports:** 1024, 1440
-- **Evidence:** `account__trips__d1440.jpg`
+- **Evidence:** `./screenshots/public/account__trips__d1440.jpg`
 
 **What happens.** Rows are ~84px tall and ~360px of content wide inside a full-width card, leaving ~650px of empty card to the right of every row, and ~500px of empty page below the card before the footer.
 
@@ -3085,7 +3085,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /account/tickets
 - **Section/element:** page header + list
 - **Viewports:** 390
-- **Evidence:** `account__tickets__m390.jpg`
+- **Evidence:** `./screenshots/public/account__tickets__m390.jpg`
 
 **What happens.** The active tab already says "Tickets"; the card header says "My Tickets" with a "+ New" button, then one row, then ~560px of empty card. The heading is an `h3` under no `h2`.
 
@@ -3125,7 +3125,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /admin/support/faqs
 - **Section/element:** badge next to every question
 - **Viewports:** all
-- **Evidence:** `admin-gap__admin-faqs__d1440.jpg`
+- **Evidence:** `./screenshots/public/admin-gap__admin-faqs__d1440.jpg`
 
 **What happens.** Every question carries a bare "SYNCED" chip, with no legend, no tooltip and no distinction from manual rows (there are none).
 
@@ -3145,7 +3145,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /admin/pricing/payment-settings
 - **Section/element:** "Enabled rails" card
 - **Viewports:** all
-- **Evidence:** `admin-gap__admin-payment-settings__d1440.jpg`; live `probe-p4b.json → payment` (toggle flips, no toast, Save becomes enabled; reload without Save reverts); leave-guard does fire (`probe-p4b-5.json → payGuard: dialog 1`)
+- **Evidence:** `./screenshots/public/admin-gap__admin-payment-settings__d1440.jpg`; live `probe-p4b.json → payment` (toggle flips, no toast, Save becomes enabled; reload without Save reverts); leave-guard does fire (`probe-p4b-5.json → payGuard: dialog 1`)
 
 **What happens.** Three switches sit at the top of a card whose "Save" button is below two unrelated numeric fields. Flipping a rail saves nothing until Save is pressed ~200px lower, and there is no dirty marker on the switches themselves.
 
@@ -3165,7 +3165,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /activity dialog
 - **Section/element:** rows 1–5
 - **Viewports:** all
-- **Evidence:** `admin-gap__prop-activity__d1440.jpg` — "Copied a guest trip link for Tomas Tan" ×3 consecutively, then later again, all `seed-owner@example.com · 2 hours ago`
+- **Evidence:** `./screenshots/public/admin-gap__prop-activity__d1440.jpg` — "Copied a guest trip link for Tomas Tan" ×3 consecutively, then later again, all `seed-owner@example.com · 2 hours ago`
 
 **What happens.** Consecutive duplicate rows, each repeating the actor on every line even though every row has the same actor.
 
@@ -3305,7 +3305,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /properties
 - **Section/element:** Filter rail summary
 - **Viewports:** 1024, 1440
-- **Evidence:** `live-prop-zero.jpg` / `live3.json` ("Property Type / None", "Amenities / None", "Development / None", while Bedrooms shows the "Any" chip)
+- **Evidence:** `./screenshots/public/live/live-prop-zero.jpg` / `live3.json` ("Property Type / None", "Amenities / None", "Development / None", while Bedrooms shows the "Any" chip)
 
 **What happens.** Three groups use "None" for "no filter selected" and a fourth uses "Any".
 
@@ -3365,7 +3365,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** / , /search
 - **Section/element:** Hero search bar vs sticky search bar
 - **Viewports:** all
-- **Evidence:** `marketing__home__d1440.jpg` ("Where / When / Who"), `search-lower.png` (sticky bar "Anywhere / Anytime / 2 guests"), manifest button lists for both
+- **Evidence:** `./screenshots/public/marketing__home__d1440.jpg` ("Where / When / Who"), `search-lower.png` (sticky bar "Anywhere / Anytime / 2 guests"), manifest button lists for both
 
 **What happens.** On the homepage the three fields read Where / When / Who with values "Search destinations / Add dates / 2 guests". On `/search` the identical control reads Anywhere / Anytime / and drops the "Who" label entirely.
 
@@ -3485,7 +3485,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /cookies vs the consent banner (all routes)
 - **Section/element:** Consent buttons
 - **Viewports:** all
-- **Evidence:** `host-login2.png` banner: "Allow analytics" is the filled primary, "Essential only" is plain text. `marketing__cookies__d1440.jpg` "Cookie settings" block: "Essential only" is the filled primary, "Allow analytics" is ghost.
+- **Evidence:** `host-login2.png` banner: "Allow analytics" is the filled primary, "Essential only" is plain text. `./screenshots/public/marketing__cookies__d1440.jpg` "Cookie settings" block: "Essential only" is the filled primary, "Allow analytics" is ghost.
 
 **What happens.** The same two choices are given opposite visual weight depending on where you meet them. The policy also calls the same category both "Necessary" and "Essential".
 
@@ -3505,7 +3505,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** 404
 - **Section/element:** "Take me home" button
 - **Viewports:** all
-- **Evidence:** `marketing__404__d1440.jpg` — the CTA carries a check-circle glyph (the "success/confirmed" icon used elsewhere for completed steps)
+- **Evidence:** `./screenshots/public/marketing__404__d1440.jpg` — the CTA carries a check-circle glyph (the "success/confirmed" icon used elsewhere for completed steps)
 
 **What happens.** A "recovered / done" icon is used for a navigation action, and the only recovery path is the homepage; there are no links to Stays, Support or search.
 
@@ -3585,7 +3585,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /
 - **Section/element:** "Find your next stay" row
 - **Viewports:** 1024, 1440
-- **Evidence:** screenshot `marketing__home__d1440.jpg`, one card with a "New" badge.
+- **Evidence:** screenshot `./screenshots/public/marketing__home__d1440.jpg`, one card with a "New" badge.
 
 **What happens.** a carousel row with a single item and empty space beside it.
 
@@ -3605,7 +3605,7 @@ P2, P3, grouped by area. Machine-readable twin: `issue-register.json`.
 - **Route:** /properties/kame-home/trip
 - **Section/element:** layout
 - **Viewports:** 1440
-- **Evidence:** screenshot `guest-flow__trip__d1440.jpg`: a 300px card inside a 640px band, then ~350px of empty space above the footer.
+- **Evidence:** screenshot `./screenshots/public/guest-flow__trip__d1440.jpg`: a 300px card inside a 640px band, then ~350px of empty space above the footer.
 
 **What happens.** the page has a full-height decorative band for a single card.
 
