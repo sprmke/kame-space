@@ -571,26 +571,40 @@ export async function runPlatformBillingCycle(
   // 2. Subscriptions that can have something due.
   const horizon = new Date(now.getTime() + Math.max(settings.renewalLinkLeadDays, 3) * DAY_MS);
   const orgIds = new Set<string>();
-  const queries = [
-    sb.from('org_subscriptions').select('organization_id').in('status', ['past_due', 'suspended']),
-    sb
-      .from('org_subscriptions')
-      .select('organization_id')
-      .in('status', ['active', 'trialing'])
-      .not('current_period_end', 'is', null)
-      .lte('current_period_end', horizon.toISOString()),
-    sb
-      .from('org_subscriptions')
-      .select('organization_id')
-      .eq('status', 'active')
-      .not('scheduled_plan_id', 'is', null),
+  // Page every selection by organization_id so a backlog larger than one page is worked through
+  // in full instead of the same first page being returned every hour.
+  const dueQueries = [
+    () =>
+      sb
+        .from('org_subscriptions')
+        .select('organization_id')
+        .in('status', ['past_due', 'suspended']),
+    () =>
+      sb
+        .from('org_subscriptions')
+        .select('organization_id')
+        .in('status', ['active', 'trialing'])
+        .not('current_period_end', 'is', null)
+        .lte('current_period_end', horizon.toISOString()),
+    () =>
+      sb
+        .from('org_subscriptions')
+        .select('organization_id')
+        .eq('status', 'active')
+        .not('scheduled_plan_id', 'is', null),
   ];
-  for (const query of queries) {
-    const { data, error } = await query.limit(1000);
-    if (error) throw new Error(error.message);
-    for (const row of data ?? []) {
-      const id = row.organization_id as string;
-      if (!scope || scope.has(id)) orgIds.add(id);
+  const PAGE = 500;
+  for (const build of dueQueries) {
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await build()
+        .order('organization_id', { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error) throw new Error(error.message);
+      for (const row of data ?? []) {
+        const id = row.organization_id as string;
+        if (!scope || scope.has(id)) orgIds.add(id);
+      }
+      if ((data ?? []).length < PAGE) break;
     }
   }
 

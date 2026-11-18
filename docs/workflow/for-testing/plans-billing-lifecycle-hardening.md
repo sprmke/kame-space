@@ -25,6 +25,8 @@ Phases 0 to 8 are implemented and verified locally; only the external steps of P
 | 9.5 dev deploy     | **Open.** Not run; deploying is the owner's decision.                                                              |
 | 9.6 move to done   | After 9.1 and 9.5. The plan sits in `for-testing/` because only manual QA and the deploy remain.                   |
 
+Security review (2026-11-18): the billing `SECURITY DEFINER` functions were executable by `anon` through `/rest/v1/rpc`. Fixed in `20261342000500`, proven by the endpoint integration test, and the migration gate now blocks it. Older functions with the same exposure are tracked as PR-096.
+
 Verification: UI type-check, lint (0 errors), UI unit and DOM tests, Deno shared and handler tests, 18 local-Postgres lifecycle tests (`LOCAL_BILLING_LIVE=1`), and the plans Playwright suite all pass. The new migrations were also applied in rolled-back transactions against the local schema. PayMongo behavior (expire endpoint, refund payload) was checked against their docs, not live calls: see `docs/archive/operations/paymongo-billing-setup.md`.
 
 ## Scope

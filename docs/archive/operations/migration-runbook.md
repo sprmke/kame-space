@@ -960,7 +960,7 @@ SELECT "window", count(*) FROM public.marketing_trend_topics GROUP BY 1;
 
 Remote writes need `kamewave`. Back up first.
 
-### Plans & Billing lifecycle (`20261342000000` to `20261342000400`)
+### Plans & Billing lifecycle (`20261342000000` to `20261342000500`)
 
 Additive, one transaction per file, all idempotent (`IF NOT EXISTS` / `DROP ... IF EXISTS`). Plan: [`plans-billing-lifecycle-hardening`](../../workflow/for-testing/plans-billing-lifecycle-hardening.md).
 
@@ -973,6 +973,17 @@ Additive, one transaction per file, all idempotent (`IF NOT EXISTS` / `DROP ... 
 | `20261342000400_org_payment_provider_payment_id.sql`  | `org_payment_transactions.provider_payment_id` so refund events find their payment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 **Before applying anywhere with real data**, count live rows: `SELECT status, count(*) FROM org_subscriptions GROUP BY 1`. The first migration collapses any org that already has two live rows (keeps the most recently updated, marks the rest `canceled` with `ended_reason = 'admin'`), expires all but the newest pending checkout per org, and backfills `billing_anchor_day`, `period_paid_php` and a Managed `price_override_php` from existing rows. PayMongo live approval is still pending, so prod is expected to have no paying orgs.
+
+**Security rule for every future migration.** A `SECURITY DEFINER` function must be revoked from `PUBLIC, anon, authenticated` and granted to `service_role`. `scripts/dev/check-migration-security.sh` enforces it from `20261342000500` on. To list what is still exposed on any database:
+
+```sql
+SELECT p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')'
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public' AND p.prosecdef AND has_function_privilege('anon', p.oid, 'execute')
+ORDER BY 1;
+```
+
+Older functions that show up here predate the rule and are tracked as PR-096 in the production-readiness ledger.
 
 **Verify locally** (rolled back, safe on a populated DB):
 
