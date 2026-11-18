@@ -53,7 +53,9 @@ export function BookingChatPickerDialog({
         <ResponsiveModalHeader className="border-border/60 space-y-1 border-b px-4 pb-3 pt-1 text-left lg:pt-4">
           <ResponsiveModalTitle>Open chat</ResponsiveModalTitle>
           <ResponsiveModalDescription>
-            {guestName} has {matches.length} chats
+            {matches.length === 1
+              ? `Is this ${guestName}?`
+              : `${guestName} has ${matches.length} chats`}
           </ResponsiveModalDescription>
         </ResponsiveModalHeader>
 

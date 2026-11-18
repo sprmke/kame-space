@@ -179,6 +179,21 @@ describe('BookingListQuickActions click', () => {
     );
   });
 
+  it('asks before opening a lone single-word name match', async () => {
+    fetchBookingChats.mockResolvedValue([
+      chat({ id: 'c-7', platform: 'facebook', match: 'name', participant_name: 'Santos' }),
+    ]);
+    renderActions(propertyRow);
+    fireEvent.click(chatButton()!);
+
+    expect(await screen.findByText('Is this Maria Santos?')).toBeTruthy();
+    expect(navigate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('option', { name: /Santos/ }));
+    expect(navigate).toHaveBeenCalledWith(
+      '/org/acme/property/solea/inbox?conversationId=c-7&platform=facebook'
+    );
+  });
+
   it('can search Messages from the picker', async () => {
     fetchBookingChats.mockResolvedValue([chat(), chat({ id: 'c-2', platform: 'instagram' })]);
     renderActions(propertyRow);

@@ -80,8 +80,20 @@ export type BookingChatOutcome =
   | { kind: 'open'; match: BookingChatMatch }
   | { kind: 'choose'; matches: BookingChatMatch[] };
 
+/**
+ * A lone thread found only by name opens straight away when the name is a full name. A
+ * single word ("Cruz", an Instagram handle) could be a different guest, so the host confirms
+ * it in the picker instead of landing in the wrong conversation.
+ */
+function isSafeToOpenDirectly(match: BookingChatMatch): boolean {
+  if (match.match !== 'name') return true;
+  return (match.participant_name ?? '').trim().split(/\s+/).filter(Boolean).length >= 2;
+}
+
 export function bookingChatOutcome(matches: readonly BookingChatMatch[]): BookingChatOutcome {
   if (matches.length === 0) return { kind: 'none' };
-  if (matches.length === 1) return { kind: 'open', match: matches[0]! };
+  if (matches.length === 1 && isSafeToOpenDirectly(matches[0]!)) {
+    return { kind: 'open', match: matches[0]! };
+  }
   return { kind: 'choose', matches: [...matches] };
 }

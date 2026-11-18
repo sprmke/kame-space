@@ -94,6 +94,7 @@ Deno.test('nameSearchTokens: letters and digits only, short and duplicate tokens
     'santos',
   ]);
   assertEquals(nameSearchTokens([null, undefined, 'Al']), []);
+  assertEquals(nameSearchTokens(['José Peña']), ['josé', 'peña']);
 });
 
 Deno.test(

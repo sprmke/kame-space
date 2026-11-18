@@ -54,7 +54,7 @@ This page is your main dashboard for all bookings at this property. Summary card
 - Q: How do I create a new booking?
   A: Use **New booking** in the page header. It opens the same guest booking form in a dialog, right in the dashboard - fill it out on the guest's behalf. After you submit, you can add another booking or jump straight to the new booking's detail page.
 - Q: What does the chat icon on a booking do?
-  A: It opens that guest's conversation in **Messages**. If the guest has one chat, you land right in it. If they have several (website Chat plus Facebook or Instagram), you pick which one. If nothing matches yet, a message says so and **Search Messages** opens the inbox with the guest's name typed in. Website chats linked to the booking match exactly. Facebook and Instagram chats match by the guest name or Facebook name on the booking, so they are labeled **Name match**. The icon only shows if you can view Messages.
+  A: It opens that guest's conversation in **Messages**. If the guest has one chat, you land right in it. If they have several (website Chat plus Facebook or Instagram), you pick which one. If nothing matches yet, a message says so and **Search Messages** opens the inbox with the guest's name typed in. Website chats linked to the booking match exactly. Facebook and Instagram chats match by the guest name or Facebook name on the booking, so they are labeled **Name match**. When the only match is a one-word name, the picker asks you to confirm it first. The icon only shows if you can view Messages.
 - Q: Can I bulk-import bookings from a spreadsheet?
   A: Yes on **Starter and above**. Use **Import** beside **New booking** (property bookings only). You can open the wizard and upload a file on Free to try it, but continuing past the first step asks you to upgrade. On a paid plan, confirm column mapping, then review the rows. Select **Need fixing** to see problem rows; **Fix** opens the complete row so you can correct every invalid value together. **Skipped** rows stay openable the same way, so use **Restore** to bring them back, or **Fix** to correct them. Past stays commit as **Imported**; today and future stays show **Pending Review** but still appear when you filter by **Imported**. No new-booking emails or calendar events on import.
 - Q: How do Airbnb bookings appear here?
@@ -148,11 +148,11 @@ When a stage is active, the list query sends the matching `status[]` values to `
 
 Table rows and cards carry a **chat icon** (`BookingListQuickActions`). Kanban has none.
 
-| Matches for the booking | Result                                                                                                                      |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| One                     | Navigates to this property's Messages with `?conversationId=&platform=` so that thread is open                              |
-| Several                 | **Open chat** picker (bottom sheet below `lg`, dialog on desktop): channel icon, name, channel, last activity, unread count |
-| None                    | Toast **No chat for this booking yet** with **Search Messages** (opens Messages with `?search=<guest name>`)                |
+| Matches for the booking | Result                                                                                                                                                                                                                              |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| One                     | Navigates to this property's Messages with `?conversationId=&platform=` so that thread is open. A lone **name-only** match with a one-word name (a Page called "Cruz") asks first in the picker (**Is this …?**) instead of opening |
+| Several                 | **Open chat** picker (bottom sheet below `lg`, dialog on desktop): channel icon, name, channel, last activity, unread count                                                                                                         |
+| None                    | Toast **No chat for this booking yet** with **Search Messages** (opens Messages with `?search=<guest name>`)                                                                                                                        |
 
 - The icon is hidden unless the viewer has `inbox:view` for that property (parking rows: parking `inbox:view`). It shows a spinner while the lookup runs; a second tap within 15 seconds reuses the answer.
 - Matching (`social-inbox-booking-chats`), strongest first: thread linked to the booking (`booking_id`), the booking's signed-in guest, then guest name or Facebook name (whole-name tokens only, Chat, Facebook, Instagram). Up to 10, never outside this property.
