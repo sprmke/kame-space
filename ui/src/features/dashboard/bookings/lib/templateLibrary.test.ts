@@ -19,7 +19,7 @@ import {
 } from '@/features/dashboard/bookings/lib/templateLibrary';
 
 function template(overrides: Partial<PropertyTemplateDto> = {}): PropertyTemplateDto {
-  return {
+  const merged: PropertyTemplateDto = {
     templateKey: 'house-rules',
     name: 'House Rules',
     category: 'standard',
@@ -33,7 +33,27 @@ function template(overrides: Partial<PropertyTemplateDto> = {}): PropertyTemplat
     guestVisible: false,
     guestPhase: 'always',
     updatedAt: null,
+    group: null,
+    recipient: null,
+    trigger: null,
+    automationToggleKey: null,
+    iconId: null,
+    defaultSubject: null,
+    subjectLocked: false,
+    chapter: null,
+    defaultPhase: null,
+    defaultGuestVisible: false,
+    condition: null,
+    requiresEdit: false,
+    appliesWhen: null,
+    placeholderKeys: [],
     ...overrides,
+  };
+  if (merged.group || merged.category === 'custom') return merged;
+  // Legacy fixture shorthand: derive a group from the category the way the server does.
+  return {
+    ...merged,
+    group: merged.category === 'standard' ? 'stay-guide' : 'guest-emails',
   };
 }
 
@@ -48,30 +68,30 @@ const standardKeys = ['house-rules', 'check-in-instructions', 'check-out-instruc
 describe('buildTemplateLibrary', () => {
   it('returns built-in sections when nothing loaded', () => {
     expect(buildTemplateLibrary(undefined)).toEqual([
-      expect.objectContaining({ id: 'email', kind: 'builtin', entries: [] }),
-      expect.objectContaining({ id: 'standard', kind: 'builtin', entries: [] }),
+      expect.objectContaining({ id: 'stay-guide', kind: 'builtin', entries: [] }),
+      expect.objectContaining({ id: 'guest-emails', kind: 'builtin', entries: [] }),
     ]);
     expect(buildTemplateLibrary([])).toEqual([
-      expect.objectContaining({ id: 'email', kind: 'builtin', entries: [] }),
-      expect.objectContaining({ id: 'standard', kind: 'builtin', entries: [] }),
+      expect.objectContaining({ id: 'stay-guide', kind: 'builtin', entries: [] }),
+      expect.objectContaining({ id: 'guest-emails', kind: 'builtin', entries: [] }),
     ]);
   });
 
-  it('orders Emails before Stay guide and built-ins by registry', () => {
+  it('orders Stay guide before Guest emails and keeps registry order', () => {
     const groups = buildTemplateLibrary([
-      template({ templateKey: 'check-out-instructions', name: 'Check-out Instructions' }),
       template({ templateKey: 'house-rules', name: 'House Rules' }),
       template({ templateKey: 'check-in-instructions', name: 'Check-in Instructions' }),
+      template({ templateKey: 'check-out-instructions', name: 'Check-out Instructions' }),
     ]);
 
-    expect(groups.map((group) => group.id)).toEqual(['email', 'standard']);
-    expect(groups[1]!.entries.map((entry) => entry.templateKey)).toEqual(standardKeys);
+    expect(groups.map((group) => group.id)).toEqual(['stay-guide', 'guest-emails']);
+    expect(groups[0]!.entries.map((entry) => entry.templateKey)).toEqual(standardKeys);
   });
 
   it('skips built-in keys the server did not return', () => {
     const groups = buildTemplateLibrary([template({ templateKey: 'house-rules' })]);
 
-    expect(groups[1]!.entries.map((entry) => entry.templateKey)).toEqual(['house-rules']);
+    expect(groups[0]!.entries.map((entry) => entry.templateKey)).toEqual(['house-rules']);
   });
 
   it('lists the four cancellation emails in the Emails group', () => {
@@ -85,8 +105,8 @@ describe('buildTemplateLibrary', () => {
       cancellationKeys.map((templateKey) => template({ templateKey, category: 'email' }))
     );
 
-    expect(groups[0]!.id).toBe('email');
-    expect(groups[0]!.entries.map((entry) => entry.templateKey)).toEqual(cancellationKeys);
+    expect(groups[1]!.id).toBe('guest-emails');
+    expect(groups[1]!.entries.map((entry) => entry.templateKey)).toEqual(cancellationKeys);
   });
 
   it('separates email and custom groups and marks email as gated', () => {
@@ -97,8 +117,8 @@ describe('buildTemplateLibrary', () => {
     ]);
 
     expect(groups.map((group) => [group.id, group.gated])).toEqual([
-      ['email', true],
-      ['standard', false],
+      ['stay-guide', false],
+      ['guest-emails', true],
       ['custom', true],
     ]);
   });
@@ -110,7 +130,7 @@ describe('buildTemplateLibrary', () => {
     ]);
 
     expect(groups.map((group) => group.kind)).toEqual(['builtin', 'builtin', 'ungrouped']);
-    expect(groups[1]!.entries[0]!.organisable).toBe(false);
+    expect(groups[0]!.entries[0]!.organisable).toBe(false);
     expect(groups[2]!.entries[0]!.organisable).toBe(true);
   });
 
@@ -130,9 +150,9 @@ describe('buildTemplateLibrary', () => {
       template({ templateKey: 'custom-mail', name: 'Extra mail', category: 'email' }),
     ]);
 
-    expect(groups[0]!.entries.map((entry) => entry.templateKey)).toEqual(['custom-mail']);
-    expect(groups[1]!.entries.map((entry) => entry.templateKey)).toEqual(['custom-md']);
-    expect(groups[0]!.entries[0]!.organisable).toBe(true);
+    expect(groups[0]!.entries.map((entry) => entry.templateKey)).toEqual(['custom-md']);
+    expect(groups[1]!.entries.map((entry) => entry.templateKey)).toEqual(['custom-mail']);
+    expect(groups[1]!.entries[0]!.organisable).toBe(true);
   });
 
   it('derives customized status from isDefault for built-ins', () => {
@@ -141,7 +161,7 @@ describe('buildTemplateLibrary', () => {
       template({ templateKey: 'check-in-instructions', isDefault: false }),
     ]);
 
-    expect(groups[1]!.entries.map((entry) => entry.status)).toEqual(['default', 'customized']);
+    expect(groups[0]!.entries.map((entry) => entry.status)).toEqual(['default', 'customized']);
   });
 
   it('reports no status for custom templates, which have no shipped default', () => {
@@ -168,7 +188,7 @@ describe('buildTemplateLibrary - folders', () => {
     folderId: null,
   });
 
-  it('orders Emails and Stay guide first, then folders by position, then ungrouped', () => {
+  it('orders Stay guide and Guest emails first, then folders by position, then ungrouped', () => {
     const groups = buildTemplateLibrary(
       [template({ templateKey: 'house-rules' }), customA, customB],
       [
@@ -178,8 +198,8 @@ describe('buildTemplateLibrary - folders', () => {
     );
 
     expect(groups.map((group) => [group.kind, group.label])).toEqual([
-      ['builtin', 'Emails'],
       ['builtin', 'Stay guide'],
+      ['builtin', 'Guest emails'],
       ['folder', 'Arrival'],
       ['folder', 'Zebra'],
       ['ungrouped', 'Custom'],
@@ -235,16 +255,13 @@ describe('buildTemplateLibrary - folders', () => {
   it('ignores folderId on a built-in template', () => {
     const groups = buildTemplateLibrary([template({ templateKey: 'house-rules', folderId: 'f1' })]);
 
-    expect(groups[1]!.entries[0]!.folderId).toBeNull();
+    expect(groups[0]!.entries[0]!.folderId).toBeNull();
   });
 });
 
 describe('templatePlacementTargets', () => {
-  it('lists Stay guide, Emails, then folders (no ungrouped Custom in create Group select)', () => {
-    expect(templatePlacementTargets([]).map((target) => target.label)).toEqual([
-      'Stay guide',
-      'Emails',
-    ]);
+  it('lists Stay guide, then folders (no ungrouped Custom in create Group select)', () => {
+    expect(templatePlacementTargets([]).map((target) => target.label)).toEqual(['Stay guide']);
   });
 
   it('lists folders after the built-in destinations', () => {
@@ -253,28 +270,25 @@ describe('templatePlacementTargets', () => {
         folder({ id: 'f2', name: 'Zebra', position: 1 }),
         folder({ id: 'f1', name: 'Arrival', position: 0 }),
       ]).map((target) => target.label)
-    ).toEqual(['Stay guide', 'Emails', 'Arrival', 'Zebra']);
+    ).toEqual(['Stay guide', 'Arrival', 'Zebra']);
   });
 
   it('includes ungrouped Custom for Move only when there are no host folders', () => {
     expect(
       templatePlacementTargets([], { includeUngrouped: true }).map((target) => target.label)
-    ).toEqual(['Stay guide', 'Emails', 'Custom']);
+    ).toEqual(['Stay guide', 'Custom']);
     expect(
       templatePlacementTargets([folder({ id: 'f1', name: 'Arrival' })], {
         includeUngrouped: true,
       }).map((target) => target.label)
-    ).toEqual(['Stay guide', 'Emails', 'Arrival']);
+    ).toEqual(['Stay guide', 'Arrival']);
   });
 });
 
 /** @deprecated wrapper still used in a few call sites */
 describe('templateMoveTargets', () => {
   it('maps custom-only folder ids for legacy callers', () => {
-    expect(templateMoveTargets([])).toEqual([
-      { folderId: null, label: 'Stay guide' },
-      { folderId: null, label: 'Emails' },
-    ]);
+    expect(templateMoveTargets([])).toEqual([{ folderId: null, label: 'Stay guide' }]);
   });
 });
 
@@ -291,12 +305,12 @@ describe('applyTemplateCategoryFilter', () => {
 
   it('shows only the Emails section when filtered to email', () => {
     const filtered = applyTemplateCategoryFilter(groups, 'email');
-    expect(filtered.map((group) => group.id)).toEqual(['email']);
+    expect(filtered.map((group) => group.id)).toEqual(['guest-emails']);
   });
 
   it('shows only Stay guide when filtered to standard', () => {
     const filtered = applyTemplateCategoryFilter(groups, 'standard');
-    expect(filtered.map((group) => group.id)).toEqual(['standard']);
+    expect(filtered.map((group) => group.id)).toEqual(['stay-guide']);
   });
 
   it('shows host folders and ungrouped Custom when filtered to custom', () => {
@@ -342,7 +356,7 @@ describe('filterTemplateLibrary', () => {
     const filtered = filterTemplateLibrary(groups, 'emails');
 
     expect(filtered).toHaveLength(1);
-    expect(filtered[0]!.id).toBe('email');
+    expect(filtered[0]!.id).toBe('guest-emails');
   });
 
   it('matches on the template key', () => {
@@ -356,7 +370,7 @@ describe('filterTemplateLibrary', () => {
   it('drops groups left with no entries instead of showing a bare heading', () => {
     const filtered = filterTemplateLibrary(groups, 'gaf');
 
-    expect(filtered.map((group) => group.id)).toEqual(['email']);
+    expect(filtered.map((group) => group.id)).toEqual(['guest-emails']);
   });
 
   it('returns no groups when nothing matches', () => {
@@ -428,7 +442,7 @@ describe('templateMetaParts', () => {
       template({ templateKey: 'house-rules', isDefault: true }),
     ]);
 
-    expect(templateMetaParts(groups[1]!.entries[0]!, now)).toEqual(['Stay guide', 'Default']);
+    expect(templateMetaParts(groups[0]!.entries[0]!, now)).toEqual(['Stay guide', 'Default']);
   });
 
   it('adds the updated date when the template has been saved', () => {
@@ -442,8 +456,8 @@ describe('templateMetaParts', () => {
       }),
     ]);
 
-    expect(templateMetaParts(groups[0]!.entries[0]!, now)).toEqual([
-      'Emails',
+    expect(templateMetaParts(groups[1]!.entries[0]!, now)).toEqual([
+      'Guest emails',
       'Customized',
       'Updated Oct 18',
     ]);
@@ -491,7 +505,7 @@ describe('templateRowStatusParts', () => {
       template({ templateKey: 'house-rules', isDefault: true, updatedAt: '2026-10-18T09:00:00Z' }),
     ]);
 
-    expect(templateRowStatusParts(groups[1]!.entries[0]!, now)).toEqual([]);
+    expect(templateRowStatusParts(groups[0]!.entries[0]!, now)).toEqual([]);
   });
 
   it('flags an edited built-in with its date', () => {
@@ -499,7 +513,7 @@ describe('templateRowStatusParts', () => {
       template({ templateKey: 'house-rules', isDefault: false, updatedAt: '2026-10-18T09:00:00Z' }),
     ]);
 
-    expect(templateRowStatusParts(groups[1]!.entries[0]!, now)).toEqual([
+    expect(templateRowStatusParts(groups[0]!.entries[0]!, now)).toEqual([
       'Customized',
       'Updated Oct 18',
     ]);

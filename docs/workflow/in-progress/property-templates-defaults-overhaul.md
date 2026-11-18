@@ -263,7 +263,7 @@ One server module, `_shared/propertyTemplateCatalog.ts`, exports every token wit
 - [x] Remove retired `email-parking-request` from UI sections, `PROPERTY_EMAIL_TEMPLATE_KEYS` (`_shared/propertyTemplateEmail.ts`) and `templatePlaceholderCatalog.ts`.
 - [x] Catalog entry for `email-booking-cancelled-host`; add `cancellation_*` to block keys and both references; add `stay_guide_cta_section` to the server reference; document `pet_age`, `form_url`, `review_url`.
 - [x] Sample builders for `cancellation_intro`, `cancellation_detail_section`, `cancellation_request_title` in `buildSampleDynamicSections`.
-- [x] `buildBookingPlaceholderVars`: time fallbacks read the property's `checkInTime` / `checkOutTime` (`settings.checkInTime` / `settings.checkOutTime`), not `'2:00 PM'` / `'11:00 AM'`. Same in `buildGuestFormPlaceholderVars`.
+- [x] `buildBookingPlaceholderVars`: drop the fixed `'2:00 PM'` / `'11:00 AM'` fallbacks; `renderPropertyTemplateSendEmail` resolves the property's guest form times once per render and fills only the blanks. Same for `buildGuestFormPlaceholderVars`.
 - [x] `buildSdRefundChecklistSectionHtml`: use the booking's check-out time; drop "strictly"; keep steps until Phase 5 replaces the block.
 - [x] Pre-arrival reminder: omit the balance sentence when the balance is ₱0.
 - [x] `rowToDto#isDefault`: compare normalized content (`normalizeTemplateContentForCompare` on both sides, including TipTap list canonicalization); add a regression test that a round-tripped default stays "default".
@@ -274,19 +274,15 @@ One server module, `_shared/propertyTemplateCatalog.ts`, exports every token wit
 
 ### Phase 1: Registry as the single source of truth
 
-- [ ] Extend `PropertyTemplateDefinition` (`_shared/propertyTemplates.ts`): `group`, `recipient`, `trigger`, `automationToggleKey`, `iconId`, `allowedPlaceholders`, `requiredBlocks` (warn if removed, for example `sd_refund_details_section` holds the refund form button), `defaultSubject`, `subjectLocked`, guide fields (`chapter`, `defaultPhase`, `defaultGuestVisible`, `condition`, `requiresEdit`), `appliesWhen` (for Building admin).
-- [ ] New `_shared/propertyTemplateDefaults/condo.ts` + `index.ts#resolveTemplatePack(type)`; registry reads `defaultContent` / `defaultSubject` from the pack. Pack resolution needs `properties.type`, so `resolvePropertyTemplateContent` loads it once per call (cache per request).
-- [ ] New `_shared/propertyTemplateCatalog.ts` (replaces `_shared/propertyTemplatePlaceholders.ts` reference list; keep `applyPropertyTemplateSamplePlaceholders` behavior).
-- [ ] `serializePropertyTemplatesForAdmin` returns per-template metadata + catalog + automation state (`resolvePropertyAutomationState`: enabled, plan-blocked).
-- [ ] UI: `usePropertyTemplates.ts` DTO types; `templateLibrary.ts#buildTemplateLibrary` builds groups from `template.group`; icon map keyed by `iconId`; delete `EMAIL_TEMPLATE_SECTIONS` / `STANDARD_TEMPLATE_SECTIONS` and UI `propertyTemplatePlaceholders.ts`; property part of `templatePlaceholderCatalog.ts` reads the server catalog (Telegram part unchanged).
-- [ ] Consumers of the deleted UI lists switch to DTO metadata: `page-editor/lib/stayGuideChapterSections.ts`, `guest/stay-guide/lib/mapStayGuideData.ts` (`CHAPTER_TEMPLATE_KEYS` comes from `section.chapter` in the stay guide DTO), `guest/chat/lib/guestChatResourceHubItems.ts`, `inbox/lib/inboxMockStore.ts`, setup guide hooks.
-- [ ] Contract tests (Deno, `propertyTemplates_test.ts` + new `propertyTemplateCatalog_test.ts`):
-  - every built-in has group, recipient (emails), trigger, icon, label;
-  - every token in every default body and subject is in that template's `allowedPlaceholders` and in the catalog;
-  - every allowed token is produced by the send-path var builder for that template (render with a fixture booking, assert no `{{` remains);
-  - block tokens sit alone in a `<p>`; defaults contain no `style=`, `<table`, `—` or `–`;
-  - GAF and pet rendered subjects still match `parseApprovalSubject`.
-- [ ] Vitest DOM test (`.test.tsx`, happy-dom project): each default round-trips through the TipTap schema unchanged, so defaults are stored in canonical form.
+- [x] Extend `PropertyTemplateDefinition` (`_shared/propertyTemplates.ts`): `group`, `recipient`, `trigger`, `automationToggleKey`, `iconId`, `allowedPlaceholders` (delivered as `placeholderKeys`), `defaultSubject`, `subjectLocked`, guide fields (`chapter`, `defaultPhase`, `defaultGuestVisible`, `condition`, `requiresEdit`), `appliesWhen` (for Building admin). `requiredBlocks` is still open.
+- [x] New `_shared/propertyTemplateDefaults/condo.ts` + `index.ts#resolveTemplatePack(type)`; registry reads `defaultContent` / `defaultSubject` from the pack. Package resolution does not yet read `properties.type` because only the condo pack exists; `resolveTemplatePack` ignores the type today.
+- [x] New `_shared/propertyTemplateCatalog.ts` with allowed keys per template and the block key list. `_shared/propertyTemplatePlaceholders.ts` still provides the human reference lines and sample values.
+- [x] `serializePropertyTemplatesForAdmin` returns per-template metadata, `placeholderKeys`, and hides Building admin when no GAF/pet requirement applies. Automation state is still fetched separately by the Settings page.
+- [x] UI: `usePropertyTemplates.ts` DTO types; `templateLibrary.ts#buildTemplateLibrary` builds the five groups from `template.group`; icon map keyed by `iconId`; `propertyTemplateSections.ts` reduced to the four guide keys the page editor needs. UI `propertyTemplateCatalog` and `propertyTemplatePlaceholders` remain as a fallback when a cached response predates `placeholderKeys`.
+- [ ] Consumers of the static lists switch to DTO metadata: `page-editor/lib/stayGuideChapterSections.ts`, `guest/stay-guide/lib/mapStayGuideData.ts` (`CHAPTER_TEMPLATE_KEYS` from `section.chapter`), setup guide hooks. (The chat and inbox consumers did not reference the deleted lists.)
+- [x] Contract tests (Deno, `propertyTemplates_test.ts`): every built-in has group, recipient (emails), trigger, icon, label and subject; every token in every default body and subject is allowed; block tokens sit alone in a `<p>`; defaults contain no `style=`, `<table`, `—` or `–`.
+- [ ] Remaining contract test: every allowed token is produced by the send-path var builder with a fixture booking (assert no `{{` remains), and GAF/pet rendered subjects still match `parseApprovalSubject`.
+- [ ] Vitest DOM test (`.test.tsx`, happy-dom project): each default round-trips through the TipTap schema unchanged.
 
 ### Phase 2: Placeholder engine
 

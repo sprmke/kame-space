@@ -25,6 +25,24 @@ On **phone/tablet**, the page scrolls inside the section layout (`AdminSectionNa
 
 Operators edit per-property copy here. **Preview and live sends use the same renderer** (`renderPropertyTemplateSendEmail` + `fragments/configurable-template-send.html`). Dynamic blocks (tables, payment breakdown, CTAs) are **`{{placeholders}}` in the template body** — visible in Preview when sample/send HTML is injected.
 
+### Rail groups
+
+The rail is built from the server registry, not a hand-kept UI list. `GET property-templates-settings` returns `group`, `recipient`, `trigger`, `automationToggleKey`, `iconId`, `chapter`, `condition` and `placeholderKeys` per template.
+
+| Order | Group          | Contents                                                                                        |
+| ----- | -------------- | ----------------------------------------------------------------------------------------------- |
+| 1     | Stay guide     | Guide sections, shown under chapter sub-labels. Always visible so hosts can add templates.      |
+| 2     | Guest messages | Host-sent replies. Only visible when the property has messages.                                 |
+| 3     | Guest emails   | Automated guest mail. Always visible.                                                           |
+| 4     | Building admin | GAF, pet and GAF cancellation. Hidden when the property has no GAF or pet document requirement. |
+| 5     | Team alerts    | Mail to the property's team inbox.                                                              |
+| 6     | Folders        | Host-created folders.                                                                           |
+| 7     | Custom         | Ungrouped host-owned templates.                                                                 |
+
+Filter chips map to these groups: **All**, **Stay guide**, **Emails** (Guest emails + Building admin + Team alerts), **Custom**.
+
+Built-in content and default subjects live in `supabase/functions/_shared/propertyTemplateDefaults/condo.ts`. Every property resolves to the condo pack until other packs exist. `properties.type` is read by the resolver, so a new pack is a content file plus a resolver branch.
+
 Template bodies (and section images) are bulk-copyable via org **Properties → Copy settings**.
 
 **Plan gating (`customTemplates`, Starter+):** Standard templates (house rules, check-in/out, parking reminders) are free — edit, preview, placeholders, reset, and save with no plan gate and no WYSIWYG blur. Email templates stay editable/previewable on Free; **Reset** always restores the shipped default (ungated `action: reset`); **Save** opens the upgrade modal when not entitled (server also gates email-key content PATCH). **Add Custom Template** (page header / mobile hero) and create/save **custom** templates require Starter+ — client pre-flight plus `property-templates-settings` (`action: create`, custom-key PATCH, and email-key PATCH). Delete custom stays open. Email and custom cards show a `TierBadge` (replacing the old Email category pill). The **Email templates** and **Custom templates** section headings also show a `TierBadge` when the org is below Starter.

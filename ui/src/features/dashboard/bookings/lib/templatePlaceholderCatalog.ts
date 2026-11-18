@@ -248,6 +248,21 @@ export function propertyPlaceholderLinesForTemplate(
   return placeholderLinesFromKeys(propertyPlaceholderKeysForTemplate(templateKey, category));
 }
 
+/**
+ * Prefer the server catalog carried on the DTO. The local map stays as a fallback for rows
+ * serialized before the server list shipped, so an older cached response still works.
+ */
+export function propertyPlaceholderLinesForDto(template: {
+  templateKey: string;
+  category: 'standard' | 'email' | 'custom';
+  placeholderKeys?: readonly string[] | null;
+}): string[] {
+  if (template.placeholderKeys && template.placeholderKeys.length > 0) {
+    return placeholderLinesFromKeys(template.placeholderKeys);
+  }
+  return propertyPlaceholderLinesForTemplate(template.templateKey, template.category);
+}
+
 /** Shared booking/guest tokens for Telegram booking alerts. */
 const TELEGRAM_BOOKING_GUEST_STAY = [
   'primary_guest_name',

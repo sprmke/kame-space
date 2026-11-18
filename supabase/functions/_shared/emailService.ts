@@ -29,6 +29,7 @@ import {
   computeReadyForCheckinTotalDue,
 } from './propertyTemplateEmailSections.ts';
 import { formatDateForEmail, formatTimeForDisplay } from './utils.ts';
+import { resolveGuestFormSettings } from './guestFormSettings.ts';
 import { guestJourneyReviewExpectation } from './guestJourneyCopy.ts';
 import { resolvePropertyMedianFirstResponseHours } from './guestResponseTime.ts';
 import { resolveDocumentRequirements } from './documentRequirements.ts';
@@ -1117,11 +1118,16 @@ export async function sendSdRefundFormRequest(booking: GuestSubmission) {
   const sdFormUrl = guestLinkExtras.sd_form_url ?? '';
 
   const guestContact = await loadGuestFacingContactInfo(propertyId, settings);
+  const formSettings = propertyId ? await resolveGuestFormSettings(propertyId) : null;
+  const checkOutTime = formatTimeForDisplay(
+    booking.check_out_time,
+    formatTimeForDisplay(formSettings?.checkOutTime)
+  );
 
   const sdRefundSections = {
     sd_refund_checklist_section: buildSdRefundChecklistSectionHtml({
       unitLabel,
-      checkOutTime: formatTimeForDisplay(booking.check_out_time, settings.checkOutTime),
+      checkOutTime,
       brandColor: settings.brandColor,
     }),
     sd_refund_details_section: buildSdRefundDetailsSectionHtml({
@@ -1132,7 +1138,7 @@ export async function sendSdRefundFormRequest(booking: GuestSubmission) {
     /** Backward compat for saved templates still using the combined placeholder. */
     sd_refund_footer_section: buildSdRefundFooterSectionHtml({
       unitLabel,
-      checkOutTime: formatTimeForDisplay(booking.check_out_time, settings.checkOutTime),
+      checkOutTime,
       securityDepositFormatted,
       sdFormUrl,
       brandColor: settings.brandColor,

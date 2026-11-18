@@ -39,7 +39,7 @@ import {
   templateMetaParts,
   type TemplateLibraryEntry,
 } from '@/features/dashboard/bookings/lib/templateLibrary';
-import { propertyPlaceholderLinesForTemplate } from '@/features/dashboard/bookings/lib/templatePlaceholderCatalog';
+import { propertyPlaceholderLinesForDto } from '@/features/dashboard/bookings/lib/templatePlaceholderCatalog';
 import {
   attachTemplatePreviewActionBlocker,
   blockTemplatePreviewAction,
@@ -219,8 +219,8 @@ export function PropertyTemplateEditorPane({
   });
 
   const placeholderLines = React.useMemo(
-    () => propertyPlaceholderLinesForTemplate(template.templateKey, template.category),
-    [template.templateKey, template.category]
+    () => propertyPlaceholderLinesForDto(template),
+    [template]
   );
 
   const validPlaceholderKeys = React.useMemo(
@@ -566,9 +566,7 @@ export function PropertyTemplateEditorPane({
                       id="template-guest-phase"
                       value={guestPhase}
                       disabled={saving}
-                      onChange={(event) =>
-                        setGuestPhase(event.target.value as GuestTemplatePhase)
-                      }
+                      onChange={(event) => setGuestPhase(event.target.value as GuestTemplatePhase)}
                       className="border-input bg-background min-h-[44px] w-full rounded-lg border px-3 text-sm"
                     >
                       <option value="always">At every stage</option>

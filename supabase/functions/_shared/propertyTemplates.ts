@@ -7,8 +7,57 @@ import { createClient } from './supabaseJs.ts';
 import { PROPERTY_TEMPLATE_PLACEHOLDERS_REFERENCE } from './propertyTemplatePlaceholders.ts';
 import { normalizeBlockLevelPlaceholdersInHtml } from './normalizeBlockLevelPlaceholders.ts';
 import { normalizeEmailCalloutPlaceholders } from './normalizeEmailCalloutPlaceholders.ts';
+import type { PropertyAutomationToggleKey } from './propertyAutomationToggles.ts';
+import { condoTemplateDefault } from './propertyTemplateDefaults/index.ts';
+import { propertyTemplatePlaceholderKeys } from './propertyTemplateCatalog.ts';
+import { resolveDocumentRequirements } from './documentRequirements.ts';
 
 export type PropertyTemplateCategory = 'standard' | 'email' | 'custom';
+
+/**
+ * Rail group. `category` stays the behaviour (guide section, automated email, host-owned);
+ * `group` decides where the template sits in the Templates rail and which rail order applies.
+ */
+export const PROPERTY_TEMPLATE_GROUPS = [
+  'stay-guide',
+  'guest-messages',
+  'guest-emails',
+  'building-admin',
+  'team-alerts',
+] as const;
+
+export type PropertyTemplateGroup = (typeof PROPERTY_TEMPLATE_GROUPS)[number];
+
+/** Icon id resolved to a Lucide component on the client. */
+export type PropertyTemplateIconId =
+  | 'home'
+  | 'log-in'
+  | 'log-out'
+  | 'car'
+  | 'paw'
+  | 'mail'
+  | 'file-check'
+  | 'send'
+  | 'file-text'
+  | 'x-circle'
+  | 'ban'
+  | 'undo'
+  | 'receipt'
+  | 'clipboard'
+  | 'message'
+  | 'list-checks';
+
+export const PROPERTY_TEMPLATE_CHAPTERS = [
+  'getting-in',
+  'make-yourself-at-home',
+  'before-you-go',
+] as const;
+
+export type PropertyTemplateChapter = (typeof PROPERTY_TEMPLATE_CHAPTERS)[number];
+
+export type PropertyTemplateRecipient = 'guest' | 'team' | 'building-admin';
+
+export type PropertyTemplateCondition = 'has_pets' | 'need_parking';
 
 /**
  * Which trip moment a guest-visible custom template belongs to (guest journey plan D8).
@@ -54,6 +103,28 @@ export type PropertyTemplateDefinition = {
   defaultContent: string;
   /** Maps to `loadEmailTemplate` slug when preview uses the full design shell. */
   previewTemplateSlug?: string;
+  group: PropertyTemplateGroup;
+  /** Emails only: who receives it. */
+  recipient: PropertyTemplateRecipient | null;
+  /** Host language "When" line, for example "Guest submits the form". */
+  trigger: string | null;
+  /** Automation master switch in Settings → Email automations. */
+  automationToggleKey: PropertyAutomationToggleKey | null;
+  iconId: PropertyTemplateIconId;
+  /** Email only. Null on guide sections and messages. */
+  defaultSubject: string | null;
+  /** GAF and pet subjects stay fixed because inbound approval parses them. */
+  subjectLocked: boolean;
+  /** Guide sections only. */
+  chapter: PropertyTemplateChapter | null;
+  defaultPhase: GuestTemplatePhase | null;
+  defaultGuestVisible: boolean;
+  /** Guide section renders only for matching bookings. */
+  condition: PropertyTemplateCondition | null;
+  /** Cannot be switched on until the host edits the default scaffold. */
+  requiresEdit: boolean;
+  /** Building admin group shows only when this property requirement applies. */
+  appliesWhen: 'gaf-or-pet-required' | null;
 };
 
 export type PropertyTemplateRow = {
@@ -106,9 +177,40 @@ export type PropertyTemplateDto = {
   /** Custom templates only: the trip stage that shows it. `always` when unset. */
   guestPhase: GuestTemplatePhase;
   updatedAt: string | null;
+  /** Allowed `{{tokens}}` for this template, from the server catalog. */
+  placeholderKeys: string[];
+  /** Rail group. Null for host-owned rows, which sit in folders or Custom. */
+  group: PropertyTemplateGroup | null;
+  recipient: PropertyTemplateRecipient | null;
+  trigger: string | null;
+  automationToggleKey: PropertyAutomationToggleKey | null;
+  iconId: PropertyTemplateIconId | null;
+  /** Email only. `subject` is the saved override; this is the shipped default. */
+  defaultSubject: string | null;
+  subjectLocked: boolean;
+  chapter: PropertyTemplateChapter | null;
+  defaultPhase: GuestTemplatePhase | null;
+  defaultGuestVisible: boolean;
+  condition: PropertyTemplateCondition | null;
+  requiresEdit: boolean;
+  appliesWhen: 'gaf-or-pet-required' | null;
 };
 
-const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
+type BuiltinTemplateContent = {
+  key: PropertyTemplateKey;
+  label: string;
+  description: string;
+  category: Exclude<PropertyTemplateCategory, 'custom'>;
+  defaultContent: string;
+  previewTemplateSlug?: string;
+};
+
+/**
+ * Legacy inline copy. The pack below is authoritative: `BUILTIN_TEMPLATES` overrides
+ * `defaultContent` from `propertyTemplateDefaults/condo.ts`, so the two can never disagree at
+ * runtime. The inline strings are removed in the copy-refresh pass.
+ */
+const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   {
     key: 'house-rules',
     label: 'House Rules',
@@ -320,6 +422,184 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
 <p>{{email_signature_section}}</p>`,
   },
 ];
+
+type BuiltinMeta = {
+  group: PropertyTemplateGroup;
+  recipient: PropertyTemplateRecipient | null;
+  trigger: string | null;
+  automationToggleKey: PropertyAutomationToggleKey | null;
+  iconId: PropertyTemplateIconId;
+  subjectLocked: boolean;
+  chapter: PropertyTemplateChapter | null;
+  defaultPhase: GuestTemplatePhase | null;
+  defaultGuestVisible: boolean;
+  condition: PropertyTemplateCondition | null;
+  requiresEdit: boolean;
+  appliesWhen: 'gaf-or-pet-required' | null;
+};
+
+function guideMeta(input: {
+  chapter: PropertyTemplateChapter;
+  phase: GuestTemplatePhase;
+  iconId: PropertyTemplateIconId;
+  condition?: PropertyTemplateCondition;
+}): BuiltinMeta {
+  return {
+    group: 'stay-guide',
+    recipient: null,
+    trigger: null,
+    automationToggleKey: null,
+    iconId: input.iconId,
+    subjectLocked: false,
+    chapter: input.chapter,
+    defaultPhase: input.phase,
+    defaultGuestVisible: true,
+    condition: input.condition ?? null,
+    requiresEdit: false,
+    appliesWhen: null,
+  };
+}
+
+function emailMeta(input: {
+  group: PropertyTemplateGroup;
+  recipient: PropertyTemplateRecipient;
+  trigger: string;
+  iconId: PropertyTemplateIconId;
+  toggle?: PropertyAutomationToggleKey;
+  subjectLocked?: boolean;
+  appliesWhen?: 'gaf-or-pet-required';
+}): BuiltinMeta {
+  return {
+    group: input.group,
+    recipient: input.recipient,
+    trigger: input.trigger,
+    automationToggleKey: input.toggle ?? null,
+    iconId: input.iconId,
+    subjectLocked: input.subjectLocked ?? false,
+    chapter: null,
+    defaultPhase: null,
+    defaultGuestVisible: false,
+    condition: null,
+    requiresEdit: false,
+    appliesWhen: input.appliesWhen ?? null,
+  };
+}
+
+const BUILTIN_META: Record<PropertyTemplateKey, BuiltinMeta> = {
+  'house-rules': guideMeta({
+    chapter: 'make-yourself-at-home',
+    phase: 'always',
+    iconId: 'home',
+  }),
+  'check-in-instructions': guideMeta({
+    chapter: 'getting-in',
+    phase: 'arrival',
+    iconId: 'log-in',
+  }),
+  'check-out-instructions': guideMeta({
+    chapter: 'before-you-go',
+    phase: 'checkout',
+    iconId: 'log-out',
+  }),
+  'parking-reminders': guideMeta({
+    chapter: 'make-yourself-at-home',
+    phase: 'arrival',
+    iconId: 'car',
+    condition: 'need_parking',
+  }),
+  'email-gaf-request': emailMeta({
+    group: 'building-admin',
+    recipient: 'building-admin',
+    trigger: 'Host approves a booking that needs a GAF',
+    iconId: 'file-check',
+    toggle: 'emailGafRequest',
+    subjectLocked: true,
+    appliesWhen: 'gaf-or-pet-required',
+  }),
+  'email-pet-request': emailMeta({
+    group: 'building-admin',
+    recipient: 'building-admin',
+    trigger: 'Host approves a booking with a pet',
+    iconId: 'paw',
+    toggle: 'emailPetRequest',
+    subjectLocked: true,
+    appliesWhen: 'gaf-or-pet-required',
+  }),
+  'email-new-booking-request': emailMeta({
+    group: 'team-alerts',
+    recipient: 'team',
+    trigger: 'Guest submits the form',
+    iconId: 'mail',
+    toggle: 'emailNewBookingRequest',
+  }),
+  'email-booking-request-received': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Guest submits the form',
+    iconId: 'mail',
+    toggle: 'emailBookingRequestReceived',
+  }),
+  'email-booking-acknowledgement': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Host approves the request',
+    iconId: 'send',
+    toggle: 'emailBookingAcknowledgement',
+  }),
+  'email-ready-for-checkin': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Booking reaches Ready for check-in',
+    iconId: 'log-in',
+    toggle: 'emailReadyForCheckin',
+  }),
+  'email-sd-refund-form-request': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Before check-out (cron lead time)',
+    iconId: 'file-text',
+    toggle: 'emailSdRefundCheckout',
+  }),
+  'email-booking-cancelled-guest': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Booking becomes Cancelled',
+    iconId: 'x-circle',
+  }),
+  'email-cancellation-request-guest': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Guest requests, then host approves or declines',
+    iconId: 'undo',
+  }),
+  'email-refund-sent-guest': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Host records a refund',
+    iconId: 'receipt',
+  }),
+  'email-booking-cancelled-host': emailMeta({
+    group: 'team-alerts',
+    recipient: 'team',
+    trigger: 'Guest cancels or asks to cancel',
+    iconId: 'ban',
+  }),
+};
+
+/**
+ * Built-ins with pack copy applied. The pack is the source of truth for content and subject;
+ * the metadata table is the source of truth for group, trigger, toggle and guide behaviour.
+ */
+const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = BUILTIN_CONTENT.map((content) => {
+  const meta = BUILTIN_META[content.key];
+  const pack = condoTemplateDefault(content.key);
+  return {
+    ...content,
+    ...meta,
+    defaultContent: pack?.content ?? content.defaultContent,
+    defaultSubject: pack?.subject ?? null,
+  };
+});
 
 const BUILTIN_BY_KEY = new Map(BUILTIN_TEMPLATES.map((t) => [t.key, t]));
 
@@ -614,6 +894,20 @@ function rowToDto(
     guestVisible: row.category === 'custom' ? row.guest_visible === true : false,
     guestPhase: isGuestTemplatePhase(row.guest_phase) ? row.guest_phase : 'always',
     updatedAt: row.updated_at,
+    group: builtin?.group ?? null,
+    recipient: builtin?.recipient ?? null,
+    trigger: builtin?.trigger ?? null,
+    automationToggleKey: builtin?.automationToggleKey ?? null,
+    iconId: builtin?.iconId ?? null,
+    defaultSubject: builtin?.defaultSubject ?? null,
+    subjectLocked: builtin?.subjectLocked ?? false,
+    chapter: builtin?.chapter ?? null,
+    defaultPhase: builtin?.defaultPhase ?? null,
+    defaultGuestVisible: builtin?.defaultGuestVisible ?? false,
+    condition: builtin?.condition ?? null,
+    requiresEdit: builtin?.requiresEdit ?? false,
+    appliesWhen: builtin?.appliesWhen ?? null,
+    placeholderKeys: [...propertyTemplatePlaceholderKeys(row.template_key, row.category)],
   };
 }
 
@@ -632,6 +926,20 @@ function builtinToDto(builtin: PropertyTemplateDefinition): PropertyTemplateDto 
     guestVisible: false,
     guestPhase: 'always',
     updatedAt: null,
+    group: builtin.group,
+    recipient: builtin.recipient,
+    trigger: builtin.trigger,
+    automationToggleKey: builtin.automationToggleKey,
+    iconId: builtin.iconId,
+    defaultSubject: builtin.defaultSubject,
+    subjectLocked: builtin.subjectLocked,
+    chapter: builtin.chapter,
+    defaultPhase: builtin.defaultPhase,
+    defaultGuestVisible: builtin.defaultGuestVisible,
+    condition: builtin.condition,
+    requiresEdit: builtin.requiresEdit,
+    appliesWhen: builtin.appliesWhen,
+    placeholderKeys: [...propertyTemplatePlaceholderKeys(builtin.key, builtin.category)],
   };
 }
 
@@ -640,10 +948,16 @@ export async function serializePropertyTemplatesForAdmin(propertyId: string): Pr
   placeholdersReference: string[];
   folders: PropertyTemplateFolderDto[];
 }> {
-  const rows = await listPropertyTemplateRows(propertyId);
+  const [rows, folderRows, needsBuildingAdmin] = await Promise.all([
+    listPropertyTemplateRows(propertyId),
+    listPropertyTemplateFolders(propertyId),
+    propertyAppliesBuildingAdminTemplates(propertyId),
+  ]);
   const rowByKey = new Map(rows.map((r) => [r.template_key, r]));
 
-  const templates: PropertyTemplateDto[] = BUILTIN_TEMPLATES.map((builtin) => {
+  const templates: PropertyTemplateDto[] = BUILTIN_TEMPLATES.filter(
+    (builtin) => builtin.appliesWhen !== 'gaf-or-pet-required' || needsBuildingAdmin
+  ).map((builtin) => {
     const row = rowByKey.get(builtin.key);
     if (!row) return builtinToDto(builtin);
     return rowToDto(row, builtin);
@@ -654,7 +968,6 @@ export async function serializePropertyTemplatesForAdmin(propertyId: string): Pr
     templates.push(rowToDto(row));
   }
 
-  const folderRows = await listPropertyTemplateFolders(propertyId);
   const countByFolder = new Map<string, number>();
   for (const template of templates) {
     if (!template.folderId) continue;
@@ -671,6 +984,27 @@ export async function serializePropertyTemplatesForAdmin(propertyId: string): Pr
       templateCount: countByFolder.get(row.id) ?? 0,
     })),
   };
+}
+
+/**
+ * Building admin templates only make sense when the property actually asks for a GAF or pet
+ * document. A property with neither should not see a group it can never send from.
+ */
+async function propertyAppliesBuildingAdminTemplates(propertyId: string): Promise<boolean> {
+  try {
+    const requirements = await resolveDocumentRequirements(propertyId);
+    if (requirements.length === 0) return false;
+    return requirements.some(
+      (req) =>
+        req.id === 'gaf' ||
+        req.id === 'pet' ||
+        req.pdfTemplateId === 'gaf' ||
+        req.pdfTemplateId === 'pet'
+    );
+  } catch (err) {
+    console.warn('[propertyTemplates] document requirement lookup failed:', err);
+    return true;
+  }
 }
 
 export const MAX_TEMPLATE_FOLDERS = 20;

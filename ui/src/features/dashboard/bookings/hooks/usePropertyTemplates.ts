@@ -8,6 +8,29 @@ import { supabase } from '@/lib/supabase/client';
 
 export type PropertyTemplateCategory = 'standard' | 'email' | 'custom';
 
+export type PropertyTemplateGroup =
+  'stay-guide' | 'guest-messages' | 'guest-emails' | 'building-admin' | 'team-alerts';
+
+export type PropertyTemplateIconId =
+  | 'home'
+  | 'log-in'
+  | 'log-out'
+  | 'car'
+  | 'paw'
+  | 'mail'
+  | 'file-check'
+  | 'send'
+  | 'file-text'
+  | 'x-circle'
+  | 'ban'
+  | 'undo'
+  | 'receipt'
+  | 'clipboard'
+  | 'message'
+  | 'list-checks';
+
+export type PropertyTemplateChapter = 'getting-in' | 'make-yourself-at-home' | 'before-you-go';
+
 export type PropertyTemplateDto = {
   templateKey: string;
   name: string;
@@ -25,16 +48,25 @@ export type PropertyTemplateDto = {
   /** Custom templates only: the trip stage that shows it. */
   guestPhase: GuestTemplatePhase;
   updatedAt: string | null;
+  /** Rail group. Null for host-owned rows. */
+  group: PropertyTemplateGroup | null;
+  recipient: 'guest' | 'team' | 'building-admin' | null;
+  trigger: string | null;
+  automationToggleKey: string | null;
+  iconId: PropertyTemplateIconId | null;
+  defaultSubject: string | null;
+  subjectLocked: boolean;
+  chapter: PropertyTemplateChapter | null;
+  defaultPhase: GuestTemplatePhase | null;
+  defaultGuestVisible: boolean;
+  condition: 'has_pets' | 'need_parking' | null;
+  requiresEdit: boolean;
+  appliesWhen: 'gaf-or-pet-required' | null;
+  placeholderKeys: string[];
 };
 
 /** Mirrors `GUEST_TEMPLATE_PHASES` in `_shared/propertyTemplates.ts`. */
-export type GuestTemplatePhase =
-  | 'before'
-  | 'arrival'
-  | 'stay'
-  | 'checkout'
-  | 'after'
-  | 'always';
+export type GuestTemplatePhase = 'before' | 'arrival' | 'stay' | 'checkout' | 'after' | 'always';
 
 export type PropertyTemplateFolderDto = {
   id: string;

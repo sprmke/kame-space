@@ -31,6 +31,7 @@ import {
   type PropertyTemplateKey,
 } from './propertyTemplates.ts';
 import { computeTotalGuestBalanceFromBooking } from './totalGuestBalance.ts';
+import { resolveGuestFormSettings } from './guestFormSettings.ts';
 import type { GuestFormData, GuestSubmission } from './types.ts';
 import { countStayNights, formatDateForEmail, formatTimeForDisplay } from './utils.ts';
 
@@ -176,10 +177,6 @@ export function buildBookingPlaceholderVars(
   const totalBalance =
     computeTotalGuestBalanceFromBooking(booking as unknown as Record<string, unknown>) ?? 0;
 
-  // Fall back to this property's own times, never a fixed string that can contradict Settings.
-  const propertyCheckInTime = formatTimeForDisplay(settings.checkInTime);
-  const propertyCheckOutTime = formatTimeForDisplay(settings.checkOutTime);
-
   const flags = decorFlags(booking);
 
   return {
@@ -190,8 +187,8 @@ export function buildBookingPlaceholderVars(
     guest_facebook_name: escapeHtml(booking.guest_facebook_name),
     check_in_date: escapeHtml(displayCheckIn),
     check_out_date: escapeHtml(displayCheckOut),
-    check_in_time: escapeHtml(formatTimeForDisplay(booking.check_in_time, propertyCheckInTime)),
-    check_out_time: escapeHtml(formatTimeForDisplay(booking.check_out_time, propertyCheckOutTime)),
+    check_in_time: escapeHtml(formatTimeForDisplay(booking.check_in_time)),
+    check_out_time: escapeHtml(formatTimeForDisplay(booking.check_out_time)),
     nights: String(nights),
     pax: String(pax),
     tower_and_unit_number: escapeHtml(unitLabel),
@@ -240,8 +237,6 @@ export function buildGuestFormPlaceholderVars(
   const propertyName = branding?.propertyName ?? 'Property';
   const hasDecor = Boolean(formData.guestRequestsSurpriseDecor);
   const hasPets = Boolean(formData.hasPets);
-  const propertyCheckInTime = formatTimeForDisplay(settings.checkInTime);
-  const propertyCheckOutTime = formatTimeForDisplay(settings.checkOutTime);
 
   return {
     primary_guest_name: escapeHtml(formData.primaryGuestName),
@@ -251,8 +246,8 @@ export function buildGuestFormPlaceholderVars(
     guest_facebook_name: escapeHtml(formData.guestFacebookName),
     check_in_date: escapeHtml(displayCheckIn),
     check_out_date: escapeHtml(displayCheckOut),
-    check_in_time: escapeHtml(formatTimeForDisplay(formData.checkInTime, propertyCheckInTime)),
-    check_out_time: escapeHtml(formatTimeForDisplay(formData.checkOutTime, propertyCheckOutTime)),
+    check_in_time: escapeHtml(formatTimeForDisplay(formData.checkInTime)),
+    check_out_time: escapeHtml(formatTimeForDisplay(formData.checkOutTime)),
     nights: String(nights),
     pax: String(pax),
     tower_and_unit_number: escapeHtml(unitLabel),
@@ -312,10 +307,31 @@ export async function renderPropertyTemplateSendEmail(input: {
 
   // The default trip button steps aside when the host already put the trip link in the body,
   // so a guest never sees two links to the same place (plan 6.3).
-  const vars =
+  let vars: Record<string, string> =
     rawContent.includes('{{trip_url}}') && input.placeholderVars.trip_cta_section !== undefined
       ? { ...input.placeholderVars, trip_cta_section: '' }
-      : input.placeholderVars;
+      : { ...input.placeholderVars };
+
+  /*
+   * Booking rows can be missing their own times (legacy imports), and a fixed fallback string
+   * contradicts Settings. Resolve this property's times once per render and fill only the
+   * blanks, so the email always matches what the guest form and stay guide say.
+   */
+  if (input.propertyId) {
+    try {
+      const formSettings = await resolveGuestFormSettings(input.propertyId);
+      const propertyCheckIn = formatTimeForDisplay(formSettings.checkInTime);
+      const propertyCheckOut = formatTimeForDisplay(formSettings.checkOutTime);
+      if (!vars.check_in_time && propertyCheckIn) {
+        vars.check_in_time = escapeHtml(propertyCheckIn);
+      }
+      if (!vars.check_out_time && propertyCheckOut) {
+        vars.check_out_time = escapeHtml(propertyCheckOut);
+      }
+    } catch (err) {
+      console.warn('[propertyTemplateEmail] guest form settings lookup failed:', err);
+    }
+  }
 
   let body = applyPropertyTemplatePlaceholders(rawContent, vars);
   body = prepareConfigurableEmailBodyHtml(body, settings.publicGuestAppOrigin);
