@@ -163,4 +163,14 @@ test.describe('@ci booking chat shortcut', () => {
     );
     expect(serious.map((v) => `${v.id}: ${v.nodes.map((n) => n.html).join(' | ')}`)).toEqual([]);
   });
+  for (const width of [1024, 1280]) {
+    test(`desktop ${width}px: the chat icon is fully visible without scrolling the table`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 800 });
+      const chatButton = await openBookings(page, [chat()]);
+      // IntersectionObserver respects the table's overflow clipping, unlike a bounding-box check.
+      await expect(chatButton).toBeInViewport({ ratio: 1 });
+    });
+  }
 });

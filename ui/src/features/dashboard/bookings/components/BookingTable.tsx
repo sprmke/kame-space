@@ -180,13 +180,17 @@ function BookingTableRow({
         </td>
       ) : null}
 
+      {/* The chat shortcut sits beside the guest so it stays in view when the table scrolls sideways. */}
       <td className={adminTableCell.body}>
-        <AdminTableGuestCell
-          primary_guest_name={row.primary_guest_name}
-          guest_facebook_name={row.guest_facebook_name}
-          guest_email={row.guest_email}
-          valid_id_url={row.valid_id_url}
-        />
+        <div className="flex items-center justify-between gap-1">
+          <AdminTableGuestCell
+            primary_guest_name={row.primary_guest_name}
+            guest_facebook_name={row.guest_facebook_name}
+            guest_email={row.guest_email}
+            valid_id_url={row.valid_id_url}
+          />
+          <BookingListQuickActions row={row} className="shrink-0" />
+        </div>
       </td>
 
       {/* Stay */}
@@ -224,12 +228,9 @@ function BookingTableRow({
         </span>
       </td>
 
-      {/* Actions: chat shortcut + row affordance. Row click still opens the booking. */}
+      {/* Action - chevron only, click is handled by the whole row */}
       <td className={adminTableCell.action}>
-        <div className="flex items-center justify-end gap-0.5">
-          <BookingListQuickActions row={row} />
-          <AdminTableRowAffordance />
-        </div>
+        <AdminTableRowAffordance />
       </td>
     </tr>
   );
