@@ -1,9 +1,9 @@
 import { voucherLiabilityPhp } from '@/features/guest/sd-form/lib/voucher';
+import { isOtaPrepaidSource } from '@/lib/bookingChannel';
 
 import {
   computeTotalGuestBalance,
   guestBalancePaidRecorded,
-  isAirbnbBookingSource,
 } from '@/features/dashboard/bookings/lib/totalGuestBalance';
 import type { BookingRow, SdSettlementLineItem } from '@/features/dashboard/bookings/lib/types';
 
@@ -164,16 +164,16 @@ export function buildHostNetBreakdown(
   const additional = toMoneyNumber(booking.guest_additional_fee);
   const parkingGuest = parkingFeeForHostNet(booking);
   const parkingPaid = toMoneyNumber(booking.parking_rate_paid);
-  const isAirbnb = isAirbnbBookingSource(booking.booking_source);
+  const isOtaPrepaid = isOtaPrepaidSource(booking.booking_source);
   const bookingRate = bookingRateForDisplay(booking);
 
-  const income: HostNetBreakdownLine[] = isAirbnb
+  const income: HostNetBreakdownLine[] = isOtaPrepaid
     ? bookingRate != null
       ? [{ key: 'booking_rate', label: 'Booking rate', amount: bookingRate }]
       : []
     : [{ key: 'down', label: 'Down payment', amount: down }];
 
-  if (!isAirbnb && guestBalance != null) {
+  if (!isOtaPrepaid && guestBalance != null) {
     income.push({
       key: 'guest_balance',
       label: 'Guest balance',

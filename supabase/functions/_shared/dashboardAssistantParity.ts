@@ -203,6 +203,7 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'resolve-owner-default-parking': read,
   'resolve-booking-property': read,
   'smart-pricing-preview': tool('get_smart_pricing_preview'),
+  'social-inbox-booking-chats': read,
   'social-inbox-messages': read,
   'voice-receptionist-usage': read,
   'voice-receptionist-voice-preview': read,

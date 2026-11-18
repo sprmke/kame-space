@@ -47,26 +47,32 @@ const PAGES = [
 ] as const;
 
 test.describe('@ci parking manual QA widths', () => {
+  // One test per viewport and page, not one loop per viewport. A single test visiting five pages
+  // in sequence can spend up to 40 s per page waiting for a cold dev-server compile against a 45 s
+  // budget, so one slow page failed all five. Independent tests get their own budget and run in
+  // parallel.
   for (const viewport of WIDTHS) {
-    test(`${viewport.name} parking pages render without horizontal overflow`, async ({ page }) => {
-      const state = createParkingFlowState();
-      state.status = 'PENDING_REVIEW';
-      state.parkingId = 'parking-e2e-001';
-      state.parkingSlug = 'slot-12a';
-      state.parkingLabel = 'Tower 1 · B2 · 12A';
-      state.endorsementSentAt = new Date().toISOString();
-      await installParkingFlowMocks(page, state);
-      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    for (const target of PAGES) {
+      test(`${viewport.name}: ${target.name} renders without horizontal overflow`, async ({
+        page,
+      }) => {
+        const state = createParkingFlowState();
+        state.status = 'PENDING_REVIEW';
+        state.parkingId = 'parking-e2e-001';
+        state.parkingSlug = 'slot-12a';
+        state.parkingLabel = 'Tower 1 · B2 · 12A';
+        state.endorsementSentAt = new Date().toISOString();
+        await installParkingFlowMocks(page, state);
+        await page.setViewportSize({ width: viewport.width, height: viewport.height });
 
-      for (const target of PAGES) {
         await page.goto(target.path);
         await expect(page.getByRole('heading', { name: target.heading }).first()).toBeVisible({
           timeout: 20_000,
         });
         await expect(page.locator(target.ready).first()).toBeVisible({ timeout: 20_000 });
         await expectNoPageHorizontalOverflow(page);
-      }
-    });
+      });
+    }
   }
 
   test('phone pricing calendar keeps all seven day columns on screen', async ({ page }) => {

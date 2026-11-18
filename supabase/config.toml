@@ -282,7 +282,8 @@ verify_jwt = false
 # Airbnb / OTA calendar sync. ical-export + get-form-completion are public (token-guarded in the
 # handler). calendar-sync-cron: global sweep (optional X-Calendar-Sync-Cron-Secret) + scoped
 # "Sync now" (resolveScopedPropertyAccess in the handler). Cloud-only schedule via pg_cron —
-# migration 20261213120500_calendar_sync_cron.sql (job calendar-sync-every-30m).
+# migration 20261343000500_calendar_sync_cron_every_10m.sql (job calendar-sync-every-10m,
+# */10 tick with a 30 min per-feed minimum).
 [functions.ical-export]
 verify_jwt = false
 
@@ -984,6 +985,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.social-inbox-threads]
+verify_jwt = false
+
+[functions.social-inbox-booking-chats]
 verify_jwt = false
 
 [functions.social-inbox-messages]

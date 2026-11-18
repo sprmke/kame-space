@@ -2,7 +2,7 @@
 title: 'Org Bookings List — operator guide'
 status: active
 tags: [guides, routes, org, booking-workflow]
-updated: 2026-11-16
+updated: 2026-11-18
 ---
 
 # Org Bookings List — operator guide
@@ -36,6 +36,8 @@ Differences from property list:
 5. **New booking** in the header (desktop) or hero (phone) opens a listing picker, then the same create modal as that listing’s Bookings page. Date range and Import stay on each property page (not here).
 6. Views: table, card, calendar only (no kanban).
 
+7. Table and card rows have a **chat icon** that deep-links into the row's property or parking Inbox (there is no org-level Inbox). Visibility is checked per listing with `inbox:view`. Behavior: [Property bookings → Chat shortcut](./property/bookings.md#chat-shortcut).
+
 Stay-side `need_parking` on property bookings is unchanged — that is nested stay workflow, not standalone parking reservations.
 
 ---
@@ -46,6 +48,8 @@ This page combines every property stay and every parking-slot reservation across
 
 **Common host questions**
 
+- Q: What does the chat icon on a row do?
+  A: It opens that guest's conversation in the Messages of the listing the booking belongs to (property or parking slot). One chat opens directly, several give you a picker, none shows a message with **Search Messages**. The icon is hidden on rows where you cannot view that listing's Messages.
 - Q: Why is there no kanban here?
   A: Parking reservations use a simple status path (review → active → completed). Kanban remains on each property’s bookings page for the full stay workflow.
 - Q: How do I add a booking from the org page?
@@ -87,6 +91,8 @@ This page combines every property stay and every parking-slot reservation across
 
 Parking-scoped list: `?parking_id=…` with parking team `bookings:view`.
 
+Chat icon: `GET social-inbox-booking-chats?booking_id=&property_id=|parking_id=` per row click (`inbox:view` on that listing).
+
 Status changes: `POST transition-parking-booking?parking_id=…` with `{ bookingId, toStatus }`.
 
 ---
@@ -114,10 +120,10 @@ Status changes: `POST transition-parking-booking?parking_id=…` with `{ booking
 
 ## Testing
 
-| Layer | Path / spec                                               | Manual                                               |
-| ----- | --------------------------------------------------------- | ---------------------------------------------------- |
-| Unit  | `ui/src/features/dashboard/bookings/lib/workflow.test.ts` | —                                                    |
-| E2E   | —                                                         | Org New booking picker → property and parking create |
+| Layer | Path / spec                                                                          | Manual                                               |
+| ----- | ------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| Unit  | `ui/src/features/dashboard/bookings/lib/workflow.test.ts`                            | —                                                    |
+| E2E   | `ui/e2e/features/bookings/bookingChatShortcut.spec.ts` (`@ci`) runs on this org list | Org New booking picker → property and parking create |
 
 ## Related docs
 

@@ -4,7 +4,9 @@ import { type GuestFormData } from '@/features/guest/form/schemas/guestFormSchem
 import { formatTimeToAMPM } from '@/utils/format/dates';
 
 function clipboardGuestNameLabel(source: BookingSource): string {
-  if (source === 'Airbnb') return 'Airbnb Name';
+  if (source === 'Airbnb' || source === 'Agoda' || source === 'Booking.com') {
+    return `${source} Name`;
+  }
   if (source === 'Facebook') return 'Facebook Name';
   return 'Full Name';
 }

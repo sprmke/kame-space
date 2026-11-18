@@ -11,6 +11,8 @@ SUPABASE=("$ROOT/scripts/dev/bunx" --bun supabase@latest)
 PROJECT_REF_FILE="$ROOT/supabase/.temp/project-ref"
 # shellcheck source=scripts/dev/check-linked-project.sh
 source "$ROOT/scripts/dev/check-linked-project.sh"
+# shellcheck source=scripts/deploy/retry-lib.sh
+source "$ROOT/scripts/deploy/retry-lib.sh"
 
 DB_ONLY=false
 FUNCTIONS_ONLY=false
@@ -184,7 +186,8 @@ run_functions_deploy() {
   if [[ "$selection" == "all" ]]; then
     echo "→ supabase functions deploy (all)"
     # Non-interactive CI: the hosted CLI now requires an explicit yes.
-    "${SUPABASE[@]}" functions deploy --yes
+    # Bundling fetches remote modules, so a connection reset is retried (retry-lib.sh, PR-098).
+    deploy_retry_transient "${SUPABASE[@]}" functions deploy --yes
     return 0
   fi
 
@@ -204,7 +207,7 @@ run_functions_deploy() {
   fi
 
   echo "→ supabase functions deploy ${names[*]}"
-  "${SUPABASE[@]}" functions deploy --yes "${names[@]}"
+  deploy_retry_transient "${SUPABASE[@]}" functions deploy --yes "${names[@]}"
 }
 
 # Stamps every function with the commit it was built from, so a Sentry issue can be tied to

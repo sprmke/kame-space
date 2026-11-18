@@ -58,7 +58,7 @@ export type GuestTrip = {
     balancePaid: number;
     /** Still unpaid, never below 0. */
     amountDue: number | null;
-    isAirbnb: boolean;
+    isOtaPrepaid: boolean;
   };
   refund: { amount: number | null; settledAt: string | null };
   cancellation: {
