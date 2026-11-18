@@ -12,6 +12,7 @@ import { handleParkingPaymentWebhookEvent } from './parkingPaymentOrchestrator.t
 import {
   extractRefundedPaymentId,
   extractWebhookInner,
+  paymentMethodFromWebhookPayload,
   readMetadataString,
   readWebhookKind,
 } from './paymongoWebhookMetadata.ts';
@@ -148,12 +149,6 @@ export async function resolveOrgTransactionFromWebhookPayload(
   return (data as OrgPaymentTransactionRow | null) ?? null;
 }
 
-function paymentMethodFromPayload(payload: Record<string, unknown>): string | null {
-  const { innerAttrs } = extractWebhookInner(payload);
-  const source = innerAttrs?.source as Record<string, unknown> | undefined;
-  return typeof source?.type === 'string' ? source.type : null;
-}
-
 export async function handlePaymongoWebhookEvent(
   eventType: string,
   payload: Record<string, unknown>
@@ -179,7 +174,7 @@ export async function handlePaymongoWebhookEvent(
       await fulfillOrgSubscriptionPayment({
         transactionId: orgTxn.id,
         providerReference: orgTxn.provider_reference,
-        paymentMethodType: paymentMethodFromPayload(payload),
+        paymentMethodType: paymentMethodFromWebhookPayload(payload),
         paidAt: new Date().toISOString(),
         rawPayload: payload,
         assignedByUserId: readMetadataString(metadata, 'initiated_by'),
@@ -229,7 +224,7 @@ export async function handlePaymongoWebhookEvent(
     const result = await fulfillOrgSubscriptionPayment({
       transactionId: orgTxn.id,
       providerReference: orgTxn.provider_reference,
-      paymentMethodType: paymentMethodFromPayload(payload),
+      paymentMethodType: paymentMethodFromWebhookPayload(payload),
       paidAt,
       rawPayload: payload,
       assignedByUserId: readMetadataString(metadata, 'initiated_by'),
