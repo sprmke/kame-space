@@ -316,6 +316,11 @@ const TOOL_LABELS: Record<string, { progress: string; done: string; failed: stri
     done: 'Listed marketing templates',
     failed: 'Template list failed',
   },
+  get_marketing_plan: {
+    progress: 'Loading the marketing plan…',
+    done: 'Loaded the marketing plan',
+    failed: 'Marketing plan failed',
+  },
   get_marketing_publish_history: {
     progress: 'Loading publish history…',
     done: 'Loaded publish history',
@@ -626,6 +631,11 @@ const TOOL_LABELS: Record<string, { progress: string; done: string; failed: stri
     progress: 'Reopening the ticket…',
     done: 'Reopened the ticket',
     failed: 'Could not reopen the ticket',
+  },
+  propose_mark_plan_item_posted: {
+    progress: 'Marking the plan item as posted…',
+    done: 'Marked as posted',
+    failed: 'Could not mark the plan item posted',
   },
   propose_mark_notifications_read: {
     progress: 'Marking notifications read…',

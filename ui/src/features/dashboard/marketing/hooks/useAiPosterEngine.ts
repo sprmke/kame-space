@@ -179,6 +179,7 @@ export function useAiPosterEngine(themeKey?: string | null) {
       prompt: string;
       format: DesignTemplateFormat;
       preferredArchetype?: PosterArchetypeId | null;
+      trendTopicKey?: string | null;
     }) => {
       const [result] = await Promise.all([
         generatePosters(propertyId, {
@@ -187,6 +188,7 @@ export function useAiPosterEngine(themeKey?: string | null) {
           facts: baseFacts,
           brandColor,
           preferredArchetype: input.preferredArchetype ?? null,
+          trendTopicKey: input.trendTopicKey ?? null,
         }),
         loadFonts(),
       ]);

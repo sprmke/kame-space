@@ -119,6 +119,19 @@ All four show a trend indicator vs. the previous equal-length period, powered by
 
 ---
 
+## Marketing today
+
+`PlannerTodayCard` sits under the stat cards. It shows up to three Marketing Planner items for
+today with their time and status, plus **Open plan** into
+`/org/:orgSlug/property/:propertySlug/marketing?tab=plan&range=today`.
+
+- Renders nothing when the property has no `marketingPlanner` plan feature or no items today, so it
+  never becomes dashboard clutter.
+- A failed plan load also renders nothing; the dashboard never shows a planner error.
+- Source: `marketing-planner?range=today`, the same query the Plan tab uses.
+
+---
+
 ## Board section (finance + calendar + ops)
 
 `DashboardFinanceCalendarSection` renders once a period is resolved as an equal **`lg:grid-cols-2`** board (six half-width cards, equal row height via `items-stretch`).

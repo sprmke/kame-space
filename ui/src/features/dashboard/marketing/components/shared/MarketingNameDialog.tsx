@@ -66,7 +66,7 @@ export function MarketingNameDialog({
           onChange={(e) => setValue(e.target.value)}
           className="h-10"
           onKeyDown={(e) => {
-            if (e.key === 'Enter') void handleConfirm();
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) void handleConfirm();
           }}
         />
       </div>

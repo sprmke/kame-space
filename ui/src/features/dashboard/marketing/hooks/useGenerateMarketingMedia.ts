@@ -46,6 +46,8 @@ export type GenerateMarketingMediaPayload = {
   themeKey?: string;
   /** AI Studio example the host started from (attribution only). */
   sampleId?: string;
+  /** Marketing Trends topic this came from (the server loads the topic). */
+  trendTopicKey?: string | null;
 };
 
 export function useGenerateMarketingMedia() {

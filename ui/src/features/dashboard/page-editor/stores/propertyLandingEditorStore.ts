@@ -33,7 +33,7 @@ type PropertyLandingEditorActions = {
 };
 
 function cloneConfig(config: PropertyLandingSectionConfig): PropertyLandingSectionConfig {
-  return JSON.parse(JSON.stringify(config)) as PropertyLandingSectionConfig;
+  return structuredClone(config);
 }
 
 /** Force product-fixed section order; mandatory sections always visible. */

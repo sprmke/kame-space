@@ -194,6 +194,18 @@ export const FEATURE_GATE_COPY: Record<PlanFeatureKey, FeatureGateCopy> = {
       'Downloading the Activity & Audit Log as CSV is available on Starter and above. Viewing the log in the dashboard stays free on every plan.',
     ctaLabel: 'View plans',
   },
+  marketingPlanner: {
+    title: 'Marketing Planner',
+    description:
+      'A dated posting plan built from your open nights, pace and reviews is available on Pro and above.',
+    ctaLabel: 'View plans',
+  },
+  aiMarketingPlanner: {
+    title: 'AI Marketing Planner',
+    description:
+      'AI-written hooks, captions and weekly plan summaries are available on Business and above.',
+    ctaLabel: 'View plans',
+  },
 };
 
 export function featureGateCopy(feature: PlanFeatureKey): FeatureGateCopy {

@@ -144,7 +144,7 @@ export function PropertyHouseRulesManageDialog({
                         onNewCustomHouseRuleInputChange(category.id, event.target.value)
                       }
                       onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
+                        if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
                           event.preventDefault();
                           onAddCustomHouseRule(category.id);
                         }

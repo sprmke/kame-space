@@ -1,13 +1,17 @@
 ---
-stage: in-progress
+stage: for-testing
 title: 'Legal and privacy coverage: current policies and consistent notices across the app'
-status: in-progress
-tags: [workflow, in-progress, legal, privacy, terms, cookies, payments, consent, ux]
+status: for-testing
+tags: [workflow, for-testing, legal, privacy, terms, cookies, payments, consent, ux]
 updated: 2026-11-18
 kind: plan
 ---
 
 # Legal and privacy coverage
+
+> **Status 2026-11-16:** implementation complete and live. The cookie consent banner and the
+> legal notices shipped. The only open item is D3, the lawyer review of the rewritten Terms and
+> Privacy, which needs a human reviewer.
 
 Bring the Terms, Privacy and Cookie policies up to date with what the product does today, and
 show short, consistent legal notices at every point where a person signs in, submits personal

@@ -66,7 +66,7 @@ The `parkings` vertical has CRUD, RBAC, pricing/settings, and dashboard pages. T
 - Discovery UX redesign (Phase 3).
 - On-site photo/slot measuring ops (Phase 4).
 
-See [`parking-e2e-later-phases.md`](../planned/parking-e2e-later-phases.md) for Phase 2–4 planning stubs.
+See [`parking-e2e-later-phases.md`](./parking-e2e-later-phases.md) for Phase 2–4 planning stubs.
 
 ## UX brief (Impeccable Operate + UI/UX Pro Max)
 
@@ -98,7 +98,7 @@ See [`parking-e2e-later-phases.md`](../planned/parking-e2e-later-phases.md) for 
 | 3   | [`parking-e2e-phase1-host-broadcast-notifications.md`](./parking-e2e-phase1-host-broadcast-notifications.md)   | Candidates, claim, decline, cron, Telegram+email                       | #2           |
 | 4   | [`parking-e2e-phase1-guest-request-realtime-status.md`](./parking-e2e-phase1-guest-request-realtime-status.md) | Real submit, status page, Realtime, endorsement                        | #2, #3       |
 | 5   | [`parking-e2e-phase1-bookings-page-updates.md`](./parking-e2e-phase1-bookings-page-updates.md)                 | List/kanban/detail Accept·Decline·countdown                            | #2, #3       |
-| —   | [`parking-e2e-later-phases.md`](../planned/parking-e2e-later-phases.md)                                        | Phase 2a/2b/3/4 stubs only                                             | Phase 1 done |
+| —   | [`parking-e2e-later-phases.md`](./parking-e2e-later-phases.md)                                        | Phase 2a/2b/3/4 stubs only                                             | Phase 1 done |
 
 ## Sequencing
 
@@ -193,4 +193,4 @@ Apply across Docs 1–5 before calling Phase 1 done:
 | Phase 1c new workflow/statuses                       | Doc 2                                                                              |
 | Phase 1d bookings list/kanban                        | Doc 5                                                                              |
 | Phase 1e production / multi-tenant                   | This overview checklist                                                            |
-| Phase 2a/2b/3/4                                      | [`parking-e2e-later-phases.md`](../planned/parking-e2e-later-phases.md) stubs only |
+| Phase 2a/2b/3/4                                      | [`parking-e2e-later-phases.md`](./parking-e2e-later-phases.md) stubs only |

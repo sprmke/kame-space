@@ -24,6 +24,12 @@ import {
   type MarketingTemplateRef,
 } from '@/features/dashboard/marketing/lib/marketingStudioRoute';
 import { MARKETING_STUDIO_TAB_LABELS } from '@/features/dashboard/marketing/lib/theme/marketingStudioNav';
+import {
+  takePendingPlannerDraft,
+  type PlannerHandoffPayload,
+} from '@/features/dashboard/marketing/lib/planner/plannerHandoff';
+import { attachPlannerAsset } from '@/features/dashboard/marketing/lib/planner/plannerApi';
+import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
 
 import { MarketingEditorSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { Button } from '@/components/ui/button';
@@ -39,6 +45,11 @@ export type MarketingEditorDocument =
       templateRecord: MarketingTemplateRecord | null;
       /** Open the AI panel on arrival (Library "Start with AI"). */
       openAi: boolean;
+      /**
+       * Copy and dates from a Marketing Planner item. Consumed once, when the host opened the
+       * editor from the plan, so the draft starts with the host's own words.
+       */
+      plannerSeed?: PlannerHandoffPayload | null;
     };
 
 export type MarketingEditorNav = {
@@ -70,6 +81,7 @@ export function MarketingEditorHost({ contentType, children }: Props) {
   const location = useLocation();
   const createdIdsRef = useRef(new Set<string>());
   const { canDeleteTemplate } = useMarketingPermissions();
+  const propertyId = usePropertyIdParam();
   const restore = useRestoreMarketingItems();
 
   const savedId = item.mode === 'saved' ? item.id : null;
@@ -95,6 +107,15 @@ export function MarketingEditorHost({ contentType, children }: Props) {
   if (item.mode === 'saved' && !createdHere) docKeyRef.current = `item:${item.id}`;
   if (draftKey) docKeyRef.current = draftKey;
 
+  // Latch the planner seed once per draft key. Reading it inside the render memo would
+  // consume it on the first pass and then change the document identity, remounting the editor.
+  const plannerSeedRef = useRef<PlannerHandoffPayload | null>(null);
+  const plannerSeedKeyRef = useRef<string | null>(null);
+  if (item.mode === 'draft' && draftKey && plannerSeedKeyRef.current !== draftKey) {
+    plannerSeedKeyRef.current = draftKey;
+    plannerSeedRef.current = takePendingPlannerDraft();
+  }
+
   const documentRef = useRef<MarketingEditorDocument | null>(null);
   const document = useMemo<MarketingEditorDocument | null>(() => {
     if (item.mode === 'saved') {
@@ -109,6 +130,7 @@ export function MarketingEditorHost({ contentType, children }: Props) {
         size: normalizeStartSize(contentType, item.size ?? template.data?.aspectPreset ?? null),
         templateRecord: template.data ?? null,
         openAi,
+        plannerSeed: plannerSeedRef.current,
       };
     }
     return null;
@@ -123,13 +145,24 @@ export function MarketingEditorHost({ contentType, children }: Props) {
       onCreated: (created) => {
         createdIdsRef.current.add(created.id);
         replaceDraftWithItem(created.id);
+        // The other half of the planner handoff: a draft made from a plan item comes back
+        // to it, so the item stops asking to be made. One attach per seed.
+        const seed = plannerSeedRef.current;
+        if (seed) {
+          plannerSeedRef.current = null;
+          void attachPlannerAsset(propertyId, {
+            itemId: seed.itemId,
+            assetKind: 'template',
+            assetId: created.id,
+          }).catch(() => undefined);
+        }
       },
       openItem: (id, options) => openItem(id, { replace: options?.replace }),
       startDraft: (from, options) =>
         startDraft(from, { size: options?.size ?? null, replace: options?.replace }),
       backLabel: MARKETING_STUDIO_TAB_LABELS[tab],
     }),
-    [closeItem, replaceDraftWithItem, openItem, startDraft, tab]
+    [closeItem, replaceDraftWithItem, openItem, startDraft, tab, propertyId]
   );
 
   const noun = CONTENT_NOUN[contentType].one;

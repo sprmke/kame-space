@@ -8,6 +8,7 @@
 import { createServiceClient } from './orgAuth.ts';
 import {
   expirePaymongoCheckoutSession,
+  getPaymongoPaidPayment,
   getPaymongoProviderPaymentState,
   isPaymongoCheckoutSessionRef,
   isPaymongoPaymentLinkRef,
@@ -67,12 +68,16 @@ export async function reconcilePendingOrgPaymentTransaction(
   const paymongoState = await getPaymongoProviderPaymentState(providerRef);
 
   if (paymongoState === 'paid') {
+    // The real payment: its id lets a later refund event find this transaction.
+    const paid = await getPaymongoPaidPayment(providerRef);
     await fulfillOrgSubscriptionPayment({
       transactionId,
       providerReference: providerRef,
       paymentMethodType:
-        typeof txn.payment_method_type === 'string' ? txn.payment_method_type : 'qrph',
-      paidAt: new Date().toISOString(),
+        paid?.methodType ??
+        (typeof txn.payment_method_type === 'string' ? txn.payment_method_type : 'qrph'),
+      paidAt: paid?.paidAt ?? new Date().toISOString(),
+      providerPaymentId: paid?.paymentId ?? null,
       rawPayload: { source: 'reconcile', provider_reference: providerRef },
     });
     return 'fulfilled';
@@ -193,12 +198,15 @@ export async function sweepOrgPayments(options: {
       await stampReconciled(txn.id as string);
       const state = await getPaymongoProviderPaymentState(txn.provider_reference as string);
       if (state !== 'paid') continue;
+      const paid = await getPaymongoPaidPayment(txn.provider_reference as string);
       const result = await fulfillOrgSubscriptionPayment({
         transactionId: txn.id as string,
         providerReference: txn.provider_reference as string,
         paymentMethodType:
-          typeof txn.payment_method_type === 'string' ? txn.payment_method_type : 'qrph',
-        paidAt: new Date().toISOString(),
+          paid?.methodType ??
+          (typeof txn.payment_method_type === 'string' ? txn.payment_method_type : 'qrph'),
+        paidAt: paid?.paidAt ?? new Date().toISOString(),
+        providerPaymentId: paid?.paymentId ?? null,
         rawPayload: { source: 'sweep_recovery', provider_reference: txn.provider_reference },
         allowReopen: true,
       });

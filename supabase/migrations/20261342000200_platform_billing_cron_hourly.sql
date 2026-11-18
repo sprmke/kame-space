@@ -1,6 +1,6 @@
 -- Billing cycle runs hourly (was daily at 06:00 UTC) so period-end transitions land within the
 -- hour instead of up to a day late. The job is fully idempotent: transitions are compare-and-set
--- and every reminder is send-once. Plan: docs/workflow/in-progress/plans-billing-lifecycle-hardening.md
+-- and every reminder is send-once. Plan: docs/workflow/for-testing/plans-billing-lifecycle-hardening.md
 
 CREATE OR REPLACE FUNCTION public.sync_platform_billing_cron_job()
 RETURNS jsonb

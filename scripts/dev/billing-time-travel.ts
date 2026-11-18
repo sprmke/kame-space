@@ -13,7 +13,7 @@
  *   bun run billing:time-travel -- --org <slug|id> --run               # just run the cron
  *
  * Flags: --days N (forward), --run (POST platform-billing-cron after shifting), --status (print
- * only). Refuses any non-local SUPABASE_URL. Plan: docs/workflow/in-progress/plans-billing-lifecycle-hardening.md
+ * only). Refuses any non-local SUPABASE_URL. Plan: docs/workflow/for-testing/plans-billing-lifecycle-hardening.md
  */
 
 import { createClient } from '@supabase/supabase-js';

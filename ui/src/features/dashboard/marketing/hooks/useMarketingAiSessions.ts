@@ -152,6 +152,8 @@ export type SavePostVersionsInput = {
   title?: string;
   themeKey?: string | null;
   parentVersionId?: string | null;
+  /** Marketing Trends topic this creation came from (stored on the session). */
+  trendTopicKey?: string | null;
   versions: Array<{
     spec: Record<string, unknown>;
     goal: string;

@@ -1,6 +1,6 @@
 -- Org billing notices (renewal ready, past due, suspended, trial ending, ...) in the in-app
 -- notification list and web push. One org-level type; metadata.kind says which message.
--- Plan: docs/workflow/in-progress/plans-billing-lifecycle-hardening.md (Phase 4)
+-- Plan: docs/workflow/for-testing/plans-billing-lifecycle-hardening.md (Phase 4)
 
 -- This list is a superset on purpose: every type allowed through 20261332, the marketing_* types
 -- added by develop's 20261340000000_marketing_planner.sql (which sorts before this file), and

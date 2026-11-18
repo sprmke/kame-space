@@ -465,7 +465,7 @@ export function ContactHostSheet({
                           aria-label="Message to host"
                           disabled={sendingFirst}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
+                            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                               e.preventDefault();
                               handleSendFirst();
                             }

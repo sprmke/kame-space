@@ -78,6 +78,10 @@ export type PlanFeatures = {
   analyticsInsights: boolean;
   /** CSV export of the org Activity & Audit Log. In-app viewing stays ungated. */
   activityLogExport: boolean;
+  /** Marketing Planner: dated, data-driven posting plan for the listing. Pro and above. */
+  marketingPlanner: boolean;
+  /** AI-written briefs for the planner. Business and above. */
+  aiMarketingPlanner: boolean;
   /** Marketing Studio media library storage quotas (images, video, audio). */
   marketingMediaLibrary: PlanMarketingMediaLibrary;
 };
@@ -116,6 +120,8 @@ export const DEFAULT_PLAN_FEATURES: PlanFeatures = {
   copyPropertySettings: false,
   analyticsInsights: false,
   activityLogExport: false,
+  marketingPlanner: false,
+  aiMarketingPlanner: false,
   marketingMediaLibrary: { ...DEFAULT_MARKETING_MEDIA_LIBRARY },
 };
 
@@ -228,6 +234,8 @@ export function parsePlanFeatures(raw: unknown): PlanFeatures {
     copyPropertySettings: asBool(obj.copyPropertySettings, base.copyPropertySettings),
     analyticsInsights: asBool(obj.analyticsInsights, base.analyticsInsights),
     activityLogExport: asBool(obj.activityLogExport, base.activityLogExport),
+    marketingPlanner: asBool(obj.marketingPlanner, base.marketingPlanner),
+    aiMarketingPlanner: asBool(obj.aiMarketingPlanner, base.aiMarketingPlanner),
     marketingMediaLibrary: parseMarketingMediaLibrary(obj.marketingMediaLibrary),
   };
 }

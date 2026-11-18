@@ -3,7 +3,7 @@
 -- catalog only affects new purchases. A super-admin "move subscribers to the current price"
 -- migration (effective at least 30 days out, with notice) moves existing subscribers at their
 -- next renewal on or after the effective date.
--- Plan: docs/workflow/in-progress/plans-billing-lifecycle-hardening.md (Phase 7)
+-- Plan: docs/workflow/for-testing/plans-billing-lifecycle-hardening.md (Phase 7)
 
 ALTER TABLE public.org_subscriptions
   ADD COLUMN IF NOT EXISTS pricing_snapshot JSONB;

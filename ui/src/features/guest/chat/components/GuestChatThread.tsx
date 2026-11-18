@@ -814,7 +814,7 @@ export function GuestChatThread({
             className="bg-card max-h-28 min-h-[44px] flex-1 resize-none py-2.5 text-[15px] leading-snug sm:text-sm"
             aria-label="Message"
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();
                 if (canSend || (composerMode.kind === 'edit' && draft.trim())) {
                   void handleSend();

@@ -38,6 +38,8 @@ import {
 import { createNotification } from './notificationService.ts';
 import { bookingNotificationMetadata } from './notificationEnrichment.ts';
 import { resolveOrganizationIdForProperty } from './propertyScope.ts';
+import { normalizeBookingDateToYmd } from './calendarAvailabilityManila.ts';
+import { maybeCreateFreedDatesOpportunity } from './marketingFreedDates.ts';
 import { type ActivityActorType, type ActorContext, logActivity } from './activityLog.ts';
 import { capturePostHogEvent } from './posthog.ts';
 import { purgeCacheByScope } from './queryCache.ts';
@@ -887,22 +889,24 @@ export class WorkflowOrchestrator {
         shouldGenerateGafRequestPdf
           ? generatePDF(fd, propertyId).catch((err) => {
               console.error('[orchestrator] GAF PDF generation failed:', err);
-          void captureSideEffectFailure('pdf:gaf', err, { bookingStatusTo: toStatus });
+              void captureSideEffectFailure('pdf:gaf', err, { bookingStatusTo: toStatus });
               throw new Error(
                 `GAF request PDF could not be generated. Ensure templates/guest-form-template.pdf exists in Storage. ${
                   err instanceof Error ? err.message : String(err)
-                }`
+                }`,
+                { cause: err }
               );
             })
           : Promise.resolve(null),
         shouldGeneratePetRequestPdf
           ? generatePetPDF(fd, propertyId).catch((err) => {
               console.error('[orchestrator] Pet request PDF generation failed:', err);
-          void captureSideEffectFailure('pdf:pet_request', err, { bookingStatusTo: toStatus });
+              void captureSideEffectFailure('pdf:pet_request', err, { bookingStatusTo: toStatus });
               throw new Error(
                 `Pet request PDF could not be generated. Ensure templates/pet-form-template.pdf exists in Storage. ${
                   err instanceof Error ? err.message : String(err)
-                }`
+                }`,
+                { cause: err }
               );
             })
           : Promise.resolve(null),
@@ -1315,7 +1319,34 @@ export class WorkflowOrchestrator {
             dedupeKey: `${bookingId}:cancelled`,
           });
         } catch (notifyError) {
-          console.error('[orchestrator] Cancellation notification failed (non-fatal):', notifyError);
+          console.error(
+            '[orchestrator] Cancellation notification failed (non-fatal):',
+            notifyError
+          );
+        }
+      }
+
+      // ── Marketing planner: a cancellation frees nights worth promoting ──────
+      // Runs after every other cancellation side effect and never throws, so a
+      // planner write can never fail a cancellation.
+      if (flag(devControls, 'saveToDatabase')) {
+        try {
+          const plannerOrgId = await resolveNotificationOrgId();
+          const checkInYmd = normalizeBookingDateToYmd(String(updatedBooking.check_in_date ?? ''));
+          const checkOutYmd = normalizeBookingDateToYmd(
+            String(updatedBooking.check_out_date ?? '')
+          );
+          if (plannerOrgId && checkInYmd && checkOutYmd) {
+            await maybeCreateFreedDatesOpportunity({
+              organizationId: plannerOrgId,
+              propertyId,
+              checkInYmd,
+              checkOutYmd,
+              actor,
+            });
+          }
+        } catch (freedError) {
+          console.error('[orchestrator] Freed-dates opportunity failed (non-fatal):', freedError);
         }
       }
     }

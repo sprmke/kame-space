@@ -275,21 +275,17 @@ async function cachedShellResponse(): Promise<Response> {
  */
 async function navigationResponse(request: Request): Promise<Response> {
   if (self.navigator.onLine !== false) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), NAVIGATION_NETWORK_TIMEOUT_MS);
     try {
       const response = await fetch(request.url, {
         cache: 'no-cache',
         credentials: 'same-origin',
         redirect: 'follow',
-        signal: controller.signal,
+        signal: AbortSignal.timeout(NAVIGATION_NETWORK_TIMEOUT_MS),
       });
       const contentType = response.headers.get('content-type') ?? '';
       if (response.ok && contentType.includes('text/html')) return response;
     } catch {
       // Offline / timeout / DNS — fall through to the precached shell.
-    } finally {
-      clearTimeout(timer);
     }
   }
   return cachedShellResponse();
@@ -363,7 +359,7 @@ registerRoute(
         maxAgeSeconds: 60 * 60 * 24 * 30,
         purgeOnQuotaError: true,
       }),
-    ]
+    ],
   })
 );
 
@@ -407,8 +403,7 @@ registerRoute(
 // Public runtime files referenced by the SW itself / the OS shell.
 registerRoute(
   ({ url, sameOrigin }) =>
-    sameOrigin &&
-    /^\/(?:icons|favicon|images|screenshots|fonts)\//.test(url.pathname),
+    sameOrigin && /^\/(?:icons|favicon|images|screenshots|fonts)\//.test(url.pathname),
   new StaleWhileRevalidate({
     cacheName: `${CACHE_PREFIX}media`,
     plugins: [
@@ -418,7 +413,7 @@ registerRoute(
         maxAgeSeconds: 60 * 60 * 24 * 30,
         purgeOnQuotaError: true,
       }),
-    ]
+    ],
   })
 );
 
@@ -617,7 +612,8 @@ self.addEventListener('push', (event) => {
     payload = { title: 'New notification', body: event.data?.text() };
   }
   if (!payload || typeof payload !== 'object') payload = {};
-  const title = typeof payload.title === 'string' && payload.title ? payload.title : 'New notification';
+  const title =
+    typeof payload.title === 'string' && payload.title ? payload.title : 'New notification';
   const body = truncatePushBody(payload.body);
   const tag = payload.groupKey || payload.tag || payload.notificationId || payload.type || 'gfm';
   const badge = normalizeBadgeCount(payload.unreadCount);
@@ -660,8 +656,7 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const data = event.notification.data as
-    | { path?: unknown; kind?: unknown; notificationId?: string | null }
-    | undefined;
+    { path?: unknown; kind?: unknown; notificationId?: string | null } | undefined;
   const path = safeAppPath(data?.path);
   const kind = typeof data?.kind === 'string' ? data.kind : undefined;
   const markReadOnly = event.action === 'mark-read';
@@ -671,7 +666,10 @@ self.addEventListener('notificationclick', (event) => {
     (async () => {
       // Read in the OS tray: the app shows it read once the bell refetches.
       if (markReadOnly && data?.notificationId) {
-        const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        const clientList = await self.clients.matchAll({
+          type: 'window',
+          includeUncontrolled: true,
+        });
         for (const client of clientList) {
           client.postMessage({
             type: SW_MESSAGE.NOTIFICATION_CLICK,

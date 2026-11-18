@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import {
   ChevronDown,
@@ -7,6 +7,7 @@ import {
   Play,
   Settings2,
   Sparkles,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -31,6 +32,7 @@ import {
   type AiCreateRequest,
 } from '@/features/dashboard/marketing/lib/aiStudioCreatePayload';
 import { takePendingAiStartPhoto } from '@/features/dashboard/marketing/lib/aiStudioHandoff';
+import type { PendingAiTrend } from '@/features/dashboard/marketing/lib/trends/trendTypes';
 import {
   OUTPUT_FEATURE,
   POST_FORMATS,
@@ -139,6 +141,17 @@ type Props = {
   onClearSample: () => void;
   /** Which outputs this role may start (for the example detail button). */
   access: Record<AiStudioOutput, boolean>;
+  /** The "Trending today" rail, rendered above the description field. */
+  trendsRail?: ReactNode;
+  /**
+   * A trend the host picked in the sheet. A prop, not a one-shot module, because
+   * picking an angle usually leaves the URL unchanged (already a new creation of
+   * that output), so this component does not remount and a mount-time read would
+   * miss it.
+   */
+  trend?: PendingAiTrend | null;
+  /** Called once the trend has been applied, so the parent can clear it. */
+  onTrendApplied?: () => void;
 };
 
 function credits(value: number): string {
@@ -165,6 +178,9 @@ export function AiStudioCreate({
   onApplySample,
   onClearSample,
   access,
+  trendsRail,
+  trend,
+  onTrendApplied,
 }: Props) {
   const { open: openUpgradeModal } = useUpgradeModal();
   const generateAvailability = useFeatureAvailability('marketing.ai_studio.generate');
@@ -195,6 +211,19 @@ export function AiStudioCreate({
   });
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const promptRef = useRef<HTMLTextAreaElement>(null);
+
+  // A trend picked in the Trends sheet: the topic key travels with the request,
+  // the server loads the topic itself.
+  const [activeTrend, setActiveTrend] = useState<PendingAiTrend | null>(null);
+  useEffect(() => {
+    if (!trend) return;
+    setActiveTrend(trend);
+    onTextChange(trend.angle.prompt);
+    onTrendApplied?.();
+    // The prompt is the only thing the form needs from the trend; the key travels
+    // in the request. Applying once per picked trend is the whole contract.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trend]);
 
   // Photo ↔ Clip: settings that differ reset; photos are trimmed to the new cap.
   const mountedOutput = useRef(output);
@@ -397,6 +426,7 @@ export function AiStudioCreate({
         referenceIds: references.map((reference) => reference.id),
         sampleId: sample?.id ?? null,
         preferredArchetype: sample?.output === 'post' ? sample.archetype : null,
+        trendTopicKey: activeTrend?.topicKey ?? null,
       })
     );
   };
@@ -475,6 +505,22 @@ export function AiStudioCreate({
               className="lg:hidden"
             />
           ) : null}
+
+          {activeTrend ? (
+            <span className="border-border bg-muted/60 inline-flex max-w-full items-center gap-1.5 rounded-full border py-1 pl-2.5 pr-1 text-xs">
+              <span className="truncate">Trend: {activeTrend.title}</span>
+              <button
+                type="button"
+                onClick={() => setActiveTrend(null)}
+                aria-label="Remove the trend"
+                className="text-muted-foreground hover:text-foreground focus-visible:ring-ring flex size-6 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2"
+              >
+                <X className="size-3.5" aria-hidden />
+              </button>
+            </span>
+          ) : null}
+
+          {trendsRail}
 
           <div className="space-y-2">
             <Label htmlFor="ai-studio-prompt" className="sr-only">

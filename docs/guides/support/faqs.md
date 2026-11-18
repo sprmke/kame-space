@@ -2,7 +2,7 @@
 title: 'Curated support FAQs'
 status: active
 tags: [guides, support, faqs, help-center]
-updated: 2026-11-11
+updated: 2026-11-15
 ---
 
 # Curated support FAQs
@@ -58,6 +58,33 @@ Hosts sign in with Google. The invite email must match the Google account the pe
 - order: 40
 
 Deletion is permanent and only allowed when there is no booking history and no blocking finance or maintenance records. You must type the organization slug to confirm. Your Google sign-in account stays; only this org and its properties are removed.
+
+### Does Kame replace Airbnb or Agoda?
+
+- category: Getting Started
+- audience: public
+- source: docs/guides/routes/for-hosts.md
+- order: 42
+
+Kame gives you a direct booking channel and the tools to run each stay. You can still use marketplaces for discovery. Airbnb availability and reservations can sync into Kame today. Connections for Agoda and other channels are not available yet.
+
+### Does Kame charge a commission on property bookings?
+
+- category: Plans & Billing
+- audience: public
+- source: docs/guides/routes/for-hosts.md
+- order: 15
+
+Active property plans use a subscription and do not charge a Kame percentage on each property booking. Parking has a separate fee model. Payment provider fees and fees from other booking channels may still apply.
+
+### How does Kame help guests trust a listing?
+
+- category: Account & Security
+- audience: public
+- source: docs/guides/routes/for-hosts.md
+- order: 15
+
+Hosts submit identity and listing-rights information for review before going live. Guests also get clear booking, payment, policy, and stay details in one place. Verification reduces risk, but no platform can promise that fraud is impossible.
 
 ### Why can't I see the Add property button?
 
@@ -787,6 +814,15 @@ While a paid plan is active you can't delete the organization, because you have 
 - order: 60
 
 Managed is sales-assisted. Choose Contact sales on the Managed card, or file a ticket from Help and Support, and our team will confirm onboarding and pricing.
+
+### What is the Plan tab in Marketing?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 5
+
+It is a short to-do list of what to post, when, and why, built from your own calendar: open nights, weekend gaps, long weekends, how far ahead guests book, and recent reviews. Open Marketing, then Plan. Nothing is invented, and it works without AI.
 
 ### What is Marketing Studio?
 
@@ -1644,6 +1680,38 @@ The first time a guest opens their trip page you get one notification, "Maria op
 - source: docs/guides/routes/account/profile.md
 
 Sign in, open your profile, and turn on Alerts on this device. On an iPhone or iPad, add the site to your home screen first, then turn it on, because Safari only allows alerts for installed apps. You get an alert when your host confirms your booking and when your check-in is ready; everything else still arrives by email.
+
+### What are the topics under Trending today?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+
+They are what people in the Philippines are reading and searching about today, this week and this month. Each topic comes with three ready-made angles, so you can start from something people already care about instead of a blank page.
+
+### Where do the trending topics come from?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+
+Public lists: Google Trends for the Philippines, Wikipedia pages people are reading, the Apple Music Philippines chart, and the Netflix Philippines top 10. Every topic shows where it came from. TikTok, Facebook, Instagram and X do not offer a free public list, so something viral usually shows up here a day or so later.
+
+### Can I use a celebrity photo or a show logo in my post?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+
+No. You can mention what people are watching, but do not use a real person's photo or likeness, a show or network logo, or wording that sounds like a partnership or an endorsement. The app blocks that wording for you.
+
+### Why does the rail say Seasonal ideas instead of Trending today?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+
+It means there is no fresh list right now, so you are seeing Philippine seasonal ideas instead, such as long weekends and the Christmas season. The list rebuilds every morning.
 
 ### How do I search for a stay or parking on my phone?
 

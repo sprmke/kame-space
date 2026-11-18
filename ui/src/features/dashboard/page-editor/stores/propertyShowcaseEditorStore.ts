@@ -63,7 +63,7 @@ type PropertyShowcaseEditorActions = {
 };
 
 function cloneSnapshot(snapshot: Snapshot): Snapshot {
-  return JSON.parse(JSON.stringify(snapshot)) as Snapshot;
+  return structuredClone(snapshot);
 }
 
 function applyTemplateTypography(

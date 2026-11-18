@@ -28,7 +28,7 @@ afterEach(() => {
 
 describe('studio tabs', () => {
   it('labels every tab in display order', () => {
-    expect(MARKETING_STUDIO_TABS[0]).toBe('generate');
+    expect(MARKETING_STUDIO_TABS[0]).toBe('plan');
     for (const tab of MARKETING_STUDIO_TABS) {
       expect(MARKETING_STUDIO_TAB_LABELS[tab].trim()).not.toBe('');
     }
@@ -40,6 +40,7 @@ describe('studio tabs', () => {
 
     expect(isMarketingEditorTab('design')).toBe(true);
     expect(isMarketingEditorTab('generate')).toBe(false);
+    expect(isMarketingEditorTab('plan')).toBe(false);
     expect(isMarketingEditorTab(null)).toBe(false);
   });
 });
@@ -49,16 +50,13 @@ describe('resolveDefaultMarketingStudioTab', () => {
     expect(resolveDefaultMarketingStudioTab({ lastTab: 'video', aiAvailable: true })).toBe('video');
   });
 
-  it('opens AI Studio when generation is available', () => {
-    expect(resolveDefaultMarketingStudioTab({ lastTab: null, aiAvailable: true })).toBe('generate');
-  });
-
-  it('falls back to Posts when generation is unavailable', () => {
-    expect(resolveDefaultMarketingStudioTab({ lastTab: null, aiAvailable: false })).toBe('design');
+  it('opens the Plan when no tab is remembered', () => {
+    expect(resolveDefaultMarketingStudioTab({ lastTab: null, aiAvailable: true })).toBe('plan');
+    expect(resolveDefaultMarketingStudioTab({ lastTab: null, aiAvailable: false })).toBe('plan');
   });
 
   it('ignores an unknown stored tab', () => {
-    expect(resolveDefaultMarketingStudioTab({ lastTab: 'nope', aiAvailable: false })).toBe('design');
+    expect(resolveDefaultMarketingStudioTab({ lastTab: 'nope', aiAvailable: false })).toBe('plan');
   });
 });
 

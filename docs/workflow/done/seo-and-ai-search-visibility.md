@@ -435,7 +435,7 @@ Current: upload compression exists, responsive transforms opt-in, some heavy sta
 ### Item 14. Core Web Vitals
 
 Current: Sentry field data, Lighthouse scripts, bundle budgets. The broad speed work lives in
-[`app-speed-root-cause-overhaul.md`](./app-speed-root-cause-overhaul.md); this item covers only
+[`app-speed-root-cause-overhaul.md`](../in-progress/app-speed-root-cause-overhaul.md); this item covers only
 the public, indexable pages and must not duplicate that plan.
 
 - [x] SEO-14.1 Targets at p75 on public routes: LCP under 2.5 s, INP under 200 ms, CLS under 0.1 (mobile).

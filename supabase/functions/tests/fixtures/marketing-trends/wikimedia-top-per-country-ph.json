@@ -1,0 +1,138 @@
+{
+  "items": [
+    {
+      "country": "PH",
+      "access": "all-access",
+      "year": "2026",
+      "month": "11",
+      "day": "07",
+      "articles": [
+        { "article": "Main_Page", "project": "en.wikipedia", "views_ceil": 46900, "rank": 1 },
+        { "article": "Claire_Liu", "project": "en.wikipedia", "views_ceil": 12500, "rank": 2 },
+        { "article": "Special:Search", "project": "en.wikipedia", "views_ceil": 9000, "rank": 3 },
+        { "article": "Maria_Sakkari", "project": "en.wikipedia", "views_ceil": 8300, "rank": 4 },
+        { "article": "Alexandra_Eala", "project": "en.wikipedia", "views_ceil": 5200, "rank": 5 },
+        {
+          "article": "Pinoy_Big_Brother:_Collab_3.0",
+          "project": "en.wikipedia",
+          "views_ceil": 5100,
+          "rank": 6
+        },
+        { "article": "Beeg", "project": "en.wikipedia", "views_ceil": 4600, "rank": 7 },
+        {
+          "article": "The_Remarried_Empress",
+          "project": "en.wikipedia",
+          "views_ceil": 3900,
+          "rank": 8
+        },
+        {
+          "article": "Crown_Jewel_(2026)",
+          "project": "en.wikipedia",
+          "views_ceil": 3400,
+          "rank": 9
+        },
+        {
+          "article": "Godzilla_Minus_Zero",
+          "project": "en.wikipedia",
+          "views_ceil": 2800,
+          "rank": 10
+        },
+        { "article": ".xxx", "project": "en.wikipedia", "views_ceil": 2800, "rank": 11 },
+        {
+          "article": "2026_United_States_elections",
+          "project": "en.wikipedia",
+          "views_ceil": 2700,
+          "rank": 12
+        },
+        { "article": "Abdul_El-Sayed", "project": "en.wikipedia", "views_ceil": 2600, "rank": 13 },
+        {
+          "article": "Doctor_X:_Mafia_in_White",
+          "project": "en.wikipedia",
+          "views_ceil": 2400,
+          "rank": 14
+        },
+        { "article": "Ansel_Adams", "project": "en.wikipedia", "views_ceil": 2400, "rank": 15 },
+        {
+          "article": "UAAP_Season_89_basketball_tournaments",
+          "project": "en.wikipedia",
+          "views_ceil": 2400,
+          "rank": 16
+        },
+        { "article": "Mikee_Quintos", "project": "en.wikipedia", "views_ceil": 2400, "rank": 17 },
+        {
+          "article": "LOL:_Last_One_Laughing_Philippines",
+          "project": "en.wikipedia",
+          "views_ceil": 2100,
+          "rank": 18
+        },
+        { "article": "LANY", "project": "en.wikipedia", "views_ceil": 1900, "rank": 19 },
+        {
+          "article": "Resident_Evil_(2026_film)",
+          "project": "en.wikipedia",
+          "views_ceil": 1900,
+          "rank": 20
+        },
+        {
+          "article": "Miss_Universe_2026",
+          "project": "en.wikipedia",
+          "views_ceil": 1800,
+          "rank": 21
+        },
+        {
+          "article": "Kristaps_Porziņģis",
+          "project": "en.wikipedia",
+          "views_ceil": 1700,
+          "rank": 22
+        },
+        {
+          "article": "Archive_of_Our_Own",
+          "project": "en.wikipedia",
+          "views_ceil": 1700,
+          "rank": 23
+        },
+        { "article": "Ethan_Hawke", "project": "en.wikipedia", "views_ceil": 1700, "rank": 24 },
+        {
+          "article": "2026_Hong_Kong_Tennis_Open",
+          "project": "en.wikipedia",
+          "views_ceil": 1600,
+          "rank": 25
+        },
+        { "article": "Unis_(group)", "project": "en.wikipedia", "views_ceil": 1600, "rank": 26 },
+        {
+          "article": "Alexandra_Shubladze",
+          "project": "en.wikipedia",
+          "views_ceil": 1500,
+          "rank": 27
+        },
+        {
+          "article": "Hong_Kong_Open_(tennis)",
+          "project": "en.wikipedia",
+          "views_ceil": 1500,
+          "rank": 28
+        },
+        {
+          "article": "Pinoy_Big_Brother",
+          "project": "en.wikipedia",
+          "views_ceil": 1500,
+          "rank": 29
+        },
+        { "article": "Google_Drive", "project": "en.wikipedia", "views_ceil": 1400, "rank": 30 },
+        { "article": "Dead-End_Job", "project": "en.wikipedia", "views_ceil": 1400, "rank": 31 },
+        { "article": "ChatGPT", "project": "en.wikipedia", "views_ceil": 1300, "rank": 32 },
+        {
+          "article": "Heart_of_the_Beast",
+          "project": "en.wikipedia",
+          "views_ceil": 1300,
+          "rank": 33
+        },
+        { "article": "خاص:بحث", "project": "ar.wiktionary", "views_ceil": 1100, "rank": 34 },
+        {
+          "article": "Speciale:Ricerca",
+          "project": "it.wikiversity",
+          "views_ceil": 1100,
+          "rank": 35
+        }
+      ]
+    }
+  ]
+}

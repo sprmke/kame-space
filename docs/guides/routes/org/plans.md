@@ -12,7 +12,7 @@ Routes:
 - `/org/:orgSlug/plans` — org shell (PayMongo checkout runs here; org sidebar only)
 - `/org/:orgSlug/property/:propertySlug/plans` — legacy redirect → org `/plans`
 
-> **Status:** Documented. Lifecycle hardening shipped per [`plans-billing-lifecycle-hardening.md`](../../../workflow/in-progress/plans-billing-lifecycle-hardening.md).
+> **Status:** Documented. Lifecycle hardening shipped per [`plans-billing-lifecycle-hardening.md`](../../../workflow/for-testing/plans-billing-lifecycle-hardening.md).
 
 ## Progress overview
 
@@ -142,7 +142,7 @@ Internal plan codes stay stable in the database; hosts see these names. **Monthl
 | Tables                 | `pricing_plans`, `org_subscriptions`, `org_subscription_properties`, `org_subscription_events`, `org_payment_transactions`, `org_billing_ledger`, `org_billing_notifications`, `org_billing_details`, `plan_price_migrations` |
 | E2E                    | `ui/e2e/features/plans/org/*` (mocked), run with `bun run test:e2e:plans`                                                                                                                                                     |
 
-Full design and rationale: [`plans-billing-lifecycle-hardening.md`](../../../workflow/in-progress/plans-billing-lifecycle-hardening.md), earlier model in [`org-level-billing-migration.md`](../../../workflow/done/org-level-billing-migration.md).
+Full design and rationale: [`plans-billing-lifecycle-hardening.md`](../../../workflow/for-testing/plans-billing-lifecycle-hardening.md), earlier model in [`org-level-billing-migration.md`](../../../workflow/done/org-level-billing-migration.md).
 
 ---
 
@@ -157,6 +157,10 @@ Full design and rationale: [`plans-billing-lifecycle-hardening.md`](../../../wor
 | Handlers      | `supabase/functions/tests/handlers/{org-subscription-change,preview-org-plan-change,org-billing-details,get-org-payment-receipt}.test.ts`                                                                                                                                           | Real PayMongo webhook    |
 
 ---
+
+## Marketing Trends (no plan change)
+
+Marketing **Trends** (the `Trending today` rail and the Trends sheet in AI Studio, plus **Copy caption idea**) is available on every plan that includes Content Studio. It adds no card bullet, no Compare row and no new gate, so the tier matrix and the review dialog are unchanged. Generating from a trend uses the existing AI generation gates. See [`org/property/marketing.md`](property/marketing.md) §Trends.
 
 ## Host-facing knowledge
 

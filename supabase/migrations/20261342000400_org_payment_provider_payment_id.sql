@@ -1,7 +1,7 @@
 -- PayMongo refund events reference the refunded payment (`payment_id`), not the checkout session
 -- we store as provider_reference. Keep the paid payment's id so a refund can be matched to its
 -- transaction (Plans & Billing lifecycle E36).
--- Plan: docs/workflow/in-progress/plans-billing-lifecycle-hardening.md (Phase 7)
+-- Plan: docs/workflow/for-testing/plans-billing-lifecycle-hardening.md (Phase 7)
 
 ALTER TABLE public.org_payment_transactions
   ADD COLUMN IF NOT EXISTS provider_payment_id TEXT;

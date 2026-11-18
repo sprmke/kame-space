@@ -15,6 +15,10 @@ import { createServiceClient } from '../_shared/orgAuth.ts';
 import { jsonError, jsonSuccess, readJsonBody } from '../_shared/httpResponse.ts';
 import { serveSuperAdmin } from '../_shared/serveEdge.ts';
 import { collectSystemHealthChecks } from '../_shared/systemHealth/collect.ts';
+import {
+  evaluateMarketingTrendsHealth,
+  marketingTrendsHealthCheck,
+} from '../_shared/systemHealth/marketingTrendsHealth.ts';
 import { PROBES, probesToChecks, runProbes } from '../_shared/systemHealth/probes.ts';
 import type { SystemHealthSnapshot } from '../_shared/systemHealth/snapshotChecks.ts';
 import {
@@ -81,6 +85,11 @@ serveSuperAdmin('super-admin-system-health', async (req) => {
       get: getEnv,
       isProd,
     });
+
+    // The Marketing Trends list has its own check: the job registry sees whether
+    // the cron ran, this one sees whether a list was actually published.
+    const trendsHealth = await evaluateMarketingTrendsHealth(supabase);
+    checks.push(marketingTrendsHealthCheck(trendsHealth));
 
     const probesLastRunAt =
       (snapshot.probes ?? [])

@@ -2,7 +2,7 @@
 title: 'Intake'
 status: active
 tags: [workflow, intake]
-updated: 2026-11-04
+updated: 2026-11-18
 stage: intake
 kind: reference
 ---
@@ -17,7 +17,7 @@ Active design specs (`<slug>-design.md`) and the two permanent scratchpads:
 | [`_to-plan.md`](./_to-plan.md)                                     | Items that need a written plan before implementation.                               |
 | [`_to-dos.md`](./_to-dos.md)                                       | Priority, pre-release and post-release tasks with status emojis.                    |
 | [`ui-improvements-worksheet.md`](./ui-improvements-worksheet.md)   | Claim sheet for open UI polish so sessions do not collide with in-progress modules. |
-| [`mascot-empty-states-design.md`](./mascot-empty-states-design.md) | Design for 404 / feature-unavailable brand empty states (UI-05).                    |
+| [`ui-improvements-backlog-cleanup-review.md`](./ui-improvements-backlog-cleanup-review.md) | Per-item review notes for the shipped UI improvements batch.                |
 
 Design specs move with their plan when it starts, ships or is cancelled. Do not leave `stage: done` files here.
 

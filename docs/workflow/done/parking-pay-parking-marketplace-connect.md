@@ -184,6 +184,6 @@ Implementation complete for this plan’s locked scope (public new-tab Find park
 ## Related
 
 - Done: [`../done/parking-e2e-phase7-property-booking-migration.md`](../done/parking-e2e-phase7-property-booking-migration.md)
-- Overview: [`parking-e2e-later-phases.md`](../planned/parking-e2e-later-phases.md)
+- Overview: [`parking-e2e-later-phases.md`](./parking-e2e-later-phases.md)
 - Tracking: [`parking-e2e-production-readiness.md`](../in-progress/production-readiness/audits/parking-e2e-production-readiness.md) (Q5)
 - In progress: Phase 3–5 / 8 docs under `../in-progress/`

@@ -1,13 +1,17 @@
 ---
 title: 'Full-app test architecture: page-mirrored suites, access matrix, enforced coverage'
-status: planned
-tags: [planning, testing, vitest, playwright, deno, pgtap, ci-cd, rbac, plans, governance]
-updated: 2026-11-13
+status: in-progress
+tags: [workflow, in-progress, testing, vitest, playwright, deno, pgtap, ci-cd, rbac, plans, governance]
+updated: 2026-11-16
 stage: in-progress
 kind: plan
 ---
 
 # Full-app test architecture
+
+> **Status 2026-11-16:** corrected from `planned`. The entrypoint test seam, personas, page
+> manifests, handler coverage and lane guards shipped in #476; the release ran in #485. The
+> remaining scope is the pgTAP, nightly, mutation, large-tenant and governance work under Progress.
 
 ## Progress
 

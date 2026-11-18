@@ -111,7 +111,7 @@ status changes.
 
 | Spec                                                               | Item IDs                               |
 | ------------------------------------------------------------------ | -------------------------------------- |
-| [`mascot-empty-states-design.md`](./mascot-empty-states-design.md) | UI-05 (optional reuse for UI-06 later) |
+| [`mascot-empty-states-design.md`](../done/mascot-empty-states-design.md) | UI-05 (optional reuse for UI-06 later) |
 
 ## Agent checklist before a UI PR
 

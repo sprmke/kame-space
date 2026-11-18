@@ -184,6 +184,18 @@ export const SCHEDULED_JOBS: ScheduledJobDef[] = [
     secretEnv: 'OPS_REPORT_CRON_SECRET',
     features: ['Operations reporting'],
   },
+  {
+    fn: 'marketing-trends-cron',
+    label: 'Marketing trends',
+    secretEnv: 'MARKETING_TRENDS_CRON_SECRET',
+    features: ['Marketing Studio'],
+  },
+  {
+    fn: 'marketing-trends-weekly-cron',
+    label: 'Marketing trends (weekly sources)',
+    secretEnv: 'MARKETING_TRENDS_CRON_SECRET',
+    features: ['Marketing Studio'],
+  },
 ];
 
 export function vaultSecretName(secretEnv: string): string {

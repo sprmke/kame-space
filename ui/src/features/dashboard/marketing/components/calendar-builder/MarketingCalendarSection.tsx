@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { CalendarBuilder } from '@/features/dashboard/marketing/components/calendar-builder/components/CalendarBuilder';
 import { useCalendarExport } from '@/features/dashboard/marketing/components/calendar-builder/hooks/useCalendarExport';
@@ -26,6 +26,19 @@ export function MarketingCalendarSection({ document, nav, onPublish }: Props) {
   const { property } = useOrgContext();
   const previewRef = useRef<HTMLDivElement>(null);
   const previewMonth = useCalendarBuilderStore((s) => s.previewMonth);
+  const setPreviewMonth = useCalendarBuilderStore((s) => s.setPreviewMonth);
+
+  // A planner item carries the nights to promote; open the builder on that month, once.
+  const plannerSeed = document.mode === 'draft' ? document.plannerSeed : null;
+  const appliedSeedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!plannerSeed || plannerSeed.dates.length === 0) return;
+    if (appliedSeedRef.current === plannerSeed.itemId) return;
+    appliedSeedRef.current = plannerSeed.itemId;
+    const [year, month] = plannerSeed.dates[0].split('-').map(Number);
+    if (!Number.isFinite(year) || !Number.isFinite(month)) return;
+    setPreviewMonth(new Date(year, month - 1, 1));
+  }, [plannerSeed, setPreviewMonth]);
   const { data: bookedDates, isLoading } = useMarketingBookedDates();
   const { canEditContent, canPublish } = useMarketingPermissions();
   const { canUse: canUseMarketingStudio, isLoading: marketingStudioLoading } =

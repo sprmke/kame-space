@@ -311,6 +311,13 @@ export const TEAM_PERMISSIONS: TeamPermission[] = [
     icon: Megaphone,
   },
   {
+    id: 'marketing.plan:edit',
+    name: 'Edit marketing plan',
+    description: 'Change planner settings, add, reschedule, skip and mark items posted',
+    category: 'Marketing',
+    icon: Megaphone,
+  },
+  {
     id: 'notifications:view',
     name: 'View Notifications',
     description: 'View Telegram module settings',
@@ -728,6 +735,7 @@ export const SEEDED_TEMPLATE_PERMISSIONS: Record<string, string[]> = {
     'marketing.media:add',
     'marketing.media:delete',
     'marketing.publish:add',
+    'marketing.plan:edit',
     'analytics:view',
     'assistant:view',
     'activity:view',

@@ -1,5 +1,5 @@
 -- Plans & Billing lifecycle hardening (Phases 0, 1, 3, 4, 6).
--- Plan: docs/workflow/in-progress/plans-billing-lifecycle-hardening.md
+-- Plan: docs/workflow/for-testing/plans-billing-lifecycle-hardening.md
 --
 -- Adds: scheduled downgrade / cancel-at-period-end intent, billing anchor + period-paid
 -- tracking, price override, one pending checkout per org, payment intent snapshot + receipts,

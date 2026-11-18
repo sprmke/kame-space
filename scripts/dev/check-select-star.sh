@@ -55,6 +55,14 @@ ALLOWLIST=(
   # Weekly ops report: single-row reads of ops_reports by id; the full row includes
   # the JSON summary and Markdown body. The list query uses explicit columns.
   'ops-report/index.ts'
+  # Marketing planner tables are narrow and every read is property-scoped and bounded:
+  # settings is one row per property, plans/items are capped at 200, and each insert or
+  # update returns the single row just written. Column lists here fight the typed client
+  # (a non-literal select string degrades to GenericStringError), so '*' is deliberate.
+  '_shared/marketingPlanner.ts'
+  # Same planner tables, read-only loader: property row, planner settings, calendar
+  # events (capped at 200) and first-touch publications (capped at 30).
+  '_shared/marketingSignalsData.ts'
   '_shared/opsReportRunner.ts'
   # Pre-arrival reminder: one booking row per due reminder, read by primary key and passed
   # whole to the email renderer (dates, guests, contact, payment, parking, pet).

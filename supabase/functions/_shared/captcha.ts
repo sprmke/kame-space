@@ -168,38 +168,32 @@ export async function verifyCaptchaToken(
 
   let data: SiteverifyResponse | null = null;
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), SITEVERIFY_TIMEOUT_MS);
-    try {
-      const form = new URLSearchParams();
-      form.set('secret', secret);
-      form.set('response', trimmed);
-      if (options.remoteIp && options.remoteIp !== 'unknown') {
-        form.set('remoteip', options.remoteIp);
-      }
-      const res = await fetch(SITEVERIFY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: form,
-        signal: controller.signal,
-      });
-      if (!res.ok) {
-        logCaptchaEvent('captcha_provider_error', { status: res.status });
-        // Degraded, not broken: we fail open and the rate limiter + heuristics still
-        // apply, so this is a warning, sampled, tagged by provider.
-        await captureSentryMessage(`turnstile siteverify HTTP ${res.status}`, {
-          logPrefix: 'captcha',
-          level: 'warning',
-          tags: { provider: 'cloudflare_turnstile' },
-          fingerprint: ['provider', 'cloudflare_turnstile', `${Math.floor(res.status / 100)}xx`],
-          extra: { status: res.status },
-        });
-        return { ok: true, outcome: 'provider_error', reason: `siteverify_http_${res.status}` };
-      }
-      data = (await res.json()) as SiteverifyResponse;
-    } finally {
-      clearTimeout(timer);
+    const form = new URLSearchParams();
+    form.set('secret', secret);
+    form.set('response', trimmed);
+    if (options.remoteIp && options.remoteIp !== 'unknown') {
+      form.set('remoteip', options.remoteIp);
     }
+    const res = await fetch(SITEVERIFY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form,
+      signal: AbortSignal.timeout(SITEVERIFY_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      logCaptchaEvent('captcha_provider_error', { status: res.status });
+      // Degraded, not broken: we fail open and the rate limiter + heuristics still
+      // apply, so this is a warning, sampled, tagged by provider.
+      await captureSentryMessage(`turnstile siteverify HTTP ${res.status}`, {
+        logPrefix: 'captcha',
+        level: 'warning',
+        tags: { provider: 'cloudflare_turnstile' },
+        fingerprint: ['provider', 'cloudflare_turnstile', `${Math.floor(res.status / 100)}xx`],
+        extra: { status: res.status },
+      });
+      return { ok: true, outcome: 'provider_error', reason: `siteverify_http_${res.status}` };
+    }
+    data = (await res.json()) as SiteverifyResponse;
   } catch (error) {
     // Network / abort / parse failure → fail open, but recorded: a Turnstile outage
     // silently disables bot protection, which is worth knowing about.

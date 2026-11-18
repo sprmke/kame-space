@@ -35,6 +35,28 @@ PR #204 (`docs/readiness-dashboard-2026-11-01`) closed automatically when its br
 its patch was already in `develop` (`git cherry` showed it as applied). PR #153
 (`ci/pin-actions-sha`) is untouched and still open.
 
+## 2026-11-17 cleanup (after the phone-search release)
+
+Base: `develop` (`30169f062`). Only branches whose PRs were already merged were deleted.
+
+| Removed | Tip | Why it was safe |
+| --- | --- | --- |
+| `chore/backport-mobile-search` (local + remote) | `de3c896ca` | PR #490 merged; `git cherry` showed 0 unapplied patches |
+| `release/2026-11-16-mobile-search` (local + remote) | `87092a69b` | PR #489 merged into `develop`; the same content also landed through #490 |
+| Worktree `.claude/worktrees/feat-mobile-search-airbnb-ux` | `de3c896ca` | Clean tree, checked out on the deleted merged branch |
+| `codex/core-product-advantages` (local + remote) | `86f5c7426` | PR #487 merged into `develop` as `8c6aabc29`; worktree `kame-homes-product-positioning` removed after the merge |
+
+Kept on purpose:
+
+| Branch / PR | Why |
+| --- | --- |
+| `feat/multi-channel-calendar-sync` (#493) | Open, green, waiting for review |
+| `feat/marketing-ai-studio-overhaul` (#488) | Open, conflicts with `develop` |
+| `feat/public-landing-redesign` | Local feature work, 8 commits plus uncommitted files |
+| `feat/multi-residence-config-decoupling` (#354) | Draft marked DO NOT MERGE |
+| `codex/mascot-talking-preview` (#353) | Draft preview, not reviewed |
+| `recover/pre-reset-20261110`, `backup/multi-residence-pre-rebase-1794322170` | Safety snapshots with unique history; keep until the owner says otherwise |
+
 ## Kept branches
 
 | Branch                                                                                    | Why it stays                                                                                                                                                                                                                                                                | Next step                                                                                                          |

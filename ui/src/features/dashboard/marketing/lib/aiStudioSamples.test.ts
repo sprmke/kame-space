@@ -270,6 +270,7 @@ describe('recipe → request', () => {
       prompt: sample.prompt,
       preferredArchetype: sample.archetype,
       sampleId: sample.id,
+      trendTopicKey: null,
     });
   });
 

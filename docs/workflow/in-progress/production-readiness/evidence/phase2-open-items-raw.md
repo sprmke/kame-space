@@ -53,7 +53,7 @@
 - L310 (box, Phase 5 — Remaining dashboard writes (P1/P2)): Property/parking settings fields currently blocked — **deferred** → [`../planned/ai-assistant-settings-validators.md`](../../../planned/ai-assistant-settings-validators.md)
 - L311 (box, Phase 5 — Remaining dashboard writes (P1/P2)): Email automation toggles / doc requirements — **deferred** → [`../planned/ai-assistant-settings-validators.md`](../../../planned/ai-assistant-settings-validators.md)
 - L320 (box, Phase 6 — Hard wizards (P2)): Bulk pricing with explicit diff preview — **deferred** → [`../planned/ai-assistant-bulk-pricing-chat.md`](../../../planned/ai-assistant-bulk-pricing-chat.md)
-- L321 (box, Phase 6 — Hard wizards (P2)): Parking broadcast fan-out — **deferred** → [`../planned/ai-assistant-parking-broadcast-chat.md`](../../../planned/ai-assistant-parking-broadcast-chat.md)
+- L321 (box, Phase 6 — Hard wizards (P2)): Parking broadcast fan-out — **deferred** → [`../planned/ai-assistant-parking-broadcast-chat.md`](../../../wont-do/ai-assistant-parking-broadcast-chat.md)
 
 ## docs/workflow/done/ai-assistant-turn-progress-ux.md
 

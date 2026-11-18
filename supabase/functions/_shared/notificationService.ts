@@ -36,6 +36,11 @@ export type NotificationType =
   | 'guest_request_submitted'
   | 'booking_receipt_uploaded'
   | 'booking_trip_viewed'
+  | 'marketing_plan_ready'
+  | 'marketing_item_due'
+  | 'marketing_opportunity_urgent'
+  | 'marketing_publish_held'
+  | 'marketing_publish_failed'
   | 'billing_notice';
 
 /** Legacy inbox rows stored this generic title before participant names shipped. */

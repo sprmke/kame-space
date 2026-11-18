@@ -3,6 +3,7 @@ import { ChannelMixCard } from '@/features/dashboard/analytics/components/Channe
 import { GuestAgeCard } from '@/features/dashboard/analytics/components/GuestAgeCard';
 import { GuestOriginsCard } from '@/features/dashboard/analytics/components/GuestOriginsCard';
 import { GuestPartySizeCard } from '@/features/dashboard/analytics/components/GuestPartySizeCard';
+import { MarketingResultsCard } from '@/features/dashboard/analytics/components/MarketingResultsCard';
 import { PublicPagePerformanceCard } from '@/features/dashboard/analytics/components/PublicPagePerformanceCard';
 import type { AnalyticsBundle } from '@/features/dashboard/analytics/lib/types';
 
@@ -25,6 +26,7 @@ export function AnalyticsOverviewSection({ bundle }: Props) {
       <div className={CARD_GRID}>
         <ChannelMixCard channelMix={bundle.distributions.channelMix} compact />
         <PublicPagePerformanceCard publicPage={bundle.publicPage} />
+        {bundle.marketing ? <MarketingResultsCard marketing={bundle.marketing} /> : null}
         <BenchmarkCard
           benchmark={bundle.benchmark}
           ownOccupancyRatePct={bundle.kpis.occupancyRate.value}

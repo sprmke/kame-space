@@ -13,6 +13,8 @@ export type MarketingCaptionPromptInput = {
   contentHint?: string;
   nightlyRate?: string;
   availabilityText?: string;
+  /** Marketing Trends topic to mention (loaded by the caller, never by the client). */
+  trendBlock?: string;
 };
 
 export const CAPTION_MAX_LENGTH = { story: 220, post: 400 } as const;
@@ -35,6 +37,9 @@ export function buildMarketingCaptionPrompt(input: MarketingCaptionPromptInput):
     (input.availabilityText ? `Availability: ${input.availabilityText}\n` : '') +
     (input.contentHint
       ? `Creative brief:\n${wrapUntrusted('host_brief', input.contentHint, 500)}\n`
+      : '') +
+    (input.trendBlock
+      ? `Topic to mention:\n${wrapUntrusted('trend_context', input.trendBlock, 1_200)}\n`
       : '') +
     'Write one caption only - no quotes or labels.';
   return { system, user };
