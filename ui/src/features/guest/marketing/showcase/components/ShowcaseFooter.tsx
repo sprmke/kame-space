@@ -29,13 +29,20 @@ export function ShowcaseFooter({ data }: { data: ShowcaseData }) {
   const showOrgLabel = Boolean(orgLabel);
 
   return (
-    <footer className={cn('@sm:py-16 border-t py-14', tokens.footer, 'font-sans antialiased')}>
+    <footer
+      className={cn(
+        /* Extra bottom pad so the fixed Terms / Privacy pill does not cover the last footer row. */
+        '@sm:pt-16 @sm:pb-24 border-t pt-14 pb-20',
+        tokens.footer,
+        'font-sans antialiased'
+      )}
+    >
       <div className="@lg:grid-cols-3 @sm:px-6 @lg:px-8 @sm:gap-12 mx-auto grid max-w-6xl gap-10 px-4">
         <div className="min-w-0 space-y-4">
           <button
             type="button"
             onClick={() => scrollShowcaseToTop()}
-            className="flex min-h-11 cursor-pointer items-center gap-3 text-left"
+            className="flex min-h-11 max-w-full cursor-pointer items-center gap-3 text-left"
             aria-label="Back to top"
           >
             {data.logoUrl ? (
@@ -52,7 +59,7 @@ export function ShowcaseFooter({ data }: { data: ShowcaseData }) {
               </span>
             ) : null}
             <div className="min-w-0">
-              <p className="@sm:text-xl truncate text-lg font-semibold tracking-tight">
+              <p className="@sm:text-xl line-clamp-2 text-lg font-semibold tracking-tight">
                 {data.propertyName}
               </p>
               <p className={cn('truncate text-base', tokens.muted)}>

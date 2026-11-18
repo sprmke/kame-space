@@ -4,7 +4,6 @@ import {
   showcaseScaledRem,
   showcaseScaledVw,
   showcaseScaledClampExpr,
-  showcaseScaledClampClass,
   SHOWCASE_DISPLAY_SCALE_VAR,
   SHOWCASE_BODY_SCALE_VAR,
   showcaseSectionHeadingClass,
@@ -28,12 +27,6 @@ describe('showcaseScaledVw', () => {
 describe('showcaseScaledClampExpr', () => {
   it('showcaseScaledClampExpr is exported', () => {
     expect(typeof showcaseScaledClampExpr).toBe('function');
-  });
-});
-
-describe('showcaseScaledClampClass', () => {
-  it('showcaseScaledClampClass is exported', () => {
-    expect(typeof showcaseScaledClampClass).toBe('function');
   });
 });
 

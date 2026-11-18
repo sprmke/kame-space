@@ -67,7 +67,7 @@ const CHROME: Record<ShowcaseVariant, ShowcaseHeaderChrome> = {
     shell:
       'relative border-b backdrop-blur-2xl after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-[hsl(var(--showcase-accent,var(--primary)))]/55',
     inner: 'mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6',
-    navItem: 'rounded-md px-2.5 font-mono text-[11px] uppercase tracking-[0.16em] xl:px-3',
+    navItem: 'rounded-md px-2.5 font-mono text-xs uppercase tracking-[0.16em] xl:px-3',
     brandMark: 'rounded-lg',
     iconButton: 'rounded-lg',
     navOnHeroActive: 'bg-white/15 text-white',

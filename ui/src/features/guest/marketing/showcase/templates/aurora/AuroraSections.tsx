@@ -41,6 +41,7 @@ import {
   resolveShowcaseParallaxEnabled,
   resolveShowcaseMotionReduced,
 } from '@/features/guest/marketing/showcase/lib/showcaseStyleConfig';
+import { showcaseSectionHeadingClass } from '@/features/guest/marketing/showcase/lib/showcaseTypographyScale';
 import {
   AuroraParallaxContainer,
   AuroraParallaxLayer,
@@ -213,7 +214,7 @@ function AuroraHero({ data, section }: { data: ShowcaseData; section: ShowcaseRe
           <motion.h1
             className={cn(
               displayFontClass,
-              '@sm:text-5xl @lg:text-[5rem] @lg:leading-[0.95] max-w-4xl text-[clamp(1.75rem,8vw,2.5rem)] font-semibold tracking-[-0.03em] text-white'
+              '@sm:text-5xl @lg:text-[5rem] @lg:leading-[0.95] max-w-4xl text-[clamp(2.25rem,10vw,3rem)] font-semibold tracking-[-0.03em] text-white'
             )}
             variants={
               heroEnter ? { hidden: { opacity: 0, y: 28 }, show: { opacity: 1, y: 0 } } : undefined
@@ -361,6 +362,7 @@ export function AuroraSections({ data }: { data: ShowcaseData }) {
                 key={section.id}
                 data={data}
                 section={section}
+                headingSizeClassName={showcaseSectionHeadingClass}
                 containerClassName="@sm:px-6 @lg:px-8 mx-auto max-w-6xl px-4"
               />
             );
