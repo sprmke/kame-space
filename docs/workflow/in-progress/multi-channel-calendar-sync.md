@@ -3,7 +3,7 @@ title: 'Multi-channel calendar sync: Agoda and Booking.com for Philippine hosts'
 status: in-progress
 tags:
   [workflow, in-progress, calendar, integrations, airbnb, agoda, booking-com, ical, channel-sync]
-updated: 2026-11-17
+updated: 2026-11-19
 stage: in-progress
 kind: plan
 ---
@@ -1006,9 +1006,59 @@ There is one hosted Supabase project (`fworvijbrwpyngycotbz`, dev and production
    `CALENDAR_CHANNELS_BETA_ORG_IDS=<organization id of kame-test-tenant>`.
    Edge secrets apply to new invocations, no redeploy. Rolling back is clearing the first secret.
 3. In `kame-test-tenant/kame-test-tenant`, Pricing, Channel sync: connect Booking.com (paste the
-   export link), turn on **Share this property's dates**, copy the Booking.com link into Booking.com
+   export link; sending dates turns on by itself), copy the Booking.com link into Booking.com
    Sync calendars. Leave **Create bookings** off.
 4. Close one date and make one test reservation on Booking.com, then read the fixture from the feed
    and fill S3 to S7 and S9 to S11. Repeat for Agoda once approved.
 5. Widen: clear `CALENDAR_CHANNELS_BETA_ORG_IDS` only after the live QA matrix passes and the host copy
    in "Copy that changes at launch" is published.
+
+## 21. Two-way sync UX (2026-11-19)
+
+**Problem.** The dialog split each channel into "From {channel}" and "To {channel}". Hosts could not tell
+that these are the two halves of one two-way sync. Connecting a channel only turned on the **get** half:
+sending our dates stayed off until the host found a separate, property-wide switch, so a new connection
+was one-way by default.
+
+**Decisions.**
+
+1. Each channel is one two-way connection with two numbered steps: **Get dates from {channel}** and
+   **Send dates to {channel}**. A step gets a check only when that direction is proven.
+2. `addFeed` turns date sharing on when it is off (unless `pricing.channel_sync` is paused). Failure is
+   logged and never fails the connect. Activity: `integrations.config_changed`, `auto: channel_connected`.
+3. Channel status is two-way aware: **Two-way** needs a healthy import **and** a read of our link in the last
+   48 h; **Finish setup** covers connected-but-not-proven; a channel that stops reading for 48 h raises a
+   `read_stale` warning (**Needs attention**). Pure logic in `channelSyncView.ts` (`receiveHealth`,
+   `sendHealth`), 7 unit tests.
+4. The property-wide switch moves to the channel list as **Send dates to channels** with a **?**. A
+   per-channel send switch is not built: the export token is per property and sharing a calendar with one
+   channel and not another has no safe meaning in the hub model.
+5. Recent activity covers both directions per channel: import events plus the latest read of our link
+   (`buildChannelReadActivityRow`). The GET returns up to 20 events per feed instead of 30 across all
+   feeds, so a busy channel cannot crowd out a quiet one. A connected channel with no events shows
+   "No activity yet". Read history is not stored, only the latest read.
+6. Existing connections with sharing off show **Finish setup** and a **Turn on** button. No migration.
+
+**Two-way coverage by channel.**
+
+| Direction or rule                                | Airbnb    | Agoda                         | Booking.com                    |
+| ------------------------------------------------ | --------- | ----------------------------- | ------------------------------ |
+| Get dates (import feed)                          | live      | built, dark, adapter facts H1 | built, dark, event format H2   |
+| Send dates (`ical-export?as=`)                   | live      | built, dark                   | built, dark                    |
+| Sending turns on at connect                      | yes (new) | yes (new)                     | yes (new)                      |
+| Proof the channel reads our link                 | yes       | yes                           | yes                            |
+| Hub relay to the other channels, echo protection | yes       | yes                           | yes                            |
+| Imported reservations become bookings            | on        | off until Phase 0 (opt-in)    | off until Phase 0 (opt-in)     |
+| Verified with a real listing                     | yes       | waiting on Agoda approval     | feed empty, needs closed dates |
+
+Dates block both ways for all three channels. The only gap before launch is real-listing proof for
+Agoda and Booking.com (H1, H2), which also decides whether Create bookings can default on for them.
+
+**Tests for this change.** Vitest: `channelSyncView` (two-way status), `calendarSyncActivity` (send row,
+merge), `ChannelSyncDialog` DOM (27: list, statuses, steps, validation, guard, loading, error, paused,
+empty activity, both-direction activity, view-only). Deno: `calendarExportEnable_test.ts` (4). Playwright
+`channelSync.spec.ts` at 375, 768 and 1024 px (12). Not covered by an automated test: the handler's
+auto-enable against a real database, and live Agoda or Booking.com runs (H1, H2).
+
+**Docs touched:** route guide `org/property/pricing.md`, support FAQ "How do I connect Airbnb or another
+OTA calendar?". Plans/RBAC: N/A (no new gate; existing `calendarSync` and `pricing.channels:edit`).

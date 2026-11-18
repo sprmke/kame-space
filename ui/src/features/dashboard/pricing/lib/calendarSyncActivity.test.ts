@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildCalendarSyncActivityRows,
+  buildChannelReadActivityRow,
   isHostFacingCalendarSyncEvent,
+  mergeChannelActivity,
 } from '@/features/dashboard/pricing/lib/calendarSyncActivity';
 import type { CalendarSyncEvent } from '@/features/dashboard/pricing/lib/calendarSyncApi';
 
@@ -92,5 +94,36 @@ describe('buildCalendarSyncActivityRows', () => {
       'Empty calendar check',
       'Dates changed after review',
     ]);
+  });
+});
+
+describe('send-side activity', () => {
+  const rel = (iso: string) => `at ${iso}`;
+
+  it('builds a row only when the channel has read our link', () => {
+    expect(buildChannelReadActivityRow('Agoda', null, rel)).toBeNull();
+    expect(buildChannelReadActivityRow('Agoda', undefined, rel)).toBeNull();
+    const row = buildChannelReadActivityRow('Agoda', '2026-11-16T05:00:00.000Z', rel);
+    expect(row?.title).toBe('Agoda read your dates');
+    expect(row?.tone).toBe('neutral');
+  });
+
+  it('sorts the read row in with import events, newest first, and caps the list', () => {
+    const imports = buildCalendarSyncActivityRows(
+      [
+        event({ id: 1, action: 'block_created', created_at: '2026-11-16T03:00:00.000Z' }),
+        event({ id: 2, action: 'block_updated', created_at: '2026-11-16T07:00:00.000Z' }),
+      ],
+      rel
+    );
+    const read = buildChannelReadActivityRow('Agoda', '2026-11-16T05:00:00.000Z', rel);
+    expect(mergeChannelActivity(imports, read).map((r) => r.id)).toEqual([2, 'channel-read', 1]);
+    expect(mergeChannelActivity(imports, read, 2)).toHaveLength(2);
+  });
+
+  it('returns only import rows when there is no read yet', () => {
+    const imports = buildCalendarSyncActivityRows([event({ id: 1, action: 'block_created' })], rel);
+    expect(mergeChannelActivity(imports, null).map((r) => r.id)).toEqual([1]);
+    expect(mergeChannelActivity([], null)).toEqual([]);
   });
 });

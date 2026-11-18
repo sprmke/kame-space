@@ -32,7 +32,12 @@ function feed(provider: string, over: Feed = {}): Feed {
 /** Overrides the harness default for `calendar-sync-settings` (the later route wins). */
 async function mockCalendarSync(
   page: Page,
-  opts: { connectable: string[]; feeds?: Feed[] }
+  opts: {
+    connectable: string[];
+    feeds?: Feed[];
+    reads?: Record<string, unknown>;
+    events?: Array<Record<string, unknown>>;
+  }
 ): Promise<{ addBodies: Array<Record<string, unknown>> }> {
   const addBodies: Array<Record<string, unknown>> = [];
   await page.route('**/functions/v1/calendar-sync-settings**', async (route: Route) => {
@@ -56,7 +61,7 @@ async function mockCalendarSync(
             enabled: true,
             rotatedAt: null,
             lastServedAt: null,
-            reads: {},
+            reads: opts.reads ?? {},
             urls: {
               all: 'https://example.com/ical/all',
               airbnb: 'https://example.com/ical/airbnb',
@@ -64,7 +69,7 @@ async function mockCalendarSync(
               booking_com: 'https://example.com/ical/booking-com',
             },
           },
-          recentEvents: [],
+          recentEvents: opts.events ?? [],
           connectableProviders: opts.connectable,
         },
       }),
@@ -106,8 +111,8 @@ for (const viewport of [
       const { addBodies } = await mockCalendarSync(page, { connectable: ['airbnb', 'agoda'] });
       const dialog = await openChannelSync(page);
       await dialog.getByRole('button', { name: /^Agoda/ }).click();
-      await expect(dialog.getByRole('heading', { name: 'From Agoda' })).toBeVisible();
-      await expect(dialog.getByRole('heading', { name: 'To Agoda' })).toBeVisible();
+      await expect(dialog.getByRole('heading', { name: 'Get dates from Agoda' })).toBeVisible();
+      await expect(dialog.getByRole('heading', { name: 'Send dates to Agoda' })).toBeVisible();
 
       const input = dialog.getByPlaceholder('https://…agoda.com/…');
       await input.fill('https://www.airbnb.com/calendar/ical/1.ics');
@@ -136,13 +141,56 @@ for (const viewport of [
       });
       const dialog = await openChannelSync(page);
       await expect(dialog.getByText(/Connect each channel to Kame Space only/)).toBeVisible();
-      await expect(dialog.getByRole('button', { name: /^Airbnb, Connected/ })).toBeVisible();
+      await expect(dialog.getByRole('button', { name: /^Airbnb, Finish setup/ })).toBeVisible();
       await expect(dialog.getByRole('button', { name: /^Agoda, Needs attention/ })).toBeVisible();
 
       await dialog.getByRole('button', { name: /^Booking.com/ }).click();
       await expect(dialog.getByText(/sending back closed dates/)).toBeVisible();
 
       // No horizontal scroll inside the dialog at any width.
+      const overflow = await dialog.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+      expect(overflow).toBe(false);
+    });
+
+    test('shows Two-way, and Recent activity for both directions with an empty state', async ({
+      page,
+    }) => {
+      await installPropertyTeamRbacMocks(page, 'full_access');
+      const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
+      await mockCalendarSync(page, {
+        connectable: ['airbnb', 'agoda', 'booking_com'],
+        feeds: [feed('agoda'), feed('booking_com', { createBookings: false })],
+        reads: { agoda: { lastReadAt: hoursAgo(1), readCount: 5 } },
+        events: [
+          {
+            id: 1,
+            feed_id: 'feed-agoda',
+            action: 'block_created',
+            external_uid: 'u1',
+            start_date: '2027-09-01',
+            end_date: '2027-09-04',
+            summary: 'Reserved',
+            detail: null,
+            created_at: hoursAgo(3),
+          },
+        ],
+      });
+      const dialog = await openChannelSync(page);
+      await expect(dialog.getByRole('button', { name: /^Agoda, Two-way/ })).toBeVisible();
+      await expect(
+        dialog.getByRole('button', { name: /^Booking.com, Finish setup/ })
+      ).toBeVisible();
+
+      await dialog.getByRole('button', { name: /^Agoda/ }).click();
+      await dialog.getByText('Recent activity').click();
+      await expect(dialog.getByText('Busy dates imported')).toBeVisible();
+      await expect(dialog.getByText('Agoda read your dates')).toBeVisible();
+
+      await dialog.getByRole('button', { name: 'All channels' }).click();
+      await dialog.getByRole('button', { name: /^Booking.com/ }).click();
+      await dialog.getByText('Recent activity').click();
+      await expect(dialog.getByText('No activity yet')).toBeVisible();
+
       const overflow = await dialog.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
       expect(overflow).toBe(false);
     });

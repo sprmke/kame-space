@@ -1038,7 +1038,7 @@ No. Bookings with saved pricing keep their amounts. Updated rates apply to futur
 - source: docs/guides/routes/org/property/pricing.md
 - order: 40
 
-Open Pricing, then Channel sync. Airbnb is the only provider offered today. Use From Airbnb to paste their export link, and To Airbnb to copy your Kame link back into Airbnb.
+Open Pricing, then Channel sync. Airbnb is the only provider offered to most hosts today. Each channel syncs both ways. In step 1, Get dates from Airbnb, paste their export link. In step 2, Send dates to Airbnb, copy your Kame link into Airbnb. A channel shows Two-way once Airbnb has read your link.
 
 ### Will a booking on one channel block the others?
 

@@ -53,7 +53,7 @@ describe('buildChannelRows', () => {
     });
     expect(rows.map((r) => r.provider)).toEqual(['airbnb', 'agoda']);
     expect(rows[1].connectable).toBe(false);
-    expect(rows[1].status).toBe('syncing');
+    expect(rows[1].status).toBe('finish_setup');
   });
 
   it('marks failing feeds as needing attention and paused wins', () => {
@@ -73,6 +73,68 @@ describe('buildChannelRows', () => {
       },
     });
     expect(rows[0].lastReadAt).toBe('2026-11-17T02:00:00Z');
+  });
+});
+
+describe('two-way status', () => {
+  const NOW = Date.parse('2026-11-19T12:00:00Z');
+  const hours = (h: number) => new Date(NOW - h * 3_600_000).toISOString();
+  const withRead = (lastReadAt: string | null, enabled = true) => ({
+    feeds: [feed({ lastSuccessAt: hours(1) })],
+    export: {
+      ...exportBase,
+      enabled,
+      reads: (lastReadAt ? { airbnb: { lastReadAt, readCount: 2 } } : {}) as Record<
+        string,
+        { lastReadAt: string; readCount: number }
+      >,
+    },
+  });
+
+  it('is two-way only when we imported and the channel read our link', () => {
+    const row = buildChannelRows(withRead(hours(3)), {}, NOW)[0];
+    expect(row.status).toBe('two_way');
+    expect(row.receive.state).toBe('ok');
+    expect(row.send.state).toBe('ok');
+  });
+
+  it('is finish setup while the channel has not read our link', () => {
+    const row = buildChannelRows(withRead(null), {}, NOW)[0];
+    expect(row.status).toBe('finish_setup');
+    expect(row.send.state).toBe('waiting');
+  });
+
+  it('is finish setup when sharing is off', () => {
+    const row = buildChannelRows(withRead(hours(3), false), {}, NOW)[0];
+    expect(row.status).toBe('finish_setup');
+    expect(row.send.state).toBe('off');
+  });
+
+  it('needs attention when the channel stopped reading for 48 hours', () => {
+    const row = buildChannelRows(withRead(hours(60)), {}, NOW)[0];
+    expect(row.status).toBe('needs_attention');
+    expect(row.send.state).toBe('stale');
+    expect(row.warnings.map((w) => w.kind)).toEqual(['read_stale']);
+  });
+
+  it('is finish setup before the first import finishes', () => {
+    const rows = buildChannelRows(
+      { feeds: [feed({ lastSuccessAt: null })], export: exportBase },
+      {},
+      NOW
+    );
+    expect(rows[0].receive.state).toBe('waiting');
+    expect(rows[0].status).toBe('finish_setup');
+  });
+
+  it('reports a failing import as the receive side', () => {
+    const rows = buildChannelRows(
+      { feeds: [feed({ health: 'error' })], export: exportBase },
+      {},
+      NOW
+    );
+    expect(rows[0].receive.state).toBe('error');
+    expect(rows[0].status).toBe('needs_attention');
   });
 });
 

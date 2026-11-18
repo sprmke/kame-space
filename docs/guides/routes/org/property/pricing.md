@@ -74,7 +74,8 @@ dates that should not be available to guests.
   and any deposit on their platform, so Airbnb bookings hide both fields and keep them at zero.
 - Q: Where do I connect Airbnb or other OTA calendars?
   A: Pricing → **Channel sync** (Airbnb today; Agoda and Booking.com to selected hosts first). Tap a
-  channel, paste its export link in step 1, and copy your Kame link back in step 2.
+  channel, paste its link in step 1 (get dates from the channel), then paste your Kame link into the
+  channel in step 2 (send dates to the channel). Both steps together keep it two-way.
 
 ---
 
@@ -103,13 +104,14 @@ dates that should not be available to guests.
 
 **Channel sync** button in the Pricing page header (desktop outline button aligned with the title; mobile hero icon). Below Pro, a corner **Pro** pill signals the plan gate. Opens a **`ResponsiveModal`** (`ChannelSyncDialog`, bottom sheet on phone) with two views and almost no body copy. Every instruction lives in the **?** next to a section title.
 
-- **Channel list:** one flat row per channel: name, a one-line meta (`Synced 12 min ago`, or the first warning), and either **Connect** (not connected) or a status dot (**Connected**, **Needs attention**, **Paused**) plus a chevron. Once two or more channels are connected a single tip line appears: connect each channel to Kame Space only, not to each other. No info box, no activity list here.
-- **Channel view** (tap a row, back chevron in the header returns, focus moves with it): header shows the channel name and its status. Two flat sections separated by hairlines, no nested cards:
-  - **From {channel}** (**?** has where to find the link and any eligibility limit): when not connected, one input and **Connect** on the same row; when connected, one status line (`Synced …`, `Retrying`, `Needs fix: …`, `Waiting for first sync`) with **Sync now** and **Remove** icons, then a **Create bookings** switch (**?** explains it).
-  - **To {channel}** (**?** has where to paste our link): the section's own switch turns sharing on or off for the whole property (one switch covers every channel). When on, the read-only link with **Copy** and a `Read 2 h ago` line.
-  - **Recent activity** at the bottom, collapsed, only that channel's last four host-facing events, only when there are any.
-- A warning (link failing, channel never read our link, Booking.com closed dates) is one tinted line at the top of the channel view. A paused channel or paused imports shows the standard unavailable notice.
-- Turning sharing **off** while any channel is connected asks first ("Stop sharing dates?"), because those channels stop learning about new bookings and can be double booked. Turning it on never asks.
+- **Two-way by design:** every channel syncs both directions with Kame Space. **Get dates** pulls the channel's calendar into Kame Space; **Send dates** is the Kame link the channel reads so our bookings and blocks stop it from being double booked. Connecting a channel also turns sending on (server side, `addFeed`), so the host only has to paste Kame's link into the channel.
+- **Channel list:** one flat row per channel: name, two short lines (a down arrow for get, an up arrow for send: `Synced 12 min ago`, `Read 2 h ago`, `Not read yet`, `Sending is off`), and a status: **Not connected** (row shows **Connect**), **Finish setup** (connected, but the channel has not read our link yet or sending is off), **Two-way** (we imported its calendar and it has read ours), **Needs attention**, **Paused**. Below the rows one **Send dates to channels** switch (property-wide, with its **?**). Once two or more channels are connected a single tip line appears: connect each channel to Kame Space only, not to each other. No info box, no activity list here.
+- **Channel view** (tap a row, back chevron in the header returns, focus moves with it): header shows the channel name and its status. Two numbered steps separated by hairlines, no nested cards. A step shows a green check once that direction is proven:
+  - **1 Get dates from {channel}** (**?** has where to find the link and any eligibility limit): when not connected, one input and **Connect** on the same row; when connected, one status line (`Synced …`, `Retrying`, `Needs fix: …`, `Waiting for first sync`) with **Sync now** and **Remove** icons, then a **Create bookings** switch (**?** explains it). Checked after the first successful sync.
+  - **2 Send dates to {channel}** (**?** has where to paste our link): the read-only link with **Copy** and a status line (`Read 2 h ago`, `Waiting for {channel} to read it`, `Last read 3 days ago`). If sharing is off it says `Sending is off` with **Turn on**. Checked once the channel has read the link in the last 48 hours.
+  - **Recent activity** at the bottom, collapsed, shown once the channel has a connected feed. It covers both directions for that channel only: what we imported (`Busy dates imported`, `Booking added`, `Date conflict`, `Sync failed`) and the latest time the channel read our link (`Agoda read your dates`). We keep the latest read per channel, not a read history. A connected channel with nothing yet shows `No activity yet`. The server returns up to 20 events per feed, so a busy channel cannot hide a quiet one.
+- A warning (link failing, channel never read our link, channel stopped reading it for 48 hours, Booking.com closed dates) is one tinted line at the top of the channel view. A paused channel or paused imports shows the standard unavailable notice.
+- Turning **Send dates to channels** off while any channel is connected asks first ("Stop sharing dates?"), because those channels stop learning about new bookings and can be double booked. Turning it on never asks. Connecting a channel turns it on automatically (activity log: `integrations.config_changed`, `setting: export_enabled`, `auto: channel_connected`).
 - A pasted link that has not been connected is an unsaved draft: closing the dialog or going back asks to keep editing or discard (`useGuardedClose`).
 - Which channels appear: the server returns `connectableProviders`. **Airbnb** is always connectable. **Agoda** and **Booking.com** appear only when the rollout gate allows them, or when the property already has a feed for them. Kame Space supports only these three channels: no Vrbo, no "other calendar", and every link must be on that channel's own host. A property may have **at most 6 active feeds**, and connecting a URL that is already connected on the same property is refused.
 - **Plan:** `calendarSync` (Pro / `growth` and above) is shared by every channel; the modal is **preview-open** below Pro; **Connect** and turning on sharing open the upgrade modal. Server enforces it on writes (`calendar-sync-settings` PATCH, `calendar-sync-cron`).
@@ -126,20 +128,20 @@ dates that should not be available to guests.
 - **Booking.com closed-dates warning:** two or more events in one pull that exactly match nights Kame served Booking.com set `echoWarning`. Fix: export **reserved dates only**.
 - **No duplicates:** a hand-entered stay with the same dates and the same channel source is linked, not duplicated, and never adopted across channels. Reconnecting a removed feed re-links by reservation UID within the same channel.
 - **Past stays:** reservations whose checkout is already past are skipped.
-- **Health:** Connected (never synced yet) / Synced / Retrying / Needs fix (4+ failures raise `calendar_sync_failing`).
+- **Health:** Waiting for first sync / Synced / Retrying / Needs fix (4+ failures raise `calendar_sync_failing`).
 - **Remove:** confirm dialog; optional **Also delete dates this calendar added**.
 - **Guest form link:** open an imported stay on the Pricing calendar, then **Copy guest form link** (requires `bookings.detail.workflow:edit`). The link opens the guest form with the dates locked and the channel's wording (`Agoda Name`, no payment step). **Open in {channel}** shows when the feed supplied a reservation URL.
 
 ### Export link
 
-- One token-guarded iCal URL per channel (`…/ical-export/calendar.ics?property=…&token=…&as=<channel>`, always `https://` on hosted; the path ends in `.ics` because OTAs reject links that do not). Off by default. It publishes Kame bookings, manual blocks and other channels' stays, never the channel's own nights.
+- One token-guarded iCal URL per channel (`…/ical-export/calendar.ics?property=…&token=…&as=<channel>`, always `https://` on hosted; the path ends in `.ics` because OTAs reject links that do not). Off until the first channel is connected (connecting turns it on) or the host flips **Send dates to channels**. It publishes Kame bookings, manual blocks and other channels' stays, never the channel's own nights.
 
 ### When dates do not block on a channel
 
 Work through these in order; each one is visible on the page or in Recent activity.
 
 1. **Feed failing?** Health badge shows Retrying or Needs fix, and `lastError` names the cause. Re-paste the channel's export link.
-2. **Never read our link?** The channel row reports `exportNeverRead` after 24 hours. Re-paste the Kame link on the channel side and press **Sync now**.
+2. **Never read our link, or stopped reading it?** The channel row reports `exportNeverRead` after 24 hours, and a warning once a channel that used to read it has not for 48 hours. Re-paste the Kame link on the channel side and press **Sync now**.
 3. **Echo warning?** The channel is exporting closed dates as well as reservations. Export **reserved dates only**.
 4. **Channel-specific eligibility?** Agoda needs a room type with exactly one room; Booking.com removes pasted calendar links once a channel manager is connected.
 5. **Direct link left in place?** The host pasted one channel's link into another. Remove it; connect each channel only to Kame.
@@ -154,9 +156,9 @@ If Airbnb reports a night that already has a live Kame booking or manual block, 
 - Q: Where do I connect my Airbnb calendar?
   A: Pricing → **Channel sync** → **Airbnb** → step 1 → paste Airbnb’s Export calendar URL. Hover **?** for steps. You need Pro or higher.
 - Q: How do I block Airbnb when someone books here?
-  A: Channel sync → **Airbnb** → step 2 → turn on Share → copy the link into Airbnb’s import calendar field. The link must end with `.ics` before the `?` (Kame’s copy button already does that). Use HTTPS; do not shorten the URL.
+  A: Channel sync → **Airbnb** → step 2 (Send dates to Airbnb) → copy the link into Airbnb’s import calendar field. Sending is already on once Airbnb is connected; if the step says Sending is off, tap **Turn on**. The link must end with `.ics` before the `?` (Kame’s copy button already does that). Use HTTPS; do not shorten the URL.
 - Q: Airbnb says something went wrong when I paste our link.
-  A: Re-copy from Channel sync after Share is on. Confirm the address looks like `…/ical-export/calendar.ics?property=…&token=…&as=airbnb`. Older links without `.ics` or that start with `http://` fail Airbnb’s check.
+  A: Re-copy from Channel sync while sending is on. Confirm the address looks like `…/ical-export/calendar.ics?property=…&token=…&as=airbnb`. Older links without `.ics` or that start with `http://` fail Airbnb’s check.
 - Q: Does changing a nightly rate here change Airbnb’s price?
   A: No. Channel Sync shares **availability** only. List prices on this page are for Kame guest booking / admin pricing review.
 - Q: Can I edit or unblock a date that came from Airbnb?

@@ -59,17 +59,35 @@ export const CHANNEL_COPY: Record<DialogChannel, ChannelCopy> = {
   },
 };
 
-export type ChannelStatus = 'not_connected' | 'syncing' | 'needs_attention' | 'paused';
+/**
+ * One word per channel. `two_way` means both directions are proven: we imported its calendar and
+ * the channel has read ours. Anything short of that while connected is `finish_setup`.
+ */
+export type ChannelStatus =
+  'not_connected' | 'finish_setup' | 'two_way' | 'needs_attention' | 'paused';
 
 export const CHANNEL_STATUS_LABEL: Record<ChannelStatus, string> = {
   not_connected: 'Not connected',
-  syncing: 'Connected',
+  finish_setup: 'Finish setup',
+  two_way: 'Two-way',
   needs_attention: 'Needs attention',
   paused: 'Paused',
 };
 
+/** State of one direction of the sync. */
+export type DirectionState = 'off' | 'waiting' | 'ok' | 'stale' | 'error';
+
+export interface DirectionHealth {
+  state: DirectionState;
+  /** Last successful import (receive) or last time the channel read our link (send). */
+  at: string | null;
+}
+
+/** A channel that has not read our link for this long is treated as disconnected on its side. */
+export const SEND_STALE_MS = 48 * 60 * 60 * 1000;
+
 export interface ChannelWarning {
-  kind: 'feed_error' | 'never_read' | 'echo';
+  kind: 'feed_error' | 'never_read' | 'read_stale' | 'echo';
   message: string;
 }
 
@@ -82,6 +100,10 @@ export interface ChannelRow {
   lastImportAt: string | null;
   /** When the channel last read our export link, if it ever did. */
   lastReadAt: string | null;
+  /** Channel to Kame Space: dates and bookings we pull in. */
+  receive: DirectionHealth;
+  /** Kame Space to channel: our dates the channel reads. */
+  send: DirectionHealth;
   warnings: ChannelWarning[];
   /** Host may add a feed for this channel right now. */
   connectable: boolean;
@@ -95,10 +117,18 @@ function latest(values: Array<string | null | undefined>): string | null {
   return best;
 }
 
+export function isReadStale(lastReadAt: string | null, nowMs: number): boolean {
+  if (!lastReadAt) return false;
+  const t = Date.parse(lastReadAt);
+  return Number.isFinite(t) && nowMs - t > SEND_STALE_MS;
+}
+
 export function channelWarnings(
   provider: DialogChannel,
   feeds: CalendarSyncFeed[],
-  exportEnabled: boolean
+  exportEnabled: boolean,
+  lastReadAt: string | null = null,
+  nowMs: number = Date.now()
 ): ChannelWarning[] {
   const label = CHANNEL_COPY[provider].label;
   const out: ChannelWarning[] = [];
@@ -114,6 +144,17 @@ export function channelWarnings(
       message: `${label} hasn't read your link yet.`,
     });
   }
+  if (
+    exportEnabled &&
+    feeds.some((f) => f.isActive) &&
+    !feeds.some((f) => f.isActive && f.exportNeverRead) &&
+    isReadStale(lastReadAt, nowMs)
+  ) {
+    out.push({
+      kind: 'read_stale',
+      message: `${label} stopped reading your link. Check it is still pasted there.`,
+    });
+  }
   if (provider === 'booking_com' && feeds.some((f) => f.isActive && f.echoWarning)) {
     out.push({
       kind: 'echo',
@@ -123,9 +164,28 @@ export function channelWarnings(
   return out;
 }
 
+export function receiveHealth(feeds: CalendarSyncFeed[]): DirectionHealth {
+  const active = feeds.filter((f) => f.isActive);
+  if (active.length === 0) return { state: 'off', at: null };
+  const at = latest(active.map((f) => f.lastSuccessAt));
+  if (active.some((f) => f.health === 'error')) return { state: 'error', at };
+  return at ? { state: 'ok', at } : { state: 'waiting', at: null };
+}
+
+export function sendHealth(
+  exportEnabled: boolean,
+  lastReadAt: string | null,
+  nowMs: number
+): DirectionHealth {
+  if (!exportEnabled) return { state: 'off', at: lastReadAt };
+  if (!lastReadAt) return { state: 'waiting', at: null };
+  return { state: isReadStale(lastReadAt, nowMs) ? 'stale' : 'ok', at: lastReadAt };
+}
+
 export function buildChannelRows(
   settings: Pick<CalendarSyncSettings, 'feeds' | 'export' | 'connectableProviders'> | undefined,
-  paused: Partial<Record<DialogChannel, boolean>> = {}
+  paused: Partial<Record<DialogChannel, boolean>> = {},
+  nowMs: number = Date.now()
 ): ChannelRow[] {
   const feeds = settings?.feeds ?? [];
   // Older servers omit the list: they only ever connected Airbnb.
@@ -140,13 +200,17 @@ export function buildChannelRows(
     // Hide a channel that is not rolled out to this org and has nothing connected.
     if (!canConnect && channelFeeds.length === 0) continue;
 
-    const warnings = channelWarnings(provider, channelFeeds, exportEnabled);
+    const lastReadAt = reads[provider]?.lastReadAt ?? null;
+    const warnings = channelWarnings(provider, channelFeeds, exportEnabled, lastReadAt, nowMs);
     const active = channelFeeds.filter((f) => f.isActive);
+    const receive = receiveHealth(channelFeeds);
+    const send = sendHealth(exportEnabled, lastReadAt, nowMs);
     let status: ChannelStatus;
     if (paused[provider]) status = 'paused';
     else if (active.length === 0) status = 'not_connected';
     else if (warnings.length > 0) status = 'needs_attention';
-    else status = 'syncing';
+    else if (receive.state === 'ok' && send.state === 'ok') status = 'two_way';
+    else status = 'finish_setup';
 
     rows.push({
       provider,
@@ -154,7 +218,9 @@ export function buildChannelRows(
       feeds: channelFeeds,
       status,
       lastImportAt: latest(channelFeeds.map((f) => f.lastSuccessAt)),
-      lastReadAt: reads[provider]?.lastReadAt ?? null,
+      lastReadAt,
+      receive,
+      send,
       warnings,
       connectable: canConnect,
     });
@@ -169,3 +235,43 @@ export function showHubChecklist(rows: ChannelRow[]): boolean {
 
 /** Shown once two or more channels are connected. */
 export const HUB_TIP = 'Connect each channel to Kame Space only, not to each other.';
+
+/** Help for the one property-wide sharing switch (shown on the channel list). */
+export const SHARE_HELP =
+  'Sends your bookings and blocked dates to every connected channel. Turn it off and channels can be double booked.';
+
+/** Step titles: plain verbs, one per direction. */
+export const getStepTitle = (direction: 'receive' | 'send', label: string): string =>
+  direction === 'receive' ? `Get dates from ${label}` : `Send dates to ${label}`;
+
+/** One short line per direction, for the list row and the step. */
+export function directionText(
+  direction: 'receive' | 'send',
+  label: string,
+  health: DirectionHealth,
+  formatRelative: (iso: string) => string,
+  compact = false
+): string {
+  if (direction === 'receive') {
+    switch (health.state) {
+      case 'ok':
+        return `Synced ${health.at ? formatRelative(health.at) : ''}`.trim();
+      case 'error':
+        return 'Needs fix';
+      case 'waiting':
+        return 'Waiting for first sync';
+      default:
+        return 'Not connected';
+    }
+  }
+  switch (health.state) {
+    case 'ok':
+      return `Read ${health.at ? formatRelative(health.at) : ''}`.trim();
+    case 'stale':
+      return `Last read ${health.at ? formatRelative(health.at) : 'a while ago'}`;
+    case 'waiting':
+      return compact ? 'Not read yet' : `Waiting for ${label} to read it`;
+    default:
+      return 'Sending is off';
+  }
+}

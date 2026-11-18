@@ -10,6 +10,8 @@ import {
 
 import {
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
   CalendarOff,
   CalendarPlus,
   Check,
@@ -38,6 +40,8 @@ import {
 } from '@/features/dashboard/pricing/hooks/useCalendarSync';
 import {
   buildCalendarSyncActivityRows,
+  buildChannelReadActivityRow,
+  mergeChannelActivity,
   type CalendarSyncActivityTone,
 } from '@/features/dashboard/pricing/lib/calendarSyncActivity';
 import {
@@ -49,11 +53,15 @@ import {
   buildChannelRows,
   CHANNEL_COPY,
   CHANNEL_STATUS_LABEL,
+  directionText,
+  getStepTitle,
   HUB_TIP,
+  SHARE_HELP,
   showHubChecklist,
   type ChannelRow,
   type ChannelStatus,
   type DialogChannel,
+  type DirectionHealth,
 } from '@/features/dashboard/pricing/lib/channelSyncView';
 
 import { FeatureAvailabilityButton } from '@/components/feature-availability/FeatureAvailabilityButton';
@@ -103,10 +111,32 @@ function feedStatus(feed: CalendarSyncFeed): { text: string; tone: 'ok' | 'warn'
 
 const STATUS_DOT: Record<ChannelStatus, string> = {
   not_connected: 'bg-muted-foreground/40',
-  syncing: 'bg-emerald-500',
+  finish_setup: 'bg-blue-500',
+  two_way: 'bg-emerald-500',
   needs_attention: 'bg-destructive',
   paused: 'bg-amber-500',
 };
+
+/** One direction of a channel on the list row: arrow + a few words. */
+function DirectionLine({
+  direction,
+  text,
+  health,
+}: {
+  direction: 'receive' | 'send';
+  text: string;
+  health: DirectionHealth;
+}) {
+  const Icon = direction === 'receive' ? ArrowDown : ArrowUp;
+  const bad = health.state === 'error' || health.state === 'stale';
+  return (
+    <span className={cn('inline-flex items-center gap-1', bad && 'text-destructive')}>
+      <Icon className="size-3 shrink-0" aria-hidden />
+      <span className="sr-only">{direction === 'receive' ? 'Receive: ' : 'Send: '}</span>
+      {text}
+    </span>
+  );
+}
 
 function StatusLabel({ status, className }: { status: ChannelStatus; className?: string }) {
   return (
@@ -190,16 +220,31 @@ function SectionTitle({
   id,
   children,
   help,
+  step,
+  done = false,
   trailing,
 }: {
   id: string;
   children: string;
   help: string;
+  step: number;
+  done?: boolean;
   trailing?: React.ReactNode;
 }) {
   return (
     <div className="flex min-h-[44px] items-center justify-between gap-3">
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
+        <span
+          className={cn(
+            'flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+            done
+              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+              : 'bg-muted text-muted-foreground'
+          )}
+          aria-hidden
+        >
+          {done ? <Check className="size-3.5" /> : step}
+        </span>
         <h3 id={id} className="text-sm font-semibold">
           {children}
         </h3>
@@ -281,12 +326,16 @@ export function ChannelSyncDialog({
   const selectedPaused = row?.status === 'paused';
   const anyActiveFeed = feeds.some((f) => f.isActive);
 
-  // Activity for the open channel only: last few host-facing events, closed by default.
+  // Activity for the open channel, both directions: what we imported from it, and the latest
+  // time it read our link. Closed by default.
   const activityRows = useMemo(() => {
     const ids = new Set(channelFeeds.map((f) => f.id));
     const events = (data?.recentEvents ?? []).filter((e) => ids.has(e.feed_id));
-    return buildCalendarSyncActivityRows(events, formatRelative, 4);
-  }, [data?.recentEvents, channelFeeds]);
+    return mergeChannelActivity(
+      buildCalendarSyncActivityRows(events, formatRelative, 4),
+      buildChannelReadActivityRow(row?.label ?? '', row?.lastReadAt, formatRelative)
+    );
+  }, [data?.recentEvents, channelFeeds, row?.label, row?.lastReadAt]);
 
   // Keep focus where the host expects it when the view changes.
   useEffect(() => {
@@ -422,12 +471,7 @@ export function ChannelSyncDialog({
     <div className="space-y-4">
       <ul className="divide-border divide-y overflow-hidden rounded-xl border">
         {rows.map((r) => {
-          const meta =
-            r.status === 'needs_attention'
-              ? (r.warnings[0]?.message ?? null)
-              : r.status === 'syncing' && r.lastImportAt
-                ? `Synced ${formatRelative(r.lastImportAt)}`
-                : null;
+          const showDirections = r.status !== 'not_connected' && r.status !== 'paused';
           const invite = r.status === 'not_connected' && r.connectable && !readOnly;
           return (
             <li key={r.provider}>
@@ -440,8 +484,19 @@ export function ChannelSyncDialog({
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{r.label}</p>
-                  {meta ? (
-                    <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">{meta}</p>
+                  {showDirections ? (
+                    <p className="text-muted-foreground mt-0.5 flex flex-col gap-0.5 text-xs">
+                      <DirectionLine
+                        direction="receive"
+                        health={r.receive}
+                        text={directionText('receive', r.label, r.receive, formatRelative)}
+                      />
+                      <DirectionLine
+                        direction="send"
+                        health={r.send}
+                        text={directionText('send', r.label, r.send, formatRelative, true)}
+                      />
+                    </p>
                   ) : null}
                 </div>
                 {invite ? (
@@ -455,6 +510,28 @@ export function ChannelSyncDialog({
           );
         })}
       </ul>
+      <div className="flex min-h-[52px] items-center justify-between gap-3 rounded-xl border px-4">
+        <div className="flex items-center gap-1">
+          <Label htmlFor="channel-share-dates" className="text-sm font-medium">
+            Send dates to channels
+          </Label>
+          <FieldHelpTooltip label="Send dates to channels" help={SHARE_HELP} />
+        </div>
+        <div className="flex items-center gap-2">
+          {showChannelSyncTierBadge ? <TierBadge feature="calendarSync" /> : null}
+          <Switch
+            id="channel-share-dates"
+            checked={exportEnabled}
+            onCheckedChange={handleExportEnabledChange}
+            disabled={
+              readOnly ||
+              setEnabled.isPending ||
+              !data?.export.urls ||
+              (!channelSyncAvailability.available && !channelSyncAvailability.isLoading)
+            }
+          />
+        </div>
+      </div>
       {showHubChecklist(rows) ? (
         <p className="text-muted-foreground flex items-start gap-2 text-xs">
           <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
@@ -506,8 +583,13 @@ export function ChannelSyncDialog({
         ) : null}
 
         <section aria-labelledby="channel-from">
-          <SectionTitle id="channel-from" help={copy.importHelp}>
-            {`From ${row.label}`}
+          <SectionTitle
+            id="channel-from"
+            step={1}
+            done={row.receive.state === 'ok'}
+            help={copy.importHelp}
+          >
+            {getStepTitle('receive', row.label)}
           </SectionTitle>
 
           {channelFeeds.length === 0 ? (
@@ -632,30 +714,18 @@ export function ChannelSyncDialog({
           )}
         </section>
 
-        <section aria-label={`Share dates with ${row.label}`}>
+        <section aria-labelledby="channel-to">
           <SectionTitle
             id="channel-to"
-            help={`${copy.exportHelp} One switch covers every channel.`}
-            trailing={
-              <div className="flex items-center gap-2">
-                {showChannelSyncTierBadge ? <TierBadge feature="calendarSync" /> : null}
-                <Switch
-                  checked={exportEnabled}
-                  onCheckedChange={handleExportEnabledChange}
-                  aria-label={`Share dates with ${row.label}`}
-                  disabled={
-                    readOnly ||
-                    setEnabled.isPending ||
-                    !data?.export.urls ||
-                    (!channelSyncAvailability.available && !channelSyncAvailability.isLoading)
-                  }
-                />
-              </div>
-            }
+            step={2}
+            done={row.send.state === 'ok'}
+            help={copy.exportHelp}
           >
-            {`To ${row.label}`}
+            {getStepTitle('send', row.label)}
           </SectionTitle>
-          {exportEnabled && exportUrl ? (
+          {!data?.export.urls ? (
+            <p className="text-muted-foreground text-sm">Link unavailable</p>
+          ) : exportEnabled && exportUrl ? (
             <div className="space-y-1.5">
               <div className="flex gap-2">
                 <Input
@@ -666,18 +736,34 @@ export function ChannelSyncDialog({
                 />
                 <CopyButton value={exportUrl} label={`Copy ${row.label} export link`} />
               </div>
-              {row.lastReadAt ? (
-                <p className="text-muted-foreground text-xs">
-                  {`Read ${formatRelative(row.lastReadAt)}`}
-                </p>
+              <p
+                className={cn(
+                  'text-xs',
+                  row.send.state === 'stale' ? 'text-destructive' : 'text-muted-foreground'
+                )}
+              >
+                {directionText('send', row.label, row.send, formatRelative)}
+              </p>
+            </div>
+          ) : (
+            <div className="flex min-h-[44px] items-center justify-between gap-3">
+              <p className="text-muted-foreground text-sm">Sending is off</p>
+              {!readOnly ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 shrink-0"
+                  disabled={setEnabled.isPending}
+                  onClick={() => handleExportEnabledChange(true)}
+                >
+                  Turn on
+                </Button>
               ) : null}
             </div>
-          ) : !data?.export.urls ? (
-            <p className="text-muted-foreground text-sm">Link unavailable</p>
-          ) : null}
+          )}
         </section>
 
-        {activityRows.length > 0 ? (
+        {channelFeeds.length > 0 || activityRows.length > 0 ? (
           <section>
             <Collapsible open={activityOpen} onOpenChange={setActivityOpen}>
               <CollapsibleTrigger className="text-muted-foreground hover:text-foreground flex min-h-[44px] w-full items-center justify-between text-sm font-medium">
@@ -688,6 +774,9 @@ export function ChannelSyncDialog({
                 />
               </CollapsibleTrigger>
               <CollapsibleContent>
+                {activityRows.length === 0 ? (
+                  <p className="text-muted-foreground pb-2 text-sm">No activity yet</p>
+                ) : null}
                 <ul className="divide-border divide-y">
                   {activityRows.map((its) => (
                     <li key={its.id} className="flex items-start gap-2.5 py-2.5">
@@ -772,7 +861,7 @@ export function ChannelSyncDialog({
               {row ? <StatusLabel status={row.status} className="ml-2" /> : null}
             </div>
             <ResponsiveModalDescription className="sr-only">
-              Connect your channel calendars so availability stays in sync.
+              Keep your dates in sync both ways with each channel.
             </ResponsiveModalDescription>
           </ResponsiveModalHeader>
 
