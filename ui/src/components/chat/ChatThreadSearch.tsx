@@ -53,7 +53,7 @@ export function ChatThreadSearchPanel({
         className="h-7 min-h-[30px] flex-1 border-0 bg-transparent shadow-none"
         aria-label="Search in conversation"
         onKeyDown={(e) => {
-          if (e.key === 'Enter') {
+          if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
             e.preventDefault();
             if (e.shiftKey) onPrev();
             else onNext();

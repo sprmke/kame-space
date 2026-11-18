@@ -278,7 +278,7 @@ A `meta_sync_state` row exists for each Meta connection: Facebook and Instagram 
 
 **Worker:** `meta-inbox-worker`, called by pg_cron every minute through a SQL gate. The cron job calls `net.http_post` only when outbox rows or sync rows are due, so idle minutes cost no invocations. Connect and `check_now` also kick it directly. Each run has a 40-second budget, claims up to 20 due rows ordered by `next_run_at` with `FOR UPDATE SKIP LOCKED`, allows one active job per connection, rotates across orgs, and keeps 4 Graph calls in flight.
 
-**Rate limits:** read `X-Business-Use-Case-Usage` and `X-App-Usage` on every response. At 75% the Page's intervals double. At 90% everything except `check_now` pauses for that Page until Meta's reported regain time. The value is stored as `rate_limit_pct` and feeds the `meta_graph` metering in [`super-admin-service-cost-monitoring.md`](./super-admin-service-cost-monitoring.md).
+**Rate limits:** read `X-Business-Use-Case-Usage` and `X-App-Usage` on every response. At 75% the Page's intervals double. At 90% everything except `check_now` pauses for that Page until Meta's reported regain time. The value is stored as `rate_limit_pct` and feeds the `meta_graph` metering in [`super-admin-service-cost-monitoring.md`](../planned/super-admin-service-cost-monitoring.md).
 
 **Errors:** token and permission errors set the connection to `status = 'error'` with a reason code and stop scheduling. Transient errors back off.
 
@@ -777,12 +777,12 @@ Recorded 2026-11-10, on `feat/guest-inbox-meta-sync` from `origin/develop`.
 | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | [`guest-inbox-meta-hardening.md`](../done/guest-inbox-meta-hardening.md) (done 2026-08-20)                        | Keeps its health check, Fix connection, `HUMAN_AGENT`, and token debug. Revisits its disconnect decision through D2. |
 | [`dashboard-contextual-help.md`](../in-progress/dashboard-contextual-help.md)                                     | Phase 5 takes over P7.1 and P7.2 for the inbox.                                                                      |
-| [`super-admin-service-cost-monitoring.md`](./super-admin-service-cost-monitoring.md)                              | Phase 3 supplies `rate_limit_pct` for `meta_graph` metering. Phase 4's degrade poll is its A16 mode.                 |
+| [`super-admin-service-cost-monitoring.md`](../planned/super-admin-service-cost-monitoring.md)                              | Phase 3 supplies `rate_limit_pct` for `meta_graph` metering. Phase 4's degrade poll is its A16 mode.                 |
 | [`supabase-capacity-and-operational-readiness.md`](../in-progress/supabase-capacity-and-operational-readiness.md) | Builds on the Realtime binding merge. Phase 4 removes the inbox bindings, and Phase 8 reports the result there.      |
 | Architecture modernization plan (approved 2026-09-21)                                                             | Follows its choices: plain outbox, Sentry alerts, no Redis.                                                          |
 | [`full-app-test-architecture.md`](./full-app-test-architecture.md)                                                | Tests land in its layout if it ships first.                                                                          |
 | [`app-speed-root-cause-overhaul.md`](./app-speed-root-cause-overhaul.md)                                          | The list function and removing Graph calls from GETs help its edge p95 targets.                                      |
-| [`marketing-meta-publishing-gaps.md`](./marketing-meta-publishing-gaps.md)                                        | Shares the Meta connection and the Graph version bump in 1.10.                                                       |
+| [`marketing-meta-publishing-gaps.md`](../planned/marketing-meta-publishing-gaps.md)                                        | Shares the Meta connection and the Graph version bump in 1.10.                                                       |
 
 ## Plans, permissions, audit
 

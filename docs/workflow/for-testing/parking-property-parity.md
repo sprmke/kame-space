@@ -94,7 +94,7 @@ Run via normal dev → prod cutover (`bun run deploy:supabase:dev` first; prod o
 - Thick parking booking detail (claim-only stays)
 - Meta Channels on parking
 - Marketing, Maintenance, Templates, Public Pages editor, Voice Receptionist, stay-guide / SD / GAF on parking
-- Property→parking auto-search ([`parking-e2e-later-phases.md`](../planned/parking-e2e-later-phases.md) Phase 2b)
+- Property→parking auto-search ([`parking-e2e-later-phases.md`](../done/parking-e2e-later-phases.md) Phase 2b)
 
 ---
 

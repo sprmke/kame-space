@@ -6,6 +6,7 @@ import {
   CalendarPlus,
   CalendarX,
   Car,
+  CreditCard,
   ClipboardCheck,
   Copy,
   FileCheck,
@@ -75,6 +76,7 @@ const NOTIFICATION_ICONS: Record<NotificationType, LucideIcon> = {
   maintenance_guest_reported: Wrench,
   guest_request_submitted: CalendarPlus,
   booking_receipt_uploaded: Receipt,
+  billing_notice: CreditCard,
 };
 
 /** Category glyph shared by the bell list, Activity page, and realtime toast. */

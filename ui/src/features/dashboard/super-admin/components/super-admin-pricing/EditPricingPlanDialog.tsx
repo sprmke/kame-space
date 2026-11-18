@@ -13,6 +13,7 @@ import {
   normalizeVolumeDiscountTiers,
   type VolumeDiscountTier,
 } from '@/features/dashboard/plans/lib/planPricing';
+import { PriceMigrationSection } from '@/features/dashboard/super-admin/components/super-admin-pricing/PriceMigrationSection';
 import { VolumePricingEditor } from '@/features/dashboard/super-admin/components/super-admin-pricing/VolumePricingEditor';
 import type { PricingPlan } from '@/features/dashboard/super-admin/types/pricingPlan';
 
@@ -253,6 +254,8 @@ export function EditPricingPlanDialog({
                 onVolumeDiscountTiersChange={setVolumeDiscountTiers}
               />
             ) : null}
+
+            {!plan.isDefault ? <PriceMigrationSection planId={plan.id} /> : null}
 
             <div className="space-y-2">
               <Label htmlFor="plan-ai-credits">AI monthly credits</Label>

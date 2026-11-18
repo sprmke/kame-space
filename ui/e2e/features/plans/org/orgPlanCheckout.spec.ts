@@ -69,7 +69,9 @@ test.describe('@ci org plan upgrade checkout', () => {
     await expect(page.getByText('Payment cancelled.')).toBeVisible({ timeout: 10_000 });
   });
 
-  test('pending checkout shows resume payment and confirming banner', async ({ page }) => {
+  test('an open checkout from another device offers resume payment without polling', async ({
+    page,
+  }) => {
     const pending = {
       transactionId: 'txn-pending-resume',
       planId: PLAN_GROWTH,
@@ -82,14 +84,32 @@ test.describe('@ci org plan upgrade checkout', () => {
     await installPaymongoCheckoutRedirectStub(page, 'success');
 
     await openOrgPlansBilling(page);
-    await expect(page.getByText('Confirming payment…')).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: /Resume payment|Open checkout/ }).first()
-    ).toBeVisible();
+    // Only a checkout this browser started is "being confirmed". This one was left open
+    // elsewhere, so the summary card offers it and the page does not poll for it.
+    await expect(page.getByText('A plan payment is waiting to be completed.')).toBeVisible();
+    await expect(page.getByText('Confirming payment…')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Resume payment' }).first()).toBeVisible();
 
     await resumePendingPayment(page);
     await expect(page).toHaveURL(/checkout=success/);
     expect(state.checkoutCalls).toEqual([PLAN_GROWTH]);
+  });
+
+  test('a checkout started in this browser shows the confirming banner', async ({ page }) => {
+    const pending = {
+      transactionId: 'txn-pending-local',
+      planId: PLAN_GROWTH,
+      checkoutUrl: 'https://checkout.paymongo.com/e2e-local',
+    };
+    await installPlansCheckoutMocks(page, {
+      subscriptionPlanId: PLAN_STARTER,
+      pendingCheckout: pending,
+    });
+    await seedActiveCheckoutSession(page, { ...pending, previousPlanId: PLAN_STARTER });
+
+    await openOrgPlansBilling(page);
+    await expect(page.getByText('Confirming payment…')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('button', { name: 'Open checkout' }).first()).toBeVisible();
   });
 
   test('checkout watch timeout offers resume payment', async ({ page }) => {

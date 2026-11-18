@@ -8,7 +8,7 @@ updated: 2026-08-26
 
 # Phase 7 — Property-Booking Parking Migration
 
-Part of [Parking E2E Phase 2+ overview](../planned/parking-e2e-later-phases.md). Depends on Phases 3, 4, 5 (payment, payout, endorsement automation) — all shipped.
+Part of [Parking E2E Phase 2+ overview](./parking-e2e-later-phases.md). Depends on Phases 3, 4, 5 (payment, payout, endorsement automation) — all shipped.
 
 ## Problem
 

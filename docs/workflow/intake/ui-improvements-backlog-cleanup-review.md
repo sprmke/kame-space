@@ -1,3 +1,12 @@
+---
+title: 'UI improvements backlog cleanup — review notes'
+status: active
+tags: [workflow, intake, ui, review]
+updated: 2026-11-18
+stage: intake
+kind: reference
+---
+
 # UI improvements backlog cleanup — review notes
 
 Branch: `sprmke/ui-improvements-backlog-cleanup`  

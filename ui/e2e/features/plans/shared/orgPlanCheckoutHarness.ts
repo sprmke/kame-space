@@ -22,6 +22,7 @@ import {
   PLANS_E2E_PROPERTY_SLUG,
   plansE2ePaths,
   planChargedPhp,
+  planPreviewPayload,
 } from './orgPlanHarnessShared';
 
 export {
@@ -59,6 +60,19 @@ export type PlansCheckoutHarnessOptions = {
   pendingCheckout?: PendingCheckout | null;
   /** Fulfill pending checkout on the next org-plan poll (simulates webhook). */
   fulfillOnNextOrgPlanPoll?: boolean;
+  /** The first checkout call is refused with 409 "price changed" and this fresh amount. */
+  priceChangesTo?: number;
+  /** Account credit covers every payment: the quote is "Paid with account credit". */
+  coveredByCredit?: boolean;
+  billingDetails?: BillingDetailsMock | null;
+};
+
+export type BillingDetailsMock = {
+  legalName: string | null;
+  address: string | null;
+  tin: string | null;
+  billingEmail: string | null;
+  updatedAt: string | null;
 };
 
 export type PlansCheckoutHarnessState = {
@@ -71,6 +85,13 @@ export type PlansCheckoutHarnessState = {
   checkoutCalls: string[];
   fulfillOnNextOrgPlanPoll: boolean;
   checkoutCreateShouldFail: string | null;
+  /** Fresh amount the next checkout call is refused with (409), then the quote uses it. */
+  priceChangesTo: number | null;
+  /** Amount the quote shows after a price change was refused. */
+  quoteChargeOverridePhp: number | null;
+  coveredByCredit: boolean;
+  billingDetails: BillingDetailsMock | null;
+  billingDetailsSaves: Array<Record<string, unknown>>;
 };
 
 function planById(planId: string | null) {
@@ -113,6 +134,12 @@ function orgPlanPayload(state: PlansCheckoutHarnessState) {
     assignedPropertyIds: currentPlan ? [PLANS_E2E_PROPERTY_ID] : [],
     pendingCheckoutUrl: pendingUrl,
     pendingCheckoutPlanId: pendingPlanId,
+    pendingCheckoutPurpose: state.pendingCheckout ? 'change' : null,
+    upcomingPayment: null,
+    accountCreditPhp: 0,
+    amountOwedPhp: 0,
+    billingDetails: state.billingDetails,
+    transactionsNextCursor: null,
     transactions: state.transactions,
   };
 }
@@ -293,6 +320,11 @@ export async function installPlansCheckoutMocks(
     checkoutCalls: [],
     fulfillOnNextOrgPlanPoll: options.fulfillOnNextOrgPlanPoll ?? false,
     checkoutCreateShouldFail: null,
+    priceChangesTo: options.priceChangesTo ?? null,
+    quoteChargeOverridePhp: null,
+    coveredByCredit: options.coveredByCredit ?? false,
+    billingDetails: options.billingDetails ?? null,
+    billingDetailsSaves: [],
   };
 
   await installPlansE2eSession(page);
@@ -369,14 +401,93 @@ export async function installPlansCheckoutMocks(
         await fulfillJson(route, { success: true, data: orgPlanPayload(state) });
         return;
       }
+      case 'preview-org-plan-change': {
+        const body = route.request().postDataJSON() as {
+          kind?: 'pay' | 'schedule' | 'cancel';
+          planId?: string;
+        };
+        const preview = planPreviewPayload({
+          kind: body.kind ?? 'pay',
+          planId: body.planId ?? null,
+          currentPlanId: state.subscriptionPlanId,
+        }) as Record<string, unknown>;
+        if (preview.kind === 'pay') {
+          if (state.quoteChargeOverridePhp != null) {
+            preview.chargePhp = state.quoteChargeOverridePhp;
+          }
+          if (state.coveredByCredit) {
+            const total = Number(preview.targetTotalPhp);
+            preview.coveredByCredit = true;
+            preview.chargePhp = 0;
+            preview.ledgerCreditAppliedPhp = total;
+            preview.lineItems = [
+              ...(preview.lineItems as unknown[]),
+              { kind: 'credit', label: 'Account credit', amountPhp: -total },
+            ];
+          }
+        }
+        await fulfillJson(route, { success: true, data: preview });
+        return;
+      }
+      case 'org-billing-details': {
+        if (route.request().method() === 'PUT') {
+          const body = route.request().postDataJSON() as Record<string, unknown>;
+          state.billingDetailsSaves.push(body);
+          state.billingDetails = {
+            legalName: (body.legalName as string) || null,
+            address: (body.address as string) || null,
+            tin: (body.tin as string) || null,
+            billingEmail: (body.billingEmail as string) || null,
+            updatedAt: '2026-09-02T00:00:00.000Z',
+          };
+        }
+        await fulfillJson(route, { success: true, data: { details: state.billingDetails } });
+        return;
+      }
       case 'create-org-subscription-checkout': {
         if (state.checkoutCreateShouldFail) {
           await fulfillJson(route, { success: false, error: state.checkoutCreateShouldFail }, 502);
           return;
         }
-        const body = route.request().postDataJSON() as { planId?: string };
-        const planId = String(body.planId ?? '');
+        const body = route.request().postDataJSON() as { planId?: string; resume?: boolean };
+        // "Resume" and "pay what is due" send no plan: the open checkout's plan is the answer.
+        const planId = String(body.planId ?? state.pendingCheckout?.planId ?? '');
         state.checkoutCalls.push(planId);
+
+        // The price moved since the host reviewed it: refuse once with the fresh amount.
+        if (state.priceChangesTo != null) {
+          const fresh = state.priceChangesTo;
+          state.priceChangesTo = null;
+          state.quoteChargeOverridePhp = fresh;
+          await fulfillJson(
+            route,
+            {
+              success: false,
+              error: 'The price changed. Review it and confirm again.',
+              code: 'price_changed',
+              freshChargePhp: fresh,
+            },
+            409
+          );
+          return;
+        }
+
+        // Account credit covers it: no PayMongo checkout, the plan changes right away.
+        if (state.coveredByCredit && planId) {
+          fulfillPendingCheckout(state, planId);
+          await fulfillJson(route, {
+            success: true,
+            data: {
+              checkoutUrl: null,
+              transactionId: 'txn-paid-with-credit',
+              reused: false,
+              paidWithCredit: true,
+              purpose: 'change',
+              chargePhp: 0,
+            },
+          });
+          return;
+        }
 
         if (
           state.pendingCheckout?.planId === planId &&
@@ -388,6 +499,9 @@ export async function installPlansCheckoutMocks(
               checkoutUrl: state.pendingCheckout.checkoutUrl,
               transactionId: state.pendingCheckout.transactionId,
               reused: true,
+              paidWithCredit: false,
+              purpose: 'change',
+              chargePhp: 0,
             },
           });
           return;
@@ -400,6 +514,9 @@ export async function installPlansCheckoutMocks(
             checkoutUrl: pending.checkoutUrl,
             transactionId: pending.transactionId,
             reused: false,
+            paidWithCredit: false,
+            purpose: 'change',
+            chargePhp: 0,
           },
         });
         return;

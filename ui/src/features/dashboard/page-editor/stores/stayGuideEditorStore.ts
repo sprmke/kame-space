@@ -53,7 +53,7 @@ type Actions = {
 };
 
 function cloneSnapshot(snapshot: Snapshot): Snapshot {
-  return JSON.parse(JSON.stringify(snapshot)) as Snapshot;
+  return structuredClone(snapshot);
 }
 
 /** Per-template display font, mirroring `applyTemplateTypography` for Showcase. */

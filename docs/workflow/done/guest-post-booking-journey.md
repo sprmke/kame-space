@@ -1,5 +1,5 @@
 ---
-stage: in-progress
+stage: done
 title: 'Guest post-booking journey: one connected flow from dates to review'
 status: done
 tags: [workflow, planned, guest, booking, trip, stay-guide, chat, emails, ux]
@@ -35,8 +35,8 @@ Builds on, does not replace: [`guest-trip-hub.md`](../in-progress/guest-trip-hub
 v1, in progress), [`cancellation-policy-and-process.md`](../in-progress/cancellation-policy-and-process.md),
 [`mobile-app-chrome-header-and-tab-bar.md`](../in-progress/mobile-app-chrome-header-and-tab-bar.md),
 [`live-identity-verification.md`](../in-progress/live-identity-verification.md),
-[`guest-review-facebook-cta.md`](./guest-review-facebook-cta.md),
-[`guest-trust-safety-reporting.md`](./guest-trust-safety-reporting.md).
+[`guest-review-facebook-cta.md`](../planned/guest-review-facebook-cta.md),
+[`guest-trust-safety-reporting.md`](../planned/guest-trust-safety-reporting.md).
 
 ---
 

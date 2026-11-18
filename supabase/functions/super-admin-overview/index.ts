@@ -103,7 +103,32 @@ serveSuperAdmin('super-admin-overview', async (req) => {
     countPendingApprovals(),
   ]);
 
+  // Billing items that need a person: money collected but not applied to a plan, and orgs that
+  // have been paused (suspended) for more than a week.
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const tenMinAgo = new Date(now.getTime() - 10 * 60 * 1000).toISOString();
+  const [heldPaymentsRes, suspendedLongRes] = await Promise.all([
+    supabase
+      .from('org_payment_transactions')
+      .select('id, review_reason, paid_at')
+      .eq('status', 'paid')
+      .or('applied.is.null,applied.eq.false')
+      .lte('paid_at', tenMinAgo)
+      .limit(500),
+    supabase
+      .from('org_subscriptions')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'suspended')
+      .lte('suspended_at', weekAgo),
+  ]);
+  // Payments kept as account credit ("stale:") are settled; only the rest need a decision.
+  const heldPayments = (heldPaymentsRes.data ?? []).filter(
+    (row) => !String(row.review_reason ?? '').startsWith('stale:')
+  ).length;
+
   const firstError =
+    heldPaymentsRes.error ??
+    suspendedLongRes.error ??
     orgOwnersRes.error ??
     orgCreatedRes.error ??
     orgCountRes.error ??
@@ -236,6 +261,8 @@ serveSuperAdmin('super-admin-overview', async (req) => {
       openTickets: openTicketsRes.count ?? 0,
       undisbursedParkingPayouts: undisbursedPayoutsRes.count ?? 0,
       unassignedSubscriptions: Math.max((orgCountRes.count ?? 0) - liveSubscriptions.length, 0),
+      heldPayments,
+      suspendedOverWeek: suspendedLongRes.count ?? 0,
     },
     recent: {
       organizations: (recentOrgsRes.data ?? []).map((o) => ({

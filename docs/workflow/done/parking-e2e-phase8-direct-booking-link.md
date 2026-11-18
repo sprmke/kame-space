@@ -8,7 +8,7 @@ updated: 2026-08-30
 
 # Phase 8 — Direct-Booking Link
 
-Part of [Parking E2E Phase 2+ overview](../planned/parking-e2e-later-phases.md). Intake item #3. Depends on Phases 3, 4, 5 (payment, payout, endorsement automation) — this phase adds a new entry point into the already-built engine, it does not add new matching/payment/payout mechanics.
+Part of [Parking E2E Phase 2+ overview](./parking-e2e-later-phases.md). Intake item #3. Depends on Phases 3, 4, 5 (payment, payout, endorsement automation) — this phase adds a new entry point into the already-built engine, it does not add new matching/payment/payout mechanics.
 
 ## Problem
 
@@ -109,4 +109,4 @@ Functional verification against the real local stack (real guest/host Supabase A
 - [x] Host dashboard clearly documents the commission difference (`ParkingDirectLinkCard.tsx`).
 - [ ] Mobile (375px) pass of the new dashboard card — not yet run.
 
-Back to [done index](./README.md) · overview: [`../planned/parking-e2e-later-phases.md`](../planned/parking-e2e-later-phases.md).
+Back to [done index](./README.md) · overview: [`../planned/parking-e2e-later-phases.md`](./parking-e2e-later-phases.md).

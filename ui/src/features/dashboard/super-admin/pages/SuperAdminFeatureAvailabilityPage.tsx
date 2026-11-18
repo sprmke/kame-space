@@ -1,8 +1,8 @@
 import * as React from 'react';
 
+import { SuperAdminPage } from '@/features/dashboard/super-admin/components/shared/SuperAdminPage';
 import { FeatureAvailabilityDialog } from '@/features/dashboard/super-admin/components/super-admin-feature-availability/FeatureAvailabilityDialog';
 import { FeatureAvailabilityRow } from '@/features/dashboard/super-admin/components/super-admin-feature-availability/FeatureAvailabilityRow';
-import { SuperAdminPage } from '@/features/dashboard/super-admin/components/shared/SuperAdminPage';
 import {
   useDeleteUnusedFeatureAvailabilityRow,
   useFeatureAvailabilityAdmin,
@@ -29,8 +29,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import type { FeatureAvailabilityCatalogEntry } from '@/lib/featureAvailability/featureAvailabilityCatalog';
 import { appPageTitle, usePageTitle } from '@/lib/pageTitle';
 

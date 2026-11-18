@@ -2,7 +2,7 @@
 title: 'Tasks To Plan'
 status: active
 tags: [planning, intake, backlog]
-updated: 2026-11-17
+updated: 2026-11-18
 stage: intake
 kind: backlog
 ---
@@ -925,9 +925,9 @@ Every mutating host action on the booking detail page writes an activity_log row
 
 ===
 
-📋 AI Assistant — parking broadcast fan-out
+❌ AI Assistant — parking broadcast fan-out
 
-→ **Planned:** [`../planned/ai-assistant-parking-broadcast-chat.md`](../planned/ai-assistant-parking-broadcast-chat.md) — Deferred from ../done/ai-assistant-attachment-actions-and-coverage.md Phase 6 + Part E matrix.
+→ **Won't do:** [`../wont-do/ai-assistant-parking-broadcast-chat.md`](../wont-do/ai-assistant-parking-broadcast-chat.md) — Deferred from ../done/ai-assistant-attachment-actions-and-coverage.md Phase 6 + Part E matrix.
 
 ===
 
@@ -968,7 +968,7 @@ Example:
 
 ===
 
-📋 Live Identity Verification — guided capture, phone handoff, PhilSys QR, liveness
+🚧 Live Identity Verification — guided capture, phone handoff, PhilSys QR, liveness
 
 → **In progress:** [`../in-progress/live-identity-verification.md`](../in-progress/live-identity-verification.md) — Replace today's "pick a file from your gallery" identity capture — on both the guest booking form and the host/org verification flow — with one shared guided live capture module: desktop starts it, a QR hands it to the phone, the phone...
 
@@ -984,7 +984,7 @@ Example:
 
 Sync with other popular platforms that Philippine hosts use, on top of the Airbnb sync we already have (Agoda, Booking.com and others), so a booking on any one blocks the rest automatically.
 
-→ **Planned:** [`../planned/multi-channel-calendar-sync.md`](../planned/multi-channel-calendar-sync.md) — Agoda and Booking.com are doable over iCal with no partnership; Traveloka and Trip.com need a paid channel-manager API (decision-gated). Kame Space as the hub, relay fixes, echo detection, cadence and scale fixes, full test plan.
+→ **Planned:** on branch `feat/multi-channel-calendar-sync` (PR [#493](https://github.com/sprmke/kame-space/pull/493)); the doc lands in `docs/workflow/in-progress/` when that merges. Agoda and Booking.com are doable over iCal with no partnership; Traveloka and Trip.com need a paid channel-manager API (decision-gated). Kame Space as the hub, relay fixes, echo detection, cadence and scale fixes, full test plan.
 
 ===
 
@@ -1000,9 +1000,9 @@ Sync with other popular platforms that Philippine hosts use, on top of the Airbn
 
 ===
 
-📋 Parking E2E Phase 6 — Behavioral Ranking, Transparency & Trust/Safety
+❌ Parking E2E Phase 6 — Behavioral Ranking, Transparency & Trust/Safety
 
-→ **Planned:** [`../planned/parking-e2e-phase6-ranking-trust-safety.md`](../planned/parking-e2e-phase6-ranking-trust-safety.md) — Part of Parking E2E Phase 2+ overview. Depends on Phase 2 (price ranking baseline) and Phase 5 (chat/response-time signal source) having run in production long enough to accumulate real data — this phase is explicitly sequenced _after_...
+→ **Won't do:** [`../wont-do/parking-e2e-phase6-ranking-trust-safety.md`](../wont-do/parking-e2e-phase6-ranking-trust-safety.md) — Part of Parking E2E Phase 2+ overview. Depends on Phase 2 (price ranking baseline) and Phase 5 (chat/response-time signal source) having run in production long enough to accumulate real data — this phase is explicitly sequenced _after_...
 
 ===
 
@@ -1125,7 +1125,7 @@ From the dashboard, there should be a copyable link for parking owner hosts wher
 
 We should apply all the same logic and flow that we have from above except that this is direct booking and guest needs to manually fill up their information, car details and pay the parking.
 
-→ **Overview:** [`../planned/parking-e2e-later-phases.md`](../planned/parking-e2e-later-phases.md) · **Done:** Phases 0–5, 7–8 (`docs/workflow/done/parking-e2e-phase*.md`) · **In progress:** Phase 6 + [`../in-progress/production-readiness/audits/parking-e2e-production-readiness.md`](../in-progress/production-readiness/audits/parking-e2e-production-readiness.md)
+→ **In progress:** [`../in-progress/parking-module-hardening.md`](../in-progress/parking-module-hardening.md) · **Done:** Phases 0–5, 7–8 ([`../done/parking-e2e-later-phases.md`](../done/parking-e2e-later-phases.md), `docs/workflow/done/parking-e2e-phase*.md`) · **Cancelled:** Phase 6 behavioral ranking (re-open after real payment history) · readiness audit: [`../in-progress/production-readiness/audits/parking-e2e-production-readiness.md`](../in-progress/production-readiness/audits/parking-e2e-production-readiness.md)
 
 ===
 
@@ -1179,7 +1179,7 @@ Phase 4: Manual & Physical on site tasks:
 - Picture different type of parking (tower, bay). Edit and add parking slot number dynamically
 - Measure dimension and height clearance
 
-→ **Done (Phase 0 & Phase 1):** [`../done/parking-e2e-phase1-overview.md`](../done/parking-e2e-phase1-overview.md) (+ companions in `done/`). Phases 2–5, 7–8 **done**; Phase 6 + production-readiness **planned:** [`../planned/parking-e2e-later-phases.md`](../planned/parking-e2e-later-phases.md).
+→ **Done (Phase 0 & Phase 1):** [`../done/parking-e2e-phase1-overview.md`](../done/parking-e2e-phase1-overview.md) (+ companions in `done/`). Phases 2–5, 7–8 **done**; Phase 6 **cancelled**; remaining hardening **in progress:** [`../in-progress/parking-module-hardening.md`](../in-progress/parking-module-hardening.md).
 
 ===
 
