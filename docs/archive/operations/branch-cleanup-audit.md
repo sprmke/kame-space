@@ -432,7 +432,14 @@ release would have been unsafe. They need their own session.
 
 ## 2026-11-19 landing hero release
 
-PR #536 carries the aligned day/night landing hero and its responsive asset cleanup. The feature
-branch `fix/landing-mascot-alignment` was recorded at tip `53a230487cbc6925b60e9a841db2737bea1eabaa`
-before its post-merge deletion. Restore it with
-`git branch fix/landing-mascot-alignment 53a230487cbc6925b60e9a841db2737bea1eabaa` if needed.
+PR #536 carries the aligned day/night landing hero and its responsive asset cleanup. Its squash
+merge landed on `develop` as `4109b6f44a639a81a74c3946215b761a406ffeee`.
+
+The feature branch `fix/landing-mascot-alignment` reached
+`21a3456e0cb8eb90f9fa298ce8d5a376fa483620` before its post-merge deletion. Restore it with
+`git branch fix/landing-mascot-alignment 21a3456e0cb8eb90f9fa298ce8d5a376fa483620` if needed.
+
+PR #538 shipped the same squash commit to `main` as
+`1e24f40c1acabb9972fc81149337c4095204c6e5`. Its release branch `release/2026-11-19-landing-hero`
+was cut from `main` and recorded at `00a521a1a` before deletion. Restore it with
+`git branch release/2026-11-19-landing-hero 00a521a1a` if needed.
