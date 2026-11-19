@@ -1,7 +1,7 @@
 ---
 title: 'All good (working)'
 status: active
-updated: 2026-11-06
+updated: 2026-11-20
 stage: in-progress
 kind: reference
 ---
@@ -41,3 +41,4 @@ Only rows with evidence. Everything else stays off this list until the baseline 
 | Guest PII storage         | `payment-receipts`, `valid-ids` private; stored URLs 400 anonymously                                                                                                          |
 | Property team roles       | Full Access / Operations / Read Only invited + accepted via real API; 7 reads/writes match seeded templates; UI redirects match (`evidence/phase6-rbac-matrix-2026-10-19.md`) |
 | Team seat plan gate       | Free refuses invites (1 seat); Growth allows                                                                                                                                  |
+| Public read cache         | PR-131 / #183 deployed 2026-11-19 ([#540](https://github.com/sprmke/kame-space/pull/540), run `44575415204`). Hosted: 10 `get-public-property` calls = 0 durable counter writes, 8 `search-listings` = 1, 8 `search-suggestions` = 0; `preview=1`, date filters and `developments?slug=` still meter 3/3 (`evidence/pr-131-public-read-caching-2026-11-20.md`) |
