@@ -64,12 +64,11 @@ test.describe('@ci host Get Verified states', () => {
     const resubmit = page.getByRole('button', { name: 'Resubmit' });
     await expect(resubmit).toBeEnabled({ timeout: 30_000 });
 
-    // Picking a file can race the dialog's dismiss handling; keep editing if it prompts.
+    // Picking a file can race the dialog's dismiss handling; Esc = Keep editing.
     const guard = page.getByRole('alertdialog', { name: /Save your changes\?/i });
     await guard.waitFor({ state: 'visible', timeout: 1_500 }).catch(() => undefined);
     if (await guard.isVisible().catch(() => false)) {
-      // Nested AlertDialog can sit under a Dialog scrim in hit-testing; force still fires.
-      await page.getByRole('button', { name: 'Keep editing' }).click({ force: true });
+      await page.keyboard.press('Escape');
       await expect(guard).toHaveCount(0);
     }
     // Always re-attach so Resubmit is enabled after any guard race.
