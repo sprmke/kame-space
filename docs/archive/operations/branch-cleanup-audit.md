@@ -35,6 +35,17 @@ PR #204 (`docs/readiness-dashboard-2026-11-01`) closed automatically when its br
 its patch was already in `develop` (`git cherry` showed it as applied). PR #153
 (`ci/pin-actions-sha`) is untouched and still open.
 
+## 2026-11-20 cleanup (booking detail edge read)
+
+Base: `develop` (`3069f595b`), `main` (`248976723`). Post-prod cleanup after PRs #546 / #548.
+
+| Removed                                              | Tip         | Why it was safe                                                                                      |
+| ---------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------- |
+| `fix/booking-detail-edge-read` (local + remote)      | `336a99d9f` | Squash-merged as #546 → `develop` (`3069f595b`) and #548 → `main`. Key files identical to `develop`. |
+| `release/booking-detail-edge-read` (remote; earlier) | `095f532af` | Squash-merged as #548 → `main`; remote already gone after merge `--delete-branch`.                   |
+
+Also removed a temporary `supabase/.env.dev.local` symlink created for the prod edge deploy. No dedicated worktree for this change. Route / edge docs already updated in the same PRs.
+
 ## 2026-11-17 cleanup (after the phone-search release)
 
 Base: `develop` (`30169f062`). Only branches whose PRs were already merged were deleted.
