@@ -272,7 +272,8 @@ export function buildTemplateLibrary(
  */
 function effectiveGroup(template: PropertyTemplateDto): PropertyTemplateGroup | null {
   if (template.group) return template.group;
-  if (!isHostOwnedTemplateKey(template.templateKey)) return null;
+  // Fallback for a cached response from before the registry carried `group`, and for the
+  // E2E fixtures that model the API shape.
   if (template.category === 'standard') return 'stay-guide';
   if (template.category === 'email') return 'guest-emails';
   if (template.category === 'message') return 'guest-messages';
