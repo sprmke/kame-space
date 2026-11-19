@@ -14,6 +14,7 @@ import {
   saveParkingPricing,
   type ParkingPricingPatch,
 } from '../_shared/parkingPricing.ts';
+import { PARKING_MIN_NIGHTLY_RATE } from '../_shared/parkingGuestFee.ts';
 import { isValidCalendarDateKey } from '../_shared/parkingBlockedDates.ts';
 import { resolveScopedParkingTeamAccess } from '../_shared/parkingScope.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
@@ -49,15 +50,15 @@ serveAuthenticated('parking-pricing', async (req) => {
 
     if (body.weekdayNightlyRate !== undefined) {
       const rate = Number(body.weekdayNightlyRate);
-      if (!Number.isFinite(rate) || rate < 0) {
-        return jsonError(req, 'weekdayNightlyRate must be a non-negative number', 400);
+      if (!Number.isFinite(rate) || rate < PARKING_MIN_NIGHTLY_RATE) {
+        return jsonError(req, 'weekdayNightlyRate must be at least ₱' + PARKING_MIN_NIGHTLY_RATE, 400);
       }
       patch.weekdayNightlyRate = rate;
     }
     if (body.weekendNightlyRate !== undefined) {
       const rate = Number(body.weekendNightlyRate);
-      if (!Number.isFinite(rate) || rate < 0) {
-        return jsonError(req, 'weekendNightlyRate must be a non-negative number', 400);
+      if (!Number.isFinite(rate) || rate < PARKING_MIN_NIGHTLY_RATE) {
+        return jsonError(req, 'weekendNightlyRate must be at least ₱' + PARKING_MIN_NIGHTLY_RATE, 400);
       }
       patch.weekendNightlyRate = rate;
     }

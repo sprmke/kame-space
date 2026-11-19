@@ -152,6 +152,14 @@ export type ParkingFlowState = {
   };
 };
 
+/** Matches guestFeePct 0.05 / guestFeeFixed 15 on a ₱1,200/night, 2-night stay. */
+export const PARKING_PAYMENT_PREVIEW = {
+  nights: 2,
+  hostGrossTotal: 2400,
+  guestFeeTotal: 135,
+  guestChargeTotal: 2535,
+} as const;
+
 const MOCK_HOST_CONTACT = {
   name: 'Parking Host',
   email: 'host@example.com',
@@ -361,7 +369,13 @@ function bookingRow(state: ParkingFlowState) {
 
 function guestStatusPayload(state: ParkingFlowState) {
   const status = effectiveStatus(state);
+  const showsPayment =
+    status === 'PENDING_PAYMENT' ||
+    status === 'PENDING_REVIEW' ||
+    status === 'READY_FOR_CHECKIN' ||
+    status === 'COMPLETED';
   return {
+    payment: showsPayment ? PARKING_PAYMENT_PREVIEW : null,
     status,
     checkInDate: '2027-08-25',
     checkOutDate: '2027-08-27',
@@ -635,11 +649,9 @@ function parkingPricingPayload() {
     weekendNightlyRate: 350,
     dateOverrides: {},
     currency: 'PHP',
-    guestRateCapWeekday: 400,
-    guestRateCapWeekend: 400,
-    guestRateWeekday: 400,
-    guestRateWeekend: 400,
     commissionPct: 0.1,
+    guestFeePct: 0.05,
+    guestFeeFixed: 15,
     directBookingToken: DIRECT_LINK_TOKEN,
     directBookingSlug: 'slot-12a',
     directCommissionPct: 0.05,

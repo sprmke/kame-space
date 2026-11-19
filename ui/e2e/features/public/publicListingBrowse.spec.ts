@@ -96,7 +96,7 @@ test.describe('@ci public listing browse', () => {
                   parkingType: 'inside_tower',
                   tower: 'Tower A',
                   slotLabel: 'Slot 1',
-                  ratePerNight: 300,
+                  ratePerNight: 1250,
                   features: [],
                   city: 'Taguig',
                 },
@@ -107,7 +107,7 @@ test.describe('@ci public listing browse', () => {
               facets: {
                 locations: [{ location: 'inside_tower', count: 100 }],
                 towers: [{ tower: 'Tower A', count: 100 }],
-                price: { min: 300, max: 300 },
+                price: { min: 1250, max: 1250 },
               },
             }),
           });
@@ -117,6 +117,9 @@ test.describe('@ci public listing browse', () => {
 
     await page.goto('/parkings/in/taguig?location=inside_tower&towers=Tower%20A');
     await expect(page.getByText('1 / 3')).toBeVisible({ timeout: 20_000 });
+    // The card shows the host's own nightly rate; the service fee is added at checkout.
+    await expect(page.getByText('₱1,250').first()).toBeVisible();
+    await expect(page.getByText('/ night').first()).toBeVisible();
 
     const first = requests[0]!;
     expect(first.searchParams.get('locationSlug')).toBe('taguig');

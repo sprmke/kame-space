@@ -43,7 +43,7 @@ function Stamp({ children, className }: { children: ReactNode; className?: strin
   return (
     <span
       className={cn(
-        'border-current/40 inline-flex -rotate-3 items-center gap-1.5 rounded-2xl border-2 border-dashed bg-white/60 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] backdrop-blur',
+        'border-current/40 inline-flex -rotate-3 items-center gap-1.5 rounded-2xl border-2 border-dashed bg-white/60 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] backdrop-blur',
         className
       )}
     >
@@ -102,7 +102,7 @@ function HavenHero({ data, section }: { data: ShowcaseData; section: ShowcaseRes
           <Eyebrow>{data.heroEyebrow}</Eyebrow>
           <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2">
             <h1
-              className={cn(DISPLAY, 'text-[clamp(2.25rem,6vw,4rem)] font-medium leading-[1.05]')}
+              className={cn(DISPLAY, 'text-[clamp(2.5rem,10vw,4rem)] font-medium leading-[1.05]')}
             >
               {title}
             </h1>
@@ -217,6 +217,7 @@ export function HavenSections({ data }: { data: ShowcaseData }) {
               section={sec}
               alt={alt}
               headingClassName={DISPLAY}
+              headingSizeClassName="@sm:text-4xl text-3xl font-medium"
               containerClassName={CONTAINER}
             />
           );

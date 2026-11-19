@@ -369,6 +369,21 @@ Deno.test({
         }
       });
 
+      await t.step('an unknown plan id is a clean 404, never a server error', async () => {
+        const fake = crypto.randomUUID();
+        for (const [fn, body] of [
+          ['preview-org-plan-change', { organizationId: orgId, kind: 'pay', planId: fake }],
+          [
+            'create-org-subscription-checkout',
+            { organizationId: orgId, planId: fake, idempotencyKey: 'k-fake' },
+          ],
+        ] as const) {
+          const res = await call(fn, owner, { method: 'POST', body });
+          assertEquals(res.status, 404, `${fn}: ${JSON.stringify(res.body)}`);
+          assertEquals(res.body.code, 'plan_not_found');
+        }
+      });
+
       await t.step(
         'checkout: stale price refused, idempotent, then paid and receipted',
         async () => {

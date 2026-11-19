@@ -93,7 +93,7 @@ kind: backlog
 - ✅ Payment e2e and management from super admin
   → **Done 2026-11-19:** [`../done/plans-billing-lifecycle-hardening.md`](../done/plans-billing-lifecycle-hardening.md) (sandbox matrix passed, super-admin billing panel shipped)
 - 🔵 Billing follow-ups from the lifecycle plan
-  Confirm with the accountant whether BIR official receipts or VAT are needed. Confirm the product defaults D5 (suspension behaves like Free) and D6 (auto-cover with a prorated true-up). PayMongo go-live configuration is PR-097 and the deploy flake is PR-098 in [`../in-progress/production-readiness/LEDGER.md`](../in-progress/production-readiness/LEDGER.md).
+  Confirm with the accountant whether BIR official receipts or VAT are needed. Confirm the product defaults D5 (suspension behaves like Free) and D6 (auto-cover with a prorated true-up). PayMongo go-live (live keys, activation, live webhook, one live checkout) is PR-097 in [`../in-progress/production-readiness/LEDGER.md`](../in-progress/production-readiness/LEDGER.md).
 - 🔵 Improve QR design to include our logo?
 - 🔵 Select turtle character and add it on their templates
 - 🔵 Super admin - playbook articles?

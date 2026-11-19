@@ -105,7 +105,7 @@ Platform-level control panel, distinct from org/property admin and the legacy `A
 | `/admin/pricing/plans`                           | [admin/pricing-plans.md](./admin/pricing-plans.md)               | Documented — tier catalog CRUD                                                               |
 | `/admin/pricing/subscriptions`                   | [admin/org-subscriptions.md](./admin/org-subscriptions.md)       | Documented — org subscription assignments                                                    |
 | `/admin/pricing/payment-settings`                | [admin/payment-settings.md](./admin/payment-settings.md)         | Documented — PayMongo dunning config                                                         |
-| `/admin/parking/payouts`                         | [admin/parking-payouts.md](./admin/parking-payouts.md)           | Documented — commission/guest rate config + manual payout ledger                             |
+| `/admin/parking/payouts`                         | [admin/parking-payouts.md](./admin/parking-payouts.md)           | Documented — commission/guest fee config + manual payout ledger                              |
 | `/admin/support`                                 | [admin/support.md](./admin/support.md)                           | Documented — ticket triage (table/card)                                                      |
 
 ## App shell

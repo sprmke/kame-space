@@ -75,7 +75,20 @@ export async function loadQuotePlan(
   planId: string,
   options: { allowInactive?: boolean } = {}
 ): Promise<QuotePlan> {
-  const plan = await loadOrgEligiblePlan(planId, options);
+  let plan;
+  try {
+    plan = await loadOrgEligiblePlan(planId, options);
+  } catch (err) {
+    // A plan id the client made up (or a stale one) is the caller's mistake, not a server error.
+    const message = err instanceof Error ? err.message : '';
+    if (
+      message === 'Pricing plan not found or inactive' ||
+      message === 'Commission pricing is not available'
+    ) {
+      throw new BillingRuleError('That plan is not available.', 'plan_not_found', 404);
+    }
+    throw err;
+  }
   return {
     id: plan.id,
     code: plan.code,

@@ -157,7 +157,10 @@ export function Marquee({
     return (
       <div className={cn('flex flex-wrap gap-x-8 gap-y-2', className)}>
         {items.map((item, i) => (
-          <span key={`${item}-${i}`} className={itemClassName}>
+          <span
+            key={`${item}-${i}`}
+            className={cn('max-w-full min-w-0 [overflow-wrap:anywhere]', itemClassName)}
+          >
             {item}
           </span>
         ))}

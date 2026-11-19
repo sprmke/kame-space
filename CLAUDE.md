@@ -154,6 +154,7 @@ Prefer `serveAdmin`/`servePublic`/`serveCronPost` (`_shared/serveEdge.ts`) over 
 - `compareFormData` (`_shared/utils.ts`) **omits `petType`** — changing only pet type silently skips the update/revert pipeline.
 - Two PDF template copies must be hand-synced: Storage bucket `templates` (workflow generation) vs `ui/public/templates` (admin preview).
 - Legacy static email HTML still references a dead `{{urgentBlock}}` placeholder — live sends use per-property templates + `configurable-template-send.html` instead.
+- **Tailwind text sizes in `ui/src/index.css` and showcase typography files:** never `@apply text-base|sm|lg|xl` in the base `h1` to `h4` rules (it copies `.showcase-scope .text-*` and shrinks every showcase heading to body size), and never build a class with `${}` (Tailwind cannot see it, so no CSS is generated). `showcaseLiteralClasses.test.ts` guards the second.
 - RLS is **not** the access-control layer today — it's edge-function checks (`verifyAdminJwt`/`verifyOrgAccess`/`verifyPropertyAccess`/`resolveScopedParkingAccess`). Don't assume a table is protected just because the query goes through Supabase.
 
 ## Plan mode

@@ -39,6 +39,7 @@ import {
   resolveShowcaseMotionReduced,
   resolveShowcaseParallaxEnabled,
 } from '@/features/guest/marketing/showcase/lib/showcaseStyleConfig';
+import { showcaseSectionHeadingClass } from '@/features/guest/marketing/showcase/lib/showcaseTypographyScale';
 import { useShowcaseScrollProgress } from '@/features/guest/marketing/showcase/templates/aurora/useShowcaseScrollProgress';
 import { AtlasHostSection } from '@/features/guest/marketing/showcase/templates/shared/ShowcaseHostSections';
 import {
@@ -57,7 +58,7 @@ import type {
 import { cn } from '@/lib/utils';
 
 const DISPLAY = 'font-grotesk font-medium tracking-[-0.03em]';
-const MONO = 'font-mono text-[11px] uppercase tracking-[0.24em]';
+const MONO = 'font-mono text-xs uppercase tracking-[0.24em]';
 const CONTAINER = 'mx-auto max-w-6xl px-5 @md:px-8';
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -224,7 +225,7 @@ function AtlasHero({
           <motion.h1
             className={cn(
               DISPLAY,
-              'max-w-4xl text-[clamp(2.25rem,8vw,5rem)] leading-[1.0]',
+              'max-w-4xl text-[clamp(2.5rem,10vw,5rem)] leading-[1.0]',
               onImage ? 'text-white' : ''
             )}
             initial={reduced ? false : { opacity: 0, y: 20, filter: 'blur(10px)' }}
@@ -549,6 +550,7 @@ export function AtlasSections({ data }: { data: ShowcaseData }) {
               section={sec}
               alt={alt}
               headingClassName={DISPLAY}
+              headingSizeClassName={showcaseSectionHeadingClass}
               containerClassName={CONTAINER}
             />
           );
