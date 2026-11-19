@@ -7,11 +7,7 @@ import { createClient } from './supabaseJs.ts';
 import { resolveAppSettings } from './appSettings.ts';
 import { loadAuthUserProfile } from './authUserProfile.ts';
 import { mintGuestBookingAccessToken } from './guestBookingAccessToken.ts';
-import {
-  buildGuestEssentialsHtml,
-  loadGuestEssentials,
-  type GuestEssentialsDto,
-} from './guestEssentials.ts';
+import { buildGuestEssentialsHtml, loadGuestEssentials } from './guestEssentials.ts';
 import { buildPropertyPlaceholderVars } from './propertyTemplatePropertyVars.ts';
 import { guestTripStage, loadGuestTripContent } from './guestTripContent.ts';
 import { linkGuestBookingsByEmail } from './guestProfileService.ts';
@@ -399,10 +395,8 @@ export type GuestStayGuideDto = {
 async function resolveSectionHtml(
   propertyId: string,
   templateKey: StayGuideSectionKey,
-  booking: GuestSubmission,
   publicOrigin: string,
-  essentials: GuestEssentialsDto | null,
-  revealLabel: string | null
+  placeholderVars: Record<string, string>
 ): Promise<{
   label: string;
   displayHeading: string;
@@ -414,36 +408,6 @@ async function resolveSectionHtml(
     propertyId,
     templateKey
   );
-  const settings = await resolveAppSettings(propertyId);
-  const branding = await loadPropertyEmailBranding(propertyId);
-  const propertySlug = (await resolvePropertySlugById(propertyId)) ?? '';
-  const bookingId = String(booking.id ?? '').trim();
-  const guestLinkExtras =
-    bookingId && propertySlug
-      ? await guestBookingEmailLinkPlaceholderExtras({
-          origin: settings.publicGuestAppOrigin,
-          propertySlug,
-          bookingId,
-        })
-      : {
-          property_slug: propertySlug,
-          form_url: '',
-          sd_form_url: '',
-          review_url: '',
-          trip_url: '',
-        };
-
-  const bookingVars = buildBookingPlaceholderVars(booking, settings, guestLinkExtras, branding);
-  // Secrets render here (guide only), reveal-gated by the essentials DTO.
-  const propertyVars = await buildPropertyPlaceholderVars({
-    propertyId,
-    booking,
-    essentials,
-    revealSecrets: true,
-    revealLabel,
-  });
-  const placeholderVars = { ...propertyVars.vars, ...bookingVars };
-
   const withPlaceholders = applyPropertyTemplatePlaceholders(content, placeholderVars);
   const prepared = prepareConfigurableEmailBodyHtml(withPlaceholders, publicOrigin);
   const { heading, bodyHtml } = extractLeadingSectionHeading(prepared);
@@ -694,16 +658,47 @@ async function buildGuestStayGuidePayload(
   const essentials = await loadGuestEssentials({ propertyId, booking });
   const revealLabel = essentials?.revealAt != null ? formatRevealLabel(essentials.revealAt) : null;
 
+  /*
+   * Build the property and booking placeholders once. Rebuilding them per section loaded the
+   * public property (with reviews and pricing) twelve times on a single guide view.
+   */
+  const branding = await loadPropertyEmailBranding(propertyId);
+  const propertySlug = (await resolvePropertySlugById(propertyId)) ?? '';
+  const bookingId = String(booking.id ?? '').trim();
+  const guestLinkExtras =
+    bookingId && propertySlug
+      ? await guestBookingEmailLinkPlaceholderExtras({
+          origin: settings.publicGuestAppOrigin,
+          propertySlug,
+          bookingId,
+        })
+      : {
+          property_slug: propertySlug,
+          form_url: '',
+          sd_form_url: '',
+          review_url: '',
+          trip_url: '',
+        };
+  const propertyVars = await buildPropertyPlaceholderVars({
+    propertyId,
+    booking,
+    essentials,
+    revealSecrets: true,
+    revealLabel,
+  });
+  const sectionPlaceholderVars = {
+    ...propertyVars.vars,
+    ...buildBookingPlaceholderVars(booking, settings, guestLinkExtras, branding),
+  };
+
   const sections: StayGuideSectionDto[] = [];
   for (const key of sectionKeys) {
     const builtin = getBuiltinPropertyTemplate(key);
     const resolved = await resolveSectionHtml(
       propertyId,
       key,
-      booking,
       publicOrigin,
-      essentials,
-      revealLabel
+      sectionPlaceholderVars
     );
     sections.push({
       key,
