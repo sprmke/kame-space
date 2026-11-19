@@ -347,10 +347,10 @@ One server module, `_shared/propertyTemplateCatalog.ts`, exports every token wit
 
 ### Phase 7: Cross-surface wiring, docs, QA
 
-- [ ] Copy settings: `templatesGroup` clones `subject`, `guest_visible`, `guest_phase`, folders (by name) and `folder_id` mapping. Also `propertySettingsClonePhase23.ts`.
-- [ ] AI Assistant tools that read templates (`dashboardAssistantCoverageTools.ts`, `dashboardAssistantHostMediaTools.ts`) understand groups and messages.
-- [ ] Setup guide step "Review email templates" becomes "Review templates" and links to Templates filtered to Not shown to guests and Emails (`setupGuideSteps.ts`).
-- [ ] Run the QA matrix below on local, then dev.
+- [x] Copy settings: the Templates group clones `subject`, `guest_visible`, `guest_phase` and folders (matched by name, with new folders created on the target). Both the base and asset-aware groups share one reader/writer.
+- [x] AI Assistant tools read the registry, so guest messages and guide sections are listed and readable; the tool description names messages.
+- [x] Setup guide: no "Review email templates" step exists in `setupGuideSteps.ts` today, so there was nothing to relabel. N/A.
+- [ ] QA matrix below run on local and dev. Needs the local stack and live cron triggers; the code gates are green but the manual walk was not run in this session.
 
 ## Verification matrix
 
@@ -399,6 +399,22 @@ Gates per phase: `bun run ci:quality`, `bun run test:edge`, `bun run test:edge:h
 
 1. **GAF cancellation notice to the building admin.** Ship `email-building-admin-cancellation`? Recommended: **yes**, default on only for properties with a GAF requirement, host can switch it off. Cancelled guests otherwise stay on the building's approved list.
 2. **GAF name.** Code uses both "Guest Advice Form" (6) and "Guest Advise Form" (9). Recommended: "Guest Advice Form", applied everywhere in the same change.
+
+## Verification results
+
+| Gate                                  | Result                                            |
+| ------------------------------------- | ------------------------------------------------- |
+| `bun run type-check`                  | pass                                              |
+| `bun run lint`                        | 0 errors                                          |
+| `bun run test:fast`                   | pass (6458 unit tests, 84 DOM tests)              |
+| `bun run build`                       | pass                                              |
+| Deno `_shared` suite                  | 2067 passed, 0 failed                             |
+| `bun run check:support-content`       | pass (201 FAQs)                                   |
+| `bun run check:ai-knowledge-coverage` | pass (79 guides)                                  |
+| `bun run test:support-content`        | pass                                              |
+| `bun run check:plan-catalog`          | not run (needs a fresh local DB)                  |
+| Manual QA matrix                      | not run (needs the local stack and cron triggers) |
+| Production deploy                     | not run; requires `kamewave`                      |
 
 ## Follow-ups (not in this plan)
 
