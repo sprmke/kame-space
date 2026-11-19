@@ -126,7 +126,7 @@ export type GuestRequestDto = {
 export type ChatTemplateListItem = {
   templateKey: string;
   name: string;
-  category: 'standard' | 'custom';
+  category: 'standard' | 'message' | 'custom';
   description: string | null;
   sectionImageUrl: string | null;
   folderId: string | null;

@@ -26,6 +26,7 @@ import {
   sendBookingAcknowledgement,
   sendBookingCancelledGuest,
   sendBookingCancelledHost,
+  sendBuildingAdminGafCancellation,
   sendReadyForCheckin,
   sendSdRefundFormRequest,
 } from './emailService.ts';
@@ -1299,6 +1300,18 @@ export class WorkflowOrchestrator {
             bookingStatusTo: toStatus,
           });
         }
+      }
+
+      try {
+        await sendBuildingAdminGafCancellation(updatedBooking);
+        emailsSent.push('building_admin_gaf_cancellation');
+      } catch (err) {
+        console.error('[orchestrator] Building admin GAF cancellation email failed:', err);
+        emailsFailed.push('building_admin_gaf_cancellation');
+        await captureSideEffectFailure('email:building_admin_gaf_cancellation', err, {
+          provider: 'resend',
+          bookingStatusTo: toStatus,
+        });
       }
 
       const organizationId = await resolveNotificationOrgId();

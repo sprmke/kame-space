@@ -14,6 +14,8 @@ export type HowItWorksButtonProps = {
   label?: string;
   title: string;
   steps: HowItWorksStep[];
+  /** Optional callout above `tip` (e.g. live platform rates). */
+  notice?: string;
   tip?: string;
   learnMoreHref?: string;
   className?: string;
@@ -31,6 +33,7 @@ export function HowItWorksButton({
   label: labelOverride,
   title,
   steps,
+  notice,
   tip,
   learnMoreHref,
   className,
@@ -73,6 +76,7 @@ export function HowItWorksButton({
         onOpenChange={setOpen}
         title={title}
         steps={steps}
+        notice={notice}
         tip={tip}
         learnMoreHref={learnMoreHref}
       />

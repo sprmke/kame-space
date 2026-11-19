@@ -31,7 +31,7 @@ export const ANALYTICS_DEEP_LINK_ROUTES = {
   marketing: 'marketing',
   public_pages: 'public-pages',
   settings: 'settings',
-  inbox: 'inbox',
+  inbox: 'messages',
   none: null,
 } as const;
 

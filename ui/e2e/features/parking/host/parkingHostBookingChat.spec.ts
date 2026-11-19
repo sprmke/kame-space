@@ -21,7 +21,7 @@ test.describe('@ci parking host booking chat shortcut', () => {
     await page.getByRole('button', { name: 'Open chat with Jamie Park' }).first().click();
 
     await expect(page).toHaveURL(
-      /\/org\/sample-stays-ph\/parking\/slot-12a\/inbox\?conversationId=conv-parking-1&platform=web/
+      /\/org\/sample-stays-ph\/parking\/slot-12a\/messages\?conversationId=conv-parking-1&platform=web/
     );
     const request = new URL(state.lastBookingChatsUrl!);
     expect(request.searchParams.get('parking_id')).toBe('parking-e2e-001');

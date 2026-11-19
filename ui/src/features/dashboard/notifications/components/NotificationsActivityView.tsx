@@ -16,12 +16,10 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 /**
- * In-app activity view of the Notifications hub — the feed owns the view's full
- * height and its scrollport, so there is one scrollbar and pagination runs as
- * the host scrolls.
+ * In-app activity view of the Notifications hub.
  *
- * Delivery settings (this device + push preferences) live only in the header
- * **Manage** sheet. The tab stays feed-first: Sync Center (when needed) + Activity.
+ * Sync Center (when needed) sits above the card. The Activity title + Mark all
+ * row is pinned; only the feed scrolls and pages (20 per request).
  */
 export function NotificationsActivityView() {
   const { orgSlug } = useNotificationsOrgScope();
@@ -53,40 +51,42 @@ export function NotificationsActivityView() {
 
   return (
     <div
-      ref={setScrollRoot}
-      data-admin-content-scroll
       className={cn(
-        'min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain',
+        'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
         bottomTabBarOffsetClassName()
       )}
     >
-      <div className="flex min-h-full w-full min-w-0 flex-col gap-3 sm:gap-4">
-        <SyncCenterCard />
-        <Card className="flex flex-auto flex-col overflow-hidden">
-          <div className="flex shrink-0 items-center justify-between gap-3 px-3 pb-2 pt-3 sm:px-4">
-            <h2 className="text-card-title">Activity</h2>
-            {unreadCount > 0 ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-primary h-8 px-2"
-                onClick={() => markAllRead.mutate()}
-                disabled={markAllRead.isPending}
-              >
-                Mark all as read
-              </Button>
-            ) : null}
-          </div>
+      {/* Returns null when empty so hub tab→card spacing matches Telegram. */}
+      <SyncCenterCard className="mb-3 shrink-0 sm:mb-4" />
+      <Card className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="border-border flex shrink-0 items-center justify-between gap-3 border-b px-3 py-3 sm:px-4">
+          <h2 className="text-card-title">Activity</h2>
+          {unreadCount > 0 ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-primary h-8 px-2"
+              onClick={() => markAllRead.mutate()}
+              disabled={markAllRead.isPending}
+            >
+              Mark all as read
+            </Button>
+          ) : null}
+        </div>
+        <div
+          ref={setScrollRoot}
+          data-admin-content-scroll
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain"
+        >
           <InAppNotificationsPanel
             mode="full"
             pathScope={pathScope}
             variant="feed"
             scrollRoot={scrollRoot}
-            className="flex flex-auto flex-col"
           />
-        </Card>
-      </div>
+        </div>
+      </Card>
     </div>
   );
 }

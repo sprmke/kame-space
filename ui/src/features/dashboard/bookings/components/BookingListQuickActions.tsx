@@ -30,8 +30,22 @@ import { Button } from '@/components/ui/button';
 import { EdgeResponseError } from '@/lib/api/edgeError';
 import { cn } from '@/lib/utils';
 
+/** Fields needed to resolve Inbox destination, guest label, and the chats lookup. */
+export type BookingListQuickActionsRow = Pick<
+  BookingRow,
+  | 'id'
+  | 'booking_kind'
+  | 'property_id'
+  | 'property_slug'
+  | 'parking_id'
+  | 'parking_slug'
+  | 'primary_guest_name'
+  | 'guest_facebook_name'
+  | 'guest_email'
+>;
+
 type Props = {
-  row: BookingRow;
+  row: BookingListQuickActionsRow;
   className?: string;
   /** Stop the parent row/card click from firing. */
   stopPropagation?: boolean;
@@ -49,7 +63,7 @@ function failureMessage(error: unknown): string {
 }
 
 /**
- * Chat shortcut on a bookings list row (table and cards, property, parking and org lists).
+ * Chat shortcut on bookings list surfaces (table Actions, card, kanban, calendar day detail).
  *
  * One thread opens it directly in the property or parking Inbox. Several open a picker. None
  * explains itself and offers a search. Always stays inside Messages.

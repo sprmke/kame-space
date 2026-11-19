@@ -485,6 +485,25 @@ export async function fetchChatTemplatePreview(
   return snapshot;
 }
 
+/** Flattened text for a message template, inserted into the composer as editable text. */
+export async function fetchChatTemplatePlainText(
+  orgSlug: string | null,
+  orgId: string | null,
+  scope: InboxApiScope | null | undefined,
+  templateKey: string,
+  opts?: { conversationId?: string | null; bookingId?: string | null }
+): Promise<string> {
+  const jwt = await getJwt();
+  const url = new URL(withInboxScope(orgUrl('/chat-templates', orgSlug, orgId), scope));
+  url.searchParams.set('template_key', templateKey);
+  if (opts?.conversationId) url.searchParams.set('conversation_id', opts.conversationId);
+  if (opts?.bookingId) url.searchParams.set('booking_id', opts.bookingId);
+  const res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${jwt}` } });
+  const json = (await res.json()) as EdgeJson;
+  const payload = unwrapEdgePayload(json, res.status);
+  return String(payload.plainText ?? '').trim();
+}
+
 /** Scoped `social-inbox-send` URL — for the offline outbox, which needs a concrete URL. */
 export function inboxSendUrl(
   orgSlug: string | null,

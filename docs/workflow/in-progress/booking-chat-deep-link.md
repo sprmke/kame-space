@@ -2,7 +2,7 @@
 title: 'Booking chat deep link'
 status: in-progress
 tags: [workflow, bookings, inbox]
-updated: 2026-11-19
+updated: 2026-11-18
 ---
 
 # Booking chat deep link (UI-09 follow-up)

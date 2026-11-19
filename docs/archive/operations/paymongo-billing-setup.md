@@ -28,8 +28,10 @@ Plan: [`docs/workflow/done/paymongo-subscription-billing.md`](../../workflow/don
 
 1. Complete PayMongo KYB (business registration, ID, proof of address, settlement bank).
 2. Request activation for **QRPH**, **Maya**, and **online banking (Dob)** if not enabled by default.
-3. Create a **separate live webhook** on the production Supabase project URL with its own signing secret.
-4. Store **`PAYMONGO_SECRET_KEY`** (`sk_live_…`) and **`PAYMONGO_WEBHOOK_SECRET`** as **production** Edge secrets only — do not reuse dev keys on prod.
+3. Create a **separate live webhook** on the production Supabase project URL (`https://fworvijbrwpyngycotbz.supabase.co/functions/v1/paymongo-webhook`) with its own signing secret and the five events above: `payment.paid`, `payment.failed`, `payment.refunded`, `link.payment.paid`, `checkout_session.payment.paid`.
+4. Store **`PAYMONGO_SECRET_KEY`** (`sk_live_…`) and **`PAYMONGO_WEBHOOK_SECRET`** as **production** Edge secrets only — do not reuse dev keys on prod. Both are readable only as digests afterwards, so keep the source values safe.
+5. Run one live checkout end to end: Subscribe on `/org/:orgSlug/plans`, pay the smallest plan, confirm the plan flips to active, the receipt email arrives with a working PDF link, the webhook appears in Supabase logs with `200`, and refunding it in PayMongo marks the payment `refunded`.
+6. Confirm the hourly cron still answers 200 after the key swap (`platform-billing-cron`); it authenticates with `PLATFORM_BILLING_CRON_SECRET`, not PayMongo.
 
 ## Env vars
 
@@ -84,7 +86,7 @@ Verified against the real PayMongo **sandbox** on 2026-11-19 by `orgBillingSandb
 | Minimum amount            | PHP 1.00 floor for payment intents in the docs. No per-method minimum was found                                                                                                                   | `MINIMUM_CHARGE_PHP = 20`, deliberately above the floor; the excess becomes account credit                         |
 | Methods on our sessions   | QR Ph and the e-wallets enabled in `platform_payment_settings` (the sandbox showed Maya and Online Banking)                                                                                       | `mapPlatformMethodsToPaymongoCheckout`                                                                             |
 
-**Webhook registration (sandbox account, checked 2026-11-19):** two sandbox webhooks exist and both are **disabled**: one to a local ngrok URL and one to the production project's `paymongo-webhook`. Neither lists `payment.refunded`. Enable the production-project hook and add `payment.refunded` before relying on webhooks; until then payments are recovered by the hourly reconciliation. The production project's `PAYMONGO_SECRET_KEY` and `PAYMONGO_WEBHOOK_SECRET` digests differ from the local `.env.dev.local` values, so confirm which PayMongo account and mode production uses before enabling it.
+**Webhook registration (sandbox account, re-checked 2026-11-19):** the production project's `PAYMONGO_SECRET_KEY` and `PAYMONGO_WEBHOOK_SECRET` now hold the **sandbox** account values, its `paymongo-webhook` hook is **enabled** with the events listed above, and one real purchase end to end (checkout, webhook, receipt PDF, refund) passed on production. The second sandbox hook, pointing at a local ngrok URL, stays disabled. Before go-live, swap in the live keys, enable the live hook with the same events, and run one live checkout (see **Live (production)** above).
 
 **Run the sandbox matrix locally:**
 

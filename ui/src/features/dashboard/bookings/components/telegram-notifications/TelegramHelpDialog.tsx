@@ -8,6 +8,11 @@ import {
 
 import { Button } from '@/components/ui/button';
 import {
+  MODAL_BODY_CLASS,
+  MODAL_FOOTER_CLASS,
+  MODAL_HEADER_CLASS,
+} from '@/components/ui/modal-chrome';
+import {
   ResponsiveModal,
   ResponsiveModalClose,
   ResponsiveModalContent,
@@ -27,6 +32,10 @@ type Props = {
   variant?: 'text' | 'icon';
   className?: string;
 };
+
+/** Same footprint as Manage notifications so a nested open does not leave a rim. */
+const HELP_MODAL_SIZE_CLASS =
+  'max-h-[min(92dvh,760px)] max-w-[min(calc(100vw-1.5rem),44rem)] sm:max-w-[min(92vw,44rem)]';
 
 function TelegramHelpSections({ sections }: { sections: TelegramHelpSection[] }) {
   return (
@@ -115,31 +124,41 @@ export function TelegramHelpDialog({
       </ResponsiveModalTrigger>
       <ResponsiveModalContent
         sheetLayout="split"
-        className="flex max-h-[min(92dvh,52rem)] min-h-0 flex-col overflow-hidden sm:max-w-[min(92vw,42rem)]"
+        /* Above Manage notifications (Dialog z-[100]/[101]) when opened from that sheet. */
+        overlayClassName="z-[102]"
+        className={cn(
+          'z-[103] flex w-full min-h-0 flex-col gap-0 overflow-hidden p-0 pb-0 pt-0 sm:p-0',
+          HELP_MODAL_SIZE_CLASS
+        )}
       >
-        <ResponsiveModalHeader className="shrink-0 px-4 sm:px-5">
+        <ResponsiveModalHeader className={cn('space-y-0 text-left', MODAL_HEADER_CLASS)}>
           <ResponsiveModalTitle>Telegram setup guide</ResponsiveModalTitle>
         </ResponsiveModalHeader>
 
         <Tabs defaultValue={defaultTab} className="flex min-h-0 flex-1 flex-col">
-          <div className="shrink-0 pb-3 max-lg:px-4">
+          <div className={cn('border-border shrink-0 border-b', MODAL_BODY_CLASS, 'py-3')}>
             <TabsList className="bg-muted/45 grid h-auto w-full grid-cols-2 gap-1 rounded-xl p-1">
               <TabsTrigger
                 value="bot-token"
-                className="min-h-[44px] rounded-lg px-2 text-xs font-semibold sm:min-h-[40px] sm:px-3 sm:text-sm"
+                className="min-h-[40px] rounded-lg px-2 text-xs font-semibold sm:px-3 sm:text-sm"
               >
                 How to get bot token
               </TabsTrigger>
               <TabsTrigger
                 value="chat-id"
-                className="min-h-[44px] rounded-lg px-2 text-xs font-semibold sm:min-h-[40px] sm:px-3 sm:text-sm"
+                className="min-h-[40px] rounded-lg px-2 text-xs font-semibold sm:px-3 sm:text-sm"
               >
                 How to get chat ID
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 px-4 sm:px-5">
+          <div
+            className={cn(
+              'min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]',
+              MODAL_BODY_CLASS
+            )}
+          >
             <TabsContent value="bot-token" className="mt-0 focus-visible:outline-none">
               <TelegramHelpSections sections={TELEGRAM_BOT_TOKEN_HELP} />
             </TabsContent>
@@ -149,9 +168,9 @@ export function TelegramHelpDialog({
           </div>
         </Tabs>
 
-        <ResponsiveModalFooter className="shrink-0 px-4 sm:px-5 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <ResponsiveModalFooter className={MODAL_FOOTER_CLASS}>
           <ResponsiveModalClose asChild>
-            <Button type="button" variant="secondary" size="sm">
+            <Button type="button" className="w-full sm:w-auto">
               Close
             </Button>
           </ResponsiveModalClose>

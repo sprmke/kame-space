@@ -47,6 +47,12 @@ test.describe('parking pricing edit @ci', () => {
       page.getByText(/service fee at checkout \(5% \+ ₱15 per booking\)/i)
     ).toBeVisible();
 
+    // Direct link card compares 5% with 10% on the same (draft) weekday rate.
+    await expect(page.getByText('Weekday with this link')).toBeVisible();
+    await expect(page.getByText('₱332')).toBeVisible();
+    await expect(page.getByText(/vs ₱315 at the standard fee/)).toBeVisible();
+    await expect(page.getByText(/5% vs 10%/)).toBeVisible();
+
     // Under the minimum: error shown and Save is disabled.
     await weekday.fill('99');
     await expect(weekdayPreview.getByText('Enter at least ₱100.')).toBeVisible();

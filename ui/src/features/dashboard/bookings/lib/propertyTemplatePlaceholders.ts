@@ -70,13 +70,19 @@ export const PROPERTY_TEMPLATE_SAMPLE_VARS: Record<string, string> = {
   guest_phone: '09171234567',
   guest_email: 'jane.guest@example.com',
   guest_facebook_name: 'Jane Guest',
+  guest_first_name: 'Jane',
   guest_name: 'Jane Guest',
   check_in_date: 'July 10, 2026',
   check_out_date: 'July 12, 2026',
   check_in_time: '2:00 PM',
   check_out_time: '11:00 AM',
+  stay_dates: '(July 10, 2026 to July 12, 2026)',
   nights: '2',
+  nights_label: '2 nights',
   pax: '2',
+  guests_label: '2 guests',
+  review_window_days: '14',
+  expires_in_days: '2',
   tower_and_unit_number: 'Monaco 2604',
   unit_number: 'Monaco 2604',
   property_name: 'Sample Property',
@@ -92,14 +98,22 @@ export const PROPERTY_TEMPLATE_SAMPLE_VARS: Record<string, string> = {
   pet_name: 'Buddy',
   pet_type: 'Dog',
   pet_breed: 'Shih Tzu',
+  pet_age: '2',
   car_brand_model: 'Toyota Vios',
   car_color: 'White',
   car_plate_number: 'ABC 1234',
   total_guest_balance: '₱3,599',
   sd_form_url:
     'https://kamespace.com/properties/azure-north/sd-form?bookingId=00000000-0000-4000-8000-000000000001',
+  form_url:
+    'https://kamespace.com/properties/azure-north/form?bookingId=00000000-0000-4000-8000-000000000001',
+  review_url:
+    'https://kamespace.com/properties/azure-north/guest-review?bookingId=00000000-0000-4000-8000-000000000001',
   trip_url:
     'https://kamespace.com/properties/azure-north/trip?bookingId=00000000-0000-4000-8000-000000000001',
+  messages_url:
+    'https://kamespace.com/properties/azure-north/messages?bookingId=00000000-0000-4000-8000-000000000001',
+  stay_guide_url: 'https://kamespace.com/properties/azure-north/stay-guide?token=sample-token',
   security_deposit: '₱3,000.00',
   facebook_page_url: 'https://www.facebook.com/example',
   airbnb_url: 'https://www.airbnb.com/rooms/example',
@@ -108,6 +122,8 @@ export const PROPERTY_TEMPLATE_SAMPLE_VARS: Record<string, string> = {
   contact_email: 'host@example.com',
   social_contact_mentions:
     'message us on <a href="https://www.facebook.com/example">Facebook</a> or <a href="https://www.airbnb.com/rooms/example">Airbnb</a>',
+  cancellation_intro: 'Your booking was cancelled.',
+  cancellation_request_title: 'Cancellation request received',
 };
 
 export function applyPropertyTemplatePlaceholders(html: string): string {
@@ -120,4 +136,15 @@ export function applyPropertyTemplatePlaceholders(html: string): string {
     }
   }
   return out;
+}
+
+/**
+ * A subject placeholder should read like a real subject, not like `{{tower_and_unit_number}}`.
+ * Sample values fill known tokens; unknown block tokens are dropped.
+ */
+export function previewPropertyTemplateSubject(subject: string): string {
+  return applyPropertyTemplatePlaceholders(subject)
+    .replace(/\{\{[^{}]*\}\}/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }

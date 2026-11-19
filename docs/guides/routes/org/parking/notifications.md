@@ -38,11 +38,11 @@ Page subtitle: "Manage in-app notifications and Telegram alerts for this parking
 
 **Hub layout.** Four KPI cards above the tabs: **Unread**, **Messages**, **Telegram on** (modules enabled / total) and **Connected** (modules with a bot token and chat ID / total). Each card jumps to the tab it describes. **Activity** and **Telegram** follow, and the activity list is the first thing on the tab. The Activity feed is **org-wide**, not limited to this slot.
 
-**Manage sheet.** Header **Manage** (gear icon in the phone hero) has two tabs. **Activity** uses one card for **Push notifications**, **Push preferences** and **Quiet hours** (same layout as property). **Telegram** holds the **Telegram delivery** master switch, Setup Guide, the shared bot token card and the three module cards.
+**Manage sheet.** Header **Manage** (gear icon in the phone hero) has two tabs with standard modal chrome. **Activity** uses one card for **Push notifications**, **Push preferences** and **Quiet hours**. **Telegram** uses the same one-card pattern: **Telegram delivery** on top, then Setup Guide, shared bot token, and module cards underneath when delivery is on.
 
 **Off states.** Each tab leads with a master switch. While it loads the row skeletons instead of claiming the channel is unavailable. With a channel off, its controls are hidden and replaced by a short panel describing what turning it back on restores.
 
-**Telegram tab.** One card: **Telegram delivery** master switch, then either the paused panel (off), the empty status panel (on, nothing sent), or the read-only history (module, time, text, **Failed** badge). 20 per page with Newer / Older, 15-day window, scoped to this parking slot, and no Telegram API calls. Activity empty uses the same status-panel pattern as property.
+**Telegram tab.** One card with a pinned **Telegram** header (delivery switch lives in **Manage** only). Then either the paused empty (off), the centered empty (on, nothing sent), or the read-only history (module, time, text, **Failed** badge). 20 per page with scroll load-more, 15-day window, scoped to this parking slot, and no Telegram API calls. Activity empty matches the same centered pattern as property.
 
 **How it works** is the **?** beside the **Notifications** page title (phone hero and desktop header), with the same copy as the property page: in-app, phone push and Telegram, plus the per-channel mute rule and Manila quiet hours.
 

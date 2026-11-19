@@ -58,6 +58,21 @@ export function guestTripPath(
   return appendGuestBookingAccessQuery(path, accessToken);
 }
 
+/** Guest chat for one booking. Booking-scoped so the thread and context are correct. */
+export function guestMessagesPath(
+  origin: string,
+  propertySlug: string,
+  bookingId: string,
+  accessToken?: string | null
+): string {
+  const base = origin.replace(/\/+$/, '');
+  const slug = propertySlug.trim();
+  const id = bookingId.trim();
+  if (!slug || !id) return base;
+  const path = `${base}/properties/${encodeURIComponent(slug)}/messages?bookingId=${encodeURIComponent(id)}`;
+  return appendGuestBookingAccessQuery(path, accessToken);
+}
+
 export function guestStayGuidePath(origin: string, propertySlug: string, token: string): string {
   const base = origin.replace(/\/+$/, '');
   const slug = propertySlug.trim();

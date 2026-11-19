@@ -6,6 +6,7 @@ import { resolveAppSettings } from './appSettings.ts';
 import { buildGuestFacingPlaceholderVars, loadGuestFacingContactInfo } from './guestContactInfo.ts';
 import { loadPropertyEmailBranding } from './propertyEmailBranding.ts';
 import {
+  applyPropertyTemplatePlaceholders,
   renderPropertyTemplateSendEmail,
   type PropertyEmailTemplateKey,
 } from './propertyTemplateEmail.ts';
@@ -13,6 +14,7 @@ import { buildSampleDynamicSections } from './propertyTemplateEmailSections.ts';
 import { normalizeBlockLevelPlaceholdersInHtml } from './normalizeBlockLevelPlaceholders.ts';
 import { normalizeEmailCalloutPlaceholders } from './normalizeEmailCalloutPlaceholders.ts';
 import { escapeHtml } from './renderEmailHtml.ts';
+import { buildPropertyPlaceholderVars } from './propertyTemplatePropertyVars.ts';
 import { getBuiltinPropertyTemplate, type PropertyTemplateCategory } from './propertyTemplates.ts';
 import { PROPERTY_TEMPLATE_SAMPLE_VARS } from './propertyTemplatePlaceholders.ts';
 
@@ -22,14 +24,23 @@ export async function renderPropertyTemplatePreview(input: {
   category: PropertyTemplateCategory;
   content: string;
   name?: string;
-}): Promise<{ html: string; mode: 'standard' | 'email-shell' }> {
+  /** Draft subject. Falls back to the shipped default. */
+  subject?: string | null;
+}): Promise<{ html: string; mode: 'standard' | 'email-shell'; subject: string }> {
   if (input.category === 'standard') {
-    let resolvedContent = input.content;
-    for (const [key, value] of Object.entries(PROPERTY_TEMPLATE_SAMPLE_VARS)) {
-      resolvedContent = resolvedContent.split(`{{${key}}}`).join(value);
-    }
+    /* Guide sections use the same property tokens as the live guide. Sample values only fill
+     * guest-specific or booking-specific tokens that a preview cannot know. */
+    const sampleVars = Object.fromEntries(
+      Object.entries(PROPERTY_TEMPLATE_SAMPLE_VARS).map(([key, value]) => [key, escapeHtml(value)])
+    );
+    const { vars } = await buildPropertyPlaceholderVars({ propertyId: input.propertyId });
+    const resolvedContent = applyPropertyTemplatePlaceholders(input.content, {
+      ...sampleVars,
+      ...vars,
+    });
     return {
       mode: 'standard',
+      subject: '',
       html: `<!doctype html><html><head><meta charset="utf-8"/><style>
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:24px;color:#333;line-height:1.65;max-width:720px;margin:0 auto;font-size:15px}
         h1{font-size:1.875rem;font-weight:700;margin:1.5rem 0 .5rem}h2{font-size:1.5rem;font-weight:600;margin:1.25rem 0 .5rem}h3{font-size:1.25rem;font-weight:600;margin:1rem 0 .5rem}
@@ -44,6 +55,9 @@ export async function renderPropertyTemplatePreview(input: {
   const settings = await resolveAppSettings(input.propertyId);
   const branding = await loadPropertyEmailBranding(input.propertyId);
   const guestContact = await loadGuestFacingContactInfo(input.propertyId, settings);
+  const { vars: propertyVars } = await buildPropertyPlaceholderVars({
+    propertyId: input.propertyId,
+  });
   const builtin = getBuiltinPropertyTemplate(input.templateKey);
   const dynamicSections = buildSampleDynamicSections({
     templateKey: input.templateKey,
@@ -56,6 +70,8 @@ export async function renderPropertyTemplatePreview(input: {
     ...Object.fromEntries(
       Object.entries(PROPERTY_TEMPLATE_SAMPLE_VARS).map(([key, value]) => [key, escapeHtml(value)])
     ),
+    // Real property data wins over sample values, so the preview matches a live send.
+    ...propertyVars,
     tower_and_unit_number: escapeHtml(branding.unitLabel),
     unit_number: escapeHtml(branding.unitLabel),
     property_name: escapeHtml(branding.propertyName),
@@ -78,5 +94,11 @@ export async function renderPropertyTemplatePreview(input: {
     contentOverride: previewContent,
   });
 
-  return { mode: 'email-shell', html };
+  const rawSubject =
+    input.subject?.trim() || getBuiltinPropertyTemplate(input.templateKey)?.defaultSubject || '';
+  const subject = applyPropertyTemplatePlaceholders(rawSubject, placeholderVars)
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return { mode: 'email-shell', html, subject };
 }

@@ -1,6 +1,9 @@
 import { assertStringIncludes, assertNotMatch } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 
-import { buildPaymentBreakdownSectionFromBooking } from './propertyTemplateEmailSections.ts';
+import {
+  buildPaymentBreakdownSectionFromBooking,
+  buildSdRefundChecklistSectionHtml,
+} from './propertyTemplateEmailSections.ts';
 import type { GuestSubmission } from './types.ts';
 
 const peso = (amount: number | null | undefined) => `PHP ${amount ?? 0}`;
@@ -39,4 +42,22 @@ Deno.test('Direct payment breakdown keeps the full pricing table', () => {
   assertStringIncludes(html, 'Booking rate balance');
   assertStringIncludes(html, 'Down payment paid');
   assertStringIncludes(html, 'Security deposit');
+});
+
+Deno.test('check-out checklist uses the booking check-out time', () => {
+  const html = buildSdRefundChecklistSectionHtml({
+    unitLabel: 'Monaco 2604',
+    checkOutTime: '12:00 PM',
+  });
+
+  assertStringIncludes(html, '12:00 PM');
+  assertNotMatch(html, /11:00 AM/);
+  assertNotMatch(html, /strictly/);
+});
+
+Deno.test('check-out checklist makes no time claim when the time is unknown', () => {
+  const html = buildSdRefundChecklistSectionHtml({ unitLabel: 'Monaco 2604' });
+
+  assertStringIncludes(html, 'Please check out by the time shown on your booking.');
+  assertNotMatch(html, /11:00 AM/);
 });

@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 
 import {
   AdminDataTable,
+  AdminTableActionsTh,
   AdminTableFlagsCell,
   AdminTableGuestCell,
   AdminTableHeadRow,
@@ -109,9 +110,7 @@ export function BookingTable({
         <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Pax</AdminTableTh>
         <AdminTableTh className="hidden px-3 sm:table-cell sm:px-4">Flags</AdminTableTh>
         <AdminTableTh className="hidden px-3 sm:px-4 lg:table-cell">Amount</AdminTableTh>
-        <AdminTableTh className="pl-2 pr-3 sm:pl-3 sm:pr-4">
-          <span className="sr-only">View</span>
-        </AdminTableTh>
+        <AdminTableActionsTh />
       </AdminTableHeadRow>
       <tbody>
         {rows.map((row, i) => (
@@ -180,17 +179,13 @@ function BookingTableRow({
         </td>
       ) : null}
 
-      {/* The chat shortcut sits beside the guest so it stays in view when the table scrolls sideways. */}
       <td className={adminTableCell.body}>
-        <div className="flex items-center justify-between gap-1">
-          <AdminTableGuestCell
-            primary_guest_name={row.primary_guest_name}
-            guest_facebook_name={row.guest_facebook_name}
-            guest_email={row.guest_email}
-            valid_id_url={row.valid_id_url}
-          />
-          <BookingListQuickActions row={row} className="shrink-0" />
-        </div>
+        <AdminTableGuestCell
+          primary_guest_name={row.primary_guest_name}
+          guest_facebook_name={row.guest_facebook_name}
+          guest_email={row.guest_email}
+          valid_id_url={row.valid_id_url}
+        />
       </td>
 
       {/* Stay */}
@@ -228,9 +223,12 @@ function BookingTableRow({
         </span>
       </td>
 
-      {/* Action - chevron only, click is handled by the whole row */}
+      {/* Chat + chevron; row click still opens the booking */}
       <td className={adminTableCell.action}>
-        <AdminTableRowAffordance />
+        <div className="inline-flex items-center justify-end gap-0.5">
+          <BookingListQuickActions row={row} />
+          <AdminTableRowAffordance />
+        </div>
       </td>
     </tr>
   );

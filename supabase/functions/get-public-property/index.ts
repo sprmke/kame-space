@@ -13,7 +13,14 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { jsonError, jsonSuccess } from '../_shared/httpResponse.ts';
 import { resolveListingSlugRedirect } from '../_shared/listingSlugRedirect.ts';
 import { loadPublicPropertyById } from '../_shared/publicPropertyService.ts';
-import { publicGetRateLimitGate } from '../_shared/publicEndpointRateLimit.ts';
+import {
+  publicCachedGetRateLimitGate,
+  publicGetRateLimitGate,
+} from '../_shared/publicEndpointRateLimit.ts';
+import {
+  loadPublicPropertyDetailCached,
+  peekPublicPropertyDetail,
+} from '../_shared/publicPropertyDetailCache.ts';
 import {
   readPropertyIdFromUrl,
   readPropertySlugFromUrl,
@@ -26,16 +33,34 @@ servePublic('get-public-property', async (req) => {
     return jsonError(req, `Method ${req.method} not allowed`, 405);
   }
 
-  const limited = await publicGetRateLimitGate(req, 'get-public-property');
-  if (limited) return limited;
-
   const url = new URL(req.url);
   const propertyIdParam = readPropertyIdFromUrl(url);
   const slug = readPropertySlugFromUrl(url);
 
   if (!propertyIdParam && !slug) {
+    const limitedBadRequest = await publicGetRateLimitGate(req, 'get-public-property');
+    if (limitedBadRequest) return limitedBadRequest;
     return jsonError(req, 'property or property_id query param is required', 400);
   }
+
+  const previewRequested =
+    url.searchParams.get('preview') === '1' || url.searchParams.get('embed') === '1';
+  const lookup = { slug: propertyIdParam ? null : slug, id: propertyIdParam };
+
+  // A cache hit costs no database work, so it skips the durable counter write (a database
+  // write per request, which is what saturated the public reads under load) and is
+  // counted in memory. Host preview never reads or writes the cache.
+  if (!previewRequested) {
+    const cached = await peekPublicPropertyDetail(lookup);
+    if (cached) {
+      const burst = await publicCachedGetRateLimitGate(req, 'get-public-property');
+      if (burst) return burst;
+      return jsonSuccess(req, cached, undefined, 'publicDynamic');
+    }
+  }
+
+  const limited = await publicGetRateLimitGate(req, 'get-public-property');
+  if (limited) return limited;
 
   const propertyId = propertyIdParam ?? (await resolvePropertyIdBySlug(slug!));
   if (!propertyId) {
@@ -50,10 +75,12 @@ servePublic('get-public-property', async (req) => {
     return jsonError(req, 'Property not found', 404);
   }
 
-  const previewRequested =
-    url.searchParams.get('preview') === '1' || url.searchParams.get('embed') === '1';
   const hostPreview = previewRequested && (await hasHostPreviewAccess(req, propertyId));
-  const detail = await loadPublicPropertyById(propertyId, { allowInactive: hostPreview });
+  const detail = previewRequested
+    ? await loadPublicPropertyById(propertyId, { allowInactive: hostPreview })
+    : await loadPublicPropertyDetailCached(lookup, () =>
+        loadPublicPropertyById(propertyId, { allowInactive: false })
+      );
 
   if (!detail) {
     return jsonError(req, 'Property not found', 404);

@@ -14,11 +14,12 @@ Route: `/org/:orgSlug/property/:propertySlug/analytics`
 > Ask Analytics), Phase 5 shipped as org portfolio rollup + CSV export.
 > Plan: [`../../../../workflow/for-testing/host-analytics-module.md`](../../../../workflow/for-testing/host-analytics-module.md)
 
-## Needs promotion this week
+## Promote this week
 
-`OrgMarketingRanking` sits above the org listings list. It ranks unlocked property rows by open
-nights in the next 30 days times ADR, so a cheap listing with one gap never outranks an expensive
-listing with an empty week. Each row links straight to that property's plan.
+`OrgMarketingRanking` is a compact strip above the org listings list (not a full surface card).
+It ranks unlocked property rows by open nights in the next 30 days times ADR, so a cheap listing
+with one gap never outranks an expensive listing with an empty week. Each row links straight to
+that property's plan.
 
 - Hidden when every listing is full or the org has no unlocked properties.
 - Parkings are excluded: the planner markets properties only.

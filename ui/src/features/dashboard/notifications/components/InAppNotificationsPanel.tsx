@@ -116,7 +116,7 @@ export function InAppNotificationsPanel({
     if (variant === 'dropdown') {
       return 'max-h-[min(24rem,60vh)] overflow-y-auto overscroll-contain';
     }
-    /* Feed: the hub view's scrollport owns scroll, so one scrollbar, not two. */
+    /* Feed: Activity card scrollport owns scroll (header stays pinned above). */
     return undefined;
   }, [variant]);
 
@@ -140,13 +140,9 @@ export function InAppNotificationsPanel({
   }
 
   if (notifications.length === 0) {
-    /* Hub feed gets the status panel; bell/sheet stays a short line. */
+    /* Hub feed gets the centered empty; bell/sheet stays a short line. */
     if (variant === 'feed') {
-      return (
-        <div className={cn('px-3 py-4 sm:px-4 sm:py-5', className)}>
-          <ActivityEmptyPanel className="border-0 bg-transparent px-0 py-2 sm:px-0 sm:py-2" />
-        </div>
-      );
+      return <ActivityEmptyPanel className={className} />;
     }
 
     return (
@@ -169,23 +165,23 @@ export function InAppNotificationsPanel({
       className={cn('min-w-0', variant === 'sheet' && 'flex min-h-0 flex-1 flex-col', className)}
     >
       <div ref={scrollRef} className={listScrollClassName}>
-        <ul
-          aria-label="Notifications"
-          className={variant === 'feed' ? 'divide-border/60 divide-y' : undefined}
-        >
+        <ul aria-label="Notifications" className="divide-border divide-y">
           {notifications.map((notification) => {
             const Icon = notificationIconFor(notification.type);
             const stayLabel = formatNotificationStayLabel(notification.metadata);
             const inboxPlatform = notificationInboxPlatform(notification.metadata);
             const platformLabel = formatNotificationInboxPlatformLabel(notification.metadata);
+            const unread = !notification.isRead;
             return (
               <li key={notification.id}>
                 <button
                   type="button"
                   onClick={() => handleRowClick(notification)}
                   className={cn(
-                    'hover:bg-muted/60 flex min-h-[44px] w-full items-start gap-2.5 px-3 py-2.5 text-left transition-colors sm:gap-3 sm:px-4',
-                    !notification.isRead && 'bg-primary/5',
+                    'hover:bg-muted/50 flex min-h-[44px] w-full items-start gap-2.5 border-l-2 px-3 py-2.5 text-left transition-colors sm:gap-3 sm:px-4',
+                    unread
+                      ? 'border-l-primary bg-primary/[0.06]'
+                      : 'border-l-transparent',
                     variant === 'feed' && 'sm:py-3'
                   )}
                 >
@@ -199,9 +195,9 @@ export function InAppNotificationsPanel({
                     <span
                       className={cn(
                         'mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full sm:size-8',
-                        notification.isRead
-                          ? 'bg-muted text-muted-foreground'
-                          : 'bg-primary/10 text-primary'
+                        unread
+                          ? 'bg-primary/15 text-primary'
+                          : 'bg-muted text-muted-foreground'
                       )}
                     >
                       <Icon className="size-3.5 sm:size-4" aria-hidden />
@@ -215,24 +211,21 @@ export function InAppNotificationsPanel({
                           platformLabel={platformLabel}
                           nameClassName={cn(
                             'text-[13px] sm:text-sm',
-                            notification.isRead ? 'font-medium' : 'font-semibold'
+                            unread ? 'font-semibold' : 'font-medium'
                           )}
                         />
                       ) : (
                         <span
                           className={cn(
                             'truncate text-[13px] sm:text-sm',
-                            notification.isRead ? 'font-medium' : 'font-semibold'
+                            unread ? 'font-semibold' : 'font-medium'
                           )}
                         >
                           {formatNotificationDisplayTitle(notification)}
                         </span>
                       )}
-                      {!notification.isRead ? (
-                        <span
-                          className="bg-primary mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
-                          aria-hidden
-                        />
+                      {unread ? (
+                        <span className="bg-primary mt-1 size-2 shrink-0 rounded-full" aria-hidden />
                       ) : null}
                     </span>
                     {stayLabel ? (
@@ -257,7 +250,7 @@ export function InAppNotificationsPanel({
           })}
         </ul>
 
-        {variant === 'feed' && (hasNextPage || isFetchingNextPage) ? (
+        {(hasNextPage || isFetchingNextPage) && mode === 'full' ? (
           <div ref={sentinelRef} role="status" aria-live="polite" aria-busy={isFetchingNextPage}>
             {isFetchingNextPage ? (
               <div className="px-4 pb-2 pt-1">

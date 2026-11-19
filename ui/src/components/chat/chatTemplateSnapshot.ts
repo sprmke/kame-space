@@ -7,7 +7,7 @@
 export type ChatTemplateSnapshot = {
   templateKey: string;
   name: string;
-  category: 'standard' | 'custom';
+  category: 'standard' | 'message' | 'custom';
   html: string;
   sectionImageUrl: string | null;
   propertyId: string;

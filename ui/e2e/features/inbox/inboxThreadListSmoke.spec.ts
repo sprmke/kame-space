@@ -10,7 +10,7 @@ import {
 test.describe('@ci inbox thread list smoke', () => {
   test('mock inbox shows seeded conversations', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
-    await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/inbox?mock=true`);
+    await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/messages?mock=true`);
     await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible({
       timeout: 20_000,
     });
@@ -19,7 +19,7 @@ test.describe('@ci inbox thread list smoke', () => {
 
   test('open Facebook thread shows org Meta badge', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
-    await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/inbox?mock=true`);
+    await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/messages?mock=true`);
     await page.getByText('Maria Santos').click();
     await expect(page.getByText('Org Meta')).toBeVisible({ timeout: 15_000 });
   });
@@ -29,11 +29,11 @@ test.describe('@ci inbox thread list smoke', () => {
       multiProperty: true,
       crossPropertyBookingSeeded: true,
     });
-    await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/inbox?mock=true`);
+    await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/messages?mock=true`);
     await page.getByText('Maria Santos').click();
     const switchLink = page.getByRole('link', { name: /Looks like Solea Cebu/i });
     await expect(switchLink).toBeVisible({ timeout: 15_000 });
     await switchLink.click();
-    await expect(page).toHaveURL(new RegExp(`/property/${TEAM_E2E_PROPERTY_SLUG_2}/inbox`));
+    await expect(page).toHaveURL(new RegExp(`/property/${TEAM_E2E_PROPERTY_SLUG_2}/messages`));
   });
 });

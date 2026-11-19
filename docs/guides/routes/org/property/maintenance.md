@@ -27,7 +27,7 @@ Single-page maintenance view (no tabs), structured like Finance.
 
 **Header (top right):** date range filter, **Export report**, **Add reminder**. On **phone/tablet**, Add + export options live in one hero ··· menu; the overlap toolbar is date range only.
 
-**Summary cards:** Total, Telegram enabled, Completed, Pending — `AdminMetricCard` styling (matches Finance/Bookings).
+**Summary cards:** Total, Completed, Pending, Telegram enabled — `AdminMetricCard` styling (matches Finance/Bookings).
 
 **Reminders toolbar** (`MaintenanceRemindersToolbar`):
 
@@ -36,7 +36,7 @@ Single-page maintenance view (no tabs), structured like Finance.
 
 Status, category, and Telegram filters apply **client-side** on items already loaded for the date range; search still uses the API `q` param. List/card views paginate filtered results; calendar shows all matching rows for the period.
 
-**Reminders list:** table / card / calendar (`?view=table|card|calendar`). CRUD via a **3-step** modal (Details → Reminders → Preview); recurring series and mark-as-done supported. On phone, card rows match Bookings density: title + **⋯** on the first line; status badge · date · category · recurrence on the second; edit / delete / series open from the **⋯** sheet (not inline icon buttons). Notes stay hidden until edit. `sm+` keeps the taller stacked card with notes and a footer action bar.
+**Reminders list:** table / card / calendar (`?view=table|card|calendar`). CRUD via a **3-step** modal (Details → Reminders → Preview); recurring series and mark-as-done supported. **Next / Save** stay disabled until the active step’s required fields are valid; invalid fields show a red border plus the error line (validate on blur, re-check on change). Desktop table has a labeled **Actions** column with always-visible edit / delete / series icons (not hover-only). On phone, card rows match Bookings density: title + **⋯** on the first line; status badge · date · category · recurrence on the second; edit / delete / series open from the **⋯** sheet (not inline icon buttons). Notes stay hidden until edit. `sm+` cards use fixed slots (date → title → meta → notes) with bottom padding above the action bar so notes never sit on the divider.
 
 **Category picker** (`CategoryCombobox`, shared with Finance): presets are ordered by trade and frequency (plumbing, electrical, aircon, appliance, cleaning, pest control, repairs, painting, structural, landscaping, pool, safety, amenities, supplies, utilities, other). Typing filters the list; the pinned **Use "…"** row saves a custom category. Choosing **Other (type your own)** clears the field and prompts for a custom name. Enter picks the highlighted preset or the typed value, Escape restores the value from before opening. Presets live in `maintenanceCategories.ts`.
 

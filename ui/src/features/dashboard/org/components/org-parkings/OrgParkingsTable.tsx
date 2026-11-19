@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import {
   AdminDataTable,
+  AdminTableActionsTh,
   AdminTableHeadRow,
   AdminTableTh,
   adminTableBodyText,
@@ -47,9 +48,7 @@ export function OrgParkingsTable({ parkings, orgSlug }: Props) {
         <AdminTableTh className="hidden sm:table-cell">Reservations</AdminTableTh>
         <AdminTableTh className="hidden lg:table-cell">Revenue</AdminTableTh>
         <AdminTableTh className="hidden lg:table-cell">Occupancy</AdminTableTh>
-        <AdminTableTh className="w-12 pr-2 sm:pr-4">
-          <span className="sr-only">Actions</span>
-        </AdminTableTh>
+        <AdminTableActionsTh />
       </AdminTableHeadRow>
       <tbody>
         {parkings.map((parking, index) => {

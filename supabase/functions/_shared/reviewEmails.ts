@@ -11,6 +11,14 @@ import { resolvePublicGuestAppOrigin } from './publicAppOrigin.ts';
 import { escapeHtml, loadEmailTemplate, replacePlaceholders } from './renderEmailHtml.ts';
 import { createServiceClient } from './orgAuth.ts';
 import { sendResendEmail } from './sendResendEmail.ts';
+import { resolveAppSettings } from './appSettings.ts';
+import {
+  buildBookingPlaceholderVars,
+  renderPropertyTemplateSendEmail,
+  resolvePropertyTemplateSubject,
+} from './propertyTemplateEmail.ts';
+import { formatResendFromAddress, loadPropertyEmailBranding } from './propertyEmailBranding.ts';
+import { getBuiltinPropertyTemplate } from './propertyTemplates.ts';
 
 async function sendReviewNotice(opts: {
   to: string | null | undefined;
@@ -94,6 +102,71 @@ async function guestReviewLink(
   return guestGuestReviewPath(resolvePublicGuestAppOrigin(null), propertySlug, bookingId, token);
 }
 
+async function sendReviewWindowEmail(input: {
+  templateKey: 'email-review-request' | 'email-review-reminder';
+  bookingId: string;
+  propertyId: string;
+  guestEmail: string | null;
+  guestName: string;
+  accessToken?: string | null;
+}): Promise<boolean> {
+  const to = input.guestEmail?.trim();
+  if (!to) return false;
+  if (await isEmailSuppressed(to)) return false;
+
+  const property = await loadPropertyEmailBits(input.propertyId);
+  const url = await guestReviewLink(property.slug, input.bookingId, input.accessToken);
+
+  const { data: booking } = await createServiceClient()
+    .from('guest_submissions')
+    .select('*')
+    .eq('id', input.bookingId)
+    .eq('property_id', input.propertyId)
+    .maybeSingle();
+  if (!booking) return false;
+
+  const settings = await resolveAppSettings(input.propertyId);
+  const branding = await loadPropertyEmailBranding(input.propertyId);
+  const placeholderVars = buildBookingPlaceholderVars(
+    booking as never,
+    settings,
+    { review_url: url, property_slug: property.slug },
+    branding
+  );
+  placeholderVars.review_url = escapeHtml(url);
+
+  const html = await renderPropertyTemplateSendEmail({
+    propertyId: input.propertyId,
+    templateKey: input.templateKey,
+    emailTitle: getBuiltinPropertyTemplate(input.templateKey)?.label ?? 'Review',
+    branding,
+    placeholderVars,
+    booking: booking as never,
+  });
+  const subject = await resolvePropertyTemplateSubject({
+    propertyId: input.propertyId,
+    templateKey: input.templateKey,
+    vars: placeholderVars,
+    fallback:
+      input.templateKey === 'email-review-request'
+        ? `How was your stay at ${property.name}?`
+        : `Reminder: review ${property.name}`,
+  });
+
+  await sendResendEmail({
+    from: formatResendFromAddress(
+      `${branding.unitLabel} - ${branding.organizationName}`,
+      branding.fromEmail
+    ),
+    to: [to],
+    reply_to: settings.emailReplyTo,
+    subject,
+    html,
+    errorLabel: 'email',
+  });
+  return true;
+}
+
 export async function sendReviewRequestEmail(input: {
   bookingId: string;
   propertyId: string;
@@ -101,19 +174,7 @@ export async function sendReviewRequestEmail(input: {
   guestName: string;
   accessToken?: string | null;
 }): Promise<boolean> {
-  const property = await loadPropertyEmailBits(input.propertyId);
-  const url = await guestReviewLink(property.slug, input.bookingId, input.accessToken);
-  return sendReviewNotice({
-    to: input.guestEmail,
-    guestName: input.guestName,
-    propertyName: property.name,
-    brandColor: property.brandColor,
-    subject: `How was your stay at ${property.name}?`,
-    headline: `How was your stay at ${property.name}?`,
-    body: 'You have 14 days to leave a review. The host will not see it until they review you, or the window closes.',
-    ctaLabel: 'Leave a review',
-    ctaUrl: url,
-  });
+  return sendReviewWindowEmail({ ...input, templateKey: 'email-review-request' });
 }
 
 export async function sendReviewReportDecisionEmail(input: {
@@ -193,17 +254,5 @@ export async function sendReviewReminderEmail(input: {
   guestName: string;
   accessToken?: string | null;
 }): Promise<boolean> {
-  const property = await loadPropertyEmailBits(input.propertyId);
-  const url = await guestReviewLink(property.slug, input.bookingId, input.accessToken);
-  return sendReviewNotice({
-    to: input.guestEmail,
-    guestName: input.guestName,
-    propertyName: property.name,
-    brandColor: property.brandColor,
-    subject: `Reminder: review ${property.name}`,
-    headline: 'A few days left to review',
-    body: 'Your review window closes soon. You can skip this. The host still will not see an unpublished review.',
-    ctaLabel: 'Leave a review',
-    ctaUrl: url,
-  });
+  return sendReviewWindowEmail({ ...input, templateKey: 'email-review-reminder' });
 }

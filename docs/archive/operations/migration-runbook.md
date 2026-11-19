@@ -294,6 +294,12 @@ The linked database’s **`supabase_migrations.schema_migrations`** lists a **ve
 3. **If the history row is wrong** but live schema matches your committed migrations (**`supabase db diff --linked`**): **`bunx supabase@latest migration repair <VERSION> --status reverted`** then **`db push`**. **`repair`** only adjusts the history table — it **does not** roll back DDL; if that migration created objects your chain would recreate, you may hit **already exists**.
 4. **`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` warnings** from the CLI during push/dump: harmless if OAuth is configured in Dashboard for hosted projects.
 
+**Never rename a migration the linked database has already applied.** Renaming it leaves the remote history row with no local file, so every later `db push` aborts with this error (it happened on 2026-11-19: `20261342000600_function_privileges_parity.sql` was applied to production through the `cd-prod` `include_all` dispatch, then renamed to `20261343001100`, and the next deploy failed). Keep the version the database recorded. When an applied-then-new migration sorts **before** the latest applied version, re-run the workflow with the repair input instead of renumbering:
+
+```bash
+gh workflow run cd-prod.yml --ref develop -f include_all=true
+```
+
 After **`repair --status reverted`**, if **`db push`** says **found local migrations to insert before the last migration on remote** — run **`bunx supabase@latest db push --include-all`**, or **`migration repair <MISSING_VERSION> --status applied`** when live schema already matches that file (**`migration list`** to see gaps). Prefer eyeballing the SQL (**`IF NOT EXISTS`** migrations are safest to replay).
 
 ### 5.2 `db push`: duplicate key on `schema_migrations_pkey`
@@ -1051,9 +1057,9 @@ SELECT "window", count(*) FROM public.marketing_trend_topics GROUP BY 1;
 
 Remote writes need `kamewave`. Back up first.
 
-### Plans & Billing lifecycle (`20261342000000` to `20261342000500`)
+### Plans & Billing lifecycle (`20261342000000` to `20261342000600`)
 
-Additive, one transaction per file, all idempotent (`IF NOT EXISTS` / `DROP ... IF EXISTS`). Plan: [`plans-billing-lifecycle-hardening`](../../workflow/for-testing/plans-billing-lifecycle-hardening.md).
+Additive, one transaction per file, all idempotent (`IF NOT EXISTS` / `DROP ... IF EXISTS`). Plan: [`plans-billing-lifecycle-hardening`](../../workflow/done/plans-billing-lifecycle-hardening.md).
 
 | File                                                  | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -1062,6 +1068,8 @@ Additive, one transaction per file, all idempotent (`IF NOT EXISTS` / `DROP ... 
 | `20261342000200_platform_billing_cron_hourly.sql`     | Replaces `platform-billing-daily` with `platform-billing-hourly` (minute 7) through `sync_platform_billing_cron_job()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `20261342000300_plan_price_lock.sql`                  | `org_subscriptions.pricing_snapshot` and `plan_price_migrations` (grandfathered prices)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `20261342000400_org_payment_provider_payment_id.sql`  | `org_payment_transactions.provider_payment_id` so refund events find their payment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `20261342000500_billing_lock_down_grants.sql`         | Revokes `anon` and `authenticated` on the four billing functions (`cancel_org_subscription_to_free`, `org_billing_balance`, `assign_org_payment_receipt`, `sync_platform_billing_cron_job`) and on the new billing tables. On standard Supabase defaults (the local stack, CI replay, a new project) every new public function is granted to `anon` and `authenticated`, and `REVOKE ... FROM PUBLIC` does not remove that, so there the billing functions were callable through `/rest/v1/rpc`. **Hosted production already had restrictive defaults and was not exposed** (checked 2026-11-19: `anon` runs 0 of 123 definer functions); this file makes the environments consistent                                          |
+| `20261342000600_function_privileges_parity.sql`       | PR-096. Makes every environment match production: future functions created by `postgres` in `public` get no explicit `anon`/`authenticated` grant, and every existing `SECURITY DEFINER` function is revoked from `PUBLIC`, `anon` and `authenticated` except the two signed-in users call (`admin_set_cancellation_policy_snapshot`, `user_can_read_inbox_broadcast`, both check the caller). A no-op on production. Local before/after: 62 `anon` and 62 `authenticated` definer functions down to 0 and 2                                                                                                                                                                                                                   |
 
 **Before applying anywhere with real data**, count live rows: `SELECT status, count(*) FROM org_subscriptions GROUP BY 1`. The first migration collapses any org that already has two live rows (keeps the most recently updated, marks the rest `canceled` with `ended_reason = 'admin'`), expires all but the newest pending checkout per org, and backfills `billing_anchor_day`, `period_paid_php` and a Managed `price_override_php` from existing rows. PayMongo live approval is still pending, so prod is expected to have no paying orgs.
 
@@ -1083,7 +1091,7 @@ WHERE n.nspname = 'public' AND p.prosecdef AND has_function_privilege('anon', p.
 ORDER BY 1;
 ```
 
-Older functions that show up here predate the rule and are tracked as PR-096 in the production-readiness ledger.
+Hosted production's default privileges for functions created by `postgres` in `public` are already owner-only, which is why it was never exposed; the local stack and any new project use the permissive Supabase defaults until migration `…0600` is applied.
 
 **Verify locally** (rolled back, safe on a populated DB):
 
@@ -1095,3 +1103,22 @@ LOCAL_BILLING_LIVE=1 TZ=Asia/Manila deno test --config supabase/functions/deno.j
 ```
 
 **Deploy order:** migrations first, then the functions (`org-plan`, `create-org-subscription-checkout`, `paymongo-webhook`, `platform-billing-cron`, the new `org-subscription-change`, `preview-org-plan-change`, `org-billing-details`, `get-org-payment-receipt`), then the UI. `apply-org-plan-downgrade` is removed, so an old browser tab calling it gets a 404 until refreshed. Add `payment.refunded` to the PayMongo webhook events. Remote writes need `kamewave`. Backup first.
+
+## Property template defaults backfill
+
+Migration `20261343001100_property_template_contents_v2.sql` adds `subject`, `default_hash` and
+the `message` category. After it lands, properties that never edited a default should get the
+new condo copy without losing a section image or a visibility choice.
+
+```bash
+bun run backfill:templates             # dry run: counts per template key
+bun run backfill:templates -- --execute  # rewrites matched row content
+```
+
+The script holds a frozen copy of every previously shipped default and rewrites a built-in row
+only when its normalized content matches that old default and it has no subject override. It
+keeps `section_image_url`, `guest_visible` and `guest_phase`, clears `default_hash`, and leaves
+customized rows untouched. Run
+the dry run on local and on the shared project first; a production run is a remote write and
+needs the same approval as any other production change. Rows the host customized are untouched
+and show **New default available** in the editor.

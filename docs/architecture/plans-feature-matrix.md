@@ -344,7 +344,7 @@ Corrections to the plan's assumptions are called out explicitly — several "exp
 
 ## Phase 5 — `automatedBookingFlow` (booking workflow automation) — ✅ shipped 2026-08-24
 
-Repurposed the existing (previously uncalled) `automatedBookingFlow` key — already `false` only on `free` in the seed data, no migration needed — to gate 5 of `_shared/propertyAutomationToggles.ts`'s active automation-toggle keys: `emailGafRequest`, `emailBookingAcknowledgement`, `emailPetRequest`, `emailReadyForCheckin`, `emailSdRefundCheckout`. (`emailParkingBroadcast` is retired — property parking uses marketplace.) `emailNewBookingRequest` stays free (core "guest submitted a form" ops alert). PDF auto-generation is **not** gated — it's required infra (orchestrator throws if missing), not a paid convenience.
+Repurposed the existing (previously uncalled) `automatedBookingFlow` key — already `false` only on `free` in the seed data, no migration needed — to gate the automated booking emails in `_shared/propertyAutomationToggles.ts`: `emailGafRequest`, `emailBookingAcknowledgement`, `emailPetRequest`, `emailReadyForCheckin`, `emailSdRefundCheckout`, `emailPreArrivalReminder` and `emailBuildingAdminCancellation`. (`emailParkingBroadcast` is retired — property parking uses marketplace.) `emailNewBookingRequest` stays free (core "guest submitted a form" ops alert). PDF auto-generation is **not** gated — it's required infra (orchestrator throws if missing), not a paid convenience.
 
 **Two access patterns, don't conflate them:** `propertyAutomationEnabled()`/`resolvePropertyAutomationToggles()` (plan-gated) for anything the orchestrator or a cron fires automatically — including `sd-refund-cron`'s admin-scoped "run now," since it re-invokes the same automation. `rawPropertyAutomationEnabled()` (property setting only, no plan gate) for a genuinely separate manual action a host clicks specifically because the automated path is blocked — gating the escape hatch behind the same entitlement it exists to route around defeats it. Caught this exact bug mid-phase: `send-sd-refund-form-email` (pre-existing manual resend) was calling the plan-gated function; fixed to use the raw one. **`parking-broadcast-email` removed.**
 
@@ -428,7 +428,7 @@ Full detail in [`org-level-billing-migration.md`](../workflow/done/org-level-bil
 
 ## Phase 13 — Billing lifecycle hardening — ✅ shipped 2026-11-18
 
-Plan: [`plans-billing-lifecycle-hardening.md`](../workflow/for-testing/plans-billing-lifecycle-hardening.md). The route guide ([`org/plans.md`](../guides/routes/org/plans.md)) is the host-facing behavior; this section records what it means for entitlements.
+Plan: [`plans-billing-lifecycle-hardening.md`](../workflow/done/plans-billing-lifecycle-hardening.md). The route guide ([`org/plans.md`](../guides/routes/org/plans.md)) is the host-facing behavior; this section records what it means for entitlements.
 
 **When a plan's features change.**
 
