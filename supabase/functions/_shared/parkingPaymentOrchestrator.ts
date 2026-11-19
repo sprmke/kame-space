@@ -16,7 +16,7 @@ import { sendParkingTelegramNotice } from './telegramParking.ts';
 import { createPaymongoPaymentLink, phpToCentavos } from './paymongoClient.ts';
 import { loadParkingPricing } from './parkingPricing.ts';
 import { resolveParkingPlatformSettings } from './parkingPlatformSettings.ts';
-import { computeParkingSettlement } from './parkingSettlement.ts';
+import { computeParkingChargeBreakdown } from './parkingGuestFee.ts';
 import type { ParkingBookingChannel } from './parkingDirectLink.ts';
 import { sendParkingConfirmedEmail } from './parkingBroadcastEmail.ts';
 import { sendParkingEndorsementEmail } from './parkingEndorsementEmail.ts';
@@ -67,27 +67,26 @@ function toIsoDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function round2(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
 export type ParkingPaymentAmounts = {
   nights: number;
+  /** hostGrossTotal + guestFeeTotal. This is the PayMongo amount. */
   guestChargeTotal: number;
+  /** Service fee the guest pays on top of the host rate. */
+  guestFeeTotal: number;
   hostGrossTotal: number;
   commissionPct: number;
   commissionAmount: number;
   hostNetTotal: number;
   /** Estimated processor cut of the guest charge. 0 for offline/complimentary bookings. */
   paymentFeeAmount: number;
-  /** guestChargeTotal − hostNetTotal − paymentFeeAmount. */
+  /** guestFeeTotal + commissionAmount − paymentFeeAmount. */
   platformNetTotal: number;
 };
 
 /**
- * Per-night proration for both guest charge and host payout (Phase 4 — replaces Phase 3's
- * averaged-rate × nights approach, since a stay spanning both weekday and weekend nights was
- * previously smoothed into a single blended rate instead of billed per actual night). Resolves
+ * Per-night host gross (date override, else weekday/weekend) plus one guest service fee per
+ * booking. The guest pays the host rate and the fee; the host nets gross minus commission.
+ * Resolves
  * live platform settings + host pricing once and snapshots the result onto the transaction row
  * at creation time — a later admin config or pricing change never affects an already-created
  * transaction (decision #4).
@@ -107,14 +106,9 @@ export async function computeParkingPaymentAmounts(
     resolveParkingPlatformSettings(),
   ]);
 
-  let guestChargeTotal = 0;
   let hostGrossTotal = 0;
   for (const night of effectiveNights) {
     const weekend = isWeekendRateDay(night);
-    guestChargeTotal += weekend
-      ? platformSettings.guestRateWeekend
-      : platformSettings.guestRateWeekday;
-
     const override = pricing.dateOverrides[toIsoDateKey(night)];
     hostGrossTotal +=
       override !== undefined
@@ -124,29 +118,29 @@ export async function computeParkingPaymentAmounts(
           : pricing.weekdayNightlyRate;
   }
 
-  guestChargeTotal = round2(guestChargeTotal);
-  hostGrossTotal = round2(hostGrossTotal);
   const commissionPct =
     bookingChannel === 'direct_link'
       ? platformSettings.directCommissionPct
       : platformSettings.commissionPct;
-  const settlement = computeParkingSettlement({
-    guestChargeTotal,
+  const breakdown = computeParkingChargeBreakdown({
     hostGrossTotal,
     commissionPct,
+    guestFeePct: platformSettings.guestFeePct,
+    guestFeeFixed: platformSettings.guestFeeFixed,
     paymentFeePct: platformSettings.paymentFeePct,
     paymentFeeFixed: platformSettings.paymentFeeFixed,
   });
 
   return {
     nights,
-    guestChargeTotal,
-    hostGrossTotal,
+    guestChargeTotal: breakdown.guestChargeTotal,
+    guestFeeTotal: breakdown.guestFeeTotal,
+    hostGrossTotal: breakdown.hostGrossTotal,
     commissionPct,
-    commissionAmount: settlement.commissionAmount,
-    hostNetTotal: settlement.hostNetTotal,
-    paymentFeeAmount: settlement.paymentFeeAmount,
-    platformNetTotal: settlement.platformNetTotal,
+    commissionAmount: breakdown.commissionAmount,
+    hostNetTotal: breakdown.hostNetTotal,
+    paymentFeeAmount: breakdown.paymentFeeAmount,
+    platformNetTotal: breakdown.platformNetTotal,
   };
 }
 
@@ -228,6 +222,7 @@ export async function createParkingPaymentTransaction(
       parking_id: parkingId,
       organization_id: parking.organization_id,
       guest_charge_total: amounts.guestChargeTotal,
+      guest_fee_total: amounts.guestFeeTotal,
       host_gross_total: amounts.hostGrossTotal,
       commission_pct: amounts.commissionPct,
       host_net_total: amounts.hostNetTotal,

@@ -42,6 +42,7 @@ function serializeRow(row: Record<string, unknown>) {
       null,
     nights: Number(row.nights ?? 0),
     guestChargeTotal: Number(row.guest_charge_total ?? 0),
+    guestFeeTotal: Number(row.guest_fee_total ?? 0),
     hostGrossTotal: Number(row.host_gross_total ?? 0),
     commissionPct: Number(row.commission_pct ?? 0),
     bookingChannel: (row.booking_channel as string | undefined) ?? 'standard',
