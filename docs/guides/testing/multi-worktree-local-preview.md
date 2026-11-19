@@ -25,6 +25,9 @@ bun run ui:port         # print sticky port only
 ./dev.sh --ui-only --env dev   # Vite against hosted env file
 ```
 
+`bun run dev:ui` stays the raw Vite entry (Playwright / CI pass `--host` /
+`--port`). Use `bun run ui` for sticky worktree ports.
+
 Sticky port is stored in gitignored `.local/vite-port`. Find the URL with:
 
 ```bash
