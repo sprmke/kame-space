@@ -21,12 +21,16 @@ That often leaves **Kong/DB up but `supabase_edge_runtime_*` missing** (function
 
 ## Default behavior (every session)
 
-| Do                                                                          | Do not                                       |
-| --------------------------------------------------------------------------- | -------------------------------------------- |
-| `curl` `http://127.0.0.1:54321/functions/v1/health`, `docker ps`, read logs | `bun run stop:supabase`, `supabase stop`     |
-| Reuse the already-running `./dev.sh` / Vite                                 | `pkill` vite / `dev.sh` / kill `:5173`       |
-| Tell the user the stack looks down and **ask** before restart               | Restart “while we’re here” or to pick up env |
-| Prefer code/config fixes that hot-reload                                    | Bounce Docker to clear a UI bug              |
+| Do                                                                       | Do not                                        |
+| ------------------------------------------------------------------------ | --------------------------------------------- |
+| `curl` `…/functions/v1/get-health`, `docker ps`, read logs               | `bun run stop:supabase`, `supabase stop`      |
+| Reuse the shared stack; per worktree use `bun run ui` (sticky Vite port) | `pkill` vite / `dev.sh` / kill random `:517x` |
+| Tell the user the stack looks down and **ask** before restart            | Restart “while we’re here” or to pick up env  |
+| Prefer code/config fixes that hot-reload                                 | Bounce Docker to clear a UI bug               |
+
+Secondary Orca worktrees: **`bun run ui`** (or `./dev.sh` when the shared stack
+is already healthy). Do not cold-start or recycle edge for a sibling preview.
+Guide: `docs/guides/testing/multi-worktree-local-preview.md`.
 
 ## When stop / restart is allowed
 
@@ -46,3 +50,4 @@ Hooks: `.cursor/hooks/guard-shell.sh` + `.claude/hooks/guard-shell.sh` via
 
 - Prod deploys stay behind **`kamewave`** (`.cursor/rules/no-prod-deploy.mdc`)
 - Local seed / stack: `docs/guides/testing/local-seed-data.md`, `./dev.sh`
+- Multi-worktree UI ports: `docs/guides/testing/multi-worktree-local-preview.md`, `bun run ui`

@@ -33,7 +33,7 @@ Stale if a skill mentions Next.js App Router, tRPC, Drizzle, Neon, or AWS S3 for
 - Claude Code: **`.claude/README.md`** + root **`CLAUDE.md`**
 - OpenCode: **`.opencode/README.md`** + root **`opencode.json`**
 - AI session hygiene / model routing: **`.cursor/rules/ai-usage.mdc`**
-- Local stack: `bun install` → `./dev.sh` (or `./dev.sh --ui-only`)
+- Local stack: `bun install` → `./dev.sh` (shared Docker). Per Orca worktree UI: `bun run ui` (sticky Vite port). Guide: `docs/guides/testing/multi-worktree-local-preview.md`
 - Once after clone: **`bun run setup:ai-tooling`** (Cursor + Claude + OpenCode)
 
 ## Where to edit (pointers)

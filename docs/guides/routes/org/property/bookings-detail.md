@@ -471,7 +471,7 @@ This is the page a host opens to manage one specific booking end to end: guest d
 
 | Action                              | Endpoint                                                                                                                                                                                        |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Load booking                        | Supabase `guest_submissions` select (admin session)                                                                                                                                             |
+| Load booking                        | `GET get-booking?format=row` (admin JWT + property scope; full `guest_submissions` row)                                                                                                         |
 | Save edit-form and progress fields  | `POST update-booking-details`                                                                                                                                                                   |
 | Reschedule / clear detail assets    | `POST update-booking-details`                                                                                                                                                                   |
 | Reject an approved GAF / pet file   | `POST update-booking-details` (`operation: 'review_document'`, `decision: 'reject'`) — **409** if the status moved; **429** with `retryAfterSec` when the 30 s / 5-per-hour review limit is hit |

@@ -40,4 +40,4 @@ Single-request warm latency on the same baseline: `get-public-property` 1.2–1.
 
 ## Follow-up (2026-11-20)
 
-Root cause and a code fix for the findings above: [`pr-131-public-read-caching-2026-11-20.md`](./pr-131-public-read-caching-2026-11-20.md). The hosted re-test is still open.
+Root cause and the fix for the findings above: [`pr-131-public-read-caching-2026-11-20.md`](./pr-131-public-read-caching-2026-11-20.md). Deployed to production 2026-11-19; the same file records the hosted verification.

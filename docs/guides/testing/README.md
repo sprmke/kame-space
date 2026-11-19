@@ -287,6 +287,7 @@ and `@ci` suites one after another on the same port.
 | [`super-admin-manual.md`](./super-admin-manual.md)                       | Super admin OTP + payouts           |
 | [`cost-abuse-verification.md`](./cost-abuse-verification.md)             | Cost/abuse/security dev verify      |
 | [`local-google-setup.md`](./local-google-setup.md)                       | Local Maps key + OAuth client       |
+| [`multi-worktree-local-preview.md`](./multi-worktree-local-preview.md)   | Per-worktree Vite + shared Supabase |
 
 Manual-only (existing):
 
