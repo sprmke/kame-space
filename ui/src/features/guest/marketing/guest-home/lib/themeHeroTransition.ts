@@ -1,4 +1,4 @@
-/** Home hero art per theme. Light = sunrise render, dark = night render. */
+/** Home hero art per theme. Light = golden-hour resort + mascot, dark = night match. */
 export const HERO_IMAGE_LIGHT = '/marketing/home/hero-day';
 export const HERO_IMAGE_DARK = '/marketing/home/hero-night';
 
