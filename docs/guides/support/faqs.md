@@ -381,7 +381,7 @@ Document requirements are set at the development level by the platform team, und
 - source: docs/guides/routes/org/property/templates.md
 - order: 30
 
-The four standard templates (house rules, check-in instructions, check-out instructions, and parking reminders) appear on the guest stay guide during their booking window. Email templates are used for automated messages throughout the booking process.
+Ten stay guide sections are available. Welcome, check-in, house rules, emergency and safety, and check-out show by default. Getting here, using the unit, and building amenities start hidden until you review the copy and switch them on. Parking appears only when the booking needs parking, and pets only when the guest brings a pet. Email templates are used for automated messages throughout the booking process.
 
 ### How do I get a shareable link for the stay guide?
 

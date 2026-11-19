@@ -50,7 +50,7 @@ hide the ones you don't need, and set colours / fonts / motion - the same contro
   hidden until their own reveal time, so the link can go out early without handing out the code.
 - Q: How do I change the wording? A: **Public Pages → Stay Guide → Edit → Section details** -
   expand a chapter to edit its text and section image (also editable under **Templates**).
-- Q: Which sections can appear? A: Welcome, Getting here, Check-in, House rules, Using the unit, Building amenities, Trash and recycling, Parking, Pet guidelines, Emergency and safety, Around the area, and Check-out. Each has a Show to guests switch in **Templates**. Sections that make claims only you can confirm start hidden, and Parking or Pet guidelines only show for bookings that need them.
+- Q: Which sections can appear? A: Welcome, Getting here, Check-in, House rules, Using the unit, Building amenities, Parking, Pet guidelines, Emergency and safety, and Check-out. Each has a Show to guests switch in **Templates**. Sections that make claims only you can confirm start hidden, and Parking or Pet guidelines only show for bookings that need them. Trash and recycling is part of **Using the unit**.
 - Q: How do I change how it looks? A: Same editor - **Template**, **Sections** (reorder /
   hide), and **Style** (palette / type / motion).
 - Q: Which plan? A: Editing is available on every plan; **saving** needs Pro

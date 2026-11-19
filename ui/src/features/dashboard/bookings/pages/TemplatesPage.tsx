@@ -350,7 +350,7 @@ export function TemplatesPage() {
     return [
       {
         key: 'add-template',
-        label: 'Add template',
+        label: 'New template',
         Icon: Plus,
         onSelect: openAddTemplate,
       },
@@ -384,7 +384,7 @@ export function TemplatesPage() {
           onClick={openAddTemplate}
         >
           <Plus className="size-4" aria-hidden />
-          Add Template
+          New template
         </Button>
       </TierBadgeAnchor>
     </div>

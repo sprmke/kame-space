@@ -131,7 +131,6 @@ const MESSAGE_KEYS = [
   'message-check-in-day',
   'message-early-check-in',
   'message-late-check-out',
-  'message-mid-stay',
   'message-noise-reminder',
   'message-check-out-reminder',
   'message-thank-you',
@@ -158,11 +157,9 @@ Deno.test('guide sections carry a chapter and the right default visibility', () 
     'house-rules',
     'using-the-unit',
     'building-amenities',
-    'trash-and-recycling',
     'parking-reminders',
     'pet-guidelines',
     'emergency-and-safety',
-    'local-guide',
     'check-out-instructions',
   ];
   for (const key of guideKeys) {
@@ -174,8 +171,6 @@ Deno.test('guide sections carry a chapter and the right default visibility', () 
 
   assertEquals(getBuiltinPropertyTemplate('getting-here')?.defaultGuestVisible, false);
   assertEquals(getBuiltinPropertyTemplate('using-the-unit')?.defaultGuestVisible, false);
-  assertEquals(getBuiltinPropertyTemplate('local-guide')?.defaultGuestVisible, false);
-  assertEquals(getBuiltinPropertyTemplate('local-guide')?.requiresEdit, true);
   assertEquals(getBuiltinPropertyTemplate('welcome-note')?.defaultGuestVisible, true);
   assertEquals(getBuiltinPropertyTemplate('pet-guidelines')?.condition, 'has_pets');
   assertEquals(getBuiltinPropertyTemplate('parking-reminders')?.condition, 'need_parking');

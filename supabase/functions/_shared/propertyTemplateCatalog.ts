@@ -128,10 +128,8 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
   'getting-here': unique(CORE, ['map_cta_section']),
   'using-the-unit': CORE,
   'building-amenities': unique(CORE, ['amenities_list']),
-  'trash-and-recycling': CORE,
   'pet-guidelines': CORE,
   'emergency-and-safety': unique(CORE, ['emergency_contacts_section']),
-  'local-guide': CORE,
   'email-gaf-request': unique(
     CORE,
     PLAIN_BOOKING_META,

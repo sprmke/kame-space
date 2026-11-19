@@ -24,6 +24,27 @@ kind: plan
 
 Make **Templates** (`/org/:orgSlug/property/:propertySlug/templates`) the one place a host controls every word a guest, the building admin, or their team receives for a property. Every automated email becomes a configurable template with an editable subject. The stay guide gets a full condo-ready set of sections. A new **Guest messages** group gives hosts ready-to-send replies for the moments that come up in chat. Every default is rewritten for Philippine condo hosts (Azure North first, no Azure-only literals), uses placeholders that pull real property data so defaults never contradict Settings, and is proven wired end to end by contract tests: registry, editor, preview, send path, stay guide, trip page, chat and copy-settings all read the same definition.
 
+## Design review and pruning (2026-11-19)
+
+A follow-up review of the shipped module tightened the default set and replaced the improvised header controls.
+
+**Final default set: 37 templates** — 10 stay guide, 9 guest messages, 12 guest emails, 3 building admin, 3 team alerts.
+
+| Decision | Detail                                                                                                                                                                                          |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Merged   | `trash-and-recycling` copy moved into **Using the unit** under a Trash and recycling heading. One section covers appliance use and waste instead of two thin chapters.                          |
+| Removed  | `local-guide` (Around the area). It shipped a placeholder-only scaffold (`[Restaurant or cafe]`) nobody could send as-is. Hosts who want a local guide can add a custom template.               |
+| Removed  | `message-mid-stay` (Checking in). It overlapped check-in day, check-out reminder and thank you, and read like filler in the quick-reply list.                                                   |
+| Kept     | All 12 guest emails are wired to a workflow transition, automation toggle or review window. All 3 building admin and 3 team alert templates are required by the GAF, pet or cancellation flows. |
+
+**UI corrections**
+
+- Editor header is one identity block (icon, title, tier/unsaved badges, group and description), a compact icon facts row (recipient, trigger, automation), a full-width Subject field with a Fixed badge, and one action row. Save is always visible and disabled until the draft changes.
+- Guest visibility uses the shared `Switch` and shadcn `Select` instead of a native checkbox and `<select>`.
+- Rail rows show a muted **Hidden** badge with an eye-off icon instead of the word "Hidden" in the meta line. Group counts are right-aligned chips.
+- Preview now renders through the preview edge function for **standard** templates as well, using `buildPropertyPlaceholderVars` so property address, contact card, map CTA and other blocks resolve with real data. The raw `{{tokens}}` bug is fixed.
+- Subject placeholders use a new `defaultSubjectPreview` DTO field, filled server-side with this property's unit and name, so the input never shows raw braces.
+
 ## Prior work checked
 
 | Item                                                                                                              | State                          | Relation to this plan                                                                       |
@@ -162,37 +183,37 @@ Each email template header shows: **To** (recipient), **When** (trigger), **Auto
 
 **Stay guide** (`category: standard`)
 
-| Key                      | Label                | Chapter               | Phase    | Default shown | Condition            | Status |
-| ------------------------ | -------------------- | --------------------- | -------- | ------------- | -------------------- | ------ |
-| `welcome-note`           | Welcome              | Getting in            | arrival  | On            | none                 | NEW    |
-| `getting-here`           | Getting here         | Getting in            | before   | Off           | none                 | NEW    |
-| `check-in-instructions`  | Check-in             | Getting in            | arrival  | On            | none                 | REFINE |
-| `house-rules`            | House rules          | Make yourself at home | always   | On            | none                 | REFINE |
-| `using-the-unit`         | Using the unit       | Make yourself at home | stay     | Off           | none                 | NEW    |
-| `building-amenities`     | Building amenities   | Make yourself at home | stay     | Off           | none                 | NEW    |
-| `trash-and-recycling`    | Trash and recycling  | Make yourself at home | stay     | Off           | none                 | NEW    |
-| `parking-reminders`      | Parking              | Make yourself at home | arrival  | On            | `need_parking`       | REFINE |
-| `pet-guidelines`         | Pet guidelines       | Make yourself at home | arrival  | On            | `has_pets`           | NEW    |
-| `emergency-and-safety`   | Emergency and safety | Make yourself at home | stay     | On            | none                 | NEW    |
-| `local-guide`            | Around the area      | Make yourself at home | stay     | Off           | none, `requiresEdit` | NEW    |
-| `check-out-instructions` | Check-out            | Before you go         | checkout | On            | none                 | REFINE |
+| Key                      | Label                | Chapter               | Phase    | Default shown | Condition            | Status                               |
+| ------------------------ | -------------------- | --------------------- | -------- | ------------- | -------------------- | ------------------------------------ |
+| `welcome-note`           | Welcome              | Getting in            | arrival  | On            | none                 | NEW                                  |
+| `getting-here`           | Getting here         | Getting in            | before   | Off           | none                 | NEW                                  |
+| `check-in-instructions`  | Check-in             | Getting in            | arrival  | On            | none                 | REFINE                               |
+| `house-rules`            | House rules          | Make yourself at home | always   | On            | none                 | REFINE                               |
+| `using-the-unit`         | Using the unit       | Make yourself at home | stay     | Off           | none                 | NEW                                  |
+| `building-amenities`     | Building amenities   | Make yourself at home | stay     | Off           | none                 | NEW                                  |
+| `trash-and-recycling`    | Trash and recycling  | Make yourself at home | stay     | Off           | none                 | Removed (merged into Using the unit) |
+| `parking-reminders`      | Parking              | Make yourself at home | arrival  | On            | `need_parking`       | REFINE                               |
+| `pet-guidelines`         | Pet guidelines       | Make yourself at home | arrival  | On            | `has_pets`           | NEW                                  |
+| `emergency-and-safety`   | Emergency and safety | Make yourself at home | stay     | On            | none                 | NEW                                  |
+| `local-guide`            | Around the area      | Make yourself at home | stay     | Off           | none, `requiresEdit` | Removed (placeholder scaffold)       |
+| `check-out-instructions` | Check-out            | Before you go         | checkout | On            | none                 | REFINE                               |
 
 "Off" sections make claims only the host can confirm (appliances, amenities, chute location, local places). They show a **Not shown to guests** badge in the rail.
 
 **Guest messages** (`category: message`, new)
 
-| Key                          | Label              | Typical moment                  |
-| ---------------------------- | ------------------ | ------------------------------- |
-| `message-balance-reminder`   | Balance reminder   | Before check-in, balance unpaid |
-| `message-document-follow-up` | Missing documents  | Pending documents               |
-| `message-check-in-day`       | Check-in day       | Morning of arrival              |
-| `message-early-check-in`     | Early check-in     | Guest asks to arrive early      |
-| `message-late-check-out`     | Late check-out     | Guest asks to stay later        |
-| `message-mid-stay`           | Checking in        | Day 2 of a longer stay          |
-| `message-noise-reminder`     | Noise reminder     | Complaint from the building     |
-| `message-check-out-reminder` | Check-out reminder | Evening before check-out        |
-| `message-thank-you`          | Thank you          | After check-out                 |
-| `message-lost-and-found`     | Item left behind   | After check-out                 |
+| Key                          | Label              | Typical moment                    |
+| ---------------------------- | ------------------ | --------------------------------- |
+| `message-balance-reminder`   | Balance reminder   | Before check-in, balance unpaid   |
+| `message-document-follow-up` | Missing documents  | Pending documents                 |
+| `message-check-in-day`       | Check-in day       | Morning of arrival                |
+| `message-early-check-in`     | Early check-in     | Guest asks to arrive early        |
+| `message-late-check-out`     | Late check-out     | Guest asks to stay later          |
+| `message-mid-stay`           | Checking in        | Removed: overlapped other moments |
+| `message-noise-reminder`     | Noise reminder     | Complaint from the building       |
+| `message-check-out-reminder` | Check-out reminder | Evening before check-out          |
+| `message-thank-you`          | Thank you          | After check-out                   |
+| `message-lost-and-found`     | Item left behind   | After check-out                   |
 
 **Guest emails** (`category: email`)
 
@@ -421,11 +442,20 @@ Tests added: pack/registry contract, message and guide metadata, subject lock an
 ## Local verification (2026-11-19)
 
 - Restarted the shared local stack from this worktree so the edge runtime served these functions, then applied the canonical seed (`seed:verify` passed).
-- Templates rail on `/org/kame-homes/property/kame-home/templates`: 12 Stay guide, 10 Guest messages, 12 Guest emails, 3 Building admin, 3 Team alerts. Labels, Hidden badges, Subject, Send test and the new default copy all render.
-- Guest stay guide with a real token: Welcome, Check-in, House rules, Emergency and safety and Check-out render; Getting here, Using the unit, Building amenities, Trash and recycling and Around the area stay hidden; Pet guidelines stay hidden without pets.
+- Templates rail on `/org/kame-homes/property/kame-home/templates`: 12 Stay guide, 10 Guest messages, 12 Guest emails, 3 Building admin, 3 Team alerts before the pruning pass. Labels, Hidden badges, Subject, Send test and the new default copy all render.
+- Guest stay guide with a real token: Welcome, Check-in, House rules, Emergency and safety and Check-out render; Getting here, Using the unit and Building amenities stay hidden; Pet guidelines stay hidden without pets. Trash and recycling appears inside Using the unit when that section is on; Around the area is no longer a default.
 - Inbox Insert -> Messages inserts editable text with the guest first name and the property check-in time.
 - Fixed from this pass: labels to host language, guide reading order, registry phase default, blank chat name/time, message CTA blocks, and block placeholders nesting inside a paragraph (left an empty paragraph in the guide).
 - The Supabase CLI `db query` was killed by the host during `seed:local` (exit 137); the same seed SQL was applied through the database container and `99-verify` passed. Local CLI issue, not a seed failure.
+
+## Redesign pass (2026-11-19)
+
+- Rail: 10 Stay guide, 9 Guest messages, 12 Guest emails, 3 Building admin, 3 Team alerts. Hidden sections show a muted badge, group counts are right-aligned, and group headings stay pinned while scrolling.
+- Editor at 1440, 1024, 768 and 375: identity header, icon facts row, full-width Subject with resolved placeholder, one action row, Switch and Select controls, and Save disabled until the draft changes.
+- Standard preview (`Check-in`, `Welcome`) renders real dates, times, unit, address, contact card and map CTA in the sandboxed iframe. No raw `{{tokens}}`.
+- Email preview (`Booking confirmed`, `Check-in details`) renders the production shell with sample guest data. Subject placeholders read "Monaco 2604 - Check-in details (July 10, 2026 to July 12, 2026)".
+- No console errors on the Templates route.
+- Stay guide token URL still renders only the visible sections after the trash merge and local-guide removal.
 
 ## Verification results
 
@@ -433,9 +463,9 @@ Tests added: pack/registry contract, message and guide metadata, subject lock an
 | ------------------------------------- | ------------------------------------------------- |
 | `bun run type-check`                  | pass                                              |
 | `bun run lint`                        | 0 errors                                          |
-| `bun run test:fast`                   | pass (6458 unit tests, 84 DOM tests)              |
+| `bun run test:fast`                   | pass (6459 unit tests, 84 DOM tests)              |
 | `bun run build`                       | pass                                              |
-| Deno `_shared` suite                  | 2067 passed, 0 failed                             |
+| Deno `_shared` suite                  | 2082 passed, 0 failed                             |
 | `bun run check:support-content`       | pass (201 FAQs)                                   |
 | `bun run check:ai-knowledge-coverage` | pass (79 guides)                                  |
 | `bun run test:support-content`        | pass                                              |

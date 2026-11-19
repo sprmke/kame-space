@@ -72,6 +72,15 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
 </ul>
 <h3>TV and internet</h3>
 <p>The Wi-Fi details are under Essentials. Sign out of your streaming accounts before you leave.</p>
+<h3>Trash and recycling</h3>
+<p>The building requires waste segregation. Please sort your trash before you throw it out.</p>
+<ul>
+<li><strong>Biodegradable:</strong> food scraps and kitchen waste</li>
+<li><strong>Recyclable:</strong> plastic bottles, cans and clean paper</li>
+<li><strong>Residual:</strong> everything else</li>
+</ul>
+<p>Collection schedule: {{garbage_schedule}}</p>
+<p>Before you check out, bag all trash and take it to the garbage room or chute on your floor.</p>
 <h3>If something stops working</h3>
 <p>Message us right away. Please do not try to repair appliances yourself.</p>`,
   },
@@ -91,17 +100,7 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
 <p>Keep noise down in hallways and elevators, and do not leave items in the corridor.</p>
 <p>Ask the reception desk for today's hours.</p>`,
   },
-  'trash-and-recycling': {
-    content: `<h2>Trash and recycling</h2>
-<p>The building requires waste segregation. Please sort your trash before you throw it out.</p>
-<ul>
-<li><strong>Biodegradable:</strong> food scraps and kitchen waste</li>
-<li><strong>Recyclable:</strong> plastic bottles, cans and clean paper</li>
-<li><strong>Residual:</strong> everything else</li>
-</ul>
-<p>Collection schedule: {{garbage_schedule}}</p>
-<p>Before you check out, bag all trash and take it to the garbage room or chute on your floor.</p>`,
-  },
+
   'parking-reminders': {
     content: `<h2>Parking</h2>
 <p>Parking is only for guests who arranged a slot with us before arrival.</p>
@@ -147,25 +146,7 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
 <h3>Power or water interruption</h3>
 <p>If the power or water goes out, message us and we will check with the building.</p>`,
   },
-  'local-guide': {
-    content: `<h2>Around the area</h2>
-<h3>Food and coffee</h3>
-<ul>
-<li>[Restaurant or cafe]: [what to order, how far]</li>
-</ul>
-<h3>Groceries and essentials</h3>
-<ul>
-<li>[Store]: [distance, opening hours]</li>
-</ul>
-<h3>Getting around</h3>
-<ul>
-<li>[Transport tip]</li>
-</ul>
-<h3>Things to do</h3>
-<ul>
-<li>[Place]: [why we like it]</li>
-</ul>`,
-  },
+
   'check-out-instructions': {
     content: `<h2>Check-out</h2>
 <p>Check-out is by <strong>{{check_out_time}}</strong> on <strong>{{check_out_date}}</strong>. Need more time? Message us before your check-out day and we will check if a late check-out is possible.</p>
@@ -363,10 +344,7 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
     content: `<p>Hi {{guest_first_name}}, thanks for asking. Check-out is by {{check_out_time}} on {{check_out_date}}.</p>
 <p>A late check-out depends on whether a guest arrives after you. We will confirm by the evening before. An extra fee may apply.</p>`,
   },
-  'message-mid-stay': {
-    content: `<p>Hi {{guest_first_name}}, we hope you are enjoying your stay at {{property_name}}. Is everything working well in the unit?</p>
-<p>If you need anything, like extra towels or help with an appliance, message us here.</p>`,
-  },
+
   'message-noise-reminder': {
     content: `<p>Hi {{guest_first_name}}, the building let us know about noise from the unit. Please keep the volume down, especially during quiet hours ({{quiet_hours}}).</p>
 <p>Repeated complaints can lead to a fine from the building. Thank you for understanding.</p>`,

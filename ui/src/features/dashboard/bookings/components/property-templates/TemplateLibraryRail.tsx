@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { ChevronRight, FolderOpen, Plus, Search, X } from 'lucide-react';
+import { ChevronRight, EyeOff, FolderOpen, Plus, Search, X } from 'lucide-react';
 
 import { TemplateLibraryCategoryFilter } from '@/features/dashboard/bookings/components/property-templates/TemplateLibraryCategoryFilter';
 import {
@@ -64,25 +64,37 @@ type TemplateLibraryRailProps = {
 };
 
 function TemplateRowMeta({ entry, active }: { entry: TemplateLibraryEntry; active: boolean }) {
-  const parts = React.useMemo(() => {
-    const base = templateRowStatusParts(entry);
-    if (entry.template.category === 'standard' && !entry.template.guestVisible) {
-      return ['Hidden', ...base];
-    }
-    return base;
-  }, [entry]);
-  if (parts.length === 0) return null;
+  const parts = React.useMemo(() => templateRowStatusParts(entry), [entry]);
+  const hidden = entry.template.category === 'standard' && !entry.template.guestVisible;
+  if (!hidden && parts.length === 0) return null;
 
   return (
-    <span
-      className={cn(
-        'block truncate text-xs',
-        /* On the brand pill, use the fill's own foreground at full strength. A /75 tint
-         * failed color contrast once a default row started showing meta text. */
-        active ? 'text-primary-foreground' : 'text-muted-foreground'
-      )}
-    >
-      {parts.join(' · ')}
+    <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
+      {hidden ? (
+        <span
+          className={cn(
+            'inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide',
+            active
+              ? 'bg-primary-foreground/20 text-primary-foreground'
+              : 'bg-muted text-muted-foreground'
+          )}
+        >
+          <EyeOff className="size-3" aria-hidden />
+          Hidden
+        </span>
+      ) : null}
+      {parts.length > 0 ? (
+        <span
+          className={cn(
+            'block truncate text-xs',
+            /* On the brand pill, use the fill's own foreground at full strength. A /75 tint
+             * failed color contrast once a default row started showing meta text. */
+            active ? 'text-primary-foreground' : 'text-muted-foreground'
+          )}
+        >
+          {parts.join(' · ')}
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -269,22 +281,22 @@ function RailGroupHeading({
   const showGroupMenu = actionGroups.length > 0;
 
   return (
-    <div className="flex min-h-[32px] items-center gap-1.5 pb-1 pl-2.5 pr-1 pt-3 first:pt-1">
-      <p className="text-muted-foreground min-w-0 truncate text-xs font-medium uppercase tracking-wider">
+    <div className="bg-card sticky top-0 z-[2] flex min-h-[32px] items-center gap-1.5 pb-1 pl-2.5 pr-1 pt-3 first:pt-1">
+      <p className="text-muted-foreground min-w-0 truncate text-[11px] font-semibold uppercase tracking-wider">
         {group.label}
       </p>
+      {group.gated ? <TierBadge feature="customTemplates" /> : null}
       {group.entries.length > 0 ? (
-        <span className="text-muted-foreground/70 shrink-0 text-xs tabular-nums">
+        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold tabular-nums">
           {group.entries.length}
         </span>
       ) : null}
-      {group.gated ? <TierBadge feature="customTemplates" /> : null}
 
       {showGroupMenu ? (
         <ResponsiveOverflowMenu
           label={`Actions for ${group.label}`}
           sheetTitle={group.label}
-          triggerClassName={cn(railMenuTriggerClassName, 'ml-auto')}
+          triggerClassName={cn(railMenuTriggerClassName)}
           actionGroups={actionGroups}
         />
       ) : null}

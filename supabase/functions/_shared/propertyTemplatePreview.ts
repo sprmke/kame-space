@@ -14,6 +14,7 @@ import { buildSampleDynamicSections } from './propertyTemplateEmailSections.ts';
 import { normalizeBlockLevelPlaceholdersInHtml } from './normalizeBlockLevelPlaceholders.ts';
 import { normalizeEmailCalloutPlaceholders } from './normalizeEmailCalloutPlaceholders.ts';
 import { escapeHtml } from './renderEmailHtml.ts';
+import { buildPropertyPlaceholderVars } from './propertyTemplatePropertyVars.ts';
 import { getBuiltinPropertyTemplate, type PropertyTemplateCategory } from './propertyTemplates.ts';
 import { PROPERTY_TEMPLATE_SAMPLE_VARS } from './propertyTemplatePlaceholders.ts';
 
@@ -27,10 +28,16 @@ export async function renderPropertyTemplatePreview(input: {
   subject?: string | null;
 }): Promise<{ html: string; mode: 'standard' | 'email-shell'; subject: string }> {
   if (input.category === 'standard') {
-    let resolvedContent = input.content;
-    for (const [key, value] of Object.entries(PROPERTY_TEMPLATE_SAMPLE_VARS)) {
-      resolvedContent = resolvedContent.split(`{{${key}}}`).join(value);
-    }
+    /* Guide sections use the same property tokens as the live guide. Sample values only fill
+     * guest-specific or booking-specific tokens that a preview cannot know. */
+    const sampleVars = Object.fromEntries(
+      Object.entries(PROPERTY_TEMPLATE_SAMPLE_VARS).map(([key, value]) => [key, escapeHtml(value)])
+    );
+    const { vars } = await buildPropertyPlaceholderVars({ propertyId: input.propertyId });
+    const resolvedContent = applyPropertyTemplatePlaceholders(input.content, {
+      ...sampleVars,
+      ...vars,
+    });
     return {
       mode: 'standard',
       subject: '',

@@ -39,6 +39,7 @@ function template(overrides: Partial<PropertyTemplateDto> = {}): PropertyTemplat
     automationToggleKey: null,
     iconId: null,
     defaultSubject: null,
+    defaultSubjectPreview: null,
     subjectLocked: false,
     chapter: null,
     defaultPhase: null,

@@ -55,6 +55,7 @@ export type PropertyTemplateDto = {
   automationToggleKey: string | null;
   iconId: PropertyTemplateIconId | null;
   defaultSubject: string | null;
+  defaultSubjectPreview: string | null;
   subjectLocked: boolean;
   chapter: PropertyTemplateChapter | null;
   defaultPhase: GuestTemplatePhase | null;

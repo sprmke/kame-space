@@ -206,11 +206,9 @@ export function buildTemplateLibrary(
     'house-rules',
     'using-the-unit',
     'building-amenities',
-    'trash-and-recycling',
     'parking-reminders',
     'pet-guidelines',
     'emergency-and-safety',
-    'local-guide',
     'check-out-instructions',
   ];
 

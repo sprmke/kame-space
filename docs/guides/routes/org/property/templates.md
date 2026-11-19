@@ -2,7 +2,7 @@
 title: 'Property templates'
 status: active
 tags: [guides, routes, org, property]
-updated: 2026-09-20
+updated: 2026-11-19
 ---
 
 # Property templates
@@ -13,9 +13,9 @@ Route: `/org/:orgSlug/property/:propertySlug/templates`
 
 ## Purpose
 
-Each template card shows a **title**, **subtitle** (built-in description from the server registry; custom templates use a generic fallback), Edit/Preview tabs, WYSIWYG editor (white `bg-card` surface on light theme), placeholders, and reset-to-default. On phone, Edit/Preview and Placeholders/Send/Reset/Save (and Delete for custom) are **icon-only** so the whole toolbar stays on one row; labels return from `sm` up.
+Each template card shows a **title**, **subtitle** (built-in description from the server registry; custom templates use a generic fallback), a single **Edit / Preview** switch, and one action row with Placeholders, Send test (emails), Reset (built-ins), Save, and a `More` menu for custom-template actions. On phone the view switch is icon-only and Save stays labelled; Placeholders is icon-only until `xl`.
 
-**Custom templates → Send to guest (shipped):** Custom template cards show a **Send** icon button (next to Placeholders) once the saved content has no unsaved edits. It opens a dialog to search/pick a booking (guest name, date, or status). While bookings load, the list is row skeletons. The send button keeps a spinner only while the email is sending. It sends that exact saved content to the booking's guest email immediately — not tied to booking status or an automation toggle, and no cooldown. Uses the same `renderPropertyTemplateSendEmail` shell as every other template send. Requires `bookings.detail.workflow:edit` (same leaf as the booking-detail manual workflow email resends). Skipped (with a toast) if the guest's email is on the suppression list. Emits `booking.custom_template_sent` to the org activity log on success (`booking` category, `metadata.template_key` / `template_name`).
+**Custom templates → Send to guest (shipped):** Custom template cards show **Send to guest** in the More menu once the saved content has no unsaved edits. It opens a dialog to search/pick a booking (guest name, date, or status). While bookings load, the list is row skeletons. The send button keeps a spinner only while the email is sending. It sends that exact saved content to the booking's guest email immediately — not tied to booking status or an automation toggle, and no cooldown. Uses the same `renderPropertyTemplateSendEmail` shell as every other template send. Requires `bookings.detail.workflow:edit` (same leaf as the booking-detail manual workflow email resends). Skipped (with a toast) if the guest's email is on the suppression list. Emits `booking.custom_template_sent` to the org activity log on success (`booking` category, `metadata.template_key` / `template_name`).
 
 **Chat templates (shipped):** the property's standard and custom templates are also selectable in **Guest Inbox → Insert (`+`) → Templates** and in the **AI Assistant → Pin context → Templates**. Email templates are excluded from both. The Inbox opens the same preview as this page, then sends a snapshot into the thread; web chat renders the snapshot as a rich card, Meta DMs receive flattened text. The AI Assistant receives the template body as context, not a message. No new plan key or permission leaf: standard templates stay free and custom templates inherit `customTemplates`; Inbox listing uses `inbox:view`, sending uses `inbox.messages:edit`, and assistant listing uses `templates:view`.
 
@@ -31,7 +31,7 @@ The rail is built from the server registry, not a hand-kept UI list. `GET proper
 
 | Order | Group          | Contents                                                                                        |
 | ----- | -------------- | ----------------------------------------------------------------------------------------------- |
-| 1     | Stay guide     | Guide sections, shown under chapter sub-labels. Always visible so hosts can add templates.      |
+| 1     | Stay guide     | Guide sections in reading order. Always visible so hosts can add templates.                     |
 | 2     | Guest messages | Host-sent replies. Only visible when the property has messages.                                 |
 | 3     | Guest emails   | Automated guest mail. Always visible.                                                           |
 | 4     | Building admin | GAF, pet and GAF cancellation. Hidden when the property has no GAF or pet document requirement. |
@@ -39,19 +39,19 @@ The rail is built from the server registry, not a hand-kept UI list. `GET proper
 | 6     | Folders        | Host-created folders.                                                                           |
 | 7     | Custom         | Ungrouped host-owned templates.                                                                 |
 
-Filter chips map to these groups: **All**, **Stay guide**, **Emails** (Guest emails + Building admin + Team alerts), **Custom**.
+The type filter is **All types**, **Stay guide**, **Messages**, **Emails**, **Custom**. Hidden guide sections carry a muted **Hidden** badge next to the row title instead of a plain word in the meta line.
 
 Built-in content and default subjects live in `supabase/functions/_shared/propertyTemplateDefaults/condo.ts`. Every property resolves to the condo pack until other packs exist. `properties.type` is read by the resolver, so a new pack is a content file plus a resolver branch.
 
 ### Guest messages
 
-Ten ready-to-send messages live under **Guest messages**: balance reminder, missing documents, check-in day, early check-in, late check-out, checking in, noise reminder, check-out reminder, thank you, and item left behind. They use the same placeholders as emails and can go by chat or email.
+Nine ready-to-send messages live under **Guest messages**: balance reminder, missing documents, check-in day, early check-in, late check-out, noise reminder, check-out reminder, thank you, and item left behind. They use the same placeholders as emails and can go by chat or email. The generic mid-stay "checking in" message was removed as noise; the check-in day and check-out reminder messages cover the useful moments.
 
 In **Guest Inbox → Insert (`+`) → Messages** a message is inserted as editable text in the composer, so bracketed fill-ins like `[item]` can be changed before sending. **Send to guest** by email uses the same booking picker as custom templates and needs Starter or above.
 
 ### Subjects and test send
 
-Every email template shows **To**, **When**, **Automation** (On, Off, or Needs plan), a **Subject** field and **Send test**. GAF and pet subjects are read-only and marked **Fixed**, because inbound approval matches those subject lines.
+Every email template shows a compact facts row with the recipient, trigger and automation state (On, Off, or Needs plan), a **Subject** field and **Send test** in the action row. GAF and pet subjects are read-only and marked **Fixed**, because inbound approval matches those subject lines. The Subject placeholder shows the shipped default filled with this property's real unit, guest dates and property name, so hosts never see raw `{{tokens}}`.
 
 The subject is the saved `subject` column when set, otherwise the shipped default. Plain placeholders are filled from the same values as the body; block placeholders are rejected in a subject. **Send test** renders the current draft with this property's real data and mails it to the signed-in account, subject prefixed `[Test]`. It never goes to a guest, so automation switches do not apply. Ten sends per user per hour.
 
@@ -67,28 +67,28 @@ Route/nav: `templates:view`. In-page: `templates.standard:edit`, `templates.emai
 
 ## Host-facing knowledge
 
-Templates is where you customize the text guests and your team receive: stay guide sections (house rules, check-in and check-out, parking) and automated emails (booking confirmations, document requests, ready-for-check-in). Preview shows the same layout that goes out to guests, whether that's on the stay guide or in an email.
+Templates is where you customize the text guests and your team receive: ten stay guide sections (welcome, getting here, check-in, house rules, using the unit, building amenities, parking, pets, emergency and safety, check-out) and automated emails (booking confirmations, document requests, check-in details). Preview renders the same layout that goes out to guests, using this property's address, unit, times and contact details.
 
-**Mobile editor chrome:** Edit/Preview uses the dense card-header segment track (~28px). Placeholders / Reset / Save are compact 32px icon controls (labels from `sm+`). TipTap toolbar buttons match that size. Rich-text body/headings use a phone-scaled type set (14px body; H1 ~20px) so content doesn’t dwarf admin chrome.
+**Mobile editor chrome:** the Edit/Preview switch is icon-only on phone. Placeholders, Reset and Save sit in one action row; Save stays labelled. The guest visibility block uses a proper switch and the standard select control, not native browser inputs.
 
 **Common host questions**
 
 - Q: Which templates do guests actually see?
-  A: The four standard templates (house rules, check-in instructions, check-out instructions, parking reminders) appear on the guest stay guide during their booking window. Email templates are used for automated messages throughout the booking process.
+  A: Ten stay guide sections are available. Welcome, check-in, house rules, emergency and safety, and check-out show by default; getting here, using the unit, and building amenities start hidden until you review the copy and switch them on. Parking shows only when the booking needs parking, and pets only when the guest brings a pet. Email templates are used for automated messages throughout the booking process.
 - Q: Where do I upload Stay Guide section photos?
   A: **Public Pages → Stay Guide → Edit → Content**. Templates still edits the text for those sections, but section images upload only in the Stay Guide page editor (with live preview).
 - Q: If I mess up an email template, can I undo it?
-  A: Yes. Use **Reset to default** on any built-in template to restore the original wording, including dynamic sections like payment tables and signatures. Reset works on Free; saving your own edits still needs Starter.
+  A: Yes. Use **Reset** on any built-in template to restore the original wording, including dynamic sections like payment tables and signatures. Reset works on Free; saving your own edits still needs Starter.
 - Q: Can I customize email templates on Free?
   A: You can open, edit, and reset them. Saving your changes requires Starter. Standard stay-guide templates can be edited and saved on Free.
 - Q: Can I use these templates in chat?
   A: Yes. In Guest Inbox, open **Insert** (`+`) and pick a template under **Templates**. You see the full preview before sending. Web chat shows your template as a card the guest can open; Facebook and Instagram get the same words as plain text. In the AI Assistant, pin a template as context to rewrite or reuse it. Email templates stay email-only.
 - Q: Do custom templates get sent automatically?
-  A: No, custom templates are never part of the automated booking workflow. Use the **Send** button on a custom template card to send it to a specific booking's guest on demand - the built-in standard and email templates are still the only ones wired to guest-facing pages and automated status-driven sends.
+  A: No, custom templates are never part of the automated booking workflow. Use the **Send to guest** action on a custom template to send it to a specific booking's guest on demand. The built-in sections and emails are the only ones wired to guest-facing pages and automated status-driven sends.
 - Q: Why do I need a code to save a template?
-  A: Template text can reach guests and building admins, so saving, resetting, or creating a template asks the org owner for a one-time email code first - same idea as changing payment details. Renaming, moving, or deleting does not.
-- Q: Why is Add Custom Template asking me to upgrade?
-  A: Custom templates and saving email templates are on Starter and above. You can still fully edit and save the four standard stay-guide templates on Free, and you can preview, edit, and reset email copy - Save just prompts you to upgrade.
+  A: Template text can reach guests and building admins, so saving, resetting, or creating a template asks the org owner for a one-time email code first. Renaming, moving, or deleting does not.
+- Q: Why is the custom template action asking me to upgrade?
+  A: Custom templates and saving email templates are on Starter and above. You can still fully edit and save the standard stay-guide templates on Free, and you can preview, edit, and reset email copy. Save prompts you to upgrade.
 
 ## Integration status
 
@@ -99,15 +99,17 @@ Templates is where you customize the text guests and your team receive: stay gui
 | **Admin UI**                    | Load, edit, save, reset, custom create/delete, Edit/Preview, placeholders insert, image resize                                                                                                                       |
 | **Persistence**                 | `property_template_contents` per `property_id` + `template_key`; optional **`section_image_url`** (standard only — uploaded from Stay Guide Page Editor); built-ins fall back to shipped defaults when no row exists |
 | **API**                         | `GET/PATCH property-templates-settings`, `POST property-templates-preview`, `POST upload-property-template-asset` (section + inline images)                                                                          |
-| **Preview**                     | Standard: client sample placeholders. Email: same send shell + `buildSampleDynamicSections()` as production                                                                                                          |
+| **Preview**                     | Standard: server-rendered HTML with this property's real values in a sandboxed iframe. Email: same send shell + `buildSampleDynamicSections()` as production                                                         |
 | **Workflow sends**              | `emailService.ts` → `renderPropertyTemplateSendEmail()` resolves DB/default body, substitutes plain + dynamic section placeholders, wraps in send shell                                                              |
 | **Custom template manual send** | `POST send-property-custom-template-email` → `sendPropertyCustomTemplateEmail()` — booking picker dialog, on-demand send, no status/automation gate                                                                  |
 
 ### Standard templates → guest stay guide (shipped)
 
-The four **standard** keys (`house-rules`, `check-in-instructions`, `check-out-instructions`, `parking-reminders`) render on the token-gated guest page **`/properties/:slug/stay-guide?token=`** during the booking access window. See **[[stay-guide|Guest stay guide (token-gated brochure)]]**.
+All ten **standard** guide keys (`welcome-note`, `getting-here`, `check-in-instructions`, `house-rules`, `using-the-unit`, `building-amenities`, `parking-reminders`, `pet-guidelines`, `emergency-and-safety`, `check-out-instructions`) render on the token-gated guest page **`/properties/:slug/stay-guide?token=`** during the booking access window. See **[[stay-guide|Guest stay guide (token-gated brochure)]]**.
 
-**Stay guide preview** — use **Public Pages → Stay Guide → Edit** (live preview) or open the Stay Guide card’s preview URL. Templates edits body copy only; it does not include a **Preview stay guide** button.
+The default set was pruned: trash and recycling now lives inside **Using the unit**, and the placeholder-heavy **Around the area** section was removed. Hosts who want a local guide can add a custom template.
+
+**Stay guide preview** — use **Public Pages → Stay Guide → Edit** (live preview) or open the Stay Guide card's preview URL. Templates edits body copy only; it does not include a **Preview stay guide** button.
 
 ### Previously not wired (email/PDF)
 
@@ -136,11 +138,12 @@ Static files under `email-templates/*.html` remain for reference; live sends use
 
 ## Sections
 
-| Group    | Keys                                                                                                                                                                                                                                                                                                                                |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Standard | `house-rules`, `check-in-instructions`, `check-out-instructions`, `parking-reminders`                                                                                                                                                                                                                                               |
-| Email    | `email-gaf-request`, `email-pet-request`, `email-new-booking-request`, `email-booking-request-received`, `email-booking-acknowledgement`, `email-ready-for-checkin`, `email-sd-refund-form-request`, `email-booking-cancelled-guest`, `email-booking-cancelled-host`, `email-cancellation-request-guest`, `email-refund-sent-guest` |
-| Custom   | `custom-{uuid}` — operator-created; sent on demand to a picked booking's guest via **Send to guest**                                                                                                                                                                                                                                |
+| Group    | Keys                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Standard | `welcome-note`, `getting-here`, `check-in-instructions`, `house-rules`, `using-the-unit`, `building-amenities`, `parking-reminders`, `pet-guidelines`, `emergency-and-safety`, `check-out-instructions`                                                                                                                                                                                                                                                                                                                                         |
+| Messages | `message-balance-reminder`, `message-document-follow-up`, `message-check-in-day`, `message-early-check-in`, `message-late-check-out`, `message-noise-reminder`, `message-check-out-reminder`, `message-thank-you`, `message-lost-and-found`                                                                                                                                                                                                                                                                                                     |
+| Email    | `email-gaf-request`, `email-pet-request`, `email-new-booking-request`, `email-booking-request-received`, `email-booking-acknowledgement`, `email-ready-for-checkin`, `email-pre-arrival-reminder`, `email-parking-reminder`, `email-sd-refund-form-request`, `email-review-request`, `email-review-reminder`, `email-booking-cancelled-guest`, `email-request-expired-guest`, `email-cancellation-request-guest`, `email-refund-sent-guest`, `email-building-admin-cancellation`, `email-request-expiring-host`, `email-booking-cancelled-host` |
+| Custom   | `custom-{uuid}` — operator-created; sent on demand to a picked booking's guest via **Send to guest**                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 Built-in defaults ship in `propertyTemplates.ts` on the server. Rows in `property_template_contents` override defaults per property.
 
@@ -168,7 +171,7 @@ picker (`always / before / arrival / stay / checkout / after`). Visible ones ren
 | Save custom content                                                                             | `PATCH` `{ templateKey: "custom-…", content, name?, settingsVerificationToken }` — same **`customTemplates`** + OTP as create                                                                 |
 | Delete custom                                                                                   | `PATCH` `{ action: "delete", templateKey }` — no OTP (organise / remove only)                                                                                                                 |
 | Rename / move / folders                                                                         | organise PATCHes — no OTP                                                                                                                                                                     |
-| Preview (email shell)                                                                           | `POST property-templates-preview` `{ templateKey, category, content, subject?, name? }`                                                                                                       |
+| Preview (all templates)                                                                         | `POST property-templates-preview` `{ templateKey, category, content, subject?, name? }`                                                                                                       |
 | Send test to me                                                                                 | `POST send-property-template-test-email` `{ templateKey, category, content, subject?, name? }` — caller's own address, 10 per user per hour                                                   |
 | Auth: `verifyAdminJwt` + property scope via `property_id` query (same as other admin settings). |                                                                                                                                                                                               |
 
@@ -176,10 +179,11 @@ picker (`always / before / arrival / stay / checkout / after`). Visible ones ren
 
 ## Preview
 
-- **Standard:** inline HTML preview (`RichTextDisplay`) with sample `{{placeholder}}` substitution (same sample values as the preview API).
-- **Email:** iframe from preview edge function — **`renderPropertyTemplatePreview`** calls **`renderPropertyTemplateSendEmail`** with `contentOverride`, sample vars, and **`buildSampleDynamicSections()`** for section placeholders present in the template body (same layout as production sends).
+- **Both categories** render through `POST property-templates-preview` in a sandboxed iframe, so what the host sees is what the send path renders.
+- **Standard:** the preview edge function starts from the shipped sample variables, then overlays `buildPropertyPlaceholderVars({ propertyId })`. Address, unit, map link, contact card, house rules, amenities and other property-data blocks resolve with this property's real values. No raw `{{tokens}}` reach the iframe.
+- **Email:** **`renderPropertyTemplatePreview`** calls **`renderPropertyTemplateSendEmail`** with `contentOverride`, sample vars, and **`buildSampleDynamicSections()`** for section placeholders present in the template body (same layout as production sends).
 
-Preview and send are aligned on `fragments/configurable-template-send.html`.
+Preview and send are aligned on `fragments/configurable-template-send.html`. The preview pane owns its own scroll; the header and action row stay fixed.
 
 ## Placeholders
 

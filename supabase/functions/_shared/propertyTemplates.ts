@@ -4,7 +4,11 @@
  */
 
 import { createClient } from './supabaseJs.ts';
-import { PROPERTY_TEMPLATE_PLACEHOLDERS_REFERENCE } from './propertyTemplatePlaceholders.ts';
+import {
+  applyPropertyTemplateSamplePlaceholders,
+  PROPERTY_TEMPLATE_PLACEHOLDERS_REFERENCE,
+  PROPERTY_TEMPLATE_SAMPLE_VARS,
+} from './propertyTemplatePlaceholders.ts';
 import { normalizeBlockLevelPlaceholdersInHtml } from './normalizeBlockLevelPlaceholders.ts';
 import { normalizeEmailCalloutPlaceholders } from './normalizeEmailCalloutPlaceholders.ts';
 import type { PropertyAutomationToggleKey } from './propertyAutomationToggles.ts';
@@ -107,16 +111,13 @@ export type PropertyTemplateKey =
   | 'getting-here'
   | 'using-the-unit'
   | 'building-amenities'
-  | 'trash-and-recycling'
   | 'pet-guidelines'
   | 'emergency-and-safety'
-  | 'local-guide'
   | 'message-balance-reminder'
   | 'message-document-follow-up'
   | 'message-check-in-day'
   | 'message-early-check-in'
   | 'message-late-check-out'
-  | 'message-mid-stay'
   | 'message-noise-reminder'
   | 'message-check-out-reminder'
   | 'message-thank-you'
@@ -218,6 +219,8 @@ export type PropertyTemplateDto = {
   iconId: PropertyTemplateIconId | null;
   /** Email only. `subject` is the saved override; this is the shipped default. */
   defaultSubject: string | null;
+  /** The shipped default subject with real property values, for the editor placeholder. */
+  defaultSubjectPreview: string | null;
   subjectLocked: boolean;
   chapter: PropertyTemplateChapter | null;
   defaultPhase: GuestTemplatePhase | null;
@@ -534,13 +537,6 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
     defaultContent: '',
   },
   {
-    key: 'trash-and-recycling',
-    label: 'Trash and recycling',
-    description: 'Waste segregation and collection.',
-    category: 'standard',
-    defaultContent: '',
-  },
-  {
     key: 'pet-guidelines',
     label: 'Pet guidelines',
     description: 'Rules for guests bringing a pet.',
@@ -551,13 +547,6 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
     key: 'emergency-and-safety',
     label: 'Emergency and safety',
     description: 'Emergency contacts and safety steps.',
-    category: 'standard',
-    defaultContent: '',
-  },
-  {
-    key: 'local-guide',
-    label: 'Around the area',
-    description: 'Food, stores and things to do nearby.',
     category: 'standard',
     defaultContent: '',
   },
@@ -593,13 +582,6 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
     key: 'message-late-check-out',
     label: 'Late check-out',
     description: 'Guest asks to stay later.',
-    category: 'message',
-    defaultContent: '',
-  },
-  {
-    key: 'message-mid-stay',
-    label: 'Checking in',
-    description: 'Day two of a longer stay.',
     category: 'message',
     defaultContent: '',
   },
@@ -880,12 +862,6 @@ const BUILTIN_META: Record<PropertyTemplateKey, BuiltinMeta> = {
     iconId: 'list-checks',
     visible: false,
   }),
-  'trash-and-recycling': guideMeta({
-    chapter: 'make-yourself-at-home',
-    phase: 'stay',
-    iconId: 'list-checks',
-    visible: false,
-  }),
   'pet-guidelines': guideMeta({
     chapter: 'make-yourself-at-home',
     phase: 'arrival',
@@ -897,19 +873,11 @@ const BUILTIN_META: Record<PropertyTemplateKey, BuiltinMeta> = {
     phase: 'stay',
     iconId: 'list-checks',
   }),
-  'local-guide': guideMeta({
-    chapter: 'make-yourself-at-home',
-    phase: 'stay',
-    iconId: 'list-checks',
-    visible: false,
-    requiresEdit: true,
-  }),
   'message-balance-reminder': messageMeta({}),
   'message-document-follow-up': messageMeta({}),
   'message-check-in-day': messageMeta({}),
   'message-early-check-in': messageMeta({}),
   'message-late-check-out': messageMeta({}),
-  'message-mid-stay': messageMeta({}),
   'message-noise-reminder': messageMeta({}),
   'message-check-out-reminder': messageMeta({}),
   'message-thank-you': messageMeta({}),
@@ -1301,6 +1269,7 @@ function rowToDto(
     automationToggleKey: builtin?.automationToggleKey ?? null,
     iconId: builtin?.iconId ?? null,
     defaultSubject: builtin?.defaultSubject ?? null,
+    defaultSubjectPreview: null,
     subjectLocked: builtin?.subjectLocked ?? false,
     chapter: builtin?.chapter ?? null,
     defaultPhase: builtin?.defaultPhase ?? null,
@@ -1344,6 +1313,7 @@ function builtinToDto(builtin: PropertyTemplateDefinition): PropertyTemplateDto 
     automationToggleKey: builtin.automationToggleKey,
     iconId: builtin.iconId,
     defaultSubject: builtin.defaultSubject,
+    defaultSubjectPreview: null,
     subjectLocked: builtin.subjectLocked,
     chapter: builtin.chapter,
     defaultPhase: builtin.defaultPhase,
@@ -1375,6 +1345,10 @@ export async function serializePropertyTemplatesForAdmin(propertyId: string): Pr
   ]);
   const rowByKey = new Map(rows.map((r) => [r.template_key, r]));
 
+  /* A subject placeholder should read like a real subject. Property values win over the
+   * sample values, so the preview names this property, not a generic one. */
+  const subjectVars = { ...PROPERTY_TEMPLATE_SAMPLE_VARS, ...propertyVars.vars };
+
   const templates: PropertyTemplateDto[] = BUILTIN_TEMPLATES.filter(
     (builtin) => builtin.appliesWhen !== 'gaf-or-pet-required' || needsBuildingAdmin
   ).map((builtin) => {
@@ -1386,6 +1360,14 @@ export async function serializePropertyTemplatesForAdmin(propertyId: string): Pr
   for (const row of rows) {
     if (!isCustomTemplateKey(row.template_key)) continue;
     templates.push(rowToDto(row));
+  }
+
+  for (const template of templates) {
+    if (!template.defaultSubject) continue;
+    template.defaultSubjectPreview =
+      applyPropertyTemplateSamplePlaceholders(template.defaultSubject, subjectVars)
+        .replace(/\s+/g, ' ')
+        .trim() || null;
   }
 
   if (automation) {

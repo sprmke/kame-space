@@ -178,9 +178,12 @@ export const PROPERTY_TEMPLATE_SAMPLE_VARS: Record<string, string> = {
   cancellation_request_title: 'Cancellation request received',
 };
 
-export function applyPropertyTemplateSamplePlaceholders(html: string): string {
+export function applyPropertyTemplateSamplePlaceholders(
+  html: string,
+  vars: Record<string, string> = PROPERTY_TEMPLATE_SAMPLE_VARS
+): string {
   let out = html;
-  for (const [key, value] of Object.entries(PROPERTY_TEMPLATE_SAMPLE_VARS)) {
+  for (const [key, value] of Object.entries(vars)) {
     out = out.split(`{{${key}}}`).join(value);
     const hyphenKey = key.replace(/_/g, '-');
     if (hyphenKey !== key) {
