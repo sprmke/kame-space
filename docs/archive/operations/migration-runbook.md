@@ -1107,16 +1107,18 @@ LOCAL_BILLING_LIVE=1 TZ=Asia/Manila deno test --config supabase/functions/deno.j
 ## Property template defaults backfill
 
 Migration `20261343001100_property_template_contents_v2.sql` adds `subject`, `default_hash` and
-the `message` category. After it lands, properties that never edited a default should fall
-through to the new condo copy instead of keeping the old body in a row.
+the `message` category. After it lands, properties that never edited a default should get the
+new condo copy without losing a section image or a visibility choice.
 
 ```bash
 bun run backfill:templates             # dry run: counts per template key
-bun run backfill:templates -- --execute  # deletes matched rows
+bun run backfill:templates -- --execute  # rewrites matched row content
 ```
 
-The script holds a frozen copy of every previously shipped default and deletes a built-in row
-only when its normalized content matches that old default and it has no subject override. Run
+The script holds a frozen copy of every previously shipped default and rewrites a built-in row
+only when its normalized content matches that old default and it has no subject override. It
+keeps `section_image_url`, `guest_visible` and `guest_phase`, clears `default_hash`, and leaves
+customized rows untouched. Run
 the dry run on local and on the shared project first; a production run is a remote write and
 needs the same approval as any other production change. Rows the host customized are untouched
 and show **New default available** in the editor.

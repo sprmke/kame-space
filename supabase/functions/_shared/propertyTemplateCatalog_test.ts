@@ -125,4 +125,24 @@ Deno.test('guest messages may use trip links', () => {
   const keys = propertyTemplatePlaceholderKeys('message-check-in-day', 'message');
   assertEquals(keys.includes('trip_url'), true);
   assertEquals(keys.includes('review_url'), true);
+  assertEquals(keys.includes('stay_guide_url'), true);
+  assertEquals(keys.includes('messages_url'), true);
+});
+
+Deno.test('optional property lines are block placeholders', () => {
+  for (const key of ['garbage_schedule_section', 'quiet_hours_section']) {
+    assertEquals(isBlockLevelPropertyPlaceholder(key), true, `${key} should be block level`);
+  }
+});
+
+Deno.test('guest messages reject team-only and email-only tokens', () => {
+  const keys = propertyTemplatePlaceholderKeys('message-check-in-day', 'message');
+  for (const token of [
+    'booking_link',
+    'booking_link_cta',
+    'urgent_notice',
+    'gcash_payment_section',
+  ]) {
+    assertEquals(keys.includes(token), false, `${token} must stay out of guest messages`);
+  }
 });

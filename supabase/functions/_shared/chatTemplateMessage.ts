@@ -152,6 +152,16 @@ export async function buildChatTemplateVars(input: {
       // empty in chat.
       ...bookingVars,
       ...contactVars,
+      // Email CTAs are buttons; chat inserts editable text, so keep plain links instead.
+      trip_cta_section: bookingVars.trip_url
+        ? `<p><a href="${bookingVars.trip_url}">View your trip</a></p>`
+        : '',
+      review_cta_section: bookingVars.review_url
+        ? `<p><a href="${bookingVars.review_url}">Leave a review</a></p>`
+        : '',
+      messages_cta_section: propertyVars.vars.messages_url
+        ? `<p><a href="${propertyVars.vars.messages_url}">Message your host</a></p>`
+        : '',
     };
   }
 

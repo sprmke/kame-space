@@ -13,6 +13,7 @@ import {
 } from '../_shared/propertyEmailBranding.ts';
 import { renderPropertyTemplatePreview } from '../_shared/propertyTemplatePreview.ts';
 import {
+  getBuiltinPropertyTemplate,
   isBuiltinPropertyTemplateKey,
   isCustomTemplateKey,
   validateTemplateContent,
@@ -61,9 +62,13 @@ serveAuthenticated('send-property-template-test-email', async (req, user) => {
   const contentErr = validateTemplateContent(content);
   if (contentErr) return jsonError(req, contentErr, 400);
 
+  /* Never trust the submitted category for a built-in: it decides which edit leaf is
+   * required and which renderer runs. */
+  const effectiveCategory = getBuiltinPropertyTemplate(templateKey)?.category ?? category;
+
   const { property } = await resolveScopedPropertyAccess(
     req,
-    editPermission(templateKey, category)
+    editPermission(templateKey, effectiveCategory)
   );
 
   const limited = await rateLimitGate(req, {
@@ -83,7 +88,7 @@ serveAuthenticated('send-property-template-test-email', async (req, user) => {
   const preview = await renderPropertyTemplatePreview({
     propertyId: property.id,
     templateKey,
-    category,
+    category: effectiveCategory,
     content,
     name,
     subject,

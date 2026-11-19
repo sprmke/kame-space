@@ -1,5 +1,7 @@
 import * as React from 'react';
 
+import { Link } from 'react-router-dom';
+
 import {
   Braces,
   ChevronLeft,
@@ -113,6 +115,10 @@ type Props = {
   showSectionImage?: boolean;
   /** When false, content is preview-only (no edit/save/reset/delete). */
   canEdit?: boolean;
+  /** Property-data tokens that resolve to an empty string for this property. */
+  emptyPlaceholders?: string[];
+  /** Email automations section for the Automation fact link. */
+  automationHref?: string;
 };
 
 export function PropertyTemplateEditorPane({
@@ -126,6 +132,8 @@ export function PropertyTemplateEditorPane({
   saving,
   showSectionImage = true,
   canEdit = true,
+  emptyPlaceholders = [],
+  automationHref,
 }: Props) {
   const { template, icon: Icon } = entry;
   const [content, setContent] = React.useState(() =>
@@ -140,6 +148,7 @@ export function PropertyTemplateEditorPane({
   );
   const [activeTab, setActiveTab] = React.useState<EditorTab>(canEdit ? 'edit' : 'preview');
   const [previewHtml, setPreviewHtml] = React.useState<string | null>(null);
+  const [previewSubject, setPreviewSubject] = React.useState('');
   const [previewFailed, setPreviewFailed] = React.useState(false);
   const [resetOpen, setResetOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
@@ -194,8 +203,9 @@ export function PropertyTemplateEditorPane({
   const isMessage = template.category === 'message';
   const isCustom = template.category === 'custom';
   const isStandard = template.category === 'standard';
-  /** Automated email + custom saves need Starter+; guide sections and messages are free. */
-  const requiresStarterToPersist = isAutomatedEmail || isCustom;
+  /** Automated emails and host-owned saves need Starter+; built-in guide sections and
+   * built-in messages stay free. */
+  const requiresStarterToPersist = isAutomatedEmail || entry.organisable;
   const allowSectionImage = isStandard && showSectionImage;
   const uploadTemplateAsset = useUploadPropertyTemplateAsset();
 
@@ -246,6 +256,13 @@ export function PropertyTemplateEditorPane({
     [placeholderLines]
   );
 
+  const emptyTokensInTemplate = React.useMemo(() => {
+    const present = new Set(
+      [...content.matchAll(/\{\{([\w-]+)\}\}/g)].map((match) => match[1].replace(/-/g, '_'))
+    );
+    return emptyPlaceholders.filter((key) => present.has(key));
+  }, [content, emptyPlaceholders]);
+
   const handleInlineImageUpload = React.useCallback(
     async (file: File) => {
       const result = await uploadTemplateAsset.mutateAsync({
@@ -287,13 +304,15 @@ export function PropertyTemplateEditorPane({
         templateKey: template.templateKey,
         category: template.category,
         content,
+        subject: subject.trim() || null,
         name: template.name,
       });
       setPreviewHtml(result.html);
+      setPreviewSubject(result.subject ?? '');
     } catch {
       setPreviewFailed(true);
     }
-  }, [content, fetchPreview, template.category, template.name, template.templateKey]);
+  }, [content, fetchPreview, subject, template.category, template.name, template.templateKey]);
 
   React.useEffect(() => {
     if (activeTab !== 'preview') return;
@@ -328,6 +347,7 @@ export function PropertyTemplateEditorPane({
     setActiveTab(tab);
     if (tab === 'edit') {
       setPreviewHtml(null);
+      setPreviewSubject('');
       setPreviewFailed(false);
     }
   };
@@ -340,7 +360,7 @@ export function PropertyTemplateEditorPane({
           <button
             type="button"
             onClick={onBack}
-            className="text-muted-foreground hover:text-foreground flex min-h-[44px] w-full items-center gap-1 px-2 text-[13px] font-medium lg:hidden"
+            className="text-muted-foreground hover:text-foreground flex min-h-[44px] w-full items-center gap-1 px-3 text-[13px] font-medium lg:hidden"
           >
             <ChevronLeft className="size-4 shrink-0" aria-hidden />
             All templates
@@ -355,7 +375,7 @@ export function PropertyTemplateEditorPane({
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <h2 className="text-card-title min-w-0 truncate">{template.name}</h2>
-              {isEmail || isCustom ? <TierBadge feature="customTemplates" /> : null}
+              {requiresStarterToPersist ? <TierBadge feature="customTemplates" /> : null}
               {hasChanges ? (
                 <span className="text-muted-foreground inline-flex items-center gap-1.5 text-[11px] font-medium">
                   <span className="bg-warning size-1.5 rounded-full" aria-hidden />
@@ -379,7 +399,7 @@ export function PropertyTemplateEditorPane({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 shrink-0"
+                className="relative h-8 shrink-0 before:absolute before:-inset-y-1.5 before:content-['']"
                 onClick={() => setResetOpen(true)}
               >
                 Use new default
@@ -408,14 +428,28 @@ export function PropertyTemplateEditorPane({
                 </span>
               ) : null}
               {template.automationToggleKey ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <Zap className="size-3.5 shrink-0" aria-hidden />
-                  {template.automationPlanBlocked
-                    ? 'Automation needs plan'
-                    : template.automationEnabled
-                      ? 'Automation on'
-                      : 'Automation off'}
-                </span>
+                automationHref ? (
+                  <Link
+                    to={automationHref}
+                    className="hover:text-foreground inline-flex items-center gap-1.5 hover:underline"
+                  >
+                    <Zap className="size-3.5 shrink-0" aria-hidden />
+                    {template.automationPlanBlocked
+                      ? 'Automation needs plan'
+                      : template.automationEnabled
+                        ? 'Automation on'
+                        : 'Automation off'}
+                  </Link>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Zap className="size-3.5 shrink-0" aria-hidden />
+                    {template.automationPlanBlocked
+                      ? 'Automation needs plan'
+                      : template.automationEnabled
+                        ? 'Automation on'
+                        : 'Automation off'}
+                  </span>
+                )
               ) : null}
             </div>
             {isAutomatedEmail ? (
@@ -458,12 +492,12 @@ export function PropertyTemplateEditorPane({
             triggerClassName={cn(cardHeaderSegmentedTriggerClassName, 'px-2 sm:px-2.5')}
           />
           {canEdit ? (
-            <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
+            <div className="ml-auto flex shrink-0 items-center gap-2">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-8 gap-1.5 px-2.5"
+                className="relative h-9 gap-1.5 px-2.5 before:absolute before:-inset-y-1 before:content-['']"
                 onClick={() => setPlaceholdersOpen(true)}
                 aria-label="Placeholders"
                 title="Placeholders"
@@ -476,7 +510,7 @@ export function PropertyTemplateEditorPane({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8 gap-1.5 px-2.5"
+                  className="relative h-9 gap-1.5 px-2.5 before:absolute before:-inset-y-1 before:content-['']"
                   onClick={handleSendTest}
                   disabled={sendingTest}
                   aria-label="Send test"
@@ -491,7 +525,7 @@ export function PropertyTemplateEditorPane({
                   type="button"
                   variant="ghost"
                   size="icon-sm"
-                  className="size-8"
+                  className="relative size-9 before:absolute before:-inset-1 before:content-['']"
                   onClick={() => setResetOpen(true)}
                   aria-label="Reset"
                   title="Reset"
@@ -501,7 +535,7 @@ export function PropertyTemplateEditorPane({
               ) : null}
               {/* One ⋯ for the custom-template actions: four inline buttons never
                * fit beside Save on a phone. */}
-              {isCustom || isMessage ? (
+              {entry.organisable || isMessage ? (
                 <ResponsiveOverflowMenu
                   label={`Actions for ${template.name}`}
                   sheetTitle={template.name}
@@ -517,7 +551,7 @@ export function PropertyTemplateEditorPane({
                         onSelect: () => setSendOpen(true),
                       },
                     ],
-                    ...(isCustom
+                    ...(entry.organisable
                       ? [
                           [
                             {
@@ -553,7 +587,7 @@ export function PropertyTemplateEditorPane({
               <Button
                 type="button"
                 size="sm"
-                className="h-8 gap-1.5 px-2.5"
+                className="relative h-9 gap-1.5 px-2.5 before:absolute before:-inset-y-1 before:content-['']"
                 disabled={!hasChanges || saving}
                 onClick={() => {
                   if (openStarterUpgradeIfNeeded()) return;
@@ -581,24 +615,32 @@ export function PropertyTemplateEditorPane({
         data-template-pane-scroll
         className={cn(
           'flex min-h-0 min-w-0 flex-1 flex-col overscroll-contain p-3 sm:p-4',
-          activeTab === 'preview' ? 'min-h-[280px] overflow-hidden' : 'overflow-y-auto',
+          activeTab === 'preview' ? 'min-h-0 overflow-hidden' : 'overflow-y-auto',
           bottomTabBarOffsetClassName()
         )}
       >
         {activeTab === 'preview' ? (
           previewFailed ? (
-            <div className="bg-muted/20 text-muted-foreground flex min-h-[280px] flex-1 flex-col items-center justify-center gap-3 rounded-lg border text-sm">
+            <div className="bg-muted/20 text-muted-foreground flex min-h-[200px] flex-1 flex-col items-center justify-center gap-3 rounded-lg border text-sm">
               <p>Preview did not load.</p>
               <Button type="button" variant="outline" size="sm" onClick={() => void loadPreview()}>
                 Try again
               </Button>
             </div>
           ) : previewPending || !previewHtml ? (
-            <div className="bg-muted/20 text-muted-foreground flex min-h-[280px] flex-1 items-center justify-center rounded-lg border text-sm">
+            <div className="bg-muted/20 text-muted-foreground flex min-h-[200px] flex-1 items-center justify-center rounded-lg border text-sm">
               Loading preview…
             </div>
           ) : (
             <div className="bg-muted/20 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border">
+              {previewSubject ? (
+                <div className="border-border bg-card flex shrink-0 items-center gap-2 border-b px-3 py-2">
+                  <span className="text-muted-foreground text-[11px] font-semibold uppercase tracking-wide">
+                    Subject
+                  </span>
+                  <span className="min-w-0 truncate text-xs">{previewSubject}</span>
+                </div>
+              ) : null}
               <iframe
                 ref={previewIframeRef}
                 title={`${template.name} preview`}
@@ -621,7 +663,9 @@ export function PropertyTemplateEditorPane({
                       Show to guests
                     </label>
                     <p className="text-muted-foreground mt-0.5 text-xs">
-                      Appears on the trip page and in the stay guide.
+                      {isStandard
+                        ? 'Shows in the stay guide.'
+                        : 'Appears on the trip page and in the stay guide.'}
                     </p>
                   </div>
                   <Switch
@@ -632,11 +676,11 @@ export function PropertyTemplateEditorPane({
                     aria-label="Show to guests"
                   />
                 </div>
-                {guestVisible ? (
+                {guestVisible && isCustom ? (
                   <div className="border-separator space-y-1.5 border-t pt-3">
                     <label
                       htmlFor="template-guest-phase"
-                      className="text-foreground block text-xs font-medium"
+                      className="text-foreground block text-sm font-medium"
                     >
                       When to show
                     </label>
@@ -660,6 +704,13 @@ export function PropertyTemplateEditorPane({
                   </div>
                 ) : null}
               </div>
+            ) : null}
+
+            {emptyTokensInTemplate.length > 0 ? (
+              <p className="text-muted-foreground text-xs leading-snug">
+                Not set for this property:{' '}
+                {emptyTokensInTemplate.map((key) => `{{${key}}}`).join(', ')}
+              </p>
             ) : null}
 
             {allowSectionImage ? (

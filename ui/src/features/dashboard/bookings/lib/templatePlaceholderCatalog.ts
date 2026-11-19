@@ -66,7 +66,7 @@ const PROPERTY_GUEST_CONTACT_KEYS = [
 const PROPERTY_BOOKING_META_KEYS = ['booking_source', 'booking_link'] as const;
 
 /** Guest-facing links (only filled on guest emails). */
-const PROPERTY_GUEST_LINK_KEYS = ['trip_url'] as const;
+const PROPERTY_GUEST_LINK_KEYS = ['trip_url', 'stay_guide_url', 'messages_url'] as const;
 
 const PROPERTY_SECTION_KEYS = [
   'urgent_notice',
@@ -106,6 +106,8 @@ const PROPERTY_SECTION_KEYS = [
   'map_cta_section',
   'messages_cta_section',
   'cancellation_policy_section',
+  'garbage_schedule_section',
+  'quiet_hours_section',
 ] as const;
 
 /** Block-level placeholders — each must sit on its own `<p>` line in email templates. */

@@ -27,9 +27,16 @@ const railMenuTriggerClassName =
 /** Template rows hide ⋯ until hover/focus; section headings keep ⋯ visible. */
 const templateRowMenuTriggerClassName = cn(
   railMenuTriggerClassName,
-  '[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:transition-opacity',
+  '[@media(hover:hover)]:pointer-events-none [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:transition-opacity',
+  '[@media(hover:hover)]:group-focus-within/row:pointer-events-auto [@media(hover:hover)]:group-hover/row:pointer-events-auto',
   '[@media(hover:hover)]:group-focus-within/row:opacity-100 [@media(hover:hover)]:group-hover/row:opacity-100'
 );
+
+/** Only Stay guide and Guest messages accept host-created templates. */
+function groupAcceptsNewTemplates(group: TemplateLibraryGroup): boolean {
+  if (group.kind === 'folder' || group.kind === 'ungrouped') return true;
+  return group.kind === 'builtin' && (group.id === 'stay-guide' || group.id === 'guest-messages');
+}
 
 export type TemplateRailHandlers = {
   onRenameTemplate: (entry: TemplateLibraryEntry) => void;
@@ -142,7 +149,7 @@ const TemplateRow = React.forwardRef<
           <span className="block truncate text-sm font-medium">{entry.name}</span>
           <TemplateRowMeta entry={entry} active={active} />
         </span>
-        {showChevron && !canOrganise && !canDelete ? (
+        {showChevron ? (
           <ChevronRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
         ) : null}
       </button>
@@ -198,10 +205,14 @@ function RailFolderEmptyState({
   const canAdd =
     permissions.canAddCustom &&
     typeof handlers.onAddTemplateToGroup === 'function' &&
-    (group.kind === 'folder' || group.kind === 'builtin');
+    groupAcceptsNewTemplates(group);
 
   const emptyHint =
-    group.kind === 'builtin' ? 'Add a custom template here.' : 'Move a template here.';
+    group.kind === 'builtin'
+      ? canAdd
+        ? 'Add a custom template here.'
+        : 'No templates yet.'
+      : 'Move a template here.';
 
   return (
     <div
@@ -244,7 +255,7 @@ function RailGroupHeading({
   const canAddToGroup =
     permissions.canAddCustom &&
     typeof handlers.onAddTemplateToGroup === 'function' &&
-    (group.kind === 'folder' || group.kind === 'builtin' || group.kind === 'ungrouped');
+    groupAcceptsNewTemplates(group);
 
   const actionGroups: Parameters<typeof ResponsiveOverflowMenu>[0]['actionGroups'] = [];
 

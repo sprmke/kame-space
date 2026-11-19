@@ -480,8 +480,9 @@ export function usePropertyTemplatePreview() {
       templateKey: string;
       category: PropertyTemplateCategory;
       content: string;
+      subject?: string | null;
       name?: string;
-    }): Promise<{ html: string; mode: string }> => {
+    }): Promise<{ html: string; mode: string; subject: string }> => {
       const headers = await authHeaders();
       const res = await fetch(scopedFunctionsUrl('/property-templates-preview', propertyId), {
         method: 'POST',
@@ -495,12 +496,12 @@ export function usePropertyTemplatePreview() {
       const json = (await res.json()) as {
         success?: boolean;
         error?: string;
-        data?: { html: string; mode: string };
+        data?: { html: string; mode: string; subject?: string };
       };
       if (!json.success || !json.data) {
         throw new Error(json.error ?? 'Failed to render preview');
       }
-      return json.data;
+      return { ...json.data, subject: json.data.subject ?? '' };
     },
   });
 }

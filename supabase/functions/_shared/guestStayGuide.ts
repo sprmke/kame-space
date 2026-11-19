@@ -643,11 +643,12 @@ async function buildGuestStayGuidePayload(
 
   const sectionKeys: StayGuideSectionKey[] = STAY_GUIDE_STANDARD_SECTION_KEYS.filter((key) => {
     if (options?.includeAllStandardSections) return true;
-    if (key === 'parking-reminders') return Boolean(booking.need_parking);
-    if (key === 'pet-guidelines') return Boolean(booking.has_pets);
     const builtin = getBuiltinPropertyTemplate(key);
+    // A host's explicit "hidden" choice wins, even for a conditional section.
     if (visibilityByKey.get(key) === false) return false;
     if (!visibilityByKey.has(key) && builtin?.defaultGuestVisible === false) return false;
+    if (key === 'parking-reminders') return Boolean(booking.need_parking);
+    if (key === 'pet-guidelines') return Boolean(booking.has_pets);
     return true;
   });
 

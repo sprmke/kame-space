@@ -207,6 +207,12 @@ export async function buildPropertyPlaceholderVars(
   vars.parking_slot_note = escapeHtml(essentials?.parkingSlotNote ?? '');
   vars.garbage_schedule = escapeHtml(essentials?.garbageSchedule ?? '');
   vars.quiet_hours = escapeHtml(essentials?.quietHours ?? '');
+  vars.garbage_schedule_section = essentials?.garbageSchedule
+    ? `<p>Collection schedule: ${escapeHtml(essentials.garbageSchedule)}</p>`
+    : '';
+  vars.quiet_hours_section = essentials?.quietHours
+    ? `<p>Quiet hours are ${escapeHtml(essentials.quietHours)}.</p>`
+    : '';
   vars.building_security_phone = escapeHtml(essentials?.buildingSecurityPhone ?? '');
   vars.emergency_contact_name = escapeHtml(essentials?.emergencyContactName ?? '');
   vars.emergency_contact_phone = escapeHtml(essentials?.emergencyContactPhone ?? '');

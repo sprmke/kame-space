@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 
 import { FileText, FolderPlus, Plus, RefreshCw } from 'lucide-react';
 
@@ -104,6 +104,11 @@ function TemplatePaneMessage({
 
 export function TemplatesPage() {
   const propertyId = usePropertyIdParam();
+  const { orgSlug, propertySlug } = useParams<{ orgSlug: string; propertySlug: string }>();
+  const automationHref =
+    orgSlug && propertySlug
+      ? `/org/${orgSlug}/property/${propertySlug}/settings#section-email-automations`
+      : undefined;
   const { data, isLoading, error, refetch } = usePropertyTemplates();
   const {
     saveTemplate,
@@ -308,14 +313,16 @@ export function TemplatesPage() {
   const openAddTemplateInGroup = React.useCallback(
     (group: TemplateLibraryGroup) => {
       if (!ensureCustomTemplates()) return;
-      if (group.kind === 'builtin' && (group.id === 'standard' || group.id === 'email')) {
-        setAddTemplateInitialPlacement({ category: group.id, folderId: null });
+      if (group.kind === 'builtin' && group.id === 'stay-guide') {
+        setAddTemplateInitialPlacement({ category: 'standard', folderId: null });
+      } else if (group.kind === 'builtin' && group.id === 'guest-messages') {
+        setAddTemplateInitialPlacement({ category: 'message', folderId: null });
       } else if (group.kind === 'folder' && group.folderId) {
         setAddTemplateInitialPlacement({ category: 'custom', folderId: group.folderId });
       } else if (group.kind === 'ungrouped') {
         setAddTemplateInitialPlacement({ category: 'custom', folderId: null });
       } else {
-        setAddTemplateInitialPlacement(null);
+        return;
       }
       setAddTemplateOpen(true);
     },
@@ -391,11 +398,13 @@ export function TemplatesPage() {
   ) : null;
 
   const canEditActive = activeEntry
-    ? activeEntry.category === 'standard'
-      ? canEditStandard
-      : activeEntry.category === 'email'
-        ? canEditEmail
-        : canEditCustom
+    ? activeEntry.organisable
+      ? canEditCustom
+      : activeEntry.category === 'standard' || activeEntry.category === 'message'
+        ? canEditStandard
+        : activeEntry.category === 'email'
+          ? canEditEmail
+          : canEditCustom
     : false;
 
   const detail = (() => {
@@ -403,7 +412,7 @@ export function TemplatesPage() {
       return (
         <TemplatePaneMessage
           title="No templates yet"
-          body="Templates load with the property. Reload if this looks wrong."
+          body="Reload to try again."
           action={
             <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>
               Reload
@@ -422,6 +431,8 @@ export function TemplatesPage() {
         saving={saveTemplate.isPending || resetTemplate.isPending}
         showSectionImage={false}
         canEdit={canEditActive}
+        emptyPlaceholders={data?.propertyEmptyPlaceholders ?? []}
+        automationHref={automationHref}
         onBack={isMobile ? () => selectTemplate(null) : undefined}
         onSave={(input) => handleSave(activeEntry.templateKey, input)}
         onRename={

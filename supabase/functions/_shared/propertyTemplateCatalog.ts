@@ -95,7 +95,8 @@ const PLAIN_WORKFLOW: string[] = [
   'cancellation_host_intro',
   'cancellation_host_title',
 ];
-const PLAIN_GUEST_LINKS: string[] = ['trip_url'];
+const PLAIN_GUEST_LINKS: string[] = ['trip_url', 'stay_guide_url', 'messages_url'];
+const PLAIN_FEES: string[] = ['pet_fee', 'parking_rate'];
 
 /** Block tokens the editor must insert on their own paragraph. */
 export const PROPERTY_BLOCK_PLACEHOLDER_KEYS: readonly string[] = EMAIL_DYNAMIC_SECTION_KEYS;
@@ -108,7 +109,14 @@ function unique(...groups: readonly (readonly string[])[]): string[] {
   return [...new Set(groups.flat())];
 }
 
-const CORE_BASE = unique(PLAIN_CORE, PLAIN_STAY, PLAIN_FLAGS, PLAIN_WORKFLOW, PLAIN_PROPERTY);
+const CORE_BASE = unique(
+  PLAIN_CORE,
+  PLAIN_STAY,
+  PLAIN_FLAGS,
+  PLAIN_WORKFLOW,
+  PLAIN_PROPERTY,
+  PLAIN_FEES
+);
 /** Guest, guide and team contexts may use arrival essentials; building admin may not. */
 const CORE = unique(CORE_BASE, PLAIN_ESSENTIALS);
 
@@ -126,12 +134,12 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
   'parking-reminders': unique(CORE, PLAIN_VEHICLE, ['parking_cta_section']),
   'welcome-note': unique(CORE, ['contact_section']),
   'getting-here': unique(CORE, ['map_cta_section']),
-  'using-the-unit': CORE,
+  'using-the-unit': unique(CORE, ['garbage_schedule_section']),
   'building-amenities': unique(CORE, ['amenities_list']),
   'pet-guidelines': CORE,
   'emergency-and-safety': unique(CORE, ['emergency_contacts_section']),
   'email-gaf-request': unique(
-    CORE,
+    CORE_BASE,
     PLAIN_BOOKING_META,
     ['urgent_notice', 'update_notice'],
     ['email_signature_section']
@@ -245,6 +253,25 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
   'email-building-admin-cancellation': unique(CORE_BASE, ['email_signature_section']),
 };
 
+/**
+ * Guest messages are property templates that go out as chat text or a one-off email. They may
+ * use guest, stay, property, contact and arrival data plus guest links, but not team-only
+ * booking links, workflow cancellation copy, secrets or email-only payment/signature blocks.
+ */
+const MESSAGE_TEMPLATE_KEYS = unique(
+  PLAIN_CORE,
+  PLAIN_STAY,
+  PLAIN_FLAGS,
+  PLAIN_PROPERTY,
+  PLAIN_ESSENTIALS,
+  PLAIN_PAYMENT,
+  PLAIN_FEES,
+  PLAIN_CONTACT,
+  PLAIN_GUEST_LINKS,
+  ['review_url', 'form_url', 'garbage_schedule_section', 'quiet_hours_section'],
+  ['trip_cta_section', 'review_cta_section', 'messages_cta_section']
+);
+
 const CUSTOM_TEMPLATE_KEYS = unique(
   CORE,
   PLAIN_PET,
@@ -261,10 +288,10 @@ export function propertyTemplatePlaceholderKeys(
   templateKey: string,
   category: 'standard' | 'email' | 'message' | 'custom'
 ): readonly string[] {
-  if (category === 'custom' || category === 'message') {
-    return PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE[templateKey] ?? CUSTOM_TEMPLATE_KEYS;
-  }
-  return PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE[templateKey] ?? CUSTOM_TEMPLATE_KEYS;
+  const scoped = PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE[templateKey];
+  if (category === 'message') return scoped ?? MESSAGE_TEMPLATE_KEYS;
+  if (category === 'custom') return scoped ?? CUSTOM_TEMPLATE_KEYS;
+  return scoped ?? CUSTOM_TEMPLATE_KEYS;
 }
 
 /** Tokens that carry a booking access token in the URL. Never for building admin or team mail. */

@@ -45,6 +45,7 @@ export type TemplatePlacement = {
 export const TEMPLATE_GROUP_SELECT = {
   UNGROUPED: '__ungrouped__',
   STANDARD_SECTION: '__section_standard__',
+  MESSAGE_SECTION: '__section_message__',
   EMAIL_SECTION: '__section_email__',
   NEW_GROUP: '__new_group__',
 } as const;
@@ -84,6 +85,7 @@ export type TemplateLibraryGroup = {
 
 export const BUILTIN_GROUP_LABELS = {
   standard: 'Stay guide',
+  message: 'Guest messages',
   email: 'Emails',
 } as const;
 
@@ -143,6 +145,7 @@ export function placementsEqual(a: TemplatePlacement, b: TemplatePlacement): boo
 
 export function groupSelectValueFromPlacement(placement: TemplatePlacement): string {
   if (placement.category === 'standard') return TEMPLATE_GROUP_SELECT.STANDARD_SECTION;
+  if (placement.category === 'message') return TEMPLATE_GROUP_SELECT.MESSAGE_SECTION;
   if (placement.category === 'email') return TEMPLATE_GROUP_SELECT.EMAIL_SECTION;
   return placement.folderId ?? TEMPLATE_GROUP_SELECT.UNGROUPED;
 }
@@ -154,6 +157,9 @@ export function placementFromGroupSelectValue(
   if (value === TEMPLATE_GROUP_SELECT.NEW_GROUP) return null;
   if (value === TEMPLATE_GROUP_SELECT.STANDARD_SECTION) {
     return { category: 'standard', folderId: null };
+  }
+  if (value === TEMPLATE_GROUP_SELECT.MESSAGE_SECTION) {
+    return { category: 'message', folderId: null };
   }
   if (value === TEMPLATE_GROUP_SELECT.EMAIL_SECTION) {
     return { category: 'email', folderId: null };
@@ -309,7 +315,11 @@ export function applyTemplateCategoryFilter(
   }
 
   const ids: PropertyTemplateGroup[] =
-    filter === 'standard' ? ['stay-guide'] : ['guest-emails', 'building-admin', 'team-alerts'];
+    filter === 'standard'
+      ? ['stay-guide']
+      : filter === 'messages'
+        ? ['guest-messages']
+        : ['guest-emails', 'building-admin', 'team-alerts'];
 
   return groups
     .filter((group) => group.kind === 'builtin' && (ids as string[]).includes(group.id))
@@ -395,6 +405,7 @@ export function templatePlacementTargets(
   );
   const targets: TemplatePlacementTarget[] = [
     { placement: { category: 'standard', folderId: null }, label: BUILTIN_GROUP_LABELS.standard },
+    { placement: { category: 'message', folderId: null }, label: BUILTIN_GROUP_LABELS.message },
   ];
   if (options.includeUngrouped && sorted.length === 0) {
     targets.push({

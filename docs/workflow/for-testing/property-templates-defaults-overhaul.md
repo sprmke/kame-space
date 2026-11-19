@@ -154,7 +154,7 @@ System notices that **stay in code** (not host copy, or security/legal content):
 | D12 | Write once, use everywhere | New blocks `{{check_in_instructions_section}}`, `{{check_out_instructions_section}}`, `{{house_rules_section}}` embed the host's guide templates in emails. The check-out email uses the host's **Check-out** section instead of the hardcoded checklist. Legacy `{{sd_refund_checklist_section}}` keeps rendering for saved rows but reads the booking's check-out time.                                                                  |
 | D13 | Labels                     | Host language: "Booking acknowledgement" becomes **Booking confirmed** (matches `guestJourneyCopy.ts` vocabulary), "SD Refund Form Request" becomes **Check-out and deposit refund** (matches Email automations). Keys never change.                                                                                                                                                                                                       |
 | D14 | Quick replies vs messages  | Quick replies stay short, plain-text, org-scoped Inbox snippets. Guest messages are property-scoped rich templates that use the full placeholder set and can go by chat or email. Inbox inserts a message template as **editable text** in the composer (bracketed fill-ins like `[item]` need an edit); guide and custom templates keep the card send.                                                                                    |
-| D15 | Existing host copy         | Never overwrite a customized row. Rows whose normalized content equals a previously shipped default are deleted by a one-shot backfill so they fall through to the new default. Customized rows get a **New default available** badge with compare and "Use new default".                                                                                                                                                                  |
+| D15 | Existing host copy         | Never overwrite a customized row. Rows whose normalized content equals a previously shipped default are rewritten to the new default by a one-shot backfill, preserving their section image and visibility fields. Customized rows get a **New default available** badge with **Use new default**.                                                                                                                                         |
 | D16 | Plans                      | No new `PlanFeatureKey`. Guide sections and Guest messages: edit, save and chat send free. Email body and subject save: `customTemplates` (Starter+), as today. Sending a message by email: `customTemplates`. Pre-arrival toggle: `automatedBookingFlow`, like Ready for check-in. Test send: ungated, rate-limited.                                                                                                                      |
 | D17 | Permissions                | No new leaf. Guest messages use `templates.standard:edit` (team UI label becomes "Stay guide and messages"). Emails `templates.email:edit`. Custom `templates.custom:*`. Message email send `bookings.detail.workflow:edit` (same as custom send). Test send needs the edit leaf of that template's category.                                                                                                                              |
 | D18 | OTP                        | Subject, content and visibility saves go through the existing org-owner OTP (15-minute sudo). Test send and organise actions do not.                                                                                                                                                                                                                                                                                                       |
@@ -313,7 +313,7 @@ One server module, `_shared/propertyTemplateCatalog.ts`, exports every token wit
 - [x] Blocks built: `contact_section`, `emergency_contacts_section`, `house_rules_list`, `amenities_list`, `check_in_instructions_section`, `check_out_instructions_section`, `house_rules_section` (guide body embedded, dropped above 8 000 chars), `balance_due_section`, `arrival_access_note_section`, `review_cta_section`, `parking_cta_section`, `map_cta_section`, `messages_cta_section`, `cancellation_policy_section`. The four CTA blocks render from real URLs at send time.
 - [x] Save validation in `property-templates-settings`: errors for secrets outside Stay guide, tokenized links in Building admin / Team alerts, and block tokens in a subject; `warnings[]` for unknown tokens and removed `requiredBlocks`.
 - [x] Missing data: GET returns `propertyEmptyPlaceholders` for the property. The per-template chip row in the editor is still open (Phase 3 UI).
-- [ ] Placeholders dialog grouped list with kind badges and real values. The dialog already groups and searches; the kind badge and real-value columns remain.
+- [ ] Placeholders dialog grouped list with kind badges and real values. The dialog already groups and searches; the kind badge and real-value columns remain. Save-time warnings and the editor's empty-token hint cover the main failure modes.
 - [x] Tests: `propertyTemplateCatalog_test.ts` covers secret gating, link gating by group, unknown-token warnings, subject block rejection and required-block warnings.
 
 ### Phase 3: Groups, guide visibility, subjects, test send
@@ -321,10 +321,10 @@ One server module, `_shared/propertyTemplateCatalog.ts`, exports every token wit
 - [x] Migration `supabase/migrations/20261343001100_property_template_contents_v2.sql`: `subject TEXT NULL`, `default_hash TEXT NULL`, `message` added to the category check, host-owned email rows converted to message.
 - [x] `upsertPropertyTemplateRow` / `updateCustomTemplateRow`: `guest_visible` / `guest_phase` now allowed on standard rows, `subject` persisted (locked subjects ignored), `default_hash` written from the current default.
 - [x] Stay guide reads built-in guide visibility from the row, falling back to the registry default; `chapter` returned per section and the guest page groups by it.
-- [ ] Trip page phase filtering for built-in sections. Check-in and check-out instructions remain status-driven.
+- [ ] Trip page phase filtering for built-in sections. Check-in and check-out instructions remain status-driven. The editor now hides the stage picker for built-in guide sections (it only applies to custom sections today), so no dead control ships while this stays open.
 - [x] Show to guests on host-owned and built-in standard templates. The chapter is derived from the registry, so a separate chapter picker was not needed.
 - [x] Rail + filters: five registry groups, Messages filter, not-organisable built-ins, Building admin hidden when not applicable.
-- [ ] Not shown to guests rail badge and the New default available badge with compare. Both are Phase 5 UI.
+- [x] Hidden guide sections show a muted **Hidden** badge; **New default available** shows with **Use new default**. A side-by-side compare is still not built.
 - [x] Add template targets: Stay guide, folders, Custom. Guest emails, Building admin and Team alerts are not targets; Guest messages targets arrive with Phase 6.
 - [x] Email header: To, When, Automation (On / Off / Needs plan), Subject (read-only with a Fixed note for GAF and pet) and Send test.
 - [x] Settings -> Email automations: **Edit template** link per row. Arrival and parking reminder rows arrive with Phase 4.
@@ -358,7 +358,7 @@ One server module, `_shared/propertyTemplateCatalog.ts`, exports every token wit
 
 ### Phase 6: Guest messages
 
-- [x] Registry entries for the 10 message templates (`category: message`, group Guest messages) with shipped copy.
+- [x] Registry entries for the 9 message templates (`category: message`, group Guest messages) with shipped copy.
 - [x] `chat-templates` and `chatTemplateMessage.ts` include `message`; the Inbox Insert menu has a **Messages** section that inserts flattened, placeholder-filled text into the composer for editing. Guide and custom templates keep the card flow.
 - [x] `send-property-custom-template-email` accepts `message-*` keys as well as `custom-*`; the Send to guest dialog is reused; the send is gated on `customTemplates`.
 - [x] AI Assistant `get_property_template_content` lists and reads messages; the tool description names them.
@@ -456,6 +456,26 @@ Tests added: pack/registry contract, message and guide metadata, subject lock an
 - Email preview (`Booking confirmed`, `Check-in details`) renders the production shell with sample guest data. Subject placeholders read "Monaco 2604 - Check-in details (July 10, 2026 to July 12, 2026)".
 - No console errors on the Templates route.
 - Stay guide token URL still renders only the visible sections after the trash merge and local-guide removal.
+
+## Review pass (2026-11-20)
+
+A code review checked the full branch against this plan, the route guide, DESIGN.md and the mobile UI rules. Fixed in the same branch:
+
+- **Messages filter:** filtering by Messages returned every email section because `'messages'` fell through to the email branch. It now returns only Guest messages, with a unit test.
+- **Guest message tokens:** messages fell back to the custom-template allow-list, so team-only links, urgent notices and email-only blocks saved without error. Messages now have their own context list. A test asserts `booking_link`, `booking_link_cta`, `urgent_notice` and `gcash_payment_section` are rejected.
+- **Chat links:** the review CTA and the trip CTA now render as plain links in chat instead of disappearing, so the thank-you and trip messages keep a working link.
+- **Hidden conditional sections:** a host turning off Parking or Pet guidelines now wins over the booking condition. Previously the condition check ran first and the section still appeared.
+- **GAF context:** `email-gaf-request` no longer allows arrival-essentials tokens that the plan reserves for guest and team contexts.
+- **Token catalog:** `stay_guide_url`, `messages_url`, `pet_fee` and `parking_rate` are in the allowed lists, so saved templates no longer get spurious unknown-token warnings.
+- **Test send:** built-in test sends derive the category and permission from the registry, not the submitted category.
+- **Backfill:** the script rewrites matched row content instead of deleting the row, preserving section images, `guest_visible` and `guest_phase`; the runbook wording is updated.
+- **SSRF:** remote image inlining rejects loopback, private, link-local and CGNAT targets and refuses redirects.
+- **Defaults:** trash collection and quiet hours use blocks that disappear when the setting is empty; the balance reminder no longer carries an email-only GCash block into chat; the Getting here and Parking defaults no longer print an empty address or vehicle line.
+- **Editor:** standard guide sections show only **Show to guests** (the stage picker applies to custom sections), the header and toolbar align, action targets reach 44px, the off switch is visible, the preview shows the rendered subject and no longer clips, and empty property tokens used by the open template are listed.
+- **Add target:** **Guest messages** is a valid destination for a host-created template; Guest emails are no longer offered as a dead end.
+- **Automation fact:** links to Settings → Email automations (section anchor).
+
+Known follow-ups kept open: trip-page stage filtering for built-in sections, a side-by-side default compare, kind badges and real values in the Placeholders dialog, and per-sender Deno tests for the moved emails.
 
 ## Verification results
 

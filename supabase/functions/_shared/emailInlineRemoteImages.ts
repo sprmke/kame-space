@@ -151,6 +151,51 @@ async function downloadViaStorage(url: string): Promise<{
   }
 }
 
+function isPrivateIpv4(host: string): boolean {
+  const parts = host.split('.').map(Number);
+  if (
+    parts.length !== 4 ||
+    parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)
+  ) {
+    return false;
+  }
+  const [a, b] = parts;
+  if (a === 0 || a === 10 || a === 127 || a >= 224) return true;
+  if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+  if (a === 169 && b === 254) return true; // link-local
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  return false;
+}
+
+function isPrivateIpv6(host: string): boolean {
+  const value = host.replace(/^\[|\]$/g, '').toLowerCase();
+  if (value === '::1' || value === '::') return true;
+  if (value.startsWith('fc') || value.startsWith('fd')) return true; // fc00::/7
+  if (/^fe[89ab]/.test(value)) return true; // fe80::/10
+  if (value.startsWith('::ffff:')) return isPrivateIpv4(value.slice(7));
+  return false;
+}
+
+/** Reject loopback, private, link-local and CGNAT targets before fetching a remote image. */
+async function hostIsBlocked(host: string): Promise<boolean> {
+  const value = host.toLowerCase();
+  if (value === 'localhost' || value.endsWith('.local')) return true;
+  if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(value)) return isPrivateIpv4(value);
+  if (value.includes(':')) return isPrivateIpv6(value);
+  try {
+    const [ipv4, ipv6] = await Promise.all([
+      Deno.resolveDns(value, 'A').catch(() => []),
+      Deno.resolveDns(value, 'AAAA').catch(() => []),
+    ]);
+    return ipv4.some(isPrivateIpv4) || ipv6.some(isPrivateIpv6);
+  } catch {
+    // If DNS cannot be checked, do not fetch. The image stays a normal remote URL in the
+    // email instead of being inlined.
+    return true;
+  }
+}
+
 async function downloadViaFetch(url: string): Promise<{
   bytes: Uint8Array;
   contentType: string;
@@ -158,18 +203,13 @@ async function downloadViaFetch(url: string): Promise<{
 } | null> {
   try {
     const host = new URL(url).hostname.toLowerCase();
-    if (
-      host === 'localhost' ||
-      host === '127.0.0.1' ||
-      host.endsWith('.local') ||
-      host === '0.0.0.0'
-    ) {
-      return null;
-    }
+    if (await hostIsBlocked(host)) return null;
+    /* No redirects: a public URL must not bounce into a private address. */
     const res = await fetch(url, {
-      redirect: 'follow',
+      redirect: 'manual',
       headers: { Accept: 'image/*,*/*;q=0.8' },
     });
+    if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) return null;
     if (!res.ok) return null;
     const contentType = res.headers.get('content-type')?.split(';')[0]?.trim() || 'image/jpeg';
     if (!contentType.startsWith('image/')) return null;

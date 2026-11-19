@@ -58,7 +58,12 @@ function template(overrides: Partial<PropertyTemplateDto> = {}): PropertyTemplat
   // Legacy fixture shorthand: derive a group from the category the way the server does.
   return {
     ...merged,
-    group: merged.category === 'standard' ? 'stay-guide' : 'guest-emails',
+    group:
+      merged.category === 'standard'
+        ? 'stay-guide'
+        : merged.category === 'message'
+          ? 'guest-messages'
+          : 'guest-emails',
   };
 }
 
@@ -288,8 +293,11 @@ describe('buildTemplateLibrary - folders', () => {
 });
 
 describe('templatePlacementTargets', () => {
-  it('lists Stay guide, then folders (no ungrouped Custom in create Group select)', () => {
-    expect(templatePlacementTargets([]).map((target) => target.label)).toEqual(['Stay guide']);
+  it('lists Stay guide and Guest messages, then folders (no ungrouped Custom in create Group select)', () => {
+    expect(templatePlacementTargets([]).map((target) => target.label)).toEqual([
+      'Stay guide',
+      'Guest messages',
+    ]);
   });
 
   it('lists folders after the built-in destinations', () => {
@@ -298,31 +306,35 @@ describe('templatePlacementTargets', () => {
         folder({ id: 'f2', name: 'Zebra', position: 1 }),
         folder({ id: 'f1', name: 'Arrival', position: 0 }),
       ]).map((target) => target.label)
-    ).toEqual(['Stay guide', 'Arrival', 'Zebra']);
+    ).toEqual(['Stay guide', 'Guest messages', 'Arrival', 'Zebra']);
   });
 
   it('includes ungrouped Custom for Move only when there are no host folders', () => {
     expect(
       templatePlacementTargets([], { includeUngrouped: true }).map((target) => target.label)
-    ).toEqual(['Stay guide', 'Custom']);
+    ).toEqual(['Stay guide', 'Guest messages', 'Custom']);
     expect(
       templatePlacementTargets([folder({ id: 'f1', name: 'Arrival' })], {
         includeUngrouped: true,
       }).map((target) => target.label)
-    ).toEqual(['Stay guide', 'Arrival']);
+    ).toEqual(['Stay guide', 'Guest messages', 'Arrival']);
   });
 });
 
 /** @deprecated wrapper still used in a few call sites */
 describe('templateMoveTargets', () => {
   it('maps custom-only folder ids for legacy callers', () => {
-    expect(templateMoveTargets([])).toEqual([{ folderId: null, label: 'Stay guide' }]);
+    expect(templateMoveTargets([])).toEqual([
+      { folderId: null, label: 'Stay guide' },
+      { folderId: null, label: 'Guest messages' },
+    ]);
   });
 });
 
 describe('applyTemplateCategoryFilter', () => {
   const groups = buildTemplateLibrary([
     template({ templateKey: 'house-rules' }),
+    template({ templateKey: 'message-check-in-day', name: 'Check-in day', category: 'message' }),
     template({ templateKey: 'email-gaf-request', name: 'GAF Request', category: 'email' }),
     template({ templateKey: 'custom-a', name: 'A', category: 'custom' }),
   ]);
@@ -339,6 +351,11 @@ describe('applyTemplateCategoryFilter', () => {
   it('shows only Stay guide when filtered to standard', () => {
     const filtered = applyTemplateCategoryFilter(groups, 'standard');
     expect(filtered.map((group) => group.id)).toEqual(['stay-guide']);
+  });
+
+  it('shows only Guest messages when filtered to messages', () => {
+    const filtered = applyTemplateCategoryFilter(groups, 'messages');
+    expect(filtered.map((group) => group.id)).toEqual(['guest-messages']);
   });
 
   it('shows host folders and ungrouped Custom when filtered to custom', () => {

@@ -494,7 +494,7 @@ Per-property operational settings in `app_settings` (below Building Forms in the
 
 Compact summary row on the Email automations card (`N of 12 on`) with **Manage**. **Manage** opens a `ResponsiveModal` (bottom sheet below `lg`) with the grouped list (`PropertyEmailAutomationTogglePanel`): **Your team**, **Building admin**, **Guest**, **Guest reviews**. Each row shows the recipient, a one-line **When** trigger, and an **Edit template** link straight to that email in Templates. Toggles edit the page draft live; the modal footer is **Done**, so the save still happens through the page **Save Changes**. Master switches in `app_settings.automation_toggles` (JSONB). Missing keys default to **enabled**, and a stored retired key (`emailParkingBroadcast`) is ignored. Saved via **`app-settings` PATCH**.
 
-Five rows are plan-gated (`emailGafRequest`, `emailBookingAcknowledgement`, `emailPetRequest`, `emailReadyForCheckin`, `emailSdRefundCheckout`): they show a plan pill and a disabled switch that opens the upgrade modal. **New booking alert**, **Review request**, and **Review reminder** stay free.
+Seven rows are plan-gated (`emailGafRequest`, `emailBookingAcknowledgement`, `emailPetRequest`, `emailReadyForCheckin`, `emailSdRefundCheckout`, `emailPreArrivalReminder`, `emailBuildingAdminCancellation`): they show a plan pill and a disabled switch that opens the upgrade modal. **New booking alert**, **Review request**, **Review reminder** and **Parking reminder** stay free.
 
 ---
 

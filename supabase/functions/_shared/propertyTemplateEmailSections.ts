@@ -67,6 +67,8 @@ export const EMAIL_DYNAMIC_SECTION_KEYS = [
   'map_cta_section',
   'messages_cta_section',
   'cancellation_policy_section',
+  'garbage_schedule_section',
+  'quiet_hours_section',
 ] as const;
 
 export type EmailDynamicSectionKey = (typeof EMAIL_DYNAMIC_SECTION_KEYS)[number];

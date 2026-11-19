@@ -24,7 +24,7 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
   },
   'getting-here': {
     content: `<h2>Getting here</h2>
-<p>{{property_name}} is at {{property_address}}.</p>
+<p>Use the map button below for the exact address and directions to {{property_name}}.</p>
 <p>{{map_cta_section}}</p>
 <h3>By car</h3>
 <ul>
@@ -33,7 +33,7 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
 <li>If you booked parking, see the Parking section of this guide.</li>
 </ul>
 <h3>By taxi or ride-hailing</h3>
-<p>Set the pin to the address above and ask to be dropped at your tower lobby.</p>`,
+<p>Set the pin to the map link above and ask to be dropped at your tower lobby.</p>`,
   },
   'check-in-instructions': {
     content: `<h2>Check-in</h2>
@@ -79,7 +79,7 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
 <li><strong>Recyclable:</strong> plastic bottles, cans and clean paper</li>
 <li><strong>Residual:</strong> everything else</li>
 </ul>
-<p>Collection schedule: {{garbage_schedule}}</p>
+<p>{{garbage_schedule_section}}</p>
 <p>Before you check out, bag all trash and take it to the garbage room or chute on your floor.</p>
 <h3>If something stops working</h3>
 <p>Message us right away. Please do not try to repair appliances yourself.</p>`,
@@ -105,10 +105,7 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
     content: `<h2>Parking</h2>
 <p>Parking is only for guests who arranged a slot with us before arrival.</p>
 <h3>Your vehicle</h3>
-<ul>
-<li>Plate number: <strong>{{car_plate_number}}</strong></li>
-<li>Vehicle: {{car_brand_model}}, {{car_color}}</li>
-</ul>
+<p>Have your plate number, make, model and color ready for the guard.</p>
 <h3>Parking rules</h3>
 <ul>
 <li>Park only in the slot assigned to you.</li>
@@ -321,8 +318,7 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
   },
   'message-balance-reminder': {
     content: `<p>Hi {{guest_first_name}}, a reminder that your remaining balance for your stay on {{check_in_date}} is <strong>{{total_guest_balance}}</strong>.</p>
-<p>{{gcash_payment_section}}</p>
-<p>Once paid, upload your receipt on your trip page.</p>
+<p>Payment details and the receipt upload are on your trip page.</p>
 <p>{{trip_cta_section}}</p>`,
   },
   'message-document-follow-up': {
@@ -346,7 +342,8 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
   },
 
   'message-noise-reminder': {
-    content: `<p>Hi {{guest_first_name}}, the building let us know about noise from the unit. Please keep the volume down, especially during quiet hours ({{quiet_hours}}).</p>
+    content: `<p>Hi {{guest_first_name}}, the building let us know about noise from the unit. Please keep the volume down, especially during quiet hours.</p>
+<p>{{quiet_hours_section}}</p>
 <p>Repeated complaints can lead to a fine from the building. Thank you for understanding.</p>`,
   },
   'message-check-out-reminder': {

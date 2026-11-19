@@ -1,19 +1,22 @@
 #!/usr/bin/env bun
 /**
- * One-shot: delete property template rows that still hold a previously shipped default.
+ * One-shot: refresh property template rows that still hold a previously shipped default.
  *
- * Properties that never edited a default should fall through to the new copy. A row whose
- * normalized content equals an old default is exactly that case.
+ * A row whose normalized content equals an old default was never customized. Rewriting its
+ * content to the new default preserves the host's section image, visibility and trip phase,
+ * which deleting the row would silently drop.
  *
  * Usage:
  *   bun scripts/backfill-property-template-defaults.ts            # dry run
- *   bun scripts/backfill-property-template-defaults.ts --execute  # delete matched rows
+ *   bun scripts/backfill-property-template-defaults.ts --execute  # update matched rows
  *
  * Reads SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY, falling back to the local stack.
  * Never run against production without the team's explicit approval.
  */
 
 import { createClient } from '@supabase/supabase-js';
+
+import { condoTemplateDefault } from '../supabase/functions/_shared/propertyTemplateDefaults/index.ts';
 
 /** Shipped defaults before the condo pack rewrite. Frozen on purpose. */
 const OLD_DEFAULTS: Record<string, string> = {
@@ -204,18 +207,31 @@ for (let from = 0; ; from += BATCH) {
   if (rows.length < BATCH) break;
 }
 
+const now = new Date().toISOString();
+const newContentByKey = new Map(
+  [...counts.keys()].map((key) => [key, condoTemplateDefault(key)?.content ?? ''])
+);
+
 if (execute) {
   for (let index = 0; index < matchedIds.length; index += BATCH) {
     const chunk = matchedIds.slice(index, index + BATCH);
-    const { error } = await supabase.from('property_template_contents').delete().in('id', chunk);
-    if (error) throw error;
+    for (const key of counts.keys()) {
+      const content = newContentByKey.get(key);
+      if (!content) continue;
+      const { error } = await supabase
+        .from('property_template_contents')
+        .update({ content, default_hash: null, updated_at: now })
+        .in('id', chunk)
+        .eq('template_key', key);
+      if (error) throw error;
+    }
   }
 }
 
 console.log(
-  `${execute ? 'Deleted' : 'Would delete'} ${matchedIds.length} of ${scanned} built-in rows.`
+  `${execute ? 'Updated' : 'Would update'} ${matchedIds.length} of ${scanned} built-in rows.`
 );
 for (const [templateKey, count] of [...counts].sort((a, b) => a[0].localeCompare(b[0]))) {
   console.log(`  ${templateKey}: ${count}`);
 }
-if (!execute) console.log('\nDry run only. Re-run with --execute to delete.');
+if (!execute) console.log('\nDry run only. Re-run with --execute to update.');

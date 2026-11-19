@@ -55,6 +55,9 @@ export async function renderPropertyTemplatePreview(input: {
   const settings = await resolveAppSettings(input.propertyId);
   const branding = await loadPropertyEmailBranding(input.propertyId);
   const guestContact = await loadGuestFacingContactInfo(input.propertyId, settings);
+  const { vars: propertyVars } = await buildPropertyPlaceholderVars({
+    propertyId: input.propertyId,
+  });
   const builtin = getBuiltinPropertyTemplate(input.templateKey);
   const dynamicSections = buildSampleDynamicSections({
     templateKey: input.templateKey,
@@ -67,6 +70,8 @@ export async function renderPropertyTemplatePreview(input: {
     ...Object.fromEntries(
       Object.entries(PROPERTY_TEMPLATE_SAMPLE_VARS).map(([key, value]) => [key, escapeHtml(value)])
     ),
+    // Real property data wins over sample values, so the preview matches a live send.
+    ...propertyVars,
     tower_and_unit_number: escapeHtml(branding.unitLabel),
     unit_number: escapeHtml(branding.unitLabel),
     property_name: escapeHtml(branding.propertyName),

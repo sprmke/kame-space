@@ -59,11 +59,13 @@ Settings -> Email automations rows link back here with **Edit template**.
 
 Template bodies (and section images) are bulk-copyable via org **Properties → Copy settings**.
 
-**Plan gating (`customTemplates`, Starter+):** Standard templates (house rules, check-in/out, parking reminders) are free — edit, preview, placeholders, reset, and save with no plan gate and no WYSIWYG blur. Email templates stay editable/previewable on Free; **Reset** always restores the shipped default (ungated `action: reset`); **Save** opens the upgrade modal when not entitled (server also gates email-key content PATCH). **Add Custom Template** (page header / mobile hero) and create/save **custom** templates require Starter+ — client pre-flight plus `property-templates-settings` (`action: create`, custom-key PATCH, and email-key PATCH). Delete custom stays open. Email and custom cards show a `TierBadge` (replacing the old Email category pill). The **Email templates** and **Custom templates** section headings also show a `TierBadge` when the org is below Starter.
+**Plan gating (`customTemplates`, Starter+):** Built-in guide sections and built-in Guest messages are free: edit, preview, placeholders, reset, and save with no plan gate and no WYSIWYG blur. Email templates stay editable/previewable on Free; **Reset** always restores the shipped default (ungated `action: reset`); **Save** opens the upgrade modal when not entitled (server also gates email-key content PATCH). **New template** (page header / mobile hero) and create/save **custom or host-owned** templates require Starter+ — client pre-flight plus `property-templates-settings` (`action: create`, custom-key PATCH, and email-key PATCH). Delete custom stays open. Cards that need Starter to save (automated emails and host-owned templates) show a `TierBadge`. The **Email templates** and **Custom templates** section headings also show a `TierBadge` when the org is below Starter.
 
 ### Permissions (Phase 5)
 
 Route/nav: `templates:view`. In-page: `templates.standard:edit`, `templates.email:edit`, `templates.custom:{add,edit,delete}`. Members without an edit leaf see preview-only cards (no Save/Reset/Delete). Add Custom is hidden without `templates.custom:add`.
+
+Built-in Guest messages use `templates.standard:edit` and save free. A host-created message lives under a `custom-*` key, so it uses `templates.custom:edit` and the Starter+ `customTemplates` gate, like any host-owned template.
 
 ## Host-facing knowledge
 
@@ -111,11 +113,9 @@ The default set was pruned: trash and recycling now lives inside **Using the uni
 
 **Stay guide preview** — use **Public Pages → Stay Guide → Edit** (live preview) or open the Stay Guide card's preview URL. Templates edits body copy only; it does not include a **Preview stay guide** button.
 
-### Previously not wired (email/PDF)
+### Standard sections inside emails
 
-| Area                            | Behavior                                                             |
-| ------------------------------- | -------------------------------------------------------------------- |
-| **Standard templates** (4 keys) | **Not** injected into workflow emails or PDFs (stay guide page only) |
+`{{check_in_instructions_section}}`, `{{check_out_instructions_section}}` and `{{house_rules_section}}` embed the host's guide section in an email. The check-out and deposit refund email uses `check_out_instructions_section` by default, so the guest gets the same check-out steps as the stay guide. Legacy `{{sd_refund_checklist_section}}` rows keep rendering until reset.
 
 ### Email send path
 
@@ -183,7 +183,7 @@ picker (`always / before / arrival / stay / checkout / after`). Visible ones ren
 - **Standard:** the preview edge function starts from the shipped sample variables, then overlays `buildPropertyPlaceholderVars({ propertyId })`. Address, unit, map link, contact card, house rules, amenities and other property-data blocks resolve with this property's real values. No raw `{{tokens}}` reach the iframe.
 - **Email:** **`renderPropertyTemplatePreview`** calls **`renderPropertyTemplateSendEmail`** with `contentOverride`, sample vars, and **`buildSampleDynamicSections()`** for section placeholders present in the template body (same layout as production sends).
 
-Preview and send are aligned on `fragments/configurable-template-send.html`. The preview pane owns its own scroll; the header and action row stay fixed.
+The preview shows the rendered subject above the body. Preview and send are aligned on `fragments/configurable-template-send.html`. The preview pane owns its own scroll; the header and action row stay fixed. When the open template uses a property token that is empty, the editor lists it above the body so the host can fill the missing setting.
 
 ## Placeholders
 
@@ -218,9 +218,9 @@ The server catalog (`_shared/propertyTemplateCatalog.ts`) decides what each temp
 
 Secrets save only in Stay guide templates and render reveal-gated. Everywhere else they read "on your trip page". A secret or guest link in a forbidden template returns **400** naming the token. Unknown tokens save but return warnings, and the editor shows them.
 
-`GET property-templates-settings` also returns `propertyEmptyPlaceholders`, the property-data tokens that are empty for this property, so the editor can point at the setting that fills them.
+`GET property-templates-settings` also returns `propertyEmptyPlaceholders`, the property-data tokens that are empty for this property. The editor lists the ones the open template actually uses, so a host can fill the missing setting before a guest sees a blank line.
 
-**New blocks:** `contact_section`, `emergency_contacts_section`, `house_rules_list`, `amenities_list`, `check_in_instructions_section`, `check_out_instructions_section`, `house_rules_section`, `balance_due_section`, `arrival_access_note_section`, `review_cta_section`, `parking_cta_section`, `map_cta_section`, `messages_cta_section`, `cancellation_policy_section`.
+**New blocks:** `contact_section`, `emergency_contacts_section`, `house_rules_list`, `amenities_list`, `check_in_instructions_section`, `check_out_instructions_section`, `house_rules_section`, `balance_due_section`, `arrival_access_note_section`, `review_cta_section`, `parking_cta_section`, `map_cta_section`, `messages_cta_section`, `cancellation_policy_section`, `garbage_schedule_section`, `quiet_hours_section`.
 
 ## WYSIWYG in real email
 
