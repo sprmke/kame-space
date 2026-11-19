@@ -56,7 +56,13 @@ export const PRICING_HELP_COPY = {
   parkingCustomDates: {
     hint: 'Nights with a price you set for a specific date. They override the base and weekend rates.',
   },
+  parkingBlockedNights: {
+    hint: 'Nights you closed so guests cannot book them. Blocked nights stay out of marketplace matching.',
+  },
   parkingPayout: {
     hint: 'The price guests see, the platform fee, and the amount you receive per night.',
+  },
+  parkingDirectLink: {
+    hint: 'Share this link with guests you find yourself. Those bookings use a lower platform fee.',
   },
 } satisfies HelpCopyModule;
