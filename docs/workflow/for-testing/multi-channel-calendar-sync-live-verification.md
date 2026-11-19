@@ -27,26 +27,26 @@ Booking.com listings and a staged rollout. Plan and design: [`../in-progress/mul
 
 ## Open verification
 
-| #   | Item                                      | How to verify                                                                                                                                                                                                                                     | Blocked on                                          | State            |
-| --- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | ---------------- |
-| V1  | **Sending turns on at connect (hosted)**  | On `kame-test-tenant`, connect Airbnb. Expect **Send dates to channels** on, step 2 showing the link, and one `integrations.config_changed` row with `auto: channel_connected` in the log.                                                        | Test tenant is on Free, and connect needs Pro (V13) | open             |
-| V2  | **Rollout secrets on the hosted project** | Set `CALENDAR_CHANNELS_ENABLED=agoda,booking_com` and `CALENDAR_CHANNELS_BETA_ORG_IDS=<kame-test-tenant org id>` (runbook in plan §20). Agoda and Booking.com appear only for that org.                                                           | Hosted secret write (needs `kamewave`)              | open             |
-| V3  | **Booking.com real feed**                 | Close one date and make one reservation on Booking.com. Capture the sanitized fixture. Fill the Phase 0 sheet S3 to S7, S9 to S11. Decide whether **Create bookings** can default on.                                                             | Host action on Booking.com                          | open             |
-| V4  | **Agoda real feed**                       | Once Agoda approves the listing: connect, capture the fixture, set `hostSuffixes` and URL shape, `classifyEventKind('agoda')`, and check S12 (does Agoda mask links in chat, QR fallback).                                                        | Agoda approval (created 2026-11-17, 1 to 3 days)    | open             |
-| V5  | **Two-way proof per channel**             | For each channel, the row reaches **Two-way**: the channel reads our link (read time shows) and our import is `Synced`. A date blocked in Kame shows on the channel after its refresh window. Use a live property (see V11), not the test tenant. | V3, V4                                              | partial (Airbnb) |
-| V6  | **Live QA matrix**                        | Run plan §13 for Airbnb, Agoda, Booking.com and Direct, including relay between channels, echo handling and a cancellation.                                                                                                                       | V3, V4                                              | open             |
-| V7  | **Phone check of the dialog**             | On a real phone: list, a connected channel, a not-connected channel, sending off, Recent activity (empty and filled), paste and connect.                                                                                                          | Nothing                                             | open             |
-| V8  | **Beta soak**                             | Zero phantom bookings over 7 days on beta orgs, then clear `CALENDAR_CHANNELS_BETA_ORG_IDS`.                                                                                                                                                      | V2 to V6                                            | open             |
-| V9  | **Launch copy**                           | Publish the copy list in plan §20 (plan labels, pricing page, FAQs, Host-facing knowledge), then `check:support-content`, `check:ai-knowledge-coverage`, `check:plan-catalog`.                                                                    | V8                                                  | open             |
-| V10 | **Parser-drift probe on `/admin/health`** | Add before general availability. Needs a change to the system-health RPC and a second live channel.                                                                                                                                               | V5                                                  | open             |
+| #   | Item                                      | How to verify                                                                                                                                                                                                                                     | Blocked on                                       | State            |
+| --- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------- |
+| V1  | **Sending turns on at connect (hosted)**  | On `kame-test-tenant`, connect Airbnb. Expect **Send dates to channels** on, step 2 showing the link, and one `integrations.config_changed` row with `auto: channel_connected` in the log.                                                        | Nothing                                          | done 2026-11-19  |
+| V2  | **Rollout secrets on the hosted project** | Set `CALENDAR_CHANNELS_ENABLED=agoda,booking_com` and `CALENDAR_CHANNELS_BETA_ORG_IDS=<kame-test-tenant org id>` (runbook in plan §20). Agoda and Booking.com appear only for that org.                                                           | Hosted secret write (needs `kamewave`)           | done 2026-11-19  |
+| V3  | **Booking.com real feed**                 | Close one date and make one reservation on Booking.com. Capture the sanitized fixture. Fill the Phase 0 sheet S3 to S7, S9 to S11. Decide whether **Create bookings** can default on.                                                             | Host action on Booking.com                       | open             |
+| V4  | **Agoda real feed**                       | Once Agoda approves the listing: connect, capture the fixture, set `hostSuffixes` and URL shape, `classifyEventKind('agoda')`, and check S12 (does Agoda mask links in chat, QR fallback).                                                        | Agoda approval (created 2026-11-17, 1 to 3 days) | open             |
+| V5  | **Two-way proof per channel**             | For each channel, the row reaches **Two-way**: the channel reads our link (read time shows) and our import is `Synced`. A date blocked in Kame shows on the channel after its refresh window. Use a live property (see V11), not the test tenant. | V3, V4                                           | partial (Airbnb) |
+| V6  | **Live QA matrix**                        | Run plan §13 for Airbnb, Agoda, Booking.com and Direct, including relay between channels, echo handling and a cancellation.                                                                                                                       | V3, V4                                           | open             |
+| V7  | **Phone check of the dialog**             | On a real phone: list, a connected channel, a not-connected channel, sending off, Recent activity (empty and filled), paste and connect.                                                                                                          | Nothing                                          | open             |
+| V8  | **Beta soak**                             | Zero phantom bookings over 7 days on beta orgs, then clear `CALENDAR_CHANNELS_BETA_ORG_IDS`.                                                                                                                                                      | V2 to V6                                         | open             |
+| V9  | **Launch copy**                           | Publish the copy list in plan §20 (plan labels, pricing page, FAQs, Host-facing knowledge), then `check:support-content`, `check:ai-knowledge-coverage`, `check:plan-catalog`.                                                                    | V8                                               | open             |
+| V10 | **Parser-drift probe on `/admin/health`** | Add before general availability. Needs a change to the system-health RPC and a second live channel.                                                                                                                                               | V5                                               | open             |
 
 ## Found after release
 
-| #   | Finding                                                                                                                                                                                                                                                                                                                                                             | What to do                                                                                                                                                                                                                                                                                       |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| V11 | **The test tenant's export link answers `410 Gone`.** `ical-export` stops publishing for listings that are not live, and the test property is `INACTIVE` by design. A channel reading that link gets `410`, so the send side cannot reach **Two-way** there.                                                                                                        | Prove V1 (the switch and the log row) on the test tenant. Prove the send side (V5) on a live property of the owner's, in a beta org listed in `CALENDAR_CHANNELS_BETA_ORG_IDS`. The import side works on any property.                                                                           |
-| V12 | **Cron job not confirmed.** ~~Migration `20261343000500` replaces the sweep with `calendar-sync-every-10m`.~~ **Confirmed 2026-11-19** from the project database.                                                                                                                                                                                                   | `calendar-sync-every-10m` runs `*/10 * * * *`, active, with a succeeded run every 10 minutes and no gaps. `calendar-sync-retention-daily` (`23 3 * * *`) is scheduled and has not fired yet. `calendar_sync_runs` fills: 7 runs in 24 hours, all `synced`, zero errors in 7 days. Details below. |
-| V13 | **The test tenant cannot connect a channel.** `kame-test-tenant` has no `org_subscriptions` row, so it sits on the default Free plan, and `calendarSync` is `true` only on Pro and above. `addFeed` calls `requirePropertyFeature('calendarSync')`, so connecting there answers a plan gate. Reading the dialog still works, because GET is preview-open below Pro. | Put the test tenant on Pro or higher before V1 and V2, or run the beta on a Pro+ org (V8). `kame-homes` is on Business and is eligible. Record the choice here before the beta soak.                                                                                                             |
+| #   | Finding                                                                                                                                                                                                                                                                                            | What to do                                                                                                                                                                                                                                                                                       |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| V11 | **The test tenant's export link answers `410 Gone`.** `ical-export` stops publishing for listings that are not live, and the test property is `INACTIVE` by design. A channel reading that link gets `410`, so the send side cannot reach **Two-way** there.                                       | Prove V1 (the switch and the log row) on the test tenant. Prove the send side (V5) on a live property of the owner's, in a beta org listed in `CALENDAR_CHANNELS_BETA_ORG_IDS`. The import side works on any property.                                                                           |
+| V12 | **Cron job not confirmed.** ~~Migration `20261343000500` replaces the sweep with `calendar-sync-every-10m`.~~ **Confirmed 2026-11-19** from the project database.                                                                                                                                  | `calendar-sync-every-10m` runs `*/10 * * * *`, active, with a succeeded run every 10 minutes and no gaps. `calendar-sync-retention-daily` (`23 3 * * *`) is scheduled and has not fired yet. `calendar_sync_runs` fills: 7 runs in 24 hours, all `synced`, zero errors in 7 days. Details below. |
+| V13 | **The test tenant cannot connect a channel.** ~~`kame-test-tenant` has no `org_subscriptions` row, so it sat on the default Free plan.~~ **Fixed 2026-11-19:** the tenant now has an active Pro (`growth`) subscription assigned manually, and `kame-test-property` is enrolled. Connecting works. | Keep the test tenant on Pro while V3 to V8 run. Before GA, decide whether the beta org should be a paying host instead, then clear `CALENDAR_CHANNELS_BETA_ORG_IDS`.                                                                                                                             |
 
 ## Database and cron checks (2026-11-19)
 
@@ -67,29 +67,55 @@ Management API. No writes were made to the hosted project.
 | `calendar_sync_events` | RLS on with no policies, but `anon` and `authenticated` still hold full table grants, `TRUNCATE` included. Rows stay hidden and `TRUNCATE` is not reachable through PostgREST; the grant is the PR-096 hygiene item   |
 | Local stack            | The local database was 17 migrations behind. `bun run db:migrate` applied all 17 (6 billing `20261342…` plus 11 calendar)                                                                                             |
 
-### Next action: V13, then V2, then V1
+### Hosted verification pass, 2026-11-19
 
-1. Put `kame-test-tenant` on Pro or higher (V13), or pick a Pro+ org for the beta. Without that, the
-   connect button in the test tenant answers a plan gate.
-2. Set the rollout secrets:
+Run with the owner's `kamewave` instruction. Hosted writes are limited to the two rows below.
 
-```bash
-supabase secrets set \
-  CALENDAR_CHANNELS_ENABLED=agoda,booking_com \
-  CALENDAR_CHANNELS_BETA_ORG_IDS=f50a7039-365c-4ef9-a80e-867d51ed5372 \
-  --project-ref fworvijbrwpyngycotbz
-```
+| Change          | Detail                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rollout secrets | `CALENDAR_CHANNELS_ENABLED=agoda,booking_com` and `CALENDAR_CHANNELS_BETA_ORG_IDS=f50a7039-365c-4ef9-a80e-867d51ed5372` (test tenant only)                                                                                                                                                                                                                                   |
+| Test tenant     | Pro (`growth`) assigned the way `createOrgSubscription` does it: `org_subscriptions` (`source` `admin`, price snapshot 799, 2026-11-18 to 2027-11-18), `org_subscription_properties` slot on `kame-test-property`, `assigned` and `property_added` events, `ai_platform_org_settings` at `growth` / 5000 credits, and one `billing.plan_overridden_by_platform` activity row |
 
-Supabase secret writes to the hosted project need the `kamewave` unlock. After the write, open
-**Pricing → Channel sync** as the `kame-test-tenant` owner: Agoda and Booking.com should appear next to
-Airbnb, and no other org should see them.
+**V2 result.** `calendar-sync-settings` reports `connectableProviders`:
 
-Two notes for whoever runs V1 next:
+| Org                | Plan     | In beta list | Connectable                      |
+| ------------------ | -------- | ------------ | -------------------------------- |
+| `kame-test-tenant` | Pro      | yes          | `airbnb`, `agoda`, `booking_com` |
+| `kame-homes`       | Business | no           | `airbnb`                         |
 
-- Hosted password sign-in is captcha-protected, so V1 cannot be driven by a plain API script. Use the app
-  as a host, or mint a session with the service role.
-- The test tenant has one property, `kame-test-property`, and it is `INACTIVE`. That is fine for V1 (the
-  switch and the log row). Sending cannot be proven there; use a live property for V5 (V11).
+So the list scopes the new channels to one org, and a paying org outside it still sees only Airbnb.
+
+**V1 result.** Connected Airbnb on `kame-test-property` with a shape-valid Airbnb URL. Before the write:
+no feeds, sharing off.
+
+- The feed row was created with `create_bookings` true.
+- `property_calendar_export.is_enabled` went from `false` to `true` with no second step.
+- `activity_log` gained `integrations.connected` and `integrations.config_changed` with
+  `{"auto":"channel_connected","setting":"export_enabled","enabled":true,"feed_provider":"airbnb"}`.
+- `initialSync` came back as `error` with `http_404`, because the URL was synthetic. That path is
+  non-fatal and does not affect the switch proof.
+
+Cleaned up afterwards: sharing off again, feed removed, so the test tenant is back to no feeds and
+sharing off. `kame-homes` was not touched (1 feed, sharing on).
+
+### How to repeat the hosted checks
+
+Hosted password sign-in answers captcha, so the scripted path is a magic link minted with the service
+role:
+
+1. `POST /auth/v1/admin/generate_link` with `{"type":"magiclink","email":"<host email>"}`.
+2. Open the returned `action_link` without following redirects and read `access_token` from the
+   `Location` fragment.
+3. Call `calendar-sync-settings?property_id=<uuid>` with that bearer token. The body is wrapped in `data`.
+4. `PATCH` `{"action":"addFeed","provider":"airbnb","icsUrl":"https://www.airbnb.com/..."}`.
+
+Never print the session or the export token. `kame-test-property` is `INACTIVE`, so its export link still
+answers `410` (V11). Use a live property to prove sending.
+
+### Next up
+
+V3 and V4 need the host's real Booking.com and Agoda listings. After those, V5 to V9 follow, and V10
+lands before general availability.
 
 ## Known, not caused by this release
 
