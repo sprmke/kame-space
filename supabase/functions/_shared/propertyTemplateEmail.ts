@@ -198,7 +198,9 @@ export async function resolvePropertyTemplateSubject(input: {
 
   const raw = rowSubject?.trim() || builtin?.defaultSubject?.trim() || '';
   if (!raw) return input.fallback;
-  const rendered = applyPropertyTemplatePlaceholders(raw, input.vars).replace(/\s+/g, ' ').trim();
+  const rendered = decodeSubjectEntities(
+    applyPropertyTemplatePlaceholders(raw, input.vars).replace(/\s+/g, ' ')
+  ).trim();
   return rendered || input.fallback;
 }
 

@@ -151,7 +151,14 @@ function normalize(html: string): string {
 
 const execute = process.argv.includes('--execute');
 const url = process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321';
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SERVICE_ROLE_KEY ?? '';
+const isLocalStack = url.includes('127.0.0.1') || url.includes('localhost');
+const key =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ??
+  process.env.SERVICE_ROLE_KEY ??
+  // Default local-stack service role key (same value in every local checkout).
+  (isLocalStack
+    ? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
+    : '');
 if (!key) {
   console.error('Set SUPABASE_SERVICE_ROLE_KEY (or SERVICE_ROLE_KEY).');
   process.exit(1);
