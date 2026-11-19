@@ -38,6 +38,11 @@ test.describe('parking pricing edit @ci', () => {
     await weekday.fill('350');
     const weekdayPreview = page.locator('#parking-weekday-rate-help');
     await expect(weekdayPreview.getByText('₱315 / night')).toBeVisible();
+    await expect(weekdayPreview.getByText('Guests see')).toBeVisible();
+    await expect(weekdayPreview.getByText('Platform fee (10%)')).toBeVisible();
+    await expect(weekdayPreview.getByText('You receive')).toBeVisible();
+    await expect(weekdayPreview.getByText('₱350 / night').first()).toBeVisible();
+    await expect(weekdayPreview.getByText('-₱35')).toBeVisible();
     await expect(
       page.getByText(/service fee at checkout \(5% \+ ₱15 per booking\)/i)
     ).toBeVisible();
@@ -57,4 +62,31 @@ test.describe('parking pricing edit @ci', () => {
     await expect(weekdayPreview.getByText('₱4,500 / night')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save' })).toBeEnabled();
   });
+
+  for (const width of [375, 768, 1024]) {
+    test(`rates form fits without sideways scroll at ${width}px`, async ({ page }) => {
+      setParkingScreenSuite(`parking-pricing-rates-${width}`);
+      const state = createParkingFlowState();
+      await installParkingFlowMocks(page, state);
+      await page.setViewportSize({ width, height: 900 });
+
+      await page.goto(parkingFlowPaths.hostPricing);
+      const weekday = page.getByLabel('Weekday / night');
+      await expect(weekday).toBeVisible();
+      await weekday.fill('350');
+
+      const preview = page.locator('#parking-weekday-rate-help');
+      await expect(preview.getByText('You receive')).toBeVisible();
+
+      const save = page.getByRole('button', { name: 'Save' });
+      await expect(save).toBeVisible();
+      const box = await save.boundingBox();
+      expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+    });
+  }
 });
