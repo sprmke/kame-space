@@ -27,7 +27,7 @@ Tag legend: [`README.md`](./README.md). Gates A–G: same file.
 
 | ID     | Change                                                                                                                                                                                                                                              |
 | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PR-131 | 🟡 public reads: isolate cache and hit-before-durable-counter order shipped in code, measured locally (44 to 953 req/s). Open: deploy (`kamewave`) and a hosted re-test on Micro. [`evidence`](./evidence/pr-131-public-read-caching-2026-11-20.md) |
+| PR-131 | ✅ public reads: isolate cache and hit-before-durable-counter order deployed to production in [#540](https://github.com/sprmke/kame-space/pull/540) (run `44575415204`). Hosted: 10 detail calls = 0 counter writes, 8 searches = 1, bypass paths still metered 3/3. [`evidence`](./evidence/pr-131-public-read-caching-2026-11-20.md) |
 
 ## 2026-11-01 re-verification on `develop` `497c7772`
 
