@@ -49,6 +49,10 @@ hooks. `orca.yaml` must exist on the branch the worktree starts from, and
 Orca reads it from the project's primary checkout, so pull that branch there
 before flipping the setting.
 
+Until both are true, keep **Local only**. With `orca.yaml only` and no detected
+file, Orca runs no setup at all: the saved local script is ignored and new
+worktrees get no UI tab.
+
 ## Auth and Maps on non-5173 ports
 
 Local GoTrue `additional_redirect_urls` includes `5173`–`5199` for
