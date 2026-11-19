@@ -431,7 +431,7 @@ export function PropertyTemplateEditorPane({
                 automationHref ? (
                   <Link
                     to={automationHref}
-                    className="hover:text-foreground inline-flex items-center gap-1.5 hover:underline"
+                    className="hover:text-foreground inline-flex items-center gap-1.5 underline decoration-dotted underline-offset-2"
                   >
                     <Zap className="size-3.5 shrink-0" aria-hidden />
                     {template.automationPlanBlocked

@@ -24,7 +24,7 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
   },
   'getting-here': {
     content: `<h2>Getting here</h2>
-<p>Use the map button below for the exact address and directions to {{property_name}}.</p>
+<p>Set the pin to {{property_name}} in your map app, or message us for the exact address and directions.</p>
 <p>{{map_cta_section}}</p>
 <h3>By car</h3>
 <ul>
@@ -33,7 +33,7 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
 <li>If you booked parking, see the Parking section of this guide.</li>
 </ul>
 <h3>By taxi or ride-hailing</h3>
-<p>Set the pin to the map link above and ask to be dropped at your tower lobby.</p>`,
+<p>Set the pin to the property name or the map link above and ask to be dropped at your tower lobby.</p>`,
   },
   'check-in-instructions': {
     content: `<h2>Check-in</h2>
