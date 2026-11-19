@@ -1,9 +1,12 @@
 /**
  * Condo default pack for property templates.
  *
- * Every property type resolves to this pack until other packs exist. Copy here is the shipped
- * default; a later pass rewrites it once the wider placeholder set lands. Bodies are stored in
- * the shape the editor produces, with block placeholders alone in a `<p>`.
+ * Every property type resolves to this pack until other packs exist. Copy is written for
+ * Philippine condo hosts: no Azure-only literals, no fixed times that can contradict Settings,
+ * and building specifics come from placeholders.
+ *
+ * Bodies are stored in the shape the editor produces. Block placeholders sit alone in a `<p>`
+ * so the send pipeline can replace them without breaking the surrounding paragraph.
  */
 
 export type CondoTemplateDefault = {
@@ -13,70 +16,176 @@ export type CondoTemplateDefault = {
 };
 
 export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
-  'house-rules': {
-    content: `<h2>House Rules</h2>
-<p>Welcome to our property! Please follow these guidelines to ensure a pleasant stay:</p>
+  'welcome-note': {
+    content: `<h2>Welcome</h2>
+<p>Hi {{guest_first_name}}, welcome to {{property_name}}. We are happy to host you.</p>
+<p>This guide covers your stay from arrival to check-out: how to get in, how things work, and what to do before you leave. Keep it open on your phone during your stay.</p>
+<p>{{contact_section}}</p>`,
+  },
+  'getting-here': {
+    content: `<h2>Getting here</h2>
+<p>{{property_name}} is at {{property_address}}.</p>
+<p>{{map_cta_section}}</p>
+<h3>By car</h3>
 <ul>
-<li><strong>No smoking</strong> inside the property</li>
-<li><strong>No parties or events</strong> without prior approval</li>
-<li><strong>Quiet hours</strong> from 10 PM to 8 AM</li>
-<li><strong>Pets</strong> allowed with prior approval and additional fee</li>
-<li><strong>Maximum occupancy</strong> must be respected</li>
+<li>Use the main gate and tell the guard you are staying at {{tower_and_unit_number}}.</li>
+<li>Drop off at your tower lobby. Do not leave your car in the drop-off area.</li>
+<li>If you booked parking, see the Parking section of this guide.</li>
 </ul>
-<p>Please treat the property with care and respect. Any damages will be deducted from the security deposit.</p>`,
+<h3>By taxi or ride-hailing</h3>
+<p>Set the pin to the address above and ask to be dropped at your tower lobby.</p>`,
   },
   'check-in-instructions': {
-    content: `<h2>Check-in Instructions</h2>
-<p>Welcome! Here's everything you need to know for your check-in:</p>
-<h3>Check-in Time</h3>
-<p>Standard check-in time is <strong>2:00 PM</strong>. Early check-in may be available upon request.</p>
-<h3>Getting Access</h3>
+    content: `<h2>Check-in</h2>
+<p>Check-in is from <strong>{{check_in_time}}</strong> on <strong>{{check_in_date}}</strong>. If you plan to arrive earlier, message us first so we can check if the unit is ready.</p>
+<h3>At the lobby</h3>
 <ol>
-<li>Upon arrival, proceed to the building lobby</li>
-<li>Check in at the front desk with your valid ID</li>
-<li>Collect your keys and parking pass (if applicable)</li>
+<li>Go to the reception desk of your tower.</li>
+<li>Show a valid ID for each registered guest.</li>
+<li>Tell the receptionist you are checking in to <strong>{{tower_and_unit_number}}</strong>.</li>
+<li>Collect the access card or visitor pass if the building gives one.</li>
 </ol>
-<h3>Self Check-in (After Hours)</h3>
-<p>For late arrivals, use the lockbox code sent to your email. The lockbox is located near the main entrance.</p>`,
+<h3>Getting into the unit</h3>
+<p>Your door code and Wi-Fi details are under Essentials at the top of this guide. They appear shortly before check-in.</p>
+<p>Only guests registered with the building can stay in the unit. Visitors need our approval first.</p>`,
   },
-  'check-out-instructions': {
-    content: `<h2>Check-out Instructions</h2>
-<p>Thank you for staying with us! Please follow these steps for check-out:</p>
-<h3>Check-out Time</h3>
-<p>Standard check-out time is <strong>11:00 AM</strong>. Late check-out may be available upon request.</p>
-<h3>Before You Leave</h3>
+  'house-rules': {
+    content: `<h2>House rules</h2>
+<p>Please follow these rules during your stay. They keep the unit in good shape and keep us on good terms with the building and our neighbors.</p>
+<p>{{house_rules_list}}</p>
+<h3>Building rules</h3>
+<p>The building's own rules apply to all guests, including rules for the lobby, elevators, pool and common areas. Building staff may ask you to follow them at any time.</p>
+<h3>Damage</h3>
+<p>Tell us about any damage or broken item as soon as you notice it. Damage beyond normal use may be charged to you or deducted from your security deposit.</p>`,
+  },
+  'using-the-unit': {
+    content: `<h2>Using the unit</h2>
+<h3>Air conditioning</h3>
+<p>Keep doors and windows closed while the aircon is on, and turn it off when you go out.</p>
+<h3>Water heater</h3>
+<p>Switch on the heater a few minutes before your shower and switch it off after.</p>
+<h3>Kitchen</h3>
 <ul>
-<li>Return all keys to the front desk or lockbox</li>
-<li>Dispose of trash in designated bins</li>
-<li>Ensure all windows and doors are locked</li>
-<li>Turn off all lights and air conditioning</li>
-<li>Check for personal belongings</li>
-</ul>`,
+<li>Cookware, plates and utensils are in the kitchen cabinets.</li>
+<li>Please wash and put away what you use.</li>
+<li>Never leave the stove on unattended.</li>
+</ul>
+<h3>TV and internet</h3>
+<p>The Wi-Fi details are under Essentials. Sign out of your streaming accounts before you leave.</p>
+<h3>If something stops working</h3>
+<p>Message us right away. Please do not try to repair appliances yourself.</p>`,
+  },
+  'building-amenities': {
+    content: `<h2>Building amenities</h2>
+<p>As our guest, you may use the building amenities below. The building sets the hours, fees and rules.</p>
+<h3>Swimming pool</h3>
+<ul>
+<li>Bring your access card or visitor pass. The pool desk may ask for it.</li>
+<li>Wear proper swimwear.</li>
+<li>An adult must watch children at all times.</li>
+<li>No glass or alcohol in the pool area.</li>
+</ul>
+<h3>Gym</h3>
+<p>Wear workout clothes and closed shoes. Wipe down equipment after use.</p>
+<h3>Common areas</h3>
+<p>Keep noise down in hallways and elevators, and do not leave items in the corridor.</p>
+<p>Ask the reception desk for today's hours.</p>`,
+  },
+  'trash-and-recycling': {
+    content: `<h2>Trash and recycling</h2>
+<p>The building requires waste segregation. Please sort your trash before you throw it out.</p>
+<ul>
+<li><strong>Biodegradable:</strong> food scraps and kitchen waste</li>
+<li><strong>Recyclable:</strong> plastic bottles, cans and clean paper</li>
+<li><strong>Residual:</strong> everything else</li>
+</ul>
+<p>Collection schedule: {{garbage_schedule}}</p>
+<p>Before you check out, bag all trash and take it to the garbage room or chute on your floor.</p>`,
   },
   'parking-reminders': {
-    content: `<h2>Parking Reminders</h2>
-<p>Important information about parking at our property:</p>
-<h3>Parking Registration</h3>
-<p>All vehicles must be registered with building security. Please provide:</p>
+    content: `<h2>Parking</h2>
+<p>Parking is only for guests who arranged a slot with us before arrival.</p>
+<h3>Your vehicle</h3>
 <ul>
-<li>Vehicle plate number</li>
-<li>Vehicle make/model</li>
-<li>Vehicle color</li>
+<li>Plate number: <strong>{{car_plate_number}}</strong></li>
+<li>Vehicle: {{car_brand_model}}, {{car_color}}</li>
 </ul>
-<h3>Parking Rules</h3>
+<h3>Parking rules</h3>
 <ul>
-<li>Park only in designated guest parking areas</li>
-<li>Display your parking pass visibly on your dashboard</li>
-<li>Do not park in reserved or handicap spaces without proper permits</li>
+<li>Park only in the slot assigned to you.</li>
+<li>Show your parking pass when the guard asks for it.</li>
+<li>Do not park in reserved, PWD or loading areas.</li>
+<li>Keep valuables out of sight.</li>
 </ul>`,
+  },
+  'pet-guidelines': {
+    content: `<h2>Pet guidelines</h2>
+<p>Your pet is welcome for this stay. Please follow these rules so we can keep hosting pets.</p>
+<ul>
+<li>Keep your pet on a leash or in a carrier in the lobby, elevators and common areas.</li>
+<li>Pets are not allowed in the pool, gym or other amenities.</li>
+<li>Clean up after your pet right away, inside and outside the unit.</li>
+<li>Do not leave your pet alone in the unit for long periods.</li>
+<li>Keep your pet off beds and sofas unless you cover them with your own blanket.</li>
+</ul>
+<p>Extra cleaning or damage caused by your pet may be charged or deducted from your security deposit.</p>`,
+  },
+  'emergency-and-safety': {
+    content: `<h2>Emergency and safety</h2>
+<p>In an emergency, call <strong>911</strong> first, then tell us.</p>
+<p>{{emergency_contacts_section}}</p>
+<h3>Fire</h3>
+<ul>
+<li>Find the nearest fire exit on your floor when you arrive.</li>
+<li>Use the stairs, never the elevator.</li>
+</ul>
+<h3>Earthquake</h3>
+<ul>
+<li>Drop, cover and hold on until the shaking stops.</li>
+<li>Leave by the stairs once it is safe and follow building staff.</li>
+</ul>
+<h3>Power or water interruption</h3>
+<p>If the power or water goes out, message us and we will check with the building.</p>`,
+  },
+  'local-guide': {
+    content: `<h2>Around the area</h2>
+<h3>Food and coffee</h3>
+<ul>
+<li>[Restaurant or cafe]: [what to order, how far]</li>
+</ul>
+<h3>Groceries and essentials</h3>
+<ul>
+<li>[Store]: [distance, opening hours]</li>
+</ul>
+<h3>Getting around</h3>
+<ul>
+<li>[Transport tip]</li>
+</ul>
+<h3>Things to do</h3>
+<ul>
+<li>[Place]: [why we like it]</li>
+</ul>`,
+  },
+  'check-out-instructions': {
+    content: `<h2>Check-out</h2>
+<p>Check-out is by <strong>{{check_out_time}}</strong> on <strong>{{check_out_date}}</strong>. Need more time? Message us before your check-out day and we will check if a late check-out is possible.</p>
+<h3>Before you leave</h3>
+<ol>
+<li>Bag all trash and take it out. Please do not leave unwashed dishes.</li>
+<li>Turn off the lights, aircon and appliances. Leave the refrigerator on.</li>
+<li>Close the windows and lock the door.</li>
+<li>Check closets, drawers, the bathroom and outlets for your belongings.</li>
+<li>Return the access card and visitor pass to the lobby reception, or where we asked you to leave them.</li>
+<li>Message us once you have left so we can inspect the unit.</li>
+</ol>`,
   },
   'email-gaf-request': {
     content: `<p>{{urgent_notice}}</p>
 <p>{{update_notice}}</p>
 <p>Good day,</p>
-<p>Kindly review the Guest Advise Form (GAF) request for <strong>{{tower_and_unit_number}}</strong>, dated from <strong>{{check_in_date}} to {{check_out_date}}</strong>, for your approval.</p>
-<p>Please let me know if you need any additional information.</p>
-<p>Thank you for your assistance.</p>
+<p>Please find attached the Guest Advice Form (GAF) for <strong>{{tower_and_unit_number}}</strong> for the stay from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong> ({{guests_label}}).</p>
+<p>Kindly review it for approval. You can reply to this email with the approved form, or let us know if you need anything else.</p>
+<p>Thank you.</p>
 <p>{{email_signature_section}}</p>`,
     subject: '{{tower_and_unit_number}} - GAF Request ({{check_in_date}} to {{check_out_date}})',
   },
@@ -84,89 +193,51 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
     content: `<p>{{urgent_notice}}</p>
 <p>{{update_notice}}</p>
 <p>Good day,</p>
-<p>May we kindly request approval for our guest to bring a pet during their stay at <strong>{{tower_and_unit_number}}</strong> from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong>.</p>
+<p>We would like to request approval for our guest to bring a pet to <strong>{{tower_and_unit_number}}</strong> from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong>. The pet details are below, and the documents are attached.</p>
 <p>{{pet_details_section}}</p>
 <p>{{pet_attachments_section}}</p>
-<p>Please let us know if you need any additional information or documentation.</p>
-<p>Thank you for your consideration.</p>
+<p>You can reply to this email with the approved form, or let us know if you need anything else.</p>
+<p>Thank you.</p>
 <p>{{email_signature_section}}</p>`,
     subject: '{{tower_and_unit_number}} - Pet Request ({{check_in_date}} to {{check_out_date}})',
   },
   'email-new-booking-request': {
     content: `<p>{{urgent_notice}}</p>
-<p>A new booking request has been submitted. Please <strong>review and approve as soon as possible</strong>.</p>
+<p><strong>{{guest_name}}</strong> sent a booking request for <strong>{{tower_and_unit_number}}</strong>. Please review it soon so the guest is not left waiting.</p>
 <p>{{new_booking_detail_tables}}</p>
 <p>{{downpayment_receipt_ai_section}}</p>
 <p>{{booking_link_cta}}</p>`,
-    subject: '{{tower_and_unit_number}} - New Booking Request {{stay_dates}}',
+    subject: '{{tower_and_unit_number}} - New booking request {{stay_dates}}',
   },
   'email-booking-request-received': {
-    content: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
-<p>We received your booking request for <strong>{{property_name}}</strong> from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong>.</p>
-<p>Your host is reviewing it now. We will email you as soon as it is confirmed.</p>
+    content: `<p>Hi {{guest_first_name}},</p>
+<p>Thanks for your booking request for <strong>{{property_name}}</strong> from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong> ({{nights_label}}, {{guests_label}}).</p>
+<p>Your request is not confirmed yet. Here is what happens next.</p>
 <p>{{booking_request_received_flow_section}}</p>
 <p>{{email_signature_section}}</p>`,
-    subject: '{{tower_and_unit_number}} - Booking Request Received {{stay_dates}}',
+    subject: '{{tower_and_unit_number}} - Booking request received {{stay_dates}}',
   },
   'email-booking-acknowledgement': {
-    content: `<p>{{booking_acknowledgement_flow_section}}</p>
-<p>Thank you for choosing {{property_name}}. We look forward to hosting you!</p>
+    content: `<p>Hi {{guest_first_name}},</p>
+<p>Good news. Your booking at <strong>{{property_name}}</strong> is confirmed.</p>
+<p>{{booking_acknowledgement_flow_section}}</p>
+<p>Thank you for choosing {{property_name}}. We look forward to hosting you.</p>
 <p>{{email_signature_section}}</p>`,
-    subject: '{{tower_and_unit_number}} - Booking Acknowledgement {{stay_dates}}',
+    subject: '{{tower_and_unit_number}} - Booking confirmed {{stay_dates}}',
   },
   'email-ready-for-checkin': {
-    content: `<p>Dear <strong>{{guest_facebook_name}}</strong>,</p>
-<p>Your check-in details are ready. We look forward to hosting you.</p>
+    content: `<p>Hi {{guest_first_name}},</p>
+<p>You are all set for your stay at <strong>{{property_name}}</strong>. Here are your check-in details.</p>
 <p>{{trip_cta_section}}</p>
 <p>{{ready_for_checkin_booking_summary_section}}</p>
 <p>{{payment_breakdown_section}}</p>
 <p>{{gcash_payment_section}}</p>
 <p>{{document_reminders_section}}</p>
+<p>{{arrival_access_note_section}}</p>
 <p>{{stay_guide_cta_section}}</p>
 <p>{{ready_for_checkin_contact_section}}</p>
 <p>{{email_signature_section}}</p>`,
-    subject: '{{tower_and_unit_number}} - Check-in Details {{stay_dates}}',
-  },
-  'email-sd-refund-form-request': {
-    content: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
-<p>Thank you for staying with us! We hope you had a wonderful stay! Please follow the check-out instructions below. After that, please open and fill out the SD refund form so that we can process your refund.</p>
-<p>{{sd_refund_checklist_section}}</p>
-<p>{{sd_refund_details_section}}</p>
-<p>{{trip_cta_section}}</p>`,
-    subject: '{{tower_and_unit_number}} - Check-out & SD Refund Details {{stay_dates}}',
-  },
-  'email-booking-cancelled-guest': {
-    content: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
-<p>{{cancellation_intro}}</p>
-<p>This is for your stay at <strong>{{tower_and_unit_number}}</strong> from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong>.</p>
-<p>{{cancellation_detail_section}}</p>
-<p>You can see the latest status any time from your trip page.</p>
-<p>{{trip_cta_section}}</p>
-<p>{{email_signature_section}}</p>`,
-    subject: '{{tower_and_unit_number}} - Booking Cancelled {{stay_dates}}',
-  },
-  'email-booking-cancelled-host': {
-    content: `<p>Hello,</p>
-<p>A booking was cancelled.</p>
-<p>{{cancellation_detail_section}}</p>
-<p>{{email_signature_section}}</p>`,
-    subject: '{{tower_and_unit_number}} - {{cancellation_host_title}} {{stay_dates}}',
-  },
-  'email-cancellation-request-guest': {
-    content: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
-<p><strong>{{cancellation_request_title}}</strong></p>
-<p>{{cancellation_detail_section}}</p>
-<p>{{trip_cta_section}}</p>
-<p>{{email_signature_section}}</p>`,
-    subject: '{{tower_and_unit_number}} - {{cancellation_request_title}}',
-  },
-  'email-refund-sent-guest': {
-    content: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
-<p>Your refund has been sent.</p>
-<p>{{cancellation_detail_section}}</p>
-<p>{{trip_cta_section}}</p>
-<p>{{email_signature_section}}</p>`,
-    subject: '{{tower_and_unit_number}} - Refund sent',
+    subject: '{{tower_and_unit_number}} - Check-in details {{stay_dates}}',
   },
   'email-pre-arrival-reminder': {
     content: `<p>Hi {{guest_first_name}},</p>
@@ -185,6 +256,15 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
 <p>{{email_signature_section}}</p>`,
     subject: '{{tower_and_unit_number}} - Reserve parking for your stay',
   },
+  'email-sd-refund-form-request': {
+    content: `<p>Hi {{guest_first_name}},</p>
+<p>Thank you for staying with us. Your check-out is by <strong>{{check_out_time}}</strong> on <strong>{{check_out_date}}</strong>.</p>
+<p>{{check_out_instructions_section}}</p>
+<p>{{sd_refund_details_section}}</p>
+<p>{{trip_cta_section}}</p>
+<p>{{email_signature_section}}</p>`,
+    subject: '{{tower_and_unit_number}} - Check-out and deposit refund {{stay_dates}}',
+  },
   'email-review-request': {
     content: `<p>Hi {{guest_first_name}},</p>
 <p>Thank you for staying at <strong>{{property_name}}</strong>. We hope you had a good stay.</p>
@@ -201,6 +281,16 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
 <p>{{email_signature_section}}</p>`,
     subject: 'Reminder: review your stay at {{property_name}}',
   },
+  'email-booking-cancelled-guest': {
+    content: `<p>Hi {{guest_first_name}},</p>
+<p>{{cancellation_intro}}</p>
+<p>This was for your stay at <strong>{{tower_and_unit_number}}</strong> from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong>.</p>
+<p>{{cancellation_detail_section}}</p>
+<p>If a refund is due, we send it based on the cancellation policy above. You can check its status on your trip page.</p>
+<p>{{trip_cta_section}}</p>
+<p>{{email_signature_section}}</p>`,
+    subject: '{{tower_and_unit_number}} - Booking cancelled {{stay_dates}}',
+  },
   'email-request-expired-guest': {
     content: `<p>Hi {{guest_first_name}},</p>
 <p>Your booking request for <strong>{{property_name}}</strong> from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong> expired because it was not confirmed in time. Nothing was charged.</p>
@@ -208,6 +298,30 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
 <p>{{trip_cta_section}}</p>
 <p>{{email_signature_section}}</p>`,
     subject: '{{tower_and_unit_number}} - Request expired {{stay_dates}}',
+  },
+  'email-cancellation-request-guest': {
+    content: `<p>Hi {{guest_first_name}},</p>
+<p><strong>{{cancellation_request_title}}</strong></p>
+<p>{{cancellation_request_message}}</p>
+<p>{{cancellation_detail_section}}</p>
+<p>{{trip_cta_section}}</p>
+<p>{{email_signature_section}}</p>`,
+    subject: '{{tower_and_unit_number}} - {{cancellation_request_title}}',
+  },
+  'email-refund-sent-guest': {
+    content: `<p>Hi {{guest_first_name}},</p>
+<p>We sent your refund for your stay at <strong>{{tower_and_unit_number}}</strong>. Depending on your bank or e-wallet, it may take a few days to show.</p>
+<p>{{cancellation_detail_section}}</p>
+<p>{{trip_cta_section}}</p>
+<p>{{email_signature_section}}</p>`,
+    subject: '{{tower_and_unit_number}} - Refund sent',
+  },
+  'email-building-admin-cancellation': {
+    content: `<p>Good day,</p>
+<p>Please cancel the GAF we sent for <strong>{{tower_and_unit_number}}</strong> for the stay from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong>. The booking was cancelled, and these guests will not check in.</p>
+<p>Thank you.</p>
+<p>{{email_signature_section}}</p>`,
+    subject: '{{tower_and_unit_number}} - GAF cancellation {{stay_dates}}',
   },
   'email-request-expiring-host': {
     content: `<p>Hi,</p>
@@ -217,12 +331,12 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
     subject:
       '{{tower_and_unit_number}} - Request expires in {{expires_in_days}} days {{stay_dates}}',
   },
-  'email-building-admin-cancellation': {
-    content: `<p>Good day,</p>
-<p>Please cancel the GAF we sent for <strong>{{tower_and_unit_number}}</strong> for the stay from <strong>{{check_in_date}}</strong> to <strong>{{check_out_date}}</strong>. The booking was cancelled, and these guests will not check in.</p>
-<p>Thank you.</p>
-<p>{{email_signature_section}}</p>`,
-    subject: '{{tower_and_unit_number}} - GAF cancellation {{stay_dates}}',
+  'email-booking-cancelled-host': {
+    content: `<p>Hi,</p>
+<p>{{cancellation_host_intro}}</p>
+<p>{{cancellation_detail_section}}</p>
+<p>{{booking_link_cta}}</p>`,
+    subject: '{{tower_and_unit_number}} - {{cancellation_host_title}} {{stay_dates}}',
   },
 };
 

@@ -198,10 +198,22 @@ export function buildTemplateLibrary(
   const list = templates ?? [];
   const hostOwned = list.filter((template) => isHostOwnedTemplateKey(template.templateKey));
 
+  const chapterOrder: Record<string, number> = {
+    'getting-in': 0,
+    'make-yourself-at-home': 1,
+    'before-you-go': 2,
+  };
+
   const groups: TemplateLibraryGroup[] = TEMPLATE_GROUP_ORDER.map((meta) => {
     const entries = list
       .filter((template) => effectiveGroup(template) === meta.id)
-      .map((template) => entryFor(template, meta.label));
+      .map((template) => entryFor(template, meta.label))
+      .sort((a, b) => {
+        if (meta.id !== 'stay-guide') return 0;
+        const left = chapterOrder[a.template.chapter ?? ''] ?? 99;
+        const right = chapterOrder[b.template.chapter ?? ''] ?? 99;
+        return left - right;
+      });
     return {
       id: meta.id,
       kind: 'builtin' as const,

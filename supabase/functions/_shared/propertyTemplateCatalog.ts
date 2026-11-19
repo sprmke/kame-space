@@ -67,7 +67,27 @@ const PLAIN_CONTACT: string[] = [
   'social_contact_mentions',
 ];
 const PLAIN_BOOKING_META: string[] = ['booking_link'];
+const PLAIN_PROPERTY: string[] = [
+  'residence_name',
+  'property_address',
+  'map_link',
+  'host_name',
+  'org_name',
+  'max_guests',
+];
+const PLAIN_ESSENTIALS: string[] = [
+  'wifi_name',
+  'unit_floor',
+  'parking_slot_note',
+  'garbage_schedule',
+  'quiet_hours',
+  'building_security_phone',
+  'emergency_contact_name',
+  'emergency_contact_phone',
+];
 const PLAIN_WORKFLOW: string[] = [
+  'guests_label',
+  'nights_label',
   'review_window_days',
   'expires_in_days',
   'cancellation_request_title',
@@ -88,13 +108,30 @@ function unique(...groups: readonly (readonly string[])[]): string[] {
   return [...new Set(groups.flat())];
 }
 
-const CORE = unique(PLAIN_CORE, PLAIN_STAY, PLAIN_FLAGS, PLAIN_WORKFLOW);
+const CORE_BASE = unique(PLAIN_CORE, PLAIN_STAY, PLAIN_FLAGS, PLAIN_WORKFLOW, PLAIN_PROPERTY);
+/** Guest, guide and team contexts may use arrival essentials; building admin may not. */
+const CORE = unique(CORE_BASE, PLAIN_ESSENTIALS);
 
 export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly string[]> = {
-  'house-rules': CORE,
-  'check-in-instructions': unique(CORE, PLAIN_PAYMENT),
-  'check-out-instructions': unique(CORE, PLAIN_PAYMENT),
-  'parking-reminders': unique(CORE, PLAIN_VEHICLE),
+  'house-rules': unique(CORE, ['house_rules_list', 'contact_section']),
+  'check-in-instructions': unique(CORE, PLAIN_PAYMENT, [
+    'house_rules_list',
+    'contact_section',
+    'check_in_instructions_section',
+  ]),
+  'check-out-instructions': unique(CORE, PLAIN_PAYMENT, [
+    'check_out_instructions_section',
+    'house_rules_section',
+  ]),
+  'parking-reminders': unique(CORE, PLAIN_VEHICLE, ['parking_cta_section']),
+  'welcome-note': unique(CORE, ['contact_section']),
+  'getting-here': unique(CORE, ['map_cta_section']),
+  'using-the-unit': CORE,
+  'building-amenities': unique(CORE, ['amenities_list']),
+  'trash-and-recycling': CORE,
+  'pet-guidelines': CORE,
+  'emergency-and-safety': unique(CORE, ['emergency_contacts_section']),
+  'local-guide': CORE,
   'email-gaf-request': unique(
     CORE,
     PLAIN_BOOKING_META,
@@ -102,7 +139,7 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
     ['email_signature_section']
   ),
   'email-pet-request': unique(
-    CORE,
+    CORE_BASE,
     PLAIN_PET,
     PLAIN_BOOKING_META,
     ['urgent_notice', 'update_notice'],
@@ -136,12 +173,15 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
     'gcash_payment_section',
     'stay_guide_cta_section',
     'ready_for_checkin_contact_section',
+    'arrival_access_note_section',
     'email_signature_section',
   ]),
   'email-sd-refund-form-request': unique(CORE, PLAIN_PAYMENT, PLAIN_CONTACT, PLAIN_GUEST_LINKS, [
     'sd_refund_checklist_section',
     'sd_refund_details_section',
+    'check_out_instructions_section',
     'trip_cta_section',
+    'email_signature_section',
   ]),
   'email-booking-cancelled-guest': unique(
     CORE,
@@ -204,7 +244,7 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
     'email_signature_section',
   ]),
   'email-request-expiring-host': unique(CORE, ['booking_link_cta']),
-  'email-building-admin-cancellation': unique(CORE, ['email_signature_section']),
+  'email-building-admin-cancellation': unique(CORE_BASE, ['email_signature_section']),
 };
 
 const CUSTOM_TEMPLATE_KEYS = unique(

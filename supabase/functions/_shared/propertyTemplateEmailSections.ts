@@ -417,7 +417,7 @@ export function buildBookingAcknowledgementFlowSectionHtml(input: {
   const checkIn = escapeHtml(input.checkIn);
   const checkOut = escapeHtml(input.checkOut);
   const socialMentions = buildSocialContactMentionsHtml(input.contact, input.brandColor);
-  const summary = `<table role="presentation" class="summary-surface" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:separate;border-spacing:0;background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;margin:0 0 4px 0;"><tr><td class="summary-inner" style="padding:18px 20px;"><p style="margin:0;font-size:16px;line-height:1.65;color:#333333;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">Your booking request for <strong style="color:#111827;font-weight:700;">${unit} from ${checkIn} to ${checkOut}</strong> is confirmed.</p></td></tr></table>`;
+  const summary = `<table role="presentation" class="summary-surface" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:separate;border-spacing:0;background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;margin:0 0 4px 0;"><tr><td class="summary-inner" style="padding:18px 20px;"><p style="margin:0;font-size:16px;line-height:1.65;color:#333333;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">Your stay: <strong style="color:#111827;font-weight:700;">${unit} from ${checkIn} to ${checkOut}</strong>.</p></td></tr></table>`;
 
   const documents = (input.requiredDocuments ?? []).map((label) => label.trim()).filter(Boolean);
   const documentList = documents.length
@@ -938,9 +938,9 @@ export function buildSdRefundDetailsSectionHtml(input: {
   const ctaStyle = withEmailShellStyleVars({}, input.brandColor).emailShellCtaBtnStyle;
 
   return [
-    notifySectionTitle('SD Refund details', input.brandColor),
-    `<p style="margin:0 0 22px 0;color:#333333;font-size:16px;line-height:1.65;">After check-out, please fill out the SD refund form below so that we can process your security deposit refund amounting to <strong style="color:#111827;font-weight:700;">${escapeHtml(input.securityDepositFormatted)}</strong>. Thank you.</p>`,
-    `<div class="cta-wrap" style="margin:28px 0 8px 0;text-align:center;"><a class="cta-btn" style="${ctaStyle}" href="${escapeHtml(input.sdFormUrl)}" target="_blank" rel="noopener">Fill out Refund Form</a></div>`,
+    notifySectionTitle('Deposit refund', input.brandColor),
+    `<p style="margin:0 0 22px 0;color:#333333;font-size:16px;line-height:1.65;">After you check out, fill out the refund form so we can return your security deposit of <strong style="color:#111827;font-weight:700;">${escapeHtml(input.securityDepositFormatted)}</strong>. We send it after we inspect the unit.</p>`,
+    `<div class="cta-wrap" style="margin:28px 0 8px 0;text-align:center;"><a class="cta-btn" style="${ctaStyle}" href="${escapeHtml(input.sdFormUrl)}" target="_blank" rel="noopener">Request deposit refund</a></div>`,
   ].join('\n');
 }
 

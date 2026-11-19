@@ -102,7 +102,15 @@ export type PropertyTemplateKey =
   | 'email-review-reminder'
   | 'email-request-expired-guest'
   | 'email-request-expiring-host'
-  | 'email-building-admin-cancellation';
+  | 'email-building-admin-cancellation'
+  | 'welcome-note'
+  | 'getting-here'
+  | 'using-the-unit'
+  | 'building-amenities'
+  | 'trash-and-recycling'
+  | 'pet-guidelines'
+  | 'emergency-and-safety'
+  | 'local-guide';
 
 export type PropertyTemplateDefinition = {
   key: PropertyTemplateKey;
@@ -487,6 +495,62 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
     category: 'email',
     defaultContent: '',
   },
+  {
+    key: 'welcome-note',
+    label: 'Welcome',
+    description: 'Your welcome note for this stay.',
+    category: 'standard',
+    defaultContent: '',
+  },
+  {
+    key: 'getting-here',
+    label: 'Getting here',
+    description: 'Directions to the building.',
+    category: 'standard',
+    defaultContent: '',
+  },
+  {
+    key: 'using-the-unit',
+    label: 'Using the unit',
+    description: 'Appliances, kitchen and internet.',
+    category: 'standard',
+    defaultContent: '',
+  },
+  {
+    key: 'building-amenities',
+    label: 'Building amenities',
+    description: 'Pool, gym and common areas.',
+    category: 'standard',
+    defaultContent: '',
+  },
+  {
+    key: 'trash-and-recycling',
+    label: 'Trash and recycling',
+    description: 'Waste segregation and collection.',
+    category: 'standard',
+    defaultContent: '',
+  },
+  {
+    key: 'pet-guidelines',
+    label: 'Pet guidelines',
+    description: 'Rules for guests bringing a pet.',
+    category: 'standard',
+    defaultContent: '',
+  },
+  {
+    key: 'emergency-and-safety',
+    label: 'Emergency and safety',
+    description: 'Emergency contacts and safety steps.',
+    category: 'standard',
+    defaultContent: '',
+  },
+  {
+    key: 'local-guide',
+    label: 'Around the area',
+    description: 'Food, stores and things to do nearby.',
+    category: 'standard',
+    defaultContent: '',
+  },
 ];
 
 type BuiltinMeta = {
@@ -509,6 +573,8 @@ function guideMeta(input: {
   phase: GuestTemplatePhase;
   iconId: PropertyTemplateIconId;
   condition?: PropertyTemplateCondition;
+  visible?: boolean;
+  requiresEdit?: boolean;
 }): BuiltinMeta {
   return {
     group: 'stay-guide',
@@ -519,9 +585,9 @@ function guideMeta(input: {
     subjectLocked: false,
     chapter: input.chapter,
     defaultPhase: input.phase,
-    defaultGuestVisible: true,
+    defaultGuestVisible: input.visible ?? true,
     condition: input.condition ?? null,
-    requiresEdit: false,
+    requiresEdit: input.requiresEdit ?? false,
     appliesWhen: null,
   };
 }
@@ -697,6 +763,49 @@ const BUILTIN_META: Record<PropertyTemplateKey, BuiltinMeta> = {
     iconId: 'file-text',
     toggle: 'emailBuildingAdminCancellation',
     appliesWhen: 'gaf-or-pet-required',
+  }),
+  'welcome-note': guideMeta({ chapter: 'getting-in', phase: 'arrival', iconId: 'home' }),
+  'getting-here': guideMeta({
+    chapter: 'getting-in',
+    phase: 'before',
+    iconId: 'car',
+    visible: false,
+  }),
+  'using-the-unit': guideMeta({
+    chapter: 'make-yourself-at-home',
+    phase: 'stay',
+    iconId: 'list-checks',
+    visible: false,
+  }),
+  'building-amenities': guideMeta({
+    chapter: 'make-yourself-at-home',
+    phase: 'stay',
+    iconId: 'list-checks',
+    visible: false,
+  }),
+  'trash-and-recycling': guideMeta({
+    chapter: 'make-yourself-at-home',
+    phase: 'stay',
+    iconId: 'list-checks',
+    visible: false,
+  }),
+  'pet-guidelines': guideMeta({
+    chapter: 'make-yourself-at-home',
+    phase: 'arrival',
+    iconId: 'paw',
+    condition: 'has_pets',
+  }),
+  'emergency-and-safety': guideMeta({
+    chapter: 'make-yourself-at-home',
+    phase: 'stay',
+    iconId: 'list-checks',
+  }),
+  'local-guide': guideMeta({
+    chapter: 'make-yourself-at-home',
+    phase: 'stay',
+    iconId: 'list-checks',
+    visible: false,
+    requiresEdit: true,
   }),
 };
 
@@ -1079,7 +1188,7 @@ function builtinToDto(builtin: PropertyTemplateDefinition): PropertyTemplateDto 
     previewTemplateSlug: builtin.previewTemplateSlug ?? null,
     sectionImageUrl: null,
     folderId: null,
-    guestVisible: false,
+    guestVisible: builtin.category === 'standard' ? builtin.defaultGuestVisible : false,
     guestPhase: 'always',
     updatedAt: null,
     group: builtin.group,

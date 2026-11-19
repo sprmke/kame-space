@@ -59,7 +59,7 @@ Deno.test('a TipTap round-tripped default still compares as default', () => {
 
 Deno.test('a real edit still compares as customized', () => {
   const builtin = getBuiltinPropertyTemplate('house-rules')!;
-  const edited = builtin.defaultContent.replace('No smoking', 'No smoking indoors');
+  const edited = builtin.defaultContent.replace('Building rules', 'Building house rules');
 
   assertNotEquals(
     normalizeTemplateContentForCompare(edited, 'house-rules'),

@@ -381,6 +381,17 @@ export function PropertyTemplateEditorPane({
           </div>
         </div>
 
+        {template.newDefaultAvailable ? (
+          <div className="border-separator flex flex-wrap items-center gap-2 border-t px-3 py-2 text-xs sm:px-4">
+            <span className="min-w-0 flex-1">A newer default is available for this email.</span>
+            {onReset ? (
+              <Button type="button" variant="outline" size="sm" onClick={() => setResetOpen(true)}>
+                Use new default
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+
         {isEmail ? (
           <div className="border-separator space-y-2 border-t px-3 py-2 sm:px-4">
             <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">

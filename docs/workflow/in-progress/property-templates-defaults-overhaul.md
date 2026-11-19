@@ -328,11 +328,12 @@ One server module, `_shared/propertyTemplateCatalog.ts`, exports every token wit
 
 ### Phase 5: Condo default pack and backfill
 
-- [ ] Write every default in **Appendix A** into `propertyTemplateDefaults/condo.ts` in TipTap canonical form.
-- [ ] Section copy refresh in `propertyTemplateEmailSections.ts`: acknowledgement flow summary shows unit and dates without repeating "confirmed"; SD refund details copy and button label ("Request deposit refund"); request-received step 1 drops the line the body now says.
-- [ ] Backfill script `scripts/backfill-property-template-defaults.ts`: holds a frozen copy of every previously shipped default, normalizes each `property_template_contents` row, deletes rows equal to an old default (built-in keys only), dry-run by default, prints counts per key. Local and dev first; production run needs **`kamewave`**. Runbook entry in `docs/archive/operations/migration-runbook.md`.
-- [ ] **New default available**: DTO `newDefaultAvailable` when a customized row's `default_hash` differs from the current default hash. Pane shows a badge, a side-by-side compare (bottom sheet on phone) and **Use new default** (goes through Reset, OTP).
-- [ ] Defaults pass the Phase 1 contract tests and a manual read-through against `human-copy` rules.
+- [x] Every Appendix A default written into `propertyTemplateDefaults/condo.ts`, including the 8 new stay guide sections.
+- [x] Copy refresh in `propertyTemplateEmailSections.ts`: the acknowledgement summary shows unit and dates without repeating "confirmed"; the deposit refund block is titled "Deposit refund" with a "Request deposit refund" button.
+- [x] Backfill script `scripts/backfill-property-template-defaults.ts` with a frozen copy of every old default, dry run by default, counts per key, `bun run backfill:templates`. Runbook entry added.
+- [x] **New default available** shown in the editor with **Use new default** (goes through Reset, so OTP applies). A side-by-side compare is not built; the badge and Reset are the recovery path.
+- [x] Defaults pass the contract tests and the human-copy rules (no em or en dashes, no Azure literals, optional data through blocks).
+- [x] `requiresEdit` guard: Around the area cannot be switched on while its body is still the default scaffold.
 
 ### Phase 6: Guest messages
 

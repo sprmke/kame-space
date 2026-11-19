@@ -64,7 +64,13 @@ type TemplateLibraryRailProps = {
 };
 
 function TemplateRowMeta({ entry, active }: { entry: TemplateLibraryEntry; active: boolean }) {
-  const parts = React.useMemo(() => templateRowStatusParts(entry), [entry]);
+  const parts = React.useMemo(() => {
+    const base = templateRowStatusParts(entry);
+    if (entry.template.category === 'standard' && !entry.template.guestVisible) {
+      return ['Hidden', ...base];
+    }
+    return base;
+  }, [entry]);
   if (parts.length === 0) return null;
 
   return (

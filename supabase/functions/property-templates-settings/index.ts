@@ -16,6 +16,7 @@ import {
   isCustomTemplateKey,
   isGuestTemplatePhase,
   MAX_CUSTOM_TEMPLATES,
+  normalizeTemplateContentForCompare,
   MAX_TEMPLATE_FOLDERS,
   propertyTemplateFolderExists,
   renamePropertyTemplateFolder,
@@ -534,6 +535,15 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
         throw err;
       }
     }
+    if (builtin.requiresEdit && guestVisible === true) {
+      const edited =
+        normalizeTemplateContentForCompare(content, templateKey) !==
+        normalizeTemplateContentForCompare(builtin.defaultContent, templateKey);
+      if (!edited) {
+        return jsonError(req, 'Edit this section before showing it to guests', 400);
+      }
+    }
+
     const tokenCheck = validatePropertyTemplateTokens({
       templateKey,
       category: builtin.category,
