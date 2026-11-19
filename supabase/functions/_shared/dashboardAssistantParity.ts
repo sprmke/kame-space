@@ -196,6 +196,10 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
     'Listing status changes (pause / archive / restore)'
   ),
   'property-templates-preview': read,
+  'send-property-template-test-email': handoff(
+    'property.templates',
+    'Test send mails the draft only to the signed-in account'
+  ),
   'property-guest-essentials': handoff(
     'property.settings',
     'Guest experience essentials (Wi-Fi, door code, contacts) are edited on the property settings page'

@@ -30,11 +30,14 @@ export const PROPERTY_TEMPLATE_PLACEHOLDERS_REFERENCE: readonly string[] = [
   '{{pet_name}}: pet name',
   '{{pet_type}}: pet type',
   '{{pet_breed}}: pet breed',
+  '{{pet_age}}: pet age',
   '{{car_brand_model}}: vehicle make/model',
   '{{car_color}}: vehicle color',
   '{{car_plate_number}}: plate number',
   '{{total_guest_balance}}: guest balance due (₱ formatted)',
   '{{sd_form_url}}: guest SD refund form URL',
+  '{{form_url}}: guest booking form URL',
+  '{{review_url}}: guest review URL',
   '{{trip_url}}: guest trip page URL (booking, documents, chat)',
   '{{security_deposit}}: security deposit (₱ formatted)',
   '{{facebook_page_url}}: Facebook page URL (property → org)',
@@ -61,11 +64,59 @@ export const PROPERTY_TEMPLATE_PLACEHOLDERS_REFERENCE: readonly string[] = [
   '{{document_reminders_section}}: GAF/parking/pet reminder card (ready for check-in)',
   '{{payment_breakdown_section}}: payment table (empty when total balance is 0)',
   '{{gcash_payment_section}}: payment accounts (+ QR when uploaded; empty when total balance is 0)',
+  '{{stay_guide_cta_section}}: “Open Stay Guide” button',
   '{{sd_refund_checklist_section}}: check-out checklist table (SD refund email)',
   '{{sd_refund_details_section}}: SD refund amount + form CTA (SD refund email)',
   '{{cancellation_intro}}: cancellation intro line (guest cancellation email)',
   '{{cancellation_detail_section}}: cancellation summary table (policy, reason, refund)',
   '{{cancellation_request_title}}: request state title (received / approved / declined)',
+  '{{cancellation_request_message}}: request state sentence (received / approved / declined)',
+  '{{cancellation_host_intro}}: host cancellation intro for the case',
+  '{{cancellation_host_title}}: host cancellation title',
+  '{{guest_first_name}}: first name, or "there"',
+  '{{nights_label}}: "2 nights"',
+  '{{guests_label}}: "2 guests"',
+  '{{stay_dates}}: date range used in subjects',
+  '{{review_window_days}}: review window length in days',
+  '{{expires_in_days}}: days before a pending request expires',
+  '{{property_address}}: property address',
+  '{{map_link}}: Google Maps link',
+  '{{map_cta_section}}: Open in Maps button',
+  '{{host_name}}: host name',
+  '{{org_name}}: organization name',
+  '{{max_guests}}: maximum guests',
+  '{{residence_name}}: development or residence name',
+  '{{wifi_name}}: Wi-Fi network name',
+  '{{wifi_password}}: Wi-Fi password (Stay guide only, reveal-gated)',
+  '{{door_code}}: door code (Stay guide only, reveal-gated)',
+  '{{unit_floor}}: unit floor',
+  '{{parking_slot_note}}: parking slot note',
+  '{{garbage_schedule}}: garbage collection schedule',
+  '{{garbage_schedule_section}}: collection schedule line (hidden when empty)',
+  '{{quiet_hours}}: quiet hours',
+  '{{quiet_hours_section}}: quiet hours line (hidden when empty)',
+  '{{building_security_phone}}: building security phone',
+  '{{emergency_contact_name}}: emergency contact name',
+  '{{emergency_contact_phone}}: emergency contact phone',
+  '{{pet_fee}}: pet fee (₱ formatted)',
+  '{{parking_rate}}: parking rate (₱ formatted)',
+  '{{form_url}}: guest booking form URL',
+  '{{review_url}}: guest review URL',
+  '{{stay_guide_url}}: guest stay guide URL with token',
+  '{{messages_url}}: guest chat URL with token',
+  '{{contact_section}}: contact card',
+  '{{emergency_contacts_section}}: emergency contacts card',
+  '{{house_rules_list}}: house rules list',
+  '{{amenities_list}}: amenities list',
+  '{{house_rules_section}}: embedded house rules template',
+  '{{check_in_instructions_section}}: embedded check-in template',
+  '{{check_out_instructions_section}}: embedded check-out template',
+  '{{balance_due_section}}: balance line, empty when nothing is due',
+  '{{arrival_access_note_section}}: note pointing to Essentials, empty without secrets',
+  '{{review_cta_section}}: Leave a review button',
+  '{{parking_cta_section}}: Find parking button',
+  '{{messages_cta_section}}: Message your host button',
+  '{{cancellation_policy_section}}: cancellation policy block',
 ];
 
 export const PROPERTY_TEMPLATE_SAMPLE_VARS: Record<string, string> = {
@@ -73,13 +124,19 @@ export const PROPERTY_TEMPLATE_SAMPLE_VARS: Record<string, string> = {
   guest_phone: '09171234567',
   guest_email: 'jane.guest@example.com',
   guest_facebook_name: 'Jane Guest',
+  guest_first_name: 'Jane',
   guest_name: 'Jane Guest',
   check_in_date: 'July 10, 2026',
   check_out_date: 'July 12, 2026',
   check_in_time: '2:00 PM',
   check_out_time: '11:00 AM',
+  stay_dates: '(July 10, 2026 to July 12, 2026)',
   nights: '2',
+  nights_label: '2 nights',
   pax: '2',
+  guests_label: '2 guests',
+  review_window_days: '14',
+  expires_in_days: '2',
   tower_and_unit_number: 'Monaco 2604',
   unit_number: 'Monaco 2604',
   property_name: 'Sample Property',
@@ -102,8 +159,15 @@ export const PROPERTY_TEMPLATE_SAMPLE_VARS: Record<string, string> = {
   total_guest_balance: '₱3,599',
   sd_form_url:
     'https://kamespace.com/properties/azure-north/sd-form?bookingId=00000000-0000-4000-8000-000000000001',
+  form_url:
+    'https://kamespace.com/properties/azure-north/form?bookingId=00000000-0000-4000-8000-000000000001',
+  review_url:
+    'https://kamespace.com/properties/azure-north/guest-review?bookingId=00000000-0000-4000-8000-000000000001',
   trip_url:
     'https://kamespace.com/properties/azure-north/trip?bookingId=00000000-0000-4000-8000-000000000001',
+  messages_url:
+    'https://kamespace.com/properties/azure-north/messages?bookingId=00000000-0000-4000-8000-000000000001',
+  stay_guide_url: 'https://kamespace.com/properties/azure-north/stay-guide?token=sample-token',
   security_deposit: '₱3,000.00',
   facebook_page_url: 'https://www.facebook.com/example',
   airbnb_url: 'https://www.airbnb.com/rooms/example',
@@ -112,11 +176,16 @@ export const PROPERTY_TEMPLATE_SAMPLE_VARS: Record<string, string> = {
   contact_email: 'host@example.com',
   social_contact_mentions:
     'message us on <a href="https://www.facebook.com/example">Facebook</a> or <a href="https://www.airbnb.com/rooms/example">Airbnb</a>',
+  cancellation_intro: 'Your booking was cancelled.',
+  cancellation_request_title: 'Cancellation request received',
 };
 
-export function applyPropertyTemplateSamplePlaceholders(html: string): string {
+export function applyPropertyTemplateSamplePlaceholders(
+  html: string,
+  vars: Record<string, string> = PROPERTY_TEMPLATE_SAMPLE_VARS
+): string {
   let out = html;
-  for (const [key, value] of Object.entries(PROPERTY_TEMPLATE_SAMPLE_VARS)) {
+  for (const [key, value] of Object.entries(vars)) {
     out = out.split(`{{${key}}}`).join(value);
     const hyphenKey = key.replace(/_/g, '-');
     if (hyphenKey !== key) {

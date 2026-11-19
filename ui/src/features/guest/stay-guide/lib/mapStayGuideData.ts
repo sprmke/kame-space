@@ -104,16 +104,21 @@ function chapterBlocks(
   dto: GuestStayGuideDto,
   chapterId: StayGuideChapterSectionId
 ): StayGuideChapterBlock[] {
+  // Prefer the registry chapter on each section so new sections route without a UI list.
+  const byChapter = dto.sections.filter((section) => section.chapter === chapterId);
   const keys = CHAPTER_TEMPLATE_KEYS[chapterId];
-  const blocks = keys
-    .map((key) => dto.sections.find((section) => section.key === key))
-    .filter((section): section is GuestStayGuideDto['sections'][number] => Boolean(section))
-    .map((section) => ({
-      key: section.key,
-      heading: section.displayHeading || section.label,
-      html: section.html ?? '',
-      imageUrl: section.imageUrl ?? null,
-    }));
+  const selected =
+    byChapter.length > 0
+      ? byChapter
+      : keys
+          .map((key) => dto.sections.find((section) => section.key === key))
+          .filter((section): section is GuestStayGuideDto['sections'][number] => Boolean(section));
+  const blocks = selected.map((section) => ({
+    key: section.key,
+    heading: section.displayHeading || section.label,
+    html: section.html ?? '',
+    imageUrl: section.imageUrl ?? null,
+  }));
 
   // "Getting In" opens with the essentials: on arrival, the door code matters more than
   // the prose below it (plan 4.2).

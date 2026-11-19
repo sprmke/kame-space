@@ -44,6 +44,15 @@ const TEMPLATES = [
     updatedAt: NOW,
   },
   {
+    templateKey: 'message-check-in-day',
+    name: 'Check-in day',
+    category: 'message',
+    description: 'Morning-of message with arrival steps.',
+    sectionImageUrl: null,
+    folderId: null,
+    updatedAt: NOW,
+  },
+  {
     templateKey: 'custom-welcome',
     name: 'Welcome note',
     category: 'custom',
@@ -89,7 +98,14 @@ async function openInbox(page: Page) {
   );
   await page.route('**/functions/v1/chat-templates*', (route) => {
     const url = new URL(route.request().url());
-    if (url.searchParams.get('template_key')) {
+    const templateKey = url.searchParams.get('template_key');
+    if (templateKey === 'message-check-in-day') {
+      return json(route, {
+        snapshot: { ...SNAPSHOT, templateKey, name: 'Check-in day', category: 'message' },
+        plainText: 'Hi Ana, today is check-in day. The unit is ready from 2:00 PM.',
+      });
+    }
+    if (templateKey) {
       return json(route, { snapshot: SNAPSHOT, plainText: 'House rules' });
     }
     return json(route, { templates: TEMPLATES });
@@ -135,6 +151,18 @@ test.describe('@ci inbox chat templates', () => {
     await page.getByRole('button', { name: 'Insert link or info' }).click();
     await expect(page.getByText('House Rules', { exact: true })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('GAF Request', { exact: true })).toHaveCount(0);
+  });
+
+  test('a guest message is inserted into the composer as editable text', async ({ page }) => {
+    await openInbox(page);
+    await page.getByRole('button', { name: 'Insert link or info' }).click();
+    const insertMenu = page.getByRole('dialog').filter({ hasText: 'Check-in day' });
+    await expect(insertMenu.getByText('Messages', { exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
+    await insertMenu.getByRole('button', { name: /Check-in day/ }).click();
+
+    await expect(page.getByPlaceholder('Write a reply…')).toHaveValue(/today is check-in day/);
   });
 
   test('phone opens the preview as a sheet with Send reachable', async ({ page }) => {

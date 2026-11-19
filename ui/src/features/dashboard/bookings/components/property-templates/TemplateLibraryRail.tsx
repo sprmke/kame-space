@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { ChevronRight, FolderOpen, Plus, Search, X } from 'lucide-react';
+import { ChevronRight, EyeOff, FolderOpen, Plus, Search, X } from 'lucide-react';
 
 import { TemplateLibraryCategoryFilter } from '@/features/dashboard/bookings/components/property-templates/TemplateLibraryCategoryFilter';
 import {
@@ -27,9 +27,16 @@ const railMenuTriggerClassName =
 /** Template rows hide ⋯ until hover/focus; section headings keep ⋯ visible. */
 const templateRowMenuTriggerClassName = cn(
   railMenuTriggerClassName,
-  '[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:transition-opacity',
+  '[@media(hover:hover)]:pointer-events-none [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:transition-opacity',
+  '[@media(hover:hover)]:group-focus-within/row:pointer-events-auto [@media(hover:hover)]:group-hover/row:pointer-events-auto',
   '[@media(hover:hover)]:group-focus-within/row:opacity-100 [@media(hover:hover)]:group-hover/row:opacity-100'
 );
+
+/** Only Stay guide and Guest messages accept host-created templates. */
+function groupAcceptsNewTemplates(group: TemplateLibraryGroup): boolean {
+  if (group.kind === 'folder' || group.kind === 'ungrouped') return true;
+  return group.kind === 'builtin' && (group.id === 'stay-guide' || group.id === 'guest-messages');
+}
 
 export type TemplateRailHandlers = {
   onRenameTemplate: (entry: TemplateLibraryEntry) => void;
@@ -65,17 +72,36 @@ type TemplateLibraryRailProps = {
 
 function TemplateRowMeta({ entry, active }: { entry: TemplateLibraryEntry; active: boolean }) {
   const parts = React.useMemo(() => templateRowStatusParts(entry), [entry]);
-  if (parts.length === 0) return null;
+  const hidden = entry.template.category === 'standard' && !entry.template.guestVisible;
+  if (!hidden && parts.length === 0) return null;
 
   return (
-    <span
-      className={cn(
-        'block truncate text-xs',
-        /* On the brand pill, tint from the fill's own foreground — never gray. */
-        active ? 'text-primary-foreground/75' : 'text-muted-foreground'
-      )}
-    >
-      {parts.join(' · ')}
+    <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
+      {hidden ? (
+        <span
+          className={cn(
+            'inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide',
+            active
+              ? 'bg-black/20 text-primary-foreground'
+              : 'bg-muted text-muted-foreground'
+          )}
+        >
+          <EyeOff className="size-3" aria-hidden />
+          Hidden
+        </span>
+      ) : null}
+      {parts.length > 0 ? (
+        <span
+          className={cn(
+            'block truncate text-xs',
+            /* On the brand pill, use the fill's own foreground at full strength. A /75 tint
+             * failed color contrast once a default row started showing meta text. */
+            active ? 'text-primary-foreground' : 'text-muted-foreground'
+          )}
+        >
+          {parts.join(' · ')}
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -123,7 +149,7 @@ const TemplateRow = React.forwardRef<
           <span className="block truncate text-sm font-medium">{entry.name}</span>
           <TemplateRowMeta entry={entry} active={active} />
         </span>
-        {showChevron && !canOrganise && !canDelete ? (
+        {showChevron ? (
           <ChevronRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
         ) : null}
       </button>
@@ -179,10 +205,14 @@ function RailFolderEmptyState({
   const canAdd =
     permissions.canAddCustom &&
     typeof handlers.onAddTemplateToGroup === 'function' &&
-    (group.kind === 'folder' || group.kind === 'builtin');
+    groupAcceptsNewTemplates(group);
 
   const emptyHint =
-    group.kind === 'builtin' ? 'Add a custom template here.' : 'Move a template here.';
+    group.kind === 'builtin'
+      ? canAdd
+        ? 'Add a custom template here.'
+        : 'No templates yet.'
+      : 'Move a template here.';
 
   return (
     <div
@@ -225,7 +255,7 @@ function RailGroupHeading({
   const canAddToGroup =
     permissions.canAddCustom &&
     typeof handlers.onAddTemplateToGroup === 'function' &&
-    (group.kind === 'folder' || group.kind === 'builtin' || group.kind === 'ungrouped');
+    groupAcceptsNewTemplates(group);
 
   const actionGroups: Parameters<typeof ResponsiveOverflowMenu>[0]['actionGroups'] = [];
 
@@ -262,22 +292,22 @@ function RailGroupHeading({
   const showGroupMenu = actionGroups.length > 0;
 
   return (
-    <div className="flex min-h-[32px] items-center gap-1.5 pb-1 pl-2.5 pr-1 pt-3 first:pt-1">
-      <p className="text-muted-foreground min-w-0 truncate text-xs font-medium uppercase tracking-wider">
+    <div className="bg-card sticky top-0 z-[2] flex min-h-[32px] items-center gap-1.5 pb-1 pl-2.5 pr-1 pt-3 first:pt-1">
+      <p className="text-muted-foreground min-w-0 truncate text-[11px] font-semibold uppercase tracking-wider">
         {group.label}
       </p>
+      {group.gated ? <TierBadge feature="customTemplates" /> : null}
       {group.entries.length > 0 ? (
-        <span className="text-muted-foreground/70 shrink-0 text-xs tabular-nums">
+        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold tabular-nums">
           {group.entries.length}
         </span>
       ) : null}
-      {group.gated ? <TierBadge feature="customTemplates" /> : null}
 
       {showGroupMenu ? (
         <ResponsiveOverflowMenu
           label={`Actions for ${group.label}`}
           sheetTitle={group.label}
-          triggerClassName={cn(railMenuTriggerClassName, 'ml-auto')}
+          triggerClassName={cn(railMenuTriggerClassName)}
           actionGroups={actionGroups}
         />
       ) : null}

@@ -6,6 +6,7 @@ import {
   KeyRound,
   LayoutTemplate,
   Loader2,
+  MessageSquare,
   Pin,
   Plus,
   Search,
@@ -140,6 +141,8 @@ type Props = {
   onInsertUrl: (url: string) => void;
   onInsertText: (text: string) => void;
   onSelectTemplate: (template: ChatTemplateListItem) => void;
+  /** Message templates go into the composer as editable text, not a card. */
+  onInsertTemplateText: (template: ChatTemplateListItem) => void;
 };
 
 /** Unified composer insert menu: links, pages, booking docs, payment info, maps. */
@@ -157,6 +160,7 @@ export function InboxInsertMenu({
   onInsertUrl,
   onInsertText,
   onSelectTemplate,
+  onInsertTemplateText,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -261,6 +265,16 @@ export function InboxInsertMenu({
     onSelectTemplate(template);
   };
 
+  const insertTemplateText = (template: ChatTemplateListItem) => {
+    closeAndReset();
+    onInsertTemplateText(template);
+  };
+
+  const messageTemplates =
+    chatTemplates.data?.filter((template) => template.category === 'message') ?? [];
+  const cardTemplates =
+    chatTemplates.data?.filter((template) => template.category !== 'message') ?? [];
+
   const pinnedIdSet = useMemo(
     () => new Set(pinnedSnippets.map((row) => row.id)),
     [pinnedSnippets]
@@ -362,13 +376,35 @@ export function InboxInsertMenu({
             </>
           ) : null}
 
-          {chatTemplates.data && chatTemplates.data.length > 0 ? (
+          {messageTemplates.length > 0 ? (
+            <>
+              <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">Messages</p>
+              <div className="mb-1">
+                {messageTemplates.map((template) => (
+                  <button
+                    key={template.templateKey}
+                    type="button"
+                    onClick={() => insertTemplateText(template)}
+                    className={cn(
+                      'native-press focus-visible:ring-ring flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm',
+                      'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2'
+                    )}
+                  >
+                    <MessageSquare className="text-muted-foreground size-4 shrink-0" aria-hidden />
+                    <span className="min-w-0 flex-1 truncate font-medium">{template.name}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : null}
+
+          {cardTemplates.length > 0 ? (
             <>
               <p className="text-muted-foreground px-2 pb-1.5 pt-3 text-xs font-medium">
                 Templates
               </p>
               <div className="mb-1">
-                {chatTemplates.data.map((template) => (
+                {cardTemplates.map((template) => (
                   <button
                     key={template.templateKey}
                     type="button"

@@ -51,7 +51,10 @@ import {
   platformLabel,
 } from '@/features/dashboard/inbox/lib/inboxFormat';
 import { readPropertyMapsUrl } from '@/features/dashboard/inbox/lib/inboxInsertContent';
-import { fetchChatTemplatePreview } from '@/features/dashboard/inbox/lib/inboxApi';
+import {
+  fetchChatTemplatePlainText,
+  fetchChatTemplatePreview,
+} from '@/features/dashboard/inbox/lib/inboxApi';
 import {
   inboxAttachmentPreviews,
   type InboxAttachmentPreview,
@@ -592,6 +595,26 @@ export function InboxConversationView({
       toast.error((e as Error).message);
     } finally {
       setComposeTemplateLoading(false);
+    }
+  };
+
+  const handleInsertTemplateText = async (template: ChatTemplateListItem) => {
+    try {
+      const text = inboxMockActive
+        ? mockChatTemplatePreview(template.templateKey)
+            .html.replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+        : await fetchChatTemplatePlainText(
+            orgContext?.orgSlug ?? null,
+            orgContext?.org.id ?? null,
+            propertyId ? { propertyId } : null,
+            template.templateKey,
+            { conversationId: conversation?.id, bookingId: matchedBooking?.id ?? null }
+          );
+      if (text.trim()) appendToDraft(text.trim());
+    } catch (e) {
+      toast.error((e as Error).message);
     }
   };
 
@@ -1320,6 +1343,7 @@ export function InboxConversationView({
                       onInsertUrl={appendToDraft}
                       onInsertText={appendToDraft}
                       onSelectTemplate={(template) => void handleSelectTemplate(template)}
+                      onInsertTemplateText={(template) => void handleInsertTemplateText(template)}
                     />
                   ) : null}
                 </div>

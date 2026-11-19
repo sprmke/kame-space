@@ -11,7 +11,7 @@ import { serveAuthenticated } from '../_shared/serveEdge.ts';
 import { validateTemplateContent } from '../_shared/propertyTemplates.ts';
 
 function parseCategory(value: unknown): PropertyTemplateCategory | null {
-  if (value === 'standard' || value === 'email' || value === 'custom') {
+  if (value === 'standard' || value === 'email' || value === 'message' || value === 'custom') {
     return value;
   }
   return null;
@@ -30,6 +30,8 @@ serveAuthenticated('property-templates-preview', async (req) => {
   const content = typeof body.content === 'string' ? body.content : '';
   const category = parseCategory(body.category);
   const name = typeof body.name === 'string' ? body.name : undefined;
+  const subject =
+    body.subject === null || typeof body.subject === 'string' ? body.subject : undefined;
 
   if (!templateKey) return jsonError(req, 'templateKey is required', 400);
   if (!category) return jsonError(req, 'category is required', 400);
@@ -43,6 +45,7 @@ serveAuthenticated('property-templates-preview', async (req) => {
     category,
     content,
     name,
+    subject,
   });
 
   return jsonSuccess(req, preview);
