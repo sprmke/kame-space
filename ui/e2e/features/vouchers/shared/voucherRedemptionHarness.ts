@@ -387,6 +387,21 @@ export async function installVoucherRedemptionHostMocks(
     });
   });
 
+  // Booking detail reads `get-booking?format=row` (edge), not browser PostgREST.
+  await page.route('**/functions/v1/get-booking**', async (route) => {
+    const url = new URL(route.request().url());
+    const bookingId = url.searchParams.get('booking_id');
+    if (bookingId === String(hostState.booking.id)) {
+      await fulfillJson(route, { success: true, data: hostState.booking });
+      return;
+    }
+    if (bookingId === VOUCHER_SOURCE_BOOKING_ID) {
+      await fulfillJson(route, { success: true, data: e2eCompletedSourceBookingRow() });
+      return;
+    }
+    await fulfillJson(route, { success: false, error: 'Booking not found' }, 404);
+  });
+
   await page.route('**/rest/v1/guest_submissions*', async (route) => {
     const url = new URL(route.request().url());
     const id = url.searchParams.get('id');

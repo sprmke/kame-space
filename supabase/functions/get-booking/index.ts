@@ -100,7 +100,7 @@ serveAuthenticated('get-booking', async (req) => {
       return jsonError(req, 'Booking not found', 404);
     }
   } else if (orgSlug || orgId) {
-    const ctx = await resolveOrgAccessContext(req, 'org:bookings:view');
+    const ctx = await resolveOrgAccessContext(req, 'org.bookings:view');
     booking = await loadBookingById(bookingId);
     if (!booking) {
       return jsonError(req, 'Booking not found', 404);
