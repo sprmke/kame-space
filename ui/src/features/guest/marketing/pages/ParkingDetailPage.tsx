@@ -383,6 +383,10 @@ export function ParkingDetailPage() {
                 baseRate={pricing.weekdayNightlyRate}
                 weekendNightlyRate={pricing.weekendNightlyRate}
                 dateOverrides={pricing.dateOverrides}
+                parkingServiceFee={{
+                  pct: pricing.guestFeePct ?? 0,
+                  fixed: pricing.guestFeeFixed ?? 0,
+                }}
                 currency={pricing.currency}
                 listingSlug={parkingSlug}
                 listingName={data.name}

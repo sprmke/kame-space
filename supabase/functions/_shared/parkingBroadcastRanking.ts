@@ -1,5 +1,5 @@
 /**
- * Parking broadcast — price ranking, guest-rate-cap exclusion, and multi-spot host dedupe.
+ * Parking broadcast — price ranking and multi-spot host dedupe (hosts set their own rate, no cap).
  * Mirrors `parkingBroadcast.ts` conventions; kept as a sibling file per the match-engine
  * ticket's own instruction rather than growing that file further.
  */
@@ -7,7 +7,6 @@
 import { createServiceClient } from './orgAuth.ts';
 import type { ParkingBroadcastCandidate } from './parkingBroadcast.ts';
 import { loadParkingPricing } from './parkingPricing.ts';
-import { resolveParkingPlatformSettings } from './parkingPlatformSettings.ts';
 
 /** D15 (locked): fixed batch size, not admin-configurable in v1. */
 export const PARKING_BATCH_SIZE = 3;
@@ -64,21 +63,6 @@ export async function computeParkingHostGross(
   return total / nights.length;
 }
 
-/** D5/D2: excluded from the pool entirely (not just ranked last) if priced above the guest rate cap. */
-export function isPriceCappedOut(
-  hostGross: number,
-  checkInDate: string,
-  checkOutDate: string,
-  guestRates: { weekday: number; weekend: number }
-): boolean {
-  const nights = nightsInRange(checkInDate, checkOutDate);
-  if (nights.length === 0) return hostGross > guestRates.weekday;
-  return nights.some((night) => {
-    const cap = isWeekendRateDay(night) ? guestRates.weekend : guestRates.weekday;
-    return hostGross > cap;
-  });
-}
-
 /**
  * Dedupe key for "a host with multiple parking spots is only offered once" (decision #6):
  * the earliest active parking_members row with edit access for this parking (same predicate
@@ -119,8 +103,8 @@ export type RankedParkingCandidate = {
 };
 
 /**
- * Price-ranks conflict-safe candidates ascending by host_gross, drops any priced above the
- * guest rate cap, and collapses multi-spot hosts to their cheapest eligible spot. Tie-break:
+ * Price-ranks conflict-safe candidates ascending by host_gross (no price ceiling: hosts set
+ * their own rate) and collapses multi-spot hosts to their cheapest eligible spot. Tie-break:
  * ascending `parkings.created_at` (earliest-listed spot wins) — documented per the ticket's
  * "pick one" ask, not left to insertion order.
  */
@@ -129,30 +113,19 @@ export async function rankAndDedupeParkingCandidates(
   checkInDate: string,
   checkOutDate: string
 ): Promise<RankedParkingCandidate[]> {
-  const [priced, platformSettings] = await Promise.all([
-    Promise.all(
-      candidates.map(async (candidate) => ({
-        candidate,
-        hostGross: await computeParkingHostGross(candidate.id, checkInDate, checkOutDate),
-      }))
-    ),
-    resolveParkingPlatformSettings(),
-  ]);
-  const guestRates = {
-    weekday: platformSettings.guestRateWeekday,
-    weekend: platformSettings.guestRateWeekend,
-  };
-
-  const withinCap = priced.filter(
-    ({ hostGross }) => !isPriceCappedOut(hostGross, checkInDate, checkOutDate, guestRates)
+  const priced = await Promise.all(
+    candidates.map(async (candidate) => ({
+      candidate,
+      hostGross: await computeParkingHostGross(candidate.id, checkInDate, checkOutDate),
+    }))
   );
 
   const hostKeys = await Promise.all(
-    withinCap.map(({ candidate }) => resolvePrimaryHostKey(candidate))
+    priced.map(({ candidate }) => resolvePrimaryHostKey(candidate))
   );
 
   const bestPerHost = new Map<string, RankedParkingCandidate>();
-  withinCap.forEach((entry, index) => {
+  priced.forEach((entry, index) => {
     const hostKey = hostKeys[index];
     const existing = bestPerHost.get(hostKey);
     if (

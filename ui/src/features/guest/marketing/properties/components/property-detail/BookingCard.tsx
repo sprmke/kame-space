@@ -54,6 +54,8 @@ function toMidnight(d: Date): Date {
 
 interface BookingCardProps {
   baseRate: number;
+  /** Parking only: guest service fee added to the stay (percent of stay plus a flat amount). */
+  parkingServiceFee?: { pct: number; fixed: number };
   currency?: string;
   cleaningFee?: number | null;
   securityDeposit?: number | null;
@@ -132,6 +134,7 @@ function GuestCountRow({
 
 export function BookingCard({
   baseRate,
+  parkingServiceFee,
   currency = 'PHP',
   cleaningFee = 500,
   securityDeposit = 2000,
@@ -294,8 +297,15 @@ export function BookingCard({
     weekendNightlyRate,
   ]);
 
+  const serviceFee =
+    isParking && staySubtotal != null && staySubtotal > 0 && parkingServiceFee
+      ? Math.round((staySubtotal * parkingServiceFee.pct + parkingServiceFee.fixed) * 100) / 100
+      : 0;
+
   const grandTotal =
-    staySubtotal != null ? staySubtotal + (showPropertyFees ? (cleaningFee ?? 0) : 0) : null;
+    staySubtotal != null
+      ? staySubtotal + (showPropertyFees ? (cleaningFee ?? 0) : 0) + serviceFee
+      : null;
 
   return (
     <motion.div
@@ -521,6 +531,12 @@ export function BookingCard({
                   </span>
                   <span>{formatCurrency(staySubtotal)}</span>
                 </div>
+                {serviceFee > 0 ? (
+                  <div className="text-muted-foreground flex items-center justify-between">
+                    <span>Service fee</span>
+                    <span>{formatCurrency(serviceFee)}</span>
+                  </div>
+                ) : null}
                 {showPropertyFees && cleaningFee ? (
                   <div className="text-muted-foreground flex items-center justify-between">
                     <span className="flex items-center gap-1">

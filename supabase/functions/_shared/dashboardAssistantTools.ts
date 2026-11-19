@@ -14,6 +14,7 @@
  * `index.ts`). Do not add a fake tool for functionality that doesn't exist.
  */
 
+import { PARKING_MIN_NIGHTLY_RATE } from './parkingGuestFee.ts';
 import {
   pendingTasksForBooking,
   sdRefundAmountForBooking,
@@ -3058,6 +3059,11 @@ async function toolProposeUpdateParkingBaseRate(
     if (typeof args[key] === 'number') patch[key] = args[key] as number;
   }
   if (Object.keys(patch).length === 0) return { ok: false, error: 'No valid fields to update' };
+  if (
+    Object.values(patch).some((rate) => !Number.isFinite(rate) || rate < PARKING_MIN_NIGHTLY_RATE)
+  ) {
+    return { ok: false, error: `Parking rates must be at least ₱${PARKING_MIN_NIGHTLY_RATE}` };
+  }
 
   await verifyParkingTeamAccess(ctx.req, parkingId, 'pricing:edit');
 
@@ -3087,11 +3093,14 @@ async function toolProposeSetParkingDateRateOverride(
   const parkingId = str(args, 'parkingId');
   const date = str(args, 'date');
   const rate = Number(args.rate);
-  if (!parkingId || !date || !isValidCalendarDateKey(date) || !Number.isFinite(rate) || rate < 0) {
+  if (!parkingId || !date || !isValidCalendarDateKey(date) || !Number.isFinite(rate)) {
     return {
       ok: false,
-      error: 'parkingId, a valid date (YYYY-MM-DD), and a non-negative rate are required',
+      error: 'parkingId, a valid date (YYYY-MM-DD), and a rate are required',
     };
+  }
+  if (rate < PARKING_MIN_NIGHTLY_RATE) {
+    return { ok: false, error: `Parking rates must be at least ₱${PARKING_MIN_NIGHTLY_RATE}` };
   }
 
   await verifyParkingTeamAccess(ctx.req, parkingId, 'pricing:edit');

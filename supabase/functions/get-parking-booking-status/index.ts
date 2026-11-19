@@ -12,9 +12,88 @@ import {
 } from '../_shared/orgSettingsValidation.ts';
 import { resolveParkingHostContact } from '../_shared/parkingBroadcast.ts';
 import { loadResolvedBrandColorByParkingId } from '../_shared/parkingBranding.ts';
+import { computeParkingPaymentAmounts } from '../_shared/parkingPaymentOrchestrator.ts';
 import { resolveParkingPlatformSettings } from '../_shared/parkingPlatformSettings.ts';
 import { servePublic } from '../_shared/serveEdge.ts';
 import { publicGetRateLimitGate } from '../_shared/publicEndpointRateLimit.ts';
+
+const POST_PAYMENT_STATUSES = new Set(['PENDING_REVIEW', 'READY_FOR_CHECKIN', 'COMPLETED']);
+
+type PaymentPreview = {
+  nights: number;
+  hostGrossTotal: number;
+  guestFeeTotal: number;
+  guestChargeTotal: number;
+};
+
+/**
+ * Rent + service fee for the status/pay page. Before a transaction exists this is a read-only
+ * preview (computeParkingPaymentAmounts does no writes); once one does, the snapshot wins so the
+ * figure the guest already paid never moves under them (decision: "never re-derived").
+ */
+async function resolveGuestPaymentPreview(
+  supabase: ReturnType<typeof createServiceClient>,
+  booking: {
+    id: string;
+    status: string;
+    parking_id: string | null;
+    parking_check_in_date: string | null;
+    parking_check_out_date: string | null;
+    check_in_date: string | null;
+    check_out_date: string | null;
+    parking_booking_channel: string | null;
+  }
+): Promise<PaymentPreview | null> {
+  if (booking.status === 'PENDING_PAYMENT') {
+    if (!booking.parking_id) return null;
+    const { data: pendingTxn } = await supabase
+      .from('parking_payment_transactions')
+      .select('parking_id, nights, host_gross_total, guest_fee_total, guest_charge_total')
+      .eq('booking_id', booking.id)
+      .eq('status', 'pending')
+      .maybeSingle();
+    if (pendingTxn && String(pendingTxn.parking_id) === String(booking.parking_id)) {
+      return {
+        nights: Number(pendingTxn.nights),
+        hostGrossTotal: Number(pendingTxn.host_gross_total),
+        guestFeeTotal: Number(pendingTxn.guest_fee_total),
+        guestChargeTotal: Number(pendingTxn.guest_charge_total),
+      };
+    }
+    const amounts = await computeParkingPaymentAmounts(
+      booking.parking_id,
+      String(booking.parking_check_in_date ?? booking.check_in_date ?? ''),
+      String(booking.parking_check_out_date ?? booking.check_out_date ?? ''),
+      (booking.parking_booking_channel as 'standard' | 'direct_link' | null) ?? 'standard'
+    );
+    return {
+      nights: amounts.nights,
+      hostGrossTotal: amounts.hostGrossTotal,
+      guestFeeTotal: amounts.guestFeeTotal,
+      guestChargeTotal: amounts.guestChargeTotal,
+    };
+  }
+
+  if (POST_PAYMENT_STATUSES.has(booking.status)) {
+    const { data: paidTxn } = await supabase
+      .from('parking_payment_transactions')
+      .select('nights, host_gross_total, guest_fee_total, guest_charge_total')
+      .eq('booking_id', booking.id)
+      .eq('status', 'paid')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!paidTxn) return null;
+    return {
+      nights: Number(paidTxn.nights),
+      hostGrossTotal: Number(paidTxn.host_gross_total),
+      guestFeeTotal: Number(paidTxn.guest_fee_total),
+      guestChargeTotal: Number(paidTxn.guest_charge_total),
+    };
+  }
+
+  return null;
+}
 
 function readParkingCoverImage(
   settings: Record<string, unknown> | null | undefined
@@ -55,7 +134,7 @@ servePublic('get-parking-booking-status', async (req) => {
        parking_payment_expires_at, parking_broadcast_batch_number,
        parking_endorsement_note, parking_request_organization_id,
        endorsement_sent_at, endorsement_send_error, endorsement_email_snapshot,
-       guest_auth_user_id, guest_email`
+       guest_auth_user_id, guest_email, parking_booking_channel`
     )
     .eq('id', bookingId)
     .maybeSingle();
@@ -155,6 +234,7 @@ servePublic('get-parking-booking-status', async (req) => {
       : (booking.parking_broadcast_expires_at ?? null);
 
   const platformSettings = await resolveParkingPlatformSettings();
+  const payment = await resolveGuestPaymentPreview(supabase, booking);
 
   return jsonSuccess(req, {
     status: booking.status,
@@ -180,5 +260,6 @@ servePublic('get-parking-booking-status', async (req) => {
         : null,
     hostContact,
     supportEscalationPhone: platformSettings.supportEscalationPhone,
+    payment,
   });
 });
