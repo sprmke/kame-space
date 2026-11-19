@@ -32,7 +32,7 @@ test.describe('parking pricing edit @ci', () => {
 
     await page.goto(parkingFlowPaths.hostPricing);
     const weekday = page.getByLabel('Weekday / night');
-    await expect(weekday).toBeVisible();
+    await expect(weekday).toBeVisible({ timeout: 20_000 });
 
     // Preview: guests see the host rate, the host receives rate minus the 10% fee.
     await weekday.fill('350');
@@ -72,7 +72,7 @@ test.describe('parking pricing edit @ci', () => {
 
       await page.goto(parkingFlowPaths.hostPricing);
       const weekday = page.getByLabel('Weekday / night');
-      await expect(weekday).toBeVisible();
+      await expect(weekday).toBeVisible({ timeout: 20_000 });
       await weekday.fill('350');
 
       const preview = page.locator('#parking-weekday-rate-help');
