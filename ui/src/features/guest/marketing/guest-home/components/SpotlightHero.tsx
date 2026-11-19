@@ -32,7 +32,15 @@ const HERO_SIZES = '(min-width: 1440px) 1280px, (min-width: 1024px) calc(100vw -
  * first, so it carries the description; the night layer is the same scene for the other theme
  * and stays decorative so a screen reader hears it once.
  */
-const HERO_ART_ALT = 'Sunlit living room in a Kame Space stay, looking out to the water';
+const HERO_ART_ALT =
+  'Tropical resort towers and water park at golden hour, with the Kame turtle mascot in the foreground';
+
+/**
+ * Phone panels are taller than the 16:9 master, so `object-cover` crops the sides. Bias the
+ * focal point toward the water park and mascot on the right so the character stays in frame.
+ * Day and night share this crop so the theme dissolve stays locked.
+ */
+const HERO_OBJECT_POSITION = 'object-right-bottom';
 
 function HeroArt({
   src,
@@ -48,7 +56,7 @@ function HeroArt({
     width: HERO_IMAGE_WIDTH,
     height: HERO_IMAGE_HEIGHT,
     sizes: HERO_SIZES,
-    className: 'absolute inset-0 h-full w-full object-cover object-[50%_45%]',
+    className: `absolute inset-0 h-full w-full object-cover ${HERO_OBJECT_POSITION}`,
   };
   const webpSrcSet = HERO_WIDTHS.map((width) => `${src}-${width}.webp ${width}w`).join(', ');
   const avifSrcSet = HERO_WIDTHS.map((width) => `${src}-${width}.avif ${width}w`).join(', ');
