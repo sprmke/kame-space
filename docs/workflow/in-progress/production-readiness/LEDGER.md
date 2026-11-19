@@ -23,6 +23,12 @@ Tag legend: [`README.md`](./README.md). Gates A–G: same file.
 
 ---
 
+## 2026-11-20 update
+
+| ID     | Change                                                                                                                                                                                                                                              |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PR-131 | 🟡 public reads: isolate cache and hit-before-durable-counter order shipped in code, measured locally (44 to 953 req/s). Open: deploy (`kamewave`) and a hosted re-test on Micro. [`evidence`](./evidence/pr-131-public-read-caching-2026-11-20.md) |
+
 ## 2026-11-01 re-verification on `develop` `497c7772`
 
 Evidence: [`evidence/phase5-reverify-2026-11-01.md`](./evidence/phase5-reverify-2026-11-01.md). Flips and new rows from today's pass:

@@ -14,6 +14,7 @@ import {
   identityFromRequest,
   isIdentityBlocked,
   rateLimitGate,
+  rateLimitGateInMemory,
   resetBlockedIdentitiesCacheForTests,
   resetInMemoryRateLimitForTests,
 } from './rateLimit.ts';
@@ -166,3 +167,21 @@ Deno.test('checkRateLimitInMemory: never throws and never needs the network', ()
     globalThis.fetch = realFetch;
   }
 });
+
+Deno.test(
+  'rateLimitGateInMemory: null under the limit, then a CORS 429 with Retry-After',
+  async () => {
+    resetInMemoryRateLimitForTests();
+    const options = { scope: 'mem-gate', identity: 'ip:9.9.9.9', limit: 2, windowSec: 60 };
+    const req = reqWith({ origin: 'https://kamespace.com' });
+    assertEquals(rateLimitGateInMemory(req, options), null);
+    assertEquals(rateLimitGateInMemory(req, options), null);
+    const blocked = rateLimitGateInMemory(req, options);
+    assertEquals(blocked?.status, 429);
+    assertEquals(Number(blocked?.headers.get('Retry-After')) >= 1, true);
+    const body = await blocked!.json();
+    assertEquals(body.rateLimited, true);
+    assertEquals(body.success, false);
+    resetInMemoryRateLimitForTests();
+  }
+);
