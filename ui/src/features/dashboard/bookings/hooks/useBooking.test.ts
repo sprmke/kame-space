@@ -20,7 +20,7 @@ describe('buildGetBookingRowQuery', () => {
     const qs = buildGetBookingRowQuery({
       bookingId: 'booking-1',
       parkingId: 'parking-1',
-      orgSlug: 'kame-homes',
+      orgSlug: 'test-org',
     });
     const params = new URLSearchParams(qs);
     expect(params.get('parking_id')).toBe('parking-1');
@@ -31,7 +31,7 @@ describe('buildGetBookingRowQuery', () => {
   it('falls back to org scope for assistant cards without property/parking', () => {
     const qs = buildGetBookingRowQuery({
       bookingId: 'booking-1',
-      orgSlug: 'kame-homes',
+      orgSlug: 'test-org',
       orgId: 'org-1',
     });
     const params = new URLSearchParams(qs);

@@ -92,14 +92,14 @@ globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
         property: {
           id: PROPERTY_ID,
           organization_id: 'org-1',
-          name: 'Kame Home',
-          slug: 'kame-home',
+          name: 'Test Property',
+          slug: 'test-property',
           inactive_reason: null,
         },
         org: {
           id: 'org-1',
-          name: 'Kame Homes',
-          slug: 'kame-homes',
+          name: 'Test Org',
+          slug: 'test-org',
           // Owner is someone else; caller is platform admin via ADMIN_ALLOWED_EMAILS.
           owner_id: OWNER_ID,
         },
@@ -119,7 +119,7 @@ globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
   }
 
   if (url.includes('/rest/v1/properties')) {
-    return json({ id: PROPERTY_ID, name: 'Kame Home' });
+    return json({ id: PROPERTY_ID, name: 'Test Property' });
   }
 
   return json({ message: `unexpected fetch ${url}` }, 599);
