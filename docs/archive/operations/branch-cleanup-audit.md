@@ -39,22 +39,22 @@ its patch was already in `develop` (`git cherry` showed it as applied). PR #153
 
 Base: `develop` (`30169f062`). Only branches whose PRs were already merged were deleted.
 
-| Removed | Tip | Why it was safe |
-| --- | --- | --- |
-| `chore/backport-mobile-search` (local + remote) | `de3c896ca` | PR #490 merged; `git cherry` showed 0 unapplied patches |
-| `release/2026-11-16-mobile-search` (local + remote) | `87092a69b` | PR #489 merged into `develop`; the same content also landed through #490 |
-| Worktree `.claude/worktrees/feat-mobile-search-airbnb-ux` | `de3c896ca` | Clean tree, checked out on the deleted merged branch |
-| `codex/core-product-advantages` (local + remote) | `86f5c7426` | PR #487 merged into `develop` as `8c6aabc29`; worktree `kame-homes-product-positioning` removed after the merge |
+| Removed                                                   | Tip         | Why it was safe                                                                                                 |
+| --------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| `chore/backport-mobile-search` (local + remote)           | `de3c896ca` | PR #490 merged; `git cherry` showed 0 unapplied patches                                                         |
+| `release/2026-11-16-mobile-search` (local + remote)       | `87092a69b` | PR #489 merged into `develop`; the same content also landed through #490                                        |
+| Worktree `.claude/worktrees/feat-mobile-search-airbnb-ux` | `de3c896ca` | Clean tree, checked out on the deleted merged branch                                                            |
+| `codex/core-product-advantages` (local + remote)          | `86f5c7426` | PR #487 merged into `develop` as `8c6aabc29`; worktree `kame-homes-product-positioning` removed after the merge |
 
 Kept on purpose:
 
-| Branch / PR | Why |
-| --- | --- |
-| `feat/multi-channel-calendar-sync` (#493) | Open, green, waiting for review |
-| `feat/marketing-ai-studio-overhaul` (#488) | Open, conflicts with `develop` |
-| `feat/public-landing-redesign` | Local feature work, 8 commits plus uncommitted files |
-| `feat/multi-residence-config-decoupling` (#354) | Draft marked DO NOT MERGE |
-| `codex/mascot-talking-preview` (#353) | Draft preview, not reviewed |
+| Branch / PR                                                                  | Why                                                                       |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `feat/multi-channel-calendar-sync` (#493)                                    | Open, green, waiting for review                                           |
+| `feat/marketing-ai-studio-overhaul` (#488)                                   | Open, conflicts with `develop`                                            |
+| `feat/public-landing-redesign`                                               | Local feature work, 8 commits plus uncommitted files                      |
+| `feat/multi-residence-config-decoupling` (#354)                              | Draft marked DO NOT MERGE                                                 |
+| `codex/mascot-talking-preview` (#353)                                        | Draft preview, not reviewed                                               |
 | `recover/pre-reset-20261110`, `backup/multi-residence-pre-rebase-1794322170` | Safety snapshots with unique history; keep until the owner says otherwise |
 
 ## Kept branches
@@ -429,3 +429,10 @@ Kept in the stash, not shipped: `stash@{0}` (on `perf/fix-boot-counting`, `wip-b
 holds the planned AI Studio quality overhaul, the listing-slug reservation migrations and the
 full-app QA audit plan. Those plans are still `status: planned`, so folding them into a production
 release would have been unsafe. They need their own session.
+
+## 2026-11-19 landing hero release
+
+PR #536 carries the aligned day/night landing hero and its responsive asset cleanup. The feature
+branch `fix/landing-mascot-alignment` was recorded at tip `53a230487cbc6925b60e9a841db2737bea1eabaa`
+before its post-merge deletion. Restore it with
+`git branch fix/landing-mascot-alignment 53a230487cbc6925b60e9a841db2737bea1eabaa` if needed.
