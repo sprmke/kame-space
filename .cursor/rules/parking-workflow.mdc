@@ -160,12 +160,12 @@ offer. Locked constants (not admin-configurable in v1): `PARKING_BATCH_SIZE = 3`
   (weekday/weekend mix + `parking_pricing_date_overrides`, via `loadParkingPricing`). Ascending
   sort; **tie-break is `parkings.created_at` ascending** (earliest-listed spot wins) — a
   deliberate choice, not insertion order.
-- **Guest rate cap (D5, live config since Phase 4)**: `resolveParkingPlatformSettings()`
-  (`parkingPlatformSettings.ts`) resolves `guestRateWeekday`/`guestRateWeekend` from the
-  super-admin-configurable `platform_parking_settings` singleton — a candidate priced above the
-  cap for any night in the stay is **excluded from the pool entirely**, not ranked last. Falls
-  back to a flat ₱400 stub only if that row is somehow missing (shouldn't happen — the
-  migration seeds it).
+- **No price cap (hosts set their own rate)**: ranking sorts by `host_gross` ascending and
+  dedupes multi-spot hosts, but never excludes a candidate for being expensive. Host rates have a
+  **₱100 minimum** (`PARKING_MIN_NIGHTLY_RATE` in `parkingGuestFee.ts`, enforced by
+  `parkingPricing.ts#validateMoneyField` for base rates and date overrides) and no maximum.
+  There is no platform guest rate any more; `guest_rate_*` columns remain in
+  `platform_parking_settings` but nothing reads them.
 - **Multi-spot host dedupe**: `resolvePrimaryHostKey` — earliest active `parking_members` row
   with edit access (same predicate `resolveParkingHostRecipients` uses), else the org owner.
   Two candidates sharing a key collapse to the cheaper one.
@@ -191,12 +191,15 @@ offer. Locked constants (not admin-configurable in v1): `PARKING_BATCH_SIZE = 3`
   PayMongo Payment Link on "Pay now" click — reuses an existing `pending`
   `parking_payment_transactions` row if one exists (idempotent across repeated clicks), else
   computes amounts via `computeParkingPaymentAmounts`, which (Phase 4) walks each occupied
-  night individually and sums the guest rate and host rate per night by weekday/weekend
-  classification (guest side from `resolveParkingPlatformSettings()`, host side from
-  `loadParkingPricing()` including date overrides) — **per-night-prorated, not averaged** (a
+  night individually and sums the host rate per night by weekday/weekend classification
+  (`loadParkingPricing()` including date overrides) — **per-night-prorated, not averaged** (a
   stay spanning both a weekday and a weekend night is billed per actual night, not a blended
-  rate × nights, which was Phase 3's interim approach). `commissionPct` also resolves live from
-  `platform_parking_settings`. **Resolved values are snapshotted onto the
+  rate × nights, which was Phase 3's interim approach). The **guest charge is that host gross
+  plus a guest service fee** (`parkingGuestFee.ts#computeParkingChargeBreakdown`:
+  `gross × guest_fee_pct + guest_fee_fixed`, the fixed part once per booking) and
+  `commissionPct`/the fee resolve live from `platform_parking_settings`. The fee is snapshotted as
+  `guest_fee_total`; host net stays `gross − commission`, and host-facing analytics use
+  `host_gross_total`, never the guest charge. **Resolved values are snapshotted onto the
   `parking_payment_transactions` row at creation time** — a later admin config change never
   touches an already-created transaction (see "Platform config & payouts" below).
   `parking_payment_transactions` has one `pending` row per booking (partial unique index).
@@ -258,12 +261,17 @@ that surface; revisit once Phase 8's unauthenticated direct-link entry point exi
 ## Platform config & payouts (Phase 4)
 
 - **Config resolver**: `parkingPlatformSettings.ts#resolveParkingPlatformSettings()` is the
-  single source of truth for `commissionPct`/`guestRateWeekday`/`guestRateWeekend`, plus the
+  single source of truth for `commissionPct`/`guestFeePct`/`guestFeeFixed`, plus the
   estimated `paymentFeePct`/`paymentFeeFixed` and `directCommissionPct`, reading the singleton
   `platform_parking_settings` row (`id = 1` CHECK, mirrors `platform_payment_settings`).
-  Every caller (`parkingBroadcastRanking.ts` for the cap, `parkingPaymentOrchestrator.ts` for
-  payment amounts, `parkingPricing.ts` for the host-facing cap + display) resolves it **once per
+  Every caller (`parkingPaymentOrchestrator.ts` for payment amounts, `parkingPricing.ts` for the
+  host-facing display, the super-admin settings save for the no-loss check) resolves it **once per
   operation** and threads the values through — never re-query per candidate/night.
+- **No-loss guard**: `parkingGuestFee.ts#checkParkingNoLoss()` runs on every
+  `platform-parking-settings` save and rejects a config whose platform net is negative at the
+  ₱100 minimum on either channel, or whose per-peso margin
+  (`commission + fee − processor% × (1 + fee)`) is negative. Defaults: 10% / 5% direct
+  commission, 5% + ₱15 guest fee, 3.125% + ₱15 processor.
 - **Settlement math**: `parkingSettlement.ts#computeParkingSettlement()` is the only place that
   turns guest charge + host gross into `commissionAmount`, `hostNetTotal`, `paymentFeeAmount`
   (guest charge × processor fee pct + fixed) and `platformNetTotal`
@@ -275,12 +283,13 @@ that surface; revisit once Phase 8's unauthenticated direct-link entry point exi
 - **Super-admin config page**: `platform-parking-settings` edge function (GET/PUT singleton,
   `serveSuperAdmin`, mirrors `platform-payment-settings`) + `SuperAdminParkingPayoutsPage.tsx`
   (`/admin/parking/payouts`). The page includes a live per-night settlement preview (host rate →
-  host net → processor fee → platform net). Changing commission/guest rate/processor fee here only
+  host net → processor fee → platform net). Changing commission/guest fee/processor fee here only
   affects bookings created **after** saving — see the snapshot invariant above.
-- **Host-readable cap**: hosts can't call the super-admin-gated settings endpoint, so
-  `parking-pricing` GET piggybacks the live cap (`guestRateCapWeekday`/`guestRateCapWeekend`)
-  and `commissionPct` onto its own response (`ParkingPricingDto`) for
-  `ParkingPricingRatesFormCard.tsx`'s inline warning + fee/net-payout display.
+- **Host-readable config**: hosts can't call the super-admin-gated settings endpoint, so
+  `parking-pricing` GET piggybacks `commissionPct`, `directCommissionPct`, `guestFeePct` and
+  `guestFeeFixed` onto its own response (`ParkingPricingDto`) for `ParkingPricingRatesFormCard.tsx`'s
+  fee/net-payout display. The public parking detail response carries the guest fee so the booking
+  card can show a service fee line before checkout.
   `parkingPricingDefaults.ts`'s `STUB_*` constants are fallback-only now (used only before the
   real response loads) — never the enforcement source.
 - **Payout ledger — manual disbursement only**: `parking_payment_transactions` (Phase 3) gained
@@ -556,8 +565,9 @@ it wired whenever `BookingRow` or the broadcast payload shape changes.
 | Guest pay-now checkout                                                                              | `supabase/functions/create-parking-payment-checkout/index.ts`                                                                                                                                                                                    |
 | Webhook dispatch (`kind` routing)                                                                   | `supabase/functions/_shared/subscriptionOrchestrator.ts` (`handlePaymongoWebhookEvent`), `supabase/functions/_shared/paymongoWebhookMetadata.ts`                                                                                                 |
 | Payment schema (`parking_payment_transactions`, `guest_auth_user_id`, `parking_payment_expires_at`) | `supabase/migrations/20261128120100_parking_payment.sql`                                                                                                                                                                                         |
-| Guest rate/commission config resolver (live, Phase 4)                                               | `supabase/functions/_shared/parkingPlatformSettings.ts` (`resolveParkingPlatformSettings`)                                                                                                                                                       |
-| Server-side price-cap enforcement + host-readable cap/commission on the pricing DTO                 | `supabase/functions/_shared/parkingPricing.ts` (`assertWithinGuestRateCap`, `ParkingPricingDto.guestRateCapWeekday/Weekend/commissionPct`)                                                                                                       |
+| Guest fee/commission config resolver (live)                                                         | `supabase/functions/_shared/parkingPlatformSettings.ts` (`resolveParkingPlatformSettings`)                                                                                                                                                       |
+| ₱100 host-rate minimum + host-readable commission/guest fee on the pricing DTO                      | `supabase/functions/_shared/parkingPricing.ts` (`validateMoneyField`, `ParkingPricingDto.commissionPct/guestFeePct/guestFeeFixed`)                                                                                                               |
+| Guest fee + no-loss check                                                                           | `supabase/functions/_shared/parkingGuestFee.ts`                                                                                                                                                                                                  |
 | Platform config schema + payout ledger columns                                                      | `supabase/migrations/20261129120000_parking_platform_settings.sql`                                                                                                                                                                               |
 | Super-admin config GET/PUT                                                                          | `supabase/functions/platform-parking-settings/index.ts`                                                                                                                                                                                          |
 | Payout ledger (list, mark-disbursed, record-clawback)                                               | `supabase/functions/parking-payouts/index.ts`                                                                                                                                                                                                    |
@@ -606,7 +616,7 @@ it wired whenever `BookingRow` or the broadcast payload shape changes.
   fallthrough (that's exactly the bug this rule replaced).
 - Don't send `sendParkingConfirmedEmail` from claim — it fires from `fulfillParkingPayment` on
   payment success only; claim sends `sendParkingAwaitingPaymentEmail` instead.
-- Don't hardcode a guest rate/commission constant anywhere new — resolve
+- Don't hardcode a guest fee/commission constant anywhere new — resolve
   `resolveParkingPlatformSettings()` instead, and don't recompute it retroactively for an
   already-created `parking_payment_transactions` row; the values are snapshotted at checkout
   creation on purpose (a later admin config change must never move a paid or in-flight

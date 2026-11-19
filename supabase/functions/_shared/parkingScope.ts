@@ -11,7 +11,8 @@ import {
   verifyOrgAccess,
   verifyParkingTeamAccess,
 } from './orgAuth.ts';
-import { resolveParkingGuestNightlyRate } from './parkingPlatformSettings.ts';
+import { loadParkingHostRates } from './parkingHostRates.ts';
+import { resolveParkingPlatformSettings } from './parkingPlatformSettings.ts';
 import { loadResolvedBrandColorByParkingId } from './parkingBranding.ts';
 import {
   readParkingHeightClearanceM,
@@ -232,7 +233,20 @@ export async function loadPublicParkingBySlug(slug: string) {
   if (error || !data) return null;
 
   const parkingId = data.id as string;
-  const guestRate = await resolveParkingGuestNightlyRate();
+  const [hostRates, platformSettings, overrideRows] = await Promise.all([
+    loadParkingHostRates([parkingId]),
+    resolveParkingPlatformSettings(),
+    supabase
+      .from('parking_pricing_date_overrides')
+      .select('pricing_date, nightly_rate')
+      .eq('parking_id', parkingId)
+      .gte('pricing_date', new Date().toISOString().slice(0, 10)),
+  ]);
+  const hostRate = hostRates.get(parkingId)!;
+  const dateOverrides: Record<string, number> = {};
+  for (const row of overrideRows.data ?? []) {
+    dateOverrides[String(row.pricing_date).slice(0, 10)] = Number(row.nightly_rate);
+  }
 
   const org = data.organizations as { slug: string; name: string; settings?: unknown };
   const orgSettings =
@@ -274,8 +288,8 @@ export async function loadPublicParkingBySlug(slug: string) {
     level: data.level as string | null,
     slotLabel: data.slot_label as string,
     parkingType: data.parking_type as string,
-    // Guests see the amount checkout charges, never the host payout rate (G-1).
-    ratePerNight: guestRate.weekday,
+    // Hosts set their own rate; guests see it and pay a service fee on top at checkout.
+    ratePerNight: hostRate.weekday,
     brandColor,
     description,
     /* Host-written search overrides; null means the public page generates its own. */
@@ -287,9 +301,12 @@ export async function loadPublicParkingBySlug(slug: string) {
     checkInTime: formatCheckTime12h(checkInRaw),
     checkOutTime: formatCheckTime12h(checkOutRaw),
     pricing: {
-      weekdayNightlyRate: guestRate.weekday,
-      weekendNightlyRate: guestRate.weekend,
-      dateOverrides: {} as Record<string, number>,
+      weekdayNightlyRate: hostRate.weekday,
+      weekendNightlyRate: hostRate.weekend,
+      dateOverrides,
+      // Guests pay the host rate plus this service fee at checkout (fee is once per booking).
+      guestFeePct: platformSettings.guestFeePct,
+      guestFeeFixed: platformSettings.guestFeeFixed,
       currency: 'PHP',
     },
     coverImage: media.find((item) => item.isPrimary)?.url ?? images[0] ?? null,

@@ -351,6 +351,8 @@ function bookingRateLodgingInRange(
 export type ParkingLedgerTotals = {
   status: string;
   guestChargeTotal: number;
+  /** What the host's rate earned (rate × nights). Host-facing revenue, excludes the guest fee. */
+  hostGrossTotal: number;
   hostNetTotal: number;
 };
 
@@ -358,6 +360,7 @@ function parkingLedgerTotals(row: Record<string, unknown>): ParkingLedgerTotals 
   return {
     status: String(row.status ?? ''),
     guestChargeTotal: roundMoney(Number(row.guest_charge_total ?? 0)),
+    hostGrossTotal: roundMoney(Number(row.host_gross_total ?? 0)),
     hostNetTotal: roundMoney(Number(row.host_net_total ?? 0)),
   };
 }
@@ -423,7 +426,7 @@ function computePeriodKpiSnapshot(
     const checkInInRange = checkInIso >= from && checkInIso <= to;
     const isParking = Boolean(String(row.parking_id ?? '').trim());
     const parkingLedger = parkingLedgerByBookingId?.get(String(row.id));
-    const rate = parkingLedger?.guestChargeTotal;
+    const rate = parkingLedger?.hostGrossTotal;
 
     const nightsInRange = countOccupiedNightsInRange(
       checkInIso,
@@ -702,7 +705,7 @@ export async function computeDashboardStats(
   if (ledgerScope) {
     let parkingLedgerQuery = supabase
       .from('parking_payment_transactions')
-      .select('booking_id, status, guest_charge_total, host_net_total')
+      .select('booking_id, status, guest_charge_total, host_gross_total, host_net_total')
       .in('status', ['pending', 'paid'])
       .order('created_at', { ascending: false });
     if (ledgerScope.kind === 'parking') {
@@ -812,7 +815,7 @@ export async function computeDashboardStats(
             row,
             numberOfNights,
             nightsInRange,
-            parkingLedger?.guestChargeTotal
+            parkingLedger?.hostGrossTotal
           )
       );
       performanceMap.set(assetId, perf);
@@ -824,7 +827,7 @@ export async function computeDashboardStats(
           row,
           numberOfNights,
           1,
-          parkingLedger?.guestChargeTotal
+          parkingLedger?.hostGrossTotal
         );
         trendRevenueByKey.set(
           bucketKey,
@@ -886,7 +889,7 @@ export async function computeDashboardStats(
         checkInIso,
         checkOutIso,
         status,
-        amount: parkingLedger?.guestChargeTotal ?? bookingRateForDisplay(row) ?? 0,
+        amount: parkingLedger?.hostGrossTotal ?? bookingRateForDisplay(row) ?? 0,
       });
 
       if (status !== 'COMPLETED') {

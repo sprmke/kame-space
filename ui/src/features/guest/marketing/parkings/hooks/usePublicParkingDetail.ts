@@ -9,6 +9,9 @@ export type PublicParkingPricing = {
   weekdayNightlyRate: number;
   weekendNightlyRate: number;
   dateOverrides: Record<string, number>;
+  /** Service fee guests pay on top of the nightly rate: fraction of the stay + flat per booking. */
+  guestFeePct?: number;
+  guestFeeFixed?: number;
   currency: string;
 };
 

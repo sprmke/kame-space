@@ -7,8 +7,9 @@ export type PlatformParkingSettings = {
   commissionPct: number;
   /** Phase 8 — commission applied to direct-booking-link bookings instead of commissionPct. */
   directCommissionPct: number;
-  guestRateWeekday: number;
-  guestRateWeekend: number;
+  /** Guest service fee added on top of the host rate: fraction of host gross + flat per booking. */
+  guestFeePct: number;
+  guestFeeFixed: number;
   /** Estimated payment-processor cut of the guest charge, 0..1. */
   paymentFeePct: number;
   /** Fixed per-transaction processor fee in pesos. */
@@ -29,6 +30,7 @@ export type ParkingPayoutTransaction = {
   checkOutDate: string | null;
   nights: number;
   guestChargeTotal: number;
+  guestFeeTotal: number;
   hostGrossTotal: number;
   commissionPct: number;
   bookingChannel: string;
