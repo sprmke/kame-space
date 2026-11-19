@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 export async function expectNoPageHorizontalOverflow(page: Page): Promise<void> {
   await expect
@@ -10,6 +10,29 @@ export async function expectNoPageHorizontalOverflow(page: Page): Promise<void> 
       { message: 'document should not overflow the viewport horizontally' }
     )
     .toBe(true);
+}
+
+/**
+ * A dialog or panel must not scroll sideways. Polls instead of measuring once: on a loaded
+ * CI runner a dialog can still be settling (font swap, open transition) when a one-shot
+ * measurement runs, which failed the channel sync specs at 1024px twice on 2026-11-19 while
+ * passing locally. The returned string carries the real numbers, so a genuine overflow says
+ * how far it is over instead of just `true`.
+ */
+export async function expectNoHorizontalOverflow(
+  target: Locator,
+  description = 'element'
+): Promise<void> {
+  await expect
+    .poll(
+      () =>
+        target.evaluate((el) => {
+          const over = el.scrollWidth - el.clientWidth;
+          return over > 1 ? `overflows by ${over}px (${el.scrollWidth} > ${el.clientWidth})` : 'fits';
+        }),
+      { message: `${description} should not scroll sideways` }
+    )
+    .toBe('fits');
 }
 
 export async function expectNoUnnamedInteractiveControls(page: Page): Promise<void> {

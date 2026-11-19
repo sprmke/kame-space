@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 
+import { expectNoHorizontalOverflow } from '../../shared/layoutAssertions';
 import {
   installPropertyTeamRbacMocks,
   TEAM_E2E_ORG_SLUG,
@@ -149,8 +150,7 @@ for (const viewport of [
       await expect(dialog.getByText(/sending back closed dates/)).toBeVisible();
 
       // No horizontal scroll inside the dialog at any width.
-      const overflow = await dialog.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
-      expect(overflow).toBe(false);
+      await expectNoHorizontalOverflow(dialog, 'channel sync dialog');
     });
 
     test('shows Two-way, and Recent activity for both directions with an empty state', async ({
@@ -192,8 +192,7 @@ for (const viewport of [
       await dialog.getByText('Recent activity').click();
       await expect(dialog.getByText('No activity yet')).toBeVisible();
 
-      const overflow = await dialog.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
-      expect(overflow).toBe(false);
+      await expectNoHorizontalOverflow(dialog, 'channel sync dialog');
     });
   });
 }
