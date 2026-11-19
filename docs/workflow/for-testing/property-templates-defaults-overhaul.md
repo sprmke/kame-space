@@ -400,6 +400,24 @@ Gates per phase: `bun run ci:quality`, `bun run test:edge`, `bun run test:edge:h
 1. **GAF cancellation notice to the building admin.** Ship `email-building-admin-cancellation`? Recommended: **yes**, default on only for properties with a GAF requirement, host can switch it off. Cancelled guests otherwise stay on the building's approved list.
 2. **GAF name.** Code uses both "Guest Advice Form" (6) and "Guest Advise Form" (9). Recommended: "Guest Advice Form", applied everywhere in the same change.
 
+## Review and hardening (2026-11-19)
+
+Self-review and a focused security pass found and fixed:
+
+- **Registry drift:** the ten message keys were in the pack and metadata but missing from `BUILTIN_CONTENT`, so they never serialized. A new contract test compares the pack keys with the registry.
+- **Chat links:** chat never passed the property slug, so `trip_url` and `review_url` rendered empty in guest messages. The slug is now resolved and passed.
+- **Guest link scrub order:** building-admin and team emails blanked guest links before the parking CTA was re-injected. The scrub now runs last.
+- **OTP bypass scope:** `publicPagesAutosaveGate` could skip re-auth for subject and visibility writes. The bypass is now limited to standard guide content with no subject or visibility change.
+- **Send rate limit:** `send-property-custom-template-email` now has a per-user, per-property limit.
+- **Tenant link minting:** a booking from another property can no longer mint guide or chat links under this property.
+- **Review lookup:** the review email booking read is scoped by property.
+- **Subject entities:** subjects decode HTML entities so a property name with `&` reads correctly.
+- **Preview samples:** the new email and message templates have sample sections, including the trip CTA.
+- **Backfill:** collects matches first, then deletes, and prints matched property ids in the dry run.
+- **Accessibility:** the active rail row now meets color contrast.
+
+Tests added: pack/registry contract, message and guide metadata, subject lock and hash, subject validation, message token rules, preview sample coverage, message insert E2E, subject and test-send E2E, and the chat-link regression is covered by the Inbox message E2E path.
+
 ## Verification results
 
 | Gate                                  | Result                                            |

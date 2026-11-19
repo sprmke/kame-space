@@ -658,12 +658,13 @@ async function resolveSubjectForBooking(input: {
   templateKey: string;
   booking: GuestSubmission;
   settings: Awaited<ReturnType<typeof resolveAppSettings>>;
+  branding: Awaited<ReturnType<typeof loadPropertyEmailBranding>>;
   fallback: string;
 }): Promise<string> {
   return resolvePropertyTemplateSubject({
     propertyId: input.propertyId,
     templateKey: input.templateKey,
-    vars: buildBookingPlaceholderVars(input.booking, input.settings),
+    vars: buildBookingPlaceholderVars(input.booking, input.settings, {}, input.branding),
     fallback: input.fallback,
   });
 }
@@ -763,6 +764,7 @@ export async function sendNewBookingRequestNotify(booking: GuestSubmission) {
       templateKey: 'email-new-booking-request',
       booking,
       settings,
+      branding,
       fallback: `${unitLabel} - New Booking Request ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
     })}`,
     html,
@@ -840,6 +842,7 @@ export async function sendBookingRequestReceived(booking: GuestSubmission) {
       templateKey: 'email-booking-request-received',
       booking,
       settings,
+      branding,
       fallback: `${unitLabel} - Booking Request Received ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
     }),
     html,
@@ -941,6 +944,7 @@ export async function sendBookingAcknowledgement(booking: GuestSubmission) {
       templateKey: 'email-booking-acknowledgement',
       booking,
       settings,
+      branding,
       fallback: `${unitLabel} - Booking Acknowledgement ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
     }),
     html,
@@ -1122,6 +1126,7 @@ export async function sendReadyForCheckin(booking: GuestSubmission) {
       templateKey: 'email-ready-for-checkin',
       booking,
       settings,
+      branding,
       fallback: `${unitLabel} - Check-in Details ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
     }),
     html,
@@ -1215,6 +1220,7 @@ export async function sendSdRefundFormRequest(booking: GuestSubmission) {
       templateKey: 'email-sd-refund-form-request',
       booking,
       settings,
+      branding,
       fallback: `${unitLabel} - Check-out & SD Refund Details ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
     }),
     html,

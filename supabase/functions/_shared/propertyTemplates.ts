@@ -561,6 +561,76 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
     category: 'standard',
     defaultContent: '',
   },
+  {
+    key: 'message-balance-reminder',
+    label: 'Balance reminder',
+    description: 'Before check-in when a balance is unpaid.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-document-follow-up',
+    label: 'Missing documents',
+    description: 'While the booking is pending documents.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-check-in-day',
+    label: 'Check-in day',
+    description: 'Morning of arrival.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-early-check-in',
+    label: 'Early check-in',
+    description: 'Guest asks to arrive early.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-late-check-out',
+    label: 'Late check-out',
+    description: 'Guest asks to stay later.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-mid-stay',
+    label: 'Checking in',
+    description: 'Day two of a longer stay.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-noise-reminder',
+    label: 'Noise reminder',
+    description: 'A complaint came from the building.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-check-out-reminder',
+    label: 'Check-out reminder',
+    description: 'Evening before check-out.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-thank-you',
+    label: 'Thank you',
+    description: 'After check-out.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-lost-and-found',
+    label: 'Item left behind',
+    description: 'After check-out.',
+    category: 'message',
+    defaultContent: '',
+  },
 ];
 
 type BuiltinMeta = {
@@ -946,6 +1016,17 @@ export function templateDefaultHash(templateKey: string): string | null {
   return hashTemplateDefault(builtin.defaultContent, builtin.defaultSubject);
 }
 
+const MAX_TEMPLATE_SUBJECT_LENGTH = 200;
+
+export function validateTemplateSubject(subject: string | null | undefined): string | null {
+  if (subject == null) return null;
+  if (/[\r\n]/.test(subject)) return 'Subject must be a single line';
+  if (subject.length > MAX_TEMPLATE_SUBJECT_LENGTH) {
+    return `Subject must be at most ${MAX_TEMPLATE_SUBJECT_LENGTH} characters`;
+  }
+  return null;
+}
+
 export function validateCustomTemplateName(name: string): string | null {
   const trimmed = name.trim();
   if (!trimmed) return 'Template name is required';
@@ -1184,9 +1265,14 @@ function rowToDto(
   builtin?: PropertyTemplateDefinition
 ): PropertyTemplateDto {
   const defaultContent = builtin?.defaultContent ?? '';
-  const isDefault =
+  const isDefaultContent =
     normalizeTemplateContentForCompare(row.content, row.template_key) ===
     normalizeTemplateContentForCompare(defaultContent, row.template_key);
+  const isDefaultSubject =
+    !builtin ||
+    builtin.subjectLocked ||
+    (row.subject?.trim() ?? '') === (builtin.defaultSubject?.trim() ?? '');
+  const isDefault = isDefaultContent && isDefaultSubject;
   const currentDefaultHash = builtin
     ? hashTemplateDefault(builtin.defaultContent, builtin.defaultSubject)
     : null;
@@ -1222,9 +1308,10 @@ function rowToDto(
     newDefaultAvailable: Boolean(
       builtin &&
       !isDefault &&
-      row.default_hash &&
       currentDefaultHash &&
-      row.default_hash !== currentDefaultHash
+      // A customized row saved before `default_hash` existed was written against an older
+      // default, so it is exactly the case the badge is for.
+      (!row.default_hash || row.default_hash !== currentDefaultHash)
     ),
     automationEnabled: null,
     automationPlanBlocked: false,

@@ -8,6 +8,7 @@ import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import {
   isBlockLevelPropertyPlaceholder,
   propertyTemplatePlaceholderKeys,
+  TOKENIZED_LINK_PLACEHOLDER_KEYS,
   validatePropertyTemplateTokens,
 } from './propertyTemplateCatalog.ts';
 
@@ -89,4 +90,39 @@ Deno.test('every default block key is recognised as block level', () => {
       assertEquals(isBlockLevelPropertyPlaceholder(key), true, `${key} should be block level`);
     }
   }
+});
+
+Deno.test('guest messages can use a trip link but not secrets', () => {
+  const ok = validatePropertyTemplateTokens({
+    templateKey: 'message-check-in-day',
+    category: 'message',
+    group: 'guest-messages',
+    content: '<p>Your steps: {{trip_url}}</p>',
+  });
+  assertEquals(ok.errors, []);
+
+  const secret = validatePropertyTemplateTokens({
+    templateKey: 'message-check-in-day',
+    category: 'message',
+    group: 'guest-messages',
+    content: '<p>{{door_code}}</p>',
+  });
+  assertEquals(secret.errors.length, 1);
+});
+
+Deno.test('the render-time scrub covers every guest CTA block', () => {
+  for (const key of [
+    'trip_cta_section',
+    'parking_cta_section',
+    'review_cta_section',
+    'stay_guide_cta_section',
+  ]) {
+    assertEquals(TOKENIZED_LINK_PLACEHOLDER_KEYS.includes(key), true, `${key} must be scrubbed`);
+  }
+});
+
+Deno.test('guest messages may use trip links', () => {
+  const keys = propertyTemplatePlaceholderKeys('message-check-in-day', 'message');
+  assertEquals(keys.includes('trip_url'), true);
+  assertEquals(keys.includes('review_url'), true);
 });

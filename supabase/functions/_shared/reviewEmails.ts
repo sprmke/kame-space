@@ -121,6 +121,7 @@ async function sendReviewWindowEmail(input: {
     .from('guest_submissions')
     .select('*')
     .eq('id', input.bookingId)
+    .eq('property_id', input.propertyId)
     .maybeSingle();
   if (!booking) return false;
 

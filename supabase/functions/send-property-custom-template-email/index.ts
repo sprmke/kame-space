@@ -29,12 +29,21 @@ import {
   resolvePropertyTemplateContent,
 } from '../_shared/propertyTemplates.ts';
 import { DatabaseService } from '../_shared/databaseService.ts';
+import { rateLimitGate } from '../_shared/rateLimit.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 
-serveAuthenticated('send-property-custom-template-email', async (req) => {
+serveAuthenticated('send-property-custom-template-email', async (req, user) => {
   requireHttpMethod(req, 'POST');
   const propertyAccess = await resolveScopedPropertyAccess(req, 'bookings.detail.workflow:edit');
   const propertyId = propertyAccess.property.id;
+
+  const limited = await rateLimitGate(req, {
+    scope: 'property_template_email_send',
+    identity: `${user.id}:${propertyId}`,
+    limit: 30,
+    windowSec: 3600,
+  });
+  if (limited) return limited;
   const body = await readJsonBody(req);
   const bookingId = body?.bookingId;
   const templateKey = body?.templateKey;

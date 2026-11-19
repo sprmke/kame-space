@@ -32,6 +32,7 @@ import {
   resolvePropertyTemplateContent,
   type PropertyTemplateKey,
 } from './propertyTemplates.ts';
+import { TOKENIZED_LINK_PLACEHOLDER_KEYS } from './propertyTemplateCatalog.ts';
 import { computeTotalGuestBalanceFromBooking } from './totalGuestBalance.ts';
 import { resolveGuestFormSettings } from './guestFormSettings.ts';
 import { REVIEW_WINDOW_DAYS } from './reviewWindow.ts';
@@ -158,6 +159,17 @@ function decorFlags(booking: {
     decor_flag: hasDecor ? '🎉 Has decor' : '',
     pet_flag: hasPets ? '🐶 Has pets' : '',
   };
+}
+
+/** Placeholder values are HTML-escaped for the body; a subject needs the raw characters. */
+function decodeSubjectEntities(value: string): string {
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ');
 }
 
 /**
@@ -474,6 +486,18 @@ export async function renderPropertyTemplateSendEmail(input: {
       guideKey.templateKey,
       vars
     );
+  }
+
+  /*
+   * Belt and braces: a row saved before save-time validation could still carry a guest link
+   * in a building admin or team email. Blank them at render time too, so a booking access
+   * token can never reach the building.
+   */
+  const templateGroup = getBuiltinPropertyTemplate(input.templateKey)?.group;
+  if (templateGroup === 'building-admin' || templateGroup === 'team-alerts') {
+    for (const key of TOKENIZED_LINK_PLACEHOLDER_KEYS) {
+      if (key in vars) vars[key] = '';
+    }
   }
 
   let body = applyPropertyTemplatePlaceholders(rawContent, vars);

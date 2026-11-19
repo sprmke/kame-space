@@ -19,6 +19,8 @@ import { escapeHtml } from './renderEmailHtml.ts';
 
 export type PropertyPlaceholderBooking = {
   id?: string | null;
+  /** Used to refuse minting a guest link for a booking on another property. */
+  property_id?: string | null;
   status?: string | null;
   check_in_date?: string | null;
   check_in_time?: string | null;
@@ -44,6 +46,25 @@ export type PropertyPlaceholderVarsResult = {
 };
 
 const SECRET_POINTER = 'on your trip page';
+
+/**
+ * Property reads carry pricing, reviews and media. Rendering several emails or a stay guide
+ * would otherwise pay for that repeatedly. The branding loader already caches for 30s, so
+ * match it.
+ */
+const PROPERTY_CACHE_TTL_MS = 30_000;
+const propertyCache = new Map<
+  string,
+  { at: number; value: Awaited<ReturnType<typeof loadPublicPropertyById>> }
+>();
+
+async function loadPropertyCached(propertyId: string) {
+  const hit = propertyCache.get(propertyId);
+  if (hit && Date.now() - hit.at < PROPERTY_CACHE_TTL_MS) return hit.value;
+  const value = await loadPublicPropertyById(propertyId, { allowInactive: true }).catch(() => null);
+  propertyCache.set(propertyId, { at: Date.now(), value });
+  return value;
+}
 
 function str(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
@@ -109,7 +130,7 @@ export async function buildPropertyPlaceholderVars(
 
   const settings = await resolveAppSettings(propertyId);
   const [property, formSettings, contact] = await Promise.all([
-    loadPublicPropertyById(propertyId, { allowInactive: true }).catch(() => null),
+    loadPropertyCached(propertyId),
     resolveGuestFormSettings(propertyId).catch(() => null),
     loadGuestFacingContactInfo(propertyId, settings),
   ]);
@@ -142,9 +163,11 @@ export async function buildPropertyPlaceholderVars(
 
   const slug = property?.slug ?? (await resolvePropertySlugById(propertyId)) ?? '';
   const bookingId = str(input.booking?.id);
+  const bookingPropertyId = str(input.booking?.property_id);
+  const bookingBelongsToProperty = !bookingPropertyId || bookingPropertyId === propertyId;
   let stayGuideUrl = '';
   let messagesUrl = '';
-  if (slug && bookingId) {
+  if (slug && bookingId && bookingBelongsToProperty) {
     try {
       const token = await mintGuestBookingAccessToken(bookingId);
       stayGuideUrl = guestStayGuidePath(settings.publicGuestAppOrigin, slug, token);

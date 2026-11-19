@@ -163,14 +163,16 @@ const oldNormalized = new Map(
 );
 
 const counts = new Map<string, number>();
+const matchedIds: string[] = [];
 let scanned = 0;
-let matched = 0;
 
+// Collect first, delete later. Deleting while paging by range shifts rows and can skip some.
 for (let from = 0; ; from += BATCH) {
   const { data, error } = await supabase
     .from('property_template_contents')
-    .select('id, template_key, content, subject')
+    .select('id, property_id, template_key, content, subject')
     .in('template_key', Object.keys(OLD_DEFAULTS))
+    .order('id', { ascending: true })
     .range(from, from + BATCH - 1);
   if (error) throw error;
   const rows = data ?? [];
@@ -185,21 +187,27 @@ for (let from = 0; ; from += BATCH) {
     if (subject) continue;
     if (normalize(String(row.content ?? '')) !== expected) continue;
 
-    matched += 1;
+    matchedIds.push(String(row.id));
     counts.set(templateKey, (counts.get(templateKey) ?? 0) + 1);
-    if (execute) {
-      const { error: deleteError } = await supabase
-        .from('property_template_contents')
-        .delete()
-        .eq('id', row.id);
-      if (deleteError) throw deleteError;
+    if (!execute && matchedIds.length <= 50) {
+      console.log(`  match ${row.property_id} ${templateKey} ${row.id}`);
     }
   }
 
   if (rows.length < BATCH) break;
 }
 
-console.log(`${execute ? 'Deleted' : 'Would delete'} ${matched} of ${scanned} built-in rows.`);
+if (execute) {
+  for (let index = 0; index < matchedIds.length; index += BATCH) {
+    const chunk = matchedIds.slice(index, index + BATCH);
+    const { error } = await supabase.from('property_template_contents').delete().in('id', chunk);
+    if (error) throw error;
+  }
+}
+
+console.log(
+  `${execute ? 'Deleted' : 'Would delete'} ${matchedIds.length} of ${scanned} built-in rows.`
+);
 for (const [templateKey, count] of [...counts].sort((a, b) => a[0].localeCompare(b[0]))) {
   console.log(`  ${templateKey}: ${count}`);
 }

@@ -12,6 +12,7 @@ import { createServiceClient } from './orgAuth.ts';
 import { loadGuestFacingContactInfo } from './guestContactInfo.ts';
 import { escapeHtml } from './renderEmailHtml.ts';
 import { loadPropertyEmailBranding } from './propertyEmailBranding.ts';
+import { resolvePropertySlugById } from './propertyScope.ts';
 import { buildPropertyPlaceholderVars } from './propertyTemplatePropertyVars.ts';
 import {
   applyPropertyTemplatePlaceholders,
@@ -108,9 +109,10 @@ export async function buildChatTemplateVars(input: {
   booking?: GuestSubmission | null;
 }): Promise<Record<string, string>> {
   const settings = await resolveAppSettings(input.propertyId);
-  const [branding, contact] = await Promise.all([
+  const [branding, contact, propertySlug] = await Promise.all([
     loadPropertyEmailBranding(input.propertyId),
     loadGuestFacingContactInfo(input.propertyId, settings),
+    resolvePropertySlugById(input.propertyId).catch(() => ''),
   ]);
 
   const contactVars: Record<string, string> = {
@@ -130,7 +132,14 @@ export async function buildChatTemplateVars(input: {
   if (input.booking) {
     return {
       ...propertyVars.vars,
-      ...buildBookingPlaceholderVars(input.booking, settings, {}, branding),
+      // The slug is required for trip, review and form links; without it those tokens render
+      // empty in chat.
+      ...buildBookingPlaceholderVars(
+        input.booking,
+        settings,
+        propertySlug ? { property_slug: propertySlug } : {},
+        branding
+      ),
       ...contactVars,
     };
   }

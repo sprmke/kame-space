@@ -128,6 +128,18 @@ export const DYNAMIC_SECTIONS_BY_TEMPLATE: Record<string, EmailDynamicSectionKey
     'sd_refund_details_section',
     'trip_cta_section',
   ],
+  'email-pre-arrival-reminder': [
+    'balance_due_section',
+    'trip_cta_section',
+    'email_signature_section',
+  ],
+  'email-parking-reminder': ['parking_cta_section', 'email_signature_section'],
+  'email-review-request': ['review_cta_section', 'email_signature_section'],
+  'email-review-reminder': ['review_cta_section', 'email_signature_section'],
+  'email-request-expired-guest': ['trip_cta_section', 'email_signature_section'],
+  'email-request-expiring-host': ['booking_link_cta'],
+  'email-building-admin-cancellation': ['email_signature_section'],
+  'message-balance-reminder': ['gcash_payment_section'],
 };
 
 function notifyDetailTableStyle(): string {
@@ -1014,6 +1026,12 @@ export function buildSampleDynamicSections(input: {
 
   for (const key of keys) {
     switch (key) {
+      case 'trip_cta_section':
+        out.trip_cta_section = buildGuestTripCtaHtml(
+          `${input.settings.publicGuestAppOrigin.replace(/\/+$/, '')}/properties/sample-property/trip?bookingId=sample`,
+          brandColor
+        );
+        break;
       case 'cancellation_intro':
         out.cancellation_intro = 'Your booking was cancelled.';
         break;
