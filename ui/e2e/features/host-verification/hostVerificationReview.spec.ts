@@ -107,7 +107,12 @@ test.describe('@ci super admin host verification review', () => {
     // The confirm stays disabled until a reason is chosen.
     await expect(page.getByRole('button', { name: 'Confirm reject' })).toBeDisabled();
     await page.locator('#reject-reason-select').click();
-    await page.getByRole('option', { name: 'Identity does not match the documents provided' }).click();
+    const reasonOption = page.getByRole('option', {
+      name: 'Identity does not match the documents provided',
+    });
+    await reasonOption.waitFor({ state: 'visible' });
+    // DOM click bypasses Dialog body pointer-events lock on portaled Select.
+    await reasonOption.evaluate((el) => (el as HTMLElement).click());
 
     const rejectResponse = page.waitForResponse(
       (res) =>

@@ -153,6 +153,10 @@ Explicit `z-[N]` class floors still win when higher (command palette, lightboxes
 workflow confirms). Do not hand-roll nested `overlayClassName="z-[102]"` for
 ordinary modal-in-modal cases; the stack handles it.
 
+Portaled menus that open **inside** a modal (`Select`, `Popover` / date pickers)
+use `z-[200]` and `pointer-events: auto` so they stay above the modal stack and
+remain clickable while Radix Dialog locks `pointer-events` on `document.body`.
+
 ---
 
 ## Related docs

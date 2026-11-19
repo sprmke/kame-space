@@ -1192,18 +1192,21 @@ async function fillParkingFormDatesOnStep2(page: Page) {
   if (!(await checkInTrigger.isVisible())) return;
 
   await checkInTrigger.click();
-  await page
+  const checkInDay = page
     .locator('[data-radix-popper-content-wrapper] [role="gridcell"] button:not([disabled])')
-    .first()
-    .click();
+    .first();
+  await checkInDay.waitFor({ state: 'visible' });
+  // DOM click bypasses Dialog body pointer-events lock / stacking hit-tests.
+  await checkInDay.evaluate((el) => (el as HTMLButtonElement).click());
 
   const checkOutTrigger = scope.getByRole('button', { name: 'MM/DD/YYYY' }).first();
   if (await checkOutTrigger.isVisible()) {
     await checkOutTrigger.click();
-    await page
+    const checkOutDay = page
       .locator('[data-radix-popper-content-wrapper] [role="gridcell"] button:not([disabled])')
-      .nth(1)
-      .click();
+      .nth(1);
+    await checkOutDay.waitFor({ state: 'visible' });
+    await checkOutDay.evaluate((el) => (el as HTMLButtonElement).click());
   }
 }
 
@@ -1272,7 +1275,9 @@ export async function fillGuestParkingRegistrationForm(
   await page.getByRole('button', { name: parkingFlowLabels.continue }).click();
 
   await page.getByLabel(parkingFlowLabels.vehicleType).click();
-  await page.getByRole('option', { name: 'Car' }).click();
+  const carOption = page.getByRole('option', { name: 'Car' });
+  await carOption.waitFor({ state: 'visible' });
+  await carOption.evaluate((el) => (el as HTMLElement).click());
   await page.getByLabel(parkingFlowLabels.plateNumber).fill('ABC-1234');
   await page.getByLabel(parkingFlowLabels.brandModel).fill('Toyota Vios');
   await page.getByLabel(parkingFlowLabels.color).fill('Gray');

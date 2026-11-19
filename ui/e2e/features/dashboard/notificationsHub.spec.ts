@@ -76,7 +76,7 @@ async function mockNotificationPreferences(page: Page) {
   });
 }
 
-/** Two history pages so Newer / Older can be exercised. */
+/** Two history pages so infinite-scroll load-more can be exercised. */
 async function mockTelegramHistory(page: Page) {
   await page.route('**/functions/v1/telegram-message-log**', async (route) => {
     const params = new URLSearchParams(route.request().url().split('?')[1] ?? '');
@@ -175,10 +175,14 @@ test.describe('@ci notifications hub', () => {
     await expect(page.getByText('Failed', { exact: true })).toBeVisible();
     await expect(page.getByText('Bad Request: chat not found')).toBeVisible();
 
-    /* Older walks to the second page, Newer comes back. */
-    await page.getByRole('button', { name: 'Older' }).click();
-    await expect(page.getByText('Payment reminder for November dues.')).toBeVisible();
-    await page.getByRole('button', { name: 'Newer' }).click();
+    /* Scroll the history card so the infinite-scroll sentinel loads page 2. */
+    const historyScroll = page.locator('main .overflow-y-auto').last();
+    await historyScroll.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    await expect(page.getByText('Payment reminder for November dues.')).toBeVisible({
+      timeout: 10_000,
+    });
     await expect(page.getByText('New message from Ana Reyes on Facebook')).toBeVisible();
   });
 
@@ -297,11 +301,10 @@ test.describe('@ci notifications hub', () => {
       { timeout: 20_000 }
     );
 
-    /* One master switch on the tab; no second "paused" card repeating it. */
-    await expect(page.getByRole('switch', { name: 'Telegram delivery' })).not.toBeChecked();
+    /* Hub tab shows paused empty state; the master switch lives in Manage. */
     await expect(page.getByText('Telegram is paused')).toBeVisible();
-    /* Past sends stay readable while delivery is paused. */
-    await expect(page.getByText('New message from Ana Reyes on Facebook')).toBeVisible();
+    await expect(page.getByText('Turn delivery back on in Manage.')).toBeVisible();
+    await expect(page.getByRole('switch', { name: 'Telegram delivery' })).toHaveCount(0);
   });
 
   test('the master switch turns delivery off', async ({ page }) => {
