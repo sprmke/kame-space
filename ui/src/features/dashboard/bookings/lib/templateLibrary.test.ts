@@ -67,7 +67,7 @@ function folder(
   return { position: 0, templateCount: 0, ...overrides };
 }
 
-const standardKeys = ['house-rules', 'check-in-instructions', 'check-out-instructions'];
+const standardKeys = ['check-in-instructions', 'house-rules', 'check-out-instructions'];
 
 describe('buildTemplateLibrary', () => {
   it('returns built-in sections when nothing loaded', () => {
@@ -81,7 +81,7 @@ describe('buildTemplateLibrary', () => {
     ]);
   });
 
-  it('orders Stay guide before Guest emails and keeps registry order', () => {
+  it('orders Stay guide before Guest emails and keeps reading order', () => {
     const groups = buildTemplateLibrary([
       template({ templateKey: 'house-rules', name: 'House Rules' }),
       template({ templateKey: 'check-in-instructions', name: 'Check-in Instructions' }),
@@ -103,13 +103,15 @@ describe('buildTemplateLibrary', () => {
       template({ templateKey: 'house-rules', chapter: 'make-yourself-at-home' }),
       template({ templateKey: 'check-in-instructions', chapter: 'getting-in' }),
       template({ templateKey: 'check-out-instructions', chapter: 'before-you-go' }),
-      template({ templateKey: 'message-check-in-day', category: 'message', group: 'guest-messages' }),
+      template({
+        templateKey: 'message-check-in-day',
+        category: 'message',
+        group: 'guest-messages',
+      }),
     ]);
 
     const messages = groups.find((group) => group.id === 'guest-messages');
-    expect(messages?.entries.map((entry) => entry.templateKey)).toEqual([
-      'message-check-in-day',
-    ]);
+    expect(messages?.entries.map((entry) => entry.templateKey)).toEqual(['message-check-in-day']);
 
     const guide = groups.find((group) => group.id === 'stay-guide');
     expect(guide?.entries.map((entry) => entry.templateKey)).toEqual([
@@ -186,7 +188,7 @@ describe('buildTemplateLibrary', () => {
       template({ templateKey: 'check-in-instructions', isDefault: false }),
     ]);
 
-    expect(groups[0]!.entries.map((entry) => entry.status)).toEqual(['default', 'customized']);
+    expect(groups[0]!.entries.map((entry) => entry.status)).toEqual(['customized', 'default']);
   });
 
   it('reports no status for custom templates, which have no shipped default', () => {
@@ -416,8 +418,8 @@ describe('resolveSelectedTemplateKey', () => {
   });
 
   it('falls back to the first entry for an unknown or missing key', () => {
-    expect(resolveSelectedTemplateKey(groups, 'deleted-custom')).toBe('house-rules');
-    expect(resolveSelectedTemplateKey(groups, null)).toBe('house-rules');
+    expect(resolveSelectedTemplateKey(groups, 'deleted-custom')).toBe('check-in-instructions');
+    expect(resolveSelectedTemplateKey(groups, null)).toBe('check-in-instructions');
   });
 
   it('returns null for an empty library so the caller can show an empty state', () => {

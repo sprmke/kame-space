@@ -10,8 +10,11 @@ import { assertEquals, assertStringIncludes } from 'https://deno.land/std@0.224.
 Deno.env.set('SUPABASE_URL', 'http://127.0.0.1:54321');
 Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role');
 
-const { buildBookingPlaceholderVars, resolvePropertyTemplateSubject } =
-  await import('./propertyTemplateEmail.ts');
+const {
+  applyPropertyTemplatePlaceholders,
+  buildBookingPlaceholderVars,
+  resolvePropertyTemplateSubject,
+} = await import('./propertyTemplateEmail.ts');
 import type { AppSettingsResolved } from './appSettings.ts';
 import type { GuestSubmission } from './types.ts';
 
@@ -96,4 +99,22 @@ Deno.test('subjects decode escaped values and respect locked templates', async (
     fallback: 'Monaco 2604 - GAF Request (a to b)',
   });
   assertEquals(locked, 'Monaco 2604 - GAF Request (a to b)');
+});
+
+Deno.test('block placeholders unwrap their paragraph and empty blocks drop the line', () => {
+  const block = applyPropertyTemplatePlaceholders('<p>{{contact_section}}</p>', {
+    contact_section: '<p>Contact</p><table></table>',
+  });
+  assertEquals(block, '<p>Contact</p><table></table>');
+
+  const empty = applyPropertyTemplatePlaceholders(
+    '<p>Before</p><p>{{contact_section}}</p><p>After</p>',
+    { contact_section: '' }
+  );
+  assertEquals(empty, '<p>Before</p><p>After</p>');
+
+  const inline = applyPropertyTemplatePlaceholders('<p>Hi {{guest_name}}</p>', {
+    guest_name: 'Jane',
+  });
+  assertEquals(inline, '<p>Hi Jane</p>');
 });

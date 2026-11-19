@@ -10,7 +10,9 @@
 import { resolveAppSettings } from './appSettings.ts';
 import { createServiceClient } from './orgAuth.ts';
 import { loadGuestFacingContactInfo } from './guestContactInfo.ts';
+import { resolveGuestFormSettings } from './guestFormSettings.ts';
 import { escapeHtml } from './renderEmailHtml.ts';
+import { formatTimeForDisplay } from './utils.ts';
 import { loadPropertyEmailBranding } from './propertyEmailBranding.ts';
 import { resolvePropertySlugById } from './propertyScope.ts';
 import { buildPropertyPlaceholderVars } from './propertyTemplatePropertyVars.ts';
@@ -109,10 +111,11 @@ export async function buildChatTemplateVars(input: {
   booking?: GuestSubmission | null;
 }): Promise<Record<string, string>> {
   const settings = await resolveAppSettings(input.propertyId);
-  const [branding, contact, propertySlug] = await Promise.all([
+  const [branding, contact, propertySlug, formSettings] = await Promise.all([
     loadPropertyEmailBranding(input.propertyId),
     loadGuestFacingContactInfo(input.propertyId, settings),
     resolvePropertySlugById(input.propertyId).catch(() => ''),
+    resolveGuestFormSettings(input.propertyId).catch(() => null),
   ]);
 
   const contactVars: Record<string, string> = {
@@ -130,25 +133,37 @@ export async function buildChatTemplateVars(input: {
   });
 
   if (input.booking) {
+    const bookingVars = buildBookingPlaceholderVars(
+      input.booking,
+      settings,
+      propertySlug ? { property_slug: propertySlug } : {},
+      branding
+    );
+    // A legacy booking row can be missing its own times; use the property's times.
+    if (!bookingVars.check_in_time) {
+      bookingVars.check_in_time = escapeHtml(formatTimeForDisplay(formSettings?.checkInTime));
+    }
+    if (!bookingVars.check_out_time) {
+      bookingVars.check_out_time = escapeHtml(formatTimeForDisplay(formSettings?.checkOutTime));
+    }
     return {
       ...propertyVars.vars,
       // The slug is required for trip, review and form links; without it those tokens render
       // empty in chat.
-      ...buildBookingPlaceholderVars(
-        input.booking,
-        settings,
-        propertySlug ? { property_slug: propertySlug } : {},
-        branding
-      ),
+      ...bookingVars,
       ...contactVars,
     };
   }
 
   const guestName = input.conversation?.participant_name?.trim() || 'Guest';
+  const guestFirstName = guestName.split(/\s+/)[0] || 'there';
   return {
     ...propertyVars.vars,
+    guest_first_name: escapeHtml(guestFirstName),
     guest_name: escapeHtml(guestName),
     primary_guest_name: escapeHtml(guestName),
+    check_in_time: escapeHtml(formatTimeForDisplay(formSettings?.checkInTime)),
+    check_out_time: escapeHtml(formatTimeForDisplay(formSettings?.checkOutTime)),
     guest_email: '',
     guest_phone: '',
     guest_facebook_name: '',
@@ -157,8 +172,6 @@ export async function buildChatTemplateVars(input: {
     unit_number: escapeHtml(branding.unitLabel),
     check_in_date: '',
     check_out_date: '',
-    check_in_time: '',
-    check_out_time: '',
     nights: '',
     pax: '',
     special_requests: '',

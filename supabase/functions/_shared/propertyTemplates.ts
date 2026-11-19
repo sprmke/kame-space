@@ -252,7 +252,7 @@ type BuiltinTemplateContent = {
 const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   {
     key: 'house-rules',
-    label: 'House Rules',
+    label: 'House rules',
     description: 'Set rules and guidelines for guests during their stay.',
     category: 'standard',
     defaultContent: `<h2>House Rules</h2>
@@ -268,7 +268,7 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   },
   {
     key: 'check-in-instructions',
-    label: 'Check-in Instructions',
+    label: 'Check-in',
     description: 'Provide detailed instructions for guest check-in process.',
     category: 'standard',
     defaultContent: `<h2>Check-in Instructions</h2>
@@ -286,7 +286,7 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   },
   {
     key: 'check-out-instructions',
-    label: 'Check-out Instructions',
+    label: 'Check-out',
     description: 'Guide guests through the check-out process.',
     category: 'standard',
     defaultContent: `<h2>Check-out Instructions</h2>
@@ -304,7 +304,7 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   },
   {
     key: 'parking-reminders',
-    label: 'Parking Reminders',
+    label: 'Parking',
     description: 'Important information about parking regulations and procedures.',
     category: 'standard',
     defaultContent: `<h2>Parking Reminders</h2>
@@ -325,7 +325,7 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   },
   {
     key: 'email-gaf-request',
-    label: 'GAF Request',
+    label: 'GAF request',
     description: 'Request email sent to building admin for guest registration approval.',
     category: 'email',
     previewTemplateSlug: 'gaf-request',
@@ -339,7 +339,7 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   },
   {
     key: 'email-pet-request',
-    label: 'Pet Request',
+    label: 'Pet request',
     description: 'Request email sent to building admin for pet approval.',
     category: 'email',
     previewTemplateSlug: 'pet-request',
@@ -355,7 +355,7 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   },
   {
     key: 'email-new-booking-request',
-    label: 'New Booking Request',
+    label: 'New booking request',
     description: 'Owner alert when a guest submits a new booking form.',
     category: 'email',
     previewTemplateSlug: 'new-booking-request',
@@ -367,7 +367,7 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   },
   {
     key: 'email-booking-request-received',
-    label: 'Booking Request Received',
+    label: 'Booking request received',
     description: 'Guest email right after a booking request is submitted.',
     category: 'email',
     defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
@@ -378,7 +378,7 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   },
   {
     key: 'email-booking-acknowledgement',
-    label: 'Booking Acknowledgement',
+    label: 'Booking confirmed',
     description: 'Guest email after admin proceeds to pending documents.',
     category: 'email',
     previewTemplateSlug: 'booking-acknowledgement',
@@ -388,7 +388,7 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   },
   {
     key: 'email-ready-for-checkin',
-    label: 'Ready for Check-in',
+    label: 'Check-in details',
     description: 'Guest email with check-in details and payment breakdown.',
     category: 'email',
     previewTemplateSlug: 'ready-for-checkin',
@@ -405,7 +405,7 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   },
   {
     key: 'email-sd-refund-form-request',
-    label: 'SD Refund Form Request',
+    label: 'Check-out and deposit refund',
     description: 'Guest email with check-out checklist and security deposit refund form link.',
     category: 'email',
     previewTemplateSlug: 'sd-refund-form-request',
@@ -417,7 +417,7 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   },
   {
     key: 'email-booking-cancelled-guest',
-    label: 'Booking Cancelled (Guest)',
+    label: 'Booking cancelled',
     description: 'Guest email when a booking is cancelled.',
     category: 'email',
     defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
@@ -430,7 +430,7 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   },
   {
     key: 'email-booking-cancelled-host',
-    label: 'Booking Cancelled (Host)',
+    label: 'Booking cancelled',
     description: 'Host email when a guest cancels or asks to cancel.',
     category: 'email',
     defaultContent: `<p>Hello,</p>
@@ -440,7 +440,7 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   },
   {
     key: 'email-cancellation-request-guest',
-    label: 'Cancellation Request (Guest)',
+    label: 'Cancellation request',
     description: 'Guest email for a cancellation request received, approved or declined.',
     category: 'email',
     defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
@@ -451,7 +451,7 @@ const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   },
   {
     key: 'email-refund-sent-guest',
-    label: 'Refund Sent (Guest)',
+    label: 'Refund sent',
     description: 'Guest email when the host marks a refund as sent.',
     category: 'email',
     defaultContent: '',
@@ -1287,8 +1287,13 @@ function rowToDto(
     previewTemplateSlug: builtin?.previewTemplateSlug ?? null,
     sectionImageUrl: String(row.section_image_url ?? '').trim() || null,
     folderId: row.category === 'custom' ? (row.folder_id ?? null) : null,
-    guestVisible: row.category === 'custom' ? row.guest_visible === true : false,
-    guestPhase: isGuestTemplatePhase(row.guest_phase) ? row.guest_phase : 'always',
+    guestVisible:
+      row.category === 'custom' || row.category === 'standard' ? row.guest_visible === true : false,
+    guestPhase: isGuestTemplatePhase(row.guest_phase)
+      ? row.guest_phase
+      : row.category === 'standard'
+        ? (builtin?.defaultPhase ?? 'always')
+        : 'always',
     updatedAt: row.updated_at,
     group: builtin?.group ?? null,
     recipient: builtin?.recipient ?? null,
@@ -1331,7 +1336,7 @@ function builtinToDto(builtin: PropertyTemplateDefinition): PropertyTemplateDto 
     sectionImageUrl: null,
     folderId: null,
     guestVisible: builtin.category === 'standard' ? builtin.defaultGuestVisible : false,
-    guestPhase: 'always',
+    guestPhase: builtin.category === 'standard' ? (builtin.defaultPhase ?? 'always') : 'always',
     updatedAt: null,
     group: builtin.group,
     recipient: builtin.recipient,

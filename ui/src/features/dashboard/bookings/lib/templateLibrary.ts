@@ -198,11 +198,21 @@ export function buildTemplateLibrary(
   const list = templates ?? [];
   const hostOwned = list.filter((template) => isHostOwnedTemplateKey(template.templateKey));
 
-  const chapterOrder: Record<string, number> = {
-    'getting-in': 0,
-    'make-yourself-at-home': 1,
-    'before-you-go': 2,
-  };
+  // Reading order for the guide chapters, not alphabetical. Host-owned sections sort last.
+  const stayGuideOrder = [
+    'welcome-note',
+    'getting-here',
+    'check-in-instructions',
+    'house-rules',
+    'using-the-unit',
+    'building-amenities',
+    'trash-and-recycling',
+    'parking-reminders',
+    'pet-guidelines',
+    'emergency-and-safety',
+    'local-guide',
+    'check-out-instructions',
+  ];
 
   const groups: TemplateLibraryGroup[] = TEMPLATE_GROUP_ORDER.map((meta) => {
     const entries = list
@@ -210,9 +220,9 @@ export function buildTemplateLibrary(
       .map((template) => entryFor(template, meta.label))
       .sort((a, b) => {
         if (meta.id !== 'stay-guide') return 0;
-        const left = chapterOrder[a.template.chapter ?? ''] ?? 99;
-        const right = chapterOrder[b.template.chapter ?? ''] ?? 99;
-        return left - right;
+        const left = stayGuideOrder.indexOf(a.templateKey);
+        const right = stayGuideOrder.indexOf(b.templateKey);
+        return (left === -1 ? 999 : left) - (right === -1 ? 999 : right);
       });
     return {
       id: meta.id,

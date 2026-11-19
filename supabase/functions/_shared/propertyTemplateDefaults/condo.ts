@@ -341,15 +341,18 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
   'message-balance-reminder': {
     content: `<p>Hi {{guest_first_name}}, a reminder that your remaining balance for your stay on {{check_in_date}} is <strong>{{total_guest_balance}}</strong>.</p>
 <p>{{gcash_payment_section}}</p>
-<p>Once paid, upload your receipt on your trip page: {{trip_url}}</p>`,
+<p>Once paid, upload your receipt on your trip page.</p>
+<p>{{trip_cta_section}}</p>`,
   },
   'message-document-follow-up': {
     content: `<p>Hi {{guest_first_name}}, we still need a few documents before your stay on {{check_in_date}}. The building needs them to register you as a guest.</p>
-<p>Please upload them on your trip page: {{trip_url}}</p>`,
+<p>Please upload them on your trip page.</p>
+<p>{{trip_cta_section}}</p>`,
   },
   'message-check-in-day': {
     content: `<p>Hi {{guest_first_name}}, today is check-in day. The unit is ready from {{check_in_time}}.</p>
-<p>Your arrival steps and access details are on your trip page: {{trip_url}}</p>
+<p>Your arrival steps and access details are on your trip page.</p>
+<p>{{trip_cta_section}}</p>
 <p>Message us here if anything comes up on the way. Safe travels.</p>`,
   },
   'message-early-check-in': {
@@ -370,12 +373,14 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
   },
   'message-check-out-reminder': {
     content: `<p>Hi {{guest_first_name}}, a reminder that check-out is tomorrow, {{check_out_date}}, by {{check_out_time}}.</p>
-<p>The check-out steps are on your trip page: {{trip_url}}</p>
+<p>The check-out steps are on your trip page.</p>
+<p>{{trip_cta_section}}</p>
 <p>Please message us once you have left the unit so we can start the inspection.</p>`,
   },
   'message-thank-you': {
     content: `<p>Hi {{guest_first_name}}, thank you for staying at {{property_name}}. We hope you had a great time.</p>
-<p>If you have a minute, we would appreciate a short review: {{review_url}}</p>
+<p>If you have a minute, we would appreciate a short review.</p>
+<p>{{review_cta_section}}</p>
 <p>We would be happy to host you again.</p>`,
   },
   'message-lost-and-found': {

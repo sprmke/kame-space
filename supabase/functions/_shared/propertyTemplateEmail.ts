@@ -32,7 +32,10 @@ import {
   resolvePropertyTemplateContent,
   type PropertyTemplateKey,
 } from './propertyTemplates.ts';
-import { TOKENIZED_LINK_PLACEHOLDER_KEYS } from './propertyTemplateCatalog.ts';
+import {
+  isBlockLevelPropertyPlaceholder,
+  TOKENIZED_LINK_PLACEHOLDER_KEYS,
+} from './propertyTemplateCatalog.ts';
 import { computeTotalGuestBalanceFromBooking } from './totalGuestBalance.ts';
 import { resolveGuestFormSettings } from './guestFormSettings.ts';
 import { REVIEW_WINDOW_DAYS } from './reviewWindow.ts';
@@ -103,7 +106,23 @@ export function applyPropertyTemplatePlaceholders(
   html: string,
   vars: Record<string, string>
 ): string {
-  return html.replace(/\{\{([\w-]+)\}\}/g, (_, rawKey: string) => {
+  /*
+   * A block placeholder sits alone in a `<p>`, but its value is a table or div. Keeping the
+   * outer `<p>` nested a block in a paragraph, which the browser repairs into a stray empty
+   * paragraph (visible in the stay guide). Unwrap it here; an empty block removes the line.
+   */
+  const unwrapped = html.replace(
+    /<p(\s[^>]*)?>\s*\{\{([\w-]+)\}\}\s*<\/p>/gi,
+    (match, attrs: string | undefined, rawKey: string) => {
+      const key = normalizePropertyTemplatePlaceholderKey(rawKey);
+      if (!isBlockLevelPropertyPlaceholder(key)) return match;
+      const value = vars[key] ?? '';
+      if (!value.trim()) return '';
+      return value;
+    }
+  );
+
+  return unwrapped.replace(/\{\{([\w-]+)\}\}/g, (_, rawKey: string) => {
     const key = normalizePropertyTemplatePlaceholderKey(rawKey);
     return vars[key] ?? '';
   });
