@@ -85,6 +85,7 @@
     "dev": "./dev.sh",
     "ui": "./scripts/dev/ui-worktree.sh",
     "ui:port": "./scripts/dev/ui-worktree.sh --print-port",
+    "preview:worktree": "./scripts/dev/open-worktree-preview.sh",
     "dev:ui": "cd ui && bun run dev",
     "dev:api": "bash -c './scripts/dev/build-local-functions-env.sh >/dev/null && ./scripts/dev/bunx --bun supabase@latest functions serve --env-file ./supabase/.temp/functions-serve.env'",
     "dev:remote-api": "./scripts/dev/run-remote-functions-serve.sh",
