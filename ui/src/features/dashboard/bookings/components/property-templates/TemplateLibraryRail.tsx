@@ -77,8 +77,9 @@ function TemplateRowMeta({ entry, active }: { entry: TemplateLibraryEntry; activ
     <span
       className={cn(
         'block truncate text-xs',
-        /* On the brand pill, tint from the fill's own foreground — never gray. */
-        active ? 'text-primary-foreground/75' : 'text-muted-foreground'
+        /* On the brand pill, use the fill's own foreground at full strength. A /75 tint
+         * failed color contrast once a default row started showing meta text. */
+        active ? 'text-primary-foreground' : 'text-muted-foreground'
       )}
     >
       {parts.join(' · ')}
