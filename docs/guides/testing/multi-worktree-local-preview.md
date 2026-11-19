@@ -43,9 +43,11 @@ Repo root [`orca.yaml`](../../../orca.yaml):
 - `defaultTabs` → opens a **UI** tab that runs `bun run ui`
 - `scripts.archive` → stops only this worktree's Vite (never Docker)
 
-In Orca: **Settings → Repository → Command source** should use **orca.yaml**
-(not Local only), so new worktrees pick up these hooks after `orca.yaml` is on
-the start-from branch.
+In Orca: **Settings → Projects → kame-homes → Worktree hooks → Advanced →
+Command source** should use **orca.yaml only** (not Local only), so new
+worktrees pick up these hooks. `orca.yaml` must exist on the branch the
+worktree starts from, and Orca reads it from the project's primary checkout,
+so pull that branch there before flipping the setting.
 
 ## Auth and Maps on non-5173 ports
 
@@ -55,11 +57,12 @@ the shared stack once so Auth reloads.
 
 Google Cloud (one-time operator edit):
 
-1. OAuth client → Authorized JavaScript origins: add
-   `http://127.0.0.1:5173` through `:5199` (and `localhost` mirrors) or the
-   ports you actually use.
+1. OAuth client → Authorized redirect URIs: add
+   `http://127.0.0.1:54321/auth/v1/callback` (the `localhost` mirror only if
+   the API uses it). Vite origins are not needed; GoTrue handles the redirect.
 2. Maps API key website restriction: allow
-   `http://127.0.0.1:5173/*` … `5199/*` (and `localhost`).
+   `http://127.0.0.1:5173/*` … `5199/*` (and `localhost`) for the ports you
+   actually open.
 
 Details: [`local-google-setup.md`](./local-google-setup.md).
 

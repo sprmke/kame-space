@@ -2,7 +2,7 @@
 title: 'Local Google credentials (Maps + OAuth)'
 status: active
 tags: [guides, testing, local, google]
-updated: 2026-11-04
+updated: 2026-11-20
 ---
 
 # Local Google credentials (Maps + OAuth)
@@ -52,23 +52,21 @@ listing map uses the Embed API.
 
 1. **APIs & Services → Credentials → Create credentials → OAuth client ID**.
 2. Application type: **Web application**. Name: `Kame Space local dev`.
-3. Authorized JavaScript origins (include the multi-worktree Vite range
-   `5173`–`5199`; see [`multi-worktree-local-preview.md`](./multi-worktree-local-preview.md)):
-
-   ```
-   http://127.0.0.1:5173
-   http://localhost:5173
-   ```
-
-   Add the same hosts for any other sticky ports you use (`5174` … `5199`), or
-   add them when a worktree first needs Google sign-in on that port.
+3. Authorized JavaScript origins: leave empty. Sign-in uses GoTrue's redirect
+   flow, so Google only checks the callback in the next step. JavaScript
+   origins are for pages that call Google Identity Services directly
+   (`accounts.google.com/gsi/client`), which this app does not.
 
 4. Authorized redirect URIs (GoTrue callback stays on the API port, not Vite):
 
    ```
    http://127.0.0.1:54321/auth/v1/callback
-   http://localhost:54321/auth/v1/callback
    ```
+
+   That is the value in `supabase/config.toml` under
+   `[auth.external.google] redirect_uri`. Add the `localhost` mirror
+   (`http://localhost:54321/auth/v1/callback`) only if you point the API at
+   `localhost`.
 
 5. Create, then copy the **Client ID** and **Client secret**.
 
@@ -77,9 +75,19 @@ listing map uses the Embed API.
 1. **APIs & Services → Credentials → Create credentials → API key**.
 2. Name: `Kame Space local maps`.
 3. **Edit** the key:
-   - Application restrictions: **Websites**. Add
-     `http://127.0.0.1:5173/*` and `http://localhost:5173/*`, plus the same
-     pattern for other sticky ports in `5174`–`5199` that you preview.
+   - Application restrictions: **Websites**. Add the Vite origins you actually
+     open, both hosts if you use both. Sticky ports run `5173`–`5199`
+     (`scripts/dev/ui-worktree.sh`):
+
+     ```
+     http://127.0.0.1:5173/*
+     http://localhost:5173/*
+     ```
+
+     Add the same pair for each other sticky port you preview, for example
+     `5174` or `5195`. Referrer checks use the origin, so only the ports in use
+     are needed.
+
    - API restrictions: **Restrict key**, select the five APIs from step 2.
 4. Save and copy the key.
 
@@ -105,8 +113,8 @@ LOCALSTOP=localstop bun run stop:supabase
 ```
 
 Repo `supabase/config.toml` already lists Auth `additional_redirect_urls` for
-Vite ports `5173`–`5199`. Google Cloud origins (step 3) still need the matching
-JS origins for sign-in on those ports.
+Vite ports `5173`–`5199` on both `127.0.0.1` and `localhost`, so the post-sign-in
+return to any sticky port works without changing the Google client.
 
 ## Verify
 
