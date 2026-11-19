@@ -43,11 +43,11 @@ Repo root [`orca.yaml`](../../../orca.yaml):
 - `defaultTabs` → opens a **UI** tab that runs `bun run ui`
 - `scripts.archive` → stops only this worktree's Vite (never Docker)
 
-In Orca: **Settings → Projects → kame-homes → Worktree hooks → Advanced →
-Command source** should use **orca.yaml only** (not Local only), so new
-worktrees pick up these hooks. `orca.yaml` must exist on the branch the
-worktree starts from, and Orca reads it from the project's primary checkout,
-so pull that branch there before flipping the setting.
+In Orca: open this project's **Worktree hooks → Advanced → Command source**
+and set **orca.yaml only** (not Local only), so new worktrees pick up these
+hooks. `orca.yaml` must exist on the branch the worktree starts from, and
+Orca reads it from the project's primary checkout, so pull that branch there
+before flipping the setting.
 
 ## Auth and Maps on non-5173 ports
 
