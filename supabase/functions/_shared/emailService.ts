@@ -1251,22 +1251,30 @@ export async function sendPropertyCustomTemplateEmail(
   const guestContact = await loadGuestFacingContactInfo(propertyId, settings);
   const guestLinkExtras = await loadGuestBookingEmailLinkExtras(booking, settings);
 
+  const placeholderVars = buildBookingPlaceholderVars(
+    booking,
+    settings,
+    {
+      ...guestLinkExtras,
+      ...buildGuestFacingPlaceholderVars(guestContact),
+      email_signature_section: buildEmailSignatureSectionHtml(settings.gafUnitOwner, unitLabel),
+    },
+    branding
+  );
   const html = await renderPropertyTemplateSendEmail({
     propertyId,
     templateKey,
     emailTitle: templateName,
-    placeholderVars: buildBookingPlaceholderVars(
-      booking,
-      settings,
-      {
-        ...guestLinkExtras,
-        ...buildGuestFacingPlaceholderVars(guestContact),
-        email_signature_section: buildEmailSignatureSectionHtml(settings.gafUnitOwner, unitLabel),
-      },
-      branding
-    ),
+    placeholderVars,
     branding,
     contentOverride: content,
+    booking,
+  });
+  const subject = await resolvePropertyTemplateSubject({
+    propertyId,
+    templateKey,
+    vars: placeholderVars,
+    fallback: `${unitLabel} - ${templateName} ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
   });
 
   const sent = await sendResendEmail({
@@ -1276,7 +1284,7 @@ export async function sendPropertyCustomTemplateEmail(
     ),
     to: [booking.guest_email],
     reply_to: EMAIL_REPLY_TO,
-    subject: `${unitLabel} - ${templateName} ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    subject,
     html,
     errorLabel: 'email',
   });

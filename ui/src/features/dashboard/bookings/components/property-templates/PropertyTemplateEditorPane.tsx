@@ -194,10 +194,12 @@ export function PropertyTemplateEditorPane({
     guestPhase !== template.guestPhase ||
     subject !== (template.subject ?? '');
   const isEmail = template.category === 'email' || template.category === 'message';
+  const isAutomatedEmail = template.category === 'email';
+  const isMessage = template.category === 'message';
   const isCustom = template.category === 'custom';
   const isStandard = template.category === 'standard';
-  /** Email + custom saves need Starter+; standard templates are free. */
-  const requiresStarterToPersist = isEmail || isCustom;
+  /** Automated email + custom saves need Starter+; guide sections and messages are free. */
+  const requiresStarterToPersist = isAutomatedEmail || isCustom;
   const allowSectionImage = isStandard && showSectionImage;
   const uploadTemplateAsset = useUploadPropertyTemplateAsset();
 
@@ -492,7 +494,7 @@ export function PropertyTemplateEditorPane({
                 ) : null}
                 {/* One ⋯ for the custom-template actions: four inline buttons never
                  * fit beside Save on a phone. */}
-                {isCustom ? (
+                {isCustom || isMessage ? (
                   <ResponsiveOverflowMenu
                     label={`Actions for ${template.name}`}
                     sheetTitle={template.name}
@@ -508,32 +510,36 @@ export function PropertyTemplateEditorPane({
                           onSelect: () => setSendOpen(true),
                         },
                       ],
-                      [
-                        {
-                          key: 'rename',
-                          label: 'Rename',
-                          icon: <Pencil className="size-4" aria-hidden />,
-                          disabled: !onRename,
-                          onSelect: () => onRename?.(),
-                        },
-                        {
-                          key: 'move',
-                          label: 'Move',
-                          icon: <FolderInput className="size-4" aria-hidden />,
-                          disabled: !onMove,
-                          onSelect: () => onMove?.(),
-                        },
-                      ],
-                      [
-                        {
-                          key: 'delete',
-                          label: 'Delete template',
-                          icon: <Trash2 className="size-4" aria-hidden />,
-                          destructive: true,
-                          disabled: !onDelete,
-                          onSelect: () => setDeleteOpen(true),
-                        },
-                      ],
+                      ...(isCustom
+                        ? [
+                            [
+                              {
+                                key: 'rename',
+                                label: 'Rename',
+                                icon: <Pencil className="size-4" aria-hidden />,
+                                disabled: !onRename,
+                                onSelect: () => onRename?.(),
+                              },
+                              {
+                                key: 'move',
+                                label: 'Move',
+                                icon: <FolderInput className="size-4" aria-hidden />,
+                                disabled: !onMove,
+                                onSelect: () => onMove?.(),
+                              },
+                            ],
+                            [
+                              {
+                                key: 'delete',
+                                label: 'Delete template',
+                                icon: <Trash2 className="size-4" aria-hidden />,
+                                destructive: true,
+                                disabled: !onDelete,
+                                onSelect: () => setDeleteOpen(true),
+                              },
+                            ],
+                          ]
+                        : []),
                     ]}
                   />
                 ) : null}
@@ -707,7 +713,7 @@ export function PropertyTemplateEditorPane({
         onInsertToken={handleInsertPlaceholder}
       />
 
-      {isCustom ? (
+      {isCustom || isMessage ? (
         <SendCustomTemplateDialog
           templateKey={template.templateKey}
           templateName={template.name}

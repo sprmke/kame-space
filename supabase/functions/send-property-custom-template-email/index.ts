@@ -10,6 +10,7 @@
  */
 
 import { buildActorContext, logActivity } from '../_shared/activityLog.ts';
+import { catchPlanFeatureError, requirePropertyFeature } from '../_shared/planEntitlements.ts';
 import { sendPropertyCustomTemplateEmail } from '../_shared/emailService.ts';
 import {
   jsonError,
@@ -21,7 +22,12 @@ import {
   resolveScopedPropertyAccess,
   verifyBookingBelongsToProperty,
 } from '../_shared/propertyScope.ts';
-import { isCustomTemplateKey, resolveCustomTemplateRow } from '../_shared/propertyTemplates.ts';
+import {
+  getBuiltinPropertyTemplate,
+  isCustomTemplateKey,
+  resolveCustomTemplateRow,
+  resolvePropertyTemplateContent,
+} from '../_shared/propertyTemplates.ts';
 import { DatabaseService } from '../_shared/databaseService.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
 
@@ -36,15 +42,39 @@ serveAuthenticated('send-property-custom-template-email', async (req) => {
   if (!bookingId || typeof bookingId !== 'string') {
     return jsonError(req, 'bookingId (string) is required');
   }
-  if (!templateKey || typeof templateKey !== 'string' || !isCustomTemplateKey(templateKey)) {
-    return jsonError(req, 'templateKey must be a custom template key');
+  if (!templateKey || typeof templateKey !== 'string') {
+    return jsonError(req, 'templateKey (string) is required');
+  }
+
+  const builtin = getBuiltinPropertyTemplate(templateKey);
+  const isMessage = builtin?.category === 'message';
+  if (!isCustomTemplateKey(templateKey) && !isMessage) {
+    return jsonError(req, 'templateKey must be a custom or message template key');
+  }
+
+  try {
+    await requirePropertyFeature(propertyId, 'customTemplates');
+  } catch (err) {
+    const planErr = catchPlanFeatureError(req, err);
+    if (planErr) return planErr;
+    throw err;
   }
 
   await verifyBookingBelongsToProperty(bookingId, propertyId);
 
-  const template = await resolveCustomTemplateRow(propertyId, templateKey);
-  if (!template) {
-    return jsonError(req, 'Custom template not found or has no content', 404);
+  let name = '';
+  let content = '';
+  if (isCustomTemplateKey(templateKey)) {
+    const template = await resolveCustomTemplateRow(propertyId, templateKey);
+    if (!template) {
+      return jsonError(req, 'Custom template not found or has no content', 404);
+    }
+    name = template.name;
+    content = template.content;
+  } else {
+    const resolved = await resolvePropertyTemplateContent(propertyId, builtin!.key);
+    name = resolved.label;
+    content = resolved.content;
   }
 
   const booking = await DatabaseService.getBookingById(bookingId);
@@ -55,12 +85,7 @@ serveAuthenticated('send-property-custom-template-email', async (req) => {
     return jsonError(req, 'Booking has no guest email', 409);
   }
 
-  const result = await sendPropertyCustomTemplateEmail(
-    booking,
-    templateKey,
-    template.name,
-    template.content
-  );
+  const result = await sendPropertyCustomTemplateEmail(booking, templateKey, name, content);
 
   if (result && 'skipped' in result && result.skipped) {
     return jsonError(req, 'Guest email is suppressed - cannot send', 409);
@@ -75,7 +100,11 @@ serveAuthenticated('send-property-custom-template-email', async (req) => {
     targetType: 'booking',
     targetId: bookingId,
     targetLabel: (booking.primary_guest_name as string | undefined) ?? null,
-    metadata: { template_key: templateKey, template_name: template.name },
+    metadata: {
+      template_key: templateKey,
+      template_name: name,
+      category: builtin?.category ?? 'custom',
+    },
   });
 
   return jsonResponse(req, { success: true, bookingId, templateKey });

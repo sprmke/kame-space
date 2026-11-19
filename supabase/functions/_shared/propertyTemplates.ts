@@ -110,7 +110,17 @@ export type PropertyTemplateKey =
   | 'trash-and-recycling'
   | 'pet-guidelines'
   | 'emergency-and-safety'
-  | 'local-guide';
+  | 'local-guide'
+  | 'message-balance-reminder'
+  | 'message-document-follow-up'
+  | 'message-check-in-day'
+  | 'message-early-check-in'
+  | 'message-late-check-out'
+  | 'message-mid-stay'
+  | 'message-noise-reminder'
+  | 'message-check-out-reminder'
+  | 'message-thank-you'
+  | 'message-lost-and-found';
 
 export type PropertyTemplateDefinition = {
   key: PropertyTemplateKey;
@@ -617,6 +627,23 @@ function emailMeta(input: {
   };
 }
 
+function messageMeta(input: { iconId?: PropertyTemplateIconId }): BuiltinMeta {
+  return {
+    group: 'guest-messages',
+    recipient: null,
+    trigger: null,
+    automationToggleKey: null,
+    iconId: input.iconId ?? 'message',
+    subjectLocked: false,
+    chapter: null,
+    defaultPhase: null,
+    defaultGuestVisible: false,
+    condition: null,
+    requiresEdit: false,
+    appliesWhen: null,
+  };
+}
+
 const BUILTIN_META: Record<PropertyTemplateKey, BuiltinMeta> = {
   'house-rules': guideMeta({
     chapter: 'make-yourself-at-home',
@@ -807,6 +834,16 @@ const BUILTIN_META: Record<PropertyTemplateKey, BuiltinMeta> = {
     visible: false,
     requiresEdit: true,
   }),
+  'message-balance-reminder': messageMeta({}),
+  'message-document-follow-up': messageMeta({}),
+  'message-check-in-day': messageMeta({}),
+  'message-early-check-in': messageMeta({}),
+  'message-late-check-out': messageMeta({}),
+  'message-mid-stay': messageMeta({}),
+  'message-noise-reminder': messageMeta({}),
+  'message-check-out-reminder': messageMeta({}),
+  'message-thank-you': messageMeta({}),
+  'message-lost-and-found': messageMeta({}),
 };
 
 /**

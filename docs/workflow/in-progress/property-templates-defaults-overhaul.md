@@ -337,13 +337,13 @@ One server module, `_shared/propertyTemplateCatalog.ts`, exports every token wit
 
 ### Phase 6: Guest messages
 
-- [ ] Registry entries for the 10 message templates (`category: message`, group Guest messages).
-- [ ] `chat-templates` list and `chatTemplateMessage.ts` include `message`; Inbox Insert → Templates shows a **Messages** section that inserts flattened, placeholder-filled text into the composer for editing (D14). Guide and custom keep the card flow.
-- [ ] Generalize `send-property-custom-template-email` to accept `message-*` keys (name kept for compatibility); `SendCustomTemplateDialog.tsx` reused for messages; plan gate `customTemplates`.
-- [ ] AI Assistant: catalog group Templates lists messages; `get_property_template_content` reads them.
-- [ ] Team permissions UI: relabel `templates.standard:edit` to "Stay guide and messages" (`ui/src/features/dashboard/team/lib/propertyPermissions.ts` and server label source).
-- [ ] Quick replies: remove the Azure location literal from `inboxDefaultQuickReplies.ts` (use `{{map_link}}` only) and align check-in/out wording with property times (G13). Already-seeded orgs keep their rows.
-- [ ] Tests: chat send of a message template (Deno), Inbox insert as text (Playwright `@ci`), email send of a message.
+- [x] Registry entries for the 10 message templates (`category: message`, group Guest messages) with shipped copy.
+- [x] `chat-templates` and `chatTemplateMessage.ts` include `message`; the Inbox Insert menu has a **Messages** section that inserts flattened, placeholder-filled text into the composer for editing. Guide and custom templates keep the card flow.
+- [x] `send-property-custom-template-email` accepts `message-*` keys as well as `custom-*`; the Send to guest dialog is reused; the send is gated on `customTemplates`.
+- [x] AI Assistant `get_property_template_content` lists and reads messages; the tool description names them.
+- [x] Team permissions label `templates.standard:edit` is now **Stay guide and messages**.
+- [x] Quick replies: the Azure location literal is gone (map link only) and the check-in reply points at the booking's own times.
+- [ ] Tests: a Deno test for chat send of a message template and a Playwright `@ci` case for Inbox insert as text. Existing chat template tests still pass.
 
 ### Phase 7: Cross-surface wiring, docs, QA
 

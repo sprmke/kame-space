@@ -43,6 +43,12 @@ Filter chips map to these groups: **All**, **Stay guide**, **Emails** (Guest ema
 
 Built-in content and default subjects live in `supabase/functions/_shared/propertyTemplateDefaults/condo.ts`. Every property resolves to the condo pack until other packs exist. `properties.type` is read by the resolver, so a new pack is a content file plus a resolver branch.
 
+### Guest messages
+
+Ten ready-to-send messages live under **Guest messages**: balance reminder, missing documents, check-in day, early check-in, late check-out, checking in, noise reminder, check-out reminder, thank you, and item left behind. They use the same placeholders as emails and can go by chat or email.
+
+In **Guest Inbox → Insert (`+`) → Messages** a message is inserted as editable text in the composer, so bracketed fill-ins like `[item]` can be changed before sending. **Send to guest** by email uses the same booking picker as custom templates and needs Starter or above.
+
 ### Subjects and test send
 
 Every email template shows **To**, **When**, **Automation** (On, Off, or Needs plan), a **Subject** field and **Send test**. GAF and pet subjects are read-only and marked **Fixed**, because inbound approval matches those subject lines.

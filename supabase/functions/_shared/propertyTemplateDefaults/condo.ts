@@ -338,6 +338,50 @@ export const CONDO_TEMPLATE_DEFAULTS: Record<string, CondoTemplateDefault> = {
 <p>{{booking_link_cta}}</p>`,
     subject: '{{tower_and_unit_number}} - {{cancellation_host_title}} {{stay_dates}}',
   },
+  'message-balance-reminder': {
+    content: `<p>Hi {{guest_first_name}}, a reminder that your remaining balance for your stay on {{check_in_date}} is <strong>{{total_guest_balance}}</strong>.</p>
+<p>{{gcash_payment_section}}</p>
+<p>Once paid, upload your receipt on your trip page: {{trip_url}}</p>`,
+  },
+  'message-document-follow-up': {
+    content: `<p>Hi {{guest_first_name}}, we still need a few documents before your stay on {{check_in_date}}. The building needs them to register you as a guest.</p>
+<p>Please upload them on your trip page: {{trip_url}}</p>`,
+  },
+  'message-check-in-day': {
+    content: `<p>Hi {{guest_first_name}}, today is check-in day. The unit is ready from {{check_in_time}}.</p>
+<p>Your arrival steps and access details are on your trip page: {{trip_url}}</p>
+<p>Message us here if anything comes up on the way. Safe travels.</p>`,
+  },
+  'message-early-check-in': {
+    content: `<p>Hi {{guest_first_name}}, thanks for asking. Check-in starts at {{check_in_time}}.</p>
+<p>We cannot confirm an early check-in yet because it depends on when the unit is ready after the previous guest. We will message you on {{check_in_date}} as soon as we know.</p>`,
+  },
+  'message-late-check-out': {
+    content: `<p>Hi {{guest_first_name}}, thanks for asking. Check-out is by {{check_out_time}} on {{check_out_date}}.</p>
+<p>A late check-out depends on whether a guest arrives after you. We will confirm by the evening before. An extra fee may apply.</p>`,
+  },
+  'message-mid-stay': {
+    content: `<p>Hi {{guest_first_name}}, we hope you are enjoying your stay at {{property_name}}. Is everything working well in the unit?</p>
+<p>If you need anything, like extra towels or help with an appliance, message us here.</p>`,
+  },
+  'message-noise-reminder': {
+    content: `<p>Hi {{guest_first_name}}, the building let us know about noise from the unit. Please keep the volume down, especially during quiet hours ({{quiet_hours}}).</p>
+<p>Repeated complaints can lead to a fine from the building. Thank you for understanding.</p>`,
+  },
+  'message-check-out-reminder': {
+    content: `<p>Hi {{guest_first_name}}, a reminder that check-out is tomorrow, {{check_out_date}}, by {{check_out_time}}.</p>
+<p>The check-out steps are on your trip page: {{trip_url}}</p>
+<p>Please message us once you have left the unit so we can start the inspection.</p>`,
+  },
+  'message-thank-you': {
+    content: `<p>Hi {{guest_first_name}}, thank you for staying at {{property_name}}. We hope you had a great time.</p>
+<p>If you have a minute, we would appreciate a short review: {{review_url}}</p>
+<p>We would be happy to host you again.</p>`,
+  },
+  'message-lost-and-found': {
+    content: `<p>Hi {{guest_first_name}}, we found something in the unit after your stay: <strong>[item]</strong>.</p>
+<p>Let us know if it is yours and how you want to get it back. We can keep it for you for a few weeks, or send it to you at your cost.</p>`,
+  },
 };
 
 export function condoTemplateDefault(key: string): CondoTemplateDefault | undefined {

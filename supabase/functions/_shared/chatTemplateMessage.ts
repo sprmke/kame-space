@@ -95,7 +95,7 @@ export async function loadChatTemplate(
   return {
     templateKey,
     name: resolved.label,
-    category: 'standard',
+    category: builtin.category,
     content: resolved.content,
     sectionImageUrl: resolved.sectionImageUrl,
   };
