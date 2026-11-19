@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 
 const CATEGORY_LABEL: Record<ChatTemplateSnapshot['category'], string> = {
   standard: 'Stay guide',
+  message: 'Message',
   custom: 'Custom',
 };
 

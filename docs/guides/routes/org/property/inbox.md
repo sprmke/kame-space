@@ -13,13 +13,13 @@ Route: `/org/:orgSlug/property/:propertySlug/inbox`
 
 ## Progress overview
 
-| Section       | E2E | Validation | Docs | Notes                                                                                      |
-| ------------- | --- | ---------- | ---- | ------------------------------------------------------------------------------------------ |
-| Messages      | Yes | Yes        | Yes  | Web scoped to property; Meta = effective connection                                        |
-| Channels      | Yes | Yes        | Yes  | First connect becomes org-default Meta; later connects override                            |
-| Quick replies | Yes | Yes        | Yes  | Org-scoped templates; managed here with `inbox.quickReplies:*` / `inbox.automation:edit`   |
-| Templates     | Yes | Yes        | Yes  | Property stay-guide + custom templates in Insert (`+`); email templates excluded           |
-| Automation    | Yes | Yes        | Yes  | Org-scoped AI settings; managed here with `inbox.quickReplies:*` / `inbox.automation:edit` |
+| Section       | E2E | Validation | Docs | Notes                                                                                              |
+| ------------- | --- | ---------- | ---- | -------------------------------------------------------------------------------------------------- |
+| Messages      | Yes | Yes        | Yes  | Web scoped to property; Meta = effective connection                                                |
+| Channels      | Yes | Yes        | Yes  | First connect becomes org-default Meta; later connects override                                    |
+| Quick replies | Yes | Yes        | Yes  | Org-scoped templates; managed here with `inbox.quickReplies:*` / `inbox.automation:edit`           |
+| Templates     | Yes | Yes        | Yes  | Property stay-guide, guest messages and custom templates in Insert (`+`); email templates excluded |
+| Automation    | Yes | Yes        | Yes  | Org-scoped AI settings; managed here with `inbox.quickReplies:*` / `inbox.automation:edit`         |
 
 ## Overview
 
@@ -68,7 +68,9 @@ This is where you read and reply to guest messages for this property: website ch
 - Q: Can I send a Stay Guide or custom template in chat?
   A: Yes. Open **Insert** (`+`) in the composer and pick a row under **Templates**. You get a full preview first, then **Send**. Web chat shows the template as a rich card the guest can open; Facebook and Instagram receive the same copy as plain text. Email templates are never offered in chat. The guest sees exactly what you sent even if you edit that template later.
 - Q: Which templates appear under Insert → Templates?
-  A: The standard stay-guide templates (house rules, check-in, check-out, parking reminders) and every custom template on this property. Email templates and templates from other properties do not appear. Parking inboxes do not have a Templates section.
+  A: The stay guide sections, the guest messages (balance reminder, check-in day, check-out reminder, thank you and others), and every custom template on this property. Email templates and templates from other properties do not appear. Parking inboxes do not have a Templates section.
+- Q: How are guest messages different from templates?
+  A: A guest message is inserted into the composer as editable text, so you can change names, items or amounts before sending. A stay-guide or custom template keeps the card flow and sends as a card the guest can open.
 - Q: Can I attach photos or PDFs to a website chat reply?
   A: Yes. Use the paperclip on **website chat** threads (JPEG, PNG, WebP, PDF). Meta Facebook/Instagram replies from this UI remain text-only.
 - Q: Why did a guest message stay pending even though Send automatically is on?
@@ -133,6 +135,7 @@ trip page.
 - **Share resources:** the composer's **Insert** menu (`InboxInsertMenu`, `+` icon) inserts plain URLs or payment-method text into the draft — no new message type. Sections: Property (page, calendar, guest form, chat link), Pages (showcase, stay guide, listing preview paths), Location (map link from property settings when set), Payment (formatted payment methods from property settings), **Packs** (Check-in pack — times + stay guide + map + calendar when available), and Booking (search or auto-matched booking → status-gated doc links; below Pro (`propertyShowcase`) the **Pages → Showcase / Stay Guide** rows and the booking's **Stay Guide** row stay visible with a Pro pill and open the upgrade modal instead of inserting (`InboxShareRow.lockedFeature`), and the Check-in pack leaves out the stay guide line). Auto-match uses inquiry dates + guest name against this property's recent bookings (`inboxMatchBooking.ts`). Every inserted https link renders as a typed tap card via `urlLinkCardMeta()` / `ChatUrlLinkCard` (calendar, stay guide, form, document, etc.).
 - **Quick reply merge fields:** templates may include `{{guest_name}}`, `{{property_name}}`, `{{check_in_date}}`, `{{check_out_date}}`, `{{inquiry_dates}}`, plus link tokens (`{{calendar_link}}`, `{{property_link}}`, `{{form_link}}`, `{{messages_link}}`, `{{showcase_link}}`, `{{map_link}}`, `{{stay_guide_link}}`). Resolved on insert/send from the open thread + auto-matched booking (`inboxQuickReplyMerge.ts`, `inboxQuickReplyLinks.ts`). The same templates also appear under **Snippets** in the Insert (`+`) menu. The quick-reply form shows a live preview when placeholders or URLs are present.
 - **Pinned snippets:** property-scoped saved messages in `properties.settings.inboxPinnedSnippets` (max 5) — managed in **Manage → Quick replies → Pinned snippets**; inserted from **Pinned** in Insert (`+`). Requires `inbox.quickReplies:edit`.
+- **Guest messages:** Insert (`+`) → **Messages** inserts a message template as editable text in the composer, with placeholders already filled from the thread and the matched booking.
 - **Template messages:** Insert (`+`) → **Templates** lists this property's standard + custom templates (email excluded). Selecting one opens a full preview; **Send** writes `social_messages.message_kind = 'template'` with a `template_snapshot` (rendered HTML + name + category). Web chat renders the snapshot as a rich card in the thread and in the guest chat widget; tapping expands it to a full-screen or modal preview. Meta DMs receive flattened text (max 2,000 chars) and stay normal text messages. Template messages cannot be edited; unsend still works. Placeholders resolve from the conversation and the auto-matched booking, and unknown tokens are dropped. Audit: `inbox.chat_template_sent`.
 - **Host attachments (web chat):** paperclip in the composer uploads JPEG/PNG/WebP/PDF via `upload-inbox-chat-asset`; outbound send includes `attachments` on `social-inbox-send` (web platform only).
 - **Calendar tap-to-modal:** a "Check availability" calendar link card, when tapped in either the host bubble here or the guest's own web chat widget, opens the property's availability calendar in an in-place modal (`BookingCalendarModal`) instead of navigating to a new tab.

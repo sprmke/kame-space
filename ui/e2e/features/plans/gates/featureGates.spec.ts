@@ -123,9 +123,9 @@ const SURFACES: GateSurface[] = [
   },
   {
     feature: 'customTemplates',
-    name: 'Templates: Add Template',
+    name: 'Templates: New template',
     path: `${PROPERTY}/templates`,
-    control: (page) => page.getByRole('button', { name: /Add Template/ }),
+    control: (page) => page.getByRole('button', { name: /New template/ }),
     scope: parentScope,
     behaviour: 'modal',
   },

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
   AlertTriangle,
@@ -530,6 +530,18 @@ export function usePropertySettingsController() {
       .getElementById(`section-${sectionId}`)
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  const location = useLocation();
+  useEffect(() => {
+    if (!location.hash) return;
+    const target = document.getElementById(location.hash.slice(1));
+    if (!target) return;
+    const timer = window.setTimeout(
+      () => target.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+      80
+    );
+    return () => window.clearTimeout(timer);
+  }, [location.hash]);
 
   const setProfileField = useCallback(
     <K extends keyof PropertyProfileDraft>(

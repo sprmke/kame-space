@@ -28,10 +28,12 @@ import {
   buildUrgentSameDayCallout,
   computeReadyForCheckinTotalDue,
 } from './propertyTemplateEmailSections.ts';
-import { formatDateForEmail } from './utils.ts';
+import { formatDateForEmail, formatTimeForDisplay } from './utils.ts';
+import { resolveGuestFormSettings } from './guestFormSettings.ts';
 import { guestJourneyReviewExpectation } from './guestJourneyCopy.ts';
 import { resolvePropertyMedianFirstResponseHours } from './guestResponseTime.ts';
 import { resolveDocumentRequirements } from './documentRequirements.ts';
+import { propertyAutomationEnabled } from './propertyAutomationToggles.ts';
 import { buildStayGuideCheckInDocuments } from './stayGuideCheckInDocuments.ts';
 import { resolveAppSettings } from './appSettings.ts';
 import { buildGuestFacingPlaceholderVars, loadGuestFacingContactInfo } from './guestContactInfo.ts';
@@ -39,6 +41,7 @@ import {
   buildBookingPlaceholderVars,
   buildGuestFormPlaceholderVars,
   renderPropertyTemplateSendEmail,
+  resolvePropertyTemplateSubject,
 } from './propertyTemplateEmail.ts';
 import { loadBookingEmailDisplayContext } from './emailBookingContext.ts';
 import {
@@ -650,6 +653,22 @@ async function getResendCredentials(propertyId?: string | null) {
   return { RESEND_API_KEY, EMAIL_TO, EMAIL_REPLY_TO, settings };
 }
 
+async function resolveSubjectForBooking(input: {
+  propertyId: string | null | undefined;
+  templateKey: string;
+  booking: GuestSubmission;
+  settings: Awaited<ReturnType<typeof resolveAppSettings>>;
+  branding: Awaited<ReturnType<typeof loadPropertyEmailBranding>>;
+  fallback: string;
+}): Promise<string> {
+  return resolvePropertyTemplateSubject({
+    propertyId: input.propertyId,
+    templateKey: input.templateKey,
+    vars: buildBookingPlaceholderVars(input.booking, input.settings, {}, input.branding),
+    fallback: input.fallback,
+  });
+}
+
 function pesoFormat(amount: number | null | undefined): string {
   if (amount == null) return '-';
   return `₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -740,7 +759,14 @@ export async function sendNewBookingRequestNotify(booking: GuestSubmission) {
     ),
     to: [EMAIL_REPLY_TO],
     reply_to: booking.guest_email,
-    subject: `${urgentPrefix}${unitLabel} - New Booking Request ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    subject: `${urgentPrefix}${await resolveSubjectForBooking({
+      propertyId,
+      templateKey: 'email-new-booking-request',
+      booking,
+      settings,
+      branding,
+      fallback: `${unitLabel} - New Booking Request ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    })}`,
     html,
     errorLabel: 'email',
   });
@@ -811,7 +837,14 @@ export async function sendBookingRequestReceived(booking: GuestSubmission) {
     ),
     to: [booking.guest_email],
     reply_to: EMAIL_REPLY_TO,
-    subject: `${unitLabel} - Booking Request Received ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    subject: await resolveSubjectForBooking({
+      propertyId,
+      templateKey: 'email-booking-request-received',
+      booking,
+      settings,
+      branding,
+      fallback: `${unitLabel} - Booking Request Received ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    }),
     html,
     errorLabel: 'email',
   });
@@ -906,7 +939,14 @@ export async function sendBookingAcknowledgement(booking: GuestSubmission) {
     ),
     to: [booking.guest_email],
     reply_to: EMAIL_REPLY_TO,
-    subject: `${unitLabel} - Booking Acknowledgement ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    subject: await resolveSubjectForBooking({
+      propertyId,
+      templateKey: 'email-booking-acknowledgement',
+      booking,
+      settings,
+      branding,
+      fallback: `${unitLabel} - Booking Acknowledgement ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    }),
     html,
     errorLabel: 'email',
   });
@@ -1081,7 +1121,14 @@ export async function sendReadyForCheckin(booking: GuestSubmission) {
     ),
     to: [booking.guest_email],
     reply_to: EMAIL_REPLY_TO,
-    subject: `${unitLabel} - Check-in Details ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    subject: await resolveSubjectForBooking({
+      propertyId,
+      templateKey: 'email-ready-for-checkin',
+      booking,
+      settings,
+      branding,
+      fallback: `${unitLabel} - Check-in Details ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    }),
     html,
     ...(attachments.length > 0 ? { attachments } : {}),
     errorLabel: 'email',
@@ -1117,10 +1164,16 @@ export async function sendSdRefundFormRequest(booking: GuestSubmission) {
   const sdFormUrl = guestLinkExtras.sd_form_url ?? '';
 
   const guestContact = await loadGuestFacingContactInfo(propertyId, settings);
+  const formSettings = propertyId ? await resolveGuestFormSettings(propertyId) : null;
+  const checkOutTime = formatTimeForDisplay(
+    booking.check_out_time,
+    formatTimeForDisplay(formSettings?.checkOutTime)
+  );
 
   const sdRefundSections = {
     sd_refund_checklist_section: buildSdRefundChecklistSectionHtml({
       unitLabel,
+      checkOutTime,
       brandColor: settings.brandColor,
     }),
     sd_refund_details_section: buildSdRefundDetailsSectionHtml({
@@ -1131,6 +1184,7 @@ export async function sendSdRefundFormRequest(booking: GuestSubmission) {
     /** Backward compat for saved templates still using the combined placeholder. */
     sd_refund_footer_section: buildSdRefundFooterSectionHtml({
       unitLabel,
+      checkOutTime,
       securityDepositFormatted,
       sdFormUrl,
       brandColor: settings.brandColor,
@@ -1161,7 +1215,14 @@ export async function sendSdRefundFormRequest(booking: GuestSubmission) {
     ),
     to: [booking.guest_email],
     reply_to: EMAIL_REPLY_TO,
-    subject: `${unitLabel} - Check-out & SD Refund Details ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    subject: await resolveSubjectForBooking({
+      propertyId,
+      templateKey: 'email-sd-refund-form-request',
+      booking,
+      settings,
+      branding,
+      fallback: `${unitLabel} - Check-out & SD Refund Details ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    }),
     html,
     errorLabel: 'email',
   });
@@ -1196,22 +1257,30 @@ export async function sendPropertyCustomTemplateEmail(
   const guestContact = await loadGuestFacingContactInfo(propertyId, settings);
   const guestLinkExtras = await loadGuestBookingEmailLinkExtras(booking, settings);
 
+  const placeholderVars = buildBookingPlaceholderVars(
+    booking,
+    settings,
+    {
+      ...guestLinkExtras,
+      ...buildGuestFacingPlaceholderVars(guestContact),
+      email_signature_section: buildEmailSignatureSectionHtml(settings.gafUnitOwner, unitLabel),
+    },
+    branding
+  );
   const html = await renderPropertyTemplateSendEmail({
     propertyId,
     templateKey,
     emailTitle: templateName,
-    placeholderVars: buildBookingPlaceholderVars(
-      booking,
-      settings,
-      {
-        ...guestLinkExtras,
-        ...buildGuestFacingPlaceholderVars(guestContact),
-        email_signature_section: buildEmailSignatureSectionHtml(settings.gafUnitOwner, unitLabel),
-      },
-      branding
-    ),
+    placeholderVars,
     branding,
     contentOverride: content,
+    booking,
+  });
+  const subject = await resolvePropertyTemplateSubject({
+    propertyId,
+    templateKey,
+    vars: placeholderVars,
+    fallback: `${unitLabel} - ${templateName} ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
   });
 
   const sent = await sendResendEmail({
@@ -1221,7 +1290,7 @@ export async function sendPropertyCustomTemplateEmail(
     ),
     to: [booking.guest_email],
     reply_to: EMAIL_REPLY_TO,
-    subject: `${unitLabel} - ${templateName} ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    subject,
     html,
     errorLabel: 'email',
   });
@@ -1563,36 +1632,50 @@ export async function sendBookingCancelledGuest(
       { label: 'Stay', value: `${c.displayCheckInDate} to ${c.displayCheckOutDate}` },
       ...(expired ? [] : [{ label: 'Reason', value: cancellationReasonLabel(ctx.reasonCode) }]),
       ...(ctx.policyTitle ? [{ label: 'Policy', value: ctx.policyTitle }] : []),
-      ...(ctx.refundPercent != null ? [{ label: 'Policy refund', value: `${ctx.refundPercent}% of paid` }] : []),
+      ...(ctx.refundPercent != null
+        ? [{ label: 'Policy refund', value: `${ctx.refundPercent}% of paid` }]
+        : []),
       ...(nothingPaid ? [] : [{ label: 'Refund', value: cancellationPeso(ctx.refundDuePhp) }]),
     ],
     note: ctx.reasonNote ?? null,
   });
 
+  const templateKey = expired ? 'email-request-expired-guest' : 'email-booking-cancelled-guest';
+  const placeholderVars = buildBookingPlaceholderVars(
+    booking,
+    c.settings,
+    {
+      ...c.guestLinkExtras,
+      ...buildGuestFacingPlaceholderVars(c.guestContact),
+      cancellation_intro: who,
+      cancellation_detail_section: detail,
+      email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
+    },
+    c.branding
+  );
   const html = await renderPropertyTemplateSendEmail({
     propertyId: c.propertyId,
-    templateKey: 'email-booking-cancelled-guest',
+    templateKey,
     emailTitle: expired ? 'Request expired' : 'Booking cancelled',
-    placeholderVars: buildBookingPlaceholderVars(
-      booking,
-      c.settings,
-      {
-        ...c.guestLinkExtras,
-        ...buildGuestFacingPlaceholderVars(c.guestContact),
-        cancellation_intro: who,
-        cancellation_detail_section: detail,
-        email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
-      },
-      c.branding
-    ),
+    placeholderVars,
     branding: c.branding,
+    booking,
+  });
+  const subject = await resolvePropertyTemplateSubject({
+    propertyId: c.propertyId,
+    templateKey,
+    vars: placeholderVars,
+    fallback: `${c.unitLabel} - ${expired ? 'Request expired' : 'Booking Cancelled'} ${formatEmailDateRange(c.displayCheckInDate, c.displayCheckOutDate)}`,
   });
 
   return sendResendEmail({
-    from: formatResendFromAddress(`${c.unitLabel} - ${c.branding.organizationName}`, c.branding.fromEmail),
+    from: formatResendFromAddress(
+      `${c.unitLabel} - ${c.branding.organizationName}`,
+      c.branding.fromEmail
+    ),
     to: [booking.guest_email],
     reply_to: c.EMAIL_REPLY_TO,
-    subject: `${c.unitLabel} - ${expired ? 'Request expired' : 'Booking Cancelled'} ${formatEmailDateRange(c.displayCheckInDate, c.displayCheckOutDate)}`,
+    subject,
     html,
     errorLabel: 'email',
   });
@@ -1610,38 +1693,39 @@ export async function sendPendingReviewChaseHost(booking: GuestSubmission) {
   if (!to) return { skipped: true, reason: 'no_host_email' };
   if (await isEmailSuppressed(to)) return { skipped: true, reason: 'suppressed' };
 
-  const guestName =
-    String(booking.primary_guest_name ?? '').trim() ||
-    String(booking.guest_facebook_name ?? '').trim() ||
-    'A guest';
-
-  const body = `<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;">Hi,</p>
-<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;"><strong>${escapeHtml(guestName)}</strong> asked for <strong>{{tower_and_unit_number}}</strong> from {{check_in_date}} to {{check_out_date}}, and the request is still waiting for a decision.</p>
-<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;">If it stays unanswered, it expires in ${PENDING_REVIEW_CHASE_LEAD_DAYS} days: the dates are released and the guest is told. Nothing has been charged, so there is nothing to refund. Accepting or declining it now keeps both the dates and the guest.</p>`;
-
+  const placeholderVars = buildBookingPlaceholderVars(
+    booking,
+    c.settings,
+    {
+      ...c.guestLinkExtras,
+      ...buildGuestFacingPlaceholderVars(c.guestContact),
+      email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
+    },
+    c.branding
+  );
   const html = await renderPropertyTemplateSendEmail({
     propertyId: c.propertyId,
-    templateKey: 'email-booking-acknowledgement',
+    templateKey: 'email-request-expiring-host',
     emailTitle: 'A booking request is about to expire',
-    contentOverride: body,
-    placeholderVars: buildBookingPlaceholderVars(
-      booking,
-      c.settings,
-      {
-        ...c.guestLinkExtras,
-        ...buildGuestFacingPlaceholderVars(c.guestContact),
-        email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
-      },
-      c.branding
-    ),
+    placeholderVars,
     branding: c.branding,
+    booking,
+  });
+  const subject = await resolvePropertyTemplateSubject({
+    propertyId: c.propertyId,
+    templateKey: 'email-request-expiring-host',
+    vars: placeholderVars,
+    fallback: `${c.unitLabel} - Request expires in ${PENDING_REVIEW_CHASE_LEAD_DAYS} days ${formatEmailDateRange(c.displayCheckInDate, c.displayCheckOutDate)}`,
   });
 
   return sendResendEmail({
-    from: formatResendFromAddress(`${c.unitLabel} - ${c.branding.organizationName}`, c.branding.fromEmail),
+    from: formatResendFromAddress(
+      `${c.unitLabel} - ${c.branding.organizationName}`,
+      c.branding.fromEmail
+    ),
     to: [to],
     reply_to: c.EMAIL_REPLY_TO,
-    subject: `${c.unitLabel} - Request expires in ${PENDING_REVIEW_CHASE_LEAD_DAYS} days ${formatEmailDateRange(c.displayCheckInDate, c.displayCheckOutDate)}`,
+    subject,
     html,
     errorLabel: 'email',
   });
@@ -1675,29 +1759,49 @@ export async function sendBookingCancelledHost(
     note: ctx.reasonNote ?? null,
   });
 
+  const hostTitle = ctx.requestOnly ? 'Cancellation requested' : 'Cancellation';
+  const hostIntro = ctx.requestOnly
+    ? `${guestName} asked to cancel. Approve or decline it from the booking.`
+    : ctx.initiator === 'guest'
+      ? `${guestName} cancelled their booking.`
+      : 'This booking was cancelled.';
+
+  const placeholderVars = buildBookingPlaceholderVars(
+    booking,
+    c.settings,
+    {
+      ...c.guestLinkExtras,
+      ...buildGuestFacingPlaceholderVars(c.guestContact),
+      cancellation_detail_section: detail,
+      cancellation_host_title: hostTitle,
+      cancellation_host_intro: hostIntro,
+      email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
+    },
+    c.branding
+  );
   const html = await renderPropertyTemplateSendEmail({
     propertyId: c.propertyId,
     templateKey: 'email-booking-cancelled-host',
     emailTitle: ctx.requestOnly ? 'Cancellation requested' : 'Booking cancelled',
-    placeholderVars: buildBookingPlaceholderVars(
-      booking,
-      c.settings,
-      {
-        ...c.guestLinkExtras,
-        ...buildGuestFacingPlaceholderVars(c.guestContact),
-        cancellation_detail_section: detail,
-        email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
-      },
-      c.branding
-    ),
+    placeholderVars,
     branding: c.branding,
+    booking,
+  });
+  const subject = await resolvePropertyTemplateSubject({
+    propertyId: c.propertyId,
+    templateKey: 'email-booking-cancelled-host',
+    vars: placeholderVars,
+    fallback: `${c.unitLabel} - ${hostTitle} ${formatEmailDateRange(c.displayCheckInDate, c.displayCheckOutDate)}`,
   });
 
   return sendResendEmail({
-    from: formatResendFromAddress(`${c.unitLabel} - ${c.branding.organizationName}`, c.branding.fromEmail),
+    from: formatResendFromAddress(
+      `${c.unitLabel} - ${c.branding.organizationName}`,
+      c.branding.fromEmail
+    ),
     to: [to],
     reply_to: c.EMAIL_REPLY_TO,
-    subject: `${c.unitLabel} - ${ctx.requestOnly ? 'Cancellation requested' : 'Cancellation'} ${formatEmailDateRange(c.displayCheckInDate, c.displayCheckOutDate)}`,
+    subject,
     html,
     errorLabel: 'email',
   });
@@ -1737,30 +1841,49 @@ export async function sendCancellationRequestGuest(
     note: input.hostMessage ?? null,
   });
 
+  const requestMessage =
+    input.state === 'received'
+      ? 'We received your request to cancel. We will review it and let you know.'
+      : input.state === 'approved'
+        ? 'Your cancellation is approved. Any refund due is shown below.'
+        : 'We could not approve your cancellation request, so your booking stays active. Our note is below.';
+
+  const placeholderVars = buildBookingPlaceholderVars(
+    booking,
+    c.settings,
+    {
+      ...c.guestLinkExtras,
+      ...buildGuestFacingPlaceholderVars(c.guestContact),
+      cancellation_request_title: title,
+      cancellation_request_message: requestMessage,
+      cancellation_detail_section: detail,
+      email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
+    },
+    c.branding
+  );
   const html = await renderPropertyTemplateSendEmail({
     propertyId: c.propertyId,
     templateKey: 'email-cancellation-request-guest',
     emailTitle: title,
-    placeholderVars: buildBookingPlaceholderVars(
-      booking,
-      c.settings,
-      {
-        ...c.guestLinkExtras,
-        ...buildGuestFacingPlaceholderVars(c.guestContact),
-        cancellation_request_title: title,
-        cancellation_detail_section: detail,
-        email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
-      },
-      c.branding
-    ),
+    placeholderVars,
     branding: c.branding,
+    booking,
+  });
+  const subject = await resolvePropertyTemplateSubject({
+    propertyId: c.propertyId,
+    templateKey: 'email-cancellation-request-guest',
+    vars: placeholderVars,
+    fallback: `${c.unitLabel} - ${title}`,
   });
 
   return sendResendEmail({
-    from: formatResendFromAddress(`${c.unitLabel} - ${c.branding.organizationName}`, c.branding.fromEmail),
+    from: formatResendFromAddress(
+      `${c.unitLabel} - ${c.branding.organizationName}`,
+      c.branding.fromEmail
+    ),
     to: [booking.guest_email],
     reply_to: c.EMAIL_REPLY_TO,
-    subject: `${c.unitLabel} - ${title}`,
+    subject,
     html,
     errorLabel: 'email',
   });
@@ -1794,7 +1917,10 @@ export async function sendRefundSentGuest(
         ...c.guestLinkExtras,
         ...buildGuestFacingPlaceholderVars(c.guestContact),
         cancellation_detail_section: detail,
-        email_signature_section: buildEmailSignatureSectionHtml(c.settings.gafUnitOwner, c.unitLabel),
+        email_signature_section: buildEmailSignatureSectionHtml(
+          c.settings.gafUnitOwner,
+          c.unitLabel
+        ),
       },
       c.branding
     ),
@@ -1802,10 +1928,82 @@ export async function sendRefundSentGuest(
   });
 
   return sendResendEmail({
-    from: formatResendFromAddress(`${c.unitLabel} - ${c.branding.organizationName}`, c.branding.fromEmail),
+    from: formatResendFromAddress(
+      `${c.unitLabel} - ${c.branding.organizationName}`,
+      c.branding.fromEmail
+    ),
     to: [booking.guest_email],
     reply_to: c.EMAIL_REPLY_TO,
-    subject: `${c.unitLabel} - Refund sent`,
+    subject: await resolvePropertyTemplateSubject({
+      propertyId: c.propertyId,
+      templateKey: 'email-refund-sent-guest',
+      vars: buildBookingPlaceholderVars(booking, c.settings),
+      fallback: `${c.unitLabel} - Refund sent`,
+    }),
+    html,
+    errorLabel: 'email',
+  });
+}
+
+/**
+ * Building admin: ask them to cancel a GAF for a booking that no longer exists.
+ *
+ * Only sends when a GAF PDF was generated, so a property without the GAF requirement never
+ * sees it. The host can switch it off in Settings -> Email automations.
+ */
+export async function sendBuildingAdminGafCancellation(booking: GuestSubmission) {
+  if (!String(booking.gaf_request_pdf_url ?? '').trim()) {
+    return { skipped: true, reason: 'no_gaf' };
+  }
+
+  const propertyId = resolveEmailPropertyId(booking);
+  if (!(await propertyAutomationEnabled(propertyId, 'emailBuildingAdminCancellation'))) {
+    return { skipped: true, reason: 'toggle_off' };
+  }
+
+  const { EMAIL_TO, EMAIL_REPLY_TO, settings } = await getResendCredentials(propertyId);
+  const to = String(EMAIL_TO ?? '').trim();
+  if (!to) return { skipped: true, reason: 'no_building_admin_email' };
+  if (await isEmailSuppressed(to)) return { skipped: true, reason: 'suppressed' };
+
+  const { branding, unitLabel, displayCheckInDate, displayCheckOutDate } =
+    await loadBookingEmailDisplayContext(propertyId, booking);
+  const guestContact = await loadGuestFacingContactInfo(propertyId, settings);
+  const guestLinkExtras = await loadGuestBookingEmailLinkExtras(booking, settings);
+
+  const placeholderVars = buildBookingPlaceholderVars(
+    booking,
+    settings,
+    {
+      ...guestLinkExtras,
+      ...buildGuestFacingPlaceholderVars(guestContact),
+      email_signature_section: buildEmailSignatureSectionHtml(settings.gafUnitOwner, unitLabel),
+    },
+    branding
+  );
+  const html = await renderPropertyTemplateSendEmail({
+    propertyId,
+    templateKey: 'email-building-admin-cancellation',
+    emailTitle: 'GAF cancellation',
+    placeholderVars,
+    branding,
+    booking,
+  });
+  const subject = await resolvePropertyTemplateSubject({
+    propertyId,
+    templateKey: 'email-building-admin-cancellation',
+    vars: placeholderVars,
+    fallback: `${unitLabel} - GAF cancellation ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+  });
+
+  return sendResendEmail({
+    from: formatResendFromAddress(
+      `${unitLabel} - ${branding.organizationName}`,
+      branding.fromEmail
+    ),
+    to: [to],
+    reply_to: EMAIL_REPLY_TO,
+    subject,
     html,
     errorLabel: 'email',
   });

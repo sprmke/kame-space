@@ -97,6 +97,7 @@
     "db:migrate": "./scripts/dev/run-with-ui-dev-env.sh ./scripts/dev/bunx --bun supabase@latest migration up --local --include-all",
     "seed:mock-listings": "node scripts/dev/generate-mock-listings-seed.mjs",
     "seed:local": "bash scripts/dev/seed-local.sh apply",
+    "backfill:templates": "bun scripts/backfill-property-template-defaults.ts",
     "seed:refresh": "bash scripts/dev/seed-local.sh refresh",
     "seed:verify": "bash scripts/dev/seed-local.sh verify",
     "seed:attach-admin": "bash scripts/dev/attach-local-admin.sh",

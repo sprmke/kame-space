@@ -16,6 +16,7 @@ import {
   isCustomTemplateKey,
   isGuestTemplatePhase,
   MAX_CUSTOM_TEMPLATES,
+  normalizeTemplateContentForCompare,
   MAX_TEMPLATE_FOLDERS,
   propertyTemplateFolderExists,
   renamePropertyTemplateFolder,
@@ -25,9 +26,11 @@ import {
   validateCustomTemplateName,
   validateTemplateContent,
   validateTemplateFolderName,
+  validateTemplateSubject,
   type GuestTemplatePhase,
 } from '../_shared/propertyTemplates.ts';
 import { jsonError, jsonSuccess, readJsonBody } from '../_shared/httpResponse.ts';
+import { validatePropertyTemplateTokens } from '../_shared/propertyTemplateCatalog.ts';
 import { catchPlanFeatureError, requirePropertyFeature } from '../_shared/planEntitlements.ts';
 import { resolveScopedPropertyAccess } from '../_shared/propertyScope.ts';
 import type { TeamPermissionId } from '../_shared/propertyTeamPermissions.ts';
@@ -92,8 +95,14 @@ async function requireTemplateContentOtp(input: {
   body: Record<string, unknown>;
   organizationId: string;
   propertyId: string;
+  /**
+   * Page Editor autosave is the only ungated write. Allow it for standard guide content only
+   * (and only when the patch does not also change subject or guest visibility), so the body
+   * flag cannot be used to skip re-auth for the newer fields.
+   */
+  allowPageEditorAutosave?: boolean;
 }): Promise<Response | null> {
-  if (input.body.publicPagesAutosaveGate === true) return null;
+  if (input.allowPageEditorAutosave && input.body.publicPagesAutosaveGate === true) return null;
   const token =
     typeof input.body.settingsVerificationToken === 'string'
       ? input.body.settingsVerificationToken
@@ -327,6 +336,8 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
       templateKey,
       category: builtin.category,
       content: builtin.defaultContent,
+      subject: null,
+      ...(builtin.requiresEdit ? { guestVisible: false } : {}),
       ...(builtin.category === 'standard' ? { sectionImageUrl: null } : {}),
     });
     await emitTemplateActivity(req, user, access, 'settings.template_saved', templateKey, {
@@ -362,7 +373,10 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
 
     const categoryRaw = typeof body.category === 'string' ? body.category.trim() : 'custom';
     const category =
-      categoryRaw === 'standard' || categoryRaw === 'email' || categoryRaw === 'custom'
+      categoryRaw === 'standard' ||
+      categoryRaw === 'email' ||
+      categoryRaw === 'message' ||
+      categoryRaw === 'custom'
         ? categoryRaw
         : 'custom';
 
@@ -373,6 +387,21 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
         return jsonError(req, 'Folder not found', 404);
       }
     }
+
+    const createSubject =
+      body.subject === null || typeof body.subject === 'string'
+        ? (body.subject as string | null)
+        : undefined;
+    const createSubjectErr = validateTemplateSubject(createSubject);
+    if (createSubjectErr) return jsonError(req, createSubjectErr, 400);
+    const tokenCheck = validatePropertyTemplateTokens({
+      templateKey: 'custom-create',
+      category,
+      group: category === 'standard' ? 'stay-guide' : null,
+      content,
+      subject: createSubject,
+    });
+    if (tokenCheck.errors.length > 0) return jsonError(req, tokenCheck.errors[0]!, 400);
 
     const otpGate = await requireTemplateContentOtp({
       req,
@@ -389,6 +418,7 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
       category,
       name: name.trim(),
       content,
+      ...(createSubject === undefined ? {} : { subject: createSubject }),
       folderId,
     });
     await emitTemplateActivity(req, user, access, 'settings.template_saved', templateKey, {
@@ -396,9 +426,10 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
       operation: 'create',
       name: name.trim(),
       ...(folderId ? { folder_id: folderId } : {}),
+      ...(createSubject ? { subject_changed: true } : {}),
     });
     const data = await serializePropertyTemplatesForAdmin(property.id);
-    return jsonSuccess(req, data);
+    return jsonSuccess(req, { ...data, warnings: tokenCheck.warnings });
   }
 
   const templateKey = typeof body.templateKey === 'string' ? body.templateKey.trim() : '';
@@ -407,9 +438,12 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
     body.sectionImageUrl === null || typeof body.sectionImageUrl === 'string'
       ? (body.sectionImageUrl as string | null)
       : undefined;
+  const subject =
+    body.subject === null || typeof body.subject === 'string'
+      ? (body.subject as string | null)
+      : undefined;
 
-  // Guest visibility applies to custom templates only (plan D8). Undefined means "leave it
-  // as it is"; a built-in is always false.
+  // Guide sections and custom templates can show to guests; email and message rows cannot.
   const guestVisible = body.guestVisible === undefined ? undefined : body.guestVisible === true;
   let guestPhase: GuestTemplatePhase | undefined;
   if (body.guestPhase !== undefined && body.guestPhase !== null) {
@@ -428,6 +462,8 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
 
   const contentErr = validateTemplateContent(content);
   if (contentErr) return jsonError(req, contentErr, 400);
+  const subjectErr = validateTemplateSubject(subject);
+  if (subjectErr) return jsonError(req, subjectErr, 400);
 
   if (isCustomTemplateKey(templateKey)) {
     const access = await resolveScopedPropertyAccess(req, 'templates.custom:edit');
@@ -451,9 +487,19 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
     const existingCategory =
       existingRow?.category === 'standard' ||
       existingRow?.category === 'email' ||
+      existingRow?.category === 'message' ||
       existingRow?.category === 'custom'
         ? existingRow.category
         : 'custom';
+
+    const tokenCheck = validatePropertyTemplateTokens({
+      templateKey,
+      category: existingCategory,
+      group: existingCategory === 'standard' ? 'stay-guide' : null,
+      content,
+      subject,
+    });
+    if (tokenCheck.errors.length > 0) return jsonError(req, tokenCheck.errors[0]!, 400);
 
     const otpGate = await requireTemplateContentOtp({
       req,
@@ -469,6 +515,7 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
       category: existingCategory,
       name: name || undefined,
       content,
+      subject,
       folderId: existingCategory === 'custom' ? (existingRow?.folder_id ?? null) : null,
       guestVisible,
       // A visible template with no stage shows at every stage.
@@ -479,9 +526,10 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
       operation: 'edit',
       ...(guestVisible === undefined ? {} : { guest_visible: guestVisible }),
       ...(guestPhase === undefined ? {} : { guest_phase: guestPhase }),
+      ...(subject === undefined ? {} : { subject_changed: true }),
     });
     const data = await serializePropertyTemplatesForAdmin(property.id);
-    return jsonSuccess(req, data);
+    return jsonSuccess(req, { ...data, warnings: tokenCheck.warnings });
   }
 
   if (isBuiltinPropertyTemplateKey(templateKey)) {
@@ -501,11 +549,34 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
         throw err;
       }
     }
+    if (builtin.requiresEdit && guestVisible === true) {
+      const edited =
+        normalizeTemplateContentForCompare(content, templateKey) !==
+        normalizeTemplateContentForCompare(builtin.defaultContent, templateKey);
+      if (!edited) {
+        return jsonError(req, 'Edit this section before showing it to guests', 400);
+      }
+    }
+
+    const tokenCheck = validatePropertyTemplateTokens({
+      templateKey,
+      category: builtin.category,
+      group: builtin.group,
+      content,
+      subject,
+    });
+    if (tokenCheck.errors.length > 0) return jsonError(req, tokenCheck.errors[0]!, 400);
+
     const otpGate = await requireTemplateContentOtp({
       req,
       body,
       organizationId: org.id,
       propertyId: property.id,
+      allowPageEditorAutosave:
+        builtin.category === 'standard' &&
+        subject === undefined &&
+        guestVisible === undefined &&
+        guestPhase === undefined,
     });
     if (otpGate) return otpGate;
     await upsertPropertyTemplateRow({
@@ -513,6 +584,9 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
       templateKey,
       category: builtin.category,
       content,
+      ...(subject === undefined ? {} : { subject }),
+      ...(guestVisible === undefined ? {} : { guestVisible }),
+      ...(guestPhase === undefined ? {} : { guestPhase }),
       ...(builtin.category === 'standard' && sectionImageUrl !== undefined
         ? { sectionImageUrl }
         : {}),
@@ -520,9 +594,12 @@ serveAuthenticated('property-templates-settings', async (req, user) => {
     await emitTemplateActivity(req, user, access, 'settings.template_saved', templateKey, {
       category: builtin.category,
       operation: 'edit',
+      ...(guestVisible === undefined ? {} : { guest_visible: guestVisible }),
+      ...(guestPhase === undefined ? {} : { guest_phase: guestPhase }),
+      ...(subject === undefined ? {} : { subject_changed: true }),
     });
     const data = await serializePropertyTemplatesForAdmin(property.id);
-    return jsonSuccess(req, data);
+    return jsonSuccess(req, { ...data, warnings: tokenCheck.warnings });
   }
 
   return jsonError(req, 'Unknown template key', 400);

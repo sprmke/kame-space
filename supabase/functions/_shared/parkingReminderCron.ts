@@ -12,12 +12,15 @@ import { manilaTodayYmd } from './calendarAvailabilityManila.ts';
 import { isParkingReminderDue } from './parkingReminderEligibility.ts';
 import { verifyCronSecret } from './cronSecretGate.ts';
 import { createServiceClient } from './orgAuth.ts';
-import { resolveGuestParkingCtaAbsoluteUrl } from './ownerDefaultParking.ts';
 import { isParkingLinkableStatus } from './parkingPropertyLink.ts';
-import { renderPropertyTemplateSendEmail } from './propertyTemplateEmail.ts';
+import {
+  buildBookingPlaceholderVars,
+  renderPropertyTemplateSendEmail,
+  resolvePropertyTemplateSubject,
+} from './propertyTemplateEmail.ts';
+import { propertyAutomationEnabled } from './propertyAutomationToggles.ts';
 import { resolveAppSettings } from './appSettings.ts';
 import { formatResendFromAddress, loadPropertyEmailBranding } from './propertyEmailBranding.ts';
-import { escapeHtml } from './renderEmailHtml.ts';
 import { sendResendEmail } from './sendResendEmail.ts';
 
 export function verifyParkingReminderCronSecret(req: Request): boolean {
@@ -77,36 +80,41 @@ async function loadUnlinkedCandidates(): Promise<ReminderCandidateRow[]> {
 }
 
 async function sendReminderEmail(row: ReminderCandidateRow): Promise<void> {
+  if (!(await propertyAutomationEnabled(row.property_id, 'emailParkingReminder'))) return;
+
   const settings = await resolveAppSettings(row.property_id);
   const branding = await loadPropertyEmailBranding(row.property_id);
-  const guestName = String(row.primary_guest_name ?? row.guest_facebook_name ?? 'Guest').trim();
   const guestEmail = String(row.guest_email ?? '').trim();
   if (!guestEmail) throw new Error('Booking has no guest email');
 
-  const parkingUrl = await resolveGuestParkingCtaAbsoluteUrl({
-    propertyBookingId: row.id,
-    publicGuestAppOrigin: settings.publicGuestAppOrigin,
-  });
+  const { data: bookingRow } = await createServiceClient()
+    .from('guest_submissions')
+    .select('*')
+    .eq('id', row.id)
+    .maybeSingle();
+  if (!bookingRow) throw new Error('Booking not found');
 
+  const placeholderVars = buildBookingPlaceholderVars(bookingRow as never, settings, {}, branding);
   const html = await renderPropertyTemplateSendEmail({
     propertyId: row.property_id,
-    templateKey: 'email-booking-acknowledgement',
+    templateKey: 'email-parking-reminder',
     emailTitle: 'Parking reminder',
-    contentOverride: REMINDER_BODY_TEMPLATE,
     branding,
-    placeholderVars: {
-      guest_name: escapeHtml(guestName),
-      unit_label: escapeHtml(branding.unitLabel),
-      check_in_date: escapeHtml(row.check_in_date),
-      parking_url: parkingUrl,
-    },
+    placeholderVars,
+    booking: bookingRow as never,
+  });
+  const subject = await resolvePropertyTemplateSubject({
+    propertyId: row.property_id,
+    templateKey: 'email-parking-reminder',
+    vars: placeholderVars,
+    fallback: `${branding.organizationName} - Parking reminder for your upcoming stay`,
   });
 
   await sendResendEmail({
     from: formatResendFromAddress(branding.organizationName, branding.fromEmail),
     to: [guestEmail],
     reply_to: settings.emailReplyTo,
-    subject: `${branding.organizationName} - Parking reminder for your upcoming stay`,
+    subject,
     html,
     errorLabel: 'email',
   });

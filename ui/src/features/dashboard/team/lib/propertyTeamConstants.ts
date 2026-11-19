@@ -375,8 +375,8 @@ export const TEAM_PERMISSIONS: TeamPermission[] = [
   },
   {
     id: 'templates.standard:edit',
-    name: 'Edit standard templates',
-    description: 'House rules / check-in/out / parking reminders',
+    name: 'Stay guide and messages',
+    description: 'Guide sections and guest messages',
     category: 'Templates',
     icon: FileText,
   },
