@@ -1,7 +1,7 @@
 ---
-stage: in-progress
+stage: for-testing
 title: 'Host-set parking pricing — hosts set the nightly rate, platform adds a guest service fee'
-status: in-progress
+status: for-testing
 tags: [planning, parking, pricing, payments, super-admin]
 updated: 2026-11-19
 ---
