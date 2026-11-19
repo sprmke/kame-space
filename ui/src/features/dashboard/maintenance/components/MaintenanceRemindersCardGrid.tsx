@@ -163,14 +163,19 @@ function MaintenanceReminderCard({
         </div>
       </div>
 
-      {/* sm+: prior stacked card */}
-      <div className="hidden h-full flex-col sm:flex">
-        <div className="flex min-h-0 flex-1 flex-col px-4 pt-4">
-          <p className="text-muted-foreground text-[11px] font-medium tabular-nums">
-            {formatIsoDate(item.scheduled_on)}
-          </p>
+      {/* sm+: fixed slots so date / title / meta / notes align across the grid */}
+      <div className="hidden h-full min-h-[11.5rem] flex-col sm:flex">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 px-4 pb-3 pt-4">
+          <div className="flex min-h-[1.25rem] shrink-0 items-center justify-between gap-2">
+            <p className="text-muted-foreground min-w-0 truncate text-[11px] font-medium leading-none tabular-nums">
+              {formatIsoDate(item.scheduled_on)}
+            </p>
+            {showStatus && item.telegram_reminder_enabled ? (
+              <MaintenanceStatusBadge isComplete={Boolean(item.completed_at)} />
+            ) : null}
+          </div>
 
-          <div className="mt-2 min-w-0">
+          <div className="min-h-[1.25rem] min-w-0 shrink-0">
             {isRecurring && onOpenSeries ? (
               <button
                 type="button"
@@ -180,36 +185,37 @@ function MaintenanceReminderCard({
                   onOpenSeries();
                 }}
               >
-                <p className="text-foreground truncate text-sm font-bold underline-offset-2 hover:underline">
+                <p className="text-foreground truncate text-sm font-bold leading-tight underline-offset-2 hover:underline">
                   {item.label}
                 </p>
               </button>
             ) : (
-              <p className="text-foreground truncate text-sm font-bold">{item.label}</p>
+              <p className="text-foreground truncate text-sm font-bold leading-tight">{item.label}</p>
             )}
+          </div>
 
+          <div className="flex min-h-[1.25rem] min-w-0 shrink-0 items-center gap-2 overflow-hidden">
             {recurrenceLabel ? (
-              <span className="text-muted-foreground mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide">
+              <span className="text-muted-foreground inline-flex max-w-[45%] shrink-0 items-center gap-1 truncate text-[10px] font-medium uppercase tracking-wide">
                 <Repeat className="size-3 shrink-0" aria-hidden />
                 {recurrenceLabel}
               </span>
             ) : null}
+            {item.category ? (
+              <p className="text-data-secondary min-w-0 flex-1 truncate text-xs leading-none">
+                {item.category}
+              </p>
+            ) : null}
           </div>
 
-          {item.category ? (
-            <p className="text-data-secondary mt-1 truncate">{item.category}</p>
-          ) : null}
-
-          {showStatus && item.telegram_reminder_enabled ? (
-            <div className="mt-2">
-              <MaintenanceStatusBadge isComplete={Boolean(item.completed_at)} />
-            </div>
-          ) : null}
-
-          {notes ? <p className="text-data-secondary mt-2 line-clamp-2">{notes}</p> : null}
+          <div className="mt-auto min-h-[2.5rem]">
+            {notes ? (
+              <p className="text-data-secondary line-clamp-2 text-xs leading-snug">{notes}</p>
+            ) : null}
+          </div>
         </div>
 
-        <div className="border-separator bg-muted/20 dark:bg-muted/30 mt-auto flex justify-end border-t">
+        <div className="border-separator bg-muted/20 dark:bg-muted/30 flex shrink-0 justify-end border-t">
           {isRecurring && onOpenSeries ? (
             <CardIconAction
               label="View recurring series"

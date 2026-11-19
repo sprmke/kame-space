@@ -12,13 +12,16 @@ import type {
 
 export type FinanceLedgerEntry = {
   id: string;
-  source: 'stay' | 'transaction';
+  /** `parking_payout` = read-only marketplace payment row (parking finance only). */
+  source: 'stay' | 'transaction' | 'parking_payout';
   date: string;
   description: string;
   subDescription?: string;
   category: string;
   type: 'income' | 'expense';
   status: FinanceLedgerStatus;
+  /** Overrides the default Completed / Pending / Canceled badge label. */
+  statusLabel?: string;
   netAmount: number;
   stay?: FinanceBookingLedgerRow;
   transaction?: FinanceLineItem;
@@ -97,6 +100,7 @@ function entryMatchesSearch(entry: FinanceLedgerEntry, needle: string): boolean 
     entry.description,
     entry.subDescription,
     entry.category,
+    entry.statusLabel,
     entry.id,
     entry.stay?.guest_email,
     entry.stay?.guest_facebook_name,

@@ -7,7 +7,7 @@ updated: 2026-08-23
 
 # Parking Guest Inbox
 
-Route: `/org/:orgSlug/parking/:parkingSlug/inbox`
+Route: `/org/:orgSlug/parking/:parkingSlug/messages` (legacy `/inbox` redirects here)
 
 > **Status:** Documented
 

@@ -62,7 +62,7 @@ Telegram module settings (and optional credentials) are bulk-copyable via org **
 The page **Telegram** tab is a read-only copy of what each Telegram group received: one row per send with the module, relative time, the message text (clamped, **Show more** expands), and a **Failed** badge with Telegram's reason when a send was rejected.
 
 - **15-day window.** Reads only cover the last 15 days; a daily job prunes older rows, so storage stays bounded.
-- **Paginated.** 20 per page with **Newer** / **Older**; only the page on screen is loaded.
+- **Paginated.** Scroll loads older pages (20 at a time); only fetched pages stay in memory.
 - **Scoped to this asset.** Unlike the org-wide Activity feed, history shows the sends for this property.
 - **No Telegram calls.** The list reads our own table, so browsing history costs no bot API quota.
 - **Delivery off.** When the master switch is off, a notice explains that messages are not being sent.
@@ -91,7 +91,8 @@ In the header **Manage** sheet only (**Activity** tab). The page Activity feed d
 - The bell **unread badge** uses the same collapse rule as the list: one unread per inbox conversation (plus each unread booking event). Legacy per-message `inbox_new_message` rows for one thread count as **1**, not N. `notifications-list` computes `unreadCount` from the recent capped window with `type` + `conversation_id` selected so collapse can run.
 - When available, a **stay date range** appears under the name (e.g. `Aug 14 - 15, 2026` for inquiry or booked dates).
 - The realtime **toast** uses the same guest name as the title with an inline **channel pill** (**Chat**, **Facebook**, or **Instagram**) for inbox rows, a **channel glyph** for inbox or a **category glyph** for booking events, the message preview in the body, and the stay range beneath it. Its **View** action uses the brand primary colour, and repeat messages in one conversation replace the open toast instead of stacking.
-- The feed is capped in height inside the **Activity** card and pages on scroll (20 per request) — not a full-page dump. Phone rows are dense (13px title, single-line body preview, tighter padding); card chrome uses shared `text-card-title` / `text-card-description` tokens so Telegram headings and in-app descriptions stay the same size.
+- The **Activity** title and **Mark all as read** stay pinned at the top of the card; only the feed scrolls. Pages load 20 at a time on scroll (not a full dump). Unread rows use a primary left rail, soft tint, stronger title weight, and a status dot. Separators use the full `border` token so rows stay distinct. Phone rows stay dense (13px title, single-line body preview, tighter padding); card chrome uses shared `text-card-title` / `text-card-description` tokens so Telegram headings and in-app descriptions stay the same size.
+- **Telegram** history matches that pattern: delivery switch pinned, list scrolls and loads older pages (20) on scroll. History only fetches while the Telegram tab is open (Activity does not load it).
 
 ### Telegram notifications
 
@@ -105,7 +106,7 @@ If the shared token field is empty but a module already has a saved token (e.g. 
 
 ### Per-module flow (all six bots)
 
-**Telegram notifications** group heading includes **Setup Guide** (BotFather + chat ID setup). **Shared bot token** card: **Save and test** validates via Telegram `getMe`, then saves; when saved, the card shows **Saved** instead of the button. When you enable a module, the bot token field pre-fills from this value (still editable per module).
+**Telegram notifications** group heading includes **Setup Guide** (BotFather + chat ID setup). The guide opens as a nested modal with the same chrome and size as **Manage notifications** (higher stacking so Manage does not show through). **Shared bot token** card: **Save and test** validates via Telegram `getMe`, then saves; when saved, the card shows **Saved** instead of the button. When you enable a module, the bot token field pre-fills from this value (still editable per module).
 
 1. **Enable notifications** — master toggle (**off by default**; opt-in per module). When off, only this toggle is shown.
 
@@ -117,7 +118,7 @@ If the shared token field is empty but a module already has a saved token (e.g. 
 
 3. **Manage cards** — after connect, shown inside a bordered group (Chat: **New message**; Marketing/Staff: **Notification controls**; Operations: **Workflow alerts**; Finance/Maintenance: **Reminder message**), same card pattern as **Telegram connection**:
 
-- **Chat:** New message template for every inbound guest message (placeholders include `{{chat_source}}`, `{{chat_content}}`, attachment helpers, and `{{conversation_link}}` → `/org/:orgSlug/property/:propertySlug/inbox?conversationId=…&platform=web|facebook|instagram`)
+- **Chat:** New message template for every inbound guest message (placeholders include `{{chat_source}}`, `{{chat_content}}`, attachment helpers, and `{{conversation_link}}` → `/org/:orgSlug/property/:propertySlug/messages?conversationId=…&platform=web|facebook|instagram`)
 - **Marketing:** Schedule alerts (daily times + calendar rules) · Message templates
 - **Staff:** Schedule alerts · Message templates
 - **Operations:** Message templates (6 scenarios)
@@ -151,13 +152,13 @@ Legacy URLs redirect here — see [previous guide version](./notifications.md) r
 
 **Tabs:** **Activity** (unread count badge) then **Telegram**. Switching tabs replaces the URL `?view=` value and prompts first if a Telegram card has unsaved edits (Save / Discard / Keep editing).
 
-**Activity tab:** the **Activity** card with the bounded feed (plus **Offline changes** when needed). No push toggle on the tab. Delivery settings live only in the header **Manage** sheet. An empty feed uses the same status-panel pattern as Manage (title, short line, three bullets), not a bare "No notifications yet."
+**Activity tab:** the **Activity** card with a pinned header and scroll-paged feed (plus **Offline changes** when needed). No push toggle on the tab. Delivery settings live only in the header **Manage** sheet. An empty feed is centered (icon, title, one short line).
 
-**Telegram tab:** one card with the **Telegram delivery** master switch and, below it, either the paused panel (delivery off), the empty status panel (delivery on, nothing sent yet), or the sent-message history.
+**Telegram tab:** the **Telegram** card with a pinned header matching Activity (no delivery switch on the tab; that lives in **Manage**). Below the header: paused empty (delivery off), centered empty (delivery on, nothing sent yet), or the sent-message history.
 
 **Unavailable push (Manage → Activity).** When this device cannot subscribe (browser support missing, or a build without the VAPID key) the switch is **disabled** and the reason is shown in red. While a fresh service worker is still starting the row says **"Preparing notifications on this device…"** in muted text; if it does not come up, that becomes **"Notifications are not available on this device right now."** with no reload instruction. The row never invites a click that would fail, and it re-checks by itself once the worker becomes active. Unavailable copy also notes that in-app alerts still arrive in Activity.
 
-**Manage → Telegram:** **Telegram delivery** master switch, then **Telegram notifications** with **Get Help**, the shared bot token card, and one card per module. Cards stack on every screen width; the old desktop-only sidebar is gone.
+**Manage → Telegram:** one bordered card matching Activity: **Telegram delivery** master switch on top, then (when on) **Telegram notifications** with Setup Guide, the shared bot token card, and one card per module inside the same surface. When delivery is off, the paused panel sits under the switch. Standard modal chrome (header divider, body padding, footer **Done**).
 
 ---
 
@@ -178,7 +179,7 @@ Notifications is the one place to review in-app alerts and set up Telegram for t
 - Q: Where did the phone-push settings go?
   A: Tap **Manage** in the Notifications header. The sheet holds **Push notifications**, **Push preferences** and the way into Telegram settings.
 - Q: Why does Activity or Telegram look empty?
-  A: Activity stays empty until a booking or message event lands. On Telegram, if delivery is off you see a paused panel; if delivery is on but nothing was sent yet, you see a short empty panel that points you to Manage.
+  A: Activity stays empty until a booking or message event lands. On Telegram, if delivery is off you see a paused state that points to Manage; if delivery is on but nothing was sent yet, you see a short centered empty state.
 - Q: What do the four cards at the top mean?
   A: **Unread** and **Messages** count what is waiting for you. **Telegram on** and **Connected** show how many Telegram modules are switched on and how many have a bot token plus chat ID. Tap a card to jump to that tab.
 - Q: Does the activity list only show this property?

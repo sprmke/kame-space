@@ -21,7 +21,7 @@ export const PARKING_PAYOUTS_HOW_IT_WORKS: HowItWorksCopy = {
     {
       icon: Users,
       title: 'Guests pay the platform rate',
-      body: 'A fixed nightly price set by Kame Space. It also covers platform costs, so it can be higher than your rate.',
+      body: 'A fixed nightly price set by Kame Space. It can be higher than your rate.',
     },
     {
       icon: Banknote,
@@ -56,7 +56,13 @@ export const PRICING_HELP_COPY = {
   parkingCustomDates: {
     hint: 'Nights with a price you set for a specific date. They override the base and weekend rates.',
   },
+  parkingBlockedNights: {
+    hint: 'Nights you closed so guests cannot book them. Blocked nights stay out of marketplace matching.',
+  },
   parkingPayout: {
     hint: 'What guests pay, the platform fee, and the amount you receive per night.',
+  },
+  parkingDirectLink: {
+    hint: 'Share this link with guests you find yourself. Those bookings use a lower platform fee.',
   },
 } satisfies HelpCopyModule;

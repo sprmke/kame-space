@@ -122,8 +122,63 @@ export function DevicePushPausedPanel({ className }: { className?: string }) {
   );
 }
 
-/** Paused copy for Telegram delivery. */
-export function TelegramPausedPanel({ className }: { className?: string }) {
+type FeedEmptyProps = {
+  icon: LucideIcon;
+  title: string;
+  description?: string;
+  className?: string;
+};
+
+/**
+ * Centered empty / paused state for Activity and Telegram hub feeds.
+ * Keep copy to a title + optional one line (no checklist essays).
+ */
+export function NotificationsFeedEmpty({
+  icon: Icon,
+  title,
+  description,
+  className,
+}: FeedEmptyProps) {
+  return (
+    <div
+      className={cn(
+        'flex min-h-[min(50dvh,22rem)] flex-col items-center justify-center gap-3 px-6 py-12 text-center',
+        className
+      )}
+    >
+      <span className="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-full">
+        <Icon className="size-5" aria-hidden />
+      </span>
+      <div className="max-w-sm space-y-1">
+        <p className="text-foreground text-sm font-semibold">{title}</p>
+        {description ? (
+          <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/** Paused copy for Telegram delivery (Manage sheet + hub when delivery is off). */
+export function TelegramPausedPanel({
+  className,
+  variant = 'manage',
+}: {
+  className?: string;
+  /** Hub feed uses the centered empty; Manage keeps the checklist card. */
+  variant?: 'manage' | 'feed';
+}) {
+  if (variant === 'feed') {
+    return (
+      <NotificationsFeedEmpty
+        icon={Send}
+        title="Telegram is paused"
+        description="Turn delivery back on in Manage."
+        className={className}
+      />
+    );
+  }
+
   return (
     <ChannelPausedPanel
       icon={Send}
@@ -139,18 +194,13 @@ export function TelegramPausedPanel({ className }: { className?: string }) {
   );
 }
 
-/** Empty Activity feed: status first, then where related settings live. */
+/** Empty Activity feed on the hub tab. */
 export function ActivityEmptyPanel({ className }: { className?: string }) {
   return (
-    <ChannelPausedPanel
+    <NotificationsFeedEmpty
       icon={Bell}
       title="No activity yet"
-      description="Booking and message events show up here when they happen."
-      items={[
-        'Unread rows stay marked until you open them',
-        'Phone push is set in Manage',
-        'Telegram sends stay on the Telegram tab',
-      ]}
+      description="Booking and message events show up here."
       className={className}
     />
   );
@@ -165,15 +215,10 @@ export function TelegramHistoryEmptyPanel({
   className?: string;
 }) {
   return (
-    <ChannelPausedPanel
+    <NotificationsFeedEmpty
       icon={Send}
       title="Nothing sent yet"
       description={`Sent alerts from the last ${retentionDays} days show up here.`}
-      items={[
-        'Connect a module in Manage',
-        'Delivery must stay on',
-        'Failed sends show a Failed badge',
-      ]}
       className={className}
     />
   );

@@ -35,24 +35,24 @@ export function ParkingToolbar({
     : PARKING_SORT_OPTIONS[0]!.value;
 
   return (
-    <div className="border-border bg-background/95 sticky top-[var(--public-nav-h)] z-20 border-b backdrop-blur-sm max-lg:hidden">
+    <div className="border-border bg-background shrink-0 border-b max-lg:hidden">
       <div className="flex items-center justify-between gap-2 px-4 py-2 sm:gap-4 sm:px-6 sm:py-3">
-        <div className="flex shrink-0 items-center gap-4">
+        <div className="flex shrink-0 items-center gap-3 sm:gap-4">
           <Button
             variant="outline"
             size="sm"
             onClick={onToggleFilters}
             className={cn(
-              'hidden h-9 gap-2 lg:flex',
-              filtersOpen && 'border-primary bg-primary/10 text-primary hover:bg-primary/15'
+              'hidden h-9 gap-2 lg:inline-flex',
+              filtersOpen && 'border-primary bg-primary/10 text-brand-ink hover:bg-primary/15'
             )}
           >
             <SlidersHorizontal className="h-4 w-4" aria-hidden />
             {filtersOpen ? 'Hide Filters' : 'Show Filters'}
           </Button>
 
-          <span className="text-muted-foreground text-[13px] sm:text-sm">
-            <span className="text-foreground font-semibold">{totalResults}</span>{' '}
+          <span className="text-muted-foreground whitespace-nowrap text-[13px] sm:text-sm">
+            <span className="text-foreground font-semibold tabular-nums">{totalResults}</span>{' '}
             {totalResults === 1 ? 'slot' : 'slots'}
           </span>
         </div>

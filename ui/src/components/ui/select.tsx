@@ -14,21 +14,27 @@ const SelectValue = SelectPrimitive.Value;
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      'border-border/50 bg-card placeholder:text-muted-foreground/70 hover:border-primary/25 field-focus flex h-11 w-full items-center justify-between rounded-lg border px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 max-lg:h-10 max-lg:px-3',
-      className
-    )}
-    {...props}
-  >
-    {children}
-    <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50" />
-    </SelectPrimitive.Icon>
-  </SelectPrimitive.Trigger>
-));
+>(({ className, children, ...props }, ref) => {
+  const ariaInvalid = props['aria-invalid'];
+  const isInvalid = ariaInvalid === true || ariaInvalid === 'true';
+
+  return (
+    <SelectPrimitive.Trigger
+      ref={ref}
+      className={cn(
+        'border-border/50 bg-card placeholder:text-muted-foreground/70 hover:border-primary/25 field-focus flex h-11 w-full items-center justify-between rounded-lg border px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 max-lg:h-10 max-lg:px-3',
+        isInvalid && 'border-destructive bg-destructive/5 field-focus-error',
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <SelectPrimitive.Icon asChild>
+        <ChevronDown className="h-4 w-4 opacity-50" />
+      </SelectPrimitive.Icon>
+    </SelectPrimitive.Trigger>
+  );
+});
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 
 const SelectContent = React.forwardRef<

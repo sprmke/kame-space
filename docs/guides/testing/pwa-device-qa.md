@@ -98,7 +98,7 @@ Mark each ✅ / ❌ / N/A and note the build id (Help & Support → App card).
 ### 5. Updates
 
 - [ ] Deploy a new build with the app open on a clean page: it updates on its own
-      within one foreground cycle (or shows the "Update ready" prompt).
+      within one foreground cycle (or shows the "New version available" prompt).
 - [ ] With a dirty form open, the app does **not** reload; the prompt appears and
       "Later" hides it for 4 hours.
 - [ ] Two tabs open: one applies, the other reloads only when clean.

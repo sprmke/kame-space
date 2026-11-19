@@ -133,6 +133,28 @@ chrome change, then review the diff.
 
 ---
 
+## 6. Nested modal scrims
+
+When a modal opens on top of another, the **new** scrim must sit _above_ the
+parent modal surface (not underneath it). Otherwise the parent content stays
+fully readable and the nested confirm feels unfocused.
+
+`DialogContent`, `SheetContent` (including `ResponsiveModal` / `BottomSheet`),
+and `AlertDialogContent` register on a shared stack in
+[`ui/src/components/ui/modalLayer.ts`](../../ui/src/components/ui/modalLayer.ts):
+
+| Stack depth | Overlay z | Content z |
+| ----------- | --------- | --------- |
+| 0           | 100       | 101       |
+| 1           | 110       | 111       |
+| 2           | 120       | 121       |
+
+Explicit `z-[N]` class floors still win when higher (command palette, lightboxes,
+workflow confirms). Do not hand-roll nested `overlayClassName="z-[102]"` for
+ordinary modal-in-modal cases; the stack handles it.
+
+---
+
 ## Related docs
 
 - [`.cursor/rules/mobile-responsive.mdc`](../../.cursor/rules/mobile-responsive.mdc) — §9 modals and dropdowns

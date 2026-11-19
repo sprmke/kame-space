@@ -4,6 +4,7 @@ import { ArrowUpRight, Building2, PencilLine } from 'lucide-react';
 
 import {
   AdminDataTable,
+  AdminTableActionsTh,
   AdminTableHeadRow,
   AdminTableTh,
   adminTableBodyText,
@@ -54,9 +55,7 @@ export function OrgPropertyReviewsTable({ rows, orgSlug, onShowReviews, onShowTo
         <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Reviews</AdminTableTh>
         <AdminTableTh className="hidden px-3 sm:px-4 lg:table-cell">Responded</AdminTableTh>
         <AdminTableTh className="px-3 sm:px-4">To write</AdminTableTh>
-        <AdminTableTh className="pl-2 pr-3 sm:pl-3 sm:pr-4">
-          <span className="sr-only">Actions</span>
-        </AdminTableTh>
+        <AdminTableActionsTh />
       </AdminTableHeadRow>
       <tbody>
         {rows.map((row, index) => (

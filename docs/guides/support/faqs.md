@@ -1461,7 +1461,7 @@ Archive when you want to stop taking new bookings but keep the history. Delete i
 - audience: host
 - source: docs/guides/routes/org/parking/pricing.md
 
-Guests always see and pay the platform guest rate. Your nightly rate is what your payout is calculated from. We take the platform fee from your rate, and the rest is yours. The guest rate is also the price cap, so a slot priced above it is not matched.
+Guests always see and pay the platform guest rate. Your nightly rate is what your payout is calculated from. We take the platform fee from your rate, and the rest is yours. You can save a rate above the guest rate, but marketplace search will not match that listing until you lower it.
 
 ### How much does Kame Space take from a parking booking?
 

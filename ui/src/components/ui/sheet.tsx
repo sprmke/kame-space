@@ -4,6 +4,7 @@ import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-react';
 
+import { useModalLayer } from '@/components/ui/useModalLayer';
 import { cn } from '@/lib/utils';
 
 import { sheetHeightForDrag, shouldDismissSheetDrag } from './sheetDrag';
@@ -19,12 +20,18 @@ const SheetPortal = SheetPrimitive.Portal;
 const SheetOverlay = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Overlay>
->(({ className, ...props }, ref) => (
+>(({ className, style, ...props }, ref) => (
   <SheetPrimitive.Overlay
     className={cn(
-      'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 modal-scrim fixed inset-0 z-50 data-[state=closed]:pointer-events-none',
+      'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 modal-scrim fixed inset-0 data-[state=closed]:pointer-events-none',
+      style?.zIndex == null &&
+        !/\bz-\[/.test(typeof className === 'string' ? className : '') &&
+        !/(?:^|\s)z-50(?:\s|$)/.test(typeof className === 'string' ? className : '')
+        ? 'z-50'
+        : null,
       className
     )}
+    style={style}
     {...props}
     ref={ref}
   />
@@ -32,7 +39,7 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 
 const sheetVariants = cva(
-  'bg-card data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 gap-4 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500',
+  'bg-card data-[state=open]:animate-in data-[state=closed]:animate-out fixed gap-4 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500',
   {
     variants: {
       side: {
@@ -211,6 +218,10 @@ const SheetContent = React.forwardRef<
   ) => {
     const isDraggableBottomSheet = side === 'bottom' && !disableDrag;
     const drag = useSheetHeightDrag(isDraggableBottomSheet);
+    const { overlayZ, contentZ } = useModalLayer({
+      overlayClassName,
+      contentClassName: typeof className === 'string' ? className : undefined,
+    });
     const setContentRef = React.useCallback(
       (node: HTMLDivElement | null) => {
         drag.contentRef.current = node;
@@ -228,12 +239,12 @@ const SheetContent = React.forwardRef<
 
     return (
       <SheetPortal>
-        <SheetOverlay className={overlayClassName} />
+        <SheetOverlay className={overlayClassName} style={{ zIndex: overlayZ }} />
         <SheetPrimitive.Content
           ref={setContentRef}
           className={cn(sheetVariants({ side }), className)}
           {...props}
-          style={{ ...style, ...drag.dragStyle }}
+          style={{ ...style, ...drag.dragStyle, zIndex: contentZ }}
         >
           {!hideClose && side !== 'bottom' ? (
             <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none">

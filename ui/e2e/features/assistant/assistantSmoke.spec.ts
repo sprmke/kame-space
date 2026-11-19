@@ -5,6 +5,8 @@ import {
   openPropertyDashboard,
 } from '../team/shared/propertyTeamRbacHarness';
 
+import { openAssistantFromQuickAccess, quickAccessFab } from './shared/assistantQuickAccess';
+
 test.describe('@smoke assistant shell', () => {
   test('assistant enabled loads bookings shell', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -14,10 +16,8 @@ test.describe('@smoke assistant shell', () => {
       if (msg.type() === 'error') console.log('CONSOLE', msg.text());
     });
     await openPropertyDashboard(page);
-    await expect(page.getByRole('button', { name: 'Open AI assistant' })).toBeVisible({
-      timeout: 20_000,
-    });
-    await page.getByRole('button', { name: 'Open AI assistant' }).click();
+    await expect(quickAccessFab(page)).toBeVisible({ timeout: 20_000 });
+    await openAssistantFromQuickAccess(page);
     await expect(page.getByRole('heading', { name: 'AI Assistant' })).toBeVisible({
       timeout: 20_000,
     });

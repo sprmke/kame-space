@@ -445,7 +445,13 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-w-0 space-y-1">
+    <div
+      className={
+        error
+          ? 'min-w-0 space-y-1 [&_input]:border-destructive [&_input]:bg-destructive/5 [&_textarea]:border-destructive [&_textarea]:bg-destructive/5'
+          : 'min-w-0 space-y-1'
+      }
+    >
       <label className="text-muted-foreground block text-xs">
         {label}
         {required ? (

@@ -5,6 +5,10 @@ import { Link } from 'react-router-dom';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 
 import type { AuthPageConfig } from '@/features/guest/auth/config/auth-page-config';
+import {
+  AUTH_CAPTCHA_UNAVAILABLE_MESSAGE,
+  isAuthCaptchaTokenMissing,
+} from '@/features/guest/auth/lib/authCaptchaToken';
 import { classifyAuthFailure } from '@/features/guest/auth/lib/authFailureReason';
 
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
@@ -81,6 +85,12 @@ export function AuthPageContent({ config, actions }: AuthPageContentProps) {
     setError(null);
     setIsSending(true);
     const captchaToken = await captcha.ensureToken();
+    if (isAuthCaptchaTokenMissing(captchaToken)) {
+      captcha.reset();
+      setIsSending(false);
+      setError(AUTH_CAPTCHA_UNAVAILABLE_MESSAGE);
+      return;
+    }
     const otpError = await actions.sendEmailOtp(trimmed, captchaToken);
     captcha.reset();
     setIsSending(false);
@@ -116,6 +126,12 @@ export function AuthPageContent({ config, actions }: AuthPageContentProps) {
     setError(null);
     setIsSending(true);
     const captchaToken = await captcha.ensureToken();
+    if (isAuthCaptchaTokenMissing(captchaToken)) {
+      captcha.reset();
+      setIsSending(false);
+      setError(AUTH_CAPTCHA_UNAVAILABLE_MESSAGE);
+      return;
+    }
     const otpError = await actions.sendEmailOtp(email.trim(), captchaToken);
     captcha.reset();
     setIsSending(false);

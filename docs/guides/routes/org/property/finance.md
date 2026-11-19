@@ -36,7 +36,7 @@ Single-page finance view — no tabs. A **date range** picker in the page header
 
 **Charts:** a cash-flow area chart plus an income/expense/all category-breakdown donut — the same chart components used on the property dashboard.
 
-**Unified ledger:** stay bookings and manual operating transactions appear together in one list, switchable between **table**, **card**, and **calendar** views (`?view=table|card|calendar`; mobile always defaults to card). Each row shows date, description, category, status (`completed` | `pending` | `canceled`), and net amount. On phone, card rows match Bookings density: type icon · title + amount on the first line; status badge · date · category on the second; edit / delete / series behind a single **⋯** sheet (not inline icon buttons). `sm+` keeps the taller multi-line card with footer icon actions.
+**Unified ledger:** stay bookings and manual operating transactions appear together in one list, switchable between **table**, **card**, and **calendar** views (`?view=table|card|calendar`; mobile always defaults to card). Each row shows date, description, category, status (`completed` | `pending` | `canceled`), net amount, and a labeled **Actions** column. Desktop table actions stay visible (not hover-only) so stay vs transaction controls are obvious. On phone, card rows match Bookings density: type icon · title + amount on the first line; status badge · date · category on the second; edit / delete / series behind a single **⋯** sheet (not inline icon buttons). `sm+` cards use fixed slots (title/date → category/recurrence → amount/actions) so category lines share one baseline across the grid.
 
 The parking-scoped finance page (`/org/:orgSlug/parking/:parkingSlug/finance`) reuses this same page and components but hides the stays ledger and stays export section (parking has no `guest_submissions` rows) — see `scope.parkingId` gating throughout.
 
@@ -86,13 +86,14 @@ Charts (`FinanceTransactionsChart`) plot the same underlying data as cash-flow (
 
 ### Fields (per row)
 
-| Field       | Source                                                                           |
-| ----------- | -------------------------------------------------------------------------------- |
-| Date        | Stay check-in date, or transaction `occurred_on`                                 |
-| Description | Guest/property name, or transaction `label`                                      |
-| Category    | Stay category (fixed), or transaction `category`                                 |
-| Status      | Booking status mapped to `completed`/`pending`/`canceled`, or transaction status |
-| Amount      | Net amount (income positive, expense negative)                                   |
+| Field       | Source                                                                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Date        | Stay check-in date, or transaction `occurred_on`                                                                                            |
+| Description | Guest/property name, or transaction `label`                                                                                                 |
+| Category    | Stay category (fixed), or transaction `category`                                                                                            |
+| Status      | Booking status mapped to `completed`/`pending`/`canceled`, or transaction status                                                            |
+| Amount      | Net amount (income positive, expense negative)                                                                                              |
+| Actions     | Always-visible controls (`AdminTableActionsTh`): stay → open details; transaction → edit / delete / series when applicable. Not hover-only. |
 
 ### Toolbar (`FinanceLedgerToolbar`)
 
@@ -130,7 +131,7 @@ Charts (`FinanceTransactionsChart`) plot the same underlying data as cash-flow (
 
 1. **Add Transaction** (page header) or **Edit** on a ledger row opens a stepper modal (`OperatingLineItemForm` via `FinanceTransactionModals`).
 2. Steps: **Details** (kind, label, amount, category, date, notes) → **Repeat** (create + recurring edit only) → **Reminders** (Telegram) → **Preview**. One-shot edits skip Repeat.
-3. Footer is **Back** (left, after step 1) · **Cancel** + **Next** (right), then **Add transaction** or **Save** on Preview. Activity history for an existing entry appears on the Preview step.
+3. Footer is **Back** (left, after step 1) · **Cancel** + **Next** (right), then **Add transaction** or **Save** on Preview. **Next / Save** stay disabled until the active step is valid; invalid fields use a red border plus the error line (blur, then re-check on change). Activity history for an existing entry appears on the Preview step.
 4. Submit → **`finance-line-items`** POST (create) or PATCH (update).
 5. Recurring items generate/extend a series (`recurrence_series_id`); editing/deleting prompts an **edit scope**: this occurrence only, this and future, or the whole series (`RecurringSeriesModal`, `RecurringDeleteDialog`).
 6. Delete → **`finance-line-items`** DELETE, same edit-scope prompt for recurring items.
@@ -195,7 +196,7 @@ Legacy stored `finance:edit` expands to all transaction + export leaves. Parking
 | Concern             | Path                                                                                                                                                                                                                                                          |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Page                | `ui/src/features/dashboard/finance/pages/FinancePage.tsx`                                                                                                                                                                                                     |
-| Loading skeleton    | `FinancePageBodySkeleton` (`FinancePageSkeleton.tsx`) — KPIs, cash-flow / breakdown, toolbar, then table (desktop) / cards (phone) or calendar from `?view=`                                                                                                  |
+| Loading skeleton    | `FinancePageBodySkeleton` (`FinancePageSkeleton.tsx`) — KPIs, cash-flow / breakdown, toolbar, then ledger table via `FinanceStaysTableSkeleton` (`AdminDataTable` column parity) / cards (phone) or calendar from `?view=`                                    |
 | Route               | `ui/src/features/dashboard/finance/routes/index.tsx`                                                                                                                                                                                                          |
 | Summary cards       | `ui/src/features/dashboard/finance/components/FinanceSummaryCards.tsx`                                                                                                                                                                                        |
 | Ledger toolbar      | `ui/src/features/dashboard/finance/components/FinanceLedgerToolbar.tsx`                                                                                                                                                                                       |

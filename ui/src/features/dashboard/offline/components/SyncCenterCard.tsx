@@ -4,6 +4,7 @@ import { useOfflineSyncStore } from '@/features/dashboard/offline/store/offlineS
 
 import { Button } from '@/components/ui/button';
 import { discardOutboxItem, drainOutbox, retryOutboxItem } from '@/lib/pwa/syncEngine';
+import { cn } from '@/lib/utils';
 
 function timeAgo(ts: number): string {
   const s = Math.round((Date.now() - ts) / 1000);
@@ -16,7 +17,7 @@ function timeAgo(ts: number): string {
 /**
  * Pending + failed offline changes. Hidden entirely when the outbox is empty.
  */
-export function SyncCenterCard() {
+export function SyncCenterCard({ className }: { className?: string } = {}) {
   const items = useOfflineSyncStore((s) => s.items);
   const syncing = useOfflineSyncStore((s) => s.syncing);
   const lastSyncedAt = useOfflineSyncStore((s) => s.lastSyncedAt);
@@ -27,7 +28,7 @@ export function SyncCenterCard() {
   const failed = items.filter((i) => i.status === 'failed');
 
   return (
-    <div className="border-border bg-card rounded-xl border p-4">
+    <div className={cn('border-border bg-card rounded-xl border p-4', className)}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <UploadCloud className="text-primary h-4 w-4" />

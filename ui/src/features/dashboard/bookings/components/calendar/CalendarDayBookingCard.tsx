@@ -1,5 +1,6 @@
 import { ArrowUpRight, Car, Dog, PartyPopper } from 'lucide-react';
 
+import { BookingListQuickActions } from '@/features/dashboard/bookings/components/BookingListQuickActions';
 import { BookingResourceLabel } from '@/features/dashboard/bookings/components/BookingResourceLabel';
 import { occupiedNightsFromStay } from '@/features/dashboard/bookings/components/calendar/calendarStayAmounts';
 import { GuestAvatar } from '@/features/dashboard/bookings/components/GuestAvatar';
@@ -28,8 +29,11 @@ type CalendarDayBookingCardSource = {
   check_out_date: string;
   number_of_nights: number | null;
   property_name?: string | null;
+  property_id?: string | null;
+  property_slug?: string | null;
   parking_name?: string | null;
   parking_id?: string | null;
+  parking_slug?: string | null;
   booking_kind?: 'property' | 'parking' | null;
 };
 
@@ -57,12 +61,19 @@ export function CalendarDayBookingCard({ row, amount, showProperty = false, onOp
   );
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
       aria-label={`Open details for ${name}`}
       className={cn(
-        'group flex w-full items-start gap-3 rounded-lg p-2.5 text-left transition-colors',
+        'group flex w-full cursor-pointer items-start gap-3 rounded-lg p-2.5 text-left transition-colors',
         'border-border/50 border',
         'hover:bg-muted/50 focus-visible:ring-sidebar-primary/40 outline-none focus-visible:ring-2'
       )}
@@ -76,10 +87,13 @@ export function CalendarDayBookingCard({ row, amount, showProperty = false, onOp
               <BookingResourceLabel row={row} className="mt-0.5 font-medium" />
             ) : null}
           </div>
-          <ArrowUpRight
-            className="text-muted-foreground/50 group-hover:text-muted-foreground size-3.5 shrink-0 transition-colors"
-            aria-hidden
-          />
+          <div className="flex shrink-0 items-center gap-0.5">
+            <BookingListQuickActions row={row} className="-mr-0.5" />
+            <ArrowUpRight
+              className="text-muted-foreground/50 group-hover:text-muted-foreground size-3.5 transition-colors"
+              aria-hidden
+            />
+          </div>
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
           <StatusBadge status={row.status} />
@@ -124,7 +138,7 @@ export function CalendarDayBookingCard({ row, amount, showProperty = false, onOp
           )}
         </p>
       </div>
-    </button>
+    </div>
   );
 }
 

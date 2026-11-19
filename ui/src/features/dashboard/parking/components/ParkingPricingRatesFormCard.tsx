@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { AlertTriangle, Loader2, Save } from 'lucide-react';
 
 import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
@@ -24,9 +25,6 @@ type Props = {
   /** Live super-admin-configured guest rates — what riders actually pay. */
   guestRateWeekday?: number;
   guestRateWeekend?: number;
-  /** Live super-admin-configured values — fall back to the stub defaults until loaded. */
-  guestRateCapWeekday?: number;
-  guestRateCapWeekend?: number;
   commissionPct?: number;
   readOnly?: boolean;
   hasChanges?: boolean;
@@ -51,7 +49,6 @@ function MoneyInput({
   label,
   value,
   guestRate,
-  cap,
   commissionPct,
   readOnly,
   onChange,
@@ -60,17 +57,27 @@ function MoneyInput({
   label: string;
   value: number;
   guestRate: number;
-  cap: number;
   commissionPct: number;
   readOnly?: boolean;
   onChange: (value: number) => void;
 }) {
-  const overCap = value > cap;
-  const commissionAmount = Math.round(value * commissionPct);
-  const netPayout = value - commissionAmount;
+  const [draft, setDraft] = useState<string | null>(null);
+  const isEmptyDraft = draft !== null && draft.trim() === '';
+  const display = draft ?? String(value);
+  /** Empty field counts as 0 for fee / net / soft-warn math without forcing `0` into the input. */
+  const effectiveRate = isEmptyDraft ? 0 : value;
+  const aboveGuestRate = effectiveRate > guestRate;
+  const commissionAmount = Math.round(effectiveRate * commissionPct);
+  const netPayout = effectiveRate - commissionAmount;
+
+  useEffect(() => {
+    // Keep an in-progress empty clear; only drop draft when parent value changes otherwise.
+    if (isEmptyDraft && value === 0) return;
+    setDraft(null);
+  }, [value, isEmptyDraft]);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       <Label htmlFor={id} className="text-muted-foreground text-sm">
         {label}
       </Label>
@@ -82,24 +89,52 @@ function MoneyInput({
           id={id}
           type="number"
           min={0}
-          step={1}
-          value={value}
+          step={50}
+          inputMode="numeric"
+          value={display}
           disabled={readOnly}
-          aria-invalid={overCap}
-          onChange={(e) => onChange(Number(e.target.value))}
+          aria-invalid={aboveGuestRate || undefined}
+          onChange={(e) => {
+            const raw = e.target.value;
+            setDraft(raw);
+            if (raw.trim() === '') {
+              onChange(0);
+              return;
+            }
+            const n = Number(raw);
+            if (!Number.isFinite(n)) return;
+            onChange(Math.max(0, n));
+          }}
+          onBlur={() => {
+            if (draft === null) return;
+            const trimmed = draft.trim();
+            if (trimmed === '') {
+              onChange(0);
+              setDraft(null);
+              return;
+            }
+            const n = Number(trimmed);
+            if (!Number.isFinite(n)) {
+              setDraft(null);
+              return;
+            }
+            onChange(Math.max(0, Math.round(n)));
+            setDraft(null);
+          }}
           className={cn(
             'h-10 pl-8 text-sm tabular-nums',
-            overCap && 'border-destructive focus-visible:ring-destructive'
+            aboveGuestRate && 'border-amber-500/80 focus-visible:ring-amber-500/40'
           )}
         />
       </div>
-      {overCap ? (
-        <p className="text-destructive flex items-start gap-1.5 text-xs">
+      {aboveGuestRate ? (
+        <p className="text-amber-700 dark:text-amber-400 flex items-start gap-1.5 text-xs">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-          Above max {formatPhp(cap)} - lower to save and offer to guests.
+          Above guest rate {formatPhp(guestRate)}. Marketplace will not match this listing.
         </p>
-      ) : (
-        <dl className="space-y-1 text-xs">
+      ) : null}
+      <div className="space-y-2">
+        <dl className="space-y-1.5 text-sm">
           <div className="flex items-baseline justify-between gap-3">
             <dt className="text-muted-foreground">Guests pay</dt>
             <dd className="text-foreground tabular-nums">{formatPhp(guestRate)} / night</dd>
@@ -108,14 +143,15 @@ function MoneyInput({
             <dt className="text-muted-foreground">Platform fee ({formatPct(commissionPct)})</dt>
             <dd className="text-muted-foreground tabular-nums">-{formatPhp(commissionAmount)}</dd>
           </div>
-          <div className="border-border/60 flex items-baseline justify-between gap-3 border-t pt-1">
-            <dt className="text-foreground font-medium">You receive</dt>
-            <dd className="text-foreground font-semibold tabular-nums">
-              {formatPhp(netPayout)} / night
-            </dd>
-          </div>
         </dl>
-      )}
+        <div className="bg-muted/50 border-border/50 flex items-baseline justify-between gap-3 rounded-lg border px-3 py-2.5">
+          <p className="text-foreground text-sm font-semibold">You receive</p>
+          <p className="text-foreground text-base font-bold tabular-nums sm:text-lg">
+            {formatPhp(netPayout)}
+            <span className="text-muted-foreground ms-1 text-xs font-medium">/ night</span>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -125,8 +161,6 @@ export function ParkingPricingRatesFormCard({
   weekendRate,
   guestRateWeekday = STUB_GUEST_PARKING_RATE_WEEKDAY,
   guestRateWeekend = STUB_GUEST_PARKING_RATE_WEEKEND,
-  guestRateCapWeekday = STUB_GUEST_PARKING_RATE_WEEKDAY,
-  guestRateCapWeekend = STUB_GUEST_PARKING_RATE_WEEKEND,
   commissionPct = STUB_COMMISSION_PCT,
   readOnly = false,
   hasChanges = false,
@@ -137,7 +171,6 @@ export function ParkingPricingRatesFormCard({
   onSaveClick,
 }: Props) {
   const compactChrome = useDashboardCompactChrome();
-  const capExceeded = weekdayRate > guestRateCapWeekday || weekendRate > guestRateCapWeekend;
 
   return (
     <section className={pricingRatesFormSurfaceClassName(compactChrome)}>
@@ -151,13 +184,12 @@ export function ParkingPricingRatesFormCard({
               variant="section"
             />
           </div>
-          <div className="mt-3 space-y-4">
+          <div className="mt-3 space-y-5">
             <MoneyInput
               id="parking-weekday-rate"
               label="Weekday / night"
               value={weekdayRate}
               guestRate={guestRateWeekday}
-              cap={guestRateCapWeekday}
               commissionPct={commissionPct}
               readOnly={readOnly}
               onChange={onWeekdayChange}
@@ -167,7 +199,6 @@ export function ParkingPricingRatesFormCard({
               label="Fri–Sun / night"
               value={weekendRate}
               guestRate={guestRateWeekend}
-              cap={guestRateCapWeekend}
               commissionPct={commissionPct}
               readOnly={readOnly}
               onChange={onWeekendChange}
@@ -181,7 +212,7 @@ export function ParkingPricingRatesFormCard({
             <Button
               type="button"
               className="min-h-[44px] w-full"
-              disabled={saving || capExceeded}
+              disabled={saving}
               onClick={onSaveClick}
             >
               {saving ? (

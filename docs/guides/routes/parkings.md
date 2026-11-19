@@ -71,7 +71,7 @@ Guests browse standalone parking slots by city or building, open a slot detail p
 
 ## List (`/parkings`)
 
-**`ParkingsListPage`** — hero search, collapsible **`ParkingFilters`** sidebar (location type, tower, price; **closed by default** on desktop — use **Show Filters** in the toolbar), **`ParkingToolbar`** sort (sticky, `lg+` only; below `lg` the shared `ListingMobileResultsBar` shows the slot count and a round filter button with an applied-filter badge, and sort lives in the filter sheet on every parking list, including `/developments/:slug/parking`), location-grouped carousels via **`ParkingsByLocation`**. Filters/sort from URL; tower options from API facets. When Tower is shown but has no options, the section shows **None**.
+**`ParkingsListPage`** — hero search, collapsible **`ParkingFilters`** sidebar (location type, tower, price; **closed by default** on desktop — use **Show Filters** in the toolbar), **`ParkingToolbar`** (same non-sticky chrome as Properties / Developments, `lg+` only; below `lg` the shared `ListingMobileResultsBar` shows the slot count and a round filter button with an applied-filter badge, and sort lives in the filter sheet on every parking list, including `/developments/:slug/parking`), location-grouped carousels via **`ParkingsByLocation`**. Filters/sort from URL; tower options from API facets. When Tower is shown but has no options, the section shows **None**.
 
 - **Mobile filters:** the **`ParkingFilters`** sheet opens as a bottom sheet (flex column, `z-[100]`/`z-[101]` so it clears the scroll-morph search bar). Header and the **Show results** / **Clear all** footer are pinned; only the option list scrolls; the footer carries a safe-area inset.
 

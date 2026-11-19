@@ -2,6 +2,8 @@ import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModul
 
 const ROUTE_SEGMENT_NAV_LABEL: Record<string, string> = {
   pricing: ADMIN_MODULE_LABEL.pricing,
+  messages: ADMIN_MODULE_LABEL.inbox,
+  /** Legacy deep links before the `/messages` rename. */
   inbox: ADMIN_MODULE_LABEL.inbox,
 };
 

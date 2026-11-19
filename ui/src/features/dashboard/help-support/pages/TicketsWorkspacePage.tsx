@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
@@ -8,6 +8,7 @@ import { HelpEmptyState } from '@/features/dashboard/help-support/components/Hel
 import { NewTicketModal } from '@/features/dashboard/help-support/components/NewTicketModal';
 import { SupportTicketStatusBadge } from '@/features/dashboard/help-support/components/SupportTicketStatusBadge';
 import { TicketThreadPanel } from '@/features/dashboard/help-support/components/TicketThreadPanel';
+import { useSupportTicketScope } from '@/features/dashboard/help-support/hooks/useSupportTicketScope';
 import { useSupportTickets } from '@/features/dashboard/help-support/hooks/useSupportTickets';
 import {
   helpSupportTicketDetailPath,
@@ -19,11 +20,18 @@ import {
 } from '@/features/dashboard/help-support/lib/helpSupportPaths';
 import type { SupportTicketCategory } from '@/features/dashboard/help-support/lib/supportTicketSchema';
 import { SUPPORT_TICKET_CATEGORY_LABELS } from '@/features/dashboard/help-support/lib/supportTicketSchema';
+import {
+  readTicketsWorkspaceLayoutHint,
+  resolveTicketsWorkspaceLoadState,
+  ticketsWorkspaceLayoutFromCount,
+  ticketsWorkspaceLayoutStorageKey,
+  writeTicketsWorkspaceLayoutHint,
+} from '@/features/dashboard/help-support/lib/ticketsWorkspaceLayout';
 import { MANAGED_PLAN_INQUIRY_SUBJECT } from '@/features/dashboard/plans/lib/planPresentation';
 
 import { bottomTabBarOffsetClassName } from '@/components/mobile/BottomTabBar';
+import { TicketsWorkspaceSkeleton } from '@/components/skeletons/TicketsWorkspaceSkeleton';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +42,9 @@ function formatTicketDate(iso: string): string {
     day: 'numeric',
   });
 }
+
+const EMPTY_TICKETS_DESCRIPTION =
+  'Open a ticket for something broken, an idea, or a question. We reply here.';
 
 type TicketsWorkspacePageProps = {
   /** When set (e.g. `/account`), skip admin Help & Support base-path resolution. */
@@ -65,6 +76,19 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
       : null;
   const [backgroundTicketId, setBackgroundTicketId] = useState<string | null>(null);
 
+  const scope = useSupportTicketScope();
+  const layoutStorageKey = useMemo(
+    () =>
+      ticketsWorkspaceLayoutStorageKey([
+        scope.channel ?? 'host',
+        scope.orgSlug,
+        scope.orgId,
+        scope.propertyId,
+        scope.parkingId,
+      ]),
+    [scope.channel, scope.orgSlug, scope.orgId, scope.propertyId, scope.parkingId]
+  );
+
   const { data, isPending, isError, refetch } = useSupportTickets();
   const tickets = data?.tickets ?? [];
   const firstTicketId = tickets[0]?.id;
@@ -72,6 +96,21 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
   const isEmpty = listReady && tickets.length === 0;
   const visibleTicketId = ticketId ?? (!isMobile && isNew ? backgroundTicketId : null);
   const paneOpen = Boolean(visibleTicketId);
+
+  const loadState = resolveTicketsWorkspaceLoadState({
+    isPending,
+    ticketCount: data ? data.tickets.length : undefined,
+    hint: readTicketsWorkspaceLayoutHint(layoutStorageKey),
+  });
+  const showHeaderNew = Boolean(basePath) && !isEmpty && loadState !== 'empty';
+
+  useEffect(() => {
+    if (!listReady) return;
+    writeTicketsWorkspaceLayoutHint(
+      layoutStorageKey,
+      ticketsWorkspaceLayoutFromCount(tickets.length)
+    );
+  }, [listReady, layoutStorageKey, tickets.length]);
 
   useEffect(() => {
     if (ticketId) setBackgroundTicketId(ticketId);
@@ -166,6 +205,37 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
     </Button>
   ) : null;
 
+  const composeModal = (
+    <NewTicketModal
+      open={isNew}
+      defaultSubject={newTicketDefaults?.subject}
+      defaultCategory={newTicketDefaults?.category}
+      onOpenChange={(open) => {
+        if (open) openCompose();
+        else if (isNew) closeCompose();
+      }}
+      onSubmitted={(id) => {
+        if (basePath) {
+          navigate(helpSupportTicketDetailPath(basePath, id), { replace: true });
+        }
+      }}
+    />
+  );
+
+  if (loadState === 'empty' || loadState === 'list') {
+    return (
+      <div
+        className={cn(
+          'flex min-h-0 flex-1 flex-col overflow-hidden lg:min-h-[480px]',
+          bottomTabBarOffsetClassName()
+        )}
+      >
+        <TicketsWorkspaceSkeleton layout={loadState} className="min-h-0 flex-1" />
+        {composeModal}
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -192,7 +262,7 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
             >
               My Tickets
             </h3>
-            {basePath ? newTicketButton : null}
+            {showHeaderNew ? newTicketButton : null}
           </div>
 
           <div
@@ -203,13 +273,7 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
                 : 'overflow-y-auto'
             )}
           >
-            {isPending ? (
-              <div className="space-y-1 p-3">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-              </div>
-            ) : isError ? (
+            {isError ? (
               <HelpEmptyState
                 icon={Ticket}
                 title="Couldn't load tickets"
@@ -225,7 +289,12 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
                 }
               />
             ) : isEmpty ? (
-              <HelpEmptyState icon={Ticket} title="No tickets yet" action={newTicketCta} />
+              <HelpEmptyState
+                icon={Ticket}
+                title="No tickets yet"
+                description={EMPTY_TICKETS_DESCRIPTION}
+                action={newTicketCta}
+              />
             ) : (
               <ul aria-labelledby="my-tickets-heading">
                 {tickets.map((ticket) => {
@@ -290,20 +359,7 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
         </div>
       </div>
 
-      <NewTicketModal
-        open={isNew}
-        defaultSubject={newTicketDefaults?.subject}
-        defaultCategory={newTicketDefaults?.category}
-        onOpenChange={(open) => {
-          if (open) openCompose();
-          else if (isNew) closeCompose();
-        }}
-        onSubmitted={(id) => {
-          if (basePath) {
-            navigate(helpSupportTicketDetailPath(basePath, id), { replace: true });
-          }
-        }}
-      />
+      {composeModal}
     </div>
   );
 }

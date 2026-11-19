@@ -45,7 +45,7 @@ Shortcuts:
 | `?shortcut=` | Lands on                                                          |
 | ------------ | ----------------------------------------------------------------- |
 | `bookings`   | `/org/:org/property/:slug/bookings` (or parking equivalent)       |
-| `inbox`      | `/org/:org/property/:slug/inbox` (or parking equivalent)          |
+| `inbox`      | `/org/:org/property/:slug/messages` (or parking equivalent)       |
 | `checkins`   | the bookings list filtered to today's arrival date in Asia/Manila |
 
 A shortcut never bypasses a required setup step: onboarding, verification-rejected

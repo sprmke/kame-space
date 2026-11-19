@@ -42,7 +42,9 @@ export interface InputProps
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, variant, inputSize, error, ...props }, ref) => {
-    const computedVariant = error ? 'error' : variant;
+    const ariaInvalid = props['aria-invalid'];
+    const isInvalid = Boolean(error) || ariaInvalid === true || ariaInvalid === 'true';
+    const computedVariant = isInvalid ? 'error' : variant;
     const usesNativeDatetimeUi = type === 'time' || type === 'date' || type === 'datetime-local';
 
     return (

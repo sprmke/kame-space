@@ -5,7 +5,10 @@ import { toast } from 'sonner';
 
 import { MetaLogo, PlatformLogo } from '@/features/dashboard/inbox/components/PlatformLogo';
 import { platformLabel } from '@/features/dashboard/inbox/lib/inboxFormat';
-import { isMetaSyncConnectionError } from '@/features/dashboard/inbox/lib/metaInboxSyncErrors';
+import {
+  friendlyMetaSyncError,
+  isMetaSyncConnectionError,
+} from '@/features/dashboard/inbox/lib/metaInboxSyncErrors';
 import type { InboxConnection } from '@/features/dashboard/inbox/types/inbox';
 import { TierBadgeAnchor } from '@/features/dashboard/plans/components/TierBadge';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
@@ -49,11 +52,20 @@ function InboxChannelsTabSkeleton() {
 
 function webhookWarning(conn: InboxConnection | undefined): string | null {
   if (!conn || conn.status !== 'connected' || conn.isPreview) return null;
-  if (conn.errorMessage && isMetaSyncConnectionError(conn.errorMessage)) return null;
-  if (conn.webhookSubscribed === false) {
-    return conn.errorMessage ?? 'Live messages may not arrive.';
+  // Always map Graph / sync dumps — never paint raw Meta API text under the row.
+  if (conn.errorMessage) {
+    if (isMetaSyncConnectionError(conn.errorMessage) || conn.webhookSubscribed === false) {
+      return (
+        friendlyMetaSyncError(conn.errorMessage) ??
+        'Live messages may not arrive. Try Fix connection.'
+      );
+    }
+    return friendlyMetaSyncError(conn.errorMessage);
   }
-  return conn.errorMessage;
+  if (conn.webhookSubscribed === false) {
+    return 'Live messages may not arrive. Try Fix connection.';
+  }
+  return null;
 }
 
 type Props = {
@@ -108,12 +120,8 @@ function MetaPlatformRow({
   const webhookNote = webhookWarning(conn);
 
   let detail: string | null = null;
-  if (
-    conn?.status === 'error' &&
-    conn.errorMessage &&
-    !isMetaSyncConnectionError(conn.errorMessage)
-  ) {
-    detail = conn.errorMessage;
+  if (conn?.status === 'error' && conn.errorMessage) {
+    detail = friendlyMetaSyncError(conn.errorMessage);
   } else if (connected && conn?.displayName) {
     detail = conn.displayName;
   } else if (platform === 'instagram' && metaState === 'partial') {

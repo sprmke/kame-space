@@ -243,11 +243,6 @@ export function InboxInsertMenu({
     openUpgradeModal(feature);
   };
 
-  const insertPinnedSnippet = (body: string) => {
-    const merged = mergeSnippet ? mergeSnippet(body) : body;
-    insertText(merged);
-  };
-
   const insertSnippet = (body: string) => {
     if (!canUseQuickReplies) {
       if (!quickRepliesLoading) openUpgradeModal('quickReplies');
@@ -257,12 +252,20 @@ export function InboxInsertMenu({
     insertText(merged);
   };
 
+  const insertPinnedSnippet = (body: string) => {
+    insertSnippet(body);
+  };
+
   const selectTemplate = (template: ChatTemplateListItem) => {
     closeAndReset();
     onSelectTemplate(template);
   };
 
-  const snippetTemplates = templates.slice(0, 8);
+  const pinnedIdSet = useMemo(
+    () => new Set(pinnedSnippets.map((row) => row.id)),
+    [pinnedSnippets]
+  );
+  const snippetTemplates = templates.filter((t) => !pinnedIdSet.has(t.id)).slice(0, 8);
 
   const mapsLink = mapsUrl?.trim() ?? '';
 

@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import {
   AdminDataTable,
+  AdminTableActionsTh,
   AdminTableHeadRow,
   AdminTableRowAffordance,
   AdminTableTh,
@@ -35,9 +36,7 @@ export function SuperAdminPlatformPropertiesTable({ properties }: Props) {
         <AdminTableTh className="hidden px-3 lg:table-cell lg:px-4">Type</AdminTableTh>
         <AdminTableTh className="hidden px-3 xl:table-cell xl:px-4">Location</AdminTableTh>
         <AdminTableTh className="px-3 sm:px-4">Status</AdminTableTh>
-        <AdminTableTh className="pl-2 pr-3 sm:pl-3 sm:pr-4">
-          <span className="sr-only">Open</span>
-        </AdminTableTh>
+        <AdminTableActionsTh>Open</AdminTableActionsTh>
       </AdminTableHeadRow>
       <tbody>
         {properties.map((platformProperty, index) => {

@@ -14,7 +14,7 @@ import {
  * live Page.
  */
 
-const INBOX_URL = `/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/inbox?mock=true`;
+const INBOX_URL = `/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/messages?mock=true`;
 const ALEX = 'Alex Rivera';
 
 async function openInbox(page: import('@playwright/test').Page) {

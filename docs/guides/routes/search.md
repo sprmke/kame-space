@@ -82,6 +82,7 @@ Guests can search by place name, city, listing title, **Nearby**, or everyday wo
 ### Hero / compact search bar
 
 - Works on homepage **and** every listing page that mounts the bar (`/properties`, `/developments`, `/parkings`, `/services`, `/search`, `/…/in/:location`, development detail / nested parking).
+- Desktop expand: the home hero (`panelPlacement="above"`) dims the page with a light backdrop. Listing / category pages do **not** dim — panels sit over the page chrome; Escape and outside-click still close.
 - Zero-state (under 2 characters): on home — suggested destinations (includes **Nearby**); on category pages — **Suggested developments / properties / parkings** with **Nearby {category}** first, then recommended listings from `list-public-*`.
 - Choosing **Nearby** / **Nearby developments** (chip or typed phrase) requests geolocation, then opens `/search?where=Nearby%20developments&type=developments&focus=developments&lat=…&lng=…` (category pages scope to that family; home stays unscoped `where=Nearby`).
 - Live typeahead (≥2 characters, 250ms debounce): Locations first, then listing families — only groups with hits. On a category page, that family is listed **immediately after Locations**. Each group shows at most **3** matches; when there are 3+, a header **See all** opens `/search?where=…&type=<category>&focus=<category>` (Locations → All without `type`). Nearby phrases return a single location chip labeled **Nearby** or **Nearby {category}**.

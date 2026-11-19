@@ -83,7 +83,8 @@ export function AdminDialogShell({
       >
         <ResponsiveModalHeader
           className={cn(
-            'space-y-1 text-left',
+            /* Override DialogHeader gap-2 / SheetHeader space-y-2 so title + subtitle sit tight. */
+            'gap-1 space-y-1 text-left',
             MODAL_HEADER_CLASS,
             headerClassName
           )}
@@ -91,7 +92,9 @@ export function AdminDialogShell({
           {typeof title === 'string' ? <ResponsiveModalTitle>{title}</ResponsiveModalTitle> : title}
           {description != null ? (
             typeof description === 'string' ? (
-              <ResponsiveModalDescription>{description}</ResponsiveModalDescription>
+              <ResponsiveModalDescription className="leading-snug">
+                {description}
+              </ResponsiveModalDescription>
             ) : (
               description
             )

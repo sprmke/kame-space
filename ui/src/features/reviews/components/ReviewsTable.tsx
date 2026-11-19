@@ -14,6 +14,7 @@ import {
 
 import {
   AdminDataTable,
+  AdminTableActionsTh,
   AdminTableHeadRow,
   AdminTableTh,
   adminTableBodyText,
@@ -134,9 +135,7 @@ export function ReceivedReviewsTable({
         <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Review</AdminTableTh>
         <AdminTableTh className="hidden px-3 sm:px-4 lg:table-cell">Response</AdminTableTh>
         <AdminTableTh className="hidden px-3 sm:px-4 xl:table-cell">Stay</AdminTableTh>
-        <AdminTableTh className="pl-2 pr-3 sm:pl-3 sm:pr-4">
-          <span className="sr-only">Actions</span>
-        </AdminTableTh>
+        <AdminTableActionsTh />
       </AdminTableHeadRow>
       <tbody>
         {rows.map((review, index) => {
@@ -263,9 +262,7 @@ export function WrittenReviewsTable({
         <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Review</AdminTableTh>
         <AdminTableTh className="hidden px-3 sm:px-4 lg:table-cell">Host again</AdminTableTh>
         <AdminTableTh className="hidden px-3 sm:px-4 xl:table-cell">Submitted</AdminTableTh>
-        <AdminTableTh className="pl-2 pr-3 sm:pl-3 sm:pr-4">
-          <span className="sr-only">Actions</span>
-        </AdminTableTh>
+        <AdminTableActionsTh />
       </AdminTableHeadRow>
       <tbody>
         {rows.map((review, index) => {
@@ -358,9 +355,7 @@ export function ToWriteReviewsTable({
         ) : null}
         <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Stay</AdminTableTh>
         <AdminTableTh className="px-3 sm:px-4">Window</AdminTableTh>
-        <AdminTableTh className="pl-2 pr-3 sm:pl-3 sm:pr-4">
-          <span className="sr-only">Actions</span>
-        </AdminTableTh>
+        <AdminTableActionsTh />
       </AdminTableHeadRow>
       <tbody>
         {rows.map((row, index) => {

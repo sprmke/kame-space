@@ -6,7 +6,7 @@ export type ParkingPricingDto = ParkingPricingDefaults & {
   dateOverrides: Record<string, number>;
   bookedDateKeys: string[];
   blockedDateKeys: string[];
-  /** Live super-admin-configured guest rate cap (Phase 4) — see parkingPricingDefaults.ts. */
+  /** Live super-admin guest rates (alias of guestRate*); used for soft-warn + match exclusion. */
   guestRateCapWeekday: number;
   guestRateCapWeekend: number;
   /** Same values, named for the host-facing "guests pay" line. */

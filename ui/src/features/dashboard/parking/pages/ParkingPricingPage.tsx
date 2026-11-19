@@ -41,7 +41,6 @@ import { useParkingPermissions } from '@/features/dashboard/team/hooks/useParkin
 import { hasParkingPermission } from '@/features/dashboard/team/lib/parkingPermissions';
 
 import { HowItWorksButton } from '@/components/help/HowItWorksButton';
-import { NoticeCallout } from '@/components/help/NoticeCallout';
 import { FloatingPanel } from '@/components/mobile/FloatingPanel';
 import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
 import { PricingPageBodySkeleton } from '@/components/skeletons/PricingSkeleton';
@@ -53,16 +52,21 @@ export function ParkingPricingPage() {
   const { data: parkingAccess } = useParkingPermissions();
   const canEdit = hasParkingPermission(parkingAccess?.permissions, 'pricing:edit');
 
+  const [currentMonth, setCurrentMonth] = useState(() => new Date());
+  const { data: pricingData, isLoading, isError, error } = useParkingPricing(currentMonth);
+
+  const guestRateWeekday = pricingData?.guestRateWeekday ?? STUB_GUEST_PARKING_RATE_WEEKDAY;
+  const guestRateWeekend = pricingData?.guestRateWeekend ?? STUB_GUEST_PARKING_RATE_WEEKEND;
+  const payoutNotice = `Guests pay ${formatMoneyCompact(guestRateWeekday)} weekday, ${formatMoneyCompact(guestRateWeekend)} weekend. Your rate sets your payout. Listings priced above the platform rate are not matched.`;
+
   const titleHint = (
     <HowItWorksButton
       {...PARKING_PAYOUTS_HOW_IT_WORKS}
+      notice={payoutNotice}
       label="How payouts work"
       className="size-8 text-current opacity-80 hover:bg-transparent hover:text-current hover:opacity-100"
     />
   );
-
-  const [currentMonth, setCurrentMonth] = useState(() => new Date());
-  const { data: pricingData, isLoading, isError, error } = useParkingPricing(currentMonth);
   const saveMutation = useSaveParkingPricing();
 
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
@@ -381,9 +385,6 @@ export function ParkingPricingPage() {
     );
   }
 
-  const guestRateWeekday = pricingData?.guestRateWeekday ?? STUB_GUEST_PARKING_RATE_WEEKDAY;
-  const guestRateWeekend = pricingData?.guestRateWeekend ?? STUB_GUEST_PARKING_RATE_WEEKEND;
-
   return (
     <>
       <AdminMobilePage
@@ -392,16 +393,11 @@ export function ParkingPricingPage() {
         titleId="parking-pricing-heading"
         titleHint={titleHint}
       >
-        <NoticeCallout tone="info">
-          Guests pay the platform rate: {formatMoneyCompact(guestRateWeekday)} weekday,{' '}
-          {formatMoneyCompact(guestRateWeekend)} weekend. Your rate sets your payout. Listings
-          priced above the platform rate are not matched.
-        </NoticeCallout>
-
         <ParkingPricingStatsRow
           weekdayRate={weekdayRate}
           weekendRate={weekendRate}
           customDatesCount={customDatePrices.size}
+          blockedDatesCount={blockedDateKeys.size}
         />
 
         <div className={pricingCalendarFormGridClassName(compactChrome)}>
@@ -424,8 +420,6 @@ export function ParkingPricingPage() {
               weekendRate={weekendRate}
               guestRateWeekday={guestRateWeekday}
               guestRateWeekend={guestRateWeekend}
-              guestRateCapWeekday={pricingData?.guestRateCapWeekday}
-              guestRateCapWeekend={pricingData?.guestRateCapWeekend}
               commissionPct={pricingData?.commissionPct}
               readOnly={!canEdit}
               hasChanges={hasChanges}

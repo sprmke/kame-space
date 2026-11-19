@@ -63,7 +63,7 @@ export function applyLaunchShortcut(
   if (!base) return basePath;
   const root = `/org/${base.orgSlug}/${base.kind === 'property' ? 'property' : 'parking'}/${base.listingSlug}`;
   if (shortcut === 'bookings') return `${root}/bookings`;
-  if (shortcut === 'inbox') return `${root}/inbox`;
+  if (shortcut === 'inbox') return `${root}/messages`;
   return `${root}/bookings?${checkinsQuery(todayIso)}`;
 }
 

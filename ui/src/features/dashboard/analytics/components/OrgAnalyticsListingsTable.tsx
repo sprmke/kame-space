@@ -21,6 +21,7 @@ import {
 } from '@/features/dashboard/analytics/lib/types';
 import {
   AdminDataTable,
+  AdminTableActionsTh,
   AdminTableHeadRow,
   AdminTableRowAffordance,
   AdminTableTh,
@@ -126,9 +127,7 @@ export function OrgAnalyticsListingsTable({ rows, orgSlug, sort, onSortChange }:
           onSortChange={onSortChange}
           className={HEAD_PAD.body}
         />
-        <AdminTableTh className={cn(HEAD_PAD.action, 'w-12')}>
-          <span className="sr-only">Open</span>
-        </AdminTableTh>
+        <AdminTableActionsTh>Open</AdminTableActionsTh>
       </AdminTableHeadRow>
       <tbody>
         {rows.map((row, index) => {
@@ -150,7 +149,7 @@ export function OrgAnalyticsListingsTable({ rows, orgSlug, sort, onSortChange }:
             >
               <td className={adminTableCell.status}>
                 <p
-                  className={cn(adminTableBodyText.primary, 'max-w-[16rem] leading-snug')}
+                  className={cn(adminTableBodyText.primary, 'max-w-[16rem] truncate leading-snug')}
                   title={name}
                 >
                   {name}

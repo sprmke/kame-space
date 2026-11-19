@@ -58,7 +58,9 @@ export function FinanceLedgerCardGrid({
               setDrawerStay(entry.stay ?? null);
               return;
             }
-            onEditTransaction?.(entry);
+            if (entry.source === 'transaction') {
+              onEditTransaction?.(entry);
+            }
           };
 
           const phoneActions =
@@ -98,19 +100,28 @@ export function FinanceLedgerCardGrid({
                 ]
               : [];
 
+          const isInteractive = entry.source === 'stay' || entry.source === 'transaction';
+
           return (
             <div
               key={entry.id}
-              role="button"
-              tabIndex={0}
-              className="surface-card-interactive flex cursor-pointer flex-col px-3 py-2.5 sm:min-h-[148px] sm:p-4"
-              onClick={handleOpen}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleOpen();
-                }
-              }}
+              role={isInteractive ? 'button' : undefined}
+              tabIndex={isInteractive ? 0 : undefined}
+              className={cn(
+                'surface-card-interactive flex flex-col px-3 py-2.5 sm:min-h-[11.5rem] sm:p-0',
+                isInteractive ? 'cursor-pointer' : 'cursor-default'
+              )}
+              onClick={isInteractive ? handleOpen : undefined}
+              onKeyDown={
+                isInteractive
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleOpen();
+                      }
+                    }
+                  : undefined
+              }
             >
               {/* Phone: title + amount; status · meta; actions behind ⋯ */}
               <div className="flex items-start gap-2.5 sm:hidden">
@@ -134,12 +145,12 @@ export function FinanceLedgerCardGrid({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-foreground min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight">
+                    <p className="text-foreground min-w-0 flex-1 truncate text-sm font-semibold leading-tight">
                       {entry.description}
                     </p>
                     <span
                       className={cn(
-                        'shrink-0 text-[13px] font-semibold tabular-nums leading-none',
+                        'shrink-0 text-sm font-semibold tabular-nums leading-none',
                         isIncome
                           ? 'text-emerald-700 dark:text-emerald-300'
                           : 'text-red-600 dark:text-red-400'
@@ -149,9 +160,19 @@ export function FinanceLedgerCardGrid({
                       {formatMoney(Math.abs(entry.netAmount))}
                     </span>
                   </div>
-                  <div className="mt-1 flex min-w-0 items-center gap-1.5">
-                    <FinanceLedgerStatusBadge status={entry.status} className="shrink-0" />
-                    <p className="text-muted-foreground min-w-0 flex-1 truncate text-[11px] leading-tight">
+                  {entry.subDescription ? (
+                    <p className="text-muted-foreground mt-0.5 truncate text-sm leading-snug">
+                      {entry.subDescription}
+                    </p>
+                  ) : null}
+                  <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
+                    <FinanceLedgerStatusBadge
+                      status={entry.status}
+                      label={entry.statusLabel}
+                      size="comfortable"
+                      className="shrink-0"
+                    />
+                    <p className="text-muted-foreground min-w-0 flex-1 truncate text-sm leading-snug">
                       <span className="tabular-nums">{format(parseISO(entry.date), 'MMM d')}</span>
                       <span className="text-muted-foreground/40 mx-1" aria-hidden>
                         ·
@@ -177,13 +198,13 @@ export function FinanceLedgerCardGrid({
                 </div>
               </div>
 
-              {/* sm+: taller card layout */}
-              <div className="hidden h-full flex-col sm:flex">
-                <div className="mb-3 flex items-start justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
+              {/* sm+: fixed header / meta / amount slots so category aligns across cards */}
+              <div className="hidden h-full flex-col px-4 pb-3 pt-4 sm:flex">
+                <div className="flex shrink-0 items-start justify-between gap-2">
+                  <div className="flex min-w-0 items-start gap-2">
                     <div
                       className={cn(
-                        'size-8 shrink-0',
+                        'mt-0.5 size-8 shrink-0',
                         toneIconWrapClasses(isIncome ? 'green' : 'red')
                       )}
                     >
@@ -200,70 +221,88 @@ export function FinanceLedgerCardGrid({
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-foreground truncate text-sm font-semibold leading-snug">
+                      <p className="text-foreground truncate text-base font-semibold leading-tight">
                         {entry.description}
                       </p>
-                      <p className="text-muted-foreground text-xs">
+                      <p className="text-muted-foreground mt-1 text-sm leading-snug tabular-nums">
                         {format(parseISO(entry.date), 'MMM d, yyyy')}
                       </p>
                     </div>
                   </div>
-                  <FinanceLedgerStatusBadge status={entry.status} />
+                  <FinanceLedgerStatusBadge
+                    status={entry.status}
+                    label={entry.statusLabel}
+                    size="comfortable"
+                    className="shrink-0"
+                  />
                 </div>
 
-                <div className="mt-auto space-y-2">
-                  <p className="text-muted-foreground text-xs">{entry.category}</p>
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={cn(
-                        'text-sm font-semibold tabular-nums tracking-tight sm:text-base',
-                        isIncome
-                          ? 'text-emerald-700 dark:text-emerald-300'
-                          : 'text-red-600 dark:text-red-400'
-                      )}
+                <div className="mt-3 flex min-h-[1.25rem] min-w-0 shrink-0 flex-col justify-center gap-1 overflow-hidden">
+                  <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+                    <p className="text-muted-foreground min-w-0 flex-1 truncate text-sm leading-snug">
+                      {entry.category}
+                    </p>
+                    {recurrenceLabel ? (
+                      <span className="text-muted-foreground inline-flex shrink-0 items-center gap-1 text-xs font-medium uppercase tracking-wide">
+                        <Repeat className="size-3.5 shrink-0" aria-hidden />
+                        {recurrenceLabel}
+                      </span>
+                    ) : null}
+                  </div>
+                  {entry.subDescription ? (
+                    <p className="text-muted-foreground min-w-0 truncate text-sm leading-snug">
+                      {entry.subDescription}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="mt-auto flex min-h-[2.75rem] items-center justify-between gap-2 pt-3">
+                  <span
+                    className={cn(
+                      'text-base font-semibold tabular-nums tracking-tight',
+                      isIncome
+                        ? 'text-emerald-700 dark:text-emerald-300'
+                        : 'text-red-600 dark:text-red-400'
+                    )}
+                  >
+                    {amountPrefix}
+                    {formatMoney(Math.abs(entry.netAmount))}
+                  </span>
+                  {entry.source === 'transaction' ? (
+                    <div
+                      className="-mr-1.5 flex shrink-0 items-center"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      {amountPrefix}
-                      {formatMoney(Math.abs(entry.netAmount))}
-                    </span>
-                    {entry.source === 'transaction' ? (
-                      <div
-                        className="flex items-center gap-0.5"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {entry.transaction?.recurrence_series_id && onOpenSeries ? (
-                          <button
-                            type="button"
-                            className="text-muted-foreground hover:bg-muted/60 hover:text-foreground inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg"
-                            aria-label="View recurring series"
-                            onClick={() => onOpenSeries(entry)}
-                          >
-                            <Repeat className="size-4" />
-                          </button>
-                        ) : null}
+                      {entry.transaction?.recurrence_series_id && onOpenSeries ? (
                         <button
                           type="button"
                           className="text-muted-foreground hover:bg-muted/60 hover:text-foreground inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg"
-                          aria-label="Edit transaction"
-                          onClick={() => onEditTransaction?.(entry)}
+                          aria-label="View recurring series"
+                          onClick={() => onOpenSeries(entry)}
                         >
-                          <Pencil className="size-4" />
+                          <Repeat className="size-4" />
                         </button>
-                        <button
-                          type="button"
-                          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg"
-                          aria-label="Delete transaction"
-                          onClick={() => onDeleteTransaction?.(entry)}
-                        >
-                          <Trash2 className="size-4" />
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-                  {recurrenceLabel ? (
-                    <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
-                      {recurrenceLabel}
-                    </p>
-                  ) : null}
+                      ) : null}
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:bg-muted/60 hover:text-foreground inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg"
+                        aria-label="Edit transaction"
+                        onClick={() => onEditTransaction?.(entry)}
+                      >
+                        <Pencil className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg"
+                        aria-label="Delete transaction"
+                        onClick={() => onDeleteTransaction?.(entry)}
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="inline-flex min-h-[44px] min-w-[44px]" aria-hidden />
+                  )}
                 </div>
               </div>
             </div>

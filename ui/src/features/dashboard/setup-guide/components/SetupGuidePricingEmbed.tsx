@@ -317,8 +317,6 @@ export function SetupGuideParkingPricingEmbed({ parkingId }: { parkingId: string
       weekendRate={weekendRate}
       guestRateWeekday={pricingData?.guestRateWeekday}
       guestRateWeekend={pricingData?.guestRateWeekend}
-      guestRateCapWeekday={pricingData?.guestRateCapWeekday}
-      guestRateCapWeekend={pricingData?.guestRateCapWeekend}
       commissionPct={pricingData?.commissionPct}
       readOnly={!canEdit}
       hasChanges={hasChanges}

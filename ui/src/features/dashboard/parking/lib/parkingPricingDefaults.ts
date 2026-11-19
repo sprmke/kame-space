@@ -3,9 +3,8 @@ export const DEFAULT_PARKING_WEEKEND_NIGHTLY_RATE = 400;
 
 /**
  * Fallback-only defaults (Phase 4) — used only before the real `parking-pricing` GET response
- * loads (which now carries the live `guestRateCapWeekday`/`guestRateCapWeekend` cap, sourced
- * from the super-admin-configurable `platform_parking_settings`). Do not use these for cap
- * enforcement once real data has loaded; see `ParkingPricingRatesFormCard.tsx`.
+ * loads (live guest rates + commission from super-admin `platform_parking_settings`). Soft-warn
+ * and marketplace matching still use those guest rates; host rates may be saved above them.
  */
 export const STUB_GUEST_PARKING_RATE_WEEKDAY = 400;
 export const STUB_GUEST_PARKING_RATE_WEEKEND = 400;

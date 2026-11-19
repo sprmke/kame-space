@@ -6,7 +6,7 @@ import {
   TEAM_E2E_PROPERTY_SLUG,
 } from '../team/shared/propertyTeamRbacHarness';
 
-const INBOX = `/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/inbox`;
+const INBOX = `/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/messages`;
 
 test.describe('@ci inbox deep links', () => {
   test('?conversationId opens that thread (the bookings list chat icon target)', async ({

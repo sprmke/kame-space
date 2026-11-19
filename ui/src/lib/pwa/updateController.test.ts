@@ -96,7 +96,7 @@ describe('auto-reload loop guard', () => {
     bumpAutoReloadCount(storage);
     bumpAutoReloadCount(storage);
     expect(canAutoReload(storage)).toBe(false);
-    // This is the bug we fixed: the Update ready prompt is what we show after the
+    // This is the bug we fixed: the New version available prompt is what we show after the
     // loop guard trips — tapping Reload must still apply the waiting worker.
     expect(isUpdateApplyBlocked('auto', storage)).toBe(true);
     expect(isUpdateApplyBlocked('user', storage)).toBe(false);

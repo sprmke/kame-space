@@ -806,7 +806,7 @@ function WorkflowPanelInner({
       className={cn(
         'flex flex-col',
         isModal
-          ? 'min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-hidden'
+          ? 'min-h-0 min-w-0 overflow-x-hidden'
           : // Sticky rail: never taller than the viewport; keep a usable floor on short screens.
             'border-border bg-card gap-0 overflow-hidden rounded-xl border shadow-sm lg:max-h-[calc(100dvh-2.5rem)] lg:min-h-[min(24rem,calc(100dvh-2.5rem))]'
       )}
@@ -838,7 +838,7 @@ function WorkflowPanelInner({
 
       {/* ── Stage-specific sub-form ───────────────────────────────────────── */}
       {needsReviewAck ? (
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
           <WorkflowPendingReviewAck
             bookingId={booking.id}
             isModal={isModal}
@@ -975,7 +975,7 @@ function WorkflowPanelInner({
             <div
               className={cn(
                 'flex flex-col gap-2',
-                'border-separator mt-auto shrink-0 border-t px-4 pb-[max(env(safe-area-inset-bottom,0px),1rem)] pt-3 sm:px-5 sm:pb-4'
+                'border-separator shrink-0 border-t px-4 pb-[max(env(safe-area-inset-bottom,0px),1rem)] pt-3 sm:px-5 sm:pb-4'
               )}
             >
               <button

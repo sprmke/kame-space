@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import { Route } from 'react-router-dom';
 
+import { LegacyInboxToMessagesRedirect } from '@/features/dashboard/inbox/routes';
 import type { ParkingRouteFn } from '@/features/dashboard/org/routes/guards';
 
 import {
@@ -114,9 +115,10 @@ export function parkingAdminRoutes(parkingRoute: ParkingRouteFn): ReactNode {
         )}
       />
       <Route
-        path="inbox"
+        path="messages"
         element={parkingRoute('inbox', <ParkingInboxPage />, <ParkingInboxRouteSkeleton />)}
       />
+      <Route path="inbox" element={<LegacyInboxToMessagesRedirect />} />
     </>
   );
 }

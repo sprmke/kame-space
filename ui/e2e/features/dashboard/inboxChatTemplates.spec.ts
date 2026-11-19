@@ -95,7 +95,7 @@ async function openInbox(page: Page) {
     return json(route, { templates: TEMPLATES });
   });
 
-  await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/inbox`);
+  await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/messages`);
   await page.getByText('Lia Gomez').first().click();
 }
 
