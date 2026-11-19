@@ -13,7 +13,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     setupFiles: ['./vitest.setup.ts'],
-    include: ['src/**/*Test.ts', 'src/**/*.test.ts'],
+    include: ['src/**/*Test.ts', 'src/**/*.test.ts', 'vite-plugins/**/*.test.ts'],
     passWithNoTests: false,
     coverage: {
       provider: 'v8',

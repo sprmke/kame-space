@@ -23,6 +23,11 @@ backend deploy for no extra signal.
 | **Deploy gate** (`ci-deploy-gate.sh`, `cd-prod`) | every backend deploy                              | static guards · lint · types · unit + coverage floor · dom · edge unit + handlers · build + budgets · **`@critical` journeys (desktop)**       | ~9 min       |
 | `@live`                                          | manual / nightly                                  | real local Supabase stack                                                                                                                      | never a gate |
 
+`bun run test:e2e:csp` is a separate, opt-in run: it builds the app, serves it with the exact
+`Content-Security-Policy` from `ui/vercel.json`, runs the whole mocked suite and fails on any
+violation the browser reports. Run it when you change the policy or add a third-party origin.
+It is not wired into `ci.yml` yet because that needs workflow-file scope.
+
 ### Criticality, not just lanes
 
 A lane tag says _when_ a spec runs. `@critical` says _it must also run before a deploy_:
@@ -56,6 +61,7 @@ Need full parity before a deploy anyway? Run `bun run ci:quality` locally.
 | Playwright smoke                | `bun run test:e2e:smoke`           | PR + develop         |
 | Playwright phone + tablet smoke | `bun run test:e2e:smoke`           | every PR             |
 | Playwright CI suite             | `bun run test:e2e:ci`              | develop              |
+| Playwright under the real CSP   | `bun run test:e2e:csp`             | local / manual       |
 | Post-deploy                     | `./scripts/deploy/ci-smoke.sh dev` | after develop deploy |
 | Full local parity               | `bun run ci:quality`               | before push          |
 
