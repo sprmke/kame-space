@@ -420,28 +420,32 @@ export function PropertyTemplateEditorPane({
               ) : null}
             </div>
             <div className="flex items-center gap-2">
-              <label
-                htmlFor={`template-subject-${template.templateKey}`}
-                className="text-xs font-medium"
-              >
-                Subject
-              </label>
-              <Input
-                id={`template-subject-${template.templateKey}`}
-                value={subject}
-                onChange={(event) => setSubject(event.target.value)}
-                placeholder={template.defaultSubject ?? ''}
-                disabled={!canEdit || template.subjectLocked}
-                className="h-8 text-xs"
-              />
-              {template.subjectLocked ? (
-                <span className="text-muted-foreground shrink-0 text-[11px]">Fixed</span>
+              {isAutomatedEmail ? (
+                <>
+                  <label
+                    htmlFor={`template-subject-${template.templateKey}`}
+                    className="text-xs font-medium"
+                  >
+                    Subject
+                  </label>
+                  <Input
+                    id={`template-subject-${template.templateKey}`}
+                    value={subject}
+                    onChange={(event) => setSubject(event.target.value)}
+                    placeholder={template.defaultSubject ?? ''}
+                    disabled={!canEdit || template.subjectLocked}
+                    className="h-8 text-xs"
+                  />
+                  {template.subjectLocked ? (
+                    <span className="text-muted-foreground shrink-0 text-[11px]">Fixed</span>
+                  ) : null}
+                </>
               ) : null}
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="shrink-0"
+                className="ml-auto shrink-0"
                 onClick={handleSendTest}
                 disabled={!canEdit || sendingTest}
               >

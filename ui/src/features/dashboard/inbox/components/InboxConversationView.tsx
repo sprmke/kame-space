@@ -601,7 +601,10 @@ export function InboxConversationView({
   const handleInsertTemplateText = async (template: ChatTemplateListItem) => {
     try {
       const text = inboxMockActive
-        ? mockChatTemplatePreview(template.templateKey).html
+        ? mockChatTemplatePreview(template.templateKey)
+            .html.replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
         : await fetchChatTemplatePlainText(
             orgContext?.orgSlug ?? null,
             orgContext?.org.id ?? null,

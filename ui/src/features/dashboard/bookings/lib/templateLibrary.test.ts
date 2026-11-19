@@ -98,6 +98,27 @@ describe('buildTemplateLibrary', () => {
     expect(groups[0]!.entries.map((entry) => entry.templateKey)).toEqual(['house-rules']);
   });
 
+  it('groups guest messages and keeps guide sections in chapter order', () => {
+    const groups = buildTemplateLibrary([
+      template({ templateKey: 'house-rules', chapter: 'make-yourself-at-home' }),
+      template({ templateKey: 'check-in-instructions', chapter: 'getting-in' }),
+      template({ templateKey: 'check-out-instructions', chapter: 'before-you-go' }),
+      template({ templateKey: 'message-check-in-day', category: 'message', group: 'guest-messages' }),
+    ]);
+
+    const messages = groups.find((group) => group.id === 'guest-messages');
+    expect(messages?.entries.map((entry) => entry.templateKey)).toEqual([
+      'message-check-in-day',
+    ]);
+
+    const guide = groups.find((group) => group.id === 'stay-guide');
+    expect(guide?.entries.map((entry) => entry.templateKey)).toEqual([
+      'check-in-instructions',
+      'house-rules',
+      'check-out-instructions',
+    ]);
+  });
+
   it('lists the four cancellation emails in the Emails group', () => {
     const cancellationKeys = [
       'email-booking-cancelled-guest',
