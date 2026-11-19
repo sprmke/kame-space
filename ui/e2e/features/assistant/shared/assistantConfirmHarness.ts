@@ -9,14 +9,14 @@ import type { ChatBlock } from '@/features/dashboard/ai-assistant/lib/aiAssistan
 import {
   installPropertyTeamRbacMocks,
   openPropertyDashboard,
-  setAssistantChatBlocksForMocks,
+  queueAssistantChatBlocksForMocks,
   teamRbacPaths,
 } from '../../team/shared/propertyTeamRbacHarness';
 
 import { openAssistantFromQuickAccess } from './assistantQuickAccess';
 
-export function setAssistantChatBlocks(blocks: ChatBlock[]) {
-  setAssistantChatBlocksForMocks(blocks);
+export function queueAssistantChatBlocks(blocks: ChatBlock[]) {
+  queueAssistantChatBlocksForMocks(blocks);
 }
 
 export async function installAssistantConfirmMocks(page: Page) {
