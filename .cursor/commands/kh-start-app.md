@@ -20,7 +20,7 @@ Uses `ui/.env.development.dev`. Needs network. No local Docker DB.
 ./dev.sh --ui-only --env dev
 ```
 
-App: usually `http://localhost:5173` (Vite). Remote API/data: **dev** Supabase (`fwor…`), not production.
+App: sticky Vite port (`bun run ui:port`, range `5173`–`5199`). Remote API/data: **dev** Supabase (`fwor…`), not production. Multi-worktree: `docs/guides/testing/multi-worktree-local-preview.md`.
 
 ### B — Full local stack
 
@@ -42,10 +42,10 @@ Uses `ui/.env.development` (whatever that file points at — confirm before test
 
 ## Steps (agent)
 
-1. Check if a dev server is already running (terminals / ports). Do not start a duplicate if one is healthy.
+1. Check if this worktree already has UI (`bun run ui` is idempotent). Do not kill another worktree's Vite or the shared Supabase stack.
 2. Prefer **mode A** unless the ticket needs local DB/functions.
 3. After start, tell the user:
-   - Local URL
+   - Local URL (`http://127.0.0.1:$(bun run ui:port)/`)
    - Which backend (dev hosted vs local)
    - Reminder: never deploy to production Supabase from a QA session
 4. Optional: open the route from the ticket (from **Where** in the GitHub issue).

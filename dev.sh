@@ -3,17 +3,22 @@
 #
 # Usage:
 #   ./dev.sh                      Full stack (default) + ngrok on :54321 for Meta/webhooks
-#   ./dev.sh --ui-only              Vite only — uses ui/.env.development
-#   ./dev.sh --ui-only --env dev    Vite only — uses ui/.env.development.dev (hosted dev)
-#   ./dev.sh --ui-only --env local  Vite only — uses ui/.env.development.local (local stack)
+#   ./dev.sh --ui-only              Vite only — sticky per-worktree port via bun run ui
+#   ./dev.sh --ui-only --env dev    Vite only — uses ui/.env.development.dev (hosted)
+#   ./dev.sh --ui-only --env local  Vite only — uses ui/.env.development.local
 #   SKIP_SUPABASE=1 ./dev.sh        Same as --ui-only
 #   SKIP_NGROK=1 ./dev.sh           Full stack without ngrok
+#
+# Multi-worktree: Docker + edge stay shared (project guest-form-management).
+# Each worktree runs its own Vite on a sticky port (5173-5199). See
+# docs/guides/testing/multi-worktree-local-preview.md
 #
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
 export PATH="/usr/local/bin:/opt/homebrew/bin:${HOME}/.bun/bin:${PATH}"
 BUNX="$ROOT/scripts/dev/bunx"
+UI_LAUNCHER="$ROOT/scripts/dev/ui-worktree.sh"
 
 UI_ONLY=0
 ENV_PROFILE=""
@@ -32,18 +37,35 @@ if [[ "${SKIP_SUPABASE:-}" == "1" ]]; then
   UI_ONLY=1
 fi
 
+start_ui() {
+  if [[ -n "$ENV_PROFILE" ]]; then
+    exec "$UI_LAUNCHER" --env "$ENV_PROFILE"
+  fi
+  exec "$UI_LAUNCHER"
+}
+
+shared_edge_healthy() {
+  local code
+  code="$(
+    curl -sS -o /dev/null -w '%{http_code}' --connect-timeout 1 --max-time 2 \
+      'http://127.0.0.1:54321/functions/v1/get-health' 2>/dev/null || echo '000'
+  )"
+  [[ "$code" == "200" ]]
+}
+
+shared_kong_up() {
+  docker ps --format '{{.Names}}' 2>/dev/null | grep -q '^supabase_kong_guest-form-management$'
+}
+
 if [[ "$UI_ONLY" == "1" ]]; then
   case "$ENV_PROFILE" in
-    dev|local)
-      echo "UI-only mode (--env $ENV_PROFILE). See docs/archive/operations/dev-staging-environment.md"
-      exec "$ROOT/scripts/dev/run-with-vite-env.sh" --env "$ENV_PROFILE"
-      ;;
-    "")
-      echo "UI-only mode (no Docker / Supabase). Ensure VITE_* in ui/.env.development targets your Supabase project."
-      echo "For hosted dev: ./dev.sh --ui-only --env dev"
-      echo "Starting UI development server..."
-      cd "$ROOT/ui" && bun run dev
-      exit 0
+    dev|local|"")
+      if [[ -n "$ENV_PROFILE" ]]; then
+        echo "UI-only mode (--env $ENV_PROFILE). Sticky per-worktree Vite port."
+      else
+        echo "UI-only mode. Sticky per-worktree Vite port (shared API on :54321)."
+      fi
+      start_ui
       ;;
     *)
       echo "ERROR: Unknown --env profile: $ENV_PROFILE (use local or dev)" >&2
@@ -54,6 +76,14 @@ fi
 
 if [[ -n "$ENV_PROFILE" ]]; then
   echo "NOTE: --env is ignored for full-stack mode; using local Docker Supabase." >&2
+fi
+
+# If another worktree already owns a healthy shared stack, only start this worktree's UI.
+# Never kill functions serve / edge runtime for a sibling worktree.
+if shared_kong_up && shared_edge_healthy; then
+  echo "Shared local Supabase already healthy on :54321 (reusing; not restarting Docker/edge)."
+  echo "Starting this worktree's UI only…"
+  start_ui
 fi
 
 # Docker Desktop must be running before Supabase can start containers.
@@ -72,7 +102,7 @@ if ! docker info >/dev/null 2>&1; then
   fi
   if ! docker info >/dev/null 2>&1; then
     echo "Cannot connect to Docker. Start Docker Desktop, wait until it is running, then re-run ./dev.sh"
-    echo "Or run UI against remote Supabase: ./dev.sh --ui-only"
+    echo "Or run UI against remote Supabase: ./dev.sh --ui-only --env dev"
     exit 1
   fi
 fi
@@ -144,8 +174,8 @@ if [[ -n "$LOCAL_EDGE" ]]; then
   done
 fi
 
-# Stop any leftover `functions serve` from a prior dev.sh (duplicate processes fight over
-# the same Docker container name and spam "No such container" while polling logs).
+# Only recycle edge serve when we are cold-starting the shared stack (health was not 200).
+# Secondary worktrees never reach this branch while the stack is healthy.
 if pgrep -f "supabase.*functions serve.*functions-serve.env" >/dev/null 2>&1; then
   echo "Stopping leftover supabase functions serve…"
   pkill -f "supabase.*functions serve.*functions-serve.env" 2>/dev/null || true
@@ -176,13 +206,18 @@ for _ in $(seq 1 45); do
   sleep 1
 done
 
+# Leave functions serve running after this UI exits so sibling worktrees keep
+# the shared API. Tear down with `LOCALSTOP=localstop bun run stop:supabase` when asked.
 cleanup() {
-  kill "$FUNCTIONS_PID" 2>/dev/null || true
   if [[ -n "$NGROK_PID" ]]; then
     kill "$NGROK_PID" 2>/dev/null || true
   fi
 }
 trap cleanup EXIT
 
-echo "Starting UI development server..."
-cd "$ROOT/ui" && bun run dev
+echo "Starting this worktree's UI development server…"
+# exec so Ctrl-C stops only Vite; shared edge keep serving other worktrees.
+if [[ -n "$ENV_PROFILE" ]]; then
+  exec "$UI_LAUNCHER" --env "$ENV_PROFILE"
+fi
+exec "$UI_LAUNCHER"

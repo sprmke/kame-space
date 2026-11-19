@@ -52,14 +52,18 @@ listing map uses the Embed API.
 
 1. **APIs & Services → Credentials → Create credentials → OAuth client ID**.
 2. Application type: **Web application**. Name: `Kame Space local dev`.
-3. Authorized JavaScript origins:
+3. Authorized JavaScript origins (include the multi-worktree Vite range
+   `5173`–`5199`; see [`multi-worktree-local-preview.md`](./multi-worktree-local-preview.md)):
 
    ```
    http://127.0.0.1:5173
    http://localhost:5173
    ```
 
-4. Authorized redirect URIs:
+   Add the same hosts for any other sticky ports you use (`5174` … `5199`), or
+   add them when a worktree first needs Google sign-in on that port.
+
+4. Authorized redirect URIs (GoTrue callback stays on the API port, not Vite):
 
    ```
    http://127.0.0.1:54321/auth/v1/callback
@@ -74,7 +78,8 @@ listing map uses the Embed API.
 2. Name: `Kame Space local maps`.
 3. **Edit** the key:
    - Application restrictions: **Websites**. Add
-     `http://127.0.0.1:5173/*` and `http://localhost:5173/*`.
+     `http://127.0.0.1:5173/*` and `http://localhost:5173/*`, plus the same
+     pattern for other sticky ports in `5174`–`5199` that you preview.
    - API restrictions: **Restrict key**, select the five APIs from step 2.
 4. Save and copy the key.
 
@@ -91,16 +96,23 @@ GOOGLE_CLIENT_ID=<local client id>
 GOOGLE_CLIENT_SECRET=<local client secret>
 ```
 
-GoTrue reads `GOOGLE_*` when the container starts, so restart the stack:
+GoTrue reads `GOOGLE_*` when the container starts. Restart the **shared** stack
+only when you intend to bounce API for every worktree (unlock `localstop`):
 
 ```bash
-bun run stop:supabase && ./dev.sh
+LOCALSTOP=localstop bun run stop:supabase
+./dev.sh
 ```
+
+Repo `supabase/config.toml` already lists Auth `additional_redirect_urls` for
+Vite ports `5173`–`5199`. Google Cloud origins (step 3) still need the matching
+JS origins for sign-in on those ports.
 
 ## Verify
 
 - Local map picker renders and location search returns results.
-- Sign-in with Google on `/auth` completes and returns to `127.0.0.1:5173`.
+- Sign-in with Google on `/auth` completes and returns to this worktree's Vite
+  origin (`127.0.0.1:<sticky-port>` from `bun run ui:port`).
 - Production `VITE_GOOGLE_MAPS_API_KEY` and the production OAuth client are untouched.
 
 If sign-in returns `Unsupported provider: missing redirect URI`, the redirect URI in step 4
