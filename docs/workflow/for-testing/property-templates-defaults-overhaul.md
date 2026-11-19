@@ -479,19 +479,19 @@ Known follow-ups kept open: trip-page stage filtering for built-in sections, a s
 
 ## Verification results
 
-| Gate                                  | Result                                            |
-| ------------------------------------- | ------------------------------------------------- |
-| `bun run type-check`                  | pass                                              |
-| `bun run lint`                        | 0 errors                                          |
-| `bun run test:fast`                   | pass (6459 unit tests, 84 DOM tests)              |
-| `bun run build`                       | pass                                              |
-| Deno `_shared` suite                  | 2082 passed, 0 failed                             |
-| `bun run check:support-content`       | pass (201 FAQs)                                   |
-| `bun run check:ai-knowledge-coverage` | pass (79 guides)                                  |
-| `bun run test:support-content`        | pass                                              |
-| `bun run check:plan-catalog`          | not run (needs a fresh local DB)                  |
-| Manual QA matrix                      | not run (needs the local stack and cron triggers) |
-| Production deploy                     | not run; requires `kamewave`                      |
+| Gate                                  | Result                                          |
+| ------------------------------------- | ----------------------------------------------- |
+| `bun run type-check`                  | pass                                            |
+| `bun run lint`                        | 0 errors                                        |
+| `bun run test:fast`                   | pass (6464 unit tests, 84 DOM tests)            |
+| `bun run build`                       | pass                                            |
+| Deno `_shared` suite                  | 2105 passed, 0 failed                           |
+| `bun run check:support-content`       | pass (201 FAQs)                                 |
+| `bun run check:ai-knowledge-coverage` | pass (79 guides)                                |
+| `bun run test:support-content`        | pass                                            |
+| `bun run check:plan-catalog`          | not run (needs a fresh local DB)                |
+| Manual QA matrix                      | local walk run; live cron triggers still manual |
+| Production deploy                     | not run; requires `kamewave`                    |
 
 ## Follow-ups (not in this plan)
 
