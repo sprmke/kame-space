@@ -53,6 +53,28 @@ Until both are true, keep **Local only**. With `orca.yaml only` and no detected
 file, Orca runs no setup at all: the saved local script is ignored and new
 worktrees get no UI tab.
 
+To make a new worktree open its preview in the Orca browser too, set the local
+command source to **Run both** and save a local setup script that waits for the
+port and calls `orca tab create` (see the existing-worktree command below for
+the shape). `orca.yaml` cannot define browser tabs itself.
+
+## Existing worktrees
+
+Worktrees created before `orca.yaml` existed have no setup hook and no UI tab.
+Run this from any checkout, pointing at the worktree:
+
+```bash
+bash scripts/dev/open-worktree-preview.sh ../cerith
+# or from inside the worktree
+bun run preview:worktree
+```
+
+It copies missing env files from the primary checkout, installs dependencies
+when they are missing, starts (or reuses) the worktree's Vite server in a UI
+terminal, waits for HTTP 200, and opens an Orca browser tab at the sticky port.
+Pass `--split right` to open it in a split pane. It is idempotent: a running
+server and an existing tab are reused.
+
 ## Auth and Maps on non-5173 ports
 
 Local GoTrue `additional_redirect_urls` includes `5173`–`5199` for
