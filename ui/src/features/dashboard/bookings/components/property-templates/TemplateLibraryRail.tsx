@@ -82,7 +82,7 @@ function TemplateRowMeta({ entry, active }: { entry: TemplateLibraryEntry; activ
           className={cn(
             'inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide',
             active
-              ? 'bg-primary-foreground/20 text-primary-foreground'
+              ? 'bg-black/20 text-primary-foreground'
               : 'bg-muted text-muted-foreground'
           )}
         >
