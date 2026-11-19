@@ -88,6 +88,9 @@ listing map uses the Embed API.
      `5174` or `5195`. Referrer checks use the origin, so only the ports in use
      are needed.
 
+     Every entry needs the scheme, host, port and `/*` path. A bare port number
+     such as `5173` is not a valid referrer and will never match.
+
    - API restrictions: **Restrict key**, select the five APIs from step 2.
 4. Save and copy the key.
 
