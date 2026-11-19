@@ -148,8 +148,33 @@ resolve_vite() {
 
 VITE_BIN="$(resolve_vite)"
 if [[ -z "$VITE_BIN" ]]; then
-  echo "ERROR: vite not found. Run bun install (or orca setup) in this worktree first." >&2
+  # Orca starts defaultTabs in parallel with scripts.setup, so a fresh worktree can
+  # reach this point before `bun install` finishes. Wait for setup instead of failing.
+  echo "Waiting for setup to install dependencies..."
+  for _ in $(seq 1 180); do
+    VITE_BIN="$(resolve_vite)"
+    [[ -n "$VITE_BIN" ]] && break
+    sleep 1
+  done
+fi
+
+if [[ -z "$VITE_BIN" ]]; then
+  echo "Dependencies missing; running bun install..."
+  bun install
+  VITE_BIN="$(resolve_vite)"
+fi
+
+if [[ -z "$VITE_BIN" ]]; then
+  echo "ERROR: vite not found after bun install." >&2
   exit 1
+fi
+
+# Setup copies env files after bun install; give it a moment so Vite reads them.
+if [[ ! -f "$ROOT/ui/.env.development" ]]; then
+  for _ in $(seq 1 5); do
+    [[ -f "$ROOT/ui/.env.development" ]] && break
+    sleep 1
+  done
 fi
 
 case "$ENV_PROFILE" in
