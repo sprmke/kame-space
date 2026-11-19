@@ -1104,6 +1104,20 @@ export async function installParkingFlowMocks(page: Page, state: ParkingFlowStat
     }
   });
 
+  await page.route('**/functions/v1/get-booking**', async (route) => {
+    const url = new URL(route.request().url());
+    const bookingId = url.searchParams.get('booking_id');
+    if (bookingId === E2E_PROPERTY_BOOKING_ID) {
+      await fulfillJson(route, { success: true, data: e2ePropertyBookingRow() });
+      return;
+    }
+    if (bookingId === state.bookingId && state.status !== 'draft') {
+      await fulfillJson(route, { success: true, data: bookingRow(state) });
+      return;
+    }
+    await fulfillJson(route, { success: false, error: 'Booking not found' }, 404);
+  });
+
   await page.route('**/rest/v1/guest_submissions*', async (route) => {
     const url = new URL(route.request().url());
     const id = url.searchParams.get('id');
