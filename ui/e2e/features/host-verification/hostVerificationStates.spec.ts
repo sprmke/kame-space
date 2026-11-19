@@ -68,12 +68,13 @@ test.describe('@ci host Get Verified states', () => {
     const guard = page.getByRole('alertdialog', { name: /Save your changes\?/i });
     await guard.waitFor({ state: 'visible', timeout: 1_500 }).catch(() => undefined);
     if (await guard.isVisible().catch(() => false)) {
-      await page.getByRole('button', { name: 'Keep editing' }).click();
+      // Nested AlertDialog can sit under a Dialog scrim in hit-testing; force still fires.
+      await page.getByRole('button', { name: 'Keep editing' }).click({ force: true });
       await expect(guard).toHaveCount(0);
-      // Dismissing can clear the slot; re-pick so the submit has the requested document.
-      await page.locator('#onboarding-valid-id').setInputFiles(E2E_IMAGE_FILE);
-      await expect(resubmit).toBeEnabled({ timeout: 30_000 });
     }
+    // Always re-attach so Resubmit is enabled after any guard race.
+    await page.locator('#onboarding-valid-id').setInputFiles(E2E_IMAGE_FILE);
+    await expect(resubmit).toBeEnabled({ timeout: 30_000 });
 
     const submitResponse = page.waitForResponse(
       (res) =>
