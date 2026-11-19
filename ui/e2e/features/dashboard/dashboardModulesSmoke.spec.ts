@@ -148,7 +148,7 @@ test.describe('@ci dashboard module shells', () => {
     await templatesReady;
 
     const rail = page.getByRole('complementary', { name: 'Templates' });
-    await rail.getByRole('button', { name: /Booking Acknowledgement/ }).click();
+    await rail.getByRole('button', { name: /Booking confirmed/ }).click();
 
     const editor = page.getByRole('region', { name: 'Template editor' });
     const subject = editor.getByLabel('Subject');

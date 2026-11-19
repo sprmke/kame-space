@@ -836,7 +836,7 @@ function propertyTemplatesSettingsPayload(customTemplateSeeded = false) {
       template('email-pet-request', 'Pet Request', 'email'),
       template('email-booking-cancelled-guest', 'Booking Cancelled (Guest)', 'email'),
       template('email-new-booking-request', 'New Booking Request', 'email'),
-      template('email-booking-acknowledgement', 'Booking Acknowledgement', 'email'),
+      template('email-booking-acknowledgement', 'Booking confirmed', 'email'),
       template('email-ready-for-checkin', 'Ready for Check-in', 'email'),
       template('email-sd-refund-form-request', 'SD Refund Form Request', 'email'),
       ...(customTemplateSeeded ? [template('custom-e2e-001', 'Welcome Note', 'custom')] : []),
