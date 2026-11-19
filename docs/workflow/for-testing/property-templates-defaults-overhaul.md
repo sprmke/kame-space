@@ -1,7 +1,7 @@
 ---
 title: 'Property templates: defaults, groups and placeholders overhaul'
-status: planned
-tags: [workflow, planned, templates, emails, stay-guide, inbox]
+status: for-testing
+tags: [workflow, for-testing, templates, emails, stay-guide, inbox]
 updated: 2026-11-19
 stage: for-testing
 kind: plan
