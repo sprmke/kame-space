@@ -30,7 +30,7 @@ function OrgListingTableSkeleton({
   minWidth: number;
   label: string;
 }) {
-  const gridTemplateColumns = `minmax(0,2fr) repeat(${columns.length}, minmax(0,1fr)) 3rem`;
+  const gridTemplateColumns = `minmax(0,2fr) repeat(${columns.length}, minmax(0,1fr)) minmax(4.5rem,auto)`;
 
   return (
     <div className="surface-card surface-card-clip" aria-busy="true" aria-label={label}>
@@ -46,7 +46,7 @@ function OrgListingTableSkeleton({
                 {column.label}
               </span>
             ))}
-            <span className="sr-only">Actions</span>
+            <span className="justify-self-end whitespace-nowrap text-right">Actions</span>
           </div>
           {Array.from({ length: 6 }).map((_, row) => (
             <div

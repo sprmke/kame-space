@@ -201,7 +201,7 @@ export async function resolveNotificationClickPath(
     if (slug) {
       const base = `/org/${orgSlug}/property/${slug}`;
       if (n.booking_id) return `${base}/bookings/${n.booking_id}`;
-      if (n.conversation_id) return `${base}/inbox`;
+      if (n.conversation_id) return `${base}/messages`;
       return `${base}/notifications`;
     }
   }
@@ -216,7 +216,7 @@ export async function resolveNotificationClickPath(
     if (slug) {
       const base = `/org/${orgSlug}/parking/${slug}`;
       if (n.booking_id) return `${base}/bookings/${n.booking_id}`;
-      if (n.conversation_id) return `${base}/inbox`;
+      if (n.conversation_id) return `${base}/messages`;
       return `${base}/notifications`;
     }
   }

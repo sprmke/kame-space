@@ -16,11 +16,15 @@ function FinanceChartCardSkeleton({
   icon: Icon,
   description,
   className,
+  action,
+  plot,
 }: {
   title: string;
   icon: typeof BarChart3;
   description: string;
   className?: string;
+  action?: 'view' | 'segment';
+  plot: 'area' | 'donut';
 }) {
   return (
     <section className={className} aria-hidden>
@@ -37,15 +41,40 @@ function FinanceChartCardSkeleton({
               </p>
             </div>
           </div>
-          <Skeleton className="hidden h-9 w-24 shrink-0 rounded-lg sm:block" />
+          {action === 'segment' ? (
+            <Skeleton className="h-9 w-36 shrink-0 rounded-lg" />
+          ) : action === 'view' ? (
+            <Skeleton className="hidden h-9 w-14 shrink-0 rounded-lg sm:block" />
+          ) : null}
         </div>
-        <Skeleton className="h-[180px] w-full min-w-0 rounded-xl sm:h-[220px]" />
+        {plot === 'donut' ? (
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="flex min-h-[160px] flex-1 items-center justify-center px-2 pb-10 sm:min-h-[200px]">
+              <Skeleton className="size-40 shrink-0 rounded-full sm:size-48" />
+            </div>
+            <div className="border-border/50 shrink-0 border-t pt-2">
+              <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <Skeleton key={index} className="h-4 w-full" />
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <Skeleton className="h-[180px] w-full min-w-0 rounded-xl sm:h-[240px] lg:h-[300px]" />
+            <div className="mt-4 flex justify-center gap-6">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
 }
 
-/** Cash flow (3/5) beside breakdown (2/5), as `FinanceTransactionsChart` renders them. */
+/** Cash flow (3/5) beside breakdown donut (2/5), as `FinanceTransactionsChart` renders them. */
 export function FinanceChartsSkeleton() {
   return (
     <div className="grid min-w-0 items-stretch gap-3 lg:grid-cols-5 xl:gap-4" aria-hidden>
@@ -54,12 +83,15 @@ export function FinanceChartsSkeleton() {
         icon={BarChart3}
         description="Stay net, transactions, and expenses over time"
         className="lg:col-span-3"
+        plot="area"
       />
       <FinanceChartCardSkeleton
         title="Breakdown"
         icon={PieChart}
         description="By category"
         className="lg:col-span-2"
+        action="segment"
+        plot="donut"
       />
     </div>
   );

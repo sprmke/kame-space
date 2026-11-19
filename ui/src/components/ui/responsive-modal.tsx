@@ -128,7 +128,7 @@ export function ResponsiveModalHeader({
   if (useSheet) {
     return (
       <BottomSheetHeader
-        className={cn('space-y-1 px-0 pb-1 pt-0 text-left', className)}
+        className={cn('gap-1 space-y-1 px-0 pb-1 pt-0 text-left', className)}
         {...props}
       />
     );

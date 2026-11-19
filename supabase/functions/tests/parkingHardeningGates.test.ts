@@ -117,7 +117,9 @@ Deno.test('every parking admin route is permission-wrapped', async () => {
   const src = await source('../../ui/src/features/dashboard/parking/routes/index.tsx');
   const routeCount = countOccurrences(src, '<Route');
   const guardedCount = countOccurrences(src, 'element={parkingRoute(');
-  assertEquals(routeCount, guardedCount);
+  // One unguarded `<Route>` is the legacy `/inbox` → `/messages` redirect.
+  assert(src.includes('element={<LegacyInboxToMessagesRedirect'));
+  assertEquals(routeCount - 1, guardedCount);
 });
 
 Deno.test('org-wide booking lists include pre-claim parking requests', async () => {

@@ -12,6 +12,7 @@ import {
 
 import {
   AdminDataTable,
+  AdminTableActionsTh,
   AdminTableHeadRow,
   AdminTableTh,
   adminTableCell,
@@ -70,9 +71,7 @@ export function FinanceLedgerTable({
           <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Category</AdminTableTh>
           <AdminTableTh className="px-3 sm:px-4">Status</AdminTableTh>
           <AdminTableTh className="px-3 sm:px-4">Amount</AdminTableTh>
-          <AdminTableTh className="pl-2 pr-3 sm:pl-3 sm:pr-4">
-            <span className="sr-only">Actions</span>
-          </AdminTableTh>
+          <AdminTableActionsTh />
         </AdminTableHeadRow>
         <tbody>
           {rows.map((entry, index) => {
@@ -90,21 +89,28 @@ export function FinanceLedgerTable({
               if (entry.source === 'transaction') {
                 onEditTransaction?.(entry);
               }
+              /* parking_payout is read-only */
             };
+
+            const isInteractive = entry.source === 'stay' || entry.source === 'transaction';
 
             return (
               <tr
                 key={entry.id}
-                role="button"
-                tabIndex={0}
+                role={isInteractive ? 'button' : undefined}
+                tabIndex={isInteractive ? 0 : undefined}
                 className={adminTableRowClass(index)}
-                onClick={handleOpen}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleOpen();
-                  }
-                }}
+                onClick={isInteractive ? handleOpen : undefined}
+                onKeyDown={
+                  isInteractive
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleOpen();
+                        }
+                      }
+                    : undefined
+                }
               >
                 <td className={adminTableCell.status}>
                   <div className="flex items-center gap-3">
@@ -161,7 +167,7 @@ export function FinanceLedgerTable({
                   {entry.category}
                 </td>
                 <td className={adminTableCell.body}>
-                  <FinanceLedgerStatusBadge status={entry.status} />
+                  <FinanceLedgerStatusBadge status={entry.status} label={entry.statusLabel} />
                 </td>
                 <td className={adminTableCell.money}>
                   <span className={adminTableMoneyClass(amountClass)}>
@@ -206,7 +212,7 @@ export function FinanceLedgerTable({
                         </button>
                       ) : null}
                     </div>
-                  ) : (
+                  ) : entry.source === 'stay' ? (
                     <button
                       type="button"
                       className={adminTableIconButtonClass}
@@ -216,6 +222,8 @@ export function FinanceLedgerTable({
                     >
                       <Eye className="size-4" />
                     </button>
+                  ) : (
+                    <span className="text-muted-foreground sr-only">Marketplace payout</span>
                   )}
                 </td>
               </tr>

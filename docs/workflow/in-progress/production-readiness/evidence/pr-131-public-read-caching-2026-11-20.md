@@ -49,16 +49,16 @@ Merged in [#540](https://github.com/sprmke/kame-space/pull/540) and deployed by 
 
 Read-only GETs with the anon key against `fwor…` (`x-served-by: supabase-edge-runtime`, `cf-cache-status: DYNAMIC`, so every request did execute in the edge runtime; no CDN answer is inflating the numbers).
 
-| Check                                                  | Result                                                          |
-| ------------------------------------------------------ | --------------------------------------------------------------- |
-| All seven public endpoints                              | 200, and repeat bodies byte-identical                            |
-| `get-public-property`, 10 calls                        | **0** durable counter writes                                    |
-| `search-listings`, 8 calls                             | **1** durable write (the miss), 7 hits                          |
-| `search-suggestions`, 8 calls                          | **0** durable writes                                            |
-| `get-public-property` with `preview=1`, 3 calls        | 3 durable writes (bypass, never cached)                         |
-| `list-public-properties` date-filtered, 3 calls        | 3 durable writes (bypass, availability never stale)             |
-| `list-public-developments?slug=`, 3 calls              | 3 durable writes (database read before the cache)                |
-| `get-public-property` control, 3 calls                 | 0 durable writes                                                |
+| Check                                           | Result                                              |
+| ----------------------------------------------- | --------------------------------------------------- |
+| All seven public endpoints                      | 200, and repeat bodies byte-identical               |
+| `get-public-property`, 10 calls                 | **0** durable counter writes                        |
+| `search-listings`, 8 calls                      | **1** durable write (the miss), 7 hits              |
+| `search-suggestions`, 8 calls                   | **0** durable writes                                |
+| `get-public-property` with `preview=1`, 3 calls | 3 durable writes (bypass, never cached)             |
+| `list-public-properties` date-filtered, 3 calls | 3 durable writes (bypass, availability never stale) |
+| `list-public-developments?slug=`, 3 calls       | 3 durable writes (database read before the cache)   |
+| `get-public-property` control, 3 calls          | 0 durable writes                                    |
 
 Counter writes were measured by diffing `request_rate_limits` rows for the scope before and after each burst, not inferred from latency.
 

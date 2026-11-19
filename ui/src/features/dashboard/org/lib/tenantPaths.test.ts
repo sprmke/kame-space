@@ -145,6 +145,14 @@ describe('propertySectionPath', () => {
   it('propertySectionPath is exported', () => {
     expect(typeof propertySectionPath).toBe('function');
   });
+
+  it('maps the inbox section to the /messages URL segment', () => {
+    expect(propertySectionPath('acme', 'monaco', 'inbox')).toBe(
+      '/org/acme/property/monaco/messages'
+    );
+    expect(propertyInboxPath('acme', 'monaco')).toBe('/org/acme/property/monaco/messages');
+    expect(parkingInboxPath('acme', 'slot-1')).toBe('/org/acme/parking/slot-1/messages');
+  });
 });
 
 describe('parkingNotificationsPath', () => {

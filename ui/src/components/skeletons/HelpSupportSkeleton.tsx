@@ -1,5 +1,11 @@
 import type { HelpSupportSection } from '@/features/dashboard/help-support/lib/helpSupportPaths';
+import { useSupportTicketScope } from '@/features/dashboard/help-support/hooks/useSupportTicketScope';
+import {
+  readTicketsWorkspaceLayoutHint,
+  ticketsWorkspaceLayoutStorageKey,
+} from '@/features/dashboard/help-support/lib/ticketsWorkspaceLayout';
 
+import { TicketsWorkspaceSkeleton } from '@/components/skeletons/TicketsWorkspaceSkeleton';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -60,41 +66,25 @@ function HelpSupportModuleNavSkeleton() {
   );
 }
 
+function TicketsSectionRouteSkeleton() {
+  const scope = useSupportTicketScope();
+  const hint = readTicketsWorkspaceLayoutHint(
+    ticketsWorkspaceLayoutStorageKey([
+      scope.channel ?? 'host',
+      scope.orgSlug,
+      scope.orgId,
+      scope.propertyId,
+      scope.parkingId,
+    ])
+  );
+
+  return <TicketsWorkspaceSkeleton layout={hint ?? 'empty'} />;
+}
+
 /** Content under the section intro: FAQ / guide rows in a card, or the tickets workspace. */
 export function HelpSupportSectionSkeleton({ section }: { section: HelpSupportSection }) {
   if (section === 'tickets') {
-    return (
-      <div
-        role="status"
-        className="border-border/80 bg-card flex min-h-[20rem] overflow-hidden rounded-xl border shadow-sm lg:min-h-[480px]"
-        aria-busy="true"
-        aria-label="Loading tickets"
-      >
-        <div className="border-border/80 flex w-full flex-col lg:w-[min(100%,400px)] lg:border-r">
-          <div className="flex items-center justify-between gap-3 border-b px-3 py-2.5">
-            <p className="text-sm font-semibold">Tickets</p>
-            <span className="border-border inline-flex h-11 items-center rounded-md border px-3 text-sm font-medium sm:h-9">
-              New
-            </span>
-          </div>
-          <div className="space-y-2 p-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="border-border/60 space-y-2 rounded-xl border p-3"
-                style={{ opacity: 1 - i * 0.08 }}
-              >
-                <Skeleton className="h-4 w-2/3" />
-                <Skeleton className="h-3 w-1/3" />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="text-muted-foreground hidden flex-1 items-center justify-center p-8 text-sm lg:flex">
-          Select a ticket
-        </div>
-      </div>
-    );
+    return <TicketsSectionRouteSkeleton />;
   }
 
   return (

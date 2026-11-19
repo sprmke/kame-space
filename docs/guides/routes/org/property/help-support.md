@@ -2,7 +2,7 @@
 title: 'Property Help & Support'
 status: active
 tags: [guides, routes, org, property, help-support]
-updated: 2026-09-05
+updated: 2026-11-19
 ---
 
 # Property Help & Support
@@ -20,7 +20,7 @@ Announcements moved to dedicated sidebar route: [Announcements](./announcements.
 | FAQs    | Yes | N/A        | Yes  | Search + category tiles (property-scoped); open a topic for Q&A |
 | Guides  | Yes | N/A        | Yes  | Topic tiles, then articles for the chosen topic                 |
 | Tickets | Yes | Yes        | Yes  | Fill-height inbox: 400px list, docked composer                  |
-| Ask AI  | Yes | N/A        | Yes  | Opens the existing assistant panel, no new UI                   |
+| Ask AI  | Yes | N/A        | Yes  | Opens assistant, upgrade modal, or unavailable sheet            |
 | App     | No  | N/A        | Yes  | App version, Check for updates, Install app entry               |
 
 ## Overview
@@ -49,6 +49,8 @@ This is where you go if you're stuck, found something broken, or want to ask us 
   A: Yes. Tickets about something broken can include up to 3 files - images up to 10 MB (compressed automatically before upload) or short videos up to 50 MB. Trim or compress a longer clip first; videos aren't re-encoded for you.
 - Q: What's the difference between Ask AI and a ticket?
   A: Ask AI answers questions about your bookings and data right away. A ticket goes to our support team. Use a ticket when something is broken, you have an idea, or the assistant can't help.
+- Q: Why can't I open Ask AI?
+  A: Your plan may need an upgrade, AI may be turned off for maintenance, or your role may not include the assistant. The page explains which case applies.
 - Q: What's the difference between FAQs and Guides?
   A: FAQs are the short common answers. Open Guides when you want the full picture for a page.
 - Q: Do I need a specific role to see Help & Support?
@@ -64,7 +66,7 @@ Persistent **Help & Support** title and subtitle. Four clickable summary cards s
 
 ### Behavior / edge cases
 
-Ask AI does not navigate. It calls `openAiAssistant()`, which opens the existing assistant slide-over already mounted in `AdminLayoutShell` when the property plan includes **`aiDashboardAssistant`** (Business and above) and org/platform kill-switches allow it. If the plan tier blocks the assistant, the same click opens the **subscription upgrade** modal instead of doing nothing. That signal is one-shot: switching org, property, or parking remounts the admin shell and must not reopen the panel from a leftover request. Guides and Tickets keep nested URLs (`/docs`, `/tickets`) for deep links, but they are the same Help & Support page: the title, subtitle, and four cards stay mounted. Switching modules only replaces the content below the cards — it does not replay the admin page-enter animation.
+Ask AI does not navigate. It calls `openAiAssistant()`, which opens the existing assistant slide-over already mounted in `AdminLayoutShell` when the property plan includes **`aiDashboardAssistant`** (Business and above) and org/platform kill-switches allow it. If the plan tier blocks the assistant, the same click opens the **subscription upgrade** modal. If the platform or org kill switch is off, this property is disabled, or the member lacks `assistant:view`, the click opens an **AI assistant unavailable** sheet instead of doing nothing. Access must finish loading before the request is handled so a fast click is not dropped. That signal is one-shot: switching org, property, or parking remounts the admin shell and must not reopen the panel from a leftover request. Guides and Tickets keep nested URLs (`/docs`, `/tickets`) for deep links, but they are the same Help & Support page: the title, subtitle, and four cards stay mounted. Switching modules only replaces the content below the cards — it does not replay the admin page-enter animation.
 
 ## Guides
 
@@ -74,7 +76,7 @@ Topic tiles first (Organization, Property, Parking, Guest pages), each with a ce
 
 ## Tickets
 
-List, new ticket, and conversation live in one Tickets workspace (`/tickets`, `/tickets/new`, `/tickets/:ticketId`). The workspace fills remaining height under the Help cards (same fill-main pattern as Guest Inbox). Desktop is a split pane: ticket list at `lg:w-[min(100%,400px)]`, thread in the rest. The list header is **My Tickets** on the left, **New** on the right. **New** opens a modal (bottom sheet on phone) so the current thread stays visible; `/tickets/new` still opens that modal for deep links. Closing it without submitting asks to discard if the draft has content, then returns to the ticket you were on. Desktop with tickets auto-selects the first row so the idle “Pick a ticket” pane is skipped. Phone shows one pane at a time; Back lives in the thread header (`lg:hidden`), not above the split.
+List, new ticket, and conversation live in one Tickets workspace (`/tickets`, `/tickets/new`, `/tickets/:ticketId`). The workspace fills remaining height under the Help cards (same fill-main pattern as Guest Inbox). Desktop is a split pane: ticket list at `lg:w-[min(100%,400px)]`, thread in the rest. The list header is **My Tickets** on the left; **New** is on the right only when the list has tickets (the empty state uses a centered **New ticket** CTA instead). **New** opens a modal (bottom sheet on phone) so the current thread stays visible; `/tickets/new` still opens that modal for deep links. Closing it without submitting asks to discard if the draft has content, then returns to the ticket you were on. Desktop with tickets auto-selects the first row so the idle “Pick a ticket” pane is skipped. Phone shows one pane at a time; Back lives in the thread header (`lg:hidden`), not above the split. Loading uses a layout-matched skeleton: empty chrome when this scope has no tickets (or on a cold first visit), list + thread chrome when a prior visit (or cached list) had tickets.
 
 ### Fields
 
@@ -109,7 +111,7 @@ Lists the caller's own tickets with a status badge (Open / In progress / Resolve
 | Resolved           | Shown    | Banner explains resolution; placeholder “Reply to reopen…”; reply moves ticket to **In progress** |
 | Closed             | Hidden   | Banner + **Reopen ticket** button; reopen sets status to **Open**, then composer returns          |
 
-Empty and load-error states stay inside the list pane under **My Tickets** (icon well + title + retry). Closed rows in the list render slightly muted. New ticket compose is a modal, not a second pane.
+Empty and load-error states stay inside the list pane under **My Tickets** (icon well + title + short description + CTA, or retry). Empty copy explains that tickets are for something broken, an idea, or a question, and that replies show here. Closed rows in the list render slightly muted. New ticket compose is a modal, not a second pane.
 
 ## API reference
 

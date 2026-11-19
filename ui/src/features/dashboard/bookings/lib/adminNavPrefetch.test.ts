@@ -98,15 +98,13 @@ describe('primary phone tabs', () => {
   it('never attaches a prefetch handler to a tab that is not a route', () => {
     const { tabItems } = splitAdminBottomNav(buildOrgNavSections('acme'), {
       onMoreClick: () => {},
-      notifications: { onClick: () => {} },
-      assistant: { onClick: () => {} },
     });
 
-    // More / Notifications / Assistant are buttons. `notifications` does exist as a
-    // route segment, so the guard has to be "no href", which is what AdminLayout checks
-    // before attaching `onIntent`.
+    // More is a button. The guard is "no href", which is what AdminLayout
+    // checks before attaching `onIntent`.
     const nonRoute = tabItems.filter((item) => !item.href);
-    expect(nonRoute.length).toBeGreaterThan(0);
+    expect(nonRoute.length).toBe(1);
+    expect(nonRoute[0]?.key).toBe('more');
     for (const item of nonRoute) {
       expect(item.onIntent).toBeUndefined();
     }

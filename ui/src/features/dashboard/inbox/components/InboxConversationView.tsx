@@ -59,7 +59,7 @@ import {
   inboxAttachmentPreviews,
   type InboxAttachmentPreview,
 } from '@/features/dashboard/inbox/lib/inboxMessageAttachments';
-import { readInboxPinnedSnippets } from '@/features/dashboard/inbox/lib/inboxPinnedSnippets';
+import { resolvePinnedSnippets } from '@/features/dashboard/inbox/lib/inboxPinnedSnippets';
 import { mockChatTemplatePreview } from '@/features/dashboard/inbox/lib/inboxMockStore';
 import { applyInboxQuickReplyMerge } from '@/features/dashboard/inbox/lib/inboxQuickReplyMerge';
 import { templatesForConversationPlatform } from '@/features/dashboard/inbox/lib/quickReplyGroups';
@@ -317,8 +317,8 @@ export function InboxConversationView({
   );
 
   const pinnedSnippets = useMemo(
-    () => readInboxPinnedSnippets(orgContext?.property.settings),
-    [orgContext?.property.settings]
+    () => resolvePinnedSnippets(orgContext?.property.settings, templates),
+    [orgContext?.property.settings, templates]
   );
 
   const isWeb = conversation?.platform === 'web';

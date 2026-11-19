@@ -75,7 +75,7 @@ test.describe('@ci @critical feature availability - host surfaces', () => {
     await installPropertyTeamRbacMocks(page, 'full_access', {
       featureAvailabilityOff: ['inbox.meta'],
     });
-    await page.goto(propertyPath('inbox'));
+    await page.goto(propertyPath('messages'));
     await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible({
       timeout: 20_000,
     });

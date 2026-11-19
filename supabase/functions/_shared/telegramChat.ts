@@ -255,9 +255,9 @@ export function buildConversationInboxLink(
   const propertySlug = opts?.propertySlug?.trim() || null;
   const parkingSlug = opts?.parkingSlug?.trim() || null;
   const inboxBase = parkingSlug
-    ? `${appOrigin()}/org/${encodeURIComponent(orgSlug)}/parking/${encodeURIComponent(parkingSlug)}/inbox`
+    ? `${appOrigin()}/org/${encodeURIComponent(orgSlug)}/parking/${encodeURIComponent(parkingSlug)}/messages`
     : propertySlug
-      ? `${appOrigin()}/org/${encodeURIComponent(orgSlug)}/property/${encodeURIComponent(propertySlug)}/inbox`
+      ? `${appOrigin()}/org/${encodeURIComponent(orgSlug)}/property/${encodeURIComponent(propertySlug)}/messages`
       : `${appOrigin()}/org/${encodeURIComponent(orgSlug)}/properties`;
   return (
     `${inboxBase}` +
@@ -348,7 +348,7 @@ export function buildChatPreviewSamplePlaceholders(propertyName?: string): Recor
     chatSource: 'Web chat',
     text: 'Hi! Is June 18–20 still available for 2 guests?',
     attachments: [],
-    conversationLink: `${appOrigin()}/org/demo/property/demo-unit/inbox?conversationId=00000000-0000-4000-8000-000000000001&platform=web`,
+    conversationLink: `${appOrigin()}/org/demo/property/demo-unit/messages?conversationId=00000000-0000-4000-8000-000000000001&platform=web`,
     checkIn: '2026-06-18',
     checkOut: '2026-06-20',
     sentAt: new Date().toISOString(),

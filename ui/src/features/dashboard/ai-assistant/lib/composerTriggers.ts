@@ -89,7 +89,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   },
   {
     id: 'inbox',
-    label: '/inbox',
+    label: '/messages',
     hint: 'Unread guest messages',
     kind: 'prompt',
     prompt: 'Which guest conversations are unread?',

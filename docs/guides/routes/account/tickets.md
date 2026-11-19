@@ -2,7 +2,7 @@
 title: 'Guest account — Tickets'
 status: active
 tags: [guides, routes, account, help-support]
-updated: 2026-08-27
+updated: 2026-11-19
 ---
 
 # Guest account — Tickets
@@ -22,7 +22,7 @@ Route: `/account/tickets` (+ `?compose=1`, legacy `/new`, `/:ticketId`)
 
 ## Overview
 
-Signed-in explore guests open **Tickets** from the account menu (avatar) or sidebar. Layout matches dashboard **My Tickets**: list + thread split on desktop, one pane on phone, **New** compose modal. Tickets filed from public **Contact** (`/contact`) land here after submit.
+Signed-in explore guests open **Tickets** from the account menu (avatar) or sidebar. Layout matches dashboard **My Tickets**: list + thread split on desktop, one pane on phone, compose modal. Header **New** shows only when the list has tickets; the empty state uses a centered **New ticket** CTA plus a short description. Loading uses the same empty/list-aware `TicketsWorkspaceSkeleton` as Help & Support. Tickets filed from public **Contact** (`/contact`) land here after submit.
 
 Host org tickets (Help & Support in the dashboard) stay separate (`channel=host`). Explore tickets use `channel=guest` with no organization.
 

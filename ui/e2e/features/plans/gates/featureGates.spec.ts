@@ -184,7 +184,7 @@ const SURFACES: GateSurface[] = [
   {
     feature: 'metaChatChannel',
     name: 'Inbox: Connect a channel',
-    path: `${PROPERTY}/inbox`,
+    path: `${PROPERTY}/messages`,
     control: (page) => page.getByRole('button', { name: /Connect/ }).first(),
     scope: parentScope,
     behaviour: 'modal',

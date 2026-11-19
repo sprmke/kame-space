@@ -29,8 +29,12 @@ const NOTIFICATIONS_PANEL_Z = 'z-[110]';
 type Props = {
   /** Render against a brand-colored surface (mobile hero band) instead of the default chrome. */
   onPrimary?: boolean;
-  /** Desktop floating action — hidden below `lg`; mobile uses the bottom tab. */
-  variant?: 'ghost' | 'fab';
+  /**
+   * `ghost` — header icon button.
+   * `fab` — desktop floating action (legacy; prefer AdminQuickAccessHub expand pill).
+   * `panel` — controlled sheet only, no trigger (opened from Quick Access).
+   */
+  variant?: 'ghost' | 'fab' | 'panel';
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   className?: string;
@@ -152,7 +156,7 @@ export function NotificationBell({
   );
 
   const trigger =
-    variant === 'fab' ? (
+    variant === 'panel' ? null : variant === 'fab' ? (
       <button
         type="button"
         onClick={() => setOpen(true)}

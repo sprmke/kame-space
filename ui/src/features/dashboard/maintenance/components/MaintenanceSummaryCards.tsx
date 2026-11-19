@@ -14,18 +14,6 @@ export function MaintenanceSummaryCards({ total, telegramEnabled, completed, pen
     <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4">
       <AdminMetricCard title="Total" value={String(total)} icon={ListChecks} />
       <AdminMetricCard
-        title="Telegram enabled"
-        value={String(telegramEnabled)}
-        icon={Bell}
-        titleAdornment={
-          <InfoHint
-            label="Telegram enabled"
-            text={MAINTENANCE_HELP_COPY.telegramEnabled.hint}
-            variant="metric"
-          />
-        }
-      />
-      <AdminMetricCard
         title="Completed"
         value={String(completed)}
         icon={CheckCircle2}
@@ -38,6 +26,18 @@ export function MaintenanceSummaryCards({ total, telegramEnabled, completed, pen
         valueClassName={cn(pending > 0 ? 'text-amber-600 dark:text-amber-400' : undefined)}
         titleAdornment={
           <InfoHint label="Pending" text={MAINTENANCE_HELP_COPY.pending.hint} variant="metric" />
+        }
+      />
+      <AdminMetricCard
+        title="Telegram enabled"
+        value={String(telegramEnabled)}
+        icon={Bell}
+        titleAdornment={
+          <InfoHint
+            label="Telegram enabled"
+            text={MAINTENANCE_HELP_COPY.telegramEnabled.hint}
+            variant="metric"
+          />
         }
       />
     </div>

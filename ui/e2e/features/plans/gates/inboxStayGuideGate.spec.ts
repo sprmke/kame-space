@@ -60,7 +60,7 @@ async function openInsertMenu(page: Page, tier: TierCode) {
     json(route, { templates: [] })
   );
 
-  await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/inbox`);
+  await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/messages`);
   await page.getByText('Lia Gomez').first().click();
   await page.getByRole('button', { name: 'Insert link or info' }).click();
   return page.getByRole('dialog').getByRole('button', { name: /^Stay guide/i });

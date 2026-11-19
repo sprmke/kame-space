@@ -111,7 +111,17 @@ export function Field({
 
   return (
     <div
-      className={cn('flex min-w-0 flex-col gap-1.5', className)}
+      className={cn(
+        'flex min-w-0 flex-col gap-1.5',
+        error &&
+          cn(
+            '[&_input]:border-destructive [&_input]:bg-destructive/5',
+            '[&_textarea]:border-destructive [&_textarea]:bg-destructive/5',
+            '[&_button.border]:border-destructive [&_button.border]:bg-destructive/5',
+            '[&_button.border-input]:border-destructive [&_button.border-input]:bg-destructive/5'
+          ),
+        className
+      )}
       data-field={fieldKey ?? htmlFor}
     >
       <label htmlFor={htmlFor} className="text-muted-foreground text-xs font-medium">

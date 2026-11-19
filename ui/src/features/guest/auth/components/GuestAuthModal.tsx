@@ -4,6 +4,10 @@ import { ArrowLeft } from 'lucide-react';
 
 import { AuthDivider } from '@/features/guest/auth/components/AuthDivider';
 import { useGuestAuthActions } from '@/features/guest/auth/hooks/useGuestAuthActions';
+import {
+  AUTH_CAPTCHA_UNAVAILABLE_MESSAGE,
+  isAuthCaptchaTokenMissing,
+} from '@/features/guest/auth/lib/authCaptchaToken';
 
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { KameSpaceBrandIcon } from '@/components/branding/KameSpaceBrandIcon';
@@ -71,6 +75,12 @@ export function GuestAuthModal({
     setError(null);
     setIsSending(true);
     const captchaToken = await captcha.ensureToken();
+    if (isAuthCaptchaTokenMissing(captchaToken)) {
+      captcha.reset();
+      setIsSending(false);
+      setError(AUTH_CAPTCHA_UNAVAILABLE_MESSAGE);
+      return;
+    }
     const otpError = await sendEmailOtp(trimmed, captchaToken);
     captcha.reset();
     setIsSending(false);
