@@ -2,7 +2,7 @@
 title: 'Edge functions (API surface)'
 status: active
 tags: [architecture, edge-functions]
-updated: 2026-09-17
+updated: 2026-11-20
 ---
 
 # Edge functions (API surface)
@@ -105,6 +105,28 @@ Rules:
 - **A `public*` directive on an authenticated/tenant-scoped response is a cross-tenant data leak** — treat every new `public*` call site as a security-reviewed decision (verify: no auth check gates the handler, no per-viewer variation in the payload), not a performance tweak.
 
 Full phase status — what's classified vs. deferred, real bugs found during self-review (the CI guard's `rg`-not-on-`PATH` fallback bug), and the SW allowlist reconciliation: [`11-cache-api-responses.md`](../workflow/in-progress/production-readiness/checklist/11-cache-api-responses.md).
+
+### Anonymous public reads: isolate cache first, durable counter on a miss
+
+`s-maxage` does not help here (above), so the hot public reads are cached **inside the edge isolate** and metered in the order that keeps hits free (production readiness PR-131, issue #183). The pieces:
+
+| Piece                    | File                                                      | Role                                                                                                                                                                                                                                                                                       |
+| ------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Catalog-version cache    | `_shared/publicListingCache.ts`                           | Keys fold in `public_listing_catalog_version` (bumped by listing, price, review and development writes), so a write invalidates a family within about 5 s. Options: `ttlMs` (default 60 s), `skipNull` (never store a missing listing), `bypass`. `peekListingCache` is a read-only lookup |
+| Rate limit + cache order | `_shared/publicCachedRead.ts` (`cachedPublicListingRead`) | **Hit:** counted in memory (`rateLimitGateInMemory`), no I/O. **Miss:** durable `bump_rate_limit` first, then compute and store                                                                                                                                                            |
+| Property detail          | `_shared/publicPropertyDetailCache.ts`                    | `get-public-property`, 30 s TTL because the payload also reads contact info, badges and page config that the catalog version does not track                                                                                                                                                |
+
+Used by `get-public-property`, `list-public-properties`, `-parkings`, `-developments`, `-place-groups`, `search-listings` and `search-suggestions`.
+
+Rules for a new call site:
+
+- **Public, non-personalized payloads only.** Never put an authenticated or per-viewer read through it. Host preview (`preview` / `embed`) never reads or writes the cache.
+- **Anything that reads live availability bypasses it** (`bypass: range != null`). Bookings change availability without touching the catalog.
+- **Throw, never return a `Response`, from the compute.** The value is cached and wrapped as data. A failed compute is not stored.
+- **Every path that reaches the database before the cache is consulted must call `publicGetRateLimitGate` itself** (see the `?slug=` branch of `list-public-developments`). `check-serve-public-rate-limit.sh` accepts `cachedPublicListingRead` as the limiter.
+- The in-memory hit count is per isolate, a burst dampener and not a global quota. Hits cost no database work; every miss is still metered durably.
+- The cache is per isolate and capped at 300 entries (LRU). Free-text keys (`search-listings`, `search-suggestions`) can evict hot entries, which only costs a recompute and is bounded by the durable gate on misses.
+- The local edge runtime uses `policy = "oneshot"`, so it never shows a hit. Measure with `deno run --allow-all --config supabase/functions/deno.json supabase/functions/<fn>/index.ts` against the local stack.
 
 ---
 

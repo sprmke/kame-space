@@ -37,3 +37,7 @@ Single-request warm latency on the same baseline: `get-public-property` 1.2–1.
 - **B. App-level read-through cache** (`_shared/queryCache.ts`) for `get-public-property` and listing pages with a short TTL plus purge on property/pricing/review writes.
 - **C. Fewer queries per call** (fold contact / app settings / reviews into one RPC).
 - Confirm production compute size and re-run this test against it before launch.
+
+## Follow-up (2026-11-20)
+
+Root cause and a code fix for the findings above: [`pr-131-public-read-caching-2026-11-20.md`](./pr-131-public-read-caching-2026-11-20.md). The hosted re-test is still open.
