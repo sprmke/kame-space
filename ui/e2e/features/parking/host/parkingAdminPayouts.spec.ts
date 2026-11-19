@@ -51,8 +51,8 @@ test.describe('@ci super-admin parking payouts', () => {
             settings: {
               commissionPct: 0.1,
               directCommissionPct: 0.05,
-              guestRateWeekday: 400,
-              guestRateWeekend: 400,
+              guestFeePct: 0.05,
+              guestFeeFixed: 15,
               paymentFeePct: 0.03125,
               paymentFeeFixed: 15,
               supportEscalationPhone: null,
@@ -84,5 +84,42 @@ test.describe('@ci super-admin parking payouts', () => {
     await expect(page.getByText('Refund review').first()).toBeVisible();
     await page.getByRole('button', { name: 'Record refund' }).click();
     await expect(page.getByRole('heading', { name: 'Record a guest refund' })).toBeVisible();
+  });
+
+  test('has guest fee fields and no guest rate fields', async ({ page }) => {
+    const tenant = mockTenant({ persona: 'superAdmin', level: 'platform' });
+    await installTenant(page, tenant);
+    await mockEdgeFunctions(page, [
+      ...tenant.mocks,
+      {
+        name: 'platform-parking-settings',
+        body: {
+          success: true,
+          data: {
+            settings: {
+              commissionPct: 0.1,
+              directCommissionPct: 0.05,
+              guestFeePct: 0.05,
+              guestFeeFixed: 15,
+              paymentFeePct: 0.03125,
+              paymentFeeFixed: 15,
+              supportEscalationPhone: null,
+            },
+          },
+        },
+      },
+      { name: 'parking-payouts', body: { success: true, data: { transactions: [] } } },
+    ]);
+
+    await page.goto('/admin/parking/payouts');
+    await expect(page.getByLabel('Guest fee (%)')).toHaveValue('5', { timeout: 20_000 });
+    await expect(page.getByLabel('Guest fee fixed (₱)')).toHaveValue('15');
+    await expect(page.getByLabel(/Guest rate/i)).toHaveCount(0);
+    // Defaults earn money on a ₱100 night for both channels.
+    await expect(page.getByText(/lose money/i)).toHaveCount(0);
+
+    await page.getByLabel('Guest fee (%)').fill('0');
+    await page.getByLabel('Guest fee fixed (₱)').fill('0');
+    await expect(page.getByRole('alert').filter({ hasText: /lose money/i })).toBeVisible();
   });
 });

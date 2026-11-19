@@ -24,6 +24,7 @@ function serialize(row: Record<string, unknown>) {
     bookingId: String(row.booking_id),
     parkingId: String(row.parking_id),
     guestChargeTotal: Number(row.guest_charge_total ?? 0),
+    guestFeeTotal: Number(row.guest_fee_total ?? 0),
     hostGrossTotal: Number(row.host_gross_total ?? 0),
     commissionPct: Number(row.commission_pct ?? 0),
     hostNetTotal: Number(row.host_net_total ?? 0),
@@ -54,7 +55,7 @@ serveAuthenticated('parking-payments', async (req) => {
     const { data, error } = await supabase
       .from('parking_payment_transactions')
       .select(
-        `id, booking_id, parking_id, guest_charge_total, host_gross_total, commission_pct,
+        `id, booking_id, parking_id, guest_charge_total, guest_fee_total, host_gross_total, commission_pct,
          host_net_total, nights, booking_channel, status, paid_at, disbursed_at,
          disbursement_reference, refund_review_at, refunded_at, refund_amount,
          refund_reason, failure_reason`
@@ -72,7 +73,7 @@ serveAuthenticated('parking-payments', async (req) => {
   const { data, error } = await supabase
     .from('parking_payment_transactions')
     .select(
-      `id, booking_id, parking_id, guest_charge_total, host_gross_total, commission_pct,
+      `id, booking_id, parking_id, guest_charge_total, guest_fee_total, host_gross_total, commission_pct,
        host_net_total, nights, booking_channel, status, paid_at, disbursed_at,
        disbursement_reference, refund_review_at, refunded_at, refund_amount,
        refund_reason, failure_reason`

@@ -237,21 +237,58 @@
   }
 
   /* Quiet defaults — surfaces that need display scale set sizes explicitly
-   * (marketing heroes, showcase). Admin uses text-admin-* / text-card-* tokens. */
+   * (marketing heroes, showcase). Admin uses text-admin-* / text-card-* tokens.
+   *
+   * Sizes are plain CSS on purpose. `@apply text-base` (and text-sm/lg/xl) also copies every
+   * rule that mentions that class, so `.showcase-scope .text-base` became
+   * `.showcase-scope h2 { font-size: 1em }`. That is more specific than a heading's own
+   * `text-3xl` / `@sm:text-5xl`, so every showcase and stay guide heading rendered at body size. */
   h1 {
-    @apply text-lg font-bold tracking-tight sm:text-xl md:text-2xl;
+    @apply font-bold tracking-tight;
+    font-size: 1.125rem;
+    line-height: 1.75rem;
   }
 
   h2 {
-    @apply text-base font-semibold tracking-tight sm:text-lg;
+    @apply font-semibold tracking-tight;
+    font-size: 1rem;
+    line-height: 1.5rem;
   }
 
   h3 {
-    @apply text-sm font-semibold tracking-tight sm:text-base;
+    @apply font-semibold tracking-tight;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
   }
 
   h4 {
-    @apply text-sm font-semibold;
+    @apply font-semibold;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  @media (min-width: 640px) {
+    h1 {
+      font-size: 1.25rem;
+      line-height: 1.75rem;
+    }
+
+    h2 {
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
+
+    h3 {
+      font-size: 1rem;
+      line-height: 1.5rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    h1 {
+      font-size: 1.5rem;
+      line-height: 2rem;
+    }
   }
 
   p {
@@ -3215,6 +3252,11 @@ html.guest-embed-preview *::-webkit-scrollbar {
   /** Page Editor / embed scrollport lock while showcase mobile menu is open. */
   [data-showcase-scroll-lock] {
     overflow-y: hidden !important;
+  }
+
+  /* A long single word in a title or list item must wrap, not run off the screen or widen the page. */
+  .showcase-scope :is(h1, h2, h3, li) {
+    overflow-wrap: anywhere;
   }
 
   .showcase-scope {

@@ -1,17 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  computeParkingBookingBreakdown,
   computeParkingDirectLinkNet,
   computeParkingNightlyPayout,
-  computeParkingPlatformSettlement,
 } from './parkingPayout';
 
+const SETTINGS = {
+  guestFeePct: 0.05,
+  guestFeeFixed: 15,
+  paymentFeePct: 0.03125,
+  paymentFeeFixed: 15,
+};
+
 describe('parking payout display math', () => {
-  it('splits a standard booking into guest pays, fee and host net', () => {
-    expect(
-      computeParkingNightlyPayout({ hostRate: 300, guestRate: 400, commissionPct: 0.1 })
-    ).toEqual({
-      guestPays: 400,
+  it('splits a nightly rate into the platform fee and what the host receives', () => {
+    expect(computeParkingNightlyPayout({ hostRate: 300, commissionPct: 0.1 })).toEqual({
       hostGross: 300,
       commissionAmount: 30,
       hostNet: 270,
@@ -24,25 +28,45 @@ describe('parking payout display math', () => {
   });
 
   it('never returns a negative host net', () => {
-    expect(
-      computeParkingNightlyPayout({ hostRate: 300, guestRate: 400, commissionPct: 2 })
-    ).toMatchObject({ hostNet: 0 });
+    expect(computeParkingNightlyPayout({ hostRate: 300, commissionPct: 2 })).toMatchObject({
+      hostNet: 0,
+    });
   });
+});
 
-  it('computes the platform margin after the host payout and the processor fee', () => {
+describe('parking booking breakdown (guest fee on top of the host rate)', () => {
+  it('matches the server for a 1 night, 300 booking', () => {
     expect(
-      computeParkingPlatformSettlement({
-        guestChargeTotal: 400,
-        hostGrossTotal: 300,
-        commissionPct: 0.1,
-        paymentFeePct: 0.03125,
-        paymentFeeFixed: 15,
-      })
+      computeParkingBookingBreakdown({ hostGrossTotal: 300, commissionPct: 0.1, ...SETTINGS })
     ).toEqual({
+      hostGross: 300,
+      guestFee: 30,
+      guestCharge: 330,
       commissionAmount: 30,
       hostNet: 270,
-      paymentFeeAmount: 27.5,
-      platformNetTotal: 102.5,
+      paymentFeeAmount: 25.31,
+      platformNetTotal: 34.69,
     });
+  });
+
+  it('keeps the platform positive at the 100 minimum on both channels', () => {
+    const standard = computeParkingBookingBreakdown({
+      hostGrossTotal: 100,
+      commissionPct: 0.1,
+      ...SETTINGS,
+    });
+    const direct = computeParkingBookingBreakdown({
+      hostGrossTotal: 100,
+      commissionPct: 0.05,
+      ...SETTINGS,
+    });
+    expect(standard.platformNetTotal).toBe(11.25);
+    expect(direct.platformNetTotal).toBe(6.25);
+  });
+
+  it('charges no fee on a zero gross', () => {
+    expect(
+      computeParkingBookingBreakdown({ hostGrossTotal: 0, commissionPct: 0.1, ...SETTINGS })
+    ).toMatchObject({ guestFee: 0, guestCharge: 0 });
   });
 });

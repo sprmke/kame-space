@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import { ParkingPricingRatesFormCard } from '@/features/dashboard/parking/components/ParkingPricingRatesFormCard';
 import {
@@ -10,6 +11,10 @@ import {
   DEFAULT_PARKING_WEEKEND_NIGHTLY_RATE,
   parkingPricingDefaultsFromDto,
 } from '@/features/dashboard/parking/lib/parkingPricingDefaults';
+import {
+  isValidParkingRate,
+  PARKING_MIN_RATE_MESSAGE,
+} from '@/features/dashboard/parking/lib/parkingRateRules';
 import {
   buildParkingPricingSavePatch,
   parkingPricingBaselineFromDto,
@@ -256,6 +261,11 @@ export function SetupGuideParkingPricingEmbed({ parkingId }: { parkingId: string
       return true;
     }
 
+    if (!isValidParkingRate(weekdayRate) || !isValidParkingRate(weekendRate)) {
+      toast.error(PARKING_MIN_RATE_MESSAGE);
+      return false;
+    }
+
     try {
       const patch = buildParkingPricingSavePatch(
         {
@@ -315,9 +325,9 @@ export function SetupGuideParkingPricingEmbed({ parkingId }: { parkingId: string
     <ParkingPricingRatesFormCard
       weekdayRate={weekdayRate}
       weekendRate={weekendRate}
-      guestRateWeekday={pricingData?.guestRateWeekday}
-      guestRateWeekend={pricingData?.guestRateWeekend}
       commissionPct={pricingData?.commissionPct}
+      guestFeePct={pricingData?.guestFeePct}
+      guestFeeFixed={pricingData?.guestFeeFixed}
       readOnly={!canEdit}
       hasChanges={hasChanges}
       saving={saveMutation.isPending}

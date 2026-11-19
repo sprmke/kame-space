@@ -11,6 +11,7 @@ import {
 } from './parkingBlockedDates.ts';
 import { resolveParkingPlatformSettings } from './parkingPlatformSettings.ts';
 import { ensureParkingDirectBookingToken } from './parkingDirectLink.ts';
+import { PARKING_MIN_NIGHTLY_RATE } from './parkingGuestFee.ts';
 
 export const DEFAULT_PARKING_WEEKDAY = 300;
 export const DEFAULT_PARKING_WEEKEND = 400;
@@ -21,20 +22,16 @@ export type ParkingPricingDto = {
   dateOverrides: Record<string, number>;
   bookedDateKeys: string[];
   blockedDateKeys: string[];
-  /**
-   * Live super-admin guest rates (Phase 4). Same values as `guestRateWeekday`/`guestRateWeekend`.
-   * Kept for host UI soft-warn + broadcast pool exclusion when host rate is above guest rate.
-   * Host rates may still be saved above these values.
-   */
-  guestRateCapWeekday: number;
-  guestRateCapWeekend: number;
-  /** Same live values, named for the host-facing "guests pay" line. */
-  guestRateWeekday: number;
-  guestRateWeekend: number;
   /** Live super-admin-configured commission %, for the host-facing fee/net-payout breakdown. */
   commissionPct: number;
   /** Phase 8 — commission % applied to bookings made through this listing's direct link. */
   directCommissionPct: number;
+  /**
+   * Guest service fee added on top of the host rate at checkout (fraction of the host gross
+   * plus a flat peso amount per booking). Host-readable so the Pricing preview matches checkout.
+   */
+  guestFeePct: number;
+  guestFeeFixed: number;
   /** Phase 8 — opaque token + slug for building the shareable direct-booking link. */
   directBookingToken: string;
   directBookingSlug: string;
@@ -59,12 +56,19 @@ function pickMoney(value: unknown, fallback: number): number {
   return Number.isFinite(n) && n >= 0 ? n : fallback;
 }
 
-function validateMoneyField(value: unknown, label: string): number | null | string {
+export function validateMoneyField(
+  value: unknown,
+  label: string,
+  min: number = PARKING_MIN_NIGHTLY_RATE
+): number | null | string {
   if (value === undefined) return null;
   if (value === null) return null;
   const n = Number(value);
-  if (!Number.isFinite(n) || n < 0) {
-    return `${label} must be a non-negative number`;
+  if (!Number.isFinite(n)) {
+    return `${label} must be a number`;
+  }
+  if (n < min) {
+    return `${label} must be at least ₱${min}`;
   }
   if (n > 999_999_999) {
     return `${label} is too large`;
@@ -224,12 +228,10 @@ export async function loadParkingPricing(
     dateOverrides,
     bookedDateKeys,
     blockedDateKeys,
-    guestRateCapWeekday: platformSettings.guestRateWeekday,
-    guestRateCapWeekend: platformSettings.guestRateWeekend,
-    guestRateWeekday: platformSettings.guestRateWeekday,
-    guestRateWeekend: platformSettings.guestRateWeekend,
     commissionPct: platformSettings.commissionPct,
     directCommissionPct: platformSettings.directCommissionPct,
+    guestFeePct: platformSettings.guestFeePct,
+    guestFeeFixed: platformSettings.guestFeeFixed,
     directBookingToken: directLink.token,
     directBookingSlug: directLink.slug,
   };
@@ -284,7 +286,7 @@ export async function saveParkingPricing(
       if (!validateDateKey(date)) {
         throw new Error(`Invalid override date: ${date}`);
       }
-      const validated = validateMoneyField(rate, 'Override rate');
+      const validated = validateMoneyField(rate, `Override rate for ${date}`);
       if (typeof validated === 'string') throw new Error(validated);
       if (validated === null) throw new Error('Override rate is required');
       return {

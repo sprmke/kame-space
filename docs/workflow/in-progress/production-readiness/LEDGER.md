@@ -2,7 +2,7 @@
 title: 'Production readiness ledger'
 status: active
 tags: [workflow, in-progress, production-readiness]
-updated: 2026-11-19
+updated: 2026-11-20
 stage: in-progress
 kind: reference
 ---
@@ -22,6 +22,12 @@ Tag legend: [`README.md`](./README.md). Gates A–G: same file.
 | Tag   | ✅ verified · 🟡 unverified · 🔴 failing · ⛔ operator · 🧭 decision · ⏸️ deferred · 🆕 untracked |
 
 ---
+
+## 2026-11-20 update
+
+| ID     | Change                                                                                                                                                                                                                                                                                                                                 |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PR-131 | ✅ public reads: isolate cache and hit-before-durable-counter order deployed to production in [#540](https://github.com/sprmke/kame-space/pull/540) (run `44575415204`). Hosted: 10 detail calls = 0 counter writes, 8 searches = 1, bypass paths still metered 3/3. [`evidence`](./evidence/pr-131-public-read-caching-2026-11-20.md) |
 
 ## 2026-11-01 re-verification on `develop` `497c7772`
 
@@ -226,7 +232,7 @@ Top blockers for launch: restore drill (PR-024), Turnstile enforce on hosted UI 
 | PR-093 | Operator P0-1..P0-6 still open (P0-7 ✅)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | blocker | operator | ⛔  | operator/cost-abuse-security-pending-from-user                                          |
 | PR-094 | V-1 hosted-dev deploy — in progress this session                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | blocker | agent    | 🟡  | this plan 0.5                                                                           |
 | PR-095 | V-2..V-5 after V-1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | high    | agent    | 🟡  | operator list                                                                           |
-| PR-096 | `SECURITY DEFINER` functions in `public` callable by `anon`. **Resolved 2026-11-19, production was never exposed:** hosted production has `anon` running 0 of 123 definer functions and `authenticated` only the two intended ones (both check the caller). The ~60 exposed functions were an artifact of standard Supabase defaults on the local stack and CI replays. Migration `20261343001100` makes every environment match production, and `probe-function-privileges-local.sh` enforces it after every fresh replay | high    | agent    | ✅  | `docs/archive/operations/migration-runbook.md` (Plans & Billing lifecycle section)      |
+| PR-096 | `SECURITY DEFINER` functions in `public` callable by `anon`. **Resolved 2026-11-19, production was never exposed:** hosted production has `anon` running 0 of 123 definer functions and `authenticated` only the two intended ones (both check the caller). The ~60 exposed functions were an artifact of standard Supabase defaults on the local stack and CI replays. Migration `20261342000600` makes every environment match production, and `probe-function-privileges-local.sh` enforces it after every fresh replay | high    | agent    | ✅  | `docs/archive/operations/migration-runbook.md` (Plans & Billing lifecycle section)      |
 | PR-097 | PayMongo go-live configuration. **Sandbox wiring done 2026-11-19:** the production project's PayMongo secrets now point at the sandbox account, its webhook is enabled with `payment.refunded` added, and one real purchase end to end (checkout, webhook, receipt PDF, refund) passed on production. **Left for go-live (operator):** live-mode keys and PayMongo approval, a live webhook with the five events, `PAYMONGO_WEBHOOK_SECRET`, and one live checkout. Production secrets are sandbox values until then       | high    | operator | ⛔  | `docs/archive/operations/paymongo-billing-setup.md` (verified API facts, webhook state) |
 | PR-098 | `cd-prod` backend deploy failed intermittently with an `esm.sh` connection reset while bundling edge functions (three times on 2026-11-18). **Fixed 2026-11-19:** `scripts/deploy/retry-lib.sh` retries `supabase functions deploy` (up to 3 attempts, backoff) on transient network errors only, never on real errors or migrations; covered by `scripts/dev/test-deploy-retry.sh` in CI                                                                                                                                  | medium  | agent    | ✅  | `scripts/deploy/deploy-supabase.sh`, `deploy-supabase-dev.sh`                           |
 

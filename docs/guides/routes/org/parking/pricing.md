@@ -2,28 +2,28 @@
 title: 'Parking Pricing — operator guide'
 status: active
 tags: [guides, routes, org, parking]
-updated: 2026-09-03
+updated: 2026-11-19
 ---
 
 # Parking Pricing — operator guide
 
 Route: `/org/:orgSlug/parking/:parkingSlug/pricing`
 
-> **Status:** Documented — weekday/weekend base rates + calendar overrides (no fees); payout preview + soft warn when host rate is above guest rate; live super-admin guest rates since Phase 4; direct booking link since Phase 8.
+> **Status:** Documented — weekday/weekend base rates + calendar overrides; **hosts set their own rate (minimum ₱100, no maximum)**; guests pay that rate plus a service fee; payout preview shows the rate guests see, the platform fee and the payout; direct booking link since Phase 8.
 
 ## Progress overview
 
-| Section                       | E2E save | Validation | Docs | Notes                                                                                                           |
-| ----------------------------- | -------- | ---------- | ---- | --------------------------------------------------------------------------------------------------------------- |
-| Base rates                    | ✅       | ✅         | Done | `parking_settings.weekday_nightly_rate` / weekend                                                               |
-| Calendar custom dates         | ✅       | ✅         | Done | `parking_pricing_date_overrides`                                                                                |
-| Date blocks                   | ✅       | ✅         | Done | `parking_blocked_dates`; broadcast + calendar UI                                                                |
-| Fees                          | —        | —          | N/A  | Not applicable for parking                                                                                      |
-| Booked nights                 | ✅       | —          | Done | `bookedDateKeys` from claimed parking bookings                                                                  |
-| Team access                   | —        | —          | Done | Parking team `pricing:view` / `pricing:edit`                                                                    |
-| Payout preview (Phase 3/4)    | —        | —          | Done | Guest rate + platform fee + net payout under each rate field — display only, live commission %                  |
-| Guest-rate soft warn          | ✅       | —          | Done | Host may save above guest rate; amber warn + marketplace match exclusion; guest rate is live super-admin config |
-| Direct booking link (Phase 8) | —        | —          | Done | Copyable link at a reduced fee, with a per-night comparison using the current rate                              |
+| Section                       | E2E save | Validation | Docs | Notes                                                                                               |
+| ----------------------------- | -------- | ---------- | ---- | --------------------------------------------------------------------------------------------------- |
+| Base rates                    | ✅       | ✅         | Done | `parking_settings.weekday_nightly_rate` / weekend                                                   |
+| Calendar custom dates         | ✅       | ✅         | Done | `parking_pricing_date_overrides`                                                                    |
+| Date blocks                   | ✅       | ✅         | Done | `parking_blocked_dates`; broadcast + calendar UI                                                    |
+| Fees                          | —        | —          | N/A  | Not applicable for parking                                                                          |
+| Booked nights                 | ✅       | —          | Done | `bookedDateKeys` from claimed parking bookings                                                      |
+| Team access                   | —        | —          | Done | Parking team `pricing:view` / `pricing:edit`                                                        |
+| Payout preview                | —        | —          | Done | Rate guests see + platform fee + net payout under each rate field — display only, live commission % |
+| Minimum rate (₱100)           | ✅       | ✅         | Done | Rejected client- and server-side; no maximum; a cleared field can't be saved                        |
+| Direct booking link (Phase 8) | —        | —          | Done | Copyable link at a reduced fee, with a per-night comparison using the current rate                  |
 
 ---
 
@@ -31,22 +31,19 @@ Route: `/org/:orgSlug/parking/:parkingSlug/pricing`
 
 Parking **Pricing** mirrors the property pricing calendar but only stores **weekday** and **Fri–Sun weekend** nightly rates. There are **no fee defaults** (no down payment, security deposit, pet fee, etc.).
 
-**Two prices, never one.** The host edits the **host rate** (what their payout is calculated from). Guests are charged the platform **guest rate**, set by a super admin at `/admin/parking/payouts`. The page shows both, plus the platform fee and the host's net per night, so the split is visible before saving. A host rate above the guest rate can be saved; the UI warns, and marketplace broadcast excludes that listing from matching (guaranteed-loss).
+**One price, set by the host.** The host edits the nightly rate and guests see that same rate on cards and the detail page. At checkout the guest pays the rate plus a small **service fee** (a percentage of the stay plus a flat amount per booking, set by a super admin at `/admin/parking/payouts`). The service fee never comes out of the host's payout. The platform fee is a percentage of the host rate and is taken from the payout. The page shows the rate guests see, the platform fee and the host's net per night before saving.
 
 **Permissions:** parking team `pricing:view` to open the page; `pricing:edit` to edit rates and calendar overrides. A parking member with `pricing:edit` can edit without holding an org-level parking permission.
 
-**Defaults (seed):** weekday ₱300, weekend ₱350 (local seed) / ₱400 (migration default). Platform guest rate defaults to ₱400 weekday and ₱400 weekend.
+**Defaults (seed):** weekday ₱300, weekend ₱350 (local seed) / ₱400 (migration default).
 
-**Guest rate (super admin):** weekday/weekend guest prices and commission live at
-`/admin/parking/payouts` (see `docs/guides/routes/admin/parking-payouts.md`). Hosts may set any
-host rate (no min/max save gate). Rates above the guest rate soft-warn in the form and stay out
-of marketplace matching; direct-link bookings still use the host rate for payout math.
+**Minimum rate:** every base rate and every calendar override must be at least **₱100**. There is no maximum. The field steps by ₱50 as a hint, but any amount from ₱100 up is accepted. A cleared field stays empty while you type, shows an inline error and can't be saved. A rate already stored below ₱100 is left as is: the form flags it and **Save** stays off until it is raised, and bookings already in flight keep charging the stored rate.
 
 ---
 
 ## Host-facing knowledge
 
-Parking **Pricing** sets how much guests pay per night for this slot. Guests pay the platform guest rate. You set a weekday rate and a higher Fri–Sun weekend rate, then optionally override specific future dates on the calendar. Your rate is what your payout is calculated from, after the platform fee. There are no stay-style fees like deposits or pet fees, just nightly parking rates. Changes can apply to all future dates or only the month you’re viewing.
+Parking **Pricing** sets the nightly price guests see for this slot. Guests pay your rate plus a small service fee at checkout. You set a weekday rate and a higher Fri–Sun weekend rate, then optionally override specific future dates on the calendar. Your payout is your rate minus the platform fee. The guest service fee is on top and is not taken from you. There are no stay-style fees like deposits or pet fees, just nightly parking rates. Changes can apply to all future dates or only the month you’re viewing.
 
 **Common host questions**
 
@@ -56,12 +53,14 @@ Parking **Pricing** sets how much guests pay per night for this slot. Guests pay
   A: Yes. Click or drag those dates on the calendar and set a custom nightly amount. Custom dates show with a pen icon in the legend.
 - Q: Will booked or blocked nights block the calendar?
   A: **Booked** nights (claimed reservations) and **Blocked** nights (owner-managed closures) show on the calendar and are excluded from broadcast candidate matching. Block future dates via the pricing modal **Block** action; unblock the same way.
-- Q: What do "Guests pay", "Platform fee" and "You receive" mean?
-  A: Guests pay the platform guest rate, a fixed nightly price set by Kame Space. The platform fee is our cut of your rate. "You receive" is your payout per night after that fee. The fee is a fixed percentage and is not negotiable per listing.
+- Q: What do "Guests see", "Platform fee" and "You receive" mean?
+  A: "Guests see" is the nightly rate you set. The platform fee is our cut of your rate. "You receive" is your payout per night after that fee. Guests also pay a separate service fee at checkout, and it does not reduce your payout.
 - Q: How is the platform fee calculated?
-  A: It is a percentage of your nightly rate, not of the guest price. For example, at 10% on a ₱300 rate, the fee is ₱30 and you receive ₱270 per night. The guest still pays the platform guest rate.
-- Q: What happens if I set my rate above the guest rate?
-  A: You can save it. Guests still pay the platform guest rate. Marketplace search will not match your listing at that price. Lower your rate at or under the guest rate to be offered again.
+  A: It is a percentage of your nightly rate. For example, at 10% on a ₱300 rate, the fee is ₱30 and you receive ₱270 per night. The guest's service fee is added on top of your rate and is not part of this.
+- Q: Is there a maximum rate?
+  A: No. You can price your slot at any amount from ₱100 up. Higher rates can rank lower in matching because requests go to the cheapest eligible slots first, but they are never excluded.
+- Q: Why can't I save a rate under ₱100?
+  A: ₱100 per night is the minimum so the booking covers payment processing costs. Enter ₱100 or more.
 - Q: What's the direct booking link for?
   A: A link you can share yourself (text, chat, wherever) that takes a guest straight to your listing's booking form instead of the general marketplace search. Bookings through it use a lower platform fee since you sourced the guest yourself. The card shows the exact per-night difference using your current rate.
 - Q: When do I get paid?
@@ -73,10 +72,9 @@ Parking **Pricing** sets how much guests pay per night for this slot. Guests pay
 
 ### Summary cards
 
-Four fixed KPI chips (always shown; counts use `0` when empty): weekday base rate, weekend
-premium %, custom calendar dates, blocked nights.
+Three KPI chips: weekday base rate, weekend premium %, count of custom calendar dates.
 
-A **How payouts work** hint sits next to the page title (3 equal steps). The live platform guest rate, payout rule, and “not matched above guest rate” note live in that panel as a callout (not as a page banner). A second tip covers direct-link fee and manual payouts.
+A **How payouts work** hint sits next to the page title (3 steps + tip).
 
 ### Calendar
 
@@ -88,34 +86,38 @@ A **How payouts work** hint sits next to the page title (3 equal steps). The liv
 
 ### Base rates (right column)
 
-| Field               | DB column              | Default | Guest rate (default seed) |
-| ------------------- | ---------------------- | ------- | ------------------------- |
-| Weekday (per night) | `weekday_nightly_rate` | ₱300    | Live — ₱400 default seed  |
-| Fri–Sun (per night) | `weekend_nightly_rate` | ₱400    | Live — ₱400 default seed  |
+| Field               | DB column              | Default | Rule               |
+| ------------------- | ---------------------- | ------- | ------------------ |
+| Weekday (per night) | `weekday_nightly_rate` | ₱300    | ≥ ₱100, no maximum |
+| Fri–Sun (per night) | `weekend_nightly_rate` | ₱400    | ≥ ₱100, no maximum |
 
-Guest rates and commission % are read live from the `parking-pricing` GET response
-(`guestRateWeekday`/`guestRateWeekend`/`commissionPct`, sourced from super-admin
-`/admin/parking/payouts`) — not hardcoded. Inputs use `step={50}` and allow an empty draft while
-editing (no forced `0` on backspace). Each field shows a three-line breakdown underneath:
+Commission % and the guest service fee are read live from the `parking-pricing` GET response
+(`commissionPct`/`guestFeePct`/`guestFeeFixed`, sourced from the super-admin
+`/admin/parking/payouts` config), not hardcoded. Each field shows a three-line breakdown
+underneath using those live values, plus one line under the fields about the guest service fee:
 
 ```
-Guests pay          ₱400 / night
+Guests see          ₱300 / night
 Platform fee (10%)  -₱30
-You receive         ₱270 / night   ← emphasized payout row
+You receive         ₱270 / night
 ```
 
-A rate above the guest rate keeps the preview and shows an amber soft warning (marketplace will
-not match). **Save** stays enabled. The card header also carries a **Base rates** hint.
+A rate under ₱100 or an empty field shows an inline error and disables **Save**. Saving is also
+refused from the leave dialog and the Setup Guide step. The card header carries a **Base rates**
+hint.
 
 **Save** at the bottom of the card when values change.
 
 ### Direct booking link (Phase 8)
 
-Below the rates card: **Direct booking link** with an info hint, a short fee line (lower % when
-you send the link), an emphasized weekday payout preview vs the standard fee, and **Copy link**
-for `/parkings/:slug/form?dl=<token>` (no raw URL on the card). The token is generated
-automatically the first time this page loads and never changes. Guests still sign in; the link
-only changes which platform fee applies. A short note under the button says so.
+Below the rates card: **Direct booking link** — a one-line explanation that sharing the link
+lowers the platform fee, a per-night comparison using the current weekday rate (for example
+"Weekday: you receive ₱285 instead of ₱270 per night"), the monospace URL preview, and **Copy
+link** for `/parkings/:slug/form?dl=<token>` — the exact same booking form guests reach from
+search, carrying an opaque per-listing token instead. The token is generated automatically the
+first time this page loads for the listing (nothing to configure) and never changes. A guest
+following the link still signs in as usual — the link only changes which platform fee applies,
+not whether sign-in is required. A short note under the button says so.
 
 ### Save dialog (base rate changes)
 
@@ -129,10 +131,10 @@ only changes which platform fee applies. A short note under the button says so.
 
 ## API
 
-| Method | Edge function     | Query          | Body (PATCH)                                                                                 |
-| ------ | ----------------- | -------------- | -------------------------------------------------------------------------------------------- |
-| GET    | `parking-pricing` | `?parking_id=` | — (also returns `directCommissionPct`/`directBookingToken`/`directBookingSlug`, Phase 8)     |
-| PATCH  | `parking-pricing` | `?parking_id=` | `weekdayNightlyRate`, `weekendNightlyRate`, `dateOverrides`, `blockRange`, `unblockDateKeys` |
+| Method | Edge function     | Query          | Body (PATCH)                                                                                                                   |
+| ------ | ----------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| GET    | `parking-pricing` | `?parking_id=` | — (also returns `commissionPct`/`directCommissionPct`/`guestFeePct`/`guestFeeFixed`, `directBookingToken`/`directBookingSlug`) |
+| PATCH  | `parking-pricing` | `?parking_id=` | `weekdayNightlyRate`, `weekendNightlyRate`, `dateOverrides`, `blockRange`, `unblockDateKeys`                                   |
 
 Auth: signed-in user + parking team permission. `verify_jwt = false`; handler uses `resolveScopedParkingTeamAccess` (`pricing:view` / `pricing:edit`).
 
@@ -142,26 +144,26 @@ Auth: signed-in user + parking team permission. `verify_jwt = false`; handler us
 
 ## Implementation map
 
-| Layer                                                        | Path                                                                                                                                                                                                                |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Page                                                         | `ui/src/features/dashboard/parking/pages/ParkingPricingPage.tsx`                                                                                                                                                    |
-| Loading skeleton (`PricingPageBodySkeleton`)                 | `ui/src/components/skeletons/PricingSkeleton.tsx` — 3 stat cards, the live month's week rows (day + price cells, outside days blank), rates card with payout helper lines + direct-link card (stacked on phone)     |
-| Rates form card (payout preview, soft warn above guest rate) | `ui/src/features/dashboard/parking/components/ParkingPricingRatesFormCard.tsx`                                                                                                                                      |
-| Direct link card (Phase 8)                                   | `ui/src/features/dashboard/parking/components/ParkingDirectLinkCard.tsx`                                                                                                                                            |
-| Hooks                                                        | `ui/src/features/dashboard/parking/hooks/useParkingPricing.ts`                                                                                                                                                      |
-| API client                                                   | `ui/src/features/dashboard/parking/lib/parkingPricingApi.ts`                                                                                                                                                        |
-| Client-side fallback guest rate / commission (pre-load only) | `ui/src/features/dashboard/parking/lib/parkingPricingDefaults.ts`                                                                                                                                                   |
-| Edge                                                         | `supabase/functions/parking-pricing/index.ts`                                                                                                                                                                       |
-| Shared                                                       | `supabase/functions/_shared/parkingPricing.ts` (save allows any rate ≥ 0), `parkingBroadcastRanking.ts` (excludes above guest rate), `parkingPlatformSettings.ts`, `parkingBlockedDates.ts`, `parkingDirectLink.ts` |
-| Migration                                                    | `supabase/migrations/20260918140000_parking_pricing.sql`, `20261104120000_parking_blocked_dates_automation.sql`, `20261129120000_parking_platform_settings.sql`, `20261202120000_parking_direct_booking_link.sql`   |
-| Calendar UI (shared)                                         | `ui/src/features/dashboard/pricing/components/PricingCalendarGrid.tsx`                                                                                                                                              |
+| Layer                                                                     | Path                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page                                                                      | `ui/src/features/dashboard/parking/pages/ParkingPricingPage.tsx`                                                                                                                                                                                                                                               |
+| Loading skeleton (`PricingPageBodySkeleton`)                              | `ui/src/components/skeletons/PricingSkeleton.tsx` — 3 stat cards, the live month's week rows (day + price cells, outside days blank), rates card with payout helper lines + direct-link card (stacked on phone)                                                                                                |
+| Rates form card (payout preview, ₱100 minimum)                            | `ui/src/features/dashboard/parking/components/ParkingPricingRatesFormCard.tsx`                                                                                                                                                                                                                                 |
+| Direct link card (Phase 8)                                                | `ui/src/features/dashboard/parking/components/ParkingDirectLinkCard.tsx`                                                                                                                                                                                                                                       |
+| Hooks                                                                     | `ui/src/features/dashboard/parking/hooks/useParkingPricing.ts`                                                                                                                                                                                                                                                 |
+| API client                                                                | `ui/src/features/dashboard/parking/lib/parkingPricingApi.ts`                                                                                                                                                                                                                                                   |
+| Client-side fallback-only commission / guest fee defaults (pre-load only) | `ui/src/features/dashboard/parking/lib/parkingPricingDefaults.ts`                                                                                                                                                                                                                                              |
+| Edge                                                                      | `supabase/functions/parking-pricing/index.ts`                                                                                                                                                                                                                                                                  |
+| Shared                                                                    | `supabase/functions/_shared/parkingPricing.ts` (incl. the ₱100 minimum), `parkingGuestFee.ts` (guest fee + no-loss check), `parkingPlatformSettings.ts` (live config resolver), `parkingBlockedDates.ts`, `parkingDirectLink.ts` (Phase 8 token)                                                               |
+| Migration                                                                 | `supabase/migrations/20260918140000_parking_pricing.sql`, `20261104120000_parking_blocked_dates_automation.sql`, `20261129120000_parking_platform_settings.sql`, `20261202120000_parking_direct_booking_link.sql`, `20261344000000_parking_guest_fee.sql`, `20261344000100_parking_search_price_host_rate.sql` |
+| Calendar UI (shared)                                                      | `ui/src/features/dashboard/pricing/components/PricingCalendarGrid.tsx`                                                                                                                                                                                                                                         |
 
 ---
 
 ## Testing
 
-| Layer | Path / spec                                                                  | Manual        |
-| ----- | ---------------------------------------------------------------------------- | ------------- |
-| Unit  | `parkingStatusMachine_test.ts`                                               | —             |
-| E2E   | [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs | PayMongo live |
-| N/A   | Parking host dashboard shell load                                            | —             |
+| Layer | Path / spec                                                                                                                                            | Manual        |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| Unit  | `parkingGuestFee_test.ts`, `parkingSettlement_test.ts`, `parkingPayout.test.ts`, `parkingRateRules.test.ts`                                            | —             |
+| E2E   | `parkingPricingEdit.spec.ts` (₱100 minimum, clearable field, no maximum); [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs | PayMongo live |
+| N/A   | Parking host dashboard shell load                                                                                                                      | —             |

@@ -21,7 +21,13 @@ export default definePageCoverage({
   na: {},
   gates: ['emailAutomations'],
   permissions: ['bookings.detail.workflow:edit', 'bookings.detail.parking:edit'],
-  edgeFunctions: ['get-booking', 'update-booking-details', 'cancel-booking', 'send-booking-workflow-email'],
+  edgeFunctions: [
+    'get-booking',
+    'update-booking-details',
+    'cancel-booking',
+    'send-booking-workflow-email',
+  ],
+  // Detail load uses get-booking?format=row (not browser PostgREST on guest_submissions).
   activity: ['booking.status_changed', 'booking.updated'],
   unit: [
     'ui/src/features/dashboard/bookings/lib/workflow.test.ts',

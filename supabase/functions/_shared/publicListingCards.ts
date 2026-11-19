@@ -14,7 +14,7 @@
  */
 
 import { createServiceClient } from './orgAuth.ts';
-import { resolveParkingGuestNightlyRate } from './parkingPlatformSettings.ts';
+import { loadParkingHostRates } from './parkingHostRates.ts';
 import { asSettings, readSettingsString } from './listingPlace.ts';
 import { batchLoadIsSuperhostByPropertyId } from './orgSuperhost.ts';
 import {
@@ -318,8 +318,6 @@ export type PublicParkingCard = {
 export async function loadParkingCards(ids: string[]): Promise<PublicParkingCard[]> {
   if (ids.length === 0) return [];
   const supabase = createServiceClient();
-  const guestRate = await resolveParkingGuestNightlyRate();
-
   const rows = await loadRowsByKeyChunks('parking cards', ids, (chunk, from, to) =>
     supabase
       .from('parkings')
@@ -331,9 +329,10 @@ export async function loadParkingCards(ids: string[]): Promise<PublicParkingCard
       .range(from, to)
   );
 
-  const [stats, developments] = await Promise.all([
+  const [stats, developments, hostRates] = await Promise.all([
     loadIndexStats('parking', ids),
     loadDevelopmentLinks(rows.map((row) => String(row.residence_name ?? ''))),
+    loadParkingHostRates(ids),
   ]);
 
   const cards = rows.map((row): PublicParkingCard => {
@@ -361,8 +360,8 @@ export async function loadParkingCards(ids: string[]): Promise<PublicParkingCard
       tower: summary.tower ?? undefined,
       level: summary.level ?? undefined,
       slotLabel: summary.slotLabel,
-      // Charged rate is the platform guest rate everywhere (G-1).
-      ratePerNight: guestRate.weekday,
+      // The host's own weekday rate; the guest service fee is added at checkout.
+      ratePerNight: hostRates.get(id)!.weekday,
       features: summary.features,
       coverImage: summary.coverImage ?? undefined,
       residenceName: summary.residenceName ?? undefined,
@@ -460,8 +459,7 @@ export async function loadDevelopmentSearchSummaries(
 export async function loadParkingSearchSummaries(ids: string[]): Promise<ParkingSearchSummary[]> {
   if (ids.length === 0) return [];
   const supabase = createServiceClient();
-  const guestRate = await resolveParkingGuestNightlyRate();
-  const [rows, stats] = await Promise.all([
+  const [rows, stats, hostRates] = await Promise.all([
     loadRowsByKeyChunks('parking summaries', ids, (chunk, from, to) =>
       supabase
         .from('parkings')
@@ -473,6 +471,7 @@ export async function loadParkingSearchSummaries(ids: string[]): Promise<Parking
         .range(from, to)
     ),
     loadIndexStats('parking', ids),
+    loadParkingHostRates(ids),
   ]);
   const summaries = rows.map((row) => {
     const summary = mapParkingSearchSummary({
@@ -487,8 +486,8 @@ export async function loadParkingSearchSummaries(ids: string[]): Promise<Parking
       rate_per_night: row.rate_per_night != null ? Number(row.rate_per_night) : null,
       settings: row.settings,
     });
-    // Charged rate, consistent with browse cards, detail, form and checkout (G-1).
-    return { ...summary, ratePerNight: guestRate.weekday };
+    // Host-set rate, consistent with browse cards, detail and checkout.
+    return { ...summary, ratePerNight: hostRates.get(row.id as string)!.weekday };
   });
   return orderByIds(ids, summaries);
 }

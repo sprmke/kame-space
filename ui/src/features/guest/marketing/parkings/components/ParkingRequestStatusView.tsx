@@ -10,7 +10,10 @@ import { toast } from 'sonner';
 import { ParkingChatSheet } from '@/features/guest/marketing/parkings/components/ParkingChatSheet';
 import { useCancelParkingBooking } from '@/features/guest/marketing/parkings/hooks/useCancelParkingBooking';
 import { useCreateParkingPaymentCheckout } from '@/features/guest/marketing/parkings/hooks/useCreateParkingPaymentCheckout';
-import type { ParkingBookingStatusValue } from '@/features/guest/marketing/parkings/hooks/useParkingBookingStatus';
+import type {
+  ParkingBookingStatusValue,
+  ParkingPaymentPreview,
+} from '@/features/guest/marketing/parkings/hooks/useParkingBookingStatus';
 import { useRequestParkingEndorsement } from '@/features/guest/marketing/parkings/hooks/useRequestParkingEndorsement';
 
 import { ParkingPaymentLegalNotice } from '@/components/legal/LegalNoticePresets';
@@ -36,6 +39,7 @@ import { parkingStatusGuest } from '@/lib/parking/parkingFlowCopy';
 import { parkingFlowFadeUp, parkingFlowTransition } from '@/lib/parking/parkingFlowMotion';
 import { sanitizeEmailSnapshotHtml } from '@/lib/sanitizeHtml';
 import { cn } from '@/lib/utils';
+import { formatMoney } from '@/utils/format/currency';
 
 type HostContact = { name: string; email: string; phone: string | null };
 
@@ -55,6 +59,7 @@ type StatusData = {
   hostContact: HostContact | null;
   viewerOwnsBooking?: boolean;
   supportEscalationPhone: string | null;
+  payment: ParkingPaymentPreview | null;
 };
 
 type CountdownState = {
@@ -125,6 +130,28 @@ function DetailsFold({ title, children }: { title: string; children: React.React
         />
       </button>
       {open ? <div className="space-y-3 pb-1 pt-2">{children}</div> : null}
+    </div>
+  );
+}
+
+/** Rent + service fee = total, from the snapshot (or a read-only preview before one exists). */
+function PaymentBreakdown({ payment }: { payment: ParkingPaymentPreview }) {
+  return (
+    <div className="border-border/60 bg-muted/30 space-y-1.5 rounded-xl border p-3 text-sm">
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground">
+          Rent · {payment.nights} night{payment.nights !== 1 ? 's' : ''}
+        </span>
+        <span className="text-foreground">{formatMoney(payment.hostGrossTotal)}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground">Service fee</span>
+        <span className="text-foreground">{formatMoney(payment.guestFeeTotal)}</span>
+      </div>
+      <div className="border-border/60 flex items-center justify-between border-t pt-1.5 font-semibold">
+        <span className="text-foreground">Total</span>
+        <span className="text-foreground">{formatMoney(payment.guestChargeTotal)}</span>
+      </div>
     </div>
   );
 }
@@ -299,6 +326,8 @@ export function ParkingRequestStatusView({ bookingId, data, countdown, isRefetch
       {data.parkingLabel && (isPayment || isPaid) ? (
         <p className="text-foreground text-sm font-medium">{data.parkingLabel}</p>
       ) : null}
+
+      {data.payment && (isPayment || isPaid) ? <PaymentBreakdown payment={data.payment} /> : null}
 
       {data.endorsementNote && isPaid ? (
         <div className="space-y-1">

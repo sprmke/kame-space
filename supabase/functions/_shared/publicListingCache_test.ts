@@ -3,6 +3,7 @@ import { assertEquals } from 'jsr:@std/assert@1';
 import {
   __resetListingCacheForTests,
   listingCacheKey,
+  peekListingCache,
   withListingCache,
 } from './publicListingCache.ts';
 
@@ -101,5 +102,87 @@ Deno.test('a failed compute is not cached', async () => {
 });
 
 Deno.test('listingCacheKey is independent of param order', () => {
-  assertEquals(listingCacheKey('n', { a: 1, b: [2, 3] }), listingCacheKey('n', { b: [2, 3], a: 1 }));
+  assertEquals(
+    listingCacheKey('n', { a: 1, b: [2, 3] }),
+    listingCacheKey('n', { b: [2, 3], a: 1 })
+  );
+});
+
+Deno.test(
+  'peekListingCache reports a miss, then a hit after a compute, and never computes',
+  async () => {
+    const { loader } = versionStub({ property: 1, development: 1, parking: 1 });
+    __resetListingCacheForTests(loader);
+    const c = counter();
+    const key = listingCacheKey('t', { peek: 1 });
+    assertEquals(await peekListingCache(key, { families: ['property'] }), { hit: false });
+    assertEquals(c.count, 0);
+    await withListingCache(key, { families: ['property'] }, c.compute);
+    assertEquals(await peekListingCache(key, { families: ['property'] }), { hit: true, value: 1 });
+    assertEquals(c.count, 1);
+  }
+);
+
+Deno.test(
+  'peekListingCache is a miss after a catalog version bump or a failed version read',
+  async () => {
+    const { state, loader } = versionStub({ property: 1, development: 1, parking: 1 });
+    __resetListingCacheForTests(loader);
+    const key = listingCacheKey('t', { peek: 2 });
+    await withListingCache(key, { families: ['property'] }, () => Promise.resolve('v1'));
+    state.property = 2;
+    __resetListingCacheForTests(loader);
+    assertEquals(await peekListingCache(key, { families: ['property'] }), { hit: false });
+
+    state.fail = true;
+    __resetListingCacheForTests(loader);
+    assertEquals(await peekListingCache(key, { families: ['property'] }), { hit: false });
+  }
+);
+
+Deno.test('peekListingCache honors bypass', async () => {
+  const { loader } = versionStub({ property: 1, development: 1, parking: 1 });
+  __resetListingCacheForTests(loader);
+  const key = listingCacheKey('t', { peek: 3 });
+  await withListingCache(key, { families: ['property'] }, () => Promise.resolve('x'));
+  assertEquals(await peekListingCache(key, { families: ['property'], bypass: true }), {
+    hit: false,
+  });
+});
+
+Deno.test('ttlMs expires an entry earlier than the default', async () => {
+  const { loader } = versionStub({ property: 1, development: 1, parking: 1 });
+  __resetListingCacheForTests(loader);
+  const c = counter();
+  const key = listingCacheKey('t', { ttl: 1 });
+  const options = { families: ['property' as const], ttlMs: 5 };
+  await withListingCache(key, options, c.compute);
+  await new Promise((resolve) => setTimeout(resolve, 15));
+  assertEquals(await withListingCache(key, options, c.compute), 2);
+});
+
+Deno.test('skipNull never stores a missing listing', async () => {
+  const { loader } = versionStub({ property: 1, development: 1, parking: 1 });
+  __resetListingCacheForTests(loader);
+  const key = listingCacheKey('t', { nil: 1 });
+  const options = { families: ['property' as const], skipNull: true };
+  let published = false;
+  const load = () => Promise.resolve(published ? 'live' : null);
+  assertEquals(await withListingCache(key, options, load), null);
+  published = true;
+  assertEquals(await withListingCache(key, options, load), 'live');
+});
+
+Deno.test('a null result is cached when skipNull is not set (existing behavior)', async () => {
+  const { loader } = versionStub({ property: 1, development: 1, parking: 1 });
+  __resetListingCacheForTests(loader);
+  const key = listingCacheKey('t', { nil: 2 });
+  let calls = 0;
+  const load = () => {
+    calls += 1;
+    return Promise.resolve(null);
+  };
+  await withListingCache(key, { families: ['property'] }, load);
+  await withListingCache(key, { families: ['property'] }, load);
+  assertEquals(calls, 1);
 });

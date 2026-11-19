@@ -17,7 +17,8 @@
 import { jsonError, jsonResponse } from '../_shared/httpResponse.ts';
 import { MAP_MARKER_CAP, readGeoOrigin, readMapBbox } from '../_shared/publicGeoScope.ts';
 import { loadDevelopmentCards } from '../_shared/publicListingCards.ts';
-import { listingCacheKey, withListingCache } from '../_shared/publicListingCache.ts';
+import { listingCacheKey } from '../_shared/publicListingCache.ts';
+import { cachedPublicListingRead } from '../_shared/publicCachedRead.ts';
 import {
   parseBoundedCsv,
   parseOptionalNumber,
@@ -56,12 +57,12 @@ servePublic('list-public-developments', async (req) => {
     return jsonError(req, 'Method not allowed', 405);
   }
 
-  const limited = await publicGetRateLimitGate(req, 'list-public-developments');
-  if (limited) return limited;
-
   const url = new URL(req.url);
   const requestedSlug = readQueryText(url.searchParams.get('slug')).toLowerCase();
   if (requestedSlug) {
+    // This lookup reads the database before the cache is consulted, so it is metered here.
+    const limited = await publicGetRateLimitGate(req, 'list-public-developments');
+    if (limited) return limited;
     // A renamed development answers with a 301 so an old shared link still resolves.
     const redirectTo = await resolveListingSlugRedirect('development', requestedSlug);
     if (redirectTo) {
@@ -103,7 +104,9 @@ servePublic('list-public-developments', async (req) => {
   };
 
   try {
-    const body = await withListingCache(
+    const read = await cachedPublicListingRead(
+      req,
+      'list-public-developments',
       listingCacheKey('list-public-developments', { ...base, requestedPage, pageSize, mapMode }),
       // Cards carry property counts, so property changes invalidate too.
       { families: ['development', 'property'] },
@@ -144,6 +147,8 @@ servePublic('list-public-developments', async (req) => {
         };
       }
     );
+    if ('limited' in read) return read.limited;
+    const body = read.value;
 
     return jsonResponse(req, body, 200, 'publicDynamic');
   } catch (error) {

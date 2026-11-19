@@ -1,16 +1,12 @@
 export const DEFAULT_PARKING_WEEKDAY_NIGHTLY_RATE = 300;
 export const DEFAULT_PARKING_WEEKEND_NIGHTLY_RATE = 400;
 
-/**
- * Fallback-only defaults (Phase 4) — used only before the real `parking-pricing` GET response
- * loads (live guest rates + commission from super-admin `platform_parking_settings`). Soft-warn
- * and marketplace matching still use those guest rates; host rates may be saved above them.
- */
-export const STUB_GUEST_PARKING_RATE_WEEKDAY = 400;
-export const STUB_GUEST_PARKING_RATE_WEEKEND = 400;
+/** Fallback-only defaults, used before the real `parking-pricing` GET response loads. */
 export const STUB_COMMISSION_PCT = 0.1;
 /** Phase 8 fallback — half the standard stub, matches the platform_parking_settings default. */
 export const STUB_DIRECT_COMMISSION_PCT = 0.05;
+export const STUB_GUEST_FEE_PCT = 0.05;
+export const STUB_GUEST_FEE_FIXED = 15;
 
 export type ParkingPricingDefaults = {
   weekdayNightlyRate: number;

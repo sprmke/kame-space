@@ -15,8 +15,18 @@ const richTextStyles = `
     overflow-x: auto;
   }
 
+  .${STAY_GUIDE_RICH_TEXT_CLASS} h1 {
+    font-size: 1.5rem;
+    line-height: 1.25;
+    font-weight: 700;
+    margin: 1.5rem 0 0.75rem;
+    letter-spacing: -0.02em;
+    color: hsl(var(--showcase-ink, var(--foreground)));
+  }
+
   .${STAY_GUIDE_RICH_TEXT_CLASS} h2 {
     font-size: 1.25rem;
+    line-height: 1.3;
     font-weight: 700;
     margin: 1.25rem 0 0.75rem;
     letter-spacing: -0.02em;
@@ -24,10 +34,44 @@ const richTextStyles = `
   }
 
   .${STAY_GUIDE_RICH_TEXT_CLASS} h3 {
-    font-size: 1.05rem;
+    font-size: 1.125rem;
+    line-height: 1.35;
     font-weight: 600;
     margin: 1.25rem 0 0.5rem;
     color: hsl(var(--showcase-ink, var(--foreground)));
+  }
+
+  .${STAY_GUIDE_RICH_TEXT_CLASS} h4 {
+    font-size: 1rem;
+    line-height: 1.4;
+    font-weight: 600;
+    margin: 1.25rem 0 0.4rem;
+    color: hsl(var(--showcase-ink, var(--foreground)));
+  }
+
+  .${STAY_GUIDE_RICH_TEXT_CLASS} > :first-child {
+    margin-top: 0;
+  }
+
+  .${STAY_GUIDE_RICH_TEXT_CLASS} > :last-child {
+    margin-bottom: 0;
+  }
+
+  .${STAY_GUIDE_RICH_TEXT_CLASS} blockquote {
+    margin: 1.25rem 0;
+    padding: 0.25rem 0 0.25rem 1rem;
+    border-left: 3px solid hsl(var(--showcase-accent, var(--primary)) / 0.55);
+    font-style: italic;
+  }
+
+  .${STAY_GUIDE_RICH_TEXT_CLASS} blockquote p {
+    margin: 0;
+  }
+
+  .${STAY_GUIDE_RICH_TEXT_CLASS} hr {
+    margin: 1.5rem 0;
+    border: 0;
+    border-top: 1px solid hsl(var(--showcase-ink-muted, var(--muted-foreground)) / 0.25);
   }
 
   .${STAY_GUIDE_RICH_TEXT_CLASS} p {
@@ -38,8 +82,9 @@ const richTextStyles = `
 
   .${STAY_GUIDE_RICH_TEXT_CLASS} p + h3,
   .${STAY_GUIDE_RICH_TEXT_CLASS} ul + h3,
-  .${STAY_GUIDE_RICH_TEXT_CLASS} ol + h3 {
-    margin-top: 1.5rem;
+  .${STAY_GUIDE_RICH_TEXT_CLASS} ol + h3,
+  .${STAY_GUIDE_RICH_TEXT_CLASS} blockquote + h3 {
+    margin-top: 1.75rem;
   }
 
   .${STAY_GUIDE_RICH_TEXT_CLASS} ul,
