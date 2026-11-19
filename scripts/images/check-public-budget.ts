@@ -42,6 +42,8 @@ const ALLOWLIST = new Map<string, string>([
   ],
   ['marketing/home/hero-day.webp', 'Home hero WebP master; srcset serves smaller widths first'],
   ['marketing/home/hero-night.webp', 'Home hero WebP master; srcset serves smaller widths first'],
+  ['marketing/home/hero-day-1280.webp', 'Home hero desktop WebP; phones still take 640w AVIF first'],
+  ['marketing/home/hero-night-1280.webp', 'Home hero desktop WebP; phones still take 640w AVIF first'],
   ['marketing/home/hero-day-1672.webp', 'Home hero full-width WebP for large / retina viewports'],
   ['marketing/home/hero-night-1672.webp', 'Home hero full-width WebP for large / retina viewports'],
   ['marketing/home/hero-day-1672.avif', 'Home hero full-width AVIF for large / retina viewports'],
