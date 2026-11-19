@@ -25,3 +25,10 @@ COMMENT ON COLUMN public.property_template_contents.category IS
 UPDATE public.property_template_contents
 SET category = 'message', updated_at = now()
 WHERE template_key LIKE 'custom-%' AND category = 'email';
+
+-- Before this change only custom templates had a Show to guests switch. Standard rows were
+-- always shown, and their `guest_visible` defaulted to FALSE. Preserve that behaviour: existing
+-- standard rows become visible, and a host can hide a section from now on.
+UPDATE public.property_template_contents
+SET guest_visible = TRUE, updated_at = now()
+WHERE category = 'standard' AND guest_visible = FALSE;

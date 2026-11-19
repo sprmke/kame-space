@@ -1039,11 +1039,29 @@ export async function upsertPropertyTemplateRow(input: {
     patch.folder_id = input.category === 'custom' ? input.folderId : null;
   }
   const allowsGuestVisibility = input.category === 'custom' || input.category === 'standard';
+  /*
+   * A guide section saved for the first time must inherit its registry visibility. Without
+   * this, editing or resetting a default-visible section inserted a row with
+   * `guest_visible = false` and silently hid it from guests. Only apply the default on insert;
+   * an existing row may be an explicit host choice.
+   */
+  let existingGuideRow: PropertyTemplateRow | null = null;
+  if (
+    builtin?.category === 'standard' &&
+    input.guestVisible === undefined &&
+    allowsGuestVisibility
+  ) {
+    existingGuideRow = await getPropertyTemplateRow(input.propertyId, input.templateKey);
+  }
   if (input.guestVisible !== undefined) {
     patch.guest_visible = allowsGuestVisibility ? input.guestVisible : false;
+  } else if (builtin?.category === 'standard' && !existingGuideRow) {
+    patch.guest_visible = builtin.defaultGuestVisible;
   }
   if (input.guestPhase !== undefined) {
     patch.guest_phase = allowsGuestVisibility ? input.guestPhase : null;
+  } else if (builtin?.category === 'standard' && !existingGuideRow) {
+    patch.guest_phase = builtin.defaultPhase ?? 'always';
   }
 
   const { data, error } = await supabaseAdmin()
