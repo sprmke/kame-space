@@ -418,6 +418,15 @@ Self-review and a focused security pass found and fixed:
 
 Tests added: pack/registry contract, message and guide metadata, subject lock and hash, subject validation, message token rules, preview sample coverage, message insert E2E, subject and test-send E2E, and the chat-link regression is covered by the Inbox message E2E path.
 
+## Local verification (2026-11-19)
+
+- Restarted the shared local stack from this worktree so the edge runtime served these functions, then applied the canonical seed (`seed:verify` passed).
+- Templates rail on `/org/kame-homes/property/kame-home/templates`: 12 Stay guide, 10 Guest messages, 12 Guest emails, 3 Building admin, 3 Team alerts. Labels, Hidden badges, Subject, Send test and the new default copy all render.
+- Guest stay guide with a real token: Welcome, Check-in, House rules, Emergency and safety and Check-out render; Getting here, Using the unit, Building amenities, Trash and recycling and Around the area stay hidden; Pet guidelines stay hidden without pets.
+- Inbox Insert -> Messages inserts editable text with the guest first name and the property check-in time.
+- Fixed from this pass: labels to host language, guide reading order, registry phase default, blank chat name/time, message CTA blocks, and block placeholders nesting inside a paragraph (left an empty paragraph in the guide).
+- The Supabase CLI `db query` was killed by the host during `seed:local` (exit 137); the same seed SQL was applied through the database container and `99-verify` passed. Local CLI issue, not a seed failure.
+
 ## Verification results
 
 | Gate                                  | Result                                            |
