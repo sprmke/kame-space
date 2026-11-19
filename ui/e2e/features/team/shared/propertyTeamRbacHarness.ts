@@ -66,7 +66,7 @@ type AssistantChatBlock = {
 let assistantChatBlocks: AssistantChatBlock[] = [];
 
 /** Set mocked assistant turn blocks for the next dashboard-assistant-chat POST. */
-export function queueAssistantChatBlocksForMocks(blocks: AssistantChatBlock[]) {
+export function setAssistantChatBlocksForMocks(blocks: AssistantChatBlock[]) {
   assistantChatBlocks = blocks;
 }
 
