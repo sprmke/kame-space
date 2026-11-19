@@ -1009,8 +1009,8 @@ There is one hosted Supabase project (`fworvijbrwpyngycotbz`, dev and production
    `CALENDAR_CHANNELS_BETA_ORG_IDS=<organization id of kame-test-tenant>`.
    Edge secrets apply to new invocations, no redeploy. Rolling back is clearing the first secret.
    The test tenant id is `f50a7039-365c-4ef9-a80e-867d51ed5372`. Both secrets were set on 2026-11-19.
-   For the live-property proof the list also carried the owner org (`de7a1840-caeb-4428-ad2a-367fca6ff84b`,
-   `kame-homes`); remove that id before general availability.
+   For the live-property proof the list also carried the owner org (`de7a1840-caeb-4428-ad2a-367fca6ff84b`);
+   remove that id before general availability.
    Live verification status, the verified cron and database state, and the hosted pass that proved V1
    and V2: [`../for-testing/multi-channel-calendar-sync-live-verification.md`](../for-testing/multi-channel-calendar-sync-live-verification.md).
 3. In `kame-test-tenant` / `kame-test-property`, Pricing, Channel sync: connect Booking.com (paste the
