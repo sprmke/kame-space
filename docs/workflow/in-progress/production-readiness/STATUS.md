@@ -11,6 +11,12 @@ last_verified: '2224ef7c 2026-11-02'
 
 # Readiness status — 2026-11-02
 
+> **Release update (2026-11-21).** The readiness remediation PRs **#544, #553, #555 and #556**
+> are merged and deployed to production. Frontend shipped in release **#561** (`e0caab2aa`);
+> `kamespace.com` is live with an enforcing CSP header. This page keeps the 2026-11-02 gate
+> scoreboard as historical detail. For the current module-by-module state, use
+> [`qa/MODULE-DISPOSITION.md`](./qa/MODULE-DISPOSITION.md).
+
 One page answering "what is done, what is in progress, what is pending". Detail lives in the
 [`LEDGER.md`](./LEDGER.md) (one row per item), the phase plan
 ([`production-readiness-launch-audit.md`](./production-readiness-launch-audit.md)) and `evidence/`.

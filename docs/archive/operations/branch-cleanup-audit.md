@@ -485,3 +485,40 @@ Kept on purpose: everything with an open PR or unapplied patch
 Worktrees that still point at merged branches (`arowana`, `bass`, `coelacanth`, `cutlassfish`,
 `dulse`, `sculpin`, `anemone`) were **not** removed: removing one closes an Orca workspace, which
 is the owner's call. Their branches can be deleted as soon as the worktree is retired.
+
+## 2026-11-21 production release
+
+Owner unlocked with **`kamewave`**. Merged in risk order, each after green checks:
+
+| PR                                   | Squash commit on `develop` | Deployed                                              |
+| ------------------------------------ | -------------------------- | ----------------------------------------------------- |
+| #558 docs sync                       | `b2e830eab`                | Docs only                                             |
+| #531 booking chat plan               | `2f321465c`                | Docs only                                             |
+| #529 calendar sync verification      | `2440c2b80`                | Docs only                                             |
+| #535 parking pricing tests           | `3a1d29f8f`                | Tests only                                            |
+| #557 mascot poses                    | `d4d79412b`                | UI; shipped earlier in #559                           |
+| #556 guest-document purge            | `5dcacc85f`                | Backend deploy `44810944536` success                  |
+| #555 sign-out cache + injection      | `7845acb36`                | Backend deploy `44817564438` success                  |
+| #544 CSP, captcha, AI ceiling        | `a11f41c7e`                | Backend deploy `44820155136` success                  |
+| #553 money, webhook, alerts, privacy | `a389a27e8`                | Backend deploy `44824503476` success, four migrations |
+
+Release PR #561 (`develop` → `main`) merged as `e0caab2aa`. Vercel Production deployment
+`7954836569` succeeded. Production check: `https://kamespace.com/` returns 200 and sends an
+enforcing `Content-Security-Policy` header, not Report-Only.
+
+Conflicts resolved during the release:
+
+- #555 and #553 against the shared readiness `LEDGER.md` tables: kept the merged statuses and
+  re-applied each PR's own rows.
+- #544 against `README.md`, `LEDGER.md`, checklist 22 and LLM Top 10: kept the newer merged rows
+  and re-applied the CSP/captcha/AI status.
+- #553 against `ALL-GOOD.md`, `LEDGER.md`, `README.md` and `TO-FIX.md`: kept the release state
+  and added the double-booking, parking refund and webhook idempotency entries.
+- #561 passed on rerun after the known `voiceReceptionistConsent` smoke flake and two parking
+  specs flaked once and passed on rerun; no code change was needed.
+
+Branches deleted after the release (remote, plus local where not checked out): all nine PR
+branches, `feat/multi-channel-calendar-sync`, `feat/host-set-parking-pricing`,
+`feat/local-dev-test-login`, and the earlier merged release branches. Kept: #554, #488, #495,
+#354, #353, the `backup/` and `recover/` snapshots, and the dirty `refine-payment-plans-billing`
+worktree.
