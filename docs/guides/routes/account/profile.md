@@ -42,7 +42,7 @@ Stays, Favorites, and Tickets each have their own dedicated guide — see [stays
 
 ---
 
-> **Legal notice:** A **Privacy and data** card under Identity links to the Privacy Policy and Terms and opens an email to request a copy or deletion of data. Pattern and full list: [legal.md](../legal.md#in-app-notices).
+> **Privacy and data:** the card under Identity links to the Privacy Policy and Terms and offers **Download my data** and **Delete my account**. Download calls `data-subject-request` (`kind: export`) and saves a JSON file of the caller's own profile, bookings, reviews, verifications, tickets and host memberships. Deletion opens a bottom-sheet confirm and files a reviewed request (`kind: delete`, 15-day due date); bookings stay as financial records with personal fields removed. A repeated request reuses the open one. Pattern and full list: [legal.md](../legal.md#in-app-notices).
 
 ## Host-facing knowledge
 

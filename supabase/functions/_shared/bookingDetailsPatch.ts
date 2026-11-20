@@ -336,10 +336,7 @@ function parsePayloadRecord(raw: unknown, fieldName: string): Record<string, unk
   return raw as Record<string, unknown>;
 }
 
-function computeBalance(
-  bookingRate?: number | null,
-  downPayment?: number | null
-): number | null {
+function computeBalance(bookingRate?: number | null, downPayment?: number | null): number | null {
   if (bookingRate == null || downPayment == null) return null;
   return Math.round((bookingRate - downPayment) * 100) / 100;
 }
@@ -441,12 +438,11 @@ function validatePatchValue(column: string, value: unknown): unknown {
     case 'parking_rate_guest':
     case 'guest_additional_fee':
     case 'parking_rate_paid':
-    case 'sd_refund_amount':
-      {
-        const amount = parseFiniteNumber(value, column);
-        if (amount < 0) throw new Error(`${column} must not be negative`);
-        return amount;
-      }
+    case 'sd_refund_amount': {
+      const amount = parseFiniteNumber(value, column);
+      if (amount < 0) throw new Error(`${column} must not be negative`);
+      return amount;
+    }
     case 'balance':
     case 'guest_balance_paid_amount': {
       const amount = parseOptionalFiniteNumber(value, column);
@@ -619,9 +615,7 @@ export function requestPdfClearPatchForAdminPayload(
     patch.gaf_request_pdf_url = null;
   } else if (!sameText(baseline.guest_email as string, draft.guest_email as string)) {
     patch.gaf_request_pdf_url = null;
-  } else if (
-    !sameText(baseline.guest_phone_number as string, draft.guest_phone_number as string)
-  ) {
+  } else if (!sameText(baseline.guest_phone_number as string, draft.guest_phone_number as string)) {
     patch.gaf_request_pdf_url = null;
   } else if (!sameText(baseline.guest2_name as string, draft.guest2_name as string)) {
     patch.gaf_request_pdf_url = null;
@@ -639,7 +633,9 @@ export function requestPdfClearPatchForAdminPayload(
     patch.gaf_request_pdf_url = null;
   } else if (!sameNumber(baseline.guest5_age as number, draft.guest5_age as number)) {
     patch.gaf_request_pdf_url = null;
-  } else if (normDate(baseline.check_in_date as string) !== normDate(draft.check_in_date as string)) {
+  } else if (
+    normDate(baseline.check_in_date as string) !== normDate(draft.check_in_date as string)
+  ) {
     patch.gaf_request_pdf_url = null;
   } else if (
     normDate(baseline.check_out_date as string) !== normDate(draft.check_out_date as string)
@@ -729,7 +725,16 @@ async function updateBookingRow(
   }
 
   const { data, error } = await query.select('*').maybeSingle();
-  if (error) throw new Error(`Failed to update booking: ${error.message}`);
+  if (error) {
+    // 23P01 = exclusion_violation from the DB stay-overlap guard (migration 20261345000000).
+    // The handler maps this prefix to 409 so a reschedule race gets a clear message.
+    if (error.code === '23P01') {
+      throw new Error(
+        'BOOKING_DATE_CONFLICT: Those dates overlap another booking on this property.'
+      );
+    }
+    throw new Error(`Failed to update booking: ${error.message}`);
+  }
   if (!data) {
     throw new Error('STATUS_CONFLICT: Booking status changed. Refresh and try again.');
   }
@@ -775,10 +780,7 @@ export async function applyBookingDetailsPatch(
       return { booking: existing, skipped: true, changedColumns: [] };
     }
     const patch: Record<string, unknown> = { need_parking: true };
-    if (
-      existing.parking_completed_at ||
-      isPostPendingDocumentsStatus(existingStatus)
-    ) {
+    if (existing.parking_completed_at || isPostPendingDocumentsStatus(existingStatus)) {
       patch.parking_completed_at = null;
     }
     const booking = await updateBookingRow(bookingId, patch, {
@@ -837,10 +839,7 @@ export async function applyBookingDetailsPatch(
       parking_check_out_date: formatDateForGuestSubmission(parkingCheckOutDate),
       need_parking: true,
     };
-    if (
-      existing.parking_completed_at ||
-      isPostPendingDocumentsStatus(existingStatus)
-    ) {
+    if (existing.parking_completed_at || isPostPendingDocumentsStatus(existingStatus)) {
       patch.parking_completed_at = null;
     }
     const booking = await updateBookingRow(bookingId, patch, {
