@@ -145,7 +145,7 @@ Helpers: `listingSearchPreferType.ts`, `listingScrollSearchPaths.ts` (`resolveLi
 - **No stale empty flash:** previous-query placeholder data is treated as loading during a phrase/location/category change. It cannot rewrite the URL or briefly display old zero totals while the current geo request is still in flight.
 - **Applied chips:** dismissible chips under the toolbar on category tabs; filtered empty state offers **Clear filters**.
 - On **All** there is no shared sidebar (each category filters on its own schema), so the button **names the category it opens** — “Filter properties” — and switching is silent: the tab strip and sidebar are the feedback. **No toast.** Target is `focus` when populated, else the densest tab. Category tab changes push history so Back works. Opening Filters (or a category pill) keeps the **All / Properties / Developments / Parkings** strip visible so guests can toggle families without closing the sidebar.
-- **Errors / empty:** failed fetch shows **Try again**; empty offers **Search nearby**, clear place, clear dates; wires expansion note when soft fallback was tried.
+- **Errors / empty:** failed fetch shows **Try again**; empty uses library mascot `gentle-failure`, then **Search nearby** (primary) plus outline **Clear place** / **Clear dates**; wires expansion note when soft fallback was tried.
 - Locations are a typeahead group only — on `/search` they become the `where` text filter, not a fourth card grid.
 - Cards reuse Property / Development / Parking components; amenity chips show human labels (not raw ids).
 - Pagination (`page` in URL) only on a single-category tab. All is a first-page preview per category.

@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 
 import { Link } from 'react-router-dom';
 
+import { Building2 } from 'lucide-react';
+
 import { GuestAccountContentCard } from '@/features/guest/account/components/GuestAccountContentCard';
 import { GuestAccountEmptyState } from '@/features/guest/account/components/GuestAccountEmptyState';
 import {
@@ -111,8 +113,11 @@ export function GuestVouchersPage() {
   if (vouchers.length === 0) {
     return (
       <GuestAccountEmptyState
-        message="No vouchers yet."
+        mascotPose="voucher"
+        title="No vouchers yet"
+        description="Rewards from stays will appear here when you earn them."
         actionLabel="Browse properties"
+        actionIcon={Building2}
         actionHref="/properties"
       />
     );

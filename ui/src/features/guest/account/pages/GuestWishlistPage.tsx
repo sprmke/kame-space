@@ -1,3 +1,5 @@
+import { Building2 } from 'lucide-react';
+
 import { GuestAccountContentCard } from '@/features/guest/account/components/GuestAccountContentCard';
 import { GuestAccountEmptyState } from '@/features/guest/account/components/GuestAccountEmptyState';
 import {
@@ -31,8 +33,11 @@ export function GuestWishlistPage() {
   if (slugs.length === 0) {
     return (
       <GuestAccountEmptyState
-        message="No saved properties."
+        mascotPose="favorites"
+        title="No favorites yet"
+        description="Save places you like so you can find them later."
         actionLabel="Browse properties"
+        actionIcon={Building2}
         actionHref="/properties"
       />
     );

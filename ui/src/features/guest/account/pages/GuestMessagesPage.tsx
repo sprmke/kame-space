@@ -1,3 +1,5 @@
+import { Building2, RefreshCw } from 'lucide-react';
+
 import { GuestAccountEmptyState } from '@/features/guest/account/components/GuestAccountEmptyState';
 import {
   GUEST_MESSAGES_HUB_SHELL_CLASS,
@@ -52,7 +54,7 @@ function GuestMessagesHubSkeleton() {
 
 export function GuestMessagesPage() {
   usePageTitle(publicPageTitle('Stays'));
-  const { data, isLoading, isError } = useGuestMessages();
+  const { data, isLoading, isError, refetch } = useGuestMessages();
   const threads = data?.threads ?? [];
 
   if (isLoading) {
@@ -60,14 +62,26 @@ export function GuestMessagesPage() {
   }
 
   if (isError) {
-    return <p className="text-destructive text-sm">Could not load messages.</p>;
+    return (
+      <GuestAccountEmptyState
+        mascotPose="gentle-failure"
+        title="Couldn't load messages"
+        description="Check your connection and try again."
+        actionLabel="Try again"
+        actionIcon={RefreshCw}
+        onAction={() => void refetch()}
+      />
+    );
   }
 
   if (threads.length === 0) {
     return (
       <GuestAccountEmptyState
-        message="No messages yet."
+        mascotPose="guest-inbox"
+        title="No messages yet"
+        description="Chats with hosts about your stays will show up here."
         actionLabel="Browse properties"
+        actionIcon={Building2}
         actionHref="/properties"
       />
     );
