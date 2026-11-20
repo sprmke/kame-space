@@ -31,7 +31,7 @@ export function PropertyInboxPage() {
       returnPath={
         orgSlug && orgContext?.propertySlug
           ? propertyInboxPath(orgSlug, orgContext.propertySlug)
-          : '/inbox'
+          : '/messages'
       }
       canReply={hasPropertyPermission(permissions, 'inbox.messages:edit')}
       canManage={canManageChannels || canManageQuickReplies || canManageAutomation}

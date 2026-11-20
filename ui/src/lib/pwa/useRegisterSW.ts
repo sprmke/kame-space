@@ -238,7 +238,7 @@ function createController(
 
   const accept = async (reloadPage = true, source: UpdateApplySource = 'user'): Promise<void> => {
     if (accepting) return;
-    // Loop guard only blocks automatic applies. The Update ready prompt is what
+    // Loop guard only blocks automatic applies. The New version available prompt is what
     // we show after that guard trips — Reload / Force update must still work.
     if (reloadPage && isUpdateApplyBlocked(source, window.sessionStorage)) {
       return;

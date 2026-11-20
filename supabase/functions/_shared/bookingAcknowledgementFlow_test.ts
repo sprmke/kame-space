@@ -5,7 +5,12 @@
  * Run: deno test supabase/functions/_shared/bookingAcknowledgementFlow_test.ts
  */
 
-import { assert, assertEquals, assertMatch, assertNotMatch } from 'https://deno.land/std@0.224.0/assert/mod.ts';
+import {
+  assert,
+  assertEquals,
+  assertMatch,
+  assertNotMatch,
+} from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { buildBookingAcknowledgementFlowSectionHtml } from './propertyTemplateEmailSections.ts';
 
 const CONTACT = {
@@ -62,9 +67,9 @@ Deno.test('never calls the follow-up a "Booking Confirmation email"', () => {
   assertEquals(/booking confirmation email/i.test(build(['Guest Advice Form (GAF)'])), false);
 });
 
-Deno.test('the summary says confirmed, not approved', () => {
+Deno.test('the summary shows the stay, not a second confirmation or approval', () => {
   const html = build([]);
-  assertMatch(html, /is confirmed/i);
+  assertMatch(html, /Your stay:/);
   assertNotMatch(html, /has been approved/i);
   assert(html.includes('Monaco 2604'));
 });

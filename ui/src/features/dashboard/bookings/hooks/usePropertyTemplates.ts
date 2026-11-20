@@ -6,7 +6,30 @@ import { scopedFunctionsUrl, usePropertyIdParam } from '@/features/dashboard/org
 import { friendlyToastError } from '@/lib/feedback/toastMessages';
 import { supabase } from '@/lib/supabase/client';
 
-export type PropertyTemplateCategory = 'standard' | 'email' | 'custom';
+export type PropertyTemplateCategory = 'standard' | 'email' | 'message' | 'custom';
+
+export type PropertyTemplateGroup =
+  'stay-guide' | 'guest-messages' | 'guest-emails' | 'building-admin' | 'team-alerts';
+
+export type PropertyTemplateIconId =
+  | 'home'
+  | 'log-in'
+  | 'log-out'
+  | 'car'
+  | 'paw'
+  | 'mail'
+  | 'file-check'
+  | 'send'
+  | 'file-text'
+  | 'x-circle'
+  | 'ban'
+  | 'undo'
+  | 'receipt'
+  | 'clipboard'
+  | 'message'
+  | 'list-checks';
+
+export type PropertyTemplateChapter = 'getting-in' | 'make-yourself-at-home' | 'before-you-go';
 
 export type PropertyTemplateDto = {
   templateKey: string;
@@ -25,16 +48,30 @@ export type PropertyTemplateDto = {
   /** Custom templates only: the trip stage that shows it. */
   guestPhase: GuestTemplatePhase;
   updatedAt: string | null;
+  /** Rail group. Null for host-owned rows. */
+  group: PropertyTemplateGroup | null;
+  recipient: 'guest' | 'team' | 'building-admin' | null;
+  trigger: string | null;
+  automationToggleKey: string | null;
+  iconId: PropertyTemplateIconId | null;
+  defaultSubject: string | null;
+  defaultSubjectPreview: string | null;
+  subjectLocked: boolean;
+  chapter: PropertyTemplateChapter | null;
+  defaultPhase: GuestTemplatePhase | null;
+  defaultGuestVisible: boolean;
+  condition: 'has_pets' | 'need_parking' | null;
+  requiresEdit: boolean;
+  appliesWhen: 'gaf-or-pet-required' | null;
+  placeholderKeys: string[];
+  subject: string | null;
+  newDefaultAvailable: boolean;
+  automationEnabled: boolean | null;
+  automationPlanBlocked: boolean;
 };
 
 /** Mirrors `GUEST_TEMPLATE_PHASES` in `_shared/propertyTemplates.ts`. */
-export type GuestTemplatePhase =
-  | 'before'
-  | 'arrival'
-  | 'stay'
-  | 'checkout'
-  | 'after'
-  | 'always';
+export type GuestTemplatePhase = 'before' | 'arrival' | 'stay' | 'checkout' | 'after' | 'always';
 
 export type PropertyTemplateFolderDto = {
   id: string;
@@ -47,7 +84,47 @@ export type PropertyTemplatesData = {
   templates: PropertyTemplateDto[];
   placeholdersReference: string[];
   folders: PropertyTemplateFolderDto[];
+  /** Property-data tokens that are empty for this property. */
+  propertyEmptyPlaceholders: string[];
+  /** Save-time token warnings from the server. */
+  warnings?: string[];
 };
+
+export function useSendPropertyTemplateTestEmail() {
+  const propertyId = usePropertyIdParam();
+
+  return useMutation({
+    mutationFn: async (input: {
+      templateKey: string;
+      category: PropertyTemplateCategory;
+      content: string;
+      subject?: string | null;
+      name?: string;
+    }) => {
+      const headers = await authHeaders();
+      const res = await fetch(
+        scopedFunctionsUrl('/send-property-template-test-email', propertyId),
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(input),
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? 'Could not send test email');
+      }
+      const json = (await res.json()) as { data?: { sentTo?: string } };
+      return { sentTo: json.data?.sentTo ?? '' };
+    },
+    onSuccess: (data) => {
+      toast.success(data.sentTo ? `Test sent to ${data.sentTo}` : 'Test sent');
+    },
+    onError: (error: Error) => {
+      toast.error(friendlyToastError(error, 'Could not send test email'));
+    },
+  });
+}
 
 export const PROPERTY_TEMPLATES_QUERY_KEY = ['property-templates'] as const;
 
@@ -89,6 +166,8 @@ export function usePropertyTemplates() {
         templates: json.data.templates,
         placeholdersReference: json.data.placeholdersReference ?? [],
         folders: json.data.folders ?? [],
+        propertyEmptyPlaceholders: json.data.propertyEmptyPlaceholders ?? [],
+        warnings: json.data.warnings,
       };
     },
     enabled: Boolean(propertyId),
@@ -149,6 +228,7 @@ export function usePropertyTemplateMutations() {
       /** Custom templates only: show it to guests, and at which trip stage. */
       guestVisible?: boolean;
       guestPhase?: GuestTemplatePhase;
+      subject?: string | null;
       silent?: boolean;
       publicPagesAutosaveGate?: boolean;
       settingsVerificationToken?: string;
@@ -164,6 +244,7 @@ export function usePropertyTemplateMutations() {
           sectionImageUrl: input.sectionImageUrl,
           ...(input.guestVisible === undefined ? {} : { guestVisible: input.guestVisible }),
           ...(input.guestPhase === undefined ? {} : { guestPhase: input.guestPhase }),
+          ...(input.subject === undefined ? {} : { subject: input.subject }),
           ...(input.publicPagesAutosaveGate ? { publicPagesAutosaveGate: true } : {}),
           ...(input.settingsVerificationToken
             ? { settingsVerificationToken: input.settingsVerificationToken }
@@ -178,9 +259,15 @@ export function usePropertyTemplateMutations() {
     },
     onSuccess: (_data, variables) => {
       invalidate();
-      if (!variables.silent) {
-        toast.success('Template saved');
+      if (variables.silent) return;
+      const warnings = (_data as { data?: { warnings?: string[] } } | null)?.data?.warnings ?? [];
+      if (warnings.length > 0) {
+        toast.warning(warnings[0]!, {
+          description: warnings.length > 1 ? warnings.slice(1).join(' ') : undefined,
+        });
+        return;
       }
+      toast.success('Template saved');
     },
     onError: (error: Error, variables) => {
       // Silent autosave still surfaces via Page Editor Unsaved/Save failed; toast on failure only.
@@ -393,8 +480,9 @@ export function usePropertyTemplatePreview() {
       templateKey: string;
       category: PropertyTemplateCategory;
       content: string;
+      subject?: string | null;
       name?: string;
-    }): Promise<{ html: string; mode: string }> => {
+    }): Promise<{ html: string; mode: string; subject: string }> => {
       const headers = await authHeaders();
       const res = await fetch(scopedFunctionsUrl('/property-templates-preview', propertyId), {
         method: 'POST',
@@ -408,12 +496,12 @@ export function usePropertyTemplatePreview() {
       const json = (await res.json()) as {
         success?: boolean;
         error?: string;
-        data?: { html: string; mode: string };
+        data?: { html: string; mode: string; subject?: string };
       };
       if (!json.success || !json.data) {
         throw new Error(json.error ?? 'Failed to render preview');
       }
-      return json.data;
+      return { ...json.data, subject: json.data.subject ?? '' };
     },
   });
 }

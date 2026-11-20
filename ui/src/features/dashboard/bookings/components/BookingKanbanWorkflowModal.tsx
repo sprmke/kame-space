@@ -119,8 +119,10 @@ export function BookingKanbanWorkflowModal({
           className={cn(
             'bg-card flex w-full flex-col overflow-hidden border',
             shellVisible
-              ? // Explicit height so flex-1 body (WorkflowPanel) does not collapse to 0 under max-h-only.
-                'shadow-elevated-lg h-[min(92dvh,40rem)] max-h-[min(92dvh,40rem)] max-w-[min(calc(100vw-1.5rem),32rem)] rounded-t-2xl sm:max-w-lg sm:rounded-xl'
+              ? // Content-sized height only. Cap with max-h so tall forms scroll.
+                // Never fixed `h-*`, `min-h-*`, or grow (`flex-1` / `flex-auto`) on this
+                // shell — those created empty gaps above the action footer.
+                'shadow-elevated-lg h-auto max-h-[min(92dvh,40rem)] max-w-[min(calc(100vw-1.5rem),32rem)] self-center rounded-t-2xl sm:max-w-lg sm:self-auto sm:rounded-xl'
               : 'max-h-0 max-w-0 border-0 shadow-none'
           )}
           onClick={(e) => e.stopPropagation()}
@@ -152,26 +154,24 @@ export function BookingKanbanWorkflowModal({
 
           <div
             className={cn(
-              'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden',
+              'flex min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-contain',
               !shellVisible && 'sr-only'
             )}
           >
             {isLoading && !booking ? (
-              <div className="flex-1 p-4 sm:p-5">
+              <div className="p-4 sm:p-5">
                 <WorkflowSheetSkeleton />
               </div>
             ) : null}
 
             {error && !booking ? (
-              <div className="text-destructive flex flex-1 items-center justify-center px-4 py-8 text-center text-sm sm:px-5">
+              <div className="text-destructive flex items-center justify-center px-4 py-8 text-center text-sm sm:px-5">
                 Could not load booking.
               </div>
             ) : null}
 
             {workflowPanel ? (
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-                {workflowPanel}
-              </div>
+              <div className="flex min-h-0 min-w-0 flex-col">{workflowPanel}</div>
             ) : null}
           </div>
         </div>

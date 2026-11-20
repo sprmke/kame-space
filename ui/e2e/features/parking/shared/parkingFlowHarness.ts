@@ -152,6 +152,14 @@ export type ParkingFlowState = {
   };
 };
 
+/** Matches guestFeePct 0.05 / guestFeeFixed 15 on a ₱1,200/night, 2-night stay. */
+export const PARKING_PAYMENT_PREVIEW = {
+  nights: 2,
+  hostGrossTotal: 2400,
+  guestFeeTotal: 135,
+  guestChargeTotal: 2535,
+} as const;
+
 const MOCK_HOST_CONTACT = {
   name: 'Parking Host',
   email: 'host@example.com',
@@ -361,7 +369,13 @@ function bookingRow(state: ParkingFlowState) {
 
 function guestStatusPayload(state: ParkingFlowState) {
   const status = effectiveStatus(state);
+  const showsPayment =
+    status === 'PENDING_PAYMENT' ||
+    status === 'PENDING_REVIEW' ||
+    status === 'READY_FOR_CHECKIN' ||
+    status === 'COMPLETED';
   return {
+    payment: showsPayment ? PARKING_PAYMENT_PREVIEW : null,
     status,
     checkInDate: '2027-08-25',
     checkOutDate: '2027-08-27',
@@ -635,11 +649,9 @@ function parkingPricingPayload() {
     weekendNightlyRate: 350,
     dateOverrides: {},
     currency: 'PHP',
-    guestRateCapWeekday: 400,
-    guestRateCapWeekend: 400,
-    guestRateWeekday: 400,
-    guestRateWeekend: 400,
     commissionPct: 0.1,
+    guestFeePct: 0.05,
+    guestFeeFixed: 15,
     directBookingToken: DIRECT_LINK_TOKEN,
     directBookingSlug: 'slot-12a',
     directCommissionPct: 0.05,
@@ -1092,6 +1104,20 @@ export async function installParkingFlowMocks(page: Page, state: ParkingFlowStat
     }
   });
 
+  await page.route('**/functions/v1/get-booking**', async (route) => {
+    const url = new URL(route.request().url());
+    const bookingId = url.searchParams.get('booking_id');
+    if (bookingId === E2E_PROPERTY_BOOKING_ID) {
+      await fulfillJson(route, { success: true, data: e2ePropertyBookingRow() });
+      return;
+    }
+    if (bookingId === state.bookingId && state.status !== 'draft') {
+      await fulfillJson(route, { success: true, data: bookingRow(state) });
+      return;
+    }
+    await fulfillJson(route, { success: false, error: 'Booking not found' }, 404);
+  });
+
   await page.route('**/rest/v1/guest_submissions*', async (route) => {
     const url = new URL(route.request().url());
     const id = url.searchParams.get('id');
@@ -1166,18 +1192,21 @@ async function fillParkingFormDatesOnStep2(page: Page) {
   if (!(await checkInTrigger.isVisible())) return;
 
   await checkInTrigger.click();
-  await page
+  const checkInDay = page
     .locator('[data-radix-popper-content-wrapper] [role="gridcell"] button:not([disabled])')
-    .first()
-    .click();
+    .first();
+  await checkInDay.waitFor({ state: 'visible' });
+  // DOM click bypasses Dialog body pointer-events lock / stacking hit-tests.
+  await checkInDay.evaluate((el) => (el as HTMLButtonElement).click());
 
   const checkOutTrigger = scope.getByRole('button', { name: 'MM/DD/YYYY' }).first();
   if (await checkOutTrigger.isVisible()) {
     await checkOutTrigger.click();
-    await page
+    const checkOutDay = page
       .locator('[data-radix-popper-content-wrapper] [role="gridcell"] button:not([disabled])')
-      .nth(1)
-      .click();
+      .nth(1);
+    await checkOutDay.waitFor({ state: 'visible' });
+    await checkOutDay.evaluate((el) => (el as HTMLButtonElement).click());
   }
 }
 
@@ -1246,7 +1275,9 @@ export async function fillGuestParkingRegistrationForm(
   await page.getByRole('button', { name: parkingFlowLabels.continue }).click();
 
   await page.getByLabel(parkingFlowLabels.vehicleType).click();
-  await page.getByRole('option', { name: 'Car' }).click();
+  const carOption = page.getByRole('option', { name: 'Car' });
+  await carOption.waitFor({ state: 'visible' });
+  await carOption.evaluate((el) => (el as HTMLElement).click());
   await page.getByLabel(parkingFlowLabels.plateNumber).fill('ABC-1234');
   await page.getByLabel(parkingFlowLabels.brandModel).fill('Toyota Vios');
   await page.getByLabel(parkingFlowLabels.color).fill('Gray');

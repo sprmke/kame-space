@@ -3,9 +3,13 @@
  * without creating a circular module graph.
  */
 
+import { toHostFacingError } from './hostFacingError.ts';
 import { decryptMetaInboxToken } from './metaInboxCrypto.ts';
 import { META_GRAPH_BASE, META_WEBHOOK_SUBSCRIBED_FIELDS } from './metaInboxConfig.ts';
 import type { SocialChannelConnectionRow } from './socialInboxTypes.ts';
+
+const HOST_FACING_SUBSCRIBE_FAILED =
+  'Could not verify Meta. Try Fix connection in Channels.';
 
 /** Parse Meta Graph responses; empty bodies become `{}` instead of throwing. */
 export async function parseMetaGraphJson(res: Response): Promise<Record<string, unknown>> {
@@ -31,10 +35,11 @@ export async function subscribeMetaPageWebhooks(
   const res = await fetch(url.toString(), { method: 'POST' });
   const json = await parseMetaGraphJson(res);
   if (!res.ok || json.success !== true) {
-    throw new Error(
+    const raw =
       (json.error as { message?: string } | undefined)?.message ??
-        'Failed to subscribe Meta webhooks'
-    );
+      'Failed to subscribe Meta webhooks';
+    console.warn('meta-inbox subscribe webhooks failed', { pageId, message: raw.slice(0, 500) });
+    throw new Error(toHostFacingError(raw, HOST_FACING_SUBSCRIBE_FAILED));
   }
 }
 

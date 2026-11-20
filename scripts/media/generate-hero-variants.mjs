@@ -15,7 +15,7 @@
  *
  * Output is committed, so the build does not depend on sharp being present.
  */
-import { existsSync, unlinkSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -48,14 +48,6 @@ for (const name of NAMES) {
     );
   }
 
-  // Full-size WebP sibling for budget checks and non-srcset fallbacks. JPEG master is left
-  // alone so we never re-crush the committed source.
-  const fullWebp = path.join(dir, `${name}.webp`);
-  const webpBuf = await sharp(input).rotate().webp({ quality: WEBP_QUALITY, effort: 5 }).toBuffer();
-  writeFileSync(fullWebp, webpBuf);
-  console.log(`  ${path.basename(fullWebp)}  ${Math.round(webpBuf.byteLength / 1024)} KiB`);
-  changed += 1;
-
   for (const width of WIDTHS) {
     const resized = sharp(input).rotate().resize({ width, withoutEnlargement: true });
 
@@ -70,6 +62,14 @@ for (const name of NAMES) {
     console.log(`  ${path.basename(webp)}  ${Math.round(variantWebp.byteLength / 1024)} KiB`);
 
     changed += 2;
+  }
+
+  // The responsive picture always selects a numbered srcset candidate. Remove the retired
+  // unnumbered WebP so it cannot become an unserved duplicate of the 1672px variant.
+  const fullWebp = path.join(dir, `${name}.webp`);
+  if (existsSync(fullWebp)) {
+    unlinkSync(fullWebp);
+    console.log(`  removed ${path.basename(fullWebp)}`);
   }
 
   for (const width of LEGACY_WIDTHS) {

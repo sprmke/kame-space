@@ -1,0 +1,15 @@
+# Orca worktree lifecycle for Kame Space.
+# Docs: docs/guides/testing/multi-worktree-local-preview.md
+# Settings → Repository → Command source: prefer "orca.yaml" (not Local only).
+
+scripts:
+  setup: |
+    bash scripts/dev/setup-worktree.sh
+  archive: |
+    bash scripts/dev/archive-worktree-ui.sh
+
+setupAgentStartupPolicy: wait-for-setup
+
+defaultTabs:
+  - title: UI
+    command: bun run ui

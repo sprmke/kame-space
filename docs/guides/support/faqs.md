@@ -381,7 +381,7 @@ Document requirements are set at the development level by the platform team, und
 - source: docs/guides/routes/org/property/templates.md
 - order: 30
 
-The four standard templates (house rules, check-in instructions, check-out instructions, and parking reminders) appear on the guest stay guide during their booking window. Email templates are used for automated messages throughout the booking process.
+Ten stay guide sections are available. Welcome, check-in, house rules, emergency and safety, and check-out show by default. Getting here, using the unit, and building amenities start hidden until you review the copy and switch them on. Parking appears only when the booking needs parking, and pets only when the guest brings a pet. Email templates are used for automated messages throughout the booking process.
 
 ### How do I get a shareable link for the stay guide?
 
@@ -1455,13 +1455,13 @@ The guest is emailed, the booking is cancelled, and the payment moves to refund 
 
 Archive when you want to stop taking new bookings but keep the history. Delete is only offered for a slot with no bookings. Deleting also removes its manual finance entries, so archive is the safer choice once you have used the slot.
 
-### Why is the price a guest sees different from my nightly rate?
+### Why does a guest pay more than my nightly rate?
 
 - category: Parking
 - audience: host
 - source: docs/guides/routes/org/parking/pricing.md
 
-Guests always see and pay the platform guest rate. Your nightly rate is what your payout is calculated from. We take the platform fee from your rate, and the rest is yours. The guest rate is also the price cap, so a slot priced above it is not matched.
+Guests see your nightly rate and pay it plus a small service fee at checkout. The service fee is added on top and never comes out of your payout. We take the platform fee from your rate and the rest is yours. You can set any rate from ₱100 per night up, with no maximum.
 
 ### How much does Kame Space take from a parking booking?
 
@@ -1469,7 +1469,7 @@ Guests always see and pay the platform guest rate. Your nightly rate is what you
 - audience: host
 - source: docs/guides/routes/org/parking/pricing.md
 
-A fixed percentage of your nightly rate, not the guest price. Pricing shows the exact split: guests pay, the platform fee, and what you receive. At 10% on a ₱300 rate, the fee is ₱30 and you receive ₱270 per night.
+A fixed percentage of your nightly rate. Pricing shows the exact split: the rate guests see, the platform fee, and what you receive. At 10% on a ₱300 rate, the fee is ₱30 and you receive ₱270 per night.
 
 ### How do I get a lower fee on a parking booking?
 
@@ -1485,7 +1485,7 @@ Share your direct booking link from Pricing. Bookings through that link use a lo
 - audience: host
 - source: docs/guides/routes/org/parking/finance.md
 
-Payouts are sent manually by the Kame Space team after the guest's payment is confirmed. You are paid your rate minus the platform fee. Parking Finance shows each booking's guest price, gross, fee, net and payout status.
+Payouts are sent manually by the Kame Space team after the guest's payment is confirmed. You are paid your rate minus the platform fee. Parking Finance shows each booking's rate, fee, net and payout status.
 
 ### Can I record a parking booking the guest already paid in cash?
 

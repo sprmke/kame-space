@@ -82,6 +82,7 @@ Guests can search by place name, city, listing title, **Nearby**, or everyday wo
 ### Hero / compact search bar
 
 - Works on homepage **and** every listing page that mounts the bar (`/properties`, `/developments`, `/parkings`, `/services`, `/search`, `/…/in/:location`, development detail / nested parking).
+- Desktop expand: the home hero (`panelPlacement="above"`) dims the page with a light backdrop. Listing / category pages do **not** dim — panels sit over the page chrome; Escape and outside-click still close.
 - Zero-state (under 2 characters): on home — suggested destinations (includes **Nearby**); on category pages — **Suggested developments / properties / parkings** with **Nearby {category}** first, then recommended listings from `list-public-*`.
 - Choosing **Nearby** / **Nearby developments** (chip or typed phrase) requests geolocation, then opens `/search?where=Nearby%20developments&type=developments&focus=developments&lat=…&lng=…` (category pages scope to that family; home stays unscoped `where=Nearby`).
 - Live typeahead (≥2 characters, 250ms debounce): Locations first, then listing families — only groups with hits. On a category page, that family is listed **immediately after Locations**. Each group shows at most **3** matches; when there are 3+, a header **See all** opens `/search?where=…&type=<category>&focus=<category>` (Locations → All without `type`). Nearby phrases return a single location chip labeled **Nearby** or **Nearby {category}**.
@@ -95,7 +96,7 @@ Guests can search by place name, city, listing title, **Nearby**, or everyday wo
 
 ### Phone and tablet search (below `lg`)
 
-Same values, same URLs, different control. `HeroSearch` swaps the three-segment bar for one pill and a full-screen sheet whenever the viewport is under 1024px. Plan: `docs/workflow/in-progress/mobile-search-airbnb-flow.md`.
+Same values, same URLs, different control. `HeroSearch` swaps the three-segment bar for one pill and a full-screen sheet whenever the viewport is under 1024px. Plan: `docs/workflow/for-testing/mobile-search-airbnb-flow.md`.
 
 | Piece           | Behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -144,7 +145,7 @@ Helpers: `listingSearchPreferType.ts`, `listingScrollSearchPaths.ts` (`resolveLi
 - **No stale empty flash:** previous-query placeholder data is treated as loading during a phrase/location/category change. It cannot rewrite the URL or briefly display old zero totals while the current geo request is still in flight.
 - **Applied chips:** dismissible chips under the toolbar on category tabs; filtered empty state offers **Clear filters**.
 - On **All** there is no shared sidebar (each category filters on its own schema), so the button **names the category it opens** — “Filter properties” — and switching is silent: the tab strip and sidebar are the feedback. **No toast.** Target is `focus` when populated, else the densest tab. Category tab changes push history so Back works. Opening Filters (or a category pill) keeps the **All / Properties / Developments / Parkings** strip visible so guests can toggle families without closing the sidebar.
-- **Errors / empty:** failed fetch shows **Try again**; empty offers **Search nearby**, clear place, clear dates; wires expansion note when soft fallback was tried.
+- **Errors / empty:** failed fetch shows **Try again**; empty uses library mascot `gentle-failure`, then **Search nearby** (primary) plus outline **Clear place** / **Clear dates**; wires expansion note when soft fallback was tried.
 - Locations are a typeahead group only — on `/search` they become the `where` text filter, not a fourth card grid.
 - Cards reuse Property / Development / Parking components; amenity chips show human labels (not raw ids).
 - Pagination (`page` in URL) only on a single-category tab. All is a first-page preview per category.

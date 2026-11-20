@@ -2,6 +2,7 @@
  * Meta webhook subscription verification + lightweight recovery.
  */
 
+import { toHostFacingError } from './hostFacingError.ts';
 import {
   getMetaAppCredentials,
   META_GRAPH_BASE,
@@ -15,6 +16,12 @@ import {
 } from './metaInboxGraphHttp.ts';
 import { socialInboxDb } from './socialInboxDb.ts';
 import type { SocialChannelConnectionRow } from './socialInboxTypes.ts';
+
+/** Stored on `social_channel_connections.error_message` — never a Graph dump. */
+const HOST_FACING_WEBHOOK_VERIFY_FAILED =
+  'Could not verify Meta. Try Fix connection in Channels.';
+const HOST_FACING_WEBHOOK_STILL_MISSING =
+  'Live messages may not arrive. Try Fix connection in Channels.';
 
 const EXPECTED_WEBHOOK_FIELDS = META_WEBHOOK_SUBSCRIBED_FIELDS.split(',')
   .map((field) => field.trim())
@@ -309,20 +316,20 @@ export async function reconcileMetaConnectionWebhook(
         : null;
 
     if (!verification.isSubscribed) {
-      const missingLabel =
-        verification.missingFields.length > 0
-          ? ` Missing fields: ${verification.missingFields.join(', ')}.`
-          : '';
       const attempts = previousAttempts + 1;
-      const errorParts = [`Webhook subscription still missing after retry.${missingLabel}`].filter(
-        Boolean
-      );
+      // Keep Graph field names out of host-facing `error_message` (Channels + thread empty).
+      console.warn('meta-inbox webhook fields still missing after retry', {
+        pageId: connection.meta_page_id,
+        missingFields: verification.missingFields,
+      });
       await updateWebhookState(connection, {
         webhook_subscribed_at: connection.webhook_subscribed_at ?? null,
         webhook_last_verified_at: now,
         webhook_verify_attempts: attempts,
         token_expires_at: tokenDebug?.expiresAt ?? connection.token_expires_at ?? null,
-        error_message: [...errorParts, tokenInvalid, tokenExpiringSoon].filter(Boolean).join(' '),
+        error_message: [HOST_FACING_WEBHOOK_STILL_MISSING, tokenInvalid, tokenExpiringSoon]
+          .filter(Boolean)
+          .join(' '),
       });
       return {
         verified: false,
@@ -353,13 +360,17 @@ export async function reconcileMetaConnectionWebhook(
     };
   } catch (error) {
     const attempts = previousAttempts + 1;
-    const message = error instanceof Error ? error.message : 'Webhook verification failed';
+    const raw = error instanceof Error ? error.message : 'Webhook verification failed';
+    console.warn('meta-inbox webhook verification failed', {
+      pageId: connection.meta_page_id,
+      message: raw.slice(0, 500),
+    });
     await updateWebhookState(connection, {
       webhook_subscribed_at: connection.webhook_subscribed_at ?? null,
       webhook_last_verified_at: now,
       webhook_verify_attempts: attempts,
       token_expires_at: connection.token_expires_at ?? null,
-      error_message: `Webhook verification failed: ${message}`,
+      error_message: toHostFacingError(raw, HOST_FACING_WEBHOOK_VERIFY_FAILED),
     });
     return { verified: false, resubscribed: false, missingFields: [] };
   }

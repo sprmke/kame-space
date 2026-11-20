@@ -7,6 +7,7 @@ import {
   OrgAnalyticsRevenueChange,
   orgAnalyticsListingHref,
 } from '@/features/dashboard/analytics/components/OrgAnalyticsListingParts';
+import { orgAttentionReasons } from '@/features/dashboard/analytics/lib/orgAnalyticsListings';
 import {
   orgPortfolioListingKind,
   orgPortfolioListingName,
@@ -21,8 +22,10 @@ type Props = {
   orgSlug: string;
 };
 
+type UnlockedRow = Extract<OrgPortfolioRow, { locked: false }>;
+
 const CARD_CLASS = cn(
-  'surface-card group relative flex min-w-0 flex-col gap-3.5 p-4 transition-colors',
+  'surface-card group relative flex min-w-0 flex-col gap-3 p-3.5 transition-colors sm:p-4',
   'hover:bg-muted/30 focus-within:ring-primary/40 focus-within:ring-2'
 );
 
@@ -37,41 +40,65 @@ function Metric({
 }) {
   return (
     <div className={cn('min-w-0', className)}>
-      <p className="text-muted-foreground mb-0.5 text-[11px] font-medium">{label}</p>
-      <div className="text-foreground text-sm font-semibold tabular-nums leading-snug">
+      <p className="text-muted-foreground text-[11px] font-medium leading-none">{label}</p>
+      <div className="text-foreground mt-1 truncate text-sm font-semibold tabular-nums leading-none">
         {children}
       </div>
     </div>
   );
 }
 
-function Header({ row, orgSlug }: Props) {
-  const name = orgPortfolioListingName(row);
+function RevenueValue({ row }: { row: UnlockedRow }) {
   return (
-    <div className="min-w-0 space-y-1.5">
-      <OrgAnalyticsKindBadge kind={orgPortfolioListingKind(row)} />
-      <Link
-        to={orgAnalyticsListingHref(orgSlug, row)}
-        className="text-foreground group-hover:text-primary block text-sm font-semibold leading-snug transition-colors after:absolute after:inset-0 after:content-[''] sm:text-base"
-      >
-        {name}
-      </Link>
-    </div>
+    <span className="inline-flex max-w-full items-baseline gap-1.5 truncate">
+      <span className="truncate whitespace-nowrap">{formatMoneyCompact(row.grossRevenue)}</span>
+      <OrgAnalyticsRevenueChange pct={row.revenueChangePct} />
+    </span>
   );
 }
 
-function MetricsBlock({ row }: { row: Extract<OrgPortfolioRow, { locked: false }> }) {
+function NameLink({ row, orgSlug }: Props) {
+  const name = orgPortfolioListingName(row);
   return (
-    <div className="border-separator grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-3.5 sm:grid-cols-4">
-      <Metric label="Occupancy">{row.occupancyRate}%</Metric>
-      <Metric label="Revenue" className="sm:col-span-1">
-        <span className="block whitespace-nowrap">{formatMoneyCompact(row.grossRevenue)}</span>
-        <OrgAnalyticsRevenueChange pct={row.revenueChangePct} />
-      </Metric>
-      <Metric label="Bookings">{row.reservations}</Metric>
-      <Metric label="Outlook">
-        <OrgAnalyticsOutlook row={row} compact />
-      </Metric>
+    <Link
+      to={orgAnalyticsListingHref(orgSlug, row)}
+      title={name}
+      className="text-foreground group-hover:text-primary block truncate text-sm font-semibold leading-snug transition-colors after:absolute after:inset-0 after:content-[''] sm:text-[15px]"
+    >
+      {name}
+    </Link>
+  );
+}
+
+function AttentionReasonLines({ row }: { row: UnlockedRow }) {
+  const reasons = orgAttentionReasons(row).filter((reason) => reason.key !== 'underbooked');
+  if (reasons.length === 0) return null;
+  return (
+    <ul className="text-muted-foreground relative z-[1] space-y-0.5 text-[11px] leading-snug sm:text-xs">
+      {reasons.map((reason) => (
+        <li key={reason.key}>
+          <span className="text-foreground font-medium">{reason.label}</span>
+          <span>{`. ${reason.detail}`}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function MetricsBlock({ row }: { row: UnlockedRow }) {
+  return (
+    <div className="border-separator space-y-2.5 border-t pt-3">
+      <div className="grid grid-cols-3 gap-3">
+        <Metric label="Occupancy">{row.occupancyRate}%</Metric>
+        <Metric label="Revenue">
+          <RevenueValue row={row} />
+        </Metric>
+        <Metric label="Bookings">{row.reservations}</Metric>
+      </div>
+      <div className="text-muted-foreground relative z-[1] flex min-w-0 items-baseline gap-1.5 text-[11px] leading-none sm:text-xs">
+        <span className="shrink-0">Outlook</span>
+        <OrgAnalyticsOutlook row={row} compact className="min-w-0 truncate text-[11px] sm:text-xs" />
+      </div>
     </div>
   );
 }
@@ -80,12 +107,26 @@ function MetricsBlock({ row }: { row: Extract<OrgPortfolioRow, { locked: false }
 export function OrgAnalyticsListingCard({ row, orgSlug }: Props) {
   return (
     <article className={CARD_CLASS}>
-      <Header row={row} orgSlug={orgSlug} />
+      <div className="min-w-0 space-y-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <OrgAnalyticsKindBadge kind={orgPortfolioListingKind(row)} />
+          {!row.locked ? (
+            <OrgAnalyticsAttention
+              row={row}
+              hideOutlookReasons
+              showDetail={false}
+              className="relative z-[1] shrink-0"
+            />
+          ) : null}
+        </div>
+        <NameLink row={row} orgSlug={orgSlug} />
+      </div>
+
       {row.locked ? (
         <p className="text-muted-foreground text-xs">Unavailable on your plan</p>
       ) : (
         <>
-          <OrgAnalyticsAttention row={row} hideOutlookReasons />
+          <AttentionReasonLines row={row} />
           <MetricsBlock row={row} />
         </>
       )}
@@ -96,29 +137,33 @@ export function OrgAnalyticsListingCard({ row, orgSlug }: Props) {
 /** List view: one wide row per listing. */
 export function OrgAnalyticsListingRow({ row, orgSlug }: Props) {
   return (
-    <article className={cn(CARD_CLASS, 'lg:flex-row lg:items-start lg:gap-5')}>
-      <div className="min-w-0 lg:w-52 lg:shrink-0">
-        <Header row={row} orgSlug={orgSlug} />
+    <article className={cn(CARD_CLASS, 'lg:flex-row lg:items-center lg:gap-5')}>
+      <div className="min-w-0 flex-1 space-y-1 lg:max-w-[18rem] lg:shrink-0">
+        <OrgAnalyticsKindBadge kind={orgPortfolioListingKind(row)} />
+        <NameLink row={row} orgSlug={orgSlug} />
       </div>
+
       {row.locked ? (
         <p className="text-muted-foreground text-xs">Unavailable on your plan</p>
       ) : (
         <>
-          <div className="relative z-[1] min-w-0 lg:max-w-[14rem] lg:flex-1">
-            <OrgAnalyticsAttention row={row} hideOutlookReasons />
+          <div className="relative z-[1] min-w-0 lg:w-36 lg:shrink-0">
+            <OrgAnalyticsAttention row={row} hideOutlookReasons showDetail={false} />
           </div>
-          <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4 lg:max-w-none lg:shrink-0">
+          <div className="grid min-w-0 flex-1 grid-cols-3 gap-3 lg:max-w-md">
             <Metric label="Occupancy">{row.occupancyRate}%</Metric>
             <Metric label="Revenue">
-              <span className="block whitespace-nowrap">
-                {formatMoneyCompact(row.grossRevenue)}
-              </span>
-              <OrgAnalyticsRevenueChange pct={row.revenueChangePct} />
+              <RevenueValue row={row} />
             </Metric>
             <Metric label="Bookings">{row.reservations}</Metric>
-            <Metric label="Outlook">
-              <OrgAnalyticsOutlook row={row} compact />
-            </Metric>
+          </div>
+          <div className="relative z-[1] min-w-0 lg:w-40 lg:shrink-0">
+            <p className="text-muted-foreground text-[11px] font-medium leading-none">Outlook</p>
+            <OrgAnalyticsOutlook
+              row={row}
+              compact
+              className="mt-1 min-w-0 truncate text-sm font-semibold leading-none"
+            />
           </div>
         </>
       )}

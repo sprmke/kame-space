@@ -32,10 +32,10 @@ describe('marketing hero width variants', () => {
 
       it(`${name}-${width}.webp exists and is smaller than or equal to the full render`, () => {
         const variant = path.join(HERO_DIR, `${name}-${width}.webp`);
-        const full = path.join(HERO_DIR, `${name}.webp`);
+        const full = path.join(HERO_DIR, `${name}-1672.webp`);
 
         expect(existsSync(variant), `missing ${variant}`).toBe(true);
-        if (existsSync(full) && width < 1672) {
+        if (width < 1672) {
           expect(statSync(variant).size).toBeLessThan(statSync(full).size);
         }
       });
@@ -44,7 +44,7 @@ describe('marketing hero width variants', () => {
 
   it('the 640w variant is meaningfully smaller than the full render', () => {
     const small = statSync(path.join(HERO_DIR, 'hero-day-640.webp')).size;
-    const full = statSync(path.join(HERO_DIR, 'hero-day.webp')).size;
+    const full = statSync(path.join(HERO_DIR, 'hero-day-1672.webp')).size;
     // A phone must not download the desktop file. Assert a floor of 3x.
     expect(full / small).toBeGreaterThan(3);
   });

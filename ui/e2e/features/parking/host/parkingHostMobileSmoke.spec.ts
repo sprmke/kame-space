@@ -21,7 +21,8 @@ test.describe('@smoke @critical parking host mobile action bar', () => {
     await expect(page.getByRole('heading', { name: 'Jamie Park' }).first()).toBeVisible({
       timeout: 20_000,
     });
-    const bar = page.getByRole('toolbar');
+    // Quick access is also a toolbar; pin the booking status action bar.
+    const bar = page.getByRole('toolbar').filter({ hasText: 'Approve for check-in' });
     await expect(bar).toBeVisible();
     await expect(bar.getByRole('button', { name: 'Approve for check-in' })).toBeVisible();
     await expectNoPageHorizontalOverflow(page);

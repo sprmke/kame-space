@@ -1073,6 +1073,15 @@ Additive, one transaction per file, all idempotent (`IF NOT EXISTS` / `DROP ... 
 
 **Before applying anywhere with real data**, count live rows: `SELECT status, count(*) FROM org_subscriptions GROUP BY 1`. The first migration collapses any org that already has two live rows (keeps the most recently updated, marks the rest `canceled` with `ended_reason = 'admin'`), expires all but the newest pending checkout per org, and backfills `billing_anchor_day`, `period_paid_php` and a Managed `price_override_php` from existing rows. PayMongo live approval is still pending, so prod is expected to have no paying orgs.
 
+### Host-set parking pricing (`20261344000000`, `20261344000100`)
+
+| File                                                | What it does                                                                                                                                                                                                                                                                                   |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `20261344000000_parking_guest_fee.sql`              | Adds `platform_parking_settings.guest_fee_pct` (default 0.05) and `guest_fee_fixed` (default 15) with a CHECK, and `parking_payment_transactions.guest_fee_total` (default 0, so historical rows keep the guest charge they paid). Additive; the old `guest_rate_*` columns stay, unread       |
+| `20261344000100_parking_search_price_host_rate.sql` | `pls_refresh_parking` writes the search price from the host weekday rate (fallback 300), drops the platform-settings trigger and its function, and refreshes every parking. Existing `pls_parking_settings_sync` keeps the index current on host edits. Grants unchanged (`service_role` only) |
+
+Rollback: restore the previous `pls_refresh_parking` body from `20261327000000_parking_guest_rate_index_fix.sql`; the new columns can stay.
+
 **Security rule for every future migration.** A `SECURITY DEFINER` function must be revoked from `PUBLIC, anon, authenticated` and granted to `service_role`. `scripts/dev/check-migration-security.sh` enforces it from `20261342000500` on, and `scripts/dev/probe-function-privileges-local.sh` runs after every fresh replay in CI and fails if `anon` can run any definer function, if `authenticated` can run anything beyond the two allowlisted ones, or if a new function gets an explicit `anon`/`authenticated` default grant. To list what is exposed on any database:
 
 ```sql
@@ -1094,3 +1103,22 @@ LOCAL_BILLING_LIVE=1 TZ=Asia/Manila deno test --config supabase/functions/deno.j
 ```
 
 **Deploy order:** migrations first, then the functions (`org-plan`, `create-org-subscription-checkout`, `paymongo-webhook`, `platform-billing-cron`, the new `org-subscription-change`, `preview-org-plan-change`, `org-billing-details`, `get-org-payment-receipt`), then the UI. `apply-org-plan-downgrade` is removed, so an old browser tab calling it gets a 404 until refreshed. Add `payment.refunded` to the PayMongo webhook events. Remote writes need `kamewave`. Backup first.
+
+## Property template defaults backfill
+
+Migration `20261343001100_property_template_contents_v2.sql` adds `subject`, `default_hash` and
+the `message` category. After it lands, properties that never edited a default should get the
+new condo copy without losing a section image or a visibility choice.
+
+```bash
+bun run backfill:templates             # dry run: counts per template key
+bun run backfill:templates -- --execute  # rewrites matched row content
+```
+
+The script holds a frozen copy of every previously shipped default and rewrites a built-in row
+only when its normalized content matches that old default and it has no subject override. It
+keeps `section_image_url`, `guest_visible` and `guest_phase`, clears `default_hash`, and leaves
+customized rows untouched. Run
+the dry run on local and on the shared project first; a production run is a remote write and
+needs the same approval as any other production change. Rows the host customized are untouched
+and show **New default available** in the editor.

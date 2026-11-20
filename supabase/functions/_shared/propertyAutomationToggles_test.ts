@@ -12,13 +12,13 @@ import {
   PROPERTY_AUTOMATION_TOGGLE_KEYS,
 } from './propertyAutomationToggles.ts';
 
-Deno.test('property automation keys - 9 keys, retired parking broadcast removed', () => {
-  assertEquals(PROPERTY_AUTOMATION_TOGGLE_KEYS.length, 9);
+Deno.test('property automation keys - 12 keys, retired parking broadcast removed', () => {
+  assertEquals(PROPERTY_AUTOMATION_TOGGLE_KEYS.length, 12);
   assertEquals(PROPERTY_AUTOMATION_TOGGLE_KEYS.includes('emailParkingBroadcast' as never), false);
 });
 
-Deno.test('plan-gated property toggles - 5 keys, new booking alert stays free', () => {
-  assertEquals(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.length, 5);
+Deno.test('plan-gated property toggles - 7 keys, new booking alert stays free', () => {
+  assertEquals(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.length, 7);
   assertEquals(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.includes('emailNewBookingRequest'), false);
   assertEquals(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.includes('emailReviewRequest'), false);
   assertEquals(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.includes('emailGafRequest'), true);
@@ -33,7 +33,8 @@ Deno.test('mergePropertyAutomationToggles - ignores unknown stored keys', () => 
   assertEquals('emailParkingBroadcast' in merged, false);
   assertEquals(merged.emailGafRequest, false);
   assertEquals(merged.emailNewBookingRequest, true);
-  assertEquals(Object.keys(merged).length, 9);
+  assertEquals(merged.emailPreArrivalReminder, true);
+  assertEquals(Object.keys(merged).length, 12);
 });
 
 Deno.test('mergePropertyAutomationToggles - defaults when raw is junk', () => {

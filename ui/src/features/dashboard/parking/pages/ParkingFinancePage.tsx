@@ -46,6 +46,7 @@ import {
   withPeriodComparison,
 } from '@/features/dashboard/finance/lib/financeSummaryStats';
 import type { FinanceLineItem, FinanceQuery } from '@/features/dashboard/finance/lib/types';
+import { buildParkingPayoutLedgerEntries } from '@/features/dashboard/parking/lib/parkingFinanceLedger';
 
 import { FloatingPanel, FloatingToolbar } from '@/components/mobile/FloatingPanel';
 import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
@@ -54,54 +55,6 @@ import { useAdminMobileCardViewGuard } from '@/hooks/useAdminMobileCardViewGuard
 import { useIsBelowLg, useIsBelowMd } from '@/hooks/useMediaQuery';
 import { fromIsoDate } from '@/lib/date/navigation';
 import { buildPageItems } from '@/lib/table/pagination';
-import { formatMoney } from '@/utils/format/currency';
-
-function MarketplacePayoutsSection() {
-  const { data, isLoading } = useParkingPayments();
-  const rows = data ?? [];
-
-  return (
-    <FloatingPanel padding="md" className="space-y-3">
-      <div>
-        <h2 className="text-section-title">Marketplace payouts</h2>
-        <p className="text-muted-foreground text-xs">
-          Paid bookings. Payouts are sent manually by the Kame Space team.
-        </p>
-      </div>
-      {isLoading && rows.length === 0 ? (
-        <p className="text-muted-foreground text-sm">Loading payouts…</p>
-      ) : rows.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No marketplace payments yet.</p>
-      ) : (
-        <ul className="divide-border/60 divide-y">
-          {rows.map((row) => (
-            <li key={row.id} className="flex items-start justify-between gap-3 py-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium">
-                  {formatMoney(row.hostNetTotal)} net
-                  {row.bookingChannel === 'direct_link' ? ' · Direct link' : ''}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  Guest paid {formatMoney(row.guestChargeTotal)} · Gross{' '}
-                  {formatMoney(row.hostGrossTotal)} · Fee {(row.commissionPct * 100).toFixed(1)}%
-                </p>
-              </div>
-              <span className="text-muted-foreground shrink-0 text-right text-xs">
-                {row.status === 'refunded'
-                  ? 'Refunded'
-                  : row.status === 'refund_review'
-                    ? 'Refund review'
-                    : row.disbursedAt
-                      ? 'Disbursed'
-                      : 'Awaiting payout'}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </FloatingPanel>
-  );
-}
 
 export function ParkingFinancePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -155,12 +108,18 @@ export function ParkingFinancePage() {
   const summaryQuery = useFinanceSummary(query);
   const previousSummaryQuery = useFinanceSummary(previousPeriodQuery);
   const lineItemsQuery = useFinanceLineItems(query);
+  const parkingPaymentsQuery = useParkingPayments();
 
   useAdminMobileCardViewGuard(isMobileLayout, query, setQuery);
 
   const allEntries = useMemo(() => {
-    return buildFinanceLedgerEntries([], lineItemsQuery.data ?? []);
-  }, [lineItemsQuery.data]);
+    const operating = buildFinanceLedgerEntries([], lineItemsQuery.data ?? []);
+    const payouts = buildParkingPayoutLedgerEntries(parkingPaymentsQuery.data ?? [], {
+      from: query.from,
+      to: query.to,
+    });
+    return [...operating, ...payouts];
+  }, [lineItemsQuery.data, parkingPaymentsQuery.data, query.from, query.to]);
 
   const filteredEntries = useMemo(
     () => filterFinanceLedgerEntries(allEntries, query),
@@ -202,8 +161,8 @@ export function ParkingFinancePage() {
   const showTableView = query.view === 'table' && !isMobileLayout;
   const showCardView = query.view === 'card' || (isMobileLayout && query.view !== 'calendar');
   const showPagination = !showCalendarView && pageCount > 1;
-  const isLedgerLoading = lineItemsQuery.isLoading;
-  const isLedgerRefreshing = lineItemsQuery.isFetching;
+  const isLedgerLoading = lineItemsQuery.isLoading || parkingPaymentsQuery.isLoading;
+  const isLedgerRefreshing = lineItemsQuery.isFetching || parkingPaymentsQuery.isFetching;
   const chartsLoading = lineItemsQuery.isPending;
 
   const handleCalendarMonthChange = useCallback(
@@ -368,8 +327,6 @@ export function ParkingFinancePage() {
           ariaLabel="Finance ledger pagination"
         />
       ) : null}
-
-      <MarketplacePayoutsSection />
 
       <FinanceTransactionModals
         query={query}

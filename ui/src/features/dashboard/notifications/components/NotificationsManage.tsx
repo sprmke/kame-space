@@ -19,6 +19,11 @@ import { UnsavedChangesDialog } from '@/components/forms/UnsavedChangesDialog';
 import { MobileHeroActionButton } from '@/components/mobile/MobileHeroActionButton';
 import { Button } from '@/components/ui/button';
 import {
+  MODAL_BODY_CLASS,
+  MODAL_FOOTER_CLASS,
+  MODAL_HEADER_CLASS,
+} from '@/components/ui/modal-chrome';
+import {
   ResponsiveModal,
   ResponsiveModalContent,
   ResponsiveModalFooter,
@@ -28,6 +33,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useGuardedViewSwitch } from '@/hooks/useGuardedViewSwitch';
 import { useFeatureAvailability } from '@/lib/featureAvailability/useFeatureAvailability';
+import { cn } from '@/lib/utils';
 
 const MANAGE_LABEL = 'Manage notifications';
 
@@ -73,8 +79,8 @@ type DialogProps = {
  * **Activity** holds this device's push opt-in and the per-group push
  * preferences, **Telegram** holds the master switch and the bot/module setup.
  *
- * A channel that is switched off shows what it would give you instead of its
- * controls, and each master row skeletons until its state has been read.
+ * Both tabs use one bordered card (master switch on top, settings below) so
+ * hierarchy matches. A channel that is off shows what turning it on restores.
  */
 export function NotificationsManageDialog({
   open,
@@ -120,9 +126,12 @@ export function NotificationsManageDialog({
       <ResponsiveModal open={open} onOpenChange={guardedOpenChange}>
         <ResponsiveModalContent
           sheetLayout="split"
-          className="flex max-h-[min(92dvh,760px)] min-h-0 flex-col overflow-hidden sm:max-w-[min(92vw,44rem)]"
+          className={cn(
+            'flex w-full min-h-0 flex-col gap-0 overflow-hidden p-0 pb-0 pt-0 sm:p-0',
+            'max-h-[min(92dvh,760px)] max-w-[min(calc(100vw-1.5rem),44rem)] sm:max-w-[min(92vw,44rem)]'
+          )}
         >
-          <ResponsiveModalHeader className="shrink-0 px-4 sm:px-5">
+          <ResponsiveModalHeader className={cn('space-y-0 text-left', MODAL_HEADER_CLASS)}>
             <ResponsiveModalTitle>Manage notifications</ResponsiveModalTitle>
           </ResponsiveModalHeader>
 
@@ -131,7 +140,7 @@ export function NotificationsManageDialog({
             onValueChange={(next) => requestSwitch(() => onTabChange(next as ManageTab))}
             className="flex min-h-0 flex-1 flex-col"
           >
-            <div className="shrink-0 pb-3 max-lg:px-4">
+            <div className={cn('border-border shrink-0 border-b', MODAL_BODY_CLASS, 'py-3')}>
               <TabsList className="bg-muted/45 grid h-auto w-full grid-cols-2 gap-1 rounded-xl p-1">
                 <TabsTrigger
                   value="activity"
@@ -148,13 +157,13 @@ export function NotificationsManageDialog({
               </TabsList>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2 sm:px-5">
+            <div
+              className={cn(
+                'min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]',
+                MODAL_BODY_CLASS
+              )}
+            >
               <TabsContent value="activity" className="mt-0 focus-visible:outline-none">
-                {/*
-                 * One card for the whole Activity push block: master switch,
-                 * preferences and quiet hours share a border so the sheet does
-                 * not look like a card stacked on a flat list.
-                 */}
                 {!push.ready ? (
                   <ChannelSwitchSkeleton />
                 ) : (
@@ -179,14 +188,18 @@ export function NotificationsManageDialog({
 
               <TabsContent value="telegram" className="mt-0 focus-visible:outline-none">
                 {telegramAvailable ? (
-                  <div className="space-y-4">
-                    <TelegramDeliverySwitchRow />
+                  <div className="border-border bg-card overflow-hidden rounded-xl border">
+                    <TelegramDeliverySwitchRow embedded />
                     {delivery.isLoading ? (
-                      <ChannelCardsSkeleton />
+                      <div className="border-border space-y-3 border-t px-3 py-3 sm:px-4">
+                        <ChannelCardsSkeleton />
+                      </div>
                     ) : telegramEnabled ? (
-                      telegramContent
+                      <div className="border-border space-y-4 border-t px-3 py-3 sm:px-4">
+                        {telegramContent}
+                      </div>
                     ) : (
-                      <TelegramPausedPanel />
+                      <TelegramPausedPanel className="border-border rounded-none border-0 border-t bg-transparent" />
                     )}
                   </div>
                 ) : (
@@ -198,7 +211,7 @@ export function NotificationsManageDialog({
             </div>
           </Tabs>
 
-          <ResponsiveModalFooter className="shrink-0 px-4 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
+          <ResponsiveModalFooter className={MODAL_FOOTER_CLASS}>
             <Button
               type="button"
               className="w-full sm:w-auto"

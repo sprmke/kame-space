@@ -2,7 +2,7 @@
 title: 'Tasks To Do'
 status: active
 tags: [planning, intake, backlog]
-updated: 2026-11-18
+updated: 2026-11-19
 stage: intake
 kind: backlog
 ---
@@ -48,14 +48,15 @@ kind: backlog
 - 🚧 Refine cancellation policy settings and the overall cancellation process.
   → **In progress:** [`../in-progress/cancellation-policy-and-process.md`](../in-progress/cancellation-policy-and-process.md)
 - ✅ On/off dashboard pages, sections, features or buttons from super admin, with a visible reason
-  → **Done:** [`../done/feature-availability-controls.md`](../done/feature-availability-controls.md) · QA: [`../for-testing/feature-availability-controls.md`](../for-testing/feature-availability-controls.md)
+  → **Done:** [`../done/feature-availability-controls.md`](../done/feature-availability-controls.md) · QA: [`../for-testing/feature-availability-controls-manual-qa.md`](../for-testing/feature-availability-controls-manual-qa.md)
 - ✅ Improve and refine default amenities and house rules
 - 🚧 Refine and improve cancellation policy options
   → **In progress:** [`../in-progress/cancellation-policy-and-process.md`](../in-progress/cancellation-policy-and-process.md)
 - ✅ Fix issue where google map is not rendering properly on both dashboard and public page
 - ✅ Display warning message if user refresh the page when editing on a page (ex. Settings). Right now, we only display the default browser warning and not our custom popup modal warning
 - ✅ Cleanup usages of "—" on email templates and across the app. If we need to use it, then please ensure that we use the normal "-". But please analyze carefully if it's good UX to use - at all. Then make sure to apply all usages across the entire app that it's still using it. From UI, email templates and other locations that we are using it from our app.
-- 🔵 Refine templates
+- 📋 Refine templates
+  → **For testing:** [`../for-testing/property-templates-defaults-overhaul.md`](../for-testing/property-templates-defaults-overhaul.md)
 - ✅ Improve activity modal from settings to be the same modal size or I think it's better if we have navigation here to view the activity detail and we can back to it instead of opening it on a new modal
 - ✅ Fix super admin UI issue on this: https://kamespace.com/admin/orgs/kame-homes
 - ✅ Why stay guide and showcase public page editor is not loading at all (root cause: `public-page-configs` edge function boot error from a duplicate `const row`; also added error states so a failed config no longer leaves the skeleton up forever)
@@ -75,7 +76,8 @@ kind: backlog
   → **In progress:** [`../in-progress/app-speed-root-cause-overhaul.md`](../in-progress/app-speed-root-cause-overhaul.md)
 - ✅ Refine Channel sync modal (From/To progressive empty states + feed card) (UI-36)
 - 🔵 Inbox refinement
-- 🔵 Refine email templates, refine flows/events or actions that we need to send email
+- 📋 Refine email templates, refine flows/events or actions that we need to send email
+  → **For testing:** [`../for-testing/property-templates-defaults-overhaul.md`](../for-testing/property-templates-defaults-overhaul.md)
 - ❌ Reposition light/dark switch
   → **Won't do:** [`../wont-do/dashboard-top-header-bar.md`](../wont-do/dashboard-top-header-bar.md) — profile, theme toggle and mode switch stay in the sidebar footer
 - 🔵 Improve paid/pro subscription badge/flow
@@ -91,7 +93,7 @@ kind: backlog
 - ✅ Payment e2e and management from super admin
   → **Done 2026-11-19:** [`../done/plans-billing-lifecycle-hardening.md`](../done/plans-billing-lifecycle-hardening.md) (sandbox matrix passed, super-admin billing panel shipped)
 - 🔵 Billing follow-ups from the lifecycle plan
-  Confirm with the accountant whether BIR official receipts or VAT are needed. Confirm the product defaults D5 (suspension behaves like Free) and D6 (auto-cover with a prorated true-up). PayMongo go-live configuration is PR-097 and the deploy flake is PR-098 in [`../in-progress/production-readiness/LEDGER.md`](../in-progress/production-readiness/LEDGER.md).
+  Confirm with the accountant whether BIR official receipts or VAT are needed. Confirm the product defaults D5 (suspension behaves like Free) and D6 (auto-cover with a prorated true-up). PayMongo go-live (live keys, activation, live webhook, one live checkout) is PR-097 in [`../in-progress/production-readiness/LEDGER.md`](../in-progress/production-readiness/LEDGER.md).
 - 🔵 Improve QR design to include our logo?
 - 🔵 Select turtle character and add it on their templates
 - 🔵 Super admin - playbook articles?
@@ -140,7 +142,8 @@ kind: backlog
   - ✅ Inbox: remove Not connected badge (UI-20)
   - ✅ AI import bookings: drop allowed-use line (UI-21)
   - ✅ Download template: rephrase “No manual updates…” (UI-22)
-  - 🔵 Condo-default templates refine (UI-23 · needs product input)
+  - 📋 Condo-default templates refine (UI-23)
+    → **For testing:** [`../for-testing/property-templates-defaults-overhaul.md`](../for-testing/property-templates-defaults-overhaul.md)
   - 🔵 Privacy / legal tech disclosure (UI-24 · blocked by `legal-and-privacy-coverage`)
   - ✅ Guest tickets + dashboard support skeletons (UI-25)
   - ✅ Guest account help UX (UI-26)

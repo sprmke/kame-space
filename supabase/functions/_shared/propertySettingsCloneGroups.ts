@@ -18,8 +18,13 @@ import {
   type PublicPageType,
 } from './publicPageConfigs.ts';
 import {
+  createPropertyTemplateFolder,
+  DuplicateTemplateFolderNameError,
+  isGuestTemplatePhase,
+  listPropertyTemplateFolders,
   listPropertyTemplateRows,
   upsertPropertyTemplateRow,
+  type GuestTemplatePhase,
   type PropertyTemplateCategory,
 } from './propertyTemplates.ts';
 import { isSeededTemplateName, seedPropertyTeamTemplates } from './propertyTeamTemplates.ts';
@@ -505,23 +510,97 @@ const publicPagesGroup: CloneGroup = {
   },
 };
 
+/** Read side shared by the base and asset-aware Templates groups. */
+export async function readTemplatesWithFolders(propertyId: string) {
+  const [rows, folders] = await Promise.all([
+    listPropertyTemplateRows(propertyId),
+    listPropertyTemplateFolders(propertyId),
+  ]);
+  const folderNameById = new Map(folders.map((folder) => [folder.id, folder.name]));
+  return {
+    rows: rows.map((r) => ({
+      template_key: r.template_key,
+      category: r.category,
+      name: r.name,
+      content: r.content,
+      section_image_url: r.section_image_url,
+      subject: r.subject ?? null,
+      guest_visible: r.guest_visible === true,
+      guest_phase: isGuestTemplatePhase(r.guest_phase) ? r.guest_phase : null,
+      folder_name: r.folder_id ? (folderNameById.get(r.folder_id) ?? null) : null,
+    })),
+    folders: folders.map((folder) => ({ name: folder.name, position: folder.position })),
+  };
+}
+
+export type CloneTemplateRow = {
+  template_key: string;
+  category: PropertyTemplateCategory;
+  name: string | null;
+  content: string;
+  section_image_url: string | null;
+  subject?: string | null;
+  guest_visible?: boolean;
+  guest_phase?: string | null;
+  folder_name?: string | null;
+};
+
+/** Writes template rows, re-creating host folders by name on the target property. */
+export async function writeTemplatesWithFolders(
+  payload: Record<string, unknown>,
+  targetCtx: { propertyId: string },
+  sectionImageUrlFor: (row: CloneTemplateRow) => string | null
+) {
+  const rows = Array.isArray(payload.rows) ? (payload.rows as CloneTemplateRow[]) : [];
+  const folders = Array.isArray(payload.folders)
+    ? (payload.folders as Array<{ name: string; position: number }>)
+    : [];
+
+  const targetFolders = await listPropertyTemplateFolders(targetCtx.propertyId);
+  const folderIdByName = new Map(targetFolders.map((folder) => [folder.name, folder.id]));
+  for (const folder of folders) {
+    const name = String(folder.name ?? '').trim();
+    if (!name || folderIdByName.has(name)) continue;
+    try {
+      const created = await createPropertyTemplateFolder({
+        propertyId: targetCtx.propertyId,
+        name,
+      });
+      folderIdByName.set(name, created.id);
+    } catch (err) {
+      if (!(err instanceof DuplicateTemplateFolderNameError)) throw err;
+    }
+  }
+
+  for (const row of rows) {
+    const folderName = String(row.folder_name ?? '').trim();
+    const guestPhase = isGuestTemplatePhase(row.guest_phase)
+      ? (row.guest_phase as GuestTemplatePhase)
+      : undefined;
+    await upsertPropertyTemplateRow({
+      propertyId: targetCtx.propertyId,
+      templateKey: String(row.template_key),
+      category: row.category,
+      name: row.name,
+      content: String(row.content ?? ''),
+      ...(row.subject === undefined ? {} : { subject: row.subject }),
+      ...(row.category === 'custom' ? { guestVisible: row.guest_visible === true } : {}),
+      ...(row.category === 'standard' ? { guestVisible: row.guest_visible === true } : {}),
+      ...(guestPhase ? { guestPhase } : {}),
+      ...(row.category === 'custom' && folderName
+        ? { folderId: folderIdByName.get(folderName) ?? null }
+        : {}),
+      sectionImageUrl: sectionImageUrlFor(row),
+    });
+  }
+}
+
 const templatesGroup: CloneGroup = {
   id: 'templates',
   label: 'Templates',
   editLeaves: ['templates.standard:edit', 'templates.email:edit'],
   defaultOn: true,
-  async read(sourceCtx) {
-    const rows = await listPropertyTemplateRows(sourceCtx.propertyId);
-    return {
-      rows: rows.map((r) => ({
-        template_key: r.template_key,
-        category: r.category,
-        name: r.name,
-        content: r.content,
-        section_image_url: r.section_image_url,
-      })),
-    };
-  },
+  read: (sourceCtx) => readTemplatesWithFolders(sourceCtx.propertyId),
   sanitize(payload) {
     const rows = Array.isArray(payload.rows) ? payload.rows : [];
     return {
@@ -532,37 +611,23 @@ const templatesGroup: CloneGroup = {
           category: row.category,
           name: row.name,
           content: row.content,
+          subject: row.subject ?? null,
+          guest_visible: row.guest_visible === true,
+          guest_phase: row.guest_phase ?? null,
+          folder_name: row.folder_name ?? null,
           // Phase 1: text only — drop section images (Phase 2 clones them)
           section_image_url: null,
         };
       }),
+      folders: Array.isArray(payload.folders) ? payload.folders : [],
     };
   },
   async hasNonDefault(targetCtx) {
     const rows = await listPropertyTemplateRows(targetCtx.propertyId);
     return rows.length > 0;
   },
-  async write(payload, targetCtx) {
-    const rows = Array.isArray(payload.rows)
-      ? (payload.rows as Array<{
-          template_key: string;
-          category: PropertyTemplateCategory;
-          name: string | null;
-          content: string;
-          section_image_url: string | null;
-        }>)
-      : [];
-    for (const row of rows) {
-      await upsertPropertyTemplateRow({
-        propertyId: targetCtx.propertyId,
-        templateKey: String(row.template_key),
-        category: row.category,
-        name: row.name,
-        content: String(row.content ?? ''),
-        sectionImageUrl: null,
-      });
-    }
-  },
+  write: (payload, targetCtx) =>
+    writeTemplatesWithFolders(payload as Record<string, unknown>, targetCtx, () => null),
 };
 
 const telegramNotificationsGroup: CloneGroup = {

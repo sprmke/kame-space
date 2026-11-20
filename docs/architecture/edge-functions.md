@@ -2,7 +2,7 @@
 title: 'Edge functions (API surface)'
 status: active
 tags: [architecture, edge-functions]
-updated: 2026-09-17
+updated: 2026-11-20
 ---
 
 # Edge functions (API surface)
@@ -105,6 +105,28 @@ Rules:
 - **A `public*` directive on an authenticated/tenant-scoped response is a cross-tenant data leak** — treat every new `public*` call site as a security-reviewed decision (verify: no auth check gates the handler, no per-viewer variation in the payload), not a performance tweak.
 
 Full phase status — what's classified vs. deferred, real bugs found during self-review (the CI guard's `rg`-not-on-`PATH` fallback bug), and the SW allowlist reconciliation: [`11-cache-api-responses.md`](../workflow/in-progress/production-readiness/checklist/11-cache-api-responses.md).
+
+### Anonymous public reads: isolate cache first, durable counter on a miss
+
+`s-maxage` does not help here (above), so the hot public reads are cached **inside the edge isolate** and metered in the order that keeps hits free (production readiness PR-131, issue #183). The pieces:
+
+| Piece                    | File                                                      | Role                                                                                                                                                                                                                                                                                       |
+| ------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Catalog-version cache    | `_shared/publicListingCache.ts`                           | Keys fold in `public_listing_catalog_version` (bumped by listing, price, review and development writes), so a write invalidates a family within about 5 s. Options: `ttlMs` (default 60 s), `skipNull` (never store a missing listing), `bypass`. `peekListingCache` is a read-only lookup |
+| Rate limit + cache order | `_shared/publicCachedRead.ts` (`cachedPublicListingRead`) | **Hit:** counted in memory (`rateLimitGateInMemory`), no I/O. **Miss:** durable `bump_rate_limit` first, then compute and store                                                                                                                                                            |
+| Property detail          | `_shared/publicPropertyDetailCache.ts`                    | `get-public-property`, 30 s TTL because the payload also reads contact info, badges and page config that the catalog version does not track                                                                                                                                                |
+
+Used by `get-public-property`, `list-public-properties`, `-parkings`, `-developments`, `-place-groups`, `search-listings` and `search-suggestions`.
+
+Rules for a new call site:
+
+- **Public, non-personalized payloads only.** Never put an authenticated or per-viewer read through it. Host preview (`preview` / `embed`) never reads or writes the cache.
+- **Anything that reads live availability bypasses it** (`bypass: range != null`). Bookings change availability without touching the catalog.
+- **Throw, never return a `Response`, from the compute.** The value is cached and wrapped as data. A failed compute is not stored.
+- **Every path that reaches the database before the cache is consulted must call `publicGetRateLimitGate` itself** (see the `?slug=` branch of `list-public-developments`). `check-serve-public-rate-limit.sh` accepts `cachedPublicListingRead` as the limiter.
+- The in-memory hit count is per isolate, a burst dampener and not a global quota. Hits cost no database work; every miss is still metered durably.
+- The cache is per isolate and capped at 300 entries (LRU). Free-text keys (`search-listings`, `search-suggestions`) can evict hot entries, which only costs a recompute and is bounded by the durable gate on misses.
+- The local edge runtime uses `policy = "oneshot"`, so it never shows a hit. Measure with `deno run --allow-all --config supabase/functions/deno.json supabase/functions/<fn>/index.ts` against the local stack.
 
 ---
 
@@ -585,7 +607,7 @@ Batch `.in(...)` reads in public endpoints go through `_shared/publicListingRows
 | `dashboard-assistant-settings` | GET, PATCH | authenticated JWT + org | Org opt-in + per-property disable list. Message/write-action limits are resolved (read-only) and rejected on PATCH (403 `ai_limit_platform_managed`). GET has no permission gate (any member needs it to know whether the launcher should render) and includes `platformEnabled` and **`aiModeEnabled`** (platform AI mode switch, already false when the kill switch is off) and **`aiBlocker`** (`'platform' \| 'organization' \| null`, from `_shared/aiUsageService.ts#resolveAiFeatureBlocker`: global AI switch or feature allowlist, then the org AI master switch), so the UI can show the "AI is off" card for an org block before a turn fails (a `platform` block stays a plain error, since hosts cannot lift it); PATCH needs `org.settings.aiAssistant:edit`. |
 | `dashboard-assistant-global-settings` | GET, PATCH | super-admin | Platform-wide kill switch for the AI dashboard assistant (`enabled`) plus the **`aiModeEnabled`** switch for full-page AI mode (default off). Independent of `ai-platform-global-settings`. |
 | `dashboard-assistant-expire-pending-actions` | POST | cron secret | TTL sweep — flips stale `pending` rows in `ai_dashboard_assistant_pending_actions` to `expired` (15 min TTL). Scheduled via `public.sync_dashboard_assistant_expire_cron_job()` (migration `20261316121100_dashboard_assistant_expire_cron.sql`, every 5 min). Optional `DASHBOARD_ASSISTANT_EXPIRE_CRON_SECRET` / header `X-Dashboard-Assistant-Expire-Cron-Secret`. |
-| `get-booking` | GET | authenticated JWT + property/org | Minimal single-booking read (fills the gap `list-bookings` didn't cover) — `?booking_id=` + `?property_id=` or `?org_id=`/`?org_slug=`. Returns the `booking_card`-shaped fields. `bookings:view` / `org:bookings:view`. |
+| `get-booking` | GET | authenticated JWT + property/parking/org | Single-booking read — `?booking_id=` + `?property_id=` / `?parking_id=` / `?org_id=`/`?org_slug=`. Default: slim `booking_card` fields. `?format=row`: full `guest_submissions` row for booking detail (`useBooking`). Same edge auth as `list-bookings` (platform admin included). |
 | `get-booking-ai-assistant-audit` | GET | authenticated JWT + property | Read-only "Actions taken by AI assistant" trail for a booking from `ai_dashboard_assistant_action_audit`. `?booking_id=`. `bookings:view`. |
 | `guest-profile` | GET, PATCH | authenticated JWT (guest) | Read/update **`guest_profiles`** for **`auth.uid()`**; links legacy bookings by email on GET. Server uses **`service_role`** (table grant required — see migration `20261127120000_guest_profiles_service_role_grants.sql`). |
 | `upload-guest-profile-asset` | POST | authenticated JWT (guest) | Multipart avatar → **`guest-profile-assets`** bucket (JPEG/PNG/WebP/HEIC, magic-byte sniffed; mismatch → 400); updates profile row. |
@@ -659,6 +681,7 @@ Batch `.in(...)` reads in public endpoints go through `_shared/publicListingRows
 | `public-page-configs` | GET, PATCH | admin JWT | **GET/PATCH** section visibility/order/style in **`public_page_configs`** (`page_type`: `stay_guide` \| `property_landing` \| `property_showcase`). Lazy-create on GET. PATCH gated by **`publicPagesAutosave`**; showcase publish/template additionally by **`propertyShowcase`**. Permissions per leaf (`publicPages.property:edit` / `stayGuide:edit` / `showcase:edit`). **`?property_id=`** + **`page_type=`** (GET) / body `{ pageType, config }` (PATCH). |
 | `upload-property-template-asset` | POST | admin JWT | Multipart: **`section_image`** (standard template key → persists **`section_image_url`**) or **`inline_image`** (WYSIWYG embed URL only). **`?property_id=`**. |
 | `property-templates-preview` | POST | admin JWT | Body `{ templateKey, category, content, name? }` → `{ html, mode }` email-shell or standard preview HTML with sample placeholders + property branding. **`?property_id=`**. **`static_files`** for email template fragments. Does not affect live sends. |
+| `send-property-template-test-email` | POST | admin JWT | Body `{ templateKey, category, content, subject?, name? }` → renders the draft with real property data and mails it to the caller's own account with a `[Test]` subject. Requires the edit leaf for that template's category, checks suppression, and is limited to 10 sends per user per hour. Never emails a guest. **`?property_id=`**. **`static_files`** for email template fragments. |
 | `org-settings` | GET, PATCH | admin JWT | **GET/PATCH** organization-scoped operator config in **`org_settings`**: **social links** (`facebookPageUrl` → `facebook_reviews_url`, `instagramUrl`, `tiktokUrl`), team logo reset. Email automations are **per property** (`app_settings`). **Not** editable: guest app origin (env **`PUBLIC_GUEST_APP_ORIGIN`**). Query **`?org_id=`** or **`?org_slug=`**. |
 | `upload-app-settings-asset` | POST | admin JWT | Multipart upload for **property** assets. **`gcash_qr`**: stages unique Storage path, returns URL only — does **not** write `app_settings` (commits via OTP-gated **`app-settings` PATCH** `paymentMethods`). **`gaf_unit_owner_signature`** → **`gaf_unit_owner_signature_url`** immediately. External review image / stay-photo assets as documented. JPEG/PNG/WebP, max 5 MB (signature: PNG/JPEG only). **`?property_id=`**. **`verify_jwt = false`**; **`verifyAdminJwt`**. |
 | `upload-property-media` | POST, DELETE | admin JWT | **POST** multipart gallery upload → public URL in Storage **`property-media`** (`{propertyId}/{mediaId}.{ext}`) and append to **`properties.settings.media`**. **DELETE** JSON `{ mediaId, storagePath? }` removes DB row + storage object. Supported image/video MIME types; max **9** images (5 MB each) and **1** video (25 MB). Reorder/primary via **`update-property`** **`settings.media`**. **`?property_id=`**. **`verify_jwt = false`**; **`verifyAdminJwt`**. |

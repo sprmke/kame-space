@@ -134,7 +134,7 @@ describe('BookingListQuickActions click', () => {
     fireEvent.click(chatButton()!);
     await waitFor(() =>
       expect(navigate).toHaveBeenCalledWith(
-        '/org/acme/property/solea/inbox?conversationId=c-1&platform=web'
+        '/org/acme/property/solea/messages?conversationId=c-1&platform=web'
       )
     );
     expect(fetchBookingChats).toHaveBeenCalledWith('acme', 'org-1', 'b-1', { propertyId: 'p-1' });
@@ -146,7 +146,7 @@ describe('BookingListQuickActions click', () => {
     fireEvent.click(chatButton()!);
     await waitFor(() =>
       expect(navigate).toHaveBeenCalledWith(
-        '/org/acme/parking/lot-a/inbox?conversationId=c-9&platform=web'
+        '/org/acme/parking/lot-a/messages?conversationId=c-9&platform=web'
       )
     );
     expect(fetchBookingChats).toHaveBeenCalledWith('acme', 'org-1', 'b-2', { parkingId: 'k-1' });
@@ -175,7 +175,7 @@ describe('BookingListQuickActions click', () => {
 
     fireEvent.click(screen.getByRole('option', { name: /Mara S/ }));
     expect(navigate).toHaveBeenCalledWith(
-      '/org/acme/property/solea/inbox?conversationId=c-2&platform=facebook'
+      '/org/acme/property/solea/messages?conversationId=c-2&platform=facebook'
     );
   });
 
@@ -190,7 +190,7 @@ describe('BookingListQuickActions click', () => {
     expect(navigate).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('option', { name: /Santos/ }));
     expect(navigate).toHaveBeenCalledWith(
-      '/org/acme/property/solea/inbox?conversationId=c-7&platform=facebook'
+      '/org/acme/property/solea/messages?conversationId=c-7&platform=facebook'
     );
   });
 
@@ -199,7 +199,7 @@ describe('BookingListQuickActions click', () => {
     renderActions(propertyRow);
     fireEvent.click(chatButton()!);
     fireEvent.click(await screen.findByRole('button', { name: /Search all chats/i }));
-    expect(navigate).toHaveBeenCalledWith('/org/acme/property/solea/inbox?search=Maria+Santos');
+    expect(navigate).toHaveBeenCalledWith('/org/acme/property/solea/messages?search=Maria+Santos');
   });
 
   it('explains when there is no chat and offers a search', async () => {
@@ -210,7 +210,7 @@ describe('BookingListQuickActions click', () => {
     expect(message).toBe('No chat for this booking yet');
     expect(navigate).not.toHaveBeenCalled();
     options.action.onClick();
-    expect(navigate).toHaveBeenCalledWith('/org/acme/property/solea/inbox?search=Maria+Santos');
+    expect(navigate).toHaveBeenCalledWith('/org/acme/property/solea/messages?search=Maria+Santos');
   });
 
   it.each([

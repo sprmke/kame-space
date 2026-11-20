@@ -112,7 +112,8 @@ export function deriveInboxSyncStatus(input: InboxSyncStatusInput): InboxSyncSta
     return {
       state: 'importing',
       label: loaded > 0 ? `Importing ${loaded} chats` : 'Importing chats',
-      detail: 'Bringing in your recent chats. You can keep working.',
+      detail:
+        'Pulling in recent Facebook and Instagram chats. New messages show up as they load. You can keep working.',
       action: null,
       actionLabel: null,
       tone: 'muted',

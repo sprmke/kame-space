@@ -66,7 +66,7 @@ const PROPERTY_GUEST_CONTACT_KEYS = [
 const PROPERTY_BOOKING_META_KEYS = ['booking_source', 'booking_link'] as const;
 
 /** Guest-facing links (only filled on guest emails). */
-const PROPERTY_GUEST_LINK_KEYS = ['trip_url'] as const;
+const PROPERTY_GUEST_LINK_KEYS = ['trip_url', 'stay_guide_url', 'messages_url'] as const;
 
 const PROPERTY_SECTION_KEYS = [
   'urgent_notice',
@@ -90,6 +90,24 @@ const PROPERTY_SECTION_KEYS = [
   'sd_refund_checklist_section',
   'sd_refund_details_section',
   'booking_vehicle_copy',
+  'cancellation_intro',
+  'cancellation_detail_section',
+  'contact_section',
+  'emergency_contacts_section',
+  'house_rules_list',
+  'amenities_list',
+  'house_rules_section',
+  'check_in_instructions_section',
+  'check_out_instructions_section',
+  'balance_due_section',
+  'arrival_access_note_section',
+  'review_cta_section',
+  'parking_cta_section',
+  'map_cta_section',
+  'messages_cta_section',
+  'cancellation_policy_section',
+  'garbage_schedule_section',
+  'quiet_hours_section',
 ] as const;
 
 /** Block-level placeholders — each must sit on its own `<p>` line in email templates. */
@@ -146,18 +164,6 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
       'email_signature_section',
     ]
   ),
-  'email-parking-request': uniqueKeys(
-    PROPERTY_EMAIL_CORE,
-    PROPERTY_VEHICLE_KEYS,
-    PROPERTY_BOOKING_META_KEYS,
-    [
-      'urgent_notice',
-      'update_notice',
-      'booking_vehicle_copy',
-      'parking_reply_callout_section',
-      'email_signature_section',
-    ]
-  ),
   'email-new-booking-request': uniqueKeys(
     PROPERTY_EMAIL_CORE,
     PROPERTY_BOOKING_META_KEYS,
@@ -209,14 +215,30 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
     PROPERTY_BOOKING_META_KEYS,
     PROPERTY_GUEST_CONTACT_KEYS,
     PROPERTY_GUEST_LINK_KEYS,
-    ['cancellation_detail_section', 'trip_cta_section', 'email_signature_section']
+    [
+      'cancellation_intro',
+      'cancellation_detail_section',
+      'trip_cta_section',
+      'email_signature_section',
+    ]
+  ),
+  'email-booking-cancelled-host': uniqueKeys(
+    PROPERTY_EMAIL_CORE,
+    PROPERTY_BOOKING_META_KEYS,
+    PROPERTY_GUEST_CONTACT_KEYS,
+    ['cancellation_detail_section', 'booking_link_cta', 'email_signature_section']
   ),
   'email-cancellation-request-guest': uniqueKeys(
     PROPERTY_EMAIL_CORE,
     PROPERTY_BOOKING_META_KEYS,
     PROPERTY_GUEST_CONTACT_KEYS,
     PROPERTY_GUEST_LINK_KEYS,
-    ['cancellation_detail_section', 'trip_cta_section', 'email_signature_section']
+    [
+      'cancellation_request_title',
+      'cancellation_detail_section',
+      'trip_cta_section',
+      'email_signature_section',
+    ]
   ),
   'email-refund-sent-guest': uniqueKeys(
     PROPERTY_EMAIL_CORE,
@@ -229,7 +251,7 @@ export const PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE: Record<string, readonly stri
 
 export function propertyPlaceholderKeysForTemplate(
   templateKey: string,
-  category: 'standard' | 'email' | 'custom'
+  category: 'standard' | 'email' | 'message' | 'custom'
 ): readonly string[] {
   if (category === 'custom') return PROPERTY_CUSTOM_TEMPLATE_KEYS;
   return PROPERTY_PLACEHOLDER_KEYS_BY_TEMPLATE[templateKey] ?? PROPERTY_CUSTOM_TEMPLATE_KEYS;
@@ -237,9 +259,24 @@ export function propertyPlaceholderKeysForTemplate(
 
 export function propertyPlaceholderLinesForTemplate(
   templateKey: string,
-  category: 'standard' | 'email' | 'custom'
+  category: 'standard' | 'email' | 'message' | 'custom'
 ): string[] {
   return placeholderLinesFromKeys(propertyPlaceholderKeysForTemplate(templateKey, category));
+}
+
+/**
+ * Prefer the server catalog carried on the DTO. The local map stays as a fallback for rows
+ * serialized before the server list shipped, so an older cached response still works.
+ */
+export function propertyPlaceholderLinesForDto(template: {
+  templateKey: string;
+  category: 'standard' | 'email' | 'message' | 'custom';
+  placeholderKeys?: readonly string[] | null;
+}): string[] {
+  if (template.placeholderKeys && template.placeholderKeys.length > 0) {
+    return placeholderLinesFromKeys(template.placeholderKeys);
+  }
+  return propertyPlaceholderLinesForTemplate(template.templateKey, template.category);
 }
 
 /** Shared booking/guest tokens for Telegram booking alerts. */

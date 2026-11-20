@@ -30,4 +30,15 @@ Stale duplicate copies removed from `docs/workflow/` on 2026-11-04 during the wo
 
 | [`full-app-test-architecture.md`](./full-app-test-architecture.md) | [`../../workflow/in-progress/full-app-test-architecture.md`](../../workflow/in-progress/full-app-test-architecture.md) |
 | [`app-speed-root-cause-overhaul.md`](./app-speed-root-cause-overhaul.md) | [`../../workflow/in-progress/app-speed-root-cause-overhaul.md`](../../workflow/in-progress/app-speed-root-cause-overhaul.md) |
+| [`mobile-search-airbnb-flow.md`](./mobile-search-airbnb-flow.md) | [`../../workflow/for-testing/mobile-search-airbnb-flow.md`](../../workflow/for-testing/mobile-search-airbnb-flow.md) |
+| [`mascot-empty-states-design.md`](./mascot-empty-states-design.md) | [`../../workflow/done/mascot-empty-states-design.md`](../../workflow/done/mascot-empty-states-design.md) |
+
+## 2026-11-21 sync
+
+The two copies above were stale duplicates left behind after a stage move. The archived
+copies are the older revisions; the links in the right column are canonical. The
+`for-testing/feature-availability-controls.md` QA companion was renamed to
+`feature-availability-controls-manual-qa.md` so it no longer shares a slug with the
+`done/` plan.
+
 Back to [docs index](../README.md).

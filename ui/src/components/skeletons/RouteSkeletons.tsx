@@ -870,7 +870,7 @@ export function ParkingPricingRouteSkeleton() {
       subtitle="Manage pricing and availability."
       titleId="parking-pricing-heading"
     >
-      <PricingPageBodySkeleton statsCount={3} showDirectLinkCard />
+      <PricingPageBodySkeleton statsCount={4} showDirectLinkCard />
     </AdminMobilePage>
   );
 }

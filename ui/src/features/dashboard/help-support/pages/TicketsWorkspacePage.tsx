@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { Plus, Ticket } from 'lucide-react';
+import { Plus, RefreshCw, Ticket } from 'lucide-react';
 
 import { HelpEmptyState } from '@/features/dashboard/help-support/components/HelpEmptyState';
 import { NewTicketModal } from '@/features/dashboard/help-support/components/NewTicketModal';
 import { SupportTicketStatusBadge } from '@/features/dashboard/help-support/components/SupportTicketStatusBadge';
 import { TicketThreadPanel } from '@/features/dashboard/help-support/components/TicketThreadPanel';
 import { useSupportTickets } from '@/features/dashboard/help-support/hooks/useSupportTickets';
+import { useSupportTicketScope } from '@/features/dashboard/help-support/hooks/useSupportTicketScope';
 import {
   helpSupportTicketDetailPath,
   helpSupportTicketsPath,
@@ -19,11 +20,18 @@ import {
 } from '@/features/dashboard/help-support/lib/helpSupportPaths';
 import type { SupportTicketCategory } from '@/features/dashboard/help-support/lib/supportTicketSchema';
 import { SUPPORT_TICKET_CATEGORY_LABELS } from '@/features/dashboard/help-support/lib/supportTicketSchema';
+import {
+  readTicketsWorkspaceLayoutHint,
+  resolveTicketsWorkspaceLoadState,
+  ticketsWorkspaceLayoutFromCount,
+  ticketsWorkspaceLayoutStorageKey,
+  writeTicketsWorkspaceLayoutHint,
+} from '@/features/dashboard/help-support/lib/ticketsWorkspaceLayout';
 import { MANAGED_PLAN_INQUIRY_SUBJECT } from '@/features/dashboard/plans/lib/planPresentation';
 
 import { bottomTabBarOffsetClassName } from '@/components/mobile/BottomTabBar';
+import { TicketsWorkspaceSkeleton } from '@/components/skeletons/TicketsWorkspaceSkeleton';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +42,12 @@ function formatTicketDate(iso: string): string {
     day: 'numeric',
   });
 }
+
+const EMPTY_TICKETS_DESCRIPTION =
+  'Open a ticket for something broken, an idea, or a question. We reply here.';
+
+const EMPTY_GUEST_TICKETS_DESCRIPTION =
+  'Need help with a stay or booking? Open a ticket and we will reply here.';
 
 type TicketsWorkspacePageProps = {
   /** When set (e.g. `/account`), skip admin Help & Support base-path resolution. */
@@ -46,6 +60,7 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
   const [searchParams, setSearchParams] = useSearchParams();
   const adminBasePath = useHelpSupportBasePath();
   const basePath = basePathOverride ?? adminBasePath;
+  const isGuestAccount = Boolean(basePathOverride);
   const isMobile = useIsBelowLg();
   const splatParam = useParams()['*'];
   const segment = resolveTicketsRouteSegment(basePath, location.pathname, splatParam);
@@ -65,6 +80,19 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
       : null;
   const [backgroundTicketId, setBackgroundTicketId] = useState<string | null>(null);
 
+  const scope = useSupportTicketScope();
+  const layoutStorageKey = useMemo(
+    () =>
+      ticketsWorkspaceLayoutStorageKey([
+        scope.channel ?? 'host',
+        scope.orgSlug,
+        scope.orgId,
+        scope.propertyId,
+        scope.parkingId,
+      ]),
+    [scope.channel, scope.orgSlug, scope.orgId, scope.propertyId, scope.parkingId]
+  );
+
   const { data, isPending, isError, refetch } = useSupportTickets();
   const tickets = data?.tickets ?? [];
   const firstTicketId = tickets[0]?.id;
@@ -72,6 +100,21 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
   const isEmpty = listReady && tickets.length === 0;
   const visibleTicketId = ticketId ?? (!isMobile && isNew ? backgroundTicketId : null);
   const paneOpen = Boolean(visibleTicketId);
+
+  const loadState = resolveTicketsWorkspaceLoadState({
+    isPending,
+    ticketCount: data ? data.tickets.length : undefined,
+    hint: readTicketsWorkspaceLayoutHint(layoutStorageKey),
+  });
+  const showHeaderNew = Boolean(basePath) && !isEmpty && loadState !== 'empty';
+
+  useEffect(() => {
+    if (!listReady) return;
+    writeTicketsWorkspaceLayoutHint(
+      layoutStorageKey,
+      ticketsWorkspaceLayoutFromCount(tickets.length)
+    );
+  }, [listReady, layoutStorageKey, tickets.length]);
 
   useEffect(() => {
     if (ticketId) setBackgroundTicketId(ticketId);
@@ -160,20 +203,61 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
   );
 
   const newTicketCta = basePath ? (
-    <Button type="button" className="min-h-11 gap-1.5" onClick={openCompose}>
-      <Plus className="size-4" aria-hidden />
+    <Button
+      type="button"
+      className={cn(
+        'min-h-11 gap-2 px-5',
+        isGuestAccount ? 'w-full max-w-xs rounded-full sm:w-auto' : 'gap-1.5'
+      )}
+      onClick={openCompose}
+    >
+      <Plus className="size-4 shrink-0" aria-hidden />
       New ticket
     </Button>
   ) : null;
 
+  const composeModal = (
+    <NewTicketModal
+      open={isNew}
+      defaultSubject={newTicketDefaults?.subject}
+      defaultCategory={newTicketDefaults?.category}
+      onOpenChange={(open) => {
+        if (open) openCompose();
+        else if (isNew) closeCompose();
+      }}
+      onSubmitted={(id) => {
+        if (basePath) {
+          navigate(helpSupportTicketDetailPath(basePath, id), { replace: true });
+        }
+      }}
+    />
+  );
+
+  const workspaceShellClass = cn(
+    'flex min-h-0 flex-1 flex-col overflow-hidden',
+    !isGuestAccount && 'lg:min-h-[480px]',
+    bottomTabBarOffsetClassName()
+  );
+
+  if (loadState === 'empty' || loadState === 'list') {
+    return (
+      <div className={workspaceShellClass}>
+        <TicketsWorkspaceSkeleton layout={loadState} className="min-h-0 flex-1" />
+        {composeModal}
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={cn(
-        'flex min-h-0 flex-1 flex-col overflow-hidden lg:min-h-[480px]',
-        bottomTabBarOffsetClassName()
-      )}
-    >
-      <div className="border-border/80 bg-card flex min-h-0 flex-1 overflow-hidden rounded-xl border shadow-sm">
+    <div className={workspaceShellClass}>
+      <div
+        className={cn(
+          'flex min-h-0 flex-1 overflow-hidden',
+          isGuestAccount
+            ? 'flex-col'
+            : 'border-border/80 bg-card rounded-xl border shadow-sm'
+        )}
+      >
         <div
           className={cn(
             'border-border/80 flex h-full min-h-0 shrink-0 flex-col',
@@ -185,15 +269,23 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
                 )
           )}
         >
-          <div className="flex shrink-0 items-center justify-between gap-3 border-b px-3 py-2.5">
-            <h3
-              id="my-tickets-heading"
-              className="text-foreground min-w-0 truncate text-sm font-semibold tracking-tight"
-            >
-              My Tickets
-            </h3>
-            {basePath ? newTicketButton : null}
-          </div>
+          {isGuestAccount ? (
+            showHeaderNew ? (
+              <div className="flex shrink-0 items-center justify-end gap-3 border-b px-3 py-2.5">
+                {newTicketButton}
+              </div>
+            ) : null
+          ) : (
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b px-3 py-2.5">
+              <h3
+                id="my-tickets-heading"
+                className="text-foreground min-w-0 truncate text-sm font-semibold tracking-tight"
+              >
+                My Tickets
+              </h3>
+              {showHeaderNew ? newTicketButton : null}
+            </div>
+          )}
 
           <div
             className={cn(
@@ -203,31 +295,42 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
                 : 'overflow-y-auto'
             )}
           >
-            {isPending ? (
-              <div className="space-y-1 p-3">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-              </div>
-            ) : isError ? (
+            {isError ? (
               <HelpEmptyState
                 icon={Ticket}
+                mascotPose={isGuestAccount ? 'gentle-failure' : undefined}
                 title="Couldn't load tickets"
+                description={isGuestAccount ? 'Check your connection and try again.' : undefined}
                 action={
                   <Button
                     type="button"
-                    variant="outline"
-                    className="min-h-11"
+                    variant={isGuestAccount ? 'default' : 'outline'}
+                    className={cn(
+                      'min-h-11 gap-2 px-5',
+                      isGuestAccount ? 'w-full max-w-xs rounded-full sm:w-auto' : undefined
+                    )}
                     onClick={() => void refetch()}
                   >
+                    <RefreshCw className="size-4 shrink-0" aria-hidden />
                     Try again
                   </Button>
                 }
               />
             ) : isEmpty ? (
-              <HelpEmptyState icon={Ticket} title="No tickets yet" action={newTicketCta} />
+              <HelpEmptyState
+                icon={Ticket}
+                mascotPose={isGuestAccount ? 'phone' : undefined}
+                title="No tickets yet"
+                description={
+                  isGuestAccount ? EMPTY_GUEST_TICKETS_DESCRIPTION : EMPTY_TICKETS_DESCRIPTION
+                }
+                action={newTicketCta}
+              />
             ) : (
-              <ul aria-labelledby="my-tickets-heading">
+              <ul
+                aria-labelledby={isGuestAccount ? undefined : 'my-tickets-heading'}
+                aria-label={isGuestAccount ? 'Tickets' : undefined}
+              >
                 {tickets.map((ticket) => {
                   const selected = ticket.id === visibleTicketId;
                   return (
@@ -290,20 +393,7 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
         </div>
       </div>
 
-      <NewTicketModal
-        open={isNew}
-        defaultSubject={newTicketDefaults?.subject}
-        defaultCategory={newTicketDefaults?.category}
-        onOpenChange={(open) => {
-          if (open) openCompose();
-          else if (isNew) closeCompose();
-        }}
-        onSubmitted={(id) => {
-          if (basePath) {
-            navigate(helpSupportTicketDetailPath(basePath, id), { replace: true });
-          }
-        }}
-      />
+      {composeModal}
     </div>
   );
 }

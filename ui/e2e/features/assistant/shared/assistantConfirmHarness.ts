@@ -13,6 +13,8 @@ import {
   teamRbacPaths,
 } from '../../team/shared/propertyTeamRbacHarness';
 
+import { openAssistantFromQuickAccess } from './assistantQuickAccess';
+
 export function queueAssistantChatBlocks(blocks: ChatBlock[]) {
   queueAssistantChatBlocksForMocks(blocks);
 }
@@ -28,10 +30,7 @@ function assistantDialog(page: Page) {
 export async function openAssistantPanel(page: Page) {
   await page.setViewportSize({ width: 1280, height: 900 });
   await openPropertyDashboard(page);
-  await expect(page.getByRole('button', { name: 'Open AI assistant' })).toBeVisible({
-    timeout: 20_000,
-  });
-  await page.getByRole('button', { name: 'Open AI assistant' }).click();
+  await openAssistantFromQuickAccess(page);
   const panel = assistantDialog(page);
   await expect(panel).toBeVisible({ timeout: 20_000 });
   await expect(panel.getByRole('heading', { name: 'AI Assistant' })).toBeVisible({

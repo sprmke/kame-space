@@ -1,4 +1,7 @@
-import { MapPin, Search } from 'lucide-react';
+import { MapPin } from 'lucide-react';
+
+import { KameMascotImage } from '@/components/branding/KameMascotImage';
+import { Button } from '@/components/ui/button';
 
 type Props = {
   where: string;
@@ -34,24 +37,24 @@ export function SearchEmptyState({
           Allow location to see stays and parking near you.
         </p>
         {onRequestLocation ? (
-          <button
+          <Button
             type="button"
             onClick={onRequestLocation}
             disabled={locationRequesting}
-            className="bg-primary-strong text-primary-foreground hover:bg-primary-strong/90 mt-5 min-h-[44px] cursor-pointer rounded-full px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-5 min-h-11 rounded-full px-5"
           >
             {locationRequesting ? 'Checking…' : 'Use my location'}
-          </button>
+          </Button>
         ) : null}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center px-4 py-20 text-center sm:py-24">
-      <span className="bg-muted text-muted-foreground mb-5 flex size-14 items-center justify-center rounded-2xl">
-        <Search className="h-6 w-6" aria-hidden />
-      </span>
+    <div className="flex flex-col items-center justify-center px-4 py-16 text-center sm:py-20">
+      <div className="motion-safe:animate-float relative mb-5 w-36 sm:mb-6 sm:w-40" aria-hidden>
+        <KameMascotImage pose="gentle-failure" />
+      </div>
       <h2 className="text-foreground text-base font-semibold sm:text-lg">No matches</h2>
       {where ? (
         <p className="text-muted-foreground mt-2 max-w-md text-sm leading-relaxed">
@@ -67,33 +70,31 @@ export function SearchEmptyState({
           Also checked related matches for {smartFallbackLabel}.
         </p>
       ) : null}
-      <div className="mt-5 flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
+      <div className="mt-6 flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
         {onSearchNearby ? (
-          <button
-            type="button"
-            onClick={onSearchNearby}
-            className="bg-primary-strong text-primary-foreground hover:bg-primary-strong/90 min-h-[44px] cursor-pointer rounded-full px-5 text-sm font-semibold"
-          >
+          <Button type="button" onClick={onSearchNearby} className="min-h-11 rounded-full px-5">
             Search nearby
-          </button>
+          </Button>
         ) : null}
         {onClearWhere && where ? (
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onClearWhere}
-            className="text-foreground hover:text-primary min-h-[44px] cursor-pointer px-3 text-sm font-medium underline-offset-4 hover:underline"
+            className="min-h-11 rounded-full px-5"
           >
             Clear place
-          </button>
+          </Button>
         ) : null}
         {onClearDates ? (
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onClearDates}
-            className="text-foreground hover:text-primary min-h-[44px] cursor-pointer px-3 text-sm font-medium underline-offset-4 hover:underline"
+            className="min-h-11 rounded-full px-5"
           >
             Clear dates
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>

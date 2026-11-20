@@ -5,6 +5,8 @@ import {
   openPropertyDashboard,
 } from '../team/shared/propertyTeamRbacHarness';
 
+import { openAssistantFromQuickAccess } from './shared/assistantQuickAccess';
+
 const TEMPLATES = {
   templates: [
     {
@@ -70,7 +72,7 @@ test.describe('@ci assistant template context', () => {
     );
 
     await openPropertyDashboard(page);
-    await page.getByRole('button', { name: 'Open AI assistant' }).click();
+    await openAssistantFromQuickAccess(page);
     await expect(page.getByRole('heading', { name: 'AI Assistant' })).toBeVisible({
       timeout: 20_000,
     });

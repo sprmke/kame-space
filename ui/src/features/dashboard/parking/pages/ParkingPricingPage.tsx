@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import { format, eachDayOfInterval, isSameDay, isBefore, startOfToday } from 'date-fns';
 
@@ -11,12 +12,14 @@ import {
   useParkingPricing,
   useSaveParkingPricing,
 } from '@/features/dashboard/parking/hooks/useParkingPricing';
+import {
+  isValidParkingRate,
+  PARKING_MIN_RATE_MESSAGE,
+} from '@/features/dashboard/parking/lib/parkingRateRules';
 import { resolveParkingNightlyRateForDate } from '@/features/dashboard/parking/lib/parkingPricingCompute';
 import {
   DEFAULT_PARKING_WEEKDAY_NIGHTLY_RATE,
   DEFAULT_PARKING_WEEKEND_NIGHTLY_RATE,
-  STUB_GUEST_PARKING_RATE_WEEKDAY,
-  STUB_GUEST_PARKING_RATE_WEEKEND,
   parkingPricingDefaultsFromDto,
 } from '@/features/dashboard/parking/lib/parkingPricingDefaults';
 import {
@@ -41,12 +44,10 @@ import { useParkingPermissions } from '@/features/dashboard/team/hooks/useParkin
 import { hasParkingPermission } from '@/features/dashboard/team/lib/parkingPermissions';
 
 import { HowItWorksButton } from '@/components/help/HowItWorksButton';
-import { NoticeCallout } from '@/components/help/NoticeCallout';
 import { FloatingPanel } from '@/components/mobile/FloatingPanel';
 import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
 import { PricingPageBodySkeleton } from '@/components/skeletons/PricingSkeleton';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
-import { formatMoneyCompact } from '@/utils/format/currency';
 
 export function ParkingPricingPage() {
   const compactChrome = useDashboardCompactChrome();
@@ -238,7 +239,10 @@ export function ParkingPricingPage() {
   const applyCustomPrice = () => {
     if (!newPrice.trim() || selectedDates.length === 0) return;
     const price = parseFloat(newPrice);
-    if (!Number.isFinite(price) || price < 0) return;
+    if (!isValidParkingRate(price)) {
+      toast.error(PARKING_MIN_RATE_MESSAGE);
+      return;
+    }
 
     const defaults = {
       weekdayNightlyRate: weekdayRate,
@@ -288,6 +292,10 @@ export function ParkingPricingPage() {
   };
 
   const savePricing = async (options: ParkingPricingSaveOptions): Promise<boolean> => {
+    if (!isValidParkingRate(weekdayRate) || !isValidParkingRate(weekendRate)) {
+      toast.error(PARKING_MIN_RATE_MESSAGE);
+      return false;
+    }
     const patch = buildParkingPricingSavePatch(
       {
         weekdayRate,
@@ -381,9 +389,6 @@ export function ParkingPricingPage() {
     );
   }
 
-  const guestRateWeekday = pricingData?.guestRateWeekday ?? STUB_GUEST_PARKING_RATE_WEEKDAY;
-  const guestRateWeekend = pricingData?.guestRateWeekend ?? STUB_GUEST_PARKING_RATE_WEEKEND;
-
   return (
     <>
       <AdminMobilePage
@@ -392,16 +397,11 @@ export function ParkingPricingPage() {
         titleId="parking-pricing-heading"
         titleHint={titleHint}
       >
-        <NoticeCallout tone="info">
-          Guests pay the platform rate: {formatMoneyCompact(guestRateWeekday)} weekday,{' '}
-          {formatMoneyCompact(guestRateWeekend)} weekend. Your rate sets your payout. Listings
-          priced above the platform rate are not matched.
-        </NoticeCallout>
-
         <ParkingPricingStatsRow
           weekdayRate={weekdayRate}
           weekendRate={weekendRate}
           customDatesCount={customDatePrices.size}
+          blockedDatesCount={blockedDateKeys.size}
         />
 
         <div className={pricingCalendarFormGridClassName(compactChrome)}>
@@ -422,11 +422,9 @@ export function ParkingPricingPage() {
             <ParkingPricingRatesFormCard
               weekdayRate={weekdayRate}
               weekendRate={weekendRate}
-              guestRateWeekday={guestRateWeekday}
-              guestRateWeekend={guestRateWeekend}
-              guestRateCapWeekday={pricingData?.guestRateCapWeekday}
-              guestRateCapWeekend={pricingData?.guestRateCapWeekend}
               commissionPct={pricingData?.commissionPct}
+              guestFeePct={pricingData?.guestFeePct}
+              guestFeeFixed={pricingData?.guestFeeFixed}
               readOnly={!canEdit}
               hasChanges={hasChanges}
               saving={saveMutation.isPending}

@@ -14,7 +14,7 @@ import {
  * live Page.
  */
 
-const INBOX_URL = `/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/inbox?mock=true`;
+const INBOX_URL = `/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/messages?mock=true`;
 const ALEX = 'Alex Rivera';
 
 async function openInbox(page: import('@playwright/test').Page) {
@@ -33,7 +33,7 @@ test.describe('@ci inbox meta parity states', () => {
     await expect(pill).toBeVisible();
     await pill.click();
 
-    await page.getByRole('button', { name: 'How this inbox works' }).click();
+    await page.getByRole('button', { name: 'How Messages works' }).click();
 
     // The limits Meta imposes are the whole point of the sheet. Assert the body copy, not
     // the title: the pill's own button carries the same words, so the title is ambiguous.

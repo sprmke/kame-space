@@ -25,7 +25,7 @@ import {
 } from '@/features/dashboard/bookings/lib/propertyTemplatePlaceholders';
 import { withStorageUrlCacheBust } from '@/features/dashboard/bookings/lib/storageUrls';
 import { buildValidPlaceholderKeySet } from '@/features/dashboard/bookings/lib/telegramPlaceholderGroups';
-import { propertyPlaceholderLinesForTemplate } from '@/features/dashboard/bookings/lib/templatePlaceholderCatalog';
+import { propertyPlaceholderLinesForDto } from '@/features/dashboard/bookings/lib/templatePlaceholderCatalog';
 import {
   attachTemplatePreviewActionBlocker,
   blockTemplatePreviewAction,
@@ -172,8 +172,8 @@ export function PropertyTemplateEditorCard({
   });
 
   const placeholderLines = React.useMemo(
-    () => propertyPlaceholderLinesForTemplate(template.templateKey, template.category),
-    [template.templateKey, template.category]
+    () => propertyPlaceholderLinesForDto(template),
+    [template]
   );
 
   const validPlaceholderKeys = React.useMemo(

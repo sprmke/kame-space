@@ -48,7 +48,7 @@ while IFS= read -r file; do
     fi
     continue
   fi
-  if has_match 'rateLimitGate|antiSpamGate|checkIpRateLimit' "$file"; then
+  if has_match 'rateLimitGate|antiSpamGate|checkIpRateLimit|cachedPublicListingRead' "$file"; then
     continue
   fi
   echo "MISSING rate limit: $fn ($file)" >&2

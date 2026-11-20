@@ -737,7 +737,7 @@ export const COVERAGE_TOOL_DECLARATIONS = [
   {
     name: 'get_property_template_content',
     description:
-      'Read the full copy of a property template (house rules, check-in, check-out, parking, or a custom template). Omit templateKey to list templates; pass the template key or name to read one. Never answer a template content question by only opening the Templates page.',
+      'Read the full copy of a property template: stay guide sections, guest messages (balance reminder, check-in day, check-out reminder, thank you), or a custom template. Omit templateKey to list them; pass the template key or name to read one. Never answer a template content question by only opening the Templates page.',
     parameters: {
       type: 'object',
       properties: {

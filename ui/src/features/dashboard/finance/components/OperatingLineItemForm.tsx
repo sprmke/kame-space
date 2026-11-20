@@ -5,7 +5,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type ReactNode,
 } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,6 +24,7 @@ import {
   financeMessageTemplateForApi,
   financeMessageTemplateForForm,
 } from '@/features/dashboard/finance/lib/financeReminderTemplate';
+import { canProceedOperatingLineItemFormStep } from '@/features/dashboard/finance/lib/operatingLineItemFormCanProceed';
 import {
   buildOperatingLineItemFormSteps,
   clampOperatingLineItemFormStepIndex,
@@ -41,6 +41,7 @@ import {
 } from '@/features/dashboard/finance/lib/recurrence';
 import type { FinanceLineItem } from '@/features/dashboard/finance/lib/types';
 
+import { FormFieldBlock } from '@/components/forms/FormFieldBlock';
 import { WizardStepHeading } from '@/components/wizard/WizardStepHeading';
 import { Checkbox } from '@/components/ui/checkbox';
 import { IsoDateInput } from '@/components/ui/iso-date-input';
@@ -225,6 +226,8 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
       formState: { errors, isDirty },
     } = useForm<OperatingLineItemFormValues>({
       resolver: zodResolver(schema),
+      mode: 'onTouched',
+      reValidateMode: 'onChange',
       defaultValues: defaultValues(initial, globalDefaultMessageTemplate, seriesRecurrenceUntil),
     });
 
@@ -257,24 +260,17 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
 
     const canProceed = useMemo(() => {
       const stepKind = activeStep?.kind ?? 'details';
-      if (stepKind === 'preview' || isLastStep) {
-        return schema.safeParse(previewValues).success;
-      }
-      if (stepKind === 'details') {
-        const label = String(previewValues.label ?? '').trim();
-        const category = String(previewValues.category ?? '').trim();
-        const amount = Number(previewValues.amount);
-        const dateOk = /^\d{4}-\d{2}-\d{2}$/.test(String(previewValues.occurred_on ?? ''));
-        return label.length > 0 && category.length > 0 && Number.isFinite(amount) && amount > 0 && dateOk;
-      }
-      if (stepKind === 'repeat') {
-        const interval = previewValues.recurrence_interval;
-        if (interval === 'none') return true;
-        const until = String(previewValues.recurrence_until ?? '');
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(until)) return false;
-        return until >= String(previewValues.occurred_on ?? '');
-      }
-      return true;
+      return canProceedOperatingLineItemFormStep({
+        stepKind,
+        isLastStep,
+        formValid: schema.safeParse(previewValues).success,
+        label: String(previewValues.label ?? ''),
+        category: String(previewValues.category ?? ''),
+        amount: Number(previewValues.amount),
+        occurredOn: String(previewValues.occurred_on ?? ''),
+        recurrenceInterval: String(previewValues.recurrence_interval ?? 'none'),
+        recurrenceUntil: String(previewValues.recurrence_until ?? ''),
+      });
     }, [activeStep?.kind, isLastStep, previewValues]);
 
     useEffect(() => {
@@ -414,15 +410,15 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
               })}
             </div>
 
-            <Field label="Label" required error={errors.label?.message}>
+            <FormFieldBlock label="Label" required error={errors.label?.message}>
               <input
                 className="border-input bg-card text-foreground field-focus h-10 w-full rounded-lg border px-3 text-sm transition-colors"
                 placeholder="e.g. Monthly rent"
                 {...register('label')}
               />
-            </Field>
+            </FormFieldBlock>
 
-            <Field label="Amount (₱)" required error={errors.amount?.message}>
+            <FormFieldBlock label="Amount (₱)" required error={errors.amount?.message}>
               <input
                 type="number"
                 step="0.01"
@@ -431,10 +427,10 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
                 placeholder="0.00"
                 {...register('amount')}
               />
-            </Field>
+            </FormFieldBlock>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Category" required error={errors.category?.message}>
+              <FormFieldBlock label="Category" required error={errors.category?.message}>
                 <Controller
                   name="category"
                   control={control}
@@ -442,13 +438,15 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
                     <CategoryCombobox
                       value={field.value ?? ''}
                       onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      invalid={Boolean(errors.category)}
                       suggestions={FINANCE_CATEGORY_SUGGESTIONS}
                     />
                   )}
                 />
-              </Field>
+              </FormFieldBlock>
 
-              <Field label="Date" error={errors.occurred_on?.message}>
+              <FormFieldBlock label="Date" error={errors.occurred_on?.message}>
                 <Controller
                   name="occurred_on"
                   control={control}
@@ -461,23 +459,23 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
                     />
                   )}
                 />
-              </Field>
+              </FormFieldBlock>
             </div>
 
-            <Field label="Notes" error={errors.notes?.message}>
+            <FormFieldBlock label="Notes" error={errors.notes?.message}>
               <textarea
                 rows={5}
                 className="border-input bg-card text-foreground field-focus w-full rounded-lg border px-3 py-2 text-sm transition-colors"
                 placeholder="Optional notes…"
                 {...register('notes')}
               />
-            </Field>
+            </FormFieldBlock>
           </div>
         ) : null}
 
         {activeStep?.kind === 'repeat' ? (
           <div className="space-y-4">
-            <Field label="Repeat" error={errors.recurrence_interval?.message}>
+            <FormFieldBlock label="Repeat" error={errors.recurrence_interval?.message}>
               <Controller
                 name="recurrence_interval"
                 control={control}
@@ -496,16 +494,16 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
                   </Select>
                 )}
               />
-            </Field>
+            </FormFieldBlock>
 
             {recurrenceInterval !== 'none' ? (
-              <Field label="Repeats until" error={errors.recurrence_until?.message}>
+              <FormFieldBlock label="Repeats until" error={errors.recurrence_until?.message}>
                 <Controller
                   name="recurrence_until"
                   control={control}
                   render={({ field }) => <IsoDateInput {...field} />}
                 />
-              </Field>
+              </FormFieldBlock>
             ) : null}
 
             {isEdit && isRecurringEdit ? (
@@ -581,7 +579,7 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
 
             {telegramReminderEnabled ? (
               <div className="space-y-4">
-                <Field label="Days before due" error={errors.telegram_days_before?.message}>
+                <FormFieldBlock label="Days before due" error={errors.telegram_days_before?.message}>
                   <input
                     type="number"
                     min={0}
@@ -589,9 +587,9 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
                     className="border-input bg-card text-foreground field-focus h-10 w-full rounded-lg border px-3 text-sm"
                     {...register('telegram_days_before', { valueAsNumber: true })}
                   />
-                </Field>
+                </FormFieldBlock>
 
-                <Field
+                <FormFieldBlock
                   label="How often to remind"
                   error={errors.telegram_reminder_interval?.message}
                 >
@@ -629,7 +627,7 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
                       </RadioGroup>
                     )}
                   />
-                </Field>
+                </FormFieldBlock>
 
                 <TelegramReminderSchedulePreview
                   anchorDate={occurredOn}
@@ -640,13 +638,13 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
                   singleOccurrenceOnly={isEdit}
                 />
 
-                <Field label="Message" error={errors.telegram_message_template?.message}>
+                <FormFieldBlock label="Message" error={errors.telegram_message_template?.message}>
                   <textarea
                     rows={7}
                     className="border-input bg-card text-foreground field-focus w-full rounded-lg border px-3 py-2 font-mono text-xs"
                     {...register('telegram_message_template')}
                   />
-                </Field>
+                </FormFieldBlock>
 
                 {isEdit ? (
                   <Controller
@@ -690,36 +688,3 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
     );
   }
 );
-
-function Field({
-  label,
-  required,
-  hint,
-  error,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  hint?: string;
-  error?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="block min-w-0">
-      <span className="text-overline mb-1.5 block">
-        {label}
-        {required ? (
-          <>
-            {' '}
-            <span className="text-destructive" aria-hidden>
-              *
-            </span>
-          </>
-        ) : null}
-      </span>
-      {children}
-      {hint ? <p className="text-caption text-muted-foreground mt-1">{hint}</p> : null}
-      {error ? <p className="text-destructive mt-1 text-xs font-medium">{error}</p> : null}
-    </div>
-  );
-}

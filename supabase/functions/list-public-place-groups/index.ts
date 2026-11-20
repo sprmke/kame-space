@@ -16,10 +16,10 @@ import {
   loadParkingCards,
   loadPropertyCards,
 } from '../_shared/publicListingCards.ts';
-import { listingCacheKey, withListingCache } from '../_shared/publicListingCache.ts';
+import { listingCacheKey } from '../_shared/publicListingCache.ts';
+import { cachedPublicListingRead } from '../_shared/publicCachedRead.ts';
 import { loadPublicPlaceGroups, type ListingFamily } from '../_shared/publicListingSearch.ts';
 import { servePublic } from '../_shared/serveEdge.ts';
-import { publicGetRateLimitGate } from '../_shared/publicEndpointRateLimit.ts';
 
 type RouteFamily = 'properties' | 'developments' | 'parkings';
 
@@ -57,8 +57,6 @@ function loadCards(family: RouteFamily, ids: string[]): Promise<Array<{ id: stri
 servePublic('list-public-place-groups', async (req) => {
   if (req.method !== 'GET') return jsonError(req, 'Method not allowed', 405);
 
-  const limited = await publicGetRateLimitGate(req, 'list-public-place-groups');
-  if (limited) return limited;
   const url = new URL(req.url);
   const family = url.searchParams.get('family') as RouteFamily | null;
   if (family !== 'properties' && family !== 'developments' && family !== 'parkings') {
@@ -81,7 +79,9 @@ servePublic('list-public-place-groups', async (req) => {
   const indexFamily = INDEX_FAMILY[family];
 
   try {
-    const body = await withListingCache(
+    const read = await cachedPublicListingRead(
+      req,
+      'list-public-place-groups',
       listingCacheKey('list-public-place-groups', { family, groupOffset, groupLimit, previewSize }),
       {
         families: indexFamily === 'development' ? ['development', 'property'] : [indexFamily],
@@ -116,6 +116,8 @@ servePublic('list-public-place-groups', async (req) => {
         };
       }
     );
+    if ('limited' in read) return read.limited;
+    const body = read.value;
 
     return jsonResponse(req, body, 200, 'publicDynamic');
   } catch (error) {

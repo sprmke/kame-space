@@ -13,6 +13,8 @@ import {
   signInLocalParkingHost,
 } from '../../parking/shared/parkingLiveLocalHarness';
 
+import { openAssistantFromQuickAccess, quickAccessFab } from './assistantQuickAccess';
+
 const LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
 const LOCAL_SERVICE_ROLE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
@@ -239,7 +241,7 @@ export async function installAssistantLiveHostSession(page: Page, request: APIRe
 
 export async function openAssistantLivePanel(page: Page, pagePath = assistantLivePaths.bookings) {
   await page.setViewportSize({ width: 1280, height: 900 });
-  const fab = page.getByRole('button', { name: 'Open AI assistant' });
+  const fab = quickAccessFab(page);
   for (let attempt = 0; attempt < 2; attempt++) {
     await page.goto(pagePath, { waitUntil: 'domcontentloaded' });
     // Bookings shell heading — avoid waiting forever on a stuck auth skeleton.
@@ -251,8 +253,7 @@ export async function openAssistantLivePanel(page: Page, pagePath = assistantLiv
     if (await fab.isVisible().catch(() => false)) break;
     if (attempt === 0) await new Promise((r) => setTimeout(r, 2_000));
   }
-  await expect(fab).toBeVisible({ timeout: 60_000 });
-  await fab.click();
+  await openAssistantFromQuickAccess(page);
   const panel = assistantDialog(page);
   await expect(panel).toBeVisible({ timeout: 20_000 });
   await expect(panel.getByRole('heading', { name: 'AI Assistant' })).toBeVisible({

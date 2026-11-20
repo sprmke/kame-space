@@ -53,7 +53,7 @@ describe('applyLaunchShortcut', () => {
       '/org/acme/property/monaco/bookings'
     );
     expect(applyLaunchShortcut('/org/acme/parking/spot', 'inbox', TODAY)).toBe(
-      '/org/acme/parking/spot/inbox'
+      '/org/acme/parking/spot/messages'
     );
   });
 

@@ -12,6 +12,20 @@ Deno.test('parking ledger map prefers a paid row over a pending row', () => {
   assertEquals(map.get('b1')?.guestChargeTotal, 700);
 });
 
+Deno.test('parking ledger map exposes host gross separately from the guest charge', () => {
+  const map = buildParkingLedgerTotalsByBooking([
+    {
+      booking_id: 'b1',
+      status: 'paid',
+      guest_charge_total: 330,
+      host_gross_total: 300,
+      host_net_total: 270,
+    },
+  ]);
+  assertEquals(map.get('b1')?.hostGrossTotal, 300);
+  assertEquals(map.get('b1')?.guestChargeTotal, 330);
+});
+
 Deno.test('parking ledger map ignores expired and cancelled rows', () => {
   const map = buildParkingLedgerTotalsByBooking([
     { booking_id: 'b1', status: 'expired', guest_charge_total: 700, host_net_total: 630 },

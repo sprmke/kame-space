@@ -237,7 +237,7 @@ export function WorkflowActionsBar({
       className={cn(
         'flex flex-col gap-2',
         isModal
-          ? 'border-separator mt-auto shrink-0 border-t px-4 pb-[max(env(safe-area-inset-bottom,0px),1rem)] pt-3 sm:px-5 sm:pb-4'
+          ? 'border-separator shrink-0 border-t px-4 pb-[max(env(safe-area-inset-bottom,0px),1rem)] pt-3 sm:px-5 sm:pb-4'
           : 'px-4 py-4'
       )}
     >

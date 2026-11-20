@@ -2,7 +2,7 @@
 title: 'Production readiness ledger'
 status: active
 tags: [workflow, in-progress, production-readiness]
-updated: 2026-11-19
+updated: 2026-11-20
 stage: in-progress
 kind: reference
 ---
@@ -22,6 +22,12 @@ Tag legend: [`README.md`](./README.md). Gates A–G: same file.
 | Tag   | ✅ verified · 🟡 unverified · 🔴 failing · ⛔ operator · 🧭 decision · ⏸️ deferred · 🆕 untracked |
 
 ---
+
+## 2026-11-20 update
+
+| ID     | Change                                                                                                                                                                                                                                                                                                                                 |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PR-131 | ✅ public reads: isolate cache and hit-before-durable-counter order deployed to production in [#540](https://github.com/sprmke/kame-space/pull/540) (run `44575415204`). Hosted: 10 detail calls = 0 counter writes, 8 searches = 1, bypass paths still metered 3/3. [`evidence`](./evidence/pr-131-public-read-caching-2026-11-20.md) |
 
 ## 2026-11-01 re-verification on `develop` `497c7772`
 
