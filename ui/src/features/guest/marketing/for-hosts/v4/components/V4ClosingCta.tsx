@@ -24,7 +24,7 @@ export function V4ClosingCta() {
             <p className="text-3xl font-bold tracking-[-0.04em] sm:text-4xl md:whitespace-nowrap lg:text-[2.75rem] lg:leading-none">
               List your place. Take bookings directly.
             </p>
-            <p className="text-primary-foreground/90 mt-4 max-w-xl text-base leading-relaxed sm:text-lg">
+            <p className="text-primary-foreground mt-4 max-w-xl text-base leading-relaxed sm:text-lg">
               One place for your listing, bookings, and guest messages.
             </p>
             <div className="text-primary-foreground mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm sm:text-[15px]">

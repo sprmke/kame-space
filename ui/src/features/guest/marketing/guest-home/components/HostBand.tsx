@@ -32,7 +32,7 @@ export function HostBand() {
               >
                 List your place. Take bookings directly.
               </h2>
-              <p className="text-primary-foreground/90 mt-3 max-w-xl text-base leading-relaxed sm:text-lg">
+              <p className="text-primary-foreground mt-3 max-w-xl text-base leading-relaxed sm:text-lg">
                 One place for your listing, bookings, and guest messages.
               </p>
               <ul className="text-primary-foreground mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm sm:text-[15px]">
