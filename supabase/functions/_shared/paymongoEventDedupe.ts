@@ -48,6 +48,7 @@ export async function claimPaymongoEvent(
     .from('processed_paymongo_events')
     .select('id, processed_at, created_at')
     .eq('event_id', eventId)
+    .limit(1)
     .maybeSingle();
 
   // The row disappeared between the insert conflict and the read (a release won the race).

@@ -41,7 +41,13 @@ export async function buildDataSubjectExport(
     orgMemberships,
     propertyMemberships,
   ] = await Promise.all([
-    sb.from('guest_profiles').select('*').eq('user_id', user.id).maybeSingle(),
+    sb
+      .from('guest_profiles')
+      .select(
+        'user_id,display_name,bio,avatar_url,phone,location_label,created_at,updated_at,identity_verified_at'
+      )
+      .eq('user_id', user.id)
+      .maybeSingle(),
     sb
       .from('guest_submissions')
       .select(

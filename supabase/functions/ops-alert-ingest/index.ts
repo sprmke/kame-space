@@ -14,6 +14,7 @@
 import { jsonError, jsonResponse, requireHttpMethod } from '../_shared/httpResponse.ts';
 import { raiseOpsAlert, type OpsAlertSource, type OpsAlertTier } from '../_shared/ops/opsAlert.ts';
 import { verifyOpsAlertSignature } from '../_shared/ops/opsAlertIngest.ts';
+import { identityFromRequest, rateLimitGate } from '../_shared/rateLimit.ts';
 import { servePublic } from '../_shared/serveEdge.ts';
 
 const TIERS: OpsAlertTier[] = ['p0', 'p1', 'p2', 'p3', 'drill'];
@@ -48,6 +49,17 @@ servePublic('ops-alert-ingest', async (req) => {
   if (!(await verifyOpsAlertSignature(rawBody, signature, secret))) {
     return jsonError(req, 'Invalid signature', 401);
   }
+
+  // Only a valid signature reaches the limiter, so an unauthenticated flood cannot exhaust a
+  // real source's budget. A burst of real alerts is still capped and the storm guard compresses
+  // what gets delivered.
+  const limited = await rateLimitGate(req, {
+    scope: 'ops-alert-ingest',
+    identity: identityFromRequest(req),
+    limit: 60,
+    windowSec: 60,
+  });
+  if (limited) return limited;
 
   let body: Record<string, unknown>;
   try {

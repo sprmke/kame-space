@@ -65,6 +65,9 @@ const STORM_THRESHOLD = 10;
 const SEND_TIMEOUT_MS = 5000;
 const MAX_TEXT = 280;
 
+const OPS_ALERT_COLUMNS =
+  'id,alert_key,tier,source,title,summary,links,context,status,first_seen_at,last_seen_at,occurrences,last_notified_at,notify_count';
+
 const TIER_MARKER: Record<OpsAlertTier, string> = {
   p0: '🔴 P0',
   p1: '🟠 P1',
@@ -276,7 +279,7 @@ export async function raiseOpsAlert(input: OpsAlertInput): Promise<OpsAlertOutco
   try {
     const { data: existing } = await supabase
       .from('ops_alerts')
-      .select('*')
+      .select(OPS_ALERT_COLUMNS)
       .eq('alert_key', input.key)
       .neq('status', 'resolved')
       .maybeSingle();
@@ -298,14 +301,14 @@ export async function raiseOpsAlert(input: OpsAlertInput): Promise<OpsAlertOutco
         .from('ops_alerts')
         .update({ ...payload, occurrences: row.occurrences + 1 })
         .eq('id', row.id)
-        .select('*')
+        .select(OPS_ALERT_COLUMNS)
         .single();
       row = (data as OpsAlertRow | null) ?? row;
     } else {
       const { data, error } = await supabase
         .from('ops_alerts')
         .insert({ ...payload, alert_key: input.key, first_seen_at: nowIso })
-        .select('*')
+        .select(OPS_ALERT_COLUMNS)
         .single();
       if (error) {
         if (error.code === '23505') return { notified: false, skipped: 'db' };
@@ -324,7 +327,7 @@ export async function raiseOpsAlert(input: OpsAlertInput): Promise<OpsAlertOutco
 
     const { data: recent } = await supabase
       .from('ops_alerts')
-      .select('*')
+      .select(OPS_ALERT_COLUMNS)
       .gte('last_notified_at', new Date(now.getTime() - STORM_WINDOW_MS).toISOString())
       .order('last_notified_at', { ascending: false })
       .limit(STORM_THRESHOLD + 1);
@@ -365,7 +368,7 @@ export async function resolveOpsAlert(key: string, note = 'Recovered'): Promise<
       .update({ status: 'resolved', resolved_at: nowIso, updated_at: nowIso })
       .eq('alert_key', key)
       .neq('status', 'resolved')
-      .select('*')
+      .select(OPS_ALERT_COLUMNS)
       .maybeSingle();
     const row = data as OpsAlertRow | null;
     if (!row || (row.notify_count ?? 0) === 0) return { notified: false };
