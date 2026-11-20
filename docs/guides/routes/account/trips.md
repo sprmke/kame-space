@@ -54,7 +54,7 @@ can open each one to check status, documents, payment and your contact details.
 2. Grouping by `guestTripListGroup` (Manila today): cancelled → Cancelled; completed or checked out
    past date → Past; checked out awaiting refund stays in Upcoming.
 
-Empty: "No trips yet." + Browse properties.
+Empty: library mascot `arrival` (suitcase travel pose), title **No trips yet**, short description, **Browse properties**. Load error uses `gentle-failure` + Try again.
 
 ---
 

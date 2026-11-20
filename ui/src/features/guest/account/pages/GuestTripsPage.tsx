@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import { Car, ChevronRight, Luggage } from 'lucide-react';
+import { Building2, Car, ChevronRight, Luggage, RefreshCw } from 'lucide-react';
 
 import { GuestAccountContentCard } from '@/features/guest/account/components/GuestAccountContentCard';
 import { GuestAccountEmptyState } from '@/features/guest/account/components/GuestAccountEmptyState';
@@ -87,15 +87,14 @@ export function GuestTripsPage() {
 
   if (isError) {
     return (
-      <GuestAccountEmptyState message="Could not load your trips.">
-        <button
-          type="button"
-          onClick={() => void refetch()}
-          className="text-primary mt-4 inline-flex min-h-[44px] items-center text-sm font-medium"
-        >
-          Try again
-        </button>
-      </GuestAccountEmptyState>
+      <GuestAccountEmptyState
+        mascotPose="gentle-failure"
+        title="Couldn't load trips"
+        description="Check your connection and try again."
+        actionLabel="Try again"
+        actionIcon={RefreshCw}
+        onAction={() => void refetch()}
+      />
     );
   }
 
@@ -104,8 +103,11 @@ export function GuestTripsPage() {
   if (linkable.length === 0) {
     return (
       <GuestAccountEmptyState
-        message="No trips yet."
+        mascotPose="arrival"
+        title="No trips yet"
+        description="Book a stay and your upcoming trips will show up here."
         actionLabel="Browse properties"
+        actionIcon={Building2}
         actionHref="/properties"
       />
     );
