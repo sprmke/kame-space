@@ -208,6 +208,7 @@ export function MonolithSections({ data }: { data: ShowcaseData }) {
                 section={section}
                 alt={index % 2 === 1}
                 headingClassName="font-instrument"
+                headingSizeClassName={monolithSectionTitleClass}
                 containerClassName="@sm:px-6 @lg:px-8 mx-auto max-w-6xl px-4"
               />
             );

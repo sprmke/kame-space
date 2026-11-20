@@ -147,7 +147,11 @@ const GATE_COVERAGE: Record<PlanFeatureKey, Coverage> = {
   },
   customTemplates: {
     client: ['dashboard/bookings/pages/TemplatesPage.tsx'],
-    server: ['marketing-templates', 'property-templates-settings'],
+    server: [
+      'marketing-templates',
+      'property-templates-settings',
+      'send-property-custom-template-email',
+    ],
   },
   publicPagesAutosave: {
     client: ['dashboard/page-editor/components/PageEditorHeader.tsx'],

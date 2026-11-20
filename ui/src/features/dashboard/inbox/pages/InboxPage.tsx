@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useSearchParams } from 'react-router-dom';
 
@@ -37,6 +37,10 @@ import {
 } from '@/features/dashboard/inbox/hooks/useInbox';
 import { requestMetaInboxSync } from '@/features/dashboard/inbox/lib/inboxApi';
 import type { InboxApiScope } from '@/features/dashboard/inbox/lib/inboxApi';
+import {
+  INBOX_SPLIT_PANE_MIN_WIDTH_PX,
+  resolveInboxAutoSelectId,
+} from '@/features/dashboard/inbox/lib/inboxAutoSelect';
 import { deriveInboxSyncStatus } from '@/features/dashboard/inbox/lib/inboxSyncStatus';
 import { metaInboxOAuthErrorMessage } from '@/features/dashboard/inbox/lib/metaInboxOAuthErrors';
 import type {
@@ -111,6 +115,8 @@ export function InboxPage({
   const [searchInput, setSearchInput] = useState(() => searchParams.get('search') ?? '');
   const debouncedSearchInput = useDebouncedValue(searchInput, 300);
   const search = debouncedSearchInput.trim();
+  const inboxShellRef = useRef<HTMLDivElement | null>(null);
+  const [splitPaneActive, setSplitPaneActive] = useState(false);
 
   useEffect(() => {
     if (!conversationIdParam) return;
@@ -121,9 +127,26 @@ export function InboxPage({
     }
   }, [conversationIdParam, platformParam]);
 
-  const selectConversation = (id: string) => {
+  useLayoutEffect(() => {
+    const el = inboxShellRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const update = (width: number) => {
+      setSplitPaneActive(width >= INBOX_SPLIT_PANE_MIN_WIDTH_PX);
+    };
+    update(el.getBoundingClientRect().width);
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (typeof width === 'number') update(width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const selectConversation = (id: string, opts?: { openMobile?: boolean }) => {
     setSelectedId(id);
-    setMobileShowConversation(true);
+    if (opts?.openMobile !== false) {
+      setMobileShowConversation(true);
+    }
     const next = new URLSearchParams(searchParams);
     next.set('conversationId', id);
     setSearchParams(next, { replace: true });
@@ -254,6 +277,21 @@ export function InboxPage({
     }
     return merged;
   }, [threadsData?.pages]);
+  const conversationIds = useMemo(() => conversations.map((c) => c.id), [conversations]);
+
+  // Split layout only: open the newest filtered thread so the right pane is never an empty
+  // "Select a conversation" prompt. Narrow (list-first) stays untouched until the host taps.
+  // Does not chase newly arrived threads while the current selection is still in the list.
+  useEffect(() => {
+    if (!splitPaneActive) return;
+    if (threadsLoading && conversationIds.length === 0) return;
+    const nextId = resolveInboxAutoSelectId(conversationIds, selectedId);
+    if (!nextId || nextId === selectedId) return;
+    selectConversation(nextId, { openMobile: false });
+    // selectConversation closes over searchParams; ids + selection + layout are the real inputs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [splitPaneActive, threadsLoading, conversationIds, selectedId]);
+
   const messages = useMemo(() => {
     if (!messagesData?.pages.length) return [];
     return [...messagesData.pages].reverse().flatMap((p) => p.messages);
@@ -384,46 +422,27 @@ export function InboxPage({
       subtitle="View and reply to guest messages from connected channels."
       titleId="inbox-heading"
       heroTrailing={
-        <div className="flex items-center gap-2">
-          {/* Hide the idle "Not connected" badge; Channels manage still covers connect. */}
-          {syncStatus.state !== 'needs-attention' || syncStatus.action !== 'reconnect' ? (
-            <InboxSyncStatusPill
-              status={syncStatus}
-              onAction={handleSyncAction}
-              onHowItWorks={() => setHowItWorksOpen(true)}
-            />
-          ) : null}
-          <InboxManageToolbar
-            canManage={canManage}
-            canManageChannels={allowChannels}
-            canManageQuickReplies={allowQuickReplies}
-            canManageAutomation={allowAutomation}
-            showChannelsTab={showChannelsTab}
-            showSettingsManageTabs={showSettingsManageTabs}
-            onOpen={setManageModal}
-            variant="hero"
-          />
-        </div>
+        <InboxManageToolbar
+          canManage={canManage}
+          canManageChannels={allowChannels}
+          canManageQuickReplies={allowQuickReplies}
+          canManageAutomation={allowAutomation}
+          showChannelsTab={showChannelsTab}
+          showSettingsManageTabs={showSettingsManageTabs}
+          onOpen={setManageModal}
+          variant="hero"
+        />
       }
       desktopActions={
-        <div className="flex items-center gap-2">
-          {syncStatus.state !== 'needs-attention' || syncStatus.action !== 'reconnect' ? (
-            <InboxSyncStatusPill
-              status={syncStatus}
-              onAction={handleSyncAction}
-              onHowItWorks={() => setHowItWorksOpen(true)}
-            />
-          ) : null}
-          <InboxManageToolbar
-            canManage={canManage}
-            canManageChannels={allowChannels}
-            canManageQuickReplies={allowQuickReplies}
-            canManageAutomation={allowAutomation}
-            showChannelsTab={showChannelsTab}
-            showSettingsManageTabs={showSettingsManageTabs}
-            onOpen={setManageModal}
-          />
-        </div>
+        <InboxManageToolbar
+          canManage={canManage}
+          canManageChannels={allowChannels}
+          canManageQuickReplies={allowQuickReplies}
+          canManageAutomation={allowAutomation}
+          showChannelsTab={showChannelsTab}
+          showSettingsManageTabs={showSettingsManageTabs}
+          onOpen={setManageModal}
+        />
       }
       className="flex min-h-0 flex-1 flex-col"
     >
@@ -451,12 +470,25 @@ export function InboxPage({
         />
         <StaleDataLabel updatedAt={threadsDataUpdatedAt} className="px-1" />
 
-        <div className="border-border/80 bg-card @container relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">
+        <div
+          ref={inboxShellRef}
+          className="border-border/80 bg-card @container relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm"
+        >
           <InboxPlatformTabs
             value={platformFilter}
             onChange={setPlatformFilter}
             platforms={showChannelsTab ? undefined : ['web']}
             metaFeatureOff={!metaAvailability.available}
+            trailing={
+              /* Hide idle "Not connected"; Channels manage still covers connect. */
+              syncStatus.state !== 'needs-attention' || syncStatus.action !== 'reconnect' ? (
+                <InboxSyncStatusPill
+                  status={syncStatus}
+                  onAction={handleSyncAction}
+                  onHowItWorks={() => setHowItWorksOpen(true)}
+                />
+              ) : null
+            }
           />
 
           {showChannelsTab &&

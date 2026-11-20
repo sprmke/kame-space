@@ -228,6 +228,15 @@ export const MOCK_CHAT_TEMPLATES: ChatTemplateListItem[] = [
     updatedAt: '2026-10-02T04:00:00.000Z',
   },
   {
+    templateKey: 'message-check-in-day',
+    name: 'Check-in day',
+    category: 'message',
+    description: 'Morning-of message with arrival steps.',
+    sectionImageUrl: null,
+    folderId: null,
+    updatedAt: '2026-10-20T04:00:00.000Z',
+  },
+  {
     templateKey: 'custom-welcome',
     name: 'Welcome note',
     category: 'custom',
@@ -258,6 +267,8 @@ export function mockChatTemplatePreview(templateKey: string): ChatTemplateSnapsh
         ? '<h2>House rules</h2><p>Hi {{guest_name}}, here is a quick reminder for your stay.</p><ul><li>Quiet hours start at 10:00 PM.</li><li>Please keep the unit and hallway clean.</li><li>No smoking inside the unit.</li></ul>'
         : item.templateKey === 'check-in-instructions'
           ? '<h2>Check-in</h2><p>Hi {{guest_name}}, check-in starts at 2:00 PM.</p><p>Your unit is {{tower_and_unit_number}}. Message us when you arrive and we will meet you at the lobby.</p>'
-          : '<p>Hi {{guest_name}}! Welcome to {{property_name}}. The wifi name and password are on the card by the TV. Message us anytime if you need help.</p>',
+          : item.templateKey === 'message-check-in-day'
+            ? '<p>Hi {{guest_name}}, today is check-in day. The unit is ready from 2:00 PM.</p><p>Your arrival steps are on your trip page.</p>'
+            : '<p>Hi {{guest_name}}! Welcome to {{property_name}}. The wifi name and password are on the card by the TV. Message us anytime if you need help.</p>',
   };
 }

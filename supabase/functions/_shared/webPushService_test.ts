@@ -29,13 +29,13 @@ Deno.test('buildPushPayload caps title and body, collapses whitespace', () => {
       title: 'T'.repeat(PUSH_TITLE_MAX + 50),
       body: `  line one\n\nline two ${'x'.repeat(PUSH_BODY_MAX)}  `,
     },
-    '/org/a/property/b/inbox',
+    '/org/a/property/b/messages',
     7
   );
   assertEquals(payload.title.length, PUSH_TITLE_MAX);
   assertEquals((payload.body ?? '').length, PUSH_BODY_MAX);
   assertEquals((payload.body ?? '').includes('\n'), false);
-  assertEquals(payload.path, '/org/a/property/b/inbox');
+  assertEquals(payload.path, '/org/a/property/b/messages');
   assertEquals(payload.notificationId, 'n1');
   assertEquals(payload.tag, 'n1');
   assertEquals(payload.unreadCount, 7);

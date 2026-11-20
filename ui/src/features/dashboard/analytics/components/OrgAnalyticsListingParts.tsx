@@ -119,7 +119,7 @@ export function OrgAnalyticsOutlook({
   if (compact) {
     return (
       <p
-        className={cn('text-xs font-medium leading-snug sm:text-[13px]', className)}
+        className={cn('truncate text-xs font-medium leading-none sm:text-[13px]', className)}
         title={outlookDetail(row)}
       >
         <span className={OUTLOOK_TONE[row.forwardOccupancyState30d]}>{label}</span>

@@ -34,7 +34,6 @@ import {
 import {
   showcaseBodyTextClass,
   showcaseEditorialSectionHeadingClass,
-  showcaseScaledClampClass,
 } from '@/features/guest/marketing/showcase/lib/showcaseTypographyScale';
 import { EditorialHostSection } from '@/features/guest/marketing/showcase/templates/shared/ShowcaseHostSections';
 import { StayGuideTemplatedSection } from '@/features/guest/marketing/showcase/templates/shared/StayGuideSections';
@@ -59,10 +58,8 @@ function EditorialHero({
   const motionReduced = resolveShowcaseMotionReduced(data.config, data.reducedMotion, data.embed);
   const images = section.images.length > 0 ? section.images : [];
   const canvasOff = resolveShowcaseCanvasPaused(data.config, data.reducedMotion);
-  const placeholders =
-    mode === 'dark'
-      ? ['bg-[#2a241c]', 'bg-[#252019]', 'bg-[#1f1a15]']
-      : ['bg-[#ddd6c8]', 'bg-[#e7e0d4]', 'bg-[#d6cfc2]'];
+  const hasExtraImages = images.length > 1;
+  const placeholder = mode === 'dark' ? 'bg-[#2a241c]' : 'bg-[#ddd6c8]';
 
   return (
     <section
@@ -81,7 +78,8 @@ function EditorialHero({
             <h1
               className={cn(
                 displayFontClass,
-                showcaseScaledClampClass(1.875, 7, 4.5),
+                // Literal on purpose: Tailwind cannot scan a class built by a function.
+                'text-[length:clamp(calc(2.5rem*var(--showcase-display-scale,1)),calc(11cqw*var(--showcase-display-scale,1)),calc(4.5rem*var(--showcase-display-scale,1)))]',
                 'mt-3 leading-[0.98] tracking-tight'
               )}
             >
@@ -110,7 +108,13 @@ function EditorialHero({
         </div>
         <div className="@sm:grid-cols-2 @lg:col-span-7 @sm:gap-3 @lg:gap-4 grid grid-cols-1 gap-2">
           <motion.div
-            className="@sm:col-span-1 @sm:row-span-2 @sm:aspect-auto @sm:min-h-[200px] @lg:min-h-[320px] relative aspect-[16/10] overflow-hidden rounded-sm"
+            className={cn(
+              'relative aspect-[16/10] overflow-hidden rounded-sm',
+              // A lone photo (Stay Guide hero) fills the row instead of leaving empty tiles.
+              hasExtraImages
+                ? '@sm:col-span-1 @sm:row-span-2 @sm:aspect-auto @sm:min-h-[200px] @lg:min-h-[320px]'
+                : '@sm:col-span-2 @lg:aspect-[16/11]'
+            )}
             initial={data.reducedMotion ? false : { opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -125,16 +129,16 @@ function EditorialHero({
                 decoding="sync"
               />
             ) : (
-              <div className={cn('size-full', placeholders[0])} />
+              <div className={cn('size-full', placeholder)} />
             )}
           </motion.div>
-          <motion.div
-            className="relative aspect-[4/5] overflow-hidden rounded-sm"
-            initial={data.reducedMotion ? false : { opacity: 0, y: 28 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {images[1] ? (
+          {images[1] ? (
+            <motion.div
+              className="relative aspect-[4/5] overflow-hidden rounded-sm"
+              initial={data.reducedMotion ? false : { opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            >
               <img
                 src={images[1]}
                 alt={buildListingImageAlt({ listingName: data.propertyName, index: 1 })}
@@ -142,17 +146,15 @@ function EditorialHero({
                 loading="lazy"
                 decoding="async"
               />
-            ) : (
-              <div className={cn('size-full', placeholders[1])} />
-            )}
-          </motion.div>
-          <motion.div
-            className="relative aspect-[4/3] overflow-hidden rounded-sm"
-            initial={data.reducedMotion ? false : { opacity: 0, y: 28 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {images[2] ? (
+            </motion.div>
+          ) : null}
+          {images[2] ? (
+            <motion.div
+              className="relative aspect-[4/3] overflow-hidden rounded-sm"
+              initial={data.reducedMotion ? false : { opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            >
               <img
                 src={images[2]}
                 alt={buildListingImageAlt({ listingName: data.propertyName, index: 2 })}
@@ -160,10 +162,8 @@ function EditorialHero({
                 loading="lazy"
                 decoding="async"
               />
-            ) : (
-              <div className={cn('size-full', placeholders[2])} />
-            )}
-          </motion.div>
+            </motion.div>
+          ) : null}
         </div>
       </div>
     </section>
@@ -188,6 +188,7 @@ export function EditorialSections({ data }: { data: ShowcaseData }) {
                 data={data}
                 section={section}
                 headingClassName="font-cormorant"
+                headingSizeClassName={showcaseEditorialSectionHeadingClass}
                 containerClassName="@sm:px-6 @lg:px-8 mx-auto max-w-6xl px-4"
               />
             );

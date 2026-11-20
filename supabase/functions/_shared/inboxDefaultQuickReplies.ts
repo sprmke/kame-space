@@ -27,7 +27,7 @@ export const INBOX_DEFAULT_QUICK_REPLIES: DefaultQuickReplySeed[] = [
   {
     title: 'Check-in',
     body_text:
-      'Check-in is from 2:00 PM and check-out is by 12:00 PM (Asia/Manila). Early check-in may be possible if the unit is ready. Just ask.',
+      'Your check-in and check-out times are on your booking. Early check-in may be possible if the unit is ready. Just ask.',
     sort_order: 2,
   },
   {
@@ -45,7 +45,7 @@ export const INBOX_DEFAULT_QUICK_REPLIES: DefaultQuickReplySeed[] = [
   {
     title: 'Location',
     body_text:
-      'We’re in Azure North, San Fernando, Pampanga. Map pin: {{map_link}}. I can send the exact unit address once your dates are confirmed.',
+      'Map pin: {{map_link}}. I can send the exact unit address once your dates are confirmed.',
     sort_order: 5,
   },
   {

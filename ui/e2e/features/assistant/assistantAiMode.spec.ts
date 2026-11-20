@@ -14,6 +14,8 @@ import {
   TEAM_E2E_PROPERTY_SLUG,
 } from '../team/shared/propertyTeamRbacHarness';
 
+import { openAssistantFromQuickAccess, quickAccessFab } from './shared/assistantQuickAccess';
+
 const PROPERTY_ROOT = `/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}`;
 
 function modeSwitch(page: Page) {
@@ -55,7 +57,7 @@ test.describe('AI mode', () => {
       aiModeEnabled: true,
     });
     await openPropertyDashboard(page);
-    await expect(page.getByRole('button', { name: 'Open AI assistant' })).toBeVisible({
+    await expect(quickAccessFab(page)).toBeVisible({
       timeout: 20_000,
     });
 
@@ -64,12 +66,12 @@ test.describe('AI mode', () => {
     await expect(page.getByTestId('assistant-briefing')).toBeVisible();
     await openSplitView(page);
     await expect(page).toHaveURL(new RegExp(`${PROPERTY_ROOT}/bookings`));
-    // Sheet launcher is hidden in AI mode; the chat is the full page.
-    await expect(page.getByRole('button', { name: 'Open AI assistant' })).toHaveCount(0);
+    // Quick Access FAB is hidden in AI mode; the chat is the full page.
+    await expect(quickAccessFab(page)).toHaveCount(0);
     await expect.poll(() => mockedSavedDashboardMode()).toBe('ai');
 
     await modeSwitch(page).click();
-    await expect(page.getByRole('button', { name: 'Open AI assistant' })).toBeVisible({
+    await expect(quickAccessFab(page)).toBeVisible({
       timeout: 20_000,
     });
     await expect(page).toHaveURL(new RegExp(`${PROPERTY_ROOT}/bookings`));
@@ -165,7 +167,7 @@ test.describe('AI mode', () => {
     // Draft survives the switch too.
     await composer(page).fill('and tomorrow?');
     await modeSwitch(page).click();
-    await page.getByRole('button', { name: 'Open AI assistant' }).click();
+    await openAssistantFromQuickAccess(page);
     const sheet = page.getByRole('dialog');
     await expect(sheet.getByText('Two bookings need your review.')).toBeVisible();
     await expect(sheet.getByRole('textbox', { name: 'Message' })).toHaveValue('and tomorrow?');
@@ -370,7 +372,7 @@ test.describe('AI mode', () => {
       savedDashboardMode: 'ai',
     });
     await openPropertyDashboard(page);
-    await expect(page.getByRole('button', { name: 'Open AI assistant' })).toBeVisible({
+    await expect(quickAccessFab(page)).toBeVisible({
       timeout: 20_000,
     });
     await expect(page.getByRole('switch', { name: /^AI mode/ })).toHaveCount(0);

@@ -14,7 +14,11 @@ import { manilaTodayYmd, normalizeBookingDateToYmd } from './calendarAvailabilit
 import { verifyCronSecret } from './cronSecretGate.ts';
 import { propertyAutomationEnabled } from './propertyAutomationToggles.ts';
 import { resolveAppSettings } from './appSettings.ts';
-import { buildBookingPlaceholderVars, renderPropertyTemplateSendEmail } from './propertyTemplateEmail.ts';
+import {
+  buildBookingPlaceholderVars,
+  renderPropertyTemplateSendEmail,
+  resolvePropertyTemplateSubject,
+} from './propertyTemplateEmail.ts';
 import { loadBookingEmailDisplayContext } from './emailBookingContext.ts';
 import { formatEmailDateRange, formatResendFromAddress } from './propertyEmailBranding.ts';
 import { createServiceClient } from './orgAuth.ts';
@@ -109,18 +113,11 @@ export async function loadPreArrivalCandidates(
   );
 }
 
-const REMINDER_BODY = `<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;">Hi <strong>{{guest_facebook_name}}</strong>, your stay at <strong>{{tower_and_unit_number}}</strong> starts in two days, on {{check_in_date}}.</p>
-<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;">Check-in is from {{check_in_time}} and check-out is by {{check_out_time}}.</p>
-<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#333333;">Your balance is {{total_guest_balance}}. Everything else - directions, house rules, and your arrival steps - is on your trip page.</p>
-<p>{{trip_cta_section}}</p>`;
-
 async function sendReminder(row: PreArrivalCandidate): Promise<boolean> {
   const email = String(row.guest_email ?? '').trim();
   if (!email || (await isEmailSuppressed(email))) return false;
 
-  // The reminder is part of the same conversation as the ready-for-check-in email, so it
-  // follows that toggle rather than inventing another one.
-  if (!(await propertyAutomationEnabled(row.property_id, 'emailReadyForCheckin'))) return false;
+  if (!(await propertyAutomationEnabled(row.property_id, 'emailPreArrivalReminder'))) return false;
 
   const settings = await resolveAppSettings(row.property_id);
   const { branding, unitLabel, displayCheckInDate, displayCheckOutDate } =
@@ -139,25 +136,35 @@ async function sendReminder(row: PreArrivalCandidate): Promise<boolean> {
     bookingId: row.id,
   });
 
+  const placeholderVars = buildBookingPlaceholderVars(
+    booking.data as GuestSubmission,
+    settings,
+    linkExtras,
+    branding
+  );
   const html = await renderPropertyTemplateSendEmail({
     propertyId: row.property_id,
-    templateKey: 'email-booking-acknowledgement',
+    templateKey: 'email-pre-arrival-reminder',
     emailTitle: `Check-in in ${PRE_ARRIVAL_LEAD_DAYS} days`,
-    contentOverride: REMINDER_BODY,
     branding,
-    placeholderVars: buildBookingPlaceholderVars(
-      booking.data as GuestSubmission,
-      settings,
-      linkExtras,
-      branding
-    ),
+    placeholderVars,
+    booking: booking.data as GuestSubmission,
+  });
+  const subject = await resolvePropertyTemplateSubject({
+    propertyId: row.property_id,
+    templateKey: 'email-pre-arrival-reminder',
+    vars: placeholderVars,
+    fallback: `${unitLabel} - Check-in in ${PRE_ARRIVAL_LEAD_DAYS} days ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
   });
 
   await sendResendEmail({
-    from: formatResendFromAddress(`${unitLabel} - ${branding.organizationName}`, branding.fromEmail),
+    from: formatResendFromAddress(
+      `${unitLabel} - ${branding.organizationName}`,
+      branding.fromEmail
+    ),
     to: [email],
     reply_to: settings.emailReplyTo,
-    subject: `${unitLabel} - Check-in in ${PRE_ARRIVAL_LEAD_DAYS} days ${formatEmailDateRange(displayCheckInDate, displayCheckOutDate)}`,
+    subject,
     html,
     errorLabel: 'email',
   });

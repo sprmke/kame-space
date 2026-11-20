@@ -12,8 +12,9 @@ import { cn } from '@/lib/utils';
 
 const FILTER_OPTIONS: { value: TemplateCategoryFilter; label: string }[] = [
   { value: 'all', label: 'All types' },
-  { value: 'email', label: 'Emails' },
   { value: 'standard', label: 'Stay guide' },
+  { value: 'messages', label: 'Messages' },
+  { value: 'email', label: 'Emails' },
   { value: 'custom', label: 'Custom' },
 ];
 
@@ -93,7 +94,8 @@ export function TemplateLibraryCategoryFilter({ value, onChange }: Props) {
           aria-expanded={popoverOpen}
           className={cn(
             'border-border relative inline-flex size-10 shrink-0 items-center justify-center rounded-lg border transition-colors',
-            'focus-visible:ring-ring min-h-[44px] min-w-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
+            "before:absolute before:-inset-0.5 before:content-['']",
+            'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
             activeCount > 0
               ? 'border-primary/30 bg-primary/10 text-primary'
               : 'bg-card text-muted-foreground hover:bg-muted/60 hover:text-foreground'

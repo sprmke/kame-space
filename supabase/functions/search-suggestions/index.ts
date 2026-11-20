@@ -10,7 +10,8 @@
 
 import { jsonError, jsonSuccess } from '../_shared/httpResponse.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
-import { publicGetRateLimitGate } from '../_shared/publicEndpointRateLimit.ts';
+import { cachedPublicListingRead } from '../_shared/publicCachedRead.ts';
+import { listingCacheKey } from '../_shared/publicListingCache.ts';
 import { pruneExpiredRateLimitBuckets } from '../_shared/publicRateLimit.ts';
 import {
   escapeIlikePattern,
@@ -246,8 +247,6 @@ servePublic('search-suggestions', async (req) => {
   }
 
   pruneExpiredRateLimitBuckets();
-  const limited = await publicGetRateLimitGate(req, 'search-suggestions');
-  if (limited) return limited;
 
   const url = new URL(req.url);
   const q = readQueryText(url.searchParams.get('q'));
@@ -304,136 +303,153 @@ servePublic('search-suggestions', async (req) => {
     );
   }
 
-  if (intent.kind === 'concept') {
-    try {
-      const grouped = await buildConceptSuggestions(intent, limit);
-      return jsonSuccess(req, { query: q, ...grouped }, undefined, 'publicDynamic');
-    } catch (error) {
-      console.error('[search-suggestions] concept', error);
-      return jsonError(req, 'Failed to load suggestions', 500);
-    }
-  }
+  try {
+    const read = await cachedPublicListingRead(
+      req,
+      'search-suggestions',
+      listingCacheKey('search-suggestions', { q, limit }),
+      { families: ['property', 'development', 'parking'] },
+      async () => {
+        if (intent.kind === 'concept') {
+          const grouped = await buildConceptSuggestions(intent, limit);
+          return { query: q, ...grouped };
+        }
 
-  const orPattern = postgrestOrIlikeValue(q);
-  const ilikePattern = `%${escapeIlikePattern(q)}%`;
-  const supabase = createServiceClient();
+        const orPattern = postgrestOrIlikeValue(q);
+        const ilikePattern = `%${escapeIlikePattern(q)}%`;
+        const supabase = createServiceClient();
 
-  const [propertiesRes, developmentsRes, parkingsRes, propertyCitiesRes, developmentCitiesRes] =
-    await Promise.all([
-      supabase
-        .from('properties')
-        .select('id, slug, name, city, residence_name, status')
-        .eq('status', 'ACTIVE')
-        .or(`name.ilike.${orPattern},city.ilike.${orPattern},residence_name.ilike.${orPattern}`)
-        .limit(24),
-      supabase
-        .from('developments')
-        .select('id, slug, name, city, location, status')
-        .eq('status', 'ACTIVE')
-        .or(`name.ilike.${orPattern},city.ilike.${orPattern},location.ilike.${orPattern}`)
-        .limit(24),
-      supabase
-        .from('parkings')
-        .select('id, slug, name, residence_name, tower, status, settings')
-        .eq('status', 'ACTIVE')
-        .or(`name.ilike.${orPattern},residence_name.ilike.${orPattern},tower.ilike.${orPattern}`)
-        .limit(24),
-      supabase
-        .from('properties')
-        .select('city')
-        .eq('status', 'ACTIVE')
-        .not('city', 'is', null)
-        .ilike('city', ilikePattern)
-        .limit(40),
-      supabase
-        .from('developments')
-        .select('city')
-        .eq('status', 'ACTIVE')
-        .not('city', 'is', null)
-        .ilike('city', ilikePattern)
-        .limit(40),
-    ]);
+        const [
+          propertiesRes,
+          developmentsRes,
+          parkingsRes,
+          propertyCitiesRes,
+          developmentCitiesRes,
+        ] = await Promise.all([
+          supabase
+            .from('properties')
+            .select('id, slug, name, city, residence_name, status')
+            .eq('status', 'ACTIVE')
+            .or(`name.ilike.${orPattern},city.ilike.${orPattern},residence_name.ilike.${orPattern}`)
+            .limit(24),
+          supabase
+            .from('developments')
+            .select('id, slug, name, city, location, status')
+            .eq('status', 'ACTIVE')
+            .or(`name.ilike.${orPattern},city.ilike.${orPattern},location.ilike.${orPattern}`)
+            .limit(24),
+          supabase
+            .from('parkings')
+            .select('id, slug, name, residence_name, tower, status, settings')
+            .eq('status', 'ACTIVE')
+            .or(
+              `name.ilike.${orPattern},residence_name.ilike.${orPattern},tower.ilike.${orPattern}`
+            )
+            .limit(24),
+          supabase
+            .from('properties')
+            .select('city')
+            .eq('status', 'ACTIVE')
+            .not('city', 'is', null)
+            .ilike('city', ilikePattern)
+            .limit(40),
+          supabase
+            .from('developments')
+            .select('city')
+            .eq('status', 'ACTIVE')
+            .not('city', 'is', null)
+            .ilike('city', ilikePattern)
+            .limit(40),
+        ]);
 
-  if (propertiesRes.error || developmentsRes.error || parkingsRes.error) {
-    console.error('[search-suggestions]', {
-      properties: propertiesRes.error,
-      developments: developmentsRes.error,
-      parkings: parkingsRes.error,
-    });
+        if (propertiesRes.error || developmentsRes.error || parkingsRes.error) {
+          console.error('[search-suggestions]', {
+            properties: propertiesRes.error,
+            developments: developmentsRes.error,
+            parkings: parkingsRes.error,
+          });
+          // Throw so the failure is answered as a 500 and never stored in the cache.
+          throw new Error('Failed to load suggestions');
+        }
+
+        const properties: SearchSuggestionItem[] = takeTop(
+          (propertiesRes.data ?? []).map((row) => ({
+            kind: 'property' as const,
+            id: row.id as string,
+            label: row.name as string,
+            subtitle: [row.city, row.residence_name].filter(Boolean).join(' · ') || 'Property',
+            slug: row.slug as string,
+            score: rankTextMatch(q, row.name, row.city, row.residence_name),
+          })),
+          PER_GROUP
+        );
+
+        const developments: SearchSuggestionItem[] = takeTop(
+          (developmentsRes.data ?? []).map((row) => ({
+            kind: 'development' as const,
+            id: row.id as string,
+            label: row.name as string,
+            subtitle: (row.location as string) || (row.city as string) || 'Development',
+            slug: row.slug as string,
+            score: rankTextMatch(q, row.name, row.city, row.location),
+          })),
+          PER_GROUP
+        );
+
+        const parkings: SearchSuggestionItem[] = takeTop(
+          (parkingsRes.data ?? []).map((row) => {
+            const settings = asSettings(row.settings);
+            const city = typeof settings.city === 'string' ? settings.city.trim() : '';
+            return {
+              kind: 'parking' as const,
+              id: row.id as string,
+              label: row.name as string,
+              subtitle:
+                [row.residence_name, row.tower, city].filter(Boolean).join(' · ') || 'Parking',
+              slug: row.slug as string,
+              score: rankTextMatch(q, row.name, row.residence_name, row.tower, city),
+            };
+          }),
+          PER_GROUP
+        );
+
+        const cityCounts = new Map<string, number>();
+        for (const row of [
+          ...(propertyCitiesRes.data ?? []),
+          ...(developmentCitiesRes.data ?? []),
+        ]) {
+          const city = typeof row.city === 'string' ? row.city.trim() : '';
+          if (!city) continue;
+          cityCounts.set(city, (cityCounts.get(city) ?? 0) + 1);
+        }
+
+        const locations: SearchSuggestionItem[] = takeTop(
+          [...cityCounts.entries()].map(([city, count]) => ({
+            kind: 'location' as const,
+            id: `location:${city.toLowerCase()}`,
+            label: city,
+            subtitle: count === 1 ? '1 listing area' : `${count} listing areas`,
+            city,
+            score: rankTextMatch(q, city),
+          })),
+          PER_GROUP
+        );
+
+        const grouped = trimOverflow({ locations, developments, properties, parkings }, limit);
+
+        return {
+          query: q,
+          locations: grouped.locations,
+          developments: grouped.developments,
+          properties: grouped.properties,
+          parkings: grouped.parkings,
+        };
+      }
+    );
+    if ('limited' in read) return read.limited;
+    return jsonSuccess(req, read.value, undefined, 'publicDynamic');
+  } catch (error) {
+    console.error('[search-suggestions]', error);
     return jsonError(req, 'Failed to load suggestions', 500);
   }
-
-  const properties: SearchSuggestionItem[] = takeTop(
-    (propertiesRes.data ?? []).map((row) => ({
-      kind: 'property' as const,
-      id: row.id as string,
-      label: row.name as string,
-      subtitle: [row.city, row.residence_name].filter(Boolean).join(' · ') || 'Property',
-      slug: row.slug as string,
-      score: rankTextMatch(q, row.name, row.city, row.residence_name),
-    })),
-    PER_GROUP
-  );
-
-  const developments: SearchSuggestionItem[] = takeTop(
-    (developmentsRes.data ?? []).map((row) => ({
-      kind: 'development' as const,
-      id: row.id as string,
-      label: row.name as string,
-      subtitle: (row.location as string) || (row.city as string) || 'Development',
-      slug: row.slug as string,
-      score: rankTextMatch(q, row.name, row.city, row.location),
-    })),
-    PER_GROUP
-  );
-
-  const parkings: SearchSuggestionItem[] = takeTop(
-    (parkingsRes.data ?? []).map((row) => {
-      const settings = asSettings(row.settings);
-      const city = typeof settings.city === 'string' ? settings.city.trim() : '';
-      return {
-        kind: 'parking' as const,
-        id: row.id as string,
-        label: row.name as string,
-        subtitle: [row.residence_name, row.tower, city].filter(Boolean).join(' · ') || 'Parking',
-        slug: row.slug as string,
-        score: rankTextMatch(q, row.name, row.residence_name, row.tower, city),
-      };
-    }),
-    PER_GROUP
-  );
-
-  const cityCounts = new Map<string, number>();
-  for (const row of [...(propertyCitiesRes.data ?? []), ...(developmentCitiesRes.data ?? [])]) {
-    const city = typeof row.city === 'string' ? row.city.trim() : '';
-    if (!city) continue;
-    cityCounts.set(city, (cityCounts.get(city) ?? 0) + 1);
-  }
-
-  const locations: SearchSuggestionItem[] = takeTop(
-    [...cityCounts.entries()].map(([city, count]) => ({
-      kind: 'location' as const,
-      id: `location:${city.toLowerCase()}`,
-      label: city,
-      subtitle: count === 1 ? '1 listing area' : `${count} listing areas`,
-      city,
-      score: rankTextMatch(q, city),
-    })),
-    PER_GROUP
-  );
-
-  const grouped = trimOverflow({ locations, developments, properties, parkings }, limit);
-
-  return jsonSuccess(
-    req,
-    {
-      query: q,
-      locations: grouped.locations,
-      developments: grouped.developments,
-      properties: grouped.properties,
-      parkings: grouped.parkings,
-    },
-    undefined,
-    'publicDynamic'
-  );
 });

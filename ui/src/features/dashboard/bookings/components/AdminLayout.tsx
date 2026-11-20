@@ -23,14 +23,16 @@ import { ModeSwitcher } from '@/features/guest/marketing/shared/components/ModeS
 
 import { AiAssistantLauncherButton } from '@/features/dashboard/ai-assistant/components/AiAssistantLauncherButton';
 import { AiAssistantSessionProvider } from '@/features/dashboard/ai-assistant/components/AiAssistantSessionProvider';
+import { AiAssistantUnavailableDialog } from '@/features/dashboard/ai-assistant/components/AiAssistantUnavailableDialog';
 import { DashboardModeProvider } from '@/features/dashboard/ai-assistant/components/DashboardModeProvider';
 import { DashboardModeToggle } from '@/features/dashboard/ai-assistant/components/DashboardModeToggle';
 import { useAiAssistantAccess } from '@/features/dashboard/ai-assistant/hooks/useAiAssistantAccess';
 import { useCanvasResize } from '@/features/dashboard/ai-assistant/hooks/useCanvasResize';
 import {
-  isAiAssistantFabVisible,
-  notificationFabStackedBottomClassName,
-} from '@/features/dashboard/ai-assistant/lib/assistantFabLayout';
+  resolveAssistantOpenRequest,
+  type AssistantUnavailableReason,
+} from '@/features/dashboard/ai-assistant/lib/assistantAccess';
+import { isAiAssistantFabVisible } from '@/features/dashboard/ai-assistant/lib/assistantFabLayout';
 import { assistantSpring } from '@/features/dashboard/ai-assistant/lib/assistantMotion';
 import {
   getAssistantOpenRequestId,
@@ -49,13 +51,16 @@ import {
   useAdminBrandThemeStyle,
 } from '@/features/dashboard/bookings/components/AdminBrandTheme';
 import { AdminMoreSheet } from '@/features/dashboard/bookings/components/AdminMoreSheet';
+import { AdminQuickAccessHub } from '@/features/dashboard/bookings/components/AdminQuickAccessHub';
 import { useAdminSession } from '@/features/dashboard/bookings/hooks/useAdminSession';
 import {
-  ASSISTANT_TAB_KEY,
-  NOTIFICATIONS_TAB_KEY,
   resolveBottomTabActiveKey,
   splitAdminBottomNav,
 } from '@/features/dashboard/bookings/lib/adminBottomNav';
+import {
+  resolveQuickAccessPaths,
+  resolveQuickAccessScope,
+} from '@/features/dashboard/bookings/lib/adminQuickAccess';
 import {
   AdminLayoutFillMainActiveContext,
   AdminLayoutFillMainContext,
@@ -118,7 +123,10 @@ import {
 } from '@/features/dashboard/parking/lib/parkingSettingsIssuesStore';
 import { BillingStatusBanner } from '@/features/dashboard/plans/components/BillingStatusBanner';
 import { OrgPlanSidebarEntry } from '@/features/dashboard/plans/components/OrgPlanSidebarEntry';
-import { UpgradeModalProvider } from '@/features/dashboard/plans/components/UpgradeModalProvider';
+import {
+  UpgradeModalProvider,
+  useUpgradeModal,
+} from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { SetupGuideProvider } from '@/features/dashboard/setup-guide/components/SetupGuideProvider';
 import { SetupGuideSidebarEntry } from '@/features/dashboard/setup-guide/components/SetupGuideSidebarEntry';
 import { SuperAdminSidebarScope } from '@/features/dashboard/super-admin/components/SuperAdminSidebarScope';
@@ -414,7 +422,11 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
   const lastHandledAssistantOpenRequestIdRef = useRef(assistantOpenRequestId);
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assistantUnavailableReason, setAssistantUnavailableReason] =
+    useState<AssistantUnavailableReason | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const { open: openUpgradeModal } = useUpgradeModal();
   // One collapse preference for both modes, so a mode switch never resizes the sidebar.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
   const { mode, availability, transitioning, onTransitionEnd } = useDashboardMode();
@@ -429,7 +441,11 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
     accessible: assistantAccessible,
     planGate,
     permissionAllowed: assistantPermissionAllowed,
+    permissionLoading: assistantPermissionLoading,
     settings: assistantSettings,
+    isPending: assistantAccessPending,
+    isFetched: assistantSettingsFetched,
+    isError: assistantSettingsError,
   } = useAiAssistantAccess(propertyId);
   // Non-critical chrome: the notification preview and the announcement unread dot only
   // decorate the shell, so they start after the first paint instead of competing with the
@@ -450,36 +466,74 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
   useEffect(() => {
     setMoreSheetOpen(false);
     setNotificationsOpen(false);
+    setToolsOpen(false);
   }, [location.pathname]);
+
+  const quickAccessPaths = useMemo(() => {
+    const orgSlug = tenant?.orgSlug ?? parkingTenant?.orgSlug ?? routeOrgSlug;
+    return resolveQuickAccessPaths({
+      scope: resolveQuickAccessScope(location.pathname),
+      orgSlug,
+      propertySlug: tenant?.propertySlug ?? routePropertySlug,
+      parkingSlug: parkingTenant?.parkingSlug ?? routeParkingSlug,
+    });
+  }, [
+    location.pathname,
+    tenant?.orgSlug,
+    tenant?.propertySlug,
+    parkingTenant?.orgSlug,
+    parkingTenant?.parkingSlug,
+    routeOrgSlug,
+    routePropertySlug,
+    routeParkingSlug,
+  ]);
 
   useEffect(() => {
     if (assistantOpenRequestId === 0) return;
     if (assistantOpenRequestId === lastHandledAssistantOpenRequestIdRef.current) return;
+
+    const outcome = resolveAssistantOpenRequest({
+      accessPending:
+        assistantAccessPending ||
+        assistantPermissionLoading ||
+        planGate.isLoading ||
+        (!assistantSettings && !assistantSettingsFetched && !assistantSettingsError),
+      accessible: assistantAccessible,
+      permissionAllowed: assistantPermissionAllowed,
+      planAllowed: planGate.allowed,
+      settings: assistantSettings,
+      settingsSettled: assistantSettingsFetched || assistantSettingsError,
+      propertyId,
+    });
+    if (outcome.kind === 'wait') return;
+
     lastHandledAssistantOpenRequestIdRef.current = assistantOpenRequestId;
     setMoreSheetOpen(false);
     setNotificationsOpen(false);
+    setToolsOpen(false);
 
-    if (assistantAccessible) {
+    if (outcome.kind === 'open') {
       setAssistantOpen(true);
       return;
     }
-
-    // Kill-switch layers (platform/org toggle) hide the assistant entirely — nothing to open.
-    const killSwitchOff = Boolean(
-      assistantSettings && (!assistantSettings.platformEnabled || !assistantSettings.enabled)
-    );
-    if (killSwitchOff) return;
-
-    // Blocked only by plan tier: open the panel read-only (past history) instead of a hard block.
-    if (!planGate.isLoading && !planGate.allowed) {
-      setAssistantOpen(true);
+    if (outcome.kind === 'upgrade') {
+      openUpgradeModal('aiDashboardAssistant');
+      return;
     }
+    setAssistantUnavailableReason(outcome.reason);
   }, [
     assistantOpenRequestId,
     assistantAccessible,
+    assistantAccessPending,
+    assistantPermissionAllowed,
+    assistantPermissionLoading,
     assistantSettings,
+    assistantSettingsFetched,
+    assistantSettingsError,
+    openUpgradeModal,
     planGate.isLoading,
     planGate.allowed,
+    propertyId,
   ]);
 
   const pageTitle = useMemo(
@@ -541,55 +595,37 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
   const openMoreSheet = useCallback(() => {
     setAssistantOpen(false);
     setNotificationsOpen(false);
+    setToolsOpen(false);
     setMoreSheetOpen(true);
   }, []);
 
-  const toggleAssistant = useCallback(() => {
+  const openNotificationsFromHub = useCallback(() => {
     setMoreSheetOpen(false);
-    setNotificationsOpen(false);
-    setAssistantOpen((open) => !open);
+    setToolsOpen(false);
+    setAssistantOpen(false);
+    setNotificationsOpen(true);
   }, []);
 
-  const toggleNotifications = useCallback(() => {
+  const openAssistantFromHub = useCallback(() => {
     setMoreSheetOpen(false);
-    setAssistantOpen(false);
-    setNotificationsOpen((open) => !open);
+    setToolsOpen(false);
+    setNotificationsOpen(false);
+    setAssistantOpen(true);
   }, []);
 
   const { tabItems, moreSections, moreItems, primaryHrefs } = useMemo(
     () =>
       splitAdminBottomNav(navSections, {
         onMoreClick: openMoreSheet,
-        assistant: !superAdmin && showAssistantFab ? { onClick: toggleAssistant } : undefined,
-        notifications: !superAdmin
-          ? {
-              onClick: toggleNotifications,
-              badge: unreadNotificationCount > 0 ? unreadNotificationCount : undefined,
-            }
-          : undefined,
       }),
-    [
-      navSections,
-      openMoreSheet,
-      superAdmin,
-      showAssistantFab,
-      toggleAssistant,
-      toggleNotifications,
-      unreadNotificationCount,
-    ]
+    [navSections, openMoreSheet]
   );
-
-  const overlayTabKey = assistantOpen
-    ? ASSISTANT_TAB_KEY
-    : notificationsOpen
-      ? NOTIFICATIONS_TAB_KEY
-      : null;
 
   const tabActiveKey = resolveBottomTabActiveKey(
     activeNavHref,
     primaryHrefs,
     moreSheetOpen,
-    overlayTabKey
+    null
   );
 
   const settingsIssueOnTabs =
@@ -826,6 +862,7 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
               if (open) {
                 setAssistantOpen(false);
                 setNotificationsOpen(false);
+                setToolsOpen(false);
               }
             }}
             moreSections={moreSections}
@@ -851,33 +888,59 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
           <GuestProfileModal open={profileModalOpen} onOpenChange={setProfileModalOpen} />
 
           {!superAdmin ? (
-            <NotificationBell
-              variant="fab"
-              open={notificationsOpen}
-              onOpenChange={(open) => {
-                if (open) {
-                  setMoreSheetOpen(false);
-                  setAssistantOpen(false);
-                }
-                setNotificationsOpen(open);
-              }}
-              className={
-                !aiMode && showAssistantFab ? notificationFabStackedBottomClassName : undefined
-              }
-            />
+            <>
+              <AdminQuickAccessHub
+                open={toolsOpen}
+                onOpenChange={(open) => {
+                  if (open) {
+                    setMoreSheetOpen(false);
+                    setAssistantOpen(false);
+                    setNotificationsOpen(false);
+                  }
+                  setToolsOpen(open);
+                }}
+                showFab={!aiMode}
+                unreadCount={unreadNotificationCount}
+                showAssistant={!aiMode && showAssistantFab}
+                messagesHref={quickAccessPaths.messagesHref}
+                helpHref={quickAccessPaths.helpHref}
+                onOpenNotifications={openNotificationsFromHub}
+                onOpenAssistant={openAssistantFromHub}
+              />
+              <NotificationBell
+                variant="panel"
+                open={notificationsOpen}
+                onOpenChange={(open) => {
+                  if (open) {
+                    setMoreSheetOpen(false);
+                    setToolsOpen(false);
+                    setAssistantOpen(false);
+                  }
+                  setNotificationsOpen(open);
+                }}
+              />
+            </>
           ) : null}
           {!superAdmin && !aiMode ? (
             <AiAssistantLauncherButton
               open={assistantOpen}
+              showFab={false}
               onOpenChange={(open) => {
                 if (open) {
                   setMoreSheetOpen(false);
+                  setToolsOpen(false);
                   setNotificationsOpen(false);
                 }
                 setAssistantOpen(open);
               }}
             />
           ) : null}
+          <AiAssistantUnavailableDialog
+            reason={assistantUnavailableReason}
+            onOpenChange={(open) => {
+              if (!open) setAssistantUnavailableReason(null);
+            }}
+          />
         </BottomBarSlotProvider>
       </DashboardChromeProvider>
     </>

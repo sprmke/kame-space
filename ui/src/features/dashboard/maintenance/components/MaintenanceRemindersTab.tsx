@@ -5,6 +5,7 @@ import { Pencil, Plus, Repeat, Trash2, Wrench } from 'lucide-react';
 import { EntityActivityHistory } from '@/features/dashboard/activity/components/EntityActivityHistory';
 import {
   AdminDataTable,
+  AdminTableActionsTh,
   AdminTableHeadRow,
   AdminTableTh,
   adminTableCell,
@@ -72,6 +73,7 @@ const INITIAL_WIZARD: MaintenanceItemFormWizardState = {
   stepLabels: ['Details', 'Reminders', 'Preview'],
   isFirstStep: true,
   isLastStep: false,
+  canProceed: false,
 };
 
 type Props = {
@@ -310,9 +312,7 @@ export function MaintenanceRemindersTab({
               <AdminTableTh className="hidden md:table-cell">Status</AdminTableTh>
             ) : null}
             <AdminTableTh className="hidden sm:table-cell">Notes</AdminTableTh>
-            <AdminTableTh className="pl-2 pr-3 text-left sm:pl-3 sm:pr-4">
-              <span className="sr-only">Actions</span>
-            </AdminTableTh>
+            <AdminTableActionsTh />
           </AdminTableHeadRow>
           <tbody>
             {displayItems.length === 0 ? (
@@ -558,6 +558,8 @@ export function MaintenanceRemindersTab({
               submitPending={submitPending}
               submitLabel={editing ? 'Save' : 'Add reminder'}
               pendingLabel={editing ? 'Saving…' : 'Adding…'}
+              canGoNext={wizard.canProceed}
+              canSubmit={wizard.canProceed}
             />
           </ResponsiveModalFooter>
         </ResponsiveModalContent>

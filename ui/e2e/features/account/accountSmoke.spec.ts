@@ -13,7 +13,7 @@ test.describe('@ci guest account shells', () => {
   test('messages page shows empty state', async ({ page }) => {
     await installGuestFavoritesMocks(page);
     await page.goto('/account/messages');
-    await expect(page.getByText('No messages yet.')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText('No messages yet')).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole('link', { name: 'Browse properties' })).toHaveAttribute(
       'href',
       '/properties'

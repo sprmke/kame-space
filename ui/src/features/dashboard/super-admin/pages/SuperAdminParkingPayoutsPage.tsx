@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Wallet } from 'lucide-react';
 
-import { computeParkingPlatformSettlement } from '@/features/dashboard/parking/lib/parkingPayout';
+import { computeParkingBookingBreakdown } from '@/features/dashboard/parking/lib/parkingPayout';
 import { SuperAdminEmptyState } from '@/features/dashboard/super-admin/components/shared/SuperAdminEmptyState';
 import { SuperAdminPage } from '@/features/dashboard/super-admin/components/shared/SuperAdminPage';
 import {
@@ -282,50 +282,47 @@ function RecordRefundDialog({ transaction }: { transaction: ParkingPayoutTransac
   );
 }
 
-function ParkingSettlementPreview({
-  guestRate,
-  commissionPct,
-  directCommissionPct,
-  paymentFeePct,
-  paymentFeeFixed,
-}: {
-  guestRate: number;
+const PREVIEW_RATES = [100, 300, 1000] as const;
+
+type PreviewSettings = {
   commissionPct: number;
   directCommissionPct: number;
+  guestFeePct: number;
+  guestFeeFixed: number;
   paymentFeePct: number;
   paymentFeeFixed: number;
-}) {
+};
+
+/** True when a config loses money at the 100 minimum or at a very high rate. */
+function losesMoney(settings: PreviewSettings): boolean {
+  return [100, 100_000].some((rate) =>
+    [settings.commissionPct, settings.directCommissionPct].some(
+      (commissionPct) =>
+        computeParkingBookingBreakdown({
+          hostGrossTotal: rate,
+          ...settings,
+          commissionPct,
+        }).platformNetTotal < 0
+    )
+  );
+}
+
+function ParkingSettlementPreview({ settings }: { settings: PreviewSettings }) {
   const [hostRate, setHostRate] = useState('300');
   const hostGross = Number(hostRate) || 0;
 
   const standard = useMemo(
-    () =>
-      computeParkingPlatformSettlement({
-        guestChargeTotal: guestRate,
-        hostGrossTotal: hostGross,
-        commissionPct,
-        paymentFeePct,
-        paymentFeeFixed,
-      }),
-    [guestRate, hostGross, commissionPct, paymentFeePct, paymentFeeFixed]
+    () => computeParkingBookingBreakdown({ hostGrossTotal: hostGross, ...settings }),
+    [hostGross, settings]
   );
-  const direct = useMemo(
-    () =>
-      computeParkingPlatformSettlement({
-        guestChargeTotal: guestRate,
-        hostGrossTotal: hostGross,
-        commissionPct: directCommissionPct,
-        paymentFeePct,
-        paymentFeeFixed,
-      }),
-    [guestRate, hostGross, directCommissionPct, paymentFeePct, paymentFeeFixed]
-  );
+  const loss = useMemo(() => losesMoney(settings), [settings]);
 
   const rows: Array<{ label: string; value: number; tone?: 'muted' | 'strong' }> = [
-    { label: 'Guest pays', value: guestRate, tone: 'muted' },
-    { label: `Host gross`, value: hostGross, tone: 'muted' },
+    { label: 'Host rate', value: standard.hostGross, tone: 'muted' },
+    { label: 'Guest fee', value: standard.guestFee, tone: 'muted' },
+    { label: 'Guest pays', value: standard.guestCharge, tone: 'strong' },
     {
-      label: `Commission (${Math.round(commissionPct * 1000) / 10}%)`,
+      label: `Commission (${Math.round(settings.commissionPct * 1000) / 10}%)`,
       value: -standard.commissionAmount,
       tone: 'muted',
     },
@@ -337,7 +334,7 @@ function ParkingSettlementPreview({
   return (
     <div className="border-border/60 bg-muted/20 rounded-lg border p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-medium">Per-night example</p>
+        <p className="text-sm font-medium">Booking example (1 night)</p>
         <div className="flex items-center gap-2">
           <Label htmlFor="parking-example-host-rate" className="text-muted-foreground text-xs">
             Host rate
@@ -375,9 +372,47 @@ function ParkingSettlementPreview({
           </div>
         ))}
       </dl>
-      <p className="text-muted-foreground mt-2 text-xs">
-        Direct link: platform net {formatPhp(direct.platformNetTotal)} per night.
-      </p>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-xs tabular-nums">
+          <caption className="text-muted-foreground pb-1 text-left">
+            Platform net per booking
+          </caption>
+          <thead>
+            <tr className="text-muted-foreground text-left">
+              <th className="py-1 pr-3 font-normal">Host rate</th>
+              <th className="py-1 pr-3 font-normal">Standard</th>
+              <th className="py-1 font-normal">Direct link</th>
+            </tr>
+          </thead>
+          <tbody>
+            {PREVIEW_RATES.map((rate) => {
+              const std = computeParkingBookingBreakdown({ hostGrossTotal: rate, ...settings });
+              const direct = computeParkingBookingBreakdown({
+                hostGrossTotal: rate,
+                ...settings,
+                commissionPct: settings.directCommissionPct,
+              });
+              return (
+                <tr key={rate} className="border-border/40 border-t">
+                  <td className="py-1 pr-3">{formatPhp(rate)}</td>
+                  <td className={cn('py-1 pr-3', std.platformNetTotal < 0 && 'text-destructive')}>
+                    {formatPhp(std.platformNetTotal)}
+                  </td>
+                  <td className={cn('py-1', direct.platformNetTotal < 0 && 'text-destructive')}>
+                    {formatPhp(direct.platformNetTotal)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {loss ? (
+        <p role="alert" className="text-destructive mt-2 text-xs">
+          These settings lose money on some bookings. Raise the guest fee or the commission. Saving
+          is blocked until every rate from ₱100 up is profitable.
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -387,8 +422,8 @@ function ParkingSettingsCard() {
   const save = useUpdatePlatformParkingSettings();
   const [commissionPct, setCommissionPct] = useState('10');
   const [directCommissionPct, setDirectCommissionPct] = useState('5');
-  const [weekday, setWeekday] = useState('400');
-  const [weekend, setWeekend] = useState('400');
+  const [guestFeePct, setGuestFeePct] = useState('5');
+  const [guestFeeFixed, setGuestFeeFixed] = useState('15');
   const [paymentFeePct, setPaymentFeePct] = useState('3.125');
   const [paymentFeeFixed, setPaymentFeeFixed] = useState('15');
   const [escalationPhone, setEscalationPhone] = useState('');
@@ -398,8 +433,8 @@ function ParkingSettingsCard() {
     if (!data || initialized) return;
     setCommissionPct(String(Math.round(data.commissionPct * 1000) / 10));
     setDirectCommissionPct(String(Math.round(data.directCommissionPct * 1000) / 10));
-    setWeekday(String(data.guestRateWeekday));
-    setWeekend(String(data.guestRateWeekend));
+    setGuestFeePct(String(Math.round(data.guestFeePct * 1000) / 10));
+    setGuestFeeFixed(String(data.guestFeeFixed));
     setPaymentFeePct(String(Math.round(data.paymentFeePct * 10000) / 100));
     setPaymentFeeFixed(String(data.paymentFeeFixed));
     setEscalationPhone(data.supportEscalationPhone ?? '');
@@ -409,8 +444,8 @@ function ParkingSettingsCard() {
   const settingsInput = {
     commissionPct: Number(commissionPct) / 100,
     directCommissionPct: Number(directCommissionPct) / 100,
-    guestRateWeekday: Number(weekday),
-    guestRateWeekend: Number(weekend),
+    guestFeePct: Number(guestFeePct) / 100,
+    guestFeeFixed: Number(guestFeeFixed),
     paymentFeePct: Number(paymentFeePct) / 100,
     paymentFeeFixed: Number(paymentFeeFixed),
     supportEscalationPhone: escalationPhone.trim(),
@@ -420,8 +455,8 @@ function ParkingSettingsCard() {
     initialized &&
     (commissionPct !== String(Math.round(data.commissionPct * 1000) / 10) ||
       directCommissionPct !== String(Math.round(data.directCommissionPct * 1000) / 10) ||
-      weekday !== String(data.guestRateWeekday) ||
-      weekend !== String(data.guestRateWeekend) ||
+      guestFeePct !== String(Math.round(data.guestFeePct * 1000) / 10) ||
+      guestFeeFixed !== String(data.guestFeeFixed) ||
       paymentFeePct !== String(Math.round(data.paymentFeePct * 10000) / 100) ||
       paymentFeeFixed !== String(data.paymentFeeFixed) ||
       escalationPhone.trim() !== (data.supportEscalationPhone ?? '').trim());
@@ -439,14 +474,14 @@ function ParkingSettingsCard() {
 
   if (isLoading && !data)
     return (
-      <SuperAdminSettingsBodySkeleton cards={1} titles={['Commission, guest rate & margin']} />
+      <SuperAdminSettingsBodySkeleton cards={1} titles={['Commission, guest fee & margin']} />
     );
   if (error) return <p className="text-destructive text-sm">Could not load parking settings.</p>;
 
   return (
     <SuperAdminSettingsCard
-      title="Commission, guest rate & margin"
-      description="Guests pay the guest rate. Hosts are paid their rate minus commission. The processor fee estimates what the payment provider keeps. Changes apply to new bookings only."
+      title="Commission, guest fee & margin"
+      description="Hosts set their own rate. Guests pay it plus the guest fee. Hosts are paid their rate minus commission. The processor fee estimates what the payment provider keeps. Changes apply to new bookings only."
       icon={<Wallet className="text-muted-foreground size-4" aria-hidden />}
       onSubmit={() => void saveSettings()}
       footer={
@@ -488,30 +523,33 @@ function ParkingSettingsCard() {
             </SuperAdminSettingsRow>
             <SuperAdminSettingsRow
               stacked
-              label="Guest rate weekday (₱/night)"
-              htmlFor="guest-rate-weekday"
+              label="Guest fee (%)"
+              htmlFor="guest-fee-pct"
+              description="Added on top of the host rate."
             >
               <Input
-                id="guest-rate-weekday"
+                id="guest-fee-pct"
                 type="number"
                 min={0}
-                step={1}
-                value={weekday}
-                onChange={(event) => setWeekday(event.target.value)}
+                max={100}
+                step={0.1}
+                value={guestFeePct}
+                onChange={(event) => setGuestFeePct(event.target.value)}
               />
             </SuperAdminSettingsRow>
             <SuperAdminSettingsRow
               stacked
-              label="Guest rate weekend (₱/night)"
-              htmlFor="guest-rate-weekend"
+              label="Guest fee fixed (₱)"
+              htmlFor="guest-fee-fixed"
+              description="Per booking, not per night."
             >
               <Input
-                id="guest-rate-weekend"
+                id="guest-fee-fixed"
                 type="number"
                 min={0}
-                step={1}
-                value={weekend}
-                onChange={(event) => setWeekend(event.target.value)}
+                step={0.01}
+                value={guestFeeFixed}
+                onChange={(event) => setGuestFeeFixed(event.target.value)}
               />
             </SuperAdminSettingsRow>
             <SuperAdminSettingsRow
@@ -548,11 +586,14 @@ function ParkingSettingsCard() {
           </div>
 
           <ParkingSettlementPreview
-            guestRate={Number(weekday) || 0}
-            commissionPct={Number(commissionPct) / 100 || 0}
-            directCommissionPct={Number(directCommissionPct) / 100 || 0}
-            paymentFeePct={Number(paymentFeePct) / 100 || 0}
-            paymentFeeFixed={Number(paymentFeeFixed) || 0}
+            settings={{
+              commissionPct: Number(commissionPct) / 100 || 0,
+              directCommissionPct: Number(directCommissionPct) / 100 || 0,
+              guestFeePct: Number(guestFeePct) / 100 || 0,
+              guestFeeFixed: Number(guestFeeFixed) || 0,
+              paymentFeePct: Number(paymentFeePct) / 100 || 0,
+              paymentFeeFixed: Number(paymentFeeFixed) || 0,
+            }}
           />
           <SuperAdminSettingsRow
             stacked

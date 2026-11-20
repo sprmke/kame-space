@@ -37,6 +37,13 @@ type Calls = { aiReview: number; issueStayGuide: number };
 async function openBooking(page: Page, tier: TierCode): Promise<Calls> {
   const calls: Calls = { aiReview: 0, issueStayGuide: 0 };
   await installTierGateMocks(page, tier);
+  await page.route('**/functions/v1/get-booking**', (route) => {
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: BOOKING }),
+    });
+  });
   await page.route('**/rest/v1/guest_submissions*', (route) => {
     const single = (route.request().headers()['accept'] ?? '').includes('pgrst.object');
     return route.fulfill({

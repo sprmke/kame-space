@@ -263,6 +263,25 @@ export async function checkRateLimit(options: RateLimitOptions): Promise<RateLim
   }
 }
 
+function rateLimitedResponse(req: Request, decision: RateLimitDecision): Response {
+  return new Response(
+    JSON.stringify({
+      success: false,
+      error: 'Too many requests. Please wait a moment and try again.',
+      retryAfterSec: decision.retryAfterSec,
+      rateLimited: true,
+    }),
+    {
+      status: 429,
+      headers: {
+        ...corsHeaders(req),
+        'Content-Type': 'application/json',
+        'Retry-After': String(decision.retryAfterSec),
+      },
+    }
+  );
+}
+
 /**
  * Non-throwing gate for edge handlers: returns a ready-to-send CORS-headed 429
  * `Response` (full envelope + `Retry-After`) when the caller is over the limit,
@@ -282,21 +301,18 @@ export async function rateLimitGate(
 ): Promise<Response | null> {
   const decision = await checkRateLimit(options);
   if (decision.allowed) return null;
+  return rateLimitedResponse(req, decision);
+}
 
-  return new Response(
-    JSON.stringify({
-      success: false,
-      error: 'Too many requests. Please wait a moment and try again.',
-      retryAfterSec: decision.retryAfterSec,
-      rateLimited: true,
-    }),
-    {
-      status: 429,
-      headers: {
-        ...corsHeaders(req),
-        'Content-Type': 'application/json',
-        'Retry-After': String(decision.retryAfterSec),
-      },
-    }
-  );
+/**
+ * Same response shape as `rateLimitGate`, counted in the isolate with no I/O.
+ *
+ * Only for answers that cost no database work (an in-isolate cache hit). The count is per
+ * isolate, so it is a burst dampener and not a global quota; every request that would reach
+ * the database still goes through the durable `rateLimitGate`.
+ */
+export function rateLimitGateInMemory(req: Request, options: RateLimitOptions): Response | null {
+  const decision = checkRateLimitInMemory(options);
+  if (decision.allowed) return null;
+  return rateLimitedResponse(req, decision);
 }

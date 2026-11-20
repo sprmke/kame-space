@@ -39,7 +39,8 @@ import {
   searchPublicProperties,
   windowedPage,
 } from '../_shared/publicListingSearch.ts';
-import { publicGetRateLimitGate } from '../_shared/publicEndpointRateLimit.ts';
+import { cachedPublicListingRead } from '../_shared/publicCachedRead.ts';
+import { listingCacheKey } from '../_shared/publicListingCache.ts';
 import { servePublic } from '../_shared/serveEdge.ts';
 
 type SearchType = 'all' | 'properties' | 'developments' | 'parkings';
@@ -110,9 +111,6 @@ servePublic('search-listings', async (req) => {
   if (req.method !== 'GET') {
     return jsonError(req, `Method ${req.method} not allowed`, 405);
   }
-
-  const limited = await publicGetRateLimitGate(req, 'search-listings');
-  if (limited) return limited;
 
   const url = new URL(req.url);
   const where = readQueryText(url.searchParams.get('where') ?? url.searchParams.get('location'));
@@ -267,84 +265,91 @@ servePublic('search-listings', async (req) => {
     };
   }
 
-  let activeSearch = buildActiveSearch(resolvedIntent, lat ?? 0, lng ?? 0);
-  let responseIntent: MetaIntent =
-    resolvedIntent.kind === 'nearby'
-      ? 'nearby'
-      : resolvedIntent.kind === 'concept'
-        ? 'concept'
-        : 'literal';
-  let usedSmartFallback = false;
-  let fallbackConceptId: string | null = null;
-  let fallbackLabel: string | null = null;
-
   try {
-    let result = await runListings(activeSearch);
-    let propertyTotal = result.propertyTotal;
-    let developmentTotal = result.developmentTotal;
-    let parkingTotal = result.parkingTotal;
-    let allTotal = propertyTotal + developmentTotal + parkingTotal;
-
-    if (activeSearch.mode === 'literal' && activeSearch.query && allTotal === 0) {
-      const fallback = findConceptFallback(where);
-      if (fallback?.kind === 'concept') {
-        activeSearch = {
-          mode: 'concept',
-          expandedTerms: fallback.expandedTerms,
-          propertyTypes: fallback.propertyTypes,
-          conceptId: fallback.conceptId,
-          label: fallback.label,
-        };
-        usedSmartFallback = true;
-        responseIntent = 'expanded';
-        fallbackConceptId = fallback.conceptId;
-        fallbackLabel = fallback.label;
-        result = await runListings(activeSearch);
-        propertyTotal = result.propertyTotal;
-        developmentTotal = result.developmentTotal;
-        parkingTotal = result.parkingTotal;
-        allTotal = propertyTotal + developmentTotal + parkingTotal;
-      }
-    }
-
-    const meta = {
-      intent: responseIntent,
-      intentLabel:
-        resolvedIntent.kind === 'nearby'
-          ? resolvedIntent.label
-          : resolvedIntent.kind === 'concept'
-            ? resolvedIntent.label
-            : usedSmartFallback
-              ? fallbackLabel
-              : null,
-      needsLocation: false,
-      usedSmartFallback,
-      conceptId:
-        resolvedIntent.kind === 'concept'
-          ? resolvedIntent.conceptId
-          : usedSmartFallback
-            ? fallbackConceptId
-            : null,
-    };
-
-    return jsonSuccess(
+    const read = await cachedPublicListingRead(
       req,
-      {
-        query: queryPayload,
-        totals: {
-          properties: propertyTotal,
-          developments: developmentTotal,
-          parkings: parkingTotal,
-          all: allTotal,
-        },
-        properties: result.properties,
-        developments: result.developments,
-        parkings: result.parkings,
-        meta,
-      },
-      undefined,
-      'publicDynamic'
+      'search-listings',
+      listingCacheKey('search-listings', queryPayload),
+      // Date-filtered searches read live availability, which bookings change without
+      // touching the catalog, so they are never cached.
+      { families: ['property', 'development', 'parking'], bypass: range != null },
+      async () => {
+        let activeSearch = buildActiveSearch(resolvedIntent, lat ?? 0, lng ?? 0);
+        let responseIntent: MetaIntent =
+          resolvedIntent.kind === 'nearby'
+            ? 'nearby'
+            : resolvedIntent.kind === 'concept'
+              ? 'concept'
+              : 'literal';
+        let usedSmartFallback = false;
+        let fallbackConceptId: string | null = null;
+        let fallbackLabel: string | null = null;
+
+        let result = await runListings(activeSearch);
+        let propertyTotal = result.propertyTotal;
+        let developmentTotal = result.developmentTotal;
+        let parkingTotal = result.parkingTotal;
+        let allTotal = propertyTotal + developmentTotal + parkingTotal;
+
+        if (activeSearch.mode === 'literal' && activeSearch.query && allTotal === 0) {
+          const fallback = findConceptFallback(where);
+          if (fallback?.kind === 'concept') {
+            activeSearch = {
+              mode: 'concept',
+              expandedTerms: fallback.expandedTerms,
+              propertyTypes: fallback.propertyTypes,
+              conceptId: fallback.conceptId,
+              label: fallback.label,
+            };
+            usedSmartFallback = true;
+            responseIntent = 'expanded';
+            fallbackConceptId = fallback.conceptId;
+            fallbackLabel = fallback.label;
+            result = await runListings(activeSearch);
+            propertyTotal = result.propertyTotal;
+            developmentTotal = result.developmentTotal;
+            parkingTotal = result.parkingTotal;
+            allTotal = propertyTotal + developmentTotal + parkingTotal;
+          }
+        }
+
+        const meta = {
+          intent: responseIntent,
+          intentLabel:
+            resolvedIntent.kind === 'nearby'
+              ? resolvedIntent.label
+              : resolvedIntent.kind === 'concept'
+                ? resolvedIntent.label
+                : usedSmartFallback
+                  ? fallbackLabel
+                  : null,
+          needsLocation: false,
+          usedSmartFallback,
+          conceptId:
+            resolvedIntent.kind === 'concept'
+              ? resolvedIntent.conceptId
+              : usedSmartFallback
+                ? fallbackConceptId
+                : null,
+        };
+
+        return {
+          query: queryPayload,
+          totals: {
+            properties: propertyTotal,
+            developments: developmentTotal,
+            parkings: parkingTotal,
+            all: allTotal,
+          },
+          properties: result.properties,
+          developments: result.developments,
+          parkings: result.parkings,
+          meta,
+        };
+      }
     );
+    if ('limited' in read) return read.limited;
+    return jsonSuccess(req, read.value, undefined, 'publicDynamic');
   } catch {
     return jsonError(req, 'Failed to search listings', 500);
   }

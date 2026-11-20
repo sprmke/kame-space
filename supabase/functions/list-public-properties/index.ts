@@ -22,7 +22,8 @@ import { jsonError, jsonResponse } from '../_shared/httpResponse.ts';
 import { MAP_MARKER_CAP, readGeoOrigin, readMapBbox } from '../_shared/publicGeoScope.ts';
 import { amenityLabelForId, propertyTypeLabel } from '../_shared/publicListingFacets.ts';
 import { loadPropertyCards } from '../_shared/publicListingCards.ts';
-import { listingCacheKey, withListingCache } from '../_shared/publicListingCache.ts';
+import { listingCacheKey } from '../_shared/publicListingCache.ts';
+import { cachedPublicListingRead } from '../_shared/publicCachedRead.ts';
 import {
   parseBoundedCsv,
   parseFlexDays,
@@ -36,7 +37,6 @@ import {
   type PropertySearchParams,
 } from '../_shared/publicListingSearch.ts';
 import { servePublic } from '../_shared/serveEdge.ts';
-import { publicGetRateLimitGate } from '../_shared/publicEndpointRateLimit.ts';
 
 type SortKey = 'recommended' | 'rating' | 'reviews' | 'newest';
 
@@ -54,9 +54,6 @@ servePublic('list-public-properties', async (req) => {
   if (req.method !== 'GET') {
     return jsonError(req, 'Method not allowed', 405);
   }
-
-  const limited = await publicGetRateLimitGate(req, 'list-public-properties');
-  if (limited) return limited;
 
   const url = new URL(req.url);
   const sp = url.searchParams;
@@ -96,7 +93,9 @@ servePublic('list-public-properties', async (req) => {
   };
 
   try {
-    const body = await withListingCache(
+    const read = await cachedPublicListingRead(
+      req,
+      'list-public-properties',
       listingCacheKey('list-public-properties', { ...base, requestedPage, pageSize, mapMode }),
       { families: ['property'], bypass: range != null },
       async () => {
@@ -135,6 +134,8 @@ servePublic('list-public-properties', async (req) => {
         };
       }
     );
+    if ('limited' in read) return read.limited;
+    const body = read.value;
 
     return jsonResponse(req, body, 200, range ? 'publicAvailability' : 'publicDynamic');
   } catch (error) {

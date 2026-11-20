@@ -21,7 +21,8 @@ import { parseRequestedRange } from '../_shared/availabilityService.ts';
 import { jsonError, jsonResponse } from '../_shared/httpResponse.ts';
 import { MAP_MARKER_CAP, readGeoOrigin, readMapBbox } from '../_shared/publicGeoScope.ts';
 import { loadParkingCards } from '../_shared/publicListingCards.ts';
-import { listingCacheKey, withListingCache } from '../_shared/publicListingCache.ts';
+import { listingCacheKey } from '../_shared/publicListingCache.ts';
+import { cachedPublicListingRead } from '../_shared/publicCachedRead.ts';
 import {
   parseBoundedCsv,
   parseFlexDays,
@@ -34,7 +35,6 @@ import {
   type ParkingSearchParams,
 } from '../_shared/publicListingSearch.ts';
 import { servePublic } from '../_shared/serveEdge.ts';
-import { publicGetRateLimitGate } from '../_shared/publicEndpointRateLimit.ts';
 
 type ParkingLocation = 'inside_tower' | 'outside_tower' | 'motorcycle';
 
@@ -56,9 +56,6 @@ servePublic('list-public-parkings', async (req) => {
   if (req.method !== 'GET') {
     return jsonError(req, 'Method not allowed', 405);
   }
-
-  const limited = await publicGetRateLimitGate(req, 'list-public-parkings');
-  if (limited) return limited;
 
   const url = new URL(req.url);
   const sp = url.searchParams;
@@ -93,7 +90,9 @@ servePublic('list-public-parkings', async (req) => {
   };
 
   try {
-    const body = await withListingCache(
+    const read = await cachedPublicListingRead(
+      req,
+      'list-public-parkings',
       listingCacheKey('list-public-parkings', { ...base, requestedPage, pageSize, mapMode }),
       { families: ['parking'], bypass: range != null },
       async () => {
@@ -127,6 +126,8 @@ servePublic('list-public-parkings', async (req) => {
         };
       }
     );
+    if ('limited' in read) return read.limited;
+    const body = read.value;
 
     return jsonResponse(req, body, 200, range ? 'publicAvailability' : 'publicDynamic');
   } catch (error) {

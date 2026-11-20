@@ -1,6 +1,6 @@
 /**
  * Phase 4 — single resolver for the parkings vertical's platform-level config (commission %,
- * guest rate). Replaces direct reads of the Phase 2/3 interim stubs everywhere except as a
+ * guest service fee). Replaces direct reads of the Phase 2/3 interim stubs everywhere except as a
  * fallback here if the config row is somehow missing (shouldn't happen — the migration seeds
  * it). Callers should resolve this ONCE per operation and thread the values through, not
  * re-query per candidate/night — see `parkingBroadcastRanking.ts` and
@@ -18,8 +18,9 @@ import { createServiceClient } from './orgAuth.ts';
 const STUB_COMMISSION_PCT = 0.1;
 /** Phase 8 default — half the standard stub, mirrors the migration's column default. */
 const STUB_DIRECT_COMMISSION_PCT = 0.05;
-const STUB_GUEST_PARKING_RATE_WEEKDAY = 400;
-const STUB_GUEST_PARKING_RATE_WEEKEND = 400;
+/** Guest service fee added on top of the host rate; mirrors the migration defaults. */
+const STUB_GUEST_FEE_PCT = 0.05;
+const STUB_GUEST_FEE_FIXED = 15;
 /** Estimated PayMongo local-card cut; editable in the super-admin payout settings. */
 const STUB_PAYMENT_FEE_PCT = 0.03125;
 const STUB_PAYMENT_FEE_FIXED = 15;
@@ -28,8 +29,9 @@ export type ParkingPlatformSettings = {
   commissionPct: number;
   /** Phase 8 — applied instead of commissionPct when a booking's channel is 'direct_link'. */
   directCommissionPct: number;
-  guestRateWeekday: number;
-  guestRateWeekend: number;
+  /** Guest service fee: fraction of the host gross, plus a flat peso amount per booking. */
+  guestFeePct: number;
+  guestFeeFixed: number;
   /** Estimated processor cut of the guest charge, used only for platform net margin. */
   paymentFeePct: number;
   /** Fixed per-transaction processor fee in pesos. */
@@ -37,25 +39,12 @@ export type ParkingPlatformSettings = {
   supportEscalationPhone: string | null;
 };
 
-/**
- * Guest-facing nightly rate. Cards, detail, form summary, status and checkout must all use
- * this instead of the listing's host rate (`parkings.rate_per_night` /
- * `parking_settings.weekday_nightly_rate`), which is a payout input only (G-1).
- */
-export async function resolveParkingGuestNightlyRate(): Promise<{
-  weekday: number;
-  weekend: number;
-}> {
-  const settings = await resolveParkingPlatformSettings();
-  return { weekday: settings.guestRateWeekday, weekend: settings.guestRateWeekend };
-}
-
 export async function resolveParkingPlatformSettings(): Promise<ParkingPlatformSettings> {
   const supabase = createServiceClient();
   const { data } = await supabase
     .from('platform_parking_settings')
     .select(
-      'commission_pct, direct_commission_pct, guest_rate_weekday, guest_rate_weekend, payment_fee_pct, payment_fee_fixed, support_escalation_phone'
+      'commission_pct, direct_commission_pct, guest_fee_pct, guest_fee_fixed, payment_fee_pct, payment_fee_fixed, support_escalation_phone'
     )
     .eq('id', 1)
     .maybeSingle();
@@ -63,8 +52,8 @@ export async function resolveParkingPlatformSettings(): Promise<ParkingPlatformS
   return {
     commissionPct: Number(data?.commission_pct ?? STUB_COMMISSION_PCT),
     directCommissionPct: Number(data?.direct_commission_pct ?? STUB_DIRECT_COMMISSION_PCT),
-    guestRateWeekday: Number(data?.guest_rate_weekday ?? STUB_GUEST_PARKING_RATE_WEEKDAY),
-    guestRateWeekend: Number(data?.guest_rate_weekend ?? STUB_GUEST_PARKING_RATE_WEEKEND),
+    guestFeePct: Number(data?.guest_fee_pct ?? STUB_GUEST_FEE_PCT),
+    guestFeeFixed: Number(data?.guest_fee_fixed ?? STUB_GUEST_FEE_FIXED),
     paymentFeePct: Number(data?.payment_fee_pct ?? STUB_PAYMENT_FEE_PCT),
     paymentFeeFixed: Number(data?.payment_fee_fixed ?? STUB_PAYMENT_FEE_FIXED),
     supportEscalationPhone: (data?.support_escalation_phone as string | undefined)?.trim() || null,

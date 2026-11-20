@@ -13,20 +13,24 @@ Route: `/org/:orgSlug/parking/:parkingSlug/finance`
 
 ## Overview
 
-**Marketplace payouts** are read-only rows from `parking-payments`: guest paid, gross, fee, net, and payout/refund status. They are separate from the manual finance ledger; disbursements and refunds are recorded by a super admin on `/admin/parking/payouts`.
+Same finance dashboard as property **`FinancePage`**, including the **brand hero** shell on phone/tablet (`AdminMobilePage` — one ··· menu for Add transaction + PDF export; date range in overlapping toolbar). Month/date filter, summary cards, cash-flow chart, ledger toolbar (table / card / calendar), **Add Transaction**, and **Export report**.
 
-Same finance dashboard as property **`FinancePage`**, including the **brand hero** shell on phone/tablet (`AdminMobilePage` — one ··· menu for Add transaction + PDF export; date range in overlapping toolbar). Month/date filter, summary cards, cash-flow chart, ledger toolbar (table / card / calendar), **Add Transaction**, and **Export report**. Operating income and expense lines are scoped to the parking slot via `parking_id` on `finance_line_items`. There is no stays ledger for parking (no `guest_submissions` link); summary cards and charts reflect operating transactions only.
+**One ledger.** Manual operating lines (`finance_line_items` with `parking_id`) and read-only **marketplace payouts** (`parking-payments`) share the same table / card / calendar. Payout rows use category **Marketplace**, show guest paid + fee in the subtitle, net in Amount, and status labels Disbursed / Awaiting payout / Refund review / Refunded (filterable as Completed / Pending / Canceled). Direct-link bookings are marked in the description. Hosts cannot edit or delete payout rows; disbursements and refunds are recorded by a super admin on `/admin/parking/payouts`.
+
+There is no stays ledger for parking (no `guest_submissions` link). Summary cards and charts still reflect **operating** transactions only (marketplace payouts are list-only so they do not double-count KPI income).
 
 ---
 
 ## Host-facing knowledge
 
-Parking **Finance** tracks money in and out for this slot only: rent collected, maintenance, supplies, and other operating lines. It works like property finance: add income or expenses, view them in a table or calendar, export reports, and set Telegram reminders for due dates. There is **no stays ledger** here because parking finance is separate from guest stay bookings.
+Parking **Finance** tracks money in and out for this slot: your own income and expense lines, plus marketplace booking payouts in the same list. It works like property finance: add income or expenses, filter by status or category, view table / cards / calendar, export reports, and set Telegram reminders for due dates. There is **no stays ledger** here because parking finance is separate from guest stay bookings.
 
 **Common host questions**
 
+- Q: Where are marketplace payouts?
+  A: In the same transactions list as your manual lines. Look for category **Marketplace**, or filter status to Pending for awaiting payout and Completed for disbursed. The subtitle shows what the guest paid and the platform fee; Amount is your net.
 - Q: Can I see guest stay payments on this page?
-  A: No. This ledger is for the parking slot’s own operating transactions. Guest stay payments stay under each **property’s** finance module.
+  A: No. Guest stay payments stay under each **property’s** finance module. This page is only for this parking slot.
 - Q: How do I get reminded before a bill is due?
   A: Configure **Finance** notifications (Telegram) under this slot’s **Notifications** page, then add due dates when you create or edit expense lines.
 - Q: Who can add or delete transactions?
@@ -77,16 +81,17 @@ Property finance uses `property_id` instead; never send both.
 
 ## Implementation map
 
-| Concern      | Path                                                                                                  |
-| ------------ | ----------------------------------------------------------------------------------------------------- |
-| Page         | `ui/src/features/dashboard/parking/pages/ParkingFinancePage.tsx`                                      |
-| Loading      | `FinancePageBodySkeleton` (`FinancePageSkeleton.tsx`) — same KPIs, charts, toolbar, responsive ledger |
-| Shared UI    | `ui/src/features/dashboard/finance/components/*`                                                      |
-| Hooks        | `useFinanceSummary`, `useFinanceLineItems` (asset scope via `useAdminAssetScope`)                     |
-| API client   | `ui/src/features/dashboard/finance/hooks/useFinanceApi.ts`, `assetEdgeFetch`                          |
-| DB           | `finance_line_items.parking_id` — migration `20260919120000_finance_line_items_parking_id.sql`        |
-| Server scope | `supabase/functions/_shared/financeAssetScope.ts`                                                     |
-| Server CRUD  | `supabase/functions/finance-line-items/index.ts`                                                      |
+| Concern           | Path                                                                                                                            |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Page              | `ui/src/features/dashboard/parking/pages/ParkingFinancePage.tsx`                                                                |
+| Payout→ledger map | `ui/src/features/dashboard/parking/lib/parkingFinanceLedger.ts`                                                                 |
+| Loading           | `FinancePageBodySkeleton` (`FinancePageSkeleton.tsx`) — same KPIs, Cash flow area + Breakdown donut, toolbar, responsive ledger |
+| Shared UI         | `ui/src/features/dashboard/finance/components/*`                                                                                |
+| Hooks             | `useFinanceSummary`, `useFinanceLineItems`, `useParkingPayments`                                                                |
+| API client        | `ui/src/features/dashboard/finance/hooks/useFinanceApi.ts`, `assetEdgeFetch`                                                    |
+| DB                | `finance_line_items.parking_id` — migration `20260919120000_finance_line_items_parking_id.sql`                                  |
+| Server scope      | `supabase/functions/_shared/financeAssetScope.ts`                                                                               |
+| Server CRUD       | `supabase/functions/finance-line-items/index.ts`                                                                                |
 
 ---
 
@@ -94,6 +99,6 @@ Property finance uses `property_id` instead; never send both.
 
 | Layer | Path / spec                                                                  | Manual        |
 | ----- | ---------------------------------------------------------------------------- | ------------- |
-| Unit  | `parkingStatusMachine_test.ts`                                               | —             |
+| Unit  | `parkingFinanceLedger.test.ts`, `parkingStatusMachine_test.ts`               | —             |
 | E2E   | [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs | PayMongo live |
 | N/A   | Parking host dashboard shell load                                            | —             |

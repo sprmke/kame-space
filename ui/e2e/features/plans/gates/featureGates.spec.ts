@@ -123,9 +123,9 @@ const SURFACES: GateSurface[] = [
   },
   {
     feature: 'customTemplates',
-    name: 'Templates: Add Template',
+    name: 'Templates: New template',
     path: `${PROPERTY}/templates`,
-    control: (page) => page.getByRole('button', { name: /Add Template/ }),
+    control: (page) => page.getByRole('button', { name: /New template/ }),
     scope: parentScope,
     behaviour: 'modal',
   },
@@ -184,7 +184,7 @@ const SURFACES: GateSurface[] = [
   {
     feature: 'metaChatChannel',
     name: 'Inbox: Connect a channel',
-    path: `${PROPERTY}/inbox`,
+    path: `${PROPERTY}/messages`,
     control: (page) => page.getByRole('button', { name: /Connect/ }).first(),
     scope: parentScope,
     behaviour: 'modal',

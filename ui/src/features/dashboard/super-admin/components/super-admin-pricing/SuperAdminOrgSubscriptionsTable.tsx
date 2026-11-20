@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import {
   AdminDataTable,
+  AdminTableActionsTh,
   AdminTableHeadRow,
   AdminTableTh,
   adminTableBodyText,
@@ -47,7 +48,7 @@ export function SuperAdminOrgSubscriptionsTable({
         <AdminTableTh className="pl-4 pr-3 sm:pl-5">Organization</AdminTableTh>
         <AdminTableTh className="hidden px-3 md:table-cell md:px-4">Properties</AdminTableTh>
         <AdminTableTh className="px-3 sm:px-4">Current plan</AdminTableTh>
-        <AdminTableTh className="pl-2 pr-3 text-right sm:pl-3 sm:pr-4">Assign</AdminTableTh>
+        <AdminTableActionsTh>Assign</AdminTableActionsTh>
         {onReassessSuperhost ? (
           <AdminTableTh className="hidden pl-2 pr-4 text-right lg:table-cell">
             Superhost

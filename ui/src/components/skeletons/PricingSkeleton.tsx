@@ -24,7 +24,12 @@ const PROPERTY_STATS = [
   { title: 'Smart Pricing', icon: Wand2, hasHint: true },
 ] as const;
 
-const PARKING_STATS = PROPERTY_STATS.slice(0, 3);
+const PARKING_STATS = [
+  { title: 'Your base rate', icon: DollarSign, hasHint: false },
+  { title: 'Weekend Premium', icon: TrendingUp, hasHint: true },
+  { title: 'Custom Dates', icon: Calendar, hasHint: true },
+  { title: 'Blocked nights', icon: Ban, hasHint: true },
+] as const;
 
 /** One `MoneyInput`: label, ₱ input, optional helper line (parking shows payout copy). */
 function MoneyInputSkeleton({ helper = false }: { helper?: boolean }) {
@@ -83,15 +88,16 @@ function RatesFormSkeleton({
   );
 }
 
-/** `ParkingDirectLinkCard`: title, commission line, copy button (URL hidden until loaded). */
+/** `ParkingDirectLinkCard`: title, fee line, payout preview, copy button. */
 function DirectLinkCardSkeleton() {
   return (
     <section className="surface-card p-4 sm:p-5" aria-hidden>
       <div className="space-y-3">
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <h3 className="text-foreground text-sm font-semibold">Direct booking link</h3>
           <Skeleton className="h-4 w-56 max-w-full" />
         </div>
+        <Skeleton className="h-[4.25rem] w-full rounded-lg" />
         <Skeleton className="h-11 w-full rounded-lg" />
       </div>
     </section>

@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import type { ReactNode } from 'react';
 
-import { Navigate, Route, useParams } from 'react-router-dom';
+import { Navigate, Route, useLocation, useParams } from 'react-router-dom';
 
 import { orgPropertiesPath } from '@/features/dashboard/org/lib/tenantPaths';
 import type { ParkingRouteFn, PropertyRouteFn } from '@/features/dashboard/org/routes/guards';
@@ -22,26 +22,39 @@ const PropertyInboxPage = lazy(() =>
   }))
 );
 
-/** Legacy org inbox → properties (pick a property to open Guest Inbox). */
+/** Legacy org inbox → properties (pick a property to open Messages). */
 export function OrgInboxRedirect() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   return <Navigate to={orgSlug ? orgPropertiesPath(orgSlug) : '/'} replace />;
 }
 
+/** Old `/inbox` URLs → `/messages`, keeping query and hash. */
+export function LegacyInboxToMessagesRedirect() {
+  const location = useLocation();
+  const pathname = location.pathname.replace(/\/inbox\/?$/, '/messages');
+  return <Navigate to={`${pathname}${location.search}${location.hash}`} replace />;
+}
+
 export function propertyInboxRoute(propertyRoute: PropertyRouteFn): ReactNode {
   return (
-    <Route
-      path="inbox"
-      element={propertyRoute('inbox', <PropertyInboxPage />, <PropertyInboxRouteSkeleton />)}
-    />
+    <>
+      <Route
+        path="messages"
+        element={propertyRoute('inbox', <PropertyInboxPage />, <PropertyInboxRouteSkeleton />)}
+      />
+      <Route path="inbox" element={<LegacyInboxToMessagesRedirect />} />
+    </>
   );
 }
 
 export function parkingInboxRoute(parkingRoute: ParkingRouteFn): ReactNode {
   return (
-    <Route
-      path="inbox"
-      element={parkingRoute('inbox', <ParkingInboxPage />, <ParkingInboxRouteSkeleton />)}
-    />
+    <>
+      <Route
+        path="messages"
+        element={parkingRoute('inbox', <ParkingInboxPage />, <ParkingInboxRouteSkeleton />)}
+      />
+      <Route path="inbox" element={<LegacyInboxToMessagesRedirect />} />
+    </>
   );
 }

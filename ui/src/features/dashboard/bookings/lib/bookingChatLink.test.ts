@@ -30,7 +30,7 @@ describe('resolveBookingChatDestination', () => {
         { booking_kind: 'property', property_id: 'p1', property_slug: 'solea' },
         'acme'
       )
-    ).toEqual({ kind: 'property', id: 'p1', inboxPath: '/org/acme/property/solea/inbox' });
+    ).toEqual({ kind: 'property', id: 'p1', inboxPath: '/org/acme/property/solea/messages' });
   });
 
   it('prefers route context on a property dashboard', () => {
@@ -39,7 +39,7 @@ describe('resolveBookingChatDestination', () => {
         propertyId: 'p9',
         propertySlug: 'ctx',
       })
-    ).toEqual({ kind: 'property', id: 'p9', inboxPath: '/org/acme/property/ctx/inbox' });
+    ).toEqual({ kind: 'property', id: 'p9', inboxPath: '/org/acme/property/ctx/messages' });
   });
 
   it('routes parking bookings to the parking inbox, ahead of any property id', () => {
@@ -54,7 +54,7 @@ describe('resolveBookingChatDestination', () => {
         },
         'acme'
       )
-    ).toEqual({ kind: 'parking', id: 'k1', inboxPath: '/org/acme/parking/lot-a/inbox' });
+    ).toEqual({ kind: 'parking', id: 'k1', inboxPath: '/org/acme/parking/lot-a/messages' });
   });
 
   it('returns null when the org, id or slug is missing', () => {

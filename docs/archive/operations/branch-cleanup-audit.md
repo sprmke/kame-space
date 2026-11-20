@@ -35,26 +35,37 @@ PR #204 (`docs/readiness-dashboard-2026-11-01`) closed automatically when its br
 its patch was already in `develop` (`git cherry` showed it as applied). PR #153
 (`ci/pin-actions-sha`) is untouched and still open.
 
+## 2026-11-20 cleanup (booking detail edge read)
+
+Base: `develop` (`3069f595b`), `main` (`248976723`). Post-prod cleanup after PRs #546 / #548.
+
+| Removed                                              | Tip         | Why it was safe                                                                                      |
+| ---------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------- |
+| `fix/booking-detail-edge-read` (local + remote)      | `336a99d9f` | Squash-merged as #546 → `develop` (`3069f595b`) and #548 → `main`. Key files identical to `develop`. |
+| `release/booking-detail-edge-read` (remote; earlier) | `095f532af` | Squash-merged as #548 → `main`; remote already gone after merge `--delete-branch`.                   |
+
+Also removed a temporary `supabase/.env.dev.local` symlink created for the prod edge deploy. No dedicated worktree for this change. Route / edge docs already updated in the same PRs.
+
 ## 2026-11-17 cleanup (after the phone-search release)
 
 Base: `develop` (`30169f062`). Only branches whose PRs were already merged were deleted.
 
-| Removed | Tip | Why it was safe |
-| --- | --- | --- |
-| `chore/backport-mobile-search` (local + remote) | `de3c896ca` | PR #490 merged; `git cherry` showed 0 unapplied patches |
-| `release/2026-11-16-mobile-search` (local + remote) | `87092a69b` | PR #489 merged into `develop`; the same content also landed through #490 |
-| Worktree `.claude/worktrees/feat-mobile-search-airbnb-ux` | `de3c896ca` | Clean tree, checked out on the deleted merged branch |
-| `codex/core-product-advantages` (local + remote) | `86f5c7426` | PR #487 merged into `develop` as `8c6aabc29`; worktree `kame-homes-product-positioning` removed after the merge |
+| Removed                                                   | Tip         | Why it was safe                                                                                                 |
+| --------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| `chore/backport-mobile-search` (local + remote)           | `de3c896ca` | PR #490 merged; `git cherry` showed 0 unapplied patches                                                         |
+| `release/2026-11-16-mobile-search` (local + remote)       | `87092a69b` | PR #489 merged into `develop`; the same content also landed through #490                                        |
+| Worktree `.claude/worktrees/feat-mobile-search-airbnb-ux` | `de3c896ca` | Clean tree, checked out on the deleted merged branch                                                            |
+| `codex/core-product-advantages` (local + remote)          | `86f5c7426` | PR #487 merged into `develop` as `8c6aabc29`; worktree `kame-homes-product-positioning` removed after the merge |
 
 Kept on purpose:
 
-| Branch / PR | Why |
-| --- | --- |
-| `feat/multi-channel-calendar-sync` (#493) | Open, green, waiting for review |
-| `feat/marketing-ai-studio-overhaul` (#488) | Open, conflicts with `develop` |
-| `feat/public-landing-redesign` | Local feature work, 8 commits plus uncommitted files |
-| `feat/multi-residence-config-decoupling` (#354) | Draft marked DO NOT MERGE |
-| `codex/mascot-talking-preview` (#353) | Draft preview, not reviewed |
+| Branch / PR                                                                  | Why                                                                       |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `feat/multi-channel-calendar-sync` (#493)                                    | Open, green, waiting for review                                           |
+| `feat/marketing-ai-studio-overhaul` (#488)                                   | Open, conflicts with `develop`                                            |
+| `feat/public-landing-redesign`                                               | Local feature work, 8 commits plus uncommitted files                      |
+| `feat/multi-residence-config-decoupling` (#354)                              | Draft marked DO NOT MERGE                                                 |
+| `codex/mascot-talking-preview` (#353)                                        | Draft preview, not reviewed                                               |
 | `recover/pre-reset-20261110`, `backup/multi-residence-pre-rebase-1794322170` | Safety snapshots with unique history; keep until the owner says otherwise |
 
 ## Kept branches
@@ -429,3 +440,48 @@ Kept in the stash, not shipped: `stash@{0}` (on `perf/fix-boot-counting`, `wip-b
 holds the planned AI Studio quality overhaul, the listing-slug reservation migrations and the
 full-app QA audit plan. Those plans are still `status: planned`, so folding them into a production
 release would have been unsafe. They need their own session.
+
+## 2026-11-19 landing hero release
+
+PR #536 carries the aligned day/night landing hero and its responsive asset cleanup. Its squash
+merge landed on `develop` as `4109b6f44a639a81a74c3946215b761a406ffeee`.
+
+The feature branch `fix/landing-mascot-alignment` reached
+`21a3456e0cb8eb90f9fa298ce8d5a376fa483620` before its post-merge deletion. Restore it with
+`git branch fix/landing-mascot-alignment 21a3456e0cb8eb90f9fa298ce8d5a376fa483620` if needed.
+
+PR #538 shipped the same squash commit to `main` as
+`1e24f40c1acabb9972fc81149337c4095204c6e5`. Its release branch `release/2026-11-19-landing-hero`
+was cut from `main` and recorded at `00a521a1a` before deletion. Restore it with
+`git branch release/2026-11-19-landing-hero 00a521a1a` if needed.
+
+## 2026-11-21 module and branch sync
+
+Read-only audit first (`bun run branch:audit`), then delete only branches that were fully merged
+or fully applied, with no unapplied patch and no worktree. Deleted, local and remote:
+
+| Branch                                           | Tip SHA                                    | Why safe                                               |
+| ------------------------------------------------ | ------------------------------------------ | ------------------------------------------------------ |
+| `release/2026-11-19-host-parking-pricing`        | `833e1812e8f61b84a08b185e94c694d1be9bae05` | Ancestor of `develop` (shipped in #533)                |
+| `release/2026-11-19-multi-channel-calendar-sync` | `2114402865d9af07b38bbfc59f6c1915fa64aa3f` | Ancestor of `develop` (shipped in #524)                |
+| `release/2026-11-19-ui-improvements`             | `54d4994101f1fd3bc144e8ce01f26f38c33aeca8` | Ancestor of `develop` (shipped in #551)                |
+| `sprmke/flyingfish`                              | `3068d654cbf351e541076dd494c402cd3903bea5` | Worktree ports change shipped in #542                  |
+| `sprmke/audit-modules-worktrees-prs`             | `18c84051821b00c14a9be48f2c08b399c83d7cd6` | Fully applied; no PR                                   |
+| `docs/calendar-sync-release-record`              | `cffd67fe6d4c6914cd87b244c81eb0973b85fb1a` | Fully applied; superseded by the live verification doc |
+| `chore/parking-pricing-test-followups`           | `d0375b6defb9098fb6f8671daaf25d532204e541` | Shipped in #537; no new files                          |
+| `fix/preview-existing-worktrees` (remote only)   | `684d47a18`                                | Fully applied via #547; local worktree stays           |
+| `sprmke/analyze-editable-public-pages` (remote)  | `042ef0116`                                | Fully applied; local worktree stays                    |
+
+Restore any of them with `git branch <name> <sha>` while the objects survive.
+
+Kept on purpose: everything with an open PR or unapplied patch
+(`feat/multi-channel-calendar-sync`, `feat/host-set-parking-pricing`,
+`test/host-set-parking-pricing-coverage`, `docs/calendar-sync-live-verification-db-checks`,
+`sprmke/desktop-screens-mobile-redesign`, `feat/marketing-ai-studio-overhaul`,
+`feat/multi-residence-config-decoupling`, `codex/mascot-talking-preview`), the
+`backup/` and `recover/` snapshots, and the two worktrees holding uncommitted edits
+(`release/2026-11-19-prod-ship`, `sprmke/refine-payment-plans-billing`).
+
+Worktrees that still point at merged branches (`arowana`, `bass`, `coelacanth`, `cutlassfish`,
+`dulse`, `sculpin`, `anemone`) were **not** removed: removing one closes an Orca workspace, which
+is the owner's call. Their branches can be deleted as soon as the worktree is retired.

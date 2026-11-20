@@ -14,11 +14,12 @@ import {
   type PropertyMediaRecord,
 } from './propertyMedia.ts';
 import { persistPropertyMedia } from './propertyMediaUpload.ts';
+import { listPropertyTemplateRows } from './propertyTemplates.ts';
 import {
-  listPropertyTemplateRows,
-  upsertPropertyTemplateRow,
-  type PropertyTemplateCategory,
-} from './propertyTemplates.ts';
+  readTemplatesWithFolders,
+  writeTemplatesWithFolders,
+  type CloneTemplateRow,
+} from './propertySettingsCloneGroups.ts';
 import {
   loadAppSettingsColumns,
   loadPropertyRow,
@@ -165,18 +166,7 @@ export const templatesWithAssetsGroup: CloneGroup = {
   editLeaves: ['templates.standard:edit', 'templates.email:edit'],
   defaultOn: true,
   assets: true,
-  async read(sourceCtx) {
-    const rows = await listPropertyTemplateRows(sourceCtx.propertyId);
-    return {
-      rows: rows.map((r) => ({
-        template_key: r.template_key,
-        category: r.category,
-        name: r.name,
-        content: r.content,
-        section_image_url: r.section_image_url,
-      })),
-    };
-  },
+  read: (sourceCtx) => readTemplatesWithFolders(sourceCtx.propertyId),
   sanitize(payload) {
     return payload;
   },
@@ -185,40 +175,29 @@ export const templatesWithAssetsGroup: CloneGroup = {
     return rows.length > 0;
   },
   async write(payload, targetCtx) {
-    const rows = Array.isArray(payload.rows)
-      ? (payload.rows as Array<{
-          template_key: string;
-          category: PropertyTemplateCategory;
-          name: string | null;
-          content: string;
-          section_image_url: string | null;
-        }>)
+    const rows = Array.isArray((payload as Record<string, unknown>).rows)
+      ? ((payload as Record<string, unknown>).rows as CloneTemplateRow[])
       : [];
+    const clonedUrlByKey = new Map<string, string>();
     for (const row of rows) {
-      let sectionImageUrl: string | null = null;
       const src = row.section_image_url?.trim();
-      if (src) {
-        const sourcePath = storagePathFromPublicUrl(src, 'app-settings-assets');
-        if (sourcePath) {
-          const ext = extFromPathOrUrl(sourcePath);
-          const targetPath = `property-templates/${targetCtx.propertyId}/${row.template_key}/section${ext}`;
-          const result = await cloneStorageObject({
-            bucket: 'app-settings-assets',
-            sourcePath,
-            targetPath,
-          });
-          if (result.ok && result.url) sectionImageUrl = result.url;
-        }
-      }
-      await upsertPropertyTemplateRow({
-        propertyId: targetCtx.propertyId,
-        templateKey: String(row.template_key),
-        category: row.category,
-        name: row.name,
-        content: String(row.content ?? ''),
-        sectionImageUrl,
+      if (!src) continue;
+      const sourcePath = storagePathFromPublicUrl(src, 'app-settings-assets');
+      if (!sourcePath) continue;
+      const ext = extFromPathOrUrl(sourcePath);
+      const targetPath = `property-templates/${targetCtx.propertyId}/${row.template_key}/section${ext}`;
+      const result = await cloneStorageObject({
+        bucket: 'app-settings-assets',
+        sourcePath,
+        targetPath,
       });
+      if (result.ok && result.url) clonedUrlByKey.set(String(row.template_key), result.url);
     }
+    await writeTemplatesWithFolders(
+      payload as Record<string, unknown>,
+      targetCtx,
+      (row) => clonedUrlByKey.get(String(row.template_key)) ?? null
+    );
   },
 };
 

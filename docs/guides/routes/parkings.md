@@ -71,7 +71,7 @@ Guests browse standalone parking slots by city or building, open a slot detail p
 
 ## List (`/parkings`)
 
-**`ParkingsListPage`** — hero search, collapsible **`ParkingFilters`** sidebar (location type, tower, price; **closed by default** on desktop — use **Show Filters** in the toolbar), **`ParkingToolbar`** sort (sticky, `lg+` only; below `lg` the shared `ListingMobileResultsBar` shows the slot count and a round filter button with an applied-filter badge, and sort lives in the filter sheet on every parking list, including `/developments/:slug/parking`), location-grouped carousels via **`ParkingsByLocation`**. Filters/sort from URL; tower options from API facets. When Tower is shown but has no options, the section shows **None**.
+**`ParkingsListPage`** — hero search, collapsible **`ParkingFilters`** sidebar (location type, tower, price; **closed by default** on desktop — use **Show Filters** in the toolbar), **`ParkingToolbar`** (same non-sticky chrome as Properties / Developments, `lg+` only; below `lg` the shared `ListingMobileResultsBar` shows the slot count and a round filter button with an applied-filter badge, and sort lives in the filter sheet on every parking list, including `/developments/:slug/parking`), location-grouped carousels via **`ParkingsByLocation`**. Filters/sort from URL; tower options from API facets. When Tower is shown but has no options, the section shows **None**.
 
 - **Mobile filters:** the **`ParkingFilters`** sheet opens as a bottom sheet (flex column, `z-[100]`/`z-[101]` so it clears the scroll-morph search bar). Header and the **Show results** / **Clear all** footer are pinned; only the option list scrolls; the footer carries a safe-area inset.
 
@@ -173,7 +173,7 @@ Distinct from:
 - Focused flow: marketing nav/footer hidden (same as property forms); uses **`MainLayout`** + **`GuestOperationalHeader`** shell. Same card rhythm as **`/parkings/:slug/form`**: **`GuestFormBrandHeader`** (circular cover, location eyebrow, status headline as title) → **`ParkingStaySummary`** → **`ParkingFlowStepper`** (Match · Pay · Done) + status body — no nested bordered status card.
 - Page title: **`{Parking or org name} - Parking Request`**; favicon uses org logo or slot cover when available
 - Initial load + refresh path: **`get-parking-booking-status?bookingId=`** (also returns `parkingName`, `coverImage`, `brandColor`, `logoUrl`, `residenceName` for the guest shell)
-- Returned fields: status, stay dates, expiry time, organization label, slot label after claim, optional host endorsement note, the active dispatch batch number, and (Phase 5) endorsement send status, an in-app copy of the sent endorsement email, host contact (once endorsement is sent), and the platform support/escalation phone
+- Returned fields: status, stay dates, expiry time, organization label, slot label after claim, optional host endorsement note, the active dispatch batch number, (Phase 5) endorsement send status, an in-app copy of the sent endorsement email, host contact (once endorsement is sent), the platform support/escalation phone, and `payment` (rent + service fee + total — a read-only preview via `computeParkingPaymentAmounts` before a transaction exists, else the snapshotted `parking_payment_transactions` row; never re-derived once paid)
 - Polls every 4 seconds until a terminal or claimed status is reached
 - Stay dates: compact readable range (**Sep 24-28, 2026**) via `formatStayDateRange` / **`ParkingStaySummary`** (same component as the request form)
 - Shared guest/host/property status copy: **`ui/src/lib/parking/parkingFlowCopy.ts`** — brand header title uses `headline` per status so form → status feels like the next step
@@ -182,8 +182,8 @@ Distinct from:
 - **Registration form:** auth required; **Which stay?** chooser when linkable stays exist → confirm & submit for linked stays, or **Different booking — enter details** → `ParkingFlowStepper` (Guest · Booking · Vehicle); no chooser when none
 - **Waiting UX:** animated **`ParkingHostSearchVisual`** (radar pulse) while finding a host; compact countdown row (“Updates within · MM:SS”) + thin drain bar — not a giant timer
 - While finding a host: **Cancel request** only; browse appears on terminal / paid
-- **Pay to confirm:** **Pay now** + cancel; short non-refundable note. The nightly price shown on cards and the detail page is the same platform guest rate checkout charges (not the host's payout rate).
-- Paid: slot + access; host/endorsement under fold; support phone after pay / terminal
+- **Pay to confirm:** a **Rent / Service fee / Total** breakdown above **Pay now** + cancel; short non-refundable note. The nightly price shown on cards and the detail page is the host's own rate; the breakdown here and the PayMongo checkout total always agree (same snapshot once a pending transaction exists).
+- Paid: the same **Rent / Service fee / Total** breakdown (now the exact amount charged) plus slot + access; host/endorsement under fold; support phone after pay / terminal
 - `NO_HOST_AVAILABLE` / `CANCELLED`: short detail + **Browse parking**
 - Host booking detail uses the same **Match · Pay · Done** stepper for pending/payment/review
 

@@ -60,9 +60,9 @@ function currentVersions(now: number): Promise<Versions> {
   return versionInFlight;
 }
 
-function remember(key: string, value: unknown, now: number): void {
+function remember(key: string, value: unknown, now: number, ttlMs: number): void {
   entries.delete(key);
-  entries.set(key, { expiresAt: now + ENTRY_TTL_MS, value });
+  entries.set(key, { expiresAt: now + ttlMs, value });
   while (entries.size > MAX_ENTRIES) {
     const oldest = entries.keys().next().value;
     if (oldest === undefined) break;
@@ -75,7 +75,49 @@ export type ListingCacheOptions = {
   families: ListingFamily[];
   /** Skip the cache (e.g. date-filtered availability requests). */
   bypass?: boolean;
+  /** Entry lifetime. Defaults to 60s. Use a shorter value for payloads that read data the
+   *  catalog version does not track (contact info, badges, page config). */
+  ttlMs?: number;
+  /** Do not store a `null` result (a missing or unpublished listing), so a listing that
+   *  just went live is never hidden behind a cached 404. */
+  skipNull?: boolean;
 };
+
+async function versionedKey(
+  key: string,
+  options: ListingCacheOptions,
+  now: number
+): Promise<string | null> {
+  try {
+    const versions = await currentVersions(now);
+    const versionTag = options.families.map((family) => `${family}:${versions[family]}`).join('|');
+    return `${versionTag}#${key}`;
+  } catch (error) {
+    console.warn('[publicListingCache] version read failed:', (error as Error).message);
+    return null;
+  }
+}
+
+export type ListingCachePeek<T> = { hit: true; value: T } | { hit: false };
+
+/**
+ * Read-only lookup. Lets a handler answer a hit before it pays for a durable rate-limit
+ * write, and never computes. A failed version read reports a miss.
+ */
+export async function peekListingCache<T>(
+  key: string,
+  options: ListingCacheOptions
+): Promise<ListingCachePeek<T>> {
+  if (options.bypass) return { hit: false };
+  const now = Date.now();
+  const fullKey = await versionedKey(key, options, now);
+  if (!fullKey) return { hit: false };
+  const hit = entries.get(fullKey);
+  if (!hit || hit.expiresAt <= now) return { hit: false };
+  entries.delete(fullKey);
+  entries.set(fullKey, hit);
+  return { hit: true, value: hit.value as T };
+}
 
 /**
  * Get-or-compute with version-scoped keys. A failed version read falls back to
@@ -89,16 +131,9 @@ export async function withListingCache<T>(
   if (options.bypass) return compute();
 
   const now = Date.now();
-  let versions: Versions;
-  try {
-    versions = await currentVersions(now);
-  } catch (error) {
-    console.warn('[publicListingCache] version read failed:', (error as Error).message);
-    return compute();
-  }
-
-  const versionTag = options.families.map((family) => `${family}:${versions[family]}`).join('|');
-  const fullKey = `${versionTag}#${key}`;
+  const fullKey = await versionedKey(key, options, now);
+  if (!fullKey) return compute();
+  const ttlMs = options.ttlMs ?? ENTRY_TTL_MS;
 
   const hit = entries.get(fullKey);
   if (hit && hit.expiresAt > now) {
@@ -112,7 +147,8 @@ export async function withListingCache<T>(
 
   const promise = compute()
     .then((value) => {
-      remember(fullKey, value, Date.now());
+      if (value === null && options.skipNull) return value;
+      remember(fullKey, value, Date.now(), ttlMs);
       return value;
     })
     .finally(() => {

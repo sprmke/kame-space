@@ -64,16 +64,16 @@ test.describe('@ci host Get Verified states', () => {
     const resubmit = page.getByRole('button', { name: 'Resubmit' });
     await expect(resubmit).toBeEnabled({ timeout: 30_000 });
 
-    // Picking a file can race the dialog's dismiss handling; keep editing if it prompts.
+    // Picking a file can race the dialog's dismiss handling; Esc = Keep editing.
     const guard = page.getByRole('alertdialog', { name: /Save your changes\?/i });
     await guard.waitFor({ state: 'visible', timeout: 1_500 }).catch(() => undefined);
     if (await guard.isVisible().catch(() => false)) {
-      await page.getByRole('button', { name: 'Keep editing' }).click();
+      await page.keyboard.press('Escape');
       await expect(guard).toHaveCount(0);
-      // Dismissing can clear the slot; re-pick so the submit has the requested document.
-      await page.locator('#onboarding-valid-id').setInputFiles(E2E_IMAGE_FILE);
-      await expect(resubmit).toBeEnabled({ timeout: 30_000 });
     }
+    // Always re-attach so Resubmit is enabled after any guard race.
+    await page.locator('#onboarding-valid-id').setInputFiles(E2E_IMAGE_FILE);
+    await expect(resubmit).toBeEnabled({ timeout: 30_000 });
 
     const submitResponse = page.waitForResponse(
       (res) =>

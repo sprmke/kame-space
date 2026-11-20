@@ -164,7 +164,7 @@ export function WorkflowSubFormHost({
     <div
       className={cn(
         isModal
-          ? 'min-h-0 min-w-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-5'
+          ? 'min-h-0 min-w-0 space-y-4 overflow-x-hidden px-4 py-4 sm:px-5'
           : 'border-separator space-y-6 border-b px-4 py-4'
       )}
     >

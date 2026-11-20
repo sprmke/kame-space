@@ -1,10 +1,15 @@
 import { useMemo, useState } from 'react';
 
-import { MessageSquare, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { MessageSquare, Pencil, Pin, Plus, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { InboxQuickReplyFormDialog } from '@/features/dashboard/inbox/components/InboxQuickReplyFormDialog';
 import { QuickReplyGroupFilters } from '@/features/dashboard/inbox/components/QuickReplyGroupTabs';
+import {
+  INBOX_PINNED_SNIPPETS_MAX,
+  sortTemplatesWithPins,
+  type InboxPinnedSnippet,
+} from '@/features/dashboard/inbox/lib/inboxPinnedSnippets';
 import {
   defaultQuickReplyGroupForTab,
   quickReplyGroupLabel,
@@ -20,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 type Props = {
   templates: InboxTemplate[];
@@ -27,24 +33,50 @@ type Props = {
   saving: boolean;
   onSave: (payload: SaveInboxTemplatePayload) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  /** Property Messages only: pin reply into Insert → Pinned (max 5). */
+  pinningEnabled?: boolean;
+  pinnedIds?: string[];
+  pinnedSnippets?: InboxPinnedSnippet[];
+  pinning?: boolean;
+  onTogglePin?: (template: InboxTemplate) => Promise<void>;
+  onUnpinId?: (id: string) => Promise<void>;
 };
 
-export function InboxQuickRepliesTab({ templates, isLoading, saving, onSave, onDelete }: Props) {
+export function InboxQuickRepliesTab({
+  templates,
+  isLoading,
+  saving,
+  onSave,
+  onDelete,
+  pinningEnabled = false,
+  pinnedIds = [],
+  pinnedSnippets = [],
+  pinning = false,
+  onTogglePin,
+  onUnpinId,
+}: Props) {
   const [groupTab, setGroupTab] = useState<QuickReplyGroupTab>('all');
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<InboxTemplate | null>(null);
 
+  const orphanPins = useMemo(() => {
+    if (!pinningEnabled) return [];
+    const templateIds = new Set(templates.map((t) => t.id));
+    return pinnedSnippets.filter((row) => !templateIds.has(row.id));
+  }, [pinningEnabled, pinnedSnippets, templates]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const rows = [...templates]
-      .filter((t) => templateMatchesQuickReplyTab(t, groupTab))
-      .sort((a, b) => a.sort_order - b.sort_order || a.title.localeCompare(b.title));
+    let rows = templates.filter((t) => templateMatchesQuickReplyTab(t, groupTab));
+    rows = pinningEnabled
+      ? sortTemplatesWithPins(rows, pinnedIds)
+      : [...rows].sort((a, b) => a.sort_order - b.sort_order || a.title.localeCompare(b.title));
     if (!q) return rows;
     return rows.filter(
       (t) => t.title.toLowerCase().includes(q) || t.body_text.toLowerCase().includes(q)
     );
-  }, [templates, search, groupTab]);
+  }, [templates, search, groupTab, pinningEnabled, pinnedIds]);
 
   const openCreate = () => {
     setEditing(null);
@@ -60,6 +92,15 @@ export function InboxQuickRepliesTab({ templates, isLoading, saving, onSave, onD
     try {
       await onDelete(template.id);
       toast.success('Deleted');
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const handleTogglePin = async (template: InboxTemplate) => {
+    if (!onTogglePin) return;
+    try {
+      await onTogglePin(template);
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -121,7 +162,7 @@ export function InboxQuickRepliesTab({ templates, isLoading, saving, onSave, onD
                 </div>
               ))}
             </div>
-          ) : filtered.length === 0 ? (
+          ) : filtered.length === 0 && orphanPins.length === 0 ? (
             <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
               <MessageSquare className="text-muted-foreground/50 size-8" aria-hidden />
               <p className="text-muted-foreground mt-3 text-sm">{emptyLabel}</p>
@@ -139,60 +180,131 @@ export function InboxQuickRepliesTab({ templates, isLoading, saving, onSave, onD
             </div>
           ) : (
             <ul className="divide-border divide-y">
-              {filtered.map((template) => (
-                <li key={template.id}>
-                  <div className="group flex items-start gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-3.5">
-                    <button
-                      type="button"
-                      className="hover:bg-muted/40 -mx-1 min-w-0 flex-1 rounded-lg px-1 py-0.5 text-left transition-colors"
-                      onClick={() => openEdit(template)}
-                    >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-medium">{template.title}</p>
-                        {groupTab === 'all' && template.platform && (
-                          <Badge variant="outline" className="px-2 py-0 font-medium">
-                            {quickReplyGroupLabel(
-                              template.platform === 'facebook' || template.platform === 'instagram'
-                                ? template.platform
-                                : 'all'
-                            )}
+              {!search.trim() &&
+                orphanPins.map((snippet) => (
+                  <li key={`orphan-${snippet.id}`}>
+                    <div className="flex items-start gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-3.5">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-medium">{snippet.title}</p>
+                          <Badge variant="secondary" className="gap-1 px-2 py-0 font-medium">
+                            <Pin className="size-3" aria-hidden />
+                            Pinned
                           </Badge>
-                        )}
-                        {groupTab === 'all' && !template.platform && (
-                          <Badge variant="secondary" className="px-2 py-0 font-medium">
-                            All
-                          </Badge>
-                        )}
+                        </div>
+                        <p className="text-muted-foreground mt-1 line-clamp-3 whitespace-pre-wrap text-xs leading-relaxed">
+                          {snippet.bodyText}
+                        </p>
                       </div>
-                      <p className="text-muted-foreground mt-1 line-clamp-3 whitespace-pre-wrap text-xs leading-relaxed">
-                        {template.body_text}
-                      </p>
-                    </button>
-                    <div className="flex shrink-0 gap-0.5">
-                      <Button
+                      {onUnpinId ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-10 min-h-[44px] min-w-[44px]"
+                          aria-label={`Unpin ${snippet.title}`}
+                          title="Unpin"
+                          disabled={pinning}
+                          onClick={() => void onUnpinId(snippet.id)}
+                        >
+                          <Pin className="size-4 fill-current" aria-hidden />
+                        </Button>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              {filtered.map((template) => {
+                const pinned = pinningEnabled && pinnedIds.includes(template.id);
+                return (
+                  <li key={template.id}>
+                    <div className="group flex items-start gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-3.5">
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-10 min-h-[44px] min-w-[44px]"
-                        aria-label={`Edit ${template.title}`}
+                        className="hover:bg-muted/40 -mx-1 min-w-0 flex-1 rounded-lg px-1 py-0.5 text-left transition-colors"
                         onClick={() => openEdit(template)}
                       >
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:bg-destructive/10 hover:text-destructive size-10 min-h-[44px] min-w-[44px]"
-                        aria-label={`Delete ${template.title}`}
-                        onClick={() => void handleDelete(template)}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-medium">{template.title}</p>
+                          {pinned ? (
+                            <Badge variant="secondary" className="gap-1 px-2 py-0 font-medium">
+                              <Pin className="size-3" aria-hidden />
+                              Pinned
+                            </Badge>
+                          ) : null}
+                          {groupTab === 'all' && template.platform && (
+                            <Badge variant="outline" className="px-2 py-0 font-medium">
+                              {quickReplyGroupLabel(
+                                template.platform === 'facebook' ||
+                                  template.platform === 'instagram'
+                                  ? template.platform
+                                  : 'all'
+                              )}
+                            </Badge>
+                          )}
+                          {groupTab === 'all' && !template.platform && (
+                            <Badge variant="secondary" className="px-2 py-0 font-medium">
+                              All
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-muted-foreground mt-1 line-clamp-3 whitespace-pre-wrap text-xs leading-relaxed">
+                          {template.body_text}
+                        </p>
+                      </button>
+                      <div className="flex shrink-0 gap-0.5">
+                        {pinningEnabled && onTogglePin ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                              'size-10 min-h-[44px] min-w-[44px]',
+                              pinned && 'text-foreground'
+                            )}
+                            aria-label={
+                              pinned ? `Unpin ${template.title}` : `Pin ${template.title}`
+                            }
+                            title={
+                              pinned
+                                ? 'Unpin'
+                                : pinnedIds.length >= INBOX_PINNED_SNIPPETS_MAX
+                                  ? `Max ${INBOX_PINNED_SNIPPETS_MAX} pins`
+                                  : 'Pin for Insert'
+                            }
+                            disabled={pinning || saving}
+                            onClick={() => void handleTogglePin(template)}
+                          >
+                            <Pin
+                              className={cn('size-4', pinned && 'fill-current')}
+                              aria-hidden
+                            />
+                          </Button>
+                        ) : null}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-10 min-h-[44px] min-w-[44px]"
+                          aria-label={`Edit ${template.title}`}
+                          onClick={() => openEdit(template)}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive size-10 min-h-[44px] min-w-[44px]"
+                          aria-label={`Delete ${template.title}`}
+                          onClick={() => void handleDelete(template)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

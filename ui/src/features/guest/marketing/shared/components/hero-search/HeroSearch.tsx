@@ -180,6 +180,10 @@ interface HeroSearchProps {
    * Desktop panel side relative to the bar. Landing hero (`/`) uses `above` so
    * Where/When/Who are not clipped under the photo. Listing pages keep `below`.
    */
+  /**
+   * `above` = home landing (dropdown opens upward + page dim while open).
+   * `below` = listing / category pages (no page dim).
+   */
   panelPlacement?: HeroSearchPanelPlacement;
 }
 
@@ -1025,10 +1029,14 @@ export function HeroSearch({
     );
   }
 
+  // Landing (`panelPlacement="above"`) dims the page behind the open panel. Listing /
+  // category heroes keep the prior clear chrome — Escape and outside-click already dismiss.
+  const showPageDim = panelPlacement === 'above';
+
   return (
     <div ref={rootRef} className={cn('relative z-50 w-full', className)}>
       <AnimatePresence>
-        {isExpanded ? (
+        {isExpanded && showPageDim ? (
           <motion.button
             type="button"
             aria-label="Close search panel"

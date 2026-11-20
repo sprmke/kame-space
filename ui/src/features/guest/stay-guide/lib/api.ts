@@ -28,6 +28,8 @@ export type StayGuideSectionDto = {
   displayHeading: string;
   html: string;
   imageUrl: string | null;
+  /** Registry chapter, so new sections group without a UI list. */
+  chapter?: string | null;
   /** Template row `updated_at` — cache-busts fixed storage paths after replace. */
   imageUpdatedAt?: string | null;
 };

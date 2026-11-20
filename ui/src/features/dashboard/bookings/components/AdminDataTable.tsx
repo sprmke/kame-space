@@ -92,10 +92,32 @@ export function AdminTableTh({
   children?: React.ReactNode;
   className?: string;
 }) {
+  // `text-left` first so callers can override (e.g. Actions `text-right`).
   return (
-    <th scope="col" className={cn('text-table-head py-3', className, 'text-left')}>
+    <th scope="col" className={cn('text-table-head py-3 text-left', className)}>
       {children}
     </th>
+  );
+}
+
+/**
+ * Narrow right-aligned actions column header.
+ * Prefer a visible "Actions" / "Open" label over `sr-only` so the trailing
+ * column is not an unexplained empty band.
+ */
+export function AdminTableActionsTh({
+  children = 'Actions',
+  className,
+}: {
+  children?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <AdminTableTh
+      className={cn('w-[1%] whitespace-nowrap pl-2 pr-3 text-right sm:pl-3 sm:pr-4', className)}
+    >
+      {children}
+    </AdminTableTh>
   );
 }
 
@@ -116,7 +138,10 @@ export const adminTableCell = {
   status: 'pl-3 pr-2 py-2.5 align-middle sm:pl-5 sm:pr-3 sm:py-3.5',
   body: 'px-2 py-2.5 align-middle sm:px-4 sm:py-3.5',
   money: 'px-2 py-2.5 text-left align-middle sm:px-4 sm:py-3.5',
-  action: 'py-2 pr-2 pl-1 text-right align-middle sm:pr-4 sm:pl-2 sm:py-3.5',
+  // `w-[1%]` + nowrap keeps the actions column hug its controls so data
+  // columns absorb remaining width (avoids a large empty trailing band).
+  action:
+    'w-[1%] whitespace-nowrap py-2 pr-2 pl-1 text-right align-middle sm:pr-4 sm:pl-2 sm:py-3.5',
 } as const;
 
 /** Trailing affordance on clickable rows (Bookings list, Finance stays). */
@@ -131,8 +156,7 @@ export function AdminTableRowAffordance() {
 const adminTableRowAffordanceClass = cn(
   'inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg',
   'text-muted-foreground',
-  'sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100',
-  'transition-opacity duration-150'
+  'transition-colors duration-150'
 );
 
 /** Same affordance as a router link (e.g. open booking from Finance stays). */
@@ -157,12 +181,14 @@ export function AdminTableRowLink({
   );
 }
 
-/** Icon button in table action cells (Transactions edit/delete). */
+/**
+ * Icon button in table action cells (edit / delete / open).
+ * Always visible — hover-only icons hide per-row controls that differ by item.
+ */
 export const adminTableIconButtonClass = cn(
   'inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg',
   'text-muted-foreground transition-colors duration-150',
-  'hover:bg-muted hover:text-foreground',
-  'sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100'
+  'hover:bg-muted hover:text-foreground'
 );
 
 /** Body copy for Bookings + Finance stays tables — scales up on larger screens. */

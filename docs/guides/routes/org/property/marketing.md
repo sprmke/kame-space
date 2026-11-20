@@ -445,7 +445,7 @@ Shared Design categories: **Promos** (₱500 off, ₱300 off, 10% off, free brea
 
 **Plan gating (`customTemplates`, Starter+):** Every content write to `marketing-templates` (create, autosave, duplicate, rename, Save as template, copy to size) requires `customTemplates`. Below Starter the editors still open and edit, and the top bar shows **Not saved** with a `TierBadge` instead of the save status. Reading the Library, restoring and deleting carry no plan gate, so a downgraded org keeps its saved work (open, download per its own gate, delete).
 
-**Prerequisite:** Meta Page + Instagram must be connected under the property **Guest Inbox** (`/org/:orgSlug/property/:propertySlug/inbox` → Manage → Channels). If none are connected, the dialog links to Inbox.
+**Prerequisite:** Meta Page + Instagram must be connected under property **Messages** (`/org/:orgSlug/property/:propertySlug/messages` → Manage → Channels). If none are connected, the dialog links to Messages.
 
 Recent attempts appear in **Recent publishes** — library toolbar → **History** (inside **More** on phones), on every tab including AI Studio. The header is one row: **Back** beside the title. It lists the last 40 attempts (platform · type, caption, status badge, relative time, error text on a failure) with a **N published** count, and reads **Nothing published yet** when there are none. It is property-wide, so all four tabs show the same list.
 

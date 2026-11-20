@@ -117,7 +117,9 @@ Deno.test('every parking admin route is permission-wrapped', async () => {
   const src = await source('../../ui/src/features/dashboard/parking/routes/index.tsx');
   const routeCount = countOccurrences(src, '<Route');
   const guardedCount = countOccurrences(src, 'element={parkingRoute(');
-  assertEquals(routeCount, guardedCount);
+  // One unguarded `<Route>` is the legacy `/inbox` → `/messages` redirect.
+  assert(src.includes('element={<LegacyInboxToMessagesRedirect'));
+  assertEquals(routeCount - 1, guardedCount);
 });
 
 Deno.test('org-wide booking lists include pre-claim parking requests', async () => {
@@ -218,18 +220,27 @@ Deno.test('parking submit validates past dates, stay length, plate, and field ca
   assert(src.includes('notes is too long'));
 });
 
-Deno.test('the latest public listing refresh uses the platform guest rate', async () => {
+Deno.test('the latest public listing refresh uses the host-set weekday rate', async () => {
   const latest = await latestMigrationDefining(
     'CREATE OR REPLACE FUNCTION public.pls_refresh_parking'
   );
   assert(
-    latest.src.includes('FROM public.platform_parking_settings'),
-    `${latest.file} must read the platform guest rate`
+    latest.src.includes('FROM public.parking_settings'),
+    `${latest.file} must read the host weekday rate`
   );
   assert(
-    !latest.src.includes('FROM public.parking_settings'),
-    `${latest.file} must not write the host rate into the public index`
+    !latest.src.includes('FROM public.platform_parking_settings'),
+    `${latest.file} must not read a platform guest rate into the public index`
   );
+});
+
+Deno.test('parking pricing has no guest rate cap and ranking has no price exclusion', async () => {
+  const pricing = await source('_shared/parkingPricing.ts');
+  assert(!pricing.includes('assertWithinGuestRateCap'));
+  assert(pricing.includes('PARKING_MIN_NIGHTLY_RATE'));
+  const ranking = await source('_shared/parkingBroadcastRanking.ts');
+  assert(!ranking.includes('isPriceCappedOut'));
+  assert(!ranking.includes('guestRate'));
 });
 
 Deno.test('parking dashboard net uses the marketplace host net', async () => {

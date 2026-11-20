@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Parking module hardening: end-to-end audit, fixes, and test coverage'
 status: in-progress
 tags: [workflow, planned, parking, payments, rbac, e2e, production-readiness]
-updated: 2026-11-19
+updated: 2026-11-20
 kind: plan
 supersedes:
   - parking-e2e-later-phases.md
@@ -34,7 +34,7 @@ Landed in the first slice:
 - **M-7** server-side past-date, 60-night cap, field lengths and plate format.
 - **M-8/M-9** delete pre-checks history (409 `has_bookings`); archive declines pending offers.
 - **M-10** status endpoint redacts endorsement HTML/note and host contact unless the signed-in caller owns the booking; returns `viewerOwnsBooking`.
-- **G-1** guest price resolver + index refresh migration; cards/detail now use the platform guest rate.
+- **G-1** guest price resolver + index refresh migration; cards/detail now use the platform guest rate. **Superseded 2026-11-19** by [`host-set-parking-pricing`](./host-set-parking-pricing.md): hosts set their own rate, cards/detail/search show it, and checkout adds a guest service fee on top.
 - **C-2/C-3/C-5/C-6** unused mock parking data, unmounted pay-parking routes, the legacy parking nav map and client legacy permission ids removed.
 - Tests: `parkingDateOverlap_test.ts`, `parkingHardeningGates.test.ts` (18 assertions), all existing parking Deno tests, UI Vitest (5308) and `tsc` pass.
 
