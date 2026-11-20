@@ -31,20 +31,22 @@ export function PwaQueryPersistence() {
     let active = true;
 
     void supabase.auth.getSession().then(({ data }) => {
-      if (active) setViewerKey(data.session?.user?.id ? `user-${data.session.user.id}` : 'anon');
+      if (active) setViewerKey(data.session?.user?.id ? `user-${data.session.user.id}` : null);
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) return;
       if (event === 'SIGNED_OUT') {
+        // Tear persistence down before clearing, and do NOT re-subscribe for an anonymous
+        // viewer: a post-sign-out subscription would write the cache back after the purge.
         unsubscribeRef.current?.();
         unsubscribeRef.current = null;
         queryClient.clear();
         void purgeOfflineState();
-        setViewerKey('anon');
+        setViewerKey(null);
         return;
       }
-      setViewerKey(session?.user?.id ? `user-${session.user.id}` : 'anon');
+      setViewerKey(session?.user?.id ? `user-${session.user.id}` : null);
     });
 
     return () => {

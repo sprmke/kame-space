@@ -187,13 +187,13 @@ trip page.
 
 ## Testing
 
-| Layer | Path / spec                                                                                                                                                                   | Manual                |
-| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| Unit  | `supabase/functions/_shared/inboxAiSafetyGuard_test.ts`                                                                                                                       | —                     |
-| E2E   | `ui/e2e/features/inbox/inboxThreadListSmoke.spec.ts` (`@ci`) — "open Facebook thread shows org Meta badge", "cross-property match suggests switching to the matched property" | Meta OAuth, live send |
-| E2E   | `ui/e2e/features/inbox/inboxDeepLink.spec.ts` (`@ci`) — `?conversationId`, `?search`, unknown `?platform`                                                                     | —                     |
-| E2E   | `ui/e2e/features/dashboard/inboxChatTemplates.spec.ts` (`@ci`) — Insert → Templates, preview → Send body, email templates hidden, 375px sheet                                 | Live Meta flattening  |
-| N/A   | —                                                                                                                                                                             | Meta connect manual   |
+| Layer | Path / spec                                                                                                                                                                           | Manual                |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| Unit  | `supabase/functions/_shared/inboxAiSafetyGuard_test.ts` (formatted account numbers, refusal-plus-figure leak), `tests/evals/aiEvalsOffline.test.ts` (14-case injection fence dataset) | —                     |
+| E2E   | `ui/e2e/features/inbox/inboxThreadListSmoke.spec.ts` (`@ci`) — "open Facebook thread shows org Meta badge", "cross-property match suggests switching to the matched property"         | Meta OAuth, live send |
+| E2E   | `ui/e2e/features/inbox/inboxDeepLink.spec.ts` (`@ci`) — `?conversationId`, `?search`, unknown `?platform`                                                                             | —                     |
+| E2E   | `ui/e2e/features/dashboard/inboxChatTemplates.spec.ts` (`@ci`) — Insert → Templates, preview → Send body, email templates hidden, 375px sheet                                         | Live Meta flattening  |
+| N/A   | —                                                                                                                                                                                     | Meta connect manual   |
 
 ## Related
 
