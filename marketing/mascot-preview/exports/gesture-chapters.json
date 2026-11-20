@@ -1,0 +1,55 @@
+{
+  "fps": 60,
+  "frames": 1968,
+  "duration": 32.8,
+  "chapters": [
+    {
+      "name": "idle",
+      "label": "Idle",
+      "start": 0,
+      "duration": 4
+    },
+    {
+      "name": "wave",
+      "label": "Wave",
+      "start": 4,
+      "duration": 3.6
+    },
+    {
+      "name": "laugh",
+      "label": "Laugh",
+      "start": 7.6,
+      "duration": 3.2
+    },
+    {
+      "name": "think",
+      "label": "Think",
+      "start": 10.8,
+      "duration": 5
+    },
+    {
+      "name": "sit",
+      "label": "Sit down",
+      "start": 15.8,
+      "duration": 6
+    },
+    {
+      "name": "jump",
+      "label": "Jump",
+      "start": 21.8,
+      "duration": 2.8
+    },
+    {
+      "name": "listen",
+      "label": "Listen",
+      "start": 24.6,
+      "duration": 4.2
+    },
+    {
+      "name": "celebrate",
+      "label": "Celebrate",
+      "start": 28.8,
+      "duration": 4
+    }
+  ]
+}
