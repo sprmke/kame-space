@@ -120,7 +120,7 @@ Platform net as a function of `H`: `net(H) = slope × H + intercept` with `slope
 ### Phase 6 — Guest-visible totals ✓
 
 - Anywhere a guest sees a payable parking total (status page, pay page, form summary, receipt/email) shows **rent + service fee = total** from the snapshotted `guest_fee_total`, never re-derived.
-- Public cards / detail show the **host nightly rate** as "from ₱X / night" with a "service fee at checkout" hint (no fee in the headline).
+- Public cards show the **host weekday rate** as `₱X / night` (no fee in the headline, no leading "from": the card carries one rate and "from" would be wrong when the weekend rate is lower). The detail page booking card adds the service fee line and the total.
 - **Acceptance:** Playwright `@ci` (mocked edges): card shows the host rate; pay page shows the fee line and the total equals PayMongo `amountCentavos`.
 
 ### Phase 7 — Docs, FAQ, cleanup ✓

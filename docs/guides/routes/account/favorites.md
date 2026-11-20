@@ -54,7 +54,7 @@ This is the guest's favorites list: properties they tapped the heart icon on whi
 
 1. Page mount → `useSavedPropertySlugsQuery` reads saved property slugs for the signed-in guest from **`guest_saved_properties`**.
 2. Each slug renders a `WishlistPropertyCard` (fetches its own listing summary).
-3. Empty state ("No saved properties.") links to **Browse properties** (`/properties`).
+3. Empty state: library mascot `favorites`, title **No favorites yet**, short description, **Browse properties** (`/properties`).
 
 ### Unsave path
 
