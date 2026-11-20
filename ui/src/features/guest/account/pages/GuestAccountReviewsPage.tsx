@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Link, useSearchParams } from 'react-router-dom';
 
-import { Inbox, PencilLine, Star } from 'lucide-react';
+import { Building2, Inbox, PencilLine, RefreshCw, Star } from 'lucide-react';
 
 import { GuestAccountContentCard } from '@/features/guest/account/components/GuestAccountContentCard';
 import { GuestAccountEmptyState } from '@/features/guest/account/components/GuestAccountEmptyState';
@@ -79,12 +79,12 @@ export function GuestAccountReviewsPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex min-h-full flex-1 flex-col gap-4">
       <SlidingTabs value={tab} onValueChange={(value) => setTab(value as GuestReviewListTab)}>
-        <SlidingTabsList className="w-full">
+        <SlidingTabsList size="compact" className="w-fit max-w-full" aria-label="Reviews">
           {TABS.map((item) => (
-            <SlidingTabsTrigger key={item.value} value={item.value} className="min-h-[44px]">
-              <item.icon className="size-4" aria-hidden />
+            <SlidingTabsTrigger key={item.value} value={item.value} className="gap-1.5 px-3">
+              <item.icon className="size-3.5 shrink-0" aria-hidden />
               {item.label}
             </SlidingTabsTrigger>
           ))}
@@ -96,31 +96,37 @@ export function GuestAccountReviewsPage() {
           <GuestReviewsPageSkeleton />
         </GuestAccountContentCard>
       ) : query.isError ? (
-        <GuestAccountContentCard>
-          <div className="flex flex-col items-center gap-3 py-6 text-center">
-            <p className="text-sm">Could not load reviews</p>
-            <Button
-              type="button"
-              variant="outline"
-              className="min-h-[44px]"
-              onClick={() => void query.refetch()}
-            >
-              Try again
-            </Button>
-          </div>
-        </GuestAccountContentCard>
+        <GuestAccountEmptyState
+          mascotPose="gentle-failure"
+          title="Couldn't load reviews"
+          description="Check your connection and try again."
+          actionLabel="Try again"
+          actionIcon={RefreshCw}
+          onAction={() => void query.refetch()}
+        />
       ) : items.length === 0 ? (
         <GuestAccountEmptyState
-          message={
+          mascotPose="guest-review"
+          title={
             tab === 'to_write'
               ? 'No stays to review'
               : tab === 'about_you'
-                ? 'No reviews yet'
+                ? 'No reviews about you'
                 : 'No reviews yet'
           }
+          description={
+            tab === 'to_write'
+              ? 'After checkout, stays waiting for your review appear here.'
+              : tab === 'about_you'
+                ? 'Host reviews of your stays will show up here.'
+                : 'Reviews you leave after a stay will show up here.'
+          }
+          actionLabel="Browse properties"
+          actionIcon={Building2}
+          actionHref="/properties"
         />
       ) : (
-        <div className="space-y-3">
+        <div className="flex min-h-0 flex-1 flex-col gap-3">
           {tab === 'about_you' && reputation ? <ReputationSummary reputation={reputation} /> : null}
           <ul className="space-y-3">
             {items.map((item) => (

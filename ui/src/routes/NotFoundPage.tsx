@@ -19,6 +19,8 @@ export function NotFoundPage() {
     <section className="border-border relative overflow-hidden border-b">
       <div className="container relative mx-auto flex min-h-[70vh] flex-col items-center justify-center px-4 py-16 sm:px-6 sm:py-24">
         <BrandEmptyState
+          mascotPose="page-not-found"
+          mascotPriority
           markSize="lg"
           titleAs="h1"
           eyebrow="Error 404"
