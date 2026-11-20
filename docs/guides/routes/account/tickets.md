@@ -22,7 +22,7 @@ Route: `/account/tickets` (+ `?compose=1`, legacy `/new`, `/:ticketId`)
 
 ## Overview
 
-Signed-in explore guests open **Tickets** from the account menu (avatar) or sidebar. Layout matches dashboard **My Tickets**: list + thread split on desktop, one pane on phone, compose modal. Header **New** shows only when the list has tickets; the empty state uses a centered **New ticket** CTA plus a short description. Loading uses the same empty/list-aware `TicketsWorkspaceSkeleton` as Help & Support. Tickets filed from public **Contact** (`/contact`) land here after submit.
+Signed-in explore guests open **Tickets** from the account menu (avatar) or sidebar. Layout matches dashboard tickets: list + thread split on desktop, one pane on phone, compose modal. Guest account cards omit the **My Tickets** title (nav already names the page); header **New** shows only when the list has tickets. Guest empty state uses library mascot `phone` (distinct from Help’s lifebuoy), short description, and a centered **New ticket** CTA (load error uses `gentle-failure`). Loading uses the same empty/list-aware `TicketsWorkspaceSkeleton` as Help & Support. Tickets filed from public **Contact** (`/contact`) land here after submit.
 
 Host org tickets (Help & Support in the dashboard) stay separate (`channel=host`). Explore tickets use `channel=guest` with no organization.
 

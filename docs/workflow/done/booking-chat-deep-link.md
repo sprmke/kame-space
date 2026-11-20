@@ -1,13 +1,17 @@
 ---
 title: 'Booking chat deep link'
-status: in-progress
-tags: [workflow, bookings, inbox]
-updated: 2026-11-18
+status: done
+tags: [workflow, done, bookings, inbox]
+updated: 2026-11-19
+stage: done
+kind: plan
 ---
 
 # Booking chat deep link (UI-09 follow-up)
 
-The chat icon on a bookings list row opens that guest's thread in the property or parking Inbox, not the inbox root.
+**Closed 2026-11-19.** Backend deployed to production and the UI release merged into `main`
+(PR #523, merge commit `55f9229`). The chat icon on a bookings list row opens that guest's
+thread in the property or parking Inbox, not the inbox root.
 
 ## Decisions
 
@@ -41,8 +45,22 @@ The chat icon on a bookings list row opens that guest's thread in the property o
 - Tests: unit (`inboxBookingChats_test.ts`, `bookingChatLink.test.ts`), DOM (`BookingListQuickActions.test.tsx`), handler contract, live Postgres (`bun run test:booking-chats:live`), E2E (`bookingChatShortcut`, `inboxDeepLink`, `parkingHostBookingChat`)
 - Docs: bookings guides (property, org, parking), inbox guide, `faqs.md`, `edge-functions.md`
 
+## Production
+
+- Backend `social-inbox-booking-chats` deployed with CD run `44387067650` (repair run needed
+  because PR #520's migration arrived out of order; the original run `44380384092` stopped at
+  `db push` before applying anything).
+- Verified live: `OPTIONS 200`, `POST 401` (auth boundary, not 404) on `fworvijbrwpyngycotbz`.
+- UI shipped on `main` via PR #523. Tests caught two merged-tree issues in the specs only: a
+  phone-only card duplicate hijacking `getByText(...).first()` at 900px, and axe sampling the
+  sheet mid fade-in (3.47:1 blended colour, 5.9:1 at rest). Both fixed in the spec.
+
 ## Follow-ups
+
+Open on issue [#53](https://github.com/sprmke/kame-space/issues/53), not blocking this ship:
 
 - Manual "Link this Meta thread to this booking" on booking detail or inbox header.
 - Kanban chat affordance.
 - Org-level Inbox route.
+- Name-only matches still open the single matching thread directly, so a common name can open
+  another guest's thread in the same property. Kept as decided; revisit with manual linking.
