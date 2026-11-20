@@ -166,6 +166,8 @@ export const APP_ANALYTICS_EVENTS = [
   'pwa_update_applied',
   'pwa_kill_switch',
   'pwa_launch_fallback',
+  // Security
+  'csp_violation',
   'media_optimized',
   // Marketing trends
   'marketing_trends_run',

@@ -97,6 +97,20 @@ export function platformDailyCostUsdCap(): number {
   return Number.isFinite(n) && n >= 0 ? n : DEFAULT_PLATFORM_DAILY_COST_USD_CAP;
 }
 
+/**
+ * Refuses an AI call once today's platform-wide estimated spend reaches the ceiling
+ * (`AI_PLATFORM_DAILY_COST_USD_CAP`, default 150 USD, 0 disables it). Throws if the spend
+ * cannot be read, so a broken read refuses the call instead of allowing it unchecked.
+ */
+export async function assertPlatformSpendCeiling(): Promise<void> {
+  const platformCap = platformDailyCostUsdCap();
+  if (platformCap <= 0) return;
+  const platformCostToday = await sumPlatformDailyCostUsd();
+  if (platformCostToday >= platformCap) {
+    throw new AiQuotaExceededError('Platform daily AI spend limit reached');
+  }
+}
+
 async function sumPlatformDailyCostUsd(): Promise<number> {
   const sb = db();
   const { data, error } = await sb
@@ -997,15 +1011,13 @@ async function assertOrgAndPropertyAiQuotaInner(
     throw new AiPlatformDisabledError('AI is disabled for this organization', 'organization');
   }
 
-  if (!global.enforceQuotas) return;
+  // The platform-wide USD ceiling is the invoice breaker, so it runs before the per-org quota
+  // switch. Turning `enforce_quotas` off relaxes org and property limits; it must not also lift
+  // the ceiling. Set `AI_PLATFORM_DAILY_COST_USD_CAP=0` to disable the ceiling deliberately.
+  // A failed spend read throws, so the call is refused rather than allowed unchecked.
+  await assertPlatformSpendCeiling();
 
-  const platformCap = platformDailyCostUsdCap();
-  if (platformCap > 0) {
-    const platformCostToday = await sumPlatformDailyCostUsd();
-    if (platformCostToday >= platformCap) {
-      throw new AiQuotaExceededError('Platform daily AI spend limit reached');
-    }
-  }
+  if (!global.enforceQuotas) return;
 
   const orgSummary = await getOrgAiUsageSummary(organizationId);
   if (orgSummary.dailyRemaining <= 0) {

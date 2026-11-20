@@ -53,8 +53,11 @@ console.log(`verify-deployed-preview: ${previewUrl}`);
 const indexHead = await head(`${previewUrl}/`);
 if (indexHead.status !== 200) fail(`/ returned ${indexHead.status}`);
 assertIncludes(indexHead.headers, 'cache-control', 'must-revalidate', 'index.html');
-if (!indexHead.headers.get('content-security-policy-report-only')) {
-  fail('index.html missing Content-Security-Policy-Report-Only (doc 22)');
+if (!indexHead.headers.get('content-security-policy')) {
+  fail('index.html missing an enforcing Content-Security-Policy (doc 22, PR-012)');
+}
+if (indexHead.headers.get('content-security-policy-report-only')) {
+  fail('index.html still sends Content-Security-Policy-Report-Only; the policy must enforce');
 }
 
 const html = await getText(`${previewUrl}/`);
