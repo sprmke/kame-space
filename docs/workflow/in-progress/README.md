@@ -2,7 +2,7 @@
 title: 'In progress'
 status: active
 tags: [workflow, in-progress]
-updated: 2026-11-19
+updated: 2026-11-21
 stage: in-progress
 kind: reference
 ---
@@ -44,7 +44,7 @@ Plans with **implementation complete** and only manual QA left live in [`../for-
 | [`agentic-ai-assistants.md`](./agentic-ai-assistants.md)                                                       | Phases 0-5 largely shipped with live evals. Open: voice tool parity, multi-card replies, guard coverage for arbitrary facts, and one reproducible multi-tool "corrupted thought signature" provider error                                                         |
 | [`ai-studio-sample-assets.md`](./ai-studio-sample-assets.md)                                                   | Blocked on a paid Gemini/Veo key (configured keys hit the free-tier cap)                                                                                                                                                                                          |
 | [`production-readiness/`](./production-readiness/README.md)                                                    | **Launch readiness umbrella**: checklist (00-38), audits, OWASP, module cards, QA batch, operator inputs, evidence. Ledger plus to-fix / all-good lists                                                                                                           |
-| [`booking-chat-deep-link.md`](./booking-chat-deep-link.md)                                                     | Bookings list chat icon deep-links to the guest's thread (one / several / none), org lists supported. Code complete, awaiting release                                                                                                                             |
+| [`booking-chat-deep-link.md`](./booking-chat-deep-link.md)                                                     | Bookings list chat icon deep-links to the guest's thread (one / several / none), org lists supported. Code shipped; PR [#531](https://github.com/sprmke/kame-space/pull/531) moves this plan to `done/`                                                           |
 
 **Moved out 2026-11-18:** [`mobile-search-airbnb-flow.md`](../for-testing/mobile-search-airbnb-flow.md) and [`guest-auth-feature-showcase.md`](../for-testing/guest-auth-feature-showcase.md) → **for testing** (shipped; device and browser QA remain).
 

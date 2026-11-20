@@ -116,6 +116,9 @@ serveAuthenticated('update-booking-details', async (req) => {
     if (message.startsWith('STATUS_CONFLICT:')) {
       return jsonError(req, message.replace('STATUS_CONFLICT:', '').trim(), 409);
     }
+    if (message.startsWith('BOOKING_DATE_CONFLICT:')) {
+      return jsonError(req, message.replace('BOOKING_DATE_CONFLICT:', '').trim(), 409);
+    }
     if (message === 'Booking not found') {
       return jsonError(req, message, 404);
     }
@@ -145,11 +148,10 @@ serveAuthenticated('update-booking-details', async (req) => {
         (result.booking.primary_guest_name as string | undefined) ??
         (beforeRow.primary_guest_name as string | undefined) ??
         null,
-      changes: diffRecord(
-        beforeRow as Record<string, unknown>,
-        result.booking,
-        { include: result.changedColumns, exclude: ['updated_at'] }
-      ),
+      changes: diffRecord(beforeRow as Record<string, unknown>, result.booking, {
+        include: result.changedColumns,
+        exclude: ['updated_at'],
+      }),
       metadata: isDocumentReview
         ? {
             operation,

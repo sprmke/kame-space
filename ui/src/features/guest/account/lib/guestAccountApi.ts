@@ -192,3 +192,53 @@ export async function fetchGuestTrips(): Promise<GuestTripListItemDto[]> {
   const payload = await guestEdgeGet('guest-trips');
   return (payload.trips as GuestTripListItemDto[] | undefined) ?? [];
 }
+
+export type DataSubjectDeletionRequest = {
+  id: string;
+  kind: 'delete';
+  status: string;
+  requested_at: string;
+  due_at: string;
+};
+
+/** Download the signed-in user's own data as JSON (`data-subject-request`, kind=export). */
+export async function downloadGuestDataExport(): Promise<Blob> {
+  const jwt = await guestJwt();
+  const res = await fetch(`${FUNCTIONS_URL}/data-subject-request`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: ANON_KEY,
+      Authorization: `Bearer ${jwt}`,
+    },
+    body: JSON.stringify({ kind: 'export' }),
+  });
+  if (!res.ok) {
+    const json = (await res.json().catch(() => ({}))) as EdgeJson;
+    throw new EdgeResponseError(json.error ?? 'Could not prepare your data', res.status);
+  }
+  return res.blob();
+}
+
+/** Open a reviewed account-deletion request (`data-subject-request`, kind=delete). */
+export async function requestGuestAccountDeletion(
+  note?: string
+): Promise<DataSubjectDeletionRequest> {
+  const jwt = await guestJwt();
+  const res = await fetch(`${FUNCTIONS_URL}/data-subject-request`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: ANON_KEY,
+      Authorization: `Bearer ${jwt}`,
+    },
+    body: JSON.stringify({ kind: 'delete', confirm: 'DELETE', ...(note ? { note } : {}) }),
+  });
+  const json = (await res.json().catch(() => ({}))) as EdgeJson;
+  if (!res.ok || !json.success) {
+    throw new EdgeResponseError(json.error ?? 'Could not record the deletion request', res.status);
+  }
+  const request = (json.data as { request?: DataSubjectDeletionRequest } | undefined)?.request;
+  if (!request) throw new EdgeResponseError('Could not record the deletion request', res.status);
+  return request;
+}

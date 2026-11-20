@@ -13,6 +13,7 @@ import { installChunkErrorRecovery } from '@/lib/chunkReload';
 import { markBoot } from '@/lib/perf/bootMarks';
 import { bootstrapPostHogTelemetry } from '@/lib/posthog/bootstrapTelemetry';
 import { posthog } from '@/lib/posthog/client';
+import { installCspViolationReporter } from '@/lib/security/cspViolationReporter';
 import { reactRootErrorHandlers } from '@/lib/sentry/capture';
 import { initSentry } from '@/lib/sentry/init';
 import { wrapRouterForSentry } from '@/lib/sentry/router';
@@ -30,6 +31,7 @@ initSentry();
 
 bootstrapPostHogTelemetry();
 installChunkErrorRecovery();
+installCspViolationReporter();
 installServiceWorkerErrorBridge();
 // Structured data is not needed for first paint, and importing it eagerly would pull the
 // whole SEO schema module into the entry bundle.

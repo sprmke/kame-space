@@ -27,7 +27,12 @@ require 'X-Content-Type-Options'
 require 'X-Frame-Options'
 require 'Referrer-Policy'
 require 'Permissions-Policy'
-require 'Content-Security-Policy-Report-Only'
+# Enforcing, not Report-Only (PR-012). The closing quote keeps the Report-Only key from matching.
+require '"key": "Content-Security-Policy"'
+if grep -q 'Content-Security-Policy-Report-Only' "$FILE"; then
+  echo "ERROR: ui/vercel.json still sends Content-Security-Policy-Report-Only; the policy must enforce"
+  fail=1
+fi
 require '/index.html'
 require '/icons/'
 require '/favicon/'

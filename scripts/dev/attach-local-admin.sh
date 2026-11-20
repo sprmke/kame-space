@@ -55,11 +55,36 @@ if [[ -z "$SUPABASE_URL" || -z "$SERVICE_ROLE_KEY" ]]; then
   echo "Could not resolve the local Supabase URL or service role key. Is the stack running?" >&2
   exit 1
 fi
+case "$SUPABASE_URL" in
+  http://127.0.0.1:*|http://localhost:*) ;;
+  *)
+    echo "Refusing to write to $SUPABASE_URL: this script only touches the local stack." >&2
+    exit 1
+    ;;
+esac
 
-# Create the auth user if it does not exist. GoTrue admin API is local only.
-USER_LOOKUP="$(curl -s "$SUPABASE_URL/auth/v1/admin/users?per_page=200" \
-  -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY")"
-if ! printf '%s' "$USER_LOOKUP" | grep -qi "\"email\":\"$EMAIL\""; then
+auth_users() {
+  curl -s "$SUPABASE_URL/auth/v1/admin/users?per_page=200" \
+    -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY"
+}
+
+user_id_for_email() {
+  python3 -c '
+import json, sys
+email = sys.argv[1].lower()
+try:
+    users = json.load(sys.stdin).get("users", [])
+except Exception:
+    users = []
+for user in users:
+    if (user.get("email") or "").lower() == email:
+        print(user.get("id", ""))
+        break
+' "$EMAIL"
+}
+
+USER_ID="$(auth_users | user_id_for_email)"
+if [[ -z "$USER_ID" ]]; then
   echo "→ Creating local auth user $EMAIL (password: seed-password)"
   curl -s -X POST "$SUPABASE_URL/auth/v1/admin/users" \
     -H "apikey: $SERVICE_ROLE_KEY" \
@@ -69,15 +94,23 @@ if ! printf '%s' "$USER_LOOKUP" | grep -qi "\"email\":\"$EMAIL\""; then
 
   # GoTrue writes through its own pool; wait until the row is visible to SQL.
   for _ in $(seq 1 20); do
-    if curl -s "$SUPABASE_URL/auth/v1/admin/users?per_page=200" \
-      -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
-      | grep -qi "\"email\":\"$EMAIL\""; then
-      break
-    fi
+    USER_ID="$(auth_users | user_id_for_email)"
+    [[ -n "$USER_ID" ]] && break
     sleep 0.5
   done
 else
   echo "→ Local auth user $EMAIL already exists"
+fi
+
+if [[ -n "$USER_ID" ]]; then
+  # A user created through Google has no password. Set one so local password
+  # sign-in works for the dev test account.
+  echo "→ Ensuring local password for $EMAIL"
+  curl -s -X PUT "$SUPABASE_URL/auth/v1/admin/users/$USER_ID" \
+    -H "apikey: $SERVICE_ROLE_KEY" \
+    -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{"password":"seed-password","email_confirm":true}' >/dev/null
 fi
 
 TMP_SQL="$(mktemp "${TMPDIR:-/tmp}/attach-local-admin.XXXXXX.sql")"

@@ -176,21 +176,21 @@ When invoking `supabase functions serve` manually, `./dev.sh` / `bun run dev:api
 
 #### Guest booking access tokens
 
-| Variable                                 | Notes                                                                                                                                                       |
-| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GUEST_BOOKING_ACCESS_SECRET`            | HMAC secret for guest PII link tokens (`_shared/guestBookingAccessToken.ts`). Optional — falls back to `SUPABASE_SERVICE_ROLE_KEY`.                         |
-| `IDENTITY_SESSION_SECRET`                | **Required.** HMAC for the 10-minute identity capture handoff token (`_shared/identitySessionToken.ts`).                                                    |
-| `IDENTITY_HASH_PEPPER`                   | **Required.** Pepper for `subject_email_hash` and `document_number_hash`. Missing → the submit endpoint returns 500; it is deliberately not defaulted.      |
-| `PHILSYS_PUBLIC_KEY`                     | Optional. Ed25519 public key (raw 32 bytes or SPKI, base64) for PhilID v1 QR verification. Without it a QR read is decoded but **not** signature-verified.  |
-| `IDENTITY_VERDICT_VALIDITY_DAYS`         | Optional, default `365`. Verdict lifetime, capped by the document expiry.                                                                                   |
-| `IDENTITY_CAPTURE_RETENTION_DAYS`        | Optional, default `7`. Capture bucket retention enforced by `identity-captures-purge-cron`.                                                                 |
-| `IDENTITY_PURGE_CRON_SECRET`             | Optional. `x-identity-purge-cron-secret`; the handler fails open until it is set, matching every sibling cron.                                              |
-| `IDENTITY_APP_ORIGINS`                   | Optional, comma-separated. Allowlist for the origin embedded in the handoff URL. Unset locally → the browser `Origin` header is trusted.                    |
-| `GUEST_BOOKING_ACCESS_ENFORCE`           | `true` → `get-form`, `get-sd-form`, `get-guest-review` require valid `?access=` token (or booking within legacy grace). Default off until dev verification. |
-| `GUEST_BOOKING_ACCESS_LEGACY_GRACE_DAYS` | When enforce is on, bare UUID still works for N days after `guest_submissions.created_at`. Default **30**. `0` = no grace.                                  |
-| `AI_PLATFORM_DAILY_COST_USD_CAP`         | Platform-wide daily AI USD ceiling in `assertOrgAndPropertyAiQuota`. Default **150**; `0` = disabled.                                                       |
-| `AI_ASSISTANT_ATTACHMENT_RETENTION_DAYS` | Purge `ai-assistant-attachments` objects older than N days (dashboard-assistant-expire cron). Default **90**.                                               |
-| `VITE_POSTHOG_SESSION_REPLAY`            | UI — set `true` to enable session replay in production builds (default off).                                                                                |
+| Variable                                 | Notes                                                                                                                                                                         |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GUEST_BOOKING_ACCESS_SECRET`            | HMAC secret for guest PII link tokens (`_shared/guestBookingAccessToken.ts`). Optional — falls back to `SUPABASE_SERVICE_ROLE_KEY`.                                           |
+| `IDENTITY_SESSION_SECRET`                | **Required.** HMAC for the 10-minute identity capture handoff token (`_shared/identitySessionToken.ts`).                                                                      |
+| `IDENTITY_HASH_PEPPER`                   | **Required.** Pepper for `subject_email_hash` and `document_number_hash`. Missing → the submit endpoint returns 500; it is deliberately not defaulted.                        |
+| `PHILSYS_PUBLIC_KEY`                     | Optional. Ed25519 public key (raw 32 bytes or SPKI, base64) for PhilID v1 QR verification. Without it a QR read is decoded but **not** signature-verified.                    |
+| `IDENTITY_VERDICT_VALIDITY_DAYS`         | Optional, default `365`. Verdict lifetime, capped by the document expiry.                                                                                                     |
+| `IDENTITY_CAPTURE_RETENTION_DAYS`        | Optional, default `7`. Capture bucket retention enforced by `identity-captures-purge-cron`.                                                                                   |
+| `IDENTITY_PURGE_CRON_SECRET`             | Optional. `x-identity-purge-cron-secret`; the handler fails open until it is set, matching every sibling cron.                                                                |
+| `IDENTITY_APP_ORIGINS`                   | Optional, comma-separated. Allowlist for the origin embedded in the handoff URL. Unset locally → the browser `Origin` header is trusted.                                      |
+| `GUEST_BOOKING_ACCESS_ENFORCE`           | `true` → `get-form`, `get-sd-form`, `get-guest-review` require valid `?access=` token (or booking within legacy grace). Default off until dev verification.                   |
+| `GUEST_BOOKING_ACCESS_LEGACY_GRACE_DAYS` | When enforce is on, bare UUID still works for N days after `guest_submissions.created_at`. Default **30**. `0` = no grace.                                                    |
+| `AI_PLATFORM_DAILY_COST_USD_CAP`         | Platform-wide daily AI USD ceiling in `assertPlatformSpendCeiling`; runs before the per-org quota switch. Default **150**; `0` = disabled. Unreadable spend refuses the call. |
+| `AI_ASSISTANT_ATTACHMENT_RETENTION_DAYS` | Purge `ai-assistant-attachments` objects older than N days (dashboard-assistant-expire cron). Default **90**.                                                                 |
+| `VITE_POSTHOG_SESSION_REPLAY`            | UI — set `true` to enable session replay in production builds (default off).                                                                                                  |
 
 #### Cron secret gate
 
@@ -248,6 +248,25 @@ sync by `ui/src/lib/telemetry/scrubParity.test.ts`. Edit both, never one. Full c
 | `SENTRY_DSN`                 | Server-side **error monitoring**, `kame-space-edge` project DSN — a different value from the browser's `VITE_SENTRY_DSN`. Never copy the web DSN here. Unset → no-op; a malformed DSN logs once and disables. Captured from the same `handleEdgeError` choke point as `POSTHOG_API_KEY`. `extra` runs through the shared PII denylist (`posthogSanitize.ts` → `telemetryScrub.ts`). |
 | `SENTRY_SAMPLE_RATE_WARNING` | Sampling for `warning`-level edge captures only (provider 429s, fail-open rate limiter). Dev `1`, prod `0.25`. Errors are never sampled.                                                                                                                                                                                                                                            |
 | `APP_RELEASE`                | Release id (git SHA) stamped by `scripts/deploy/deploy-supabase*.sh` (`supabase secrets set APP_RELEASE=…`) before `functions deploy`. Do not set by hand except in a rollback rehearsal. Pairs with the browser `VITE_APP_VERSION` so Sentry issues, PostHog events and edge errors share one deploy id. Unset → edge events carry no release.                                     |
+
+#### Ops alerting (PR-027)
+
+`_shared/ops/opsAlert.ts` + `ops-alert-ingest`; every edge **5xx** raises `edge:<fn>:5xx`. Setup and the signed drill: [`archive/operations/alerting-setup.md`](../archive/operations/alerting-setup.md) §3.
+
+| Variable                  | Notes                                                                                                                                                                |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OPS_ALERTS_ENABLED`      | `true` turns the dispatcher on. Production also auto-enables when `ENVIRONMENT=production`. Local `functions serve` never pages unless `OPS_ALERTS_FORCE_SEND=true`. |
+| `TELEGRAM_OPS_BOT_TOKEN`  | Separate ops bot (not the per-property bot). Unset → Telegram delivery skipped.                                                                                      |
+| `TELEGRAM_OPS_CHAT_ID`    | Private ops group chat id. Unset → Telegram delivery skipped.                                                                                                        |
+| `OPS_ALERT_EMAILS`        | Comma-separated Resend recipients, P0/P1 + drill only. Unset → email delivery skipped.                                                                               |
+| `OPS_ALERT_FROM_EMAIL`    | Optional sender; default `Kame Space Ops <ops@kamespace.com>`.                                                                                                       |
+| `OPS_ALERT_INGEST_SECRET` | HMAC-SHA256 secret for `ops-alert-ingest` (`X-Ops-Signature: sha256=<hex>`). Missing → endpoint returns 503.                                                         |
+
+#### Data-subject requests (PR-145)
+
+| Variable                            | Notes                                                                                                                   |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `DATA_SUBJECT_REQUESTS_CRON_SECRET` | Header `X-Data-Subject-Cron-Secret` for `data-subject-requests-cron`. Vault secret name `data_subject_requests_secret`. |
 
 #### PWA Web Push
 

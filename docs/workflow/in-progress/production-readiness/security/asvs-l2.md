@@ -1,7 +1,7 @@
 ---
 title: 'ASVS 5.0 L2 (selected)'
 status: active
-updated: 2026-11-06
+updated: 2026-11-20
 launch_gate: B
 readiness: unverified
 ---
@@ -13,7 +13,7 @@ Not a full certification. Controls that map to this stack:
 | Area               | Control                                      | Status                               |
 | ------------------ | -------------------------------------------- | ------------------------------------ |
 | V2 Auth            | MFA / step-up on destructive super-admin     | 🟡 QA #7                             |
-| V3 Session         | Sign-out clears caches                       | 🟡 PR-015                            |
+| V3 Session         | Sign-out clears caches                       | ✅ PR-015 (e2e, 2026-11-20)          |
 | V4 Access          | Server-side permission leaves                | 🟡 catalogs + `resolveScoped*Access` |
 | V5 Validation      | Server Zod on writes                         | 🟡 PR-018                            |
 | V7 Error           | No stack/secrets in JSON                     | 🟡 pentest item                      |

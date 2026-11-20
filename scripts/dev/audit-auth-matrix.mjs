@@ -138,6 +138,12 @@ const SCOPE_PATTERNS = [
   /\bunsendGuestWebMessage\s*\(\s*user\.id\b/,
   /\beditGuestWebMessage\s*\(\s*user\.id\b/,
   /\blistLinkableParkingBookingsForGuest\s*\(\s*user\.id\b/,
+  // RA 10173 self-service: every query inside the service is `.eq('user_id'|'guest_user_id'|
+  // 'guest_auth_user_id', user.id)` or `.eq(submitted_by_email, user.email)`. The resource is
+  // the caller's own account, so there is no tenant resource to scope beyond the verified user.
+  /\bbuildDataSubjectExport\s*\(\s*user\s*\)/,
+  /\brecordExportDelivered\s*\(\s*user\s*\)/,
+  /\brequestAccountDeletion\s*\(\s*user\b/,
   // Ownership-by-caller-identity convention: `resourceId, user.id[, user.email]`
   // passed into a service function that verifies the caller owns the resource
   // before acting. Common in the guest-parking self-service surface. This is a

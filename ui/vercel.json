@@ -173,11 +173,11 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(self), geolocation=(self), payment=()"
+          "value": "camera=(self), microphone=(self), geolocation=(self), payment=()"
         },
         {
-          "key": "Content-Security-Policy-Report-Only",
-          "value": "default-src 'self'; upgrade-insecure-requests; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' https://challenges.cloudflare.com https://maps.googleapis.com https://maps.gstatic.com https://us-assets.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://us.i.posthog.com https://us-assets.i.posthog.com https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com wss://generativelanguage.googleapis.com https://maps.googleapis.com https://staticmap.openstreetmap.de https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io; frame-src 'self' https://challenges.cloudflare.com https://www.google.com https://maps.google.com https://www.openstreetmap.org; worker-src 'self' blob:; manifest-src 'self'; media-src 'self' data: blob: https:"
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; upgrade-insecure-requests; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' 'wasm-unsafe-eval' https://challenges.cloudflare.com https://maps.googleapis.com https://maps.gstatic.com https://us-assets.i.posthog.com https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://us.i.posthog.com https://us-assets.i.posthog.com https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com wss://generativelanguage.googleapis.com https://maps.googleapis.com https://staticmap.openstreetmap.de https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/ https://storage.googleapis.com/mediapipe-models/face_landmarker/; frame-src 'self' https://*.supabase.co https://challenges.cloudflare.com https://www.google.com https://maps.google.com https://www.openstreetmap.org; worker-src 'self' blob:; manifest-src 'self'; media-src 'self' data: blob: https:"
         },
         {
           "key": "X-Frame-Options",

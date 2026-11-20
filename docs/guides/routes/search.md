@@ -96,7 +96,7 @@ Guests can search by place name, city, listing title, **Nearby**, or everyday wo
 
 ### Phone and tablet search (below `lg`)
 
-Same values, same URLs, different control. `HeroSearch` swaps the three-segment bar for one pill and a full-screen sheet whenever the viewport is under 1024px. Plan: `docs/workflow/in-progress/mobile-search-airbnb-flow.md`.
+Same values, same URLs, different control. `HeroSearch` swaps the three-segment bar for one pill and a full-screen sheet whenever the viewport is under 1024px. Plan: `docs/workflow/for-testing/mobile-search-airbnb-flow.md`.
 
 | Piece           | Behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

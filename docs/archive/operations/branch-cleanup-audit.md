@@ -454,3 +454,34 @@ PR #538 shipped the same squash commit to `main` as
 `1e24f40c1acabb9972fc81149337c4095204c6e5`. Its release branch `release/2026-11-19-landing-hero`
 was cut from `main` and recorded at `00a521a1a` before deletion. Restore it with
 `git branch release/2026-11-19-landing-hero 00a521a1a` if needed.
+
+## 2026-11-21 module and branch sync
+
+Read-only audit first (`bun run branch:audit`), then delete only branches that were fully merged
+or fully applied, with no unapplied patch and no worktree. Deleted, local and remote:
+
+| Branch                                           | Tip SHA                                    | Why safe                                               |
+| ------------------------------------------------ | ------------------------------------------ | ------------------------------------------------------ |
+| `release/2026-11-19-host-parking-pricing`        | `833e1812e8f61b84a08b185e94c694d1be9bae05` | Ancestor of `develop` (shipped in #533)                |
+| `release/2026-11-19-multi-channel-calendar-sync` | `2114402865d9af07b38bbfc59f6c1915fa64aa3f` | Ancestor of `develop` (shipped in #524)                |
+| `release/2026-11-19-ui-improvements`             | `54d4994101f1fd3bc144e8ce01f26f38c33aeca8` | Ancestor of `develop` (shipped in #551)                |
+| `sprmke/flyingfish`                              | `3068d654cbf351e541076dd494c402cd3903bea5` | Worktree ports change shipped in #542                  |
+| `sprmke/audit-modules-worktrees-prs`             | `18c84051821b00c14a9be48f2c08b399c83d7cd6` | Fully applied; no PR                                   |
+| `docs/calendar-sync-release-record`              | `cffd67fe6d4c6914cd87b244c81eb0973b85fb1a` | Fully applied; superseded by the live verification doc |
+| `chore/parking-pricing-test-followups`           | `d0375b6defb9098fb6f8671daaf25d532204e541` | Shipped in #537; no new files                          |
+| `fix/preview-existing-worktrees` (remote only)   | `684d47a18`                                | Fully applied via #547; local worktree stays           |
+| `sprmke/analyze-editable-public-pages` (remote)  | `042ef0116`                                | Fully applied; local worktree stays                    |
+
+Restore any of them with `git branch <name> <sha>` while the objects survive.
+
+Kept on purpose: everything with an open PR or unapplied patch
+(`feat/multi-channel-calendar-sync`, `feat/host-set-parking-pricing`,
+`test/host-set-parking-pricing-coverage`, `docs/calendar-sync-live-verification-db-checks`,
+`sprmke/desktop-screens-mobile-redesign`, `feat/marketing-ai-studio-overhaul`,
+`feat/multi-residence-config-decoupling`, `codex/mascot-talking-preview`), the
+`backup/` and `recover/` snapshots, and the two worktrees holding uncommitted edits
+(`release/2026-11-19-prod-ship`, `sprmke/refine-payment-plans-billing`).
+
+Worktrees that still point at merged branches (`arowana`, `bass`, `coelacanth`, `cutlassfish`,
+`dulse`, `sculpin`, `anemone`) were **not** removed: removing one closes an Orca workspace, which
+is the owner's call. Their branches can be deleted as soon as the worktree is retired.

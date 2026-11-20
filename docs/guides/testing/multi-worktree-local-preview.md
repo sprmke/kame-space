@@ -75,6 +75,11 @@ terminal, waits for HTTP 200, and opens an Orca browser tab at the sticky port.
 Pass `--split right` to open it in a split pane. It is idempotent: a running
 server and an existing tab are reused.
 
+Each Orca browser tab starts with no session. On `/for-hosts/login` or
+`/for-guests/login`, local dev shows **Use local test account**; it signs in with
+the seeded password account instead of Google. See
+[local seed data](./local-seed-data.md#signing-in).
+
 ## Auth and Maps on non-5173 ports
 
 Local GoTrue `additional_redirect_urls` includes `5173`–`5199` for

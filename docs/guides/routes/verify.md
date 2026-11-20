@@ -94,7 +94,7 @@ result badge and any warnings on the booking, not the ID number.
 
 | Layer              | Coverage                                                                                                                                                                                        |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unit               | `captureQuality.test.ts`, `identityVerdict.test.ts`                                                                                                                                             |
+| Unit               | `captureQuality.test.ts`, `identityVerdict.test.ts`; `cspPolicy.test.ts` pins the MediaPipe CDN version and policy paths                                                                        |
 | Deno               | `identitySessionToken_test.ts`, `identityVerification_test.ts`, `identitySessionService_test.ts`, `philsysQr_test.ts`, `mrz_test.ts`                                                            |
 | E2E mocked (`@ci`) | `ui/e2e/features/host-verification/` — 12 tests: registration → onboarding → live capture → submit, expired link, camera denied, pipeline failure, every Get Verified state, super-admin review |
 | E2E side by side   | `flows/hostRegistrationReviewTwoWindows.spec.ts` — host onboarding in one window, super-admin approval in the other                                                                             |
@@ -115,5 +115,7 @@ its own server while another session owns 4173.
 - **Page reloaded** → the token still works; it is not consumed on read.
 - **Camera denied** → visible upload fallback; the flow never dead-ends.
 - **Liveness unavailable** → `Continue` appears; the verdict caps at `unverified`.
+- **Liveness assets** load at runtime from a pinned `cdn.jsdelivr.net` path and `storage.googleapis.com` (`faceLandmarker.ts`). The Content-Security-Policy in `ui/vercel.json` allows exactly those paths and `'wasm-unsafe-eval'`. A version bump must change both, or liveness is silently skipped for everyone (`cspPolicy.test.ts` fails on drift). Until 2026-11-20 the pinned version did not exist on npm, so every capture fell back to this case.
+- **Camera blocked by the browser policy** → the `Permissions-Policy` header must keep `camera=(self)`; `camera=()` blocks capture on every device.
 - **Already completed** → "Already done. You can close this page."
 - **Submit raced** → the second request gets 409 and the phone shows the first result.

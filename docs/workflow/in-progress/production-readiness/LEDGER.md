@@ -38,7 +38,7 @@ Evidence: [`evidence/phase5-reverify-2026-11-01.md`](./evidence/phase5-reverify-
 | PR-008 | ✅ re-verified: guest-link tokens 401 without/forged, 200 inside grace                                                                                                                                                                                                                                                                               | `probe-readiness-guest-token-dev.mjs`                                                             |
 | PR-009 | ✅ re-verified: `GUEST_BOOKING_ACCESS_ENFORCE=true` on hosted dev                                                                                                                                                                                                                                                                                    | same probe                                                                                        |
 | PR-014 | ✅ re-verified: RBAC matrix + invite abuse on current dev                                                                                                                                                                                                                                                                                            | `probe-readiness-rbac-dev.mjs`, `probe-readiness-invites-dev.mjs`                                 |
-| PR-016 | ✅ uploads: byte sniffing rejects HTML-as-PNG and PDF-as-PNG on every probed path                                                                                                                                                                                                                                                                    | `probe-readiness-uploads-dev.mjs`                                                                 |
+| PR-016 | Storage: tenant paths verified, every byte-writer sniffs (CI guard), property/org deletion purges guest-PII buckets; scheduled reconcile deferred | high | agent | ✅ | 20; evidence 2026-11-20 |
 | PR-069 | ✅ abuse/CORS/storage probes run against hosted dev (CORS probe fixed, #186)                                                                                                                                                                                                                                                                         | `abuse-public-endpoints.sh`, `check-cors-origins.sh`                                              |
 | PR-076 | ✅ hosted-dev functions are on `develop` again (deployed 2026-11-01); migrations in sync                                                                                                                                                                                                                                                             | `deploy-supabase-dev.sh --functions-only`, `migrations:status:dev`                                |
 | PR-130 | ✅ closed: hosted dev and `develop` migration history match                                                                                                                                                                                                                                                                                          | `bun run migrations:status:dev`                                                                   |
@@ -77,17 +77,17 @@ Fixed in this pass (product): the notifications hub feed never attached its load
 
 ## Counts (2026-10-19, pre-baseline)
 
-| Tag | Count | Notes                                                                                   |
-| --- | ----- | --------------------------------------------------------------------------------------- |
-| ⛔  | 22    | Keys, billing, GitHub env, dashboards                                                   |
-| 🧭  | 8     | Product calls still open                                                                |
-| 🔴  | 2     | Hosted-dev drift until deploy finishes; GitHub `development` env missing smoke secrets  |
-| 🟡  | 74    | Code claimed done, not re-tested on a fresh SHA                                         |
-| ⏸️  | 18    | Explicit deferrals with a written reason                                                |
-| 🆕  | 12    | Gaps with no prior checklist (privacy, a11y, SEO, business races, …)                    |
-| ✅  | 4     | Reconciled this session (branch protection, parking ungate flag, superhost files, P0-7) |
+| Tag | Count | Notes                                                                                                               |
+| --- | ----- | ------------------------------------------------------------------------------------------------------------------- |
+| ⛔  | 22    | Keys, billing, GitHub env, dashboards                                                                               |
+| 🧭  | 8     | Product calls still open                                                                                            |
+| 🔴  | 2     | Hosted-dev drift until deploy finishes; GitHub `development` env missing smoke secrets                              |
+| 🟡  | 74    | Code claimed done, not re-tested on a fresh SHA                                                                     |
+| ⏸️  | 18    | Explicit deferrals with a written reason                                                                            |
+| 🆕  | 12    | Gaps with no prior checklist (privacy, a11y, SEO, business races, …)                                                |
+| ✅  | 8     | Reconciled this session (branch protection, parking ungate flag, superhost files, P0-7, PR-001/002, PR-006, PR-012) |
 
-Top blockers for launch: restore drill (PR-024), Turnstile enforce on hosted UI (PR-001), paid AI ceiling (PR-003), PayMongo sandbox E2E (PR-030), guest-token IDOR remaining (PR-008), CSP enforce (PR-012).
+Top blockers for launch: restore drill (PR-024), paid AI key and GCP budget (PR-003), PayMongo go-live keys (PR-097), guest-token IDOR remaining (PR-008), alerts and on-call (PR-027).
 
 ---
 
@@ -128,31 +128,31 @@ Top blockers for launch: restore drill (PR-024), Turnstile enforce on hosted UI 
 
 ## Gate B — Security posture
 
-| ID     | Item                                                                                                            | Sev     | Owner    | Tag | Sources                                                            |
-| ------ | --------------------------------------------------------------------------------------------------------------- | ------- | -------- | --- | ------------------------------------------------------------------ |
-| PR-001 | Cloudflare Turnstile keys + `CAPTCHA_MODE=enforce` on hosted UI                                                 | blocker | operator | ⛔  | P0-1; captcha audit; operator list                                 |
-| PR-002 | Supabase Auth Attack Protection captcha in Dashboard                                                            | high    | operator | ⛔  | P0-2                                                               |
-| PR-008 | Guest-link tokens: remaining IDOR on `get-form` / SD / review / voucher without `access=` after grace           | blocker | agent    | ✅  | hardening Phase 2; cost-abuse 2.1; V-5                             |
-| PR-009 | `GUEST_BOOKING_ACCESS_ENFORCE=true` already set on hosted-dev; re-verify after deploy                           | high    | agent    | 🟡  | V-5; secrets list 2026-10-19                                       |
-| PR-010 | RLS probe as `anon`/`authenticated` on **hosted** Postgres                                                      | high    | operator | ⛔  | 22                                                                 |
-| PR-011 | Supabase security advisors (`mcp get_advisors`) on hosted                                                       | high    | operator | ⛔  | 22, 14                                                             |
-| PR-012 | CSP enforce-ready (#176: 0 own-origin violations enforced); flip to enforcing + report-uri                      | high    | product  | 🧭  | 16, 22                                                             |
-| PR-013 | Prompt-injection adversarial tests (inbox + assistant exist; expand)                                            | high    | agent    | 🟡  | 22; cost-abuse §6.2                                                |
-| PR-014 | RBAC parity + invite abuse verified live (#162: org/parking invites left)                                       | high    | agent    | ✅  | 21, 29                                                             |
-| PR-015 | Shared-device sign-out: query cache / realtime / PWA Cache Storage                                              | medium  | agent    | 🟡  | 21                                                                 |
-| PR-016 | Storage: tenant-scoped paths; MIME sniff remaining upload paths; guest-PII delete propagation                   | high    | agent    | 🟡  | 20                                                                 |
-| PR-017 | Signed-URL TTLs per class + issuance log for sensitive                                                          | medium  | agent    | 🟡  | 20                                                                 |
-| PR-018 | Input validation unknown-field rejection on every write                                                         | medium  | agent    | 🟡  | 18                                                                 |
-| PR-019 | Idempotency on retryable writes; webhook event-id dedupe all providers                                          | high    | agent    | 🟡  | 18                                                                 |
-| PR-020 | Timeouts + backoff + circuit breakers on remaining outbound calls                                               | medium  | agent    | 🟡  | 18                                                                 |
-| PR-021 | Cost-weighted rate limits (AI/email/Meta/maps/payments)                                                         | medium  | agent    | ⏸️  | 23 → service-cost plan                                             |
-| PR-022 | Fail-closed cron secrets: Vault vs Edge parity (P0-6). Edge has 23 `*_CRON_SECRET` names; confirm pg_cron Vault | high    | operator | ⛔  | P0-6; secrets list                                                 |
-| PR-023 | In-house pentest §6.2 after V-1                                                                                 | high    | agent    | 🟡  | cost-abuse-verification; V-4                                       |
-| PR-068 | QA batch #4 CAPTCHA walk (pass + fail keys)                                                                     | high    | agent    | ⛔  | needs PR-001                                                       |
-| PR-069 | Abuse scripts vs hosted-dev (`cost-abuse-verify-dev.sh`)                                                        | high    | agent    | 🟡  | V-2                                                                |
-| PR-007 | GitHub branch protection `quality` on `develop` + `main`                                                        | high    | operator | ✅  | `gh api` 2026-10-19: 1 review + codeowners + `quality`. Tick P0-7. |
-| PR-070 | `PARKING_INTERIM_UNGATED_FEATURES` removed                                                                      | medium  | agent    | ✅  | `useFeatureGate.ts` comment; parking uses org plan                 |
-| PR-071 | Superhost files present (`orgSuperhost.ts`, cron, UI)                                                           | low     | agent    | ✅  | hardening stale note                                               |
+| ID     | Item                                                                                                            | Sev     | Owner    | Tag | Sources                                                                                  |
+| ------ | --------------------------------------------------------------------------------------------------------------- | ------- | -------- | --- | ---------------------------------------------------------------------------------------- |
+| PR-001 | Cloudflare Turnstile keys + `CAPTCHA_MODE=enforce` on hosted UI                                                 | blocker | agent    | ✅  | Verified on production 2026-11-20 (`verify-captcha-enforcement.ts`); P0-1; captcha audit |
+| PR-002 | Supabase Auth Attack Protection captcha in Dashboard                                                            | high    | agent    | ✅  | Verified on production 2026-11-20 (`captcha_failed`); P0-2                               |
+| PR-008 | Guest-link tokens: remaining IDOR on `get-form` / SD / review / voucher without `access=` after grace           | blocker | agent    | ✅  | hardening Phase 2; cost-abuse 2.1; V-5                                                   |
+| PR-009 | `GUEST_BOOKING_ACCESS_ENFORCE=true` already set on hosted-dev; re-verify after deploy                           | high    | agent    | 🟡  | V-5; secrets list 2026-10-19                                                             |
+| PR-010 | RLS probe as `anon`/`authenticated` on **hosted** Postgres                                                      | high    | operator | ⛔  | 22                                                                                       |
+| PR-011 | Supabase security advisors (`mcp get_advisors`) on hosted                                                       | high    | operator | ⛔  | 22, 14                                                                                   |
+| PR-012 | CSP enforcing in `ui/vercel.json`; real-browser gate `bun run test:e2e:csp`; `csp_violation` monitoring         | high    | agent    | ✅  | 16, 22; evidence 2026-11-20                                                              |
+| PR-013 | Prompt-injection adversarial tests: 14-case fence dataset, formatted-account and refusal-leak guards fixed | high | agent | ✅ | 22; cost-abuse §6.2; evidence 2026-11-20 |
+| PR-014 | RBAC parity + invite abuse verified live (#162: org/parking invites left)                                       | high    | agent    | ✅  | 21, 29                                                                                   |
+| PR-015 | Shared-device sign-out proof; post-sign-out anon re-subscribe leak fixed and covered by @ci @critical e2e | medium | agent | ✅ | 21; evidence 2026-11-20 |
+| PR-016 | Storage: tenant paths verified, every byte-writer sniffs (CI guard), property/org deletion purges guest-PII buckets; scheduled reconcile deferred | high | agent | ✅ | 20; evidence 2026-11-20 |
+| PR-017 | Signed-URL TTLs per class + issuance log for sensitive                                                          | medium  | agent    | 🟡  | 20                                                                                       |
+| PR-018 | Input validation unknown-field rejection on every write                                                         | medium  | agent    | 🟡  | 18                                                                                       |
+| PR-019 | Idempotency on retryable writes; webhook event-id dedupe all providers | high | agent | ✅ | Offline outbox replays go through `withIdempotency` (`transition-*`, inbox send, guest chat, notifications). Webhooks: PayMongo claim lease (`processed_paymongo_events.processed_at`), Meta outbox `event_key`, Resend inbound `processed_emails`. Evidence: [`pr-019-webhook-idempotency-2026-11-20.md`](./evidence/pr-019-webhook-idempotency-2026-11-20.md) |
+| PR-020 | Timeouts + backoff + circuit breakers on remaining outbound calls                                               | medium  | agent    | 🟡  | 18                                                                                       |
+| PR-021 | Cost-weighted rate limits (AI/email/Meta/maps/payments)                                                         | medium  | agent    | ⏸️  | 23 → service-cost plan                                                                   |
+| PR-022 | Fail-closed cron secrets: Vault vs Edge parity (P0-6). Edge has 23 `*_CRON_SECRET` names; confirm pg_cron Vault | high    | operator | ⛔  | P0-6; secrets list                                                                       |
+| PR-023 | In-house pentest §6.2 after V-1                                                                                 | high    | agent    | 🟡  | cost-abuse-verification; V-4                                                             |
+| PR-068 | QA batch #4 CAPTCHA walk (pass + fail keys)                                                                     | high    | agent    | ⛔  | needs PR-001                                                                             |
+| PR-069 | Abuse scripts vs hosted-dev (`cost-abuse-verify-dev.sh`)                                                        | high    | agent    | 🟡  | V-2                                                                                      |
+| PR-007 | GitHub branch protection `quality` on `develop` + `main`                                                        | high    | operator | ✅  | `gh api` 2026-10-19: 1 review + codeowners + `quality`. Tick P0-7.                       |
+| PR-070 | `PARKING_INTERIM_UNGATED_FEATURES` removed                                                                      | medium  | agent    | ✅  | `useFeatureGate.ts` comment; parking uses org plan                                       |
+| PR-071 | Superhost files present (`orgSuperhost.ts`, cron, UI)                                                           | low     | agent    | ✅  | hardening stale note                                                                     |
 
 ---
 
@@ -172,15 +172,15 @@ Top blockers for launch: restore drill (PR-024), Turnstile enforce on hosted UI 
 
 ## Gate D — AI / voice
 
-| ID     | Item                                                                            | Sev     | Owner    | Tag | Sources                                         |
-| ------ | ------------------------------------------------------------------------------- | ------- | -------- | --- | ----------------------------------------------- |
-| PR-003 | GCP billing + hard cap; paid `GEMINI_API_KEY` / `GROQ_API_KEY` per env          | blocker | operator | ⛔  | P0-3; ai-paid-provider plan                     |
-| PR-004 | Voice receptionist: paid project terms, staged rollout, dogfood                 | high    | operator | ⛔  | ai-receptionist audit Phase 0/8; D-3 after P0-3 |
-| PR-005 | AI LLM hardening manual checklist (assistant, inbox, receipt override, eval:ai) | high    | agent    | 🟡  | audits/ai-llm                                   |
-| PR-006 | Platform USD ceiling + voice quota-before-mint on hosted                        | high    | operator | ⛔  | planned/ai-paid-provider                        |
-| PR-037 | Drop legacy `voice_receptionist_*` tables after hosted backfill verify          | medium  | agent    | 🟡  | receptionist Phase 2/9                          |
-| PR-038 | Dashboard assistant + AI chat mode (in-progress) behind flag until verified     | medium  | agent    | 🆕  | in-progress/ai-chat-mode                        |
-| PR-039 | Super-admin AI settings ownership remaining clamps (property/voice)             | medium  | agent    | 🟡  | done/ai-settings-super-admin-ownership          |
+| ID     | Item                                                                                                      | Sev     | Owner    | Tag | Sources                                                        |
+| ------ | --------------------------------------------------------------------------------------------------------- | ------- | -------- | --- | -------------------------------------------------------------- |
+| PR-003 | GCP billing + hard cap; paid `GEMINI_API_KEY` / `GROQ_API_KEY` per env                                    | blocker | operator | ⛔  | P0-3; ai-paid-provider plan                                    |
+| PR-004 | Voice receptionist: paid project terms, staged rollout, dogfood                                           | high    | operator | ⛔  | ai-receptionist audit Phase 0/8; D-3 after P0-3                |
+| PR-005 | AI LLM hardening manual checklist (assistant, inbox, receipt override, eval:ai)                           | high    | agent    | 🟡  | audits/ai-llm                                                  |
+| PR-006 | Platform USD ceiling runs before the per-org quota switch; voice checks quota before minting (2026-11-20) | high    | agent    | ✅  | planned/ai-paid-provider; `aiUsageService_platformCap_test.ts` |
+| PR-037 | Drop legacy `voice_receptionist_*` tables after hosted backfill verify                                    | medium  | agent    | 🟡  | receptionist Phase 2/9                                         |
+| PR-038 | Dashboard assistant + AI chat mode (in-progress) behind flag until verified                               | medium  | agent    | 🆕  | in-progress/ai-chat-mode                                       |
+| PR-039 | Super-admin AI settings ownership remaining clamps (property/voice)                                       | medium  | agent    | 🟡  | done/ai-settings-super-admin-ownership                         |
 
 ---
 

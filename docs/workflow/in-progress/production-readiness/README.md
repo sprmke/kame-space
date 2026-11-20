@@ -2,31 +2,31 @@
 title: 'Production readiness'
 status: active
 tags: [workflow, in-progress, production-readiness, security, qa, launch]
-updated: 2026-11-06
+updated: 2026-11-21
 stage: in-progress
 kind: reference
 ---
 
 # Production readiness
 
-Every launch readiness checklist, audit, QA batch and operator list in one place. **Start with [`STATUS.md`](./STATUS.md)** for the current done / in-progress / pending view. Plan: [`production-readiness-launch-audit.md`](./production-readiness-launch-audit.md).
+Every launch readiness checklist, audit, QA batch and operator list in one place. **Start with [`qa/MODULE-DISPOSITION.md`](./qa/MODULE-DISPOSITION.md)** for the current done / in-progress / pending view of every module (re-verified 2026-11-21 against `develop` `9b3f3719f`). [`STATUS.md`](./STATUS.md) keeps the 2026-11-02 gate scoreboard as historical detail. Plan: [`production-readiness-launch-audit.md`](./production-readiness-launch-audit.md).
 
 **Folder = stage exception:** docs moved here from `planned/`, `for-testing/` and `done/` keep that history as `origin_stage` in frontmatter. They are re-verified against one baseline SHA before any is marked good. Do not move them back out with `workflow-move.sh`; that script only handles top-level stage folders.
 
 ## Status
 
-| Item         | State                                                                                                                                                                                                                                                                                                |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Baseline SHA | **`96eb9334`** (2026-11-01), after #185–#190. Hosted dev was deployed by `CD Dev` from `d4c63b07` (same edge tree, migrations in sync). Evidence: [`evidence/phase5-reverify-2026-11-01.md`](./evidence/phase5-reverify-2026-11-01.md)                                                               |
-| Hosted       | **`fwor…` is production since 2026-10-27** (`kamespace.com` and `dev.kamehomes.space` share it; no staging backend). `CD Dev` deploys to it, so hosted writes need `kamewave`                                                                                                                        |
-| CI / CD      | `CI` green on `96eb9334`; **`CD Dev` green end to end** (quality → backup → migrations → functions → smoke → adversarial auth) for the first time since 2026-09-23                                                                                                                                   |
-| Phases 1–3   | Done ([#146](https://github.com/sprmke/kame-space/pull/146)): folder, [`LEDGER.md`](./LEDGER.md), 57 module cards, checklists 31–38                                                                                                                                                                  |
-| Phases 4–8   | Automated sweep + hosted-dev probes re-run 2026-11-01 (IDOR, RBAC, invites, uploads, workflow, guest tokens, CORS, rate limits, storage, smoke, preview, AI evals, plan catalog, RLS, clean `db:reset`). Load test, restore drill, Lighthouse medians and LLM live probes still open (see scorecard) |
-| Phase 9      | Operator list done; [prod env matrix](./environments/prod-env-matrix.md) done; cutover dry run partial                                                                                                                                                                                               |
-| Phase 10     | Scorecard below is a draft until the remaining 🔴 / ⛔ / 🧭 rows close                                                                                                                                                                                                                               |
-| Fix PRs      | #185–#190 merged 2026-11-01. No open readiness PRs                                                                                                                                                                                                                                                   |
-| E2E `@ci`    | 297 passed · 9 skipped (marketing studio, PR-133) · 0 failed                                                                                                                                                                                                                                         |
-| Tag counts   | ✅ 17 · 🟡 36 · 🔴 4 · ⛔ 26 · 🆕 15 · 🧭 7 · ⏸️ 8 (~113 items; PR-133…PR-139 added)                                                                                                                                                                                                                 |
+| Item         | State                                                                                                                                                                                                                                                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Baseline SHA | **`96eb9334`** (2026-11-01), after #185–#190. Hosted dev was deployed by `CD Dev` from `d4c63b07` (same edge tree, migrations in sync). Evidence: [`evidence/phase5-reverify-2026-11-01.md`](./evidence/phase5-reverify-2026-11-01.md)                                                                                  |
+| Hosted       | **`fwor…` is production since 2026-10-27** (`kamespace.com` and `dev.kamehomes.space` share it; no staging backend). `CD Dev` deploys to it, so hosted writes need `kamewave`                                                                                                                                           |
+| CI / CD      | `CI` green on `96eb9334`; **`CD Dev` green end to end** (quality → backup → migrations → functions → smoke → adversarial auth) for the first time since 2026-09-23                                                                                                                                                      |
+| Phases 1–3   | Done ([#146](https://github.com/sprmke/kame-space/pull/146)): folder, [`LEDGER.md`](./LEDGER.md), 57 module cards, checklists 31–38                                                                                                                                                                                     |
+| Phases 4–8   | Automated sweep + hosted-dev probes re-run 2026-11-01 (IDOR, RBAC, invites, uploads, workflow, guest tokens, CORS, rate limits, storage, smoke, preview, AI evals, plan catalog, RLS, clean `db:reset`). Load test, restore drill, Lighthouse medians and LLM live probes still open (see scorecard)                    |
+| Phase 9      | Operator list done; [prod env matrix](./environments/prod-env-matrix.md) done; cutover dry run partial                                                                                                                                                                                                                  |
+| Phase 10     | Scorecard below is a draft until the remaining 🔴 / ⛔ / 🧭 rows close                                                                                                                                                                                                                                                  |
+| Fix PRs      | #185–#190 merged 2026-11-01. 2026-11-21: #556 (guest-document purge), #555 (sign-out cache, injection tests) and #544 (CSP, captcha, AI ceiling) merged; #553 (money, webhook, alerting, privacy) open. |
+| E2E `@ci`    | 297 passed · 9 skipped (marketing studio, PR-133) · 0 failed                                                                                                                                                                                                                                                            |
+| Tag counts   | ✅ 17 · 🟡 36 · 🔴 4 · ⛔ 26 · 🆕 15 · 🧭 7 · ⏸️ 8 (~113 items; PR-133…PR-139 added)                                                                                                                                                                                                                                    |
 
 ## Go / no-go (draft, 2026-10-19)
 

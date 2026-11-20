@@ -88,6 +88,12 @@ export const SCHEDULED_JOBS: ScheduledJobDef[] = [
     features: ['Guest inbox'],
   },
   {
+    fn: 'data-subject-requests-cron',
+    label: 'Data deletion due dates',
+    secretEnv: 'DATA_SUBJECT_REQUESTS_CRON_SECRET',
+    features: ['Privacy and data'],
+  },
+  {
     fn: 'meta-inbox-webhook-healthcheck',
     label: 'Meta webhook check',
     secretEnv: 'META_INBOX_WEBHOOK_HEALTHCHECK_CRON_SECRET',
