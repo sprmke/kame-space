@@ -1,54 +1,141 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 
 import { Link } from 'react-router-dom';
 
-import { HelpCircle, LifeBuoy, MessageCircle } from 'lucide-react';
+import { HelpCircle, LifeBuoy, MessageCircle, RefreshCw, Search } from 'lucide-react';
 
 import { GuestAccountContentCard } from '@/features/guest/account/components/GuestAccountContentCard';
 import { GUEST_ACCOUNT_TICKETS_PATH } from '@/features/guest/account/lib/guestAccountPaths';
+import { resolveGuestHelpFaqs } from '@/features/guest/account/lib/guestHelpFaqs';
 import { usePublicSupportFaqs } from '@/features/guest/marketing/hooks/usePublicSupportFaqs';
-import { isGuestFaq } from '@/features/guest/marketing/lib/publicSupportApi';
+import {
+  isGuestFaq,
+  type PublicSupportFaq,
+} from '@/features/guest/marketing/lib/publicSupportApi';
 
+import { HelpBackControl } from '@/features/dashboard/help-support/components/HelpBackControl';
 import { HelpDisclosure } from '@/features/dashboard/help-support/components/HelpDisclosure';
 import { HelpEmptyState } from '@/features/dashboard/help-support/components/HelpEmptyState';
 import { HelpRichText } from '@/features/dashboard/help-support/components/HelpRichText';
+import { HelpSearchField } from '@/features/dashboard/help-support/components/HelpSearchField';
+import {
+  HelpTopicList,
+  HelpTopicRow,
+} from '@/features/dashboard/help-support/components/HelpTopicList';
 import { sanitizeHelpBody } from '@/features/dashboard/help-support/lib/helpContentDisplay';
 
-import { BrandEmptyState } from '@/components/branding/BrandEmptyState';
+import { KameMascotImage } from '@/components/branding/KameMascotImage';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 
+function matchesTerm(faq: PublicSupportFaq, term: string): boolean {
+  if (!term) return true;
+  const needle = term.toLowerCase();
+  return (
+    faq.question.toLowerCase().includes(needle) ||
+    faq.answer.toLowerCase().includes(needle) ||
+    faq.category.toLowerCase().includes(needle)
+  );
+}
+
 export function GuestAccountHelpPage() {
   usePageTitle(publicPageTitle('Help'));
   const { data, isPending, isError, refetch } = usePublicSupportFaqs();
+  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const groups = useMemo(() => {
-    const faqs = (data?.faqs ?? []).filter(isGuestFaq);
-    const byCategory = new Map<string, typeof faqs>();
+  const faqs = useMemo(
+    () => resolveGuestHelpFaqs((data?.faqs ?? []).filter(isGuestFaq)),
+    [data?.faqs]
+  );
+
+  const categories = useMemo(() => {
+    const seen = new Set<string>();
+    const ordered: string[] = [];
     for (const faq of faqs) {
-      const list = byCategory.get(faq.category) ?? [];
-      list.push(faq);
-      byCategory.set(faq.category, list);
+      if (!seen.has(faq.category)) {
+        seen.add(faq.category);
+        ordered.push(faq.category);
+      }
     }
-    return [...byCategory.entries()];
-  }, [data?.faqs]);
+    return ordered;
+  }, [faqs]);
+
+  const counts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const faq of faqs) {
+      map.set(faq.category, (map.get(faq.category) ?? 0) + 1);
+    }
+    return map;
+  }, [faqs]);
+
+  const term = search.trim();
+  const browseResults = useMemo(() => {
+    return faqs.filter((faq) => {
+      if (selectedCategory && faq.category !== selectedCategory) return false;
+      return matchesTerm(faq, term);
+    });
+  }, [faqs, selectedCategory, term]);
+
+  const openCategory = (category: string) => {
+    setSearch('');
+    setSelectedCategory(category);
+  };
+
+  const closeCategory = () => {
+    setSearch('');
+    setSelectedCategory(null);
+  };
+
+  const showHomeIntro = !selectedCategory && !term;
+
+  const mascotHeader = (
+    <div className="flex flex-col items-center px-4 pt-6 text-center sm:px-5 sm:pt-8">
+      <div className="motion-safe:animate-float relative w-28 sm:w-32" aria-hidden>
+        <KameMascotImage pose="help-support" />
+      </div>
+      {showHomeIntro ? (
+        <div className="mt-4 max-w-sm space-y-1.5">
+          <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl">Help</h1>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            Answers about trips, messages, vouchers, etc.
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+
+  const contactFooter = (
+    <div className="border-border/70 flex flex-col gap-3 border-t px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <div className="flex items-start gap-2.5">
+        <LifeBuoy className="text-primary mt-0.5 size-5 shrink-0" aria-hidden />
+        <div className="min-w-0">
+          <p className="text-foreground text-sm font-semibold">Still need help?</p>
+          <p className="text-muted-foreground text-xs sm:text-sm">
+            Send a ticket and we will reply in your account.
+          </p>
+        </div>
+      </div>
+      <Button variant="outline" className="min-h-11 shrink-0 gap-2 rounded-full px-5" asChild>
+        <Link to={GUEST_ACCOUNT_TICKETS_PATH}>
+          <MessageCircle className="size-4 shrink-0" aria-hidden />
+          Contact support
+        </Link>
+      </Button>
+    </div>
+  );
 
   let body: ReactNode;
   if (isPending) {
     body = (
-      <div className="space-y-6" aria-busy="true" aria-label="Loading help">
-        <div className="space-y-2">
-          <Skeleton className="h-7 w-40" />
-          <Skeleton className="h-4 w-64 max-w-full" />
+      <div className="space-y-3 px-4 py-5 sm:px-6" aria-busy="true" aria-label="Loading help">
+        <div className="flex justify-center py-4">
+          <Skeleton className="size-28 rounded-full" />
         </div>
-        {[0, 1, 2].map((group) => (
-          <div key={group} className="space-y-2.5">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-12 w-full rounded-xl" />
-            <Skeleton className="h-12 w-full rounded-xl" />
-          </div>
-        ))}
+        <Skeleton className="h-11 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
       </div>
     );
   } else if (isError) {
@@ -56,78 +143,96 @@ export function GuestAccountHelpPage() {
       <HelpEmptyState
         icon={HelpCircle}
         title="Couldn't load help"
+        description="Check your connection and try again."
         action={
           <Button
             type="button"
-            variant="outline"
-            className="min-h-11"
+            className="min-h-11 gap-2 rounded-full px-5"
             onClick={() => void refetch()}
           >
+            <RefreshCw className="size-4 shrink-0" aria-hidden />
             Try again
           </Button>
         }
       />
     );
-  } else if (groups.length === 0) {
+  } else if (selectedCategory || term) {
     body = (
-      <BrandEmptyState
-        compact
-        markSize="sm"
-        title="No help topics yet"
-        description="Contact support if you need a hand with your stay."
-      >
-        <Button variant="default" className="min-h-11 w-full rounded-full sm:w-auto" asChild>
-          <Link to={GUEST_ACCOUNT_TICKETS_PATH}>
-            <MessageCircle className="mr-2 size-4" aria-hidden />
-            Contact support
-          </Link>
-        </Button>
-      </BrandEmptyState>
+      <div className="pb-1">
+        {mascotHeader}
+        <div className="px-4 pt-4 sm:px-5">
+          <div className="relative flex min-h-11 items-center">
+            {selectedCategory ? (
+              <div className="absolute inset-y-0 left-0 z-10 flex items-center">
+                <HelpBackControl label="All topics" onClick={closeCategory} />
+              </div>
+            ) : null}
+            <h2 className="text-foreground w-full px-12 text-center text-lg font-semibold tracking-tight sm:px-28 sm:text-xl">
+              {selectedCategory ?? 'Search'}
+            </h2>
+          </div>
+          <div className="mt-4">
+            <HelpSearchField
+              value={search}
+              onChange={setSearch}
+              placeholder={selectedCategory ? 'Search this topic' : 'Search help'}
+              label={selectedCategory ? `Search ${selectedCategory}` : 'Search help'}
+            />
+          </div>
+        </div>
+        <div className="mt-3 px-4 sm:px-5">
+          {browseResults.length === 0 ? (
+            <HelpEmptyState
+              icon={term ? Search : HelpCircle}
+              title={term ? 'No answers match that search' : 'No answers in this topic yet'}
+              compact
+            />
+          ) : (
+            browseResults.map((faq) => (
+              <HelpDisclosure key={faq.id} title={faq.question}>
+                <HelpRichText text={sanitizeHelpBody(faq.answer)} />
+              </HelpDisclosure>
+            ))
+          )}
+        </div>
+      </div>
     );
   } else {
     body = (
-      <div className="space-y-7">
-        <header className="space-y-1">
-          <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl">Help</h1>
-          <p className="text-muted-foreground text-sm">Answers for guests using Kame Space.</p>
-        </header>
-        {groups.map(([category, faqs]) => (
-          <section key={category} className="space-y-2">
-            <h2 className="text-muted-foreground text-xs font-bold uppercase tracking-wider">
-              {category}
-            </h2>
-            <div className="space-y-2">
-              {faqs.map((faq) => (
-                <HelpDisclosure key={faq.id} title={faq.question}>
-                  <HelpRichText text={sanitizeHelpBody(faq.answer)} />
-                </HelpDisclosure>
-              ))}
-            </div>
-          </section>
-        ))}
+      <div className="pb-1">
+        {mascotHeader}
+        <div className="px-4 pt-4 sm:px-5">
+          <HelpSearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search help"
+            label="Search help"
+          />
+        </div>
+        <div className="mt-4">
+          <HelpTopicList>
+            {categories.map((category) => {
+              const count = counts.get(category) ?? 0;
+              return (
+                <HelpTopicRow
+                  key={category}
+                  title={category}
+                  description={`${count} ${count === 1 ? 'question' : 'questions'}`}
+                  Icon={HelpCircle}
+                  onClick={() => openCategory(category)}
+                />
+              );
+            })}
+          </HelpTopicList>
+        </div>
       </div>
     );
   }
 
   return (
-    <GuestAccountContentCard>
+    <GuestAccountContentCard bodyClassName="p-0">
       {body}
-      {groups.length > 0 || isPending ? (
-        <div className="border-border/70 mt-8 flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-2.5">
-            <LifeBuoy className="text-primary mt-0.5 size-5 shrink-0" aria-hidden />
-            <div className="min-w-0">
-              <p className="text-foreground text-sm font-semibold">Still need help?</p>
-              <p className="text-muted-foreground text-xs sm:text-sm">
-                Send a ticket and we will reply in your account.
-              </p>
-            </div>
-          </div>
-          <Button variant="outline" className="min-h-11 shrink-0 rounded-full" asChild>
-            <Link to={GUEST_ACCOUNT_TICKETS_PATH}>Contact support</Link>
-          </Button>
-        </div>
-      ) : null}
+      {!isPending && !isError ? contactFooter : null}
     </GuestAccountContentCard>
   );
 }
