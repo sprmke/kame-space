@@ -38,7 +38,7 @@ export function HostBand() {
               <ul className="text-primary-foreground mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm sm:text-[15px]">
                 {HOST_FACTS.map((fact) => (
                   <li key={fact} className="flex items-center gap-1.5">
-                    <Check className="text-primary size-4 shrink-0" aria-hidden />
+                    <Check className="text-primary-foreground size-4 shrink-0" aria-hidden />
                     {fact}
                   </li>
                 ))}

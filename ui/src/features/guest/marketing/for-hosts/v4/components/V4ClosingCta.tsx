@@ -30,7 +30,7 @@ export function V4ClosingCta() {
             <div className="text-primary-foreground mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm sm:text-[15px]">
               {CLOSING_FACTS.map((fact) => (
                 <span key={fact} className="flex items-center gap-2">
-                  <Check className="text-primary size-4" aria-hidden />
+                  <Check className="text-primary-foreground size-4" aria-hidden />
                   {fact}
                 </span>
               ))}
