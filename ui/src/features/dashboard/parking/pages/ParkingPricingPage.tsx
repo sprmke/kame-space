@@ -43,7 +43,7 @@ import { hasParkingPermission } from '@/features/dashboard/team/lib/parkingPermi
 import { HowItWorksButton } from '@/components/help/HowItWorksButton';
 import { NoticeCallout } from '@/components/help/NoticeCallout';
 import { FloatingPanel } from '@/components/mobile/FloatingPanel';
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { PricingPageBodySkeleton } from '@/components/skeletons/PricingSkeleton';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { formatMoneyCompact } from '@/utils/format/currency';

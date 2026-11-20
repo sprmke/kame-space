@@ -4,13 +4,32 @@ import { ANNOUNCEMENTS_HELP_COPY } from '@/features/dashboard/announcements/lib/
 import type { HostAnnouncementSummary } from '@/features/dashboard/announcements/lib/hostAnnouncementPresentation';
 
 import { InfoHint } from '@/components/help/InfoHint';
+import { SummaryStrip } from '@/components/mobile/native/SummaryStrip';
 import { StatCard } from '@/components/shared/StatCard';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 
 type HostAnnouncementStatCardsProps = {
   summary: HostAnnouncementSummary;
 };
 
 export function HostAnnouncementStatCards({ summary }: HostAnnouncementStatCardsProps) {
+  const isMobile = useIsBelowLg();
+
+  if (isMobile) {
+    return (
+      <section aria-label="Announcement summary">
+        <SummaryStrip
+          segments={[
+            { count: summary.total, label: 'active', filterKey: 'all' },
+            { count: summary.critical, label: 'action required', filterKey: 'critical' },
+            { count: summary.warning, label: 'attention', filterKey: 'warning' },
+            { count: summary.info, label: 'updates', filterKey: 'info' },
+          ]}
+        />
+      </section>
+    );
+  }
+
   return (
     <section aria-label="Announcement summary">
       <div className="native-stagger grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4">

@@ -10,6 +10,8 @@ description: >-
 
 # Mobile-native responsive UI
 
+> **v3 shell shipped.** Phone admin UI follows **`mobile-native-v3.mdc` and the `native-mobile-redesign` skill** (compact brand `AppBar`, five-tab shell, named actions). Plan: `docs/workflow/for-testing/mobile-native-app-redesign.md`. Ignore any remaining hero / More-sheet rows in this skill.
+
 **Invoke this skill for every UI task** (new page, component, modal, menu, toolbar, form, card, table). Cursor loads `.cursor/rules/mobile-native-ui.mdc` (always-on gate) and `.cursor/rules/mobile-responsive.mdc` (glob on `ui/src/**`). Claude Code and OpenCode must invoke this skill explicitly.
 
 Inventory: `docs/workflow/for-testing/mobile-native-redesign.md`.

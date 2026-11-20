@@ -56,7 +56,7 @@ identity capture consent step (no policy link) and the booking cancellation-poli
 Sign-in, booking submit, both checkouts, refund payout details, chat, reviews and host
 verification show nothing.
 
-Policy links are reachable from `MarketingFooter` (desktop) and `MarketingMoreSheet` (phone).
+Policy links are reachable from `MarketingFooter` (desktop) and the guest **Account** hub (phone; More retired).
 Every guest operational page (`MainLayout`: calendar, form, success, trip, SD form, guest
 review, parking form/status, verification) shows only a copyright line, and the dashboards
 show no links at all.

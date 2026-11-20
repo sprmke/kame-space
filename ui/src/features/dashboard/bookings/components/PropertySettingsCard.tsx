@@ -104,7 +104,7 @@ import {
   SETTINGS_SECTION_EDIT_PERMISSION,
 } from '@/features/dashboard/team/lib/propertyPermissions';
 
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import {
   MobileHeroActionMenu,
   type MobileHeroActionMenuItem,

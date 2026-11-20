@@ -56,7 +56,7 @@ import { hasPropertyPermission } from '@/features/dashboard/team/lib/propertyPer
 import { FeatureUnavailablePanel } from '@/components/feature-availability/FeatureUnavailablePanel';
 import { FloatingToolbar } from '@/components/mobile/FloatingPanel';
 import { useFeatureAvailability } from '@/lib/featureAvailability/useFeatureAvailability';
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { MobileHeroActionMenu } from '@/components/mobile/MobileHeroActionButton';
 import { PropertyAnalyticsSkeleton } from '@/components/skeletons/AnalyticsSkeleton';
 import { Button } from '@/components/ui/button';

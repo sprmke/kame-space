@@ -32,7 +32,7 @@ import {
 } from '@/features/dashboard/marketing/lib/theme/marketingStudioNav';
 
 import { FeatureUnavailablePanel } from '@/components/feature-availability/FeatureUnavailablePanel';
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import {
   MarketingAiStudioConversationSkeleton,
   MarketingAiStudioHomeSkeleton,

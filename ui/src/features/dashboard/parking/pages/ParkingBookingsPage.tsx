@@ -37,7 +37,7 @@ import { useParkingPermissions } from '@/features/dashboard/team/hooks/useParkin
 import { hasParkingPermission } from '@/features/dashboard/team/lib/parkingPermissions';
 
 import { FloatingPanel, FloatingToolbar } from '@/components/mobile/FloatingPanel';
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { MobileHeroActionButton } from '@/components/mobile/MobileHeroActionButton';
 import { useIsBelowLg, useIsBelowMd } from '@/hooks/useMediaQuery';
 import { fromIsoDate } from '@/lib/date/navigation';

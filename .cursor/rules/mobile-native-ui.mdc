@@ -5,6 +5,8 @@ alwaysApply: true
 
 # Mobile-native UI gate (always-on)
 
+> **v3 shell shipped.** Also read `.cursor/rules/mobile-native-v3.mdc` and `kame-mascot.mdc`, and (Claude Code / OpenCode) invoke the **`native-mobile-redesign`** skill with `mobile-responsive`. Use `AdminMobilePage` + `AppBar`, never the deleted teal hero or More sheets. Plan: `docs/workflow/for-testing/mobile-native-app-redesign.md` (device QA open).
+
 Every **UI change** in `ui/src/**` must preserve the **native app** mobile experience from the mobile-native redesign, not a shrunk desktop layout.
 
 ## When this applies
@@ -26,16 +28,16 @@ Every **UI change** in `ui/src/**` must preserve the **native app** mobile exper
 | Overflow ⋯ menu                 | `ResponsiveOverflowMenu` (marketing: `MarketingOverflowMenu`) |
 | Bottom nav                      | `BottomTabBar` + `BottomBarSlotProvider`                      |
 | Dominant Save / Back / Continue | `ContextualActionBar`                                         |
-| Admin page                      | `AdminMobilePage` + `MobileBrandHero`                         |
+| Admin page                      | `AdminMobilePage` + v3 `AppBar`                               |
 | List filters on phone           | `AdminListRefineSheet`                                        |
-| Hero trailing actions           | `MobileHeroActionMenu` (one ··· max, not a row of icons)      |
+| App-bar overflow                | One ··· max via `ResponsiveOverflowMenu` (not a row of icons) |
 
 ## Hard rules below `lg` (`max-lg`)
 
 - **No centered `Dialog`** for forms, pickers, or confirms. Use bottom sheets via `ResponsiveModal`. Exceptions: `AlertDialog`, full-screen media/document lightboxes, full-screen video tour, phone full-screen search (`MobileSearchOverlay`).
 - **No floating `DropdownMenu` panels** for option lists or overflow actions. Use `MobileChoiceSheet` / `ResponsiveOverflowMenu`.
 - **Guest listing results:** one sticky row via `ListingMobileResultsBar` (count + filter badge); map through `ListingMapToggle` + `ListingMobileMapStage`. No full-width Filters & Sort row.
-- **One bottom nav layer.** Tab bar or `ContextualActionBar`, never both stacked. No second bottom tab bar on `/account/*` (top strip only). No hamburger drawer.
+- **One bottom nav layer.** Tab bar or `ContextualActionBar`, never both stacked. No second bottom tab bar or secondary strip on `/account/*` (D10 tabs + Account hub rows). No hamburger drawer.
 - **Touch targets** ≥ 44×44px. Hero icons may use invisible hit pads (`MobileHeroActionButton`).
 - **Tab clearance:** `bottomTabBarOffsetClassName()` on the document scrollport or inner fill-main scrollport (not both wrongly).
 
@@ -49,6 +51,6 @@ Every **UI change** in `ui/src/**` must preserve the **native app** mobile exper
 - [ ] §11 checklist in `mobile-responsive.mdc` / skill (375px + 768px, no horizontal scroll, sheets not dropdowns on phone)
 - [ ] Initial load shows a layout-matched skeleton (not a generic spinner) where the route/page fetches data
 - [ ] Modals and menus open as **bottom sheets** on phone
-- [ ] Route guide updated if page UX changed (`route-guides` skill)
+- [ ] Route guide updated if page UX changed (`route-guides` skill), including the "Mobile (`max-lg`)" parity table for v3 pages
 
-Inventory: `docs/workflow/for-testing/mobile-native-redesign.md`.
+Inventory: `docs/workflow/for-testing/mobile-native-app-redesign.md` (v3); earlier shell notes in `mobile-native-redesign.md`.

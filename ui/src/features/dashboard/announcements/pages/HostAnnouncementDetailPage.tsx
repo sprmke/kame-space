@@ -19,7 +19,7 @@ import { useOptionalOrgContext } from '@/features/dashboard/org/components/Requi
 import { useOptionalParkingContext } from '@/features/dashboard/org/components/RequireParkingContext';
 import { useOrganizations } from '@/features/dashboard/org/hooks/useOrganizations';
 
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { HostAnnouncementsBodySkeleton } from '@/components/skeletons/AnnouncementsSkeleton';
 import {
   orgPageTitle,

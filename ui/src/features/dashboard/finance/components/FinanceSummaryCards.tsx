@@ -4,7 +4,10 @@ import { FINANCE_HELP_COPY } from '@/features/dashboard/finance/lib/financeHelpC
 import type { FinanceSummaryCardStats } from '@/features/dashboard/finance/lib/financeSummaryStats';
 
 import { InfoHint } from '@/components/help/InfoHint';
+import { MetricStrip } from '@/components/mobile/native/MetricStrip';
 import { MoneyStatCard, StatCardGrid } from '@/components/shared/StatCard';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
+import { formatMoney } from '@/utils/format/currency';
 
 import type { LucideIcon } from 'lucide-react';
 
@@ -43,6 +46,11 @@ function SummaryMoneyStat({
   );
 }
 
+function deltaLabel(change: number | undefined): string | undefined {
+  if (change == null || change === 0) return undefined;
+  return `${change > 0 ? '+' : ''}${change}%`;
+}
+
 type Props = FinanceSummaryCardStats;
 
 export function FinanceSummaryCards({
@@ -54,6 +62,39 @@ export function FinanceSummaryCards({
   expensesChange,
   netChange,
 }: Props) {
+  const isMobile = useIsBelowLg();
+
+  if (isMobile) {
+    return (
+      <MetricStrip
+        metrics={[
+          {
+            label: 'Net',
+            value: formatMoney(netProfit),
+            delta: deltaLabel(netChange),
+            deltaPositive: (netChange ?? 0) >= 0,
+          },
+          {
+            label: 'Income',
+            value: formatMoney(totalIncome),
+            delta: deltaLabel(incomeChange),
+            deltaPositive: (incomeChange ?? 0) >= 0,
+          },
+          {
+            label: 'Expenses',
+            value: formatMoney(totalExpenses),
+            delta: deltaLabel(expensesChange),
+            deltaPositive: (expensesChange ?? 0) <= 0,
+          },
+          {
+            label: 'Pending',
+            value: formatMoney(pendingAmount),
+          },
+        ]}
+      />
+    );
+  }
+
   return (
     <StatCardGrid>
       <SummaryMoneyStat

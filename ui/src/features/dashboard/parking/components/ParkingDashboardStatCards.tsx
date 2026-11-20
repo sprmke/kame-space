@@ -4,6 +4,8 @@ import { DashboardTrendStatCard } from '@/features/dashboard/property/components
 import type { DashboardStats } from '@/features/dashboard/property/lib/types';
 
 import { MetricHint } from '@/components/help/MetricHint';
+import { MetricStrip } from '@/components/mobile/native/MetricStrip';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import { formatMoney } from '@/utils/format/currency';
 
@@ -14,6 +16,37 @@ type Props = {
 
 export function ParkingDashboardStatCards({ stats, reservationsHref }: Props) {
   const { kpis } = stats;
+  const isMobile = useIsBelowLg();
+
+  if (isMobile) {
+    return (
+      <MetricStrip
+        metrics={[
+          {
+            label: 'Revenue',
+            value: formatMoney(kpis.netProfit.value),
+            delta:
+              kpis.netProfit.changePercent != null
+                ? `${kpis.netProfit.changePercent > 0 ? '+' : ''}${kpis.netProfit.changePercent}%`
+                : undefined,
+            deltaPositive: (kpis.netProfit.changePercent ?? 0) >= 0,
+          },
+          {
+            label: 'Bookings',
+            value: `${kpis.nightsBooked.value}`,
+          },
+          {
+            label: 'Occupancy',
+            value: `${kpis.occupancyRate.value}%`,
+          },
+          {
+            label: 'ADR',
+            value: formatMoney(kpis.avgNightlyRate.value),
+          },
+        ]}
+      />
+    );
+  }
 
   return (
     <section aria-label="Key metrics">

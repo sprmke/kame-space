@@ -24,7 +24,7 @@ import { useParkingTelegramHubStats } from '@/features/dashboard/notifications/h
 import { useOptionalParkingContext } from '@/features/dashboard/org/components/RequireParkingContext';
 import { TelegramParkingSettingsCard } from '@/features/dashboard/parking/components/TelegramParkingSettingsCard';
 
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { parkingDashboardPageTitle, usePageTitle } from '@/lib/pageTitle';
 
 const PARKING_NOTIFICATION_MODULES = ['chat', 'parking', 'finance'] as const;

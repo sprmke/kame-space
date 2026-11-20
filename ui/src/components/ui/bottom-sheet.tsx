@@ -34,7 +34,7 @@ type BottomSheetContentProps = Omit<
    * `layout="split"` only, opt-in: measures content with `ResizeObserver` and sets
    * an explicit `height: min(measured, maxHeightPx, 92dvh)`, so the sheet shrinks to
    * fit short content instead of always opening at a fixed height with dead space
-   * (e.g. AdminMoreSheet). Pure CSS can't do this on iOS Safari — a flex column only
+   * (e.g. native choice sheets). Pure CSS can't do this on iOS Safari — a flex column only
    * bounds a nested `overflow-y:auto` child once the column itself has a *definite*
    * height (not `max-height`), and a definite height by nature doesn't shrink-wrap.
    * Omit this (default) to keep passing a fixed height via `className` as before.

@@ -4,7 +4,7 @@ import { useParkingPermissions } from '@/features/dashboard/team/hooks/useParkin
 import { hasParkingPermission } from '@/features/dashboard/team/lib/parkingPermissions';
 
 import { FloatingPanel } from '@/components/mobile/FloatingPanel';
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { ParkingSettingsRouteSkeleton } from '@/components/skeletons/RouteSkeletons';
 
 export function ParkingSettingsPage() {

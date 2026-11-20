@@ -7,19 +7,24 @@ import type { ReactNode } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 
 import { HOST_ANNOUNCEMENTS_PAGE_SUBTITLE } from '@/features/dashboard/announcements/lib/hostAnnouncementCopy';
+import { AdminPageHeader } from '@/features/dashboard/bookings/components/AdminPageHeader';
 import {
   ADMIN_MODULE_INBOX_LABEL,
   ADMIN_MODULE_PRICING_LABEL,
 } from '@/features/dashboard/bookings/lib/adminModuleLabels';
-import { AdminPageHeader } from '@/features/dashboard/bookings/components/AdminPageHeader';
 import { helpSupportSectionFromPath } from '@/features/dashboard/help-support/lib/helpSupportPaths';
 import { isMarketingStudioTab } from '@/features/dashboard/marketing/lib/theme/marketingStudioNav';
+import {
+  MARKETING_STUDIO_TAB_LABELS,
+  MARKETING_STUDIO_TABS,
+} from '@/features/dashboard/marketing/lib/theme/marketingStudioNav';
 import { useOptionalParkingContext } from '@/features/dashboard/org/components/RequireParkingContext';
 import { useOrgListingSkeletonView } from '@/features/dashboard/org/hooks/useOrgListingSkeletonView';
 import { PLANS_PAGE_SUBTITLE } from '@/features/dashboard/plans/lib/plansPageCopy';
 
 import { FloatingPanel, FloatingToolbar } from '@/components/mobile/FloatingPanel';
-import { AdminMobilePage, MobileBrandHero } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
+import { AppBar } from '@/components/mobile/native/AppBar';
 import {
   AdminListToolbarSkeleton,
   AdminPageHeaderSkeleton,
@@ -76,6 +81,7 @@ import { NotificationsPageBodySkeleton } from '@/components/skeletons/Notificati
 import { OrgListingPageSkeleton } from '@/components/skeletons/OrgListingSkeleton';
 import { ParkingDashboardSkeleton } from '@/components/skeletons/ParkingSkeleton';
 import { PricingPageBodySkeleton } from '@/components/skeletons/PricingSkeleton';
+import { SlidingTabsListSkeleton } from '@/components/skeletons/SlidingTabsListSkeleton';
 import {
   SuperAdminAdminListBodySkeleton,
   SuperAdminAuditBodySkeleton,
@@ -89,12 +95,6 @@ import {
 import { TemplateWorkbenchSkeleton } from '@/components/skeletons/TemplateWorkbenchSkeleton';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  MARKETING_STUDIO_TAB_LABELS,
-  MARKETING_STUDIO_TABS,
-} from '@/features/dashboard/marketing/lib/theme/marketingStudioNav';
-
-import { SlidingTabsListSkeleton } from '@/components/skeletons/SlidingTabsListSkeleton';
 import { cn } from '@/lib/utils';
 
 /** Reviews `?tab=` → skeleton variant. `properties` is org-only. */
@@ -434,7 +434,9 @@ export function PropertyBookingsRouteSkeleton() {
 export function PropertyBookingDetailRouteSkeleton() {
   return (
     <>
-      <MobileBrandHero title="Booking" flush className="md:hidden" />
+      <div className="lg:hidden">
+        <AppBar variant="detail" title="Booking" onBack={() => undefined} />
+      </div>
       <BookingDetailPageSkeleton />
     </>
   );

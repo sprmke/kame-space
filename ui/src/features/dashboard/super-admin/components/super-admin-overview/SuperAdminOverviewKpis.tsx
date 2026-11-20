@@ -17,7 +17,10 @@ import {
 import type { SuperAdminOverview } from '@/features/dashboard/super-admin/hooks/useSuperAdminOverview';
 import { superAdminPaths } from '@/features/dashboard/super-admin/lib/superAdminPaths';
 
+import { MetricStrip } from '@/components/mobile/native/MetricStrip';
+import { SummaryStrip } from '@/components/mobile/native/SummaryStrip';
 import { StatCard, StatCardGrid } from '@/components/shared/StatCard';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 
 type Props = {
   kpis: SuperAdminOverview['kpis'];
@@ -26,6 +29,34 @@ type Props = {
 };
 
 export function SuperAdminOverviewKpis({ kpis, orgsWithoutLivePlan, featuresOff = 0 }: Props) {
+  const isMobile = useIsBelowLg();
+
+  if (isMobile) {
+    return (
+      <section aria-label="Platform metrics" className="space-y-2">
+        <SummaryStrip
+          segments={[
+            { count: kpis.pendingApprovals, label: 'approvals', filterKey: 'approvals' },
+            { count: kpis.openTickets, label: 'tickets', filterKey: 'tickets' },
+            {
+              count: kpis.undisbursedParkingPayouts,
+              label: 'payouts',
+              filterKey: 'payouts',
+            },
+          ]}
+        />
+        <MetricStrip
+          metrics={[
+            { label: 'Orgs', value: String(kpis.organizations) },
+            { label: 'Live plans', value: String(kpis.liveSubscriptions) },
+            { label: 'Hosts', value: String(kpis.hosts) },
+            { label: 'Properties', value: String(kpis.properties) },
+          ]}
+        />
+      </section>
+    );
+  }
+
   return (
     <section aria-label="Platform metrics">
       <StatCardGrid className="gap-2 sm:gap-2.5 md:grid-cols-4 lg:gap-3">

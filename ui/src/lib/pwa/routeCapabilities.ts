@@ -280,6 +280,16 @@ export const ROUTE_CAPABILITIES: readonly RouteCapability[] = [
     precacheTier: 'shell',
     offline: 'none',
   },
+
+  // ── local-only design kit (`import.meta.env.DEV`) ─────────────────────────
+  {
+    id: 'dev-kit',
+    test: /^\/dev(?:\/|$)/,
+    audience: 'public',
+    installOffer: 'blocked',
+    precacheTier: 'on-demand',
+    offline: 'none',
+  },
 ];
 
 const FALLBACK: RouteCapability = {
@@ -319,6 +329,7 @@ export const KNOWN_ROUTE_SEGMENTS: ReadonlySet<string> = new Set([
   'cookies',
   'dashboard',
   'developments',
+  'dev',
   'docs',
   'explore-preview',
   'favorites',

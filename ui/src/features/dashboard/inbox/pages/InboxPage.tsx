@@ -4,8 +4,8 @@ import { useSearchParams } from 'react-router-dom';
 
 import { toast } from 'sonner';
 
-import { ADMIN_MODULE_INBOX_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import { useAdminLayoutFillMain } from '@/features/dashboard/bookings/lib/adminLayoutFillMain';
+import { ADMIN_MODULE_INBOX_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import { InboxConversationView } from '@/features/dashboard/inbox/components/InboxConversationView';
 import { InboxHowItWorksSheet } from '@/features/dashboard/inbox/components/InboxHowItWorksSheet';
 import { InboxImportBanner } from '@/features/dashboard/inbox/components/InboxImportBanner';
@@ -44,15 +44,19 @@ import type {
   ThreadPlatformFilter,
   ThreadStatusFilter,
 } from '@/features/dashboard/inbox/types/inbox';
+import { NotificationsActivityView } from '@/features/dashboard/notifications/components/NotificationsActivityView';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 
+
 import { FeatureUnavailableNotice } from '@/components/feature-availability/FeatureUnavailableNotice';
 import { bottomTabBarOffsetClassName } from '@/components/mobile/BottomTabBar';
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
+import { SegmentedTabs } from '@/components/mobile/native/SegmentedTabs';
 import { PullToRefreshIndicator } from '@/components/pwa/PullToRefreshIndicator';
 import { StaleDataLabel } from '@/components/pwa/StaleDataLabel';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { toastFeatureUnavailable } from '@/lib/featureAvailability/featureUnavailableError';
 import { useFeatureAvailability } from '@/lib/featureAvailability/useFeatureAvailability';
@@ -90,8 +94,24 @@ export function InboxPage({
   const allowChannels = canManageChannels ?? canManage;
   const allowQuickReplies = canManageQuickReplies ?? canManage;
   const allowAutomation = canManageAutomation ?? canManage;
+  const isMobileLayout = useIsBelowLg();
   useAdminLayoutFillMain(true);
   const [searchParams, setSearchParams] = useSearchParams();
+  const inboxSegment = searchParams.get('segment') === 'alerts' ? 'alerts' : 'messages';
+  const setInboxSegment = useCallback(
+    (key: string) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (key === 'alerts') next.set('segment', 'alerts');
+          else next.delete('segment');
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
 
   const [manageModal, setManageModal] = useState<InboxManageModal>(null);
   const [pagePickerState, setPagePickerState] = useState<string | null>(null);
@@ -382,6 +402,7 @@ export function InboxPage({
       title={ADMIN_MODULE_INBOX_LABEL}
       subtitle="View and reply to guest messages from connected channels."
       titleId="inbox-heading"
+      hideMobileChrome={isMobileLayout && mobileShowConversation}
       heroTrailing={
         <div className="flex items-center gap-2">
           {/* Hide the idle "Not connected" badge; Channels manage still covers connect. */}
@@ -433,6 +454,24 @@ export function InboxPage({
           bottomTabBarOffsetClassName()
         )}
       >
+        {isMobileLayout && !mobileShowConversation ? (
+          <SegmentedTabs
+            items={[
+              { key: 'messages', label: 'Messages' },
+              { key: 'alerts', label: 'Alerts' },
+            ]}
+            value={inboxSegment}
+            onChange={setInboxSegment}
+            className="shrink-0"
+          />
+        ) : null}
+
+        {isMobileLayout && inboxSegment === 'alerts' ? (
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <NotificationsActivityView />
+          </div>
+        ) : (
+          <>
         {mockActive && (
           <div
             className="shrink-0 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-950 dark:text-amber-100"
@@ -604,6 +643,8 @@ export function InboxPage({
             loadedCount={conversations.length}
           />
         </div>
+          </>
+        )}
 
         <InboxHowItWorksSheet open={howItWorksOpen} onOpenChange={setHowItWorksOpen} />
 

@@ -1,13 +1,14 @@
-import { Calendar, ChevronDown, Edit2, PencilLine, Users, X } from 'lucide-react';
+import { Calendar, ChevronDown, Edit2, Moon, PencilLine, Tag, Users, X } from 'lucide-react';
 
-import { isOtaPrepaidSource } from '@/lib/bookingChannel';
 import { BookingDetailActionsMenu } from '@/features/dashboard/bookings/components/booking-detail/BookingDetailActionsMenu';
 import { occupiedNightsFromStay } from '@/features/dashboard/bookings/components/calendar/calendarStayAmounts';
 import { StatusBadge } from '@/features/dashboard/bookings/components/StatusBadge';
 import type { BookingDetailAction } from '@/features/dashboard/bookings/lib/bookingDetailActions';
 import type { BookingRow } from '@/features/dashboard/bookings/lib/types';
 
+import { FactStrip } from '@/components/mobile/native/FactStrip';
 import { Button } from '@/components/ui/button';
+import { isOtaPrepaidSource } from '@/lib/bookingChannel';
 import { toneBadgeClasses } from '@/lib/statusToneColors';
 import { cn } from '@/lib/utils';
 import { formatBookingDate } from '@/utils/format/bookingDisplay';
@@ -87,22 +88,18 @@ export function BookingDetailMobileSummary({
         <p className="text-muted-foreground mt-0.5 truncate text-[11px] font-medium">{primary}</p>
       )}
 
-      <p className="text-muted-foreground mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
-        <span className="inline-flex min-w-0 items-center gap-1">
-          <Calendar className="size-3.5 shrink-0 opacity-70" aria-hidden />
-          <span className="min-w-0 break-words">
-            {formatBookingDate(booking.check_in_date)}
-            <span className="text-muted-foreground/50 mx-0.5" aria-hidden>
-              →
-            </span>
-            {formatBookingDate(booking.check_out_date)}
-          </span>
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <Users className="size-3.5 shrink-0 opacity-70" aria-hidden />
-          {pax} pax · {nights} {nights === 1 ? 'night' : 'nights'}
-        </span>
-      </p>
+      <FactStrip
+        className="mt-2"
+        facts={[
+          {
+            icon: Calendar,
+            label: `${formatBookingDate(booking.check_in_date)} → ${formatBookingDate(booking.check_out_date)}`,
+          },
+          { icon: Users, label: `${pax} guests` },
+          { icon: Moon, label: `${nights} ${nights === 1 ? 'night' : 'nights'}` },
+          { icon: Tag, label: source },
+        ]}
+      />
 
       <div className="mt-3 space-y-2">
         {!editMode ? (

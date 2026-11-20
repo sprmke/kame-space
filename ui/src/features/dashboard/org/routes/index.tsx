@@ -7,6 +7,7 @@ import { hostAnnouncementsOrgRoute } from '@/features/dashboard/announcements/ro
 import { HelpSupportLayout } from '@/features/dashboard/help-support/components/HelpSupportLayout';
 import { helpSupportOrgNestedRoutes } from '@/features/dashboard/help-support/routes';
 import { OrgInboxRedirect } from '@/features/dashboard/inbox/routes';
+import { nativeHubsOrgRoute } from '@/features/dashboard/native-hubs/routes';
 import { LegacyAdminRedirect } from '@/features/dashboard/org/components/LegacyAdminRedirect';
 import type { OrgRouteFn } from '@/features/dashboard/org/routes/guards';
 
@@ -165,6 +166,7 @@ export function orgAdminRoutes(orgRoute: OrgRouteFn): ReactNode {
       >
         {helpSupportOrgNestedRoutes()}
       </Route>
+      {nativeHubsOrgRoute(orgRoute)}
     </Route>
   );
 }

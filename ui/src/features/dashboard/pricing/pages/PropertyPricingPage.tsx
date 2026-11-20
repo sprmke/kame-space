@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useSearchParams } from 'react-router-dom';
+
 import {
   format,
   eachDayOfInterval,
@@ -9,16 +11,18 @@ import {
   getDaysInMonth,
 } from 'date-fns';
 import { CalendarRange, Wand2 } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import {
   CalendarBookingCelebration,
   type CalendarBookingCelebrationTrigger,
 } from '@/features/dashboard/bookings/components/calendar/CalendarBookingCelebration';
-import { ADMIN_MODULE_PRICING_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 import { buildOccupancyByDay } from '@/features/dashboard/bookings/components/calendar/calendarDateUtils';
-import { FeatureStatusDot } from '@/components/feature-availability/FeatureStatusDot';
+import { ADMIN_MODULE_PRICING_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
+
+import { CHANNEL_SYNC_OPEN_PARAM } from '@/features/dashboard/notifications/lib/notificationsPaths';
+import { pricingCalendarFormGridClassName } from '@/features/dashboard/pricing/lib/pricingCalendarLayout';
+import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
 import { TierBadge, TierBadgeAnchor } from '@/features/dashboard/plans/components/TierBadge';
 import { ChannelSyncDialog } from '@/features/dashboard/pricing/components/ChannelSyncDialog';
 import { PricingCalendarBookingModal } from '@/features/dashboard/pricing/components/PricingCalendarBookingModal';
@@ -27,10 +31,6 @@ import { PricingDateModal } from '@/features/dashboard/pricing/components/Pricin
 import { PricingRatesFormCard } from '@/features/dashboard/pricing/components/PricingRatesFormCard';
 import { PricingSaveDialog } from '@/features/dashboard/pricing/components/PricingSaveDialog';
 import { PricingStatsRow } from '@/features/dashboard/pricing/components/PricingStatsRow';
-import { useFeatureAvailability } from '@/lib/featureAvailability/useFeatureAvailability';
-import { CHANNEL_SYNC_OPEN_PARAM } from '@/features/dashboard/notifications/lib/notificationsPaths';
-import { pricingCalendarFormGridClassName } from '@/features/dashboard/pricing/lib/pricingCalendarLayout';
-import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
 import { SmartPricingDialog } from '@/features/dashboard/pricing/components/SmartPricingDialog';
 import {
   usePropertyPricing,
@@ -75,18 +75,31 @@ import type {
 import { usePropertyPermissions } from '@/features/dashboard/team/hooks/usePropertyPermissions';
 import { hasPropertyPermission } from '@/features/dashboard/team/lib/propertyPermissions';
 
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { FeatureStatusDot } from '@/components/feature-availability/FeatureStatusDot';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { MobileHeroActionButton } from '@/components/mobile/MobileHeroActionButton';
+import { DrillRow } from '@/components/mobile/native/DrillRow';
+import { SelectionBar } from '@/components/mobile/native/SelectionBar';
 import { PricingPageBodySkeleton } from '@/components/skeletons/PricingSkeleton';
+import {
+  BottomSheet,
+  BottomSheetContent,
+  BottomSheetHeader,
+  BottomSheetTitle,
+} from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { useFeatureAvailability } from '@/lib/featureAvailability/useFeatureAvailability';
+import { formatMoneyCompact } from '@/utils/format/currency';
 
 /** A viewed month at/above this many bookings triggers the busy-month celebration. */
 const BUSY_MONTH_CELEBRATION_THRESHOLD = 20;
 
 export function PropertyPricingPage() {
   const compactChrome = useDashboardCompactChrome();
+  const isMobileLayout = useIsBelowLg();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: access } = usePropertyPermissions();
   const permissions = access?.permissions;
@@ -103,6 +116,7 @@ export function PropertyPricingPage() {
     channelSyncAvailability.available && !channelSyncAvailability.isLoading;
 
   const [channelSyncOpen, setChannelSyncOpen] = useState(false);
+  const [ratesSheetOpen, setRatesSheetOpen] = useState(false);
   const [smartPricingOpen, setSmartPricingOpen] = useState(false);
 
   // Deep link from calendar_conflict / calendar_sync_failing notifications.
@@ -352,7 +366,11 @@ export function PropertyPricingPage() {
       next = [...selectedDates, date];
     }
     setSelectedDates(next);
-    openDateModal(next);
+    if (!isMobileLayout) {
+      openDateModal(next);
+    } else if (next.length === 0) {
+      setDateModalOpen(false);
+    }
   };
 
   const handleDateMouseDown = (date: Date) => {
@@ -406,7 +424,7 @@ export function PropertyPricingPage() {
     setTimeout(() => {
       justSelectedRef.current = false;
     }, 100);
-    if (selectedDatesRef.current.length > 0) {
+    if (!isMobileLayout && selectedDatesRef.current.length > 0) {
       openDateModal(selectedDatesRef.current);
     }
   };
@@ -759,7 +777,7 @@ export function PropertyPricingPage() {
                 getBookingStayTotal={getBookingDisplayTotal}
               />
 
-              <div className="lg:sticky lg:top-5">
+              <div className="hidden lg:sticky lg:top-5 lg:block">
                 <PricingRatesFormCard
                   weekdayRate={weekdayRate}
                   weekendRate={weekendRate}
@@ -780,9 +798,89 @@ export function PropertyPricingPage() {
                 />
               </div>
             </div>
+            {isMobileLayout ? (
+              <div className="border-hairline bg-card mt-3 overflow-hidden rounded-xl border">
+                <DrillRow
+                  title="Rates & rules"
+                  value={`${formatMoneyCompact(weekdayRate)} base`}
+                  onClick={() => setRatesSheetOpen(true)}
+                />
+              </div>
+            ) : null}
           </>
         )}
       </AdminMobilePage>
+
+      <BottomSheet open={ratesSheetOpen} onOpenChange={setRatesSheetOpen}>
+        <BottomSheetContent className="gap-3 pb-[max(1rem,var(--safe-bottom))]">
+          <BottomSheetHeader className="text-left">
+            <BottomSheetTitle>Rates & rules</BottomSheetTitle>
+          </BottomSheetHeader>
+          <PricingRatesFormCard
+            weekdayRate={weekdayRate}
+            weekendRate={weekendRate}
+            fees={fees}
+            readOnly={!canEditRates}
+            hasChanges={hasChanges}
+            saving={saveMutation.isPending}
+            onWeekdayChange={(value) => {
+              setWeekdayRate(value);
+              setHasChanges(true);
+            }}
+            onWeekendChange={(value) => {
+              setWeekendRate(value);
+              setHasChanges(true);
+            }}
+            onAmountChange={updateFeeAmount}
+            onSaveClick={() => {
+              handleSaveClick();
+              setRatesSheetOpen(false);
+            }}
+          />
+        </BottomSheetContent>
+      </BottomSheet>
+
+      {isMobileLayout && selectedDates.length > 0 && canSelectDates ? (
+        <SelectionBar
+          countLabel={`${selectedDates.length} night${selectedDates.length === 1 ? '' : 's'} selected`}
+          onClear={clearSelection}
+          actions={[
+            ...(canEditRates && selectionMode === 'available'
+              ? [
+                  {
+                    key: 'edit',
+                    label: 'Edit price',
+                    primary: true,
+                    onClick: () => openDateModal(selectedDates),
+                  },
+                ]
+              : []),
+            ...(canBlockDates && selectionMode === 'available'
+              ? [
+                  {
+                    key: 'block',
+                    label: 'Block dates',
+                    onClick: () => {
+                      void blockSelected();
+                    },
+                  },
+                ]
+              : []),
+            ...(canUnblockDates && selectionMode === 'blocked'
+              ? [
+                  {
+                    key: 'unblock',
+                    label: 'Unblock',
+                    primary: true,
+                    onClick: () => {
+                      void unblockSelected();
+                    },
+                  },
+                ]
+              : []),
+          ]}
+        />
+      ) : null}
 
       {canViewChannels ? (
         <ChannelSyncDialog

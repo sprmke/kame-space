@@ -35,7 +35,7 @@ import {
 } from '@/features/dashboard/team/lib/propertyPermissions';
 
 import { HowItWorksButton } from '@/components/help/HowItWorksButton';
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { propertyDashboardPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { cn } from '@/lib/utils';
 

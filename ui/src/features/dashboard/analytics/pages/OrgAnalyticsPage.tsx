@@ -26,7 +26,7 @@ import { useOrgPermissions } from '@/features/dashboard/team/hooks/useOrgPermiss
 import { hasOrgPermission } from '@/features/dashboard/team/lib/orgPermissions';
 
 import { FloatingPanel, FloatingToolbar } from '@/components/mobile/FloatingPanel';
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { MobileHeroActionMenu } from '@/components/mobile/MobileHeroActionButton';
 import { OrgAnalyticsSkeleton } from '@/components/skeletons/AnalyticsSkeleton';
 import { Button } from '@/components/ui/button';

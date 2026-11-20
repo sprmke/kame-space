@@ -1779,3 +1779,30 @@ Yes. After you pick your check-in and check-out, choose ± 1 day, ± 2 days, ± 
 - source: docs/guides/routes/search.md
 
 Tap Map at the bottom of the list on search results, Properties or Developments. The map fills the screen and you can move or zoom it to update the results. To go back to the list, drag the bar at the bottom up or tap it.
+
+### Where did More go on my phone?
+
+- category: Getting Started
+- audience: host
+- source: docs/guides/routes/org/property/dashboard.md
+- order: 200
+
+The More sheet is gone. Tools and modules live under the Work tab. Account, plan, theme, install app, Explore or Host mode, and sign out live under You.
+
+### Where are notifications on my phone?
+
+- category: Getting Started
+- audience: host
+- source: docs/guides/routes/org/property/inbox.md
+- order: 210
+
+On a property or parking phone screen, open Inbox, then tap Alerts. On an organization phone screen, use the Alerts tab. Desktop still uses the bell.
+
+### How do I switch listings on my phone?
+
+- category: Getting Started
+- audience: host
+- source: docs/guides/routes/org/selector.md
+- order: 220
+
+Tap the workspace name in the app bar, or open You and use Workspace. Pick another property, parking, or organization from the list.

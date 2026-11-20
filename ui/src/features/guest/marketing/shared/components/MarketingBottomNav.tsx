@@ -1,43 +1,42 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Building2, Car, Compass, Luggage, MessageCircle, User } from 'lucide-react';
+import { Building2, Car, Compass, Heart, Luggage, MessageCircle, User } from 'lucide-react';
 
-import {
-  GUEST_ACCOUNT_MESSAGES_PATH,
-  GUEST_ACCOUNT_PROFILE_PATH,
-  GUEST_ACCOUNT_TRIPS_PATH,
-} from '@/features/guest/account/lib/guestAccountPaths';
 import {
   useGuestNextTrip,
   type GuestNextTrip,
 } from '@/features/guest/account/hooks/useGuestNextTrip';
+import {
+  GUEST_ACCOUNT_FAVORITES_PATH,
+  GUEST_ACCOUNT_MESSAGES_PATH,
+  GUEST_ACCOUNT_PROFILE_PATH,
+  GUEST_ACCOUNT_TRIPS_PATH,
+} from '@/features/guest/account/lib/guestAccountPaths';
 import {
   getHostMarketingNavCta,
   getGuestLoginCta,
 } from '@/features/guest/auth/config/auth-navigation';
 import { getAppModeFromPath } from '@/features/guest/auth/config/mode-switch';
 import { useGuestSession } from '@/features/guest/auth/hooks/useGuestSession';
-import { MarketingMoreSheet } from '@/features/guest/marketing/shared/components/MarketingMoreSheet';
 import { useModeSwitchTransition } from '@/features/guest/marketing/shared/context/ModeSwitchTransitionContext';
 
 import { useAdminSession } from '@/features/dashboard/bookings/hooks/useAdminSession';
 
-import { BottomTabBar, moreTabItem, type BottomTabItem } from '@/components/mobile/BottomTabBar';
+import { BottomTabBar, type BottomTabItem } from '@/components/mobile/BottomTabBar';
 
 /**
- * Which tab a path belongs to. Only the booking tabs a signed-in guest actually has are
- * considered, so a stray `/properties` link never highlights a tab that is not there.
+ * Which tab a path belongs to (D10). No More tab — secondary links live in Account.
  */
 function resolveActiveKey(pathname: string, keys: Set<string>): string | null {
   if (pathname === '/' && keys.has('explore')) return 'explore';
-  if (pathname.startsWith('/properties') && keys.has('properties')) return 'properties';
+  if (pathname.startsWith('/properties') && keys.has('stays')) return 'stays';
   if (
     (pathname.startsWith('/parkings') || pathname.startsWith('/developments')) &&
-    keys.has('parkings')
+    keys.has('parking')
   ) {
-    return 'parkings';
+    return 'parking';
   }
   if (pathname.startsWith('/account/trips') && keys.has('trips')) return 'trips';
   if (
@@ -45,6 +44,12 @@ function resolveActiveKey(pathname: string, keys: Set<string>): string | null {
     keys.has('messages')
   ) {
     return 'messages';
+  }
+  if (
+    (pathname.startsWith('/account/favorites') || pathname.startsWith('/account/wishlist')) &&
+    keys.has('saved')
+  ) {
+    return 'saved';
   }
   if (pathname.startsWith('/account') && keys.has('account')) return 'account';
   return null;
@@ -57,14 +62,10 @@ function shouldDotTrips(nextTrip: GuestNextTrip | null): boolean {
 }
 
 /**
- * Persistent phone/tablet nav for every marketing + guest-account page
- * (`MarketingLayoutShell`'s `Outlet`) — replaces the old hamburger + full-screen
- * overlay. A PDP/wizard `ContextualActionBar` (Phase 2b) auto-hides this via
- * the shared `BottomBarSlotProvider`.
- *
- * A signed-in guest gets **Trips** and **Messages** in place of Properties and Parkings
- * (plan D3): those are the two things a guest with a booking needs. Explore still reaches
- * properties and parkings.
+ * Persistent phone/tablet nav for marketing + guest-account pages (D10).
+ * Signed out: Explore · Stays · Parking · Account.
+ * Signed-in guest: Explore · Trips · Messages · Saved · Account.
+ * Public More is retired; its items move into Account.
  */
 export function MarketingBottomNav() {
   const { pathname } = useLocation();
@@ -76,7 +77,6 @@ export function MarketingBottomNav() {
   const { status: adminStatus } = useAdminSession();
   const isGuestSignedIn = guestStatus === 'authenticated';
   const isHostSignedIn = adminStatus === 'admin';
-  const [moreOpen, setMoreOpen] = useState(false);
   const nextTrip = useGuestNextTrip();
 
   const accountHref = isExploreMode
@@ -101,7 +101,6 @@ export function MarketingBottomNav() {
       },
     };
 
-    // A signed-in guest sees their own trips and messages instead of the catalogue tabs.
     if (isExploreMode && isGuestSignedIn) {
       return [
         explore,
@@ -118,17 +117,21 @@ export function MarketingBottomNav() {
           href: GUEST_ACCOUNT_MESSAGES_PATH,
           Icon: MessageCircle,
         },
+        {
+          key: 'saved',
+          label: 'Saved',
+          href: GUEST_ACCOUNT_FAVORITES_PATH,
+          Icon: Heart,
+        },
         { key: 'account', label: 'Account', href: accountHref, Icon: User },
-        moreTabItem(() => setMoreOpen(true)),
       ];
     }
 
     return [
       explore,
-      { key: 'properties', label: 'Properties', href: '/properties', Icon: Building2 },
-      { key: 'parkings', label: 'Parkings', href: '/parkings', Icon: Car },
+      { key: 'stays', label: 'Stays', href: '/properties', Icon: Building2 },
+      { key: 'parking', label: 'Parking', href: '/parkings', Icon: Car },
       { key: 'account', label: 'Account', href: accountHref, Icon: User },
-      moreTabItem(() => setMoreOpen(true)),
     ];
   }, [
     isExploreMode,
@@ -141,12 +144,7 @@ export function MarketingBottomNav() {
   ]);
 
   const tabKeys = useMemo(() => new Set(items.map((item) => item.key)), [items]);
-  const activeKey = moreOpen ? 'more' : resolveActiveKey(pathname, tabKeys);
+  const activeKey = resolveActiveKey(pathname, tabKeys);
 
-  return (
-    <>
-      <BottomTabBar items={items} activeKey={activeKey} aria-label="Main" />
-      <MarketingMoreSheet open={moreOpen} onOpenChange={setMoreOpen} />
-    </>
-  );
+  return <BottomTabBar items={items} activeKey={activeKey} aria-label="Main" />;
 }

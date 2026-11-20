@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 
-import { AdminPageHeader } from '@/features/dashboard/bookings/components/AdminPageHeader';
 import { SuperAdminPageLoading } from '@/features/dashboard/super-admin/components/shared/SuperAdminPageLoading';
 
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { cn } from '@/lib/utils';
 
 type SuperAdminPageProps = {
@@ -25,7 +25,7 @@ type SuperAdminPageProps = {
 };
 
 /**
- * Standard Super Admin route shell — page header + consistent vertical rhythm,
+ * Standard Super Admin route shell — brand AppBar on phone, desktop header,
  * with built-in loading / error states. Every `/admin/*` page renders through this.
  */
 export function SuperAdminPage({
@@ -42,8 +42,13 @@ export function SuperAdminPage({
   errorMessage,
 }: SuperAdminPageProps) {
   return (
-    <div className={cn('space-y-3 sm:space-y-4', className)}>
-      <AdminPageHeader title={title} subtitle={subtitle} actions={actions} />
+    <AdminMobilePage
+      title={title}
+      subtitle={subtitle}
+      superAdmin
+      desktopActions={actions}
+      className={cn('space-y-3 sm:space-y-4', className)}
+    >
       {isLoading ? (
         (loadingBody ?? <SuperAdminPageLoading metricCount={loadingMetricCount} />)
       ) : error ? (
@@ -57,6 +62,6 @@ export function SuperAdminPage({
           {children}
         </>
       )}
-    </div>
+    </AdminMobilePage>
   );
 }

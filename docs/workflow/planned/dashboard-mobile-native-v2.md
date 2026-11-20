@@ -9,6 +9,8 @@ kind: plan
 
 # Dashboard mobile native v2
 
+> **Superseded (2026-11-20)** by [`mobile-native-app-redesign.md`](../in-progress/mobile-native-app-redesign.md). Its primitives (4a), gesture catalogue (5), split-view rule (4c) and parity rule (4d) carry over; D1 (paper header) is reversed there. Do not start phases from this file.
+
 Rebuild every dashboard screen's **phone layout** (`max-lg`) so it looks and behaves like a native iOS/Android app, matching the product shots in `marketing/social/src/features/*Screens.tsx`. Desktop (`lg+`) keeps its current layout and behavior. Every desktop capability stays reachable on phone.
 
 Public pages (marketing site, guest flows, account) come after this. They have their own follow-up task list at the end of this plan.

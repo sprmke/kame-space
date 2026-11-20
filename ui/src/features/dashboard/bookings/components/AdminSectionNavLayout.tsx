@@ -6,8 +6,11 @@ import { SectionNavIssueDot } from '@/features/dashboard/org/components/property
 
 import { FieldHelpTooltip } from '@/components/forms/FieldLabel';
 import { bottomTabBarOffsetClassName } from '@/components/mobile/BottomTabBar';
+import { DrillRow } from '@/components/mobile/native/DrillRow';
+import { ListSection } from '@/components/mobile/native/ListSection';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SlidingActivePill } from '@/components/ui/SlidingActivePill';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { useSlidingActivePill } from '@/hooks/useSlidingActivePill';
 import { cn } from '@/lib/utils';
 
@@ -343,6 +346,31 @@ const SectionNavList = React.memo(function SectionNavList({ className }: { class
   );
 });
 
+function MobileSettingsSectionIndex({
+  groups,
+  onSelect,
+}: {
+  groups: AdminSectionNavGroup[];
+  onSelect: (sectionId: string) => void;
+}) {
+  return (
+    <div className="space-y-4 pb-2 lg:hidden">
+      {groups.map((group) => (
+        <ListSection key={group.label} title={group.label}>
+          {group.sections.map((section, index) => (
+            <DrillRow
+              key={section.id}
+              title={section.label}
+              onClick={() => onSelect(section.id)}
+              className={index === group.sections.length - 1 ? 'border-b-0' : undefined}
+            />
+          ))}
+        </ListSection>
+      ))}
+    </div>
+  );
+}
+
 export function AdminSectionNavLayout({
   sections,
   sectionGroups,
@@ -352,6 +380,7 @@ export function AdminSectionNavLayout({
   footer,
 }: AdminSectionNavLayoutProps) {
   useAdminLayoutFillMain(true);
+  const isMobileLayout = useIsBelowLg();
 
   const resolvedSections = React.useMemo(
     () => (sectionGroups?.length ? flattenSectionGroups(sectionGroups) : (sections ?? [])),
@@ -377,6 +406,12 @@ export function AdminSectionNavLayout({
       store._detach();
     };
   }, [store]);
+
+  const mobileGroups = React.useMemo(() => {
+    if (sectionGroups?.length) return sectionGroups;
+    if (!resolvedSections.length) return [];
+    return [{ label: 'Sections', sections: resolvedSections }];
+  }, [sectionGroups, resolvedSections]);
 
   return (
     <SectionNavStoreContext.Provider value={store}>
@@ -422,7 +457,15 @@ export function AdminSectionNavLayout({
                 )}
               >
                 {header ? <div className="pb-3 lg:hidden">{header}</div> : null}
-                <div className="mx-auto w-full max-w-4xl space-y-6">{children}</div>
+                <div className="mx-auto w-full max-w-4xl space-y-6">
+                  {isMobileLayout && mobileGroups.length > 0 ? (
+                    <MobileSettingsSectionIndex
+                      groups={mobileGroups}
+                      onSelect={store.scrollToSection}
+                    />
+                  ) : null}
+                  {children}
+                </div>
                 {footer ? (
                   <div className="border-separator mx-auto mt-3 w-full max-w-4xl border-t pt-3 lg:hidden">
                     {footer}

@@ -23,6 +23,8 @@ import { mockPublicPropertiesListBody, mockPublicPropertyBody } from '../../shar
  *
  * Output: `ui/e2e/artifacts/mobile-chrome/<label>/<viewport>/<page>-<state>.png`
  *
+ * `MOBILE_CHROME_VIEWPORTS=iphone` limits the run to one viewport (comma list: iphone,tablet).
+ *
  * `SAFE_AREA=1` emulates iPhone safe-area insets (47px top / 34px bottom) by
  * overriding the `--safe-top` / `--safe-bottom` tokens. Chromium cannot emulate
  * `env(safe-area-inset-*)`, so this only has an effect once those tokens exist
@@ -42,6 +44,12 @@ const TABLET = { width: 768, height: 1024 } as const;
 async function stabilize(page: Page) {
   await page.addInitScript(
     ({ safeArea }) => {
+      // The seeded consent state is keyed to ports 4173/4174; set it for whatever origin we run on.
+      try {
+        localStorage.setItem('kh-cookie-consent', 'declined');
+      } catch {
+        /* storage unavailable */
+      }
       const style = document.createElement('style');
       style.textContent = `
         *, *::before, *::after {
@@ -157,16 +165,58 @@ const DASHBOARD_ROUTES: { name: string; path: string; heading: RegExp | string }
   { name: 'dash-team', path: teamRbacPaths.team, heading: 'Team' },
   { name: 'dash-activity', path: teamRbacPaths.activity, heading: 'Activity' },
   { name: 'dash-public-pages', path: teamRbacPaths.publicPages, heading: /Public pages/i },
+  // v3 baseline additions: the rest of the property modules (best effort under the mocks).
+  { name: 'dash-inbox', path: `${teamRbacPaths.dashboard}/inbox`, heading: /Messages|Inbox/i },
+  {
+    name: 'dash-maintenance',
+    path: `${teamRbacPaths.dashboard}/maintenance`,
+    heading: 'Maintenance',
+  },
+  {
+    name: 'dash-pricing',
+    path: `${teamRbacPaths.dashboard}/pricing`,
+    heading: /Pricing/i,
+  },
+  {
+    name: 'dash-notifications',
+    path: `${teamRbacPaths.dashboard}/notifications`,
+    heading: /Notifications/i,
+  },
+  { name: 'dash-analytics', path: `${teamRbacPaths.dashboard}/analytics`, heading: /Analytics/i },
+  { name: 'dash-reviews', path: teamRbacPaths.reviews, heading: /Reviews/i },
+  { name: 'dash-marketing', path: teamRbacPaths.marketing, heading: /Marketing/i },
+  { name: 'dash-templates', path: `${teamRbacPaths.dashboard}/templates`, heading: /Templates/i },
+  {
+    name: 'dash-announcements',
+    path: `${teamRbacPaths.dashboard}/announcements`,
+    heading: /Announcements/i,
+  },
+  {
+    name: 'dash-help-support',
+    path: `${teamRbacPaths.dashboard}/help-support`,
+    heading: /Help/i,
+  },
+];
+
+/** Org-scope routes captured with the multi-property org harness. */
+const ORG_ROUTES: { name: string; path: string }[] = [
+  { name: 'dash-org-home', path: orgHubPaths.dashboard },
+  { name: 'dash-org-bookings', path: orgHubPaths.bookings },
+  { name: 'dash-org-properties', path: orgHubPaths.properties },
+  { name: 'dash-org-reviews', path: orgHubPaths.reviews },
+  { name: 'dash-org-team', path: orgHubPaths.team },
 ];
 
 test.describe('@ci mobile chrome capture', () => {
   test.skip(!captureEnabled, 'Set PLAYWRIGHT_CAPTURE_SCREENS=1 to capture');
   test.describe.configure({ mode: 'serial', timeout: 120_000 });
 
+  const only = process.env.MOBILE_CHROME_VIEWPORTS?.split(',');
   for (const [viewportName, viewport] of [
     ['iphone', IPHONE],
     ['tablet', TABLET],
   ] as const) {
+    if (only && !only.includes(viewportName)) continue;
     test.describe(viewportName, () => {
       test.use({ viewport });
 
@@ -197,17 +247,19 @@ test.describe('@ci mobile chrome capture', () => {
         });
       }
 
-      test('dash-org-home', async ({ page }) => {
-        await stabilize(page);
-        await installPropertyTeamRbacMocks(page, 'full_access', {
-          orgHub: true,
-          multiProperty: true,
-          assistantEnabled: true,
+      for (const route of ORG_ROUTES) {
+        test(route.name, async ({ page }) => {
+          await stabilize(page);
+          await installPropertyTeamRbacMocks(page, 'full_access', {
+            orgHub: true,
+            multiProperty: true,
+            assistantEnabled: true,
+          });
+          await page.goto(route.path);
+          await page.waitForLoadState('networkidle').catch(() => undefined);
+          await captureStates(page, viewportName, route.name);
         });
-        await page.goto(orgHubPaths.dashboard);
-        await page.waitForLoadState('networkidle').catch(() => undefined);
-        await captureStates(page, viewportName, 'dash-org-home');
-      });
+      }
     });
   }
 });

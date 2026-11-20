@@ -67,6 +67,7 @@
     "minimal-ui-copy",
     "mobile-responsive",
     "multi-tenancy",
+    "native-mobile-redesign",
     "notifications",
     "observability",
     "pdf",
@@ -197,12 +198,7 @@
     "workflow-sync-scratchpads": ".cursor/commands/workflow-sync-scratchpads.md",
     "workflow-wont-do": ".cursor/commands/workflow-wont-do.md"
   },
-  "agents": [
-    "verifier.toml",
-    "security-auditor.toml",
-    "debugger.toml",
-    "test-runner.toml"
-  ],
+  "agents": ["verifier.toml", "security-auditor.toml", "debugger.toml", "test-runner.toml"],
   "rules": [
     {
       "path": ".cursor/rules/accessibility.mdc",
@@ -285,6 +281,11 @@
       "scope": "- 'ui/src/**/*.tsx"
     },
     {
+      "path": ".cursor/rules/kame-mascot.mdc",
+      "always": false,
+      "scope": "- 'ui/src/**/*.tsx"
+    },
+    {
       "path": ".cursor/rules/karpathy-guidelines.mdc",
       "always": true,
       "scope": "Task-specific; read when relevant"
@@ -298,6 +299,11 @@
       "path": ".cursor/rules/mobile-native-ui.mdc",
       "always": true,
       "scope": "Task-specific; read when relevant"
+    },
+    {
+      "path": ".cursor/rules/mobile-native-v3.mdc",
+      "always": false,
+      "scope": "- 'ui/src/**/*.tsx"
     },
     {
       "path": ".cursor/rules/mobile-responsive.mdc",

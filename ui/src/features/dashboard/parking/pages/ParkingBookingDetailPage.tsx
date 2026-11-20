@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Car, ChevronDown, Mail, MessageCircle, Phone, Timer, Wallet } from 'lucide-react';
+import { Calendar, Car, ChevronDown, Mail, MessageCircle, Phone, Timer, Wallet } from 'lucide-react';
 
 import { ParkingBroadcastCountdown } from '@/features/dashboard/bookings/components/ParkingBroadcastCountdown';
 import { StatusBadge } from '@/features/dashboard/bookings/components/StatusBadge';
@@ -26,8 +26,9 @@ import { useIsBelowLg } from '@/hooks/useMediaQuery';
 
 import { AdminDialogShell } from '@/components/AdminDialogShell';
 import { FloatingPanel } from '@/components/mobile/FloatingPanel';
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { ContextualActionBar } from '@/components/mobile/ContextualActionBar';
+import { FactStrip } from '@/components/mobile/native/FactStrip';
 import {
   PARKING_STATUS_FLOW_STEPS,
   ParkingFlowStepper,
@@ -45,6 +46,7 @@ import { parkingDashboardPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { PARKING_HOST_STATUS_NOTE } from '@/lib/parking/parkingFlowCopy';
 import { parkingFlowFadeUp, parkingFlowTransition } from '@/lib/parking/parkingFlowMotion';
 import { cn } from '@/lib/utils';
+import { formatBookingDate } from '@/utils/format/bookingDisplay';
 
 const NEXT_STATUS: Record<string, { label: string; to: string } | undefined> = {
   PENDING_REVIEW: { label: 'Approve for check-in', to: 'READY_FOR_CHECKIN' },
@@ -355,6 +357,21 @@ export function ParkingBookingDetailPage() {
               <ParkingBroadcastCountdown expiresAt={booking.parking_broadcast_expires_at} />
             ) : null}
           </div>
+
+          {isBelowLg ? (
+            <FactStrip
+              facts={[
+                {
+                  icon: Calendar,
+                  label: `${formatBookingDate(booking.check_in_date)} → ${formatBookingDate(booking.check_out_date)}`,
+                },
+                ...(booking.car_plate_number
+                  ? [{ icon: Car, label: booking.car_plate_number }]
+                  : []),
+                ...(guestName ? [{ icon: Mail, label: guestName }] : []),
+              ]}
+            />
+          ) : null}
 
           <ParkingStaySummary
             checkIn={booking.check_in_date}

@@ -39,7 +39,7 @@ import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeMo
 import { usePropertyEntitlements } from '@/features/dashboard/plans/hooks/usePropertyEntitlements';
 import { isFeatureEnabled } from '@/features/dashboard/plans/lib/planFeatures';
 
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { PageEditorSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { friendlyToastError } from '@/lib/feedback/toastMessages';

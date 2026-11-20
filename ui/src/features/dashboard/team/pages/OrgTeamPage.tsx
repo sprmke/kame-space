@@ -38,7 +38,7 @@ import type {
   OrgTeamTab,
 } from '@/features/dashboard/team/types/orgTeam';
 
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { MobileHeroActionButton } from '@/components/mobile/MobileHeroActionButton';
 import { TeamPageSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { Button } from '@/components/ui/button';

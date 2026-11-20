@@ -6,29 +6,30 @@ Agent context for **Vite + React + Supabase Edge Functions**. Adapted from [prop
 
 Keep this list **small**. Heavy domain specs use globs.
 
-| File                            | Purpose                                                                             |
-| ------------------------------- | ----------------------------------------------------------------------------------- |
-| `project-context.mdc`           | Lean stack + doc index + where-to-edit pointers                                     |
-| `ai-usage.mdc`                  | Session hygiene, model routing, subagent discipline                                 |
-| `documentation-maintenance.mdc` | Sync docs with code                                                                 |
-| `ui-minimal-copy.mdc`           | No extra UI prose                                                                   |
-| `human-copy.mdc`                | Production-grade copy; no AI tells / em dashes                                      |
-| `social-creative.mdc`           | Social marketing creative in `marketing/social` (glob-scoped)                       |
-| `superpowers-opt-in.mdc`        | Superpowers opt-in only (see `/superpowers-*`)                                      |
-| `git-commits.mdc`               | Human-only commits; no co-author trailers; hook strips AI attribution               |
-| `no-prod-deploy.mdc`            | Block prod Supabase/DB deploys (unlock: **kamewave**)                               |
-| `local-dev-lifecycle.mdc`       | Never stop/restart local Supabase/Vite unless asked (unlock: **localstop**)         |
-| `markitdown-mcp.mdc`            | Convert PDF/Office attachments via MarkItDown MCP                                   |
-| `route-guides.mdc`              | Page behavior docs must stay in sync                                                |
-| `plans-and-permissions.mdc`     | New features must decide Plans + Team RBAC (or N/A)                                 |
-| `audit-logging.mdc`             | Mutating changes must emit an `activity_log` event (or N/A)                         |
-| `support-content.mdc`           | Route guides, Host-facing knowledge, and curated FAQs must ship with the change     |
-| `unsaved-changes.mdc`           | Editable surfaces with a manual Save must warn before edits are lost (shared guard) |
-| `mobile-native-ui.mdc`          | Always-on gate: native mobile look/feel for any UI change in `ui/src/**`            |
-| `skeleton-loaders.mdc`          | Loading states: real static text/icons; skeleton only async values, rows, media     |
-| `branch-lifecycle.mdc`          | Finished work lands on `develop`: PR, report, merge when green, delete the branch   |
-| `karpathy-guidelines.mdc`       | Think first, simplicity, surgical diffs, verifiable goals (Karpathy-inspired)       |
-| `agent-reporting.mdc`           | One summary/report/question format for every model (OpenCode exempt)                |
+| File                            | Purpose                                                                                     |
+| ------------------------------- | ------------------------------------------------------------------------------------------- |
+| `project-context.mdc`           | Lean stack + doc index + where-to-edit pointers                                             |
+| `ai-usage.mdc`                  | Session hygiene, model routing, subagent discipline                                         |
+| `documentation-maintenance.mdc` | Sync docs with code                                                                         |
+| `ui-minimal-copy.mdc`           | No extra UI prose                                                                           |
+| `human-copy.mdc`                | Production-grade copy; no AI tells / em dashes                                              |
+| `social-creative.mdc`           | Social marketing creative in `marketing/social` (glob-scoped)                               |
+| `superpowers-opt-in.mdc`        | Superpowers opt-in only (see `/superpowers-*`)                                              |
+| `git-commits.mdc`               | Human-only commits; no co-author trailers; hook strips AI attribution                       |
+| `no-prod-deploy.mdc`            | Block prod Supabase/DB deploys (unlock: **kamewave**)                                       |
+| `local-dev-lifecycle.mdc`       | Never stop/restart local Supabase/Vite unless asked (unlock: **localstop**)                 |
+| `markitdown-mcp.mdc`            | Convert PDF/Office attachments via MarkItDown MCP                                           |
+| `route-guides.mdc`              | Page behavior docs must stay in sync                                                        |
+| `plans-and-permissions.mdc`     | New features must decide Plans + Team RBAC (or N/A)                                         |
+| `audit-logging.mdc`             | Mutating changes must emit an `activity_log` event (or N/A)                                 |
+| `support-content.mdc`           | Route guides, Host-facing knowledge, and curated FAQs must ship with the change             |
+| `unsaved-changes.mdc`           | Editable surfaces with a manual Save must warn before edits are lost (shared guard)         |
+| `mobile-native-ui.mdc`          | Always-on gate: native mobile look/feel for any UI change in `ui/src/**`                    |
+| `mobile-native-v3.mdc` (glob)   | v3 redesign rules; `native-mobile-redesign` skill is the Claude Code / OpenCode entry point |
+| `skeleton-loaders.mdc`          | Loading states: real static text/icons; skeleton only async values, rows, media             |
+| `branch-lifecycle.mdc`          | Finished work lands on `develop`: PR, report, merge when green, delete the branch           |
+| `karpathy-guidelines.mdc`       | Think first, simplicity, surgical diffs, verifiable goals (Karpathy-inspired)               |
+| `agent-reporting.mdc`           | One summary/report/question format for every model (OpenCode exempt)                        |
 
 ## New developer setup (AI tooling)
 
@@ -81,31 +82,33 @@ Run **`bun run check:ai-tooling-sync`** after changing hooks, commands, agents, 
 
 ## Conditional rules (by file glob — loaded when relevant)
 
-| File                          | Globs / topic                                                                        |
-| ----------------------------- | ------------------------------------------------------------------------------------ |
-| `booking-workflow.mdc`        | Booking status, orchestrator, guest form / bookings UI                               |
-| `admin-auth.mdc`              | JWT allow list, org/property auth surfaces                                           |
-| `competitive-ux-research.mdc` | Material UX only (skip polish/bugs)                                                  |
-| `mobile-responsive.mdc`       | `ui/src/**` — breakpoints, touch targets, admin shell                                |
-| `tech-stack.mdc`              | `ui/**`, Vite, Bun, React Router                                                     |
-| `architecture.mdc`            | Feature folders, imports, tooling                                                    |
-| `naming-conventions.mdc`      | File naming                                                                          |
-| `components.mdc`              | `*.tsx` — shadcn, theme, structure                                                   |
-| `state-management.mdc`        | `hooks/`, TanStack Query v5                                                          |
-| `forms.mdc`                   | `*Form*`, `schemas/` — RHF + Zod                                                     |
-| `security.mdc`                | Edge auth, org/property RBAC                                                         |
-| `public-ui.mdc`               | Guest form, calendar, sd-form                                                        |
-| `supabase-platform.mdc`       | Migrations, env, Storage                                                             |
-| `supabase-edge-functions.mdc` | `supabase/functions/**`                                                              |
-| `accessibility.mdc`           | WCAG for UI                                                                          |
-| `plan-mode.mdc`               | Plan mode — save finished plans to `docs/workflow/planned/`                          |
-| `workflow-docs.mdc`           | Workflow lifecycle — in-progress tracking, no silent moves                           |
-| `github-issues.mdc`           | GitHub Issues backlog + shipped archive                                              |
-| `social-inbox.mdc`            | Meta inbox                                                                           |
-| `notifications.mdc`           | In-app Notification Center (bell, realtime toasts)                                   |
-| `pwa.mdc`                     | PWA — service worker, offline cache allowlist, Web Push, offline outbox, kill-switch |
-| `ai-assistant-parity.mdc`     | New host dashboard writes → assistant tool or documented exclusion (same change)     |
-| `self-review.mdc`             | Agent-requestable — deep `/self-review` production-readiness audit (skill-backed)    |
+| File                          | Globs / topic                                                                                                                        |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `booking-workflow.mdc`        | Booking status, orchestrator, guest form / bookings UI                                                                               |
+| `admin-auth.mdc`              | JWT allow list, org/property auth surfaces                                                                                           |
+| `competitive-ux-research.mdc` | Material UX only (skip polish/bugs)                                                                                                  |
+| `mobile-responsive.mdc`       | `ui/src/**` — breakpoints, touch targets, admin shell                                                                                |
+| `mobile-native-v3.mdc`        | `ui/src/**` — v3 phone redesign: app bar, five tabs, named actions, Kame AI, motion; wins over legacy hero rules on migrated screens |
+| `kame-mascot.mdc`             | `ui/src/**` — mascot budget: five roles, sizes, poses, never-list, `KameMascot` only                                                 |
+| `tech-stack.mdc`              | `ui/**`, Vite, Bun, React Router                                                                                                     |
+| `architecture.mdc`            | Feature folders, imports, tooling                                                                                                    |
+| `naming-conventions.mdc`      | File naming                                                                                                                          |
+| `components.mdc`              | `*.tsx` — shadcn, theme, structure                                                                                                   |
+| `state-management.mdc`        | `hooks/`, TanStack Query v5                                                                                                          |
+| `forms.mdc`                   | `*Form*`, `schemas/` — RHF + Zod                                                                                                     |
+| `security.mdc`                | Edge auth, org/property RBAC                                                                                                         |
+| `public-ui.mdc`               | Guest form, calendar, sd-form                                                                                                        |
+| `supabase-platform.mdc`       | Migrations, env, Storage                                                                                                             |
+| `supabase-edge-functions.mdc` | `supabase/functions/**`                                                                                                              |
+| `accessibility.mdc`           | WCAG for UI                                                                                                                          |
+| `plan-mode.mdc`               | Plan mode — save finished plans to `docs/workflow/planned/`                                                                          |
+| `workflow-docs.mdc`           | Workflow lifecycle — in-progress tracking, no silent moves                                                                           |
+| `github-issues.mdc`           | GitHub Issues backlog + shipped archive                                                                                              |
+| `social-inbox.mdc`            | Meta inbox                                                                                                                           |
+| `notifications.mdc`           | In-app Notification Center (bell, realtime toasts)                                                                                   |
+| `pwa.mdc`                     | PWA — service worker, offline cache allowlist, Web Push, offline outbox, kill-switch                                                 |
+| `ai-assistant-parity.mdc`     | New host dashboard writes → assistant tool or documented exclusion (same change)                                                     |
+| `self-review.mdc`             | Agent-requestable — deep `/self-review` production-readiness audit (skill-backed)                                                    |
 
 ## Skills (`.cursor/skills/` — invoke `/name` or agent decides)
 
@@ -142,31 +145,32 @@ Run **`bun run check:ai-tooling-sync`** after changing hooks, commands, agents, 
 
 ### UI & quality
 
-| Skill                         | Use for                                                                                          |
-| ----------------------------- | ------------------------------------------------------------------------------------------------ |
-| `competitive-ux-research`     | Material UX only — Airbnb + PMS before new flows                                                 |
-| `frontend-design`             | Layout, visual patterns                                                                          |
-| `design-md`                   | Root `DESIGN.md` + awesome-design-md inspiration catalog                                         |
-| `design-taste-frontend`       | Taste Skill anti-slop craft (`.agents/skills/` — also redesign / stitch variants)                |
-| `playwright-cli`              | Token-efficient browser automation via `bun x playwright-cli` (prefer over MCP for coding loops) |
-| `component-generator`         | New components                                                                                   |
-| `tanstack-table`              | Admin list tables                                                                                |
-| `accessibility`               | WCAG deep patterns                                                                               |
-| `minimal-ui-copy`             | Sparse copy                                                                                      |
-| `human-copy`                  | Production-grade strings; no AI tells / em dashes (pairs with always-on `human-copy.mdc`)        |
-| `agent-reporting`             | Summary / report / question format: outcome first, 5 short sections, fixed status words          |
-| `social-creative`             | FB / IG / TikTok creative via Remotion studio; brand + not-AI checklist                          |
-| `route-guides`                | `docs/guides/routes/*`                                                                           |
-| `skeleton-loaders`            | Loading states: static labels render immediately; skeleton only async values / rows / media      |
-| `performance`                 | Vite bundle, query tuning                                                                        |
-| `batch-commit`                | Daily N commits × 5–10 files (not whole tree)                                                    |
-| `self-review`                 | Deep production-readiness module review (`/self-review`) — gaps, edge cases, ship verdict        |
-| `execute-plan`                | Audit a written plan, then implement it end to end in an isolated worktree (`/ks-execute-plan`)  |
-| `github-issues`               | GitHub Issues — view, create, ship                                                               |
-| `workflow`                    | Workflow docs lifecycle — start/done, in-progress tracking                                       |
-| `workflow-intake-scratchpads` | Sync `_to-prompt.md` / `_to-plan.md` emojis with planned/in-progress/done/wont-do                |
-| `superpowers`                 | Superpowers opt-in — save plans/specs to `docs/workflow/`                                        |
-| `mobile-responsive`           | Breakpoints, touch targets — same content as the glob rule; invoke on Claude Code for UI tasks   |
+| Skill                         | Use for                                                                                                                 |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `competitive-ux-research`     | Material UX only — Airbnb + PMS before new flows                                                                        |
+| `frontend-design`             | Layout, visual patterns                                                                                                 |
+| `design-md`                   | Root `DESIGN.md` + awesome-design-md inspiration catalog                                                                |
+| `design-taste-frontend`       | Taste Skill anti-slop craft (`.agents/skills/` — also redesign / stitch variants)                                       |
+| `playwright-cli`              | Token-efficient browser automation via `bun x playwright-cli` (prefer over MCP for coding loops)                        |
+| `component-generator`         | New components                                                                                                          |
+| `tanstack-table`              | Admin list tables                                                                                                       |
+| `accessibility`               | WCAG deep patterns                                                                                                      |
+| `minimal-ui-copy`             | Sparse copy                                                                                                             |
+| `human-copy`                  | Production-grade strings; no AI tells / em dashes (pairs with always-on `human-copy.mdc`)                               |
+| `agent-reporting`             | Summary / report / question format: outcome first, 5 short sections, fixed status words                                 |
+| `social-creative`             | FB / IG / TikTok creative via Remotion studio; brand + not-AI checklist                                                 |
+| `route-guides`                | `docs/guides/routes/*`                                                                                                  |
+| `skeleton-loaders`            | Loading states: static labels render immediately; skeleton only async values / rows / media                             |
+| `performance`                 | Vite bundle, query tuning                                                                                               |
+| `batch-commit`                | Daily N commits × 5–10 files (not whole tree)                                                                           |
+| `self-review`                 | Deep production-readiness module review (`/self-review`) — gaps, edge cases, ship verdict                               |
+| `execute-plan`                | Audit a written plan, then implement it end to end in an isolated worktree (`/ks-execute-plan`)                         |
+| `github-issues`               | GitHub Issues — view, create, ship                                                                                      |
+| `workflow`                    | Workflow docs lifecycle — start/done, in-progress tracking                                                              |
+| `workflow-intake-scratchpads` | Sync `_to-prompt.md` / `_to-plan.md` emojis with planned/in-progress/done/wont-do                                       |
+| `superpowers`                 | Superpowers opt-in — save plans/specs to `docs/workflow/`                                                               |
+| `mobile-responsive`           | Breakpoints, touch targets — same content as the glob rule; invoke on Claude Code for UI tasks                          |
+| `native-mobile-redesign`      | v3 phone redesign recipe, families, tab sets, AI + mascot checklists — invoke with `mobile-responsive` on every UI task |
 
 **No dedicated skill yet** (fall back to `docs-first` + `docs/PROJECT.md` directly): Finance module, Maintenance module, Marketing Studio (AI captions/video/Meta publish), Guest Inbox AI suggestions, guest portal (authenticated guest profile/trips), pricing calendars, super-admin platform ops (`/admin/*`, developments, hosts), org verification (base/enhanced tiers). These are real, shipped parts of the app — don't assume they don't exist just because there's no skill card for them yet.
 

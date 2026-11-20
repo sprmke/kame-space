@@ -8,6 +8,8 @@ alwaysApply: false
 
 # Mobile-first responsive UI — agent reference
 
+> **v3 shell shipped.** Phone admin UI follows **`mobile-native-v3.mdc`** (compact brand `AppBar`, `Today · Bookings · Inbox · Work · You` tabs, named actions, no More sheet). Plan: `docs/workflow/for-testing/mobile-native-app-redesign.md`. Where this file still mentions a teal hero or More sheet, ignore those rows; use `AdminMobilePage` + `AppBar`.
+
 **Always-on gate:** `.cursor/rules/mobile-native-ui.mdc` (every session). This file is the full spec when editing `ui/src/**`.
 
 Every UI component must work correctly at **375 px** (iPhone SE), **390 px** (iPhone 15), **768 px** (iPad), **1024 px** (laptop), and **1440 px** (desktop). Design mobile first; use Tailwind breakpoints to scale up, not down.

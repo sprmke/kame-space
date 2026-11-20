@@ -116,6 +116,11 @@ const SuperAdminOverviewPage = lazy(() =>
     default: m.SuperAdminOverviewPage,
   }))
 );
+const SuperAdminConsolePage = lazy(() =>
+  import('@/features/dashboard/super-admin/pages/SuperAdminConsolePage').then((m) => ({
+    default: m.SuperAdminConsolePage,
+  }))
+);
 const SuperAdminParkingPayoutsPage = lazy(() =>
   import('@/features/dashboard/super-admin/pages/SuperAdminParkingPayoutsPage').then((m) => ({
     default: m.SuperAdminParkingPayoutsPage,
@@ -192,6 +197,13 @@ export const superAdminRoutes: ReactNode = (
     <Route
       index
       element={superAdminRoute(<SuperAdminOverviewPage />, <SuperAdminOverviewRouteSkeleton />)}
+    />
+    <Route
+      path="console"
+      element={superAdminRoute(
+        <SuperAdminConsolePage />,
+        <SuperAdminOverviewRouteSkeleton />
+      )}
     />
     <Route
       path="developments"

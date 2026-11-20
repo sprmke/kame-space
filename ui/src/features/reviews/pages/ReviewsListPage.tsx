@@ -69,7 +69,7 @@ import { resolveReviewsListLoadState } from '@/features/reviews/lib/reviewsListL
 import { REVIEW_WINDOW_DAYS } from '@/features/reviews/lib/reviewWindow';
 
 import { FloatingToolbar } from '@/components/mobile/FloatingPanel';
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { MobileHeroActionButton } from '@/components/mobile/MobileHeroActionButton';
 import {
   ReviewsCardGridSkeleton,

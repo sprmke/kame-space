@@ -44,7 +44,7 @@ import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate'
 import { usePropertyPermissions } from '@/features/dashboard/team/hooks/usePropertyPermissions';
 import { hasPropertyPermission } from '@/features/dashboard/team/lib/propertyPermissions';
 
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import {
   MobileHeroActionMenu,
   type MobileHeroActionMenuItem,

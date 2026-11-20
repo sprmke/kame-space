@@ -202,7 +202,7 @@ Kanban card open still works without workflow permission (Progress rail read-onl
 | Kanban workflow modal | `ui/src/features/dashboard/bookings/components/BookingKanbanWorkflowModal.tsx`                                 |
 | Workflow (reused)     | `ui/src/features/dashboard/bookings/components/WorkflowPanel.tsx`                                              |
 | Filters               | `ui/src/features/dashboard/bookings/components/BookingFilters.tsx`                                             |
-| Mobile page shell     | `ui/src/components/mobile/MobileBrandHero.tsx` (`AdminMobilePage`)                                             |
+| Mobile page shell     | `ui/src/components/mobile/AdminMobilePage.tsx` + `components/mobile/native/AppBar`                             |
 | Routes                | `ui/src/features/dashboard/routes/index.tsx`                                                                   |
 
 ---

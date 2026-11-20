@@ -1,0 +1,44 @@
+---
+description: Kame mascot usage budget for the app. Five roles, sizes, allowed poses, never-list, one-renderer rule. Apply to any UI that shows the mascot.
+globs:
+  - 'ui/src/**/*.tsx'
+alwaysApply: false
+---
+
+# Kame mascot rules
+
+Assets: `ui/public/assets/mascot/` (93 transparent 448×468 PNG poses; `manifest.json`, `README.md`, `gallery.html`). Full spec: `docs/workflow/for-testing/mobile-native-app-redesign-design-system.md` §12.
+
+**A mascot must have a job.** It never replaces a label, status icon, source, warning or review control.
+
+## Roles
+
+| Role                    | Size        | Poses                                                                                                                         | Where                                                                                                      |
+| ----------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Welcome and orientation | 96 to 128px | `hello`, `happy-hop`, `install-app`, `sign-in`                                                                                | First-entry welcome (once per session), onboarding start, empty workspace, sign-in and install prompts     |
+| Daily guidance          | 48 to 64px  | `dashboard-overview`, `explaining`, `arrival`, `parking-guide`                                                                | Today summary card only (property, parking, org); guest trip progress card                                 |
+| AI identity             | 24 to 32px  | `ai-assistant`, `listening`, `thinking`, `explaining`                                                                         | Kame button, Ask Kame sheet, AI draft label, insight cards, conversation summary                           |
+| Empty or recovery       | 72 to 96px  | `page-not-found`, `something-went-wrong`, `offline`, `coming-soon`, `rainy-day`, plus the domain pose matching the empty page | First-use empty states, 404, error boundary, offline screen, full-page plan gates                          |
+| Milestone               | 96 to 128px | `booking-confirmed`, `action-success`, `delighted`, `room-key`, `guest-review`                                                | Guest booking submitted, review submitted, SD refund submitted, onboarding complete, verification approved |
+| Setup incomplete        | 48 to 64px  | `workspace-settings`, `properties`, `parking-listings`                                                                        | Settings setup-health card, one listing needing setup                                                      |
+
+Seasonal poses (`halloween`, `christmas-parol`, `valentine`, `new-year`, `easter`) only in the welcome role, behind a date-bounded flag.
+
+## Budget
+
+- At most **one** mascot per screen (an AI avatar in a thread counts as one).
+- Dense operational screens (Bookings, Finance, Pricing, Inbox list, Activity, Team, Settings sections, all super-admin): **only** empty states and AI avatars.
+- Filtered-empty results ("No bookings match") use text and "Clear filters", no mascot.
+
+## Never
+
+Tab bar · app bar · scope chip · metric tiles · list rows · calendar cells · charts · form fields or form screens · destructive confirms · payment, payout, refund amounts · legal, security, verification-rejected · critical announcements · whole-page loading · filler "tips" banners.
+
+## Implementation
+
+- Render through **`KameMascot`** only (`pose`, `role`, `decorative`). No raw `<img src="/assets/mascot/...">`, no CSS background.
+- WebP variants at 96 / 160 / 320w with `srcset`, explicit `width` / `height`, `decoding="async"`, `loading="lazy"` (eager only on milestone screens). Never ship the 448px PNG in a list.
+- `alt=""` when nearby text says the same thing (default); descriptive alt otherwise.
+- Not in the shell precache; on-demand tier. Check the PWA budget after adding poses.
+- One pose per role per screen; no perpetual animation. Milestone enter: scale 0.96 → 1 + fade, once, 240ms (fade only under reduced motion).
+- The voice receptionist avatar (`ReceptionistAvatar`) is a separate feature and is not governed by this budget.

@@ -1,13 +1,11 @@
 import { Navigate } from 'react-router-dom';
 
-import { GUEST_ACCOUNT_TRIPS_PATH } from '@/features/guest/account/lib/guestAccountPaths';
+import { GUEST_ACCOUNT_PROFILE_PATH } from '@/features/guest/account/lib/guestAccountPaths';
 
 /**
- * `/account` lands on Trips.
- *
- * For a guest with an upcoming stay, the trips list is the most useful page. Profile is one
- * tap away in the account nav (plan D2, finding A3).
+ * `/account` lands on the Account hub (profile + drill rows on phone).
+ * Trips / Messages / Saved stay on D10 tabs.
  */
 export function GuestAccountIndexPage() {
-  return <Navigate to={GUEST_ACCOUNT_TRIPS_PATH} replace />;
+  return <Navigate to={GUEST_ACCOUNT_PROFILE_PATH} replace />;
 }

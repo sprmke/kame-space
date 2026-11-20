@@ -26,20 +26,20 @@ import { EntityActivityHistory } from '@/features/dashboard/activity/components/
 import { BookingAiAssistantAuditCard } from '@/features/dashboard/ai-assistant/components/BookingAiAssistantAuditCard';
 import { BookingDetailAssetPreviewModal } from '@/features/dashboard/bookings/components/booking-detail/BookingDetailAssetPreviewModal';
 import { BookingDetailHeader } from '@/features/dashboard/bookings/components/booking-detail/BookingDetailHeader';
-import { GuestViewCard } from '@/features/dashboard/bookings/components/booking-detail/GuestViewCard';
 import {
   BookingDetailTabs,
   type BookingViewTab,
 } from '@/features/dashboard/bookings/components/booking-detail/BookingDetailTabs';
 import type { BookingEditTabId } from '@/features/dashboard/bookings/components/booking-detail/edit/BookingEditTabs';
+import { GuestViewCard } from '@/features/dashboard/bookings/components/booking-detail/GuestViewCard';
 import { AiSummaryPanel } from '@/features/dashboard/bookings/components/booking-detail/panels/AiSummaryPanel';
+import { BookingCancellationCard } from '@/features/dashboard/bookings/components/booking-detail/panels/BookingCancellationCard';
 import { DocumentsPanel } from '@/features/dashboard/bookings/components/booking-detail/panels/DocumentsPanel';
 import { GuestsPanel } from '@/features/dashboard/bookings/components/booking-detail/panels/GuestsPanel';
 import { OtherInfoPanel } from '@/features/dashboard/bookings/components/booking-detail/panels/OtherInfoPanel';
 import { ParkingPanel } from '@/features/dashboard/bookings/components/booking-detail/panels/ParkingPanel';
 import { PetsPanel } from '@/features/dashboard/bookings/components/booking-detail/panels/PetsPanel';
 import { PricingSummaryPanel } from '@/features/dashboard/bookings/components/booking-detail/panels/PricingSummaryPanel';
-import { BookingCancellationCard } from '@/features/dashboard/bookings/components/booking-detail/panels/BookingCancellationCard';
 import { StayDetailsPanel } from '@/features/dashboard/bookings/components/booking-detail/panels/StayDetailsPanel';
 import {
   BookingDetailShell,
@@ -78,6 +78,7 @@ import {
 import { resolveBookingViewTab } from '@/features/dashboard/bookings/lib/resolveBookingViewTab';
 import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
+import { propertySectionPath } from '@/features/dashboard/org/lib/tenantPaths';
 import { usePropertyPermissions } from '@/features/dashboard/team/hooks/usePropertyPermissions';
 import {
   bookingEditableTabs,
@@ -89,11 +90,12 @@ import { GuestReputationCard } from '@/features/reviews/components/GuestReputati
 import { ReviewGuestCard } from '@/features/reviews/components/ReviewGuestCard';
 import { useGuestReputation } from '@/features/reviews/hooks/useGuestReputation';
 
-import { MobileBrandHero } from '@/components/mobile/MobileBrandHero';
+
+import { AppBar } from '@/components/mobile/native/AppBar';
 import { BookingDetailPageSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { useIsBelowMd } from '@/hooks/useMediaQuery';
-import { useMobileHeroCollapseProgress } from '@/hooks/useMobileHeroCollapseProgress';
+import { useMobileBack } from '@/hooks/useMobileBack';
 import { propertyDashboardPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { cn } from '@/lib/utils';
 
@@ -102,7 +104,9 @@ const AUTO_REFRESH_INTERVAL_MS = 60_000;
 
 export function BookingDetailPage() {
   const { bookingId } = useParams<{ bookingId: string }>();
-  const { property } = useOrgContext();
+  const { property, orgSlug, propertySlug } = useOrgContext();
+  const bookingsHref = propertySectionPath(orgSlug, propertySlug, 'bookings');
+  const goBack = useMobileBack(bookingsHref);
   const propertyId = usePropertyIdParam();
   const queryClient = useQueryClient();
   const { data: booking, isLoading, error } = useBooking(bookingId);
@@ -152,8 +156,6 @@ export function BookingDetailPage() {
   const [aiSummaryOpen, setAiSummaryOpen] = useState(false);
   const defaultTabAppliedFor = useRef<string | null>(null);
   const isBelowMd = useIsBelowMd();
-  const heroRef = useRef<HTMLElement | null>(null);
-  const heroCollapse = useMobileHeroCollapseProgress(heroRef, isBelowMd);
   const ensureNeedParking = useEnsureNeedParking();
   const locationSlug = useMemo(
     () => propertyCityLocationSlug(property.settings),
@@ -427,27 +429,20 @@ export function BookingDetailPage() {
     ]
   );
 
+  const detailTitle = guestName ?? 'Booking';
+
   return (
     <>
-      {/* Phone-only brand hero band - matches the rest of the dashboard shell.
-       * Tablet/desktop keep the existing layout + `AdminLayout` topbar untouched. */}
-      <MobileBrandHero
-        ref={heroRef}
-        title="Booking"
-        collapseProgress={heroCollapse}
-        flush
-        className="md:hidden"
-      />
-      {/* `!mt-0`: the hidden hero above is still a sibling, so the shell's `space-y-*` would add a top gap. */}
+      <AppBar variant="detail" title={detailTitle} onBack={goBack} />
+      {/* `!mt-0`: app bar is a sibling; shell `space-y-*` would add a top gap. */}
       <div
-        data-page-brand-hero
         data-booking-detail-page
         className="!mt-0 space-y-4 max-md:px-4 max-md:pt-3"
       >
-        {/* Back nav */}
+        {/* Desktop / tablet back; phone uses AppBar back. */}
         <Link
-          to="/bookings"
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
+          to={bookingsHref}
+          className="text-muted-foreground hover:text-foreground hidden items-center gap-1.5 text-xs font-medium transition-colors md:inline-flex"
         >
           <ArrowLeft className="size-3.5" />
           Back to Bookings

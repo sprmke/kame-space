@@ -148,6 +148,7 @@ Guest heroes may use larger tracking-tight headlines; admin stays tighter and qu
 - Breakpoints: Tailwind defaults; verify 375 / 768 / 1024+
 - Touch: ≥44×44px interactive targets on guest and mobile chrome
 - Collapse complex filter/toolbars into sheets on small screens (follow existing listing patterns)
+- **Phone app (v3):** below `lg`, screens follow the native-app system in `docs/workflow/for-testing/mobile-native-app-redesign-design-system.md` (compact brand `AppBar`, audience tab sets, summary and metric strips instead of KPI grids, rows with named actions, five pill tones, push / pop / sheet motion). Shell: `AdminMobilePage` + `ui/src/components/mobile/native/*`. Architecture: `docs/architecture/mobile-native.md`. Legacy teal hero / More sheets are removed. The Kame mascot follows a budget: five roles, one per screen, never in chrome, rows, forms or serious states (`.cursor/rules/kame-mascot.mdc`).
 
 ## 9. Agent Prompt Guide
 

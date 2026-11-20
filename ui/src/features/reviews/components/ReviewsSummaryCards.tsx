@@ -7,7 +7,10 @@ import {
 import { REVIEWS_HELP_COPY } from '@/features/reviews/lib/reviewsHelpCopy';
 
 import { InfoHint } from '@/components/help/InfoHint';
+import { MetricStrip } from '@/components/mobile/native/MetricStrip';
+import { SummaryStrip } from '@/components/mobile/native/SummaryStrip';
 import { StatCard, StatCardGrid, StatCardSkeleton } from '@/components/shared/StatCard';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 
 /** Response rate is meaningless without reviews — show a dash, not 0%. */
 function formatResponseRate(summary: PropertyReviewSummary): string {
@@ -55,6 +58,37 @@ export function ReviewsSummaryCards({
 }: Props) {
   const count = summary?.count ?? 0;
   const dueCount = summary?.dueCount ?? 0;
+  const isMobile = useIsBelowLg();
+
+  if (isMobile) {
+    return (
+      <div className="space-y-2">
+        <MetricStrip
+          metrics={[
+            {
+              label: 'Average',
+              value: formatReviewAverage(summary?.avgOverall),
+            },
+            { label: 'Reviews', value: String(count) },
+            {
+              label: 'Responded',
+              value: summary ? formatResponseRate(summary) : '–',
+            },
+          ]}
+        />
+        <SummaryStrip
+          segments={[
+            { count: dueCount, label: 'to write', filterKey: 'to_write' },
+            { count, label: 'reviews', filterKey: 'all' },
+          ]}
+          onSelect={(key) => {
+            if (key === 'to_write') onShowToWrite();
+            else if (key === 'all' && count > 0) onOpenBreakdown();
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <StatCardGrid>

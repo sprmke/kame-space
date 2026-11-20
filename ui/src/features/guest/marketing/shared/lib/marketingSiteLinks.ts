@@ -1,4 +1,4 @@
-/** Secondary marketing links + socials shared by `MarketingFooter` (lg+) and `MarketingMoreSheet` (phone). */
+/** Secondary marketing links + socials shared by `MarketingFooter` (lg+) and Account hub rows (phone). */
 export type MarketingSiteLink = { href: string; label: string; switchesToHost?: boolean };
 
 export const marketingHostLinks: readonly MarketingSiteLink[] = [

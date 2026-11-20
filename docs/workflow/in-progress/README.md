@@ -2,7 +2,7 @@
 title: 'In progress'
 status: active
 tags: [workflow, in-progress]
-updated: 2026-11-19
+updated: 2026-11-20
 stage: in-progress
 kind: reference
 ---
@@ -25,7 +25,6 @@ Plans with **implementation complete** and only manual QA left live in [`../for-
 | [`cancellation-policy-and-process.md`](./cancellation-policy-and-process.md)                                   | Phases 1-7 shipped. Deferred inside the plan: bookings-list request filter, finance refund outflows and analytics split, listing date-specific example, Playwright cancel specs                                                                                   |
 | [`host-onboarding-setup-guide.md`](./host-onboarding-setup-guide.md)                                           | Reward reminder and unlock emails are unimplemented                                                                                                                                                                                                               |
 | [`property-archive-and-delete-lifecycle.md`](./property-archive-and-delete-lifecycle.md)                       | P0 hotfix shipped (restore guards, closed-property bookings, stay guide). P1-P7 remain: reason column, lifecycle service, automations matrix, host UI, guest closed screen, billing, parking parity                                                               |
-| [`mobile-app-chrome-header-and-tab-bar.md`](./mobile-app-chrome-header-and-tab-bar.md)                         | Phase 1 (docked bottom bar) and the public back control shipped. Admin tab set, large-title dashboard header and cleanup remain                                                                                                                                   |
 | [`notifications-page-restructure.md`](./notifications-page-restructure.md)                                     | Hub shell with Activity/Telegram tabs, master switch row and Telegram history shipped. Phase 1 three-tab frame (with `push`), bounded feed pager, unread filter, Telegram overview, guidance and cleanup remain                                                   |
 | [`settings-cleanup-and-clarity.md`](./settings-cleanup-and-clarity.md)                                         | Phases 1-5 shipped. Phase 6 (schema contract drop) waits on one release soak and `kamewave`                                                                                                                                                                       |
 | [`telegram-delivery-and-history.md`](./telegram-delivery-and-history.md)                                       | Code, tests and docs complete. Migration `20261320000000` still needs to be applied (unlock required for production)                                                                                                                                              |

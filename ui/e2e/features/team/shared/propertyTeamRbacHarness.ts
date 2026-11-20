@@ -1861,21 +1861,41 @@ export function adminNav(page: Page) {
   return page.getByRole('navigation', { name: 'Main menu' });
 }
 
-function moreNav(page: Page) {
-  return page.getByRole('navigation', { name: 'More' });
+/** Work hub holds module links that used to live in the More sheet. */
+function workHub(page: Page) {
+  return page.getByRole('heading', { name: 'Work', exact: true }).or(page.getByLabel('Work'));
+}
+
+function youHub(page: Page) {
+  return page.getByRole('heading', { name: 'You', exact: true });
 }
 
 function adminNavEntry(root: ReturnType<typeof adminNav>, label: string) {
   return root.getByRole('link', { name: label }).or(root.getByRole('listitem', { name: label }));
 }
 
+/** Open the Work tab (replaces the retired More sheet for module links). */
 export async function openAdminMoreSheet(page: Page) {
-  if (await moreNav(page).isVisible()) return;
   await dismissInstallPromptIfPresent(page);
-  await adminNav(page)
-    .getByRole('listitem', { name: /^More\b/ })
-    .click();
-  await expect(moreNav(page)).toBeVisible({ timeout: 10_000 });
+  const workTab = adminNav(page).getByRole('listitem', { name: /^Work\b/ });
+  if (await workTab.isVisible().catch(() => false)) {
+    await workTab.click();
+  } else {
+    await adminNav(page).getByRole('link', { name: /^Work\b/ }).click();
+  }
+  await expect(workHub(page).first()).toBeVisible({ timeout: 10_000 });
+}
+
+/** Open the You tab (account, theme, AI mode). */
+export async function openAdminYouHub(page: Page) {
+  await dismissInstallPromptIfPresent(page);
+  const youTab = adminNav(page).getByRole('listitem', { name: /^You\b/ });
+  if (await youTab.isVisible().catch(() => false)) {
+    await youTab.click();
+  } else {
+    await adminNav(page).getByRole('link', { name: /^You\b/ }).click();
+  }
+  await expect(youHub(page).first()).toBeVisible({ timeout: 10_000 });
 }
 
 async function dismissInstallPromptIfPresent(page: Page) {
@@ -1915,7 +1935,7 @@ export async function expectNavLinkVisible(page: Page, label: string) {
   }
 
   await openAdminMoreSheet(page);
-  await expect(moreNav(page).getByRole('link', { name: label })).toBeVisible();
+  await expect(page.getByRole('link', { name: label }).first()).toBeVisible();
 }
 
 export async function expectNavLinkHidden(page: Page, label: string) {
@@ -1928,7 +1948,7 @@ export async function expectNavLinkHidden(page: Page, label: string) {
   await expect(adminNavEntry(root, label)).toHaveCount(0);
 
   await openAdminMoreSheet(page);
-  await expect(moreNav(page).getByRole('link', { name: label })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: label })).toHaveCount(0);
 }
 
 /** One operating expense for the finance ledger when `financeSeeded` is set. */

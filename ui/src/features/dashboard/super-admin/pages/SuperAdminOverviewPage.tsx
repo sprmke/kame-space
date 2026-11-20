@@ -1,12 +1,12 @@
 import { useState } from 'react';
 
-import { AdminPageHeader } from '@/features/dashboard/bookings/components/AdminPageHeader';
 import { SuperAdminAiCostChart } from '@/features/dashboard/super-admin/components/super-admin-overview/SuperAdminAiCostChart';
 import { SuperAdminAttentionPanel } from '@/features/dashboard/super-admin/components/super-admin-overview/SuperAdminAttentionPanel';
 import { SuperAdminGrowthChart } from '@/features/dashboard/super-admin/components/super-admin-overview/SuperAdminGrowthChart';
 import { SuperAdminOverviewKpis } from '@/features/dashboard/super-admin/components/super-admin-overview/SuperAdminOverviewKpis';
 import { SuperAdminPlanMixDonut } from '@/features/dashboard/super-admin/components/super-admin-overview/SuperAdminPlanMixDonut';
 import { SuperAdminRecentActivity } from '@/features/dashboard/super-admin/components/super-admin-overview/SuperAdminRecentActivity';
+import { SuperAdminPage } from '@/features/dashboard/super-admin/components/shared/SuperAdminPage';
 import { useFeatureAvailabilityAdmin } from '@/features/dashboard/super-admin/hooks/useFeatureAvailabilityAdmin';
 import {
   useSuperAdminOverview,
@@ -30,33 +30,31 @@ export function SuperAdminOverviewPage() {
   const featuresOff = featureAvailability ? countFeaturesOff(featureAvailability.resolved) : 0;
 
   return (
-    <div className="space-y-3 sm:space-y-4">
-      <AdminPageHeader
-        title="Overview"
-        subtitle="Platform health across organizations, billing, operations, and AI."
-        actions={
-          <SegmentedControl
-            value={range}
-            onChange={setRange}
-            size="dense"
-            equalSegments
-            aria-label="Time range"
-            options={[
-              { value: '30d', label: '30d' },
-              { value: '90d', label: '90d' },
-              { value: '12mo', label: '12mo' },
-            ]}
-          />
-        }
-      />
-
-      {isLoading && !data ? (
-        <SuperAdminOverviewBodySkeleton metricCount={12} />
-      ) : error ? (
-        <p className="text-destructive text-sm">
-          {error instanceof Error ? error.message : 'Could not load the platform overview.'}
-        </p>
-      ) : data ? (
+    <SuperAdminPage
+      title="Overview"
+      subtitle="Platform health across organizations, billing, operations, and AI."
+      actions={
+        <SegmentedControl
+          value={range}
+          onChange={setRange}
+          size="dense"
+          equalSegments
+          aria-label="Time range"
+          options={[
+            { value: '30d', label: '30d' },
+            { value: '90d', label: '90d' },
+            { value: '12mo', label: '12mo' },
+          ]}
+        />
+      }
+      isLoading={isLoading && !data}
+      loadingBody={<SuperAdminOverviewBodySkeleton metricCount={12} />}
+      error={error}
+      errorMessage={
+        error instanceof Error ? error.message : 'Could not load the platform overview.'
+      }
+    >
+      {data ? (
         <div className="space-y-3 sm:space-y-4">
           <SuperAdminOverviewKpis
             kpis={data.kpis}
@@ -81,6 +79,6 @@ export function SuperAdminOverviewPage() {
           <SuperAdminRecentActivity recent={data.recent} />
         </div>
       ) : null}
-    </div>
+    </SuperAdminPage>
   );
 }

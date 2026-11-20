@@ -34,6 +34,7 @@ import {
 import { assistantSpring } from '@/features/dashboard/ai-assistant/lib/assistantMotion';
 import {
   getAssistantOpenRequestId,
+  openAiAssistant,
   subscribeAssistantOpenRequest,
 } from '@/features/dashboard/ai-assistant/lib/assistantOpenStore';
 import { isCanvasOpen } from '@/features/dashboard/ai-assistant/lib/assistantScope';
@@ -48,13 +49,11 @@ import {
   AdminBrandTheme,
   useAdminBrandThemeStyle,
 } from '@/features/dashboard/bookings/components/AdminBrandTheme';
-import { AdminMoreSheet } from '@/features/dashboard/bookings/components/AdminMoreSheet';
 import { useAdminSession } from '@/features/dashboard/bookings/hooks/useAdminSession';
 import {
-  ASSISTANT_TAB_KEY,
-  NOTIFICATIONS_TAB_KEY,
-  resolveBottomTabActiveKey,
-  splitAdminBottomNav,
+  buildAdminV3Tabs,
+  flattenNavigableNavItems,
+  resolveAdminV3TabActiveKey,
 } from '@/features/dashboard/bookings/lib/adminBottomNav';
 import {
   AdminLayoutFillMainActiveContext,
@@ -77,16 +76,27 @@ import {
   LEGACY_NAV_SECTIONS,
   type SidebarNavSection,
 } from '@/features/dashboard/bookings/lib/adminSidebarNav';
+import {
+  adminTabForRoute,
+  adminTabScope,
+  type AdminTabKey,
+} from '@/features/dashboard/bookings/lib/adminTabForRoute';
+import {
+  clearAdminTabPath,
+  recallAdminTabPath,
+  rememberAdminTabPath,
+} from '@/features/dashboard/bookings/lib/adminTabMemory';
 import { resolveActiveNavHref } from '@/features/dashboard/bookings/lib/navActive';
 import { DashboardChromeProvider } from '@/features/dashboard/lib/dashboardChromeContext';
+import { recordWorkRecent } from '@/features/dashboard/native-hubs/lib/workRecent';
 import { NotificationBell } from '@/features/dashboard/notifications/components/NotificationBell';
 import { NotificationsProvider } from '@/features/dashboard/notifications/components/NotificationsProvider';
 import { useNotificationsList } from '@/features/dashboard/notifications/hooks/useNotifications';
 import { ListingContractRenewalProvider } from '@/features/dashboard/org/components/listing-authorization/ListingContractRenewalProvider';
 import { ListingVerificationSidebarCta } from '@/features/dashboard/org/components/listing-authorization/ListingVerificationSidebarCta';
 import { OrgSettingsIssuesSync } from '@/features/dashboard/org/components/OrgSettingsIssuesSync';
-import { PropertyLifecycleBanner } from '@/features/dashboard/org/components/PropertyLifecycleBanner';
 import { SectionNavIssueDot } from '@/features/dashboard/org/components/property-settings/PropertySettingsFields';
+import { PropertyLifecycleBanner } from '@/features/dashboard/org/components/PropertyLifecycleBanner';
 import {
   type OrgContextValue,
   useOptionalOrgContext,
@@ -111,6 +121,11 @@ import {
   hasPropertySettingsIssues,
   subscribePropertySettingsIssues,
 } from '@/features/dashboard/org/lib/propertySettingsIssuesStore';
+import {
+  orgDashboardPath,
+  parkingDashboardPath,
+  propertyDashboardPath,
+} from '@/features/dashboard/org/lib/tenantPaths';
 import type { Organization, Parking, Property } from '@/features/dashboard/org/types';
 import {
   hasParkingSettingsIssues,
@@ -126,14 +141,19 @@ import { useOrgPermissions } from '@/features/dashboard/team/hooks/useOrgPermiss
 import { useParkingPermissions } from '@/features/dashboard/team/hooks/useParkingPermissions';
 import { usePropertyPermissions } from '@/features/dashboard/team/hooks/usePropertyPermissions';
 
+import { FeatureAvailabilityBanner } from '@/components/feature-availability/FeatureAvailabilityBanner';
+import { LegalFooterLinks } from '@/components/legal/LegalFooterLinks';
 import { BottomBarSlotProvider } from '@/components/mobile/BottomBarSlot';
 import { BottomTabBar } from '@/components/mobile/BottomTabBar';
 import { MobileAppShell } from '@/components/mobile/ContextualActionBar';
+import { FirstEntryWelcome } from '@/features/dashboard/native-hubs/components/FirstEntryWelcome';
+import { AdminNativeChromeProvider } from '@/components/mobile/native/AdminNativeChromeContext';
+import { useNavDirection } from '@/components/mobile/native/useNavDirection';
 import { PageTransition } from '@/components/mobile/PageTransition';
+import { scrollAdminViewToTop } from '@/components/navigation/ScrollToTop';
 import { AiAssistantPanelSkeleton } from '@/components/skeletons/AiAssistantSkeleton';
+import { useTheme } from '@/components/theme/ThemeProvider';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { FeatureAvailabilityBanner } from '@/components/feature-availability/FeatureAvailabilityBanner';
-import { LegalFooterLinks } from '@/components/legal/LegalFooterLinks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SlidingActivePill } from '@/components/ui/SlidingActivePill';
 import { useAfterFirstPaint } from '@/hooks/useAfterFirstPaint';
@@ -149,6 +169,7 @@ import {
 } from '@/lib/pageTitle';
 import { PostHogAdminScopeSync } from '@/lib/posthog/PostHogAdminScopeSync';
 import { cn } from '@/lib/utils';
+
 
 const SIDEBAR_COLLAPSED_KEY = 'kame-admin-sidebar-collapsed';
 
@@ -296,6 +317,8 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
   const brandStyle = useAdminBrandThemeStyle();
   const location = useLocation();
   const navigate = useNavigate();
+  useNavDirection();
+  const { resolvedTheme } = useTheme();
   const {
     orgSlug: routeOrgSlug,
     propertySlug: routePropertySlug,
@@ -308,6 +331,19 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
   // Declared before its first consumer: the tenant lists, the notification preview and the
   // announcement dot all gate on it, and a `const` read before its declaration would throw.
   const afterFirstPaint = useAfterFirstPaint();
+  const tabRetapRef = useRef<{ key: string; scrolled: boolean } | null>(null);
+
+  // Phone status bar matches the brand app bar (D13 theme-color per surface).
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+    const previous = meta.getAttribute('content');
+    meta.setAttribute('content', resolvedTheme === 'dark' ? '#1a2422' : '#115e4e');
+    return () => {
+      if (previous) meta.setAttribute('content', previous);
+      else meta.setAttribute('content', resolvedTheme === 'dark' ? '#121212' : '#f5f6f8');
+    };
+  }, [resolvedTheme]);
   const tenant = useOptionalOrgContext();
   const parkingTenant = useOptionalParkingContext();
   const { data: orgsData } = useOrganizations();
@@ -412,7 +448,6 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
     () => 0
   );
   const lastHandledAssistantOpenRequestIdRef = useRef(assistantOpenRequestId);
-  const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   // One collapse preference for both modes, so a mode switch never resizes the sidebar.
@@ -448,15 +483,21 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
   );
 
   useEffect(() => {
-    setMoreSheetOpen(false);
     setNotificationsOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!activeNavHref) return;
+    const label = navSections
+      .flatMap((section) => section.items)
+      .find((item) => item.href === activeNavHref)?.label;
+    if (label) recordWorkRecent(activeNavHref, label);
+  }, [activeNavHref, navSections]);
 
   useEffect(() => {
     if (assistantOpenRequestId === 0) return;
     if (assistantOpenRequestId === lastHandledAssistantOpenRequestIdRef.current) return;
     lastHandledAssistantOpenRequestIdRef.current = assistantOpenRequestId;
-    setMoreSheetOpen(false);
     setNotificationsOpen(false);
 
     if (assistantAccessible) {
@@ -538,59 +579,51 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
     setProfileModalOpen(true);
   }, []);
 
-  const openMoreSheet = useCallback(() => {
-    setAssistantOpen(false);
-    setNotificationsOpen(false);
-    setMoreSheetOpen(true);
-  }, []);
+  const tabScope = adminTabScope(location.pathname);
+  const tabBasePath = useMemo(() => {
+    const orgSlug = tenant?.orgSlug ?? parkingTenant?.orgSlug ?? routeOrgSlug;
+    const propertySlug = tenant?.propertySlug ?? routePropertySlug;
+    const parkingSlug = parkingTenant?.parkingSlug ?? routeParkingSlug;
+    if (superAdmin) return '/admin';
+    if (!orgSlug) return '';
+    if (tabScope === 'property' && propertySlug) return propertyDashboardPath(orgSlug, propertySlug);
+    if (tabScope === 'parking' && parkingSlug) return parkingDashboardPath(orgSlug, parkingSlug);
+    if (tabScope === 'org') return orgDashboardPath(orgSlug).replace(/\/dashboard$/, '');
+    return '';
+  }, [
+    superAdmin,
+    tabScope,
+    tenant?.orgSlug,
+    tenant?.propertySlug,
+    parkingTenant?.orgSlug,
+    parkingTenant?.parkingSlug,
+    routeOrgSlug,
+    routePropertySlug,
+    routeParkingSlug,
+  ]);
 
-  const toggleAssistant = useCallback(() => {
-    setMoreSheetOpen(false);
-    setNotificationsOpen(false);
-    setAssistantOpen((open) => !open);
-  }, []);
+  const tabItems = useMemo(() => {
+    if (!tabScope || !tabBasePath) return [];
+    const navigable = flattenNavigableNavItems(navSections);
+    return buildAdminV3Tabs({
+      scope: tabScope,
+      basePath: tabBasePath,
+      navigable,
+      inboxBadge: unreadNotificationCount > 0 ? unreadNotificationCount : undefined,
+      alertsBadge: unreadNotificationCount > 0 ? unreadNotificationCount : undefined,
+    });
+  }, [tabScope, tabBasePath, navSections, unreadNotificationCount]);
 
-  const toggleNotifications = useCallback(() => {
-    setMoreSheetOpen(false);
-    setAssistantOpen(false);
-    setNotificationsOpen((open) => !open);
-  }, []);
+  useEffect(() => {
+    const tab = adminTabForRoute(location.pathname);
+    if (!tab || !tabScope || !tabBasePath) return;
+    const rootForTab = tabItems.find((item) => item.key === tab)?.href;
+    if (rootForTab && location.pathname !== rootForTab) {
+      rememberAdminTabPath(tabScope, tabBasePath, tab, location.pathname);
+    }
+  }, [location.pathname, tabScope, tabBasePath, tabItems]);
 
-  const { tabItems, moreSections, moreItems, primaryHrefs } = useMemo(
-    () =>
-      splitAdminBottomNav(navSections, {
-        onMoreClick: openMoreSheet,
-        assistant: !superAdmin && showAssistantFab ? { onClick: toggleAssistant } : undefined,
-        notifications: !superAdmin
-          ? {
-              onClick: toggleNotifications,
-              badge: unreadNotificationCount > 0 ? unreadNotificationCount : undefined,
-            }
-          : undefined,
-      }),
-    [
-      navSections,
-      openMoreSheet,
-      superAdmin,
-      showAssistantFab,
-      toggleAssistant,
-      toggleNotifications,
-      unreadNotificationCount,
-    ]
-  );
-
-  const overlayTabKey = assistantOpen
-    ? ASSISTANT_TAB_KEY
-    : notificationsOpen
-      ? NOTIFICATIONS_TAB_KEY
-      : null;
-
-  const tabActiveKey = resolveBottomTabActiveKey(
-    activeNavHref,
-    primaryHrefs,
-    moreSheetOpen,
-    overlayTabKey
-  );
+  const tabActiveKey = resolveAdminV3TabActiveKey(location.pathname);
 
   const settingsIssueOnTabs =
     (propertySettingsHasIssues && isPropertyAdminPath(location.pathname)) ||
@@ -598,19 +631,23 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
     (orgSettingsHasIssues && isOrgAdminPath(location.pathname));
 
   const tabItemsWithBadges = useMemo(() => {
-    const announcementsInMore = moreItems.some((item) => item.label === 'Announcements');
-    const moreNeedsDot =
-      (announcementsInMore && hostAnnouncementsHaveUnread) ||
-      (settingsIssueOnTabs && moreItems.some((m) => m.label === 'Settings'));
-
     return tabItems.map((item) => {
-      if (item.key === 'more') {
-        return moreNeedsDot ? { ...item, badge: true } : item;
-      }
-      if (item.label === 'Settings' && settingsIssueOnTabs) return { ...item, badge: true };
+      if (item.key === 'work' && settingsIssueOnTabs) return { ...item, badge: true };
+      if (item.key === 'work' && hostAnnouncementsHaveUnread) return { ...item, badge: true };
       return item;
     });
-  }, [tabItems, moreItems, settingsIssueOnTabs, hostAnnouncementsHaveUnread]);
+  }, [tabItems, settingsIssueOnTabs, hostAnnouncementsHaveUnread]);
+
+  const activeTabKey = adminTabForRoute(location.pathname);
+  const askKameLabelled = activeTabKey === 'today' || activeTabKey === 'overview';
+  const nativeChromeValue = useMemo(
+    () => ({
+      onAskKame: showAssistantFab ? () => openAiAssistant() : undefined,
+      hideKame: !showAssistantFab || superAdmin,
+      askKameLabelled,
+    }),
+    [showAssistantFab, superAdmin, askKameLabelled]
+  );
 
   const toggleSidebarCollapsed = () => {
     setSidebarCollapsed((prev) => {
@@ -620,20 +657,47 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
     });
   };
 
-  // Phone tabs are the PWA's primary navigation, so they warm their target chunk on
-  // pointer-down rather than only on sidebar hover (which a thumb never triggers).
-  // Chunk-only: the page's own queries still run on mount, because pretending to
-  // prefetch data we do not own the cache keys for is how stale views happen.
+  // Phone tabs: warm chunks on pointer-down; D15 memory + re-tap (scroll then root).
   const tabItemsWithPrefetch = useMemo(
     () =>
       tabItemsWithBadges.map((item) => {
-        if (!item.href) return item;
-        const loader = resolveAdminNavPrefetch(item.href);
-        if (!loader) return item;
-        const href = item.href;
-        return { ...item, onIntent: () => prefetchChunkOnce(href, loader) };
+        const rootHref = item.href;
+        if (!rootHref || !tabScope || !tabBasePath) return item;
+        const loader = resolveAdminNavPrefetch(rootHref);
+        const tabKey = item.key as AdminTabKey;
+        return {
+          ...item,
+          href: undefined,
+          onIntent: loader ? () => prefetchChunkOnce(rootHref, loader) : item.onIntent,
+          onClick: () => {
+            const isActive = item.key === tabActiveKey;
+            if (isActive) {
+              const atRoot =
+                location.pathname === rootHref || location.pathname === `${rootHref}/`;
+              if (atRoot) {
+                scrollAdminViewToTop('auto');
+                tabRetapRef.current = null;
+                return;
+              }
+              if (tabRetapRef.current?.key === item.key && tabRetapRef.current.scrolled) {
+                clearAdminTabPath(tabScope, tabBasePath, tabKey);
+                tabRetapRef.current = null;
+                navigate(rootHref);
+                return;
+              }
+              scrollAdminViewToTop('smooth');
+              tabRetapRef.current = { key: item.key, scrolled: true };
+              return;
+            }
+            tabRetapRef.current = null;
+            const remembered = recallAdminTabPath(tabScope, tabBasePath, tabKey);
+            const target =
+              remembered && remembered.startsWith(rootHref) ? remembered : rootHref;
+            navigate(target);
+          },
+        };
       }),
-    [tabItemsWithBadges]
+    [tabItemsWithBadges, tabScope, tabBasePath, tabActiveKey, location.pathname, navigate]
   );
 
   // AI mode: the composer dock is the only bottom layer on phone.
@@ -656,8 +720,6 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
     prevAiModeRef.current = aiMode;
     if (aiMode) {
       setAssistantOpen(false);
-      // Switched from the phone More sheet: the AI chrome replaces the sheet's nav.
-      setMoreSheetOpen(false);
     }
   }, [aiMode]);
 
@@ -673,6 +735,7 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
       {!superAdmin ? <HostVerificationChangesGate /> : null}
       {!superAdmin ? <NotificationsProvider /> : null}
       <DashboardChromeProvider aiMode={aiMode} canvasOpen={canvasOpen}>
+        <AdminNativeChromeProvider value={nativeChromeValue}>
         <BottomBarSlotProvider tabBar={mobileTabBar}>
           <div
             className="bg-background flex h-screen overflow-hidden"
@@ -819,67 +882,47 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
             </div>
           </div>
 
-          <AdminMoreSheet
-            open={moreSheetOpen}
-            onOpenChange={(open) => {
-              setMoreSheetOpen(open);
-              if (open) {
-                setAssistantOpen(false);
-                setNotificationsOpen(false);
-              }
-            }}
-            moreSections={moreSections}
-            activeNavHref={activeNavHref}
-            pathname={location.pathname}
-            propertySettingsHasIssues={propertySettingsHasIssues}
-            parkingSettingsHasIssues={parkingSettingsHasIssues}
-            orgSettingsHasIssues={orgSettingsHasIssues}
-            hostAnnouncementsHaveUnread={hostAnnouncementsHaveUnread}
-            displayName={displayName}
-            avatarUrl={avatarUrl}
-            initials={initials}
-            email={email}
-            signOut={signOut}
-            onOpenProfile={() => {
-              setMoreSheetOpen(false);
-              openProfileModal();
-            }}
-            onSignOutNavigate={() => navigate(hostLoginPath(), { replace: true })}
-            superAdmin={superAdmin}
-          />
-
           <GuestProfileModal open={profileModalOpen} onOpenChange={setProfileModalOpen} />
 
+          {/* Phone: Alerts live under Inbox / Alerts tab. Desktop keeps the FAB bell. */}
           {!superAdmin ? (
             <NotificationBell
               variant="fab"
               open={notificationsOpen}
               onOpenChange={(open) => {
-                if (open) {
-                  setMoreSheetOpen(false);
-                  setAssistantOpen(false);
-                }
+                if (open) setAssistantOpen(false);
                 setNotificationsOpen(open);
               }}
-              className={
+              className={cn(
+                'max-lg:hidden',
                 !aiMode && showAssistantFab ? notificationFabStackedBottomClassName : undefined
-              }
+              )}
             />
           ) : null}
           {!superAdmin && !aiMode ? (
             <AiAssistantLauncherButton
               open={assistantOpen}
               onOpenChange={(open) => {
-                if (open) {
-                  setMoreSheetOpen(false);
-                  setNotificationsOpen(false);
-                }
+                if (open) setNotificationsOpen(false);
                 setAssistantOpen(open);
               }}
+              showFab
             />
           ) : null}
         </BottomBarSlotProvider>
+        </AdminNativeChromeProvider>
       </DashboardChromeProvider>
+      {!superAdmin && !aiMode && tabBasePath ? (
+        <FirstEntryWelcome
+          todayHref={tabBasePath}
+          workspaceLabel={
+            tenant?.property?.name ??
+            parkingTenant?.parking?.name ??
+            tenant?.org?.name ??
+            undefined
+          }
+        />
+      ) : null}
     </>
   );
 }

@@ -15,9 +15,9 @@ import {
   helpSupportPropertyRoute,
 } from '@/features/dashboard/help-support/routes';
 import { propertyInboxRoute } from '@/features/dashboard/inbox/routes';
-import { propertyReviewsRoute } from '@/features/reviews/routes';
 import { maintenancePropertyRoute } from '@/features/dashboard/maintenance/routes';
 import { marketingPropertyRoute } from '@/features/dashboard/marketing/routes';
+import { nativeHubsParkingRoute, nativeHubsPropertyRoute } from '@/features/dashboard/native-hubs/routes';
 import {
   legacyAdminRedirects,
   orgAdminRoutes,
@@ -37,6 +37,8 @@ import {
   teamAuthRoutes,
 } from '@/features/dashboard/team/routes';
 
+import { propertyReviewsRoute } from '@/features/reviews/routes';
+
 /** Dashboard / admin routes: org, property shell, bookings, finance, etc. */
 export const dashboardRoutes: ReactNode[] = [
   superAdminRoutes,
@@ -47,6 +49,7 @@ export const dashboardRoutes: ReactNode[] = [
     {propertyShellRoute(
       <>
         {dashboardPropertyRoute(propertyRoute)}
+        {nativeHubsPropertyRoute(propertyRoute)}
         {adminPropertyRoutes(propertyRoute)}
         {customPagesPropertyRoute(propertyRoute)}
         {financePropertyRoute(propertyRoute)}
@@ -68,6 +71,7 @@ export const dashboardRoutes: ReactNode[] = [
     {parkingShellRoute(
       <>
         {parkingAdminRoutes(parkingRoute)}
+        {nativeHubsParkingRoute(parkingRoute)}
         {parkingTeamRoute(parkingRoute)}
         {activityParkingRoute(parkingRoute)}
         {hostAnnouncementsParkingRoute(parkingRoute)}

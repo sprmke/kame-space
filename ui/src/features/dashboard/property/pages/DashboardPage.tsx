@@ -7,12 +7,13 @@ import {
   useDateNavigation,
   useSyncDateRangeWithQuery,
 } from '@/features/dashboard/bookings/hooks/useDateNavigation';
+import { PlannerTodayCard } from '@/features/dashboard/marketing/components/planner/PlannerTodayCard';
 import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { usePropertyCalendarConflictAttentionItem } from '@/features/dashboard/org/hooks/usePropertyCalendarConflictAttentionItem';
 import { usePropertyRejectedExternalReviewsAttentionItem } from '@/features/dashboard/org/hooks/usePropertyRejectedExternalReviewsAttentionItem';
 import { DashboardFinanceCalendarSection } from '@/features/dashboard/property/components/DashboardFinanceCalendarSection';
 import { DashboardStatCards } from '@/features/dashboard/property/components/DashboardStatCards';
-import { PlannerTodayCard } from '@/features/dashboard/marketing/components/planner/PlannerTodayCard';
+import { TodayMobileBody } from '@/features/dashboard/property/components/TodayMobileBody';
 import { ViewPropertyButton } from '@/features/dashboard/property/components/ViewPropertyButton';
 import { useDashboardStats } from '@/features/dashboard/property/hooks/useDashboardStats';
 import {
@@ -25,9 +26,9 @@ import { usePropertyPermissions } from '@/features/dashboard/team/hooks/usePrope
 import { hasPropertyPermission } from '@/features/dashboard/team/lib/propertyPermissions';
 
 import { FloatingPanel, FloatingToolbar } from '@/components/mobile/FloatingPanel';
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
 import { DashboardSkeleton } from '@/components/skeletons/AdminSkeletons';
-import { useIsBelowMd } from '@/hooks/useMediaQuery';
+import { useIsBelowLg, useIsBelowMd } from '@/hooks/useMediaQuery';
 import { useRouteContentReady } from '@/hooks/useRouteContentReady';
 import { detectPresetFromRange, fromIsoDate } from '@/lib/date/navigation';
 
@@ -41,6 +42,7 @@ import { detectPresetFromRange, fromIsoDate } from '@/lib/date/navigation';
 export function DashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const isBelowMd = useIsBelowMd();
+  const isMobileLayout = useIsBelowLg();
   const { propertySlug, orgSlug } = useOrgContext();
   const { data: access } = usePropertyPermissions();
   const canViewFinance = hasPropertyPermission(access?.permissions, 'finance:view');
@@ -117,8 +119,8 @@ export function DashboardPage() {
 
   return (
     <AdminMobilePage
-      title="Dashboard"
-      subtitle="Overview of your property's performance and activity."
+      title={isMobileLayout ? 'Today' : 'Dashboard'}
+      subtitle={isMobileLayout ? undefined : "Overview of your property's performance and activity."}
       titleId="dashboard-heading"
       heroTrailing={heroViewProperty}
       overlap={overlapControls}
@@ -148,9 +150,14 @@ export function DashboardPage() {
         </FloatingPanel>
       ) : data ? (
         <div className="native-stagger flex min-w-0 flex-col gap-2.5 sm:gap-3 lg:gap-4">
-          <DashboardStatCards stats={data} />
-
-          <PlannerTodayCard />
+          {isMobileLayout ? (
+            <TodayMobileBody stats={data} orgSlug={orgSlug} propertySlug={propertySlug} />
+          ) : (
+            <>
+              <DashboardStatCards stats={data} />
+              <PlannerTodayCard />
+            </>
+          )}
 
           {period.from && period.to ? (
             <DashboardFinanceCalendarSection

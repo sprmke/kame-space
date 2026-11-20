@@ -3,7 +3,7 @@ title: 'Marketing Studio mobile parity + dashboard responsive polish'
 stage: in-progress
 status: in-progress
 tags: [mobile-responsive, marketing, pricing, dashboard]
-updated: 2026-11-06
+updated: 2026-11-20
 kind: plan
 ---
 
@@ -128,7 +128,7 @@ Decisions locked with the user: **full editing parity for all three Studio edito
 
 | Need                                       | Use                                                                                                                                                                                    |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Page shell + brand hero + sticky chrome    | `AdminMobilePage` (`components/mobile/MobileBrandHero.tsx`) — `heroTrailing`, `overlap`, `stickyPrimary`, `stickyMore`, `stickyMoreActiveCount`, `desktopActions`, `dense`             |
+| Page shell (v3 AppBar)                     | `AdminMobilePage` (`components/mobile/AdminMobilePage.tsx`) — `heroTrailing`, `overlap`, `stickyPrimary`, `desktopActions`, `dense` (More sheet retired; modules live under Work)      |
 | Full‑height main column on mobile          | `useAdminLayoutFillMain(true)` / `useAdminLayoutIsFillMain()` (`bookings/components/AdminLayout.tsx`) + `bottomTabBarOffsetClassName()` on the **inner scrollport**                    |
 | Bottom sheet / drawer for panels           | `ResponsiveModal` + `sheetLayout="split"` (`components/ui/responsive-modal.tsx`), or `BottomSheet*` (`components/ui/bottom-sheet.tsx`)                                                 |
 | Filter/sort/settings drawer                | `AdminListRefineSheet` + `AdminListRefineSection` + `AdminMobileSearchFilterRow` (`components/mobile/AdminListRefineSheet.tsx`)                                                        |

@@ -6,6 +6,9 @@ import { TEAM_HELP_COPY } from '@/features/dashboard/team/lib/teamHelpCopy';
 import type { TeamInvitation, TeamMember } from '@/features/dashboard/team/types/propertyTeam';
 
 import { InfoHint } from '@/components/help/InfoHint';
+import { MetricStrip } from '@/components/mobile/native/MetricStrip';
+import { SummaryStrip } from '@/components/mobile/native/SummaryStrip';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -31,6 +34,26 @@ export function TeamStatsCards({ members, invitations }: Props) {
   ).length;
   const fromOrgCount = members.filter((m) => m.fromOrg).length;
   const pendingInvites = invitations.length;
+  const isMobile = useIsBelowLg();
+
+  if (isMobile) {
+    return (
+      <div className="space-y-2">
+        <MetricStrip
+          metrics={[
+            { label: 'Members', value: String(members.length) },
+            { label: 'Access', value: String(adminCount) },
+            { label: 'From org', value: String(fromOrgCount) },
+          ]}
+        />
+        {pendingInvites > 0 ? (
+          <SummaryStrip
+            segments={[{ count: pendingInvites, label: 'pending invites', filterKey: 'invites' }]}
+          />
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4">

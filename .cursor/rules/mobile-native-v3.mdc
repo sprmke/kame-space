@@ -1,0 +1,66 @@
+---
+description: Mobile native v3 (phone app redesign) rules for ui/src. Compact brand app bar, five-tab shell, page families, named actions, motion, Kame AI patterns, parity. Takes precedence over legacy hero and density rules on any screen the v3 plan has migrated.
+globs:
+  - 'ui/src/**/*.tsx'
+  - 'ui/src/**/*.ts'
+alwaysApply: false
+---
+
+# Mobile native v3 (phone app redesign)
+
+Plan: `docs/workflow/for-testing/mobile-native-app-redesign.md`. Full spec: `mobile-native-app-redesign-design-system.md`. Routes: `mobile-native-app-redesign-pages.md`. Architecture: `docs/architecture/mobile-native.md`. Skill: **`native-mobile-redesign`** (with `mobile-responsive`).
+
+## Precedence
+
+- **This file wins** over legacy hero / More / 6-tab rules in `mobile-responsive.mdc`. Phone chrome uses `AdminMobilePage` + `AppBar` only (teal `MobileBrandHero` and More sheets are deleted).
+- Everything not contradicted here (breakpoints, touch targets, `ResponsiveModal`, `MobileChoiceSheet`, skeletons, unsaved-changes guards, Plans/RBAC, audit logging, copy rules) still applies. Phone only (`max-lg`); desktop `lg+` is not changed by this redesign.
+
+## Locked decisions (2026-11-20)
+
+- **Admin tabs:** property and parking `Today · Bookings · Inbox · Work · You`; **org `Today · Bookings · Alerts · Work · You`** (the org has no messages, only the org-scoped alerts feed). No More sheet, no overlay tabs, never more than five. Permission fallback: slot 2 or 3 becomes the next permitted module; Today, Work, You always exist. Route-to-tab mapping lives in one pure, unit-tested `tabForRoute`.
+- **Notifications** are the **Alerts** segment of the Inbox tab (badge = unread messages + alerts). Alert preferences live in You → Notifications.
+- **App bar:** compact brand band (graphite in dark). Root: scope chip + Kame button, then large title + **one named action pill** (+ one `···` max). Detail: back, title, status pill or one action. Flow: close or back, title, stepper. Photo: glass controls over the image. Large → compact title uses opacity only; **no scroll-linked layout animation, no per-frame React state**. One header component; `AdminMobilePage` keeps its props and renders it.
+- **Kame button** in the root app bar opens the Ask Kame sheet with the page as context. No persistent composer above the tab bar.
+- **Public tabs:** signed out `Explore · Stays · Parking · Account`; signed-in guest `Explore · Trips · Messages · Saved · Account`; active stay `Trip · Guide · Messages`. No public More sheet. No second bottom bar on `/account/*`.
+- **Super-admin:** `Overview · Approvals · Orgs · Support · Console`, native-lite (shared primitives only).
+- **Tablet (768 to 1023px):** phone layout, content capped at 640px and centered.
+- **Tabs remember** their last route and scroll per scope; re-tap scrolls to top, second re-tap pops to the tab root.
+- **Transitions:** React Router `viewTransition` + View Transitions API for push / pop / tab; framer-motion for gestures and sheets only. **No new dependency.** Reduced motion: fade or nothing.
+- **Rendering:** split view (`XPageMobile`) only when the phone composition really differs, fed by the **same hooks**. No data, permission or plan logic in `*Mobile` components.
+
+## Hard rules
+
+1. **Named actions.** One primary action per screen, a verb plus object ("Add booking"). Secondary actions in one `···` that opens an action sheet. No rows of unlabeled icon buttons. No "Manage" without an object.
+2. **No four-card KPI grids above the work.** Use a `SummaryStrip` (tappable counts) or a `MetricStrip` (3 values, one delta each). Rows are tappable and carry a **named next action** when one exists ("Check in", "Upload", "Reply").
+3. **Rows, never tables,** below `lg`. Detail screens = fact strip + next action card + disclosure sections + bottom bar with at most two named actions.
+4. **One bottom layer:** tab bar or `ContextualActionBar`, never both. Any screen that mounts a `ContextualActionBar` must expose a visible back (deep links must not dead-end: `useMobileBack(fallback)`).
+5. **Containers:** short tasks, pickers, action sheets, filters = bottom sheet (medium detent, drag to large); longer create / edit = large sheet; entities, long forms, settings sections, conversations = pushed screen; wizards and editors = full-screen flow. One sheet level only; a second level pushes inside the sheet. Destructive confirms stay `AlertDialog`.
+6. **Gestures are shortcuts, never the only path.** Every swipe or long-press action also exists as a visible control. Pull to refresh in the installed PWA only.
+7. **Parity.** Every desktop capability has a phone location. Fill the "Mobile (`max-lg`)" parity table in the route guide before building a page; a page is not done until each row has a phone home.
+8. **States:** layout-matched skeleton, empty, error, offline, plan-locked, no-permission, AI-off (where AI appears). Chrome stays mounted while data loads.
+9. **Pills use five tones** (positive, attention, critical, info, neutral) through `statusToneColors.ts`. Status is never color alone.
+10. **Copy:** verb + object actions, one-word tabs, counts with nouns in strips, no filler banners or taglines, no em or en dash, dates "Nov 19 to 22", times in `Asia/Manila`. Run `human-copy` and `minimal-ui-copy`.
+11. **Forms:** `useUnsavedChangesGuard` / `useGuardedClose` (drag-to-dismiss and back gesture included); `inputMode`, `autoComplete`, `enterKeyHint`; inputs ≥ 16px.
+12. **Do not render features that do not exist.** Mockups imply a Tasks module, work-order checklists, payout schedules, undo after price change and similar. See plan §11. A component never renders a placeholder for them.
+
+## Kame AI (when a screen shows AI)
+
+- **Label honestly:** the Kame avatar or "Kame" marks **LLM output only**. Plain counts and rules show no AI marker.
+- Every summary, draft and insight shows **source chips** that open the source.
+- **Human in the loop:** drafts are editable and sent explicitly; every write goes through the assistant propose → Confirm path or a review-change sheet. No one-tap AI writes from a list.
+- **One insight per screen**, one primary action plus a dismiss icon button.
+- States: thinking, error, AI off for scope (entry hidden), plan-locked, limit reached (limits are super-admin only). New assistant writes follow `ai-assistant-parity.mdc`.
+
+## Mascot
+
+See **`kame-mascot.mdc`**. Short form: at most one mascot per screen, five roles only, `KameMascot` is the only renderer, never in headers, rows, forms, metrics, calendars or serious states.
+
+## Motion (summary)
+
+Push 280ms and pop 240ms with `cubic-bezier(0.32, 0.72, 0, 1)`; tab change cross-fade 120ms; sheets spring with detents; press scale 0.97; title handoff opacity only. Never perpetual loops, scroll-linked parallax or animating `height` on scroll. Honor `prefers-reduced-motion` everywhere.
+
+## Before claiming UI work done
+
+- [ ] Definition of done in plan §8 (parity table, family + primitives, states, mascot budget, 375 / 390 / 430 / 768px, light + dark, 200% text, reduced motion, desktop 1280px unchanged, copy, docs)
+- [ ] Screenshots `after` for the route (sweep spec in plan §10)
+- [ ] Pages-doc row checked off and route guide Mobile section updated

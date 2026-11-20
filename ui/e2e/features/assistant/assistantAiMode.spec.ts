@@ -7,7 +7,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   installPropertyTeamRbacMocks,
   mockedSavedDashboardMode,
-  openAdminMoreSheet,
+  openAdminYouHub,
   openPropertyDashboard,
   queueAssistantChatBlocksForMocks,
   TEAM_E2E_ORG_SLUG,
@@ -330,8 +330,8 @@ test.describe('AI mode', () => {
     await openPropertyDashboard(page);
     await expect(page.getByRole('navigation', { name: 'Admin' })).toBeVisible();
 
-    // Advanced on phone: the switch lives in the More sheet, above the plan row.
-    await openAdminMoreSheet(page);
+    // Advanced on phone: the switch lives in the You hub.
+    await openAdminYouHub(page);
     await modeSwitch(page).click();
     await expect(composer(page)).toBeVisible({ timeout: 20_000 });
     await expect(page).toHaveURL(/canvas=off/);

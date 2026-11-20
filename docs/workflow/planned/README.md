@@ -2,7 +2,7 @@
 title: 'Planned work'
 status: active
 tags: [workflow, planned]
-updated: 2026-11-18
+updated: 2026-11-20
 stage: planned
 kind: reference
 ---

@@ -115,6 +115,41 @@ module.exports = {
           4: 'hsl(var(--chart-4))',
           5: 'hsl(var(--chart-5))',
         },
+        /* Mobile native v3 (phone kit) — design-system §2 */
+        appbar: {
+          DEFAULT: 'hsl(var(--appbar))',
+          foreground: 'hsl(var(--appbar-foreground))',
+          muted: 'hsl(var(--appbar-muted))',
+          control: 'hsl(var(--appbar-control))',
+        },
+        canvas: 'hsl(var(--canvas))',
+        hairline: 'hsl(var(--hairline))',
+        tint: {
+          DEFAULT: 'hsl(var(--tint))',
+          foreground: 'hsl(var(--tint-foreground))',
+        },
+        pill: {
+          positive: {
+            DEFAULT: 'hsl(var(--pill-positive))',
+            foreground: 'hsl(var(--pill-positive-foreground))',
+          },
+          attention: {
+            DEFAULT: 'hsl(var(--pill-attention))',
+            foreground: 'hsl(var(--pill-attention-foreground))',
+          },
+          critical: {
+            DEFAULT: 'hsl(var(--pill-critical))',
+            foreground: 'hsl(var(--pill-critical-foreground))',
+          },
+          info: {
+            DEFAULT: 'hsl(var(--pill-info))',
+            foreground: 'hsl(var(--pill-info-foreground))',
+          },
+          neutral: {
+            DEFAULT: 'hsl(var(--pill-neutral))',
+            foreground: 'hsl(var(--pill-neutral-foreground))',
+          },
+        },
       },
       borderRadius: {
         '2xl': 'calc(var(--radius) + 4px)',
@@ -122,6 +157,19 @@ module.exports = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        'native-sheet': 'var(--radius-sheet)',
+        'native-card': 'var(--radius-card-native)',
+        'native-row': 'var(--radius-row)',
+        'native-control': 'var(--radius-control)',
+      },
+      transitionDuration: {
+        'native-push': 'var(--motion-push)',
+        'native-pop': 'var(--motion-pop)',
+        'native-tab': 'var(--motion-tab)',
+        'native-title': 'var(--motion-title)',
+      },
+      transitionTimingFunction: {
+        native: 'var(--ease-native)',
       },
       keyframes: {
         'accordion-down': {

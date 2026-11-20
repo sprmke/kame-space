@@ -6,6 +6,7 @@ import { recurrenceIntervalLabel } from '@/features/dashboard/finance/lib/recurr
 import type { MaintenanceItem } from '@/features/dashboard/maintenance/lib/types';
 
 import { AdminListCardOverflowMenu } from '@/components/mobile/AdminListCardOverflowMenu';
+import { CheckRow } from '@/components/mobile/native/CheckRow';
 import { FinanceStaysCardGridSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { compactStatusBadgeClasses } from '@/lib/statusToneColors';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,7 @@ type ItemActions = {
   onEdit?: (item: MaintenanceItem) => void;
   onDelete?: (item: MaintenanceItem) => void;
   onOpenSeries?: (item: MaintenanceItem) => void;
+  onToggleComplete?: (item: MaintenanceItem) => void;
 };
 
 type Props = ItemActions & {
@@ -32,6 +34,7 @@ export function MaintenanceRemindersCardGrid({
   onEdit,
   onDelete,
   onOpenSeries,
+  onToggleComplete,
 }: Props) {
   if (isLoading) return <FinanceStaysCardGridSkeleton />;
 
@@ -40,24 +43,98 @@ export function MaintenanceRemindersCardGrid({
   }
 
   return (
-    <div
-      className={cn(
-        'grid grid-cols-1 items-stretch gap-2 sm:grid-cols-2 sm:gap-3.5 lg:grid-cols-3 xl:grid-cols-4',
-        'transition-opacity duration-300',
-        isRefreshing && 'opacity-60'
-      )}
-    >
-      {items.map((item) => (
-        <MaintenanceReminderCard
-          key={item.id}
-          item={item}
-          showStatus={showStatus}
-          onEdit={onEdit ? () => onEdit(item) : undefined}
-          onDelete={onDelete ? () => onDelete(item) : undefined}
-          onOpenSeries={onOpenSeries ? () => onOpenSeries(item) : undefined}
-        />
-      ))}
-    </div>
+    <>
+      {/* Phone: native check rows */}
+      <div
+        className={cn(
+          'border-hairline bg-card rounded-native-row overflow-hidden border sm:hidden',
+          'transition-opacity duration-300',
+          isRefreshing && 'opacity-60'
+        )}
+      >
+        {items.map((item) => {
+          const meta = [
+            formatIsoDate(item.scheduled_on),
+            item.category || null,
+            recurrenceIntervalLabel(item.recurrence_interval),
+          ]
+            .filter(Boolean)
+            .join(' · ');
+          const checked = Boolean(item.completed_at);
+          return (
+            <CheckRow
+              key={item.id}
+              title={item.label}
+              meta={meta}
+              checked={checked}
+              disabled={!onToggleComplete}
+              onToggle={() => onToggleComplete?.(item)}
+              trailing={
+                onEdit || onDelete || onOpenSeries ? (
+                  <AdminListCardOverflowMenu
+                    label={`Actions for ${item.label}`}
+                    sheetTitle="Reminder"
+                    actions={[
+                      ...(item.recurrence_series_id && onOpenSeries
+                        ? [
+                            {
+                              key: 'series',
+                              label: 'View series',
+                              icon: <Repeat className="size-5" aria-hidden />,
+                              onSelect: () => onOpenSeries(item),
+                            },
+                          ]
+                        : []),
+                      ...(onEdit
+                        ? [
+                            {
+                              key: 'edit',
+                              label: 'Edit',
+                              icon: <Pencil className="size-5" aria-hidden />,
+                              onSelect: () => onEdit(item),
+                            },
+                          ]
+                        : []),
+                      ...(onDelete
+                        ? [
+                            {
+                              key: 'delete',
+                              label: 'Delete',
+                              icon: <Trash2 className="size-5" aria-hidden />,
+                              destructive: true,
+                              onSelect: () => onDelete(item),
+                            },
+                          ]
+                        : []),
+                    ]}
+                  />
+                ) : undefined
+              }
+            />
+          );
+        })}
+      </div>
+
+      {/* sm+: card grid */}
+      <div
+        className={cn(
+          'hidden items-stretch gap-2 sm:grid sm:grid-cols-2 sm:gap-3.5 lg:grid-cols-3 xl:grid-cols-4',
+          'transition-opacity duration-300',
+          isRefreshing && 'opacity-60'
+        )}
+      >
+        {items.map((item) => (
+          <MaintenanceReminderCard
+            key={item.id}
+            item={item}
+            showStatus={showStatus}
+            onEdit={onEdit ? () => onEdit(item) : undefined}
+            onDelete={onDelete ? () => onDelete(item) : undefined}
+            onOpenSeries={onOpenSeries ? () => onOpenSeries(item) : undefined}
+          />
+        ))}
+      </div>
+    </>
   );
 }
 

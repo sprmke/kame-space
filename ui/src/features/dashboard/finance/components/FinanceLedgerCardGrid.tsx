@@ -10,6 +10,7 @@ import { recurrenceIntervalLabel } from '@/features/dashboard/finance/lib/recurr
 import type { FinanceBookingLedgerRow } from '@/features/dashboard/finance/lib/types';
 
 import { AdminListCardOverflowMenu } from '@/components/mobile/AdminListCardOverflowMenu';
+import { SwipeableRow } from '@/components/mobile/native/SwipeableRow';
 import { FinanceStaysCardGridSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { toneIconWrapClasses } from '@/lib/statusToneColors';
 import { cn } from '@/lib/utils';
@@ -98,9 +99,8 @@ export function FinanceLedgerCardGrid({
                 ]
               : [];
 
-          return (
+          const card = (
             <div
-              key={entry.id}
               role="button"
               tabIndex={0}
               className="surface-card-interactive flex cursor-pointer flex-col px-3 py-2.5 sm:min-h-[148px] sm:p-4"
@@ -268,6 +268,38 @@ export function FinanceLedgerCardGrid({
               </div>
             </div>
           );
+
+          if (entry.source === 'transaction' && (onEditTransaction || onDeleteTransaction)) {
+            return (
+              <SwipeableRow
+                key={entry.id}
+                className="sm:contents"
+                leading={
+                  onEditTransaction
+                    ? {
+                        key: 'edit',
+                        label: 'Edit',
+                        onClick: () => onEditTransaction(entry),
+                      }
+                    : undefined
+                }
+                trailing={
+                  onDeleteTransaction
+                    ? {
+                        key: 'delete',
+                        label: 'Delete',
+                        tone: 'destructive',
+                        onClick: () => onDeleteTransaction(entry),
+                      }
+                    : undefined
+                }
+              >
+                {card}
+              </SwipeableRow>
+            );
+          }
+
+          return <div key={entry.id}>{card}</div>;
         })}
       </div>
 

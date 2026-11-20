@@ -8,6 +8,8 @@ import {
 import type { BookingStatus } from '@/features/dashboard/bookings/lib/bookingStatus';
 
 import { InfoHint } from '@/components/help/InfoHint';
+import { SummaryStrip } from '@/components/mobile/native/SummaryStrip';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 
 const STAGE_ICON_STYLES = {
   action_required: {
@@ -77,6 +79,34 @@ export function BookingsSummaryCards({
   stageLabels,
   hideStatusFooter = false,
 }: Props) {
+  const isMobile = useIsBelowLg();
+
+  if (isMobile) {
+    const mobileLabels: Record<Exclude<BookingStage, 'all'>, string> = {
+      action_required: 'action required',
+      pending_docs: 'pending docs',
+      confirmed: 'confirmed',
+      history: 'history',
+    };
+    return (
+      <SummaryStrip
+        segments={CARD_STAGES.map((stage) => ({
+          label: stageLabels?.[stage] ?? mobileLabels[stage],
+          count: counts[stage],
+          filterKey: stage,
+        }))}
+        onSelect={(filterKey) => {
+          if (!filterKey) {
+            onStageChange('all');
+            return;
+          }
+          const stage = filterKey as Exclude<BookingStage, 'all'>;
+          onStageChange(activeStage === stage ? 'all' : stage);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 items-start gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4">
       {CARD_STAGES.map((stage) => {

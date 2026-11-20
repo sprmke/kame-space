@@ -481,6 +481,17 @@ export function MaintenanceRemindersTab({
             onEdit={openEdit}
             onDelete={setDeleting}
             onOpenSeries={openSeries}
+            onToggleComplete={
+              canEdit
+                ? (item) => {
+                    void update.mutateAsync({
+                      id: item.id,
+                      patch: { marked_complete: !item.completed_at },
+                      scope: 'this',
+                    });
+                  }
+                : undefined
+            }
           />
         )
       ) : null}

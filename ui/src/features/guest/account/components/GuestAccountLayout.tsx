@@ -2,7 +2,6 @@ import { Suspense } from 'react';
 
 import { Outlet, useLocation } from 'react-router-dom';
 
-import { GuestAccountMobileNav } from '@/features/guest/account/components/GuestAccountMobileNav';
 import { GuestAccountSidebar } from '@/features/guest/account/components/GuestAccountSidebar';
 
 import { GuestAccountRouteSuspenseFallback } from '@/components/skeletons/MarketingRouteFallback';
@@ -10,16 +9,15 @@ import { cn } from '@/lib/utils';
 
 const MARKETING_HEADER_OFFSET = 'pt-[var(--public-nav-h)] lg:pt-[calc(var(--public-nav-h)+1rem)]';
 
+/**
+ * Guest account shell. Phone uses D10 bottom tabs + Account hub rows (no secondary
+ * strip). Desktop keeps the sidebar.
+ */
 export function GuestAccountLayout() {
   const location = useLocation();
 
   return (
     <div className={cn('bg-muted/20 min-h-dvh', MARKETING_HEADER_OFFSET)}>
-      <GuestAccountMobileNav
-        pathname={location.pathname}
-        className="sticky top-[var(--public-nav-h)] z-30 lg:hidden"
-      />
-
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex w-full gap-6 lg:gap-8 xl:gap-10">
           <aside

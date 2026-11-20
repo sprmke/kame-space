@@ -8,7 +8,7 @@ import {
   type ChangeEvent,
 } from 'react';
 
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import {
   ArrowLeft,
@@ -72,7 +72,7 @@ import {
 import { useOptionalOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
 import { handleAiMutationError, isAiQuotaError } from '@/features/dashboard/org/lib/aiQuotaToast';
-import { propertySectionPath } from '@/features/dashboard/org/lib/tenantPaths';
+import { bookingDetailPath, propertySectionPath } from '@/features/dashboard/org/lib/tenantPaths';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 
@@ -89,6 +89,7 @@ import {
 import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble';
 import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatThreadSearchPanel, ChatThreadSearchTrigger } from '@/components/chat/ChatThreadSearch';
+import { AppBar } from '@/components/mobile/native/AppBar';
 import { MobileChoiceItem, MobileChoiceSheet } from '@/components/mobile/MobileChoiceSheet';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -260,6 +261,7 @@ export function InboxConversationView({
   const loadingOlderRef = useRef(loadingOlder);
   loadingOlderRef.current = loadingOlder;
 
+  const navigate = useNavigate();
   const orgContext = useOptionalOrgContext();
   const propertyIdParam = usePropertyIdParam();
   const propertyId = orgContext?.property.id ?? propertyIdParam;
@@ -268,6 +270,10 @@ export function InboxConversationView({
   const { checkInTime, checkOutTime } = readPropertyCheckInTimes(orgContext?.property.settings);
   const { booking: matchedBooking } = useInboxMatchedBooking(conversation);
   const stayGuideLink = useBookingStayGuideLink(matchedBooking);
+  const reservationHref =
+    matchedBooking && orgContext?.orgSlug && orgContext.property.slug
+      ? bookingDetailPath(orgContext.orgSlug, orgContext.property.slug, matchedBooking.id)
+      : null;
 
   const quickReplyMergeContext = useMemo(() => {
     if (!conversation) return null;
@@ -657,91 +663,161 @@ export function InboxConversationView({
         />
       ) : null}
 
-      <div className="border-border bg-card flex shrink-0 items-center gap-3 border-b px-3 py-3 sm:px-4">
-        {onBack && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="@2xl:hidden min-h-[44px] min-w-[44px]"
-            onClick={onBack}
-            aria-label="Back to list"
-          >
-            <ArrowLeft className="size-5" />
-          </Button>
-        )}
-        <PlatformLogo platform={conversation.platform} size="sm" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{name}</p>
-          <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-2 text-[11px]">
-            <span>{platformLabel(conversation.platform)}</span>
+      {isMobileLayout && onBack ? (
+        <>
+          <AppBar
+            variant="detail"
+            title={name}
+            subtitle={platformLabel(conversation.platform)}
+            onBack={onBack}
+            actionLabel={reservationHref ? 'Reservation' : undefined}
+            onAction={reservationHref ? () => navigate(reservationHref) : undefined}
+          />
+          <div className="border-border bg-card flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2 text-[11px]">
+            <PlatformLogo platform={conversation.platform} size="sm" />
             {showOrgMetaBadge ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="bg-muted text-muted-foreground cursor-help rounded px-1.5 py-0.5 text-[10px] font-medium">
-                      Org Meta
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[min(90vw,18rem)] text-xs">
-                    This property has no Facebook Page of its own, so replies use the
-                    organization&rsquo;s shared Meta connection, the same one every other property
-                    without its own Page sees.
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px] font-medium">
+                Org Meta
+              </span>
             ) : null}
             {crossPropertyMatch && crossPropertyHref ? (
-              <>
-                <span aria-hidden>·</span>
-                <Link
-                  to={crossPropertyHref}
-                  className="text-primary font-medium underline-offset-2 hover:underline"
-                >
-                  Looks like {crossPropertyMatch.propertyName}
-                </Link>
-              </>
+              <Link
+                to={crossPropertyHref}
+                className="text-primary font-medium underline-offset-2 hover:underline"
+              >
+                Looks like {crossPropertyMatch.propertyName}
+              </Link>
             ) : null}
             {isWeb && conversation.inquiry_check_in && conversation.inquiry_check_out ? (
-              <>
-                <span aria-hidden>·</span>
-                <span>
-                  {formatStayDateRange(
-                    conversation.inquiry_check_in,
-                    conversation.inquiry_check_out
-                  )}
-                </span>
-              </>
+              <span className="text-muted-foreground">
+                {formatStayDateRange(
+                  conversation.inquiry_check_in,
+                  conversation.inquiry_check_out
+                )}
+              </span>
             ) : null}
-            {windowLabel && conversation.conversation_type === 'dm' && (
-              <>
-                <span aria-hidden>·</span>
-                <span
-                  className={cn('whitespace-nowrap', !windowOpen && 'text-destructive font-medium')}
-                >
-                  {windowLabel}
-                </span>
-              </>
-            )}
+            {windowLabel && conversation.conversation_type === 'dm' ? (
+              <span
+                className={cn(
+                  'whitespace-nowrap',
+                  !windowOpen && 'text-destructive font-medium'
+                )}
+              >
+                {windowLabel}
+              </span>
+            ) : null}
+            {conversation.linked_post_url ? (
+              <a
+                href={conversation.linked_post_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary min-h-11 font-medium underline-offset-2 hover:underline"
+              >
+                View post
+              </a>
+            ) : null}
+            {messages.length > 0 ? (
+              <ChatThreadSearchTrigger
+                active={threadSearch.open}
+                onClick={() =>
+                  threadSearch.open ? threadSearch.close() : threadSearch.openSearch()
+                }
+              />
+            ) : null}
           </div>
+        </>
+      ) : (
+        <div className="border-border bg-card flex shrink-0 items-center gap-3 border-b px-3 py-3 sm:px-4">
+          {onBack && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="@2xl:hidden min-h-[44px] min-w-[44px]"
+              onClick={onBack}
+              aria-label="Back to list"
+            >
+              <ArrowLeft className="size-5" />
+            </Button>
+          )}
+          <PlatformLogo platform={conversation.platform} size="sm" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold">{name}</p>
+            <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-2 text-[11px]">
+              <span>{platformLabel(conversation.platform)}</span>
+              {showOrgMetaBadge ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="bg-muted text-muted-foreground cursor-help rounded px-1.5 py-0.5 text-[10px] font-medium">
+                        Org Meta
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[min(90vw,18rem)] text-xs">
+                      This property has no Facebook Page of its own, so replies use the
+                      organization&rsquo;s shared Meta connection, the same one every other property
+                      without its own Page sees.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : null}
+              {crossPropertyMatch && crossPropertyHref ? (
+                <>
+                  <span aria-hidden>·</span>
+                  <Link
+                    to={crossPropertyHref}
+                    className="text-primary font-medium underline-offset-2 hover:underline"
+                  >
+                    Looks like {crossPropertyMatch.propertyName}
+                  </Link>
+                </>
+              ) : null}
+              {isWeb && conversation.inquiry_check_in && conversation.inquiry_check_out ? (
+                <>
+                  <span aria-hidden>·</span>
+                  <span>
+                    {formatStayDateRange(
+                      conversation.inquiry_check_in,
+                      conversation.inquiry_check_out
+                    )}
+                  </span>
+                </>
+              ) : null}
+              {windowLabel && conversation.conversation_type === 'dm' && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span
+                    className={cn(
+                      'whitespace-nowrap',
+                      !windowOpen && 'text-destructive font-medium'
+                    )}
+                  >
+                    {windowLabel}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+          {conversation.linked_post_url && (
+            <a
+              href={conversation.linked_post_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary flex min-h-[44px] shrink-0 items-center self-center px-1 text-xs font-medium underline-offset-2 hover:underline"
+            >
+              View conversation
+            </a>
+          )}
+          {messages.length > 0 ? (
+            <ChatThreadSearchTrigger
+              active={threadSearch.open}
+              onClick={() =>
+                threadSearch.open ? threadSearch.close() : threadSearch.openSearch()
+              }
+            />
+          ) : null}
         </div>
-        {conversation.linked_post_url && (
-          <a
-            href={conversation.linked_post_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary flex min-h-[44px] shrink-0 items-center self-center px-1 text-xs font-medium underline-offset-2 hover:underline"
-          >
-            View conversation
-          </a>
-        )}
-        {messages.length > 0 ? (
-          <ChatThreadSearchTrigger
-            active={threadSearch.open}
-            onClick={() => (threadSearch.open ? threadSearch.close() : threadSearch.openSearch())}
-          />
-        ) : null}
-      </div>
+      )}
 
       {threadSearch.open ? (
         <ChatThreadSearchPanel

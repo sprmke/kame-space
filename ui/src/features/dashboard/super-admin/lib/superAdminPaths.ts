@@ -1,5 +1,7 @@
 export const superAdminPaths = {
   root: '/admin',
+  /** Phone Console hub (D9); desktop redirects to Overview. */
+  console: '/admin/console',
   ai: '/admin/ai',
   aiTab: (tab: 'usage' | 'limits' | 'profiles' | 'wallets' | 'controls') => `/admin/ai?tab=${tab}`,
   /** Legacy URLs, kept as redirects into the AI console. */

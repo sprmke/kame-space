@@ -23,7 +23,9 @@ import {
 import { usePropertyPermissions } from '@/features/dashboard/team/hooks/usePropertyPermissions';
 import { hasPropertyPermission } from '@/features/dashboard/team/lib/propertyPermissions';
 
-import { AdminMobilePage } from '@/components/mobile/MobileBrandHero';
+import { AdminMobilePage } from '@/components/mobile/AdminMobilePage';
+import { SummaryStrip } from '@/components/mobile/native/SummaryStrip';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 
 /** Shared card grid: 1 col mobile, 2 from sm, 3 from lg — every gallery section. */
 const PUBLIC_PAGE_CARD_GRID_CLASS =
@@ -57,6 +59,7 @@ export function CustomPagesPage() {
     return buildPropertyGuestPublicPages(propertySlug, propertyId);
   }, [propertyId, propertySlug]);
 
+  const isMobile = useIsBelowLg();
   const editablePages = useMemo(() => pages.filter((page) => page.group === 'design'), [pages]);
   const sharePages = useMemo(() => pages.filter((page) => page.group === 'share'), [pages]);
   const bookingPages = useMemo(() => pages.filter((page) => page.group === 'booking'), [pages]);
@@ -92,6 +95,15 @@ export function CustomPagesPage() {
       desktopActions={<CopyLinksMenu items={copyMenuItems} variant="desktop" />}
     >
       <div className="flex flex-col gap-8 sm:gap-10">
+        {isMobile && pages.length > 0 ? (
+          <SummaryStrip
+            segments={[
+              { count: editablePages.length, label: 'design', filterKey: 'design' },
+              { count: sharePages.length, label: 'share', filterKey: 'share' },
+              { count: bookingPages.length, label: 'booking', filterKey: 'booking' },
+            ]}
+          />
+        ) : null}
         {editablePages.length > 0 ? (
           <section aria-labelledby="public-pages-design-heading">
             <h2 id="public-pages-design-heading" className={SECTION_HEADING_CLASS}>

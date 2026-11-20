@@ -2,7 +2,7 @@
 title: 'Tasks To Plan'
 status: active
 tags: [planning, intake, backlog]
-updated: 2026-11-19
+updated: 2026-11-20
 stage: intake
 kind: backlog
 ---
@@ -1301,7 +1301,7 @@ stat card, How it works panels, and first-visit intro cards.
 
 ===
 
-🚧 Mobile app chrome: header and tab bar
+🧪 Mobile app chrome: header and tab bar
 
 Phone shell chrome for public and dashboard: docked tab bar that fills the home-indicator strip,
 5-tab admin bar, large-title header with a compact sticky title, and a back control on detail

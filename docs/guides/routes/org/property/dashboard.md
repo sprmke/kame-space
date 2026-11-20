@@ -22,7 +22,7 @@ Route: `/org/:orgSlug/property/:propertySlug`
 | Needs attention card  | —        | —          | Documented | Board cell; swaps to Recent bookings when clear                  |
 | Maintenance reminders | —        | —          | Documented | Board cell; pending/done + next reminders                        |
 | View Property         | —        | —          | Documented | Opens the public listing in a new tab                            |
-| Mobile shell          | —        | —          | Documented | Sticky collapsing brand hero + overlap (`max-lg`)                |
+| Mobile shell          | —        | —          | Documented | v3 `AdminMobilePage` + AppBar, Today body, overlap date filter   |
 
 ---
 
@@ -38,13 +38,23 @@ Layout order:
    - Cash flow | Breakdown
    - Maintenance | Transactions
 
-### Mobile layout (`max-lg`)
+### Mobile (`max-lg`)
 
-- **Brand hero** — teal band with tenant/property switcher (light-on-primary) and page title. Subtitle is `lg+` only. On scroll the hero **sticks**; title compresses/fades and the arc flattens while switcher + **View Property** stay visible (`useMobileHeroCollapseProgress`). In-app alerts are **not** in the hero — use the **Notifications** bottom tab (or the floating bell on `lg+`).
-- **Bottom tabs** — Dashboard, Bookings, Inbox, Notifications, Assistant (when enabled), More. Finance and other pages live under More. More sheet and the expanded desktop sidebar share the same labelled module groups (**Operations**, **Guests**, **Growth** with Analytics + Marketing + Public Pages, **Manage**). More sheet nav labels use the dense admin scale (`text-[13px]`, `size-4` icons) so they match list/toolbar chrome rather than oversized body type. The sheet footer also holds the **Advanced / AI** mode switch (pages with their own phone header hide the top bar switch).
-- **Overlap toolbar** — first floating white card pulled up over the hero lower edge: date range. **View Property** is the hero trailing action (icon-only).
-- **Canvas** — denser KPI cards first (no icon tiles / “vs last period” text), then the six board cards stack full-width in the same reading order. Chart/calendar headers use a compact icon + centered title (`AdminSurfaceCardHeader`; descriptions `lg+` only). Header actions (Name/Price, All/Income/Expenses) stay on the **same row, right-aligned**, using dense equal-width `SegmentedControl` (`h-7`, 11px labels). Only when a card is too narrow for both (e.g. the two-column Finance row at 1024px) does the action wrap to its own right-aligned row; the title never runs under it. Section/card gaps stay comfortable (`gap-2.5`–`3.5`, `p-3`+), not cramped.
-- **Desktop (`lg+`)** — standard `AdminPageHeader` with inline date filter and **View Property**; board is `lg:grid-cols-2`.
+v3 native shell (`AdminMobilePage` + brand `AppBar`). Title is **Today**. Scope chip switches listing; Ask Kame is the app-bar trailing entry. **View Property** stays on the app bar. Tabs: **Today · Bookings · Inbox · Work · You** (Alerts under Inbox; modules under Work; account under You). No More sheet, no teal hero.
+
+| Desktop capability         | Phone home                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------ |
+| Date range (`?from`/`to`)  | Overlap `FloatingToolbar` + `BookingDateRangeFilter` (bottom sheet presets / custom) |
+| KPI cards                  | `TodayMobileBody` → `MetricStrip` (revenue, occupancy, bookings, ADR)                |
+| Today summary              | `TodaySummaryCard` (arrivals, checkouts, active, due)                                |
+| Marketing today            | `PlannerTodayCard`                                                                   |
+| Needs attention / recent   | `DashboardFinanceCalendarSection` → `DashboardAttentionCard` (full-width stack)      |
+| Mini calendar              | Same section calendar card; **Open calendar** link to Pricing                        |
+| Cash / breakdown charts    | Same section finance charts when `finance:view`                                      |
+| Maintenance / transactions | Same section cards when permitted                                                    |
+| Ask Kame                   | App-bar Kame button                                                                  |
+
+Canvas order: summary + metric strip + planner, then the ops board stacked full-width (same reading order as desktop). Desktop (`lg+`) keeps `AdminPageHeader`, KPI cards, and `lg:grid-cols-2` board.
 
 **Deep links:** KPI “Total Bookings”, Needs attention / Recent bookings “View”, Finance chart “View”, Maintenance “View”, and Transactions “View” / “Add” must target **`propertySectionPath`** (`/org/:orgSlug/property/:propertySlug/…`), never bare `/bookings`, `/finance`, `/maintenance`, or `/analytics`.
 
@@ -208,7 +218,8 @@ This is the home page for a single property. It starts with period performance, 
 | Stats API             | `dashboard-stats` → `supabase/functions/_shared/dashboardService.ts`                  |
 | Finance chart         | `ui/src/features/dashboard/finance/components/FinanceTransactionsChart.tsx`           |
 | Mini calendar         | `ui/src/features/dashboard/bookings/components/BookingCalendarView.tsx`               |
-| Mobile page shell     | `ui/src/components/mobile/MobileBrandHero.tsx` (`AdminMobilePage`)                    |
+| Mobile page shell     | `ui/src/components/mobile/AdminMobilePage.tsx` + `components/mobile/native/AppBar`    |
+| Today phone body      | `ui/src/features/dashboard/property/components/TodayMobileBody.tsx`                   |
 
 ---
 
