@@ -55,6 +55,17 @@ A new cron must be listed in `_shared/systemHealth/jobsRegistry.ts` so it appear
 `/admin/health`. Sentry cron monitors are limited to **one** on the current plan
 (`sd-refund-cron`); see `_shared/sentryCron.ts`.
 
+## Paging (PR-027)
+
+- Every edge **5xx** already raises `edge:<fn>:5xx` through `_shared/ops/opsAlert.ts` from
+  `handleEdgeError`; a new swallowed fault that deserves a page calls
+  `raiseOpsAlertAfterResponse({ key, tier, source, title, context })` (ids and counts only,
+  no PII). Do not call the Telegram API directly.
+- Dedupe key = one class of alert. Re-notify is per tier, and more than 10 notifications in
+  5 minutes collapses into one storm message. Never send an alert from a catch that can fire
+  per request without a stable key.
+- Setup, env vars and the signed drill: [`docs/archive/operations/alerting-setup.md`](../docs/archive/operations/alerting-setup.md) §3.
+
 ## Verify
 
 - `bun run check:posthog-analytics-only`

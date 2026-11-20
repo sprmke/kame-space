@@ -1567,9 +1567,9 @@ They are linked in the site footer, the More menu on phone, and your account men
 
 - category: Account & Security
 - audience: public
-- source: docs/guides/routes/legal.md
+- source: docs/guides/routes/account/profile.md
 
-Open your profile and choose Request a copy or deletion of your data, or email us from the address on your account. We may ask you to confirm it is you and aim to reply within 15 days. Some records, such as payment history, are kept when the law requires it.
+Open your profile and choose Download my data for a file with your details, bookings, reviews and account activity. Choose Delete my account to ask us to remove your profile and personal details. We review deletion requests and aim to finish within 15 days. Bookings stay as financial records with your personal fields removed, because the law requires us to keep them.
 
 ### What does the cookie banner do, and can I change my choice later?
 

@@ -116,7 +116,7 @@ Label `production-readiness`. Items with an open fix PR are tracked in the merge
 
 ## Decisions
 
-PR-012 CSP enforce · PR-113 brand teal contrast ([#154](https://github.com/sprmke/kame-space/pull/154)) · PR-032 double-booking DB constraint · PR-031 parking refund path · PR-035 payout scale · PR-042 budget fail-closed · PR-059 capacity targets · PR-082 RPO/RTO.
+PR-012 CSP enforce (enforcing) · PR-113 brand teal contrast ([#154](https://github.com/sprmke/kame-space/pull/154)) · ~~PR-032 double-booking DB constraint~~ (trigger shipped 2026-11-20, `test:edge:overlap`) · ~~PR-031 parking refund path~~ (shipped; re-verified 2026-11-20) · PR-035 payout scale · PR-042 budget fail-closed · PR-059 capacity targets · PR-082 RPO/RTO.
 
 ## Score improvements by page
 

@@ -2,7 +2,7 @@
 title: 'Privacy and legal'
 status: active
 tags: [workflow, in-progress, production-readiness]
-updated: 2026-11-06
+updated: 2026-11-20
 stage: in-progress
 kind: plan
 origin_stage: untracked
@@ -18,18 +18,18 @@ last_verified: none
 
 ## Remaining work
 
-| #   | Work                                                                                 | Owner    |
-| --- | ------------------------------------------------------------------------------------ | -------- |
-| 1   | Data inventory: guest IDs, receipts, voice transcripts, inbox, analytics, AI prompts | agent    |
-| 2   | Privacy policy + terms match shipped features (AI, voice, PostHog, push)             | product  |
-| 3   | Guest and host export/delete path (data subject request)                             | agent    |
-| 4   | Retention for guest IDs/receipts; purge cron + audit trail (cross-check doc 19)      | agent    |
-| 5   | Cookie / analytics consent if PostHog replay is on                                   | operator |
+| #   | Work                                                                                 | Owner               |
+| --- | ------------------------------------------------------------------------------------ | ------------------- |
+| 1   | Data inventory: guest IDs, receipts, voice transcripts, inbox, analytics, AI prompts | agent               |
+| 2   | Privacy policy + terms match shipped features (AI, voice, PostHog, push)             | product             |
+| 3   | Guest and host export/delete path (data subject request)                             | agent ✅ 2026-11-20 |
+| 4   | Retention for guest IDs/receipts; purge cron + audit trail (cross-check doc 19)      | agent               |
+| 5   | Cookie / analytics consent if PostHog replay is on                                   | operator            |
 
 ## Exit gate
 
 - [ ] Legal copy reviewed against live features — product review of `privacy`/`terms` vs shipped AI, voice, PostHog and push (not started)
-- [ ] Export/delete path exists and is documented — **not implemented** (no guest/host data-subject export or account deletion edge function exists). Tracked as PR-145; needs a product + legal decision because bookings are financial records with a lawful retention basis.
+- [ ] Export/delete path exists and is documented — **shipped 2026-11-20 for the guest portal** (`data-subject-request`, `GuestPrivacyCard`, `test:edge:privacy`); host-account UI entry and the first operator execution are still open. Evidence: `evidence/pr-145-data-subject-requests-2026-11-20.md`.
 - [ ] Retention written and jobs exist or N/A documented — partial: `activity-log-retention-cron` and `property-page-views-prune-cron` exist; guest ID/receipt/transcript retention windows are not documented.
 
 ### Notes (2026-11-02)

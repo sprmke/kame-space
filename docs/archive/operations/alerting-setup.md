@@ -59,6 +59,50 @@ Alert fatigue is the failure mode that makes alerting worthless. Start here and 
 
 ---
 
+## 3. Ops dispatcher (PR-027)
+
+The code is shipped and inert until the environment below is set. It adds one watched channel
+instead of relying on four vendor dashboards.
+
+**What ships**
+
+| Piece                     | Role                                                                                                                                                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `public.ops_alerts`       | One open row per `alert_key`; occurrences, `last_notified_at`, ack/resolved state. Service-role only, 180-day retention (`prune_ops_alerts()`).                                                              |
+| `_shared/ops/opsAlert.ts` | `raiseOpsAlert` / `resolveOpsAlert`: dedupe, per-tier re-notify (P0 15 min, P1 1 h, P2 6 h, P3 24 h), storm guard (>10 notifications in 5 min collapses to one message), 5 s channel timeouts, never throws. |
+| `ops-alert-ingest`        | `POST`, HMAC-SHA256 over the raw body in `X-Ops-Signature: sha256=<hex>`, validates and calls the dispatcher. `verify_jwt = false`.                                                                          |
+| `handleEdgeError`         | Every **5xx** raises `edge:<fn>:5xx` (P0) fire-and-forget. 4xx stays a normal outcome and never pages.                                                                                                       |
+
+**Environment (Supabase Edge secrets)**
+
+| Variable                  | Required     | Meaning                                                                                                                                             |
+| ------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OPS_ALERTS_ENABLED`      | yes (`true`) | Master switch. Production also auto-enables when `ENVIRONMENT=production`; local `functions serve` never pages unless `OPS_ALERTS_FORCE_SEND=true`. |
+| `TELEGRAM_OPS_BOT_TOKEN`  | yes          | **Separate** ops bot from the per-property bot (BotFather).                                                                                         |
+| `TELEGRAM_OPS_CHAT_ID`    | yes          | Private ops group chat id (add the bot to the group first).                                                                                         |
+| `OPS_ALERT_EMAILS`        | recommended  | Comma-separated, P0/P1 only, Resend backup + durable record.                                                                                        |
+| `OPS_ALERT_FROM_EMAIL`    | optional     | Default `Kame Space Ops <ops@kamespace.com>`.                                                                                                       |
+| `OPS_ALERT_INGEST_SECRET` | yes          | Shared with GitHub Actions / probes; 32+ random bytes.                                                                                              |
+
+**Fire drill** (an untested pager is an assumption):
+
+```bash
+BODY='{"key":"drill:ops-alert","tier":"drill","source":"probe","title":"Ops alert drill","summary":"manual drill"}'
+SIG="sha256=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac "$OPS_ALERT_INGEST_SECRET" -r | cut -d' ' -f1)"
+curl -sS -X POST "https://<project-ref>.supabase.co/functions/v1/ops-alert-ingest" \
+  -H "Content-Type: application/json" -H "X-Ops-Signature: $SIG" -d "$BODY"
+```
+
+Expect `202 { "accepted": true, "notified": true }` and a 🧪 DRILL message in the ops group
+(plus email when `OPS_ALERT_EMAILS` is set). Re-running the same key inside the storm/throttle
+window returns `notified: false` without sending — that is the dedupe working.
+
+**What still needs a human:** create the group and bot, set the secrets, run the drill, and name
+the on-call owner in [`incident-response.md`](./incident-response.md). Until then the dispatcher
+writes rows but nobody is paged.
+
+---
+
 ## Why Sentry when PostHog already captures exceptions
 
 PostHog keeps the exception history and stays the product-analytics system of record. It is not the alerting path here because PostHog alert configuration is operator-blocked ([doc 28](../../workflow/in-progress/production-readiness/checklist/28-analytics.md)). Both receive every captured error from the same choke point, so this is additive — if PostHog alerting is configured later, the Sentry rules can be retired without touching handler code.

@@ -413,6 +413,31 @@ export async function handleEdgeError(
         extra: { status, message, code },
       }),
     ]);
+
+    // Page on every 5xx (PR-027). Deduped by `edge:<fn>:5xx`, throttled by tier, and
+    // fire-and-forget: the alert path can never change or delay this response.
+    try {
+      const { raiseOpsAlertAfterResponse } = await import('./ops/opsAlert.ts');
+      await raiseOpsAlertAfterResponse({
+        key: `edge:${logPrefix}:5xx`,
+        tier: 'p0',
+        source: 'edge',
+        title: `${logPrefix} failing`,
+        summary: `${req.method} ${status}${code ? ` ${code}` : ''}`,
+        context: {
+          fn: logPrefix,
+          status,
+          code: code ?? null,
+          org_id: context.orgId ?? null,
+          property_id: context.propertyId ?? null,
+          parking_id: context.parkingId ?? null,
+          cron: context.cron ?? null,
+        },
+        links: safeUrl ? { Request: safeUrl } : {},
+      });
+    } catch (alertError) {
+      console.error('[ops-alert] edge fault escalation failed:', alertError);
+    }
   }
   // 5xx only — a 4xx is often expected client-side flow (validation, not-found) and
   // showing "Reference: <id>" there would be noise, not a debugging aid.

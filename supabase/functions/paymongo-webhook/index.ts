@@ -4,6 +4,11 @@
 
 import { createServiceClient } from '../_shared/orgAuth.ts';
 import { jsonError, jsonSuccess } from '../_shared/httpResponse.ts';
+import {
+  claimPaymongoEvent,
+  completePaymongoEvent,
+  releasePaymongoEvent,
+} from '../_shared/paymongoEventDedupe.ts';
 import { verifyPaymongoWebhookSignature } from '../_shared/paymongoWebhookVerify.ts';
 import {
   handlePaymongoWebhookEvent,
@@ -67,21 +72,18 @@ servePublic('paymongo-webhook', async (req) => {
   }
 
   const supabase = createServiceClient();
-  const { error: dedupeError } = await supabase.from('processed_paymongo_events').insert({
-    event_id: eventId,
-    event_type: eventType,
-  });
-  if (dedupeError) {
-    if (dedupeError.code === '23505') {
-      return jsonSuccess(req, { duplicate: true });
-    }
-    return jsonError(req, dedupeError.message, 500);
+  const claim = await claimPaymongoEvent(supabase, eventId, eventType);
+  if (claim === 'duplicate') {
+    return jsonSuccess(req, { duplicate: true });
   }
 
   try {
     const result = await handlePaymongoWebhookEvent(eventType, payload);
+    await completePaymongoEvent(supabase, eventId);
     return jsonSuccess(req, { eventType, ...result });
   } catch (err) {
+    // Release the claim so PayMongo's retry is processed instead of answered as a duplicate.
+    await releasePaymongoEvent(supabase, eventId);
     console.error('[paymongo-webhook]', err);
     // Captured here, inside the dedupe guard and after the event was accepted: this handler
     // answers its own 500, so the shared choke point never sees the throw. A failed payment

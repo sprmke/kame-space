@@ -1558,3 +1558,9 @@ verify_jwt = false
 
 [functions.admin-marketing-trends]
 verify_jwt = false
+
+[functions.ops-alert-ingest]
+verify_jwt = false
+
+[functions.data-subject-requests-cron]
+verify_jwt = false

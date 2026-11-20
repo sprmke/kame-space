@@ -707,6 +707,14 @@ export class DatabaseService {
 
     if (error) {
       console.error('Database error:', error);
+      // 23P01 = exclusion_violation. The DB overlap guard (migration
+      // 20261345000000) is the race-safe backstop for the in-memory check above; surface it
+      // with the same guest-facing message so two simultaneous submissions cannot double-book.
+      if (error.code === '23P01') {
+        throw new Error(
+          'BOOKING_OVERLAP: The selected dates are already booked. Please screenshot this message and contact your host to further assist you.'
+        );
+      }
       throw new Error('Failed to save guest submission');
     }
 
@@ -726,6 +734,11 @@ export class DatabaseService {
 
     if (error) {
       console.error('Database error:', error);
+      if (error.code === '23P01') {
+        throw new Error(
+          'BOOKING_OVERLAP: The selected dates are already booked. Please screenshot this message and contact your host to further assist you.'
+        );
+      }
       throw new Error('Failed to update guest submission');
     }
 

@@ -249,6 +249,25 @@ sync by `ui/src/lib/telemetry/scrubParity.test.ts`. Edit both, never one. Full c
 | `SENTRY_SAMPLE_RATE_WARNING` | Sampling for `warning`-level edge captures only (provider 429s, fail-open rate limiter). Dev `1`, prod `0.25`. Errors are never sampled.                                                                                                                                                                                                                                            |
 | `APP_RELEASE`                | Release id (git SHA) stamped by `scripts/deploy/deploy-supabase*.sh` (`supabase secrets set APP_RELEASE=…`) before `functions deploy`. Do not set by hand except in a rollback rehearsal. Pairs with the browser `VITE_APP_VERSION` so Sentry issues, PostHog events and edge errors share one deploy id. Unset → edge events carry no release.                                     |
 
+#### Ops alerting (PR-027)
+
+`_shared/ops/opsAlert.ts` + `ops-alert-ingest`; every edge **5xx** raises `edge:<fn>:5xx`. Setup and the signed drill: [`archive/operations/alerting-setup.md`](../archive/operations/alerting-setup.md) §3.
+
+| Variable                  | Notes                                                                                                                                                                |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OPS_ALERTS_ENABLED`      | `true` turns the dispatcher on. Production also auto-enables when `ENVIRONMENT=production`. Local `functions serve` never pages unless `OPS_ALERTS_FORCE_SEND=true`. |
+| `TELEGRAM_OPS_BOT_TOKEN`  | Separate ops bot (not the per-property bot). Unset → Telegram delivery skipped.                                                                                      |
+| `TELEGRAM_OPS_CHAT_ID`    | Private ops group chat id. Unset → Telegram delivery skipped.                                                                                                        |
+| `OPS_ALERT_EMAILS`        | Comma-separated Resend recipients, P0/P1 + drill only. Unset → email delivery skipped.                                                                               |
+| `OPS_ALERT_FROM_EMAIL`    | Optional sender; default `Kame Space Ops <ops@kamespace.com>`.                                                                                                       |
+| `OPS_ALERT_INGEST_SECRET` | HMAC-SHA256 secret for `ops-alert-ingest` (`X-Ops-Signature: sha256=<hex>`). Missing → endpoint returns 503.                                                         |
+
+#### Data-subject requests (PR-145)
+
+| Variable                            | Notes                                                                                                                   |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `DATA_SUBJECT_REQUESTS_CRON_SECRET` | Header `X-Data-Subject-Cron-Secret` for `data-subject-requests-cron`. Vault secret name `data_subject_requests_secret`. |
+
 #### PWA Web Push
 
 | Variable             | Notes                                                                                                                                                                        |
