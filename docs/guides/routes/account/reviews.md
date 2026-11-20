@@ -60,7 +60,7 @@ The guest's own reviews. Pending until publish. Edit while pending. Host respons
 
 Published host reviews of this guest (no internal notes). If the host submitted first and the guest has not, a teaser says "Hidden until you review" with no ratings or text. **Respond** (or **Edit response**) is the card button; **Report** is in the card's overflow menu.
 
-All tabs page 20 items with **Load more**. Load errors show **Try again**.
+Tabs use a compact fit-content sliding strip (not full-width). All tabs page 20 items with **Load more**. Load errors show **Try again**. Empty tabs use library mascot `guest-review` with a short title/description per tab (to write / by you / about you).
 
 ---
 

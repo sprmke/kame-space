@@ -16,11 +16,11 @@ export function GuestAccountContentCard({
   return (
     <div
       className={cn(
-        'border-border bg-card w-full overflow-hidden rounded-2xl border shadow-sm',
+        'border-border bg-card flex w-full min-h-full flex-1 flex-col overflow-hidden rounded-2xl border shadow-sm',
         className
       )}
     >
-      <div className={cn('p-4 sm:p-6', bodyClassName)}>{children}</div>
+      <div className={cn('flex min-h-0 flex-1 flex-col p-4 sm:p-6', bodyClassName)}>{children}</div>
     </div>
   );
 }

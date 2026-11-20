@@ -20,9 +20,9 @@ Route: `/account/help`
 
 ## Overview
 
-Signed-in explore guests open **Help** from the account menu. The page reads published FAQs from `list-public-support-faqs` and shows every row whose `audience` is `guest` or `public`, grouped by category. Host-only answers never appear here.
+Signed-in explore guests open **Help** from the account menu. The page reads published FAQs from `list-public-support-faqs` (`guest` or `public` audience). Host-only answers never appear here. If none are published, curated guest fallbacks still fill the topic grid (same idea as `/support` guest fallbacks).
 
-The page reuses the dashboard Help disclosure and rich-text primitives, so formatting and link handling match host Help. **Contact support** opens the guest Tickets workspace.
+Layout: `help-support` mascot stays on home, search, and topic views. **Help** title + short description show on the home view only (hidden once the guest searches or opens a topic). Below that: search + host-style category grid, then drill-in answers (back returns to all topics). **Contact support** in the footer opens Tickets.
 
 ## Host-facing knowledge
 
@@ -47,14 +47,15 @@ Guests can open **Help** in their account area to read answers about trips, mess
 
 ## Implementation map
 
-| Concern    | Path                                                                   |
-| ---------- | ---------------------------------------------------------------------- |
-| Page       | `ui/src/features/guest/account/pages/GuestAccountHelpPage.tsx`         |
-| API client | `ui/src/features/guest/marketing/lib/publicSupportApi.ts`              |
-| Hook       | `ui/src/features/guest/marketing/hooks/usePublicSupportFaqs.ts`        |
-| Nav        | `ui/src/features/guest/account/lib/guestAccountNav.ts`                 |
-| Shared UI  | `ui/src/features/dashboard/help-support/components/HelpDisclosure.tsx` |
-| Edge       | `supabase/functions/list-public-support-faqs/`                         |
+| Concern    | Path                                                            |
+| ---------- | --------------------------------------------------------------- |
+| Page       | `ui/src/features/guest/account/pages/GuestAccountHelpPage.tsx`  |
+| Fallbacks  | `ui/src/features/guest/account/lib/guestHelpFaqs.ts`            |
+| API client | `ui/src/features/guest/marketing/lib/publicSupportApi.ts`       |
+| Hook       | `ui/src/features/guest/marketing/hooks/usePublicSupportFaqs.ts` |
+| Nav        | `ui/src/features/guest/account/lib/guestAccountNav.ts`          |
+| Shared UI  | `HelpTopicList`, `HelpDisclosure` under help-support components |
+| Edge       | `supabase/functions/list-public-support-faqs/`                  |
 
 ## Testing
 

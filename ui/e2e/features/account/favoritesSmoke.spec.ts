@@ -17,7 +17,7 @@ test.describe('@ci guest account - favorites', () => {
     await installGuestFavoritesMocks(page, []);
 
     await page.goto('/account/favorites');
-    await expect(page.getByText('No saved properties.')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('No favorites yet')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole('link', { name: 'Browse properties' })).toHaveAttribute(
       'href',
       '/properties'

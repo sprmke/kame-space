@@ -48,7 +48,7 @@ kind: backlog
 - 🚧 Refine cancellation policy settings and the overall cancellation process.
   → **In progress:** [`../in-progress/cancellation-policy-and-process.md`](../in-progress/cancellation-policy-and-process.md)
 - ✅ On/off dashboard pages, sections, features or buttons from super admin, with a visible reason
-  → **Done:** [`../done/feature-availability-controls.md`](../done/feature-availability-controls.md) · QA: [`../for-testing/feature-availability-controls.md`](../for-testing/feature-availability-controls.md)
+  → **Done:** [`../done/feature-availability-controls.md`](../done/feature-availability-controls.md) · QA: [`../for-testing/feature-availability-controls-manual-qa.md`](../for-testing/feature-availability-controls-manual-qa.md)
 - ✅ Improve and refine default amenities and house rules
 - 🚧 Refine and improve cancellation policy options
   → **In progress:** [`../in-progress/cancellation-policy-and-process.md`](../in-progress/cancellation-policy-and-process.md)

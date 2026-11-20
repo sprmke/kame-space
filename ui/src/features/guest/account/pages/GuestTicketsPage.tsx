@@ -18,10 +18,7 @@ export function GuestTicketsPage() {
   usePageTitle(publicPageTitle('Tickets'));
 
   return (
-    <GuestAccountContentCard
-      className="flex h-[min(70vh,640px)] flex-col overflow-hidden"
-      bodyClassName="flex min-h-0 flex-1 flex-col overflow-hidden p-0 sm:p-0"
-    >
+    <GuestAccountContentCard bodyClassName="flex min-h-0 flex-1 flex-col overflow-hidden p-0 sm:p-0">
       <SupportTicketScopeProvider scope={GUEST_TICKET_SCOPE}>
         <TicketsWorkspacePage basePathOverride={GUEST_ACCOUNT_PATH} />
       </SupportTicketScopeProvider>

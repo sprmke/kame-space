@@ -22,7 +22,7 @@ Route: `/account/vouchers`
 
 ## Overview
 
-Signed-in guests see next-stay vouchers earned after a completed stay (review + claim). Ready vouchers link to book again at the same property; used vouchers stay listed for history. Wallet cards are compact ticket rows (code + offer + property), not large marketing cards.
+Signed-in guests see next-stay vouchers earned after a completed stay (review + claim). Ready vouchers link to book again at the same property; used vouchers stay listed for history. Wallet cards are compact ticket rows (code + offer + property), not large marketing cards. Empty wallet: library mascot `voucher`, title **No vouchers yet**, short description, **Browse properties**.
 
 ---
 
