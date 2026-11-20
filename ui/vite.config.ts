@@ -18,6 +18,7 @@ import {
   POLOTNO_BLUEPRINT_ENTRY,
   scopeBlueprintCss,
 } from './postcss.config.js';
+import { cspPreview } from './vite-plugins/cspPreview';
 import { preloadLandingChunk } from './vite-plugins/preloadLandingChunk';
 import { resolveReleaseId } from './vite-plugins/releaseId';
 import {
@@ -310,6 +311,10 @@ export default defineConfig({
     react(),
     seoIndexingGuardPlugin(),
     preloadLandingChunk(),
+    cspPreview({
+      vercelConfigPath: path.resolve(__dirname, 'vercel.json'),
+      reportFile: path.resolve(__dirname, '../test-results/csp-violations.ndjson'),
+    }),
     pwaPrecacheTiersPlugin(),
     ...gfmPwaPlugin(),
     ...(sentrySourceMapsEnabled ? sentrySourceMapsPlugin() : []),

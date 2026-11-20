@@ -28,23 +28,10 @@ import {
 } from '../_shared/propertyLifecycle.ts';
 import { sendResendEmail } from '../_shared/sendResendEmail.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
-
-const MARKETING_MEDIA_BUCKET = 'marketing-media';
-const LISTING_AUTHORIZATION_BUCKET = 'listing-authorization-assets';
-const APP_SETTINGS_ASSETS_BUCKET = 'app-settings-assets';
-const GUEST_CHAT_ATTACHMENTS_BUCKET = 'guest-chat-attachments';
-
-/** Property-scoped prefixes inside `app-settings-assets` (see appSettingsAssetUpload.ts). */
-const APP_SETTINGS_PROPERTY_PREFIXES = [
-  'gaf-unit-owner-signature',
-  'external-review',
-  'external-review-stay',
-];
-
-type StorageRemoval = {
-  bucket: string;
-  prefix: string;
-};
+import {
+  propertyStoragePurgeTargets,
+  purgeStorageTargets,
+} from '../_shared/tenantStoragePurge.ts';
 
 function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
@@ -67,39 +54,6 @@ function buildBlockerMessage(
     parts.push(plural(impact.deleteBlockers.importBatches, 'import batch', 'import batches'));
   }
   return `This property still has ${parts.join(', ')}. Archive it instead, or remove those records first.`;
-}
-
-/** Recursively remove every object under a storage prefix. Best effort, never throws. */
-async function removeStoragePrefix(
-  supabase: ReturnType<typeof createServiceClient>,
-  bucket: string,
-  prefix: string
-): Promise<void> {
-  const directory = prefix.replace(/\/+$/, '');
-  const pending = [directory];
-  while (pending.length > 0) {
-    const dir = pending.pop()!;
-    const { data, error } = await supabase.storage.from(bucket).list(dir, { limit: 1000 });
-    if (error) {
-      console.warn(`[delete-property] list ${bucket}/${dir}:`, error.message);
-      continue;
-    }
-
-    const files: string[] = [];
-    for (const item of data ?? []) {
-      const path = `${dir}/${item.name}`;
-      // Supabase lists folders with a null id and no metadata.
-      if (item.id === null || item.id === undefined) pending.push(path);
-      else files.push(path);
-    }
-
-    if (files.length > 0) {
-      const { error: removeError } = await supabase.storage.from(bucket).remove(files);
-      if (removeError) {
-        console.warn(`[delete-property] remove ${bucket}/${dir}:`, removeError.message);
-      }
-    }
-  }
 }
 
 async function notifyRemovedMembers(input: {
@@ -238,22 +192,11 @@ serveAuthenticated('delete-property', async (req) => {
     .map((entry) => (typeof entry.storagePath === 'string' ? entry.storagePath.trim() : ''))
     .filter((path) => path.startsWith(`${property.id}/`));
 
-  const removals: StorageRemoval[] = [
-    { bucket: PROPERTY_MEDIA_BUCKET, prefix: `${property.id}/` },
-    { bucket: MARKETING_MEDIA_BUCKET, prefix: `${property.id}/` },
-    {
-      bucket: LISTING_AUTHORIZATION_BUCKET,
-      prefix: `org/${org.id}/property/${property.id}/`,
-    },
-    ...APP_SETTINGS_PROPERTY_PREFIXES.map((prefix) => ({
-      bucket: APP_SETTINGS_ASSETS_BUCKET,
-      prefix: `${prefix}/${property.id}/`,
-    })),
-    ...conversationIds.map((conversationId) => ({
-      bucket: GUEST_CHAT_ATTACHMENTS_BUCKET,
-      prefix: `${org.id}/${conversationId}/`,
-    })),
-  ];
+  const removals = propertyStoragePurgeTargets({
+    propertyId: property.id,
+    orgId: org.id,
+    conversationIds,
+  });
 
   // Property-gallery objects are the only ones we can name without a recursive list.
   if (mediaPaths.length > 0) {
@@ -265,9 +208,7 @@ serveAuthenticated('delete-property', async (req) => {
     }
   }
 
-  for (const { bucket, prefix } of removals) {
-    await removeStoragePrefix(supabase, bucket, prefix);
-  }
+  await purgeStorageTargets(supabase, removals, 'delete-property');
 
   await notifyRemovedMembers({
     supabase,

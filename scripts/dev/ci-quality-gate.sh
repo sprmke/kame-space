@@ -39,6 +39,7 @@ run_step "brand guard (retired product name)" bun scripts/brand/check-brand.ts -
 run_step "AI knowledge coverage" bun run check:ai-knowledge-coverage
 run_step "support content format" bun run check:support-content
 run_step "support content parser tests" bun run test:support-content
+run_step "ops and security script tests" bun test scripts/captchaProbe.test.ts scripts/dev/assert-no-csp-violations.test.mjs
 run_step "seo route registry" bun run check:seo-routes
 run_step "migration versions" bash scripts/dev/check-migration-versions.sh
 run_step "migration security" bash scripts/dev/check-migration-security.sh
@@ -70,6 +71,7 @@ run_step "deploy retry helper self-test" bash scripts/dev/test-deploy-retry.sh
 run_step "vercel cache/security headers" bash scripts/dev/check-vercel-headers.sh
 run_step "CSP theme script hash (production-readiness doc 22)" bash scripts/dev/check-csp-theme-hash.sh
 run_step "storage upload cacheControl" node scripts/dev/check-storage-cache-control.mjs
+run_step "storage upload magic-byte validation" bash scripts/dev/check-storage-upload-sniff.sh
 run_step "edge serve-wrapper allowlist" node scripts/dev/audit-edge-functions.mjs --check
 run_step "AI gateway guard" node scripts/dev/check-ai-gateway.mjs
 run_step "auth matrix — zero-authz-signal guard (production-readiness doc 21)" \

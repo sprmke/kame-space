@@ -122,6 +122,13 @@ echo "Starting Supabase (DB, Auth, Storage)..."
 # Use bunx supabase@latest so Postgres 17 + storage schema order matches migrations.
 "$ROOT/scripts/dev/run-with-ui-dev-env.sh" "$BUNX" --bun supabase@latest start
 
+echo "Verifying local seed data..."
+if "$ROOT/scripts/dev/seed-local.sh" verify >/dev/null 2>&1; then
+  echo "Local seed data verified."
+else
+  echo "Local seed data is missing or stale. Run: bun run seed:local"
+fi
+
 NGROK_PID=""
 if [[ "${SKIP_NGROK:-}" != "1" ]]; then
   if command -v ngrok >/dev/null 2>&1; then

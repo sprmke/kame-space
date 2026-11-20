@@ -6,9 +6,14 @@
  * throws, and `useLivenessChallenges` turns that into "skip liveness", never a dead end.
  */
 
-const TASKS_VISION_VERSION = '0.10.22';
-const CDN_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}`;
-const MODEL_URL =
+/**
+ * `ui/vercel.json` pins both origins by exact path in `script-src` and `connect-src`, because a
+ * bare `cdn.jsdelivr.net` allowance would let any npm or GitHub file run. Bump the version here
+ * and in the policy together; `cspPolicy.test.ts` fails if they drift.
+ */
+export const TASKS_VISION_VERSION = '0.10.35';
+export const CDN_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}`;
+export const MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 
 type FaceLandmarkerLike = {

@@ -223,3 +223,10 @@ See also **`dev.sh`** (full stack) and **`docs/archive/operations/`** runbooks.
 | `extensions.json` | Recommended extensions (Bun, ESLint, Prettier, Tailwind, Deno)          |
 
 Run tasks: **Terminal → Run Task** (default build: **Dev: Full stack**).
+
+## Security verification (production readiness)
+
+| Script                                                                                               | Use                                                                                                                                                                                                                                                                         |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun scripts/dev/verify-captcha-enforcement.ts --url <functions url> [--anon-key <public anon key>]` | Read-only proof that Turnstile (edge) and Supabase Auth captcha are enforced. One token-less POST to `claim-sd-voucher` with an empty body, and one bad-credential sign-in for a `.invalid` address. Neither writes data. Exit 0 enforcing, 1 not enforcing, 2 inconclusive |
+| `bun run test:e2e:csp`                                                                               | Runs the mocked E2E suite on a production build under the real Content-Security-Policy and fails on any violation (`scripts/dev/assert-no-csp-violations.mjs`)                                                                                                              |

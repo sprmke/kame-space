@@ -65,13 +65,32 @@ The seed creates email/password logins, so Google OAuth is not required:
 - Owner: `seed-owner@example.com` / `seed-password`
 - Guest portal: `guest.demo@example.com` / `seed-password`
 
+On `/for-hosts/login` and `/for-guests/login`, local dev shows a **Use local test
+account** button under Google. It signs in with those passwords, which bypasses
+Google's embedded-browser restrictions and gives each Orca browser tab its own
+working session. The button only renders with `import.meta.env.DEV`, so it never
+appears in a production build.
+
+- Host button email: `VITE_LOCAL_TEST_EMAIL`, else the first entry in
+  `VITE_SUPER_ADMIN_EMAILS`, else `VITE_ADMIN_ALLOWED_EMAILS`
+- Guest button email: `VITE_LOCAL_GUEST_EMAIL`, else `guest.demo@example.com`
+
+If the host button returns `Invalid login credentials`, run `bun run
+seed:attach-admin`. That account is the only one in `SUPER_ADMIN_EMAILS`, so it
+is the one with `/admin/*` access.
+
 For the real super-admin account (`/admin/*`):
 
 ```bash
 bun run seed:attach-admin
 ```
 
-This reads `ADMIN_ALLOWED_EMAILS` / `VITE_SUPER_ADMIN_EMAILS` from the local env, creates the auth user if it does not exist yet (password `seed-password`), and grants org admin + property Full Access + parking MANAGER + super admin. No personal email is committed. Re-run it after `db reset`, because a reset drops the auth user.
+This reads `ADMIN_ALLOWED_EMAILS` / `VITE_SUPER_ADMIN_EMAILS` from the local env,
+creates the auth user if it does not exist yet (password `seed-password`), resets
+the password when the user already exists through Google, and grants org admin +
+property Full Access + parking MANAGER + super admin. No personal email is
+committed. `bun run seed:local`, `bun run seed:refresh`, and `bun run db:reset`
+run it for you; re-run it standalone only if you changed the allow-list emails.
 
 ## What is seeded
 

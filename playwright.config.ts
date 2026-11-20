@@ -14,6 +14,42 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 const PWA_PORT = Number(process.env.PLAYWRIGHT_PWA_PORT ?? 4174);
 const PWA_BASE_URL = `http://127.0.0.1:${PWA_PORT}`;
 
+/**
+ * The `csp` project (PR-012) runs the mocked @smoke/@ci suite against a production build served
+ * with the real Content-Security-Policy from `ui/vercel.json` (see `ui/vite-plugins/cspPreview.ts`).
+ * The browser reports every violation to a local endpoint and `scripts/dev/assert-no-csp-violations.mjs`
+ * fails the run on any. Opt in with `PLAYWRIGHT_CSP=1` (`bun run test:e2e:csp`) so a normal run
+ * does not pay for a second production build.
+ */
+const CSP_RUN = process.env.PLAYWRIGHT_CSP === '1';
+// Port 4173 on purpose: several mocked specs hardcode that origin for their asset URLs.
+const CSP_PORT = Number(process.env.PLAYWRIGHT_CSP_PORT ?? 4173);
+const CSP_BASE_URL = `http://127.0.0.1:${CSP_PORT}`;
+
+const cspServer = {
+  command: `cd ui && ../node_modules/.bin/vite build && ../node_modules/.bin/vite preview --host 127.0.0.1 --port ${CSP_PORT}`,
+  url: CSP_BASE_URL,
+  // `PLAYWRIGHT_CSP_REUSE=1` reuses a preview you started yourself, to iterate on a spec without rebuilding.
+  reuseExistingServer: process.env.PLAYWRIGHT_CSP_REUSE === '1',
+  stdout: 'pipe' as const,
+  stderr: 'pipe' as const,
+  timeout: 300_000,
+  env: {
+    // `CSP_PREVIEW=0` serves the same build with no policy, to tell a CSP failure from a
+    // production-build failure.
+    CSP_PREVIEW: process.env.CSP_PREVIEW ?? '1',
+    VITE_NODE_ENV: 'production',
+    VITE_POSTHOG_KEY: '',
+    VITE_SENTRY_DSN: '',
+    VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321/functions/v1',
+    VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key',
+    VITE_API_URL:
+      process.env.VITE_API_URL ||
+      process.env.VITE_SUPABASE_URL ||
+      'http://127.0.0.1:54321/functions/v1',
+  },
+};
+
 const recordVideo = process.env.PLAYWRIGHT_RECORD_VIDEO === '1';
 const slowMoRaw = process.env.PLAYWRIGHT_SLOW_MO;
 const slowMoParsed = slowMoRaw ? Number.parseInt(slowMoRaw, 10) : 0;
@@ -105,6 +141,27 @@ export default defineConfig({
         baseURL: PWA_BASE_URL,
       },
     },
+    ...(CSP_RUN
+      ? [
+          {
+            name: 'csp',
+            grep: /@smoke|@ci/,
+            // These four rely on dev-build behavior: the guest form auto-fills a sample ID there and
+            // the specs then wait for the Primary Guest ID file input. On a production build that
+            // input never attaches, with or without a policy, so they say nothing about CSP.
+            grepInvert:
+              /@live|@demo|@flaky|@pwa|Airbnb guest can submit mocked form|returning guest books again with wallet voucher|shows eligible voucher, discount estimate|None clears voucher selection/,
+            testIgnore: /pwa\//,
+            use: {
+              ...devices['Desktop Chrome'],
+              baseURL: CSP_BASE_URL,
+              // The production build registers a service worker; Playwright cannot route requests
+              // the worker answers, so the mocked specs would silently hit the network.
+              serviceWorkers: 'block' as const,
+            },
+          },
+        ]
+      : []),
     {
       name: 'chromium-side-by-side',
       use: {
@@ -114,65 +171,69 @@ export default defineConfig({
       },
     },
   ],
-  webServer: [
-    {
-      // Production build for the PWA project.
-      command: `cd ui && ../node_modules/.bin/vite build && ../node_modules/.bin/vite preview --host 127.0.0.1 --port ${PWA_PORT}`,
-      url: PWA_BASE_URL,
-      reuseExistingServer: !process.env.CI,
-      stdout: 'pipe',
-      stderr: 'pipe',
-      timeout: 240_000,
-      env: {
-        VITE_NODE_ENV: 'production',
-        VITE_SUPABASE_URL:
-          process.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321/functions/v1',
-        VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key',
-        VITE_API_URL:
-          process.env.VITE_API_URL ||
-          process.env.VITE_SUPABASE_URL ||
-          'http://127.0.0.1:54321/functions/v1',
-      },
-    },
-    {
-    command: `bun run dev:ui -- --host 127.0.0.1 --port ${PORT}`,
-    url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
-    stdout: 'pipe',
-    stderr: 'pipe',
-    timeout: 120_000,
-    // Telemetry is forced OFF for every test run, not merely unset by convention.
-    // A developer with real DSNs in `ui/.env.development.local` would otherwise have locally
-    // driven runs posting synthetic events into the production PostHog project and synthetic
-    // exceptions into Sentry. Declared explicitly so `observability/telemetry.spec.ts` can
-    // assert zero network attempts everywhere, not just in CI.
-    env: {
-      VITE_POSTHOG_KEY: '',
-      VITE_SENTRY_DSN: '',
-      // Pre-transform heavy routes at start (ui/vite.config.ts server.warmup).
-      E2E_WARMUP: '1',
-      // Guest form auto-fills random dev data when unset; keep E2E deterministic.
-      VITE_NODE_ENV: 'production',
-      // ui/src/lib/supabase/client.ts calls createClient() at module load time, which
-      // throws synchronously ("supabaseUrl is required") on an empty string — crashing
-      // the whole SPA before any test can render a page. CI has no ui/.env (gitignored),
-      // so without a placeholder here every @smoke/@ci spec fails identically. Specs that
-      // exercise real Supabase calls mock those calls; this only needs to satisfy the
-      // client constructor, not point at a reachable project.
-      // Host must stay "127.0.0.1" (not e.g. "placeholder.supabase.co") — supabase-js
-      // derives the localStorage session key as `sb-${hostname.split('.')[0]}-auth-token`,
-      // and ui/e2e/shared/ids.ts#SUPABASE_AUTH_STORAGE_KEY hardcodes `sb-127-auth-token`
-      // to match local dev Supabase. A different hostname silently breaks every spec that
-      // seeds a session via seedSupabaseAuthSession (admin/dashboard smoke tests).
-      VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321/functions/v1',
-      VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key',
-      // Guest form (and other features) POST to `VITE_API_URL`, not `VITE_SUPABASE_URL`.
-      // CI has no `ui/.env`; without this, `fetch(undefined/submit-form)` never hits Playwright mocks.
-      VITE_API_URL:
-        process.env.VITE_API_URL ||
-        process.env.VITE_SUPABASE_URL ||
-        'http://127.0.0.1:54321/functions/v1',
-    },
-    },
-  ],
+  // A CSP run needs only its own production build; the dev and PWA servers would race it.
+  webServer: CSP_RUN
+    ? [cspServer]
+    : [
+        {
+          // Production build for the PWA project.
+          command: `cd ui && ../node_modules/.bin/vite build && ../node_modules/.bin/vite preview --host 127.0.0.1 --port ${PWA_PORT}`,
+          url: PWA_BASE_URL,
+          reuseExistingServer: !process.env.CI,
+          stdout: 'pipe',
+          stderr: 'pipe',
+          timeout: 240_000,
+          env: {
+            VITE_NODE_ENV: 'production',
+            VITE_SUPABASE_URL:
+              process.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321/functions/v1',
+            VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key',
+            VITE_API_URL:
+              process.env.VITE_API_URL ||
+              process.env.VITE_SUPABASE_URL ||
+              'http://127.0.0.1:54321/functions/v1',
+          },
+        },
+        {
+          command: `bun run dev:ui -- --host 127.0.0.1 --port ${PORT}`,
+          url: BASE_URL,
+          reuseExistingServer: !process.env.CI,
+          stdout: 'pipe',
+          stderr: 'pipe',
+          timeout: 120_000,
+          // Telemetry is forced OFF for every test run, not merely unset by convention.
+          // A developer with real DSNs in `ui/.env.development.local` would otherwise have locally
+          // driven runs posting synthetic events into the production PostHog project and synthetic
+          // exceptions into Sentry. Declared explicitly so `observability/telemetry.spec.ts` can
+          // assert zero network attempts everywhere, not just in CI.
+          env: {
+            VITE_POSTHOG_KEY: '',
+            VITE_SENTRY_DSN: '',
+            // Pre-transform heavy routes at start (ui/vite.config.ts server.warmup).
+            E2E_WARMUP: '1',
+            // Guest form auto-fills random dev data when unset; keep E2E deterministic.
+            VITE_NODE_ENV: 'production',
+            // ui/src/lib/supabase/client.ts calls createClient() at module load time, which
+            // throws synchronously ("supabaseUrl is required") on an empty string — crashing
+            // the whole SPA before any test can render a page. CI has no ui/.env (gitignored),
+            // so without a placeholder here every @smoke/@ci spec fails identically. Specs that
+            // exercise real Supabase calls mock those calls; this only needs to satisfy the
+            // client constructor, not point at a reachable project.
+            // Host must stay "127.0.0.1" (not e.g. "placeholder.supabase.co") — supabase-js
+            // derives the localStorage session key as `sb-${hostname.split('.')[0]}-auth-token`,
+            // and ui/e2e/shared/ids.ts#SUPABASE_AUTH_STORAGE_KEY hardcodes `sb-127-auth-token`
+            // to match local dev Supabase. A different hostname silently breaks every spec that
+            // seeds a session via seedSupabaseAuthSession (admin/dashboard smoke tests).
+            VITE_SUPABASE_URL:
+              process.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321/functions/v1',
+            VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key',
+            // Guest form (and other features) POST to `VITE_API_URL`, not `VITE_SUPABASE_URL`.
+            // CI has no `ui/.env`; without this, `fetch(undefined/submit-form)` never hits Playwright mocks.
+            VITE_API_URL:
+              process.env.VITE_API_URL ||
+              process.env.VITE_SUPABASE_URL ||
+              'http://127.0.0.1:54321/functions/v1',
+          },
+        },
+      ],
 });

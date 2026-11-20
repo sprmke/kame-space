@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { Plus, Ticket } from 'lucide-react';
+import { Plus, RefreshCw, Ticket } from 'lucide-react';
 
 import { HelpEmptyState } from '@/features/dashboard/help-support/components/HelpEmptyState';
 import { NewTicketModal } from '@/features/dashboard/help-support/components/NewTicketModal';
 import { SupportTicketStatusBadge } from '@/features/dashboard/help-support/components/SupportTicketStatusBadge';
 import { TicketThreadPanel } from '@/features/dashboard/help-support/components/TicketThreadPanel';
-import { useSupportTicketScope } from '@/features/dashboard/help-support/hooks/useSupportTicketScope';
 import { useSupportTickets } from '@/features/dashboard/help-support/hooks/useSupportTickets';
+import { useSupportTicketScope } from '@/features/dashboard/help-support/hooks/useSupportTicketScope';
 import {
   helpSupportTicketDetailPath,
   helpSupportTicketsPath,
@@ -46,6 +46,9 @@ function formatTicketDate(iso: string): string {
 const EMPTY_TICKETS_DESCRIPTION =
   'Open a ticket for something broken, an idea, or a question. We reply here.';
 
+const EMPTY_GUEST_TICKETS_DESCRIPTION =
+  'Need help with a stay or booking? Open a ticket and we will reply here.';
+
 type TicketsWorkspacePageProps = {
   /** When set (e.g. `/account`), skip admin Help & Support base-path resolution. */
   basePathOverride?: string;
@@ -57,6 +60,7 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
   const [searchParams, setSearchParams] = useSearchParams();
   const adminBasePath = useHelpSupportBasePath();
   const basePath = basePathOverride ?? adminBasePath;
+  const isGuestAccount = Boolean(basePathOverride);
   const isMobile = useIsBelowLg();
   const splatParam = useParams()['*'];
   const segment = resolveTicketsRouteSegment(basePath, location.pathname, splatParam);
@@ -199,8 +203,15 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
   );
 
   const newTicketCta = basePath ? (
-    <Button type="button" className="min-h-11 gap-1.5" onClick={openCompose}>
-      <Plus className="size-4" aria-hidden />
+    <Button
+      type="button"
+      className={cn(
+        'min-h-11 gap-2 px-5',
+        isGuestAccount ? 'w-full max-w-xs rounded-full sm:w-auto' : 'gap-1.5'
+      )}
+      onClick={openCompose}
+    >
+      <Plus className="size-4 shrink-0" aria-hidden />
       New ticket
     </Button>
   ) : null;
@@ -222,14 +233,15 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
     />
   );
 
+  const workspaceShellClass = cn(
+    'flex min-h-0 flex-1 flex-col overflow-hidden',
+    !isGuestAccount && 'lg:min-h-[480px]',
+    bottomTabBarOffsetClassName()
+  );
+
   if (loadState === 'empty' || loadState === 'list') {
     return (
-      <div
-        className={cn(
-          'flex min-h-0 flex-1 flex-col overflow-hidden lg:min-h-[480px]',
-          bottomTabBarOffsetClassName()
-        )}
-      >
+      <div className={workspaceShellClass}>
         <TicketsWorkspaceSkeleton layout={loadState} className="min-h-0 flex-1" />
         {composeModal}
       </div>
@@ -237,13 +249,15 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
   }
 
   return (
-    <div
-      className={cn(
-        'flex min-h-0 flex-1 flex-col overflow-hidden lg:min-h-[480px]',
-        bottomTabBarOffsetClassName()
-      )}
-    >
-      <div className="border-border/80 bg-card flex min-h-0 flex-1 overflow-hidden rounded-xl border shadow-sm">
+    <div className={workspaceShellClass}>
+      <div
+        className={cn(
+          'flex min-h-0 flex-1 overflow-hidden',
+          isGuestAccount
+            ? 'flex-col'
+            : 'border-border/80 bg-card rounded-xl border shadow-sm'
+        )}
+      >
         <div
           className={cn(
             'border-border/80 flex h-full min-h-0 shrink-0 flex-col',
@@ -255,15 +269,23 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
                 )
           )}
         >
-          <div className="flex shrink-0 items-center justify-between gap-3 border-b px-3 py-2.5">
-            <h3
-              id="my-tickets-heading"
-              className="text-foreground min-w-0 truncate text-sm font-semibold tracking-tight"
-            >
-              My Tickets
-            </h3>
-            {showHeaderNew ? newTicketButton : null}
-          </div>
+          {isGuestAccount ? (
+            showHeaderNew ? (
+              <div className="flex shrink-0 items-center justify-end gap-3 border-b px-3 py-2.5">
+                {newTicketButton}
+              </div>
+            ) : null
+          ) : (
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b px-3 py-2.5">
+              <h3
+                id="my-tickets-heading"
+                className="text-foreground min-w-0 truncate text-sm font-semibold tracking-tight"
+              >
+                My Tickets
+              </h3>
+              {showHeaderNew ? newTicketButton : null}
+            </div>
+          )}
 
           <div
             className={cn(
@@ -276,14 +298,20 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
             {isError ? (
               <HelpEmptyState
                 icon={Ticket}
+                mascotPose={isGuestAccount ? 'gentle-failure' : undefined}
                 title="Couldn't load tickets"
+                description={isGuestAccount ? 'Check your connection and try again.' : undefined}
                 action={
                   <Button
                     type="button"
-                    variant="outline"
-                    className="min-h-11"
+                    variant={isGuestAccount ? 'default' : 'outline'}
+                    className={cn(
+                      'min-h-11 gap-2 px-5',
+                      isGuestAccount ? 'w-full max-w-xs rounded-full sm:w-auto' : undefined
+                    )}
                     onClick={() => void refetch()}
                   >
+                    <RefreshCw className="size-4 shrink-0" aria-hidden />
                     Try again
                   </Button>
                 }
@@ -291,12 +319,18 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
             ) : isEmpty ? (
               <HelpEmptyState
                 icon={Ticket}
+                mascotPose={isGuestAccount ? 'phone' : undefined}
                 title="No tickets yet"
-                description={EMPTY_TICKETS_DESCRIPTION}
+                description={
+                  isGuestAccount ? EMPTY_GUEST_TICKETS_DESCRIPTION : EMPTY_TICKETS_DESCRIPTION
+                }
                 action={newTicketCta}
               />
             ) : (
-              <ul aria-labelledby="my-tickets-heading">
+              <ul
+                aria-labelledby={isGuestAccount ? undefined : 'my-tickets-heading'}
+                aria-label={isGuestAccount ? 'Tickets' : undefined}
+              >
                 {tickets.map((ticket) => {
                   const selected = ticket.id === visibleTicketId;
                   return (
