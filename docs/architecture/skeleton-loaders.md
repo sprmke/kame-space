@@ -11,6 +11,7 @@ Loading UI must mirror the **layout that appears after data loads**, on phone an
 5. **State-aware fallbacks.** Show a skeleton only on the first load (`isLoading && !data`); cached data stays on screen during refetches so a refresh never replaces a populated page. Match the page's default/selected state (`?view=`, default tab, section nav) rather than showing empty-state chrome.
 6. **Cheap by construction.** Skeletons are static markup: no timers, observers, fetches, or shared query subscriptions. They reuse the same `StatCardSkeleton` / table / card primitives as the loaded page so metrics and spacing line up at 375, 768, and 1024px+.
 7. **Static-first.** Fixed labels, titles, subtitles, descriptions, section/card headings, tab labels, column headers, legend labels and known icons are rendered immediately, never skeletonized. Skeletons cover only async values, rows, media, charts and permission-gated actions. `StatCardSkeleton` takes `title` + `icon` (+ `changeLabel` / `footer`) for exactly this reason.
+8. **Admin tables share one grid.** List tables that load through `AdminDataTable` must skeleton with that same table shell (`AdminTableHeadRow` + `AdminTableTh` / `AdminTableActionsTh` + `adminTableCell` breakpoints). Do not invent a parallel flex row of fixed pixel widths — that is what made Finance / Bookings skeletons jump when rows arrived. Reviews already follow this pattern (`ReviewsTableSkeleton`); Finance ledger (`FinanceStaysTableSkeleton`), Bookings (`BookingsTableSkeleton`), Maintenance reminders (`FinanceOperatingTabSkeleton`), and recurring-series modals do too. Trailing action columns use a visible **Actions** (or **Open** / **Review**) header via `AdminTableActionsTh`, never an empty `sr-only` band.
 
 ## Route registry
 
@@ -48,9 +49,10 @@ Nested layouts with lazy children keep their own `Suspense` around `<Outlet />` 
 | `NotificationsSkeleton.tsx`         | Property/parking Notifications hub — four KPI cards, Activity/Telegram tab bar, activity rows                                                                    |
 | `MarketingSkeletons.tsx`            | Marketing Studio — library, template browser, AI Studio home + conversation, themes, publish history, and design/video/calendar editor chrome                    |
 | `PricingSkeleton.tsx`               | Property/parking pricing body — real-month week rows with day + price cells, property fee rows, parking payout lines + direct-link card                          |
-| `ParkingSkeleton.tsx`               | Parking dashboard, booking detail                                                                                                                                |
+| `ParkingSkeleton.tsx`               | Parking dashboard (KPI + Cash flow / Breakdown / Calendar / Transactions grid matching `ParkingDashboardCalendarSection`), booking detail                        |
 | `GuestMarketingSkeleton.tsx`        | Property detail, development detail, browse grids, account gate, property chat                                                                                   |
 | `HelpSupportSkeleton.tsx`           | Help & Support page (module nav, intro, FAQs / guides / tickets), documentation topics                                                                           |
+| `TicketsWorkspaceSkeleton.tsx`      | My Tickets workspace — empty chrome (no header New) or list + thread chrome; driven by cached count / session layout hint                                        |
 | `SuperAdminSkeletons.tsx`           | List/overview/audit bodies, settings cards, card lists, host detail, organization hub                                                                            |
 | `AiAssistantSkeleton.tsx`           | AI assistant panel chunk                                                                                                                                         |
 | `GuestPageSkeletons.tsx`            | Guest form page                                                                                                                                                  |
@@ -58,6 +60,18 @@ Nested layouts with lazy children keep their own `Suspense` around `<Outlet />` 
 | `ImportWizardSkeleton.tsx`          | Import wizard commit step                                                                                                                                        |
 | `TemplateWorkbenchSkeleton.tsx`     | Property Templates workbench — library rail (search, grouped rows) beside the editor pane; rail only below `lg`                                                  |
 | `PropertyListingStatusSkeleton.tsx` | Property Settings → Listing status card (badge, actions, optional delete row) and lifecycle confirm sheet bodies while impact loads                              |
+
+### Tickets workspace state
+
+My Tickets (Help & Support + guest `/account` tickets) keys its skeleton to empty vs list:
+
+| State                                  | Skeleton                                                                |
+| -------------------------------------- | ----------------------------------------------------------------------- |
+| Cold load / known empty for this scope | `TicketsWorkspaceSkeleton` `layout="empty"` (centered empty chrome)     |
+| Cached or prior visit had tickets      | `TicketsWorkspaceSkeleton` `layout="list"` (rows + desktop thread pane) |
+| Ready                                  | Real empty state or ticket list                                         |
+
+Layout hint: `ticketsWorkspaceLayout.ts` (sessionStorage per ticket scope).
 
 ### Reviews list state
 
@@ -123,7 +137,7 @@ first data load. Both use the same page chrome, so nothing jumps when the chunk 
 | parking `bookings`                        | `ParkingBookingsRouteSkeleton`             | `BookingsListBodySkeleton` (table / cards / calendar; kanban URLs normalize to table or cards)              |
 | parking `bookings/:bookingId`             | `ParkingBookingDetailRouteSkeleton`        | `ParkingBookingDetailPageSkeleton`                                                                          |
 | parking `finance`                         | `ParkingFinanceRouteSkeleton`              | `FinancePageBodySkeleton` (view-aware)                                                                      |
-| parking `pricing`                         | `ParkingPricingRouteSkeleton`              | `PricingPageBodySkeleton` (3 stats, payout lines, direct-link card)                                         |
+| parking `pricing`                         | `ParkingPricingRouteSkeleton`              | `PricingPageBodySkeleton` (4 stats, payout lines, direct-link card)                                         |
 | parking `notifications`                   | `ParkingNotificationsRouteSkeleton`        | `NotificationsPageBodySkeleton`                                                                             |
 | parking `settings`                        | `ParkingSettingsRouteSkeleton`             | `AppSettingsNavLayoutSkeleton`                                                                              |
 | parking `inbox` · `team`                  | `ParkingInbox/TeamRouteSkeleton`           | `InboxPageSkeleton` · `TeamPageSkeleton`                                                                    |

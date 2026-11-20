@@ -67,6 +67,12 @@ ALLOWLIST=(
   # Pre-arrival reminder: one booking row per due reminder, read by primary key and passed
   # whole to the email renderer (dates, guests, contact, payment, parking, pet).
   '_shared/preArrivalReminderCron.ts'
+  # Parking reminder: one booking row per due reminder, read by primary key and passed whole
+  # to the template renderer, same fields as the pre-arrival reminder.
+  '_shared/parkingReminderCron.ts'
+  # Review request/reminder: one booking row by id + property, passed whole to the template
+  # renderer for guest, stay, payment and link placeholders.
+  '_shared/reviewEmails.ts'
 
   # Two-way reviews: single-row reads of the full review/window row (status + notes).
   '_shared/guestReviewService.ts'

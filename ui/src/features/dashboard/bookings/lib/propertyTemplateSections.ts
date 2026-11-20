@@ -1,15 +1,4 @@
-import {
-  Car,
-  ClipboardList,
-  FileCheck,
-  FileText,
-  Home,
-  LogIn,
-  LogOut,
-  Mail,
-  PawPrint,
-  Send,
-} from 'lucide-react';
+import { Car, ClipboardList, Home, LogIn, LogOut } from 'lucide-react';
 
 import type { PropertyTemplateCategory } from '@/features/dashboard/bookings/hooks/usePropertyTemplates';
 
@@ -22,82 +11,37 @@ export type PropertyTemplateSectionMeta = {
   category: PropertyTemplateCategory;
 };
 
+/**
+ * Standard guide sections, kept static for the Stay Guide page editor, which maps chapters to
+ * editable rich-text sections before the template list loads. The Templates rail reads the
+ * server registry (`group` / `chapter`) instead.
+ */
 export const STANDARD_TEMPLATE_SECTIONS: PropertyTemplateSectionMeta[] = [
-  { templateKey: 'house-rules', label: 'House Rules', icon: Home, category: 'standard' },
+  { templateKey: 'house-rules', label: 'House rules', icon: Home, category: 'standard' },
   {
     templateKey: 'check-in-instructions',
-    label: 'Check-in Instructions',
+    label: 'Check-in',
     icon: LogIn,
     category: 'standard',
   },
   {
     templateKey: 'check-out-instructions',
-    label: 'Check-out Instructions',
+    label: 'Check-out',
     icon: LogOut,
     category: 'standard',
   },
   {
     templateKey: 'parking-reminders',
-    label: 'Parking Reminders',
+    label: 'Parking',
     icon: Car,
     category: 'standard',
   },
 ];
 
-export const EMAIL_TEMPLATE_SECTIONS: PropertyTemplateSectionMeta[] = [
-  {
-    templateKey: 'email-gaf-request',
-    label: 'GAF Request',
-    icon: FileCheck,
-    category: 'email',
-  },
-  {
-    templateKey: 'email-pet-request',
-    label: 'Pet Request',
-    icon: PawPrint,
-    category: 'email',
-  },
-  {
-    templateKey: 'email-parking-request',
-    label: 'Parking Request',
-    icon: Car,
-    category: 'email',
-  },
-  {
-    templateKey: 'email-new-booking-request',
-    label: 'New Booking Request',
-    icon: Mail,
-    category: 'email',
-  },
-  {
-    templateKey: 'email-booking-request-received',
-    label: 'Booking Request Received',
-    icon: Mail,
-    category: 'email',
-  },
-  {
-    templateKey: 'email-booking-acknowledgement',
-    label: 'Booking Acknowledgement',
-    icon: Send,
-    category: 'email',
-  },
-  {
-    templateKey: 'email-ready-for-checkin',
-    label: 'Ready for Check-in',
-    icon: LogIn,
-    category: 'email',
-  },
-  {
-    templateKey: 'email-sd-refund-form-request',
-    label: 'SD Refund Form Request',
-    icon: FileText,
-    category: 'email',
-  },
-];
+const ICONS_BY_KEY: Record<string, LucideIcon> = Object.fromEntries(
+  STANDARD_TEMPLATE_SECTIONS.map((section) => [section.templateKey, section.icon])
+);
 
 export function iconForTemplateKey(templateKey: string): LucideIcon {
-  const builtIn = [...STANDARD_TEMPLATE_SECTIONS, ...EMAIL_TEMPLATE_SECTIONS].find(
-    (s) => s.templateKey === templateKey
-  );
-  return builtIn?.icon ?? ClipboardList;
+  return ICONS_BY_KEY[templateKey] ?? ClipboardList;
 }

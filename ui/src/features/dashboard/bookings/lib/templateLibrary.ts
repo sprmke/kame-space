@@ -1,14 +1,29 @@
-import { ClipboardList, FileText, Mail } from 'lucide-react';
+import {
+  Ban,
+  Car,
+  ClipboardList,
+  FileCheck,
+  FileText,
+  Home,
+  ListChecks,
+  LogIn,
+  LogOut,
+  Mail,
+  MessageSquare,
+  PawPrint,
+  Receipt,
+  Send,
+  Undo2,
+  XCircle,
+} from 'lucide-react';
 
 import type {
   PropertyTemplateCategory,
   PropertyTemplateDto,
   PropertyTemplateFolderDto,
+  PropertyTemplateGroup,
+  PropertyTemplateIconId,
 } from '@/features/dashboard/bookings/hooks/usePropertyTemplates';
-import {
-  EMAIL_TEMPLATE_SECTIONS,
-  STANDARD_TEMPLATE_SECTIONS,
-} from '@/features/dashboard/bookings/lib/propertyTemplateSections';
 
 import type { LucideIcon } from 'lucide-react';
 
@@ -19,7 +34,7 @@ import type { LucideIcon } from 'lucide-react';
  */
 export type TemplateLibraryGroupKind = 'builtin' | 'folder' | 'ungrouped';
 
-export type TemplateCategoryFilter = 'all' | 'standard' | 'email' | 'custom';
+export type TemplateCategoryFilter = 'all' | 'standard' | 'messages' | 'email' | 'custom';
 
 export type TemplatePlacement = {
   category: PropertyTemplateCategory;
@@ -30,6 +45,7 @@ export type TemplatePlacement = {
 export const TEMPLATE_GROUP_SELECT = {
   UNGROUPED: '__ungrouped__',
   STANDARD_SECTION: '__section_standard__',
+  MESSAGE_SECTION: '__section_message__',
   EMAIL_SECTION: '__section_email__',
   NEW_GROUP: '__new_group__',
 } as const;
@@ -69,11 +85,48 @@ export type TemplateLibraryGroup = {
 
 export const BUILTIN_GROUP_LABELS = {
   standard: 'Stay guide',
+  message: 'Guest messages',
   email: 'Emails',
 } as const;
 
 /** Where ungrouped custom-category templates live. */
 export const UNGROUPED_LABEL = 'Custom';
+
+/** Rail order and labels for the five registry groups. */
+export const TEMPLATE_GROUP_ORDER: readonly {
+  id: PropertyTemplateGroup;
+  label: string;
+  gated: boolean;
+}[] = [
+  { id: 'stay-guide', label: 'Stay guide', gated: false },
+  { id: 'guest-messages', label: 'Guest messages', gated: false },
+  { id: 'guest-emails', label: 'Guest emails', gated: true },
+  { id: 'building-admin', label: 'Building admin', gated: true },
+  { id: 'team-alerts', label: 'Team alerts', gated: false },
+];
+
+const ICONS: Record<PropertyTemplateIconId, LucideIcon> = {
+  home: Home,
+  'log-in': LogIn,
+  'log-out': LogOut,
+  car: Car,
+  paw: PawPrint,
+  mail: Mail,
+  'file-check': FileCheck,
+  send: Send,
+  'file-text': FileText,
+  'x-circle': XCircle,
+  ban: Ban,
+  undo: Undo2,
+  receipt: Receipt,
+  clipboard: ClipboardList,
+  message: MessageSquare,
+  'list-checks': ListChecks,
+};
+
+export function templateIcon(iconId: PropertyTemplateIconId | null | undefined): LucideIcon {
+  return iconId ? ICONS[iconId] : ClipboardList;
+}
 
 export function isHostOwnedTemplateKey(templateKey: string): boolean {
   return templateKey.startsWith('custom-');
@@ -92,6 +145,7 @@ export function placementsEqual(a: TemplatePlacement, b: TemplatePlacement): boo
 
 export function groupSelectValueFromPlacement(placement: TemplatePlacement): string {
   if (placement.category === 'standard') return TEMPLATE_GROUP_SELECT.STANDARD_SECTION;
+  if (placement.category === 'message') return TEMPLATE_GROUP_SELECT.MESSAGE_SECTION;
   if (placement.category === 'email') return TEMPLATE_GROUP_SELECT.EMAIL_SECTION;
   return placement.folderId ?? TEMPLATE_GROUP_SELECT.UNGROUPED;
 }
@@ -104,6 +158,9 @@ export function placementFromGroupSelectValue(
   if (value === TEMPLATE_GROUP_SELECT.STANDARD_SECTION) {
     return { category: 'standard', folderId: null };
   }
+  if (value === TEMPLATE_GROUP_SELECT.MESSAGE_SECTION) {
+    return { category: 'message', folderId: null };
+  }
   if (value === TEMPLATE_GROUP_SELECT.EMAIL_SECTION) {
     return { category: 'email', folderId: null };
   }
@@ -115,16 +172,12 @@ export function placementFromGroupSelectValue(
   return { category: 'custom', folderId: null };
 }
 
-function entryFor(
-  template: PropertyTemplateDto,
-  icon: LucideIcon,
-  groupLabel: string
-): TemplateLibraryEntry {
+function entryFor(template: PropertyTemplateDto, groupLabel: string): TemplateLibraryEntry {
   const hostOwned = isHostOwnedTemplateKey(template.templateKey);
   return {
     templateKey: template.templateKey,
     name: template.name,
-    icon,
+    icon: templateIcon(template.iconId),
     category: template.category,
     groupLabel,
     folderId: template.category === 'custom' ? template.folderId : null,
@@ -140,46 +193,52 @@ function byName(a: PropertyTemplateDto, b: PropertyTemplateDto): number {
 }
 
 /**
- * Builds the rail: Emails, then Stay guide, then host folders, then ungrouped Custom.
- * Built-in sections stay visible when empty so hosts can add templates there.
+ * Builds the rail from the server registry: the five group ids in fixed order, then host
+ * folders, then ungrouped Custom. Groups stay visible when empty so hosts can add templates
+ * there, except Guest messages and Building admin, which are only useful when they have entries.
  */
 export function buildTemplateLibrary(
   templates: PropertyTemplateDto[] | undefined,
   folders: PropertyTemplateFolderDto[] | undefined = []
 ): TemplateLibraryGroup[] {
   const list = templates ?? [];
-  const byKey = new Map(list.map((template) => [template.templateKey, template]));
   const hostOwned = list.filter((template) => isHostOwnedTemplateKey(template.templateKey));
 
-  const builtInGroup = (
-    id: 'standard' | 'email',
-    sections: { templateKey: string; icon: LucideIcon }[]
-  ): TemplateLibraryGroup => {
-    const label = BUILTIN_GROUP_LABELS[id];
-    const hostIcon = id === 'email' ? Mail : FileText;
-    const builtInEntries = sections.flatMap((section) => {
-      const template = byKey.get(section.templateKey);
-      return template ? [entryFor(template, section.icon, label)] : [];
-    });
-    const hostEntries = hostOwned
-      .filter((template) => template.category === id)
-      .sort(byName)
-      .map((template) => entryFor(template, hostIcon, label));
-
-    return {
-      id,
-      kind: 'builtin',
-      label,
-      gated: id === 'email',
-      folderId: null,
-      entries: [...builtInEntries, ...hostEntries],
-    };
-  };
-
-  const groups: TemplateLibraryGroup[] = [
-    builtInGroup('email', EMAIL_TEMPLATE_SECTIONS),
-    builtInGroup('standard', STANDARD_TEMPLATE_SECTIONS),
+  // Reading order for the guide chapters, not alphabetical. Host-owned sections sort last.
+  const stayGuideOrder = [
+    'welcome-note',
+    'getting-here',
+    'check-in-instructions',
+    'house-rules',
+    'using-the-unit',
+    'building-amenities',
+    'parking-reminders',
+    'pet-guidelines',
+    'emergency-and-safety',
+    'check-out-instructions',
   ];
+
+  const groups: TemplateLibraryGroup[] = TEMPLATE_GROUP_ORDER.map((meta) => {
+    const entries = list
+      .filter((template) => effectiveGroup(template) === meta.id)
+      .map((template) => entryFor(template, meta.label))
+      .sort((a, b) => {
+        if (meta.id !== 'stay-guide') return 0;
+        const left = stayGuideOrder.indexOf(a.templateKey);
+        const right = stayGuideOrder.indexOf(b.templateKey);
+        return (left === -1 ? 999 : left) - (right === -1 ? 999 : right);
+      });
+    return {
+      id: meta.id,
+      kind: 'builtin' as const,
+      label: meta.label,
+      gated: meta.gated,
+      folderId: null,
+      entries,
+    };
+  }).filter(
+    (group) => group.entries.length > 0 || group.id === 'stay-guide' || group.id === 'guest-emails'
+  );
 
   const folderCategoryTemplates = hostOwned.filter((template) => template.category === 'custom');
   const knownFolderIds = new Set((folders ?? []).map((folder) => folder.id));
@@ -198,14 +257,14 @@ export function buildTemplateLibrary(
       entries: folderCategoryTemplates
         .filter((template) => template.folderId === folder.id)
         .sort(byName)
-        .map((template) => entryFor(template, ClipboardList, folder.name)),
+        .map((template) => entryFor(template, folder.name)),
     });
   }
 
   const ungrouped = folderCategoryTemplates
     .filter((template) => !template.folderId || !knownFolderIds.has(template.folderId))
     .sort(byName)
-    .map((template) => entryFor(template, ClipboardList, UNGROUPED_LABEL));
+    .map((template) => entryFor(template, UNGROUPED_LABEL));
 
   if (ungrouped.length > 0) {
     groups.push({
@@ -219,6 +278,20 @@ export function buildTemplateLibrary(
   }
 
   return groups;
+}
+
+/**
+ * Which rail group a template belongs to. Built-ins carry it on the DTO; legacy host-owned
+ * rows (created before groups existed) fall back to their category so they stay reachable.
+ */
+function effectiveGroup(template: PropertyTemplateDto): PropertyTemplateGroup | null {
+  if (template.group) return template.group;
+  // Fallback for a cached response from before the registry carried `group`, and for the
+  // E2E fixtures that model the API shape.
+  if (template.category === 'standard') return 'stay-guide';
+  if (template.category === 'email') return 'guest-emails';
+  if (template.category === 'message') return 'guest-messages';
+  return null;
 }
 
 /** Flattens the rail back to selection order (used for fallbacks and lookups). */
@@ -241,12 +314,16 @@ export function applyTemplateCategoryFilter(
       }));
   }
 
+  const ids: PropertyTemplateGroup[] =
+    filter === 'standard'
+      ? ['stay-guide']
+      : filter === 'messages'
+        ? ['guest-messages']
+        : ['guest-emails', 'building-admin', 'team-alerts'];
+
   return groups
-    .filter((group) => group.kind === 'builtin' && group.id === filter)
-    .map((group) => ({
-      ...group,
-      entries: group.entries.filter((entry) => entry.category === filter),
-    }));
+    .filter((group) => group.kind === 'builtin' && (ids as string[]).includes(group.id))
+    .map((group) => ({ ...group }));
 }
 
 /**
@@ -328,7 +405,7 @@ export function templatePlacementTargets(
   );
   const targets: TemplatePlacementTarget[] = [
     { placement: { category: 'standard', folderId: null }, label: BUILTIN_GROUP_LABELS.standard },
-    { placement: { category: 'email', folderId: null }, label: BUILTIN_GROUP_LABELS.email },
+    { placement: { category: 'message', folderId: null }, label: BUILTIN_GROUP_LABELS.message },
   ];
   if (options.includeUngrouped && sorted.length === 0) {
     targets.push({

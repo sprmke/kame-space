@@ -4,11 +4,66 @@
  */
 
 import { createClient } from './supabaseJs.ts';
-import { PROPERTY_TEMPLATE_PLACEHOLDERS_REFERENCE } from './propertyTemplatePlaceholders.ts';
+import {
+  applyPropertyTemplateSamplePlaceholders,
+  PROPERTY_TEMPLATE_PLACEHOLDERS_REFERENCE,
+  PROPERTY_TEMPLATE_SAMPLE_VARS,
+} from './propertyTemplatePlaceholders.ts';
 import { normalizeBlockLevelPlaceholdersInHtml } from './normalizeBlockLevelPlaceholders.ts';
 import { normalizeEmailCalloutPlaceholders } from './normalizeEmailCalloutPlaceholders.ts';
+import type { PropertyAutomationToggleKey } from './propertyAutomationToggles.ts';
+import { condoTemplateDefault } from './propertyTemplateDefaults/index.ts';
+import { propertyTemplatePlaceholderKeys } from './propertyTemplateCatalog.ts';
+import { resolveDocumentRequirements } from './documentRequirements.ts';
+import { buildPropertyPlaceholderVars } from './propertyTemplatePropertyVars.ts';
+import { resolvePropertyAutomationState } from './propertyAutomationToggles.ts';
 
-export type PropertyTemplateCategory = 'standard' | 'email' | 'custom';
+export type PropertyTemplateCategory = 'standard' | 'email' | 'message' | 'custom';
+
+/**
+ * Rail group. `category` stays the behaviour (guide section, automated email, host-owned);
+ * `group` decides where the template sits in the Templates rail and which rail order applies.
+ */
+export const PROPERTY_TEMPLATE_GROUPS = [
+  'stay-guide',
+  'guest-messages',
+  'guest-emails',
+  'building-admin',
+  'team-alerts',
+] as const;
+
+export type PropertyTemplateGroup = (typeof PROPERTY_TEMPLATE_GROUPS)[number];
+
+/** Icon id resolved to a Lucide component on the client. */
+export type PropertyTemplateIconId =
+  | 'home'
+  | 'log-in'
+  | 'log-out'
+  | 'car'
+  | 'paw'
+  | 'mail'
+  | 'file-check'
+  | 'send'
+  | 'file-text'
+  | 'x-circle'
+  | 'ban'
+  | 'undo'
+  | 'receipt'
+  | 'clipboard'
+  | 'message'
+  | 'list-checks';
+
+export const PROPERTY_TEMPLATE_CHAPTERS = [
+  'getting-in',
+  'make-yourself-at-home',
+  'before-you-go',
+] as const;
+
+export type PropertyTemplateChapter = (typeof PROPERTY_TEMPLATE_CHAPTERS)[number];
+
+export type PropertyTemplateRecipient = 'guest' | 'team' | 'building-admin';
+
+export type PropertyTemplateCondition = 'has_pets' | 'need_parking';
 
 /**
  * Which trip moment a guest-visible custom template belongs to (guest journey plan D8).
@@ -44,7 +99,29 @@ export type PropertyTemplateKey =
   | 'email-booking-cancelled-guest'
   | 'email-booking-cancelled-host'
   | 'email-cancellation-request-guest'
-  | 'email-refund-sent-guest';
+  | 'email-refund-sent-guest'
+  | 'email-pre-arrival-reminder'
+  | 'email-parking-reminder'
+  | 'email-review-request'
+  | 'email-review-reminder'
+  | 'email-request-expired-guest'
+  | 'email-request-expiring-host'
+  | 'email-building-admin-cancellation'
+  | 'welcome-note'
+  | 'getting-here'
+  | 'using-the-unit'
+  | 'building-amenities'
+  | 'pet-guidelines'
+  | 'emergency-and-safety'
+  | 'message-balance-reminder'
+  | 'message-document-follow-up'
+  | 'message-check-in-day'
+  | 'message-early-check-in'
+  | 'message-late-check-out'
+  | 'message-noise-reminder'
+  | 'message-check-out-reminder'
+  | 'message-thank-you'
+  | 'message-lost-and-found';
 
 export type PropertyTemplateDefinition = {
   key: PropertyTemplateKey;
@@ -54,6 +131,28 @@ export type PropertyTemplateDefinition = {
   defaultContent: string;
   /** Maps to `loadEmailTemplate` slug when preview uses the full design shell. */
   previewTemplateSlug?: string;
+  group: PropertyTemplateGroup;
+  /** Emails only: who receives it. */
+  recipient: PropertyTemplateRecipient | null;
+  /** Host language "When" line, for example "Guest submits the form". */
+  trigger: string | null;
+  /** Automation master switch in Settings → Email automations. */
+  automationToggleKey: PropertyAutomationToggleKey | null;
+  iconId: PropertyTemplateIconId;
+  /** Email only. Null on guide sections and messages. */
+  defaultSubject: string | null;
+  /** GAF and pet subjects stay fixed because inbound approval parses them. */
+  subjectLocked: boolean;
+  /** Guide sections only. */
+  chapter: PropertyTemplateChapter | null;
+  defaultPhase: GuestTemplatePhase | null;
+  defaultGuestVisible: boolean;
+  /** Guide section renders only for matching bookings. */
+  condition: PropertyTemplateCondition | null;
+  /** Cannot be switched on until the host edits the default scaffold. */
+  requiresEdit: boolean;
+  /** Building admin group shows only when this property requirement applies. */
+  appliesWhen: 'gaf-or-pet-required' | null;
 };
 
 export type PropertyTemplateRow = {
@@ -65,10 +164,14 @@ export type PropertyTemplateRow = {
   content: string;
   section_image_url: string | null;
   folder_id: string | null;
-  /** Custom templates only: render this template on the guest trip page and stay guide. */
+  /** Guide sections and custom templates: render this template for guests. */
   guest_visible?: boolean | null;
-  /** Custom templates only: which trip stage shows it. Null means `always`. */
+  /** Guide sections and custom templates: which trip stage shows it. Null means `always`. */
   guest_phase?: string | null;
+  /** Email subject override. Null falls through to the shipped default. */
+  subject?: string | null;
+  /** Hash of the shipped default at save time, for the "new default available" badge. */
+  default_hash?: string | null;
   updated_at: string;
 };
 
@@ -106,12 +209,53 @@ export type PropertyTemplateDto = {
   /** Custom templates only: the trip stage that shows it. `always` when unset. */
   guestPhase: GuestTemplatePhase;
   updatedAt: string | null;
+  /** Allowed `{{tokens}}` for this template, from the server catalog. */
+  placeholderKeys: string[];
+  /** Rail group. Null for host-owned rows, which sit in folders or Custom. */
+  group: PropertyTemplateGroup | null;
+  recipient: PropertyTemplateRecipient | null;
+  trigger: string | null;
+  automationToggleKey: PropertyAutomationToggleKey | null;
+  iconId: PropertyTemplateIconId | null;
+  /** Email only. `subject` is the saved override; this is the shipped default. */
+  defaultSubject: string | null;
+  /** The shipped default subject with real property values, for the editor placeholder. */
+  defaultSubjectPreview: string | null;
+  subjectLocked: boolean;
+  chapter: PropertyTemplateChapter | null;
+  defaultPhase: GuestTemplatePhase | null;
+  defaultGuestVisible: boolean;
+  condition: PropertyTemplateCondition | null;
+  requiresEdit: boolean;
+  appliesWhen: 'gaf-or-pet-required' | null;
+  /** Saved subject override, or null when the shipped default applies. */
+  subject: string | null;
+  /** True when the shipped default changed after this row was customized. */
+  newDefaultAvailable: boolean;
+  /** Automation master switch state, or null for templates that never fire automatically. */
+  automationEnabled: boolean | null;
+  /** Would be on per the property's setting but forced off by the plan tier. */
+  automationPlanBlocked: boolean;
 };
 
-const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
+type BuiltinTemplateContent = {
+  key: PropertyTemplateKey;
+  label: string;
+  description: string;
+  category: Exclude<PropertyTemplateCategory, 'custom'>;
+  defaultContent: string;
+  previewTemplateSlug?: string;
+};
+
+/**
+ * Legacy inline copy. The pack below is authoritative: `BUILTIN_TEMPLATES` overrides
+ * `defaultContent` from `propertyTemplateDefaults/condo.ts`, so the two can never disagree at
+ * runtime. The inline strings are removed in the copy-refresh pass.
+ */
+const BUILTIN_CONTENT: BuiltinTemplateContent[] = [
   {
     key: 'house-rules',
-    label: 'House Rules',
+    label: 'House rules',
     description: 'Set rules and guidelines for guests during their stay.',
     category: 'standard',
     defaultContent: `<h2>House Rules</h2>
@@ -127,7 +271,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
   },
   {
     key: 'check-in-instructions',
-    label: 'Check-in Instructions',
+    label: 'Check-in',
     description: 'Provide detailed instructions for guest check-in process.',
     category: 'standard',
     defaultContent: `<h2>Check-in Instructions</h2>
@@ -145,7 +289,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
   },
   {
     key: 'check-out-instructions',
-    label: 'Check-out Instructions',
+    label: 'Check-out',
     description: 'Guide guests through the check-out process.',
     category: 'standard',
     defaultContent: `<h2>Check-out Instructions</h2>
@@ -163,7 +307,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
   },
   {
     key: 'parking-reminders',
-    label: 'Parking Reminders',
+    label: 'Parking',
     description: 'Important information about parking regulations and procedures.',
     category: 'standard',
     defaultContent: `<h2>Parking Reminders</h2>
@@ -184,7 +328,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
   },
   {
     key: 'email-gaf-request',
-    label: 'GAF Request',
+    label: 'GAF request',
     description: 'Request email sent to building admin for guest registration approval.',
     category: 'email',
     previewTemplateSlug: 'gaf-request',
@@ -198,7 +342,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
   },
   {
     key: 'email-pet-request',
-    label: 'Pet Request',
+    label: 'Pet request',
     description: 'Request email sent to building admin for pet approval.',
     category: 'email',
     previewTemplateSlug: 'pet-request',
@@ -214,7 +358,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
   },
   {
     key: 'email-new-booking-request',
-    label: 'New Booking Request',
+    label: 'New booking request',
     description: 'Owner alert when a guest submits a new booking form.',
     category: 'email',
     previewTemplateSlug: 'new-booking-request',
@@ -226,7 +370,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
   },
   {
     key: 'email-booking-request-received',
-    label: 'Booking Request Received',
+    label: 'Booking request received',
     description: 'Guest email right after a booking request is submitted.',
     category: 'email',
     defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
@@ -237,7 +381,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
   },
   {
     key: 'email-booking-acknowledgement',
-    label: 'Booking Acknowledgement',
+    label: 'Booking confirmed',
     description: 'Guest email after admin proceeds to pending documents.',
     category: 'email',
     previewTemplateSlug: 'booking-acknowledgement',
@@ -247,7 +391,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
   },
   {
     key: 'email-ready-for-checkin',
-    label: 'Ready for Check-in',
+    label: 'Check-in details',
     description: 'Guest email with check-in details and payment breakdown.',
     category: 'email',
     previewTemplateSlug: 'ready-for-checkin',
@@ -264,7 +408,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
   },
   {
     key: 'email-sd-refund-form-request',
-    label: 'SD Refund Form Request',
+    label: 'Check-out and deposit refund',
     description: 'Guest email with check-out checklist and security deposit refund form link.',
     category: 'email',
     previewTemplateSlug: 'sd-refund-form-request',
@@ -276,7 +420,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
   },
   {
     key: 'email-booking-cancelled-guest',
-    label: 'Booking Cancelled (Guest)',
+    label: 'Booking cancelled',
     description: 'Guest email when a booking is cancelled.',
     category: 'email',
     defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
@@ -289,7 +433,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
   },
   {
     key: 'email-booking-cancelled-host',
-    label: 'Booking Cancelled (Host)',
+    label: 'Booking cancelled',
     description: 'Host email when a guest cancels or asks to cancel.',
     category: 'email',
     defaultContent: `<p>Hello,</p>
@@ -299,7 +443,7 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
   },
   {
     key: 'email-cancellation-request-guest',
-    label: 'Cancellation Request (Guest)',
+    label: 'Cancellation request',
     description: 'Guest email for a cancellation request received, approved or declined.',
     category: 'email',
     defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
@@ -310,16 +454,450 @@ const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = [
   },
   {
     key: 'email-refund-sent-guest',
-    label: 'Refund Sent (Guest)',
+    label: 'Refund sent',
     description: 'Guest email when the host marks a refund as sent.',
     category: 'email',
-    defaultContent: `<p>Hi <strong>{{guest_facebook_name}}</strong>,</p>
-<p>Your refund has been sent.</p>
-<p>{{cancellation_detail_section}}</p>
-<p>{{trip_cta_section}}</p>
-<p>{{email_signature_section}}</p>`,
+    defaultContent: '',
+  },
+  {
+    key: 'email-pre-arrival-reminder',
+    label: 'Arrival reminder',
+    description: 'Guest email two days before check-in.',
+    category: 'email',
+    defaultContent: '',
+  },
+  {
+    key: 'email-parking-reminder',
+    label: 'Parking reminder',
+    description: 'Guest email when they asked for parking but have no slot yet.',
+    category: 'email',
+    defaultContent: '',
+  },
+  {
+    key: 'email-review-request',
+    label: 'Review request',
+    description: 'Guest email when the review window opens.',
+    category: 'email',
+    defaultContent: '',
+  },
+  {
+    key: 'email-review-reminder',
+    label: 'Review reminder',
+    description: 'Guest email before the review window closes.',
+    category: 'email',
+    defaultContent: '',
+  },
+  {
+    key: 'email-request-expired-guest',
+    label: 'Request expired',
+    description: 'Guest email when a pending request expires.',
+    category: 'email',
+    defaultContent: '',
+  },
+  {
+    key: 'email-request-expiring-host',
+    label: 'Request expiring',
+    description: 'Team alert before a pending request expires.',
+    category: 'email',
+    defaultContent: '',
+  },
+  {
+    key: 'email-building-admin-cancellation',
+    label: 'GAF cancellation',
+    description: 'Building admin notice to cancel a GAF for a cancelled booking.',
+    category: 'email',
+    defaultContent: '',
+  },
+  {
+    key: 'welcome-note',
+    label: 'Welcome',
+    description: 'Your welcome note for this stay.',
+    category: 'standard',
+    defaultContent: '',
+  },
+  {
+    key: 'getting-here',
+    label: 'Getting here',
+    description: 'Directions to the building.',
+    category: 'standard',
+    defaultContent: '',
+  },
+  {
+    key: 'using-the-unit',
+    label: 'Using the unit',
+    description: 'Appliances, kitchen and internet.',
+    category: 'standard',
+    defaultContent: '',
+  },
+  {
+    key: 'building-amenities',
+    label: 'Building amenities',
+    description: 'Pool, gym and common areas.',
+    category: 'standard',
+    defaultContent: '',
+  },
+  {
+    key: 'pet-guidelines',
+    label: 'Pet guidelines',
+    description: 'Rules for guests bringing a pet.',
+    category: 'standard',
+    defaultContent: '',
+  },
+  {
+    key: 'emergency-and-safety',
+    label: 'Emergency and safety',
+    description: 'Emergency contacts and safety steps.',
+    category: 'standard',
+    defaultContent: '',
+  },
+  {
+    key: 'message-balance-reminder',
+    label: 'Balance reminder',
+    description: 'Before check-in when a balance is unpaid.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-document-follow-up',
+    label: 'Missing documents',
+    description: 'While the booking is pending documents.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-check-in-day',
+    label: 'Check-in day',
+    description: 'Morning of arrival.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-early-check-in',
+    label: 'Early check-in',
+    description: 'Guest asks to arrive early.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-late-check-out',
+    label: 'Late check-out',
+    description: 'Guest asks to stay later.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-noise-reminder',
+    label: 'Noise reminder',
+    description: 'A complaint came from the building.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-check-out-reminder',
+    label: 'Check-out reminder',
+    description: 'Evening before check-out.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-thank-you',
+    label: 'Thank you',
+    description: 'After check-out.',
+    category: 'message',
+    defaultContent: '',
+  },
+  {
+    key: 'message-lost-and-found',
+    label: 'Item left behind',
+    description: 'After check-out.',
+    category: 'message',
+    defaultContent: '',
   },
 ];
+
+type BuiltinMeta = {
+  group: PropertyTemplateGroup;
+  recipient: PropertyTemplateRecipient | null;
+  trigger: string | null;
+  automationToggleKey: PropertyAutomationToggleKey | null;
+  iconId: PropertyTemplateIconId;
+  subjectLocked: boolean;
+  chapter: PropertyTemplateChapter | null;
+  defaultPhase: GuestTemplatePhase | null;
+  defaultGuestVisible: boolean;
+  condition: PropertyTemplateCondition | null;
+  requiresEdit: boolean;
+  appliesWhen: 'gaf-or-pet-required' | null;
+};
+
+function guideMeta(input: {
+  chapter: PropertyTemplateChapter;
+  phase: GuestTemplatePhase;
+  iconId: PropertyTemplateIconId;
+  condition?: PropertyTemplateCondition;
+  visible?: boolean;
+  requiresEdit?: boolean;
+}): BuiltinMeta {
+  return {
+    group: 'stay-guide',
+    recipient: null,
+    trigger: null,
+    automationToggleKey: null,
+    iconId: input.iconId,
+    subjectLocked: false,
+    chapter: input.chapter,
+    defaultPhase: input.phase,
+    defaultGuestVisible: input.visible ?? true,
+    condition: input.condition ?? null,
+    requiresEdit: input.requiresEdit ?? false,
+    appliesWhen: null,
+  };
+}
+
+function emailMeta(input: {
+  group: PropertyTemplateGroup;
+  recipient: PropertyTemplateRecipient;
+  trigger: string;
+  iconId: PropertyTemplateIconId;
+  toggle?: PropertyAutomationToggleKey;
+  subjectLocked?: boolean;
+  appliesWhen?: 'gaf-or-pet-required';
+}): BuiltinMeta {
+  return {
+    group: input.group,
+    recipient: input.recipient,
+    trigger: input.trigger,
+    automationToggleKey: input.toggle ?? null,
+    iconId: input.iconId,
+    subjectLocked: input.subjectLocked ?? false,
+    chapter: null,
+    defaultPhase: null,
+    defaultGuestVisible: false,
+    condition: null,
+    requiresEdit: false,
+    appliesWhen: input.appliesWhen ?? null,
+  };
+}
+
+function messageMeta(input: { iconId?: PropertyTemplateIconId }): BuiltinMeta {
+  return {
+    group: 'guest-messages',
+    recipient: null,
+    trigger: null,
+    automationToggleKey: null,
+    iconId: input.iconId ?? 'message',
+    subjectLocked: false,
+    chapter: null,
+    defaultPhase: null,
+    defaultGuestVisible: false,
+    condition: null,
+    requiresEdit: false,
+    appliesWhen: null,
+  };
+}
+
+const BUILTIN_META: Record<PropertyTemplateKey, BuiltinMeta> = {
+  'house-rules': guideMeta({
+    chapter: 'make-yourself-at-home',
+    phase: 'always',
+    iconId: 'home',
+  }),
+  'check-in-instructions': guideMeta({
+    chapter: 'getting-in',
+    phase: 'arrival',
+    iconId: 'log-in',
+  }),
+  'check-out-instructions': guideMeta({
+    chapter: 'before-you-go',
+    phase: 'checkout',
+    iconId: 'log-out',
+  }),
+  'parking-reminders': guideMeta({
+    chapter: 'make-yourself-at-home',
+    phase: 'arrival',
+    iconId: 'car',
+    condition: 'need_parking',
+  }),
+  'email-gaf-request': emailMeta({
+    group: 'building-admin',
+    recipient: 'building-admin',
+    trigger: 'Host approves a booking that needs a GAF',
+    iconId: 'file-check',
+    toggle: 'emailGafRequest',
+    subjectLocked: true,
+    appliesWhen: 'gaf-or-pet-required',
+  }),
+  'email-pet-request': emailMeta({
+    group: 'building-admin',
+    recipient: 'building-admin',
+    trigger: 'Host approves a booking with a pet',
+    iconId: 'paw',
+    toggle: 'emailPetRequest',
+    subjectLocked: true,
+    appliesWhen: 'gaf-or-pet-required',
+  }),
+  'email-new-booking-request': emailMeta({
+    group: 'team-alerts',
+    recipient: 'team',
+    trigger: 'Guest submits the form',
+    iconId: 'mail',
+    toggle: 'emailNewBookingRequest',
+  }),
+  'email-booking-request-received': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Guest submits the form',
+    iconId: 'mail',
+    toggle: 'emailBookingRequestReceived',
+  }),
+  'email-booking-acknowledgement': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Host approves the request',
+    iconId: 'send',
+    toggle: 'emailBookingAcknowledgement',
+  }),
+  'email-ready-for-checkin': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Booking reaches Ready for check-in',
+    iconId: 'log-in',
+    toggle: 'emailReadyForCheckin',
+  }),
+  'email-sd-refund-form-request': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Before check-out (cron lead time)',
+    iconId: 'file-text',
+    toggle: 'emailSdRefundCheckout',
+  }),
+  'email-booking-cancelled-guest': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Booking becomes Cancelled',
+    iconId: 'x-circle',
+  }),
+  'email-cancellation-request-guest': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Guest requests, then host approves or declines',
+    iconId: 'undo',
+  }),
+  'email-refund-sent-guest': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Host records a refund',
+    iconId: 'receipt',
+  }),
+  'email-booking-cancelled-host': emailMeta({
+    group: 'team-alerts',
+    recipient: 'team',
+    trigger: 'Guest cancels or asks to cancel',
+    iconId: 'ban',
+  }),
+  'email-pre-arrival-reminder': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: '2 days before check-in',
+    iconId: 'log-in',
+    toggle: 'emailPreArrivalReminder',
+  }),
+  'email-parking-reminder': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Guest asked for parking and has no slot yet',
+    iconId: 'car',
+    toggle: 'emailParkingReminder',
+  }),
+  'email-review-request': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Review window opens',
+    iconId: 'send',
+    toggle: 'emailReviewRequest',
+  }),
+  'email-review-reminder': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Review window closes soon',
+    iconId: 'send',
+    toggle: 'emailReviewReminder',
+  }),
+  'email-request-expired-guest': emailMeta({
+    group: 'guest-emails',
+    recipient: 'guest',
+    trigger: 'Pending request expires',
+    iconId: 'x-circle',
+  }),
+  'email-request-expiring-host': emailMeta({
+    group: 'team-alerts',
+    recipient: 'team',
+    trigger: 'Request still pending 2 days before expiry',
+    iconId: 'ban',
+  }),
+  'email-building-admin-cancellation': emailMeta({
+    group: 'building-admin',
+    recipient: 'building-admin',
+    trigger: 'A booking whose GAF was sent is cancelled',
+    iconId: 'file-text',
+    toggle: 'emailBuildingAdminCancellation',
+    appliesWhen: 'gaf-or-pet-required',
+  }),
+  'welcome-note': guideMeta({ chapter: 'getting-in', phase: 'arrival', iconId: 'home' }),
+  'getting-here': guideMeta({
+    chapter: 'getting-in',
+    phase: 'before',
+    iconId: 'car',
+    visible: false,
+  }),
+  'using-the-unit': guideMeta({
+    chapter: 'make-yourself-at-home',
+    phase: 'stay',
+    iconId: 'list-checks',
+    visible: false,
+  }),
+  'building-amenities': guideMeta({
+    chapter: 'make-yourself-at-home',
+    phase: 'stay',
+    iconId: 'list-checks',
+    visible: false,
+  }),
+  'pet-guidelines': guideMeta({
+    chapter: 'make-yourself-at-home',
+    phase: 'arrival',
+    iconId: 'paw',
+    condition: 'has_pets',
+  }),
+  'emergency-and-safety': guideMeta({
+    chapter: 'make-yourself-at-home',
+    phase: 'stay',
+    iconId: 'list-checks',
+  }),
+  'message-balance-reminder': messageMeta({}),
+  'message-document-follow-up': messageMeta({}),
+  'message-check-in-day': messageMeta({}),
+  'message-early-check-in': messageMeta({}),
+  'message-late-check-out': messageMeta({}),
+  'message-noise-reminder': messageMeta({}),
+  'message-check-out-reminder': messageMeta({}),
+  'message-thank-you': messageMeta({}),
+  'message-lost-and-found': messageMeta({}),
+};
+
+/**
+ * Built-ins with pack copy applied. The pack is the source of truth for content and subject;
+ * the metadata table is the source of truth for group, trigger, toggle and guide behaviour.
+ */
+const BUILTIN_TEMPLATES: PropertyTemplateDefinition[] = BUILTIN_CONTENT.map((content) => {
+  const meta = BUILTIN_META[content.key];
+  const pack = condoTemplateDefault(content.key);
+  return {
+    ...content,
+    ...meta,
+    defaultContent: pack?.content ?? content.defaultContent,
+    defaultSubject: pack?.subject ?? null,
+  };
+});
 
 const BUILTIN_BY_KEY = new Map(BUILTIN_TEMPLATES.map((t) => [t.key, t]));
 
@@ -359,6 +937,62 @@ function normalizeStoredTemplateContent(content: string, templateKey?: string): 
     });
   }
   return out;
+}
+
+/**
+ * Canonical form for comparing a saved row against its shipped default.
+ *
+ * TipTap round-trips the same HTML in a different shape: `<li>text</li>` comes back as
+ * `<li><p>text</p></li>`, and formatting newlines disappear. A raw string compare made an
+ * untouched default read as Customized after one open-and-save, so both sides are normalized.
+ */
+function canonicalizeTiptapListItems(html: string): string {
+  return html.replace(
+    /<li(\s[^>]*)?>([\s\S]*?)<\/li>/gi,
+    (match, attrs: string | undefined, inner: string) => {
+      const body = String(inner ?? '').trim();
+      if (!body || /^<(p|ul|ol|table|h[1-6])\b/i.test(body)) return match;
+      return `<li${attrs ?? ''}><p>${body}</p></li>`;
+    }
+  );
+}
+
+export function normalizeTemplateContentForCompare(content: string, templateKey?: string): string {
+  if (!content) return '';
+  return canonicalizeTiptapListItems(normalizeStoredTemplateContent(content, templateKey))
+    .replace(/\s*\n\s*/g, '')
+    .trim();
+}
+
+/**
+ * Stable hash of a shipped default (content + subject). FNV-1a 32-bit is enough to notice a
+ * default changed; it is not a security primitive.
+ */
+export function hashTemplateDefault(content: string, subject?: string | null): string {
+  const source = `${normalizeTemplateContentForCompare(content)}\n${(subject ?? '').trim()}`;
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16);
+}
+
+export function templateDefaultHash(templateKey: string): string | null {
+  const builtin = getBuiltinPropertyTemplate(templateKey);
+  if (!builtin) return null;
+  return hashTemplateDefault(builtin.defaultContent, builtin.defaultSubject);
+}
+
+const MAX_TEMPLATE_SUBJECT_LENGTH = 200;
+
+export function validateTemplateSubject(subject: string | null | undefined): string | null {
+  if (subject == null) return null;
+  if (/[\r\n]/.test(subject)) return 'Subject must be a single line';
+  if (subject.length > MAX_TEMPLATE_SUBJECT_LENGTH) {
+    return `Subject must be at most ${MAX_TEMPLATE_SUBJECT_LENGTH} characters`;
+  }
+  return null;
 }
 
 export function validateCustomTemplateName(name: string): string | null {
@@ -415,14 +1049,17 @@ export async function upsertPropertyTemplateRow(input: {
   category: PropertyTemplateCategory;
   name?: string | null;
   content: string;
+  /** Email subject override. Locked subjects (GAF, pet) ignore it. */
+  subject?: string | null;
   sectionImageUrl?: string | null;
-  /** Custom templates only; built-ins always live in their fixed section. */
+  /** Guide sections and custom templates; ignored for email and message rows. */
   folderId?: string | null;
-  /** Custom templates only: render it for guests. Built-ins are never guest-visible here. */
+  /** Guide sections and custom templates: render it for guests. */
   guestVisible?: boolean;
-  /** Custom templates only: the trip stage that shows it. */
+  /** Guide sections and custom templates: the trip stage that shows it. */
   guestPhase?: GuestTemplatePhase;
 }): Promise<PropertyTemplateRow> {
+  const builtin = getBuiltinPropertyTemplate(input.templateKey);
   const patch: Record<string, unknown> = {
     property_id: input.propertyId,
     template_key: input.templateKey,
@@ -430,6 +1067,9 @@ export async function upsertPropertyTemplateRow(input: {
     content: normalizeStoredTemplateContent(input.content, input.templateKey),
     updated_at: new Date().toISOString(),
   };
+  if (builtin) {
+    patch.default_hash = hashTemplateDefault(builtin.defaultContent, builtin.defaultSubject);
+  }
   /*
    * Only write `name` when the caller supplied one. An unconditional
    * `name: input.name ?? null` wiped the stored name on every content save,
@@ -438,19 +1078,39 @@ export async function upsertPropertyTemplateRow(input: {
   if (input.name !== undefined) {
     patch.name = input.name?.trim() || null;
   }
+  if (input.subject !== undefined && !builtin?.subjectLocked) {
+    patch.subject = input.subject?.trim() || null;
+  }
   if (input.sectionImageUrl !== undefined) {
     patch.section_image_url = input.sectionImageUrl?.trim() || null;
   }
   if (input.folderId !== undefined) {
     patch.folder_id = input.category === 'custom' ? input.folderId : null;
   }
-  // Guest visibility only means anything for a custom template: built-ins already reach the
-  // guest through the trip page's own sections.
+  const allowsGuestVisibility = input.category === 'custom' || input.category === 'standard';
+  /*
+   * A guide section saved for the first time must inherit its registry visibility. Without
+   * this, editing or resetting a default-visible section inserted a row with
+   * `guest_visible = false` and silently hid it from guests. Only apply the default on insert;
+   * an existing row may be an explicit host choice.
+   */
+  let existingGuideRow: PropertyTemplateRow | null = null;
+  if (
+    builtin?.category === 'standard' &&
+    input.guestVisible === undefined &&
+    allowsGuestVisibility
+  ) {
+    existingGuideRow = await getPropertyTemplateRow(input.propertyId, input.templateKey);
+  }
   if (input.guestVisible !== undefined) {
-    patch.guest_visible = input.category === 'custom' ? input.guestVisible : false;
+    patch.guest_visible = allowsGuestVisibility ? input.guestVisible : false;
+  } else if (builtin?.category === 'standard' && !existingGuideRow) {
+    patch.guest_visible = builtin.defaultGuestVisible;
   }
   if (input.guestPhase !== undefined) {
-    patch.guest_phase = input.category === 'custom' ? input.guestPhase : null;
+    patch.guest_phase = allowsGuestVisibility ? input.guestPhase : null;
+  } else if (builtin?.category === 'standard' && !existingGuideRow) {
+    patch.guest_phase = builtin.defaultPhase ?? 'always';
   }
 
   const { data, error } = await supabaseAdmin()
@@ -573,20 +1233,62 @@ function rowToDto(
   builtin?: PropertyTemplateDefinition
 ): PropertyTemplateDto {
   const defaultContent = builtin?.defaultContent ?? '';
+  const isDefaultContent =
+    normalizeTemplateContentForCompare(row.content, row.template_key) ===
+    normalizeTemplateContentForCompare(defaultContent, row.template_key);
+  const isDefaultSubject =
+    !builtin ||
+    builtin.subjectLocked ||
+    (row.subject?.trim() ?? '') === (builtin.defaultSubject?.trim() ?? '');
+  const isDefault = isDefaultContent && isDefaultSubject;
+  const currentDefaultHash = builtin
+    ? hashTemplateDefault(builtin.defaultContent, builtin.defaultSubject)
+    : null;
   return {
     templateKey: row.template_key,
     name: row.name?.trim() || builtin?.label || row.template_key,
     category: row.category,
     content: normalizeStoredTemplateContent(row.content, row.template_key),
     defaultContent,
-    isDefault: row.content === defaultContent,
+    isDefault,
     description: builtin?.description ?? null,
     previewTemplateSlug: builtin?.previewTemplateSlug ?? null,
     sectionImageUrl: String(row.section_image_url ?? '').trim() || null,
     folderId: row.category === 'custom' ? (row.folder_id ?? null) : null,
-    guestVisible: row.category === 'custom' ? row.guest_visible === true : false,
-    guestPhase: isGuestTemplatePhase(row.guest_phase) ? row.guest_phase : 'always',
+    guestVisible:
+      row.category === 'custom' || row.category === 'standard' ? row.guest_visible === true : false,
+    guestPhase: isGuestTemplatePhase(row.guest_phase)
+      ? row.guest_phase
+      : row.category === 'standard'
+        ? (builtin?.defaultPhase ?? 'always')
+        : 'always',
     updatedAt: row.updated_at,
+    group: builtin?.group ?? null,
+    recipient: builtin?.recipient ?? null,
+    trigger: builtin?.trigger ?? null,
+    automationToggleKey: builtin?.automationToggleKey ?? null,
+    iconId: builtin?.iconId ?? null,
+    defaultSubject: builtin?.defaultSubject ?? null,
+    defaultSubjectPreview: null,
+    subjectLocked: builtin?.subjectLocked ?? false,
+    chapter: builtin?.chapter ?? null,
+    defaultPhase: builtin?.defaultPhase ?? null,
+    defaultGuestVisible: builtin?.defaultGuestVisible ?? false,
+    condition: builtin?.condition ?? null,
+    requiresEdit: builtin?.requiresEdit ?? false,
+    appliesWhen: builtin?.appliesWhen ?? null,
+    placeholderKeys: [...propertyTemplatePlaceholderKeys(row.template_key, row.category)],
+    subject: builtin?.subjectLocked ? null : row.subject?.trim() || null,
+    newDefaultAvailable: Boolean(
+      builtin &&
+      !isDefault &&
+      currentDefaultHash &&
+      // A customized row saved before `default_hash` existed was written against an older
+      // default, so it is exactly the case the badge is for.
+      (!row.default_hash || row.default_hash !== currentDefaultHash)
+    ),
+    automationEnabled: null,
+    automationPlanBlocked: false,
   };
 }
 
@@ -602,9 +1304,28 @@ function builtinToDto(builtin: PropertyTemplateDefinition): PropertyTemplateDto 
     previewTemplateSlug: builtin.previewTemplateSlug ?? null,
     sectionImageUrl: null,
     folderId: null,
-    guestVisible: false,
-    guestPhase: 'always',
+    guestVisible: builtin.category === 'standard' ? builtin.defaultGuestVisible : false,
+    guestPhase: builtin.category === 'standard' ? (builtin.defaultPhase ?? 'always') : 'always',
     updatedAt: null,
+    group: builtin.group,
+    recipient: builtin.recipient,
+    trigger: builtin.trigger,
+    automationToggleKey: builtin.automationToggleKey,
+    iconId: builtin.iconId,
+    defaultSubject: builtin.defaultSubject,
+    defaultSubjectPreview: null,
+    subjectLocked: builtin.subjectLocked,
+    chapter: builtin.chapter,
+    defaultPhase: builtin.defaultPhase,
+    defaultGuestVisible: builtin.defaultGuestVisible,
+    condition: builtin.condition,
+    requiresEdit: builtin.requiresEdit,
+    appliesWhen: builtin.appliesWhen,
+    placeholderKeys: [...propertyTemplatePlaceholderKeys(builtin.key, builtin.category)],
+    subject: null,
+    newDefaultAvailable: false,
+    automationEnabled: null,
+    automationPlanBlocked: false,
   };
 }
 
@@ -612,11 +1333,25 @@ export async function serializePropertyTemplatesForAdmin(propertyId: string): Pr
   templates: PropertyTemplateDto[];
   placeholdersReference: string[];
   folders: PropertyTemplateFolderDto[];
+  /** Property-data tokens that are empty for this property, for the editor hint row. */
+  propertyEmptyPlaceholders: string[];
 }> {
-  const rows = await listPropertyTemplateRows(propertyId);
+  const [rows, folderRows, needsBuildingAdmin, propertyVars, automation] = await Promise.all([
+    listPropertyTemplateRows(propertyId),
+    listPropertyTemplateFolders(propertyId),
+    propertyAppliesBuildingAdminTemplates(propertyId),
+    buildPropertyPlaceholderVars({ propertyId }),
+    resolvePropertyAutomationState(propertyId).catch(() => null),
+  ]);
   const rowByKey = new Map(rows.map((r) => [r.template_key, r]));
 
-  const templates: PropertyTemplateDto[] = BUILTIN_TEMPLATES.map((builtin) => {
+  /* A subject placeholder should read like a real subject. Property values win over the
+   * sample values, so the preview names this property, not a generic one. */
+  const subjectVars = { ...PROPERTY_TEMPLATE_SAMPLE_VARS, ...propertyVars.vars };
+
+  const templates: PropertyTemplateDto[] = BUILTIN_TEMPLATES.filter(
+    (builtin) => builtin.appliesWhen !== 'gaf-or-pet-required' || needsBuildingAdmin
+  ).map((builtin) => {
     const row = rowByKey.get(builtin.key);
     if (!row) return builtinToDto(builtin);
     return rowToDto(row, builtin);
@@ -627,7 +1362,23 @@ export async function serializePropertyTemplatesForAdmin(propertyId: string): Pr
     templates.push(rowToDto(row));
   }
 
-  const folderRows = await listPropertyTemplateFolders(propertyId);
+  for (const template of templates) {
+    if (!template.defaultSubject) continue;
+    template.defaultSubjectPreview =
+      applyPropertyTemplateSamplePlaceholders(template.defaultSubject, subjectVars)
+        .replace(/\s+/g, ' ')
+        .trim() || null;
+  }
+
+  if (automation) {
+    for (const template of templates) {
+      const key = template.automationToggleKey;
+      if (!key) continue;
+      template.automationEnabled = automation.toggles[key] ?? null;
+      template.automationPlanBlocked = automation.planBlockedKeys.includes(key);
+    }
+  }
+
   const countByFolder = new Map<string, number>();
   for (const template of templates) {
     if (!template.folderId) continue;
@@ -637,6 +1388,7 @@ export async function serializePropertyTemplatesForAdmin(propertyId: string): Pr
   return {
     templates,
     placeholdersReference: [...PROPERTY_TEMPLATE_PLACEHOLDERS_REFERENCE],
+    propertyEmptyPlaceholders: propertyVars.emptyPlaceholders,
     folders: folderRows.map((row) => ({
       id: row.id,
       name: row.name,
@@ -644,6 +1396,27 @@ export async function serializePropertyTemplatesForAdmin(propertyId: string): Pr
       templateCount: countByFolder.get(row.id) ?? 0,
     })),
   };
+}
+
+/**
+ * Building admin templates only make sense when the property actually asks for a GAF or pet
+ * document. A property with neither should not see a group it can never send from.
+ */
+async function propertyAppliesBuildingAdminTemplates(propertyId: string): Promise<boolean> {
+  try {
+    const requirements = await resolveDocumentRequirements(propertyId);
+    if (requirements.length === 0) return false;
+    return requirements.some(
+      (req) =>
+        req.id === 'gaf' ||
+        req.id === 'pet' ||
+        req.pdfTemplateId === 'gaf' ||
+        req.pdfTemplateId === 'pet'
+    );
+  } catch (err) {
+    console.warn('[propertyTemplates] document requirement lookup failed:', err);
+    return true;
+  }
 }
 
 export const MAX_TEMPLATE_FOLDERS = 20;
@@ -788,9 +1561,11 @@ export async function updateCustomTemplateRow(input: {
   folderId?: string | null;
   guestVisible?: boolean;
   guestPhase?: GuestTemplatePhase;
+  subject?: string | null;
 }): Promise<PropertyTemplateRow | null> {
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (input.name !== undefined) patch.name = input.name.trim();
+  if (input.subject !== undefined) patch.subject = input.subject?.trim() || null;
   if (input.category !== undefined) {
     patch.category = input.category;
     if (input.category !== 'custom') {

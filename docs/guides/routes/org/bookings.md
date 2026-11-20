@@ -36,7 +36,7 @@ Differences from property list:
 5. **New booking** in the header (desktop) or hero (phone) opens a listing picker, then the same create modal as that listing’s Bookings page. Date range and Import stay on each property page (not here).
 6. Views: table, card, calendar only (no kanban).
 
-7. Table and card rows have a **chat icon** that deep-links into the row's property or parking Inbox (there is no org-level Inbox). Visibility is checked per listing with `inbox:view`. Behavior: [Property bookings → Chat shortcut](./property/bookings.md#chat-shortcut).
+7. Table **Actions**, card, kanban, and calendar day-detail rows have a **chat icon** that deep-links into the row's property or parking Inbox (there is no org-level Inbox). Visibility is checked per listing with `inbox:view`. Behavior: [Property bookings → Chat shortcut](./property/bookings.md#chat-shortcut).
 
 Stay-side `need_parking` on property bookings is unchanged — that is nested stay workflow, not standalone parking reservations.
 

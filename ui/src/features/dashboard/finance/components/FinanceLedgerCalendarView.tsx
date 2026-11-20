@@ -102,13 +102,22 @@ function LedgerCalendarDayCard({
     <div className="border-border/50 bg-card rounded-xl border p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-foreground truncate text-sm font-semibold">{entry.description}</p>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-foreground truncate text-base font-semibold">{entry.description}</p>
+          <p className="text-muted-foreground mt-0.5 text-sm">
             {format(parseISO(entry.date), 'MMM d, yyyy')} · {entry.category}
           </p>
         </div>
-        <FinanceLedgerStatusBadge status={entry.status} />
+        <FinanceLedgerStatusBadge
+          status={entry.status}
+          label={entry.statusLabel}
+          size="comfortable"
+        />
       </div>
+      {entry.subDescription ? (
+        <p className="text-muted-foreground mt-1.5 truncate text-sm leading-snug">
+          {entry.subDescription}
+        </p>
+      ) : null}
       <div className="mt-3 flex items-center justify-between gap-2">
         <span
           className={cn(
@@ -133,7 +142,7 @@ function LedgerCalendarDayCard({
                 <ArrowDownRight className="size-4" />
               )}
             </button>
-          ) : (
+          ) : entry.source === 'transaction' ? (
             <>
               {entry.transaction?.recurrence_series_id && onOpenSeries ? (
                 <button
@@ -162,7 +171,7 @@ function LedgerCalendarDayCard({
                 <Trash2 className="size-4" />
               </button>
             </>
-          )}
+          ) : null}
         </div>
       </div>
       {entry.transaction?.recurrence_series_id ? (

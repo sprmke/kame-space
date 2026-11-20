@@ -55,7 +55,7 @@ Desktop (lg+):
 ```
 
 - Desktop sidebar is `hidden lg:flex` (collapsible width); main column fills the rest.
-- On mobile, **bottom tabs** are the primary navigation: **Dashboard**, **Bookings**, **Inbox** (when present), **Notifications**, **Assistant** (when enabled), and **More**. Assistant and Notifications open the same slide-over / sheet as desktop — they are not extra header icons. Remaining pages (including Finance) live in the More sheet. The hamburger drawer is retired. More sheet nav rows use dense chrome (`text-[13px]` / `size-4` icons, 44px min height) — same scale as ModeSwitcher / list toolbars, not `text-sm` body.
+- On mobile, **bottom tabs** are the primary navigation: **Dashboard**, **Bookings**, **Inbox** (when present), and **More**. Quick Access is a floating FAB (bottom-right, above the tab bar). Click expands it bottom→top into a vertical pill for Notifications, AI assistant (when enabled), Messages, and Help & Support. Remaining pages (including Finance) live in the More sheet. The hamburger drawer is retired. More sheet nav rows use dense chrome (`text-[13px]` / `size-4` icons, 44px min height) — same scale as ModeSwitcher / list toolbars, not `text-sm` body.
 - Screens with a dominant primary action (e.g. booking edit Save/Cancel) mount `ContextualActionBar`, which hides the tab bar for that route.
 - Shared primitives: `ui/src/components/mobile/` (`BottomTabBar`, `BottomBarSlot`, `ContextualActionBar`, `MobileAppShell`, `PageTransition`, `MobileHeroActionMenu`, `AdminListRefineSheet`).
 - **Hero trailing:** never render multiple icon buttons. Use `MobileHeroActionMenu` (1 item = direct icon; 2+ = one ··· dropdown).

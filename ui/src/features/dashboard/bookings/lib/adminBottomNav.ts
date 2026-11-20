@@ -1,5 +1,3 @@
-import { Bell, Sparkles } from 'lucide-react';
-
 import type {
   SidebarNavItem,
   SidebarNavSection,
@@ -9,22 +7,12 @@ import type { BottomTabItem } from '@/components/mobile/BottomTabBar';
 import { MORE_TAB_KEY, moreTabItem } from '@/components/mobile/BottomTabBar';
 import { ADMIN_MODULE_LABEL } from '@/features/dashboard/bookings/lib/adminModuleLabels';
 
-export const ASSISTANT_TAB_KEY = 'assistant';
-export const NOTIFICATIONS_TAB_KEY = 'notifications';
-
 const MAX_PRIMARY_ROUTE_TABS = 3;
 
 const CORE_ROUTE_LABELS = ['Dashboard', 'Bookings', ADMIN_MODULE_LABEL.inbox] as const;
 
 export type AdminBottomNavOverlays = {
   onMoreClick: () => void;
-  assistant?: {
-    onClick: () => void;
-  };
-  notifications?: {
-    onClick: () => void;
-    badge?: boolean | number;
-  };
 };
 
 export function flattenNavigableNavItems(sections: SidebarNavSection[]): SidebarNavItem[] {
@@ -60,7 +48,7 @@ function pickPrimaryRouteTabs(navigable: SidebarNavItem[]): SidebarNavItem[] {
 /**
  * Split permission-filtered sidebar nav into primary bottom tabs + full list for the More sheet.
  * Route tabs prefer Dashboard / Bookings / Messages, then fill from remaining nav.
- * Notifications then Assistant are overlay actions (not routes) when provided.
+ * Quick Access (notifications, assistant, messages, help) lives on the floating FAB, not tabs.
  */
 export function splitAdminBottomNav(
   sections: SidebarNavSection[],
@@ -85,28 +73,8 @@ export function splitAdminBottomNav(
       href: item.href,
       Icon: item.Icon,
     })),
+    moreTabItem(overlays.onMoreClick),
   ];
-
-  if (overlays.notifications) {
-    tabItems.push({
-      key: NOTIFICATIONS_TAB_KEY,
-      label: 'Notifications',
-      Icon: Bell,
-      onClick: overlays.notifications.onClick,
-      badge: overlays.notifications.badge,
-    });
-  }
-
-  if (overlays.assistant) {
-    tabItems.push({
-      key: ASSISTANT_TAB_KEY,
-      label: 'Assistant',
-      Icon: Sparkles,
-      onClick: overlays.assistant.onClick,
-    });
-  }
-
-  tabItems.push(moreTabItem(overlays.onMoreClick));
 
   return {
     tabItems,

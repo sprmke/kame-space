@@ -1,5 +1,6 @@
 import {
   AdminDataTable,
+  AdminTableActionsTh,
   AdminTableHeadRow,
   AdminTableRowAffordance,
   AdminTableTh,
@@ -32,9 +33,7 @@ export function SuperAdminSupportTable({ tickets, onSelect }: Props) {
         <AdminTableTh className="hidden px-3 lg:table-cell lg:px-4">Priority</AdminTableTh>
         <AdminTableTh className="whitespace-nowrap px-3 sm:px-4">Status</AdminTableTh>
         <AdminTableTh className="hidden px-3 xl:table-cell xl:px-4">Submitted</AdminTableTh>
-        <AdminTableTh className="pl-2 pr-3 sm:pl-3 sm:pr-4">
-          <span className="sr-only">Open</span>
-        </AdminTableTh>
+        <AdminTableActionsTh>Open</AdminTableActionsTh>
       </AdminTableHeadRow>
       <tbody>
         {tickets.map((ticket, index) => (

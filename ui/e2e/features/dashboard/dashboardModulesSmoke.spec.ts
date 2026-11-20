@@ -129,6 +129,40 @@ test.describe('@ci dashboard module shells', () => {
     expect(duplicateWarnings).toEqual([]);
   });
 
+  test('email subject can be tested without saving', async ({ page }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access');
+    const templatesReady = page.waitForResponse(
+      (res) => res.url().includes('/functions/v1/property-templates-settings') && res.ok()
+    );
+    const testPayloads: Record<string, unknown>[] = [];
+    await page.route('**/functions/v1/send-property-template-test-email*', (route) => {
+      testPayloads.push(route.request().postDataJSON());
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: { sentTo: 'owner@example.com' } }),
+      });
+    });
+
+    await page.goto('/org/sample-stays-ph/property/solea-mactan/templates');
+    await templatesReady;
+
+    const rail = page.getByRole('complementary', { name: 'Templates' });
+    await rail.getByRole('button', { name: /Booking confirmed/ }).click();
+
+    const editor = page.getByRole('region', { name: 'Template editor' });
+    const subject = editor.getByLabel('Subject');
+    await expect(subject).toBeVisible();
+    await subject.fill('A calmer subject');
+
+    await editor.getByRole('button', { name: 'Send test' }).click();
+    await expect(page.getByText('Test sent to owner@example.com')).toBeVisible();
+    expect(testPayloads.at(-1)).toMatchObject({
+      templateKey: 'email-booking-acknowledgement',
+      subject: 'A calmer subject',
+    });
+  });
+
   test('custom template sends to a picked booking', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access', { customTemplateSeeded: true });
     const templatesReady = page.waitForResponse(

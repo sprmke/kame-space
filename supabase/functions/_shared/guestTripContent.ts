@@ -25,6 +25,8 @@ import {
   type GuestTemplatePhase,
 } from './propertyTemplates.ts';
 import { resolvePropertySlugById } from './propertyScope.ts';
+import { loadGuestEssentials } from './guestEssentials.ts';
+import { buildPropertyPlaceholderVars } from './propertyTemplatePropertyVars.ts';
 import type { GuestSubmission } from './types.ts';
 
 /** Coarse stage the host writes for. */
@@ -108,7 +110,17 @@ export async function loadGuestTripContent(input: {
           trip_url: '',
         };
 
-  const vars = buildBookingPlaceholderVars(input.booking, settings, linkExtras, branding);
+  const essentials = await loadGuestEssentials({ propertyId, booking: input.booking });
+  const propertyVars = await buildPropertyPlaceholderVars({
+    propertyId,
+    booking: input.booking,
+    essentials,
+    revealSecrets: true,
+  });
+  const vars = {
+    ...propertyVars.vars,
+    ...buildBookingPlaceholderVars(input.booking, settings, linkExtras, branding),
+  };
   const render = (content: string): string =>
     // Absolutizes images and relative links against the public origin, same as email.
     prepareConfigurableEmailBodyHtml(

@@ -46,7 +46,7 @@ const PROPERTY_PATHS = [
   teamRbacPaths.activity,
   `${OWNER}/pricing`,
   `${OWNER}/maintenance`,
-  `${OWNER}/inbox`,
+  `${OWNER}/messages`,
   `${OWNER}/notifications`,
   `${OWNER}/templates`,
   `${OWNER}/analytics`,

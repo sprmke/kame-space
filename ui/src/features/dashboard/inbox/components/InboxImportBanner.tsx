@@ -24,7 +24,7 @@ export function InboxImportBanner({ loadedCount = 0, className }: Props) {
     >
       <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
       <span className="truncate">
-        Bringing in your recent chats. You can keep working.
+        Pulling in recent Facebook and Instagram chats. You can keep working.
         {loadedCount > 0
           ? ` ${loadedCount} conversation${loadedCount === 1 ? '' : 's'} loaded.`
           : ''}

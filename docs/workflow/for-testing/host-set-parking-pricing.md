@@ -224,3 +224,5 @@ Branch `feat/host-set-parking-pricing`, run on the worktree with `supabase/.env.
 | Phase 7 acceptance grep                                                                                                                                                                                                                             | pass (only tests, historical migrations and workflow docs remain)                                    |
 
 Not done: no production deploy (needs `kamewave`); `geoduck` stale soft-cap edits untouched.
+
+Card copy stays `₱X / night` (host weekday rate) without a leading "from", per the minimal-copy rule: the card carries one rate, and the booking card on the detail page adds the service fee line and total.

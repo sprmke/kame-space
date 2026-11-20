@@ -35,26 +35,37 @@ PR #204 (`docs/readiness-dashboard-2026-11-01`) closed automatically when its br
 its patch was already in `develop` (`git cherry` showed it as applied). PR #153
 (`ci/pin-actions-sha`) is untouched and still open.
 
+## 2026-11-20 cleanup (booking detail edge read)
+
+Base: `develop` (`3069f595b`), `main` (`248976723`). Post-prod cleanup after PRs #546 / #548.
+
+| Removed                                              | Tip         | Why it was safe                                                                                      |
+| ---------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------- |
+| `fix/booking-detail-edge-read` (local + remote)      | `336a99d9f` | Squash-merged as #546 → `develop` (`3069f595b`) and #548 → `main`. Key files identical to `develop`. |
+| `release/booking-detail-edge-read` (remote; earlier) | `095f532af` | Squash-merged as #548 → `main`; remote already gone after merge `--delete-branch`.                   |
+
+Also removed a temporary `supabase/.env.dev.local` symlink created for the prod edge deploy. No dedicated worktree for this change. Route / edge docs already updated in the same PRs.
+
 ## 2026-11-17 cleanup (after the phone-search release)
 
 Base: `develop` (`30169f062`). Only branches whose PRs were already merged were deleted.
 
-| Removed | Tip | Why it was safe |
-| --- | --- | --- |
-| `chore/backport-mobile-search` (local + remote) | `de3c896ca` | PR #490 merged; `git cherry` showed 0 unapplied patches |
-| `release/2026-11-16-mobile-search` (local + remote) | `87092a69b` | PR #489 merged into `develop`; the same content also landed through #490 |
-| Worktree `.claude/worktrees/feat-mobile-search-airbnb-ux` | `de3c896ca` | Clean tree, checked out on the deleted merged branch |
-| `codex/core-product-advantages` (local + remote) | `86f5c7426` | PR #487 merged into `develop` as `8c6aabc29`; worktree `kame-homes-product-positioning` removed after the merge |
+| Removed                                                   | Tip         | Why it was safe                                                                                                 |
+| --------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| `chore/backport-mobile-search` (local + remote)           | `de3c896ca` | PR #490 merged; `git cherry` showed 0 unapplied patches                                                         |
+| `release/2026-11-16-mobile-search` (local + remote)       | `87092a69b` | PR #489 merged into `develop`; the same content also landed through #490                                        |
+| Worktree `.claude/worktrees/feat-mobile-search-airbnb-ux` | `de3c896ca` | Clean tree, checked out on the deleted merged branch                                                            |
+| `codex/core-product-advantages` (local + remote)          | `86f5c7426` | PR #487 merged into `develop` as `8c6aabc29`; worktree `kame-homes-product-positioning` removed after the merge |
 
 Kept on purpose:
 
-| Branch / PR | Why |
-| --- | --- |
-| `feat/multi-channel-calendar-sync` (#493) | Open, green, waiting for review |
-| `feat/marketing-ai-studio-overhaul` (#488) | Open, conflicts with `develop` |
-| `feat/public-landing-redesign` | Local feature work, 8 commits plus uncommitted files |
-| `feat/multi-residence-config-decoupling` (#354) | Draft marked DO NOT MERGE |
-| `codex/mascot-talking-preview` (#353) | Draft preview, not reviewed |
+| Branch / PR                                                                  | Why                                                                       |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `feat/multi-channel-calendar-sync` (#493)                                    | Open, green, waiting for review                                           |
+| `feat/marketing-ai-studio-overhaul` (#488)                                   | Open, conflicts with `develop`                                            |
+| `feat/public-landing-redesign`                                               | Local feature work, 8 commits plus uncommitted files                      |
+| `feat/multi-residence-config-decoupling` (#354)                              | Draft marked DO NOT MERGE                                                 |
+| `codex/mascot-talking-preview` (#353)                                        | Draft preview, not reviewed                                               |
 | `recover/pre-reset-20261110`, `backup/multi-residence-pre-rebase-1794322170` | Safety snapshots with unique history; keep until the owner says otherwise |
 
 ## Kept branches
@@ -429,3 +440,17 @@ Kept in the stash, not shipped: `stash@{0}` (on `perf/fix-boot-counting`, `wip-b
 holds the planned AI Studio quality overhaul, the listing-slug reservation migrations and the
 full-app QA audit plan. Those plans are still `status: planned`, so folding them into a production
 release would have been unsafe. They need their own session.
+
+## 2026-11-19 landing hero release
+
+PR #536 carries the aligned day/night landing hero and its responsive asset cleanup. Its squash
+merge landed on `develop` as `4109b6f44a639a81a74c3946215b761a406ffeee`.
+
+The feature branch `fix/landing-mascot-alignment` reached
+`21a3456e0cb8eb90f9fa298ce8d5a376fa483620` before its post-merge deletion. Restore it with
+`git branch fix/landing-mascot-alignment 21a3456e0cb8eb90f9fa298ce8d5a376fa483620` if needed.
+
+PR #538 shipped the same squash commit to `main` as
+`1e24f40c1acabb9972fc81149337c4095204c6e5`. Its release branch `release/2026-11-19-landing-hero`
+was cut from `main` and recorded at `00a521a1a` before deletion. Restore it with
+`git branch release/2026-11-19-landing-hero 00a521a1a` if needed.

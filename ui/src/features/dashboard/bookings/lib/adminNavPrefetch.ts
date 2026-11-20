@@ -41,7 +41,9 @@ export const PROPERTY_NAV_PREFETCH: Record<string, () => Promise<unknown>> = {
   maintenance: () => import('@/features/dashboard/maintenance/pages/MaintenancePage'),
   pricing: () => import('@/features/dashboard/pricing/pages/PropertyPricingPage'),
   marketing: () => import('@/features/dashboard/marketing/pages/MarketingStudioPage'),
+  /** Public path is `/messages`; section id stays `inbox` for RBAC. */
   inbox: () => import('@/features/dashboard/inbox/pages/PropertyInboxPage'),
+  messages: () => import('@/features/dashboard/inbox/pages/PropertyInboxPage'),
 };
 
 /** `/org/:orgSlug/parking/:parkingSlug/<segment>` */
@@ -53,7 +55,9 @@ export const PARKING_NAV_PREFETCH: Record<string, () => Promise<unknown>> = {
   settings: () => import('@/features/dashboard/parking/pages/ParkingSettingsPage'),
   notifications: () => import('@/features/dashboard/parking/pages/ParkingNotificationsPage'),
   team: () => import('@/features/dashboard/team/pages/ParkingTeamPage'),
+  /** Public path is `/messages`; section id stays `inbox` for RBAC. */
   inbox: () => import('@/features/dashboard/inbox/pages/ParkingInboxPage'),
+  messages: () => import('@/features/dashboard/inbox/pages/ParkingInboxPage'),
 };
 
 /**

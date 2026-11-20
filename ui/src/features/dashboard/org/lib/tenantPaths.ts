@@ -90,9 +90,21 @@ export function parkingDashboardPath(orgSlug: string, parkingSlug: string) {
   return `/org/${orgSlug}/parking/${parkingSlug}`;
 }
 
+/**
+ * Permission / nav section id → URL path segment.
+ * Messages keeps section id `inbox` for RBAC; the public path is `/messages`.
+ */
+export function propertySectionUrlSegment(section: PropertySection): string {
+  return section === 'inbox' ? 'messages' : section;
+}
+
+export function parkingSectionUrlSegment(section: ParkingSection): string {
+  return section === 'inbox' ? 'messages' : section;
+}
+
 export function parkingSectionPath(orgSlug: string, parkingSlug: string, section: ParkingSection) {
   const base = parkingDashboardPath(orgSlug, parkingSlug);
-  return section === 'dashboard' ? base : `${base}/${section}`;
+  return section === 'dashboard' ? base : `${base}/${parkingSectionUrlSegment(section)}`;
 }
 
 export function propertyDashboardPath(orgSlug: string, propertySlug: string) {
@@ -105,7 +117,7 @@ export function propertySectionPath(
   section: PropertySection
 ) {
   const base = propertyDashboardPath(orgSlug, propertySlug);
-  return section === 'dashboard' ? base : `${base}/${section}`;
+  return section === 'dashboard' ? base : `${base}/${propertySectionUrlSegment(section)}`;
 }
 
 export type NotificationModule =

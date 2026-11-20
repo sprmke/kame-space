@@ -48,11 +48,11 @@ export function useCaptchaToken({ action, className }: Options): CaptchaControll
   const handleVerify = useCallback((token: string) => {
     tokenRef.current = token;
     setReady(token.length > 0 || !isTurnstileConfigured());
-    if (token) {
-      const waiters = waitersRef.current;
-      waitersRef.current = [];
-      waiters.forEach((resolve) => resolve(token));
-    }
+    // Wake waiters on success or failure. Auth callers gate on an empty token;
+    // guest forms still fail open after ensureToken resolves.
+    const waiters = waitersRef.current;
+    waitersRef.current = [];
+    waiters.forEach((resolve) => resolve(token));
   }, []);
 
   const reset = useCallback(() => {

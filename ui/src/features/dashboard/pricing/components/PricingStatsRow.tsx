@@ -2,6 +2,10 @@ import { Calendar, DollarSign, Tag, TrendingUp, Wand2 } from 'lucide-react';
 
 import { AdminMetricCard } from '@/features/dashboard/bookings/components/AdminMetricCard';
 import { PRICING_HELP_COPY } from '@/features/dashboard/pricing/lib/pricingHelpCopy';
+import {
+  formatWeekendPremiumPercent,
+  weekendPremiumPercent,
+} from '@/features/dashboard/pricing/lib/weekendPremium';
 
 import { InfoHint } from '@/components/help/InfoHint';
 import { cn } from '@/lib/utils';
@@ -23,7 +27,7 @@ export function PricingStatsRow({
   enabledFeesTotal,
   smartDatesCount = 0,
 }: Props) {
-  const weekendPremium = Math.round(((weekendRate - weekdayRate) / weekdayRate) * 100);
+  const weekendPremium = weekendPremiumPercent(weekdayRate, weekendRate);
   const showSmart = smartDatesCount > 0;
 
   return (
@@ -41,7 +45,7 @@ export function PricingStatsRow({
       />
       <AdminMetricCard
         title="Weekend Premium"
-        value={`+${weekendPremium}%`}
+        value={formatWeekendPremiumPercent(weekendPremium)}
         icon={TrendingUp}
         titleAdornment={
           <InfoHint

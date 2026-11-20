@@ -111,7 +111,7 @@ To clear a stuck SW: DevTools → Application → Service Workers → Unregister
 - **Safe auto-apply** with no prompt when nothing would be lost (`canApplyNow`): no dirty unsaved-changes guard, no open sheet/dialog, no outbox drain, no in-flight task. Applied at the next route change, after ≥30 s in the background, or on cold start — installed apps are rarely closed, so waiting for a click meant updates never landed (P1-3).
 - **"Later" snoozes 4 hours**, not the whole session.
 - **Multi-tab** via `BroadcastChannel('gfm-pwa')`: one tab applies; the others reload only when their own guard is clean.
-- **Loop guard**: at most two **automatic** reloads per tab session (`gfm:pwa:auto-reloads`). After the limit, auto-apply stops and the Update ready prompt is shown; tapping **Reload** / Force update always proceeds (`isUpdateApplyBlocked('user')` is never true). A 2s fallback reload covers the rare case where `skipWaiting` never fires `controllerchange`.
+- **Loop guard**: at most two **automatic** reloads per tab session (`gfm:pwa:auto-reloads`). After the limit, auto-apply stops and the New version available prompt is shown; tapping **Refresh** / Force update always proceeds (`isUpdateApplyBlocked('user')` is never true). A 2s fallback reload covers the rare case where `skipWaiting` never fires `controllerchange`.
 - **`forceUpdateBelow`** shows a blocking but polite sheet; caches are kept, so no reinstall is needed.
 - `registration.update()` is throttled to once per 10 minutes.
 

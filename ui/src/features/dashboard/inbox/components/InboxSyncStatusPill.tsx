@@ -16,8 +16,14 @@ import type {
 
 import { Button } from '@/components/ui/button';
 import {
+  MODAL_BODY_CLASS,
+  MODAL_FOOTER_CLASS,
+  MODAL_HEADER_CLASS,
+} from '@/components/ui/modal-chrome';
+import {
   ResponsiveModal,
   ResponsiveModalContent,
+  ResponsiveModalFooter,
   ResponsiveModalHeader,
   ResponsiveModalTitle,
 } from '@/components/ui/responsive-modal';
@@ -80,37 +86,50 @@ export function InboxSyncStatusPill({ status, onAction, onHowItWorks, className 
       </button>
 
       <ResponsiveModal open={open} onOpenChange={setOpen}>
-        <ResponsiveModalContent className="max-w-[min(calc(100vw-1.5rem),26rem)]">
-          <ResponsiveModalHeader>
+        <ResponsiveModalContent
+          sheetLayout="split"
+          className={cn(
+            'flex w-full flex-col gap-0 overflow-hidden p-0 pb-0 pt-0 sm:p-0',
+            'max-h-[min(90dvh,28rem)] max-w-[min(calc(100vw-1.5rem),26rem)] sm:max-w-[min(90vw,26rem)]'
+          )}
+        >
+          <ResponsiveModalHeader className={cn('space-y-0 text-left', MODAL_HEADER_CLASS)}>
             <ResponsiveModalTitle>{status.label}</ResponsiveModalTitle>
           </ResponsiveModalHeader>
 
-          <div className="space-y-4">
-            <p className="text-muted-foreground text-sm" role="status">
+          <div
+            className={cn(
+              'min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]',
+              MODAL_BODY_CLASS
+            )}
+          >
+            <p className="text-muted-foreground text-sm leading-relaxed" role="status">
               {status.detail}
             </p>
-
-            <div className="flex flex-col gap-2 sm:flex-row">
-              {status.action ? (
-                <Button type="button" onClick={runAction} className="sm:flex-1">
-                  {status.actionLabel}
-                </Button>
-              ) : null}
-              <Button
-                type="button"
-                variant="outline"
-                // Close first: two stacked sheets leave two headings on screen and nothing
-                // for a screen reader to focus.
-                onClick={() => {
-                  setOpen(false);
-                  onHowItWorks();
-                }}
-                className="sm:flex-1"
-              >
-                How this inbox works
-              </Button>
-            </div>
           </div>
+
+          <ResponsiveModalFooter
+            className={cn('flex flex-col gap-2 sm:flex-row', MODAL_FOOTER_CLASS)}
+          >
+            {status.action ? (
+              <Button type="button" onClick={runAction} className="w-full sm:flex-1">
+                {status.actionLabel}
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              // Close first: two stacked sheets leave two headings on screen and nothing
+              // for a screen reader to focus.
+              onClick={() => {
+                setOpen(false);
+                onHowItWorks();
+              }}
+              className="w-full sm:flex-1"
+            >
+              How Messages works
+            </Button>
+          </ResponsiveModalFooter>
         </ResponsiveModalContent>
       </ResponsiveModal>
     </>

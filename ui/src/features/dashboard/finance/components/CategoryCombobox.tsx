@@ -20,9 +20,11 @@ function isOtherCategory(value: string): boolean {
 type Props = {
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   suggestions: readonly string[];
   placeholder?: string;
   disabled?: boolean;
+  invalid?: boolean;
   id?: string;
   maxLength?: number;
   ariaLabel?: string;
@@ -31,9 +33,11 @@ type Props = {
 export function CategoryCombobox({
   value,
   onChange,
+  onBlur,
   suggestions,
   placeholder = 'Select or type',
   disabled = false,
+  invalid = false,
   id,
   maxLength = 80,
   ariaLabel = 'Category',
@@ -160,6 +164,7 @@ export function CategoryCombobox({
             aria-controls={open ? listboxId : undefined}
             aria-autocomplete="list"
             aria-activedescendant={open ? activeOptionId : undefined}
+            aria-invalid={invalid || undefined}
             autoComplete="off"
             maxLength={maxLength}
             disabled={disabled}
@@ -168,7 +173,8 @@ export function CategoryCombobox({
             className={cn(
               'border-input bg-card text-foreground field-focus h-10 min-h-[44px] w-full rounded-lg border py-2 pl-3 pr-[5.5rem] text-sm transition-colors',
               'placeholder:text-muted-foreground',
-              'disabled:cursor-not-allowed disabled:opacity-50'
+              'disabled:cursor-not-allowed disabled:opacity-50',
+              invalid && 'border-destructive bg-destructive/5 field-focus-error'
             )}
             onChange={(e) => {
               setDraft(e.target.value);
@@ -184,7 +190,10 @@ export function CategoryCombobox({
                 setOpen(true);
               }
             }}
-            onBlur={normalizeDraft}
+            onBlur={() => {
+              normalizeDraft();
+              onBlur?.();
+            }}
             onKeyDown={(e) => {
               if (e.key === 'ArrowDown') {
                 e.preventDefault();

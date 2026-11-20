@@ -26,6 +26,7 @@ export interface IsoDateInputProps {
   className?: string;
   wrapperClassName?: string;
   'aria-label'?: string;
+  'aria-invalid'?: boolean | 'true' | 'false';
 }
 
 function isoToDate(iso: string | undefined): Date | undefined {
@@ -68,9 +69,11 @@ const IsoDateInput = React.forwardRef<HTMLButtonElement, IsoDateInputProps>(
       onChange,
       onBlur,
       'aria-label': ariaLabel,
+      'aria-invalid': ariaInvalid,
     },
     ref
   ) => {
+    const isInvalid = ariaInvalid === true || ariaInvalid === 'true';
     const [open, setOpen] = React.useState(false);
     const isControlled = value !== undefined;
     const [internalIso, setInternalIso] = React.useState(() => {
@@ -110,6 +113,7 @@ const IsoDateInput = React.forwardRef<HTMLButtonElement, IsoDateInputProps>(
             name={name}
             disabled={disabled}
             aria-label={ariaLabel ?? 'Date'}
+            aria-invalid={isInvalid || undefined}
             aria-haspopup="dialog"
             aria-expanded={open}
             onBlur={onBlur}
@@ -117,6 +121,7 @@ const IsoDateInput = React.forwardRef<HTMLButtonElement, IsoDateInputProps>(
               'border-input bg-card field-focus relative flex h-10 w-full items-center rounded-lg border pl-3 pr-10 text-left text-sm transition-colors',
               'disabled:cursor-not-allowed disabled:opacity-50',
               display ? 'text-foreground' : 'text-muted-foreground',
+              isInvalid && 'border-destructive bg-destructive/5 field-focus-error',
               wrapperClassName,
               className
             )}

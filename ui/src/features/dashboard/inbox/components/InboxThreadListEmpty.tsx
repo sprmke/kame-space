@@ -1,9 +1,11 @@
 import { Plug, RefreshCw } from 'lucide-react';
 
-import { FeatureUnavailablePanel } from '@/components/feature-availability/FeatureUnavailablePanel';
+import { friendlyMetaSyncError } from '@/features/dashboard/inbox/lib/metaInboxSyncErrors';
 import { TierBadgeAnchor } from '@/features/dashboard/plans/components/TierBadge';
 
+import { FeatureUnavailablePanel } from '@/components/feature-availability/FeatureUnavailablePanel';
 import { Button } from '@/components/ui/button';
+import { sanitizeToastMessage } from '@/lib/feedback/toastMessages';
 
 type Props = {
   variant:
@@ -84,9 +86,11 @@ export function InboxThreadListEmpty({
   }
 
   if (variant === 'sync-error') {
+    const syncCopy =
+      friendlyMetaSyncError(syncError) ?? 'Could not load conversations. Try Reconnect.';
     return (
       <div className="flex flex-col items-center justify-center gap-3 p-6 text-center">
-        <p className="text-destructive text-sm">{syncError ?? 'Could not load conversations.'}</p>
+        <p className="text-destructive text-sm">{syncCopy}</p>
         {canConnect && onConnect && (
           <TierBadgeAnchor feature="metaChatChannel">
             <Button
@@ -141,9 +145,13 @@ export function InboxThreadListEmpty({
   }
 
   if (variant === 'load-error') {
+    const loadCopy = sanitizeToastMessage(
+      loadError,
+      'Could not load conversations. Try again.'
+    );
     return (
       <div className="flex flex-col items-center justify-center gap-3 p-6 text-center">
-        <p className="text-destructive text-sm">{loadError ?? 'Could not load conversations.'}</p>
+        <p className="text-destructive text-sm">{loadCopy}</p>
         {onRetryLoad ? (
           <Button
             type="button"

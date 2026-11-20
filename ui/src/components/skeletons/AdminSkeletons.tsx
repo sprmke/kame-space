@@ -37,6 +37,7 @@ import {
 
 import {
   AdminDataTable,
+  AdminTableActionsTh,
   AdminTableHeadRow,
   AdminTableTh,
   adminTableCell,
@@ -371,68 +372,71 @@ export function AdminListToolbarSkeleton({ sort = false }: { sort?: boolean } = 
   );
 }
 
+/** Bookings list table — same `AdminDataTable` columns as `BookingTable`. */
 export function BookingsTableSkeleton({ showProperty = false }: { showProperty?: boolean } = {}) {
   return (
-    <div
-      role="status"
-      className="surface-card surface-card-clip overflow-hidden"
-      aria-busy="true"
-      aria-label="Loading bookings"
-    >
-      <div className="overflow-x-auto">
-        <div className="min-w-[560px]">
-          <div className="border-separator bg-card text-table-head flex items-center gap-4 border-b px-4 py-3 sm:px-5">
-            <span className="shrink-0" style={{ width: 56 }}>
-              Status
-            </span>
-            {showProperty ? (
-              <span className="hidden shrink-0 md:block" style={{ width: 96 }}>
-                Listing
-              </span>
-            ) : null}
-            <span className="min-w-0 flex-1">Guest</span>
-            <span className="shrink-0" style={{ width: 88 }}>
-              Stay
-            </span>
-            <span className="hidden shrink-0 md:block" style={{ width: 32 }}>
-              Pax
-            </span>
-            <span className="hidden shrink-0 sm:block" style={{ width: 40 }}>
-              Flags
-            </span>
-            <span className="hidden shrink-0 lg:block" style={{ width: 56 }}>
-              Amount
-            </span>
-            <span className="sr-only">View</span>
-          </div>
+    <div role="status" aria-busy="true" aria-label="Loading bookings">
+      <AdminDataTable minWidth={560}>
+        <AdminTableHeadRow>
+          <AdminTableTh className="pl-4 pr-3 sm:pl-5">Status</AdminTableTh>
+          {showProperty ? (
+            <AdminTableTh className="hidden px-3 sm:table-cell sm:px-4">Listing</AdminTableTh>
+          ) : null}
+          <AdminTableTh className="px-3 sm:px-4">Guest</AdminTableTh>
+          <AdminTableTh className="px-3 sm:px-4">Stay</AdminTableTh>
+          <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Pax</AdminTableTh>
+          <AdminTableTh className="hidden px-3 sm:table-cell sm:px-4">Flags</AdminTableTh>
+          <AdminTableTh className="hidden px-3 sm:px-4 lg:table-cell">Amount</AdminTableTh>
+          <AdminTableActionsTh />
+        </AdminTableHeadRow>
+        <tbody>
           {Array.from({ length: 7 }).map((_, i) => (
-            <div
+            <tr
               key={i}
-              className={cn(
-                'bg-card flex items-center gap-3 px-4 py-4 sm:gap-4 sm:px-5',
-                i > 0 && 'border-separator border-t'
-              )}
+              className={i > 0 ? 'border-separator border-t' : undefined}
               style={{ opacity: 1 - i * 0.08 }}
             >
-              <Skeleton className="h-5 w-20 shrink-0 rounded-md" />
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <Skeleton className="size-9 shrink-0 rounded-full" />
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  <Skeleton className="h-3 w-32 max-w-full" />
-                  <Skeleton className="h-2.5 w-40 max-w-full" />
+              <td className={adminTableCell.status}>
+                <Skeleton className="h-5 w-20 rounded-md" />
+              </td>
+              {showProperty ? (
+                <td className={cn('hidden sm:table-cell', adminTableCell.body)}>
+                  <Skeleton className="h-3.5 w-24 max-w-full" />
+                </td>
+              ) : null}
+              <td className={adminTableCell.body}>
+                <div className="flex min-w-0 items-center gap-3">
+                  <Skeleton className="size-9 shrink-0 rounded-full" />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <Skeleton className="h-3.5 w-32 max-w-full" />
+                    <Skeleton className="h-2.5 w-40 max-w-full" />
+                  </div>
                 </div>
-              </div>
-              <Skeleton className="h-3 w-24 shrink-0" />
-              <Skeleton className="hidden h-3 w-8 shrink-0 md:block" />
-              <div className="hidden shrink-0 gap-1.5 sm:flex">
-                <Skeleton className="size-7 rounded-md" />
-              </div>
-              <Skeleton className="hidden h-3 w-14 shrink-0 lg:block" />
-              <Skeleton className="ml-auto size-9 shrink-0 rounded-lg" />
-            </div>
+              </td>
+              <td className={adminTableCell.body}>
+                <div className="space-y-1.5">
+                  <Skeleton className="h-3 w-28 max-w-full" />
+                  <Skeleton className="h-2.5 w-16" />
+                </div>
+              </td>
+              <td className={cn('hidden md:table-cell', adminTableCell.money)}>
+                <Skeleton className="h-3 w-8" />
+              </td>
+              <td className={cn('hidden sm:table-cell', adminTableCell.body)}>
+                <div className="flex gap-1.5">
+                  <Skeleton className="size-7 rounded-md" />
+                </div>
+              </td>
+              <td className={cn('hidden lg:table-cell', adminTableCell.money)}>
+                <Skeleton className="h-3 w-14" />
+              </td>
+              <td className={adminTableCell.action}>
+                <Skeleton className="ml-auto size-9 rounded-lg" />
+              </td>
+            </tr>
           ))}
-        </div>
-      </div>
+        </tbody>
+      </AdminDataTable>
     </div>
   );
 }
@@ -553,9 +557,9 @@ export function FinanceOverviewSkeleton() {
 
 const MAINTENANCE_KPI_CARDS = [
   { title: 'Total', icon: ListChecks, hasHint: false },
-  { title: 'Telegram enabled', icon: Bell, hasHint: true },
   { title: 'Completed', icon: CheckCircle2, hasHint: false },
   { title: 'Pending', icon: Clock3, hasHint: true },
+  { title: 'Telegram enabled', icon: Bell, hasHint: true },
 ] as const;
 
 export function MaintenanceOverviewSkeleton() {
@@ -679,107 +683,114 @@ export function FinanceStaysCardGridSkeleton() {
   );
 }
 
-/** Finance ledger table (Date+icon | Description | Category(md) | Status | Amount | Actions). */
+/**
+ * Finance ledger table — same `AdminDataTable` columns as `FinanceLedgerTable`
+ * (Date+icon | Description | Category(md) | Status | Amount | Actions).
+ */
 export function FinanceStaysTableSkeleton() {
   return (
-    <div
-      role="status"
-      className="surface-card surface-card-clip overflow-hidden"
-      aria-busy="true"
-      aria-label="Loading transactions"
-    >
-      <div className="overflow-x-auto">
-        <div className="min-w-[640px]">
-          <div className="border-separator bg-card text-table-head flex items-center gap-4 border-b px-4 py-3 sm:px-5">
-            <span className="shrink-0" style={{ width: 64 }}>
-              Date
-            </span>
-            <span className="min-w-0 flex-1">Description</span>
-            <span className="hidden shrink-0 md:block" style={{ width: 64 }}>
-              Category
-            </span>
-            <span className="shrink-0" style={{ width: 48 }}>
-              Status
-            </span>
-            <span className="shrink-0" style={{ width: 40 }}>
-              Amount
-            </span>
-            <span className="sr-only">Actions</span>
-          </div>
+    <div role="status" aria-busy="true" aria-label="Loading transactions">
+      <AdminDataTable minWidth={640}>
+        <AdminTableHeadRow>
+          <AdminTableTh className="pl-4 pr-3 sm:pl-5">Date</AdminTableTh>
+          <AdminTableTh className="px-3 sm:px-4">Description</AdminTableTh>
+          <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Category</AdminTableTh>
+          <AdminTableTh className="px-3 sm:px-4">Status</AdminTableTh>
+          <AdminTableTh className="px-3 sm:px-4">Amount</AdminTableTh>
+          <AdminTableActionsTh />
+        </AdminTableHeadRow>
+        <tbody>
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
+            <tr
               key={i}
-              className={cn(
-                'bg-card flex items-center gap-3 px-4 py-4 sm:px-5',
-                i > 0 && 'border-separator border-t'
-              )}
+              className={i > 0 ? 'border-separator border-t' : undefined}
               style={{ opacity: 1 - i * 0.08 }}
             >
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <Skeleton className="size-9 shrink-0 rounded-lg" />
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  <Skeleton className="h-3.5 w-32 max-w-full" />
-                  <Skeleton className="h-2.5 w-24 max-w-full" />
+              <td className={adminTableCell.status}>
+                <div className="flex items-center gap-3">
+                  <Skeleton className="size-9 shrink-0 rounded-lg" />
+                  <Skeleton className="h-3.5 w-24 max-w-full" />
                 </div>
-              </div>
-              <Skeleton className="hidden h-3 w-16 shrink-0 md:block" />
-              <Skeleton className="h-4 w-16 shrink-0 rounded-md" />
-              <Skeleton className="h-3 w-14 shrink-0" />
-              <Skeleton className="size-8 shrink-0 rounded-lg" />
-            </div>
+              </td>
+              <td className={adminTableCell.body}>
+                <div className="max-w-[240px] space-y-1.5">
+                  <Skeleton className="h-3.5 w-40 max-w-full" />
+                  <Skeleton className="h-2.5 w-28 max-w-full" />
+                </div>
+              </td>
+              <td className={cn('hidden md:table-cell', adminTableCell.body)}>
+                <Skeleton className="h-3 w-16" />
+              </td>
+              <td className={adminTableCell.body}>
+                <Skeleton className="h-5 w-20 rounded-full" />
+              </td>
+              <td className={adminTableCell.money}>
+                <Skeleton className="h-3.5 w-20" />
+              </td>
+              <td className={adminTableCell.action}>
+                <Skeleton className="ml-auto size-8 rounded-lg" />
+              </td>
+            </tr>
           ))}
-        </div>
-      </div>
+        </tbody>
+      </AdminDataTable>
     </div>
   );
 }
 
-/** Maintenance reminders table (Date | Label | Category(md) | Status(md) | Notes(sm) | Actions). */
-export function FinanceOperatingTabSkeleton() {
+/**
+ * Maintenance reminders table — same columns as `MaintenanceRemindersTab`
+ * (Date | Label | Category(md) | Status(md, optional) | Notes(sm) | Actions).
+ */
+export function FinanceOperatingTabSkeleton({
+  showStatus = false,
+}: {
+  showStatus?: boolean;
+} = {}) {
   return (
-    <div
-      role="status"
-      className="surface-card surface-card-clip overflow-hidden"
-      aria-busy="true"
-      aria-label="Loading reminders"
-    >
-      <div className="overflow-x-auto">
-        <div className="min-w-[560px]">
-          <div className="border-separator bg-card text-table-head flex items-center gap-4 border-b px-4 py-3 sm:px-5">
-            <span className="shrink-0" style={{ width: 40 }}>
-              Date
-            </span>
-            <span className="min-w-0 flex-1">Label</span>
-            <span className="hidden shrink-0 md:block" style={{ width: 64 }}>
-              Category
-            </span>
-            <span className="hidden shrink-0 md:block" style={{ width: 56 }}>
-              Status
-            </span>
-            <span className="hidden shrink-0 sm:block" style={{ width: 88 }}>
-              Notes
-            </span>
-            <span className="sr-only">Actions</span>
-          </div>
+    <div role="status" aria-busy="true" aria-label="Loading reminders">
+      <AdminDataTable minWidth={showStatus ? 560 : 480}>
+        <AdminTableHeadRow>
+          <AdminTableTh className="pl-4 pr-3 sm:pl-5">Date</AdminTableTh>
+          <AdminTableTh className="px-3 sm:px-4">Label</AdminTableTh>
+          <AdminTableTh className="hidden md:table-cell">Category</AdminTableTh>
+          {showStatus ? (
+            <AdminTableTh className="hidden md:table-cell">Status</AdminTableTh>
+          ) : null}
+          <AdminTableTh className="hidden sm:table-cell">Notes</AdminTableTh>
+          <AdminTableActionsTh />
+        </AdminTableHeadRow>
+        <tbody>
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
+            <tr
               key={i}
-              className={cn(
-                'bg-card flex items-center gap-4 px-4 py-3.5 sm:px-5',
-                i > 0 && 'border-separator border-t'
-              )}
+              className={i > 0 ? 'border-separator border-t' : undefined}
               style={{ opacity: 1 - i * 0.08 }}
             >
-              <Skeleton className="h-3 w-16 shrink-0" />
-              <Skeleton className="h-3 max-w-[180px] flex-1" />
-              <Skeleton className="hidden h-3 w-16 shrink-0 md:block" />
-              <Skeleton className="hidden h-4 w-14 shrink-0 rounded-md md:block" />
-              <Skeleton className="hidden h-3 w-24 shrink-0 sm:block" />
-              <Skeleton className="ml-auto size-8 shrink-0 rounded-lg" />
-            </div>
+              <td className={adminTableCell.status}>
+                <Skeleton className="h-3.5 w-20" />
+              </td>
+              <td className={adminTableCell.body}>
+                <Skeleton className="h-3.5 w-40 max-w-full" />
+              </td>
+              <td className={cn('hidden md:table-cell', adminTableCell.body)}>
+                <Skeleton className="h-3 w-16" />
+              </td>
+              {showStatus ? (
+                <td className={cn('hidden md:table-cell', adminTableCell.body)}>
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </td>
+              ) : null}
+              <td className={cn('hidden sm:table-cell', adminTableCell.body)}>
+                <Skeleton className="h-3 w-28 max-w-full" />
+              </td>
+              <td className={adminTableCell.action}>
+                <Skeleton className="ml-auto size-8 rounded-lg" />
+              </td>
+            </tr>
           ))}
-        </div>
-      </div>
+        </tbody>
+      </AdminDataTable>
     </div>
   );
 }
@@ -1381,37 +1392,42 @@ export function HostOrgCardGridSkeleton({
 }
 
 /** Recurring-series modal table — Date [+Amount] | Notes(sm) | Actions, sticky header. */
+/** Recurring series modal table — mirrors finance/maintenance series `AdminDataTable`. */
 export function RecurringSeriesTableSkeleton({ showAmount = true }: { showAmount?: boolean } = {}) {
   return (
-    <div
-      role="status"
-      className="surface-card surface-card-clip flex min-h-0 flex-1 flex-col overflow-hidden"
-      aria-busy="true"
-      aria-label="Loading series"
-    >
-      <div className="min-h-0 flex-1 overflow-auto overscroll-contain">
-        <div className="border-separator bg-card sticky top-0 z-10 flex items-center gap-4 border-b px-3 py-2 sm:px-3">
-          <Skeleton className="h-2.5 w-16 shrink-0 rounded-full" />
-          {showAmount ? <Skeleton className="h-2.5 w-14 shrink-0 rounded-full" /> : null}
-          <Skeleton className="hidden h-2.5 max-w-[140px] flex-1 rounded-full sm:block" />
-          <Skeleton className="ml-auto h-2.5 w-8 shrink-0 rounded-full" />
-        </div>
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className={cn(
-              'flex items-center gap-4 px-3 py-2.5',
-              i > 0 && 'border-separator border-t'
-            )}
-            style={{ opacity: 1 - i * 0.08 }}
-          >
-            <Skeleton className="h-3 w-20 shrink-0" />
-            {showAmount ? <Skeleton className="h-3 w-14 shrink-0" /> : null}
-            <Skeleton className="hidden h-3 max-w-[140px] flex-1 sm:block" />
-            <Skeleton className="ml-auto size-8 shrink-0 rounded-lg" />
-          </div>
-        ))}
-      </div>
+    <div role="status" aria-busy="true" aria-label="Loading series" className="min-h-0 flex-1">
+      <AdminDataTable minWidth={480} stickyHeader className="min-h-0 flex-1">
+        <AdminTableHeadRow sticky>
+          <AdminTableTh className="pl-2 pr-3 sm:pl-3">Date</AdminTableTh>
+          {showAmount ? <AdminTableTh className="px-2 sm:px-3">Amount</AdminTableTh> : null}
+          <AdminTableTh className="hidden px-2 sm:table-cell sm:px-3">Notes</AdminTableTh>
+          <AdminTableActionsTh className="pl-2 pr-2 sm:pr-3" />
+        </AdminTableHeadRow>
+        <tbody>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <tr
+              key={i}
+              className={i > 0 ? 'border-separator border-t' : undefined}
+              style={{ opacity: 1 - i * 0.08 }}
+            >
+              <td className={adminTableCell.status}>
+                <Skeleton className="h-3.5 w-20" />
+              </td>
+              {showAmount ? (
+                <td className={adminTableCell.money}>
+                  <Skeleton className="h-3.5 w-14" />
+                </td>
+              ) : null}
+              <td className={cn('hidden sm:table-cell', adminTableCell.body)}>
+                <Skeleton className="h-3 w-28 max-w-full" />
+              </td>
+              <td className={adminTableCell.action}>
+                <Skeleton className="ml-auto size-8 rounded-lg" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </AdminDataTable>
     </div>
   );
 }
@@ -1534,9 +1550,11 @@ export function InboxPageSkeleton() {
       aria-label="Loading inbox"
     >
       <div className="border-border/80 bg-card relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">
-        <div className="border-separator flex items-center gap-2 border-b px-3 py-2.5">
-          <Skeleton className="h-8 w-24 rounded-lg" />
-          <Skeleton className="h-8 w-24 rounded-lg" />
+        <div className="border-separator flex items-center gap-2 border-b px-3 py-2">
+          <Skeleton className="h-11 w-20 rounded-md" />
+          <Skeleton className="h-11 w-24 rounded-md" />
+          <Skeleton className="h-11 w-28 rounded-md" />
+          <Skeleton className="ml-auto h-8 w-28 rounded-full" />
         </div>
         <div className="flex min-h-0 flex-1">
           <div className="border-border/80 flex h-full min-h-0 w-full shrink-0 flex-col border-r lg:w-[20rem] xl:w-[25rem]">
@@ -1635,9 +1653,7 @@ function ReviewsTableHeaderCells({
         <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Reviews</AdminTableTh>
         <AdminTableTh className="hidden px-3 sm:px-4 lg:table-cell">Responded</AdminTableTh>
         <AdminTableTh className="px-3 sm:px-4">To write</AdminTableTh>
-        <AdminTableTh className="pl-2 pr-3 sm:pl-3 sm:pr-4">
-          <span className="sr-only">Actions</span>
-        </AdminTableTh>
+        <AdminTableActionsTh />
       </>
     );
   }
@@ -1665,9 +1681,7 @@ function ReviewsTableHeaderCells({
           </AdminTableTh>
         </>
       )}
-      <AdminTableTh className="pl-2 pr-3 sm:pl-3 sm:pr-4">
-        <span className="sr-only">Actions</span>
-      </AdminTableTh>
+      <AdminTableActionsTh />
     </>
   );
 }

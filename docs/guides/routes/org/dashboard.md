@@ -33,7 +33,7 @@ Org-level performance overview across **all properties** and, when present, **pa
 
 Page title **Dashboard**. Subtitle is _Performance across all properties._ or _Performance across all properties and parking._ when `parkingCount > 0`. On **phone/tablet** (`max-lg`), shared **brand hero** shell (`AdminMobilePage`): teal hero + title/subtitle, date range in overlapping floating toolbar, **Add listing** as hero icon when permitted. Card-header segments (revenue/bookings, All/Properties/Parkings) stay **right of the title** on one row — dense equal-width `SegmentedControl` (`cardHeaderSegmented*ClassName`). Desktop (`lg+`) keeps compact header with date filter + Add listing. Selected **`?from` / `?to`** (Asia/Manila) drives KPIs, charts, status breakdown, recent bookings, and listing performance.
 
-**Add listing** (when the user has **`org.properties:create`** and/or **`org.parkings:create`** — owners and platform admins always; invited members only when granted): same unified modal as the workspace switcher **+** (title **New listing**). Creating a listing navigates to its dashboard.
+**Add listing** (when the user has **`org.properties:create`** and/or **`org.parkings:create`** — owners and platform admins always; invited members only when granted): same unified modal as the workspace switcher **+** (title **New listing**, Property/Parking segmented control, wider desktop dialog). Creating a listing navigates to its dashboard.
 
 There is **no** New Booking button on this page.
 

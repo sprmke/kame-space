@@ -27,6 +27,7 @@ describe('capabilityForPath', () => {
     ['/org/acme/property/monaco', 'property-dashboard'],
     ['/org/acme/property/monaco/bookings', 'property-bookings'],
     ['/org/acme/property/monaco/bookings/abc', 'property-bookings'],
+    ['/org/acme/property/monaco/messages', 'property-inbox'],
     ['/org/acme/property/monaco/inbox', 'property-inbox'],
     ['/org/acme/property/monaco/finance', 'property-operations'],
     ['/org/acme/property/monaco/marketing', 'property-editors'],

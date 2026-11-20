@@ -10,8 +10,8 @@ import {
 } from '@/features/dashboard/org/lib/propertyEmailAutomation';
 
 describe('PROPERTY_AUTOMATION_TOGGLE_KEYS', () => {
-  it('has 9 keys and no retired parking broadcast key', () => {
-    expect(PROPERTY_AUTOMATION_TOGGLE_KEYS).toHaveLength(9);
+  it('has 12 keys and no retired parking broadcast key', () => {
+    expect(PROPERTY_AUTOMATION_TOGGLE_KEYS).toHaveLength(12);
     expect(PROPERTY_AUTOMATION_TOGGLE_KEYS).not.toContain('emailParkingBroadcast' as never);
   });
 
@@ -24,13 +24,14 @@ describe('PROPERTY_AUTOMATION_TOGGLE_KEYS', () => {
 });
 
 describe('PLAN_GATED_AUTOMATION_TOGGLE_KEYS', () => {
-  it('gates 5 toggles and keeps the new booking alert free', () => {
-    expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.size).toBe(5);
+  it('gates 7 toggles and keeps the new booking alert free', () => {
+    expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.size).toBe(7);
     expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.has('emailNewBookingRequest')).toBe(false);
     expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.has('emailReviewRequest')).toBe(false);
     expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.has('emailReviewReminder')).toBe(false);
     expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.has('emailGafRequest')).toBe(true);
     expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.has('emailSdRefundCheckout')).toBe(true);
+    expect(PLAN_GATED_AUTOMATION_TOGGLE_KEYS.has('emailPreArrivalReminder')).toBe(true);
   });
 });
 

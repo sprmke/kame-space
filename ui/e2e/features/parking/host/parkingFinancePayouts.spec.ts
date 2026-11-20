@@ -33,8 +33,11 @@ test.describe('parking finance marketplace payouts @ci', () => {
 
     await page.goto('/org/sample-stays-ph/parking/slot-12a/finance');
     await expect(page.getByRole('heading', { name: 'Finance' })).toBeVisible();
-    await expect(page.getByText('Marketplace payouts')).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText('₱630.00 net')).toBeVisible();
+    // Payouts live in the shared ledger table (description + amount), not a separate section.
+    await expect(page.getByText('Marketplace payout · Direct link')).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByText('+₱630.00')).toBeVisible();
     await expect(page.getByText(/Direct link/)).toBeVisible();
   });
 });

@@ -9,7 +9,7 @@ import {
 test.describe('@ci inbox AI handoff badge', () => {
   test('a thread with ai_handoff_at set shows the "Needs you" badge', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
-    await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/inbox?mock=true`);
+    await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/messages?mock=true`);
     await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible({
       timeout: 20_000,
     });
@@ -21,7 +21,7 @@ test.describe('@ci inbox AI handoff badge', () => {
 
   test('a thread with no ai_handoff_at does not show the badge', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
-    await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/inbox?mock=true`);
+    await page.goto(`/org/${TEAM_E2E_ORG_SLUG}/property/${TEAM_E2E_PROPERTY_SLUG}/messages?mock=true`);
     await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible({
       timeout: 20_000,
     });

@@ -5,7 +5,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type ReactNode,
 } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,6 +24,7 @@ import {
 } from '@/features/dashboard/finance/lib/recurrence';
 import { MaintenanceItemFormPreview } from '@/features/dashboard/maintenance/components/MaintenanceItemFormPreview';
 import { MAINTENANCE_CATEGORY_SUGGESTIONS } from '@/features/dashboard/maintenance/lib/maintenanceCategories';
+import { canProceedMaintenanceItemFormStep } from '@/features/dashboard/maintenance/lib/maintenanceItemFormCanProceed';
 import {
   buildMaintenanceItemFormSteps,
   clampMaintenanceItemFormStepIndex,
@@ -39,6 +39,7 @@ import {
 } from '@/features/dashboard/maintenance/lib/maintenanceReminderTemplate';
 import type { MaintenanceItem } from '@/features/dashboard/maintenance/lib/types';
 
+import { FormFieldBlock } from '@/components/forms/FormFieldBlock';
 import { WizardStepHeading } from '@/components/wizard/WizardStepHeading';
 import { Checkbox } from '@/components/ui/checkbox';
 import { IsoDateInput } from '@/components/ui/iso-date-input';
@@ -126,6 +127,8 @@ export type MaintenanceItemFormWizardState = {
   stepLabels: string[];
   isFirstStep: boolean;
   isLastStep: boolean;
+  /** Current step fields are valid enough to advance (or submit on the last step). */
+  canProceed: boolean;
 };
 
 export type MaintenanceItemFormHandle = {
@@ -210,6 +213,8 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
       formState: { errors, isDirty },
     } = useForm<MaintenanceItemFormValues>({
       resolver: zodResolver(schema),
+      mode: 'onTouched',
+      reValidateMode: 'onChange',
       defaultValues: defaultValues(initial, globalDefaultMessageTemplate, seriesRecurrenceUntil),
     });
 
@@ -231,15 +236,6 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
       return () => window.cancelAnimationFrame(id);
     }, [safeStepIndex]);
 
-    useEffect(() => {
-      onWizardStateChange?.({
-        stepIndex: safeStepIndex,
-        stepLabels,
-        isFirstStep,
-        isLastStep,
-      });
-    }, [safeStepIndex, stepLabels, isFirstStep, isLastStep, onWizardStateChange]);
-
     const recurrenceInterval = watch('recurrence_interval');
     const recurrenceUntil = watch('recurrence_until');
     const scheduledOn = watch('scheduled_on');
@@ -247,6 +243,31 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
     const telegramDaysBefore = watch('telegram_days_before');
     const telegramReminderInterval = watch('telegram_reminder_interval');
     const previewValues = watch();
+
+    const canProceed = useMemo(() => {
+      const stepKind = activeStep?.kind ?? 'details';
+      return canProceedMaintenanceItemFormStep({
+        stepKind,
+        isLastStep,
+        formValid: schema.safeParse(previewValues).success,
+        label: String(previewValues.label ?? ''),
+        category: String(previewValues.category ?? ''),
+        scheduledOn: String(previewValues.scheduled_on ?? ''),
+        recurrenceInterval: String(previewValues.recurrence_interval ?? 'none'),
+        recurrenceUntil: String(previewValues.recurrence_until ?? ''),
+        showRepeat,
+      });
+    }, [activeStep?.kind, isLastStep, previewValues, showRepeat]);
+
+    useEffect(() => {
+      onWizardStateChange?.({
+        stepIndex: safeStepIndex,
+        stepLabels,
+        isFirstStep,
+        isLastStep,
+        canProceed,
+      });
+    }, [safeStepIndex, stepLabels, isFirstStep, isLastStep, canProceed, onWizardStateChange]);
 
     const scheduleDirty = isRecurrenceScheduleDirty({
       isRecurringEdit,
@@ -307,10 +328,12 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
           stepLabels,
           isFirstStep,
           isLastStep,
+          canProceed,
         }),
       }),
       [
         activeStep?.kind,
+        canProceed,
         handleSubmit,
         isFirstStep,
         isLastStep,
@@ -341,15 +364,16 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
 
         {activeStep?.kind === 'details' ? (
           <div className="space-y-4">
-            <Field label="Label" required error={errors.label?.message}>
+            <FormFieldBlock label="Label" required error={errors.label?.message}>
               <input
                 className="border-input bg-card text-foreground field-focus h-10 w-full rounded-lg border px-3 text-sm transition-colors"
+                aria-invalid={errors.label ? true : undefined}
                 {...register('label')}
               />
-            </Field>
+            </FormFieldBlock>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Category" required error={errors.category?.message}>
+              <FormFieldBlock label="Category" required error={errors.category?.message}>
                 <Controller
                   name="category"
                   control={control}
@@ -357,13 +381,15 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
                     <CategoryCombobox
                       value={field.value ?? ''}
                       onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      invalid={Boolean(errors.category)}
                       suggestions={MAINTENANCE_CATEGORY_SUGGESTIONS}
                     />
                   )}
                 />
-              </Field>
+              </FormFieldBlock>
 
-              <Field label="Date" error={errors.scheduled_on?.message}>
+              <FormFieldBlock label="Date" error={errors.scheduled_on?.message}>
                 <Controller
                   name="scheduled_on"
                   control={control}
@@ -373,19 +399,21 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
                       onChange={field.onChange}
                       onBlur={field.onBlur}
                       name={field.name}
+                      aria-invalid={errors.scheduled_on ? true : undefined}
                     />
                   )}
                 />
-              </Field>
+              </FormFieldBlock>
             </div>
 
-            <Field label="Notes" error={errors.notes?.message}>
+            <FormFieldBlock label="Notes" error={errors.notes?.message}>
               <textarea
                 rows={5}
                 className="border-input bg-card text-foreground field-focus w-full rounded-lg border px-3 py-2 text-sm transition-colors"
+                aria-invalid={errors.notes ? true : undefined}
                 {...register('notes')}
               />
-            </Field>
+            </FormFieldBlock>
           </div>
         ) : null}
 
@@ -393,13 +421,13 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
           <div className="space-y-4">
             {showRepeat ? (
               <>
-                <Field label="Repeat" error={errors.recurrence_interval?.message}>
+                <FormFieldBlock label="Repeat" error={errors.recurrence_interval?.message}>
                   <Controller
                     name="recurrence_interval"
                     control={control}
                     render={({ field: { value, onChange } }) => (
                       <Select value={value} onValueChange={onChange}>
-                        <SelectTrigger>
+                        <SelectTrigger aria-invalid={errors.recurrence_interval ? true : undefined}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -412,16 +440,21 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
                       </Select>
                     )}
                   />
-                </Field>
+                </FormFieldBlock>
 
                 {recurrenceInterval !== 'none' ? (
-                  <Field label="Repeats until" error={errors.recurrence_until?.message}>
+                  <FormFieldBlock label="Repeats until" error={errors.recurrence_until?.message}>
                     <Controller
                       name="recurrence_until"
                       control={control}
-                      render={({ field }) => <IsoDateInput {...field} />}
+                      render={({ field }) => (
+                        <IsoDateInput
+                          {...field}
+                          aria-invalid={errors.recurrence_until ? true : undefined}
+                        />
+                      )}
                     />
-                  </Field>
+                  </FormFieldBlock>
                 ) : null}
               </>
             ) : null}
@@ -493,17 +526,21 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
 
               {telegramReminderEnabled ? (
                 <div className="space-y-4">
-                  <Field label="Days before due" error={errors.telegram_days_before?.message}>
+                  <FormFieldBlock
+                    label="Days before due"
+                    error={errors.telegram_days_before?.message}
+                  >
                     <input
                       type="number"
                       min={0}
                       max={90}
                       className="border-input bg-card text-foreground field-focus h-10 w-full rounded-lg border px-3 text-sm"
+                      aria-invalid={errors.telegram_days_before ? true : undefined}
                       {...register('telegram_days_before', { valueAsNumber: true })}
                     />
-                  </Field>
+                  </FormFieldBlock>
 
-                  <Field
+                  <FormFieldBlock
                     label="How often to remind"
                     error={errors.telegram_reminder_interval?.message}
                   >
@@ -541,7 +578,7 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
                         </RadioGroup>
                       )}
                     />
-                  </Field>
+                  </FormFieldBlock>
 
                   <TelegramReminderSchedulePreview
                     anchorDate={scheduledOn}
@@ -552,13 +589,17 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
                     singleOccurrenceOnly={isEdit}
                   />
 
-                  <Field label="Message" error={errors.telegram_message_template?.message}>
+                  <FormFieldBlock
+                    label="Message"
+                    error={errors.telegram_message_template?.message}
+                  >
                     <textarea
                       rows={7}
                       className="border-input bg-card text-foreground field-focus w-full rounded-lg border px-3 py-2 font-mono text-xs"
+                      aria-invalid={errors.telegram_message_template ? true : undefined}
                       {...register('telegram_message_template')}
                     />
-                  </Field>
+                  </FormFieldBlock>
 
                   {isEdit ? (
                     <Controller
@@ -601,32 +642,3 @@ export const MaintenanceItemForm = forwardRef<MaintenanceItemFormHandle, Props>(
   }
 );
 
-function Field({
-  label,
-  required,
-  error,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  error?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="block min-w-0">
-      <span className="text-overline mb-1.5 block">
-        {label}
-        {required ? (
-          <>
-            {' '}
-            <span className="text-destructive" aria-hidden>
-              *
-            </span>
-          </>
-        ) : null}
-      </span>
-      {children}
-      {error ? <p className="text-destructive mt-1 text-xs font-medium">{error}</p> : null}
-    </div>
-  );
-}

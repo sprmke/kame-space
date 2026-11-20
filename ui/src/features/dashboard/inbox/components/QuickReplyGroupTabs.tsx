@@ -4,37 +4,25 @@ import {
   type QuickReplyGroupTab,
 } from '@/features/dashboard/inbox/lib/quickReplyGroups';
 
-import { Button } from '@/components/ui/button';
+import { SegmentedControl } from '@/components/ui/sliding-tabs';
 
 type Props = {
   value: QuickReplyGroupTab;
   onChange: (value: QuickReplyGroupTab) => void;
 };
 
+/** Channel filter for Manage → Quick replies (sliding pill, not route tabs). */
 export function QuickReplyGroupFilters({ value, onChange }: Props) {
   return (
-    <div
-      className="flex shrink-0 items-center gap-1.5 overflow-x-auto"
-      role="group"
+    <SegmentedControl
+      value={value}
+      onChange={onChange}
+      size="compact"
       aria-label="Filter by group"
-    >
-      {QUICK_REPLY_GROUP_TABS.map((tab) => {
-        const active = value === tab;
-        const label = quickReplyGroupLabel(tab);
-        return (
-          <Button
-            key={tab}
-            type="button"
-            size="sm"
-            variant={active ? 'secondary' : 'outline'}
-            aria-pressed={active}
-            className="h-9 min-h-[44px] shrink-0 px-2.5 sm:min-h-9 sm:px-3"
-            onClick={() => onChange(tab)}
-          >
-            {label}
-          </Button>
-        );
-      })}
-    </div>
+      options={QUICK_REPLY_GROUP_TABS.map((tab) => ({
+        value: tab,
+        label: quickReplyGroupLabel(tab),
+      }))}
+    />
   );
 }

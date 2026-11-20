@@ -59,6 +59,10 @@ export function getMetaOAuthScopes(): string {
  * for nothing we render. `standby` is what arrives when Meta Business AI or another routing
  * app owns a chat, and `messaging_handovers` / `messaging_referrals` let a host see who took
  * the thread over and where the guest came from.
+ *
+ * Do not add `messaging_seen` here. That field is Instagram Messaging docs-only and is
+ * rejected by Page `subscribed_apps` (Graph `#100` on `subscribed_fields`). Messenger
+ * read receipts use `message_reads`.
  */
 export const META_WEBHOOK_SUBSCRIBED_FIELDS = [
   'messages',
@@ -67,7 +71,6 @@ export const META_WEBHOOK_SUBSCRIBED_FIELDS = [
   'message_reads',
   'message_reactions',
   'message_edits',
-  'messaging_seen',
   'standby',
   'messaging_handovers',
   'messaging_referrals',

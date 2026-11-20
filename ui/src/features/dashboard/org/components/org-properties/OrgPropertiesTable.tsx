@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import {
   AdminDataTable,
+  AdminTableActionsTh,
   AdminTableHeadRow,
   AdminTableTh,
   adminTableBodyText,
@@ -48,9 +49,7 @@ export function OrgPropertiesTable({ properties, orgSlug, onCopySettings }: Prop
         <AdminTableTh className="hidden sm:table-cell">Bookings</AdminTableTh>
         <AdminTableTh className="hidden lg:table-cell">Revenue</AdminTableTh>
         <AdminTableTh className="hidden lg:table-cell">Occupancy</AdminTableTh>
-        <AdminTableTh className="w-12 pr-2 sm:pr-4">
-          <span className="sr-only">Actions</span>
-        </AdminTableTh>
+        <AdminTableActionsTh />
       </AdminTableHeadRow>
       <tbody>
         {properties.map((property, index) => {

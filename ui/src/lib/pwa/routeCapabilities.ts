@@ -92,7 +92,7 @@ export const ROUTE_CAPABILITIES: readonly RouteCapability[] = [
   },
   {
     id: 'property-inbox',
-    test: new RegExp(`^${PROPERTY}/inbox(?:/|$)`),
+    test: new RegExp(`^${PROPERTY}/(?:messages|inbox)(?:/|$)`),
     audience: 'host',
     installOffer: 'proactive',
     precacheTier: 'host',
@@ -146,7 +146,7 @@ export const ROUTE_CAPABILITIES: readonly RouteCapability[] = [
   },
   {
     id: 'parking-inbox',
-    test: new RegExp(`^${PARKING}/inbox(?:/|$)`),
+    test: new RegExp(`^${PARKING}/(?:messages|inbox)(?:/|$)`),
     audience: 'host',
     installOffer: 'proactive',
     precacheTier: 'host',

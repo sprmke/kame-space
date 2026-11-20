@@ -401,6 +401,7 @@ export function ParkingPricingPage() {
           weekdayRate={weekdayRate}
           weekendRate={weekendRate}
           customDatesCount={customDatePrices.size}
+          blockedDatesCount={blockedDateKeys.size}
         />
 
         <div className={pricingCalendarFormGridClassName(compactChrome)}>

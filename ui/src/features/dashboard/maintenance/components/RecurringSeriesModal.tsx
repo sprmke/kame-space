@@ -13,6 +13,7 @@ import {
 
 import {
   AdminDataTable,
+  AdminTableActionsTh,
   AdminTableHeadRow,
   AdminTableTh,
   adminTableCell,
@@ -65,6 +66,7 @@ const INITIAL_WIZARD: MaintenanceItemFormWizardState = {
   stepLabels: ['Details', 'Reminders', 'Preview'],
   isFirstStep: true,
   isLastStep: false,
+  canProceed: false,
 };
 
 type Props = {
@@ -285,9 +287,7 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
                   <AdminTableTh className="hidden px-2 sm:table-cell sm:px-3 lg:max-w-none lg:whitespace-normal">
                     Notes
                   </AdminTableTh>
-                  <AdminTableTh className="pl-2 pr-2 sm:pr-3">
-                    <span className="sr-only">Actions</span>
-                  </AdminTableTh>
+                  <AdminTableActionsTh className="pl-2 pr-2 sm:pr-3" />
                 </AdminTableHeadRow>
                 <tbody>
                   {items.map((item, index) => (
@@ -393,6 +393,8 @@ export function RecurringSeriesModal({ anchor, open, onClose, query }: Props) {
               submitPending={update.isPending}
               submitLabel="Save"
               pendingLabel="Saving…"
+              canGoNext={wizard.canProceed}
+              canSubmit={wizard.canProceed}
             />
           </ResponsiveModalFooter>
         </ResponsiveModalContent>

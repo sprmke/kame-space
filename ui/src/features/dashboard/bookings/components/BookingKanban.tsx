@@ -19,6 +19,7 @@ import { GripVertical } from 'lucide-react';
 
 import { AdminTableFlagsCell } from '@/features/dashboard/bookings/components/AdminDataTable';
 import { BookingKanbanWorkflowModal } from '@/features/dashboard/bookings/components/BookingKanbanWorkflowModal';
+import { BookingListQuickActions } from '@/features/dashboard/bookings/components/BookingListQuickActions';
 import { BookingPropertyLabel } from '@/features/dashboard/bookings/components/BookingPropertyLabel';
 import { GuestAvatar } from '@/features/dashboard/bookings/components/GuestAvatar';
 import { StatusBadge } from '@/features/dashboard/bookings/components/StatusBadge';
@@ -193,9 +194,12 @@ function KanbanCardBody({
             <span className="text-caption text-muted-foreground/50">No flags</span>
           )}
         </div>
-        {row.booking_rate != null ? (
-          <span className="text-table-amount shrink-0">{formatMoney(row.booking_rate)}</span>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-1">
+          {!isOverlay ? <BookingListQuickActions row={row} /> : null}
+          {row.booking_rate != null ? (
+            <span className="text-table-amount">{formatMoney(row.booking_rate)}</span>
+          ) : null}
+        </div>
       </div>
     </div>
   );
