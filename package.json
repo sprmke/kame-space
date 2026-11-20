@@ -93,7 +93,7 @@
     "status:supabase": "./scripts/dev/run-with-ui-dev-env.sh ./scripts/dev/bunx --bun supabase@latest status",
     "stop:supabase": "./scripts/dev/run-with-ui-dev-env.sh ./scripts/dev/bunx --bun supabase@latest stop",
     "stop:supabase:clean": "./scripts/dev/run-with-ui-dev-env.sh ./scripts/dev/bunx --bun supabase@latest stop --no-backup --yes",
-    "db:reset": "./scripts/dev/run-with-ui-dev-env.sh ./scripts/dev/bunx --bun supabase@latest db reset",
+    "db:reset": "./scripts/dev/run-with-ui-dev-env.sh ./scripts/dev/bunx --bun supabase@latest db reset && { bash scripts/dev/attach-local-admin.sh || echo 'Skipped local admin attach'; }",
     "db:migrate": "./scripts/dev/run-with-ui-dev-env.sh ./scripts/dev/bunx --bun supabase@latest migration up --local --include-all",
     "seed:mock-listings": "node scripts/dev/generate-mock-listings-seed.mjs",
     "seed:local": "bash scripts/dev/seed-local.sh apply",

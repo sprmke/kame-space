@@ -36,6 +36,10 @@ export interface AuthPageActions {
   verifyEmailOtp: (email: string, code: string) => Promise<AuthError | null>;
   signInWithGoogle: () => void | Promise<void>;
   googleLoading?: boolean;
+  /** Dev-only password sign-in for the seeded local test account. */
+  testLogin?: { email: string } | null;
+  onTestLogin?: () => Promise<AuthError | null>;
+  testLoginLoading?: boolean;
   /** Top-of-page banner error, e.g. an OAuth redirect failure surfaced on return. */
   bannerError?: string | null;
 }
@@ -59,7 +63,8 @@ export function AuthPageContent({ config, actions }: AuthPageContentProps) {
   const [resendCooldown, setResendCooldown] = useState(0);
   const captcha = useCaptchaToken({ action: 'auth-email-otp' });
 
-  const busy = isSending || isVerifying || Boolean(actions.googleLoading);
+  const busy =
+    isSending || isVerifying || Boolean(actions.googleLoading) || Boolean(actions.testLoginLoading);
 
   useEffect(() => {
     if (step !== 'otp' || resendCooldown <= 0) return;
@@ -256,6 +261,22 @@ export function AuthPageContent({ config, actions }: AuthPageContentProps) {
               disabled={busy}
               loading={actions.googleLoading}
             />
+            {import.meta.env.DEV && actions.testLogin ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 w-full rounded-xl text-[15px] font-semibold sm:h-11 sm:text-sm"
+                disabled={busy}
+                title={`Sign in as ${actions.testLogin.email}`}
+                onClick={() => void actions.onTestLogin?.()}
+              >
+                {actions.testLoginLoading ? (
+                  <SpinnerIcon className="size-5" />
+                ) : (
+                  'Use local test account'
+                )}
+              </Button>
+            ) : null}
           </>
         ) : (
           <button

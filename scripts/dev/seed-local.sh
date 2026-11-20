@@ -41,3 +41,7 @@ for file in "$SEED_DIR"/*.sql; do
 done
 
 run_sql "$SEED_DIR/99-verify.sql"
+
+# Make the dev test login usable right after a seed or refresh. Best effort: a
+# clone without local env emails still gets a working seed.
+bash scripts/dev/attach-local-admin.sh || echo "→ Skipped local admin attach (see message above)."
