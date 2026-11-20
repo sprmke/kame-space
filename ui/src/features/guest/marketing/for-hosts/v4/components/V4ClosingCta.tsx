@@ -27,14 +27,14 @@ export function V4ClosingCta() {
             <p className="text-primary-foreground mt-4 max-w-xl text-base leading-relaxed sm:text-lg">
               One place for your listing, bookings, and guest messages.
             </p>
-            <div className="text-primary-foreground mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm sm:text-[15px]">
+            <ul className="mt-6 flex max-w-lg flex-col gap-2.5 text-sm text-white sm:text-[15px]">
               {CLOSING_FACTS.map((fact) => (
-                <span key={fact} className="flex items-center gap-2">
-                  <Check className="text-primary-foreground size-4" aria-hidden />
+                <li key={fact} className="flex items-center gap-2">
+                  <Check className="size-4 shrink-0 text-white" aria-hidden />
                   {fact}
-                </span>
+                </li>
               ))}
-            </div>
+            </ul>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 to={V4_SIGNUP_CTA.to}

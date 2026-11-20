@@ -35,10 +35,10 @@ export function HostBand() {
               <p className="text-primary-foreground mt-3 max-w-xl text-base leading-relaxed sm:text-lg">
                 One place for your listing, bookings, and guest messages.
               </p>
-              <ul className="text-primary-foreground mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm sm:text-[15px]">
+              <ul className="mt-5 flex max-w-lg flex-col gap-2 text-sm text-white sm:text-[15px]">
                 {HOST_FACTS.map((fact) => (
                   <li key={fact} className="flex items-center gap-1.5">
-                    <Check className="text-primary-foreground size-4 shrink-0" aria-hidden />
+                    <Check className="size-4 shrink-0 text-white" aria-hidden />
                     {fact}
                   </li>
                 ))}
