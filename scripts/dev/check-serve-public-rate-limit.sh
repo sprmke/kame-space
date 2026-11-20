@@ -12,6 +12,8 @@ ALLOWLIST=(
   'push-fanout'
   'claim-sd-voucher'
   'submit-guest-review'
+  # HMAC-signed machine ingest (GitHub Actions, probes, Sentry relay). Rejected before any work.
+  'ops-alert-ingest'
 )
 
 search_files() {

@@ -33,6 +33,11 @@ ALLOWLIST=(
   # read established the first view. There is no `.limit()` shape for an update.
   '_shared/guestTripView.ts'
 
+  # PayMongo dedupe claim lease: `update ... .eq('id', existing.id).is('processed_at', null)
+  # .select('id')` — one row by primary key, and the returned row is how the caller knows it
+  # won the retry. There is no `.limit()` shape for an update (PR-019 / PR-036).
+  '_shared/paymongoEventDedupe.ts'
+
   # Query builder is created once (`.select('id, name')`) and reused across two
   # mutually exclusive branches (`.eq('id', orgId).maybeSingle()` vs
   # `.eq('slug', orgSlug).maybeSingle()`), so the bound and the `.select(` are in
