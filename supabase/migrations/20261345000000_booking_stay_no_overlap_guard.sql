@@ -77,9 +77,9 @@ BEGIN
   IF NEW.status IN ('CANCELLED', 'IMPORTED') THEN
     RETURN NEW;
   END IF;
-  -- OTA feed imports are recorded on purpose; the calendar conflict flow surfaces the overlap
-  -- to the host instead of losing the reservation.
-  IF NEW.external_feed_id IS NOT NULL THEN
+  -- OTA feed imports and host file imports are recorded on purpose; the host resolves the
+  -- overlap (calendar conflict flow / import review) instead of losing the reservation.
+  IF NEW.external_feed_id IS NOT NULL OR NEW.imported_from_batch_id IS NOT NULL THEN
     RETURN NEW;
   END IF;
 
@@ -132,7 +132,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.enforce_booking_stay_no_overlap() IS
-  'Rejects a direct stay that overlaps another non-cancelled stay on the same property. Serialized per property with an advisory lock. OTA imports bypass and are surfaced through the calendar conflict flow.';
+  'Rejects a direct stay that overlaps another non-cancelled stay on the same property. Serialized per property with an advisory lock. OTA and host-file imports bypass and are surfaced through the calendar conflict flow or import review.';
 
 REVOKE ALL ON FUNCTION public.enforce_booking_stay_no_overlap() FROM PUBLIC, anon, authenticated;
 

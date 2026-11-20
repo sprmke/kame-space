@@ -28,7 +28,8 @@ Why not `EXCLUDE USING gist`:
   - `public.booking_text_to_date(text)` — immutable parser matching the `check_in_date_sql` /
     `check_out_date_sql` generated columns (a BEFORE trigger cannot read NEW generated values).
   - `public.enforce_booking_stay_no_overlap()` — skips `CANCELLED`, `IMPORTED`, OTA rows
-    (`external_feed_id`), parking rows and malformed dates. Takes
+    (`external_feed_id`), host-file imports (`imported_from_batch_id`), parking rows and
+    malformed dates. Takes
     `pg_advisory_xact_lock(hashtext('booking_stay_no_overlap:<property>'))` so the check and the
     insert are serialized per property. Rejects with SQLSTATE `23P01`.
 - `_shared/databaseService.ts` — `23P01` on guest save/update becomes the existing
