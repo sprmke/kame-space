@@ -172,7 +172,9 @@ Deleted, local and remote (fully merged or fully applied, no worktree):
 
 `release/2026-11-19-host-parking-pricing`, `release/2026-11-19-multi-channel-calendar-sync`,
 `release/2026-11-19-ui-improvements`, `sprmke/flyingfish`, `sprmke/audit-modules-worktrees-prs`,
-`docs/calendar-sync-release-record`. Tip SHAs are recorded in the branch audit.
+`docs/calendar-sync-release-record`, `chore/parking-pricing-test-followups`,
+`fix/preview-existing-worktrees` (remote), `sprmke/analyze-editable-public-pages` (remote).
+Tip SHAs are recorded in the branch audit.
 
 Kept on purpose:
 

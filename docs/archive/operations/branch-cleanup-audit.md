@@ -468,6 +468,9 @@ or fully applied, with no unapplied patch and no worktree. Deleted, local and re
 | `sprmke/flyingfish`                              | `3068d654cbf351e541076dd494c402cd3903bea5` | Worktree ports change shipped in #542                  |
 | `sprmke/audit-modules-worktrees-prs`             | `18c84051821b00c14a9be48f2c08b399c83d7cd6` | Fully applied; no PR                                   |
 | `docs/calendar-sync-release-record`              | `cffd67fe6d4c6914cd87b244c81eb0973b85fb1a` | Fully applied; superseded by the live verification doc |
+| `chore/parking-pricing-test-followups`           | `d0375b6defb9098fb6f8671daaf25d532204e541` | Shipped in #537; no new files                          |
+| `fix/preview-existing-worktrees` (remote only)   | `684d47a18`                                | Fully applied via #547; local worktree stays           |
+| `sprmke/analyze-editable-public-pages` (remote)  | `042ef0116`                                | Fully applied; local worktree stays                    |
 
 Restore any of them with `git branch <name> <sha>` while the objects survive.
 
