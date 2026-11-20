@@ -9,7 +9,6 @@ import { toSubscriptionState } from '../_shared/orgBillingContext.ts';
 import { expireAllPendingOrgCheckouts } from '../_shared/orgPaymentReconcile.ts';
 import { validateOrgDeletion } from '../_shared/orgSubscriptionStateMachine.ts';
 import { getActiveOrgSubscription } from '../_shared/planEntitlements.ts';
-import { PROPERTY_MEDIA_BUCKET } from '../_shared/propertyMedia.ts';
 import {
   jsonError,
   jsonSuccess,
@@ -17,6 +16,7 @@ import {
   requireHttpMethod,
 } from '../_shared/httpResponse.ts';
 import { serveAuthenticated } from '../_shared/serveEdge.ts';
+import { propertyStoragePurgeTargets, purgeStorageTargets } from '../_shared/tenantStoragePurge.ts';
 
 serveAuthenticated('delete-organization', async (req) => {
   requireHttpMethod(req, 'DELETE');
@@ -66,29 +66,14 @@ serveAuthenticated('delete-organization', async (req) => {
     }
   }
 
+  // Remove every object each property owns before the cascade drops the rows: media,
+  // marketing, listing authorization, app-settings assets and the guest-PII buckets.
   for (const property of properties ?? []) {
-    const settings =
-      property.settings &&
-      typeof property.settings === 'object' &&
-      !Array.isArray(property.settings)
-        ? (property.settings as Record<string, unknown>)
-        : {};
-    const media = Array.isArray(settings.media) ? settings.media : [];
-    const storagePaths = media
-      .filter(
-        (entry): entry is { storagePath?: string } => typeof entry === 'object' && entry !== null
-      )
-      .map((entry) => (typeof entry.storagePath === 'string' ? entry.storagePath.trim() : ''))
-      .filter((path) => path.startsWith(`${property.id}/`));
-
-    if (storagePaths.length > 0) {
-      const { error: storageError } = await supabase.storage
-        .from(PROPERTY_MEDIA_BUCKET)
-        .remove(storagePaths);
-      if (storageError) {
-        console.warn('[delete-organization] storage cleanup:', storageError.message);
-      }
-    }
+    await purgeStorageTargets(
+      supabase,
+      propertyStoragePurgeTargets({ propertyId: property.id as string, orgId: org.id }),
+      'delete-organization'
+    );
   }
 
   // Close any open checkout first: the rows go with the org, but the PayMongo link would stay payable.

@@ -2,7 +2,7 @@
 title: 'Services (guest marketing) — operator guide'
 status: active
 tags: [guides, routes]
-updated: 2026-11-16
+updated: 2026-11-20
 ---
 
 # Services (guest marketing) — operator guide
@@ -15,7 +15,7 @@ Route: `/services`
 
 Public preview for future guest services. Uses `MarketingLayoutShell` and the same listing search and scroll morph as `/properties` and `/developments`. Mobile shell: `MarketingLayoutShell` bottom tabs — see [index-landing.md](./index-landing.md) § Mobile shell.
 
-**Coming soon hero:** shared `BrandEmptyState` (platform mark + short copy), same shell as the marketing 404. Service chips below stay decorative.
+**Coming soon hero:** shared `BrandEmptyState` with the library pose `coming-soon` (`/assets/mascot/coming-soon.png`) at `markSize="xl"`, so Kame is the visual anchor under the listing search. Decorative service chips sit under the copy. Same empty shell pattern as the marketing 404 (`page-not-found`).
 
 ---
 
@@ -52,14 +52,15 @@ This page previews add-on services (cleaning, maintenance, supplies, and similar
 
 ## Implementation map
 
-| Concern        | Path                                                                         |
-| -------------- | ---------------------------------------------------------------------------- |
-| Page           | `ui/src/features/guest/marketing/pages/ServicesPage.tsx`                     |
-| Empty shell    | `ui/src/components/branding/BrandEmptyState.tsx`                             |
-| Route          | `ui/src/features/guest/marketing/routes/index.tsx`                           |
-| Search default | `ui/src/features/guest/marketing/shared/lib/listingSearchDefaultLocation.ts` |
-| Search fields  | `ui/src/features/guest/marketing/shared/lib/listingSearchFields.ts`          |
-| Search morph   | `ui/src/features/guest/marketing/shared/lib/listingScrollSearchPaths.ts`     |
+| Concern        | Path                                                                                |
+| -------------- | ----------------------------------------------------------------------------------- |
+| Page           | `ui/src/features/guest/marketing/pages/ServicesPage.tsx`                            |
+| Empty shell    | `ui/src/components/branding/BrandEmptyState.tsx` (`mascotPose="coming-soon"`)       |
+| Mascot pose    | `ui/src/components/branding/KameMascotImage.tsx` + `/assets/mascot/coming-soon.png` |
+| Route          | `ui/src/features/guest/marketing/routes/index.tsx`                                  |
+| Search default | `ui/src/features/guest/marketing/shared/lib/listingSearchDefaultLocation.ts`        |
+| Search fields  | `ui/src/features/guest/marketing/shared/lib/listingSearchFields.ts`                 |
+| Search morph   | `ui/src/features/guest/marketing/shared/lib/listingScrollSearchPaths.ts`            |
 
 ---
 

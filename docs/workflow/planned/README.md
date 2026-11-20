@@ -38,8 +38,11 @@ Every doc below sits in this folder with `stage: planned` and no shipped code. I
 
 **Not in this folder yet**
 
-- `multi-channel-calendar-sync.md` (Agoda + Booking.com on the iCal engine, channel health, kill switches) is in progress on `feat/multi-channel-calendar-sync` (PR [#493](https://github.com/sprmke/kame-space/pull/493)). It lands in [`../in-progress/`](../in-progress/) when that PR merges, so it is not listed as planned.
 - `live-identity-verification.md` is started and lives in [`../in-progress/`](../in-progress/).
+
+`multi-channel-calendar-sync.md` is no longer tracked here: it shipped dark in the 2026-11-19
+release (#493 via #524) and now lives in [`../in-progress/`](../in-progress/), with live
+verification in [`../for-testing/multi-channel-calendar-sync-live-verification.md`](../for-testing/multi-channel-calendar-sync-live-verification.md).
 
 **Other stages**
 
