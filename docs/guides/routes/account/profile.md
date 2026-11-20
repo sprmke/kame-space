@@ -120,11 +120,11 @@ Saved-properties grid (the guest's heart/favorites list). See [favorites.md](./f
 
 ## Testing
 
-| Layer | Path / spec                                                              | Manual        |
-| ----- | ------------------------------------------------------------------------ | ------------- |
-| Unit  | `ui/src/features/guest/account/lib/guestProfileValidation.ts`            | —             |
-| E2E   | `ui/e2e/features/account/accountSmoke.spec.ts` profile form load (`@ci`) | Avatar upload |
-| N/A   | Google OAuth sign-in                                                     | Manual auth   |
+| Layer | Path / spec                                                                                                                                                        | Manual        |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| Unit  | `ui/src/features/guest/account/lib/guestProfileValidation.ts`                                                                                                      | —             |
+| E2E   | `ui/e2e/features/account/accountSmoke.spec.ts` profile form load (`@ci`), `sharedDeviceSignOut.spec.ts` (`@ci @critical`) auth + query cache + Cache Storage purge | Avatar upload |
+| N/A   | Google OAuth sign-in                                                                                                                                               | Manual auth   |
 
 ---
 

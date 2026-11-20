@@ -37,8 +37,19 @@ const CURRENCY_AMOUNT_PATTERN =
 const BARE_AMOUNT_PATTERN =
   /\b(\d{1,3}(?:,\d{3})+|\d{3,6})(?:\.\d{1,2})?\s*(?:pesos?\b|php\b|\/\s*(?:night|nt)\b|per\s+(?:night|stay|person|guest|pax)\b)/gi;
 
-/** Long digit runs (GCash / bank / card numbers) — must be a configured account or in the facts. */
-const ACCOUNT_NUMBER_PATTERN = /\+?\d[\d\s-]{8,}\d/g;
+/** Long digit runs (GCash / bank / card numbers) — must be a configured account or in the facts.
+ * Dots, spaces, dashes and parentheses are accepted separators so `0917.555.1234`,
+ * `0917 555 1234` and `(0917) 555-1234` are all caught; a formatted number must not
+ * slip past the guard just because the model grouped the digits differently. */
+const ACCOUNT_NUMBER_PATTERN = /\+?\d[\d\s().-]{8,}\d/g;
+
+/**
+ * A finance figure that follows an owner/internal term, even inside a reply that also
+ * contains a refusal phrase ("I can't share that, but revenue was 1M"). The refusal must
+ * not whitelist the leak that follows it.
+ */
+const FINANCE_TERM_NEAR_FIGURE_PATTERN =
+  /\b(revenue|profit|expenses?|net income|earnings?|payouts?|gross margin|profit margin)\b[^.!?\n]{0,60}?(?:₱|PHP\b|P\s?\d|\d{1,3}\s?%|\d[\d,]{2,})/i;
 
 function normalizeAmount(value: number): number {
   return Math.round(value * 100) / 100;
@@ -184,6 +195,12 @@ export function assertSafeGuestReply(input: GuestReplyGuardInput): GuardResult {
 
   if (draftSharesOwnerSensitiveTopic(draftText)) {
     return { safe: false, reason: 'owner/internal sensitive topic in reply' };
+  }
+
+  // A refusal phrase at the start of a sentence does not make a figure after it safe:
+  // "I can't share that, but our revenue was PHP 1,000,000" still leaks the number.
+  if (FINANCE_TERM_NEAR_FIGURE_PATTERN.test(draftText)) {
+    return { safe: false, reason: 'sensitive finance figure in reply' };
   }
 
   if (intent === 'sensitive') {

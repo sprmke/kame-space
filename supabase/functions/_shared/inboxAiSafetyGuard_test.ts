@@ -150,3 +150,43 @@ Deno.test('assertSafeGuestReply - checks amounts written without a currency sign
   });
   assertEquals(grounded.safe, true);
 });
+
+Deno.test('guard blocks a formatted account number the model grouped differently', () => {
+  for (const formatted of ['0917.555.1234', '(0917) 555-1234', '+63 917 555 1234']) {
+    const result = assertSafeGuestReply({
+      draftText: `Please send it to ${formatted}.`,
+      guestMessage: 'Where do I pay?',
+      allowedFacts: {
+        pricingValues: [],
+        // A different, configured account: the formatted one is stray.
+        allowedAccountNumbers: ['09998887777'],
+        factsText: 'GCash 0999 888 7777',
+      },
+    });
+    assertEquals(result.safe, false, formatted);
+  }
+});
+
+Deno.test('a refusal phrase does not whitelist a finance figure after it', () => {
+  for (const draftText of [
+    "I can't share that, but our revenue was PHP 1,000,000 this month.",
+    'I cannot share that. The profit margin is 30%.',
+    "I'll check with the host. Our earnings were 250,000 last month.",
+  ]) {
+    const result = assertSafeGuestReply({
+      draftText,
+      guestMessage: 'What is your revenue?',
+      allowedFacts: { pricingValues: [] },
+    });
+    assertEquals(result.safe, false, draftText);
+  }
+});
+
+Deno.test('a refusal with no figure stays safe', () => {
+  const result = assertSafeGuestReply({
+    draftText: "I can't share revenue details. Please ask the host team.",
+    guestMessage: 'What is your revenue?',
+    allowedFacts: { pricingValues: [] },
+  });
+  assertEquals(result.safe, true);
+});
