@@ -32,8 +32,9 @@ export const PLAN_GATED_AUTOMATION_TOGGLE_KEYS: readonly PropertyAutomationToggl
   'emailGafRequest',
   'emailBookingAcknowledgement',
   'emailPetRequest',
-  'emailReadyForCheckin',
-  'emailSdRefundCheckout',
+  // Guest-critical lifecycle emails are deliberately NOT gated: a downgrade or suspension must
+  // never silence check-in instructions or the security-deposit refund form for a guest who
+  // already booked (readiness BIL-01). Those two keys stay available on every plan.
   'emailPreArrivalReminder',
   'emailBuildingAdminCancellation',
 ];

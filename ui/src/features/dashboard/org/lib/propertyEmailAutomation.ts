@@ -37,8 +37,7 @@ export const PLAN_GATED_AUTOMATION_TOGGLE_KEYS: ReadonlySet<PropertyAutomationTo
   'emailGafRequest',
   'emailBookingAcknowledgement',
   'emailPetRequest',
-  'emailReadyForCheckin',
-  'emailSdRefundCheckout',
+  // Guest-critical lifecycle emails stay free on every plan (BIL-01).
   'emailPreArrivalReminder',
   'emailBuildingAdminCancellation',
 ]);
