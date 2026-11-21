@@ -214,7 +214,7 @@
     "check:migration-collisions": "bash scripts/dev/check-migration-version-collisions.sh"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.8.0",
+    "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^19.8.0",
     "@commitlint/types": "^19.8.0",
     "@playwright/cli": "^0.1.17",
