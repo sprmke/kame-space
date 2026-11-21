@@ -87,7 +87,7 @@
     "jspdf-autotable": "^5.0.8",
     "jsqr": "^1.4.0",
     "konva": "^10.3.0",
-    "lucide-react": "^0.294.0",
+    "lucide-react": "^1.74.0",
     "mediabunny": "1.55.5",
     "mobx-react-lite": "^4.1.0",
     "mobx-state-tree": "^7.0.2",
