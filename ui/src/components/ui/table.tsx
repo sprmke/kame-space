@@ -4,7 +4,9 @@ import { cn } from '@/lib/utils';
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
+    // tabIndex keeps horizontally scrollable tables reachable by keyboard (axe:
+    // scrollable-region-focusable) without adding a landmark per table.
+    <div className="relative w-full overflow-auto" tabIndex={0}>
       <table ref={ref} className={cn('w-full caption-bottom text-sm', className)} {...props} />
     </div>
   )

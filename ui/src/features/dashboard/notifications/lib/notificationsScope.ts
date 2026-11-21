@@ -1,8 +1,7 @@
-import { useParams } from 'react-router-dom';
-
 import { useOptionalOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { useOptionalParkingContext } from '@/features/dashboard/org/components/RequireParkingContext';
 import { useOrganizations } from '@/features/dashboard/org/hooks/useOrganizations';
+import { useOrgSlugParam } from '@/features/dashboard/org/lib/adminApiScope';
 
 /**
  * Org scope for the Notification Center — works on property routes, parking
@@ -11,10 +10,10 @@ import { useOrganizations } from '@/features/dashboard/org/hooks/useOrganization
  * routes.
  */
 export function useNotificationsOrgScope(): { orgSlug: string | null; orgId: string | null } {
-  const { orgSlug: routeOrgSlug } = useParams<{ orgSlug?: string }>();
   const tenant = useOptionalOrgContext();
   const parkingTenant = useOptionalParkingContext();
-  const orgSlug = tenant?.orgSlug ?? parkingTenant?.orgSlug ?? routeOrgSlug ?? null;
+  const routeOrgSlug = useOrgSlugParam();
+  const orgSlug = tenant?.orgSlug ?? parkingTenant?.orgSlug ?? routeOrgSlug;
 
   const { data: orgsData } = useOrganizations();
   const orgId =

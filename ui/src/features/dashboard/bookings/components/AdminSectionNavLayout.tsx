@@ -40,6 +40,8 @@ type AdminSectionNavLayoutProps = {
   header?: React.ReactNode;
   /** Optional action row — pinned under the main content column on desktop (not under the section nav); scrolls with content on mobile. */
   footer?: React.ReactNode;
+  /** Render a compact "jump to section" control on phones (the rail is desktop-only). */
+  mobileSectionNav?: boolean;
 };
 
 function flattenSectionGroups(groups: AdminSectionNavGroup[]): AdminSectionNavItem[] {
@@ -350,6 +352,7 @@ export function AdminSectionNavLayout({
   className,
   header,
   footer,
+  mobileSectionNav = false,
 }: AdminSectionNavLayoutProps) {
   useAdminLayoutFillMain(true);
 
@@ -422,6 +425,11 @@ export function AdminSectionNavLayout({
                 )}
               >
                 {header ? <div className="pb-3 lg:hidden">{header}</div> : null}
+                {mobileSectionNav ? (
+                  <div className="pb-3 lg:hidden">
+                    <MobileSectionJump />
+                  </div>
+                ) : null}
                 <div className="mx-auto w-full max-w-4xl space-y-6">{children}</div>
                 {footer ? (
                   <div className="border-separator mx-auto mt-3 w-full max-w-4xl border-t pt-3 lg:hidden">
@@ -442,6 +450,32 @@ export function AdminSectionNavLayout({
     </SectionNavStoreContext.Provider>
   );
 }
+
+/** Phone-only section jumper. The desktop rail is hidden below lg. */
+const MobileSectionJump = React.memo(function MobileSectionJump() {
+  const store = useSectionNavStore();
+  const sections = React.useSyncExternalStore(store.subscribe, store.getSections);
+  const activeSection = React.useSyncExternalStore(store.subscribe, store.getActiveSection);
+
+  if (sections.length < 2) return null;
+
+  return (
+    <label className="block">
+      <span className="sr-only">Jump to section</span>
+      <select
+        value={activeSection}
+        onChange={(event) => store.scrollToSection(event.target.value)}
+        className="border-border bg-card text-foreground h-10 w-full rounded-lg border px-3 text-sm font-medium"
+      >
+        {sections.map((section) => (
+          <option key={section.id} value={section.id}>
+            {section.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+});
 
 type AdminSectionGroupHeadingProps = {
   title: string;

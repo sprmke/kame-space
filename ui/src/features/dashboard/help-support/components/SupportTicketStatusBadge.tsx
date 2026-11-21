@@ -11,9 +11,9 @@ const STATUS_LABELS: Record<SupportTicketStatus, string> = {
 };
 
 const STATUS_CLASSES: Record<SupportTicketStatus, string> = {
-  open: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-transparent',
-  in_progress: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-transparent',
-  resolved: 'bg-primary/10 text-primary border-transparent',
+  open: 'border-transparent bg-blue-500/10 text-blue-700 dark:text-blue-300',
+  in_progress: 'border-transparent bg-amber-500/10 text-amber-800 dark:text-amber-300',
+  resolved: 'border-transparent bg-emerald-600/10 text-emerald-800 dark:text-emerald-300',
   closed: 'bg-muted text-muted-foreground border-transparent',
 };
 

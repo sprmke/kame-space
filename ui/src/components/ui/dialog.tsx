@@ -98,16 +98,24 @@ const DialogContent = React.forwardRef<
     },
     ref
   ) => {
-    const { overlayZ, contentZ } = useModalLayer({
+    const { overlayZ, contentZ, attach } = useModalLayer({
       overlayClassName,
       contentClassName: typeof className === 'string' ? className : undefined,
     });
+    const setContentRef = React.useCallback(
+      (node: HTMLDivElement | null) => {
+        attach(node);
+        if (typeof ref === 'function') ref(node);
+        else if (ref) ref.current = node;
+      },
+      [attach, ref]
+    );
 
     return (
       <DialogPortal>
         <DialogOverlay className={overlayClassName} style={{ zIndex: overlayZ }} />
         <DialogPrimitive.Content
-          ref={ref}
+          ref={setContentRef}
           onCloseAutoFocus={(event) => {
             onCloseAutoFocus?.(event);
             clearDialogBodyPointerEventsLock();

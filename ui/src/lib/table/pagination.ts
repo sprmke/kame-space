@@ -1,4 +1,4 @@
-export const ADMIN_PAGE_SIZES = [31, 50, 100] as const;
+export const ADMIN_PAGE_SIZES = [25, 50, 100] as const;
 
 export const ADMIN_DEFAULT_PAGE_SIZE = ADMIN_PAGE_SIZES[0];
 
