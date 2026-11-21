@@ -59,9 +59,14 @@ serveAuthenticated('cancel-booking', async (req) => {
     return jsonError(req, 'Booking not found', 404);
   }
 
+  // Only a real guest request can use the guest label; skip the lookup on the host path.
+  const hasOpenGuestRequest =
+    body.initiator === 'guest'
+      ? Boolean(await loadOpenCancellationRequest(String(bookingId)))
+      : false;
   const initiator = resolveHostCancellationInitiator({
     requested: body.initiator,
-    hasOpenGuestRequest: Boolean(await loadOpenCancellationRequest(String(bookingId))),
+    hasOpenGuestRequest,
   });
   if (body.initiator === 'guest' && initiator === 'host') {
     console.warn(
