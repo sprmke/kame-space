@@ -23,6 +23,7 @@ import {
 import { readParkingIdFromUrl } from './parkingScope.ts';
 import { sendParkingTeamInviteEmail } from './parkingTeamInviteEmail.ts';
 import { assertAllowedTeamInviteEmail } from './teamInviteEmail.ts';
+import { assertInvitePermissionsWithinInviter } from './teamInvitePermissions.ts';
 import { parseTeamInviteContactFields } from './teamInviteContact.ts';
 import { virtualOrgOwnerId } from './propertyTeamService.ts';
 
@@ -493,6 +494,11 @@ export async function createParkingInvitation(
   const customRoles = await loadParkingCustomRolesMap(supabase, parkingId);
   await assertCustomRoleForParking(supabase, parkingId, roleId, customRoles);
   const permissions = resolveAssignPermissions(roleId, customRoles, undefined);
+  assertInvitePermissionsWithinInviter({
+    requested: permissions,
+    granted: ctx.permissions,
+    accessKind: ctx.accessKind,
+  });
   const contact = parseTeamInviteContactFields(body);
 
   if (await findActiveMemberByEmail(supabase, parkingId, email)) {
