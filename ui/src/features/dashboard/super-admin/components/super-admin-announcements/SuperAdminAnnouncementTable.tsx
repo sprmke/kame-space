@@ -32,7 +32,7 @@ export function SuperAdminAnnouncementTable({ announcements, onSelect }: Props) 
         <AdminTableTh className="hidden px-3 sm:table-cell sm:px-4">Severity</AdminTableTh>
         <AdminTableTh className="whitespace-nowrap px-3 sm:px-4">Status</AdminTableTh>
         <AdminTableTh className="hidden px-3 lg:table-cell lg:px-4">Schedule</AdminTableTh>
-        <AdminTableActionsTh>Open</AdminTableActionsTh>
+        <AdminTableActionsTh><span className="sr-only">Open</span></AdminTableActionsTh>
       </AdminTableHeadRow>
       <tbody>
         {announcements.map((announcement, index) => {
@@ -41,16 +41,7 @@ export function SuperAdminAnnouncementTable({ announcements, onSelect }: Props) 
             <tr
               key={announcement.id}
               className={adminTableRowClass(index)}
-              tabIndex={0}
-              role="link"
               onClick={() => onSelect(announcement.id)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  onSelect(announcement.id);
-                }
-              }}
-              aria-label={`Open ${announcement.title}`}
             >
               <td className={adminTableCell.body}>
                 <div className="flex min-w-0 items-center gap-2.5">
@@ -62,9 +53,19 @@ export function SuperAdminAnnouncementTable({ announcements, onSelect }: Props) 
                     aria-hidden
                   />
                   <div className="min-w-0">
-                    <p className={cn('truncate', adminTableBodyText.primary)}>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSelect(announcement.id);
+                      }}
+                      className={cn(
+                        'block w-full truncate text-left hover:underline',
+                        adminTableBodyText.primary
+                      )}
+                    >
                       {announcement.title || 'Untitled announcement'}
-                    </p>
+                    </button>
                     <p className={cn('line-clamp-1', adminTableBodyText.secondary)}>
                       {hostAnnouncementBodyPlainText(announcement.body)}
                     </p>

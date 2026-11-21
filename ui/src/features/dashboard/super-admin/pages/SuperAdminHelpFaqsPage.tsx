@@ -19,7 +19,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, HelpCircle, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Eye, GripVertical, HelpCircle, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -35,6 +35,7 @@ import {
   useHelpCenterFaqsAdmin,
   useUpdateHelpCenterFaq,
   type AdminHelpCenterFaq,
+  type HelpCenterFaqStatusFilter,
 } from '@/features/dashboard/super-admin/hooks/useHelpCenterFaqsAdmin';
 
 import { SuperAdminAdminListBodySkeleton } from '@/components/skeletons/SuperAdminSkeletons';
@@ -49,6 +50,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { friendlyToastError } from '@/lib/feedback/toastMessages';
 import {
@@ -101,7 +110,7 @@ function FaqRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-foreground text-sm font-medium">{faq.question}</p>
-            <span className="text-muted-foreground text-[11px] font-semibold uppercase tracking-wide">
+            <span className="bg-muted text-muted-foreground inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium">
               {isSynced ? 'Synced' : 'Manual'}
             </span>
           </div>
@@ -126,11 +135,11 @@ function FaqRow({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label="Edit FAQ"
+          aria-label={isSynced ? 'View FAQ' : 'Edit FAQ'}
           onClick={onEdit}
           className="size-9"
         >
-          <Pencil className="size-4" aria-hidden />
+          {isSynced ? <Eye className="size-4" aria-hidden /> : <Pencil className="size-4" aria-hidden />}
         </Button>
         <Button
           type="button"
@@ -153,7 +162,21 @@ export function SuperAdminHelpFaqsPage() {
   const limit = normalizeAdminPageLimit(
     Number(searchParams.get('limit') ?? String(ADMIN_DEFAULT_PAGE_SIZE))
   );
-  const { data, isLoading, error } = useHelpCenterFaqsAdmin({ page, limit });
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<HelpCenterFaqStatusFilter>('all');
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => setSearch(searchInput.trim()), 250);
+    return () => window.clearTimeout(handle);
+  }, [searchInput]);
+
+  const { data, isLoading, error } = useHelpCenterFaqsAdmin({
+    page,
+    limit,
+    q: search,
+    status: statusFilter,
+  });
   const updateFaq = useUpdateHelpCenterFaq();
   const deleteFaq = useDeleteHelpCenterFaq();
 
@@ -302,8 +325,45 @@ export function SuperAdminHelpFaqsPage() {
         <>
           <SuperAdminHelpFaqsSummaryCards faqs={faqs} />
 
-          <div className="flex justify-end">
-            <AdminListPerPageSelect limit={limit} onChange={setLimit} />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-[min(100%,14rem)] flex-1 sm:max-w-xs">
+              <Search
+                className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
+                aria-hidden
+              />
+              <Input
+                value={searchInput}
+                onChange={(event) => {
+                  setSearchInput(event.target.value);
+                  if (page !== 1) setPage(1);
+                }}
+                placeholder="Search FAQs…"
+                className="h-10 pl-9"
+                aria-label="Search FAQs"
+              />
+            </div>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => {
+                setStatusFilter(value as HelpCenterFaqStatusFilter);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger
+                className="h-10 w-[min(100%,10rem)] sm:w-[10rem]"
+                aria-label="Filter by status"
+              >
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="unpublished">Unpublished</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="ml-auto">
+              <AdminListPerPageSelect limit={limit} onChange={setLimit} />
+            </div>
           </div>
 
           {groupedByCategory.length === 0 ? (

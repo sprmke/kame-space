@@ -1,4 +1,5 @@
 import type { ExternalReviewSource } from '@/features/dashboard/org/lib/propertyExternalReviews';
+import { formatSuperAdminDate } from '@/features/dashboard/super-admin/lib/superAdminDates';
 
 import { toneBadgeClasses } from '@/lib/statusToneColors';
 import { cn } from '@/lib/utils';
@@ -22,19 +23,9 @@ export const superAdminApprovalSectionTitleClass =
 
 export const superAdminApprovalFooterButtonClass = 'min-h-[44px] w-full sm:w-auto';
 
+/** Delegates to the shared formatter so approval dates never render raw or invalid. */
 export function formatSuperAdminApprovalDate(value: string | null): string {
-  if (!value) return '-';
-  const trimmed = value.trim();
-  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
-  const date = ymd
-    ? new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]))
-    : new Date(trimmed);
-  if (Number.isNaN(date.getTime())) return trimmed;
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return formatSuperAdminDate(value);
 }
 
 export function SuperAdminApprovalInfoRow({ label, value }: { label: string; value: string }) {

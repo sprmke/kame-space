@@ -19,6 +19,7 @@ import {
 } from '@/features/dashboard/org/lib/orgPropertyDisplay';
 import { SuperAdminDetailHeader } from '@/features/dashboard/super-admin/components/shared/SuperAdminDetailHeader';
 import { SuperAdminListViewToggle } from '@/features/dashboard/super-admin/components/shared/SuperAdminListViewToggle';
+import { SuperAdminRecordNotFound } from '@/features/dashboard/super-admin/components/shared/SuperAdminRecordNotFound';
 import {
   SuperAdminHostOrgCard,
   SuperAdminHostOrgsEmptyState,
@@ -30,6 +31,7 @@ import {
   useHostProperties,
 } from '@/features/dashboard/super-admin/hooks/useHosts';
 import { hostPropertyToProperty } from '@/features/dashboard/super-admin/lib/hostPropertyAdapter';
+import { formatSuperAdminDate } from '@/features/dashboard/super-admin/lib/superAdminDates';
 import { hostDisplayInitial } from '@/features/dashboard/super-admin/lib/superAdminHostsFilters';
 import type { SuperAdminListViewMode } from '@/features/dashboard/super-admin/lib/superAdminListViewMode';
 import { superAdminPaths } from '@/features/dashboard/super-admin/lib/superAdminPaths';
@@ -144,7 +146,14 @@ export function SuperAdminHostShell() {
     );
   }
   if (error || !host) {
-    return <p className="text-destructive text-sm">Host not found.</p>;
+    return (
+      <SuperAdminRecordNotFound
+        title="Host not found"
+        description="This host may have been removed since the list was loaded."
+        backTo={superAdminPaths.hosts}
+        backLabel="Back to Hosts"
+      />
+    );
   }
 
   const initial = hostDisplayInitial(host.name, host.email);
@@ -157,7 +166,14 @@ export function SuperAdminHostShell() {
         title={host.name}
         subtitle="Organizations and properties owned by this host."
         details={
-          host.email ? <p className="text-muted-foreground text-sm">{host.email}</p> : undefined
+          <div className="space-y-0.5">
+            {host.email ? <p className="text-muted-foreground text-sm">{host.email}</p> : null}
+            <p className="text-muted-foreground text-xs">
+              {host.memberSince
+                ? `Joined ${formatSuperAdminDate(host.memberSince)}`
+                : 'Join date unavailable'}
+            </p>
+          </div>
         }
         backTo={{ to: superAdminPaths.hosts, label: 'Hosts' }}
         leading={

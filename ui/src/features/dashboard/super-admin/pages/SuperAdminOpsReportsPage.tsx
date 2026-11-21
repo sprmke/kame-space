@@ -16,6 +16,7 @@ import {
   formatOpsPeriod,
   type OpsReportListRow,
 } from '@/features/dashboard/super-admin/lib/opsReports';
+import { parseSuperAdminDate } from '@/features/dashboard/super-admin/lib/superAdminDates';
 import { superAdminPaths } from '@/features/dashboard/super-admin/lib/superAdminPaths';
 
 import { Button } from '@/components/ui/button';
@@ -30,13 +31,15 @@ function periodLabel(row: OpsReportListRow): string {
 }
 
 function generatedLabel(value: string): string {
+  const date = parseSuperAdminDate(value);
+  if (!date) return '-';
   return new Intl.DateTimeFormat('en-US', {
     timeZone: 'Asia/Manila',
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-  }).format(new Date(value));
+  }).format(date);
 }
 
 export function SuperAdminOpsReportsPage() {
@@ -76,9 +79,15 @@ export function SuperAdminOpsReportsPage() {
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <OpsStatusBadge status={row.overall_status} />
-                    <OpsSeverityBadge severity="critical" count={row.counts.critical ?? 0} />
-                    <OpsSeverityBadge severity="high" count={row.counts.high ?? 0} />
-                    <OpsSeverityBadge severity="medium" count={row.counts.medium ?? 0} />
+                    {(row.counts.critical ?? 0) > 0 ? (
+                      <OpsSeverityBadge severity="critical" count={row.counts.critical} />
+                    ) : null}
+                    {(row.counts.high ?? 0) > 0 ? (
+                      <OpsSeverityBadge severity="high" count={row.counts.high} />
+                    ) : null}
+                    {(row.counts.medium ?? 0) > 0 ? (
+                      <OpsSeverityBadge severity="medium" count={row.counts.medium} />
+                    ) : null}
                   </div>
                   <p className="text-sm font-medium">{periodLabel(row)}</p>
                   <p className="text-muted-foreground text-xs">

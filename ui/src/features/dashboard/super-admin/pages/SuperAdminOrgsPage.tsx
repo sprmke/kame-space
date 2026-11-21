@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { Building, Building2, Car, ChevronRight, Search } from 'lucide-react';
 
@@ -45,11 +45,17 @@ function PlanBadge({ row }: { row: SuperAdminOrgRow }) {
 }
 
 export function SuperAdminOrgsPage() {
+  const navigate = useNavigate();
   const { searchParams, setSearchParams, page, limit, setPage, setLimit } =
     useAdminListPaginationParams();
   const q = searchParams.get('q') ?? '';
 
-  const { data, isLoading, isFetching, error } = useSuperAdminOrgs({ q, plan: 'all', page, limit });
+  const { data, isLoading, isFetching, error, refetch } = useSuperAdminOrgs({
+    q,
+    plan: 'all',
+    page,
+    limit,
+  });
   const { data: summary } = useSuperAdminOrgsSummary();
 
   const rows = data?.organizations ?? [];
@@ -84,6 +90,7 @@ export function SuperAdminOrgsPage() {
       }
       error={error}
       errorMessage="Could not load organizations."
+      onRetry={() => void refetch()}
     >
       <section
         aria-label="Organization summary"
@@ -157,10 +164,15 @@ export function SuperAdminOrgsPage() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((row) => (
-                    <TableRow key={row.id} className="cursor-pointer">
+                    <TableRow
+                      key={row.id}
+                      className="cursor-pointer"
+                      onClick={() => navigate(superAdminPaths.organizationHub(row.slug))}
+                    >
                       <TableCell>
                         <Link
                           to={superAdminPaths.organizationHub(row.slug)}
+                          onClick={(event) => event.stopPropagation()}
                           className="font-medium hover:underline"
                         >
                           {row.name}
@@ -179,6 +191,7 @@ export function SuperAdminOrgsPage() {
                       <TableCell className="text-right">
                         <Link
                           to={superAdminPaths.organizationHub(row.slug)}
+                          onClick={(event) => event.stopPropagation()}
                           aria-label={`Open ${row.name}`}
                         >
                           <ChevronRight className="text-muted-foreground size-4" aria-hidden />

@@ -54,7 +54,7 @@ function ProfileCard({
   onDelete: () => void;
   deleting: boolean;
 }) {
-  const setKeys = AI_LIMIT_KEYS.filter((key) => profile.limits[key] !== null);
+  const setKeys = AI_LIMIT_KEYS.filter((key) => profile.limits[key] != null);
   const { usage } = profile;
   const assigned =
     usage.organizationAssignments + usage.propertyAssignments + usage.developmentAssignments;

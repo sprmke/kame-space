@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useSearchParams } from 'react-router-dom';
 
-import { BookOpen, Pencil, Plus, Trash2 } from 'lucide-react';
+import { BookOpen, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -17,6 +17,7 @@ import {
   useHostPlaybookArticlesAdmin,
   useUpdatePlaybookArticle,
   type AdminPlaybookArticle,
+  type PlaybookArticleStatusFilter,
 } from '@/features/dashboard/super-admin/hooks/useHostPlaybookArticlesAdmin';
 
 import { SuperAdminAdminListBodySkeleton } from '@/components/skeletons/SuperAdminSkeletons';
@@ -31,6 +32,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { friendlyToastError } from '@/lib/feedback/toastMessages';
 import {
@@ -111,7 +120,21 @@ export function SuperAdminPlaybookArticlesPage() {
   const limit = normalizeAdminPageLimit(
     Number(searchParams.get('limit') ?? String(ADMIN_DEFAULT_PAGE_SIZE))
   );
-  const { data, isLoading, error } = useHostPlaybookArticlesAdmin({ page, limit });
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<PlaybookArticleStatusFilter>('all');
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => setSearch(searchInput.trim()), 250);
+    return () => window.clearTimeout(handle);
+  }, [searchInput]);
+
+  const { data, isLoading, error } = useHostPlaybookArticlesAdmin({
+    page,
+    limit,
+    q: search,
+    status: statusFilter,
+  });
   const deleteArticle = useDeletePlaybookArticle();
 
   const [editingArticle, setEditingArticle] = useState<AdminPlaybookArticle | 'new' | null>(null);
@@ -190,8 +213,45 @@ export function SuperAdminPlaybookArticlesPage() {
         <p className="text-destructive text-sm">Could not load Playbook articles.</p>
       ) : (
         <>
-          <div className="flex justify-end">
-            <AdminListPerPageSelect limit={limit} onChange={setLimit} />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-[min(100%,14rem)] flex-1 sm:max-w-xs">
+              <Search
+                className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
+                aria-hidden
+              />
+              <Input
+                value={searchInput}
+                onChange={(event) => {
+                  setSearchInput(event.target.value);
+                  if (page !== 1) setPage(1);
+                }}
+                placeholder="Search articles…"
+                className="h-10 pl-9"
+                aria-label="Search Playbook articles"
+              />
+            </div>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => {
+                setStatusFilter(value as PlaybookArticleStatusFilter);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger
+                className="h-10 w-[min(100%,10rem)] sm:w-[10rem]"
+                aria-label="Filter by status"
+              >
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="unpublished">Unpublished</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="ml-auto">
+              <AdminListPerPageSelect limit={limit} onChange={setLimit} />
+            </div>
           </div>
 
           {groupedByCategory.length === 0 ? (
