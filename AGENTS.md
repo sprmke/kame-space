@@ -194,6 +194,7 @@ Full index: `.codex/README.md` (Codex) · `.cursor/rules/README.md` (Cursor) · 
 - Co-author trailers or AI commit/PR attribution — `.cursor/rules/git-commits.mdc` and **`git-commits`** skill; `.husky/commit-msg` strips `Co-authored-by` lines automatically.
 - **Production Supabase/DB deploys without unlock** — `.cursor/rules/no-prod-deploy.mdc`. Never run or recommend `deploy:supabase`, `db push`, `functions deploy`, or remote migrations unless the user said **`kamewave`** in the same message. Shell hooks enforce this.
 - **Local stack stop/kill/restart without unlock** — `.cursor/rules/local-dev-lifecycle.mdc`. Never `stop:supabase`, `pkill` Vite/`dev.sh`, or bounce Docker while the user is working unless they asked; unlock word **`localstop`** in the command. Shell hooks enforce this.
+- **Destroying uncommitted work** — `.cursor/rules/wip-preservation.mdc`. Never `git stash`, `reset --hard`, `clean -fd`, `branch -D`, or `worktree remove --force` while any worktree is dirty. Run `bun run wip:save <name>` first; a stash is not storage. Shell hooks deny the destructive commands unless the owner says **`wipsafe`** for that command.
 - Trusting a skill just because it's in the picker — if `property-management-app` (a separate Next.js/tRPC/Drizzle repo) is also open this session, its skills will appear too; ignore them here.
 
 ## Codex compatibility

@@ -1,0 +1,68 @@
+---
+description: Never lose uncommitted work. Preserve dirty worktrees and stashes on a named WIP branch before stashing, resetting, or deleting any branch or worktree.
+alwaysApply: true
+---
+
+# WIP preservation (always-on)
+
+**Non-negotiable:** uncommitted work must never be destroyed. A branch or worktree may be
+closed only when its tree is clean, or when the changes are preserved on a named WIP branch.
+
+## Why this rule exists
+
+On 2026-11-21 the auth brand-bar alignment and the dashboard Profile modal "On this device"
+card were found missing from production. Both had been written in the 2026-11-16 batch, but
+only existed in `stash@{1}` (WIP on `perf/fix-boot-counting`) and an unmerged feature branch.
+An unrelated release shipped without them. This rule prevents a repeat.
+
+## Hard rules
+
+1. Never run `git stash`, `git reset --hard`, `git clean -fd`, `git branch -D`,
+   `git branch --delete --force`, or `git worktree remove --force` while any worktree is dirty.
+2. Preserve first: `bun run wip:save <short-name>`. It commits the changes to
+   `wip/<date>-<short-name>` and returns to the original branch.
+3. A stash is not storage. If a stash is unavoidable, label it
+   (`git stash push -m "<owner> <date> <why>"`) and move it to a branch in the same session:
+   `git stash branch wip/<date>-<name> 'stash@{0}'`.
+4. Before closing a session, or cleaning branches/worktrees, run `bun run wip:audit`.
+5. Never remove a worktree that has `git status --porcelain` output. Preserve, then remove.
+6. A branch merged into `develop` can still carry unique commits. Check with
+   `bun run branch:audit`; the `branch-lifecycle` rule still applies.
+
+## Scope
+
+Every agent (Cursor, Claude Code, Codex, OpenCode) and every human working in this repo.
+
+## Hooks and tools
+
+| Tool                                  | What it does                                                                                   |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `scripts/dev/wip-guard-lib.sh`        | Shared shell guard: detects dirty trees and blocks destructive commands                        |
+| `.cursor/hooks/guard-shell.sh`        | Cursor `beforeShellExecution` deny                                                             |
+| `.claude/hooks/guard-shell.sh`        | Claude Code `PreToolUse` deny                                                                  |
+| `.opencode/plugins/gfm-ai-tooling.ts` | Routes OpenCode bash through the same Claude hook                                              |
+| `opencode.json` → `permission.bash`   | Static `ask` on the destructive commands, so OpenCode blocks even if the plugin is unavailable |
+| `session-wip-audit.sh`                | Every session starts with the stash and dirty-worktree count                                   |
+| `bun run wip:save <name>`             | Commits dirty work to `wip/<date>-<name>`, returns to the original branch                      |
+| `bun run wip:audit`                   | Lists stashes and dirty worktrees; `--strict` exits 1 when found                               |
+
+Existing stashes are mirrored under `archive/stash-*` (see
+`docs/archive/operations/stash-archive.md`). They are archives, not merge candidates.
+
+Owner override for one command only: include `wipsafe` (or `WIP_PRESERVED=1`) after the user
+explicitly says the work is disposable. Never override on your own initiative.
+
+## Recovery
+
+- `bun run wip:audit` to find the work.
+- `git stash list` and `git stash show -p 'stash@{n}'` to inspect a stash.
+- `git stash branch wip/recover 'stash@{n}'` to turn a stash into a branch.
+- `git reflog` for a lost commit; `git branch <name> <sha>` to restore it.
+- Deleted branches: tip SHAs are recorded in
+  `docs/archive/operations/branch-cleanup-audit.md`.
+
+## Related
+
+- `branch-lifecycle.mdc` — land finished work and delete branches safely.
+- Skill: `wip-preservation`.
+- `docs/archive/operations/branch-cleanup-audit.md` — durable restore record.

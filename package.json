@@ -43,6 +43,8 @@
     "audit:auth-matrix": "node scripts/dev/audit-auth-matrix.mjs",
     "check:auth-matrix": "node scripts/dev/audit-auth-matrix.mjs --check",
     "branch:audit": "bash scripts/dev/branch-audit.sh",
+    "wip:audit": "bash scripts/dev/wip-audit.sh",
+    "wip:save": "bash scripts/dev/wip-save.sh",
     "check:authenticated-rate-limit": "bash scripts/dev/check-authenticated-rate-limit.sh",
     "check:migration-drift": "bash scripts/deploy/check-migration-drift.sh",
     "perf:load-test": "echo 'Install k6 then: BASE_URL=<hosted-dev> k6 run scripts/performance/load-test/mixed.js'",
