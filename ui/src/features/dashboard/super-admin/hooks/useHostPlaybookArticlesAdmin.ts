@@ -19,15 +19,27 @@ export type AdminPlaybookArticle = {
 
 export const PLAYBOOK_ARTICLES_ADMIN_QUERY_KEY = ['super-admin', 'host-playbook-articles'] as const;
 
-export function useHostPlaybookArticlesAdmin(params?: { page?: number; limit?: number }) {
+export type PlaybookArticleStatusFilter = 'all' | 'published' | 'unpublished';
+
+export function useHostPlaybookArticlesAdmin(params?: {
+  page?: number;
+  limit?: number;
+  q?: string;
+  status?: PlaybookArticleStatusFilter;
+}) {
   const page = params?.page ?? 1;
   const limit = params?.limit ?? ADMIN_DEFAULT_PAGE_SIZE;
+  const q = params?.q?.trim() ?? '';
+  const status = params?.status ?? 'all';
+  const search = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (q) search.set('q', q);
+  if (status !== 'all') search.set('status', status);
 
   return useQuery({
-    queryKey: [...PLAYBOOK_ARTICLES_ADMIN_QUERY_KEY, page, limit] as const,
+    queryKey: [...PLAYBOOK_ARTICLES_ADMIN_QUERY_KEY, page, limit, q, status] as const,
     queryFn: () =>
       callEdgeFunction<{ articles: AdminPlaybookArticle[]; total: number }>(
-        `list-host-playbook-articles-admin?page=${page}&limit=${limit}`
+        `list-host-playbook-articles-admin?${search.toString()}`
       ),
     placeholderData: keepPreviousData,
   });

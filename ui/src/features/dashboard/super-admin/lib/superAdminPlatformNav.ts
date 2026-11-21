@@ -37,9 +37,9 @@ export type SuperAdminPlatformNavGroup = {
 };
 
 /**
- * Grouped Super Admin destinations. Single source for both the Platform
- * sidebar (rendered as labelled sections, below Overview) and the Overview
- * quick-links grid, so the two surfaces cannot drift.
+ * Grouped Super Admin destinations. Single source for the Platform sidebar
+ * (labelled sections below Overview) and the cmd-K palette page list, so the
+ * two surfaces cannot drift.
  */
 export const SUPER_ADMIN_NAV_GROUPS: SuperAdminPlatformNavGroup[] = [
   {
@@ -94,6 +94,6 @@ export const SUPER_ADMIN_NAV_GROUPS: SuperAdminPlatformNavGroup[] = [
   },
 ];
 
-/** Flat list of every non-Overview destination (Overview grid, search, etc.). */
+/** Flat list of every non-Overview destination (palette, search, tests). */
 export const SUPER_ADMIN_PLATFORM_DESTINATIONS: SuperAdminPlatformNavItem[] =
   SUPER_ADMIN_NAV_GROUPS.flatMap((group) => group.items);

@@ -1,8 +1,11 @@
 import type { ReactNode } from 'react';
 
+import { RotateCw } from 'lucide-react';
+
 import { AdminPageHeader } from '@/features/dashboard/bookings/components/AdminPageHeader';
 import { SuperAdminPageLoading } from '@/features/dashboard/super-admin/components/shared/SuperAdminPageLoading';
 
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 type SuperAdminPageProps = {
@@ -22,6 +25,8 @@ type SuperAdminPageProps = {
   /** Show a standard error message instead of `children`. */
   error?: unknown;
   errorMessage?: string;
+  /** Optional refetch, rendered as a Retry action in the error state. */
+  onRetry?: () => void;
 };
 
 /**
@@ -40,6 +45,7 @@ export function SuperAdminPage({
   loadingBody,
   error,
   errorMessage,
+  onRetry,
 }: SuperAdminPageProps) {
   return (
     <div className={cn('space-y-3 sm:space-y-4', className)}>
@@ -47,10 +53,17 @@ export function SuperAdminPage({
       {isLoading ? (
         (loadingBody ?? <SuperAdminPageLoading metricCount={loadingMetricCount} />)
       ) : error ? (
-        <p className="text-destructive text-sm">
-          {errorMessage ??
-            (error instanceof Error ? error.message : `Could not load ${title.toLowerCase()}.`)}
-        </p>
+        <div className="border-border bg-card flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4">
+          <p className="text-destructive text-sm">
+            {errorMessage ?? `Could not load ${title.toLowerCase()}.`}
+          </p>
+          {onRetry ? (
+            <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+              <RotateCw className="size-4" aria-hidden />
+              Retry
+            </Button>
+          ) : null}
+        </div>
       ) : (
         <>
           {toolbar}
