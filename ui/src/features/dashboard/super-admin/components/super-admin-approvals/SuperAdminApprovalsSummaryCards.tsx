@@ -24,7 +24,7 @@ export function SuperAdminApprovalsSummaryCards({ approvals, summary: serverSumm
       className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4"
     >
       <AdminMetricCard
-        title="In review"
+        title="Awaiting review"
         value={String(summary.pending)}
         icon={ClipboardCheck}
         iconClassName="text-amber-600 dark:text-amber-400"

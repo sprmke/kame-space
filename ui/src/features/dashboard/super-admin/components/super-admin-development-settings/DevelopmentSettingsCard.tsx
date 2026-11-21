@@ -26,6 +26,7 @@ import {
   type AdminSectionNavItem,
 } from '@/features/dashboard/bookings/components/AdminSectionNavLayout';
 import type { PropertyMediaItem } from '@/features/dashboard/org/lib/propertySettingsConstants';
+import { SuperAdminRecordNotFound } from '@/features/dashboard/super-admin/components/shared/SuperAdminRecordNotFound';
 import { DevelopmentProfileSections } from '@/features/dashboard/super-admin/components/super-admin-development-settings/DevelopmentProfileSections';
 import {
   useDeleteDevelopment,
@@ -201,7 +202,14 @@ export function DevelopmentSettingsCard({ slug }: Props) {
   };
 
   if (error && !development) {
-    return <p className="text-destructive text-sm">Development not found.</p>;
+    return (
+      <SuperAdminRecordNotFound
+        title="Development not found"
+        description="It may have been renamed or removed."
+        backTo={superAdminPaths.developments}
+        backLabel="Back to Developments"
+      />
+    );
   }
 
   const headerTitle = development?.name ?? 'Development';
@@ -209,6 +217,7 @@ export function DevelopmentSettingsCard({ slug }: Props) {
   return (
     <>
       <AdminSectionNavLayout
+        mobileSectionNav
         className="min-h-0 flex-1"
         sections={SETTINGS_SECTIONS}
         header={

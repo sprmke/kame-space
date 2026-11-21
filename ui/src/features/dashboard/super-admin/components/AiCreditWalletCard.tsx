@@ -7,6 +7,7 @@ import {
   useAdjustAiCreditWallet,
   useAiCreditWallet,
 } from '@/features/dashboard/super-admin/hooks/useAiCreditWallet';
+import { useSuperAdminOrgs } from '@/features/dashboard/super-admin/hooks/useSuperAdminOrgs';
 
 import { WalletResultSkeleton } from '@/components/skeletons/AdminSkeletons';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,19 @@ export function AiCreditWalletCard({ initialOrgId }: { initialOrgId?: string } =
 
   const { data: wallet, isLoading, isError, error } = useAiCreditWallet(activeOrgId);
   const adjust = useAdjustAiCreditWallet(activeOrgId);
+
+  // Suggestions only, so the operator never has to remember an org id.
+  const [orgSearch, setOrgSearch] = React.useState('');
+  React.useEffect(() => {
+    const handle = window.setTimeout(() => setOrgSearch(orgQuery.trim()), 250);
+    return () => window.clearTimeout(handle);
+  }, [orgQuery]);
+  const orgOptions = useSuperAdminOrgs({
+    q: orgSearch,
+    plan: 'all',
+    page: 1,
+    limit: 8,
+  });
 
   const handleLoad = () => {
     const trimmed = orgQuery.trim();
@@ -69,18 +83,30 @@ export function AiCreditWalletCard({ initialOrgId }: { initialOrgId?: string } =
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <Input
-          value={orgQuery}
-          onChange={(e) => setOrgQuery(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
-          placeholder="Org ID or slug"
-          className="h-10"
-          aria-label="Organization ID or slug"
-        />
-        <Button type="button" variant="outline" className="h-10 shrink-0" onClick={handleLoad}>
-          Load
-        </Button>
+      <div className="space-y-1.5">
+        <div className="flex gap-2">
+          <Input
+            value={orgQuery}
+            onChange={(e) => setOrgQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
+            placeholder="Search organizations"
+            className="h-10"
+            aria-label="Organization name or slug"
+            list="ai-wallet-org-options"
+            autoComplete="off"
+          />
+          <datalist id="ai-wallet-org-options">
+            {(orgOptions.data?.organizations ?? []).map((org) => (
+              <option key={org.id} value={org.slug}>
+                {org.name}
+              </option>
+            ))}
+          </datalist>
+          <Button type="button" variant="outline" className="h-10 shrink-0" onClick={handleLoad}>
+            Load
+          </Button>
+        </div>
+        <p className="text-muted-foreground text-xs">Search by organization name or slug.</p>
       </div>
 
       {isLoading ? <WalletResultSkeleton /> : null}

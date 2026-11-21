@@ -29,7 +29,7 @@ export function SuperAdminPlanMixDonut({ planMix }: { planMix: SuperAdminOvervie
           {chartData.length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart tabIndex={-1} aria-label="Plan mix" accessibilityLayer={false}>
                   <Pie
                     data={chartData}
                     cx="50%"
@@ -44,7 +44,11 @@ export function SuperAdminPlanMixDonut({ planMix }: { planMix: SuperAdminOvervie
                     isAnimationActive={false}
                   >
                     {chartData.map((entry, index) => (
-                      <Cell key={entry.code} fill={PALETTE[index % PALETTE.length]} />
+                      <Cell
+                        key={entry.code}
+                        fill={PALETTE[index % PALETTE.length]}
+                        aria-label={`${entry.label}: ${entry.count}`}
+                      />
                     ))}
                   </Pie>
                 </PieChart>

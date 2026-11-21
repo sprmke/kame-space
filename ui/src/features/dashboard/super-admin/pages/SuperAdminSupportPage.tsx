@@ -27,6 +27,7 @@ import {
 } from '@/features/dashboard/super-admin/lib/superAdminSupportFilters';
 
 import { SuperAdminAdminListBodySkeleton } from '@/components/skeletons/SuperAdminSkeletons';
+import { Button } from '@/components/ui/button';
 import { useAdminMobileGridViewGuard } from '@/hooks/useAdminMobileGridViewGuard';
 import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import {
@@ -57,7 +58,7 @@ export function SuperAdminSupportPage() {
     status: (searchParams.get('status') ??
       DEFAULT_SUPER_ADMIN_SUPPORT_FILTERS.status) as SuperAdminSupportFilters['status'],
   };
-  const { data, isLoading, isFetching, error } = useSupportTicketsAdmin(
+  const { data, isLoading, isFetching, error, refetch } = useSupportTicketsAdmin(
     {
       search: filters.search.trim() || null,
       category: filters.category === 'all' ? null : filters.category,
@@ -133,7 +134,12 @@ export function SuperAdminSupportPage() {
           metricTitles={['Total tickets', 'Open', 'In progress', 'Resolved']}
         />
       ) : error ? (
-        <p className="text-destructive text-sm">Could not load support tickets.</p>
+        <div className="border-border bg-card flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4">
+          <p className="text-destructive text-sm">Could not load support tickets.</p>
+          <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>
+            Retry
+          </Button>
+        </div>
       ) : (
         <>
           <SuperAdminSupportSummaryCards tickets={tickets} summary={ticketsSummary} />

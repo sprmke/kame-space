@@ -36,6 +36,16 @@ import {
 } from '@/features/dashboard/super-admin/lib/superAdminPricingFilters';
 
 import { SuperAdminAdminListBodySkeleton } from '@/components/skeletons/SuperAdminSkeletons';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { useAdminMobileGridViewGuard } from '@/hooks/useAdminMobileGridViewGuard';
 import { useIsBelowLg } from '@/hooks/useMediaQuery';
@@ -54,6 +64,7 @@ export function SuperAdminOrgSubscriptionsPage() {
     Number(searchParams.get('limit') ?? String(ADMIN_DEFAULT_PAGE_SIZE))
   );
   const [viewMode, setViewMode] = useState<SuperAdminOrgSubscriptionsViewMode>('table');
+  const [confirmCron, setConfirmCron] = useState<'billing' | 'superhost' | null>(null);
   const [filters, setFilters] = useState(DEFAULT_SUPER_ADMIN_ORG_SUBSCRIPTIONS_FILTERS);
   const isMobileLayout = useIsBelowLg();
   useAdminMobileGridViewGuard(isMobileLayout, viewMode, setViewMode);
@@ -142,28 +153,6 @@ export function SuperAdminOrgSubscriptionsPage() {
       <AdminPageHeader
         title="Org subscriptions"
         subtitle="Assign plans to organizations across the platform. Covers every property they own."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="min-h-[44px]"
-              disabled={superhostCron.isPending}
-              onClick={() => superhostCron.mutate()}
-            >
-              Run Superhost cron
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="min-h-[44px]"
-              disabled={billingCron.isPending}
-              onClick={() => billingCron.mutate()}
-            >
-              Run billing cron
-            </Button>
-          </div>
-        }
       />
       {isLoading ? (
         <SuperAdminAdminListBodySkeleton
@@ -174,6 +163,71 @@ export function SuperAdminOrgSubscriptionsPage() {
       ) : (
         <>
           <SuperAdminOrgSubscriptionsSummaryCards summary={summary} />
+
+          <div className="surface-card space-y-3 p-3 sm:p-4">
+            <div className="space-y-1">
+              <h2 className="text-section-title">Billing tools</h2>
+              <p className="text-muted-foreground text-xs">
+                Manual runs of the scheduled billing jobs. Normal renewals and assessments run on
+                their own.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-[44px]"
+                disabled={superhostCron.isPending}
+                onClick={() => setConfirmCron('superhost')}
+              >
+                Run Superhost assessment
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-[44px]"
+                disabled={billingCron.isPending}
+                onClick={() => setConfirmCron('billing')}
+              >
+                Run billing renewal
+              </Button>
+            </div>
+          </div>
+
+          <AlertDialog
+            open={confirmCron !== null}
+            onOpenChange={(open) => {
+              if (!open) setConfirmCron(null);
+            }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {confirmCron === 'billing'
+                    ? 'Run the billing renewal now?'
+                    : 'Run the Superhost assessment now?'}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {confirmCron === 'billing'
+                    ? 'Sends renewal links and reminders, applies scheduled plan changes, and may mark unpaid subscriptions past due or suspended.'
+                    : 'Recomputes Superhost status for every eligible organization and can add or remove the badge.'}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    const action = confirmCron;
+                    setConfirmCron(null);
+                    if (action === 'billing') billingCron.mutate();
+                    else if (action === 'superhost') superhostCron.mutate();
+                  }}
+                >
+                  Run now
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <SuperAdminOrgSubscriptionsToolbar
             filters={filters}

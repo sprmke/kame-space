@@ -86,7 +86,7 @@ function AddAnnouncementActions({ onCreatePlatform }: { onCreatePlatform: () => 
         <MobileChoiceSheet open={sheetOpen} onOpenChange={setSheetOpen} title="Add announcement">
           <div role="listbox" aria-label="Add announcement">
             <MobileChoiceItem
-              label="Platform announcement"
+              label="New platform announcement"
               icon={<Megaphone className="size-5" aria-hidden />}
               onSelect={() => {
                 onCreatePlatform();
@@ -94,7 +94,7 @@ function AddAnnouncementActions({ onCreatePlatform }: { onCreatePlatform: () => 
               }}
             />
             <MobileChoiceItem
-              label="Development announcement"
+              label="Development announcements"
               icon={<Landmark className="size-5" aria-hidden />}
               onSelect={() => {
                 setSheetOpen(false);
@@ -113,12 +113,12 @@ function AddAnnouncementActions({ onCreatePlatform }: { onCreatePlatform: () => 
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={onCreatePlatform}>
           <Megaphone className="size-4" aria-hidden />
-          Platform announcement
+          New platform announcement
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to={superAdminPaths.developments}>
             <Landmark className="size-4" aria-hidden />
-            Development announcement
+            Development announcements
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
