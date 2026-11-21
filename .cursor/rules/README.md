@@ -27,6 +27,7 @@ Keep this list **small**. Heavy domain specs use globs.
 | `mobile-native-ui.mdc`          | Always-on gate: native mobile look/feel for any UI change in `ui/src/**`            |
 | `skeleton-loaders.mdc`          | Loading states: real static text/icons; skeleton only async values, rows, media     |
 | `branch-lifecycle.mdc`          | Finished work lands on `develop`: PR, report, merge when green, delete the branch   |
+| `wip-preservation.mdc`          | Never stash/reset/delete dirty work: preserve on a `wip/` branch first              |
 | `karpathy-guidelines.mdc`       | Think first, simplicity, surgical diffs, verifiable goals (Karpathy-inspired)       |
 | `agent-reporting.mdc`           | One summary/report/question format for every model (OpenCode exempt)                |
 

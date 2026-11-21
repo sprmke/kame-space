@@ -18,6 +18,7 @@
     ".cursor/rules/testing.mdc",
     ".cursor/rules/mobile-native-ui.mdc",
     ".cursor/rules/branch-lifecycle.mdc",
+    ".cursor/rules/wip-preservation.mdc",
     ".cursor/rules/karpathy-guidelines.mdc",
     "DESIGN.md"
   ],
@@ -67,7 +68,19 @@
       "rm -rf /": "deny",
       "rm -rf /*": "deny",
       "rm -rf ~": "deny",
-      "rm -rf ~/*": "deny"
+      "rm -rf ~/*": "deny",
+      "git stash": "ask",
+      "git stash *": "ask",
+      "git reset --hard": "ask",
+      "git reset --hard *": "ask",
+      "git clean -fd*": "ask",
+      "git branch -D*": "ask",
+      "git branch --delete --force*": "ask",
+      "git worktree remove --force*": "ask",
+      "git checkout -f*": "ask",
+      "git switch -f*": "ask",
+      "git restore .*": "ask",
+      "git checkout -- .*": "ask"
     },
     "skill": {
       "*": "allow"

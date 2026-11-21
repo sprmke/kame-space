@@ -37,7 +37,7 @@ import { buildPageTitle, listingDescription, parkingTitle } from '@/lib/seo/seoM
 
 type SettingsController = ReturnType<typeof useParkingSettingsController>;
 
-const readOnlyFieldClass = 'bg-muted/40';
+const readOnlyFieldClass = 'bg-muted/40 cursor-not-allowed';
 
 function parkingTypeLabel(value: string): string {
   return PARKING_TYPES.find((type) => type.value === value)?.label ?? value;
@@ -70,7 +70,7 @@ export function ParkingBasicInformationSection({ controller }: { controller: Set
           readOnly
           aria-readonly="true"
           placeholder="-"
-          className="bg-muted/40 text-muted-foreground h-10 cursor-default font-mono tabular-nums"
+          className="bg-muted/40 text-muted-foreground h-10 cursor-not-allowed font-mono tabular-nums"
         />
       </SettingsField>
 

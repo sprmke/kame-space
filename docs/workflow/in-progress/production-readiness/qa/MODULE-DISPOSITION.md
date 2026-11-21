@@ -9,15 +9,16 @@ origin_stage: in-progress
 readiness: unverified
 launch_gate: A
 launch_blocker: tbd
-last_verified: '9b3f3719f 2026-11-21'
+last_verified: 'a389a27e8 2026-11-21'
 ---
 
 # Module status disposition
 
 One page answering **what is done, what is in progress, what is waiting on QA, and what is
-still planned**. Verified against `develop` at `9b3f3719f` on 2026-11-21.
+still planned**. Verified against `develop` at `a389a27e8` and the production release
+`e0caab2aa` on 2026-11-21.
 
-Stage counts at that commit: **129 done · 41 for testing · 28 in progress · 19 planned · 5 intake · 8 won't do**.
+Stage counts at that commit: **130 done · 41 for testing · 27 in progress · 19 planned · 5 intake · 8 won't do**.
 Full narrative per stage: [`../../README.md`](../../README.md). Branch audit record:
 [`../../archive/operations/branch-cleanup-audit.md`](../../archive/operations/branch-cleanup-audit.md).
 
@@ -133,20 +134,27 @@ owner clears it.
 
 ---
 
-## Open PR queue (verified 2026-11-21)
+## Shipped in the 2026-11-21 production release
 
-### Ready to merge (green, mergeable)
+| PR                                                    | Change                                                            | Production                                                        |
+| ----------------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [#556](https://github.com/sprmke/kame-space/pull/556) | Property and org deletion purges guest-PII documents              | Backend deploy success (`5dcacc85f`)                              |
+| [#555](https://github.com/sprmke/kame-space/pull/555) | Post-sign-out cache leak fixed; injection coverage to 14 cases    | Backend deploy success (`7845acb36`)                              |
+| [#544](https://github.com/sprmke/kame-space/pull/544) | CSP enforcing; captcha confirmed; AI spend ceiling; MediaPipe pin | Backend deploy success (`a11f41c7e`); CSP live on `kamespace.com` |
+| [#553](https://github.com/sprmke/kame-space/pull/553) | Double-booking guard; webhook claim lease; ops alerts; privacy    | Backend deploy success (`a389a27e8`), four migrations applied     |
+| [#557](https://github.com/sprmke/kame-space/pull/557) | Mascot poses across guest empties and host CTAs                   | Shipped in release #559, then #561                                |
+| [#535](https://github.com/sprmke/kame-space/pull/535) | Parking pricing coverage tests                                    | Tests only                                                        |
+| [#531](https://github.com/sprmke/kame-space/pull/531) | Booking chat deep link plan closed                                | Docs; plan now in `done/`                                         |
+| [#529](https://github.com/sprmke/kame-space/pull/529) | Calendar sync cron and live DB checks recorded                    | Docs                                                              |
+| [#558](https://github.com/sprmke/kame-space/pull/558) | Module status and branch docs synced                              | Docs                                                              |
 
-| PR                                                    | Title                                                            | Notes                                                                 |
-| ----------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------- |
-| [#556](https://github.com/sprmke/kame-space/pull/556) | Purge guest documents on property and org deletion               | Closes PR-016; all checks green                                       |
-| [#555](https://github.com/sprmke/kame-space/pull/555) | Close the sign-out cache leak and expand injection tests         | Closes PR-015 and PR-013; green                                       |
-| [#553](https://github.com/sprmke/kame-space/pull/553) | Money, webhook, alerting and privacy readiness items             | Closes PR-032 and related; green                                      |
-| [#544](https://github.com/sprmke/kame-space/pull/544) | Enforce CSP and harden captcha and AI spend                      | Closes PR-012, PR-001/002, PR-006; green                              |
-| [#557](https://github.com/sprmke/kame-space/pull/557) | Kame mascot poses across guest empties and host CTAs             | Green except two e2e shards still running                             |
-| [#531](https://github.com/sprmke/kame-space/pull/531) | Close the booking chat deep link plan                            | Docs-only; behind `develop`, safe to merge                            |
-| [#529](https://github.com/sprmke/kame-space/pull/529) | Record the calendar sync cron and live DB checks                 | Docs-only; behind `develop`, safe to merge                            |
-| [#535](https://github.com/sprmke/kame-space/pull/535) | Cover host-set parking rate cards and the direct link comparison | Tests-only; conflict resolved 2026-11-21 (`534f6f2e1`), now mergeable |
+Frontend release PR [#561](https://github.com/sprmke/kame-space/pull/561) merged to `main` as
+`e0caab2aa`. Vercel Production succeeded, `kamespace.com` answers `200`, and the response
+carries an enforcing `Content-Security-Policy` header (not Report-Only).
+
+---
+
+## Open PR queue after the release
 
 ### Conflicting — needs a deliberate conflict pass
 
@@ -166,43 +174,47 @@ owner clears it.
 
 ---
 
-## Branch hygiene (2026-11-21 pass)
+## Branch hygiene after the release
 
 Deleted, local and remote (fully merged or fully applied, no worktree):
 
 `release/2026-11-19-host-parking-pricing`, `release/2026-11-19-multi-channel-calendar-sync`,
 `release/2026-11-19-ui-improvements`, `sprmke/flyingfish`, `sprmke/audit-modules-worktrees-prs`,
 `docs/calendar-sync-release-record`, `chore/parking-pricing-test-followups`,
-`fix/preview-existing-worktrees` (remote), `sprmke/analyze-editable-public-pages` (remote).
-Tip SHAs are recorded in the branch audit.
+`fix/preview-existing-worktrees` (remote), `sprmke/analyze-editable-public-pages` (remote),
+plus the merged release branches `chore/booking-chat-doc-done`,
+`docs/calendar-sync-live-verification-db-checks`, `sprmke/readiness-money-data-ops`,
+`sprmke/readiness-csp-captcha-ai-cost`, `sprmke/readiness-prompt-injection-signout`,
+`sprmke/readiness-storage-purge`, `feat/multi-channel-calendar-sync`,
+`feat/host-set-parking-pricing`, `feat/local-dev-test-login`,
+`test/host-set-parking-pricing-coverage`, `sprmke/feat-turtle-mascot-integration`, and
+`sprmke/chore-cleanup-stale-branches`. Tip SHAs are recorded in the branch audit.
 
 Kept on purpose:
 
-| Branch                                                                | Why                                    |
-| --------------------------------------------------------------------- | -------------------------------------- |
-| `feat/multi-channel-calendar-sync`                                    | Tip carries the docs in open PR #529   |
-| `feat/host-set-parking-pricing`                                       | Tip carries the tests in open PR #535  |
-| `test/host-set-parking-pricing-coverage`                              | PR #535 is conflicting, not merged     |
-| `docs/calendar-sync-live-verification-db-checks`                      | PR #529 is open                        |
-| `sprmke/desktop-screens-mobile-redesign`                              | PR #554 is open and conflicting        |
-| `feat/marketing-ai-studio-overhaul`                                   | PR #488 is open and conflicting        |
-| `feat/multi-residence-config-decoupling`                              | PR #354 is a draft marked DO NOT MERGE |
-| `codex/mascot-talking-preview`                                        | PR #353 is a draft prototype           |
-| `backup/`, `recover/` snapshots                                       | Safety snapshots, not work branches    |
-| `release/2026-11-19-prod-ship`, `sprmke/refine-payment-plans-billing` | Worktrees hold uncommitted edits       |
+| Branch                                   | Why                                    |
+| ---------------------------------------- | -------------------------------------- |
+| `sprmke/desktop-screens-mobile-redesign` | PR #554 is open and conflicting        |
+| `feat/marketing-ai-studio-overhaul`      | PR #488 is open and conflicting        |
+| `feat/multi-residence-config-decoupling` | PR #354 is a draft marked DO NOT MERGE |
+| `codex/mascot-talking-preview`           | PR #353 is a draft prototype           |
+| `feat/public-landing-redesign`           | PR #495 is parked                      |
+| `backup/`, `recover/` snapshots          | Safety snapshots, not work branches    |
+| `sprmke/refine-payment-plans-billing`    | Worktree holds an older dirty snapshot |
+| `release/2026-11-19-prod-ship`           | Worktree holds an untracked backup dir |
 
 Worktrees on merged branches still exist (`arowana`, `bass`, `coelacanth`, `cutlassfish`,
-`dulse`, `sculpin`, `anemone`). Removing a worktree closes an Orca workspace, so it is left
-to the owner's call.
+`dulse`, `sculpin`, `anemone`, `megrim`, `hammerhead`, `tang`, `host-set-parking-pricing`,
+`geoduck`). Removing a worktree closes an Orca workspace, so it is left to the owner's call.
 
 ---
 
 ## Decisions needed from the owner
 
-1. Merge the seven ready PRs above (all green) or hold any of them.
-2. Approve a conflict pass on #535 (tests only) and #554 (mobile v3, needs UI re-verification).
-3. Decide #488 (Marketing AI Studio overhaul): revive, split, or close.
-4. Confirm which merged-branch worktrees can be retired.
-5. Dependabot: bump strategy for the 10 PRs into `main`.
+1. Approve a conflict pass on #554 (mobile v3, needs UI re-verification).
+2. Decide #488 (Marketing AI Studio overhaul): revive, split, or close.
+3. Confirm which merged-branch worktrees can be retired.
+4. Dependabot: bump strategy for the 10 PRs into `main`.
+5. Continue the QA batches for the modules already in `for-testing/`.
 
 Back to [in-progress index](../../README.md).

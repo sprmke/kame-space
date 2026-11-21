@@ -14,6 +14,14 @@ Stack: **Vite + React 18 SPA** (`ui/`) + **Supabase Edge Functions** (Deno, `sup
 
 ## AI session hygiene
 
+**Uncommitted work is sacred.** Never `git stash`, `reset --hard`, `clean -fd`, `branch -D`,
+or `worktree remove --force` while any worktree is dirty. Run `bun run wip:save <name>` first,
+which commits the changes to a `wip/<date>-<name>` branch and returns to the original branch.
+A stash is not storage: label it and move it to a `wip/` branch in the same session. Before
+cleanup, run `bun run wip:audit`. Shell hooks deny the destructive commands. Full policy:
+`.cursor/rules/wip-preservation.mdc` + skill **`wip-preservation`**; unlock word **`wipsafe`**
+only when the owner says the work is disposable.
+
 **Karpathy guidelines (always-on):** **`.cursor/rules/karpathy-guidelines.mdc`** / skill **`karpathy-guidelines`** ([upstream](https://github.com/multica-ai/andrej-karpathy-skills)). Think before coding, simplicity first, surgical changes, goal-driven verification.
 
 See **`.cursor/rules/ai-usage.mdc`** (always-on in Cursor; follow here too):

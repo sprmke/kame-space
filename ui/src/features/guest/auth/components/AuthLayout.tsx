@@ -50,7 +50,7 @@ export function AuthLayout() {
       )}
 
       <div className="bg-background flex min-h-screen flex-col">
-        <div className="flex items-center justify-between border-b p-4 lg:hidden">
+        <div className="public-brand-bar border-border justify-between border-b lg:hidden">
           <Link to={isHostMode ? '/for-hosts' : '/'} className="flex min-h-[44px] items-center">
             <MarketingBrandLogo />
           </Link>

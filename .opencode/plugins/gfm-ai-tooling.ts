@@ -170,6 +170,13 @@ function collectSessionContext(root: string): string {
     );
   }
 
+  // WIP preservation (mirror .claude/hooks/session-wip-audit.sh)
+  const wipAudit = runHookScript(root, '.claude/hooks/session-wip-audit.sh', '{}');
+  const wipContext = parseHookJson(wipAudit.stdout).additional_context;
+  if (typeof wipContext === 'string' && wipContext.length > 0) {
+    chunks.push(wipContext);
+  }
+
   // Docs sync (Claude/OpenCode cannot auto-load alwaysApply .mdc — mirror session-docs-sync-reminder.sh)
   chunks.push(
     [

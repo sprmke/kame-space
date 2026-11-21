@@ -29,8 +29,8 @@ Route: `/org/:orgSlug/property/:propertySlug/settings`
 | Building Forms     | Done      | Done       | Done | Compact summary + Manage modal (form + live PDF preview)                                                                        |
 | Email automations  | Done      | Done       | Done | Team email + read-only building admin email; check-out timing; automated sends as a summary row + Manage modal                  |
 | Search preview     | Done      | Done       | Done | Own section above Integrations; stacked title/description + Google-style preview                                                |
-| Guest experience   | Done      | Done       | Done | Summary + Manage modal for essentials; Templates link for check-in/out; unit read-only from Basic Info when set                 |
 | Integrations       | Done      | Done       | Done | Telegram + AI optional; GAF/pet via Resend inbound                                                                              |
+| Guest experience   | Done      | Done       | Done | Summary + Manage modal for essentials; Templates link for check-in/out; unit read-only from Basic Info when set                 |
 | AI features        | Moved     | n/a        | Done | Removed from property settings; configured in org Settings → AI features                                                        |
 | Activity           | Read-only | n/a        | Done | Summary row + **Manage** → modal with full property activity feed (`ActivityLogPanel`). Section shown only with `activity:view` |
 | Listing status     | Done      | Done       | Done | Last section; layout-matched skeleton while lifecycle loads; confirm sheets for pause, archive, restore, and delete             |
