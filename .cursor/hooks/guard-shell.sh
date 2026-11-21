@@ -8,12 +8,16 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$ROOT/scripts/dev/prod-deploy-guard-lib.sh"
 # shellcheck source=scripts/dev/local-dev-guard-lib.sh
 source "$ROOT/scripts/dev/local-dev-guard-lib.sh"
+# shellcheck source=scripts/dev/wip-guard-lib.sh
+source "$ROOT/scripts/dev/wip-guard-lib.sh"
 
 input=$(cat)
 if command -v jq >/dev/null 2>&1; then
   command_str=$(echo "$input" | jq -r '.command // empty')
+  cwd_str=$(echo "$input" | jq -r '.cwd // empty')
 else
   command_str=$(echo "$input" | grep -o '"command":"[^"]*"' | head -1 | sed 's/"command":"//;s/"$//' | sed 's/\\"/"/g')
+  cwd_str=""
 fi
 
 permission="allow"
@@ -28,6 +32,10 @@ elif local_dev_stop_is_blocked "$command_str"; then
   permission="deny"
   user_message="Blocked: local stack stop/kill/restart. Say you want local stopped or restarted, then rerun with unlock word localstop in the command."
   agent_message=$(local_dev_stop_block_reason)
+elif wip_guard_is_blocked "$command_str" "${cwd_str:-$ROOT}"; then
+  permission="deny"
+  user_message="Blocked: this can lose uncommitted work. Run 'bun run wip:save <name>' first, or include wipsafe to override."
+  agent_message=$(wip_guard_reason)
 else
   case "$command_str" in
     *"rm -rf /"*|*"rm -rf /*"*|*"rm -rf ~"*)
