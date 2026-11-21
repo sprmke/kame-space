@@ -38,6 +38,10 @@ ALLOWLIST=(
   # won the retry. There is no `.limit()` shape for an update (PR-019 / PR-036).
   '_shared/paymongoEventDedupe.ts'
 
+  # Linked parking cancel: the list is bounded to 50, the two `.select('id')` calls are updates
+  # (no limit shape), and the parking lookup is one row by primary key.
+  '_shared/linkedParkingCancellation.ts'
+
   # Query builder is created once (`.select('id, name')`) and reused across two
   # mutually exclusive branches (`.eq('id', orgId).maybeSingle()` vs
   # `.eq('slug', orgSlug).maybeSingle()`), so the bound and the `.select(` are in

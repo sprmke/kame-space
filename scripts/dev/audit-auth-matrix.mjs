@@ -142,6 +142,9 @@ const SCOPE_PATTERNS = [
   // 'guest_auth_user_id', user.id)` or `.eq(submitted_by_email, user.email)`. The resource is
   // the caller's own account, so there is no tenant resource to scope beyond the verified user.
   /\bbuildDataSubjectExport\s*\(\s*user\s*\)/,
+  // SAFE-01 urgent help: `createBookingHelpRequest` checks `guest_auth_user_id` (or the
+  // verified email) against `user.id` before inserting, then notifies only that booking's host.
+  /\bcreateBookingHelpRequest\s*\(\s*\{[\s\S]{0,200}?userId\s*:\s*user\.id/,
   /\brecordExportDelivered\s*\(\s*user\s*\)/,
   /\brequestAccountDeletion\s*\(\s*user\b/,
   // Ownership-by-caller-identity convention: `resourceId, user.id[, user.email]`

@@ -51,6 +51,42 @@ const ACCOUNT_NUMBER_PATTERN = /\+?\d[\d\s().-]{8,}\d/g;
 const FINANCE_TERM_NEAR_FIGURE_PATTERN =
   /\b(revenue|profit|expenses?|net income|earnings?|payouts?|gross margin|profit margin)\b[^.!?\n]{0,60}?(?:₱|PHP\b|P\s?\d|\d{1,3}\s?%|\d[\d,]{2,})/i;
 
+/**
+ * A model reply can exfiltrate context through a rendered link or image: markdown is turned
+ * into a clickable URL, and some clients prefetch images. Only links the platform itself owns
+ * (plus map directions) are allowed; a `data:` or script URI is never safe.
+ */
+const ALLOWED_REPLY_LINK_HOSTS: RegExp[] = [
+  /^kamespace\.com$/i,
+  /\.kamespace\.com$/i,
+  /^maps\.google\.com$/i,
+  /^maps\.app\.goo\.gl$/i,
+  /^goo\.gl$/i,
+  /^waze\.com$/i,
+  /^openstreetmap\.org$/i,
+  /\.openstreetmap\.org$/i,
+  /\.supabase\.co$/i,
+];
+
+const REPLY_LINK_PATTERN = /(?:https?:\/\/|www\.)[^\s<>"')\]]+/gi;
+const SCRIPT_OR_DATA_URI_PATTERN = /\b(?:data|javascript|vbscript):/i;
+
+/** First URL in the draft that is not a platform or map link, or a script/data URI. */
+export function findUnsafeReplyLink(text: string): string | null {
+  if (SCRIPT_OR_DATA_URI_PATTERN.test(text)) return 'script or data URI';
+  for (const match of text.matchAll(REPLY_LINK_PATTERN)) {
+    const raw = match[0].replace(/[.,;:!?]+$/, '');
+    let host: string;
+    try {
+      host = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`).hostname.toLowerCase();
+    } catch {
+      return raw;
+    }
+    if (!ALLOWED_REPLY_LINK_HOSTS.some((pattern) => pattern.test(host))) return raw;
+  }
+  return null;
+}
+
 function normalizeAmount(value: number): number {
   return Math.round(value * 100) / 100;
 }
@@ -183,6 +219,11 @@ export function assertSafeGuestReply(input: GuestReplyGuardInput): GuardResult {
   }
 
   const intent = classifyGuestInquiryIntent(input.guestMessage);
+
+  const unsafeLink = findUnsafeReplyLink(draftText);
+  if (unsafeLink) {
+    return { safe: false, reason: `external link: ${unsafeLink.slice(0, 80)}` };
+  }
 
   const leakedGuest = containsOtherGuestName(
     draftText,

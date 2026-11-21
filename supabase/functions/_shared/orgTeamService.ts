@@ -33,6 +33,7 @@ import {
 } from './orgTeamTemplates.ts';
 import { readOrgIdFromUrl, readOrgSlugFromUrl } from './propertyScope.ts';
 import { sendOrgTeamInviteEmail } from './orgTeamInviteEmail.ts';
+import { assertInvitePermissionsWithinInviter } from './teamInvitePermissions.ts';
 import { assertAllowedTeamInviteEmail } from './teamInviteEmail.ts';
 import { parseTeamInviteContactFields } from './teamInviteContact.ts';
 import { validatePhilippineMobilePhone } from './fieldValidation.ts';
@@ -514,6 +515,11 @@ export async function createOrgInvitation(
   const contact = parseTeamInviteContactFields(body);
   const customRoles = await loadOrgCustomRolesMap(supabase, organizationId);
   const permissions = resolveOrgInvitePermissions({}, roleId, customRoles);
+  assertInvitePermissionsWithinInviter({
+    requested: permissions,
+    granted: ctx.permissions,
+    accessKind: ctx.accessKind,
+  });
   const { allListings, assignments } = parseListingAssignmentsFromBody(body);
 
   if (!allListings && assignments.properties.length === 0 && assignments.parkings.length === 0) {
