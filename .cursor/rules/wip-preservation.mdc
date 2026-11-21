@@ -35,14 +35,19 @@ Every agent (Cursor, Claude Code, Codex, OpenCode) and every human working in th
 
 ## Hooks and tools
 
-| Tool                                  | What it does                                                              |
-| ------------------------------------- | ------------------------------------------------------------------------- |
-| `scripts/dev/wip-guard-lib.sh`        | Shared shell guard: detects dirty trees and blocks destructive commands   |
-| `.cursor/hooks/guard-shell.sh`        | Cursor `beforeShellExecution` deny                                        |
-| `.claude/hooks/guard-shell.sh`        | Claude Code `PreToolUse` deny                                             |
-| `.opencode/plugins/gfm-ai-tooling.ts` | Routes OpenCode bash through the same Claude hook                         |
-| `bun run wip:save <name>`             | Commits dirty work to `wip/<date>-<name>`, returns to the original branch |
-| `bun run wip:audit`                   | Lists stashes and dirty worktrees; `--strict` exits 1 when found          |
+| Tool                                  | What it does                                                                                   |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `scripts/dev/wip-guard-lib.sh`        | Shared shell guard: detects dirty trees and blocks destructive commands                        |
+| `.cursor/hooks/guard-shell.sh`        | Cursor `beforeShellExecution` deny                                                             |
+| `.claude/hooks/guard-shell.sh`        | Claude Code `PreToolUse` deny                                                                  |
+| `.opencode/plugins/gfm-ai-tooling.ts` | Routes OpenCode bash through the same Claude hook                                              |
+| `opencode.json` → `permission.bash`   | Static `ask` on the destructive commands, so OpenCode blocks even if the plugin is unavailable |
+| `session-wip-audit.sh`                | Every session starts with the stash and dirty-worktree count                                   |
+| `bun run wip:save <name>`             | Commits dirty work to `wip/<date>-<name>`, returns to the original branch                      |
+| `bun run wip:audit`                   | Lists stashes and dirty worktrees; `--strict` exits 1 when found                               |
+
+Existing stashes are mirrored under `archive/stash-*` (see
+`docs/archive/operations/stash-archive.md`). They are archives, not merge candidates.
 
 Owner override for one command only: include `wipsafe` (or `WIP_PRESERVED=1`) after the user
 explicitly says the work is disposable. Never override on your own initiative.

@@ -103,6 +103,7 @@ printf '%-46s %-6s %-8s %-8s %-8s %-10s %s\n' \
 if [[ "$SCOPE" != "remote" ]]; then
   while IFS= read -r b; do
     [[ "$b" == "$BASE" || "$b" == "main" ]] && continue
+    [[ "$b" == archive/* || "$b" == wip/* ]] && continue
     audit_one "refs/heads/$b" "$b"
   done < <(git for-each-ref --format='%(refname:short)' refs/heads)
 fi
@@ -110,6 +111,7 @@ fi
 if [[ "$SCOPE" != "local" ]]; then
   while IFS= read -r b; do
     [[ -z "$b" ]] && continue
+    [[ "$b" == archive/* || "$b" == wip/* ]] && continue
     audit_one "refs/remotes/origin/$b" "origin/$b"
   done < <(git for-each-ref --format='%(refname:short)' refs/remotes/origin |
     sed -n 's|^origin/||p' | grep -vE '^(HEAD|develop|main)$')
@@ -122,5 +124,7 @@ Verdicts:
   check             a file it added is missing from develop, or a worktree has uncommitted files
   keep-unmerged     patches still missing from develop
 
-Nothing was deleted. Report first; delete only after the user agrees.
+Archive refs (`archive/stash-*`, `wip/*`) are skipped here; see
+docs/archive/operations/stash-archive.md. Nothing was deleted. Report first; delete only
+after the user agrees.
 EOF

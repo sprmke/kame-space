@@ -79,10 +79,10 @@ wip_guard_is_blocked() {
       ;;
   esac
 
-  # Plain `git stash` / push / save, hard reset, and aggressive clean destroy
-  # the current working tree.
+  # Plain `git stash` / push / save, hard reset, aggressive clean, and commands
+  # that discard the working tree.
   case "$cmd" in
-    *"git stash"*|*"git stash push"*|*"git stash save"*|*"reset --hard"*|*"clean -fd"*|*"clean -fdx"*|*"clean -xdf"*|*"checkout -f"*)
+    *"git stash"*|*"git stash push"*|*"git stash save"*|*"reset --hard"*|*"clean -fd"*|*"clean -fdx"*|*"clean -xdf"*|*"checkout -f"*|*"switch -f"*|*"switch --discard-changes"*|*"restore ."*|*"restore --worktree"*|*"restore --source"*|*"checkout -- ."*|*"checkout ."*|*"checkout -- "*)
       if wip_tree_dirty "$dir"; then
         return 0
       fi
