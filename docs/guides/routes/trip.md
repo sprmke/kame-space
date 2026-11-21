@@ -24,7 +24,7 @@ submission redirects here with `&welcome=1`)
 | Getting in          | —        | —          | Documented | Inline check-in / check-out steps, every plan   |
 | From your host      | —        | —          | Documented | Guest-visible custom templates, collapsed       |
 | Stay / docs / pay   | ✅       | —          | Documented | Receipt upload lives in Payment                 |
-| Host / cancellation | —        | —          | Documented | Contact + listing cancellation policy           |
+| Host / cancellation | —        | Server     | Documented | Contact, policy, Get help now (arrival window)  |
 | Entry points        | —        | —          | Documented | Submission, Trips tab, emails, SD form, review  |
 
 ---
@@ -46,6 +46,23 @@ bottom tabs on phone) like `/success`, `/sd-form` and `/guest-review`.
 ---
 
 > **Legal notice:** Cancellation refund details show the same refund privacy line above Save, unless cash pickup is chosen. Pattern and full list: [legal.md](legal.md#in-app-notices).
+
+## Get help now (SAFE-01)
+
+From 24 hours before check-in through the check-out day, the left column shows **Get help now**
+(`GuestTripHelpButton`). It opens a bottom sheet with four issues: **I can't get in**, **Not as
+described**, **Unsafe or emergency**, **Something else**, plus a short note. Submitting calls
+`POST guest-trip-help` with `{ bookingId, kind, note? }`.
+
+- The trip page only renders the button in the arriving / arrival day / staying / checkout day
+  phases; the server also enforces the 24-hour window and rejects a cancelled booking.
+- One open request per booking. A repeat tap returns the open request instead of creating a
+  second one.
+- The host gets an in-app/push notification on that booking. The ops channel gets a P0 alert for
+  `cant_get_in` / `unsafe` and a P1 for the others (`ops_alerts` key `guest_help:<kind>`).
+- The request row (`booking_help_requests`) is the audit trail. It is service-role only.
+- The 30-minute no-reply escalation and the super-admin refund decision are the next slice; the
+  first alert and the host notification are live now.
 
 ## Guest status words
 
@@ -388,6 +405,17 @@ idempotent document share token / stay guide token self-heal and owner linking).
 | Timeline      | `guestTripTimeline` in `guestTripPhase.ts` (+ `.test.ts`); `ui/src/features/guest/trip/components/GuestTripTimeline.tsx`                                                                                                                                             |
 
 ---
+
+## Host-facing knowledge
+
+**Get help now**
+
+- Q: What does the guest see if they cannot get in?
+  A: From the day before check-in, their trip page shows **Get help now**. They pick the problem, add a note and send. You get a notification on the booking and our team is alerted.
+- Q: Will I be told at night?
+  A: Yes. An arrival problem is the highest-priority alert, so it reaches the on-call channel, not just the in-app bell.
+- Q: Can a guest send the same request twice?
+  A: No. One open request per booking; sending again shows the open request.
 
 ## Testing
 

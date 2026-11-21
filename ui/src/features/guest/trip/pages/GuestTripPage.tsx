@@ -42,6 +42,7 @@ import {
   GuestTripHostSections,
   GuestTripStepsSection,
 } from '@/features/guest/trip/components/GuestTripHostContent';
+import { GuestTripHelpButton } from '@/features/guest/trip/components/GuestTripHelpButton';
 import { GuestTripHostRow } from '@/features/guest/trip/components/GuestTripHostRow';
 import { GuestTripNowCard } from '@/features/guest/trip/components/GuestTripNowCard';
 import { GuestTripPaymentSection } from '@/features/guest/trip/components/GuestTripPaymentSection';
@@ -360,13 +361,13 @@ function GuestTripContent({
   });
 
   const nextActionKind = guestTripNextAction({
-      phase,
-      amountDue: owes ? amountDue : 0,
-      sdFormAvailable: trip.actions.sdFormAvailable,
-      reviewAvailable: trip.actions.reviewAvailable,
-      reviewSubmitted: trip.actions.reviewSubmitted,
-      stayGuideAvailable: Boolean(trip.stayGuidePath),
-      directionsAvailable: Boolean(directionsUrl),
+    phase,
+    amountDue: owes ? amountDue : 0,
+    sdFormAvailable: trip.actions.sdFormAvailable,
+    reviewAvailable: trip.actions.reviewAvailable,
+    reviewSubmitted: trip.actions.reviewSubmitted,
+    stayGuideAvailable: Boolean(trip.stayGuidePath),
+    directionsAvailable: Boolean(directionsUrl),
     parkingFindAvailable: Boolean(trip.parking.findPath),
   });
 
@@ -529,6 +530,12 @@ function GuestTripContent({
                 : null
             }
           />
+          {phase === 'arriving' ||
+          phase === 'arrival_day' ||
+          phase === 'staying' ||
+          phase === 'checkout_day' ? (
+            <GuestTripHelpButton bookingId={trip.bookingId} />
+          ) : null}
           <GuestTripReviewCard trip={trip} />
           <GuestTripShortcuts
             items={shortcuts}
