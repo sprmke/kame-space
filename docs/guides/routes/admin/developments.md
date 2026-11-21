@@ -72,7 +72,7 @@ Filters are **server-side, real DB predicates** (not client-side over the loaded
 
 ## Pagination
 
-Standard admin-list pagination (same pattern as the bookings list): `page`/`limit` persisted in the URL (`?page=`, `?limit=`), default page size 31 (`ADMIN_DEFAULT_PAGE_SIZE`). `GET list-developments` accepts `page`/`limit`/`q`/`status`/`type`, applies the filters as real Postgres predicates, orders by name, and paginates via `.range()` + `{ count: 'exact' }` — no full-table fetch. Response: `{ developments, total, page, limit }`. The list hides pagination controls until there is more than one page, and the per-page select (`AdminListPerPageSelect`) resets to page 1 on change.
+Standard admin-list pagination (same pattern as the bookings list): `page`/`limit` persisted in the URL (`?page=`, `?limit=`), default page size 25 (`ADMIN_DEFAULT_PAGE_SIZE`). `GET list-developments` accepts `page`/`limit`/`q`/`status`/`type`, applies the filters as real Postgres predicates, orders by name, and paginates via `.range()` + `{ count: 'exact' }` — no full-table fetch. Response: `{ developments, total, page, limit }`. The list hides pagination controls until there is more than one page, and the per-page select (`AdminListPerPageSelect`) resets to page 1 on change.
 
 Summary cards (Total/Active/Linked properties/Linked parking) are computed from the **current page's rows only** — a display-chrome tradeoff carried over unchanged from before this pagination work, not a full-dataset aggregate.
 

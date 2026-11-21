@@ -28,7 +28,7 @@ Platform-wide host notices — maintenance windows, product releases, billing ou
 
 The list page (`/admin/announcements`) follows the same shell as **Support tickets**: four **stat cards** (Total, Active, Critical, Warning), a search + severity + status toolbar with a **table ⇄ grid** view toggle and per-page control, then the list itself (phone/tablet always forced to grid). Clicking a row or card opens the full CRUD form in a wide **big admin dialog** (larger than the ticket/approval dialogs — sized for a form with a rich-text editor, not a thread) with its own **Save changes** / **Delete**; there is no separate detail route.
 
-**Add announcement** in the header is a dropdown with two destinations: **Platform announcement** opens the same big modal in create mode; **Development announcement** links to **`/admin/developments`** — open a development → Announcements section for residence-scoped notices (compact list + its own edit dialog, since that page batches all development fields under one **Save Changes** — see [Development detail — Announcements](./development-detail.md)).
+**Add announcement** in the header is a dropdown with two destinations: **New platform announcement** opens the same big modal in create mode; **Development announcements** links to **`/admin/developments`** — open a development → Announcements section for residence-scoped notices (compact list + its own edit dialog, since that page batches all development fields under one **Save Changes** — see [Development detail — Announcements](./development-detail.md)).
 
 Every destructive **Delete** (platform modal and the development-scoped dialog) is gated by an `AlertDialog` confirm step — no single-click delete.
 
@@ -114,3 +114,9 @@ Filters (search / severity / status), page, and page size live in the URL (`?sea
 
 - [Property Announcements](../org/property/announcements.md)
 - [Development detail — Announcements](./development-detail.md)
+
+---
+
+## Testing
+
+Announcement menu labels and the create flow are covered by the admin E2E suite.
