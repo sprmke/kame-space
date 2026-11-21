@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useLocation, useParams } from 'react-router-dom';
 
 import { isSuperAdminPath } from '@/features/dashboard/bookings/lib/adminSidebarNav';
-import { captureAppEvent } from '@/lib/posthog/capture';
 import { useOptionalOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { useOptionalParkingContext } from '@/features/dashboard/org/components/RequireParkingContext';
 import {
@@ -23,12 +22,16 @@ import {
   setSetupGuideSessionSnoozed,
 } from '@/features/dashboard/setup-guide/lib/setupGuideState';
 
+import { captureAppEvent } from '@/lib/posthog/capture';
+
 export function SetupGuideProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const tenant = useOptionalOrgContext();
   const parkingTenant = useOptionalParkingContext();
   const { orgSlug: routeOrgSlug } = useParams<{ orgSlug?: string }>();
-  const orgSlug = tenant?.orgSlug ?? parkingTenant?.orgSlug ?? routeOrgSlug;
+  // `/admin/orgs/:orgSlug` is a platform org, not a tenant. Never run the tenant
+  // setup guide (or its property reads) from that param.
+  const orgSlug = tenant?.orgSlug ?? parkingTenant?.orgSlug ?? (isSuperAdminPath(location.pathname) ? undefined : routeOrgSlug);
 
   const [open, setOpen] = useState(false);
   const [activeStepId, setActiveStepId] = useState<string | null>(null);

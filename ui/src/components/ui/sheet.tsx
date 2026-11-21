@@ -218,17 +218,18 @@ const SheetContent = React.forwardRef<
   ) => {
     const isDraggableBottomSheet = side === 'bottom' && !disableDrag;
     const drag = useSheetHeightDrag(isDraggableBottomSheet);
-    const { overlayZ, contentZ } = useModalLayer({
+    const { overlayZ, contentZ, attach } = useModalLayer({
       overlayClassName,
       contentClassName: typeof className === 'string' ? className : undefined,
     });
     const setContentRef = React.useCallback(
       (node: HTMLDivElement | null) => {
         drag.contentRef.current = node;
+        attach(node);
         if (typeof ref === 'function') ref(node);
         else if (ref) ref.current = node;
       },
-      [drag.contentRef, ref]
+      [attach, drag.contentRef, ref]
     );
     const handle =
       showHandle || side === 'bottom' ? (

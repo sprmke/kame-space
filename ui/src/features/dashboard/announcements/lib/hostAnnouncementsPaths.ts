@@ -1,23 +1,22 @@
-import { useParams } from 'react-router-dom';
-
 import { useOptionalOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { useOptionalParkingContext } from '@/features/dashboard/org/components/RequireParkingContext';
+import { useOrgSlugParam } from '@/features/dashboard/org/lib/adminApiScope';
 
 /** True when the signed-in host can open an announcements archive for the current org. */
 export function useHasHostAnnouncementsArchiveScope(): boolean {
-  const { orgSlug: routeOrgSlug } = useParams<{ orgSlug?: string }>();
   const orgContext = useOptionalOrgContext();
   const parkingContext = useOptionalParkingContext();
-  const orgSlug = orgContext?.orgSlug ?? parkingContext?.orgSlug ?? routeOrgSlug ?? null;
+  const routeOrgSlug = useOrgSlugParam();
+  const orgSlug = orgContext?.orgSlug ?? parkingContext?.orgSlug ?? routeOrgSlug;
   return Boolean(orgSlug);
 }
 
 /** Base `/announcements` path for the current admin scope. */
 export function useHostAnnouncementsBasePath(): string | null {
-  const { orgSlug: routeOrgSlug } = useParams<{ orgSlug?: string }>();
   const orgContext = useOptionalOrgContext();
   const parkingContext = useOptionalParkingContext();
-  const orgSlug = orgContext?.orgSlug ?? parkingContext?.orgSlug ?? routeOrgSlug ?? null;
+  const routeOrgSlug = useOrgSlugParam();
+  const orgSlug = orgContext?.orgSlug ?? parkingContext?.orgSlug ?? routeOrgSlug;
   if (!orgSlug) return null;
 
   if (parkingContext) {
