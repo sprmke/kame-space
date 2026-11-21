@@ -234,7 +234,17 @@ export const TurnstileWidget = forwardRef<TurnstileWidgetHandle, Props>(function
   if (!isTurnstileConfigured()) return null;
 
   return (
-    <div ref={hostRef} className={cn('turnstile-host w-full', className)}>
+    <div
+      ref={hostRef}
+      data-challenge={hasChallenge ? 'true' : 'false'}
+      className={cn(
+        'turnstile-host w-full',
+        // Invisible pass must not open a gap between email and Continue (space-y / flex gap).
+        // Challenge expands in-flow so the button shifts down only when needed.
+        hasChallenge ? 'my-2' : 'm-0 h-0 overflow-hidden p-0',
+        className
+      )}
+    >
       <div
         ref={containerRef}
         data-testid="turnstile-widget"
