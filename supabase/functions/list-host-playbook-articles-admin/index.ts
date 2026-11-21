@@ -14,14 +14,22 @@ serveSuperAdmin('list-host-playbook-articles-admin', async (req) => {
   const url = new URL(req.url);
   const p = url.searchParams;
   const { page, limit } = parsePageLimit(p);
+  const search = p.get('q')?.trim() ?? '';
+  const status = p.get('status')?.trim() ?? 'all';
 
   const supabase = createServiceClient();
   const fromIdx = (page - 1) * limit;
   const toIdx = fromIdx + limit - 1;
 
-  const { data, error, count } = await supabase
-    .from('host_playbook_articles')
-    .select('*', { count: 'exact' })
+  let query = supabase.from('host_playbook_articles').select('*', { count: 'exact' });
+  if (search) {
+    const pattern = `%${search.replace(/[%,()]/g, ' ')}%`;
+    query = query.or(`title.ilike.${pattern},body.ilike.${pattern},category.ilike.${pattern}`);
+  }
+  if (status === 'published') query = query.eq('is_active', true);
+  if (status === 'unpublished') query = query.eq('is_active', false);
+
+  const { data, error, count } = await query
     .order('category', { ascending: true })
     .order('sort_order', { ascending: true })
     .range(fromIdx, toIdx);

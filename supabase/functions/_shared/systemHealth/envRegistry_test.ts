@@ -125,3 +125,18 @@ Deno.test('missing secrets link to the project secrets page', () => {
     'https://supabase.com/dashboard/project/abcdefghijklmnopqrst/functions/secrets'
   );
 });
+
+Deno.test('cron secret definitions are unique per env key', () => {
+  const cronKeys = EDGE_ENV_REGISTRY.filter((def) => def.group === 'Cron secrets').map(
+    (def) => def.key
+  );
+  assertEquals(new Set(cronKeys).size, cronKeys.length);
+});
+
+Deno.test('jobs that share a secret merge into one definition with every label', () => {
+  const def = EDGE_ENV_REGISTRY.find(
+    (entry) => entry.group === 'Cron secrets' && entry.key === 'MARKETING_TRENDS_CRON_SECRET'
+  );
+  assert(def, 'expected a Marketing trends cron secret definition');
+  assertEquals(def?.features.length, 2);
+});
