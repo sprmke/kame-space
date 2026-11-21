@@ -71,7 +71,7 @@ Filters are **server-side, real DB predicates** (not client-side over the loaded
 
 ## Pagination
 
-Standard admin-list pagination (same pattern as the bookings list): `page`/`limit` persisted in the URL (`?page=`, `?limit=`), default page size 31 (`ADMIN_DEFAULT_PAGE_SIZE`). `GET list-platform-properties` accepts `page`/`limit`/`q`/`status`/`type`/`development`, applies the filters as real Postgres predicates against the `properties` table, orders by name, and paginates via `.range()` + `{ count: 'exact' }` — no full-table fetch. Response: `{ properties, total, page, limit }`. Pagination controls are hidden until there is more than one page; the per-page select (`AdminListPerPageSelect`) resets to page 1 on change.
+Standard admin-list pagination (same pattern as the bookings list): `page`/`limit` persisted in the URL (`?page=`, `?limit=`), default page size 25 (`ADMIN_DEFAULT_PAGE_SIZE`). `GET list-platform-properties` accepts `page`/`limit`/`q`/`status`/`type`/`development`, applies the filters as real Postgres predicates against the `properties` table, orders by name, and paginates via `.range()` + `{ count: 'exact' }` — no full-table fetch. Response: `{ properties, total, page, limit }`. Pagination controls are hidden until there is more than one page; the per-page select (`AdminListPerPageSelect`) resets to page 1 on change.
 
 ---
 

@@ -1,7 +1,7 @@
 ---
-stage: planned
+stage: for-testing
 title: 'Super Admin console — audit findings and UX backlog'
-status: planned
+status: implemented
 tags: [planning, planned-modules, super-admin, admin, audit, ux, accessibility, mobile]
 updated: 2026-11-21
 ---
@@ -12,9 +12,76 @@ Full pass over every `/admin` route on the **local stack only**. No production d
 written. The result is a ranked register of defects, accessibility failures, mobile layout
 problems, and product/UX improvements. Nothing here is implemented yet.
 
-Related plans: [`super-admin-console-followups.md`](./super-admin-console-followups.md) (net-new
-modules), [`super-admin-service-cost-monitoring.md`](./super-admin-service-cost-monitoring.md)
+Related plans: [`super-admin-console-followups.md`](../planned/super-admin-console-followups.md) (net-new
+modules), [`super-admin-service-cost-monitoring.md`](../planned/super-admin-service-cost-monitoring.md)
 (cost control). This document is about **what already ships and is wrong or weak**.
+
+## Implementation status (2026-11-21)
+
+Everything in the register below is implemented and covered by unit, handler or Playwright tests,
+except the items marked **residual**.
+
+| ID               | Status                 | Notes                                                                                                                                                              |
+| ---------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| D-01             | **Fixed**              | One `formatSuperAdminDate` helper normalises `+00`, guards NaN and formats in Asia/Manila. Table, card grid, dialog and org-hub cards use it. Unit + E2E coverage. |
+| D-02             | **Fixed**              | Failed capability calls show **Could not check access** with Retry. The guard paints a shell-shaped skeleton instead of a centered splash. E2E coverage.           |
+| D-03             | **Fixed**              | All six `role="link"` rows became normal rows with a real link or button in the primary cell.                                                                      |
+| D-04             | **Fixed**              | Status/type/development filter selects have accessible names (axe clean).                                                                                          |
+| D-05             | **Fixed**              | Edge checks dedupe by env key, and the client dedupes checks/jobs defensively. Deno + unit coverage.                                                               |
+| D-06             | **Fixed**              | Unknown `/admin/*` renders an admin 404 inside the shell. E2E coverage.                                                                                            |
+| D-07             | **Fixed**              | Shared `SuperAdminRecordNotFound` for org, development, host and report misses.                                                                                    |
+| D-08             | **Fixed**              | Organizations rows navigate on click; inner links stop propagation.                                                                                                |
+| D-09             | **Fixed**              | Cost-by-feature shows an empty state instead of bare axes when every value is zero.                                                                                |
+| D-10             | **Fixed**              | Sources section only renders when the report has sources.                                                                                                          |
+| D-11             | **Fixed**              | Org activity uses `TabsContent`; axe clean.                                                                                                                        |
+| D-12             | **Fixed**              | Duplicate ops-report routes removed.                                                                                                                               |
+| D-13             | **Fixed for new data** | New ops-report summaries format the range; Marketing trends run dates and ops-report timestamps are formatted. Historical audit rows keep their stored text.       |
+| D-14             | **Fixed**              | Job rows read "Last success" unless the status is ok, so unknown/paused rows stop claiming OK.                                                                     |
+| D-15             | **Fixed**              | Profile badges use the human name with the raw code on hover; plan and profile stay separate columns.                                                              |
+| D-16             | **Fixed**              | Manual block takes a user id or IP, normalises the prefix and validates it. Unit + route guide.                                                                    |
+| D-17             | **Fixed**              | Action columns have visually hidden headers instead of "Open"/"Review".                                                                                            |
+| D-18             | **Fixed**              | Super-admin property and development pills are sentence case.                                                                                                      |
+| D-19             | **Fixed**              | Duplicate Copy action removed.                                                                                                                                     |
+| D-20             | **Resolved by use**    | `SUPER_ADMIN_PLATFORM_DESTINATIONS` now feeds the command palette; stale comment updated.                                                                          |
+| U-01             | **Fixed**              | Palette has a Pages group from the nav catalog. E2E coverage.                                                                                                      |
+| U-02             | **Fixed**              | Sidebar groups collapse (persisted) and headers stick while scrolling.                                                                                             |
+| U-03             | **Fixed**              | Cookie consent banner no longer renders on `/admin` or `/bookings`.                                                                                                |
+| U-04             | **Fixed**              | List toolbars wrap; AI and Health tab rows wrap. No clipped controls at 390px (measured on all 37 routes).                                                         |
+| U-05             | **Fixed**              | Wallet tab suggests organizations by name/slug from the org list.                                                                                                  |
+| U-06             | **Fixed**              | Audit log gained actor, action and target filters, an expandable metadata panel and URL state. E2E coverage.                                                       |
+| U-07             | **Fixed**              | Cron runs moved into a confirmed **Billing tools** card.                                                                                                           |
+| U-08             | **Improved**           | Host detail shows the join date. Deeper profile data needs a backend field.                                                                                        |
+| U-09             | **Fixed**              | Approval cards carry title tooltips; overrides use an amber outline badge, not red.                                                                                |
+| U-10             | **Improved**           | First KPI is now **Awaiting review** so status and type counts read separately.                                                                                    |
+| U-11             | **Fixed**              | Zero severity badges are hidden; email state already rendered inline.                                                                                              |
+| U-12             | **Fixed**              | Pricing dialog is wider with a three-column price row and a stable footer. It still scrolls (long form) but no field is hidden behind the footer.                  |
+| U-13             | **Fixed**              | Menu labels are **New platform announcement** and **Development announcements**.                                                                                   |
+| U-14             | **Residual**           | Rate-limit enforcement still lives on Platform settings; the page links there and explains the mode. Merging the two surfaces needs a product decision.            |
+| U-15             | **Fixed**              | FAQ and Playbook have server-side search plus a status filter; synced FAQs show a view icon.                                                                       |
+| U-16             | **Fixed**              | Error states never print the raw server message and offer Retry where a refetch exists. E2E coverage.                                                              |
+| U-17             | **Fixed**              | Page sizes are 25/50/100. Tests read the constant.                                                                                                                 |
+| U-18             | **Fixed**              | Both approval dialogs explain when no documents were uploaded.                                                                                                     |
+| A-01             | **Fixed**              | Text links and badges use `brand-ink` / darker badge tones. axe clean.                                                                                             |
+| A-02             | **Fixed**              | Donut sectors carry `aria-label`; charts keep an accessible name.                                                                                                  |
+| A-03..A-08       | **Fixed**              | Row semantics, tab panels, select names, ops/marketing badge contrast, FAQ provenance badge.                                                                       |
+| M-01..M-04, M-06 | **Fixed**              | Filters and tabs wrap; mobile section jump on org hub and development settings; banner off.                                                                        |
+| M-05             | **N/A**                | KPI icons are intentionally desktop-only (`hidden lg:flex`).                                                                                                       |
+| X-01             | **Fixed**              | Health subtitle states when the stack is local and why Vault/cron checks look missing.                                                                             |
+| X-02             | **Residual, data**     | AI spend and per-feature cost still disagree in the local dataset. The chart now stops pretending; the aggregation itself needs a backend investigation.           |
+| X-03             | **Residual**           | Support "Organization" column semantics depend on the ticket join; left unchanged.                                                                                 |
+| X-04             | **Fixed**              | Client formatter normalises short offsets. Server serialisers were left as-is.                                                                                     |
+| X-05             | **Fixed**              | `docs/guides/routes/admin/rate-limits.md` added.                                                                                                                   |
+| X-06             | **Fixed in scope**     | Contrast fixed at the affected call sites; shared token refactor is still worth doing.                                                                             |
+
+### Verification run
+
+- `bun run test` (node 931 files / 6,573 tests, plus 10 DOM files / 86 tests) pass
+- `bun run test:edge` (2,144 Deno tests) pass
+- `bun run type-check`, `bun run lint` (0 errors) pass
+- Playwright `ui/e2e/features/admin` (24 tests incl. 6 new) pass
+- `bun run build` pass (precache budget OK)
+- Playwright `@smoke` across desktop, tablet and phone projects: 287 passed, 1 skipped
+- Live sweep: 37 routes x 2 viewports, axe WCAG 2.1 A/AA clean, no console errors, no clipped controls, no horizontal overflow
 
 ## How the audit was run
 

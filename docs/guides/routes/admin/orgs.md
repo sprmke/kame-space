@@ -147,3 +147,9 @@ doing it from the dedicated `/admin/pricing/subscriptions` or `/admin/approvals`
 - [ ] Verification approve/reject is reachable via the Approvals section; a dedicated Verification
       tab with asset previews is a nice-to-have.
 - [ ] Plan filter dropdown on the index (data supports `?plan=`, UI ships search only for v1).
+
+---
+
+## Testing
+
+Organizations row navigation and the not-found state are covered by the admin E2E suite (`ui/e2e/features/admin`).

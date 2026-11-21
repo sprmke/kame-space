@@ -18,7 +18,7 @@ Routes:
 Unknown sections (`/admin/health/foo`) redirect to `/admin/health`.
 
 > **Status:** Route shell only. `/admin/health` and its section tabs render, and unknown sections redirect home. Check data, the edge function, and job heartbeats are not in the tree yet. Plan: [`super-admin-system-health.md`](../../../workflow/in-progress/super-admin-system-health.md).
-> Page title: `System health` (`appPageTitle`). Page description under the title matches the active tab (overview, configuration, integrations, jobs, usage). Sidebar: **Platform → System health** (Activity icon).
+> Page title: `System health` (`appPageTitle`). Page description under the title matches the active tab (overview, configuration, integrations, jobs, usage). On a non-production stack the subtitle adds **Local environment: Vault and cron checks may read as missing**, so the expected Vault/pg_cron gaps are not mistaken for incidents. Sidebar: **Platform → System health** (Activity icon).
 
 ## Progress overview
 
@@ -187,3 +187,9 @@ Super admin only (`serveSuperAdmin`). Plans: **N/A** (platform operator tool). T
 **Adding a new env var or cron:** add a row to `EDGE_ENV_REGISTRY` (edge) or `UI_ENV_REGISTRY` (UI), and
 a `SCHEDULED_JOBS` entry for a new scheduled function (its cron secret is added to the env registry
 automatically).
+
+---
+
+## Testing
+
+Health dedupe, job status copy and the local-environment subtitle are covered by `adminSystemHealth.spec.ts` plus the axe sweep.

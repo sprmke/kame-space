@@ -70,7 +70,7 @@ size `ADMIN_DEFAULT_PAGE_SIZE`. `GET list-host-playbook-articles-admin` orders b
 
 No drag-and-drop reorder (unlike the FAQ editor) — reordering is a numeric **Sort order** field
 in the editor dialog, a deliberate scope trim since Playbook ordering matters far less than FAQ
-ordering (articles are matched/filtered by condition, not browsed top-to-bottom by a host).
+ordering (articles are matched/filtered by condition, not browsed top-to-bottom by a host). The editor adds a search box (title, body, category) and an Active/Inactive filter, both applied server-side by `list-host-playbook-articles-admin` (`?q=`, `?status=`), so a match is found across the whole set rather than the loaded page.
 
 ## Article editor
 
