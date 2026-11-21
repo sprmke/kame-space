@@ -8,6 +8,7 @@ import { isOtaPrepaidSource } from './bookingChannel.ts';
 import type { DocumentRequirement, DocumentRequirementCompletion } from './documentRequirements.ts';
 import { parseDocRejectionReason, resolveDocumentRequirements } from './documentRequirements.ts';
 import { createServiceClient } from './orgAuth.ts';
+import { stayBeyondContractEnd } from './stayContractWindow.ts';
 import type { PropertyAccessContext } from './orgAuth.ts';
 import {
   bookingAssetPermission,
@@ -708,6 +709,21 @@ export type ApplyBookingDetailsPatchResult = {
   changedColumns: string[];
 };
 
+async function assertStayWithinContract(propertyId: string, checkOutDate: string): Promise<void> {
+  const { data } = await createServiceClient()
+    .from('properties')
+    .select('settings')
+    .eq('id', propertyId)
+    .maybeSingle();
+  const contractEnd = stayBeyondContractEnd({
+    settings: (data?.settings as Record<string, unknown> | null) ?? null,
+    checkOutDate,
+  });
+  if (contractEnd) {
+    throw new Error(`CONTRACT_ENDED: This listing is only available until ${contractEnd}.`);
+  }
+}
+
 async function updateBookingRow(
   bookingId: string,
   patch: Record<string, unknown>,
@@ -922,6 +938,7 @@ export async function applyBookingDetailsPatch(
       throw new Error('checkInDate and checkOutDate are required');
     }
     assertStayDateOrder(checkInDate, checkOutDate);
+    await assertStayWithinContract(propertyId, checkOutDate);
     const patch: Record<string, unknown> = {
       check_in_date: formatDateForGuestSubmission(checkInDate),
       check_out_date: formatDateForGuestSubmission(checkOutDate),
@@ -974,6 +991,7 @@ export async function applyBookingDetailsPatch(
       touchesCheckOut ? patch.check_out_date : (existing.check_out_date ?? '')
     );
     assertStayDateOrder(mergedCheckIn, mergedCheckOut);
+    await assertStayWithinContract(propertyId, mergedCheckOut);
     if (!Object.prototype.hasOwnProperty.call(patch, 'number_of_nights')) {
       patch.number_of_nights = occupiedStayNights(mergedCheckIn, mergedCheckOut);
     }

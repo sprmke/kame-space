@@ -1,7 +1,10 @@
 import { minutesBetweenTimes } from '../_shared/cleaningBuffer.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { DatabaseService } from '../_shared/databaseService.ts';
-import { sendBookingRequestReceived, sendNewBookingRequestNotify } from '../_shared/emailService.ts';
+import {
+  sendBookingRequestReceived,
+  sendNewBookingRequestNotify,
+} from '../_shared/emailService.ts';
 import { resolveGuestFormSettings } from '../_shared/guestFormSettings.ts';
 import { propertyAutomationEnabled } from '../_shared/propertyAutomationToggles.ts';
 import { notifyTelegramNewBookingRequest } from '../_shared/telegramMarketing.ts';
@@ -163,7 +166,7 @@ serveHandler('submit-form', async (req) => {
     if (isSaveToDatabaseEnabled && propertyId && !existingBookingRow) {
       // New bookings only. An existing booking keeps editing while the listing is paused or
       // archived; the lifecycle gate lives in one place and is mirrored by a DB trigger.
-      await assertPropertyAcceptsNewBookings(propertyId);
+      await assertPropertyAcceptsNewBookings(propertyId, checkOutDate);
     }
 
     // Check for overlapping bookings (only if saving to database)
@@ -535,7 +538,10 @@ serveHandler('submit-form', async (req) => {
             );
           }
         } catch (receiptErr) {
-          console.error('[submit-form] Guest booking request receipt failed (non-fatal):', receiptErr);
+          console.error(
+            '[submit-form] Guest booking request receipt failed (non-fatal):',
+            receiptErr
+          );
         }
       } else {
         console.log('[submit-form] Guest booking request receipt skipped (org automation off)');
@@ -671,6 +677,21 @@ serveHandler('submit-form', async (req) => {
         JSON.stringify({
           success: false,
           error: 'policy_changed',
+          message: error.message,
+        }),
+        {
+          status: 409,
+          headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (error instanceof PropertyLifecycleError && error.code === 'STAY_EXCEEDS_CONTRACT_END') {
+      console.warn('[submit-form] rejected: stay extends past the listing contract end');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'stay_exceeds_contract_end',
           message: error.message,
         }),
         {

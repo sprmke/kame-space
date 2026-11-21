@@ -119,6 +119,9 @@ serveAuthenticated('update-booking-details', async (req) => {
     if (message.startsWith('BOOKING_DATE_CONFLICT:')) {
       return jsonError(req, message.replace('BOOKING_DATE_CONFLICT:', '').trim(), 409);
     }
+    if (message.startsWith('CONTRACT_ENDED:')) {
+      return jsonError(req, message.replace('CONTRACT_ENDED:', '').trim(), 409);
+    }
     if (message === 'Booking not found') {
       return jsonError(req, message, 404);
     }
