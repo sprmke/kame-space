@@ -5,7 +5,12 @@
 import { isBookingStatus } from '../_shared/statusMachine.ts';
 import { buildActorContext } from '../_shared/activityLog.ts';
 import { WorkflowOrchestrator } from '../_shared/workflowOrchestrator.ts';
-import { jsonResponse, readJsonBody, requireHttpMethod } from '../_shared/httpResponse.ts';
+import {
+  jsonError,
+  jsonResponse,
+  readJsonBody,
+  requireHttpMethod,
+} from '../_shared/httpResponse.ts';
 import { withIdempotency } from '../_shared/idempotency.ts';
 import {
   resolveScopedPropertyAccess,
@@ -29,6 +34,16 @@ serveAuthenticated(
     if (!toStatus) throw new Error('toStatus is required');
     if (!isBookingStatus(toStatus)) {
       throw new Error(`Invalid toStatus: "${toStatus}"`);
+    }
+
+    // Cancellation has its own endpoint so the reason, refund row, voucher release and guest
+    // email are always recorded. Never allow a raw status write to CANCELLED.
+    if (toStatus === 'CANCELLED') {
+      return jsonError(
+        req,
+        'use_cancel_booking: Cancel from the Cancellation action so the reason, refund and guest email are recorded.',
+        409
+      );
     }
 
     await verifyBookingBelongsToProperty(String(bookingId), propertyId);

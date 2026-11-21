@@ -28,8 +28,8 @@ import { createNotification } from './notificationService.ts';
 import { buildActorContext, logActivity, type ActorContext } from './activityLog.ts';
 import { WorkflowOrchestrator } from './workflowOrchestrator.ts';
 import { resolveOrganizationIdForProperty } from './propertyScope.ts';
+import { cancelLinkedParkingForStay } from './linkedParkingCancellation.ts';
 import { GUEST_CANCELLABLE_STATUSES, HOST_CANCELLABLE_STATUSES } from './statusMachine.ts';
-
 
 /** Explicit column lists so a `select('*')` guard stays green and payloads stay intentional. */
 export const BOOKING_REFUND_COLUMNS =
@@ -37,7 +37,6 @@ export const BOOKING_REFUND_COLUMNS =
 
 export const CANCELLATION_REQUEST_COLUMNS =
   'id, booking_id, property_id, status, reason_code, reason_note, host_message, requested_at, resolved_at, resolved_by, created_at, updated_at' as const;
-
 
 export const CANCELLATION_REASON_CODES = [
   'change_of_plans',
@@ -57,8 +56,7 @@ export type CancellationReasonCode = (typeof CANCELLATION_REASON_CODES)[number];
 
 export function isCancellationReasonCode(value: unknown): value is CancellationReasonCode {
   return (
-    typeof value === 'string' &&
-    (CANCELLATION_REASON_CODES as readonly string[]).includes(value)
+    typeof value === 'string' && (CANCELLATION_REASON_CODES as readonly string[]).includes(value)
   );
 }
 
@@ -100,6 +98,58 @@ export function isGuestCancellable(
 
 export function isHostCancellable(status: string | null | undefined): boolean {
   return HOST_CANCELLABLE_STATUSES.has(String(status ?? '').trim() as never);
+}
+
+/**
+ * A host may only label a cancellation "guest asked" when the guest actually opened a
+ * cancellation request. Otherwise the initiator is the host, which keeps the full-refund
+ * rule and the host-cancel metrics honest.
+ */
+export function resolveHostCancellationInitiator(input: {
+  requested: unknown;
+  hasOpenGuestRequest: boolean;
+}): 'guest' | 'host' {
+  return input.requested === 'guest' && input.hasOpenGuestRequest ? 'guest' : 'host';
+}
+
+/**
+ * A host cancellation always reaches the guest. The only suppression is an explicit
+ * `duplicate_or_test` cleanup, where there is no real guest to notify.
+ */
+export function shouldNotifyGuestOnCancellation(input: {
+  reasonCode: string;
+  requested?: unknown;
+}): boolean {
+  return input.reasonCode === 'duplicate_or_test' ? input.requested !== false : true;
+}
+
+/**
+ * Before check-in a host cancellation refunds everything the guest paid. An override may
+ * raise goodwill but can never cut the refund below that floor. After check-in the host may
+ * set a partial refund with a note (D6).
+ */
+export function assertHostRefundFloor(input: {
+  initiator: CancellationInitiator;
+  cancelledAt: Date;
+  checkInDate: string;
+  checkInTime: string;
+  baseRefundDuePhp: number;
+  overrideRefundPhp?: number | null;
+}): void {
+  if (input.initiator !== 'host') return;
+  if (input.overrideRefundPhp == null) return;
+  const checkIn = manilaCheckInInstant(input.checkInDate, input.checkInTime);
+  const beforeCheckIn = !checkIn || input.cancelledAt.getTime() < checkIn.getTime();
+  if (!beforeCheckIn) return;
+  const overrideCents = Math.round(Number(input.overrideRefundPhp) * 100);
+  const floorCents = Math.round(input.baseRefundDuePhp * 100);
+  if (Number.isFinite(overrideCents) && overrideCents < floorCents) {
+    throw new CancellationNotAllowedError(
+      'A host cancellation before check-in refunds the full amount the guest paid. Remove the override or enter the full amount.',
+      'refund_below_host_floor',
+      400
+    );
+  }
 }
 
 /**
@@ -453,13 +503,37 @@ export async function cancelBooking(input: {
   const snapshot = await ensureBookingSnapshot(booking);
   const policy = snapshot?.policy ?? context.policy;
   const display = resolveCancellationPolicyDisplay(policy);
-  const outcome = computeOutcomeForBooking({
+  const cancelledAt = new Date();
+
+  // Compute the policy outcome first so a host cannot override a pre-check-in full refund
+  // down to nothing. The floor is checked before the status write.
+  const baseOutcome = computeOutcomeForBooking({
     booking,
     policy,
     checkInTime: context.checkInTime,
     initiator: input.initiator,
+    cancelledAt: cancelledAt.toISOString(),
+  });
+  assertHostRefundFloor({
+    initiator: input.initiator,
+    cancelledAt,
+    checkInDate: str(booking.check_in_date),
+    checkInTime: context.checkInTime,
+    baseRefundDuePhp: baseOutcome.refundDuePhp,
     overrideRefundPhp: input.overrideRefundPhp,
   });
+
+  const outcome =
+    input.overrideRefundPhp == null
+      ? baseOutcome
+      : computeOutcomeForBooking({
+          booking,
+          policy,
+          checkInTime: context.checkInTime,
+          initiator: input.initiator,
+          cancelledAt: cancelledAt.toISOString(),
+          overrideRefundPhp: input.overrideRefundPhp,
+        });
 
   const result = await WorkflowOrchestrator.transition(
     bookingId,
@@ -496,6 +570,17 @@ export async function cancelBooking(input: {
     // The cancellation already committed. Never fail the request here; the next
     // trip/booking read self-heals the refund row via `ensureCancellationRefund`.
     console.error('[cancellation] refund row create failed (non-fatal):', refundErr);
+  }
+
+  // A host cancellation must not leave the guest holding paid parking for a stay that no
+  // longer exists (PRK-01). Guest cancellations keep the self-service "cancel my parking too"
+  // option, so only the host path does this automatically.
+  if (input.initiator === 'host') {
+    try {
+      await cancelLinkedParkingForStay({ stayBookingId: bookingId, actor: input.actor });
+    } catch (parkingError) {
+      console.error('[cancellation] linked parking cancel failed (non-fatal):', parkingError);
+    }
   }
 
   const resolvedRequestId = await resolveOpenRequest(
@@ -613,7 +698,11 @@ export async function withdrawCancellationRequest(input: {
   bookingId: string;
   actor: ActorContext;
 }): Promise<boolean> {
-  const resolved = await resolveOpenRequest(input.bookingId, 'withdrawn', input.actor.userId ?? null);
+  const resolved = await resolveOpenRequest(
+    input.bookingId,
+    'withdrawn',
+    input.actor.userId ?? null
+  );
   if (!resolved) return false;
   const { data } = await createServiceClient()
     .from('guest_submissions')
@@ -689,7 +778,9 @@ export async function expireStaleCancellationRequests(): Promise<number> {
   const sb = createServiceClient();
   const { data } = await sb
     .from('booking_cancellation_requests')
-    .select('id, booking_id, property_id, guest_submissions!inner(check_in_date, check_in_time, status)')
+    .select(
+      'id, booking_id, property_id, guest_submissions!inner(check_in_date, check_in_time, status)'
+    )
     .eq('status', 'open')
     .limit(500);
 

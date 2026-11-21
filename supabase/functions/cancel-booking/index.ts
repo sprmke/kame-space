@@ -24,8 +24,14 @@ import { releaseAppliedVoucherOnCancel } from '../_shared/voucherRedemption.ts';
 import {
   cancelBooking,
   isCancellationReasonCode,
+  loadOpenCancellationRequest,
+  loadPropertyCancellationContext,
+  resolveHostCancellationInitiator,
+  shouldNotifyGuestOnCancellation,
   type CancellationReasonCode,
 } from '../_shared/cancellationService.ts';
+import { raiseOpsAlertAfterResponse } from '../_shared/ops/opsAlert.ts';
+import { manilaCheckInInstant } from '../_shared/cancellationRefund.ts';
 
 serveAuthenticated('cancel-booking', async (req) => {
   requireHttpMethod(req, 'POST');
@@ -53,7 +59,15 @@ serveAuthenticated('cancel-booking', async (req) => {
     return jsonError(req, 'Booking not found', 404);
   }
 
-  const initiator = body.initiator === 'guest' ? 'guest' : 'host';
+  const initiator = resolveHostCancellationInitiator({
+    requested: body.initiator,
+    hasOpenGuestRequest: Boolean(await loadOpenCancellationRequest(String(bookingId))),
+  });
+  if (body.initiator === 'guest' && initiator === 'host') {
+    console.warn(
+      '[cancel-booking] guest initiator ignored: no open cancellation request for this booking'
+    );
+  }
   const reasonCode: CancellationReasonCode = isCancellationReasonCode(body.reasonCode)
     ? body.reasonCode
     : 'other';
@@ -86,10 +100,43 @@ serveAuthenticated('cancel-booking', async (req) => {
     reasonNote: reasonNote || null,
     overrideRefundPhp: refundOverridePhp,
     overrideNote: overrideNote || null,
-    notifyGuest: body.notifyGuest !== false,
+    notifyGuest: shouldNotifyGuestOnCancellation({
+      reasonCode,
+      requested: body.notifyGuest,
+    }),
     actor,
     devControls: (devControls ?? {}) as Record<string, boolean>,
   });
+
+  // A late host cancel is the highest-harm cancellation: the guest may have no time to find
+  // another place. Alert the ops channel (ids and reason only, no guest PII).
+  if (initiator === 'host' && !result.alreadyCancelled) {
+    try {
+      const cancellationContext = await loadPropertyCancellationContext(propertyId);
+      const checkIn = manilaCheckInInstant(
+        String(booking.check_in_date ?? ''),
+        cancellationContext.checkInTime
+      );
+      const msToCheckIn = checkIn ? checkIn.getTime() - Date.now() : Number.POSITIVE_INFINITY;
+      if (msToCheckIn > 0 && msToCheckIn <= 24 * 60 * 60 * 1000) {
+        await raiseOpsAlertAfterResponse({
+          key: 'booking:host_cancel_within_24h',
+          tier: 'p1',
+          source: 'journey',
+          title: 'Host cancelled inside 24 hours',
+          summary: 'A guest lost their stay close to check-in. Review the reason and refund.',
+          context: {
+            booking_id: String(bookingId),
+            property_id: propertyId,
+            reason_code: reasonCode,
+            hours_to_check_in: Math.round(msToCheckIn / (60 * 60 * 1000)),
+          },
+        });
+      }
+    } catch (alertErr) {
+      console.error('[cancel-booking] late-cancel alert failed (non-fatal):', alertErr);
+    }
+  }
 
   try {
     await releaseAppliedVoucherOnCancel(createServiceClient(), {

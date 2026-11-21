@@ -143,6 +143,11 @@ import {
   humanizeTransitionError,
 } from './dashboardAssistantActionDisplay.ts';
 import { WorkflowOrchestrator } from './workflowOrchestrator.ts';
+import {
+  cancelBooking,
+  isCancellationReasonCode,
+  type CancellationReasonCode,
+} from './cancellationService.ts';
 import { buildActorContext, logActivity } from './activityLog.ts';
 import {
   classifyActionRisk,
@@ -2144,6 +2149,15 @@ async function toolProposeCancelBooking(
   if (!bookingId) return { ok: false, error: 'bookingId is required' };
   const propertyId = await resolveBookingProperty(ctx, bookingId, 'bookings.detail.workflow:edit');
 
+  const reasonCodeRaw = str(args, 'reasonCode');
+  const reasonCode: CancellationReasonCode = isCancellationReasonCode(reasonCodeRaw)
+    ? reasonCodeRaw
+    : 'other';
+  const reasonNote = str(args, 'reasonNote').slice(0, 300);
+  if (reasonCode === 'other' && !reasonNote) {
+    return { ok: false, error: 'Add a short reason for the cancellation.' };
+  }
+
   // Always Tier 2 — TIER2_ONLY_TOOL_NAMES short-circuits classifyActionRisk before any edge check.
   const tier = classifyActionRisk({
     toolName: 'propose_cancel_booking',
@@ -2154,13 +2168,20 @@ async function toolProposeCancelBooking(
     isBulk: ctx.isBulk,
   });
 
+  const reasonLabel = reasonCode === 'other' ? reasonNote : reasonCode.replace(/_/g, ' ');
   return {
     ok: true,
     proposed: true,
     riskTier: tier,
     auditPropertyId: propertyId,
     auditBookingId: bookingId,
-    data: { bookingId, toStatus: 'CANCELLED', summary: 'Cancel this booking.' },
+    data: {
+      bookingId,
+      toStatus: 'CANCELLED',
+      reasonCode,
+      reasonNote,
+      summary: `Cancel this booking (${reasonLabel}). The guest gets a full refund and an email.`,
+    },
   };
 }
 
@@ -3422,21 +3443,44 @@ export async function executeConfirmedAction(
       expectedTier: 'tier2_confirmed',
     });
 
-    const result = await WorkflowOrchestrator.transition(
-      bookingId,
-      'CANCELLED',
-      {},
-      {},
-      true,
-      assistantActorContext(ctx)
-    );
-    return {
-      ok: true,
-      riskTier: 'tier2_confirmed',
-      auditPropertyId: propertyId,
-      auditBookingId: bookingId,
-      data: result,
-    };
+    const booking = await DatabaseService.getBookingById(bookingId);
+    if (!booking) return { ok: false, error: 'Booking not found' };
+
+    const reasonCodeRaw = str(inputPayload, 'reasonCode');
+    const reasonCode: CancellationReasonCode = isCancellationReasonCode(reasonCodeRaw)
+      ? reasonCodeRaw
+      : 'other';
+    const reasonNote = str(inputPayload, 'reasonNote').slice(0, 300);
+
+    try {
+      // Same service as the host's Cancellation action: reason, refund row, voucher release,
+      // started-stay block and guest email. Never a raw orchestrator write.
+      const result = await cancelBooking({
+        booking: booking as Record<string, unknown>,
+        initiator: 'host',
+        reasonCode,
+        reasonNote: reasonNote || 'Cancelled by the host from the assistant.',
+        notifyGuest: true,
+        actor: assistantActorContext(ctx),
+      });
+      return {
+        ok: true,
+        riskTier: 'tier2_confirmed',
+        auditPropertyId: propertyId,
+        auditBookingId: bookingId,
+        data: {
+          bookingId,
+          status: 'CANCELLED',
+          refundDuePhp: result.refund?.amount_due_php ?? result.outcome.refundDuePhp,
+          guestNotified: true,
+        },
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : 'Could not cancel this booking.',
+      };
+    }
   }
 
   if (toolName === 'propose_transition_booking') {
@@ -4916,10 +4960,33 @@ export const TOOL_DECLARATIONS = [
   },
   {
     name: 'propose_cancel_booking',
-    description: 'Cancel a booking. Always requires host confirmation.',
+    description:
+      'Cancel a booking. Always requires host confirmation. The guest is refunded in full and emailed.',
     parameters: {
       type: 'object',
-      properties: { bookingId: { type: 'string' } },
+      properties: {
+        bookingId: { type: 'string' },
+        reasonCode: {
+          type: 'string',
+          enum: [
+            'change_of_plans',
+            'found_another_place',
+            'travel_issue',
+            'emergency',
+            'no_show',
+            'no_payment',
+            'duplicate_or_test',
+            'host_unavailable',
+            'request_expired',
+            'other',
+          ],
+          description: 'Why the booking is being cancelled. Use "other" with a note.',
+        },
+        reasonNote: {
+          type: 'string',
+          description: 'Short human reason, required when reasonCode is "other".',
+        },
+      },
       required: ['bookingId'],
     },
   },
