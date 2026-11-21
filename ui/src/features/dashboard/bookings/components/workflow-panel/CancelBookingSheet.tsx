@@ -31,15 +31,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatMoney } from '@/utils/format/currency';
 import { cn } from '@/lib/utils';
 
-const REASONS = [
+const GUEST_REASONS = [
   { value: 'change_of_plans', label: 'Guest changed plans' },
   { value: 'found_another_place', label: 'Guest found another place' },
   { value: 'travel_issue', label: 'Travel issue' },
   { value: 'emergency', label: 'Emergency' },
-  { value: 'no_show', label: 'No-show' },
-  { value: 'no_payment', label: 'No payment received' },
-  { value: 'duplicate_or_test', label: 'Duplicate or test booking' },
+  { value: 'other', label: 'Other' },
+];
+
+const HOST_REASONS = [
   { value: 'host_unavailable', label: 'I cannot host this stay' },
+  { value: 'emergency', label: 'Emergency at the property' },
+  { value: 'no_payment', label: 'No payment received' },
+  { value: 'no_show', label: 'Guest did not show up' },
+  { value: 'duplicate_or_test', label: 'Duplicate or test booking' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -51,6 +56,7 @@ export function CancelBookingSheet({
   defaultInitiator = 'host',
   defaultReasonCode,
   defaultReasonNote,
+  allowGuestInitiator = false,
   isPending,
   onConfirm,
 }: {
@@ -61,6 +67,8 @@ export function CancelBookingSheet({
   defaultInitiator?: 'guest' | 'host';
   defaultReasonCode?: string;
   defaultReasonNote?: string | null;
+  /** Only true when the guest actually has an open cancellation request. */
+  allowGuestInitiator?: boolean;
   isPending: boolean;
   onConfirm: (input: CancelBookingInput) => Promise<void>;
 }) {
@@ -71,6 +79,15 @@ export function CancelBookingSheet({
   const [overrideAmount, setOverrideAmount] = useState('');
   const [overrideNote, setOverrideNote] = useState('');
   const [notifyGuest, setNotifyGuest] = useState(true);
+
+  // Without an open guest request the cancellation is always the host's, and the server
+  // enforces that. Do not offer a label the server will ignore.
+  const effectiveInitiator = allowGuestInitiator ? initiator : 'host';
+  const reasons = effectiveInitiator === 'host' ? HOST_REASONS : GUEST_REASONS;
+  const activeReason = reasons.some((item) => item.value === reasonCode)
+    ? reasonCode
+    : reasons[0].value;
+  const isDuplicateOrTest = activeReason === 'duplicate_or_test';
 
   const snapshot = useMemo(
     () => readCancellationPolicySnapshot(booking.cancellation_policy_snapshot),
@@ -85,27 +102,42 @@ export function CancelBookingSheet({
       booking: cancellationMoneyInputFromBooking(booking),
       cancelledAt: new Date().toISOString(),
       checkInTime,
-      initiator,
+      initiator: effectiveInitiator,
       overrideRefundPhp: parsedOverride,
     });
-  }, [booking, checkInTime, initiator, overrideAmount, overrideEnabled, snapshot]);
+  }, [booking, checkInTime, effectiveInitiator, overrideAmount, overrideEnabled, snapshot]);
+
+  const msToCheckIn = outcome.checkInInstantIso
+    ? Date.parse(outcome.checkInInstantIso) - Date.now()
+    : Number.NaN;
+  const lateHostCancel =
+    effectiveInitiator === 'host' && msToCheckIn > 0 && msToCheckIn <= 24 * 60 * 60 * 1000;
+
+  // A host cancellation before check-in refunds in full, so the override is only meaningful
+  // for a guest-initiated cancel, an unset policy, or a stay that already started.
+  const canOverride =
+    effectiveInitiator === 'guest' ||
+    outcome.mode === 'after_checkin' ||
+    outcome.mode === 'host_decides';
 
   const overrideInvalid =
-    overrideEnabled && (overrideAmount.trim() === '' || !Number.isFinite(Number(overrideAmount)));
-  const needsNote = initiator === 'host' && reasonCode === 'other' && !reasonNote.trim();
-  const overrideNeedsNote = overrideEnabled && !overrideNote.trim();
+    canOverride &&
+    overrideEnabled &&
+    (overrideAmount.trim() === '' || !Number.isFinite(Number(overrideAmount)));
+  const needsNote = effectiveInitiator === 'host' && activeReason === 'other' && !reasonNote.trim();
+  const overrideNeedsNote = canOverride && overrideEnabled && !overrideNote.trim();
   const canConfirm = !overrideInvalid && !needsNote && !overrideNeedsNote;
 
   const submit = async () => {
     if (!canConfirm) return;
     await onConfirm({
       bookingId: String(booking.id),
-      initiator,
-      reasonCode,
+      initiator: effectiveInitiator,
+      reasonCode: activeReason,
       reasonNote: reasonNote.trim(),
-      refundOverridePhp: overrideEnabled ? Number(overrideAmount) : null,
-      overrideNote: overrideEnabled ? overrideNote.trim() : undefined,
-      notifyGuest,
+      refundOverridePhp: canOverride && overrideEnabled ? Number(overrideAmount) : null,
+      overrideNote: canOverride && overrideEnabled ? overrideNote.trim() : undefined,
+      notifyGuest: isDuplicateOrTest ? notifyGuest : true,
     });
   };
 
@@ -117,33 +149,35 @@ export function CancelBookingSheet({
         </ResponsiveModalHeader>
 
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4 sm:px-5">
-          <div className="space-y-2">
-            <Label>Who asked?</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {(['guest', 'host'] as const).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setInitiator(value)}
-                  className={cn(
-                    'min-h-[44px] rounded-xl border px-3 text-sm font-medium',
-                    initiator === value ? 'border-primary bg-primary/5' : 'border-border'
-                  )}
-                >
-                  {value === 'guest' ? 'Guest asked' : "I'm cancelling"}
-                </button>
-              ))}
+          {allowGuestInitiator ? (
+            <div className="space-y-2">
+              <Label>Who asked?</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(['guest', 'host'] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setInitiator(value)}
+                    className={cn(
+                      'min-h-[44px] rounded-xl border px-3 text-sm font-medium',
+                      effectiveInitiator === value ? 'border-primary bg-primary/5' : 'border-border'
+                    )}
+                  >
+                    {value === 'guest' ? 'Guest asked' : "I'm cancelling"}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
 
           <div className="space-y-2">
             <Label htmlFor="cancel-reason">Reason</Label>
-            <Select value={reasonCode} onValueChange={setReasonCode}>
+            <Select value={activeReason} onValueChange={setReasonCode}>
               <SelectTrigger id="cancel-reason" className="h-11">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {REASONS.map((item) => (
+                {reasons.map((item) => (
                   <SelectItem key={item.value} value={item.value}>
                     {item.label}
                   </SelectItem>
@@ -154,7 +188,7 @@ export function CancelBookingSheet({
 
           <div className="space-y-2">
             <Label htmlFor="cancel-reason-note">
-              Note {initiator === 'host' && reasonCode === 'other' ? '' : '(optional)'}
+              Note {effectiveInitiator === 'host' && activeReason === 'other' ? '' : '(optional)'}
             </Label>
             <Textarea
               id="cancel-reason-note"
@@ -164,8 +198,16 @@ export function CancelBookingSheet({
             />
           </div>
 
+          {lateHostCancel ? (
+            <p className="flex items-start gap-1.5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+              <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+              Check-in is within 24 hours. The guest may not find another place, and this
+              cancellation is reviewed by support.
+            </p>
+          ) : null}
+
           <div className="bg-muted/40 rounded-xl p-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
               Refund preview
             </p>
             <div className="mt-2 space-y-1 text-sm">
@@ -198,40 +240,52 @@ export function CancelBookingSheet({
             ))}
           </div>
 
-          <div className="space-y-2">
+          {canOverride ? (
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={overrideEnabled}
+                  onCheckedChange={(checked) => setOverrideEnabled(checked === true)}
+                />
+                Override the refund
+              </label>
+              {overrideEnabled ? (
+                <div className="space-y-2">
+                  <Input
+                    value={overrideAmount}
+                    inputMode="decimal"
+                    placeholder="Refund amount"
+                    onChange={(event) => setOverrideAmount(event.target.value)}
+                    aria-label="Refund amount"
+                  />
+                  <Input
+                    value={overrideNote}
+                    placeholder="Why is the amount different?"
+                    onChange={(event) => setOverrideNote(event.target.value)}
+                    aria-label="Override note"
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-xs">
+              A host cancellation before check-in refunds the full amount paid.
+            </p>
+          )}
+
+          {isDuplicateOrTest ? (
             <label className="flex items-center gap-2 text-sm">
               <Checkbox
-                checked={overrideEnabled}
-                onCheckedChange={(checked) => setOverrideEnabled(checked === true)}
+                checked={notifyGuest}
+                onCheckedChange={(checked) => setNotifyGuest(checked === true)}
               />
-              Override the refund
+              Email the guest
             </label>
-            {overrideEnabled ? (
-              <div className="space-y-2">
-                <Input
-                  value={overrideAmount}
-                  inputMode="decimal"
-                  placeholder="Refund amount"
-                  onChange={(event) => setOverrideAmount(event.target.value)}
-                  aria-label="Refund amount"
-                />
-                <Input
-                  value={overrideNote}
-                  placeholder="Why is the amount different?"
-                  onChange={(event) => setOverrideNote(event.target.value)}
-                  aria-label="Override note"
-                />
-              </div>
-            ) : null}
-          </div>
-
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={notifyGuest}
-              onCheckedChange={(checked) => setNotifyGuest(checked === true)}
-            />
-            Email the guest
-          </label>
+          ) : (
+            <p className="text-muted-foreground text-xs">
+              The guest is emailed about this cancellation.
+            </p>
+          )}
         </div>
 
         <ResponsiveModalFooter className="border-border/60 flex gap-2 border-t px-4 py-3 sm:px-5">
