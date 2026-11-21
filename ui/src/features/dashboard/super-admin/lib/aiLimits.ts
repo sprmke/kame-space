@@ -157,8 +157,8 @@ export const SOURCE_LABEL: Record<AiLimitSource, string> = {
   global: 'Platform default',
 };
 
-export function formatLimitValue(key: AiLimitKey, value: number | null): string {
-  if (value === null) return AI_LIMIT_FIELDS[key].blankHint ? 'Auto' : '-';
+export function formatLimitValue(key: AiLimitKey, value: number | null | undefined): string {
+  if (value == null) return AI_LIMIT_FIELDS[key].blankHint ? 'Auto' : '-';
   if (key === 'dailyCostUsdLimit') return `$${value.toLocaleString('en-US')}`;
   return value.toLocaleString('en-US', { maximumFractionDigits: 3 });
 }
@@ -201,4 +201,13 @@ export function limitsToDraft(
     draft[key] = value === null || value === undefined ? '' : String(value);
   }
   return draft;
+}
+
+/** `business_plus` -> "Business Plus". Fallback label when a profile name is missing. */
+export function humanizeProfileCode(code: string): string {
+  return code
+    .split(/[_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }

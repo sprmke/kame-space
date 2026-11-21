@@ -2,9 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 
-import { BadgeCheck, Building, Building2, Car, LifeBuoy } from 'lucide-react';
+import { BadgeCheck, Building, Building2, Car, LifeBuoy, LayoutDashboard } from 'lucide-react';
 
 import { useSuperAdminSearch } from '@/features/dashboard/super-admin/hooks/useSuperAdminSearch';
+import {
+  SUPER_ADMIN_PLATFORM_DESTINATIONS,
+  type SuperAdminPlatformNavItem,
+} from '@/features/dashboard/super-admin/lib/superAdminPlatformNav';
 
 import {
   CommandDialog,
@@ -63,6 +67,26 @@ export function SuperAdminCommandPalette() {
         onValueChange={setQuery}
       />
       <CommandList>
+        <CommandGroup heading="Pages">
+          {[{ label: 'Overview', href: '/admin', Icon: LayoutDashboard }, ...SUPER_ADMIN_PLATFORM_DESTINATIONS].map(
+            (item: SuperAdminPlatformNavItem) => {
+              const Icon = item.Icon;
+              return (
+                <CommandItem
+                  key={item.href}
+                  value={`${item.label} page navigate`}
+                  onSelect={() => {
+                    setOpen(false);
+                    navigate(item.href);
+                  }}
+                >
+                  <Icon className="text-muted-foreground mr-2 size-4 shrink-0" aria-hidden />
+                  <span className="min-w-0 truncate">{item.label}</span>
+                </CommandItem>
+              );
+            }
+          )}
+        </CommandGroup>
         <CommandEmpty>
           {query.trim().length < 2
             ? 'Type at least 2 characters.'

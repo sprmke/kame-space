@@ -25,6 +25,7 @@ export function useSuperAdminAudit(params: {
   limit: number;
   q?: string;
   actor?: string;
+  action?: string;
   targetType?: string;
   targetId?: string;
 }) {
@@ -33,6 +34,7 @@ export function useSuperAdminAudit(params: {
   search.set('limit', String(params.limit));
   if (params.q) search.set('q', params.q);
   if (params.actor) search.set('actor', params.actor);
+  if (params.action) search.set('action', params.action);
   if (params.targetType) search.set('targetType', params.targetType);
   if (params.targetId) search.set('targetId', params.targetId);
 
@@ -41,5 +43,19 @@ export function useSuperAdminAudit(params: {
     placeholderData: keepPreviousData,
     queryFn: () => callEdgeFunction<AuditResponse>(`list-super-admin-audit?${search.toString()}`),
     staleTime: 15_000,
+  });
+}
+
+export type SuperAdminAuditFacets = {
+  actions: string[];
+  targetTypes: string[];
+};
+
+/** Distinct action and target values, used to populate the audit filters. */
+export function useSuperAdminAuditFacets() {
+  return useQuery({
+    queryKey: ['super-admin', 'audit', 'facets'],
+    queryFn: () => callEdgeFunction<SuperAdminAuditFacets>('list-super-admin-audit?facets=true'),
+    staleTime: 5 * 60_000,
   });
 }
