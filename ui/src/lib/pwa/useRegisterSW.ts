@@ -48,7 +48,7 @@ export type UseRegisterSWReturn = {
   updateServiceWorker: (reloadPage?: boolean) => Promise<void>;
   /** "Later": hide the prompt for four hours, not for the whole session. */
   snoozeUpdate: () => void;
-  /** Manual "Check for updates" (Help & Support, super-admin health). */
+  /** Manual "Check updates" (Profile → On this device, super-admin health). */
   checkForUpdate: () => void;
   /** Call on every route change — the safest moment to apply a waiting update. */
   notifyRouteChange: () => void;

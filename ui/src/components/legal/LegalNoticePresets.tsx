@@ -12,8 +12,7 @@ type PresetProps = { className?: string; align?: 'start' | 'center' };
 export function SignInLegalNotice({ className, align = 'center' }: PresetProps) {
   return (
     <LegalNotice align={align} className={className}>
-      By continuing, you agree to the <LegalLink doc="terms" /> and acknowledge the{' '}
-      <LegalLink doc="privacy" />.
+      By continuing, you agree to our <LegalLink doc="terms" /> and <LegalLink doc="privacy" />.
     </LegalNotice>
   );
 }

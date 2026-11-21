@@ -77,9 +77,9 @@ Resume after OAuth (guest): `sessionStorage` (`guestAuthResume.ts`) restores nav
 
 ### Host sign-in
 
-**Layout (lg+, host routes):** 50/50 split — left **`HostWorkspaceSidePanel`** (`variant="auth"`) shared with onboarding: solid **`bg-primary`**, **`MarketingBrandLogo`** inset `p-4` (same top-left as **`MarketingNav`**), headline + description, compact **`HostDashboardTourPlayer`** (expand modal — the tour film is theme-aware and follows the viewer's light/dark choice; see `for-hosts.md` § Dark mode). No footer links on the panel.
+**Layout (lg+, host routes):** 50/50 split — left **`HostWorkspaceSidePanel`** (`variant="auth"`) shared with onboarding: solid **`bg-primary`**, **`MarketingBrandLogo`** in `.public-brand-bar` (same height as **`MarketingNav`** and the same left inset via `--public-shell-px`), headline + description, compact **`HostDashboardTourPlayer`** (expand modal — the tour film is theme-aware and follows the viewer's light/dark choice; see `for-hosts.md` § Dark mode). No footer links on the panel.
 
-**Shared panel shell:** host and guest left panels both render through **`AuthSidePanelShell`** (`marketing/shared/components`): `aside` on solid **`bg-primary-strong`**, logo link inset top-left, left-aligned title + one-line description, then the audience content. Only that content differs between host and guest. The column has `pt-20` so the heading never runs into the logo on short screens.
+**Shared panel shell:** host and guest left panels both render through **`AuthSidePanelShell`** (`marketing/shared/components`): `aside` on solid **`bg-primary-strong`**, logo in `.public-brand-bar`, left-aligned title and showcase sharing the same `--public-shell-px` gutter (no centered max-width drift). The content column uses `pt-[var(--public-nav-h)]` so the heading clears the logo. The phone auth header uses the same brand bar.
 
 ### Guest sign-in layout
 
@@ -112,7 +112,7 @@ There is no password anywhere in this flow. What used to be `/for-hosts/forgot-p
 
 ---
 
-> **Legal notice:** Sign-in pages end with the shared sign-in legal line (Terms and Privacy Policy, balanced two lines) under the switch prompt; the guest auth modal shows it under Google. Email step only. Pattern and full list: [legal.md](legal.md#in-app-notices).
+> **Legal notice:** Sign-in pages and the guest auth modal show the shared line under Google ("By continuing, you agree to our Terms and Privacy Policy."). Host/guest switch stays below that. Email step only. Pattern and full list: [legal.md](legal.md#in-app-notices).
 
 ## Host-facing knowledge
 

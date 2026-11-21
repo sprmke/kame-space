@@ -18,8 +18,9 @@ export interface AuthSidePanelShellProps {
 
 /**
  * Left panel chrome shared by host and guest auth (and host onboarding): solid brand surface,
- * logo inset top-left (same spot as `MarketingNav`), left-aligned heading, then the audience
- * specific showcase. Keep audience differences inside `children` only.
+ * logo in `.public-brand-bar` (same height + left inset as `MarketingNav` / `--public-shell-px`),
+ * left-aligned heading, then the audience-specific showcase. Keep audience differences in
+ * `children` only.
  */
 export function AuthSidePanelShell({
   title,
@@ -34,18 +35,25 @@ export function AuthSidePanelShell({
       className={cn('bg-primary-strong relative hidden min-h-screen flex-col lg:flex', className)}
       aria-label={ariaLabel}
     >
-      <Link
-        to={logoHref}
-        className="group absolute left-4 top-4 z-20 min-h-[44px] rounded-lg outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/80"
-      >
-        <MarketingBrandLogo
-          tone="onPrimary"
-          className="transition-opacity group-hover:opacity-90"
-        />
-      </Link>
+      <div className="public-brand-bar absolute inset-x-0 top-0 z-20">
+        <Link
+          to={logoHref}
+          className="group flex min-h-[44px] items-center rounded-lg outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/80"
+        >
+          <MarketingBrandLogo
+            tone="onPrimary"
+            className="transition-opacity group-hover:opacity-90"
+          />
+        </Link>
+      </div>
 
-      <div className="relative z-10 flex min-h-screen flex-1 flex-col justify-center px-6 pb-10 pt-20 xl:px-10 xl:pb-12">
-        <div className="mx-auto w-full max-w-xl space-y-6 xl:space-y-7">
+      {/*
+        Same inline gutter as `.public-brand-bar` (`--public-shell-px`) so the headline and
+        showcase share the logo's left edge. Left-aligned (no mx-auto) so a max-width card
+        does not drift inward on wide half-panels.
+      */}
+      <div className="relative z-10 flex min-h-screen flex-1 flex-col justify-center px-[var(--public-shell-px)] pb-10 pt-[var(--public-nav-h)] xl:pb-12">
+        <div className="w-full max-w-xl space-y-6 xl:space-y-7">
           <div className="space-y-2">
             <h1 className="text-xl font-bold leading-tight tracking-tight text-white sm:text-2xl xl:text-3xl">
               {title}
