@@ -132,7 +132,7 @@ export function SuperAdminExternalReviewDialog({ approval, onOpenChange }: Props
                         to={listingHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline"
+                        className="text-brand-ink inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline"
                       >
                         View listing
                         <ExternalLink className="size-3" aria-hidden />

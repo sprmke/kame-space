@@ -95,7 +95,7 @@ export function HealthOverviewSection({
           <div className="flex items-center gap-4">
             <div className="relative aspect-square w-32 shrink-0 sm:w-40">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart tabIndex={-1} aria-label="Status breakdown" accessibilityLayer={false}>
                   <Pie
                     data={chartData}
                     dataKey="count"
@@ -108,7 +108,11 @@ export function HealthOverviewSection({
                     isAnimationActive={false}
                   >
                     {chartData.map((entry) => (
-                      <Cell key={entry.status} fill={statusHex(entry.status)} />
+                      <Cell
+                        key={entry.status}
+                        fill={statusHex(entry.status)}
+                        aria-label={`${HEALTH_STATUS_META[entry.status].label}: ${entry.count}`}
+                      />
                     ))}
                   </Pie>
                 </PieChart>
@@ -193,7 +197,7 @@ export function HealthOverviewSection({
               <button
                 type="button"
                 onClick={() => setShowAll((value) => !value)}
-                className="text-primary hover:bg-muted/40 flex min-h-[44px] w-full items-center justify-center text-sm font-medium"
+                className="text-brand-ink hover:bg-muted/40 flex min-h-[44px] w-full items-center justify-center text-sm font-medium"
               >
                 {showAll ? 'Show fewer' : `Show all ${issues.length}`}
               </button>

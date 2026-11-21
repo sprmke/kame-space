@@ -69,7 +69,7 @@ function CardLink({ to, label }: { to: string; label: string }) {
   return (
     <Link
       to={to}
-      className="text-primary inline-flex min-h-[44px] items-center gap-0.5 text-xs font-medium"
+      className="text-brand-ink inline-flex min-h-[44px] items-center gap-0.5 text-xs font-medium"
     >
       {label}
       <ChevronRight className="size-3.5" aria-hidden />

@@ -61,7 +61,7 @@ export function SuperAdminHealthPage() {
   );
   useHealthCheckHighlight();
 
-  const { data: summary, isLoading, error } = useSystemHealth();
+  const { data: summary, isLoading, error, refetch } = useSystemHealth();
   const runProbes = useRunHealthProbes();
   const sendTestError = useSendSentryTestError();
 
@@ -86,10 +86,15 @@ export function SuperAdminHealthPage() {
   return (
     <SuperAdminPage
       title="System health"
-      subtitle={SECTION_SUBTITLES[resolvedSection]}
+      subtitle={
+        summary?.environment === 'production'
+          ? SECTION_SUBTITLES[resolvedSection]
+          : `${SECTION_SUBTITLES[resolvedSection]} Local environment: Vault and cron checks may read as missing.`
+      }
       isLoading={isLoading}
       loadingBody={<SuperAdminHealthBodySkeleton />}
       error={error}
+      onRetry={() => void refetch()}
       actions={
         resolvedSection === 'overview' || resolvedSection === 'integrations' ? (
           <div className="flex flex-wrap items-center gap-2">

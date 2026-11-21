@@ -36,7 +36,7 @@ export function SuperAdminPlatformPropertiesTable({ properties }: Props) {
         <AdminTableTh className="hidden px-3 lg:table-cell lg:px-4">Type</AdminTableTh>
         <AdminTableTh className="hidden px-3 xl:table-cell xl:px-4">Location</AdminTableTh>
         <AdminTableTh className="px-3 sm:px-4">Status</AdminTableTh>
-        <AdminTableActionsTh>Open</AdminTableActionsTh>
+        <AdminTableActionsTh><span className="sr-only">Open</span></AdminTableActionsTh>
       </AdminTableHeadRow>
       <tbody>
         {properties.map((platformProperty, index) => {
@@ -56,20 +56,17 @@ export function SuperAdminPlatformPropertiesTable({ properties }: Props) {
             <tr
               key={platformProperty.id}
               className={adminTableRowClass(index)}
-              tabIndex={0}
-              role="link"
               onClick={() => navigate(href)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  navigate(href);
-                }
-              }}
-              aria-label={`Open ${model.title}`}
             >
               <td className={adminTableCell.body}>
                 <div className="min-w-[140px]">
-                  <p className={cn('truncate', adminTableBodyText.primary)}>{model.title}</p>
+                  <Link
+                    to={href}
+                    onClick={(event) => event.stopPropagation()}
+                    className={cn('truncate text-left hover:underline', adminTableBodyText.primary)}
+                  >
+                    {model.title}
+                  </Link>
                   {model.subtitle ? (
                     <p className={cn('truncate', adminTableBodyText.secondary)}>{model.subtitle}</p>
                   ) : null}
@@ -87,7 +84,7 @@ export function SuperAdminPlatformPropertiesTable({ properties }: Props) {
                 {platformProperty.developmentSlug && platformProperty.developmentName ? (
                   <Link
                     to={superAdminPaths.developmentDetail(platformProperty.developmentSlug)}
-                    className="text-primary relative z-[2] truncate text-sm hover:underline"
+                    className="text-brand-ink relative z-[2] truncate text-sm hover:underline"
                     onClick={(event) => event.stopPropagation()}
                   >
                     {platformProperty.developmentName}
@@ -109,7 +106,10 @@ export function SuperAdminPlatformPropertiesTable({ properties }: Props) {
                 </p>
               </td>
               <td className={adminTableCell.status}>
-                <OrgPropertyStatusBadge status={property.status} />
+                <OrgPropertyStatusBadge
+                  status={property.status}
+                  className="normal-case tracking-normal"
+                />
               </td>
               <td className={adminTableCell.action}>
                 <AdminTableRowAffordance />

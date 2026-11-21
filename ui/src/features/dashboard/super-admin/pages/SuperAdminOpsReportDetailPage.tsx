@@ -2,11 +2,11 @@ import { useMemo } from 'react';
 
 import { Link, useParams } from 'react-router-dom';
 
-import { ArrowLeft, Copy, Download, FileText, Send } from 'lucide-react';
+import { ArrowLeft, Copy, Download, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { SuperAdminEmptyState } from '@/features/dashboard/super-admin/components/shared/SuperAdminEmptyState';
 import { SuperAdminPage } from '@/features/dashboard/super-admin/components/shared/SuperAdminPage';
+import { SuperAdminRecordNotFound } from '@/features/dashboard/super-admin/components/shared/SuperAdminRecordNotFound';
 import {
   OpsSeverityBadge,
   OpsStatusBadge,
@@ -86,7 +86,7 @@ function Findings({ findings, title }: { findings: OpsFinding[]; title: string }
                   href={link.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-primary text-xs font-medium underline-offset-4 hover:underline"
+                  className="text-brand-ink text-xs font-medium underline-offset-4 hover:underline"
                 >
                   {link.label}
                 </a>
@@ -173,7 +173,12 @@ export function SuperAdminOpsReportDetailPage() {
       </Link>
 
       {!report ? (
-        <SuperAdminEmptyState icon={FileText} title="Report not found" />
+        <SuperAdminRecordNotFound
+          title="Report not found"
+          description="The report id in this link does not match a saved run."
+          backTo={superAdminPaths.opsReports}
+          backLabel="Back to Operations reports"
+        />
       ) : (
         <div className="space-y-4">
           <div className="surface-card flex flex-wrap items-center gap-2 px-3 py-3 sm:px-4">
@@ -201,23 +206,25 @@ export function SuperAdminOpsReportDetailPage() {
             ))}
           </div>
 
-          <section className="space-y-2">
-            <h2 className="text-section-title">Sources</h2>
-            <ul className="space-y-1.5">
-              {(report.summary.sources ?? []).map((source) => (
-                <li
-                  key={source.id}
-                  className="surface-card flex flex-wrap items-center gap-2 px-3 py-2 text-sm"
-                >
-                  <OpsStatusBadge status={source.status} />
-                  <span className="font-medium">{source.label}</span>
-                  {source.detail ? (
-                    <span className="text-muted-foreground text-xs">{source.detail}</span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </section>
+          {(report.summary.sources ?? []).length > 0 ? (
+            <section className="space-y-2">
+              <h2 className="text-section-title">Sources</h2>
+              <ul className="space-y-1.5">
+                {(report.summary.sources ?? []).map((source) => (
+                  <li
+                    key={source.id}
+                    className="surface-card flex flex-wrap items-center gap-2 px-3 py-2 text-sm"
+                  >
+                    <OpsStatusBadge status={source.status} />
+                    <span className="font-medium">{source.label}</span>
+                    {source.detail ? (
+                      <span className="text-muted-foreground text-xs">{source.detail}</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           {grouped.map((group) => (
             <Findings
@@ -272,19 +279,7 @@ export function SuperAdminOpsReportDetailPage() {
           ) : null}
 
           <section className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-section-title">Agent prompt</h2>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="settings-action"
-                onClick={() => copyText(agentPrompt(report.summary), 'Agent prompt copied')}
-              >
-                <Copy className="size-4" aria-hidden />
-                Copy
-              </Button>
-            </div>
+            <h2 className="text-section-title">Agent prompt</h2>
             <pre className="surface-card overflow-x-auto whitespace-pre-wrap px-3 py-3 text-xs">
               {agentPrompt(report.summary)}
             </pre>

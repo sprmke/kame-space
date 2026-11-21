@@ -1,3 +1,5 @@
+import { useLocation } from 'react-router-dom';
+
 import { LegalLink } from '@/components/legal/LegalLink';
 import { Button } from '@/components/ui/button';
 import { useCookieConsentChoice } from '@/hooks/useCookieConsentChoice';
@@ -22,8 +24,12 @@ import { cn } from '@/lib/utils';
 export function CookieConsentBanner() {
   const choice = useCookieConsentChoice();
   const { standalone } = useDisplayMode();
+  const { pathname } = useLocation();
 
-  if (choice !== null || standalone) return null;
+  // Operator consoles are not a consumer surface; the banner would cover page
+  // actions there and analytics consent belongs to guest/marketing pages.
+  const isOperatorConsole = pathname.startsWith('/admin') || pathname.startsWith('/bookings');
+  if (choice !== null || standalone || isOperatorConsole) return null;
 
   return (
     <div

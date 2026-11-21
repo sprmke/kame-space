@@ -24,9 +24,9 @@ Routes:
 | ----------------- | -------- | ---------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | AI usage          | n/a      | —          | Done | Spend trend + cost-by-feature charts + **Feature health** + top-orgs + quota breaches. Read-only.                                                         |
 | Rate limits       | Done     | server     | Done | Active per-user counters near/over the wrapper limit (last hour), manual block/unblock (step-up gated), current enforce state + limit.                    |
-| Audit log         | n/a      | —          | Done | Search + paginated list; org-hub **Activity** tab filters to one org.                                                                                     |
+| Audit log         | n/a      | —          | Done | Search, actor, action and target filters, expandable metadata detail, paginated list; org-hub **Activity** tab filters to one org.                        |
 | Platform settings | Done     | client     | Done | Signups, maintenance, default plan, support/legal, public rate limit, authenticated rate-limit enforce switch + limit, **Host verification reward** card. |
-| ⌘K search palette | n/a      | —          | Done | Fans out over orgs / properties / parkings / tickets; Enter navigates.                                                                                    |
+| ⌘K search palette | n/a      | —          | Done | Pages first, then orgs / properties / parkings / tickets; Enter navigates.                                                                                |
 
 ---
 
@@ -56,7 +56,10 @@ The AI usage page shows what AI costs the platform and how reliable each AI feat
   of calls served by the backup provider) and p50/p95 latency, from the `status`, `fallback_used`
   and `latency_ms` columns on `ai_platform_usage_events`. Cost-by-feature counts successful calls
   only. See [`ai-platform.md`](../../../architecture/ai-platform.md) §6.
-- **Audit log** (`SuperAdminAuditPage` / org-hub `SuperAdminOrgActivitySection`):
+- **Audit log** (`SuperAdminAuditPage` / org-hub `SuperAdminOrgActivitySection`): filters are
+  free-text search, actor email, action (from `list-super-admin-audit?facets=true`) and target type.
+  Every row expands to show the absolute Asia/Manila timestamp, target id and metadata JSON. Filter
+  values live in the URL (`?q=`, `?actor=`, `?action=`, `?targetType=`).
   `list-super-admin-audit` reads `super_admin_audit_events`, written fire-and-forget by
   `_shared/superAdminAudit.ts#logSuperAdminAction()` — a write failure there never blocks the
   mutation it's logging. Wired into: org subscription assign (`org-subscriptions-admin`), org
@@ -76,15 +79,17 @@ The AI usage page shows what AI costs the platform and how reliable each AI feat
   currently at or near the wrapper-default limit in the last hour
   (`list_active_wrapper_rate_limits` RPC over `request_rate_limits`, collapsed to one row per
   identity), the manual block list (`rate_limit_blocks`), and the current enforce state + limit.
-  Blocking an identity (`u:<uuid>` or `ip:<addr>`, matching `identityFromRequest`'s shape) is
+  Blocking an identity (the form accepts a bare user id or IP and normalises it to `u:<uuid>` or
+  `ip:<addr>`, matching `identityFromRequest`'s shape; see [rate-limits.md](./rate-limits.md)) is
   checked ahead of the rolling-window count on every `serveAdmin`/`serveAuthenticated` request
   (`isIdentityBlocked`, 30s isolate-local cache) — an immediate 403 regardless of the current
   count. Step-up gated (`rate_limit_block`); every block/unblock is audited via
   `logSuperAdminAction`. The page does not resolve `u:` ids to a name — cross-reference via
   Organizations/Hosts search if needed. Poll refetch every 30s.
-- **⌘K palette** (`SuperAdminCommandPalette`, mounted once in `SuperAdminShell`): debounced
-  `super-admin-search?q=` fans out over `organizations`/`properties`/`parkings`/`support_tickets`
-  with a small per-source `ilike` limit; results are grouped by type, Enter navigates.
+- **⌘K palette** (`SuperAdminCommandPalette`, mounted once in `SuperAdminShell`): a static **Pages**
+  group (from `SUPER_ADMIN_NAV_GROUPS`, so every console destination is reachable by name) plus the
+  debounced `super-admin-search?q=` fan-out over
+  `organizations`/`properties`/`parkings`/`support_tickets`. Enter navigates.
 - **Step-up OTP** (`SuperAdminStepUpProvider`, mounted once in `SuperAdminShell`): saving
   `platform-settings` and blocking/unblocking on `super-admin-rate-limits` (like every gated
   `/admin/*` mutation) needs a fresh email verification code — a ~15-min sudo window shared across
@@ -101,7 +106,7 @@ The AI usage page shows what AI costs the platform and how reliable each AI feat
 | GET     | `super-admin-ai-usage`                 | `?range=30d\|90d\|12mo` → `totals`, `dailySeries`, `featureBreakdown` (+ `errors`, `errorRatePct`, `fallbackRatePct`, `latencyP50Ms`, `latencyP95Ms`), `topOrgs`, `quotaBreaches` |
 | GET     | `super-admin-rate-limits`              | `{ enforceEnabled, limit, activeCounters[], blocks[] }` — counters from the last hour, floor count 1                                                                              |
 | POST    | `super-admin-rate-limits`              | `{ action: 'block'\|'unblock', identity, reason? }` — step-up gated (`rate_limit_block`)                                                                                          |
-| GET     | `list-super-admin-audit`               | `?q=`, `?actor=`, `?targetType=`, `?targetId=`, `?page=`, `?limit=`                                                                                                               |
+| GET     | `list-super-admin-audit`               | `?q=`, `?actor=`, `?action=`, `?targetType=`, `?targetId=`, `?page=`, `?limit=`; `?facets=true` returns distinct actions and target types                                         |
 | GET     | `org-subscriptions-admin?rewards=true` | Live `source=reward` grants for Host verification reward card                                                                                                                     |
 | GET/PUT | `platform-settings`                    | Singleton row; PUT accepts a partial patch; step-up gated (`platform_settings`)                                                                                                   |
 | GET     | `super-admin-search`                   | `?q=` (min 2 chars) → grouped `results[]` with `href`                                                                                                                             |
@@ -157,3 +162,9 @@ The AI usage page shows what AI costs the platform and how reliable each AI feat
       page by design — see [`super-admin-service-cost-monitoring.md`](../../../workflow/planned/super-admin-service-cost-monitoring.md).
       Limiter alerting (a sustained limiting spike) is not built; the page is poll-refreshed, not
       pushed.
+
+---
+
+## Testing
+
+Audit filters, metadata expansion, palette page search and the unknown-route redirect are covered by `ui/e2e/features/admin/adminConsoleAuditFixes.spec.ts`.

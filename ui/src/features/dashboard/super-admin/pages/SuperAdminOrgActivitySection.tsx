@@ -13,7 +13,7 @@ import { useSuperAdminOrgActivity } from '@/features/dashboard/super-admin/hooks
 import { SuperAdminAuditBodySkeleton } from '@/components/skeletons/SuperAdminSkeletons';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 function relativeTime(iso: string): string {
   const then = new Date(iso).getTime();
@@ -105,13 +105,13 @@ export function SuperAdminOrgActivitySection() {
           <TabsTrigger value="platform">Platform actions</TabsTrigger>
           <TabsTrigger value="org">Org activity</TabsTrigger>
         </TabsList>
+        <TabsContent value="platform" className="mt-3">
+          <PlatformActionsView orgId={org.id} />
+        </TabsContent>
+        <TabsContent value="org" className="mt-3">
+          <OrgActivityView orgId={org.id} />
+        </TabsContent>
       </Tabs>
-
-      {view === 'platform' ? (
-        <PlatformActionsView orgId={org.id} />
-      ) : (
-        <OrgActivityView orgId={org.id} />
-      )}
     </div>
   );
 }

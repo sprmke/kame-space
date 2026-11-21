@@ -156,6 +156,11 @@ const SuperAdminRateLimitsPage = lazy(() =>
     default: m.SuperAdminRateLimitsPage,
   }))
 );
+const SuperAdminNotFoundPage = lazy(() =>
+  import('@/features/dashboard/super-admin/pages/SuperAdminNotFoundPage').then((m) => ({
+    default: m.SuperAdminNotFoundPage,
+  }))
+);
 const SuperAdminSupportPage = lazy(() =>
   import('@/features/dashboard/super-admin/pages/SuperAdminSupportPage').then((m) => ({
     default: m.SuperAdminSupportPage,
@@ -219,7 +224,7 @@ export const superAdminRoutes: ReactNode = (
         <SuperAdminListRouteSkeleton
           title="Approvals"
           subtitle="Review host verification requests."
-          metricTitles={['In review', 'Org verifications', 'Listing verifications', 'Reviews']}
+          metricTitles={['Awaiting review', 'Org verifications', 'Listing verifications', 'Reviews']}
         />
       )}
     />
@@ -307,17 +312,6 @@ export const superAdminRoutes: ReactNode = (
       element={superAdminRoute(
         <SuperAdminMarketingTrendsPage />,
         <SuperAdminMarketingTrendsRouteSkeleton />
-      )}
-    />
-    <Route
-      path="ops-reports"
-      element={superAdminRoute(<SuperAdminOpsReportsPage />, <SuperAdminOpsReportsRouteSkeleton />)}
-    />
-    <Route
-      path="ops-reports/:reportId"
-      element={superAdminRoute(
-        <SuperAdminOpsReportDetailPage />,
-        <SuperAdminOpsReportDetailRouteSkeleton />
       )}
     />
     <Route
@@ -430,5 +424,6 @@ export const superAdminRoutes: ReactNode = (
       element={superAdminRoute(<SuperAdminOrgShell />, <SuperAdminOrgShellRouteSkeleton />)}
     />
     <Route path="orgs/:orgSlug/*" element={<SuperAdminOrgLegacySubrouteRedirect />} />
+    <Route path="*" element={<SuperAdminNotFoundPage />} />
   </Route>
 );

@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 
 import { useOptionalOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { useOptionalParkingContext } from '@/features/dashboard/org/components/RequireParkingContext';
@@ -14,10 +14,15 @@ export function useParkingIdParam(): string | null {
   return useOptionalParkingContext()?.parking.id ?? null;
 }
 
-/** Org slug from route or tenant context. */
+/**
+ * Org slug from route or tenant context. Super-admin routes reuse the `:orgSlug`
+ * param name for a platform org, which is not a tenant: never return it there.
+ */
 export function useOrgSlugParam(): string | null {
   const { orgSlug } = useParams<{ orgSlug?: string }>();
+  const { pathname } = useLocation();
   const orgContext = useOptionalOrgContext();
+  if (pathname.startsWith('/admin')) return orgContext?.org.slug ?? null;
   return orgSlug ?? orgContext?.org.slug ?? null;
 }
 

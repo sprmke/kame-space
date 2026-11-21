@@ -5,6 +5,7 @@ import {
   draftToLimits,
   emptyDraft,
   formatLimitValue,
+  humanizeProfileCode,
   limitsToDraft,
   ORG_OVERRIDE_KEYS,
   PROPERTY_OVERRIDE_KEYS,
@@ -82,5 +83,25 @@ describe('override key sets', () => {
       expect(ORG_OVERRIDE_KEYS).toContain(key);
       expect(PROPERTY_OVERRIDE_KEYS).not.toContain(key);
     }
+  });
+});
+
+describe('humanizeProfileCode', () => {
+  it('turns internal codes into plan-style names', () => {
+    expect(humanizeProfileCode('business_plus')).toBe('Business Plus');
+    expect(humanizeProfileCode('default')).toBe('Default');
+    expect(humanizeProfileCode('pnl-flex')).toBe('Pnl Flex');
+  });
+});
+
+describe('formatLimitValue', () => {
+  it('treats a missing value like an inherited value', () => {
+    expect(formatLimitValue('dailyCallLimit', undefined)).toBe('-');
+    expect(formatLimitValue('dailyCallLimit', null)).toBe('-');
+  });
+
+  it('formats numbers and limits decimals', () => {
+    expect(formatLimitValue('dailyCallLimit', 25)).toBe('25');
+    expect(formatLimitValue('dailyCostUsdLimit', 1.5)).toBe('$1.5');
   });
 });

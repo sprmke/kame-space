@@ -10,6 +10,7 @@ import {
   type TrendRun,
   type TrendTopicRow,
 } from '@/features/dashboard/super-admin/hooks/useMarketingTrendsAdmin';
+import { formatSuperAdminDate } from '@/features/dashboard/super-admin/lib/superAdminDates';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,9 +29,11 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 const STATUS_TONE: Record<TrendRun['status'], string> = {
-  published: 'bg-success/10 text-success',
-  failed: 'bg-destructive/10 text-destructive',
-  running: 'bg-warning/10 text-warning',
+  published:
+    'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200',
+  failed:
+    'bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-200',
+  running: 'bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-100',
   skipped: 'bg-muted text-muted-foreground',
 };
 
@@ -51,7 +54,7 @@ function RunLedger({ runs }: { runs: TrendRun[] }) {
             >
               {run.status}
             </span>
-            <span className="text-sm font-medium">{run.run_date}</span>
+            <span className="text-sm font-medium">{formatSuperAdminDate(run.run_date)}</span>
             <span className="text-caption">
               {run.trigger} · {run.topic_count} topics · {run.candidate_count} candidates
             </span>
@@ -63,7 +66,9 @@ function RunLedger({ runs }: { runs: TrendRun[] }) {
                 title={stat.error ?? undefined}
                 className={cn(
                   'rounded-full px-2 py-0.5 text-xs',
-                  stat.ok ? 'bg-muted text-muted-foreground' : 'bg-destructive/10 text-destructive'
+                  stat.ok
+                    ? 'bg-muted text-muted-foreground'
+                    : 'bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-200'
                 )}
               >
                 {SOURCE_LABELS[source] ?? source}: {stat.ok ? stat.count : 'failed'}
@@ -71,7 +76,7 @@ function RunLedger({ runs }: { runs: TrendRun[] }) {
             ))}
           </div>
           {run.ai_error ? (
-            <p className="text-destructive mt-2 text-xs">{run.ai_error}</p>
+            <p className="mt-2 text-xs text-red-800 dark:text-red-200">{run.ai_error}</p>
           ) : null}
         </li>
       ))}

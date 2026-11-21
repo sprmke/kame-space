@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import {
   AdminDataTable,
@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 function DevelopmentStatusBadge({ status }: { status: string }) {
   const active = status === 'ACTIVE';
   return (
-    <span className={listingStatusBadgeClasses(active)}>
+    <span className={cn(listingStatusBadgeClasses(active), 'normal-case tracking-normal')}>
       <span className={listingStatusDotClasses(active)} aria-hidden />
       {developmentStatusLabel(status as Development['status'])}
     </span>
@@ -48,7 +48,7 @@ export function SuperAdminDevelopmentsTable({ developments }: Props) {
         <AdminTableTh className="hidden px-3 sm:table-cell sm:px-4">Properties</AdminTableTh>
         <AdminTableTh className="hidden px-3 md:table-cell md:px-4">Parking</AdminTableTh>
         <AdminTableTh className="px-3 sm:px-4">Status</AdminTableTh>
-        <AdminTableActionsTh>Open</AdminTableActionsTh>
+        <AdminTableActionsTh><span className="sr-only">Open</span></AdminTableActionsTh>
       </AdminTableHeadRow>
       <tbody>
         {developments.map((development, index) => {
@@ -59,20 +59,17 @@ export function SuperAdminDevelopmentsTable({ developments }: Props) {
             <tr
               key={development.id}
               className={adminTableRowClass(index)}
-              tabIndex={0}
-              role="link"
               onClick={() => navigate(href)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  navigate(href);
-                }
-              }}
-              aria-label={`Open ${development.name}`}
             >
               <td className={adminTableCell.body}>
                 <div className="min-w-[140px]">
-                  <p className={cn('truncate', adminTableBodyText.primary)}>{model.title}</p>
+                  <Link
+                    to={href}
+                    onClick={(event) => event.stopPropagation()}
+                    className={cn('truncate text-left hover:underline', adminTableBodyText.primary)}
+                  >
+                    {model.title}
+                  </Link>
                   <p className={cn('truncate sm:hidden', adminTableBodyText.secondary)}>
                     {model.subtitle ?? model.locationLine}
                   </p>
