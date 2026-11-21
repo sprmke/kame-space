@@ -39,6 +39,9 @@ export type ParkingPayoutTransaction = {
   platformNetTotal: number;
   status: string;
   paidAt: string | null;
+  /** ISO instant when the payout hold ends (24h after the parking start), or null if unknown. */
+  payoutEligibleAt: string | null;
+  payoutEligible: boolean;
   disbursedAt: string | null;
   disbursementReference: string | null;
   disbursementMethod: string;
@@ -100,7 +103,12 @@ export function useParkingPayouts(status: ParkingPayoutStatusFilter = 'paid') {
 export function useMarkParkingPayoutDisbursed() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { transactionId: string; reference?: string }) =>
+    mutationFn: (input: {
+      transactionId: string;
+      reference?: string;
+      overrideEligibility?: boolean;
+      eligibilityNote?: string;
+    }) =>
       callEdgeFunction<{ transaction: ParkingPayoutTransaction }>('parking-payouts', {
         method: 'PATCH',
         body: JSON.stringify({ action: 'mark_disbursed', ...input }),

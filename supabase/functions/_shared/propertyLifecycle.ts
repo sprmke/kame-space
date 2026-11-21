@@ -23,6 +23,7 @@ import {
   resolveListingActivationBlock,
   type ListingAuthorizationState,
 } from './listingAuthorization.ts';
+import { stayBeyondContractEnd } from './stayContractWindow.ts';
 import { manilaTodayYmd } from './calendarAvailabilityManila.ts';
 import {
   asPropertyInactiveReason,
@@ -1045,10 +1046,13 @@ export async function systemActivateProperty(propertyId: string): Promise<void> 
 }
 
 /** Public new-booking gate used by `submit-form` and friends. */
-export async function assertPropertyAcceptsNewBookings(propertyId: string): Promise<void> {
+export async function assertPropertyAcceptsNewBookings(
+  propertyId: string,
+  checkOutDate?: string | null
+): Promise<void> {
   const { data, error } = await createServiceClient()
     .from('properties')
-    .select('status, inactive_reason')
+    .select('status, inactive_reason, settings')
     .eq('id', propertyId)
     .maybeSingle();
 
@@ -1067,6 +1071,20 @@ export async function assertPropertyAcceptsNewBookings(propertyId: string): Prom
       409,
       'PROPERTY_NOT_ACCEPTING_BOOKINGS',
       { state }
+    );
+  }
+
+  // A stay that ends after the host's authorization window cannot be honoured (ACC-11).
+  const contractEnd = stayBeyondContractEnd({
+    settings: (data?.settings as Record<string, unknown> | null) ?? null,
+    checkOutDate,
+  });
+  if (contractEnd) {
+    throw new PropertyLifecycleError(
+      `This place is only available until ${contractEnd}. Pick an earlier check-out.`,
+      409,
+      'STAY_EXCEEDS_CONTRACT_END',
+      { contractEnd }
     );
   }
 }

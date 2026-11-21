@@ -500,7 +500,11 @@ The **Overview** tab renders `BookingCancellationCard` under the stay details.
 | Goodwill refunds | Listed separately from the cancellation refund                                                                                                      |
 | Bookings list    | Rows with `cancellation_requested_at` show a "Cancellation requested" chip                                                                          |
 
-**Cancel sheet** (`WorkflowPanel` footer → Cancel): who asked (guest / host), reason, note, refund preview, optional override with a required note, and "Email the guest". Host-initiated cancels after check-in default to 0% and need an override.
+**Cancel sheet** (`WorkflowPanel` footer → Cancel): reason (host list), note, refund preview, and a locked full refund before check-in. The "Guest asked" toggle appears only when the guest has an open cancellation request; without one the server records the cancel as the host's. A host cancel always emails the guest (only `duplicate_or_test` can opt out). The override toggle is shown only where it can apply: a guest-initiated cancel, an unset policy, or a stay that already started (partial refund with a required note). A host cancel inside 24 hours of check-in shows a warning that support reviews it and raises the `booking:host_cancel_within_24h` alert.
+
+`transition-booking` returns **409 `use_cancel_booking`** for `toStatus: 'CANCELLED'`; the cancellation endpoint is the only way to cancel, so the reason, refund row, voucher release and guest email cannot be skipped. The AI assistant's cancel action calls the same cancellation service after host confirmation.
+
+The cancellation section also shows the linked parking: a host stay cancel moves paid parking to refund review and cancels the parking booking automatically.
 
 Endpoints: `cancel-booking` (host), `respond-cancellation-request` (approve/decline), `record-booking-refund` (mark sent / update / goodwill). All require `bookings.detail.workflow:edit`; there is no separate refund leaf.
 

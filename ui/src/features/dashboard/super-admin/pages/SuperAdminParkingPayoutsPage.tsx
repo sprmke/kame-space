@@ -52,10 +52,23 @@ function formatPhp(value: number): string {
   return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function payoutEligibleLabel(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat('en-PH', {
+    timeZone: 'Asia/Manila',
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date);
+}
+
 function MarkDisbursedDialog({ transaction }: { transaction: ParkingPayoutTransaction }) {
   const [open, setOpen] = useState(false);
   const [reference, setReference] = useState('');
+  const [eligibilityNote, setEligibilityNote] = useState('');
   const markDisbursed = useMarkParkingPayoutDisbursed();
+  const held = transaction.payoutEligible === false;
+  const canConfirm = !held || eligibilityNote.trim().length > 0;
 
   return (
     <AdminDialogShell
@@ -73,28 +86,54 @@ function MarkDisbursedDialog({ transaction }: { transaction: ParkingPayoutTransa
       footer={
         <Button
           type="button"
-          disabled={markDisbursed.isPending}
           className="min-h-[44px]"
+          disabled={markDisbursed.isPending || !canConfirm}
           onClick={async () => {
             await markDisbursed.mutateAsync({
               transactionId: transaction.id,
               reference: reference.trim() || undefined,
+              overrideEligibility: held || undefined,
+              eligibilityNote: held ? eligibilityNote.trim() : undefined,
             });
             setOpen(false);
             setReference('');
+            setEligibilityNote('');
           }}
         >
-          Confirm disbursed
+          {held ? 'Disburse early' : 'Confirm disbursed'}
         </Button>
       }
     >
-      <div className="space-y-1.5">
-        <Label htmlFor="disbursement-reference">Reference (optional)</Label>
-        <Input
-          id="disbursement-reference"
-          value={reference}
-          onChange={(event) => setReference(event.target.value)}
-        />
+      <div className="space-y-3">
+        {held ? (
+          <div className="space-y-1.5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+            <p className="font-medium">Payout held</p>
+            <p>
+              {transaction.payoutEligibleAt
+                ? `Eligible ${payoutEligibleLabel(transaction.payoutEligibleAt)} (24 hours after the parking start).`
+                : 'The parking start date is missing, so the payout is held for review.'}
+            </p>
+          </div>
+        ) : null}
+        {held ? (
+          <div className="space-y-1.5">
+            <Label htmlFor="eligibility-note">Why disburse early?</Label>
+            <Textarea
+              id="eligibility-note"
+              value={eligibilityNote}
+              rows={2}
+              onChange={(event) => setEligibilityNote(event.target.value)}
+            />
+          </div>
+        ) : null}
+        <div className="space-y-1.5">
+          <Label htmlFor="disbursement-reference">Reference (optional)</Label>
+          <Input
+            id="disbursement-reference"
+            value={reference}
+            onChange={(event) => setReference(event.target.value)}
+          />
+        </div>
       </div>
     </AdminDialogShell>
   );
@@ -473,9 +512,7 @@ function ParkingSettingsCard() {
   useUnsavedChangesGuard({ isDirty, onSave: saveSettings });
 
   if (isLoading && !data)
-    return (
-      <SuperAdminSettingsBodySkeleton cards={1} titles={['Commission, guest fee & margin']} />
-    );
+    return <SuperAdminSettingsBodySkeleton cards={1} titles={['Commission, guest fee & margin']} />;
   if (error) return <p className="text-destructive text-sm">Could not load parking settings.</p>;
 
   return (
@@ -632,6 +669,9 @@ function PayoutStatusBadge({ txn }: { txn: ParkingPayoutTransaction }) {
     return <Badge variant="destructive">Refund review</Badge>;
   }
   if (txn.failureReason) return <Badge variant="outline">Needs review</Badge>;
+  if (!txn.disbursedAt && txn.status === 'paid' && txn.payoutEligible === false) {
+    return <Badge variant="outline">Payout held</Badge>;
+  }
   return txn.disbursedAt ? (
     <Badge variant="secondary">Disbursed</Badge>
   ) : (

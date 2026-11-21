@@ -57,6 +57,7 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   // ── Guest portal / guest-side ─────────────────────────────────────────────────────────────
   'guest-messages': guest,
   'guest-profile': guest,
+  'guest-trip-help': guest,
   'guest-trips': guest,
   'guest-web-chat-feedback': guest,
   'guest-web-chat-messages': guest,
