@@ -13,11 +13,21 @@ import {
 } from '../_shared/httpResponse.ts';
 import { serveSuperAdmin } from '../_shared/serveEdge.ts';
 import { logSuperAdminAction } from '../_shared/superAdminAudit.ts';
-import { parkingRefundAmountError } from '../_shared/parkingPayoutRules.ts';
+import {
+  parkingPayoutEligibleAt,
+  parkingPayoutHoldError,
+  parkingRefundAmountError,
+} from '../_shared/parkingPayoutRules.ts';
 import { requireSuperAdminStepUp } from '../_shared/superAdminVerification.ts';
 import { logActivity } from '../_shared/activityLog.ts';
 
 const LEDGER_LIMIT = 200;
+
+function rowPayoutStartDate(row: Record<string, unknown>): string | null {
+  const booking = row.guest_submissions as Record<string, unknown> | null | undefined;
+  const value = booking?.parking_check_in_date ?? booking?.check_in_date;
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
 
 function serializeRow(row: Record<string, unknown>) {
   const booking = row.guest_submissions as Record<string, unknown> | null | undefined;
@@ -51,6 +61,11 @@ function serializeRow(row: Record<string, unknown>) {
     platformNetTotal: Number(row.platform_net_total ?? 0),
     status: row.status as string,
     paidAt: (row.paid_at as string | undefined) ?? null,
+    payoutEligibleAt: parkingPayoutEligibleAt(rowPayoutStartDate(row))?.toISOString() ?? null,
+    payoutEligible: (() => {
+      const eligibleAt = parkingPayoutEligibleAt(rowPayoutStartDate(row));
+      return eligibleAt ? Date.now() >= eligibleAt.getTime() : true;
+    })(),
     disbursedAt: (row.disbursed_at as string | undefined) ?? null,
     disbursementReference: (row.disbursement_reference as string | undefined) ?? null,
     disbursementMethod: (row.disbursement_method as string | undefined) ?? 'manual',
@@ -118,6 +133,31 @@ serveSuperAdmin('parking-payouts', async (req, admin) => {
 
     if (action === 'mark_disbursed') {
       const reference = typeof body.reference === 'string' ? body.reference.trim() || null : null;
+      const overrideEligibility = body.overrideEligibility === true;
+      const eligibilityNote =
+        typeof body.eligibilityNote === 'string' ? body.eligibilityNote.trim() : '';
+
+      const { data: existing, error: existingError } = await supabase
+        .from('parking_payment_transactions')
+        .select(SELECT_WITH_JOINS)
+        .eq('id', transactionId)
+        .maybeSingle();
+      if (existingError) return jsonError(req, existingError.message, 500);
+      if (!existing || String(existing.status) !== 'paid') {
+        return jsonError(req, 'Paid transaction not found', 404);
+      }
+
+      // Hold the payout for 24 hours after the parking start (PRK-04).
+      const hold = parkingPayoutHoldError({
+        startDate: rowPayoutStartDate(existing as Record<string, unknown>),
+      });
+      if (hold) {
+        if (!overrideEligibility) return jsonError(req, hold, 409);
+        if (!eligibilityNote) {
+          return jsonError(req, 'Add a note explaining the early disbursement');
+        }
+      }
+
       const { data, error } = await supabase
         .from('parking_payment_transactions')
         .update({
@@ -127,16 +167,35 @@ serveSuperAdmin('parking-payouts', async (req, admin) => {
         })
         .eq('id', transactionId)
         .eq('status', 'paid')
+        .is('disbursed_at', null)
         .select(SELECT_WITH_JOINS)
         .maybeSingle();
       if (error) return jsonError(req, error.message, 500);
-      if (!data) return jsonError(req, 'Paid transaction not found', 404);
+      if (!data) {
+        // Already disbursed by a concurrent click: return the stored row instead of rewriting it.
+        const { data: current } = await supabase
+          .from('parking_payment_transactions')
+          .select(SELECT_WITH_JOINS)
+          .eq('id', transactionId)
+          .maybeSingle();
+        if (current) {
+          return jsonSuccess(req, {
+            transaction: serializeRow(current as Record<string, unknown>),
+            alreadyDisbursed: true,
+          });
+        }
+        return jsonError(req, 'Paid transaction not found', 404);
+      }
       await logSuperAdminAction(admin, {
         action: 'parking_payout.disburse',
         targetType: 'parking_payment_transaction',
         targetId: transactionId,
         summary: `Marked parking payout ${transactionId} as disbursed`,
-        metadata: { reference },
+        metadata: {
+          reference,
+          overrideEligibility,
+          eligibilityNote: eligibilityNote || null,
+        },
       });
       return jsonSuccess(req, { transaction: serializeRow(data as Record<string, unknown>) });
     }
