@@ -155,13 +155,22 @@ export function evaluateDatabase(
     });
   }
 
-  const secretPairs = [
-    ...SCHEDULED_JOBS.filter((job) => !(job.nonProdOnly && isProd)).map((job) => ({
-      env: job.secretEnv,
-      label: job.label,
-    })),
-    { env: 'PUSH_FANOUT_SECRET', label: 'Push fan-out' },
-  ];
+  // Dedupe by env: several jobs can share one secret, and a repeated env would
+  // render (and key) the same Vault parity row twice.
+  const secretPairsByEnv = new Map<string, { env: string; label: string }>();
+  for (const job of SCHEDULED_JOBS) {
+    if (job.nonProdOnly && isProd) continue;
+    const existing = secretPairsByEnv.get(job.secretEnv);
+    if (existing) {
+      if (!existing.label.includes(job.label)) existing.label = `${existing.label}, ${job.label}`;
+      continue;
+    }
+    secretPairsByEnv.set(job.secretEnv, { env: job.secretEnv, label: job.label });
+  }
+  if (!secretPairsByEnv.has('PUSH_FANOUT_SECRET')) {
+    secretPairsByEnv.set('PUSH_FANOUT_SECRET', { env: 'PUSH_FANOUT_SECRET', label: 'Push fan-out' });
+  }
+  const secretPairs = [...secretPairsByEnv.values()];
   for (const pair of secretPairs) {
     const envSet = Boolean(get(pair.env)?.trim());
     const vaultName = vaultSecretName(pair.env);

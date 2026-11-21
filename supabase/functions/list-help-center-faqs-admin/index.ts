@@ -13,14 +13,22 @@ serveSuperAdmin('list-help-center-faqs-admin', async (req) => {
   const url = new URL(req.url);
   const p = url.searchParams;
   const { page, limit } = parsePageLimit(p);
+  const search = p.get('q')?.trim() ?? '';
+  const status = p.get('status')?.trim() ?? 'all';
 
   const supabase = createServiceClient();
   const fromIdx = (page - 1) * limit;
   const toIdx = fromIdx + limit - 1;
 
-  const { data, error, count } = await supabase
-    .from('help_center_faqs')
-    .select('*', { count: 'exact' })
+  let query = supabase.from('help_center_faqs').select('*', { count: 'exact' });
+  if (search) {
+    const pattern = `%${search.replace(/[%,()]/g, ' ')}%`;
+    query = query.or(`question.ilike.${pattern},answer.ilike.${pattern},category.ilike.${pattern}`);
+  }
+  if (status === 'published') query = query.eq('is_published', true);
+  if (status === 'unpublished') query = query.eq('is_published', false);
+
+  const { data, error, count } = await query
     .order('category', { ascending: true })
     .order('sort_order', { ascending: true })
     .range(fromIdx, toIdx);
