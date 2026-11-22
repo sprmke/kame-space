@@ -46,7 +46,7 @@ export function SuperAdminDevelopmentsToolbar({
 }: Props) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
         <div className="relative min-w-[min(100%,16rem)] flex-1 sm:max-w-xs">
           <Search
             className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
@@ -67,7 +67,10 @@ export function SuperAdminDevelopmentsToolbar({
             onStatusChange(value as SuperAdminDevelopmentsFilters['status'])
           }
         >
-          <SelectTrigger className="h-10 w-[min(100%,9.5rem)] shrink-0 sm:w-[9.5rem]">
+          <SelectTrigger
+            className="h-10 w-[min(100%,9.5rem)] shrink-0 sm:w-[9.5rem]"
+            aria-label="Filter by status"
+          >
             <Filter className="size-4 shrink-0 opacity-70" aria-hidden />
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -82,7 +85,10 @@ export function SuperAdminDevelopmentsToolbar({
         </Select>
 
         <Select value={filters.type} onValueChange={onTypeChange}>
-          <SelectTrigger className="h-10 w-[min(100%,9.5rem)] shrink-0 sm:w-[9.5rem]">
+          <SelectTrigger
+            className="h-10 w-[min(100%,9.5rem)] shrink-0 sm:w-[9.5rem]"
+            aria-label="Filter by type"
+          >
             <Landmark className="size-4 shrink-0 opacity-70" aria-hidden />
             <SelectValue placeholder="Type" />
           </SelectTrigger>

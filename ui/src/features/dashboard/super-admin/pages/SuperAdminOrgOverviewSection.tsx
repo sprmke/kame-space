@@ -72,7 +72,7 @@ export function SuperAdminOrgOverviewSection() {
             </div>
             <Link
               to={superAdminPaths.organizationHubSection(slug, 'approvals')}
-              className="text-primary inline-flex pt-1 text-sm font-medium hover:underline"
+              className="text-brand-ink inline-flex pt-1 text-sm font-medium hover:underline"
             >
               Review approvals
             </Link>
@@ -96,7 +96,7 @@ export function SuperAdminOrgOverviewSection() {
               href={orgDashboardPath(slug)}
               target="_blank"
               rel="noreferrer"
-              className="text-primary inline-flex items-center gap-1 pt-1 text-sm font-medium hover:underline"
+              className="text-brand-ink inline-flex items-center gap-1 pt-1 text-sm font-medium hover:underline"
             >
               Open org dashboard
               <ExternalLink className="size-3.5" aria-hidden />

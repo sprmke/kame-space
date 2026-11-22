@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import {
   AdminDataTable,
@@ -56,7 +56,7 @@ export function SuperAdminHostsTable({ hosts }: Props) {
         <AdminTableTh className="hidden px-3 sm:table-cell sm:px-4">Orgs</AdminTableTh>
         <AdminTableTh className="hidden px-3 md:table-cell md:px-4">Properties</AdminTableTh>
         <AdminTableTh className="hidden px-3 lg:table-cell lg:px-4">Parking</AdminTableTh>
-        <AdminTableActionsTh>Open</AdminTableActionsTh>
+        <AdminTableActionsTh><span className="sr-only">Open</span></AdminTableActionsTh>
       </AdminTableHeadRow>
       <tbody>
         {hosts.map((host, index) => {
@@ -66,22 +66,19 @@ export function SuperAdminHostsTable({ hosts }: Props) {
             <tr
               key={host.id}
               className={adminTableRowClass(index)}
-              tabIndex={0}
-              role="link"
               onClick={() => navigate(href)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  navigate(href);
-                }
-              }}
-              aria-label={`Open ${host.name}`}
             >
               <td className={adminTableCell.body}>
                 <div className="flex min-w-[160px] items-center gap-2.5 sm:min-w-[200px] sm:gap-3">
                   <HostAvatar host={host} className="size-9 shrink-0" />
                   <div className="min-w-0">
-                    <p className={cn('truncate', adminTableBodyText.primary)}>{host.name}</p>
+                    <Link
+                      to={href}
+                      onClick={(event) => event.stopPropagation()}
+                      className={cn('block truncate text-left hover:underline', adminTableBodyText.primary)}
+                    >
+                      {host.name}
+                    </Link>
                     {host.email ? (
                       <p className={cn('truncate', adminTableBodyText.secondary)}>{host.email}</p>
                     ) : null}

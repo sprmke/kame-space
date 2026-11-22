@@ -29,6 +29,13 @@ import type { LucideIcon } from 'lucide-react';
  */
 export type GuestPublicPageGroup = 'design' | 'share' | 'booking';
 
+/** Short labels for the Copy links menu (and matching gallery sections). */
+export const GUEST_PUBLIC_PAGE_GROUP_MENU_LABEL: Record<GuestPublicPageGroup, string> = {
+  design: 'Design',
+  share: 'Share',
+  booking: 'Booking',
+};
+
 /** Copy opens a picker instead of copying the URL straight away. */
 export type GuestPublicPageCopyPicker = 'sd-refund' | 'guest-review' | 'stay-dates';
 

@@ -3,7 +3,12 @@ import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 
-import { MODAL_CLOSE_BUTTON_CLASS } from '@/components/ui/modal-chrome';
+import {
+  MODAL_CLOSE_BUTTON_CLASS,
+  MODAL_DESCRIPTION_CLASS,
+  MODAL_HEADER_CLOSE_GUTTER_CLASS,
+  MODAL_HEADER_STACK_CLASS,
+} from '@/components/ui/modal-chrome';
 import { useModalLayer } from '@/components/ui/useModalLayer';
 import { cn } from '@/lib/utils';
 
@@ -98,16 +103,24 @@ const DialogContent = React.forwardRef<
     },
     ref
   ) => {
-    const { overlayZ, contentZ } = useModalLayer({
+    const { overlayZ, contentZ, attach } = useModalLayer({
       overlayClassName,
       contentClassName: typeof className === 'string' ? className : undefined,
     });
+    const setContentRef = React.useCallback(
+      (node: HTMLDivElement | null) => {
+        attach(node);
+        if (typeof ref === 'function') ref(node);
+        else if (ref) ref.current = node;
+      },
+      [attach, ref]
+    );
 
     return (
       <DialogPortal>
         <DialogOverlay className={overlayClassName} style={{ zIndex: overlayZ }} />
         <DialogPrimitive.Content
-          ref={ref}
+          ref={setContentRef}
           onCloseAutoFocus={(event) => {
             onCloseAutoFocus?.(event);
             clearDialogBodyPointerEventsLock();
@@ -141,7 +154,25 @@ const DialogContent = React.forwardRef<
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('flex flex-col gap-2 pr-11 text-center sm:text-left', className)} {...props} />
+  <div
+    className={cn(
+      'flex flex-col text-center sm:text-left',
+      className,
+      /*
+       * Title ↔ description (or title row ↔ subtitle) stays tight. Applied after
+       * caller classes so `space-y-2` / `space-y-4` / `gap-2` cannot reopen a
+       * large empty band under the title.
+       */
+      MODAL_HEADER_STACK_CLASS,
+      /*
+       * Close gutter must come last. Callers often pass `px-4` / `sm:px-5` for the
+       * canonical scale; twMerge treats those as overriding `pr-*`, which used to
+       * drop the reserved close slot and collide header actions with the X.
+       */
+      MODAL_HEADER_CLOSE_GUTTER_CLASS
+    )}
+    {...props}
+  />
 );
 DialogHeader.displayName = 'DialogHeader';
 
@@ -171,7 +202,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn('text-muted-foreground text-sm leading-relaxed', className)}
+    className={cn(className, MODAL_DESCRIPTION_CLASS)}
     {...props}
   />
 ));

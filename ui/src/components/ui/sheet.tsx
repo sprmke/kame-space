@@ -4,6 +4,10 @@ import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-react';
 
+import {
+  MODAL_DESCRIPTION_CLASS,
+  MODAL_HEADER_STACK_CLASS,
+} from '@/components/ui/modal-chrome';
 import { useModalLayer } from '@/components/ui/useModalLayer';
 import { cn } from '@/lib/utils';
 
@@ -218,17 +222,18 @@ const SheetContent = React.forwardRef<
   ) => {
     const isDraggableBottomSheet = side === 'bottom' && !disableDrag;
     const drag = useSheetHeightDrag(isDraggableBottomSheet);
-    const { overlayZ, contentZ } = useModalLayer({
+    const { overlayZ, contentZ, attach } = useModalLayer({
       overlayClassName,
       contentClassName: typeof className === 'string' ? className : undefined,
     });
     const setContentRef = React.useCallback(
       (node: HTMLDivElement | null) => {
         drag.contentRef.current = node;
+        attach(node);
         if (typeof ref === 'function') ref(node);
         else if (ref) ref.current = node;
       },
-      [drag.contentRef, ref]
+      [attach, drag.contentRef, ref]
     );
     const handle =
       showHandle || side === 'bottom' ? (
@@ -270,7 +275,15 @@ const SheetContent = React.forwardRef<
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
 const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('flex flex-col space-y-2 text-center sm:text-left', className)} {...props} />
+  <div
+    className={cn(
+      'flex flex-col text-center sm:text-left',
+      className,
+      // Same tight title ↔ description stack as DialogHeader (see modal-chrome).
+      MODAL_HEADER_STACK_CLASS
+    )}
+    {...props}
+  />
 );
 SheetHeader.displayName = 'SheetHeader';
 
@@ -300,7 +313,7 @@ const SheetDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Description
     ref={ref}
-    className={cn('text-muted-foreground text-sm', className)}
+    className={cn(className, MODAL_DESCRIPTION_CLASS)}
     {...props}
   />
 ));

@@ -84,7 +84,7 @@ In the header **Manage** sheet only (**Activity** tab). The page Activity feed d
 
 - **Activity** section lists org-wide in-app notifications (same data as the bell).
 - Desktop: the bell floats above the AI assistant button and opens a **slide-over panel**. Phone: tap **Notifications** in the bottom menu for the same sheet. **View all** opens this page at **Activity** when more than five items exist.
-- Rows open the related booking or inbox thread; **Mark all as read** on the full list.
+- Rows open the related booking or inbox thread. When a row has both `conversation_id` and `booking_id` (linked stay), **Messages wins** so Activity chat taps never land on booking detail. Inbox rows deep-link with `?conversationId=` (and `?platform=` / `?messageId=` when known) so the conversation opens and scrolls to that chat pill; **Mark all as read** on the full list.
 - With unread items, the desktop bell uses a soft periodic ring nudge and the count badge a gentle pulse (paused while the panel is open; respects `prefers-reduced-motion`). The mobile **Notifications** tab badge uses the same pulse.
 - Inbox rows show the guest **participant name** as the title with an inline **channel pill** (**Chat**, **Facebook**, or **Instagram**), matching the Inbox thread list — **one row per conversation**, not per message.
 - **`booking_trip_viewed`** — one row per booking, the first time the guest opens their trip page. Title is the guest's first name ("Maria opened their trip"), body names what they can now see. It is the only booking event that never repeats: `guest_submissions.guest_trip_first_viewed_at` is stamped by a conditional update, so a refresh, a second device or two tabs at once still produce one row. The deep link goes to the booking.
@@ -176,6 +176,8 @@ Notifications is the one place to review in-app alerts and set up Telegram for t
   A: It's queued. The **Offline changes** card shows it "waiting to sync" and it sends automatically when you're back online. If it fails, the card shows why and you can retry or discard.
 - Q: Where do I see everything the bell showed me?
   A: Open **Notifications** from the sidebar or **More** on a phone. The page opens on **Activity**. Or tap **View all** in the bell when you have more than five items.
+- Q: What happens when I tap a Facebook or Chat row in Activity?
+  A: It opens **Messages**, selects that conversation, and scrolls to the message from the notification when we know which one it was.
 - Q: Where did the phone-push settings go?
   A: Tap **Manage** in the Notifications header. The sheet holds **Push notifications**, **Push preferences** and the way into Telegram settings.
 - Q: Why does Activity or Telegram look empty?

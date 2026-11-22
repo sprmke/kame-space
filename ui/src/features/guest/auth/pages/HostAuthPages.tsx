@@ -31,6 +31,7 @@ export function HostLoginPage() {
         googleLoading: hostAuth.isSigningIn,
         bannerError: hostAuth.error ?? localTest.error?.message ?? null,
         testLogin: localTestEmail ? { email: localTestEmail } : null,
+        testLoginLabel: 'Use local owner account',
         onTestLogin: localTest.signIn,
         testLoginLoading: localTest.loading,
       }}

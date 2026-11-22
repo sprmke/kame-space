@@ -73,16 +73,17 @@ Clicking a host navigates to `/admin/hosts/:hostId/orgs`.
 
 ## Filters
 
-| Control | Behavior                                                                                                        |
-| ------- | --------------------------------------------------------------------------------------------------------------- |
-| Search  | Name, email — server-side (`q` query param), URL-persisted via `useSearchParams`. Resets `page` to 1 on change. |
-| View    | Table or grid                                                                                                   |
+| Control       | Behavior                                                                                                        |
+| ------------- | --------------------------------------------------------------------------------------------------------------- |
+| Search        | Name, email — server-side (`q` query param), URL-persisted via `useSearchParams`. Resets `page` to 1 on change. |
+| Detail header | Name, email and **Joined <date>** (`memberSince`, formatted in Asia/Manila).                                    |
+| View          | Table or grid                                                                                                   |
 
 ---
 
 ## Pagination
 
-Standard admin-list pagination (same pattern as `/bookings`): `page`/`limit` are URL-persisted query params (`?page=&limit=`), default page size is `ADMIN_DEFAULT_PAGE_SIZE` (31), and the per-page selector offers `ADMIN_PAGE_SIZES` (31/50/100). The pager (`AdminListPagination`) renders below the list only when there is more than one page. Changing the per-page limit or the search filter resets to page 1.
+Standard admin-list pagination (same pattern as `/bookings`): `page`/`limit` are URL-persisted query params (`?page=&limit=`), default page size is `ADMIN_DEFAULT_PAGE_SIZE` (25), and the per-page selector offers `ADMIN_PAGE_SIZES` (25/50/100). The pager (`AdminListPagination`) renders below the list only when there is more than one page. Changing the per-page limit or the search filter resets to page 1.
 
 `list-hosts` searches and paginates entirely in SQL via the `super_admin_search_hosts` RPC (`searchHostsPage` in `_shared/hostSerialize.ts`) — it never loads the full host list into the edge function. The RPC joins `organizations` (grouped by `owner_id`) with `auth.users` for name/email search, applies `ILIKE` server-side, and returns a `total_count` window column alongside the requested page of rows. The summary cards are computed separately and independently of the search/page (see above), so they always reflect platform totals even while a search is active.
 

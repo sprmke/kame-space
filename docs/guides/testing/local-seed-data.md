@@ -71,15 +71,19 @@ Google's embedded-browser restrictions and gives each Orca browser tab its own
 working session. The button only renders with `import.meta.env.DEV`, so it never
 appears in a production build.
 
-- Host button email: `VITE_LOCAL_TEST_EMAIL`, else the first entry in
-  `VITE_SUPER_ADMIN_EMAILS`, else `VITE_ADMIN_ALLOWED_EMAILS`
+- Host button email: `VITE_LOCAL_TEST_EMAIL`, else `seed-owner@example.com`
+  (the seeded org owner, platform super admin, and `/admin` account)
 - Guest button email: `VITE_LOCAL_GUEST_EMAIL`, else `guest.demo@example.com`
 
-If the host button returns `Invalid login credentials`, run `bun run
-seed:attach-admin`. That account is the only one in `SUPER_ADMIN_EMAILS`, so it
-is the one with `/admin/*` access.
+If the host button returns `Invalid login credentials`, the local seed owner is
+not in this database yet: run `bun run seed:local` (or `bun run db:reset`). The
+seed creates `seed-owner@example.com` with password `seed-password`, ownership of
+`kame-homes`, and the platform super-admin row. That email must also be in
+`ADMIN_ALLOWED_EMAILS` and `SUPER_ADMIN_EMAILS` in `supabase/.env.local`;
+`.cursor/write-env-files.sh` writes both on a fresh clone. Restart `functions
+serve` after editing that file.
 
-For the real super-admin account (`/admin/*`):
+To use your own Google account locally instead:
 
 ```bash
 bun run seed:attach-admin

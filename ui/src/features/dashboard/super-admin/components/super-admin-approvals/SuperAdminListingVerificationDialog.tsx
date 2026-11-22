@@ -715,6 +715,21 @@ export function SuperAdminListingVerificationDialog({ approval, onOpenChange }: 
                       </>
                     )}
                   </div>
+                  {(() => {
+                    const urls = detail.assetUrls;
+                    const uploaded =
+                      reviewTier === 'base'
+                        ? [urls.proofUrl].filter(Boolean).length
+                        : [urls.additionalProofUrl, urls.azurePmoConfirmationUrl].filter(Boolean)
+                            .length;
+                    if (uploaded > 0) return null;
+                    return (
+                      <p className="text-muted-foreground text-xs">
+                        No documents were uploaded for this request. Approval is still allowed,
+                        but nothing backs the claim.
+                      </p>
+                    );
+                  })()}
                 </section>
 
                 {status === 'rejected' && rejectionReason ? (

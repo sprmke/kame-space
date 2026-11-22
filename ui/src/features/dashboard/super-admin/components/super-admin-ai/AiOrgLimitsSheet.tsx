@@ -90,7 +90,7 @@ export function AiOrgLimitsSheet({ orgId, onOpenChange }: AiOrgLimitsSheetProps)
                   ) : null}
                   <Link
                     to={superAdminPaths.organizationHubSection(org.slug, 'ai')}
-                    className="text-primary ml-auto text-sm hover:underline"
+                    className="text-brand-ink ml-auto text-sm hover:underline"
                   >
                     Org hub
                   </Link>

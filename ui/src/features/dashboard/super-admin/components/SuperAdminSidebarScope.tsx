@@ -19,7 +19,7 @@ export function SuperAdminSidebarScope({
         'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
         onPrimary
           ? 'bg-primary-foreground/15 text-primary-foreground'
-          : 'bg-primary/10 text-primary'
+          : 'bg-primary/10 text-brand-ink'
       )}
     >
       <Shield className="h-5 w-5" aria-hidden />

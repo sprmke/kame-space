@@ -47,7 +47,7 @@ Every **UI change** in `ui/src/**` must preserve the **native app** mobile exper
 ## Before claiming UI work done
 
 - [ ] §11 checklist in `mobile-responsive.mdc` / skill (375px + 768px, no horizontal scroll, sheets not dropdowns on phone)
-- [ ] Initial load shows a layout-matched skeleton (not a generic spinner) where the route/page fetches data
+- [ ] Initial load shows a layout-matched skeleton (not a generic spinner) where the route/page fetches data; empty vs list chosen deliberately when both exist
 - [ ] Modals and menus open as **bottom sheets** on phone
 - [ ] Route guide updated if page UX changed (`route-guides` skill)
 

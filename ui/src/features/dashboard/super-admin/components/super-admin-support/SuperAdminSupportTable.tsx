@@ -33,27 +33,27 @@ export function SuperAdminSupportTable({ tickets, onSelect }: Props) {
         <AdminTableTh className="hidden px-3 lg:table-cell lg:px-4">Priority</AdminTableTh>
         <AdminTableTh className="whitespace-nowrap px-3 sm:px-4">Status</AdminTableTh>
         <AdminTableTh className="hidden px-3 xl:table-cell xl:px-4">Submitted</AdminTableTh>
-        <AdminTableActionsTh>Open</AdminTableActionsTh>
+        <AdminTableActionsTh><span className="sr-only">Open</span></AdminTableActionsTh>
       </AdminTableHeadRow>
       <tbody>
         {tickets.map((ticket, index) => (
           <tr
             key={ticket.id}
             className={adminTableRowClass(index)}
-            tabIndex={0}
-            role="link"
             onClick={() => onSelect(ticket.id)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                onSelect(ticket.id);
-              }
-            }}
-            aria-label={`Open ${ticket.subject}`}
           >
             <td className={adminTableCell.body}>
               <div className="min-w-0">
-                <p className={cn('truncate', adminTableBodyText.primary)}>{ticket.subject}</p>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onSelect(ticket.id);
+                  }}
+                  className={cn('block w-full truncate text-left hover:underline', adminTableBodyText.primary)}
+                >
+                  {ticket.subject}
+                </button>
                 <p className={cn('truncate', adminTableBodyText.secondary)}>
                   {ticket.submitted_by_name || ticket.submitted_by_email}
                 </p>

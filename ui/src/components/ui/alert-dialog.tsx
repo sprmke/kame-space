@@ -3,6 +3,10 @@ import * as React from 'react';
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 
 import { buttonVariants } from '@/components/ui/button';
+import {
+  MODAL_DESCRIPTION_CLASS,
+  MODAL_HEADER_STACK_CLASS,
+} from '@/components/ui/modal-chrome';
 import { useModalLayer } from '@/components/ui/useModalLayer';
 import { cn } from '@/lib/utils';
 
@@ -39,18 +43,26 @@ const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   DialogContentProps
 >(({ className, overlayClassName, style, ...props }, ref) => {
-  const { overlayZ, contentZ } = useModalLayer({
+  const { overlayZ, contentZ, attach } = useModalLayer({
     /* Floor 110 keeps confirms above page chrome (bell, selects) when opened alone;
      * nested opens still climb via the shared modal stack. */
     overlayClassName: cn('z-[110]', overlayClassName),
     contentClassName: cn('z-[111]', typeof className === 'string' ? className : undefined),
   });
+  const setContentRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      attach(node);
+      if (typeof ref === 'function') ref(node);
+      else if (ref) ref.current = node;
+    },
+    [attach, ref]
+  );
 
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay className={overlayClassName} style={{ zIndex: overlayZ }} />
       <AlertDialogPrimitive.Content
-        ref={ref}
+        ref={setContentRef}
         style={{ ...style, zIndex: contentZ }}
         className={cn(
           'bg-card data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] fixed left-[50%] top-[50%] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border p-4 shadow-lg duration-200 sm:rounded-lg sm:p-5',
@@ -64,7 +76,15 @@ const AlertDialogContent = React.forwardRef<
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
 const AlertDialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('flex flex-col space-y-2 text-center sm:text-left', className)} {...props} />
+  <div
+    className={cn(
+      'flex flex-col text-center sm:text-left',
+      className,
+      // Same tight title ↔ description stack as DialogHeader (see modal-chrome).
+      MODAL_HEADER_STACK_CLASS
+    )}
+    {...props}
+  />
 );
 AlertDialogHeader.displayName = 'AlertDialogHeader';
 
@@ -94,7 +114,7 @@ const AlertDialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Description
     ref={ref}
-    className={cn('text-muted-foreground text-sm', className)}
+    className={cn(className, MODAL_DESCRIPTION_CLASS)}
     {...props}
   />
 ));

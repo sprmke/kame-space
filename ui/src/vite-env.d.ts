@@ -11,10 +11,13 @@ interface ImportMetaEnv {
    * `vite-plugins/releaseId.ts`. Sentry release name and PostHog `app_release`.
    */
   readonly VITE_APP_VERSION?: string;
+  /**
+   * Guest/host-facing product version from root `package.json` (e.g. `1.0.0` →
+   * shown as `1.0`). Profile / App card only; telemetry keeps `VITE_APP_VERSION`.
+   */
+  readonly VITE_APP_DISPLAY_VERSION?: string;
   /** Opt into the service worker under `vite` serve (fights HMR — off by default). */
   readonly VITE_PWA_DEV?: string;
-  /** Released build id (`resolveReleaseId`), shown in Help & Support. */
-  readonly VITE_APP_VERSION?: string;
   /** Canonical app origin, e.g. `https://kamespace.com` (legacy-origin notice). */
   readonly VITE_CANONICAL_APP_ORIGIN?: string;
   /** Comma-separated hostnames whose installed apps must move to the canonical origin. */

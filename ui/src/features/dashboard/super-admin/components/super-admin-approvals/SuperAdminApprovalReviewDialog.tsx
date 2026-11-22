@@ -738,6 +738,26 @@ export function SuperAdminApprovalReviewDialog({ approval, onOpenChange }: Props
                       </>
                     )}
                   </div>
+                  {(() => {
+                    const urls = detail.assetUrls;
+                    const uploaded =
+                      reviewTier === 'enhanced'
+                        ? [
+                            urls.socialProofUrl,
+                            urls.selfieWithIdUrl,
+                            urls.platformAdminProofUrl,
+                            urls.legitimacyCheckProofUrl,
+                            urls.businessPermitOrBirUrl,
+                          ].filter(Boolean).length
+                        : [urls.validIdUrl, urls.socialProofUrl].filter(Boolean).length;
+                    if (uploaded > 0) return null;
+                    return (
+                      <p className="text-muted-foreground text-xs">
+                        No documents were uploaded for this request. Approval is still allowed,
+                        but nothing backs the claim.
+                      </p>
+                    );
+                  })()}
                 </section>
 
                 <OrgListingVerificationRollup

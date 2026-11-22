@@ -13,15 +13,27 @@ export type AdminHelpCenterFaq = HelpCenterFaq & {
 
 export const HELP_CENTER_FAQS_ADMIN_QUERY_KEY = ['super-admin', 'help-center-faqs'] as const;
 
-export function useHelpCenterFaqsAdmin(params?: { page?: number; limit?: number }) {
+export type HelpCenterFaqStatusFilter = 'all' | 'published' | 'unpublished';
+
+export function useHelpCenterFaqsAdmin(params?: {
+  page?: number;
+  limit?: number;
+  q?: string;
+  status?: HelpCenterFaqStatusFilter;
+}) {
   const page = params?.page ?? 1;
   const limit = params?.limit ?? ADMIN_DEFAULT_PAGE_SIZE;
+  const q = params?.q?.trim() ?? '';
+  const status = params?.status ?? 'all';
+  const search = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (q) search.set('q', q);
+  if (status !== 'all') search.set('status', status);
 
   return useQuery({
-    queryKey: [...HELP_CENTER_FAQS_ADMIN_QUERY_KEY, page, limit] as const,
+    queryKey: [...HELP_CENTER_FAQS_ADMIN_QUERY_KEY, page, limit, q, status] as const,
     queryFn: () =>
       callEdgeFunction<{ faqs: AdminHelpCenterFaq[]; total: number }>(
-        `list-help-center-faqs-admin?page=${page}&limit=${limit}`
+        `list-help-center-faqs-admin?${search.toString()}`
       ),
     placeholderData: keepPreviousData,
   });

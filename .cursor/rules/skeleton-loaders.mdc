@@ -46,7 +46,17 @@ Full checklist: **`skeleton-loaders`** skill
    inside a page body.
 5. **State-aware.** Respect `?view=`, the selected tab, default section, empty vs
    data state, and permission-gated cards when choosing the skeleton variant.
-6. **No extra cost.** Skeletons are static markup only: no timers, observers,
+6. **Empty vs list is mandatory.** Any list/inbox/wallet that can render a mascot
+   empty state **must** pick an `empty` or `list` skeleton before paint. Use a
+   session layout hint + cached count (see `ticketsWorkspaceLayout.ts` /
+   `guestAccountListLayout.ts`). Never show a fake list while the final UI is
+   empty, and never show list chrome (titles, row shells) that the empty state
+   does not use. Cold default: sparse guest lists → `empty`; Help / known-catalog
+   surfaces → `list`.
+7. **Layout changes update skeletons in the same change.** New empty mascot,
+   new card chrome, new grid, or new header → update the matching skeleton and
+   Suspense fallback before claiming done.
+8. **No extra cost.** Skeletons are static markup only: no timers, observers,
    fetches, or shared subscriptions.
 
 ## Do not ship without
@@ -56,6 +66,8 @@ Full checklist: **`skeleton-loaders`** skill
 - Every stat card shows its fixed label + icon while the value loads.
 - Card/section headings, tab labels and table column headers are real text.
 - Known dates/months/day numbers are real text.
+- Empty vs list (or other state variants) chosen deliberately; no flash of the
+  wrong chrome.
 - The new/updated skeleton is listed in `docs/architecture/skeleton-loaders.md`
   and the route guide's Loading row when page behavior changed.
 

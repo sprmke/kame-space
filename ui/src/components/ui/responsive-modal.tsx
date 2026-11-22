@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { MODAL_HEADER_STACK_CLASS } from '@/components/ui/modal-chrome';
 import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 
@@ -128,7 +129,7 @@ export function ResponsiveModalHeader({
   if (useSheet) {
     return (
       <BottomSheetHeader
-        className={cn('gap-1 space-y-1 px-0 pb-1 pt-0 text-left', className)}
+        className={cn('px-0 pb-1 pt-0 text-left', className, MODAL_HEADER_STACK_CLASS)}
         {...props}
       />
     );

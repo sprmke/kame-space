@@ -200,8 +200,11 @@ export async function resolveNotificationClickPath(
     const slug = p?.slug as string | undefined;
     if (slug) {
       const base = `/org/${orgSlug}/property/${slug}`;
+      // Conversation before booking: inbox rows may also set booking_id when linked.
+      if (n.conversation_id) {
+        return `${base}/messages?${inboxDeepLinkQuery(n.conversation_id, n.metadata)}`;
+      }
       if (n.booking_id) return `${base}/bookings/${n.booking_id}`;
-      if (n.conversation_id) return `${base}/messages`;
       return `${base}/notifications`;
     }
   }
@@ -215,13 +218,30 @@ export async function resolveNotificationClickPath(
     const slug = pk?.slug as string | undefined;
     if (slug) {
       const base = `/org/${orgSlug}/parking/${slug}`;
+      if (n.conversation_id) {
+        return `${base}/messages?${inboxDeepLinkQuery(n.conversation_id, n.metadata)}`;
+      }
       if (n.booking_id) return `${base}/bookings/${n.booking_id}`;
-      if (n.conversation_id) return `${base}/messages`;
       return `${base}/notifications`;
     }
   }
 
   return `/app`;
+}
+
+/** Query string for Messages deep links (mirrors UI `buildNotificationInboxHref`). */
+function inboxDeepLinkQuery(
+  conversationId: string,
+  metadata: Record<string, unknown> | null | undefined
+): string {
+  const params = new URLSearchParams({ conversationId });
+  const platform = typeof metadata?.platform === 'string' ? metadata.platform.trim() : '';
+  if (platform === 'web' || platform === 'facebook' || platform === 'instagram') {
+    params.set('platform', platform);
+  }
+  const messageId = typeof metadata?.message_id === 'string' ? metadata.message_id.trim() : '';
+  if (messageId) params.set('messageId', messageId);
+  return params.toString();
 }
 
 /** Failure cap before a subscription is retired (`disabled_at`). */

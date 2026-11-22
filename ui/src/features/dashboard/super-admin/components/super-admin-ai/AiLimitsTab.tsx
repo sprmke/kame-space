@@ -17,7 +17,10 @@ import {
   type AiLimitsMatrixFilters,
   type AiLimitsMatrixRow,
 } from '@/features/dashboard/super-admin/hooks/useSuperAdminAiLimits';
-import { formatLimitValue } from '@/features/dashboard/super-admin/lib/aiLimits';
+import {
+  formatLimitValue,
+  humanizeProfileCode,
+} from '@/features/dashboard/super-admin/lib/aiLimits';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,6 +58,8 @@ function profileOf(row: AiLimitsMatrixRow): string {
   return row.orgProfileCode ?? row.planProfileCode ?? 'default';
 }
 
+
+
 function Flags({ row }: { row: AiLimitsMatrixRow }) {
   return (
     <div className="flex flex-wrap gap-1">
@@ -91,6 +96,21 @@ export function AiLimitsTab() {
   };
   const { data, isLoading, isFetching, error } = useAiLimitsMatrix(filters);
   const { data: profilesData } = useAiLimitsProfiles();
+
+  const profileNames = React.useMemo(
+    () =>
+      new Map(
+        (profilesData?.profiles ?? []).map((profile) => [profile.code, profile.name] as const)
+      ),
+    [profilesData]
+  );
+  const profileLabel = React.useCallback(
+    (row: AiLimitsMatrixRow) => {
+      const code = profileOf(row);
+      return profileNames.get(code) ?? humanizeProfileCode(code);
+    },
+    [profileNames]
+  );
 
   // id -> name, so a selection can span pages.
   const [selected, setSelected] = React.useState<Map<string, string>>(new Map());
@@ -268,7 +288,9 @@ export function AiLimitsTab() {
                       </TableCell>
                       <TableCell className="text-sm capitalize">{row.planTier}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{profileOf(row)}</Badge>
+                        <Badge variant="secondary" title={profileOf(row)}>
+                          {profileLabel(row)}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-sm tabular-nums">
                         {usageText(
@@ -322,12 +344,12 @@ export function AiLimitsTab() {
                     <div className="truncate font-medium">{row.name}</div>
                     <div className="text-muted-foreground text-xs capitalize">
                       {row.planTier}
-                      {profileOf(row) !== row.planTier ? ` · ${profileOf(row)}` : ''}
+                      {profileOf(row) !== row.planTier ? ` · ${profileLabel(row)}` : ''}
                     </div>
                   </button>
                   <Flags row={row} />
                 </div>
-                <div className="text-muted-foreground grid grid-cols-2 gap-2 pl-7 text-xs tabular-nums">
+                <div className="text-muted-foreground grid grid-cols-2 gap-x-3 gap-y-1 pl-7 text-xs tabular-nums">
                   <span>
                     Today{' '}
                     {usageText(
@@ -336,7 +358,20 @@ export function AiLimitsTab() {
                       'dailyCallLimit'
                     )}
                   </span>
-                  <span>Month ${row.usage.monthCostUsd.toFixed(2)}</span>
+                  <span>
+                    Month{' '}
+                    {usageText(
+                      row.usage.monthCalls,
+                      row.limits.monthlyCallLimit.value,
+                      'monthlyCallLimit'
+                    )}
+                  </span>
+                  <span>Cost ${row.usage.monthCostUsd.toFixed(2)}</span>
+                  <span>
+                    Credits{' '}
+                    {Math.round(row.usage.monthCredits).toLocaleString('en-US')} /{' '}
+                    {formatLimitValue('monthlyCreditLimit', row.limits.monthlyCreditLimit.value)}
+                  </span>
                 </div>
               </Card>
             ))}

@@ -16,6 +16,20 @@ import { createServiceClient } from '../_shared/orgAuth.ts';
 import { serveSuperAdmin } from '../_shared/serveEdge.ts';
 import { logSuperAdminAction } from '../_shared/superAdminAudit.ts';
 
+const REPORT_DATE = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'Asia/Manila',
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+});
+
+function formatReportRange(start: string, end: string): string {
+  const from = new Date(start);
+  const to = new Date(end);
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return `${start} to ${end}`;
+  return `${REPORT_DATE.format(from)} to ${REPORT_DATE.format(to)}`;
+}
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const LIST_COLUMNS =
   'id,period_kind,period_start,period_end,overall_status,counts,generated_at,email_sent_at,email_error';
@@ -66,7 +80,7 @@ serveSuperAdmin('ops-report', async (req, user) => {
           action: 'ops_report.generate',
           targetType: 'ops_report',
           targetId: report.id,
-          summary: `Generated operations report for ${report.period_start} to ${report.period_end}`,
+          summary: `Generated operations report for ${formatReportRange(report.period_start, report.period_end)}`,
           metadata: {
             periodKind: report.period_kind,
             overallStatus: report.overall_status,

@@ -20,6 +20,7 @@ type NotificationLike = {
   conversation_id: string | null;
   property_id: string | null;
   parking_id: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 /** Opens Pricing with Channel sync ready (calendar conflict / sync failing). */
@@ -35,12 +36,71 @@ export type NotificationPathScope = {
   parkingSlugById: Map<string, string>;
 };
 
+function readNotificationMetaString(
+  metadata: Record<string, unknown> | null | undefined,
+  key: string
+): string | null {
+  const value = metadata?.[key];
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
+/**
+ * Messages deep link: open the thread, optionally select its channel tab, and
+ * optionally scroll to a specific chat pill (`messageId`).
+ */
+export function buildNotificationInboxHref(
+  inboxPath: string,
+  opts: {
+    conversationId: string;
+    platform?: string | null;
+    messageId?: string | null;
+  }
+): string {
+  const params = new URLSearchParams({ conversationId: opts.conversationId });
+  if (opts.platform === 'web' || opts.platform === 'facebook' || opts.platform === 'instagram') {
+    params.set('platform', opts.platform);
+  }
+  if (opts.messageId?.trim()) {
+    params.set('messageId', opts.messageId.trim());
+  }
+  return `${inboxPath}?${params.toString()}`;
+}
+
 /** Click-through destination for a notification, or null when it can't be resolved yet. */
 export function resolveNotificationPath(
   notification: NotificationLike,
   { orgSlug, propertySlugById, parkingSlugById }: NotificationPathScope
 ): string | null {
   if (!orgSlug) return null;
+
+  /*
+   * Inbox first. Chat rows can also carry `booking_id` when the thread is linked
+   * to a stay; booking must not win or Activity opens the booking detail instead
+   * of Messages.
+   */
+  if (notification.conversation_id && notification.property_id) {
+    const slug = propertySlugById.get(notification.property_id);
+    if (slug) {
+      return buildNotificationInboxHref(propertyInboxPath(orgSlug, slug), {
+        conversationId: notification.conversation_id,
+        platform: readNotificationMetaString(notification.metadata, 'platform'),
+        messageId: readNotificationMetaString(notification.metadata, 'message_id'),
+      });
+    }
+  }
+
+  if (notification.conversation_id && notification.parking_id) {
+    const slug = parkingSlugById.get(notification.parking_id);
+    if (slug) {
+      return buildNotificationInboxHref(parkingInboxPath(orgSlug, slug), {
+        conversationId: notification.conversation_id,
+        platform: readNotificationMetaString(notification.metadata, 'platform'),
+        messageId: readNotificationMetaString(notification.metadata, 'message_id'),
+      });
+    }
+  }
 
   if (notification.booking_id && notification.property_id) {
     const slug = propertySlugById.get(notification.property_id);
@@ -50,16 +110,6 @@ export function resolveNotificationPath(
   if (notification.booking_id && notification.parking_id) {
     const slug = parkingSlugById.get(notification.parking_id);
     if (slug) return parkingBookingDetailPath(orgSlug, slug, notification.booking_id);
-  }
-
-  if (notification.conversation_id && notification.property_id) {
-    const slug = propertySlugById.get(notification.property_id);
-    if (slug) return propertyInboxPath(orgSlug, slug);
-  }
-
-  if (notification.conversation_id && notification.parking_id) {
-    const slug = parkingSlugById.get(notification.parking_id);
-    if (slug) return parkingInboxPath(orgSlug, slug);
   }
 
   // Calendar sync rows have property_id but no booking/conversation.

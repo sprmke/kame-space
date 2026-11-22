@@ -101,6 +101,7 @@ export function InboxPage({
   const [pagePickerState, setPagePickerState] = useState<string | null>(null);
   const conversationIdParam = searchParams.get('conversationId');
   const platformParam = searchParams.get('platform');
+  const messageIdParam = searchParams.get('messageId');
   const [selectedId, setSelectedId] = useState<string | null>(() => conversationIdParam);
   const [mobileShowConversation, setMobileShowConversation] = useState(() => !!conversationIdParam);
   const [statusFilter, setStatusFilter] = useState<ThreadStatusFilter>('all');
@@ -149,8 +150,16 @@ export function InboxPage({
     }
     const next = new URLSearchParams(searchParams);
     next.set('conversationId', id);
+    next.delete('messageId');
     setSearchParams(next, { replace: true });
   };
+
+  const clearFocusMessageParam = useCallback(() => {
+    if (!searchParams.has('messageId')) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete('messageId');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const mockActive = useInboxMockActive();
   const { canUse: canUseMetaChatChannel, isLoading: metaChatChannelLoading } =
@@ -627,6 +636,8 @@ export function InboxPage({
                   });
                 }}
                 suggesting={aiSuggest.isPending}
+                focusMessageId={messageIdParam}
+                onFocusMessageHandled={clearFocusMessageParam}
               />
             </div>
           </div>

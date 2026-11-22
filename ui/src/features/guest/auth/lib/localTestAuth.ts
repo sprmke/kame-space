@@ -16,13 +16,11 @@ export function firstEmail(value: string | undefined | null): string {
 
 type Env = Record<string, string | undefined>;
 
-/** Super-admin email used by the host test button; falls back to the local allow list. */
+const DEFAULT_HOST_TEST_EMAIL = 'seed-owner@example.com';
+
+/** Host test button signs in as the seeded org owner and platform super admin. */
 export function resolveHostTestEmail(env: Env): string {
-  return (
-    env.VITE_LOCAL_TEST_EMAIL?.trim() ||
-    firstEmail(env.VITE_SUPER_ADMIN_EMAILS) ||
-    firstEmail(env.VITE_ADMIN_ALLOWED_EMAILS)
-  );
+  return env.VITE_LOCAL_TEST_EMAIL?.trim() || DEFAULT_HOST_TEST_EMAIL;
 }
 
 const DEFAULT_GUEST_TEST_EMAIL = 'guest.demo@example.com';

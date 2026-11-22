@@ -9,7 +9,10 @@ import {
   resolveGuestAvatarUrl,
   resolveGuestDisplayName,
 } from '@/features/guest/account/lib/guestAccountIdentity';
-import { GUEST_ACCOUNT_NAV_ITEMS } from '@/features/guest/account/lib/guestAccountNav';
+import {
+  GUEST_ACCOUNT_NAV_GROUPS,
+  GUEST_ACCOUNT_NAV_ITEMS,
+} from '@/features/guest/account/lib/guestAccountNav';
 import { useGuestSession } from '@/features/guest/auth/hooks/useGuestSession';
 
 import { resolveActiveNavHref } from '@/features/dashboard/bookings/lib/navActive';
@@ -67,43 +70,50 @@ export function GuestAccountSidebar({ pathname, onNavigate, className }: GuestAc
 
       <nav
         ref={containerRef}
-        className="relative flex-1 space-y-1 overflow-y-auto px-3 py-4"
+        className="relative flex-1 space-y-4 overflow-y-auto px-3 py-4"
         aria-label="Account menu"
       >
         {bounds ? (
           <SlidingActivePill bounds={bounds} className="bg-primary-strong rounded-xl shadow-sm" />
         ) : null}
-        {GUEST_ACCOUNT_NAV_ITEMS.map((item) => {
-          const active = item.href === activeNavHref;
-          const Icon = item.Icon;
+        {GUEST_ACCOUNT_NAV_GROUPS.map((group) => (
+          <div key={group.id} className="space-y-1">
+            <p className="text-sidebar-muted px-3 text-[10px] font-semibold uppercase tracking-wide">
+              {group.label}
+            </p>
+            {group.items.map((item) => {
+              const active = item.href === activeNavHref;
+              const Icon = item.Icon;
 
-          return (
-            <Link
-              key={item.href}
-              ref={setItemRef(item.href)}
-              to={item.href}
-              onClick={onNavigate}
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                'group relative z-[1] flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200',
-                active
-                  ? 'text-primary-foreground'
-                  : 'text-sidebar-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/40'
-              )}
-            >
-              <Icon
-                className={cn(
-                  'size-5 shrink-0 transition-colors',
-                  active
-                    ? 'text-primary-foreground'
-                    : 'text-sidebar-muted group-hover:text-foreground'
-                )}
-                aria-hidden
-              />
-              <span className="truncate">{item.label}</span>
-            </Link>
-          );
-        })}
+              return (
+                <Link
+                  key={item.href}
+                  ref={setItemRef(item.href)}
+                  to={item.href}
+                  onClick={onNavigate}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'group relative z-[1] flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200',
+                    active
+                      ? 'text-primary-foreground'
+                      : 'text-sidebar-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/40'
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      'size-5 shrink-0 transition-colors',
+                      active
+                        ? 'text-primary-foreground'
+                        : 'text-sidebar-muted group-hover:text-foreground'
+                    )}
+                    aria-hidden
+                  />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       <div className="border-sidebar-border border-t p-3">
