@@ -1,4 +1,9 @@
-import { assert, assertEquals, assertRejects } from 'https://deno.land/std@0.224.0/assert/mod.ts';
+import {
+  assert,
+  assertEquals,
+  assertRejects,
+  assertStringIncludes,
+} from 'https://deno.land/std@0.224.0/assert/mod.ts';
 
 import {
   buildAudioConfiguration,
@@ -6,6 +11,7 @@ import {
   fetchInstagramAudioById,
   InstagramAudioError,
   mapInstagramAudio,
+  parseInstagramAudioRequest,
   searchInstagramAudio,
 } from './instagramAudio.ts';
 
@@ -129,4 +135,53 @@ Deno.test('fetchInstagramAudioById: returns one song with the requested id', asy
   });
   assertEquals(track?.id, '1234');
   assert(calls[0]!.pathname.endsWith('/1234'));
+});
+
+const REEL = { publishType: 'instagram_reel', mediaType: 'video', scheduled: false } as const;
+
+Deno.test('parseInstagramAudioRequest: no song is fine anywhere', () => {
+  for (const raw of [undefined, null, {}, { audioId: '  ' }, 'x', 5]) {
+    assertEquals(parseInstagramAudioRequest(raw, { ...REEL, publishType: 'instagram_story' }), {
+      ok: true,
+      audio: null,
+    });
+  }
+});
+
+Deno.test(
+  'parseInstagramAudioRequest: a song on a Reel video is accepted with a clamped volume',
+  () => {
+    assertEquals(parseInstagramAudioRequest({ audioId: ' 1234 ', audioVolume: 70 }, REEL), {
+      ok: true,
+      audio: { audioId: '1234', audioVolume: 70 },
+    });
+    assertEquals(parseInstagramAudioRequest({ audioId: '1', audioVolume: 900 }, REEL), {
+      ok: true,
+      audio: { audioId: '1', audioVolume: 100 },
+    });
+    assertEquals(parseInstagramAudioRequest({ audioId: '1' }, REEL), {
+      ok: true,
+      audio: { audioId: '1', audioVolume: 100 },
+    });
+  }
+);
+
+Deno.test('parseInstagramAudioRequest: refuses a song anywhere but a Reel video', () => {
+  const song = { audioId: '1' };
+  for (const ctx of [
+    { ...REEL, publishType: 'instagram_story' },
+    { ...REEL, publishType: 'instagram_post' },
+    { ...REEL, publishType: 'facebook_post' },
+    { ...REEL, mediaType: 'image' as const },
+  ]) {
+    const res = parseInstagramAudioRequest(song, ctx);
+    assertEquals(res.ok, false);
+    if (!res.ok) assertStringIncludes(res.error, 'only be added to a video posted as a Reel');
+  }
+});
+
+Deno.test('parseInstagramAudioRequest: refuses a scheduled Reel with a song', () => {
+  const res = parseInstagramAudioRequest({ audioId: '1' }, { ...REEL, scheduled: true });
+  assertEquals(res.ok, false);
+  if (!res.ok) assertStringIncludes(res.error, 'cannot be scheduled');
 });

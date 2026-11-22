@@ -60,6 +60,31 @@ export function buildAudioConfiguration(input: {
   });
 }
 
+export type InstagramAudioRequest =
+  | { ok: true; audio: { audioId: string; audioVolume: number } | null }
+  | { ok: false; error: string };
+
+/**
+ * Reads and checks the `instagramAudio` field of a publish request. No song is fine. A song is
+ * accepted only on a video posted as an Instagram Reel that is not scheduled for later, because
+ * Meta mixes it in at publish time.
+ */
+export function parseInstagramAudioRequest(
+  raw: unknown,
+  ctx: { publishType: string; mediaType: 'image' | 'video'; scheduled: boolean }
+): InstagramAudioRequest {
+  const rec = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : null;
+  const audioId = typeof rec?.audioId === 'string' ? rec.audioId.trim() : '';
+  if (!audioId) return { ok: true, audio: null };
+  if (ctx.publishType !== 'instagram_reel' || ctx.mediaType !== 'video') {
+    return { ok: false, error: 'Instagram songs can only be added to a video posted as a Reel' };
+  }
+  if (ctx.scheduled) {
+    return { ok: false, error: 'Reels with an Instagram song cannot be scheduled yet' };
+  }
+  return { ok: true, audio: { audioId, audioVolume: clampIgVolume(rec?.audioVolume) } };
+}
+
 export function mapInstagramAudio(raw: IgAudioRaw): MusicTrack | null {
   const id = String(raw.audio_id ?? raw.id ?? '').trim();
   if (!id) return null;

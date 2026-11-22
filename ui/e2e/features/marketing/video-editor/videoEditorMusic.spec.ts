@@ -307,3 +307,35 @@ test.describe('@ci marketing video editor music picker on a phone', () => {
     await expect(page.getByRole('region', { name: 'Instagram song' })).toBeVisible();
   });
 });
+
+test.describe('@ci marketing video editor music picker on a tablet', () => {
+  test.setTimeout(120_000);
+  test.use({ viewport: { width: 768, height: 1024 } });
+
+  test('the picker fits at 768px with no sideways scroll and can add a song', async ({ page }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access');
+    await installTemplateMocks(page);
+    await installMediaMocks(page, [asset('a1', 'image', 'pool.jpg')]);
+    await installMusicMocks(page, {
+      groups: { trending: [mockTrack('1'), mockTrack('a', 'audius')] },
+    });
+    await openDraft(page);
+    const before = await page.locator('[data-timeline-item]').count();
+    // Below 1024px the editor uses the phone shell, so the Music tool opens the picker.
+    await page
+      .getByRole('toolbar', { name: 'Editor tools' })
+      .getByRole('button', { name: 'Audio' })
+      .click();
+    await page
+      .getByRole('toolbar', { name: 'Tool options' })
+      .getByRole('button', { name: 'Music' })
+      .click();
+
+    await expect(page.getByText('Song a')).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)
+    ).toBe(false);
+    await page.getByRole('button', { name: 'Add Song 1' }).click();
+    await expect(page.locator('[data-timeline-item]')).toHaveCount(before + 1);
+  });
+});
