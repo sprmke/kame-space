@@ -3,7 +3,7 @@ title: 'Edge-case hardening pass — cancellations, refunds, billing, parking, s
 status: active
 tags:
   [workflow, production-readiness, evidence, cancellation, refunds, billing, parking, trust-safety]
-updated: 2026-11-21
+updated: 2026-11-22
 stage: in-progress
 kind: evidence
 readiness: partial
@@ -59,3 +59,37 @@ now fixed in code and the rows that deliberately remain.
 | `teamPermissionGatesLocal.integration_test.ts` (local) | 2/2, including the escalation refusal                                                          |
 | `bun run type-check` / `check:edge-types` / `build`    | pass                                                                                           |
 | Static guards                                          | select-star, unbounded select, auth matrix, wrapper, migration security, coverage ratchet pass |
+
+## Self-review follow-ups (2026-11-22)
+
+The pre-merge self-review found two P0s and a cluster of P1s. All are fixed in the same PR.
+
+| Finding                                                                        | Fix                                                                                                                                                                                                                    |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Host/system cancel on a property with **no policy** refunded ₱0                | The host/system full-refund branch now runs before the unset-policy return; guest cancels still ask the host. Tests for host, system and guest.                                                                        |
+| `guest-trip-help` / `data-subject-request` had no `verify_jwt = false`         | Added in `config.toml` (plus the new `booking-help`) and both handlers are now in the edge type gate.                                                                                                                  |
+| A guest edit could extend a stay past the contract end                         | `submit-form` now runs `assertStayWithinContract` for existing bookings too.                                                                                                                                           |
+| Urgent help push could be muted or silenced by quiet hours                     | New `booking_help_requested` type marks the push critical and bypasses mutes and quiet hours; test.                                                                                                                    |
+| Host notification was **silently rejected** by the DB                          | The `notifications_type_check` had drifted; migration `20261350000000` restores the 37-type catalog, and `notificationTypeCatalog_test.ts` prevents another drift. The integration test now proves the row is written. |
+| Help case could never be closed                                                | `booking-help` GET/POST + **Mark resolved** on the booking overview; a new case can open after resolution.                                                                                                             |
+| One global help alert key could throttle a second guest's P0                   | Key is now per booking; the storm guard handles volume.                                                                                                                                                                |
+| Assistant cancel confirm did not show the refund amount                        | The proposal computes and includes the peso amount.                                                                                                                                                                    |
+| Payout with a missing start date was treated as eligible                       | It is now held for review, with the existing early-disburse note override.                                                                                                                                             |
+| Protocol-relative links bypassed the inbox guard                               | `//host` is now detected and blocked; test.                                                                                                                                                                            |
+| Refund alerts were never resolved                                              | `cancellation-refund-cron` resolves the 7-day/10-day keys when nothing is overdue, and clears the 7-day key once a case is overdue.                                                                                    |
+| Resending an old escalated invite bypassed the new ceiling                     | Property, parking and org resend now re-check the stored permissions.                                                                                                                                                  |
+| Stale "check-in and SD emails are paid" copy                                   | Updated in plan copy, plan matrix, settings route guide, booking-detail guide, workflow effect preview, automation triggers and tooltip.                                                                               |
+| Trip guide had two Host-facing sections and a false "on-call at night" promise | Merged into one section; the copy now says critical push + support alert when alerting is enabled.                                                                                                                     |
+
+**New verification:** `test:edge:help` (create → one open case → resolve → reopen, with the real notification insert), `notificationTypeCatalog_test`, `notificationPreferences` critical-push test, host/system unset-policy tests, protocol-relative link test, missing-date payout test. `test:edge` 2176, handlers 1506, UI 6,577 + 86, edge types, type-check and build all pass.
+
+## UI critique follow-ups (2026-11-22)
+
+Impeccable critique (Assessment A: 27/40, Assessment B: detector clean on all 9 changed UI files) found a product gap and some polish issues. Applied in the same PR:
+
+- **Token-only guests can see Get help now.** The action is no longer hidden when the trip page was opened from an email link; sending asks them to sign in with the booking email. This is a sign-in prompt, not token-native help yet; SAFE-06 remains the follow-up.
+- **After sending, the guest sees a timestamp and "The host has been notified"**, and the **Unsafe or emergency** branch shows "If anyone is in danger, call 911 first."
+- **The host case is now the first card in the booking Overview**, polls every 30 seconds while open, and is visible to read-only members (`bookings:view`); only `bookings.detail.workflow:edit` can mark it resolved.
+- **Approve mode is labelled honestly**: "Approve cancellation" / "Approve and cancel" / "Go back" instead of the host-cancel wording, and the 24h note now says support will help the guest find another place instead of "reviewed by support".
+- **Payout dialog**: the trigger reads **Review payout** when held, the early-disbursement reason is required with a visible hint, the draft is guarded, and the held banner uses the `--warning` tokens.
+- **A11y**: grouped choice sets with labels, the orphan "Who asked?" label replaced, the decline textarea labelled, and the help card uses a heading.

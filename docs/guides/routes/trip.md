@@ -56,6 +56,12 @@ described**, **Unsafe or emergency**, **Something else**, plus a short note. Sub
 
 - The trip page only renders the button in the arriving / arrival day / staying / checkout day
   phases; the server also enforces the 24-hour window and rejects a cancelled booking.
+- A token-only guest sees the action too. Sending asks them to sign in with the booking email;
+  the request endpoint is account-scoped, so the case always has an owner.
+- After sending, the guest sees the time and "The host has been notified", not just a toast. The
+  **Unsafe or emergency** branch shows "If anyone is in danger, call 911 first."
+- The host sees an open case at the top of the booking **Overview** (kind, note, time, **Mark
+  resolved**). Read-only members can see it; only `bookings.detail.workflow:edit` can close it.
 - One open request per booking. A repeat tap returns the open request instead of creating a
   second one.
 - The host gets an in-app/push notification on that booking. The ops channel gets a P0 alert for
@@ -405,17 +411,6 @@ idempotent document share token / stay guide token self-heal and owner linking).
 | Timeline      | `guestTripTimeline` in `guestTripPhase.ts` (+ `.test.ts`); `ui/src/features/guest/trip/components/GuestTripTimeline.tsx`                                                                                                                                             |
 
 ---
-
-## Host-facing knowledge
-
-**Get help now**
-
-- Q: What does the guest see if they cannot get in?
-  A: From the day before check-in, their trip page shows **Get help now**. They pick the problem, add a note and send. You get a notification on the booking and our team is alerted.
-- Q: Will I be told at night?
-  A: Yes. An arrival problem is the highest-priority alert, so it reaches the on-call channel, not just the in-app bell.
-- Q: Can a guest send the same request twice?
-  A: No. One open request per booking; sending again shows the open request.
 
 ## Testing
 
