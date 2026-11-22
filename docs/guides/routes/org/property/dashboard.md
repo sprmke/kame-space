@@ -123,12 +123,12 @@ All four show a trend indicator vs. the previous equal-length period, powered by
 
 `PlannerTodayCard` sits under the stat cards. It shows up to three Marketing Planner items for
 today with their time and status, plus **Open plan** into
-`/org/:orgSlug/property/:propertySlug/marketing?tab=plan&range=today`.
+`/org/:orgSlug/property/:propertySlug/marketing?plan=1&range=today`.
 
 - Renders nothing when the property has no `marketingPlanner` plan feature or no items today, so it
   never becomes dashboard clutter.
 - A failed plan load also renders nothing; the dashboard never shows a planner error.
-- Source: `marketing-planner?range=today`, the same query the Plan tab uses.
+- Source: `marketing-planner?range=today`, the same query the Plan modal uses.
 
 ---
 

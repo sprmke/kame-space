@@ -29,6 +29,8 @@ type Props = {
   triggerClassName?: string;
   sheetTitle?: string;
   onTriggerClick?: (event: MouseEvent) => void;
+  /** Sheet even on desktop (required when the menu opens inside a Dialog). */
+  forceSheet?: boolean;
 };
 
 /** Overflow actions in marketing surfaces: sheet on mobile, dropdown on desktop. */
@@ -39,6 +41,7 @@ export function MarketingOverflowMenu({
   triggerClassName,
   sheetTitle,
   onTriggerClick,
+  forceSheet = false,
 }: Props) {
   if (menuItems.length === 0) return null;
 
@@ -48,6 +51,7 @@ export function MarketingOverflowMenu({
     <ResponsiveOverflowMenu
       label={label}
       sheetTitle={sheetTitle ?? label}
+      forceSheet={forceSheet}
       actionGroups={toActionGroups(menuItems)}
       trigger={
         <Button

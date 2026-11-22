@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { MarketingPlannerSkeleton } from '@/components/skeletons/AdminSkeletons';
+import { SegmentedControl } from '@/components/ui/sliding-tabs';
+import { MarketingOverflowMenu } from '@/features/dashboard/marketing/components/shared/MarketingOverflowMenu';
 import { captureAppEvent } from '@/lib/posthog/capture';
 import { useMarketingTheme } from '@/features/dashboard/marketing/components/themes/MarketingThemeProvider';
 import {
@@ -24,12 +25,14 @@ import { PlannerSetupWizard } from '@/features/dashboard/marketing/components/pl
 import { PrepareWeekDialog } from '@/features/dashboard/marketing/components/planner/PrepareWeekDialog';
 import { ShareItYourselfSheet } from '@/features/dashboard/marketing/components/planner/ShareItYourselfSheet';
 import type { PlannerItemDto } from '@/features/dashboard/marketing/lib/planner/plannerApi';
+import { setPlannerOpen } from '@/features/dashboard/marketing/lib/planner/plannerRoute';
 import {
   PLANNER_RANGES,
   RANGE_LABELS,
   formatDayHeading,
   groupItemsByDay,
   normalizePlannerRange,
+  type PlannerRange,
 } from '@/features/dashboard/marketing/lib/planner/plannerRange';
 import {
   useGeneratePlan,
@@ -43,6 +46,11 @@ import {
 
 const SHOWCASE_ITEMS = 3;
 
+const RANGE_OPTIONS = PLANNER_RANGES.map((value) => ({
+  value,
+  label: RANGE_LABELS[value],
+}));
+
 function todayManilaYmd(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 }
@@ -50,7 +58,7 @@ function todayManilaYmd(): string {
 export function PlannerHome() {
   const [searchParams, setSearchParams] = useSearchParams();
   const range = normalizePlannerRange(searchParams.get('range'));
-  const setRange = (next: string) => {
+  const setRange = (next: PlannerRange) => {
     const params = new URLSearchParams(searchParams);
     params.set('range', next);
     setSearchParams(params, { replace: true });
@@ -77,6 +85,7 @@ export function PlannerHome() {
 
   const today = todayManilaYmd();
   const allowed = planGate.allowed;
+  const needsSetup = allowed && settings.isSuccess && settings.data === null;
 
   const items = useMemo(() => {
     const all = data?.items ?? [];
@@ -84,8 +93,12 @@ export function PlannerHome() {
   }, [allowed, data?.items]);
 
   const groups = useMemo(() => groupItemsByDay(items), [items]);
+  const hasItems = groups.length > 0;
 
-  const gallery = useMemo(() => normalizeGallery(listing.data?.images ?? []), [listing.data?.images]);
+  const gallery = useMemo(
+    () => normalizeGallery(listing.data?.images ?? []),
+    [listing.data?.images]
+  );
   const usedPhotoUrls = useMemo(() => {
     const used = new Set<string>();
     for (const item of data?.items ?? []) {
@@ -121,127 +134,147 @@ export function PlannerHome() {
     });
     void navigator.clipboard?.writeText(caption).catch(() => undefined);
     setOpenItem(null);
-    // AI Studio opens a fresh session so its composer can pick the draft up; the other
-    // editors land on their tab and take the caption from the clipboard for now.
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        setPlannerOpen(next, false);
+        return next;
+      },
+      { replace: true }
+    );
     if (target.tab === 'generate') startAiSession(target.output ?? 'post', { replace: true });
     else setTab(target.tab);
   };
 
+  const overflowItems = [
+    {
+      id: 'setup',
+      label: 'Goals & channels',
+      onSelect: () => setSetupOpen(true),
+    },
+    {
+      id: 'prepare',
+      label: 'Prepare week',
+      onSelect: () => setPrepareOpen(true),
+    },
+  ];
+  if (!aiGate.allowed && !aiGate.isLoading) {
+    overflowItems.push({
+      id: 'ai-upgrade',
+      label: 'AI plan',
+      onSelect: () => openUpgradeModal('aiMarketingPlanner'),
+    });
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-1">
-          {PLANNER_RANGES.map((value) => (
-            <Button
-              key={value}
-              size="sm"
-              variant={value === range ? 'default' : 'outline'}
-              onClick={() => setRange(value)}
-            >
-              {RANGE_LABELS[value]}
-            </Button>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {!aiGate.allowed && !aiGate.isLoading ? (
-            <Button size="sm" variant="outline" onClick={() => openUpgradeModal('aiMarketingPlanner')}>
-              AI plan
-            </Button>
-          ) : null}
+    <div className="flex flex-col gap-4">
+      {!needsSetup ? (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <SegmentedControl
+              value={range}
+              onChange={setRange}
+              options={RANGE_OPTIONS}
+              size="dense"
+              equalSegments
+              fullWidth
+              aria-label="Plan range"
+              className="min-w-0 flex-1"
+            />
+            {allowed ? (
+              <MarketingOverflowMenu
+                label="Plan options"
+                icon="horizontal"
+                forceSheet
+                menuItems={overflowItems}
+              />
+            ) : null}
+          </div>
           <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setSetupOpen(true)}
-            disabled={!allowed}
-          >
-            Plan setup
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setPrepareOpen(true)}
-            disabled={!allowed}
-          >
-            Prepare week
-          </Button>
-          <Button
-            size="sm"
-            disabled={!allowed || generate.isPending}
+            className="w-full sm:w-auto sm:self-start"
+            disabled={!allowed || generate.isPending || needsSetup}
             onClick={() => generate.mutate()}
           >
-            {generate.isPending ? 'Building' : 'Build plan'}
+            {generate.isPending ? 'Building…' : hasItems ? 'Rebuild plan' : 'Build plan'}
           </Button>
         </div>
-      </div>
+      ) : null}
 
-      {allowed && settings.isSuccess && settings.data === null ? (
-        <Card className="border-primary/30">
-          <CardContent className="flex flex-wrap items-center justify-between gap-2 p-4">
-            <p className="text-sm">Set up your plan: goals, where you post, and how much time.</p>
-            <Button size="sm" onClick={() => setSetupOpen(true)}>
-              Set up
-            </Button>
-          </CardContent>
-        </Card>
+      {needsSetup ? (
+        <div className="border-border space-y-3 rounded-xl border bg-muted/30 p-4">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">Set your goals</p>
+            <p className="text-caption text-muted-foreground">
+              Choose what to fill, where you post, and how often. Then build this week.
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setSetupOpen(true)}>
+            Continue
+          </Button>
+        </div>
       ) : null}
 
       {isLoading ? <MarketingPlannerSkeleton /> : null}
 
       {!isLoading && data?.summary ? (
-        <Card className="border-border/70 bg-muted/30">
-          <CardContent className="p-4 text-sm">{data.summary}</CardContent>
-        </Card>
+        <p className="text-sm leading-relaxed text-muted-foreground">{data.summary}</p>
       ) : null}
 
       {isError ? (
-        <Card>
-          <CardContent className="p-4 text-sm text-destructive">
-            {(error as Error | null)?.message || 'Could not load the plan'}
-          </CardContent>
-        </Card>
+        <p className="text-sm text-destructive">
+          {(error as Error | null)?.message || 'Could not load the plan'}
+        </p>
       ) : null}
 
-      {!isLoading && !isError && groups.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">
-            Nothing planned yet. Build a plan to see what to post.
-          </CardContent>
-        </Card>
+      {!isLoading && !isError && !needsSetup && !hasItems ? (
+        <div className="border-border flex flex-col items-center gap-3 rounded-xl border border-dashed px-4 py-8 text-center">
+          <p className="text-sm text-muted-foreground">No posts planned yet.</p>
+          <Button
+            size="sm"
+            disabled={!allowed || generate.isPending}
+            onClick={() => generate.mutate()}
+          >
+            {generate.isPending ? 'Building…' : 'Build plan'}
+          </Button>
+        </div>
       ) : null}
 
       {groups.map((group) => (
         <section key={group.day} className="space-y-2">
-          <h3 className="text-section-title text-muted-foreground">
+          <h3 className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
             {formatDayHeading(group.day, today)}
           </h3>
-          <div className="space-y-2">
+          <ul className="space-y-2">
             {group.items.map((item) => (
-              <PlanItemCard
-                key={item.id}
-                item={item}
-                day={group.day}
-                today={today}
-                readOnly={!allowed}
-                onOpen={handleOpen}
-                onSkip={(target) => skip.mutate({ itemId: target.id, reason: 'Not this week' })}
-                onOpenEditor={allowed ? handleOpenEditor : undefined}
-                onMarkPosted={(target) => setShareItem(target)}
-              />
+              <li key={item.id}>
+                <PlanItemCard
+                  item={item}
+                  day={group.day}
+                  today={today}
+                  readOnly={!allowed}
+                  onOpen={handleOpen}
+                  onSkip={(target) => skip.mutate({ itemId: target.id, reason: 'Not this week' })}
+                  onOpenEditor={allowed ? handleOpenEditor : undefined}
+                  onMarkPosted={(target) => setShareItem(target)}
+                />
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
       ))}
 
       {data && data.upcoming.length > 0 ? (
-        <section className="space-y-1">
-          <h3 className="text-section-title text-muted-foreground">Coming up</h3>
-          <ul className="space-y-1 text-sm">
+        <section className="space-y-2">
+          <h3 className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
+            Later
+          </h3>
+          <ul className="space-y-1.5 text-sm">
             {data.upcoming.map((item) => (
-              <li key={item.id} className="flex flex-wrap items-baseline gap-1">
+              <li key={item.id} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                 <span className="text-muted-foreground">
                   {formatDayHeading(item.scheduledFor?.slice(0, 10) ?? 'unscheduled', today)}
                 </span>
-                <span>{item.title}</span>
+                <span className="font-medium">{item.title}</span>
               </li>
             ))}
           </ul>
@@ -253,7 +286,11 @@ export function PlannerHome() {
         onOpenChange={setPrepareOpen}
         range={range}
         today={today}
-        itemCount={items.filter((item) => !['preparing', 'ready', 'published', 'posted_manually'].includes(item.status)).length}
+        itemCount={
+          items.filter(
+            (item) => !['preparing', 'ready', 'published', 'posted_manually'].includes(item.status)
+          ).length
+        }
         isPreparing={prepareWeek.isPending}
         onConfirm={(window) =>
           prepareWeek.mutateAsync(window).then(
@@ -307,22 +344,16 @@ export function PlannerHome() {
         }}
         item={shareItem}
         isPosting={markPosted.isPending}
-        onPosted={(target, postedUrl) =>
-          markPosted.mutate({ itemId: target.id, postedUrl })
-        }
+        onPosted={(target, postedUrl) => markPosted.mutate({ itemId: target.id, postedUrl })}
       />
 
       {!allowed && !planGate.isLoading && (data?.items.length ?? 0) > 0 ? (
-        <Card className="border-primary/30">
-          <CardContent className="flex flex-wrap items-center justify-between gap-2 p-4">
-            <p className="text-sm">
-              The full plan, reminders and Share it yourself are on Pro and above.
-            </p>
-            <Button size="sm" onClick={() => openUpgradeModal('marketingPlanner')}>
-              View plans
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="border-border flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-muted/20 p-4">
+          <p className="text-sm">Full plan is on Pro and above.</p>
+          <Button size="sm" onClick={() => openUpgradeModal('marketingPlanner')}>
+            View plans
+          </Button>
+        </div>
       ) : null}
     </div>
   );

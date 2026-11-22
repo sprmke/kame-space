@@ -12,8 +12,9 @@ test.describe('@ci marketing studio smoke', () => {
     await expect(page.getByRole('heading', { name: 'Marketing' })).toBeVisible({
       timeout: 20_000,
     });
-    const tabs = page.getByRole('tab', { name: /^(Plan|AI Studio|Posts|Videos|Calendar)/ });
-    await expect(tabs).toHaveText([/^Plan/, /^AI Studio/, 'Posts', 'Videos', 'Calendar']);
+    const tabs = page.getByRole('tab', { name: /^(AI Studio|Posts|Videos|Calendar)/ });
+    await expect(tabs).toHaveText([/^AI Studio/, 'Posts', 'Videos', 'Calendar']);
+    await expect(page.getByRole('button', { name: /^Plan/ })).toBeVisible();
     await expect(page.getByRole('tab', { name: /^Plan/ })).toHaveAttribute(
       'aria-selected',
       'true'

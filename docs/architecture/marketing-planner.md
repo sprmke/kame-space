@@ -11,12 +11,13 @@ The planner turns data the app already holds into a dated, ranked list of market
 carries each item to a finished post. Full product plan and phase status:
 [marketing-strategy-planner.md](../workflow/for-testing/marketing-strategy-planner.md).
 
-**Shipped:** foundations, the rules engine and Plan tab, the setup wizard, the AI brief pass and
-per-item rewrites, Share it yourself, the publish scheduler cron with claim holds, the planner cron
-(weekly rules plans, expiry, reminders), tracked links with first-touch attribution, the insight
-mapper, and a read-only assistant tool.
-**Not shipped yet:** Prepare handoffs into the editors, carousel and Reels in the publish dialog,
-insight snapshots (App Review), learned windows, autopilot.
+**Shipped:** foundations, the rules engine, Plan as a page action + modal (`?plan=1`, four creative
+tabs retained), the setup wizard, the AI brief pass and per-item rewrites, Share it yourself, the
+publish scheduler cron with claim holds, the planner cron (weekly rules plans, expiry, reminders),
+tracked links with first-touch attribution, the insight mapper, and a read-only assistant tool.
+**Not shipped yet:** carousel and Reels in the publish dialog, insight snapshots (App Review),
+learned windows, autopilot.
+**UX refine:** [marketing-planner-ux-refine.md](../workflow/planned/marketing-planner-ux-refine.md).
 
 ## Layering
 

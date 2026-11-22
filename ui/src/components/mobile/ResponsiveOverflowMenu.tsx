@@ -48,6 +48,11 @@ type Props = {
   trigger?: ReactElement<TriggerProps>;
   triggerClassName?: string;
   dropdownContentClassName?: string;
+  /**
+   * Always use the mobile sheet, even on `lg+`. Needed when the menu opens from
+   * inside a Dialog (dropdown portals under the dialog and cannot receive clicks).
+   */
+  forceSheet?: boolean;
 };
 
 /**
@@ -61,8 +66,9 @@ export function ResponsiveOverflowMenu({
   trigger,
   triggerClassName,
   dropdownContentClassName,
+  forceSheet = false,
 }: Props) {
-  const isMobileLayout = useIsBelowLg();
+  const isMobileLayout = useIsBelowLg() || forceSheet;
   const [sheetOpen, setSheetOpen] = useState(false);
   const visibleGroups = actionGroups
     .map((group) => group.filter((action) => !action.disabled))
@@ -156,7 +162,11 @@ export function ResponsiveOverflowMenu({
       <DropdownMenuTrigger asChild onClick={(event) => event.stopPropagation()}>
         {renderedTrigger}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className={cn('min-w-[10rem]', dropdownContentClassName)}>
+      <DropdownMenuContent
+        align="end"
+        // Dialogs use z-[100]; keep overflow above them when opened from a modal.
+        className={cn('z-[110] min-w-[10rem]', dropdownContentClassName)}
+      >
         {visibleGroups.map((group, groupIndex) => (
           <Fragment key={group[0]?.key ?? groupIndex}>
             {groupIndex > 0 ? <DropdownMenuSeparator /> : null}

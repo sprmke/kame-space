@@ -56,5 +56,5 @@ export function rankListingsForPromotion(
 
 /** Path into a listing's plan, with today's window selected. */
 export function orgPropertyPlanHref(orgSlug: string, slug: string): string {
-  return `/org/${orgSlug}/property/${slug}/marketing?tab=plan&range=today`;
+  return `/org/${orgSlug}/property/${slug}/marketing?plan=1&range=today`;
 }

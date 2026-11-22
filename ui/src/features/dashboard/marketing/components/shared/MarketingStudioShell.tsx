@@ -6,9 +6,9 @@ import { cn } from '@/lib/utils';
 
 type Props = {
   tabs?: ReactNode;
-  /** Own row above the tabs on phones (theme switcher). */
+  /** Optional leading control (prefer trailing `actions` so phone stays one row). */
   leading?: ReactNode;
-  /** Right end of the tab row on desktop (theme switcher). */
+  /** Trailing control on the tab row (compact theme switcher). */
   actions?: ReactNode;
   /** An editor with its floating mobile dock is open (reserve room for it). */
   hasDock?: boolean;

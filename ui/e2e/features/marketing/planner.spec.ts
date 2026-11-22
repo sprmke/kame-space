@@ -7,7 +7,7 @@ import {
 
 /**
  * Marketing Planner journeys. The edge function is mocked at the envelope level, so these
- * exercise the real tab, gate, item sheet and copy paths without a backend.
+ * exercise the Plan button, modal, gate, item sheet and copy paths without a backend.
  */
 
 const PLAN_ITEM = {
@@ -80,11 +80,6 @@ const SETTINGS_PAYLOAD = {
   },
 };
 
-/**
- * The RBAC harness owns the `**\/functions/v1/**` route. Registering a second catch-all would
- * shadow it (`continue()` skips later handlers), so this one falls back for every other
- * function and only answers `marketing-planner`.
- */
 /** The analytics consent card sits above the page and swallows clicks until answered. */
 async function dismissCookieConsent(page: Page) {
   const necessaryOnly = page.getByRole('button', { name: 'Necessary only' });
@@ -109,98 +104,157 @@ async function mockPlanner(page: Page) {
   });
 }
 
+async function openPlanner(page: Page) {
+  await page.getByRole('button', { name: /^Plan/ }).click();
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20_000 });
+}
+
 test.describe('@ci marketing planner', () => {
-  test('Plan is the default tab and shows the dated agenda', async ({ page }) => {
+  test('studio keeps four creative tabs and opens Plan from the page action', async ({
+    page,
+  }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await mockPlanner(page);
     await page.goto(teamRbacPaths.marketingWorkspace);
     await dismissCookieConsent(page);
 
-    await expect(page.getByRole('tab', { name: /^Plan/ })).toHaveAttribute(
-      'aria-selected',
-      'true',
-      { timeout: 20_000 }
-    );
-    await expect(page.getByRole('button', { name: 'Today', exact: true })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /^AI Studio/ })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('tab', { name: /^Plan/ })).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: /^Posts/ })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /^Videos/ })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /^Calendar/ })).toBeVisible();
+
+    await openPlanner(page);
+    await expect(page).toHaveURL(/plan=1/);
+    await expect(page.getByRole('heading', { name: 'Plan' })).toBeVisible();
     await expect(page.getByText('Two nights are still open this weekend.').first()).toBeVisible();
     await expect(page.getByText('Open this weekend', { exact: true })).toBeVisible();
-    await expect(page.getByText('12 page visits from this link')).toBeVisible();
+    await expect(page.getByText('12 visits from this link')).toBeVisible();
+  });
+
+  test('legacy ?tab=plan deep link opens the planner modal', async ({ page }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access');
+    await mockPlanner(page);
+    await page.goto(`${teamRbacPaths.marketingWorkspace}&tab=plan&range=today`);
+    await dismissCookieConsent(page);
+
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20_000 });
+    await expect(page).toHaveURL(/plan=1/);
+    await expect(page).not.toHaveURL(/tab=plan/);
   });
 
   test('range chips switch the window', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await mockPlanner(page);
-    await page.goto(teamRbacPaths.marketingWorkspace);
+    await page.goto(`${teamRbacPaths.marketingWorkspace}&plan=1`);
     await dismissCookieConsent(page);
 
-    await page.getByRole('button', { name: 'Week', exact: true }).click();
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20_000 });
+    await page.getByRole('tab', { name: 'Week', exact: true }).click();
     await expect(page).toHaveURL(/range=7d/);
   });
 
-  test('opening an item shows the claim list and the draft fields', async ({ page }) => {
+  test('opening an item shows the claim list and edit behind Edit copy', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await mockPlanner(page);
-    await page.goto(teamRbacPaths.marketingWorkspace);
+    await page.goto(`${teamRbacPaths.marketingWorkspace}&plan=1`);
     await dismissCookieConsent(page);
 
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20_000 });
     await page.getByRole('button', { name: 'Create' }).first().click();
-    await expect(page.getByText('what this says')).toBeVisible();
+    await expect(page.getByText('Dates & price')).toBeVisible();
     await expect(page.getByText('Open: 2026-11-13, 2026-11-14')).toBeVisible();
     await expect(page.getByText('From 3200 a night')).toBeVisible();
+    await page.getByRole('button', { name: 'Edit copy' }).click();
     await expect(page.getByLabel('First line')).toHaveValue('Two nights left this weekend');
     await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled();
     await page.getByRole('button', { name: 'Cancel' }).click();
   });
 
-  test('prepare week opens a confirm and states how many items need work', async ({ page }) => {
+  test('prepare week opens from plan options overflow', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await mockPlanner(page);
-    await page.goto(teamRbacPaths.marketingWorkspace);
+    await page.goto(`${teamRbacPaths.marketingWorkspace}&plan=1`);
     await dismissCookieConsent(page);
 
-    await page.getByRole('button', { name: 'Prepare week' }).click();
-    const dialog = page.getByRole('dialog');
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20_000 });
+    await page.getByRole('button', { name: 'Plan options' }).click();
+    await page.getByRole('option', { name: 'Prepare week' }).click();
+    const dialog = page.getByRole('dialog').filter({ hasText: /items need a design/ });
     await expect(dialog.getByText(/items need a design, video or calendar/)).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Start' })).toBeEnabled();
     await dialog.getByRole('button', { name: 'Cancel' }).click();
-    await expect(dialog).toBeHidden();
   });
 
-  test('setup opens from the header and saves through the wizard', async ({ page }) => {
+  test('setup opens from plan options overflow', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await mockPlanner(page);
-    await page.goto(teamRbacPaths.marketingWorkspace);
+    await page.goto(`${teamRbacPaths.marketingWorkspace}&plan=1`);
     await dismissCookieConsent(page);
 
-    await page.getByRole('button', { name: 'Plan setup' }).click();
-    const dialog = page.getByRole('dialog');
-    await expect(dialog.getByText('What matters most right now?')).toBeVisible();
-    await dialog.getByRole('button', { name: 'Cancel' }).click();
-    await expect(dialog).toBeHidden();
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20_000 });
+    await page.getByRole('button', { name: 'Plan options' }).click();
+    await page.getByRole('option', { name: 'Goals & channels' }).click();
+    await expect(page.getByText('What matters most right now?')).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel' }).click();
   });
 
   test('share it yourself opens with the caption and the host places', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await mockPlanner(page);
-    await page.goto(teamRbacPaths.marketingWorkspace);
+    await page.goto(`${teamRbacPaths.marketingWorkspace}&plan=1`);
     await dismissCookieConsent(page);
 
-    await page.getByRole('button', { name: 'I posted it' }).first().click();
-    const dialog = page.getByRole('dialog');
-    await expect(dialog.getByText('Tagaytay Rentals')).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Copy caption' })).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'I posted it' })).toBeVisible();
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20_000 });
+    await page.getByRole('button', { name: 'One night open options' }).click();
+    await page.getByRole('option', { name: 'I posted it' }).click();
+    const shareSheet = page.getByRole('dialog', { name: 'One night open' });
+    await expect(shareSheet).toBeVisible();
+    await expect(shareSheet.getByText('Tagaytay Rentals')).toBeVisible();
+    await expect(shareSheet.getByRole('button', { name: 'Copy caption' })).toBeVisible();
+    await expect(shareSheet.getByRole('button', { name: 'I posted it' })).toBeVisible();
   });
 
-  test('switching to AI Studio keeps the planner reachable', async ({ page }) => {
+  test('closing the planner returns to the creative tabs', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await mockPlanner(page);
-    await page.goto(teamRbacPaths.marketingWorkspace);
+    await page.goto(`${teamRbacPaths.marketingWorkspace}&plan=1`);
     await dismissCookieConsent(page);
 
-    await page.getByRole('tab', { name: /^AI Studio/ }).click();
-    await expect(page.getByRole('heading', { name: 'What do you want to make?' })).toBeVisible();
-    await page.getByRole('tab', { name: /^Plan/ }).click();
-    await expect(page.getByText('Open this weekend', { exact: true })).toBeVisible();
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20_000 });
+    await page.getByRole('button', { name: 'Close' }).click();
+    await expect(page.getByRole('dialog')).toBeHidden();
+    await expect(page).not.toHaveURL(/plan=1/);
+    await expect(page.getByRole('tab', { name: /^AI Studio/ })).toBeVisible();
+  });
+
+  test('captures planner screenshots at 375 and 1024', async ({ page }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access');
+    await mockPlanner(page);
+
+    for (const { width, height, label } of [
+      { width: 1024, height: 768, label: '1024' },
+      { width: 375, height: 812, label: '375' },
+    ]) {
+      await page.setViewportSize({ width, height });
+      await page.goto(teamRbacPaths.marketingWorkspace);
+      await dismissCookieConsent(page);
+      await expect(page.getByRole('tab', { name: /^AI Studio/ })).toBeVisible({
+        timeout: 20_000,
+      });
+      await page.screenshot({ path: `test-results/marketing-planner-studio-${label}.png` });
+
+      await openPlanner(page);
+      const planDialog = page.getByRole('dialog', { name: 'Plan' });
+      await expect(planDialog).toBeVisible();
+      await expect(
+        planDialog.getByRole('button', { name: /^(Build plan|Rebuild plan)$/ })
+      ).toBeVisible();
+      await expect(planDialog.getByText('Open this weekend', { exact: true })).toBeVisible();
+      await expect(planDialog.getByText('Two nights are still open this weekend.')).toBeVisible();
+      await page.screenshot({ path: `test-results/marketing-planner-modal-${label}.png` });
+      await planDialog.getByRole('button', { name: 'Close' }).click();
+      await expect(planDialog).toBeHidden();
+    }
   });
 });

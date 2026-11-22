@@ -65,7 +65,7 @@ export function MarketingResultsCard({ marketing, className }: Props) {
       )}
       {orgSlug && propertySlug ? (
         <Link
-          to={`/org/${orgSlug}/property/${propertySlug}/marketing?tab=plan`}
+          to={`/org/${orgSlug}/property/${propertySlug}/marketing?plan=1`}
           className="text-caption text-primary underline-offset-2 hover:underline"
         >
           Open plan
