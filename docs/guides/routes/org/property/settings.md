@@ -2,7 +2,7 @@
 title: 'Property Settings — operator guide'
 status: active
 tags: [guides, routes, org, property]
-updated: 2026-11-18
+updated: 2026-11-23
 ---
 
 # Property Settings — operator guide
@@ -619,9 +619,13 @@ Keep UI and edge copies in sync when changing rules.
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | Unit  | `propertySettingsSave.test.ts`, `propertySettingsCompletion.test.ts`, `propertyEmailAutomation.test.ts`                                                                                           | —                                           |
 | E2E   | `ui/e2e/features/dashboard/dashboardModulesSmoke.spec.ts` settings shell (`@ci`); `ui/e2e/features/team/propertySettingsCleanNavigation.spec.ts` clean-load no prompt vs real-edit prompt (`@ci`) | OTP payment method, live Maps, media upload |
+| E2E   | `ui/e2e/features/dashboard/settings/settingsModule.spec.ts` property scope (`@ci`, 11 tests: rail, save, guard, inline error, payment dialog, listing status, phone overflow)                     | —                                           |
+| Demo  | `ui/e2e/features/dashboard/settings/settingsTour.slowmo.spec.ts` (`@demo`, five property scenarios, headed + video)                                                                               | —                                           |
 | N/A   | —                                                                                                                                                                                                 | —                                           |
 
 ---
+
+Review: [`docs/workflow/in-progress/settings-ux-review/`](../../../../workflow/in-progress/settings-ux-review/README.md) — four open P1s (duplicate Guest experience section, legacy Tower, Maps address, read-only rail gap on phone).
 
 ## Related docs
 

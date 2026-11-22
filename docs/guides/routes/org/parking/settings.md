@@ -2,7 +2,7 @@
 title: 'Parking settings — operator guide'
 status: active
 tags: [guides, routes, org, parking]
-updated: 2026-11-11
+updated: 2026-11-23
 ---
 
 # Parking settings — operator guide
@@ -172,8 +172,10 @@ The same sections can be completed inside the post-onboarding [Setup Guide](../s
 
 ## Testing
 
-| Layer | Path / spec                                                                                                                    | Manual        |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------ | ------------- |
-| Unit  | `parkingStatusMachine_test.ts`, `parkingSettingsSavePlan.test.ts`, `parkingSettingsCompletion.test.ts`, `parkingMedia.test.ts` | —             |
-| E2E   | [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs                                                   | PayMongo live |
-| N/A   | Parking host dashboard shell load                                                                                              | —             |
+| Layer | Path / spec                                                                                                                     | Manual        |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| Unit  | `parkingStatusMachine_test.ts`, `parkingSettingsSavePlan.test.ts`, `parkingSettingsCompletion.test.ts`, `parkingMedia.test.ts`  | —             |
+| E2E   | [`parking-playwright.md`](../testing/parking-playwright.md) guest/host specs                                                    | PayMongo live |
+| E2E   | `ui/e2e/features/dashboard/settings/settingsModule.spec.ts` parking scope (`@ci`, rail, save, `settings:view` explainer, phone) | —             |
+| Demo  | `ui/e2e/features/dashboard/settings/settingsTour.slowmo.spec.ts` (`@demo`, headed + video)                                      | —             |
+| N/A   | Parking host dashboard shell load                                                                                               | —             |
