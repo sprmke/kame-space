@@ -30,7 +30,7 @@ Do not treat the KPI numbers as statements of fact until P1-1 and P1-2 are resol
 | Item          | Value                                                                          |
 | ------------- | ------------------------------------------------------------------------------ |
 | App           | `http://127.0.0.1:5186` (Vite, worktree sticky port) + local Supabase `:54321` |
-| Account       | `seed-owner@example.com` (org `kame-homes`, property `kame-home`)              |
+| Account       | seeded owner (`seed-owner@example.com`) on the canonical local org/property    |
 | Seed          | canonical local dataset, November 2026 period                                  |
 | Viewports     | 390×844, 768×1024, 1280×720, 1440×960, 1440×1900, dark mode                    |
 | Console       | 0 errors on the desktop and phone states captured                              |
