@@ -22,7 +22,7 @@ export function BookingHelpCard({ bookingId, canEdit }: { bookingId: string; can
   if (!request) return null;
 
   return (
-    <div className="rounded-xl border border-amber-300 bg-amber-50 p-4" role="status">
+    <div className="border-warning/40 bg-warning/10 rounded-xl border p-4" role="status">
       <div className="flex items-start gap-2">
         <LifeBuoy className="text-warning mt-0.5 size-4 shrink-0" aria-hidden />
         <div className="min-w-0 space-y-1">
@@ -30,7 +30,7 @@ export function BookingHelpCard({ bookingId, canEdit }: { bookingId: string; can
             Guest needs help: {KIND_LABEL[request.kind] ?? 'Other issue'}
           </p>
           {request.note ? (
-            <p className="whitespace-pre-wrap text-sm text-amber-900/90">{request.note}</p>
+            <p className="text-foreground whitespace-pre-wrap text-sm">{request.note}</p>
           ) : null}
           <p className="text-muted-foreground text-xs">
             {new Intl.DateTimeFormat('en-PH', {

@@ -65,7 +65,7 @@ described**, **Unsafe or emergency**, **Something else**, plus a short note. Sub
 - One open request per booking. A repeat tap returns the open request instead of creating a
   second one.
 - The host gets an in-app/push notification on that booking. The ops channel gets a P0 alert for
-  `cant_get_in` / `unsafe` and a P1 for the others (`ops_alerts` key `guest_help:<kind>`).
+  `cant_get_in` / `unsafe` and a P1 for the others (`ops_alerts` key `guest_help:<bookingId>`, so a repeat on the same stay aggregates).
 - The request row (`booking_help_requests`) is the audit trail. It is service-role only.
 - The 30-minute no-reply escalation and the super-admin refund decision are the next slice; the
   first alert and the host notification are live now.

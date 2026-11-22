@@ -471,6 +471,8 @@ export function BookingDetailPage() {
           </div>
         )}
 
+        {booking && <BookingHelpCard bookingId={booking.id} canEdit={canMutateWorkflow} />}
+
         {booking && (
           <div
             data-booking-detail-layout
@@ -540,7 +542,6 @@ export function BookingDetailPage() {
                       ) : null}
                       {viewTab === 'overview' && (
                         <div className="space-y-4">
-                          <BookingHelpCard bookingId={booking.id} canEdit={canMutateWorkflow} />
                           <GuestViewCard booking={booking} />
                           <StayDetailsPanel booking={booking} />
                           <BookingCancellationCard

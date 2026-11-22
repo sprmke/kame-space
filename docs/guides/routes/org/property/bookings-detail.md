@@ -489,7 +489,7 @@ This is the page a host opens to manage one specific booking end to end: guest d
 
 ## Cancellation and refunds
 
-The **Overview** tab renders an open guest help case (`BookingHelpCard`: kind, note, requested time, **Mark resolved**) above `BookingCancellationCard` when the guest used **Get help now**, then the cancellation card under the stay details.
+The **Overview** tab renders an open guest help case (`BookingHelpCard`: kind, note, requested time, **Mark resolved**) at the **top of the booking page**, above the mobile summary and the tabs, so it stays visible on every tab and on phone without expanding **Details**, when the guest used **Get help now**. The cancellation card follows under the stay details.
 
 | Section          | Behavior                                                                                                                                            |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |

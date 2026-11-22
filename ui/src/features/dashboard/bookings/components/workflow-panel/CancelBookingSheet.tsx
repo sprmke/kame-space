@@ -205,7 +205,7 @@ export function CancelBookingSheet({
           </div>
 
           {lateHostCancel ? (
-            <p className="flex items-start gap-1.5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+            <p className="border-warning/40 bg-warning/10 text-foreground flex items-start gap-1.5 rounded-xl border p-3 text-xs">
               <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
               Check-in is within 24 hours. Support will help the guest find another place.
             </p>
