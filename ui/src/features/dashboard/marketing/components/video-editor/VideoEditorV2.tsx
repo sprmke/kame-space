@@ -26,7 +26,11 @@ import { usePublicPropertyDetail } from '@/features/guest/marketing/properties/h
 
 import { MarketingTemplateBrowser } from '@/features/dashboard/marketing/components/library/MarketingTemplateBrowser';
 import type { MarketingTemplatePick } from '@/features/dashboard/marketing/components/library/MarketingTemplateBrowser';
-import { MarketingMediaLibrary } from '@/features/dashboard/marketing/components/media-library/MarketingMediaLibrary';
+import {
+  MarketingMediaLibrary,
+  type MediaLibraryTab,
+} from '@/features/dashboard/marketing/components/media-library/MarketingMediaLibrary';
+import type { InstagramPickerConfig } from '@/features/dashboard/marketing/components/media-library/music/InstagramMusicPanel';
 import {
   MarketingAiGeneratePanel,
   type MarketingAiGenerateInput,
@@ -54,6 +58,7 @@ import {
   VideoInspectorV2,
   inspectorTitle,
 } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/VideoInspectorV2';
+import { InstagramSongCard } from '@/features/dashboard/marketing/components/video-editor/v2/InstagramSongCard';
 import {
   PANEL_ACTIONS,
   VideoClipPanel,
@@ -124,6 +129,7 @@ import {
 import { fetchMarketingMediaPage } from '@/features/dashboard/marketing/lib/media/marketingMediaApi';
 import type { MediaDragPayload } from '@/features/dashboard/marketing/lib/media/mediaDrag';
 import { hasMediaDrag, readMediaDrag } from '@/features/dashboard/marketing/lib/media/mediaDrag';
+import type { MusicTrack } from '@/features/dashboard/marketing/lib/music/musicTypes';
 import {
   propertyGalleryMediaItems,
   propertyMediaItems,
@@ -167,7 +173,7 @@ import {
   type TextPresetId,
 } from '@/features/dashboard/marketing/lib/video/v2/editorCommands';
 import {
-  cacheJamendoAudioForExport,
+  cacheCatalogAudioForExport,
   remapAudioUrls,
 } from '@/features/dashboard/marketing/lib/video/v2/exportAudio';
 import { migrateVideoProjectV1 } from '@/features/dashboard/marketing/lib/video/v2/migrateVideoProjectV1';
@@ -217,6 +223,7 @@ import {
   isMediaItem,
   type AudioItem,
   type CaptionItem,
+  type InstagramSong,
   type VideoItem,
   type VideoProjectV2,
 } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
@@ -240,6 +247,7 @@ import { registerVideoThumbnailPlaybackPause } from '@/features/dashboard/market
 import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { useOrgSettings } from '@/features/dashboard/org/hooks/useOrgSettings';
 import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
+import { propertyInboxPath } from '@/features/dashboard/org/lib/tenantPaths';
 import { TierBadgeAnchor } from '@/features/dashboard/plans/components/TierBadge';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
@@ -258,6 +266,8 @@ type VideoExportPayloadV2 = {
   project: VideoProjectV2;
   blob: Blob;
   dataUrl: string;
+  /** The song Instagram adds when this is posted as a Reel. */
+  instagramSong?: InstagramSong;
 };
 
 type Props = {
@@ -306,7 +316,7 @@ function loadedFromRecord(
 }
 
 export function VideoEditorV2({ document, nav, onPublish }: Props) {
-  const { property, org } = useOrgContext();
+  const { property, org, orgSlug } = useOrgContext();
   const propertyId = usePropertyIdParam();
   const { data: orgSettings } = useOrgSettings();
   const { active: activeTheme } = useMarketingTheme();
@@ -361,6 +371,11 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   const [exportSheetOpen, setExportSheetOpen] = useState(false);
   /** The next library pick becomes the sound of a video, not a clip. */
   const [pickSoundMode, setPickSoundMode] = useState(false);
+  /** Which media library tab to land on; the nonce re-applies it when the panel is already open. */
+  const [mediaTabRequest, setMediaTabRequest] = useState<{
+    tab: MediaLibraryTab;
+    nonce: number;
+  } | null>(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [captionsSheet, setCaptionsSheet] = useState<'make' | 'edit' | null>(null);
   const autoCaptions = useAutoCaptions();
@@ -721,6 +736,14 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     [isBelowLg]
   );
 
+  const openMediaTab = useCallback(
+    (tab: MediaLibraryTab) => {
+      setMediaTabRequest((prev) => ({ tab, nonce: (prev?.nonce ?? 0) + 1 }));
+      openRailPanel('media');
+    },
+    [openRailPanel]
+  );
+
   const handleSelect = useCallback(
     (ids: string[]) => {
       setSelectedIds(ids);
@@ -963,7 +986,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     exportAbortRef.current = controller;
     setExportState({ phase: 'preparing', progress: 0 });
     try {
-      const audio = await cacheJamendoAudioForExport(current, propertyId);
+      const audio = await cacheCatalogAudioForExport(current, propertyId);
       if (controller.signal.aborted) throw new VideoExportError('cancelled', 'Export cancelled');
       if (audio.cached.size > 0) {
         // Keep the Storage copy on the saved project so the next export skips the download.
@@ -1015,6 +1038,11 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     link.click();
     window.document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    if (projectRef.current?.instagramSong) {
+      toast.message('Your Instagram song is not in this download', {
+        description: 'Instagram adds it when you post the video as a Reel.',
+      });
+    }
   }, [
     canEditContent,
     canUseMarketingStudio,
@@ -1042,6 +1070,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         project: current,
         blob,
         dataUrl: await blobToDataUrl(blob),
+        instagramSong: current.instagramSong,
       });
     } catch {
       toast.error('Video export failed');
@@ -1435,9 +1464,13 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         case 'clip-more':
           setMobilePanel('edit');
           return;
-        case 'media-add':
         case 'audio-music':
+          openMediaTab('music');
+          return;
         case 'audio-upload':
+          openMediaTab('audio');
+          return;
+        case 'media-add':
           openRailPanel('media');
           return;
         case 'media-add-on-top':
@@ -1477,6 +1510,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
       handleAddText,
       handleCommand,
       handleResetProject,
+      openMediaTab,
       openRailPanel,
       selectedIds,
       startReplace,
@@ -1592,6 +1626,54 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     </>
   );
 
+  const handlePickInstagramSong = useCallback(
+    (track: MusicTrack) => {
+      changeProject((p) => ({
+        ...p,
+        instagramSong: {
+          audioId: track.id,
+          title: track.title,
+          artist: track.artist,
+          imageUrl: track.imageUrl,
+          durationSec: track.durationSec,
+          volume: p.instagramSong?.volume ?? 100,
+        },
+      }));
+      toast.success('Song set for Instagram', {
+        description: 'Instagram adds it when you post this video as a Reel.',
+      });
+      if (isBelowLg) setMobilePanel(null);
+    },
+    [changeProject, isBelowLg]
+  );
+
+  const handleRemoveInstagramSong = useCallback(() => {
+    changeProject((p) => {
+      const { instagramSong: _removed, ...rest } = p;
+      return rest;
+    });
+  }, [changeProject]);
+
+  // Instagram songs only matter for a post, so the tab appears only for people who can publish.
+  const instagramMusic = useMemo<InstagramPickerConfig | null>(
+    () =>
+      onPublish && canPublish
+        ? {
+            selectedAudioId: project?.instagramSong?.audioId ?? null,
+            onPick: handlePickInstagramSong,
+            connectHref: propertyInboxPath(orgSlug, property.slug),
+          }
+        : null,
+    [
+      canPublish,
+      handlePickInstagramSong,
+      onPublish,
+      orgSlug,
+      project?.instagramSong?.audioId,
+      property.slug,
+    ]
+  );
+
   const mediaPanel = (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       {replaceTarget ? (
@@ -1614,6 +1696,8 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         allowedKinds={replaceKinds ? [...replaceKinds] : undefined}
         propertyItems={propertyImages}
         includeMusic
+        instagramMusic={replaceTarget || pickSoundMode ? null : instagramMusic}
+        tabRequest={mediaTabRequest}
         onPick={handlePickMedia}
       />
     </div>
@@ -1673,6 +1757,15 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
           onClose={() => setRailPanel(null)}
         />
       ) : null}
+      <Button
+        type="button"
+        variant="outline"
+        className="min-h-[44px] w-full justify-start"
+        disabled={!canEditContent || !hasProject}
+        onClick={() => openMediaTab('music')}
+      >
+        Music
+      </Button>
       <Button
         type="button"
         variant="outline"
@@ -1921,6 +2014,15 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
                   onSeek={transport.seek}
                 />
               </div>
+              {project.instagramSong ? (
+                <InstagramSongCard
+                  className="mx-3 mb-2 shrink-0"
+                  song={project.instagramSong}
+                  propertyId={propertyId}
+                  readOnly={!canEditContent}
+                  onRemove={handleRemoveInstagramSong}
+                />
+              ) : null}
               <VideoTimelineV2
                 className="shrink-0"
                 project={project}

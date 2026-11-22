@@ -33,7 +33,7 @@ AI-built videos are saved as v1 scene projects and upgrade on open. The builder 
 ## Composition and export
 
 - `VideoCompositionV2.tsx`: `TransitionSeries` for main, `Sequence` per other item, `Video`/`Audio` from `@remotion/media` (the only ones the web renderer supports). Contain fit uses a blurred backdrop. A missing file shows a striped placeholder; during export `strictMedia` makes it fail instead.
-- `exportVideoV2.ts`: blockers (empty, over 60 s) → `canRenderMediaOnWeb` → reachability probe of every media URL (`exportPreflight.ts`) → `renderMediaOnWeb` with an `AbortSignal` (Cancel) and progress. Muted when nothing can make sound (`projectHasAudio`). Jamendo stream clips are cached to Storage first (`exportAudio.ts`); a clip that cannot be cached is dropped from the export with a notice.
+- `exportVideoV2.ts`: blockers (empty, over 60 s) → `canRenderMediaOnWeb` → reachability probe of every media URL (`exportPreflight.ts`) → `renderMediaOnWeb` with an `AbortSignal` (Cancel) and progress. Muted when nothing can make sound (`projectHasAudio`). Jamendo and Audius stream clips are cached to Storage first (`cacheCatalogAudioForExport` in `exportAudio.ts`, server action `import-track`); a clip that cannot be cached is dropped from the export with a notice. An Instagram song (`project.instagramSong`) is never rendered.
 - Verified in Chromium only. Safari and Firefox need a manual matrix. `maxCanvasSinkFrameSize` is not exposed by the installed `@remotion/media`, so preview decode load is limited by the 3-visible-videos warning and `premountFor`.
 - Thumbnails: `renderVideoProjectThumbnailV2` (audio tracks dropped) renders a still at 60% into the first main-track clip; the Library card and template stills use it for v2 rows, the v1 renderer for legacy ones.
 
@@ -48,6 +48,14 @@ A full-screen dark editor layer: `MarketingStudioShell` `fullscreen` portals to 
 ## Text looks
 
 `lib/video/v2/textLooks.ts`: 12 one-tap looks as data over `VideoLayerTypography` (stroke, shadow, `boxColor`, `boxRadius`, `glowColor`, font, case). `applyTextLook` clears the previous look's keys first (`LOOK_KEYS`), `detectTextLook` reads which look a layer has (`null` after hand edits), accent looks take the project's campaign palette. `typographyToCss` draws the box and glow. Presets (`TEXT_PRESETS`) carry a starting look. Preview and export use the same CSS path.
+
+## Music picker and Instagram songs
+
+- Sources: Jamendo and Audius (full tracks, baked into the export) and Instagram's Reels music (Meta adds it on publish). One `MusicTrack` shape (`source`, `exportable`); the server merges and interleaves (`_shared/musicCatalog.ts`), groups come from `_shared/musicGroups.ts` and are mirrored in `lib/music/musicTypes.ts` (parity test).
+- `AudioItem.media.source` accepts `audius`. Stable Audius URLs (`api.audius.co/v1/tracks/{id}/stream`) are saved, never the signed ones, and are cached to Storage before export like Jamendo's.
+- `VideoProjectV2.instagramSong?: InstagramSong` is project level, not a clip: Instagram's `audio_configuration` has no start offset and Meta does not preview the mix, so a timeline clip would promise what publish cannot do. It parses with clamped numbers and https-only art. Preview links expire in about a day and a half, so only the id is saved and each play fetches a fresh link.
+- Publish: `publish-to-meta` accepts `instagramAudio { audioId, audioVolume }` for `instagram_reel` video posts that are not scheduled. The dialog starts on Instagram + Reel when a song is set.
+- Default music resolution and the older scene editor ask for `only=jamendo` so they never see Audius ids.
 
 ## Audio, voiceover and music lowering
 

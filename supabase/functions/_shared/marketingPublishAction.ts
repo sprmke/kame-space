@@ -125,6 +125,8 @@ export async function publishMarketingPost(input: {
       let igMediaType: 'IMAGE' | 'STORIES' | 'REELS' = 'IMAGE';
       if (input.publishType === 'instagram_story') igMediaType = 'STORIES';
       if (input.publishType === 'instagram_reel') igMediaType = 'REELS';
+      // Instagram no longer takes a plain video feed post: a video post is a Reel.
+      if (isVideo && igMediaType === 'IMAGE') igMediaType = 'REELS';
 
       const result = await publishToInstagramMedia({
         igUserId: connection.meta_ig_user_id,

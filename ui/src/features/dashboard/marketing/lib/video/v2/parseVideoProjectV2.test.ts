@@ -306,3 +306,69 @@ describe('parseVideoProjectV2', () => {
     expect(load({ duckUnderVoice: true }).duckUnderVoice).toBeUndefined();
   });
 });
+
+describe('Instagram song and Audius audio', () => {
+  const image = { type: 'image', media: { url: 'https://img.test/a.jpg' } };
+
+  it('keeps a valid Instagram song and clamps its numbers', () => {
+    const value = parse({
+      version: 2,
+      instagramSong: {
+        audioId: ' 1234 ',
+        title: 'Golden Hour',
+        artist: 'JVKE',
+        imageUrl: 'https://cdn.test/art.jpg',
+        durationSec: 209.4,
+        volume: 400,
+      },
+      tracks: [mainTrack(image)],
+    });
+
+    expect(value.instagramSong).toEqual({
+      audioId: '1234',
+      title: 'Golden Hour',
+      artist: 'JVKE',
+      imageUrl: 'https://cdn.test/art.jpg',
+      durationSec: 209,
+      volume: 100,
+    });
+  });
+
+  it('defaults the volume, drops non-https art and keeps a missing artist empty', () => {
+    const value = parse({
+      version: 2,
+      instagramSong: { audioId: '9', title: 'T', imageUrl: 'javascript:alert(1)' },
+      tracks: [mainTrack(image)],
+    });
+
+    expect(value.instagramSong).toMatchObject({ volume: 100, imageUrl: null, artist: '' });
+  });
+
+  it('drops an Instagram song without an id or title', () => {
+    for (const bad of [{ title: 'x' }, { audioId: '1' }, 'str', null, 5, []]) {
+      expect(
+        parse({ version: 2, instagramSong: bad, tracks: [mainTrack(image)] }).instagramSong
+      ).toBeUndefined();
+    }
+  });
+
+  it('keeps audius as an audio source and falls back for an unknown one', () => {
+    const load = (source: string) =>
+      parse({
+        version: 2,
+        tracks: [
+          mainTrack(image),
+          {
+            id: 'a',
+            kind: 'audio',
+            items: [
+              { type: 'audio', media: { url: 'https://api.audius.co/v1/tracks/x/stream', source } },
+            ],
+          },
+        ],
+      }).tracks.find((track) => track.kind === 'audio')!.items[0] as { media: { source: string } };
+
+    expect(load('audius').media.source).toBe('audius');
+    expect(load('spotify').media.source).toBe('property');
+  });
+});

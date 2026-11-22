@@ -896,6 +896,33 @@ Tap the text on the video, then tap it again to edit it. You can also select it 
 
 Yes. In the video editor tap Audio, then Record voice, allow the microphone and tap the red button. Talk while the video plays and tap again to stop. Your voice is saved to Your media and counts toward your storage. Music gets quieter by itself while you talk.
 
+### How do I add trending music to my video?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 57
+
+In the video editor tap Audio, then Music. You start on Trending songs. The top row is Saved, Trending, Popular, Genres, Moods and For stays. Genres, moods and stay ideas open a second row (Chill, Calm, Beach day and so on). Tap a song to hear it, the bookmark to save it on this device, and the plus button to add it where the playhead is. Songs you add are part of your video, so they are in the download and in posts.
+
+### Can I use songs from Instagram?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 58
+
+Yes, for Instagram Reels. In Music tap Instagram, pick a song and tap Use. Instagram adds the song when you post the video as a Reel from Publish. You need Instagram connected in Messages, and some accounts do not get Instagram music. The song is not in a downloaded video.
+
+### Why is my Instagram song not in the downloaded video?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 59
+
+Instagram only adds its songs when you post a Reel from Publish. A download is just your video. If you want music inside the file, pick a song from In video instead. Those are mixed into the download and into posts.
+
 ### Can I get subtitles made automatically?
 
 - category: Marketing Studio

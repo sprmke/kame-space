@@ -67,7 +67,7 @@ export type VideoTrack = {
   items: VideoItem[];
 };
 
-export type MediaSource = 'property' | 'library' | 'ai' | 'jamendo' | 'upload' | 'url';
+export type MediaSource = 'property' | 'library' | 'ai' | 'jamendo' | 'audius' | 'upload' | 'url';
 
 export type MediaRef = {
   url: string;
@@ -158,7 +158,7 @@ export type AudioItem = ItemBase & {
   loop?: boolean;
   title?: string;
   artist?: string;
-  /** Jamendo track id. */
+  /** Jamendo or Audius track id (see `media.source`). */
   trackId?: string;
   role?: AudioRole;
   /** Music only: lower the volume while a voice clip plays. On unless `false`. */
@@ -197,6 +197,21 @@ export const DEFAULT_CAPTION_STYLE: CaptionStyle = { look: 'highlight', y: 78, s
 
 export type VideoItem = MediaItem | LayerItem | AudioItem | CaptionItem;
 
+/**
+ * A song from Instagram's own library, picked for a Reel. Instagram mixes it in when the video is
+ * posted, so it is not an `AudioItem`: it has no place on the timeline, cannot start at an offset
+ * and is never rendered into an exported file.
+ */
+export type InstagramSong = {
+  audioId: string;
+  title: string;
+  artist: string;
+  imageUrl: string | null;
+  durationSec: number;
+  /** How loud the song is against the video's own sound, 1 to 100. */
+  volume: number;
+};
+
 export type VideoProjectV2 = {
   version: 2;
   templateId: string;
@@ -205,6 +220,8 @@ export type VideoProjectV2 = {
   fps: number;
   palette?: CampaignPalette;
   sourceReviewId?: string | null;
+  /** Song Instagram adds when this video is posted as a Reel. */
+  instagramSong?: InstagramSong;
   /** Shows behind letterboxed media. */
   background: { color: string; fill: 'color' | 'blur' };
   /** Bottom to top. `tracks[0]` is always the single `main` track. */
