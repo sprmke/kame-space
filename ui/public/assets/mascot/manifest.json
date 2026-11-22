@@ -5,6 +5,18 @@
   "height": 468,
   "transparent": true,
   "poses": [
+    {"name":"Cozy cocoa","file":"cozy-cocoa.png","category":"hospitality-playful"},
+    {"name":"Pillow fort","file":"pillow-fort.png","category":"hospitality-playful"},
+    {"name":"Tiny gardener","file":"tiny-gardener.png","category":"hospitality-playful"},
+    {"name":"Bubble wonder","file":"bubble-wonder.png","category":"hospitality-playful"},
+    {"name":"Rainy welcome","file":"rainy-welcome.png","category":"hospitality-playful"},
+    {"name":"Sleepy moon","file":"sleepy-moon.png","category":"hospitality-playful"},
+    {"name":"Welcome towels","file":"welcome-towels.png","category":"hospitality-playful"},
+    {"name":"Wifi helper","file":"wifi-helper.png","category":"hospitality-playful"},
+    {"name":"Saved safely","file":"saved-safely.png","category":"hospitality-playful"},
+    {"name":"Search explorer","file":"search-explorer.png","category":"hospitality-playful"},
+    {"name":"Celebration ribbon","file":"celebration-ribbon.png","category":"hospitality-playful"},
+    {"name":"Friendly nudge","file":"friendly-nudge.png","category":"hospitality-playful"},
     { "name": "House rules", "file": "template-house-rules.png", "category": "standard-template" },
     {
       "name": "Check in instructions",
