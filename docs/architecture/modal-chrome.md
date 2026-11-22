@@ -77,26 +77,39 @@ balanced line.
 The invisible hit pad is dropped at `lg+` (pointer device) so it can never
 overlap a header action sitting next to the close button.
 
-Modals that render the close button **inline** in the header row
-(`GuestDialogShell`, `LegalDocumentSheet`) use the same class, so the two look
-identical.
+Pick **one** close pattern. Mixing them is what floats the X in the wrong place.
+
+| Pattern                | When                                                           | Header class                                      | Close                                                                                                              |
+| ---------------------- | -------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Absolute** (default) | Dashboard / `AdminDialogShell` / most hand-rolled split modals | `MODAL_HEADER_CLASS` on `ResponsiveModalHeader`   | Leave `showCloseButton` default (`true`). Do **not** add `ResponsiveModalClose`. Sheets hide the X (drag + scrim). |
+| **Inline**             | Guest / legal / any sheet that must show an X on phone         | `MODAL_HEADER_INLINE_CLASS` on a plain flex `div` | `showCloseButton={false}` + `ResponsiveModalClose` as the last flex child                                          |
+
+Both use `MODAL_CLOSE_BUTTON_CLASS` (32px visual, ≥44px hit), so the glyph lands on
+the title baseline either way.
 
 > If you add a header action next to the close button, keep it in the header row
 > — do not stack it above or below the title.
 
 ### Close gutter (do not break this)
 
-The absolute close needs reserved header padding on the right
+The **absolute** close needs reserved header padding on the right
 (`MODAL_HEADER_CLOSE_GUTTER_CLASS` = `pr-12 sm:pr-14`).
 
-**Trap:** `cn('… pr-11', 'px-4')` drops the `pr-*` because Tailwind Merge treats
+**Trap 1:** `cn('… pr-11', 'px-4')` drops the `pr-*` because Tailwind Merge treats
 `px-4` as setting both left and right. That is how the Booking Workflow Free/Paid
 tabs slid under the X after the 2026-11-11 chrome normalize (headers gained
 `px-4` / `sm:px-5` without a surviving close gutter).
 
+**Trap 2:** Putting `ResponsiveModalClose` inside `ResponsiveModalHeader` +
+`MODAL_HEADER_CLASS` (or leaving the absolute close on while also rendering an
+inline X). `DialogHeader` always appends the close gutter, so the inline X sits
+inset from the edge and reads as a floating corner control. Use
+`MODAL_HEADER_INLINE_CLASS` on a plain `div` instead, or drop the inline close
+and keep the absolute pattern.
+
 **Guard:** `DialogHeader` always appends `MODAL_HEADER_CLOSE_GUTTER_CLASS` **after**
 the caller `className`, so a `px-*` override cannot wipe the slot. Prefer
-`MODAL_HEADER_CLASS` (uses `pl-*` + the gutter, not `px-*`). Unit test:
+`MODAL_HEADER_CLASS` for absolute close. Unit test:
 `ui/src/components/ui/modalChromeCloseGutter.test.ts`.
 
 ---
@@ -105,14 +118,15 @@ the caller `className`, so a `px-*` override cannot wipe the slot. Prefer
 
 ### Prefer a shell
 
-| Surface                          | Shell                                                                                         |
-| -------------------------------- | --------------------------------------------------------------------------------------------- |
-| Dashboard Save/Cancel form modal | `AdminDialogShell` (`ui/src/components/AdminDialogShell.tsx`)                                 |
-| Guest-facing modal               | `GuestDialogShell` (`ui/src/features/guest/marketing/shared/components/GuestDialogShell.tsx`) |
+| Surface                          | Shell                                                                                         | Close pattern |
+| -------------------------------- | --------------------------------------------------------------------------------------------- | ------------- |
+| Dashboard Save/Cancel form modal | `AdminDialogShell` (`ui/src/components/AdminDialogShell.tsx`)                                 | Absolute      |
+| Guest-facing modal               | `GuestDialogShell` (`ui/src/features/guest/marketing/shared/components/GuestDialogShell.tsx`) | Inline        |
 
 Both shells take `headerClassName` / `bodyClassName` / `footerClassName` for
 **layout** overrides only. Padding is not overridable — it is the canonical
-scale.
+scale. Hand-rolled dashboard split modals (planner, share sheet, day sheet)
+follow the absolute pattern: `MODAL_HEADER_CLASS` + title only.
 
 ### Hand-rolled modal
 

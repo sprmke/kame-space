@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 
-import { Download, Share, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { FloatingBottomOverlay } from '@/components/pwa/FloatingBottomOverlay';
+import { FixedBottomNoticeBar } from '@/components/pwa/FixedBottomNoticeBar';
 import { InstallGuideSheet } from '@/components/pwa/InstallGuideSheet';
 import type { InstallOfferState } from '@/components/pwa/useInstallOffer';
 import { Button } from '@/components/ui/button';
-import { useCookieConsentChoice } from '@/hooks/useCookieConsentChoice';
 import { PLATFORM_APP_NAME } from '@/lib/platformBranding';
 import { promptInstall } from '@/lib/pwa/installPrompt';
 import { installGuideFor, type PlatformInfo } from '@/lib/pwa/platform';
@@ -21,14 +20,15 @@ type InstallOfferSheetProps = {
 };
 
 /**
- * Proactive install offer. Phone/tablet: compact bottom chip above the tab bar
- * (non-blocking; tab bar and header controls stay clickable). Desktop: top-right chip.
+ * Proactive install offer. Fixed flush bottom bar (same chrome as cookie consent /
+ * update prompt), one line of copy. Stacks above the cookie banner when both show
+ * (`.pwa-bottom-notice-overlay` + `--cookie-consent-h`). Inline placement stays
+ * page-owned.
  */
 export function InstallOfferSheet({ offer, platform }: InstallOfferSheetProps) {
-  const { decision, visible, dismiss, dismissForever, complete } = offer;
+  const { decision, visible, dismiss, complete } = offer;
   const claim = usePwaSurfaceStore((s) => s.claim);
   const release = usePwaSurfaceStore((s) => s.release);
-  const consent = useCookieConsentChoice();
   const [guideOpen, setGuideOpen] = useState(false);
   const [installing, setInstalling] = useState(false);
 
@@ -36,17 +36,14 @@ export function InstallOfferSheet({ offer, platform }: InstallOfferSheetProps) {
   const placement = decision.show ? decision.placement : null;
 
   useEffect(() => {
-    // Cookie consent is a one-time legal prompt; the install chip waits so the two
-    // bottom surfaces never stack on a first visit.
-    if (!visible || !variant || !placement || consent === null) return;
+    if (!visible || !variant || !placement) return;
     claim('install');
     pwaTelemetry('install-prompt-shown', { variant, placement });
     return () => release('install');
-  }, [visible, variant, placement, consent, claim, release]);
+  }, [visible, variant, placement, claim, release]);
 
-  // `inline` placement is rendered by the page that owns it, never as a floating
-  // surface.
-  if (!visible || !decision.show || decision.placement === 'inline' || consent === null) {
+  // `inline` placement is rendered by the page that owns it, never as a bottom bar.
+  if (!visible || !decision.show || decision.placement === 'inline') {
     return null;
   }
 
@@ -76,47 +73,25 @@ export function InstallOfferSheet({ offer, platform }: InstallOfferSheetProps) {
     }
   };
 
-  const guideSheet =
-    guideOpen && guide ? (
-      <InstallGuideSheet
-        open={guideOpen}
-        onOpenChange={(open) => {
-          setGuideOpen(open);
-          if (!open) complete();
-        }}
-        platform={platform}
-        guide={guide}
-      />
-    ) : null;
-
-  const mobileChip = (
+  return (
     <>
-      <FloatingBottomOverlay>
-        <div
-          role="status"
-          aria-label={`Install ${PLATFORM_APP_NAME}`}
-          className="border-border bg-background pointer-events-auto flex w-full max-w-sm items-center gap-2.5 rounded-xl border px-3 py-2.5 shadow-lg"
-        >
-          <span className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-lg">
-            <Download className="size-3.5" aria-hidden />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-foreground text-[13px] font-semibold leading-tight">
-              {`Install ${PLATFORM_APP_NAME}`}
-            </p>
-            {nativeVariant ? (
-              <p className="text-muted-foreground text-[11px] leading-snug">
-                Add it to your device for a full-screen app with notifications.
-              </p>
-            ) : (
-              <p className="text-muted-foreground inline-flex flex-wrap items-center gap-1 text-[11px] leading-snug">
-                Tap <Share className="inline size-3" aria-hidden /> then Add to Home Screen.
-              </p>
-            )}
-          </div>
+      <FixedBottomNoticeBar
+        overlayClassName="pwa-bottom-notice-overlay"
+        heightCssVar="--pwa-bottom-notice-h"
+        role="status"
+        aria-label={`Install ${PLATFORM_APP_NAME}`}
+      >
+        <p className="text-foreground text-center text-[13px] font-medium leading-snug sm:text-sm">
+          {`Install ${PLATFORM_APP_NAME}`}
+        </p>
+        <div className="flex shrink-0 items-center justify-center gap-1.5">
           <Button
+            type="button"
             size="sm"
-            className="shrink-0"
+            className={cn(
+              'h-10 min-h-10 rounded-full px-4 text-[13px] font-medium',
+              'lg:h-9 lg:min-h-9'
+            )}
             onClick={() => void onInstall()}
             disabled={installing}
           >
@@ -131,64 +106,18 @@ export function InstallOfferSheet({ offer, platform }: InstallOfferSheetProps) {
             <X className="size-3.5" />
           </button>
         </div>
-      </FloatingBottomOverlay>
-      {guideSheet}
-    </>
-  );
-
-  if (decision.placement === 'sheet') return mobileChip;
-
-  // Desktop chip: bounded width; does not span the viewport.
-  return (
-    <>
-      <div
-        role="status"
-        className={cn(
-          'max-lg:hidden',
-          'pointer-events-none fixed right-4 z-[45] w-72',
-          'top-[calc(1rem+env(safe-area-inset-top))]'
-        )}
-      >
-        <div className="border-border bg-background pointer-events-auto rounded-xl border p-3 shadow-lg">
-          <div className="flex items-start gap-2">
-            <span className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-lg">
-              <Download className="size-4" aria-hidden />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-foreground text-sm font-semibold leading-tight">
-                {`Install ${PLATFORM_APP_NAME}`}
-              </p>
-              <p className="text-muted-foreground mt-0.5 text-xs leading-snug">
-                Alerts and offline access.
-              </p>
-            </div>
-            <button
-              type="button"
-              aria-label="Dismiss"
-              onClick={dismiss}
-              className="admin-overflow-trigger"
-            >
-              <X className="size-3.5" />
-            </button>
-          </div>
-          <Button
-            size="sm"
-            className="mt-2.5 w-full"
-            onClick={() => void onInstall()}
-            disabled={installing}
-          >
-            Install
-          </Button>
-          <button
-            type="button"
-            onClick={dismissForever}
-            className="text-muted-foreground hover:text-foreground mt-1 w-full py-1 text-xs"
-          >
-            Don&apos;t ask again
-          </button>
-        </div>
-      </div>
-      {guideSheet}
+      </FixedBottomNoticeBar>
+      {guideOpen && guide ? (
+        <InstallGuideSheet
+          open={guideOpen}
+          onOpenChange={(open) => {
+            setGuideOpen(open);
+            if (!open) complete();
+          }}
+          platform={platform}
+          guide={guide}
+        />
+      ) : null}
     </>
   );
 }

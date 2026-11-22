@@ -70,25 +70,13 @@ export function defaultReviewsQuery(tab: ReviewListTab): ReviewsQuery {
   };
 }
 
-/** The org rollup adds a listings tab that has no review feed of its own. */
-export type ReviewsPageTab = ReviewListTab | 'properties';
+/** Alias kept for call sites that historically used `ReviewsPageTab`. */
+export type ReviewsPageTab = ReviewListTab;
 
 export function parseReviewsTab(value: string | null): ReviewListTab {
+  // Legacy org bookmarks used `?tab=properties` (removed rollup tab).
   if (value === 'written' || value === 'to_write' || value === 'received') return value;
   return 'received';
-}
-
-export function parseReviewsPageTab(
-  value: string | null,
-  allowProperties: boolean
-): ReviewsPageTab {
-  if (allowProperties && value === 'properties') return 'properties';
-  return parseReviewsTab(value);
-}
-
-/** `properties` carries no review feed, so its API calls ride on the default tab. */
-export function reviewsApiTab(tab: ReviewsPageTab): ReviewListTab {
-  return tab === 'properties' ? 'received' : tab;
 }
 
 function parseTriState(raw: string | null): ReviewsTriState {

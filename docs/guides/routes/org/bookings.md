@@ -2,7 +2,7 @@
 title: 'Org Bookings List — operator guide'
 status: active
 tags: [guides, routes, org, booking-workflow]
-updated: 2026-11-18
+updated: 2026-11-23
 ---
 
 # Org Bookings List — operator guide
@@ -71,7 +71,7 @@ This page combines every property stay and every parking-slot reservation across
 
 **Flow:**
 
-1. Sheet/dialog lists **Properties** and **Parking** the signed-in host can see (`list-properties` / `list-parkings`). Archived listings are omitted. Paused properties show a short **Paused** hint.
+1. Listing picker uses **`AdminDialogShell`** (standard header / body / footer chrome). It lists **Properties** and **Parking** the signed-in host can see (`list-properties` / `list-parkings`) in bordered choice groups. Archived listings are omitted. Paused properties show a short **Paused** hint. Short lists stay content-height (no empty stretch under the rows).
 2. Choosing a property opens `AdminNewBookingModal` for that `propertySlug`. The modal passes `embed.propertySlug` into `GuestForm` so submit / payment info target the picked listing even on the org route (no `/property/:slug` in the URL).
 3. Choosing a parking slot opens `AdminParkingNewBookingModal` for that `parkingId` / slug (same submit path as the parking Bookings page).
 4. If there is only one creatable listing, the picker is skipped and that create modal opens directly.
@@ -91,7 +91,7 @@ This page combines every property stay and every parking-slot reservation across
 
 Parking-scoped list: `?parking_id=…` with parking team `bookings:view`.
 
-Chat icon: `GET social-inbox-booking-chats?booking_id=&property_id=|parking_id=` per row click (`inbox:view` on that listing).
+Chat icon: `GET social-inbox-booking-chats?booking_id=&property_id=|parking_id=` per row click (`inbox:view`). When none match and the host has `inbox:reply`, `POST social-inbox-ensure-booking-chat` opens or creates the web (Chat) thread.
 
 Status changes: `POST transition-parking-booking?parking_id=…` with `{ bookingId, toStatus }`.
 

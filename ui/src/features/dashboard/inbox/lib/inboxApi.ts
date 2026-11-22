@@ -347,6 +347,45 @@ export async function fetchBookingChats(
   return (payload.conversations as BookingChatMatch[] | undefined) ?? [];
 }
 
+/**
+ * Open or create the web (Chat) thread for a booking so the host can message first.
+ * Requires inbox:reply. Always platform=web.
+ */
+export async function ensureBookingWebChat(
+  orgSlug: string | null,
+  orgId: string | null,
+  bookingId: string,
+  scope: InboxApiScope
+): Promise<BookingChatMatch> {
+  const jwt = await getJwt();
+  const res = await fetch(
+    withInboxScope(orgUrl('/social-inbox-ensure-booking-chat', orgSlug, orgId), scope),
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ booking_id: bookingId, ...inboxScopeBody(scope) }),
+    }
+  );
+  const json = (await res.json()) as EdgeJson;
+  const payload = unwrapEdgePayload(json, res.status);
+  const conversation = payload.conversation as BookingChatMatch | undefined;
+  if (!conversation?.id) throw new Error('Could not open chat');
+  return {
+    id: conversation.id,
+    platform: 'web',
+    participant_name: conversation.participant_name ?? null,
+    participant_avatar_url: conversation.participant_avatar_url ?? null,
+    last_message_at: conversation.last_message_at ?? new Date().toISOString(),
+    last_message_preview: conversation.last_message_preview ?? null,
+    unread_count: conversation.unread_count ?? 0,
+    booking_id: conversation.booking_id ?? bookingId,
+    match: 'booking',
+  };
+}
+
 export async function fetchInboxMessages(
   orgSlug: string | null,
   orgId: string | null,

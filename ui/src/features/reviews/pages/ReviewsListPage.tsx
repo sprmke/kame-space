@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { useParams, useSearchParams } from 'react-router-dom';
 
-import { Building2, PencilLine, Quote, Sparkles, UserCheck } from 'lucide-react';
+import { PencilLine, Quote, Sparkles, UserCheck } from 'lucide-react';
 
 import { AdminListPagination } from '@/features/dashboard/bookings/components/AdminListToolbar';
 import { useOptionalOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
@@ -11,10 +11,6 @@ import { usePropertyPermissions } from '@/features/dashboard/team/hooks/usePrope
 import { hasPropertyPermission } from '@/features/dashboard/team/lib/propertyPermissions';
 
 import { HostGuestReviewSheet } from '@/features/reviews/components/HostGuestReviewSheet';
-import {
-  OrgPropertyReviewsCardGrid,
-  OrgPropertyReviewsTable,
-} from '@/features/reviews/components/OrgPropertyReviewsTable';
 import { ReportReviewSheet } from '@/features/reviews/components/ReportReviewSheet';
 import { ReviewAutomationSheet } from '@/features/reviews/components/ReviewAutomationSheet';
 import {
@@ -43,23 +39,18 @@ import { ReviewsToolbar } from '@/features/reviews/components/ReviewsToolbar';
 import { useGuestReputation } from '@/features/reviews/hooks/useGuestReputation';
 import { useOrgReviews } from '@/features/reviews/hooks/useOrgReviews';
 import { usePropertyReviews } from '@/features/reviews/hooks/usePropertyReviews';
-import {
-  parseOrgPropertySort,
-  sortOrgPropertyRows,
-  type OrgPropertyReviewRow,
-  type OrgPropertySort,
-  type OrgReceivedReviewItem,
-  type OrgToWriteItem,
+import type {
+  OrgReceivedReviewItem,
+  OrgToWriteItem,
 } from '@/features/reviews/lib/orgReviewsApi';
 import {
   activeReviewsFilterCount,
   defaultReviewsQuery,
   parseReviewsQueryFromParams,
-  parseReviewsPageTab,
-  reviewsApiTab,
+  parseReviewsTab,
   writeReviewsQueryToParams,
   type ReceivedReviewItem,
-  type ReviewsPageTab,
+  type ReviewListTab,
   type ReviewsQuery,
   type ToWriteItem,
   type WrittenReviewItem,
@@ -91,21 +82,19 @@ export type ReviewsListScope = 'property' | 'org';
  * Labels name the subject, not the voice: "Written" vs "To write" read as the
  * same thing at a glance. Query values stay `received | written | to_write`.
  */
-const REVIEW_TABS: Array<{ value: ReviewsPageTab; label: string; icon: LucideIcon }> = [
+const REVIEW_TABS: Array<{ value: ReviewListTab; label: string; icon: LucideIcon }> = [
   { value: 'received', label: 'From guests', icon: Quote },
   { value: 'to_write', label: 'To write', icon: PencilLine },
   { value: 'written', label: 'About guests', icon: UserCheck },
 ];
-
-const PROPERTIES_TAB = { value: 'properties' as const, label: 'By property', icon: Building2 };
 
 type Props = { scope: ReviewsListScope };
 
 /**
  * Reviews list for one property and for the whole org. Same shell both ways:
  * KPI cards → tabs → toolbar → table or cards → pagination. The org scope adds a
- * Listing column, a listing filter, and a By-property tab; its row actions come
- * from per-listing permissions the endpoint resolves, not from one page flag.
+ * Listing column and a listing filter; row actions come from per-listing
+ * permissions the endpoint resolves, not from one page flag.
  */
 export function ReviewsListPage({ scope }: Props) {
   const isOrg = scope === 'org';
@@ -118,13 +107,11 @@ export function ReviewsListPage({ scope }: Props) {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const isMobileLayout = useIsBelowLg();
-  const tab = parseReviewsPageTab(searchParams.get('tab'), isOrg);
-  const apiTab = reviewsApiTab(tab);
+  const tab = parseReviewsTab(searchParams.get('tab'));
   const query = useMemo(
-    () => parseReviewsQueryFromParams(searchParams, apiTab),
-    [searchParams, apiTab]
+    () => parseReviewsQueryFromParams(searchParams, tab),
+    [searchParams, tab]
   );
-  const propertySort = parseOrgPropertySort(searchParams.get('listingSort'));
 
   const { data: access } = usePropertyPermissions();
   const propertyCanRespond = hasPropertyPermission(access?.permissions, 'reviews.responses:edit');
@@ -148,55 +135,38 @@ export function ReviewsListPage({ scope }: Props) {
         : undefined
   );
 
-  const writeParams = useCallback(
-    (nextTab: ReviewsPageTab, nextQuery: ReviewsQuery, nextSort: OrgPropertySort) => {
-      const params = writeReviewsQueryToParams(reviewsApiTab(nextTab), nextQuery);
-      if (nextTab === 'properties') params.set('tab', 'properties');
-      if (nextSort !== 'name:asc') params.set('listingSort', nextSort);
-      return params;
-    },
-    []
-  );
+  const writeParams = useCallback((nextTab: ReviewListTab, nextQuery: ReviewsQuery) => {
+    return writeReviewsQueryToParams(nextTab, nextQuery);
+  }, []);
 
   const setQuery = useCallback(
     (next: ReviewsQuery) => {
-      setSearchParams(writeParams(tab, next, propertySort), { replace: true });
+      setSearchParams(writeParams(tab, next), { replace: true });
     },
-    [setSearchParams, tab, propertySort, writeParams]
+    [setSearchParams, tab, writeParams]
   );
 
   /** Filters and sort are tab-specific; view, page size and listing scope are not. */
   const setTab = useCallback(
-    (next: ReviewsPageTab, overrides?: Partial<ReviewsQuery>) => {
+    (next: ReviewListTab, overrides?: Partial<ReviewsQuery>) => {
       setSearchParams(
-        writeParams(
-          next,
-          {
-            ...defaultReviewsQuery(reviewsApiTab(next)),
-            view: query.view,
-            limit: query.limit,
-            properties: query.properties,
-            ...overrides,
-          },
-          propertySort
-        ),
+        writeParams(next, {
+          ...defaultReviewsQuery(next),
+          view: query.view,
+          limit: query.limit,
+          properties: query.properties,
+          ...overrides,
+        }),
         { replace: true }
       );
     },
-    [setSearchParams, query.view, query.limit, query.properties, propertySort, writeParams]
+    [setSearchParams, query.view, query.limit, query.properties, writeParams]
   );
-
-  const setPropertySort = (next: OrgPropertySort) => {
-    setSearchParams(writeParams(tab, query, next), { replace: true });
-  };
 
   useAdminMobileCardViewGuard(isMobileLayout, query, setQuery);
 
-  const propertyReviews = usePropertyReviews(apiTab, query, { enabled: !isOrg });
-  const orgReviews = useOrgReviews(apiTab, query, {
-    enabled: isOrg,
-    listingsOnly: tab === 'properties',
-  });
+  const propertyReviews = usePropertyReviews(tab, query, { enabled: !isOrg });
+  const orgReviews = useOrgReviews(tab, query, { enabled: isOrg });
   const reviews = isOrg ? orgReviews : propertyReviews;
 
   const summary = reviews.data?.summary;
@@ -210,17 +180,12 @@ export function ReviewsListPage({ scope }: Props) {
     () => listingRows.map((row) => ({ value: row.propertyId, label: row.propertyName })),
     [listingRows]
   );
-  const visibleListings = useMemo(
-    () => sortOrgPropertyRows(listingRows, propertySort, tab === 'properties' ? query.q : ''),
-    [listingRows, propertySort, tab, query.q]
-  );
 
   const hasActiveQuery =
     query.q.trim().length > 0 ||
-    activeReviewsFilterCount(apiTab, query) > 0 ||
+    activeReviewsFilterCount(tab, query) > 0 ||
     query.properties.length > 0;
   const showTable = query.view === 'table' && !isMobileLayout;
-  const tabs = isOrg ? [...REVIEW_TABS, PROPERTIES_TAB] : REVIEW_TABS;
 
   /** Org rows carry their own listing; property rows inherit the route's. */
   const resolvePropertySlug = (item: object): string =>
@@ -248,13 +213,7 @@ export function ReviewsListPage({ scope }: Props) {
   });
 
   const emptySkeletonIcon =
-    tab === 'properties'
-      ? Building2
-      : tab === 'to_write'
-        ? PencilLine
-        : tab === 'written'
-          ? UserCheck
-          : Quote;
+    tab === 'to_write' ? PencilLine : tab === 'written' ? UserCheck : Quote;
 
   const listSkeleton = () =>
     showTable ? (
@@ -262,11 +221,6 @@ export function ReviewsListPage({ scope }: Props) {
     ) : (
       <ReviewsCardGridSkeleton />
     );
-
-  const showListingReviews = (row: OrgPropertyReviewRow) =>
-    setTab('received', { properties: [row.propertyId] });
-  const showListingToWrite = (row: OrgPropertyReviewRow) =>
-    setTab('to_write', { properties: [row.propertyId] });
 
   const emptyState = () => {
     if (hasActiveQuery) {
@@ -278,7 +232,7 @@ export function ReviewsListPage({ scope }: Props) {
         />
       );
     }
-    if (apiTab === 'to_write') {
+    if (tab === 'to_write') {
       return (
         <ReviewsEmptyState
           icon={PencilLine}
@@ -287,7 +241,7 @@ export function ReviewsListPage({ scope }: Props) {
         />
       );
     }
-    if (apiTab === 'written') {
+    if (tab === 'written') {
       return <ReviewsEmptyState icon={UserCheck} title="No guest reviews written yet" />;
     }
     return (
@@ -307,7 +261,7 @@ export function ReviewsListPage({ scope }: Props) {
   };
 
   const list = () => {
-    if (apiTab === 'received') {
+    if (tab === 'received') {
       const rows = items as ReceivedReviewItem[];
       const props = {
         ...scopeProps,
@@ -324,7 +278,7 @@ export function ReviewsListPage({ scope }: Props) {
       );
     }
 
-    if (apiTab === 'written') {
+    if (tab === 'written') {
       const rows = items as WrittenReviewItem[];
       const props = {
         rows,
@@ -355,23 +309,6 @@ export function ReviewsListPage({ scope }: Props) {
     }
     if (reviews.isError) {
       return <ReviewsLoadError onRetry={() => void reviews.refetch()} />;
-    }
-    if (tab === 'properties') {
-      return showTable ? (
-        <OrgPropertyReviewsTable
-          rows={visibleListings}
-          orgSlug={orgSlug}
-          onShowReviews={showListingReviews}
-          onShowToWrite={showListingToWrite}
-        />
-      ) : (
-        <OrgPropertyReviewsCardGrid
-          rows={visibleListings}
-          orgSlug={orgSlug}
-          onShowReviews={showListingReviews}
-          onShowToWrite={showListingToWrite}
-        />
-      );
     }
     return items.length === 0 ? emptyState() : list();
   };
@@ -417,9 +354,9 @@ export function ReviewsListPage({ scope }: Props) {
         />
       )}
 
-      <SlidingTabs value={tab} onValueChange={(value) => setTab(parseReviewsPageTab(value, isOrg))}>
-        <SlidingTabsList size="primary" remeasureDeps={[dueCount > 0, isOrg]}>
-          {tabs.map(({ value, label, icon: Icon }) => (
+      <SlidingTabs value={tab} onValueChange={(value) => setTab(parseReviewsTab(value))}>
+        <SlidingTabsList size="primary" remeasureDeps={[dueCount > 0]}>
+          {REVIEW_TABS.map(({ value, label, icon: Icon }) => (
             <SlidingTabsTrigger key={value} value={value}>
               <Icon className="size-4 shrink-0" aria-hidden />
               <span className="truncate">{label}</span>
@@ -448,16 +385,14 @@ export function ReviewsListPage({ scope }: Props) {
           onChange={setQuery}
           hideTableView={isMobileLayout}
           listingOptions={isOrg ? listingOptions : undefined}
-          propertySort={propertySort}
-          onPropertySortChange={setPropertySort}
         />
       </FloatingToolbar>
 
-      <div role="region" aria-label={tabs.find((entry) => entry.value === tab)?.label}>
+      <div role="region" aria-label={REVIEW_TABS.find((entry) => entry.value === tab)?.label}>
         {body()}
       </div>
 
-      {tab !== 'properties' && pageCount > 1 && loadState === 'ready' ? (
+      {pageCount > 1 && loadState === 'ready' ? (
         <AdminListPagination
           ariaLabel="Reviews pagination"
           page={query.page}

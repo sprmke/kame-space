@@ -2,7 +2,7 @@
 title: 'Audit 02: host dashboard'
 status: active
 tags: [audit, host, ux, ui]
-updated: 2026-11-19
+updated: 2026-11-23
 ---
 
 # 02: Host dashboard (org + property modules)
@@ -84,10 +84,10 @@ the chart carries no information. Finance (property and parking) does show a leg
 which proves the pattern exists. Make it standard.
 [screenshots/10-property-analytics-no-legends.png](./screenshots/10-property-analytics-no-legends.png)
 
-### H9. "How you compare: No peer comparison yet" is a dead panel
+### H9. "How you compare: No peer comparison yet" is a dead panel — fixed
 
-A permanently empty card in a shipped analytics view. Either ship the benchmark or hide the card
-behind a "coming soon" state that does not occupy prime space every visit.
+Removed from property Analytics Overview. Peer comparison remains in Export PDF when available.
+Marketing results stays on Overview with a centered empty state and Open plan CTA.
 
 ### H10. Guest age is always empty in the seed
 

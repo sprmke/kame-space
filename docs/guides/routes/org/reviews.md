@@ -2,7 +2,7 @@
 title: 'Org Reviews — operator guide'
 status: active
 tags: [guides, routes, org, reviews]
-updated: 2026-11-11
+updated: 2026-11-23
 ---
 
 # Org Reviews — operator guide
@@ -20,14 +20,13 @@ Route: `/org/:orgSlug/reviews`
 | From guests tab   | Yes      | Yes        | Documented | Every listing's published reviews; respond in place   |
 | To write tab      | Yes      | Yes        | Documented | Open windows across listings; write without leaving   |
 | About guests tab  | —        | —          | Documented | Host reviews of guests, org-wide                      |
-| By property tab   | Yes      | —          | Documented | Per-listing rollup; row switches the feed to that one |
 | Public host block | —        | —          | Documented | `/hosts/:orgSlug` average + recent published text     |
 
 ---
 
 ## Overview
 
-The org rollup is the **same page as the property Reviews page**, scoped to every listing: `ReviewsListPage` with `scope="org"`. Same KPI cards, same tabs, same toolbar, same table and card views, same detail sheet, same pagination. The org scope adds three things: a **Listing** column, a **listing filter**, and a **By property** tab.
+The org rollup is the **same page as the property Reviews page**, scoped to every listing: `ReviewsListPage` with `scope="org"`. Same KPI cards, same three workflow tabs, same toolbar, same table and card views, same detail sheet, same pagination. The org scope adds a **Listing** column and a **listing filter**.
 
 It is a working surface, not a read-only rollup: responding, reporting and writing guest reviews all happen here, against each review's own listing, without opening the property page.
 
@@ -45,7 +44,7 @@ Page order is the standard admin list: **KPI cards → tabs → toolbar → tabl
 
 ## Host-facing knowledge
 
-This page is a portfolio view of guest reviews. You see how each property is rated, who still needs a review after checkout, and recent published guest comments. Open a property to reply or review a guest.
+This page is a portfolio view of guest reviews. You see who still needs a review after checkout and recent published guest comments, with the listing name on each row. Filter to one listing when you want a narrower feed.
 
 **Common host questions**
 
@@ -54,9 +53,9 @@ This page is a portfolio view of guest reviews. You see how each property is rat
 - Q: Why can I reply on one listing but not another?
   A: Replying needs the review permission on that listing. Your role may grant it on some and not others. Ask the owner for access.
 - Q: How do I look at one property only?
-  A: Use the **All listings** filter in the toolbar, or open the **By property** tab and tap a listing. The page address keeps your choice, so you can share or bookmark it.
+  A: Use the **All listings** filter in the toolbar. The page address keeps your choice, so you can share or bookmark it. The Listing column also shows which property each review belongs to.
 - Q: Which listing needs attention?
-  A: Open **By property** and sort by lowest rated, least responded or most to write.
+  A: Open **To write** for open windows across listings, or filter From guests by listing. Sort by rating or closing soonest on the matching tab.
 - Q: Why is a listing average blank?
   A: That listing has no published guest reviews yet.
 - Q: Do unpublished reviews show here?
@@ -84,33 +83,34 @@ Seeded templates that already had `org.bookings:view` receive `org.reviews:view`
 
 The same four cards as the property page, summed across every visible listing: **Average rating**, **Reviews**, **Responded**, **To write**. Average and Responded show a dash, not `0.0` / `0%`, when there are no published reviews. Average opens the rating breakdown; To write switches to that tab.
 
-The cards and the By-property table always cover **every** visible listing. Only the feed narrows when the listing filter is set, so the filter reads as "which listings am I looking at", not "which listings exist".
+The cards always cover **every** visible listing. Only the feed narrows when the listing filter is set, so the filter reads as "which listings am I looking at", not "which listings exist".
 
 ## Tabs
 
-| Tab              | Query             | Holds                                                     |
-| ---------------- | ----------------- | --------------------------------------------------------- |
-| **From guests**  | _(default)_       | Published guest reviews across every visible listing      |
-| **To write**     | `?tab=to_write`   | Open windows with no host review yet, across listings     |
-| **About guests** | `?tab=written`    | Reviews the team wrote about guests, across listings      |
-| **By property**  | `?tab=properties` | One row per listing: rating, reviews, responded, to write |
+| Tab              | Query           | Holds                                                 |
+| ---------------- | --------------- | ----------------------------------------------------- |
+| **From guests**  | _(default)_     | Published guest reviews across every visible listing  |
+| **To write**     | `?tab=to_write` | Open windows with no host review yet, across listings |
+| **About guests** | `?tab=written`  | Reviews the team wrote about guests, across listings  |
+
+Legacy bookmarks with `?tab=properties` open **From guests** (the old By property rollup tab was removed).
 
 ## List toolbar
 
 Same controls as the property page plus the listing filter. Only one facet sits next to **Filters**, so the search field keeps its width: on the org rollup the listing filter takes that slot and the rating filter moves inside Filters.
 
-| Control      | From guests                              | To write               | About guests             | By property             |
-| ------------ | ---------------------------------------- | ---------------------- | ------------------------ | ----------------------- |
-| **Search**   | Guest name + review text                 | Guest + listing name   | Guest name + review text | Listing name            |
-| **Listings** | Multi-select                             | Multi-select           | Multi-select             | —                       |
-| **Filters**  | Ratings · Responded / Awaiting           | —                      | Ratings · Would host     | —                       |
-| **Sort**     | Newest · Oldest · Highest · Lowest rated | Closing soonest · last | Newest · Oldest · rated  | A–Z · rating · to write |
-| **Per page** | 31 · 50 · 100                            | same                   | same                     | — (whole list)          |
-| **View**     | Table · Card                             | same                   | same                     | same                    |
+| Control      | From guests                              | To write               | About guests             |
+| ------------ | ---------------------------------------- | ---------------------- | ------------------------ |
+| **Search**   | Guest name + review text                 | Guest + listing name   | Guest name + review text |
+| **Listings** | Multi-select                             | Multi-select           | Multi-select             |
+| **Filters**  | Ratings · Responded / Awaiting           | —                      | Ratings · Would host     |
+| **Sort**     | Newest · Oldest · Highest · Lowest rated | Closing soonest · last | Newest · Oldest · rated  |
+| **Per page** | 31 · 50 · 100                            | same                   | same                     |
+| **View**     | Table · Card                             | same                   | same                     |
 
-Everything is in the URL (`tab`, `q`, `properties`, `ratings`, `responded`, `hostAgain`, `sort`, `page`, `limit`, `view`, `listingSort`), so a filtered portfolio view is shareable. Switching tab keeps the view, page size and listing scope, and resets the tab-specific filters and sort.
+Everything is in the URL (`tab`, `q`, `properties`, `ratings`, `responded`, `hostAgain`, `sort`, `page`, `limit`, `view`), so a filtered portfolio view is shareable. Switching tab keeps the view, page size and listing scope, and resets the tab-specific filters and sort.
 
-The listing filter and the Listing column only appear when the caller can see more than one listing, and the column hides when the filter is already narrowed to exactly one.
+The listing filter and the Listing column only appear when the caller can see more than one listing, and the column hides when the filter is already narrowed to exactly one. On phone, the guest cell shows the listing name as secondary text when the Listing column is hidden.
 
 ## From guests, To write, About guests
 
@@ -120,13 +120,7 @@ Opening a sheet pins it to that row's listing (`ReviewPropertyScopeProvider`), s
 
 Unpublished counterpart reviews never appear. Internal host notes never appear.
 
-Loading keeps the page chrome mounted and shows KPI cards plus the active tab's real column labels with skeleton rows. The list skeleton follows `?view=` and `?tab=` (From guests, To write, About guests, By property); switching tabs never shows the previous tab's rows. When the summary already says the tab is empty (To write = 0, no listings), a quiet empty-state placeholder replaces the row skeleton. Paging keeps the previous page on screen. A failed load shows **Try again**.
-
-## By property
-
-One row per visible listing: name, rating with stars, published count, responded rate, and a **to write** chip. Sort by listing name, rating, review count, least responded or most to write — that last one is the "which listing is behind" read.
-
-A row click narrows the feed to that listing and returns to **From guests**; the to-write chip does the same into **To write**; the trailing action opens that listing's own Reviews page. Listings with no reviews show a dash rather than `0.0`, and sort last on rating.
+Loading keeps the page chrome mounted and shows KPI cards plus the active tab's real column labels with skeleton rows. The list skeleton follows `?view=` and `?tab=` (From guests, To write, About guests); switching tabs never shows the previous tab's rows. When the summary already says the tab is empty (To write = 0), a quiet empty-state placeholder replaces the row skeleton. Paging keeps the previous page on screen. A failed load shows **Try again**.
 
 ---
 
@@ -139,7 +133,7 @@ A row click narrows the feed to that listing and returns to **From guests**; the
 | Report      | `POST report-review` (row's `property_id`)            |
 | Write guest | `POST submit-host-guest-review` (row's `property_id`) |
 
-Query: `?tab=received|written|to_write|properties` plus `q`, `properties` (comma-separated UUIDs; `property_id` still accepted), `ratings`, `responded`, `hostAgain`, `sort`, `page`, `limit`. The response is `{ tab, summary, items, total }` — offset pages with an exact total. `tab=properties` returns the summary with an empty feed, since that tab only needs the rollup.
+Query: `?tab=received|written|to_write` plus `q`, `properties` (comma-separated UUIDs; `property_id` still accepted), `ratings`, `responded`, `hostAgain`, `sort`, `page`, `limit`. The response is `{ tab, summary, items, total }` — offset pages with an exact total. The edge still accepts legacy `tab=properties` (summary-only) for old clients; the UI never requests it.
 
 Both Reviews endpoints share `_shared/reviewListParams.ts`, so the two pages accept the same vocabulary.
 
@@ -151,7 +145,6 @@ Both Reviews endpoints share `_shared/reviewListParams.ts`, so the two pages acc
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Page          | `ui/src/features/reviews/pages/OrgReviewsPage.tsx` → shared `ReviewsListPage.tsx` (`scope="org"`)                                                                                                     |
 | Loading       | `OrgReviewsRouteSkeleton` → `ReviewsPageSkeleton` (`AdminSkeletons.tsx`) — tab/view-aware `ReviewsTableSkeleton` / `ReviewsCardGridSkeleton`, plus `ReviewsEmptySkeleton` when the tab is known empty |
-| By property   | `ui/src/features/reviews/components/OrgPropertyReviewsTable.tsx`                                                                                                                                      |
 | Sheet scoping | `ui/src/features/reviews/lib/reviewPropertyScope.tsx` + `reviewPropertyScopeContext.ts`                                                                                                               |
 | List state    | `ui/src/features/reviews/lib/orgReviewsApi.ts`, `propertyReviewsApi.ts`                                                                                                                               |
 | Hook          | `ui/src/features/reviews/hooks/useOrgReviews.ts`                                                                                                                                                      |

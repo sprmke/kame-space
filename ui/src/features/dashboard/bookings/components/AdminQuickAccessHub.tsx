@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Bell, HelpCircle, LayoutGrid, MessageSquare, Sparkles } from 'lucide-react';
+import { Bell, HelpCircle, LayoutGrid, MessageSquare, Moon, Sparkles, Sun } from 'lucide-react';
 
-import { aboveBottomTabBarOverlayClassName } from '@/components/mobile/BottomTabBar';
+import { useTheme } from '@/components/theme/ThemeProvider';
 import { cn } from '@/lib/utils';
 
 export type AdminQuickAccessHubProps = {
@@ -52,9 +52,11 @@ export function AdminQuickAccessHub({
   className,
 }: AdminQuickAccessHubProps) {
   const navigate = useNavigate();
+  const { toggleTheme, resolvedTheme } = useTheme();
   const rootRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
   const hasUnread = unreadCount > 0;
+  const isDark = resolvedTheme === 'dark';
   const ariaLabel = hasUnread ? `Quick access, ${unreadCount} unread` : 'Quick access';
 
   useEffect(() => {
@@ -78,6 +80,14 @@ export function AdminQuickAccessHub({
 
   const actions = useMemo((): HubAction[] => {
     const items: HubAction[] = [
+      {
+        key: 'theme',
+        label: isDark ? 'Switch to light mode' : 'Switch to dark mode',
+        Icon: isDark ? Sun : Moon,
+        onSelect: () => {
+          toggleTheme();
+        },
+      },
       {
         key: 'notifications',
         label: 'Notifications',
@@ -128,6 +138,8 @@ export function AdminQuickAccessHub({
 
     return items;
   }, [
+    isDark,
+    toggleTheme,
     hasUnread,
     unreadCount,
     showAssistant,
@@ -148,117 +160,124 @@ export function AdminQuickAccessHub({
     <div
       ref={rootRef}
       className={cn(
-        'pointer-events-none fixed right-4 z-[41] sm:right-5',
-        aboveBottomTabBarOverlayClassName(),
+        /* `.admin-quick-access-hub` owns z-index + bottom offset above fixed notices. */
+        'admin-quick-access-hub pointer-events-none fixed right-4 sm:right-5',
         className
       )}
     >
-      <motion.div
-        role="toolbar"
-        aria-label="Quick access"
-        aria-expanded={open}
-        initial={false}
-        animate={{
-          height: open ? openHeight : FAB_SIZE,
-          borderRadius: open ? 28 : FAB_SIZE / 2,
-          paddingTop: open ? 6 : 0,
-        }}
-        transition={reduceMotion ? { duration: 0.12 } : expandSpring}
-        className={cn(
-          'pointer-events-auto relative flex w-[52px] flex-col-reverse items-center overflow-hidden',
-          'border-border/60 bg-background text-foreground shadow-elevated-lg',
-          'border'
-        )}
-      >
-        <button
-          type="button"
-          onClick={() => onOpenChange(!open)}
-          aria-label={ariaLabel}
+      {/*
+       * Outer relative wrap keeps the unread badge outside the pill's
+       * `overflow-hidden` (needed for the expand clip) so the count is not cut off.
+       */}
+      <div className="relative">
+        <motion.div
+          role="toolbar"
+          aria-label="Quick access"
           aria-expanded={open}
-          aria-controls="admin-quick-access-actions"
+          initial={false}
+          animate={{
+            height: open ? openHeight : FAB_SIZE,
+            borderRadius: open ? 28 : FAB_SIZE / 2,
+            paddingTop: open ? 6 : 0,
+          }}
+          transition={reduceMotion ? { duration: 0.12 } : expandSpring}
           className={cn(
-            'relative z-10 flex shrink-0 items-center justify-center rounded-full',
-            'text-foreground transition-colors duration-150',
-            'hover:bg-muted/60 active:bg-muted/80',
-            'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-            open && 'bg-muted/40'
+            'pointer-events-auto relative flex w-[52px] flex-col-reverse items-center overflow-hidden',
+            'border-border/60 bg-background text-foreground shadow-elevated-lg',
+            'border'
           )}
-          style={{ width: FAB_SIZE, height: FAB_SIZE }}
         >
-          <LayoutGrid className="size-5" aria-hidden strokeWidth={1.75} />
-          {hasUnread && !open ? (
-            <span
-              className={cn(
-                'bg-destructive text-destructive-foreground ring-background absolute right-0.5 top-0.5',
-                'flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold leading-none ring-2',
-                'animate-notification-badge-pulse motion-reduce:animate-none'
-              )}
-              aria-hidden
-            >
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          ) : null}
-        </button>
+          <button
+            type="button"
+            onClick={() => onOpenChange(!open)}
+            aria-label={ariaLabel}
+            aria-expanded={open}
+            aria-controls="admin-quick-access-actions"
+            className={cn(
+              'relative z-10 flex shrink-0 items-center justify-center rounded-full',
+              'text-foreground transition-colors duration-150',
+              'hover:bg-muted/60 active:bg-muted/80',
+              'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+              open && 'bg-muted/40'
+            )}
+            style={{ width: FAB_SIZE, height: FAB_SIZE }}
+          >
+            <LayoutGrid className="size-5" aria-hidden strokeWidth={1.75} />
+          </button>
 
-        <div
-          id="admin-quick-access-actions"
-          className="flex w-full flex-col-reverse items-center"
-          style={{ gap: ACTION_GAP }}
-        >
-          <AnimatePresence initial={false}>
-            {open
-              ? actions.map(({ key, label, Icon, badge, onSelect }, index) => (
-                  <motion.button
-                    key={key}
-                    type="button"
-                    onClick={onSelect}
-                    aria-label={label}
-                    title={label}
-                    initial={
-                      reduceMotion
-                        ? { opacity: 0 }
-                        : { opacity: 0, y: 14, scale: 0.88 }
-                    }
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={
-                      reduceMotion
-                        ? { opacity: 0 }
-                        : { opacity: 0, y: 10, scale: 0.92 }
-                    }
-                    transition={
-                      reduceMotion
-                        ? { duration: 0.1 }
-                        : {
-                            ...itemSpring,
-                            delay: index * 0.035,
-                          }
-                    }
-                    className={cn(
-                      'relative flex shrink-0 items-center justify-center rounded-full',
-                      'text-foreground transition-colors duration-150',
-                      'hover:bg-muted/70 active:bg-muted/90',
-                      'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
-                    )}
-                    style={{ width: ACTION_SIZE, height: ACTION_SIZE }}
-                  >
-                    <Icon className="size-[18px]" aria-hidden strokeWidth={1.75} />
-                    {badge != null && badge > 0 ? (
-                      <span
-                        className={cn(
-                          'bg-destructive text-destructive-foreground absolute -right-0.5 -top-0.5',
-                          'flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[9px] font-semibold leading-none'
-                        )}
-                        aria-hidden
-                      >
-                        {badge > 99 ? '99+' : badge}
-                      </span>
-                    ) : null}
-                  </motion.button>
-                ))
-              : null}
-          </AnimatePresence>
-        </div>
-      </motion.div>
+          <div
+            id="admin-quick-access-actions"
+            className="flex w-full flex-col-reverse items-center"
+            style={{ gap: ACTION_GAP }}
+          >
+            <AnimatePresence initial={false}>
+              {open
+                ? actions.map(({ key, label, Icon, badge, onSelect }, index) => (
+                    <motion.button
+                      key={key}
+                      type="button"
+                      onClick={onSelect}
+                      aria-label={label}
+                      title={label}
+                      initial={
+                        reduceMotion
+                          ? { opacity: 0 }
+                          : { opacity: 0, y: 14, scale: 0.88 }
+                      }
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={
+                        reduceMotion
+                          ? { opacity: 0 }
+                          : { opacity: 0, y: 10, scale: 0.92 }
+                      }
+                      transition={
+                        reduceMotion
+                          ? { duration: 0.1 }
+                          : {
+                              ...itemSpring,
+                              delay: index * 0.035,
+                            }
+                      }
+                      className={cn(
+                        'relative flex shrink-0 items-center justify-center rounded-full',
+                        'text-foreground transition-colors duration-150',
+                        'hover:bg-muted/70 active:bg-muted/90',
+                        'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
+                      )}
+                      style={{ width: ACTION_SIZE, height: ACTION_SIZE }}
+                    >
+                      <Icon className="size-[18px]" aria-hidden strokeWidth={1.75} />
+                      {badge != null && badge > 0 ? (
+                        <span
+                          className={cn(
+                            'bg-destructive text-destructive-foreground absolute right-0 top-0',
+                            'flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[9px] font-semibold leading-none'
+                          )}
+                          aria-hidden
+                        >
+                          {badge > 99 ? '99+' : badge}
+                        </span>
+                      ) : null}
+                    </motion.button>
+                  ))
+                : null}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {hasUnread && !open ? (
+          <span
+            className={cn(
+              'bg-destructive text-destructive-foreground ring-background pointer-events-none absolute -right-1 -top-1 z-10',
+              'flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold leading-none ring-2',
+              'animate-notification-badge-pulse motion-reduce:animate-none'
+            )}
+            aria-hidden
+          >
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }

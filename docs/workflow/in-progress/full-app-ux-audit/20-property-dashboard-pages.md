@@ -2,7 +2,7 @@
 title: 'Audit 20: property dashboard pages'
 status: active
 tags: [audit, dashboard, property]
-updated: 2026-11-19
+updated: 2026-11-23
 ---
 
 # 20: Property dashboard pages
@@ -239,7 +239,7 @@ uses `wins / risks / actions`. See 19-D3-1.
 
 ### P2 (carried). Charts without legends
 
-"Where bookings come from" and "Listing visits" are rings with no labels; "How you compare" is a
+"Where bookings come from" and "Listing visits" are rings with no labels; former "How you compare" is a
 permanent empty panel. See 02-H8/H9.
 
 ### P3
