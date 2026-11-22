@@ -230,9 +230,11 @@ When invoking `supabase functions serve` manually, `./dev.sh` / `bun run dev:api
 
 #### Integrations (optional)
 
-| Variable            | Notes                               |
-| ------------------- | ----------------------------------- |
-| `JAMENDO_CLIENT_ID` | Marketing Studio video music browse |
+| Variable               | Notes                                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------- |
+| `JAMENDO_CLIENT_ID`    | Marketing Studio video music browse (Jamendo source)                                            |
+| `AUDIUS_MUSIC_ENABLED` | Optional. `0`, `false` or `off` removes Audius from the music picker. Default on, no key needed |
+| `AUDIUS_APP_NAME`      | Optional. `app_name` sent to Audius. Default `kame-space`                                       |
 
 #### Observability (optional)
 
