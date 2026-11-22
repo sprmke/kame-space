@@ -16,6 +16,9 @@ import {
  */
 test.describe('@ci host onboarding with live identity capture', () => {
   test('phone handoff produces the Valid ID and the verdict reaches submit', async ({ page }) => {
+    // Two pages, a camera handoff and the document uploads. 45s is too tight on a loaded
+    // CI shard; this is a journey-length test, not a slow component.
+    test.slow();
     const state = createHostVerificationState({
       baseStatus: 'none',
       assets: { validIdPath: null, socialProofPath: null },
