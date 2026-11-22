@@ -66,16 +66,15 @@ async function findWebByBookingId(
   scope: { propertyId: string | null; parkingId: string | null }
 ): Promise<SocialConversationRow | null> {
   const sb = createServiceClient();
-  let q = sb
+  const { data, error } = await sb
     .from('social_conversations')
     .select('*')
     .eq('organization_id', orgId)
     .eq('platform', 'web')
     .eq('booking_id', bookingId)
-    .eq('conversation_type', 'dm');
-  if (scope.propertyId) q = q.eq('property_id', scope.propertyId);
-  if (scope.parkingId) q = q.eq('parking_id', scope.parkingId);
-  const { data, error } = await q.maybeSingle();
+    .eq('conversation_type', 'dm')
+    .eq(scope.propertyId ? 'property_id' : 'parking_id', scope.propertyId ?? scope.parkingId!)
+    .maybeSingle();
   if (error) throw new Error(error.message);
   return (data as SocialConversationRow | null) ?? null;
 }
@@ -86,16 +85,15 @@ async function findWebByGuestUser(
   scope: { propertyId: string | null; parkingId: string | null }
 ): Promise<SocialConversationRow | null> {
   const sb = createServiceClient();
-  let q = sb
+  const { data, error } = await sb
     .from('social_conversations')
     .select('*')
     .eq('organization_id', orgId)
     .eq('platform', 'web')
     .eq('guest_user_id', guestUserId)
-    .eq('conversation_type', 'dm');
-  if (scope.propertyId) q = q.eq('property_id', scope.propertyId);
-  if (scope.parkingId) q = q.eq('parking_id', scope.parkingId);
-  const { data, error } = await q.maybeSingle();
+    .eq('conversation_type', 'dm')
+    .eq(scope.propertyId ? 'property_id' : 'parking_id', scope.propertyId ?? scope.parkingId!)
+    .maybeSingle();
   if (error) throw new Error(error.message);
   return (data as SocialConversationRow | null) ?? null;
 }
@@ -138,6 +136,7 @@ export async function ensureHostWebChatForBooking(input: {
           .update({ booking_id: booking.id, updated_at: new Date().toISOString() })
           .eq('id', existingByGuest.id)
           .select('*')
+          .limit(1)
           .single();
         if (error) throw new Error(error.message);
         return { conversation: data as SocialConversationRow, created: false };
@@ -225,6 +224,7 @@ export async function claimHostOpenedWebChatForBooking(input: {
     })
     .eq('id', existing.id)
     .select('*')
+    .limit(1)
     .single();
 
   if (error) {
@@ -242,6 +242,7 @@ export async function claimHostOpenedWebChatForBooking(input: {
         })
         .eq('id', byGuest.id)
         .select('*')
+        .limit(1)
         .single();
       if (linkError) throw new Error(linkError.message);
       return linked as SocialConversationRow;
