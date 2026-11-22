@@ -14,7 +14,7 @@ export function ChoiceChips<T extends string>({ label, value, options, onChange 
   return (
     <div role="radiogroup" aria-label={label} className="space-y-1.5">
       <p className="text-muted-foreground text-xs">{label}</p>
-      <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex flex-wrap gap-2">
         {options.map((option) => {
           const selected = option.value === value;
           return (

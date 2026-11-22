@@ -32,6 +32,12 @@ type Props = {
 /** Actions that only look around, so a read-only role may still use them. */
 const LOOK_ONLY = new Set<PhoneToolAction>(['open-reviews', 'open-guide']);
 
+/** A tool a read-only role may still use: it only looks, or it opens a row that has such a tool. */
+function canLook(tool: PhoneTool): boolean {
+  if (tool.action && LOOK_ONLY.has(tool.action)) return true;
+  return Boolean(tool.children?.some(canLook));
+}
+
 /**
  * Phone tool row. Nothing selected: big tools, each opening a second row with a back arrow.
  * Something selected: the tools for that clip. In the page flow (not floating), so it can never
@@ -102,7 +108,7 @@ export function VideoToolStrip({
         {row.map((tool) => {
           const Icon = PHONE_TOOL_ICONS[tool.icon];
           const disabled =
-            (readOnly && !(tool.action && LOOK_ONLY.has(tool.action))) ||
+            (readOnly && !canLook(tool)) ||
             Boolean(tool.action && disabledActions?.has(tool.action));
           const active = Boolean(tool.action && tool.action === activeAction);
           return (
@@ -113,14 +119,14 @@ export function VideoToolStrip({
               aria-pressed={active || undefined}
               onClick={() => handle(tool)}
               className={cn(
-                'flex min-h-[56px] min-w-[64px] shrink-0 touch-manipulation flex-col items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium leading-none transition-colors',
+                'flex min-h-[60px] min-w-[68px] shrink-0 touch-manipulation flex-col items-center justify-start gap-1 rounded-md px-1.5 py-2 text-[11px] font-medium leading-tight transition-colors',
                 'text-muted-foreground hover:text-foreground disabled:opacity-40',
                 active && 'text-primary',
                 tool.destructive && 'text-destructive hover:text-destructive'
               )}
             >
               <Icon className="size-5" aria-hidden />
-              <span className="max-w-[4.5rem] truncate">{tool.label}</span>
+              <span className="line-clamp-2 max-w-[4.75rem] text-center">{tool.label}</span>
             </button>
           );
         })}

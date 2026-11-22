@@ -39,6 +39,15 @@ export type InspectorActions = {
   remove: (itemId: string) => void;
 };
 
+/** A small heading that groups the controls under it, so a long inspector reads in chunks. */
+export function SectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <h3 className="text-foreground border-border border-t pt-4 text-xs font-semibold uppercase tracking-wide first:border-t-0 first:pt-0">
+      {children}
+    </h3>
+  );
+}
+
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="space-y-1.5">
@@ -97,7 +106,7 @@ export function TimingFields({ item, actions }: { item: VideoItem; actions: Insp
         />
       )}
       <NumberSlider
-        label="Length"
+        label="Duration"
         unit="s"
         min={0.1}
         max={60}

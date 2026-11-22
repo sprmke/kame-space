@@ -155,8 +155,18 @@ export function VideoTrimPanel({ item, fps, onApply, onClose }: Props) {
           className="border-primary pointer-events-none absolute inset-y-0 rounded-md border-y-2"
           style={{ left: `${startRatio * 100}%`, width: `${(endRatio - startRatio) * 100}%` }}
         >
-          <span className="bg-primary absolute inset-y-0 left-0 w-2 rounded-l-md" aria-hidden />
-          <span className="bg-primary absolute inset-y-0 right-0 w-2 rounded-r-md" aria-hidden />
+          <span
+            className="bg-primary absolute inset-y-0 left-0 flex w-3.5 items-center justify-center rounded-l-md"
+            aria-hidden
+          >
+            <span className="h-5 w-0.5 rounded-full bg-white/90" />
+          </span>
+          <span
+            className="bg-primary absolute inset-y-0 right-0 flex w-3.5 items-center justify-center rounded-r-md"
+            aria-hidden
+          >
+            <span className="h-5 w-0.5 rounded-full bg-white/90" />
+          </span>
         </div>
       </div>
       <div className="text-muted-foreground mt-2 flex items-center justify-between text-xs tabular-nums">

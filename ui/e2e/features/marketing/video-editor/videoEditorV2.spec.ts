@@ -9,7 +9,6 @@ import {
 } from './videoEditorHarness';
 import { installPropertyTeamRbacMocks } from '../../team/shared/propertyTeamRbacHarness';
 
-
 /**
  * Multi-track Videos editor. Backend is mocked; this checks the editor shell, the timeline
  * model and the media library glue, not Remotion rendering quality.
@@ -97,7 +96,20 @@ test.describe('@ci marketing video editor v2 on a phone', () => {
     await expect(page.getByRole('toolbar', { name: 'Timeline tools' })).toHaveCount(0);
     await expect(page.getByRole('toolbar', { name: 'Editor tools' })).toBeVisible();
     // The dashboard behind the full-screen editor is out of reach for keyboard and readers.
-    await expect(page.locator('#root')).toHaveAttribute('inert', '');
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => document.querySelector('nav[aria-label="Admin"]')?.closest('[inert]') !== null
+        )
+      )
+      .toBe(true);
+    // Toasts stay live: their actions (Undo, Add more) must be tappable.
+    expect(
+      await page.evaluate(
+        () =>
+          document.querySelector('section[aria-label^="Notifications"]')?.closest('[inert]') ?? null
+      )
+    ).toBeNull();
 
     const before = await page
       .getByText(/^\d+:\d\d\.\d \/ /)

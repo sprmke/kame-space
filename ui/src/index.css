@@ -3592,3 +3592,14 @@ html[data-mode-transition='reduced']::view-transition-new(*) {
     transform: scaleX(1);
   }
 }
+
+/*
+ * Video editor on a phone covers the app, so a toast must not sit on the editor's own top bar
+ * (it hid the Export button). Keep it just below the bar instead.
+ */
+@media (max-width: 1023px) {
+  html[data-editor-fullscreen] [data-sonner-toaster] {
+    --offset-top: calc(env(safe-area-inset-top, 0px) + 60px) !important;
+    --mobile-offset-top: calc(env(safe-area-inset-top, 0px) + 60px) !important;
+  }
+}

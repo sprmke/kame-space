@@ -1,9 +1,11 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+
 import { createPortal } from 'react-dom';
 
 import { MarketingBuilderHeader } from '@/features/dashboard/marketing/components/shared/MarketingBuilderHeader';
 
 import { useIsBelowLg } from '@/hooks/useMediaQuery';
+import { inertExcept } from '@/lib/dom/inertExcept';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -57,26 +59,43 @@ export function MarketingStudioShell({
     const html = document.documentElement;
     const appRoot = document.getElementById('root');
     const previousOverflow = html.style.overflow;
-    const wasInert = appRoot?.hasAttribute('inert') ?? false;
+    // Sheets and dialogs portal outside the dark layer, so the whole session goes dark with it.
+    const wasDark = html.classList.contains('dark');
     html.style.overflow = 'hidden';
-    appRoot?.setAttribute('inert', '');
+    html.classList.add('dark');
+    html.setAttribute('data-editor-fullscreen', '');
+    // Everything behind the editor is out of reach, except the toast container: toasts carry
+    // actions (Undo, Add more) that must stay tappable.
+    const restoreInert = appRoot
+      ? inertExcept(appRoot, document.querySelector('section[aria-label^="Notifications"]'))
+      : () => undefined;
     return () => {
       html.style.overflow = previousOverflow;
-      if (!wasInert) appRoot?.removeAttribute('inert');
+      if (!wasDark) html.classList.remove('dark');
+      html.removeAttribute('data-editor-fullscreen');
+      restoreInert();
     };
   }, [takeOver]);
+
+  // The on-screen keyboard shrinks the visual viewport but not the layout one. Follow the visual
+  // one so the panel the host is typing in stays above the keyboard.
+  const viewport = useVisualViewport(takeOver);
 
   if (takeOver) {
     return createPortal(
       <div
         data-video-editor-fullscreen
         className={cn(
-          'dark bg-background text-foreground fixed inset-0 flex min-h-0 flex-col overflow-hidden',
+          'bg-background text-foreground dark fixed inset-x-0 flex min-h-0 flex-col overflow-hidden',
+          viewport ? 'top-0' : 'inset-y-0',
           FULLSCREEN_Z_CLASS
         )}
         style={{
           paddingTop: 'env(safe-area-inset-top, 0px)',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          paddingBottom: viewport?.keyboard ? 0 : 'env(safe-area-inset-bottom, 0px)',
+          ...(viewport
+            ? { height: viewport.height, transform: `translateY(${viewport.top}px)` }
+            : null),
         }}
       >
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
@@ -97,13 +116,37 @@ export function MarketingStudioShell({
       )}
     >
       {leading || tabs ? (
-        <MarketingBuilderHeader
-          leading={leading}
-          tabs={tabs}
-          actions={actions}
-        />
+        <MarketingBuilderHeader leading={leading} tabs={tabs} actions={actions} />
       ) : null}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
     </div>
   );
+}
+
+type VisualViewportBox = { height: number; top: number; keyboard: boolean };
+
+/** Height and offset of the visual viewport while `active`; null until it differs from the layout one. */
+function useVisualViewport(active: boolean): VisualViewportBox | null {
+  const [box, setBox] = useState<VisualViewportBox | null>(null);
+  useEffect(() => {
+    if (!active) {
+      setBox(null);
+      return;
+    }
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const update = () => {
+      const keyboard = window.innerHeight - viewport.height > 120;
+      // Only take over while the keyboard is up; otherwise the plain full-screen layer is exact.
+      setBox(keyboard ? { height: viewport.height, top: viewport.offsetTop, keyboard } : null);
+    };
+    update();
+    viewport.addEventListener('resize', update);
+    viewport.addEventListener('scroll', update);
+    return () => {
+      viewport.removeEventListener('resize', update);
+      viewport.removeEventListener('scroll', update);
+    };
+  }, [active]);
+  return box;
 }

@@ -59,6 +59,7 @@ import {
   VideoClipPanel,
 } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoClipPanel';
 import { VideoExportSheet } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoExportSheet';
+import { VideoLandscapeHint } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoLandscapeHint';
 import { VideoRecordPanel } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoRecordPanel';
 import { VideoToolStrip } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoToolStrip';
 import { VideoTrimPanel } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoTrimPanel';
@@ -83,10 +84,7 @@ import { useGenerateMarketingTemplate } from '@/features/dashboard/marketing/hoo
 import { useMarketingBookedDates } from '@/features/dashboard/marketing/hooks/useMarketingBookedDates';
 import { useMarketingDesignSession } from '@/features/dashboard/marketing/hooks/useMarketingDesignSession';
 import { useDuplicateMarketingItem } from '@/features/dashboard/marketing/hooks/useMarketingLibrary';
-import {
-  useMarketingMediaLibrary,
-  useMarketingMediaUploads,
-} from '@/features/dashboard/marketing/hooks/useMarketingMedia';
+import { useMarketingMediaLibrary } from '@/features/dashboard/marketing/hooks/useMarketingMedia';
 import { useMarketingPermissions } from '@/features/dashboard/marketing/hooks/useMarketingPermissions';
 import {
   fetchMarketingTemplate,
@@ -97,10 +95,8 @@ import {
   useVideoProjectHistory,
   useVideoProjectHistoryShortcuts,
 } from '@/features/dashboard/marketing/hooks/useVideoProjectHistory';
-import {
-  isVoiceRecordingSupported,
-  useVoiceRecorder,
-} from '@/features/dashboard/marketing/hooks/useVoiceRecorder';
+import { useVideoVoiceover } from '@/features/dashboard/marketing/hooks/useVideoVoiceover';
+import { isVoiceRecordingSupported } from '@/features/dashboard/marketing/hooks/useVoiceRecorder';
 import type { DesignBinding } from '@/features/dashboard/marketing/lib/designCanvasTypes';
 import { blobToDataUrl } from '@/features/dashboard/marketing/lib/exportVideoMedia';
 import { exportVideoV2, VideoExportError } from '@/features/dashboard/marketing/lib/exportVideoV2';
@@ -126,7 +122,6 @@ import {
 } from '@/features/dashboard/marketing/lib/marketingStudioRoute';
 import { fetchMarketingMediaPage } from '@/features/dashboard/marketing/lib/media/marketingMediaApi';
 import type { MediaDragPayload } from '@/features/dashboard/marketing/lib/media/mediaDrag';
-import { payloadFromAsset } from '@/features/dashboard/marketing/lib/media/mediaDrag';
 import { hasMediaDrag, readMediaDrag } from '@/features/dashboard/marketing/lib/media/mediaDrag';
 import {
   propertyGalleryMediaItems,
@@ -167,6 +162,7 @@ import {
   insertPayload,
   TEXT_PRESETS,
   textPresetById,
+  visibleFrameForText,
   type TextPresetId,
 } from '@/features/dashboard/marketing/lib/video/v2/editorCommands';
 import {
@@ -223,10 +219,6 @@ import {
   type VideoItem,
   type VideoProjectV2,
 } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
-import {
-  recordingRoomMs,
-  voicePlacement,
-} from '@/features/dashboard/marketing/lib/video/v2/voicePlacement';
 import { resolveAiGeneratedVideoProjectsForAllFormats } from '@/features/dashboard/marketing/lib/video/videoAiProjectBuilder';
 import {
   VIDEO_FORMAT_DIMENSIONS,
@@ -277,7 +269,8 @@ const DEFAULT_VIDEO_TEMPLATE = 'quiet-morning';
 const VIDEO_FORMATS = new Set<string>(Object.keys(VIDEO_FORMAT_DIMENSIONS));
 /** Below this width the library starts closed so the preview and timeline keep their room. */
 const WIDE_LAYOUT_PX = 1536;
-const PREVIEW_MIN_HEIGHT_CLASS = 'min-h-[220px] lg:min-h-[280px]';
+// Small on phones so a short screen (an iPhone SE) still fits panel, timeline and tools.
+const PREVIEW_MIN_HEIGHT_CLASS = 'min-h-[110px] sm:min-h-[220px] lg:min-h-[280px]';
 const EDITOR_PANELS = new Set(['media', 'text', 'templates', 'reviews']);
 
 function asVideoFormat(value: unknown, fallback: VideoFormat): VideoFormat {
@@ -368,16 +361,6 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [captionsSheet, setCaptionsSheet] = useState<'make' | 'edit' | null>(null);
   const autoCaptions = useAutoCaptions();
-  const [muteWhileRecording, setMuteWhileRecording] = useState(true);
-  const [savingVoice, setSavingVoice] = useState(false);
-  const recorder = useVoiceRecorder();
-  const uploads = useMarketingMediaUploads();
-  const pendingVoiceRef = useRef(
-    new Map<
-      string,
-      { startFrame: number; recorderStartMs: number; playStartMs: number; durationMs: number }
-    >()
-  );
   /** Phone: the next library pick goes on top of the video instead of onto the main row. */
   const pickOnTopRef = useRef(false);
   const [sizeOpen, setSizeOpen] = useState(false);
@@ -796,15 +779,30 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         if (isBelowLg) setMobilePanel(null);
         return;
       }
+      const onTop = pickOnTopRef.current;
       handleDropMedia(payload, {
         frame: currentFrameRef.current,
         trackId: null,
-        onMain: payload.kind !== 'audio' && !pickOnTopRef.current,
+        onMain: payload.kind !== 'audio' && !onTop,
       });
       pickOnTopRef.current = false;
-      if (isBelowLg) setMobilePanel(null);
+      if (isBelowLg) {
+        setMobilePanel(null);
+        // The sheet closes after each pick; one tap brings it back for the next photo.
+        toast.success('Added', {
+          // Long enough to read and reach for the button.
+          duration: 7000,
+          action: {
+            label: 'Add more',
+            onClick: () => {
+              pickOnTopRef.current = onTop;
+              openRailPanel('media');
+            },
+          },
+        });
+      }
     },
-    [apply, handleDropMedia, isBelowLg, pickSoundMode, replaceTargetId]
+    [apply, handleDropMedia, isBelowLg, openRailPanel, pickSoundMode, replaceTargetId]
   );
 
   const handleAddText = useCallback(
@@ -816,6 +814,9 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
       apply((current) =>
         insertItem(current, item, { kind: 'text', atFrame: currentFrameRef.current })
       );
+      // Show the new text, not a box around a clip that is still fading in.
+      transport.pause();
+      transport.seek(visibleFrameForText(item));
       if (isBelowLg) {
         setMobilePanel(null);
         setPhoneAction('clip-edit');
@@ -823,7 +824,21 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         openEditPanel();
       }
     },
-    [apply, isBelowLg, openEditPanel]
+    [apply, isBelowLg, openEditPanel, transport]
+  );
+
+  /** A second tap on text or a caption on the preview: edit its words. */
+  const handleEditText = useCallback(
+    (itemId: string) => {
+      setSelectedIds([itemId]);
+      if (isBelowLg) {
+        setVoiceOpen(false);
+        setPhoneAction('clip-edit');
+      } else {
+        openEditPanel();
+      }
+    },
+    [isBelowLg, openEditPanel]
   );
 
   const startReplace = useCallback(
@@ -1477,83 +1492,23 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     if (!mobilePanel) pickOnTopRef.current = false;
   }, [mobilePanel]);
 
-  const handleStartRecording = useCallback(() => {
-    const current = projectRef.current;
-    if (!current || !canEditContent) return;
-    const startFrame = currentFrameRef.current;
-    const player = playerRef.current;
-    transport.pause();
-    let mutedByUs = false;
-    void recorder.start({
-      maxMs: recordingRoomMs(startFrame, current.fps),
-      beginPlayback: async () => {
-        if (muteWhileRecording && player && !player.isMuted()) {
-          player.mute();
-          mutedByUs = true;
-        }
-        player?.play();
-        await new Promise((resolve) => setTimeout(resolve, 120));
-        return performance.now();
-      },
-      endPlayback: () => {
-        player?.pause();
-        if (mutedByUs) player?.unmute();
-      },
-      onFinished: (recording) => {
-        const ids = uploads.enqueue([recording.file]);
-        const id = ids[0];
-        if (!id) {
-          toast.error('Could not save your voice.');
-          return;
-        }
-        pendingVoiceRef.current.set(id, {
-          startFrame,
-          recorderStartMs: recording.recorderStartMs,
-          playStartMs: recording.playStartMs,
-          durationMs: recording.durationMs,
-        });
-        setSavingVoice(true);
-      },
-    });
-  }, [canEditContent, muteWhileRecording, recorder, transport, uploads]);
-
-  // The video stopping (it ended, or the host tapped it) ends the take.
-  const wasPlayingRef = useRef(false);
-  useEffect(() => {
-    if (wasPlayingRef.current && !isPlaying && recorder.phase === 'recording') recorder.stop();
-    wasPlayingRef.current = isPlaying;
-    // Only when play state changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying]);
-
-  // A saved take becomes a voice clip. Nothing temporary is ever stored in the project.
-  useEffect(() => {
-    for (const job of uploads.jobs) {
-      const pending = pendingVoiceRef.current.get(job.id);
-      if (!pending) continue;
-      if (job.status === 'done' && job.asset) {
-        pendingVoiceRef.current.delete(job.id);
-        const fps = projectRef.current?.fps ?? 30;
-        const placement = voicePlacement({ ...pending, fps });
-        const voice: AudioItem = {
-          ...audioItemFromPayload(payloadFromAsset(job.asset), { fps, from: placement.from }),
-          role: 'voice',
-          volume: 1,
-          label: 'Voice',
-          title: 'Voice',
-          durationInFrames: placement.durationInFrames,
-          trimBeforeFrames: placement.trimBeforeFrames,
-        };
-        apply((p) => insertItem(p, voice, { kind: 'audio', atFrame: placement.from }));
-        uploads.dismiss(job.id);
-      } else if (job.status === 'error' || job.status === 'cancelled') {
-        pendingVoiceRef.current.delete(job.id);
-        toast.error(job.error?.message ?? 'Could not save your voice.');
-        uploads.dismiss(job.id);
-      }
-    }
-    setSavingVoice(pendingVoiceRef.current.size > 0);
-  }, [uploads.jobs, apply, uploads]);
+  const {
+    recorder,
+    muteWhileRecording,
+    setMuteWhileRecording,
+    saving: savingVoice,
+    start: handleStartRecording,
+  } = useVideoVoiceover({
+    projectRef,
+    currentFrameRef,
+    playerRef,
+    isPlaying,
+    canEdit: canEditContent,
+    pausePlayback: transport.pause,
+    apply,
+    // The take is on the timeline: put the recorder away so the voice tools show.
+    onSaved: () => setVoiceOpen(false),
+  });
 
   const phoneTopActions = (
     <>
@@ -1722,7 +1677,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   );
 
   const railSections: MarketingRailSection[] = [
-    { key: 'media', label: 'Media', icon: Music2, panel: mediaPanel, title: 'Media library' },
+    { key: 'media', label: 'Media', icon: Music2, panel: mediaPanel, title: 'Your media' },
     { key: 'audio', label: 'Audio', icon: Mic, panel: audioPanel, title: 'Audio' },
     { key: 'text', label: 'Text', icon: Type, panel: textPanel, title: 'Add text' },
     { key: 'templates', label: 'Templates', icon: LayoutTemplate, panel: templatesPanel },
@@ -1833,13 +1788,13 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
               size="icon"
               className="h-9 min-h-[44px] w-9 min-w-[44px]"
               onClick={() => setShowSafeArea((value) => !value)}
-              aria-label="Safe area guide"
+              aria-label="Screen guide"
               aria-pressed={showSafeArea}
             >
               <Frame className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Safe area guide</TooltipContent>
+          <TooltipContent>Screen guide</TooltipContent>
         </Tooltip>
         {!inspectorOpen ? (
           <>
@@ -1860,7 +1815,8 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      <VideoLandscapeHint />
       <MarketingEditorTopBar
         backLabel={nav.backLabel}
         onBack={handleBack}
@@ -1945,6 +1901,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
                   showSafeArea={showSafeArea}
                   readOnly={!canEditContent}
                   onSelect={handleCanvasSelect}
+                  onEditText={handleEditText}
                   onPatch={(patch) => changeProject((current) => applyCanvasPatch(current, patch))}
                   onGestureEnd={() => undefined}
                   onTogglePlay={transport.togglePlay}
@@ -1959,8 +1916,6 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
                 selectedIds={selectedIds}
                 zoom={timelineZoom}
                 snapEnabled={snapEnabled}
-                canUndo={canUndo}
-                canRedo={canRedo}
                 readOnly={!canEditContent}
                 mobile={isBelowLg}
                 peaksFor={peaksFor}

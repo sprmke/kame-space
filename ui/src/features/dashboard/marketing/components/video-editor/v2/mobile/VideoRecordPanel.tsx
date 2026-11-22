@@ -22,6 +22,10 @@ type Props = {
   onClose: () => void;
 };
 
+/** A plain button on purpose: the shared Button's gradient would turn it teal, not red. */
+const RECORD_BUTTON =
+  'flex size-16 shrink-0 touch-manipulation items-center justify-center rounded-full bg-red-600 text-white shadow-lg ring-4 ring-red-600/25 transition-transform hover:bg-red-700 active:scale-95 disabled:opacity-50';
+
 function formatClock(ms: number): string {
   const total = Math.floor(ms / 1000);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
@@ -68,18 +72,18 @@ export function VideoRecordPanel({
 
       <div className="flex items-center gap-4">
         {phase === 'recording' ? (
-          <Button
+          <button
             type="button"
-            className="size-16 shrink-0 rounded-full bg-red-600 text-white hover:bg-red-700"
+            className={RECORD_BUTTON}
             aria-label="Stop recording"
             onClick={onStop}
           >
             <Square className="size-6 fill-current" aria-hidden />
-          </Button>
+          </button>
         ) : (
-          <Button
+          <button
             type="button"
-            className="size-16 shrink-0 rounded-full bg-red-600 text-white hover:bg-red-700"
+            className={RECORD_BUTTON}
             aria-label="Start recording"
             disabled={busy || saving}
             onClick={onStart}
@@ -91,7 +95,7 @@ export function VideoRecordPanel({
             ) : (
               <Mic className="size-7" aria-hidden />
             )}
-          </Button>
+          </button>
         )}
 
         <div className="min-w-0 flex-1 space-y-2">

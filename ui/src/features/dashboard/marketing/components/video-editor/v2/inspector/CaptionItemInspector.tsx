@@ -2,7 +2,10 @@ import { Trash2 } from 'lucide-react';
 
 import { NumberSlider } from '@/features/dashboard/marketing/components/calendar-builder/components/controls/NumberSlider';
 import type { InspectorActions } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
-import { TimingFields } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
+import {
+  SectionTitle,
+  TimingFields,
+} from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
 import { ChoiceChips } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/ChoiceChips';
 import { withCaptionText } from '@/features/dashboard/marketing/lib/video/v2/captionLines';
 import {
@@ -56,10 +59,11 @@ export function CaptionItemInspector({ item, actions }: Props) {
         />
       </div>
 
+      <SectionTitle>Timing</SectionTitle>
       <TimingFields item={item} actions={actions} />
 
       <section className="space-y-3" aria-label="Caption style">
-        <p className="text-muted-foreground text-xs">These apply to every caption.</p>
+        <SectionTitle>Look of every caption</SectionTitle>
         <ChoiceChips<CaptionLookId>
           label="Look"
           value={captionStyle.look}

@@ -175,7 +175,7 @@ export function MarketingEditorInspector({
         </Button>
       </div>
       <ScrollArea className="h-0 min-h-0 flex-1 [&>[data-radix-scroll-area-viewport]]:overflow-x-hidden">
-        <div className="min-w-0 space-y-4 px-4 py-4 pb-8">{children}</div>
+        <div className="min-w-0 space-y-4 px-4 py-4 pb-24">{children}</div>
       </ScrollArea>
     </aside>
   );

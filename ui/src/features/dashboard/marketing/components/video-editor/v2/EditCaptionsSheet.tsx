@@ -37,7 +37,11 @@ export function EditCaptionsSheet({
 }: Props) {
   return (
     <ResponsiveModal open={open} onOpenChange={onOpenChange}>
-      <ResponsiveModalContent className="sm:max-w-lg">
+      <ResponsiveModalContent
+        className="sm:max-w-lg"
+        // Do not jump into (and select) the first line: the host chooses which one to fix.
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
         <ResponsiveModalHeader>
           <ResponsiveModalTitle>Edit captions</ResponsiveModalTitle>
           <ResponsiveModalDescription>Fix a word and the timing stays.</ResponsiveModalDescription>

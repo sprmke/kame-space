@@ -60,6 +60,8 @@ export async function renderCaptionAudio(
   const mb = await import('mediabunny');
 
   let done = 0;
+  let readable = 0;
+  let failed = 0;
   for (const { item } of sources) {
     throwIfAborted(options.signal);
     const rate = isAudioItem(item) ? 1 : (item.playbackRate ?? 1);
@@ -101,14 +103,21 @@ export async function renderCaptionAudio(
         const at = (item.from / fps + sourceTime / rate) * CAPTION_SAMPLE_RATE;
         mixInto(mix, piece, at, gain);
       }
+      readable += 1;
     } catch (error) {
       if (error instanceof CaptionPrepareError) throw error;
-      throw new CaptionPrepareError('unreadable', 'That sound could not be read.');
+      // One broken clip must not stop the others: skip it and keep going.
+      failed += 1;
     } finally {
       input.dispose();
     }
     done += 1;
     options.onProgress?.(done / sources.length);
+  }
+
+  // Only fail when nothing at all could be read.
+  if (readable === 0 && failed > 0) {
+    throw new CaptionPrepareError('unreadable', 'That sound could not be read.');
   }
 
   let peak = 0;

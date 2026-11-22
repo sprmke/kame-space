@@ -241,7 +241,7 @@ function MediaElement({
       />
     );
   }
-  return <Img src={url} onError={() => setFailed(!strict)} style={style} />;
+  return <Img src={url} alt="" onError={() => setFailed(!strict)} style={style} />;
 }
 
 /** Blurred, scaled copy behind letterboxed media (images, or the video poster). */
@@ -251,6 +251,7 @@ function BlurBackdrop({ item }: { item: MediaItem }) {
   return (
     <Img
       src={url}
+      alt=""
       style={{
         position: 'absolute',
         inset: 0,

@@ -84,7 +84,7 @@ export function NumberSlider({
             min={min}
             max={max}
             step={step}
-            className="h-8 w-14 text-center text-xs"
+            className="h-8 w-[4.25rem] text-center text-xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             aria-label={label ? `${label} value` : 'Numeric value'}
           />
           {unit ? <span className="text-muted-foreground w-5 text-xs">{unit}</span> : null}

@@ -1,8 +1,8 @@
 import { Check } from 'lucide-react';
 
-import { NumberSlider } from '@/features/dashboard/marketing/components/calendar-builder/components/controls/NumberSlider';
 import type { InspectorActions } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
 import { ChoiceChips } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/ChoiceChips';
+import { PanelSlider } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/PanelSlider';
 import { TextLookGallery } from '@/features/dashboard/marketing/components/video-editor/v2/TextLookGallery';
 import { VideoTextStyleControls } from '@/features/dashboard/marketing/components/video-editor/VideoTextStyleControls';
 import { withCaptionText } from '@/features/dashboard/marketing/lib/video/v2/captionLines';
@@ -129,7 +129,7 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
       const volume = (item as MediaItem).volume ?? 1;
       return (
         <>
-          <NumberSlider
+          <PanelSlider
             label="Volume"
             unit="%"
             min={0}
@@ -156,7 +156,7 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
       const max = toSeconds(item.durationInFrames);
       return (
         <>
-          <NumberSlider
+          <PanelSlider
             label="Fade in"
             unit="s"
             min={0}
@@ -167,7 +167,7 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
               patch({ fadeInFrames: Math.round(value * fps) } as Partial<VideoItem>)
             }
           />
-          <NumberSlider
+          <PanelSlider
             label="Fade out"
             unit="s"
             min={0}
@@ -198,7 +198,7 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
     }
     case 'clip-duration':
       return (
-        <NumberSlider
+        <PanelSlider
           label="Seconds on screen"
           unit="s"
           min={0.1}
@@ -242,7 +242,7 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
         patch({ adjust: { ...adjust, [key]: value / 100 } } as Partial<VideoItem>);
       return (
         <>
-          <NumberSlider
+          <PanelSlider
             label="Brightness"
             unit="%"
             min={0}
@@ -250,7 +250,7 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
             value={Math.round(adjust.brightness * 100)}
             onChange={(value) => set('brightness', value)}
           />
-          <NumberSlider
+          <PanelSlider
             label="Contrast"
             unit="%"
             min={0}
@@ -258,7 +258,7 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
             value={Math.round(adjust.contrast * 100)}
             onChange={(value) => set('contrast', value)}
           />
-          <NumberSlider
+          <PanelSlider
             label="Color"
             unit="%"
             min={0}
@@ -342,7 +342,7 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
               options={CAPTION_LOOKS.map((look) => ({ value: look.id, label: look.label }))}
               onChange={(look) => actions.setCaptionStyle({ look })}
             />
-            <NumberSlider
+            <PanelSlider
               label="Size"
               unit="%"
               min={Math.round(CAPTION_SCALE_MIN * 100)}
@@ -351,7 +351,7 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
               value={Math.round(captionStyle.scale * 100)}
               onChange={(value) => actions.setCaptionStyle({ scale: value / 100 })}
             />
-            <NumberSlider
+            <PanelSlider
               label="Height on screen"
               unit="%"
               min={5}

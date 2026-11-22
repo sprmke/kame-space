@@ -56,7 +56,7 @@ export function ProjectInspectorV2({ project, onChange }: Props) {
         onChange={(color) => onChange((p) => ({ ...p, background: { ...p.background, color } }))}
       />
       <OptionSelect<'color' | 'blur'>
-        label="Behind letterboxed media"
+        label="Fill empty space with"
         value={project.background.fill}
         options={[
           { value: 'color', label: 'Solid color' },

@@ -10,6 +10,7 @@ import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeMo
 
 import { Button } from '@/components/ui/button';
 import { useIsBelowLg } from '@/hooks/useMediaQuery';
+import { cn } from '@/lib/utils';
 
 type Props = {
   /** "Posts", "Videos", "Calendar": where Back goes. */
@@ -89,10 +90,17 @@ export function MarketingEditorTopBar({
         <MarketingInlineName
           name={name}
           onRename={canSave ? onRename : undefined}
-          className="max-w-[min(22rem,45vw)]"
+          className={cn(
+            'max-w-[min(22rem,45vw)]',
+            phoneActions && 'max-lg:max-w-none max-lg:flex-1'
+          )}
         />
         {canSave ? (
-          <MarketingAutoSaveStatus status={status} errorMessage={errorMessage} />
+          <MarketingAutoSaveStatus
+            status={status}
+            errorMessage={errorMessage}
+            compact={isBelowLg && Boolean(phoneActions)}
+          />
         ) : (
           <button
             type="button"

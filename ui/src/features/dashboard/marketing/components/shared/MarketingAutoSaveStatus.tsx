@@ -5,10 +5,41 @@ import type { MarketingAutoSaveStatus } from '@/features/dashboard/marketing/hoo
 type Props = {
   status: MarketingAutoSaveStatus;
   errorMessage?: string | null;
+  /** Icon only (the words stay for screen readers). Used on phones, where the name needs the room. */
+  compact?: boolean;
 };
 
-export function MarketingAutoSaveStatus({ status, errorMessage }: Props) {
+export function MarketingAutoSaveStatus({ status, errorMessage, compact = false }: Props) {
   if (status === 'idle') return null;
+
+  if (compact) {
+    const label =
+      status === 'pending'
+        ? 'Unsaved'
+        : status === 'saving'
+          ? 'Saving'
+          : status === 'saved'
+            ? 'Saved'
+            : 'Save failed';
+    return (
+      <span
+        role="status"
+        title={status === 'error' ? (errorMessage ?? label) : label}
+        className="flex size-8 shrink-0 items-center justify-center"
+      >
+        {status === 'saving' ? (
+          <Loader2 className="text-muted-foreground size-4 animate-spin" aria-hidden />
+        ) : status === 'saved' ? (
+          <Check className="size-4 text-emerald-500" aria-hidden />
+        ) : status === 'pending' ? (
+          <Cloud className="text-muted-foreground size-4" aria-hidden />
+        ) : (
+          <AlertCircle className="text-destructive size-4" aria-hidden />
+        )}
+        <span className="sr-only">{label}</span>
+      </span>
+    );
+  }
 
   if (status === 'pending') {
     return (

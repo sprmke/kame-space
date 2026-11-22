@@ -209,6 +209,15 @@ export const TEXT_PRESETS: TextPreset[] = [
   },
 ];
 
+/**
+ * A frame where a new text clip is fully on screen: just after its entrance animation. Adding
+ * text at a frame where it is still fading in would show the host an empty box.
+ */
+export function visibleFrameForText(item: LayerItem): number {
+  const entrance = item.animationIn?.durationInFrames ?? 0;
+  return item.from + Math.max(0, Math.min(entrance + 2, item.durationInFrames - 1));
+}
+
 export function textPresetById(id: TextPresetId): TextPreset {
   return TEXT_PRESETS.find((preset) => preset.id === id) ?? TEXT_PRESETS[0]!;
 }
@@ -278,8 +287,8 @@ export function itemAriaLabel(item: VideoItem, fps: number): string {
 
 export function trackLabel(kind: VideoTrackKind, indexWithinKind: number): string {
   const base = {
-    main: 'Main',
-    overlay: 'Overlay',
+    main: 'Video',
+    overlay: 'On top',
     text: 'Text',
     audio: 'Audio',
     captions: 'Captions',
