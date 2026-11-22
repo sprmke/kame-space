@@ -2,7 +2,7 @@
 title: 'Finance — operator guide'
 status: active
 tags: [guides, routes, org, property]
-updated: 2026-11-06
+updated: 2026-11-23
 ---
 
 # Finance — operator guide
@@ -223,11 +223,16 @@ The **Edit transaction** modal (`FinanceTransactionModals`) embeds `<EntityActiv
 
 ## Testing
 
-| Layer | Path / spec                                                                                  | Manual |
-| ----- | -------------------------------------------------------------------------------------------- | ------ |
-| Unit  | `operatingLineItemFormSteps.test.ts`; `supabase/functions/_shared/financeRecurrence_test.ts` | —      |
-| E2E   | `ui/e2e/features/dashboard/dashboardModulesSmoke.spec.ts` finance shell (`@ci`)              | —      |
-| N/A   | Telegram finance reminders, PDF export pixel checks                                          | Manual |
+| Layer | Path / spec                                                                                                                                           | Manual |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Unit  | `operatingLineItemFormSteps.test.ts`; `supabase/functions/_shared/financeRecurrence_test.ts`                                                          | —      |
+| E2E   | `ui/e2e/features/dashboard/finance/financeModule.spec.ts` (`@ci`, 13 tests — shell, filters, views, create/edit/delete, series, export, phone sheets) | —      |
+| E2E   | `ui/e2e/features/dashboard/dashboardModulesSmoke.spec.ts` finance shell (`@ci`)                                                                       | —      |
+| E2E   | `ui/e2e/features/dashboard/financeLedger.spec.ts` (`@ci`, ledger rows, RBAC redirect, PDF download)                                                   | —      |
+| Tour  | `ui/e2e/features/dashboard/finance/financeTour.slowmo.spec.ts` (`@demo`) — `bun run test:e2e:finance:tour:video`                                      | —      |
+| N/A   | Telegram finance reminder delivery, PDF pixel checks                                                                                                  | Manual |
+
+UX review evidence (42 captures, 6 recordings, ranked findings): [`docs/workflow/in-progress/finance-ux-review/`](../../../../workflow/in-progress/finance-ux-review/README.md).
 
 ---
 
