@@ -64,6 +64,9 @@ export type PlannerFinishingContext = {
   title: string;
 };
 
+/** In-memory fallback when `sessionStorage` is missing (Node tests, private mode). */
+let finishingMemory: PlannerFinishingContext | null = null;
+
 export function setPendingPlannerDraft(payload: PlannerHandoffPayload | null): void {
   pending = payload;
   if (payload) {
@@ -85,6 +88,7 @@ export function takePendingPlannerDraft(): PlannerHandoffPayload | null {
 
 /** Survives the one-shot draft consume so Studio can show “Finishing: …” */
 export function setPlannerFinishing(info: PlannerFinishingContext | null): void {
+  finishingMemory = info;
   try {
     if (typeof sessionStorage === 'undefined') return;
     if (!info) {
@@ -93,21 +97,26 @@ export function setPlannerFinishing(info: PlannerFinishingContext | null): void 
     }
     sessionStorage.setItem(FINISHING_KEY, JSON.stringify(info));
   } catch {
-    // Private mode / quota: banner is optional.
+    // Private mode / quota: memory still holds the cue.
   }
 }
 
 export function getPlannerFinishing(): PlannerFinishingContext | null {
   try {
-    if (typeof sessionStorage === 'undefined') return null;
-    const raw = sessionStorage.getItem(FINISHING_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as PlannerFinishingContext;
-    if (!parsed?.itemId || !parsed?.title) return null;
-    return parsed;
+    if (typeof sessionStorage !== 'undefined') {
+      const raw = sessionStorage.getItem(FINISHING_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as PlannerFinishingContext;
+        if (parsed?.itemId && parsed?.title) {
+          finishingMemory = parsed;
+          return parsed;
+        }
+      }
+    }
   } catch {
-    return null;
+    // Fall through to memory.
   }
+  return finishingMemory;
 }
 
 export function clearPlannerFinishing(): void {
