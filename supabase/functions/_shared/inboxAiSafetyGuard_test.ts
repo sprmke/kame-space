@@ -212,6 +212,8 @@ Deno.test('findUnsafeReplyLink blocks an external link and a data URI', () => {
     'script or data URI'
   );
   assertEquals(findUnsafeReplyLink('javascript:alert(1)'), 'script or data URI');
+  assertEquals(findUnsafeReplyLink('[x](//evil.example/p)'), '//evil.example/p');
+  assertEquals(findUnsafeReplyLink('![x](//evil.example/i)'), '//evil.example/i');
 });
 
 Deno.test('assertSafeGuestReply blocks exfiltration through a rendered link', () => {

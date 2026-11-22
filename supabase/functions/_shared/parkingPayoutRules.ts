@@ -43,8 +43,10 @@ export function parkingPayoutHoldError(input: {
   startDate: string | null | undefined;
   now?: Date;
 }): string | null {
-  const eligibleAt = parkingPayoutEligibleAt(input.startDate);
-  if (!eligibleAt) return null;
+  const startDate = String(input.startDate ?? '').trim();
+  if (!startDate) return 'Payout is held until the parking start date is recorded.';
+  const eligibleAt = parkingPayoutEligibleAt(startDate);
+  if (!eligibleAt) return 'Payout is held: the parking start date could not be read.';
   const now = input.now ?? new Date();
   if (now.getTime() >= eligibleAt.getTime()) return null;
   return `Payout is held until 24 hours after the parking start (${eligibleAt.toISOString()}).`;

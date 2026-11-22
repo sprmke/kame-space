@@ -64,7 +64,7 @@ function serializeRow(row: Record<string, unknown>) {
     payoutEligibleAt: parkingPayoutEligibleAt(rowPayoutStartDate(row))?.toISOString() ?? null,
     payoutEligible: (() => {
       const eligibleAt = parkingPayoutEligibleAt(rowPayoutStartDate(row));
-      return eligibleAt ? Date.now() >= eligibleAt.getTime() : true;
+      return eligibleAt ? Date.now() >= eligibleAt.getTime() : false;
     })(),
     disbursedAt: (row.disbursed_at as string | undefined) ?? null,
     disbursementReference: (row.disbursement_reference as string | undefined) ?? null,

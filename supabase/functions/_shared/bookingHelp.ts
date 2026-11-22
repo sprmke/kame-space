@@ -9,7 +9,7 @@
 
 import { manilaCheckInInstant } from './cancellationRefund.ts';
 import { createNotification } from './notificationService.ts';
-import { raiseOpsAlert } from './ops/opsAlert.ts';
+import { raiseOpsAlertAfterResponse } from './ops/opsAlert.ts';
 import { createServiceClient } from './orgAuth.ts';
 import { resolveOrganizationIdForProperty } from './propertyScope.ts';
 
@@ -158,7 +158,7 @@ export async function createBookingHelpRequest(input: {
       await createNotification({
         organizationId,
         propertyId,
-        type: 'guest_request_submitted',
+        type: 'booking_help_requested',
         title: `Guest needs help: ${label}`,
         body: note || 'Open the booking to see details and reply.',
         bookingId,
@@ -171,8 +171,8 @@ export async function createBookingHelpRequest(input: {
   }
 
   try {
-    await raiseOpsAlert({
-      key: `guest_help:${kind}`,
+    await raiseOpsAlertAfterResponse({
+      key: `guest_help:${bookingId}`,
       tier: kind === 'cant_get_in' || kind === 'unsafe' ? 'p0' : 'p1',
       source: 'journey',
       title: `Guest needs help: ${label}`,
@@ -186,4 +186,36 @@ export async function createBookingHelpRequest(input: {
   // The help request row is the audit record; no separate org activity row is needed.
 
   return { request: inserted as HelpRow, alreadyOpen: false };
+}
+
+/** The open case for a booking, for the host's booking detail. */
+export async function loadOpenBookingHelp(bookingId: string): Promise<HelpRow | null> {
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from('booking_help_requests')
+    .select(BOOKING_HELP_COLUMNS)
+    .eq('booking_id', String(bookingId))
+    .in('status', ['open', 'escalated'])
+    .maybeSingle();
+  return (data as HelpRow | null) ?? null;
+}
+
+/** Mark the guest's open case resolved so the host has a close action and a new case can open. */
+export async function resolveBookingHelp(input: {
+  bookingId: string;
+  helpRequestId: string;
+  userId: string;
+}): Promise<HelpRow | null> {
+  const supabase = createServiceClient();
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('booking_help_requests')
+    .update({ status: 'resolved', resolved_at: now, resolved_by: input.userId, updated_at: now })
+    .eq('id', input.helpRequestId)
+    .eq('booking_id', input.bookingId)
+    .in('status', ['open', 'escalated'])
+    .select(BOOKING_HELP_COLUMNS)
+    .maybeSingle();
+  if (error) throw new BookingHelpError('Could not resolve the request. Try again.', 500);
+  return (data as HelpRow | null) ?? null;
 }

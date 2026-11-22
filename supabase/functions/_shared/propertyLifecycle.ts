@@ -1075,10 +1075,14 @@ export async function assertPropertyAcceptsNewBookings(
   }
 
   // A stay that ends after the host's authorization window cannot be honoured (ACC-11).
-  const contractEnd = stayBeyondContractEnd({
-    settings: (data?.settings as Record<string, unknown> | null) ?? null,
-    checkOutDate,
-  });
+  assertContractWindow((data?.settings as Record<string, unknown> | null) ?? null, checkOutDate);
+}
+
+function assertContractWindow(
+  settings: Record<string, unknown> | null,
+  checkOutDate?: string | null
+): void {
+  const contractEnd = stayBeyondContractEnd({ settings, checkOutDate });
   if (contractEnd) {
     throw new PropertyLifecycleError(
       `This place is only available until ${contractEnd}. Pick an earlier check-out.`,
@@ -1087,4 +1091,22 @@ export async function assertPropertyAcceptsNewBookings(
       { contractEnd }
     );
   }
+}
+
+/**
+ * Contract-only check for an edit to an existing booking. The lifecycle gate above stays
+ * new-bookings-only on purpose; a guest extending a stay past the authorization window still
+ * has to be refused (ACC-11).
+ */
+export async function assertStayWithinContract(
+  propertyId: string,
+  checkOutDate?: string | null
+): Promise<void> {
+  if (!checkOutDate) return;
+  const { data } = await createServiceClient()
+    .from('properties')
+    .select('settings')
+    .eq('id', propertyId)
+    .maybeSingle();
+  assertContractWindow((data?.settings as Record<string, unknown> | null) ?? null, checkOutDate);
 }

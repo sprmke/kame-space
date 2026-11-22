@@ -13,7 +13,7 @@ import {
 } from '../_shared/bookingHelp.ts';
 import {
   jsonError,
-  jsonSuccess,
+  jsonResponse,
   readJsonBody,
   requireHttpMethod,
 } from '../_shared/httpResponse.ts';
@@ -46,11 +46,14 @@ serveAuthenticated('guest-trip-help', async (req, user) => {
       kind: body.kind,
       note: typeof body.note === 'string' ? body.note : null,
     });
-    return jsonSuccess(
+    return jsonResponse(
       req,
       {
-        request: result.request,
-        alreadyOpen: result.alreadyOpen,
+        success: true,
+        data: {
+          request: result.request,
+          alreadyOpen: result.alreadyOpen,
+        },
       },
       result.alreadyOpen ? 200 : 201
     );

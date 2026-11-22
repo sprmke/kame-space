@@ -10,7 +10,7 @@ import { buildActorContext, logActivity } from '../_shared/activityLog.ts';
 import { expireStaleCancellationRequests } from '../_shared/cancellationService.ts';
 import { verifyCronSecret } from '../_shared/cronSecretGate.ts';
 import { createNotification } from '../_shared/notificationService.ts';
-import { raiseOpsAlert } from '../_shared/ops/opsAlert.ts';
+import { raiseOpsAlert, resolveOpsAlert } from '../_shared/ops/opsAlert.ts';
 import { refundEscalationLevel } from '../_shared/refundEscalation.ts';
 import { createServiceClient } from '../_shared/orgAuth.ts';
 import { serveCronPost } from '../_shared/serveEdge.ts';
@@ -114,6 +114,15 @@ serveCronPost('cancellation-refund-cron', verifyCancellationRefundCronSecret, as
         overdue_total_php: Math.round(overdueTotalPhp),
       },
     });
+  }
+
+  // Clear the ladder once nothing is overdue, and never leave both the 7-day and 10-day
+  // alerts open for the same case.
+  if (escalated === 0) {
+    await resolveOpsAlert('refund:overdue_10d');
+    await resolveOpsAlert('refund:escalated_7d');
+  } else if (overdue > 0) {
+    await resolveOpsAlert('refund:escalated_7d');
   }
 
   for (const [organizationId, count] of byOrg) {

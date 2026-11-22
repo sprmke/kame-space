@@ -682,6 +682,11 @@ export async function resendPropertyInvitation(
   if (existing.status !== 'pending') {
     throw new Error('Only pending invitations can be resent');
   }
+  assertInvitePermissionsWithinInviter({
+    requested: normalizePermissionIds(existing.permissions),
+    granted: ctx.permissions,
+    accessKind: ctx.accessKind,
+  });
 
   const previousToken = existing.token as string;
   const previousExpiresAt = existing.expires_at as string;

@@ -68,7 +68,7 @@ const ALLOWED_REPLY_LINK_HOSTS: RegExp[] = [
   /\.supabase\.co$/i,
 ];
 
-const REPLY_LINK_PATTERN = /(?:https?:\/\/|www\.)[^\s<>"')\]]+/gi;
+const REPLY_LINK_PATTERN = /(?:https?:\/\/|\/\/|www\.)[^\s<>"')\]]+/gi;
 const SCRIPT_OR_DATA_URI_PATTERN = /\b(?:data|javascript|vbscript):/i;
 
 /** First URL in the draft that is not a platform or map link, or a script/data URI. */

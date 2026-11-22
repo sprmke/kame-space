@@ -293,11 +293,15 @@ export function computeCancellationOutcome(input: CancellationOutcomeInput): Can
   }
 
   const policy = input.policy;
+  const afterCheckIn = Number.isFinite(checkInMs) && cancelledMs >= checkInMs;
+  // A host cancellation (or a platform cancellation before check-in) is not the guest's
+  // fault, so it refunds everything paid even when the property has no policy configured.
+  const hostOrPlatformFullRefund =
+    input.initiator === 'host' || (input.initiator === 'system' && !afterCheckIn);
 
   if (
-    !policy ||
-    policy.needsReview ||
-    (policy.presetId === 'custom' && policy.tiers.length === 0)
+    !hostOrPlatformFullRefund &&
+    (!policy || policy.needsReview || (policy.presetId === 'custom' && policy.tiers.length === 0))
   ) {
     return {
       ...baseOutcome,
@@ -309,8 +313,8 @@ export function computeCancellationOutcome(input: CancellationOutcomeInput): Can
     };
   }
 
-  const deadlines = checkInInstant ? buildCancellationDeadlines(policy, checkInInstant) : [];
-  const afterCheckIn = Number.isFinite(checkInMs) && cancelledMs >= checkInMs;
+  const deadlines =
+    checkInInstant && policy ? buildCancellationDeadlines(policy, checkInInstant) : [];
 
   let refundPercent = 0;
   let appliedRule: CancellationAppliedRule = {
@@ -333,22 +337,19 @@ export function computeCancellationOutcome(input: CancellationOutcomeInput): Can
         deadlineIso: matched.deadlineIso,
       };
     } else {
-      refundPercent = policy.fallbackRefundPercent;
+      refundPercent = policy?.fallbackRefundPercent ?? 0;
       appliedRule = {
         kind: 'fallback',
         label:
-          policy.fallbackRefundPercent > 0
-            ? `${policy.fallbackRefundPercent}% of what you paid`
+          (policy?.fallbackRefundPercent ?? 0) > 0
+            ? `${policy?.fallbackRefundPercent}% of what you paid`
             : 'No refund at this time',
       };
     }
   }
 
   let policyRefundCents = 0;
-  // A host cancellation (and a platform cancellation before check-in, such as an expired
-  // request) is not the guest's fault, so it refunds everything the guest paid.
-  const platformFullRefund = input.initiator === 'system' && !afterCheckIn;
-  if (input.initiator === 'host' || platformFullRefund) {
+  if (hostOrPlatformFullRefund) {
     refundPercent = 100;
     appliedRule = {
       kind: 'host',

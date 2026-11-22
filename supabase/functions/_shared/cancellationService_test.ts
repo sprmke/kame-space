@@ -291,3 +291,40 @@ Deno.test(
     assertEquals(outcome.retainedPhp, 0);
   }
 );
+
+Deno.test('host cancel refunds in full even when the property has no policy', () => {
+  const outcome = computeOutcomeForBooking({
+    booking: booking(),
+    policy: null,
+    checkInTime: CHECK_IN_TIME,
+    initiator: 'host',
+    cancelledAt: '2026-11-01T00:00:00.000Z',
+  });
+  assertEquals(outcome.mode, 'computed');
+  assertEquals(outcome.refundDuePhp, 5000);
+  assertEquals(outcome.appliedRule?.kind, 'host');
+});
+
+Deno.test('an expired request refunds in full even when the property has no policy', () => {
+  const outcome = computeOutcomeForBooking({
+    booking: booking(),
+    policy: null,
+    checkInTime: CHECK_IN_TIME,
+    initiator: 'system',
+    cancelledAt: '2026-11-01T00:00:00.000Z',
+  });
+  assertEquals(outcome.mode, 'computed');
+  assertEquals(outcome.refundDuePhp, 5000);
+});
+
+Deno.test('a guest cancel on an unset policy still asks the host to decide', () => {
+  const outcome = computeOutcomeForBooking({
+    booking: booking(),
+    policy: null,
+    checkInTime: CHECK_IN_TIME,
+    initiator: 'guest',
+    cancelledAt: '2026-11-01T00:00:00.000Z',
+  });
+  assertEquals(outcome.mode, 'host_decides');
+  assertEquals(outcome.refundDuePhp, 0);
+});

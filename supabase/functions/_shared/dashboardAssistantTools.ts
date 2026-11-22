@@ -145,7 +145,10 @@ import {
 import { WorkflowOrchestrator } from './workflowOrchestrator.ts';
 import {
   cancelBooking,
+  computeOutcomeForBooking,
+  ensureBookingSnapshot,
   isCancellationReasonCode,
+  loadPropertyCancellationContext,
   type CancellationReasonCode,
 } from './cancellationService.ts';
 import { buildActorContext, logActivity } from './activityLog.ts';

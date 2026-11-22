@@ -48,6 +48,12 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'accept-org-invite': account,
   'accept-parking-invite': account,
   'accept-property-invite': account,
+  'booking-help': {
+    kind: 'excluded',
+    routeKey: 'property.booking',
+    reason:
+      'Guest help cases are opened from the trip page and closed on the booking detail; the assistant does not resolve them.',
+  },
   'data-subject-request': account,
   'notification-preferences': account,
   'push-subscribe': account,

@@ -30,8 +30,15 @@ Deno.test('parking payout: hold error before eligibility, cleared after', () => 
   assertEquals(parkingPayoutHoldError({ startDate: '2026-11-20', now: after }), null);
 });
 
-Deno.test('parking payout: a missing or malformed start date does not block', () => {
+Deno.test('parking payout: a missing or malformed start date is held for review', () => {
   assertEquals(parkingPayoutEligibleAt(null), null);
   assertEquals(parkingPayoutEligibleAt('not-a-date'), null);
-  assertEquals(parkingPayoutHoldError({ startDate: null }), null);
+  assertEquals(
+    parkingPayoutHoldError({ startDate: null })?.includes('start date is recorded'),
+    true
+  );
+  assertEquals(
+    parkingPayoutHoldError({ startDate: 'not-a-date' })?.includes('could not be read'),
+    true
+  );
 });

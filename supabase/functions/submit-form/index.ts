@@ -44,6 +44,7 @@ import { maintenanceModeResponse } from '../_shared/platformSettingsCache.ts';
 import { captureFaultIfServerError } from '../_shared/httpResponse.ts';
 import {
   assertPropertyAcceptsNewBookings,
+  assertStayWithinContract,
   PropertyLifecycleError,
 } from '../_shared/propertyLifecycle.ts';
 import { captureSnapshotForBooking, PolicyChangedError } from '../_shared/cancellationService.ts';
@@ -163,10 +164,15 @@ serveHandler('submit-form', async (req) => {
     const existingBookingRow =
       isSaveToDatabaseEnabled && bookingId ? await DatabaseService.getRawData(bookingId) : null;
 
-    if (isSaveToDatabaseEnabled && propertyId && !existingBookingRow) {
-      // New bookings only. An existing booking keeps editing while the listing is paused or
-      // archived; the lifecycle gate lives in one place and is mirrored by a DB trigger.
-      await assertPropertyAcceptsNewBookings(propertyId, checkOutDate);
+    if (isSaveToDatabaseEnabled && propertyId) {
+      if (!existingBookingRow) {
+        // New bookings only. An existing booking keeps editing while the listing is paused or
+        // archived; the lifecycle gate lives in one place and is mirrored by a DB trigger.
+        await assertPropertyAcceptsNewBookings(propertyId, checkOutDate);
+      } else {
+        // An edit can still extend the stay past the host's authorization window.
+        await assertStayWithinContract(propertyId, checkOutDate);
+      }
     }
 
     // Check for overlapping bookings (only if saving to database)

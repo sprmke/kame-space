@@ -12,6 +12,7 @@
 
 import { buildActorContext, type ActorContext } from './activityLog.ts';
 import { createServiceClient } from './orgAuth.ts';
+import { createNotification } from './notificationService.ts';
 import { logParkingStatusChange } from './parkingActivity.ts';
 import { sendParkingHostCancelledEmail } from './parkingBroadcastEmail.ts';
 
@@ -107,6 +108,21 @@ export async function cancelLinkedParkingForStay(input: {
             checkOutDate: String(row.parking_check_out_date ?? row.check_out_date ?? ''),
             bookingId: parkingBookingId,
           });
+
+          // The parking host may be a different org. Tell them why a paid slot vanished.
+          const parkingOrganizationId = String(parking.organization_id ?? '');
+          if (parkingOrganizationId) {
+            await createNotification({
+              organizationId: parkingOrganizationId,
+              parkingId: String(row.parking_id),
+              bookingId: parkingBookingId,
+              type: 'parking_cancelled_by_host',
+              title: 'Parking cancelled with the stay',
+              body: 'The guest stay was cancelled by the host. This parking booking was cancelled and any payment moved to refund review.',
+              dedupeKey: `parking-stay-cancel:${parkingBookingId}`,
+              metadata: { stay_booking_id: stayBookingId },
+            });
+          }
         }
       } catch (emailError) {
         console.error(
