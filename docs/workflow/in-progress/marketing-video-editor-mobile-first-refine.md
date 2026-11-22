@@ -1,5 +1,5 @@
 ---
-stage: planned
+stage: in-progress
 title: 'Marketing: mobile-first video editor refine (text styles, voiceover, auto captions)'
 status: planned
 tags: [workflow, planned, marketing, video, remotion, mobile, captions, voiceover, ux]
