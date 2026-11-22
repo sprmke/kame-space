@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 
-import { Loader2, Mic, MicOff, PhoneOff } from 'lucide-react';
+import { Loader2, Mic, MicOff, PhoneOff, X } from 'lucide-react';
 
+import { TURTLE_IDLE_POSTER_SRC } from '@/features/guest/chat/components/voice/receptionistAvatarVideo';
 import { VoiceBoothRing } from '@/features/guest/chat/components/voice/VoiceBoothRing';
 import { VoiceMicWaveform } from '@/features/guest/chat/components/voice/VoiceMicWaveform';
 import { useDwellValue } from '@/features/guest/chat/hooks/useDwellValue';
@@ -47,8 +48,8 @@ function formatCountdown(seconds: number | null): string {
 }
 
 function statusToneClass(view: VoiceSessionView): string {
-  if (view === 'error') return 'text-destructive';
-  if (isBusyVoiceView(view)) return 'text-warning';
+  if (view === 'error') return 'text-red-700 dark:text-red-300';
+  if (isBusyVoiceView(view)) return 'text-amber-700 dark:text-amber-300';
   if (showsVoiceLevel(view)) return 'text-primary';
   return 'text-muted-foreground';
 }
@@ -192,6 +193,10 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
     const prior = [...committed].reverse().find((caption) => caption.id !== live.id);
     return prior && prior.role !== live.role ? [prior, live] : [live];
   })();
+  // Screen readers hear the status label but not the bubbles; announce each finished reply once.
+  const lastAssistantCaption = [...session.captions]
+    .reverse()
+    .find((caption) => caption.role !== 'guest' && caption.text.trim());
 
   const isEnding = session.phase === 'ending';
   const controlsDisabled = view === 'connecting' || view === 'reconnecting' || isEnding;
@@ -210,7 +215,14 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
       aria-label="Voice receptionist"
     >
       <div className="border-border flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2">
-        <span className="text-muted-foreground w-11 shrink-0 text-xs font-medium tabular-nums">
+        <span
+          aria-label={
+            inCall && !isEnding
+              ? `${formatCountdown(session.remainingSeconds)} remaining`
+              : undefined
+          }
+          className="text-muted-foreground w-11 shrink-0 text-xs font-medium tabular-nums"
+        >
           {inCall && !isEnding ? formatCountdown(session.remainingSeconds) : ''}
         </span>
         <p
@@ -233,10 +245,14 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
             onClick={handleClose}
             className="text-muted-foreground hover:text-foreground hover:bg-muted/60 inline-flex size-11 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full transition-colors"
           >
-            <PhoneOff className="size-5" aria-hidden />
+            <X className="size-5" aria-hidden />
           </button>
         )}
       </div>
+
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        {lastAssistantCaption?.text ?? ''}
+      </p>
 
       <div
         ref={session.meterRef}
@@ -250,7 +266,15 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
           <VoiceBoothRing state={voiceViewAvatarState(view)} busy={isBusyVoiceView(view)} />
           <div className="absolute inset-[11px] flex items-center justify-center">
             <Suspense
-              fallback={<div style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }} aria-hidden />}
+              fallback={
+                <img
+                  src={TURTLE_IDLE_POSTER_SRC}
+                  alt=""
+                  width={AVATAR_SIZE}
+                  height={AVATAR_SIZE}
+                  className="size-full rounded-full object-cover"
+                />
+              }
             >
               <ReceptionistAvatar state={voiceViewAvatarState(view)} size={AVATAR_SIZE} />
             </Suspense>
@@ -278,7 +302,10 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
         ) : null}
 
         {session.errorMessage ? (
-          <p role="alert" className="voice-fade-up text-destructive max-w-sm text-center text-sm">
+          <p
+            role="alert"
+            className="voice-fade-up max-w-sm text-center text-sm text-red-700 dark:text-red-300"
+          >
             {session.errorMessage}
           </p>
         ) : null}
@@ -286,7 +313,7 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
           <p
             key={session.notice}
             role="status"
-            className="voice-fade-up text-warning max-w-sm text-center text-sm font-medium"
+            className="voice-fade-up max-w-sm text-center text-sm font-medium text-amber-700 dark:text-amber-300"
           >
             {session.notice === 'offline'
               ? 'Waiting for your connection…'
@@ -302,7 +329,10 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
           </p>
         ) : null}
         {deleteError ? (
-          <p role="alert" className="voice-fade-up text-destructive max-w-sm text-center text-sm">
+          <p
+            role="alert"
+            className="voice-fade-up max-w-sm text-center text-sm text-red-700 dark:text-red-300"
+          >
             {deleteError}
           </p>
         ) : null}
@@ -314,6 +344,7 @@ export function VoiceSessionPanel({ propertySlug, onClose, className }: Props) {
               return (
                 <div
                   key={line.id}
+                  data-testid="voice-caption"
                   className={cn(
                     'voice-fade-up w-fit max-w-[min(100%,28rem)] rounded-2xl px-3 py-2 text-left text-sm leading-snug',
                     guest

@@ -2,6 +2,7 @@ import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode 
 
 import { REST, type Pose } from '../../../../../../../marketing/social/src/mascot/kamePose';
 import type { ReceptionistAvatarState } from '@/features/guest/chat/components/voice/receptionistAvatarTypes';
+import { TURTLE_IDLE_POSTER_SRC } from '@/features/guest/chat/components/voice/receptionistAvatarVideo';
 import { cn } from '@/lib/utils';
 
 // The rig pulls in three.js (~500 kB), and it is only needed once the booth is on screen.
@@ -117,7 +118,10 @@ function supportsWebGl(): boolean {
   }
 }
 
-class KameBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+class KameBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { failed: boolean }
+> {
   state = { failed: false };
 
   static getDerivedStateFromError() {
@@ -190,7 +194,11 @@ export function ReceptionistAvatar({ state, size = 160, className }: Props) {
     return () => window.cancelAnimationFrame(request);
   }, []);
 
-  const flatFallback = <div className="bg-primary/15 size-full rounded-full" aria-hidden />;
+  // WebGL can succeed at a probe and still fail inside three.js (software rendering, context
+  // limits). The poster keeps the booth looking like Kame instead of a blank circle.
+  const flatFallback = (
+    <img src={TURTLE_IDLE_POSTER_SRC} alt="" className="size-full object-cover" />
+  );
 
   return (
     <div
