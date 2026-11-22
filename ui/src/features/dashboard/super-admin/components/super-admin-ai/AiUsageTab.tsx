@@ -169,7 +169,7 @@ export function AiUsageTab() {
                 description="Estimated USD in range"
               />
               <div className={CHART_HEIGHT_CLASS}>
-                {data.featureBreakdown.length > 0 ? (
+                {data.featureBreakdown.some((row) => row.costUsd > 0) ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={data.featureBreakdown.slice(0, 10).map((r) => ({
@@ -224,7 +224,7 @@ export function AiUsageTab() {
                   </ResponsiveContainer>
                 ) : (
                   <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
-                    No AI usage in this range
+                    No per-feature AI cost in this range
                   </div>
                 )}
               </div>

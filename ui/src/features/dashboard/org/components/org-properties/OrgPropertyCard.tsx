@@ -74,7 +74,7 @@ function OrgPropertyPlatformContext({
       {developmentHref && development ? (
         <Link
           to={developmentHref}
-          className="text-primary pointer-events-auto relative z-[3] truncate hover:underline"
+          className="text-brand-ink pointer-events-auto relative z-[3] truncate hover:underline"
         >
           {development}
         </Link>

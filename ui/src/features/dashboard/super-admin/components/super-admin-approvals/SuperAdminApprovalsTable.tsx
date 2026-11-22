@@ -24,6 +24,7 @@ import {
   isListingVerificationApprovalSummary,
   isOrgApprovalSummary,
 } from '@/features/dashboard/super-admin/lib/superAdminApprovalsFilters';
+import { formatSuperAdminDate } from '@/features/dashboard/super-admin/lib/superAdminDates';
 import type { ApprovalQueueItem } from '@/features/dashboard/super-admin/types/approval';
 
 import { softBadgeClasses, toneBadgeClasses } from '@/lib/statusToneColors';
@@ -62,15 +63,6 @@ function hostModesLabel(hostModes: string[]): string {
   return 'Property';
 }
 
-function formatSubmittedDate(value: string | null): string {
-  if (!value) return '-';
-  return new Date(value).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
 type Props = {
   approvals: ApprovalQueueItem[];
   onSelect: (approval: ApprovalQueueItem) => void;
@@ -85,7 +77,7 @@ export function SuperAdminApprovalsTable({ approvals, onSelect }: Props) {
         <AdminTableTh className="hidden px-3 sm:table-cell sm:px-4">Type</AdminTableTh>
         <AdminTableTh className="hidden px-3 md:table-cell md:px-4">Submitted</AdminTableTh>
         <AdminTableTh className="whitespace-nowrap px-3 sm:px-4">Status</AdminTableTh>
-        <AdminTableActionsTh>Review</AdminTableActionsTh>
+        <AdminTableActionsTh><span className="sr-only">Review</span></AdminTableActionsTh>
       </AdminTableHeadRow>
       <tbody>
         {approvals.map((approval, index) => {
@@ -107,21 +99,22 @@ export function SuperAdminApprovalsTable({ approvals, onSelect }: Props) {
             <tr
               key={approvalQueueItemKey(approval)}
               className={adminTableRowClass(index)}
-              tabIndex={0}
-              role="link"
               onClick={() => onSelect(approval)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  onSelect(approval);
-                }
-              }}
-              aria-label={ariaLabel}
             >
               <td className={adminTableCell.body}>
                 <div className="min-w-0">
                   <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                    <p className={cn('truncate', adminTableBodyText.primary)}>{label}</p>
+                    <button
+                      type="button"
+                      aria-label={ariaLabel}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSelect(approval);
+                      }}
+                      className={cn('block max-w-full truncate text-left hover:underline', adminTableBodyText.primary)}
+                    >
+                      {label}
+                    </button>
                     {isReview ? <ReviewBadge /> : null}
                     {isListing ? <ListingBadge /> : null}
                     {!isReview && !isListing && approval.hasActiveUnitConflict ? (
@@ -177,7 +170,7 @@ export function SuperAdminApprovalsTable({ approvals, onSelect }: Props) {
               </td>
               <td className={cn(adminTableCell.body, 'hidden md:table-cell')}>
                 <span className={cn('tabular-nums', adminTableBodyText.secondary)}>
-                  {formatSubmittedDate(
+                  {formatSuperAdminDate(
                     isReview
                       ? approval.submittedAt
                       : isListing

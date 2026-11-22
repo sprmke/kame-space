@@ -15,6 +15,7 @@ import {
   isListingVerificationApprovalSummary,
   isOrgApprovalSummary,
 } from '@/features/dashboard/super-admin/lib/superAdminApprovalsFilters';
+import { formatSuperAdminDate } from '@/features/dashboard/super-admin/lib/superAdminDates';
 import type { ApprovalQueueItem } from '@/features/dashboard/super-admin/types/approval';
 
 import { AdminCardGrid, AdminCardRow } from '@/components/mobile/AdminCardGrid';
@@ -54,15 +55,6 @@ function hostModesLabel(hostModes: string[]): string {
   return 'Property';
 }
 
-function formatSubmittedDate(value: string | null): string {
-  if (!value) return '-';
-  return new Date(value).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
 type Props = {
   approvals: ApprovalQueueItem[];
   onSelect: (approval: ApprovalQueueItem) => void;
@@ -95,7 +87,10 @@ export function SuperAdminApprovalsCardGrid({ approvals, onSelect }: Props) {
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <p className="text-foreground min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight sm:text-sm">
+                  <p
+                    className="text-foreground min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight sm:text-sm"
+                    title={label}
+                  >
                     {label}
                   </p>
                   <span className="hidden sm:contents">
@@ -151,7 +146,7 @@ export function SuperAdminApprovalsCardGrid({ approvals, onSelect }: Props) {
                   ·
                 </span>
                 <span className="tabular-nums">
-                  {formatSubmittedDate(
+                  {formatSuperAdminDate(
                     isReview
                       ? approval.submittedAt
                       : isListing

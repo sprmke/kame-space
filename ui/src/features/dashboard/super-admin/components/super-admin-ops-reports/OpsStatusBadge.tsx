@@ -2,19 +2,20 @@ import type { OpsSeverity } from '@/features/dashboard/super-admin/lib/opsReport
 
 import { cn } from '@/lib/utils';
 
+// Solid fills dark enough for 4.5:1 against white at 11px bold.
 const SEVERITY_CLASS: Record<OpsSeverity, string> = {
-  critical: 'bg-red-600 text-white',
-  high: 'bg-orange-600 text-white',
+  critical: 'bg-red-700 text-white',
+  high: 'bg-orange-800 text-white',
   medium: 'bg-amber-500 text-black',
-  low: 'bg-sky-600 text-white',
-  info: 'bg-slate-500 text-white',
+  low: 'bg-sky-800 text-white',
+  info: 'bg-slate-600 text-white',
 };
 
 const STATUS_CLASS: Record<string, string> = {
-  ok: 'bg-emerald-600 text-white',
+  ok: 'bg-emerald-700 text-white',
   warn: 'bg-amber-500 text-black',
-  error: 'bg-red-600 text-white',
-  unknown: 'bg-slate-500 text-white',
+  error: 'bg-red-700 text-white',
+  unknown: 'bg-slate-600 text-white',
   skipped: 'bg-slate-200 text-slate-700',
   partial: 'bg-amber-100 text-amber-900',
 };

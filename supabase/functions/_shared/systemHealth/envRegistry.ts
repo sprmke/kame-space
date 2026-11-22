@@ -138,6 +138,27 @@ const TUNING = 'Tuning';
 const LEGACY = 'Legacy fallbacks';
 const CRON = 'Cron secrets';
 
+/** One env definition per cron secret, with the labels of every job that uses it. */
+const SCHEDULED_JOB_SECRET_ENVS: EnvDef[] = (() => {
+  const byKey = new Map<string, EnvDef>();
+  for (const job of SCHEDULED_JOBS) {
+    const existing = byKey.get(job.secretEnv);
+    if (existing) {
+      if (!existing.features.includes(job.label)) existing.features.push(job.label);
+      if (!job.nonProdOnly) existing.level = 'prodRequired';
+      continue;
+    }
+    byKey.set(job.secretEnv, {
+      key: job.secretEnv,
+      group: CRON,
+      level: job.nonProdOnly ? 'optional' : 'prodRequired',
+      features: [job.label],
+      hint: 'Production rejects cron calls when unset. Set the matching Vault secret too.',
+    });
+  }
+  return [...byKey.values()];
+})();
+
 export const EDGE_ENV_REGISTRY: EnvDef[] = [
   {
     key: 'SUPABASE_URL',
@@ -519,13 +540,9 @@ export const EDGE_ENV_REGISTRY: EnvDef[] = [
     hint: 'Used only when an organization has no link saved.',
   })),
 
-  ...SCHEDULED_JOBS.map((job): EnvDef => ({
-    key: job.secretEnv,
-    group: CRON,
-    level: job.nonProdOnly ? 'optional' : 'prodRequired',
-    features: [job.label],
-    hint: 'Production rejects cron calls when unset. Set the matching Vault secret too.',
-  })),
+  // Several cron jobs can share one secret (e.g. the two Marketing trends runs).
+  // Key the checks by secret so the console renders one row per variable.
+  ...SCHEDULED_JOB_SECRET_ENVS,
 ];
 
 export const EDGE_POSTURE_RULES: PostureRule[] = [

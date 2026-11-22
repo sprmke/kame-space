@@ -178,10 +178,10 @@ export function EditPricingPlanDialog({
       <ResponsiveModal open={open} onOpenChange={guardedOpenChange}>
         <ResponsiveModalContent
           sheetLayout="split"
-          className="flex max-h-[min(90dvh,42rem)] max-w-[min(calc(100vw-1.5rem),32rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg sm:p-0"
+          className="flex max-h-[min(92dvh,46rem)] max-w-[min(calc(100vw-1.5rem),32rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl sm:p-0"
         >
           <ResponsiveModalHeader className="shrink-0 px-4 pt-6">
-            <ResponsiveModalTitle>Edit {plan.code}</ResponsiveModalTitle>
+            <ResponsiveModalTitle>Edit {plan.name || plan.code}</ResponsiveModalTitle>
           </ResponsiveModalHeader>
 
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4">
@@ -199,7 +199,7 @@ export function EditPricingPlanDialog({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="plan-sort">Sort order</Label>
                 <Input
@@ -220,19 +220,18 @@ export function EditPricingPlanDialog({
                   onChange={(e) => setPricePhp(e.target.value)}
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="plan-discount">Discount %</Label>
-              <Input
-                id="plan-discount"
-                type="number"
-                min={0}
-                max={100}
-                step={1}
-                value={discountPercent}
-                onChange={(e) => setDiscountPercent(e.target.value)}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="plan-discount">Discount %</Label>
+                <Input
+                  id="plan-discount"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={discountPercent}
+                  onChange={(e) => setDiscountPercent(e.target.value)}
+                />
+              </div>
             </div>
 
             <p className="text-muted-foreground text-sm tabular-nums">

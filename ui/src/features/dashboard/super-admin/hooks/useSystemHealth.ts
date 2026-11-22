@@ -58,17 +58,33 @@ export type SystemHealthCapacity = {
 
 const FN = 'super-admin-system-health';
 
+/** Keep the first row per key. Guards React keys when an endpoint repeats an id. */
+export function dedupeByKey<T>(items: readonly T[], key: (item: T) => string): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const item of items) {
+    const value = key(item);
+    if (seen.has(value)) continue;
+    seen.add(value);
+    out.push(item);
+  }
+  return out;
+}
+
 /** Server checks plus this build's Vite env and UI-vs-edge parity checks. */
 export function allHealthChecks(summary: SystemHealthSummary): HealthCheck[] {
   const env = readUiEnv();
-  return [
-    ...summary.checks,
-    ...evaluateUiEnv(env, summary.environment === 'production'),
-    ...evaluateUiServerParity(env, {
-      projectRef: summary.projectRef ?? null,
-      vapidPublicKey: summary.vapidPublicKey ?? null,
-    }),
-  ];
+  return dedupeByKey(
+    [
+      ...summary.checks,
+      ...evaluateUiEnv(env, summary.environment === 'production'),
+      ...evaluateUiServerParity(env, {
+        projectRef: summary.projectRef ?? null,
+        vapidPublicKey: summary.vapidPublicKey ?? null,
+      }),
+    ],
+    (check) => check.id
+  );
 }
 const SUMMARY_KEY = ['super-admin', 'system-health', 'summary'] as const;
 
@@ -76,7 +92,14 @@ const SUMMARY_KEY = ['super-admin', 'system-health', 'summary'] as const;
 export function useSystemHealth() {
   return useQuery({
     queryKey: SUMMARY_KEY,
-    queryFn: () => callEdgeFunction<SystemHealthSummary>(`${FN}?view=summary`),
+    queryFn: async () => {
+      const summary = await callEdgeFunction<SystemHealthSummary>(`${FN}?view=summary`);
+      return {
+        ...summary,
+        checks: dedupeByKey(summary.checks ?? [], (check) => check.id),
+        jobs: dedupeByKey(summary.jobs ?? [], (job) => job.fn),
+      };
+    },
     staleTime: 60_000,
     refetchInterval: 120_000,
   });

@@ -20,11 +20,30 @@ serveSuperAdmin('list-super-admin-audit', async (req) => {
   const url = new URL(req.url);
   const p = url.searchParams;
   const { page, limit } = parsePageLimit(p, { maxLimit: 200 });
+  const facets = p.get('facets') === 'true';
   const targetType = p.get('targetType')?.trim() || null;
   const targetId = p.get('targetId')?.trim() || null;
   const actor = p.get('actor')?.trim() || null;
   const action = p.get('action')?.trim() || null;
   const search = p.get('q')?.trim() || null;
+
+  if (facets) {
+    const { data, error } = await supabase
+      .from('super_admin_audit_events')
+      .select('action,target_type')
+      .order('created_at', { ascending: false })
+      .limit(1000);
+    if (error) return jsonError(req, error.message, 500);
+    const actions = [...new Set((data ?? []).map((row) => row.action as string))].sort();
+    const targetTypes = [
+      ...new Set(
+        (data ?? [])
+          .map((row) => row.target_type as string | null)
+          .filter((value): value is string => Boolean(value))
+      ),
+    ].sort();
+    return jsonSuccess(req, { actions, targetTypes });
+  }
 
   let query = supabase
     .from('super_admin_audit_events')

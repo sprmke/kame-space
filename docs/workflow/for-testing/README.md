@@ -13,11 +13,13 @@ Implementation **complete** — remaining work is **manual verification only** (
 
 **Run the batch:** [`QA-BATCH.md`](../in-progress/production-readiness/qa/QA-BATCH.md) — recommended order + smoke paths (batches #1–#9).
 
-| When to use                                    | Action                                                                                                               |
-| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| QA passes, deferred items documented elsewhere | `/workflow-done <slug>` → [`../done/`](../done/)                                                                     |
-| Verification finds required code work          | Move back to [`../in-progress/`](../in-progress/) via `/workflow-start` or manual move + update scratchpad to **🚧** |
-| Product cancels                                | `/workflow-wont-do <slug>`                                                                                           |
+| When to use                                                      | Action                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`super-admin-console-audit.md`](./super-admin-console-audit.md) | **Super admin console audit** — every defect from the local Playwright + axe sweep of 37 admin routes is fixed: approval dates, guard retry, table semantics, admin 404, filter wrapping, palette page search, audit filters and metadata, AI wallet picker, billing tools confirmation, modal stack leak, contrast. Residual: AI spend vs per-feature aggregation (data), rate-limit config split (product), ticket org column semantics | Live sweep on local: 37 routes x desktop/phone, axe clean, no console errors; Playwright admin suite + 6 new specs; unit + Deno edge suites |
+
+| QA passes, deferred items documented elsewhere | `/workflow-done <slug>` → [`../done/`](../done/) |
+| Verification finds required code work | Move back to [`../in-progress/`](../in-progress/) via `/workflow-start` or manual move + update scratchpad to **🚧** |
+| Product cancels | `/workflow-wont-do <slug>` |
 
 **Scratchpad emoji:** **🧪** for-testing (between **🚧** in progress and **✅** done).
 

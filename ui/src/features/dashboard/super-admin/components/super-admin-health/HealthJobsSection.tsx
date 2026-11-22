@@ -51,7 +51,9 @@ function JobRow({ job }: { job: SystemHealthJob }) {
           <div className="flex flex-wrap items-baseline justify-between gap-x-2">
             <span className="text-sm font-medium">{job.label}</span>
             <span className="text-muted-foreground text-xs tabular-nums">
-              {job.lastSuccessAt ? `OK ${formatAgo(job.lastSuccessAt)}` : 'No success yet'}
+              {job.lastSuccessAt
+                ? `${job.status === 'ok' ? 'OK' : 'Last success'} ${formatAgo(job.lastSuccessAt)}`
+                : 'No success yet'}
             </span>
           </div>
           <p className="text-muted-foreground text-xs">{job.detail}</p>
@@ -103,7 +105,7 @@ function JobRow({ job }: { job: SystemHealthJob }) {
           href={job.logsHref}
           target="_blank"
           rel="noreferrer"
-          className="text-primary ml-[18px] inline-flex min-h-[44px] items-center gap-1 text-xs font-medium hover:underline lg:min-h-7"
+          className="text-brand-ink ml-[18px] inline-flex min-h-[44px] items-center gap-1 text-xs font-medium hover:underline lg:min-h-7"
         >
           <ExternalLink className="size-3.5" aria-hidden />
           Logs

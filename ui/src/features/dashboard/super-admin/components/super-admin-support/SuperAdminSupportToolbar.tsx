@@ -44,7 +44,7 @@ export function SuperAdminSupportToolbar({
 }: Props) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
         <div className="relative min-w-[min(100%,16rem)] flex-1 sm:max-w-xs">
           <Search
             className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"

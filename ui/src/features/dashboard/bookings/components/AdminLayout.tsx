@@ -13,7 +13,7 @@ import type { ReactNode } from 'react';
 import { Link, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { motion } from 'framer-motion';
-import { ChevronUp, ChevronLeft, ChevronRight, LogOut, User } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, LogOut, User } from 'lucide-react';
 
 import { AccountAvatar } from '@/features/guest/account/components/AccountAvatar';
 import { GuestProfileModal } from '@/features/guest/account/components/GuestProfileModal';
@@ -58,15 +58,15 @@ import {
   splitAdminBottomNav,
 } from '@/features/dashboard/bookings/lib/adminBottomNav';
 import {
-  resolveQuickAccessPaths,
-  resolveQuickAccessScope,
-} from '@/features/dashboard/bookings/lib/adminQuickAccess';
-import {
   AdminLayoutFillMainActiveContext,
   AdminLayoutFillMainContext,
 } from '@/features/dashboard/bookings/lib/adminLayoutFillMain';
 import { resolveAdminNavPrefetch } from '@/features/dashboard/bookings/lib/adminNavPrefetch';
 import { adminPageTransitionKey } from '@/features/dashboard/bookings/lib/adminPageTransitionKey';
+import {
+  resolveQuickAccessPaths,
+  resolveQuickAccessScope,
+} from '@/features/dashboard/bookings/lib/adminQuickAccess';
 import {
   buildOrgNavSections,
   buildParkingNavSections,
@@ -90,8 +90,8 @@ import { useNotificationsList } from '@/features/dashboard/notifications/hooks/u
 import { ListingContractRenewalProvider } from '@/features/dashboard/org/components/listing-authorization/ListingContractRenewalProvider';
 import { ListingVerificationSidebarCta } from '@/features/dashboard/org/components/listing-authorization/ListingVerificationSidebarCta';
 import { OrgSettingsIssuesSync } from '@/features/dashboard/org/components/OrgSettingsIssuesSync';
-import { PropertyLifecycleBanner } from '@/features/dashboard/org/components/PropertyLifecycleBanner';
 import { SectionNavIssueDot } from '@/features/dashboard/org/components/property-settings/PropertySettingsFields';
+import { PropertyLifecycleBanner } from '@/features/dashboard/org/components/PropertyLifecycleBanner';
 import {
   type OrgContextValue,
   useOptionalOrgContext,
@@ -134,14 +134,14 @@ import { useOrgPermissions } from '@/features/dashboard/team/hooks/useOrgPermiss
 import { useParkingPermissions } from '@/features/dashboard/team/hooks/useParkingPermissions';
 import { usePropertyPermissions } from '@/features/dashboard/team/hooks/usePropertyPermissions';
 
+import { FeatureAvailabilityBanner } from '@/components/feature-availability/FeatureAvailabilityBanner';
+import { LegalFooterLinks } from '@/components/legal/LegalFooterLinks';
 import { BottomBarSlotProvider } from '@/components/mobile/BottomBarSlot';
 import { BottomTabBar } from '@/components/mobile/BottomTabBar';
 import { MobileAppShell } from '@/components/mobile/ContextualActionBar';
 import { PageTransition } from '@/components/mobile/PageTransition';
 import { AiAssistantPanelSkeleton } from '@/components/skeletons/AiAssistantSkeleton';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { FeatureAvailabilityBanner } from '@/components/feature-availability/FeatureAvailabilityBanner';
-import { LegalFooterLinks } from '@/components/legal/LegalFooterLinks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SlidingActivePill } from '@/components/ui/SlidingActivePill';
 import { useAfterFirstPaint } from '@/hooks/useAfterFirstPaint';
@@ -181,6 +181,25 @@ const SIDEBAR_TOGGLE_TOP_COLLAPSED = 32;
 function readSidebarCollapsed(): boolean {
   if (typeof window === 'undefined') return false;
   return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+}
+
+const SIDEBAR_GROUPS_KEY = 'kame-admin-sidebar-collapsed-groups';
+
+function readCollapsedGroups(): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(SIDEBAR_GROUPS_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeCollapsedGroups(value: Record<string, boolean>) {
+  try {
+    localStorage.setItem(SIDEBAR_GROUPS_KEY, JSON.stringify(value));
+  } catch {
+    // Storage can be unavailable in private mode; collapsing is cosmetic.
+  }
 }
 
 function resolveAdminPageTitle(
@@ -319,7 +338,10 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
   const tenant = useOptionalOrgContext();
   const parkingTenant = useOptionalParkingContext();
   const { data: orgsData } = useOrganizations();
-  const orgSlugForLists = tenant?.orgSlug ?? parkingTenant?.orgSlug ?? routeOrgSlug;
+  // `/admin/orgs/:orgSlug` reuses the `:orgSlug` param name for a *super-admin* org.
+  // It is not a tenant route, so never resolve tenant properties/parkings from it.
+  const tenantRouteOrgSlug = isSuperAdminPath(location.pathname) ? undefined : routeOrgSlug;
+  const orgSlugForLists = tenant?.orgSlug ?? parkingTenant?.orgSlug ?? tenantRouteOrgSlug;
   const { data: propertiesData } = useProperties(orgSlugForLists);
   const { data: parkingsData } = useParkings(orgSlugForLists, { enabled: afterFirstPaint });
   const { email, signOut } = useAdminSession();
@@ -334,7 +356,7 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
       return buildSuperAdminNavSections();
     }
 
-    const orgSlug = tenant?.orgSlug ?? parkingTenant?.orgSlug ?? routeOrgSlug;
+    const orgSlug = tenant?.orgSlug ?? parkingTenant?.orgSlug ?? tenantRouteOrgSlug;
     const propertySlug = tenant?.propertySlug ?? routePropertySlug;
     const parkingSlug = parkingTenant?.parkingSlug ?? routeParkingSlug;
 
@@ -379,6 +401,7 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
   }, [
     tenant,
     parkingTenant,
+    tenantRouteOrgSlug,
     routeOrgSlug,
     routePropertySlug,
     routeParkingSlug,
@@ -1149,11 +1172,24 @@ function AdminSidebarNav({
   collapsed,
   superAdmin,
 }: AdminSidebarNavProps) {
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(
+    readCollapsedGroups
+  );
+  const collapsedGroupsKey = Object.keys(collapsedGroups)
+    .filter((key) => collapsedGroups[key])
+    .sort()
+    .join('|');
   const {
     containerRef,
     setItemRef,
     bounds: navPillBounds,
-  } = useSlidingActivePill(activeNavHref, [collapsed, navHrefsKey]);
+  } = useSlidingActivePill(activeNavHref, [collapsed, navHrefsKey, collapsedGroupsKey]);
+  const toggleGroup = (label: string) =>
+    setCollapsedGroups((prev) => {
+      const next = { ...prev, [label]: !prev[label] };
+      writeCollapsedGroups(next);
+      return next;
+    });
 
   return (
     <>
@@ -1171,17 +1207,39 @@ function AdminSidebarNav({
           {navSections.map((section, sectionIndex) => {
             const showHeading =
               !collapsed && navSections.length > 1 && Boolean(section.label) && !section.hideLabel;
+            // Only the super-admin console has enough destinations to need collapsing.
+            // Tenant sidebars keep plain headings so their labels never collide with page actions.
+            const canCollapse = showHeading && superAdmin;
+            const groupCollapsed = canCollapse && Boolean(collapsedGroups[section.label]);
             return (
               <div
                 key={section.label}
                 className={showHeading && sectionIndex > 0 ? 'pt-2.5' : undefined}
               >
                 {showHeading ? (
-                  <p className="text-sidebar-muted px-3 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider">
-                    {section.label}
-                  </p>
+                  canCollapse ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(section.label)}
+                      aria-expanded={!groupCollapsed}
+                      className="text-sidebar-muted hover:text-sidebar-foreground bg-sidebar sticky top-0 z-[1] flex min-h-6 w-full items-center gap-1 px-3 pb-1 text-left text-[0.6875rem] font-semibold uppercase tracking-wider"
+                    >
+                      <span className="flex-1">{section.label}</span>
+                      <ChevronDown
+                        className={cn(
+                          'size-3.5 shrink-0 transition-transform',
+                          groupCollapsed && '-rotate-90'
+                        )}
+                        aria-hidden
+                      />
+                    </button>
+                  ) : (
+                    <p className="text-sidebar-muted px-3 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider">
+                      {section.label}
+                    </p>
+                  )
                 ) : null}
-                <div className="space-y-1">
+                <div className={cn('space-y-1', groupCollapsed && 'hidden')}>
                   {section.items.map((item) => {
                     const { label, href, Icon, disabled } = item;
                     const active = href ? href === activeNavHref : false;

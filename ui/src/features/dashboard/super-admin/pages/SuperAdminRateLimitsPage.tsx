@@ -11,6 +11,10 @@ import {
   useSuperAdminRateLimits,
   useUnblockRateLimitIdentity,
 } from '@/features/dashboard/super-admin/hooks/useSuperAdminRateLimits';
+import {
+  isValidBlockIdentity,
+  normaliseBlockIdentity,
+} from '@/features/dashboard/super-admin/lib/rateLimitIdentity';
 import { superAdminPaths } from '@/features/dashboard/super-admin/lib/superAdminPaths';
 
 import { SuperAdminCardListBodySkeleton } from '@/components/skeletons/SuperAdminSkeletons';
@@ -41,7 +45,7 @@ function relativeTime(iso: string): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-const IDENTITY_PATTERN = /^(u:[a-zA-Z0-9-]+|ip:.+)$/;
+
 
 export function SuperAdminRateLimitsPage() {
   const { data, isLoading, error } = useSuperAdminRateLimits();
@@ -56,7 +60,8 @@ export function SuperAdminRateLimitsPage() {
   const blocks = data?.blocks ?? [];
   const blockedIdentities = new Set(blocks.map((b) => b.identity));
 
-  const manualIdentityValid = IDENTITY_PATTERN.test(manualIdentity.trim());
+  const blockIdentity = normaliseBlockIdentity(manualIdentity);
+  const manualIdentityValid = isValidBlockIdentity(manualIdentity);
 
   return (
     <SuperAdminPage
@@ -137,17 +142,15 @@ export function SuperAdminRateLimitsPage() {
         <h2 className="text-sm font-semibold">Manual block</h2>
         <Card padding="sm" className="space-y-3">
           <p className="text-muted-foreground text-xs">
-            Immediately cuts off a specific identity (<code>u:&lt;userId&gt;</code> or{' '}
-            <code>ip:&lt;address&gt;</code>) regardless of its current count. Requires step-up
+            Blocks one user or IP immediately, regardless of its current count. Requires step-up
             verification.
           </p>
           <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
             <Input
               value={manualIdentity}
               onChange={(event) => setManualIdentity(event.target.value)}
-              placeholder="u:… or ip:…"
-              aria-label="Identity to block"
-              className="font-mono"
+              placeholder="User id or IP address"
+              aria-label="User id or IP address to block"
             />
             <Input
               value={manualReason}
@@ -162,7 +165,7 @@ export function SuperAdminRateLimitsPage() {
               onClick={() =>
                 void block
                   .mutateAsync({
-                    identity: manualIdentity.trim(),
+                    identity: blockIdentity,
                     reason: manualReason.trim() || undefined,
                   })
                   .then(() => {

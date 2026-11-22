@@ -22,6 +22,7 @@ import {
   type AdminSectionNavItem,
 } from '@/features/dashboard/bookings/components/AdminSectionNavLayout';
 import { orgDashboardPath } from '@/features/dashboard/org/lib/tenantPaths';
+import { SuperAdminRecordNotFound } from '@/features/dashboard/super-admin/components/shared/SuperAdminRecordNotFound';
 import { SuperAdminOrgContext } from '@/features/dashboard/super-admin/components/super-admin-orgs/superAdminOrgContext';
 import { useSuperAdminOrgDetail } from '@/features/dashboard/super-admin/hooks/useSuperAdminOrgs';
 import { superAdminPaths } from '@/features/dashboard/super-admin/lib/superAdminPaths';
@@ -107,12 +108,20 @@ export function SuperAdminOrgShell() {
     );
   }
   if (error || !org) {
-    return <p className="text-destructive text-sm">Organization not found.</p>;
+    return (
+      <SuperAdminRecordNotFound
+        title="Organization not found"
+        description="It may have been renamed or removed."
+        backTo={superAdminPaths.organizations}
+        backLabel="Back to Organizations"
+      />
+    );
   }
 
   return (
     <SuperAdminOrgContext.Provider value={{ org, slug: orgSlug }}>
       <AdminSectionNavLayout
+        mobileSectionNav
         sections={ORG_HUB_SECTIONS}
         header={
           <div className="space-y-1.5">

@@ -28,7 +28,7 @@ export type ProbeRunner = { run: (probeId: string) => void; pending: boolean };
 const ENV_KEY = /^[A-Z][A-Z0-9_]+( or [A-Z0-9_]+)*$/;
 
 const actionClass =
-  'text-primary inline-flex min-h-[44px] items-center gap-1 text-xs font-medium hover:underline lg:min-h-7';
+  'text-brand-ink inline-flex min-h-[44px] items-center gap-1 text-xs font-medium hover:underline lg:min-h-7';
 
 export function HealthCheckRow({
   check,

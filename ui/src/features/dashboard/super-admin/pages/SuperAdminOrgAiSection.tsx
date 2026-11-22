@@ -21,7 +21,7 @@ export function SuperAdminOrgAiSection() {
         headerAction={
           <Link
             to={`${superAdminPaths.aiTab('limits')}&q=${encodeURIComponent(org.name)}`}
-            className="text-primary text-sm hover:underline"
+            className="text-brand-ink text-sm hover:underline"
           >
             Manage
           </Link>
