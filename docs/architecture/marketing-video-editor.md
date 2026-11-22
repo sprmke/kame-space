@@ -1,6 +1,6 @@
 # Marketing video editor (multi-track) and media library
 
-Videos tab of Marketing Studio. Replaces the scene slideshow with a CapCut-style timeline: photos, video, text and audio each sit on their own track. Hosts upload media to a per-property library with plan quotas. Plan and history: [`../workflow/in-progress/marketing-video-editor-multitrack.md`](../workflow/in-progress/marketing-video-editor-multitrack.md).
+Videos tab of Marketing Studio. Replaces the scene slideshow with a CapCut-style timeline: photos, video, text and audio each sit on their own track. Hosts upload media to a per-property library with plan quotas. Plans and history: [`../workflow/in-progress/marketing-video-editor-multitrack.md`](../workflow/in-progress/marketing-video-editor-multitrack.md) (tracks, library, quotas) and [`../workflow/in-progress/marketing-video-editor-mobile-first-refine.md`](../workflow/in-progress/marketing-video-editor-mobile-first-refine.md) (phone-first editor, text looks, voiceover, auto captions).
 
 ## Rollout and flags
 
@@ -16,9 +16,9 @@ The loader (`marketingEditorPreload.ts`) picks the editor, so hover-preload warm
 `ui/src/features/dashboard/marketing/lib/video/v2/`
 
 - `videoProjectV2Types.ts`: `VideoProjectV2 { version: 2, tracks[] }`. `tracks[0]` is the single **main** track; others are `overlay`, `text`, `audio`. Order is bottom to top and is the render order (the web renderer ignores z-index).
-- Items: `MediaItem` (image or video), `LayerItem` (text, CTA, slots, logo; same payload as v1 layers so templates look identical), `AudioItem`.
+- Items: `MediaItem` (image or video), `LayerItem` (text, CTA, slots, logo; same payload as v1 layers so templates look identical), `AudioItem` (optional `role`: `music`, `voice`, `sound`; `duckUnderVoice`; `sourceItemId` when separated from a video) and `CaptionItem` (a subtitle line: `text` plus timed `words`). A single `captions` track holds the lines and one `CaptionStyle` (look, height, size) for all of them. Every addition is an optional field or a new kind, so old rows parse unchanged and no data migration ran.
 - **Main track is magnetic**: contiguous from frame 0; insert, move, delete and trim ripple later clips; `transitionIn` overlaps the previous clip. Free tracks never overlap; a clash makes a new track.
-- Limits (`VIDEO_V2_LIMITS`, mirrored server-side in `_shared/marketingVideoProject.ts`): 60 s, 10 tracks, 150 clips, 3 visible videos, `design_json` 512 KB, own-storage media URLs only.
+- Limits (`VIDEO_V2_LIMITS`, mirrored server-side in `_shared/marketingVideoProject.ts` and enforced by `marketing-templates` on every video save): 60 s, 10 tracks, 150 clips, 200 caption lines (counted separately, `countItems` skips the captions track), 3 visible videos, `design_json` 512 KB. The server also rejects `data:`, `blob:`, `javascript:` and `file:` URLs anywhere in a saved project. A host allowlist is a follow-up: saved projects hold property photos, logos, AI results, library files and free-music streams, and rejecting a legitimate save would break autosave.
 - `timelineOps.ts` holds every edit as a pure function returning `OpResult` (`ok`, `reason`, `clamped`, `itemIds`). `timelineTiming.ts` derives time and active items. `timelineDrag.ts` / `timelineScale.ts` are drag and zoom math. All have Vitest coverage (randomized invariant tests for ops).
 - `editorCommands.ts` builds items from library payloads, text presets, duplicate and clipboard helpers. `canvasPatch.ts` applies canvas drags. `shortcuts.ts` maps keys to commands.
 
@@ -37,13 +37,37 @@ AI-built videos are saved as v1 scene projects and upgrade on open. The builder 
 - Verified in Chromium only. Safari and Firefox need a manual matrix. `maxCanvasSinkFrameSize` is not exposed by the installed `@remotion/media`, so preview decode load is limited by the 3-visible-videos warning and `premountFor`.
 - Thumbnails: `renderVideoProjectThumbnailV2` (audio tracks dropped) renders a still at 60% into the first main-track clip; the Library card and template stills use it for v2 rows, the v1 renderer for legacy ones.
 
+## Phone editor (`max-lg`)
+
+A full-screen dark editor layer: `MarketingStudioShell` `fullscreen` portals to `body` at `z-[45]` (above the app tab bar and quick-access button, below sheets and dialogs at `z-100+`), makes `#root` `inert` and locks page scroll while it is open. Desktop is unchanged. Layout, top to bottom: top bar (Back, name, save status, Undo, Redo, **Export**), preview (takes the free height), transport, timeline, then a docked panel and the **tool strip** in the page flow, so nothing floats over the timeline.
+
+- `lib/video/v2/phoneTools.ts` is the pure tool tree: root tools (Audio, Text, Captions, Media, Templates, Size, Background, AI, More), second-level rows, and the row for each selection kind (`selectionKind`, `toolsForSelection`). `PhoneToolOptions` switches voice, sound tools, captions and AI on and off.
+- `components/video-editor/v2/mobile/`: `VideoToolStrip`, `VideoClipPanel` (Speed, Volume, Fade, Duration, Fit, Motion, Adjust, Animation, Edit, Style, Lower for voice), `VideoTrimPanel` (whole file on one bar, two handles, applies on finger lift as one undo step through `setSourceWindow`), `VideoRecordPanel`, `VideoExportSheet`.
+- Export (Download MP4 and Publish) lives in one sheet; zoom is gesture-only; the overflow menu is gone.
+
+## Text looks
+
+`lib/video/v2/textLooks.ts`: 12 one-tap looks as data over `VideoLayerTypography` (stroke, shadow, `boxColor`, `boxRadius`, `glowColor`, font, case). `applyTextLook` clears the previous look's keys first (`LOOK_KEYS`), `detectTextLook` reads which look a layer has (`null` after hand edits), accent looks take the project's campaign palette. `typographyToCss` draws the box and glow. Presets (`TEXT_PRESETS`) carry a starting look. Preview and export use the same CSS path.
+
+## Audio, voiceover and music lowering
+
+- `audioDucking.ts`: `audioRoleOf`, `voiceRangesOf`, `duckFactor` (music at 25% under voice, 0.3 s ramp). `VideoCompositionV2` multiplies it into each music clip's volume (preview and export agree).
+- `separateSound` (a `timelineOps` op, 1x only) copies a video's sound to an audio clip in step and mutes the video. **Sound from video** adds a library video's sound as a `sound` clip.
+- Voice recording: `hooks/useVoiceRecorder.ts` (`MediaRecorder`, level meter, stops on end, cap or hidden tab), `voicePlacement.ts` (start offset between recorder and player, 60 s cap). The take uploads through the normal media library queue and becomes a clip only after the upload finishes, so no temporary URL is ever saved. Files are uploaded as recorded (M4A where supported, else WebM Opus); transcoding to M4A is not done.
+
+## Auto captions
+
+Browser: `lib/video/v2/captions/` builds one mono 16 kHz WAV of the video's speech in project time (`captionAudio.ts` picks voice and video-sound clips, mixes, resamples, encodes; `captionAudioBrowser.ts` decodes only the played part of each clip with Mediabunny, lazy), calls the edge function (`captionApi.ts`), pages words into lines (`captionPaging.ts`, in-house; `@remotion/captions` was not added) and places them (`captionItems.ts`, `captionOps.ts` replace or delete the whole track in one undo step). `captionLines.ts` edits and splits lines without losing words. `CaptionClipV2` renders a line from the track's `CaptionStyle` and highlights the spoken word.
+
+Server: `marketing-video-captions` takes the WAV (2 MiB cap, `Content-Length` checked before reading, magic-byte sniff), checks `marketing.generate:add` plus plan feature `aiMarketingGeneration`, the `marketing_video_captions` AI feature toggle and `assertOrgAndPropertyAiQuota`, calls Groq Whisper (`whisper-large-v3-turbo`, `verbose_json`, word timestamps) through `_shared/ai/speechTransport.ts` (the AI gateway directory), records usage by audio length (about $0.04 per hour, 10 s minimum) and stores nothing. Needs `GROQ_API_KEY`. Provider errors are never forwarded to the host.
+
 ## Editor UI
 
 `components/video-editor/VideoEditorV2.tsx` with `v2/` pieces: preview with canvas overlay (move, resize, rotate, snap, safe-area guide), timeline, inspectors, transport, export dialog.
 
 - Desktop timeline: ruler, zoom, track headers (hide, mute, lock), drag, trim, snap, split, copy and paste, marquee. Shortcuts: Space, S, Delete, Shift+Delete (ripple), Cmd/Ctrl+D, C, V, A, Z, arrows (Shift = 1 s). A focused slider does not swallow them.
-- Phone (`max-lg`): fixed centre playhead, scrolling the lanes scrubs, pinch zooms, long-press (320 ms) arms a clip drag, 44 px trim handles. A selected clip swaps the dock for an action bar (Edit, Split, Replace, Copy, Delete).
-- Left rail: Media (library), Text presets, Templates, Reviews, AI. The Media panel starts open only at 1536 px and wider. Replace opens the library filtered to the clip's kind.
+- Phone (`max-lg`): see [Phone editor](#phone-editor-max-lg). Timeline: fixed centre playhead, scrolling the lanes scrubs, pinch zooms, long-press (320 ms) arms a clip drag, 44 px trim handles.
+- Left rail: Media (library), Audio (record voice, sound from a video), Text (visual preset grid), Templates, Reviews, Captions, AI. The Media panel starts open only at 1536 px and wider. Replace opens the library filtered to the clip's kind.
 - Autosave only; there is no manual Save, so no unsaved-changes guard applies.
 
 ## Media library

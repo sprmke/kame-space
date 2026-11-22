@@ -11,6 +11,11 @@ kind: plan
 
 > **Revised 2026-11-22 (execute-plan):** audited the plan against the code and fixed drift. (1) `servePropertyScoped` does not exist: the captions function copies `marketing-media` (`serveAuthenticated` + `resolveScopedPropertyAccess` + `requirePropertyPermissionAndFeature`). (2) `_shared/marketingVideoProject.ts` (multitrack T1.13) does not exist, so Phase 5 builds it first (new T5.0) instead of waiting. (3) `friendlyMicErrorMessage` is not exported: Phase 4 exports it (additive). (4) `@remotion/captions` is not installed: added in Phase 6. (5) The cramped phone preview is caused by `MarketingStudioShell` fixed heights (`100dvh - 20rem`), not `AdminLayout`: Phase 1 uses a full-screen editor layer and leaves the shared layout alone. (6) Spikes that need real devices or a live Groq key (T0.2 to T0.5) cannot run in this environment: they are decided here with fallbacks and left as manual checks. (7) Added Decisions, per-phase Acceptance, Edge cases and Rollback sections.
 
+## Progress (2026-11-22, execute-plan)
+
+- **Built and committed on `sprmke/refine-marketing-video-editor`:** the full-screen phone editor with a tool strip and clip tools, the trim view, text looks and label presets, voice recording, sound from a video, separate sound, music that lowers under voice, auto captions (browser audio mix, `marketing-video-captions`, caption lines, edit and style), server validation of saved videos, docs, FAQs and tests.
+- **Not done, and why this plan stays in `in-progress/`:** the items left unticked below (T0.2 to T0.5 device and live-provider spikes, T1.4, T1.5 on desktop, T2.4, T2.6, T3.3, T5.4, T7.1 gaps, T7.2 to T7.4 QA). The manual export, Safari and iPhone matrix and a Groq run on real clips are the main risks.
+
 **Goal.** Make the Videos editor in Marketing Studio feel like a phone-first editor (CapCut, InShot, VN), not a desktop tool squeezed onto a phone. A non-technical host should be able to: put several videos and photos together, trim them, put good-looking text and labels on top, add background music, record a voiceover while the video plays, and get subtitles made from that voice automatically. No editing jargon.
 
 **Non-goal.** A pro editor. Keyframes, masks, chroma key, effects packs, stickers marketplace, beat sync, multi-language caption translation and server-side rendering stay out (see [§13](#13-out-of-scope)).
@@ -310,72 +315,72 @@ Each phase ships on its own. New phone UI lives in **new video-specific componen
 
 ### Phase 0: Spikes (2 to 3 days)
 
-- [ ] **T0.1** Full-screen phone editor: hide `AdminLayout` header, `BottomTabBar` and the global grid button for the editor route only (route handle or layout context flag), with back gesture and browser back still closing the editor. Confirm no other route is affected.
-- [ ] **T0.2** Voiceover: `MediaRecorder` + Player playback together on Chrome Android, Safari iOS (browser and installed PWA) and desktop Chrome/Safari/Firefox. Measure start offset; confirm Mediabunny converts WebM/Opus and MP4/AAC to M4A; confirm export plays the recording.
-- [ ] **T0.3** Text looks: render stroke, text-shadow, glow, translucent box and highlight through `renderMediaOnWeb`. Record which need a fallback (for example layered text for stroke).
-- [ ] **T0.4** Sound from a video: `@remotion/media` `<Audio>` with an MP4 source in preview and export. Fallback: extract to M4A with Mediabunny and upload as a library audio file.
-- [ ] **T0.5** Captions: Groq Whisper on 5 real clips (English, Filipino, Taglish, music under voice, quiet room). Check word timing accuracy and cost. Check `@remotion/captions@4.0.520` paging output.
-- [ ] **T0.6** Decide open questions Q1 to Q5 (§12).
+- [x] **T0.1** Full-screen phone editor: hide `AdminLayout` header, `BottomTabBar` and the global grid button for the editor route only (route handle or layout context flag), with back gesture and browser back still closing the editor. Confirm no other route is affected. _Done as a full-screen layer, verified in the phone E2E._
+- [ ] **T0.2** Voiceover: `MediaRecorder` + Player playback together on Chrome Android, Safari iOS (browser and installed PWA) and desktop Chrome/Safari/Firefox. Measure start offset; confirm Mediabunny converts WebM/Opus and MP4/AAC to M4A; confirm export plays the recording. _Recorder runs in Chromium with a fake microphone (E2E). iOS Safari, installed PWA and the other browsers are manual; no M4A conversion (see Decisions)._
+- [ ] **T0.3** Text looks: render stroke, text-shadow, glow, translucent box and highlight through `renderMediaOnWeb`. Record which need a fallback (for example layered text for stroke). _Looks use standard CSS the web renderer supports; a frame-by-frame export check of every look is manual._
+- [ ] **T0.4** Sound from a video: `@remotion/media` `<Audio>` with an MP4 source in preview and export. Fallback: extract to M4A with Mediabunny and upload as a library audio file. _Separate sound reuses the video URL as an audio clip; a real export with it is manual._
+- [ ] **T0.5** Captions: Groq Whisper on 5 real clips (English, Filipino, Taglish, music under voice, quiet room). Check word timing accuracy and cost. Check `@remotion/captions@4.0.520` paging output. _Needs a live `GROQ_API_KEY` and real clips (English, Filipino, Taglish). Not run here._
+- [x] **T0.6** Decide open questions Q1 to Q5 (§12). _Decided in Decisions._
 
 ### Phase 1: Phone shell and copy (4 to 5 days)
 
-- [ ] **T1.1** Full-screen phone editor (from T0.1), dark editor surface, top bar with close, name, undo/redo, **Export**.
-- [ ] **T1.2** Preview takes about half the height; remove the empty block under the timeline (U2, U3); tap preview to play or pause.
-- [ ] **T1.3** Export sheet: Download MP4 and Publish to Meta in one place (reuse `VideoExportDialog`, tier badges, `handleDownload` / `handlePublish`).
-- [ ] **T1.4** Split `VideoEditorV2.tsx`: move the phone dock, overflow and panels into `v2/mobile/` and commands into a `useVideoEditorCommands` hook. No behaviour change, existing E2E stays green.
-- [ ] **T1.5** Copy pass (§4.10) on phone and desktop with `human-copy`; `trackLabel()` returns icon keys on phone.
-- [ ] **T1.6** Remove the duplicate text field (U6).
+- [x] **T1.1** Full-screen phone editor (from T0.1), dark editor surface, top bar with close, name, undo/redo, **Export**.
+- [x] **T1.2** Preview takes about half the height; remove the empty block under the timeline (U2, U3); tap preview to play or pause.
+- [x] **T1.3** Export sheet: Download MP4 and Publish to Meta in one place (reuse `VideoExportDialog`, tier badges, `handleDownload` / `handlePublish`).
+- [ ] **T1.4** Split `VideoEditorV2.tsx`: move the phone dock, overflow and panels into `v2/mobile/` and commands into a `useVideoEditorCommands` hook. No behaviour change, existing E2E stays green. _Phone UI lives in new `v2/mobile/` files and the old dock is deleted, but `VideoEditorV2.tsx` is still large; no `useVideoEditorCommands` hook yet._
+- [ ] **T1.5** Copy pass (§4.10) on phone and desktop with `human-copy`; `trackLabel()` returns icon keys on phone. _Phone strip, panels and sheets use the plain wording. Desktop inspector labels (Photo wash, Behind letterboxed media, Start in source) are not renamed yet._
+- [x] **T1.6** Remove the duplicate text field (U6).
 
 ### Phase 2: Tool strip, context tools, timeline (5 to 6 days)
 
-- [ ] **T2.1** `VideoToolStrip` with second-level rows and back arrow (§4.2); safe-area aware, 44 px targets, scrolls horizontally, keyboard reachable.
-- [ ] **T2.2** Context strip per clip type (§4.3) replacing `VideoMobileActionBar`; compact docked panels for Speed (chips), Volume (slider + Sound off), Fade, Duration, Motion, Adjust, Fit.
-- [ ] **T2.3** Trim view for video clips (§4.5).
-- [ ] **T2.4** Timeline: "+" tile at the end of clips, empty helper lanes, icon lane identity, bigger thumbs, time bubble on drag (§4.4).
-- [ ] **T2.5** Gesture zoom only on phone; overflow reduced to Guest reviews, Start over, Phone screen guide.
-- [ ] **T2.6** Desktop: inspector groups reordered to match (§5).
+- [x] **T2.1** `VideoToolStrip` with second-level rows and back arrow (§4.2); safe-area aware, 44 px targets, scrolls horizontally, keyboard reachable.
+- [x] **T2.2** Context strip per clip type (§4.3) replacing `VideoMobileActionBar`; compact docked panels for Speed (chips), Volume (slider + Sound off), Fade, Duration, Motion, Adjust, Fit.
+- [x] **T2.3** Trim view for video clips (§4.5). _The bar tiles the poster; there is no frame filmstrip (Mediabunny frame cache does not exist yet)._
+- [ ] **T2.4** Timeline: "+" tile at the end of clips, empty helper lanes, icon lane identity, bigger thumbs, time bubble on drag (§4.4). _Not done: "+" tile, empty helper lanes, icon-only lane names, bigger thumbs, drag time bubble. Caption and voice lanes got their own colours and icons._
+- [x] **T2.5** Gesture zoom only on phone; overflow reduced to Guest reviews, Start over, Phone screen guide. _The phone fullscreen preview button was dropped with the overflow menu._
+- [ ] **T2.6** Desktop: inspector groups reordered to match (§5). _Not done: desktop inspector regrouping. Desktop gained the looks gallery, the caption inspector and the Audio and Captions rail sections._
 
 ### Phase 3: Text looks and labels (4 to 5 days)
 
-- [ ] **T3.1** `VideoSceneLayer` look fields (§6) + `parseVideoProjectV2` support + `VideoLayerBody` rendering, with fallbacks from T0.3.
-- [ ] **T3.2** `TEXT_LOOKS` (12) and label presets (Name tag, Location, Price, Book now, Rating) as data with Vitest coverage that every look parses and round-trips.
-- [ ] **T3.3** Inline add-text flow on the preview with the style row above the keyboard (uses `visualViewport` so the row sits on the keyboard); double-tap to edit existing text.
-- [ ] **T3.4** Visual styles gallery in the Text tool (phone) and rail (desktop); Entrance and Exit chips with live mini previews.
-- [ ] **T3.5** Theme integration: looks pick up the active marketing theme colours unless the host changes them (reuse `marketingTheme` tokens).
+- [x] **T3.1** `VideoSceneLayer` look fields (§6) + `parseVideoProjectV2` support + `VideoLayerBody` rendering, with fallbacks from T0.3.
+- [x] **T3.2** `TEXT_LOOKS` (12) and label presets (Name tag, Location, Price, Book now, Rating) as data with Vitest coverage that every look parses and round-trips.
+- [ ] **T3.3** Inline add-text flow on the preview with the style row above the keyboard (uses `visualViewport` so the row sits on the keyboard); double-tap to edit existing text. _Add text opens the Edit panel on the phone. The style row above the keyboard and double tap to edit on the preview are not built._
+- [x] **T3.4** Visual styles gallery in the Text tool (phone) and rail (desktop); Entrance and Exit chips with live mini previews. _Entrance and Exit are "Comes in" and "Goes out" chips without live mini previews._
+- [x] **T3.5** Theme integration: looks pick up the active marketing theme colours unless the host changes them (reuse `marketingTheme` tokens).
 
 ### Phase 4: Audio and voiceover (5 to 6 days)
 
-- [ ] **T4.1** Audio tool: Music (move Jamendo + default music), Upload audio, Sound from a video, Record voice.
-- [ ] **T4.2** `AudioItem.role`, `duckUnderVoice`, `sourceItemId` + parse; `duckedVolume(frame, voiceRanges)` pure function + Vitest; composition applies it.
-- [ ] **T4.3** "Separate sound" op in `timelineOps` (creates linked audio clip on a free audio lane, mutes the video clip; undoable in one step).
-- [ ] **T4.4** `useVoiceRecorder` (permission, countdown, record with playback, stop on end or cap, latency offset), M4A conversion, upload through `useUploadMarketingMedia`, local blob playback until the final URL lands.
-- [ ] **T4.5** Record panel UI, live waveform lane, Re-record, the "Make captions" chip.
-- [ ] **T4.6** Export: voice and separated sound included; preflight covers them; muted-export rule (`projectHasAudio`) counts them.
+- [x] **T4.1** Audio tool: Music (move Jamendo + default music), Upload audio, Sound from a video, Record voice.
+- [x] **T4.2** `AudioItem.role`, `duckUnderVoice`, `sourceItemId` + parse; `duckedVolume(frame, voiceRanges)` pure function + Vitest; composition applies it.
+- [x] **T4.3** "Separate sound" op in `timelineOps` (creates linked audio clip on a free audio lane, mutes the video clip; undoable in one step).
+- [x] **T4.4** `useVoiceRecorder` (permission, countdown, record with playback, stop on end or cap, latency offset), M4A conversion, upload through `useUploadMarketingMedia`, local blob playback until the final URL lands. _Uploaded as recorded (no M4A conversion). The clip is added after the upload finishes, so no blob URL is ever saved._
+- [x] **T4.5** Record panel UI, live waveform lane, Re-record, the "Make captions" chip. _A live level meter replaces the growing waveform lane; the saved clip shows its waveform._
+- [x] **T4.6** Export: voice and separated sound included; preflight covers them; muted-export rule (`projectHasAudio`) counts them. _Shared composition and preflight; a real export with voice and separated sound is a manual check._
 
 ### Phase 5: Auto captions backend (3 to 4 days)
 
 Prerequisite: multitrack **T1.13** (server-side v2 validation) is done, extended with §6.
 
-- [ ] **T5.1** Add `marketing_video_captions` to `AI_FEATURES` (`aiModelRouter.ts`), the super-admin AI feature toggles and limits (limits stay super-admin only), the usage console labels.
-- [ ] **T5.2** `_shared/marketingVideoCaptions.ts`: request parsing, size and duration caps, magic-byte sniff, Groq call, response normalisation (trim spaces, drop empty words, clamp times), credit cost from duration. Deno `_test.ts` for all pure parts with a mocked fetch.
-- [ ] **T5.3** Edge function `marketing-video-captions` (`config.toml` `verify_jwt = false` per repo convention, auth in code), `rateLimitGate`, typed errors with `upgradeHook` where a plan or credit limit applies.
-- [ ] **T5.4** Env and health: document `GROQ_API_KEY` as required for captions in `validation-and-env.md`; show caption availability in `/admin/health` integration status.
+- [x] **T5.1** Add `marketing_video_captions` to `AI_FEATURES` (`aiModelRouter.ts`), the super-admin AI feature toggles and limits (limits stay super-admin only), the usage console labels. _No migration was needed: the feature is registered in `AI_FEATURES` and the labels._
+- [x] **T5.2** `_shared/marketingVideoCaptions.ts`: request parsing, size and duration caps, magic-byte sniff, Groq call, response normalisation (trim spaces, drop empty words, clamp times), credit cost from duration. Deno `_test.ts` for all pure parts with a mocked fetch.
+- [x] **T5.3** Edge function `marketing-video-captions` (`config.toml` `verify_jwt = false` per repo convention, auth in code), `rateLimitGate`, typed errors with `upgradeHook` where a plan or credit limit applies.
+- [ ] **T5.4** Env and health: document `GROQ_API_KEY` as required for captions in `validation-and-env.md`; show caption availability in `/admin/health` integration status. _Env doc done. A caption row in `/admin/health` integration status is not added._
 
 ### Phase 6: Auto captions UI (4 to 5 days)
 
-- [ ] **T6.1** `lib/video/v2/captions/`: source audio extraction (Mediabunny, used range only), `wordsToTimeline`, paging via `@remotion/captions`, split and re-spread helpers. Vitest for mapping, paging, split and edit.
-- [ ] **T6.2** `CaptionItem` + captions track in types, parse, ops, limits; `CaptionClip` renderer with 6 caption looks including word highlight.
-- [ ] **T6.3** Auto captions sheet (source, language, progress, errors, upgrade CTA) and the captions lane.
-- [ ] **T6.4** Edit captions list (proofread all lines), tap-to-edit a line on the preview, Style for all captions, Delete all (one undo step).
-- [ ] **T6.5** Export and thumbnails include captions; the 60 s cap and caption item cap hold.
+- [x] **T6.1** `lib/video/v2/captions/`: source audio extraction (Mediabunny, used range only), `wordsToTimeline`, paging via `@remotion/captions`, split and re-spread helpers. Vitest for mapping, paging, split and edit. _Paging is in-house; `@remotion/captions` was not added (see Decisions)._
+- [x] **T6.2** `CaptionItem` + captions track in types, parse, ops, limits; `CaptionClip` renderer with 6 caption looks including word highlight. _Four caption looks (Highlight, Clean, Outline, Box), not six._
+- [x] **T6.3** Auto captions sheet (source, language, progress, errors, upgrade CTA) and the captions lane.
+- [x] **T6.4** Edit captions list (proofread all lines), tap-to-edit a line on the preview, Style for all captions, Delete all (one undo step). _Edit from the list or the panel; tapping a line on the preview is not built._
+- [x] **T6.5** Export and thumbnails include captions; the 60 s cap and caption item cap hold. _Captions render through the shared composition, so export and thumbnails include them. A real export is a manual check._
 
 ### Phase 7: QA, tests and docs (3 to 4 days, plus docs in every phase)
 
-- [ ] **T7.1** Playwright (`ui/e2e/features/marketing/video-editor/`): phone full-screen shell, tool strip navigation, add text with a look, trim view, separate sound, record voice (fake media stream via Chromium flags `--use-fake-device-for-media-stream --use-fake-ui-for-media-stream`), auto captions with a mocked `marketing-video-captions`, captions edit and delete all, export sheet. Desktop: rail Audio and Captions sections. Update existing selectors (`Clip actions`, `Editor actions`) in `videoEditorV2.spec.ts`.
-- [ ] **T7.2** `mobile-responsive` gate at 375, 768 and 1024 px; `accessibility` pass (tool strip roles, focus return after panels, captions list labels, record button state announced).
-- [ ] **T7.3** Manual matrix: export with voice, separated sound, captions and every text look on Chrome, Safari macOS, Safari iOS, Chrome Android, Firefox.
-- [ ] **T7.4** `property-dashboard-qa` pass on Marketing → Videos across plan tiers (captions gate, quota for recordings).
-- [ ] **T7.5** Docs and help (§10); move this plan through `in-progress/` and `for-testing/` with the `workflow` skill.
+- [ ] **T7.1** Playwright (`ui/e2e/features/marketing/video-editor/`): phone full-screen shell, tool strip navigation, add text with a look, trim view, separate sound, record voice (fake media stream via Chromium flags `--use-fake-device-for-media-stream --use-fake-ui-for-media-stream`), auto captions with a mocked `marketing-video-captions`, captions edit and delete all, export sheet. Desktop: rail Audio and Captions sections. Update existing selectors (`Clip actions`, `Editor actions`) in `videoEditorV2.spec.ts`. _Done: phone shell, tool rows, trim-free flows, text looks, separate sound, record voice, auto captions with a mocked endpoint, export sheet. Missing: a trim view spec and a desktop rail spec._
+- [ ] **T7.2** `mobile-responsive` gate at 375, 768 and 1024 px; `accessibility` pass (tool strip roles, focus return after panels, captions list labels, record button state announced). _375 px verified in screenshots; 768 and 1024 px and a full accessibility pass are still to do._
+- [ ] **T7.3** Manual matrix: export with voice, separated sound, captions and every text look on Chrome, Safari macOS, Safari iOS, Chrome Android, Firefox. _Manual matrix not run (needs Safari, Firefox, iOS, Android)._
+- [ ] **T7.4** `property-dashboard-qa` pass on Marketing → Videos across plan tiers (captions gate, quota for recordings). _`property-dashboard-qa` not run._
+- [x] **T7.5** Docs and help (§10); move this plan through `in-progress/` and `for-testing/` with the `workflow` skill. _Docs, route guide, FAQs and support checks done. Plan stays in `in-progress/` until the manual checks pass._
 
 **Rough total:** 30 to 38 working days for one engineer. Phases 3 and 4 can run in parallel with Phase 5 once Phase 2 lands.
 
@@ -449,19 +454,27 @@ Stickers and GIF library, effects and filters packs, keyframes, masks, chroma ke
 
 ## 14. Decisions
 
-| Decision                          | Choice                                                                                                                                                                          | Why                                                                                               |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Q1 Dark phone editor              | Yes, dark surface for the phone editor only                                                                                                                                     | Video colours read true; matches every phone editor                                               |
-| Q2 Hide dashboard chrome on phone | Yes, via a full-screen editor layer (`fixed inset-0 z-[45]`, below sheets at `z-50`)                                                                                            | No change to `AdminLayout`; the shell heights were the real cause of the small preview            |
-| Q3 Captions plan gate             | No new plan key. Gated by `marketing.content:edit` plus the AI feature toggle and AI credit quota                                                                               | Every tier already has AI allowance; avoids a catalog migration and the plan-tier golden churn    |
-| Q4 Groq as speech subprocessor    | Accepted, audio not stored; documented in `validation-and-env.md` and the route guide                                                                                           | Already the platform LLM fallback provider                                                        |
-| Q5 Caption languages              | Auto, English, Filipino                                                                                                                                                         | Matches host base                                                                                 |
-| Spike T0.2 recorder format        | Record with `MediaRecorder` in the browser default type, convert to M4A with Mediabunny before upload; if conversion is unsupported, upload the original (WebM/Opus or MP4/AAC) | Library already accepts `audio/webm`, `audio/mp4`; export plays both on Chromium                  |
-| Spike T0.3 text effects           | Stroke via `-webkit-text-stroke` + `paint-order`, shadow via `text-shadow`, box via background; each look declares a plain fallback (no stroke or glow)                         | Web renderer supports CSS text properties; fallback keeps export working if a property is dropped |
-| Spike T0.4 sound from a video     | Separate sound is an `AudioItem` that points at the same video URL (`@remotion/media` `<Audio>` accepts it); the source clip is muted                                           | No re-upload, no extra quota                                                                      |
-| Spike T0.5 captions source        | Client sends the used range as a small mono audio blob to `marketing-video-captions`; Groq `whisper-large-v3-turbo` word timestamps                                             | Keeps the 25 MB Groq limit far away (60 s is about 0.5 MB)                                        |
-| Caption items vs `maxItems`       | Captions do not count toward the 150 item cap; own cap of 200                                                                                                                   | A 60 s narration is about 40 lines; counting them would block normal projects                     |
-| Rollback editor with captions     | Rollback editor ignores caption items and shows a notice                                                                                                                        | v1 UI is deleted next release (multitrack T6.6)                                                   |
+| Decision                          | Choice                                                                                                                                                                          | Why                                                                                                                        |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Q1 Dark phone editor              | Yes, dark surface for the phone editor only                                                                                                                                     | Video colours read true; matches every phone editor                                                                        |
+| Q2 Hide dashboard chrome on phone | Yes, via a full-screen editor layer (`fixed inset-0 z-[45]`, below sheets at `z-50`)                                                                                            | No change to `AdminLayout`; the shell heights were the real cause of the small preview                                     |
+| Q3 Captions plan gate             | No new plan key. Gated by `marketing.content:edit` plus the AI feature toggle and AI credit quota                                                                               | Every tier already has AI allowance; avoids a catalog migration and the plan-tier golden churn                             |
+| Q4 Groq as speech subprocessor    | Accepted, audio not stored; documented in `validation-and-env.md` and the route guide                                                                                           | Already the platform LLM fallback provider                                                                                 |
+| Q5 Caption languages              | Auto, English, Filipino                                                                                                                                                         | Matches host base                                                                                                          |
+| Spike T0.2 recorder format        | Record with `MediaRecorder` in the browser default type, convert to M4A with Mediabunny before upload; if conversion is unsupported, upload the original (WebM/Opus or MP4/AAC) | Library already accepts `audio/webm`, `audio/mp4`; export plays both on Chromium                                           |
+| Spike T0.3 text effects           | Stroke via `-webkit-text-stroke` + `paint-order`, shadow via `text-shadow`, box via background; each look declares a plain fallback (no stroke or glow)                         | Web renderer supports CSS text properties; fallback keeps export working if a property is dropped                          |
+| Spike T0.4 sound from a video     | Separate sound is an `AudioItem` that points at the same video URL (`@remotion/media` `<Audio>` accepts it); the source clip is muted                                           | No re-upload, no extra quota                                                                                               |
+| Spike T0.5 captions source        | Client sends the used range as a small mono audio blob to `marketing-video-captions`; Groq `whisper-large-v3-turbo` word timestamps                                             | Keeps the 25 MB Groq limit far away (60 s is about 0.5 MB)                                                                 |
+| Caption items vs `maxItems`       | Captions do not count toward the 150 item cap; own cap of 200                                                                                                                   | A 60 s narration is about 40 lines; counting them would block normal projects                                              |
+| Rollback editor with captions     | Rollback editor ignores caption items and shows a notice                                                                                                                        | v1 UI is deleted next release (multitrack T6.6)                                                                            |
+| Captions gate (Q3, revised)       | `marketing.generate:add` plus plan feature `aiMarketingGeneration`, like every other Marketing AI action; no new plan key                                                       | Matches `generate-marketing-caption`; the audit found `marketing.content:edit` was not how Marketing AI is gated           |
+| Caption paging                    | In-house `pageWords` (pure, tested); `@remotion/captions` not added                                                                                                             | About 30 lines, no new dependency or bundle weight                                                                         |
+| Caption audio                     | One mono 16 kHz WAV of the whole video in project time, one provider call                                                                                                       | Words come back in project time with no conversion; 60 s is 1.92 MB, under the 2 MiB cap; sped up clips are resampled      |
+| Voice clip timing                 | The clip is added only after the upload finishes                                                                                                                                | No blob URL is ever in the project; the server validator rejects `blob:`                                                   |
+| Server validation (T5.0)          | Size, structure, counts, 60 s, caption limits and blocked URL schemes; no host allowlist                                                                                        | Saved projects hold URLs from several hosts; rejecting one would break autosave, and prod data cannot be audited from here |
+| Provider transport                | `_shared/ai/speechTransport.ts`                                                                                                                                                 | `check:ai-gateway` requires provider hosts under `_shared/ai/`                                                             |
+| Trim view                         | Poster tiled across the bar, seconds shown live, applied once on finger lift                                                                                                    | No frame filmstrip exists in the timeline; one undo step per trim                                                          |
+| Edit panels on phone              | Docked above the strip, at most 40% of the height                                                                                                                               | The old Edit sheet covered the preview; the Style panel first built hid it too, so details moved behind "More options"     |
 
 ## 15. Acceptance per phase
 

@@ -205,6 +205,20 @@ Marketing plan
   A: Yes. Connect your Facebook Page and Instagram through Guest Inbox first. Without that connection, you can still design and download assets, just not publish from here.
 - Q: Can I turn a guest review into a social post?
   A: Yes. In the post or video editor, open **Reviews** in the left rail and pick a Kame or Facebook review (Airbnb quotes stay browse-only). It fills a review layout or a **Guest love** / **Stay again** reel. You can still edit it before you download or publish.
+- Q: How do I add text or a label on top of my video?
+  A: Open the video, tap **Text**, then **Text styles**. Pick what you want to add (Headline, Caption, Name tag, Location, Price, Rating or Button) and it lands on the video where the playhead is. Tap **Style** to change how it looks with one tap (Bold, Outline, Box, Glow and more), or **Edit** to change the words. Drag the ends of the text bar on the timeline to make it show for longer or shorter.
+- Q: How do I put my own videos and photos together and trim them?
+  A: Tap **Media**, then **Photos and videos**, and pick as many as you like. Tap a clip to select it. **Trim** shows the whole video with two handles so you can keep just the part you want. **Split** cuts the clip where the playhead is. **Speed**, **Volume** and **Adjust** are on the same row.
+- Q: How do I add background music or my own sound?
+  A: Tap **Audio**. **Music** shows free songs and your uploads. **Upload audio** adds your own file. **Sound from video** uses the sound of one of your videos. Music gets quieter by itself while someone is talking; turn that off from the music clip under **Lower for voice**.
+- Q: How do I record a voiceover?
+  A: Tap **Audio**, then **Record voice**. Allow the microphone, tap the red button, and talk while the video plays. Tap it again to stop, or let the video finish. Headphones help, and the video sound is muted while you talk unless you turn that off. Your voice is saved to **Your media** and counts toward your storage like any other upload.
+- Q: How do I add subtitles?
+  A: Record a voice or add a video with sound, then tap **Text**, then **Auto captions**. Pick what to listen to and the language (Auto, English or Filipino). The captions show on the video with the spoken word highlighted. Tap **Edit captions** to fix any word in one list, change the look from **Style**, or **Delete all captions**.
+- Q: Where does my voice go when I make captions?
+  A: The sound of your video is sent to our speech service so it can write the words. We do not keep it. Captions use your AI allowance, so a plan or allowance that has none will say so.
+- Q: Why can't I record a voice?
+  A: Your browser needs permission to use the microphone. Allow it in the browser settings for this site and try again. If another app is using the microphone, close it first. Recording is not available in every browser.
 - Q: Can AI make a post, video or calendar for me inside the editor?
   A: Yes. Open **AI** in the editor's left rail, describe what you want and tap Generate. You get one new item in the size you are working on; use the size menu for other sizes.
 - Q: What is **AI Studio** for?
@@ -378,11 +392,11 @@ Opening from the Library pushes a history entry (location state `marketingLibrar
 
 Same frame everywhere: **top bar** (Back, inline name, save status, size menu, Undo/Redo on desktop, Download, Publish), **left rail** (72px icons on desktop, bottom sheet on phones), canvas, **right inspector** (desktop) / settings sheet (phones).
 
-| Editor   | Rail sections                                                                                   | Inspector                       |
-| -------- | ----------------------------------------------------------------------------------------------- | ------------------------------- |
-| Posts    | Templates, Collage, Reviews, AI, then Polotno's Text / Elements / Uploads / Background / Layers | Polotno element toolbar         |
-| Videos   | Media, Text presets, Templates, Reviews, AI                                                     | Clip, text and audio inspectors |
-| Calendar | Layouts, Show on calendar, AI                                                                   | Style, with **Advanced** panels |
+| Editor   | Rail sections                                                                                   | Inspector                                |
+| -------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Posts    | Templates, Collage, Reviews, AI, then Polotno's Text / Elements / Uploads / Background / Layers | Polotno element toolbar                  |
+| Videos   | Media, Audio, Text, Templates, Reviews, Captions, AI                                            | Clip, text, audio and caption inspectors |
+| Calendar | Layouts, Show on calendar, AI                                                                   | Style, with **Advanced** panels          |
 
 Picking a template inside an open editor asks **Replace this {item}** or **Open as new** (`MarketingReplaceTemplateDialog`). **Size menu** (`MarketingSizeDialog`): open a sibling in the same size group, **Resize** this item (posts use magic resize; collages relay out), or **Copy** to a new size (new row, same `group_id`).
 
@@ -391,9 +405,19 @@ Picking a template inside an open editor asks **Replace this {item}** or **Open 
 Videos open the multi-track editor (`VideoEditorV2`) unless `VITE_VIDEO_EDITOR_V2=false`, in which case the previous scene editor opens for rollback (both read the same saved rows: v2 upgrades a v1 project on open and autosaves v2). Photos, video, text and audio each sit on their own track; `tracks[0]` is the single **main** track and is magnetic (insert, move, delete and trim ripple later clips, `transitionIn` overlaps the previous one). Limits: 60 s, 10 tracks, 150 clips, 3 visible videos. Autosave only, so no unsaved-changes prompt applies.
 
 - **Desktop:** timeline with ruler, zoom, track headers (hide / mute / lock), drag, trim, snap, split, copy and paste, marquee. Shortcuts: Space, S, Delete, Shift+Delete (ripple), Cmd/Ctrl+D, C, V, A, Z, arrows (Shift = 1 s). A focused slider does not swallow them.
-- **Phone (`max-lg`):** fixed centre playhead, scrolling the lanes scrubs, pinch zooms, long-press (320 ms) arms a clip drag, 44 px trim handles; a selected clip swaps the dock for an action bar (Edit, Split, Replace, Copy, Delete).
+- **Phone (`max-lg`), a full-screen editor:** the dashboard header and tab bar are covered by a dark editor layer (`MarketingStudioShell` `fullscreen`, `z-[45]`, below sheets and dialogs; the app root is `inert` behind it and background scroll is locked). Top bar: Back, name, save status, Undo, Redo and a primary **Export** (one sheet with **Download MP4** and **Publish**). The preview takes the free height, then the transport row, the timeline (fixed centre playhead, scrolling the lanes scrubs, pinch zooms, long-press 320 ms arms a clip drag, 44 px trim handles) and one **tool strip** in the page flow (never floating, so it cannot cover the timeline). Nothing selected: **Audio · Text · Captions · Media · Templates · Size · Background · AI · More**; each of Audio, Text, Media and More opens a second row with a back arrow. A selected clip swaps the row for tools that fit it (video: Trim, Split, Speed, Volume, Separate sound, Adjust, Fit, Replace, Copy, Delete; photo: Duration, Split, Motion, Adjust, Fit, Replace; text: Edit, Style, Animation, Duration; caption line: Edit, Style, Split, Delete, Delete all; music or sound: Volume, Fade, Split, Lower for voice, Replace; voice: Volume, Fade, Split, Make captions). A tool opens a short panel above the strip so the preview stays visible. Pure tree and rules: `lib/video/v2/phoneTools.ts`.
 - **Export:** blockers (empty, over 60 s) → `canRenderMediaOnWeb` → reachability probe of every media URL → `renderMediaOnWeb` with Cancel. Jamendo stream clips are cached to Storage first; a clip that cannot be cached is dropped from the export with a notice. Muted when nothing can make sound.
 - **Thumbnail:** the stored Library still renders from the project (audio tracks dropped), so the card art follows the timeline.
+
+**Text looks and labels.** A look is one-tap styling for a text layer (Classic, Bold, Outline, Box, Soft box, Highlight, Glow, Pop, Elegant, Soft, Tag, Price). It is plain data on the layer's typography (`stroke`, `shadow`, `boxColor`, `boxRadius`, `glowColor`, font, case), so it saves, loads and exports like any text. Applying a look first clears the previous look's keys (`lib/video/v2/textLooks.ts`); accent looks use the project's brand accent. Label presets (Name tag, Location, Price, Rating) start with a look. Phone shows looks as live swatches in the Style panel; desktop shows the same gallery in the text inspector and a visual **Add text** grid in the Text rail. Editing text directly on the preview (double tap) is not built yet; use **Edit**.
+
+**Audio.** Audio clips carry an optional `role` (`music`, `voice`, `sound`). **Separate sound** (video clips at 1x only) copies a video's sound to its own clip, in step, and mutes the video; **Sound from video** adds the sound of a library video the same way. Music lowers to 25% under any voice clip (0.3 s ramp) unless **Lower for voice** is off (`lib/video/v2/audioDucking.ts`, applied in `VideoCompositionV2`).
+
+**Voiceover.** **Record voice** uses `MediaRecorder` (AAC in MP4 when supported, else WebM Opus): permission, 3 2 1, the video plays from the playhead and the recorder starts with it, a live level shows, and it stops on the red button, at the end of the video, at the 60 s cap or if the tab is hidden. The take uploads through the normal media library queue (`kind: audio`, `Voice.m4a` or `Voice.webm`, so it counts toward quota and the daily upload cap) and only then becomes a voice clip, placed with the measured start offset (`lib/video/v2/voicePlacement.ts`). No temporary URL is ever saved in the project. Files are uploaded as recorded; conversion to M4A is not done, so a WebM take recorded in Chromium may not preview in older Safari.
+
+**Auto captions.** **Text, Auto captions** (or **Make captions** on a voice clip): choose Voice, Video sound or Both, and Auto, English or Filipino. The browser builds one mono 16 kHz WAV of the video's speech in project time from only the part of each clip that plays (Mediabunny, `captionAudioBrowser.ts`), sends it to `marketing-video-captions` (Groq Whisper, word timestamps, nothing stored) and turns the words into lines (`captionPaging`, `captionItems`) on a **captions track** (one per project, amber lane, replaced when made again). Each line is a `CaptionItem` (`text`, timed `words`) and the track holds one `CaptionStyle` (Highlight, Clean, Outline or Box, size, height) so every line matches; Highlight colours the word being spoken. Editing a line keeps its timing when the word count is the same, otherwise the words are spread evenly. Gate: `marketing.generate:add` and plan feature `aiMarketingGeneration`, plus the `marketing_video_captions` AI feature toggle and quota; rate limit 10 per 5 minutes. Caption lines do not count toward the 150 clip limit (their own limit is 200).
+
+**Saving.** `marketing-templates` validates a video's `design_json` on create and update (`_shared/marketingVideoProject.ts`): size up to 512 KB, version 1 or 2, up to 10 tracks, 150 clips, 200 caption lines, 60 s, caption text and word limits, and no `data:`, `blob:`, `javascript:` or `file:` URLs. A host-name allowlist is not enforced yet.
 
 ### Media library
 

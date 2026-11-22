@@ -106,7 +106,12 @@ const GATE_COVERAGE: Record<PlanFeatureKey, Coverage> = {
       'dashboard/marketing/components/shared/MarketingAiGeneratePanel.tsx',
       'dashboard/marketing/components/ai-studio/AiStudioHome.tsx',
     ],
-    server: ['generate-marketing-caption', 'generate-marketing-template', 'marketing-ai-sessions'],
+    server: [
+      'generate-marketing-caption',
+      'generate-marketing-template',
+      'marketing-ai-sessions',
+      'marketing-video-captions',
+    ],
   },
   aiMarketingImageGeneration: {
     client: [

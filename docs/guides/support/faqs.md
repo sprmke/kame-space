@@ -869,6 +869,33 @@ Yes. Open the item from Your creations and keep editing by hand, or send a chang
 
 Times, deposit, and amenities come from your property settings word for word. The AI writes the headline and short lines, but it cannot add an amenity, price, or time you have not saved.
 
+### How do I add text and labels to a video?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 55
+
+Open the video and tap Text, then Text styles. Pick a Headline, Caption, Name tag, Location, Price, Rating or Button and it lands where the playhead is. Tap Style to restyle it with one tap, or Edit to change the words. Drag the ends of its bar on the timeline to show it for longer or shorter.
+
+### Can I record a voiceover on my video?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 56
+
+Yes. In the video editor tap Audio, then Record voice, allow the microphone and tap the red button. Talk while the video plays and tap again to stop. Your voice is saved to Your media and counts toward your storage. Music gets quieter by itself while you talk.
+
+### Can I get subtitles made automatically?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 57
+
+Yes. Record a voice or add a video with sound, then tap Text and Auto captions. Pick what to listen to and the language, and the words appear on your video with the spoken word highlighted. You can fix any word in Edit captions. The sound is sent to our speech service to write the words and is not kept. Captions use your AI allowance.
+
 ### Can I recover something I deleted?
 
 - category: Marketing Studio

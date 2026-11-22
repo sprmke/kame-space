@@ -48,7 +48,8 @@ test.describe('@ci marketing video editor v2 voice on a phone', () => {
     const panel = page.getByRole('region', { name: 'Record voice' });
     await panel.getByRole('button', { name: 'Start recording' }).tap();
     await expect(panel.getByRole('timer')).toBeVisible({ timeout: 15_000 });
-    await page.waitForTimeout(1200);
+    // Let it record for a moment: the clock moves past one second.
+    await expect(panel.getByRole('timer')).toHaveText(/Recording 0:0[1-9]/);
     await panel.getByRole('button', { name: 'Stop recording' }).tap();
     await expect(items).toHaveCount(before + 1, { timeout: 20_000 });
   });
@@ -132,7 +133,8 @@ test.describe('@ci marketing video editor v2 auto captions on a phone', () => {
     const panel = page.getByRole('region', { name: 'Record voice' });
     await panel.getByRole('button', { name: 'Start recording' }).tap();
     await expect(panel.getByRole('timer')).toBeVisible({ timeout: 15_000 });
-    await page.waitForTimeout(1200);
+    // Let it record for a moment: the clock moves past one second.
+    await expect(panel.getByRole('timer')).toHaveText(/Recording 0:0[1-9]/);
     await panel.getByRole('button', { name: 'Stop recording' }).tap();
 
     // The new voice clip is selected: its tools offer captions.
