@@ -129,6 +129,7 @@ export type GuestTrip = {
     sdFormAvailable: boolean;
     reviewAvailable: boolean;
     reviewSubmitted: boolean;
+    helpAvailable: boolean;
   };
   review: {
     state: 'open' | 'submitted' | 'published' | 'closed' | 'unavailable';

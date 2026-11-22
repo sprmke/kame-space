@@ -7,11 +7,13 @@
  * the report and the first alert reliable.
  */
 
-import { manilaCheckInInstant } from './cancellationRefund.ts';
 import { createNotification } from './notificationService.ts';
 import { raiseOpsAlertAfterResponse } from './ops/opsAlert.ts';
 import { createServiceClient } from './orgAuth.ts';
 import { resolveOrganizationIdForProperty } from './propertyScope.ts';
+import { isWithinBookingHelpWindow } from './bookingHelpWindow.ts';
+
+export { isWithinBookingHelpWindow };
 
 export const BOOKING_HELP_KINDS = ['cant_get_in', 'not_as_described', 'unsafe', 'other'] as const;
 
@@ -46,20 +48,6 @@ export function bookingHelpKindLabel(kind: BookingHelpKind): string {
 }
 
 /** The window is 24 hours before check-in through the check-out day (Manila). */
-export function isWithinBookingHelpWindow(input: {
-  checkInDate: string | null | undefined;
-  checkOutDate: string | null | undefined;
-  now?: Date;
-}): boolean {
-  const now = input.now ?? new Date();
-  const checkIn = manilaCheckInInstant(String(input.checkInDate ?? ''), '14:00');
-  const checkOut = manilaCheckInInstant(String(input.checkOutDate ?? ''), '23:59');
-  if (!checkIn || !checkOut) return false;
-  return (
-    now.getTime() >= checkIn.getTime() - 24 * 60 * 60 * 1000 && now.getTime() <= checkOut.getTime()
-  );
-}
-
 type HelpRow = Record<string, unknown>;
 
 export async function createBookingHelpRequest(input: {

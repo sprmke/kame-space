@@ -50,6 +50,8 @@ bottom tabs on phone) like `/success`, `/sd-form` and `/guest-review`.
 ## Get help now (SAFE-01)
 
 From 24 hours before check-in through the check-out day, the left column shows **Get help now**
+when `get-guest-trip` returns `actions.helpAvailable`. That flag comes from the same window
+rule the write endpoint enforces, so the button never appears days before the window opens
 (`GuestTripHelpButton`). It opens a bottom sheet with four issues: **I can't get in**, **Not as
 described**, **Unsafe or emergency**, **Something else**, plus a short note. Submitting calls
 `POST guest-trip-help` with `{ bookingId, kind, note? }`.

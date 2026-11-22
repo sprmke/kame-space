@@ -48,6 +48,7 @@ targets=(
   guest-trip-help/index.ts
   booking-help/index.ts
   _shared/bookingHelp.ts
+  _shared/bookingHelpWindow.ts
   data-subject-request/index.ts
   _shared/dataSubjectService.ts
   ops-alert-ingest/index.ts

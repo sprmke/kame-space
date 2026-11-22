@@ -29,6 +29,7 @@ test.describe('@ci @critical guest trip urgent help', () => {
           success: true,
           data: {
             ...base,
+            actions: { ...base.actions, helpAvailable: true },
             stay: { ...base.stay, checkInDate: checkIn, checkOutDate: addDays(checkIn, 1) },
           },
         }),

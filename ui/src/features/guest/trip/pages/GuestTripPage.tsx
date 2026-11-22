@@ -530,12 +530,7 @@ function GuestTripContent({
                 : null
             }
           />
-          {phase === 'arriving' ||
-          phase === 'arrival_day' ||
-          phase === 'staying' ||
-          phase === 'checkout_day' ? (
-            <GuestTripHelpButton bookingId={trip.bookingId} />
-          ) : null}
+          {trip.actions.helpAvailable ? <GuestTripHelpButton bookingId={trip.bookingId} /> : null}
           <GuestTripReviewCard trip={trip} />
           <GuestTripShortcuts
             items={shortcuts}
