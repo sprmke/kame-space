@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { VIDEO_V2_LIMITS } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
 import {
   recordingRoomMs,
+  recordingStartFrame,
   voicePlacement,
 } from '@/features/dashboard/marketing/lib/video/v2/voicePlacement';
 
@@ -81,5 +82,27 @@ describe('recordingRoomMs', () => {
     expect(recordingRoomMs(0, 30)).toBe(60_000);
     expect(recordingRoomMs(900, 30)).toBe(30_000);
     expect(recordingRoomMs(5000, 30)).toBe(0);
+  });
+});
+
+describe('recordingStartFrame', () => {
+  it('starts where the playhead is when there is room', () => {
+    expect(recordingStartFrame(90, 300, 30)).toBe(90);
+    expect(recordingStartFrame(0, 300, 30)).toBe(0);
+  });
+
+  it('starts from the beginning when less than a second is left', () => {
+    expect(recordingStartFrame(290, 300, 30)).toBe(0);
+    expect(recordingStartFrame(300, 300, 30)).toBe(0);
+    expect(recordingStartFrame(271, 300, 30)).toBe(0);
+  });
+
+  it('keeps a start with exactly one second left', () => {
+    expect(recordingStartFrame(270, 300, 30)).toBe(270);
+  });
+
+  it('survives odd input', () => {
+    expect(recordingStartFrame(-5, 300, 30)).toBe(0);
+    expect(recordingStartFrame(12.4, 300, 30)).toBe(12);
   });
 });

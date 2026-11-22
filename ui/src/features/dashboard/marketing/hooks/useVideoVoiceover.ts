@@ -16,6 +16,7 @@ import { useMarketingMediaUploads } from '@/features/dashboard/marketing/hooks/u
 import { useVoiceRecorder } from '@/features/dashboard/marketing/hooks/useVoiceRecorder';
 import { payloadFromAsset } from '@/features/dashboard/marketing/lib/media/mediaDrag';
 import { audioItemFromPayload } from '@/features/dashboard/marketing/lib/video/v2/editorCommands';
+import { projectDurationInFrames } from '@/features/dashboard/marketing/lib/video/v2/timelineTiming';
 import { insertItem, type OpResult } from '@/features/dashboard/marketing/lib/video/v2/timelineOps';
 import type {
   AudioItem,
@@ -23,6 +24,7 @@ import type {
 } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
 import {
   recordingRoomMs,
+  recordingStartFrame,
   voicePlacement,
 } from '@/features/dashboard/marketing/lib/video/v2/voicePlacement';
 
@@ -42,6 +44,8 @@ type Options = {
   isPlaying: boolean;
   canEdit: boolean;
   pausePlayback: () => void;
+  /** Move the playhead (used when recording restarts from the beginning). */
+  seek: (frame: number) => void;
   apply: (build: (current: VideoProjectV2) => OpResult) => void;
   /** The take is on the timeline. */
   onSaved?: () => void;
@@ -54,6 +58,7 @@ export function useVideoVoiceover({
   isPlaying,
   canEdit,
   pausePlayback,
+  seek,
   apply,
   onSaved,
 }: Options) {
@@ -66,9 +71,14 @@ export function useVideoVoiceover({
   const start = useCallback(() => {
     const current = projectRef.current;
     if (!current || !canEdit) return;
-    const startFrame = currentFrameRef.current;
+    const startFrame = recordingStartFrame(
+      currentFrameRef.current,
+      projectDurationInFrames(current),
+      current.fps
+    );
     const player = playerRef.current;
     pausePlayback();
+    if (startFrame !== currentFrameRef.current) seek(startFrame);
     let mutedByUs = false;
     void recorder.start({
       maxMs: recordingRoomMs(startFrame, current.fps),
@@ -108,6 +118,7 @@ export function useVideoVoiceover({
     playerRef,
     projectRef,
     recorder,
+    seek,
     uploads,
   ]);
 

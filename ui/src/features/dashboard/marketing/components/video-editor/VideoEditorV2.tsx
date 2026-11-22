@@ -1505,6 +1505,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     isPlaying,
     canEdit: canEditContent,
     pausePlayback: transport.pause,
+    seek: transport.seek,
     apply,
     // The take is on the timeline: put the recorder away so the voice tools show.
     onSaved: () => setVoiceOpen(false),

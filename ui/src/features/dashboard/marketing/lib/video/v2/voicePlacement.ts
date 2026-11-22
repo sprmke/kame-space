@@ -43,6 +43,19 @@ export function voicePlacement(input: VoicePlacementInput): VoicePlacement {
   return { from, trimBeforeFrames, durationInFrames };
 }
 
+/**
+ * Where recording should start. With less than a second of video left from the playhead the take
+ * would be too short to use, so it starts from the beginning instead.
+ */
+export function recordingStartFrame(
+  playheadFrame: number,
+  contentFrames: number,
+  fps: number
+): number {
+  const frame = Math.max(0, Math.round(playheadFrame));
+  return contentFrames - frame < fps ? 0 : frame;
+}
+
 /** Frames left before the 60 s cap when recording starts at `startFrame`. */
 export function recordingRoomMs(startFrame: number, fps: number): number {
   const frames = Math.max(0, VIDEO_V2_LIMITS.maxDurationFrames - Math.round(startFrame));
