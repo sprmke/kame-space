@@ -29,4 +29,11 @@ describe('pricingCalendarOutsideCellClassName', () => {
     expect(className).toContain('sm:aspect-square');
     expect(className).not.toMatch(/(^|\s)aspect-square(\s|$)/);
   });
+
+  it('keeps adjacent-month pads quieter than past in-month cells', () => {
+    const className = pricingCalendarOutsideCellClassName(false);
+    expect(className).toContain('opacity-[0.36]');
+    expect(className).toContain('bg-card');
+    expect(className).toContain('border-border/40');
+  });
 });

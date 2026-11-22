@@ -14,10 +14,19 @@ export function pricingCalendarWeekGapClassName(compactChrome: boolean): string 
   return compactChrome ? 'gap-0.5 sm:gap-1' : 'gap-1.5 sm:gap-2';
 }
 
+/**
+ * Leading/trailing adjacent-month pads. Same tile shape as in-month days
+ * (price / markers / booked state live in the cell), dimmed below past
+ * in-month opacity (`0.45`) so the focused month stays obvious.
+ */
 export function pricingCalendarOutsideCellClassName(compactChrome: boolean): string {
   return cn(
+    'border-border/40 bg-card relative flex min-w-0 flex-col rounded-lg border text-left',
+    'opacity-[0.36]',
     'sm:aspect-square',
-    compactChrome ? 'min-h-[3rem] sm:min-h-[3.25rem]' : 'min-h-[3.5rem] sm:min-h-[4.5rem]'
+    compactChrome
+      ? 'min-h-[3rem] p-0.5 sm:min-h-[3.25rem]'
+      : 'min-h-[3.5rem] p-1 sm:min-h-[4.5rem] sm:p-2'
   );
 }
 

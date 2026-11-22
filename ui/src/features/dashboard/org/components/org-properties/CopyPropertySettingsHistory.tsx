@@ -2,8 +2,14 @@ import { usePropertySettingsCopyLogs } from '@/features/dashboard/org/hooks/useP
 import type { PropertySettingsCopyLogEntry } from '@/features/dashboard/org/lib/copyPropertySettingsApi';
 import { COPY_PROPERTY_SETTINGS_GROUPS } from '@/features/dashboard/org/lib/copyPropertySettingsGroups';
 
+import { AdminDialogShell } from '@/components/AdminDialogShell';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+
 type Props = {
   orgSlug: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   propertyNameById: Map<string, string>;
 };
 
@@ -33,46 +39,94 @@ function summarizeLog(
   return `${source} → ${targetCount} ${targetCount === 1 ? 'property' : 'properties'} · ${groupCount} ${groupCount === 1 ? 'group' : 'groups'}`;
 }
 
-export function CopyPropertySettingsHistory({ orgSlug, propertyNameById }: Props) {
-  const { data, isPending, isError } = usePropertySettingsCopyLogs(orgSlug);
+function HistoryList({
+  logs,
+  propertyNameById,
+}: {
+  logs: PropertySettingsCopyLogEntry[];
+  propertyNameById: Map<string, string>;
+}) {
+  return (
+    <ul className="space-y-2.5" role="list">
+      {logs.map((log) => {
+        const groupPreview = log.groups.slice(0, 4).map(groupLabel).join(', ');
+        const more = log.groups.length > 4 ? ` +${log.groups.length - 4}` : '';
+        return (
+          <li
+            key={log.id}
+            className="border-border bg-card flex min-h-[4.5rem] items-start justify-between gap-3 rounded-xl border px-3.5 py-3.5 sm:gap-4 sm:px-4"
+          >
+            <div className="min-w-0 flex-1 space-y-1">
+              <p className="text-foreground text-sm font-medium leading-snug">
+                {summarizeLog(log, propertyNameById)}
+              </p>
+              <p className="text-muted-foreground text-xs leading-snug sm:text-[13px]">
+                {groupPreview}
+                {more}
+              </p>
+            </div>
+            <time
+              className="text-muted-foreground mt-0.5 shrink-0 text-right text-xs tabular-nums leading-snug"
+              dateTime={log.created_at}
+            >
+              {formatWhen(log.created_at)}
+            </time>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
-  // Optional section: stay blank until we know there is history (avoids a title flash on empty orgs).
-  if (isPending || isError) return null;
-
+export function CopyPropertySettingsHistoryDialog({
+  orgSlug,
+  open,
+  onOpenChange,
+  propertyNameById,
+}: Props) {
+  const { data, isPending, isError, isFetching } = usePropertySettingsCopyLogs(orgSlug, open);
   const logs = data?.logs ?? [];
-  if (logs.length === 0) return null;
+  const showLoading = open && (isPending || (isFetching && logs.length === 0));
 
   return (
-    <section className="mt-8 space-y-3" aria-label="Copy history">
-      <h2 className="text-sm font-medium">Copy history</h2>
-      <ul className="divide-border border-border divide-y rounded-lg border">
-        {logs.map((log) => {
-          const groupPreview = log.groups.slice(0, 4).map(groupLabel).join(', ');
-          const more = log.groups.length > 4 ? ` +${log.groups.length - 4}` : '';
-          return (
+    <AdminDialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Copy history"
+      sizeClassName="max-w-[min(calc(100vw-1.5rem),32rem)] sm:max-w-[min(90vw,32rem)]"
+      footer={
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-[44px]"
+          onClick={() => onOpenChange(false)}
+        >
+          Close
+        </Button>
+      }
+    >
+      {showLoading ? (
+        <ul className="space-y-2.5" aria-busy="true" aria-label="Loading copy history">
+          {Array.from({ length: 3 }).map((_, index) => (
             <li
-              key={log.id}
-              className="flex flex-col gap-0.5 px-3 py-2.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
+              key={index}
+              className="border-border flex min-h-[4.5rem] items-start justify-between gap-3 rounded-xl border px-3.5 py-3.5 sm:px-4"
             >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">
-                  {summarizeLog(log, propertyNameById)}
-                </p>
-                <p className="text-muted-foreground truncate text-xs">
-                  {groupPreview}
-                  {more}
-                </p>
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-4 w-[70%]" />
+                <Skeleton className="h-3.5 w-[55%]" />
               </div>
-              <time
-                className="text-muted-foreground shrink-0 text-xs tabular-nums"
-                dateTime={log.created_at}
-              >
-                {formatWhen(log.created_at)}
-              </time>
+              <Skeleton className="mt-0.5 h-3 w-[5.5rem] shrink-0" />
             </li>
-          );
-        })}
-      </ul>
-    </section>
+          ))}
+        </ul>
+      ) : isError ? (
+        <p className="text-muted-foreground text-sm">Could not load history.</p>
+      ) : logs.length === 0 ? (
+        <p className="text-muted-foreground text-sm">No copy runs yet.</p>
+      ) : (
+        <HistoryList logs={logs} propertyNameById={propertyNameById} />
+      )}
+    </AdminDialogShell>
   );
 }

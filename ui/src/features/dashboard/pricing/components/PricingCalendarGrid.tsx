@@ -257,15 +257,16 @@ export function PricingCalendarGrid({
                     pricingCalendarWeekGapClassName(denseCalendar)
                   )}
                 >
-                  {week.days.map((day) =>
-                    isSameMonth(day, currentMonth) ? (
+                  {week.days.map((day) => {
+                    const dayBookings = [...(bookingsByDay.get(dateKey(day)) ?? [])].sort(
+                      comparePricingCalendarLanes
+                    );
+                    return isSameMonth(day, currentMonth) ? (
                       <PricingDayCell
                         key={day.toISOString()}
                         day={day}
                         selectedDates={selectedDates}
-                        dayBookings={[...(bookingsByDay.get(dateKey(day)) ?? [])].sort(
-                          comparePricingCalendarLanes
-                        )}
+                        dayBookings={dayBookings}
                         getPriceForDate={getPriceForDate}
                         touchMode={isBelowLg}
                         touchArmed={touchAnchor != null && isSameDay(touchAnchor, day)}
@@ -278,13 +279,16 @@ export function PricingCalendarGrid({
                         denseCalendar={denseCalendar}
                       />
                     ) : (
-                      <div
+                      <PricingOutsideDayCell
                         key={day.toISOString()}
-                        className={pricingCalendarOutsideCellClassName(denseCalendar)}
-                        aria-hidden
+                        day={day}
+                        dayBookings={dayBookings}
+                        getPriceForDate={getPriceForDate}
+                        denseCalendar={denseCalendar}
+                        onNavigateMonth={onMonthChange}
                       />
-                    )
-                  )}
+                    );
+                  })}
                 </div>
 
                 <PricingCalendarSpanOverlay
@@ -369,6 +373,87 @@ export function PricingCalendarGrid({
         <LegendSwatch className="ring-primary ring-1" label="Selected" />
       </div>
     </section>
+  );
+}
+
+/**
+ * Adjacent-month pad: same cell chrome as in-month days (price, markers, booked
+ * state) at low opacity so week-edge stay pills sit on matching tiles instead of
+ * empty whitespace. Tap jumps to that month (selection stays in-month only).
+ */
+function PricingOutsideDayCell({
+  day,
+  dayBookings,
+  getPriceForDate,
+  denseCalendar,
+  onNavigateMonth,
+}: {
+  day: Date;
+  dayBookings: PropertyPricingCalendarBooking[];
+  getPriceForDate: (date: Date) => PricingDayState;
+  denseCalendar: boolean;
+  onNavigateMonth: (month: Date) => void;
+}) {
+  const { price, rule, isCustom, isBooked, isBlocked, isImported, isSmart } = getPriceForDate(day);
+  const hasHoliday = rule != null;
+  const showPrice = !isBooked;
+  const showMarkers = !isBooked && !isBlocked;
+  const hiddenBookings = isBooked && dayBookings.length > 3 ? dayBookings.slice(3) : [];
+
+  return (
+    <button
+      type="button"
+      className={cn(
+        pricingCalendarOutsideCellClassName(denseCalendar),
+        isBlocked && !isBooked && 'bg-muted/40 border-muted-foreground/15',
+        isImported && !isBooked && 'border-muted-foreground/20 border-dashed',
+        'hover:opacity-[0.48] focus-visible:opacity-[0.48]',
+        'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1'
+      )}
+      onClick={() => onNavigateMonth(startOfMonth(day))}
+      aria-label={`Go to ${format(day, 'MMMM yyyy')}`}
+    >
+      <span className="text-muted-foreground text-xs font-semibold leading-none sm:text-sm">
+        {format(day, 'd')}
+      </span>
+
+      {showPrice ? (
+        <div className="bg-muted/70 dark:bg-muted/50 mt-auto flex w-full items-center justify-center rounded px-0.5 py-0.5 sm:rounded-md sm:py-1">
+          <span className="text-muted-foreground w-full truncate text-center text-[10px] font-semibold tabular-nums leading-none sm:text-xs">
+            {formatMoneyCompact(price)}
+          </span>
+        </div>
+      ) : null}
+
+      {hiddenBookings.length > 0 ? (
+        <span
+          className="bg-card/95 text-muted-foreground ring-border absolute right-1 top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums leading-none ring-1"
+          aria-hidden
+        >
+          +{hiddenBookings.length}
+        </span>
+      ) : null}
+
+      {isCustom && showMarkers ? (
+        <PenLine
+          className="absolute right-1 top-1 size-3 text-amber-600 dark:text-amber-400"
+          aria-hidden
+        />
+      ) : isSmart && showMarkers ? (
+        <Wand2
+          className="absolute right-1 top-1 size-3 text-emerald-600 dark:text-emerald-400"
+          aria-hidden
+        />
+      ) : null}
+      {hasHoliday && showMarkers && !isSmart ? (
+        <Sparkles className="text-primary absolute right-1 top-1 size-3" aria-hidden />
+      ) : null}
+      {isImported && !isBooked ? (
+        <RefreshCw className="text-muted-foreground absolute right-1 top-1 size-3" aria-hidden />
+      ) : isBlocked && !isBooked ? (
+        <Ban className="text-muted-foreground absolute right-1 top-1 size-3" aria-hidden />
+      ) : null}
+    </button>
   );
 }
 
