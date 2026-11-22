@@ -108,9 +108,6 @@ export function InstagramMusicPanel({ propertyId, query, config, preview }: Prop
 
   return (
     <div className="space-y-3">
-      <p className="text-muted-foreground text-xs">
-        Instagram adds the song when you post a Reel. It is not in a downloaded video.
-      </p>
       {tracks.length === 0 ? (
         <Notice title="No songs found" />
       ) : (

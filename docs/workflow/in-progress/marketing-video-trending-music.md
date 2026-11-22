@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Marketing videos: trending music picker'
 status: in-progress
 tags: [workflow, in-progress, marketing, video-editor, music, meta]
-updated: 2026-11-22
+updated: 2026-11-23
 kind: plan
 ---
 
@@ -96,7 +96,7 @@ Built on branch `sprmke/video-trending-music`, not merged. Phases 0 to 3 are imp
 ### Done
 
 - **Phase 1 + 2 (free catalog):** `marketing-music` GET groups (`trending`, `popular`, 3 kinds of chips: genre, mood, "for stays"), Jamendo + Audius merged, per-source status, paging, `only=` for legacy callers; `import-track` for both sources; Audius cached for export like Jamendo.
-- **Picker:** `MusicPicker` (search, chips, Saved, previews, Show more, states for empty, error and every source off), phone sheet and desktop panel, replaces `JamendoTrackBrowser`. Music tool on the phone opens straight to it.
+- **Picker:** `MusicPicker` (search, section chips then genre/mood/stay rows, Saved on this device, previews, Show more, dual-source tip when Instagram is on, states for empty, error and every source off), phone sheet and desktop panel, replaces `JamendoTrackBrowser`. Music tool on the phone opens straight to it.
 - **Phase 3 (Instagram):** Instagram switch in the picker, `project.instagramSong`, song bar and inspector card with volume, publish dialog Reel format, `instagramAudio` in `publish-to-meta`, Reels carry the caption, video "Post" becomes a Reel (also in the assistant publish path).
 - **Tests:** Deno (groups, types, Audius, Instagram audio, catalog, Meta publish), Vitest (parity, types, payload, parser, export caching, publish format), happy-dom (hooks, picker, Instagram panel, song card), Playwright mocked (desktop + phone picker, Audius export caching with a real download, publish with a song).
 

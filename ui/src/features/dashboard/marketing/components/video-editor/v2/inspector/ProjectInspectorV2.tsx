@@ -60,16 +60,19 @@ export function ProjectInspectorV2({ project, onChange }: Props) {
         </ul>
       ) : null}
       {song ? (
-        <InstagramSongCard
-          song={song}
-          propertyId={propertyId}
-          onRemove={() => onChange((p) => withoutInstagramSong(p))}
-          onVolumeChange={(volume) =>
-            onChange((p) =>
-              p.instagramSong ? { ...p, instagramSong: { ...p.instagramSong, volume } } : p
-            )
-          }
-        />
+        <div className="space-y-2">
+          <p className="text-section-title">Reel song</p>
+          <InstagramSongCard
+            song={song}
+            propertyId={propertyId}
+            onRemove={() => onChange((p) => withoutInstagramSong(p))}
+            onVolumeChange={(volume) =>
+              onChange((p) =>
+                p.instagramSong ? { ...p, instagramSong: { ...p.instagramSong, volume } } : p
+              )
+            }
+          />
+        </div>
       ) : null}
       <ColorPicker
         label="Background"

@@ -43,9 +43,10 @@ test.describe('@ci marketing video editor music picker', () => {
     await expect(list.getByRole('listitem')).toHaveCount(3);
     await expect(list.getByText('Song a')).toBeVisible();
     const chips = page.getByRole('group', { name: 'Music groups' });
-    for (const label of ['Saved', 'Trending', 'Popular', 'Chill', 'Calm', 'Beach day']) {
+    for (const label of ['Saved', 'Trending', 'Popular', 'Genres', 'Moods', 'For stays']) {
       await expect(chips.getByRole('button', { name: label })).toBeVisible();
     }
+    await expect(chips.getByRole('button', { name: 'Chill' })).toHaveCount(0);
     await expect(chips.getByRole('button', { name: 'Trending' })).toHaveAttribute(
       'aria-pressed',
       'true'
@@ -58,10 +59,9 @@ test.describe('@ci marketing video editor music picker', () => {
     await openMusicTab(page);
     await expect(page.getByText('Song trending-1')).toBeVisible();
 
-    await page
-      .getByRole('group', { name: 'Music groups' })
-      .getByRole('button', { name: 'Beach day' })
-      .click();
+    const chips = page.getByRole('group', { name: 'Music groups' });
+    await chips.getByRole('button', { name: 'For stays' }).click();
+    await chips.getByRole('button', { name: 'Beach day' }).click();
 
     await expect(page.getByText('Song beach-day-1')).toBeVisible();
     expect(mock.requests.some((r) => r.searchParams.get('group') === 'beach-day')).toBe(true);
@@ -175,7 +175,9 @@ test.describe('@ci marketing video editor music picker', () => {
       .getByRole('button', { name: 'Instagram' })
       .click();
     await expect(page.getByText('Golden Hour')).toBeVisible();
-    await expect(page.getByText('Instagram adds the song when you post a Reel.')).toBeVisible();
+    await expect(
+      page.getByText('Instagram adds this song on a Reel. It is not in a download.')
+    ).toBeVisible();
 
     await page.getByRole('button', { name: 'Use Golden Hour' }).click();
 

@@ -894,7 +894,7 @@ Yes. In the video editor tap Audio, then Record voice, allow the microphone and 
 - source: docs/guides/routes/org/property/marketing.md
 - order: 57
 
-In the video editor tap Audio, then Music. You start on Trending songs. Swipe the row of chips for Popular, genres like Chill and Acoustic, moods like Happy and Calm, and ideas for stays like Beach day. Tap a song to hear it, the bookmark to save it for later, and the plus button to add it where the playhead is. Songs you add are part of your video, so they are in the download and in posts.
+In the video editor tap Audio, then Music. You start on Trending songs. The top row is Saved, Trending, Popular, Genres, Moods and For stays. Genres, moods and stay ideas open a second row (Chill, Calm, Beach day and so on). Tap a song to hear it, the bookmark to save it on this device, and the plus button to add it where the playhead is. Songs you add are part of your video, so they are in the download and in posts.
 
 ### Can I use songs from Instagram?
 

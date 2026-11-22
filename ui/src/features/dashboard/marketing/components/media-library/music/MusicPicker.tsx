@@ -127,6 +127,7 @@ export function MusicPicker({ onPick, instagram = null, className }: Props) {
     }
     preview.stop();
     onPick(payload);
+    toast.success('Song added to the video');
   };
 
   const sourcesOff =
@@ -168,20 +169,28 @@ export function MusicPicker({ onPick, instagram = null, className }: Props) {
 
     if (tracks.length === 0) {
       return (
-        <p className="text-muted-foreground py-8 text-center text-sm" role="status">
-          {showingSaved
-            ? 'Tap the bookmark on a song to save it here'
-            : sourcesOff
-              ? 'Music is not available right now'
-              : searching
-                ? 'No songs found. Try another word.'
-                : 'No songs here yet'}
-        </p>
+        <div className="space-y-1 py-8 text-center" role="status">
+          <p className="text-muted-foreground text-sm">
+            {showingSaved
+              ? 'Tap the bookmark on a song to save it here'
+              : sourcesOff
+                ? 'Music is not available right now'
+                : searching
+                  ? 'No songs found. Try another word.'
+                  : 'No songs here yet'}
+          </p>
+          {showingSaved ? (
+            <p className="text-muted-foreground text-xs">Saved on this device only</p>
+          ) : null}
+        </div>
       );
     }
 
     return (
       <div className="space-y-3">
+        {showingSaved ? (
+          <p className="text-muted-foreground text-xs">Saved on this device only</p>
+        ) : null}
         <ul className="space-y-2" aria-label={showingSaved ? 'Saved music' : 'Music'}>
           {tracks.map((track) => {
             const key = musicTrackKey(track);
@@ -220,7 +229,16 @@ export function MusicPicker({ onPick, instagram = null, className }: Props) {
 
   return (
     <div className={cn('space-y-3', className)}>
-      {instagram ? <ScopeSwitch value={scope} onChange={setScope} /> : null}
+      {instagram ? (
+        <div className="space-y-2">
+          <ScopeSwitch value={scope} onChange={setScope} />
+          <p className="text-muted-foreground text-xs">
+            {scope === 'instagram'
+              ? 'Instagram adds this song on a Reel. It is not in a download.'
+              : 'In video songs go into the export. Instagram songs only apply to Reels.'}
+          </p>
+        </div>
+      ) : null}
 
       <div className="relative">
         <Search

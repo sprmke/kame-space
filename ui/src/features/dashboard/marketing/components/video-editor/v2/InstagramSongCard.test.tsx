@@ -102,10 +102,10 @@ describe('InstagramSongCard', () => {
     rerender(
       <InstagramSongCard song={SONG} propertyId="p" onRemove={vi.fn()} onVolumeChange={vi.fn()} />
     );
-    expect(screen.getByText('Song volume')).toBeTruthy();
+    expect(screen.getByText('Reel volume')).toBeTruthy();
     expect(
       screen.getByText(
-        'Instagram adds this song when you post as a Reel. It is not in a downloaded video.'
+        'Sets how loud Instagram mixes this song on your Reel. It does not change the editor preview or a downloaded file.'
       )
     ).toBeTruthy();
   });

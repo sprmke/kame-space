@@ -100,9 +100,10 @@ describe('MusicPicker (library)', () => {
     expect(screen.getByText('Song a')).toBeTruthy();
     expect(screen.getAllByText('Some Artist · 2:31').length).toBe(2);
     const chips = screen.getByRole('group', { name: 'Music groups' });
-    for (const label of ['Trending', 'Popular', 'Chill', 'Happy', 'Beach day']) {
+    for (const label of ['Trending', 'Popular', 'Genres', 'Moods', 'For stays']) {
       expect(within(chips).getByRole('button', { name: label })).toBeTruthy();
     }
+    expect(within(chips).queryByRole('button', { name: 'Chill' })).toBeNull();
     expect(
       within(chips).getByRole('button', { name: 'Trending' }).getAttribute('aria-pressed')
     ).toBe('true');
@@ -115,9 +116,13 @@ describe('MusicPicker (library)', () => {
     renderPicker({ onPick: vi.fn() });
     await screen.findByText('Song trending-1');
 
+    fireEvent.click(screen.getByRole('button', { name: 'Genres' }));
     fireEvent.click(screen.getByRole('button', { name: 'Chill' }));
 
     expect(await screen.findByText('Song chill-1')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Genres' }).getAttribute('aria-pressed')).toBe(
+      'true'
+    );
     expect(screen.getByRole('button', { name: 'Chill' }).getAttribute('aria-pressed')).toBe('true');
     expect(requests.at(-1)!.searchParams.get('group')).toBe('chill');
   });
@@ -139,6 +144,7 @@ describe('MusicPicker (library)', () => {
   });
 
   it('adds a track as an audio clip payload with its source and credit', async () => {
+    const { toast } = await import('sonner');
     handler = () => page([track('a', 'audius')]);
     const onPick = vi.fn();
     renderPicker({ onPick });
@@ -154,6 +160,7 @@ describe('MusicPicker (library)', () => {
       artist: 'Some Artist',
       durationMs: 151000,
     });
+    expect(toast.success).toHaveBeenCalledWith('Song added to the video');
   });
 
   it('loads the next page with Show more and keeps the first page', async () => {
@@ -230,6 +237,7 @@ describe('MusicPicker (library)', () => {
     renderPicker({ onPick: vi.fn() });
     fireEvent.click(await screen.findByRole('button', { name: /^Saved/ }));
     expect(screen.getByText('Tap the bookmark on a song to save it here')).toBeTruthy();
+    expect(screen.getByText('Saved on this device only')).toBeTruthy();
   });
 
   it('has no Instagram tab unless the editor turns it on', async () => {
@@ -289,13 +297,16 @@ describe('MusicPicker (Instagram tab)', () => {
     renderPicker({ onPick: vi.fn(), instagram: config });
     await screen.findByText('Song 1');
 
+    expect(
+      screen.getByText(
+        'In video songs go into the export. Instagram songs only apply to Reels.'
+      )
+    ).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Instagram' }));
 
     expect(await screen.findByText('Golden Hour')).toBeTruthy();
     expect(
-      screen.getByText(
-        'Instagram adds the song when you post a Reel. It is not in a downloaded video.'
-      )
+      screen.getByText('Instagram adds this song on a Reel. It is not in a download.')
     ).toBeTruthy();
     // The free-music chips do not apply here.
     expect(screen.queryByRole('group', { name: 'Music groups' })).toBeNull();

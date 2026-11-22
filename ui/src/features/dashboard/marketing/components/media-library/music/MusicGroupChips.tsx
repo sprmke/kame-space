@@ -2,11 +2,17 @@ import { useEffect, useRef } from 'react';
 
 import { Bookmark } from 'lucide-react';
 
-import { MUSIC_GROUPS, type MusicGroup } from '@/features/dashboard/marketing/lib/music/musicTypes';
+import {
+  MUSIC_GROUPS,
+  type MusicGroup,
+  type MusicGroupKind,
+} from '@/features/dashboard/marketing/lib/music/musicTypes';
 
 import { cn } from '@/lib/utils';
 
 export const SAVED_GROUP = 'saved';
+
+type BrowseSection = 'saved' | 'trending' | 'popular' | 'genre' | 'mood' | 'collection';
 
 type Props = {
   /** A group slug, or `saved`. */
@@ -14,6 +20,23 @@ type Props = {
   onChange: (slug: string) => void;
   savedCount: number;
 };
+
+const SECTION_DEFAULT: Record<'genre' | 'mood' | 'collection', string> = {
+  genre: 'chill',
+  mood: 'happy',
+  collection: 'beach-day',
+};
+
+function sectionForValue(value: string): BrowseSection {
+  if (value === SAVED_GROUP) return 'saved';
+  if (value === 'trending') return 'trending';
+  if (value === 'popular') return 'popular';
+  const group = MUSIC_GROUPS.find((entry) => entry.slug === value);
+  if (group?.kind === 'genre' || group?.kind === 'mood' || group?.kind === 'collection') {
+    return group.kind;
+  }
+  return 'trending';
+}
 
 function Chip({
   selected,
@@ -55,36 +78,97 @@ function Chip({
   );
 }
 
-function divider(prev: MusicGroup | undefined, next: MusicGroup): boolean {
-  return Boolean(prev && prev.kind !== next.kind);
-}
-
-/** Trending, genres, moods and "for stays" collections as one swipeable row, like a story's music. */
-export function MusicGroupChips({ value, onChange, savedCount }: Props) {
+function ChipRow({
+  children,
+  label,
+}: {
+  children: React.ReactNode;
+  label: string;
+}) {
   return (
     <div
       role="group"
-      aria-label="Music groups"
+      aria-label={label}
       className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
-      <Chip
-        selected={value === SAVED_GROUP}
-        onClick={() => onChange(SAVED_GROUP)}
-        label={savedCount > 0 ? `Saved, ${savedCount}` : 'Saved'}
-      >
-        <Bookmark className="size-3.5" aria-hidden />
-        Saved
-      </Chip>
-      {MUSIC_GROUPS.map((group, index) => (
-        <div key={group.slug} className="flex shrink-0 items-center gap-2">
-          {divider(MUSIC_GROUPS[index - 1], group) ? (
-            <span aria-hidden className="bg-border h-5 w-px" />
-          ) : null}
-          <Chip selected={value === group.slug} onClick={() => onChange(group.slug)}>
-            {group.label}
-          </Chip>
-        </div>
-      ))}
+      {children}
+    </div>
+  );
+}
+
+function groupsOfKind(kind: MusicGroupKind): MusicGroup[] {
+  return MUSIC_GROUPS.filter((group) => group.kind === kind);
+}
+
+/**
+ * Browse music in two steps: a short section row, then genres / moods / stay collections when
+ * needed. Keeps the Instagram-style swipe without dumping every tag at once.
+ */
+export function MusicGroupChips({ value, onChange, savedCount }: Props) {
+  const section = sectionForValue(value);
+  const nestedKind =
+    section === 'genre' || section === 'mood' || section === 'collection' ? section : null;
+  const nestedGroups = nestedKind ? groupsOfKind(nestedKind) : [];
+
+  const pickSection = (next: BrowseSection) => {
+    if (next === 'saved') {
+      onChange(SAVED_GROUP);
+      return;
+    }
+    if (next === 'trending' || next === 'popular') {
+      onChange(next);
+      return;
+    }
+    const current = MUSIC_GROUPS.find((entry) => entry.slug === value);
+    if (current?.kind === next) return;
+    onChange(SECTION_DEFAULT[next]);
+  };
+
+  return (
+    <div className="space-y-2" role="group" aria-label="Music groups">
+      <ChipRow label="Music sections">
+        <Chip
+          selected={section === 'saved'}
+          onClick={() => pickSection('saved')}
+          label={savedCount > 0 ? `Saved, ${savedCount}` : 'Saved'}
+        >
+          <Bookmark className="size-3.5" aria-hidden />
+          Saved
+        </Chip>
+        <Chip selected={section === 'trending'} onClick={() => pickSection('trending')}>
+          Trending
+        </Chip>
+        <Chip selected={section === 'popular'} onClick={() => pickSection('popular')}>
+          Popular
+        </Chip>
+        <Chip selected={section === 'genre'} onClick={() => pickSection('genre')}>
+          Genres
+        </Chip>
+        <Chip selected={section === 'mood'} onClick={() => pickSection('mood')}>
+          Moods
+        </Chip>
+        <Chip selected={section === 'collection'} onClick={() => pickSection('collection')}>
+          For stays
+        </Chip>
+      </ChipRow>
+
+      {nestedKind ? (
+        <ChipRow
+          label={
+            nestedKind === 'genre' ? 'Genres' : nestedKind === 'mood' ? 'Moods' : 'For stays'
+          }
+        >
+          {nestedGroups.map((group) => (
+            <Chip
+              key={group.slug}
+              selected={value === group.slug}
+              onClick={() => onChange(group.slug)}
+            >
+              {group.label}
+            </Chip>
+          ))}
+        </ChipRow>
+      ) : null}
     </div>
   );
 }

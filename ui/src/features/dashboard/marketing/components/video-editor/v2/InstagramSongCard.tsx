@@ -126,7 +126,7 @@ export function InstagramSongCard({
       {onVolumeChange ? (
         <>
           <NumberSlider
-            label="Song volume"
+            label="Reel volume"
             unit="%"
             min={1}
             max={100}
@@ -135,7 +135,8 @@ export function InstagramSongCard({
             onChange={onVolumeChange}
           />
           <p className="text-muted-foreground text-xs">
-            Instagram adds this song when you post as a Reel. It is not in a downloaded video.
+            Sets how loud Instagram mixes this song on your Reel. It does not change the editor
+            preview or a downloaded file.
           </p>
         </>
       ) : null}
