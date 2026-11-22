@@ -174,8 +174,13 @@ export function PlanItemSheet({
 
             <div className="space-y-1.5">
               <p className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
-                Dates & price
+                Why this post
               </p>
+              {item.brief.why ? (
+                <p className="text-sm leading-snug">{item.brief.why}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Suggested from your calendar data.</p>
+              )}
               {claims.length > 0 ? (
                 <ul className="space-y-0.5 text-sm">
                   {claims.map((line) => (
@@ -185,9 +190,9 @@ export function PlanItemSheet({
               ) : (
                 <p className="text-sm text-muted-foreground">No dates or prices in this post.</p>
               )}
-              {item.brief.why ? (
-                <p className="text-caption text-muted-foreground">{item.brief.why}</p>
-              ) : null}
+              <p className="text-caption text-muted-foreground">
+                We pause this if the dates book or the price changes.
+              </p>
             </div>
 
             {item.trackedVisits > 0 || item.insights ? (
@@ -370,7 +375,7 @@ export function PlanItemSheet({
           <ResponsiveModalFooter className={cn(MODAL_FOOTER_CLASS, 'flex flex-wrap gap-2')}>
             {onOpenEditor ? (
               <Button size="sm" onClick={() => onOpenEditor(item)}>
-                Open in editor
+                Make this
               </Button>
             ) : null}
             <Button size="sm" variant="outline" onClick={guard.requestClose}>

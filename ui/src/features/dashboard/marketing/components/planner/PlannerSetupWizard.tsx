@@ -23,15 +23,20 @@ const GOALS = [
   { id: 'brand', label: 'Get known' },
 ] as const;
 
-const MANUAL_PLACES = [
+const MANUAL_PLACES_PRIMARY = [
   { kind: 'facebook_group', label: 'Facebook groups', hint: 'Groups you already post in' },
-  { kind: 'tiktok', label: 'TikTok', hint: null },
   { kind: 'messenger', label: 'Messenger', hint: null },
   { kind: 'viber', label: 'Viber', hint: null },
   { kind: 'whatsapp', label: 'WhatsApp', hint: null },
+] as const;
+
+const MANUAL_PLACES_MORE = [
+  { kind: 'tiktok', label: 'TikTok', hint: null },
   { kind: 'google_business', label: 'Google Business', hint: null },
   { kind: 'other', label: 'Other', hint: null },
 ] as const;
+
+const MANUAL_PLACES = [...MANUAL_PLACES_PRIMARY, ...MANUAL_PLACES_MORE] as const;
 
 const CADENCE = [
   { id: 'light', label: 'Light', hint: 'About 30 minutes a week' },
@@ -104,12 +109,16 @@ export function PlannerSetupWizard({ open, onOpenChange, isSaving, initial, onSa
   const aiPlanGate = useFeatureGate('aiMarketingPlanner');
   const [connected, setConnected] = useState<string[]>([]);
   const [manual, setManual] = useState<string[]>([]);
+  const [showMorePlaces, setShowMorePlaces] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     const split = splitChannels(initial?.channels ?? []);
     setConnected(split.connected);
     setManual(split.manual);
+    setShowMorePlaces(
+      split.manual.some((kind) => MANUAL_PLACES_MORE.some((place) => place.kind === kind))
+    );
   }, [open, initial]);
 
   const connectedOptions = useMemo(
@@ -231,8 +240,8 @@ export function PlannerSetupWizard({ open, onOpenChange, isSaving, initial, onSa
               </div>
               <div className="space-y-2">
                 <p className="text-caption text-muted-foreground">Places you post by hand</p>
-                {MANUAL_PLACES.map((place) => (
-                  <label key={place.kind} className="flex items-center gap-2 text-sm">
+                {MANUAL_PLACES_PRIMARY.map((place) => (
+                  <label key={place.kind} className="flex min-h-11 items-center gap-2 text-sm">
                     <Checkbox
                       checked={manual.includes(place.kind)}
                       onCheckedChange={() => setManual((current) => toggle(current, place.kind))}
@@ -246,6 +255,30 @@ export function PlannerSetupWizard({ open, onOpenChange, isSaving, initial, onSa
                     </span>
                   </label>
                 ))}
+                {showMorePlaces
+                  ? MANUAL_PLACES_MORE.map((place) => (
+                      <label key={place.kind} className="flex min-h-11 items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={manual.includes(place.kind)}
+                          onCheckedChange={() =>
+                            setManual((current) => toggle(current, place.kind))
+                          }
+                          aria-label={place.label}
+                        />
+                        {place.label}
+                      </label>
+                    ))
+                  : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="px-0"
+                        onClick={() => setShowMorePlaces(true)}
+                      >
+                        More places
+                      </Button>
+                    )}
               </div>
             </div>
           ) : null}
@@ -292,7 +325,7 @@ export function PlannerSetupWizard({ open, onOpenChange, isSaving, initial, onSa
                       AI written
                       <span className="text-caption text-muted-foreground">
                         {' '}
-                        about 3 credits a week
+                        up to 20 credits a week
                       </span>
                     </span>
                   </label>
