@@ -58,6 +58,7 @@ test.describe('@ci org plan billing flows', () => {
     const state = await installPlansCheckoutMocks(page, { subscriptionPlanId: PLAN_STARTER });
 
     await openOrgPlansBilling(page);
+    await page.getByRole('button', { name: 'Add' }).click();
     const save = page.getByRole('button', { name: 'Save details' });
     await expect(save).toBeDisabled();
 
@@ -71,6 +72,8 @@ test.describe('@ci org plan billing flows', () => {
       legalName: 'Sample Stays Holdings Inc.',
       billingEmail: 'billing@samplestays.test',
     });
+    // Successful save collapses the form; reopen to edit again.
+    await page.getByRole('button', { name: 'Edit' }).click();
     await expect(save).toBeDisabled();
 
     // A new edit is unsaved: navigating away prompts, Keep editing stays put.
@@ -91,6 +94,7 @@ test.describe('@ci org plan billing flows', () => {
     const state = await installPlansCheckoutMocks(page, { subscriptionPlanId: PLAN_STARTER });
 
     await openOrgPlansBilling(page);
+    await page.getByRole('button', { name: 'Add' }).click();
     await page.getByLabel('TIN').fill('12');
     await page.getByRole('button', { name: 'Save details' }).click();
 
@@ -112,6 +116,7 @@ test.describe('@ci org plan billing flows', () => {
     });
 
     await openOrgPlansBilling(page);
+    await page.getByRole('button', { name: 'View' }).click();
     await expect(page.getByLabel('Legal name')).toHaveValue('Sample Stays Holdings Inc.');
     await expect(page.getByLabel('Legal name')).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Save details' })).toHaveCount(0);
