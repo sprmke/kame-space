@@ -30,10 +30,10 @@ describe('pricingCalendarOutsideCellClassName', () => {
     expect(className).not.toMatch(/(^|\s)aspect-square(\s|$)/);
   });
 
-  it('keeps adjacent-month pads quieter than past in-month cells', () => {
+  it('keeps adjacent-month pads quieter without cell opacity', () => {
     const className = pricingCalendarOutsideCellClassName(false);
-    expect(className).toContain('opacity-[0.36]');
-    expect(className).toContain('bg-card');
-    expect(className).toContain('border-border/40');
+    expect(className).toContain('bg-muted/25');
+    expect(className).toContain('border-border/50');
+    expect(className).not.toMatch(/opacity-\[/);
   });
 });

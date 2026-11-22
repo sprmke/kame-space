@@ -16,13 +16,13 @@ export function pricingCalendarWeekGapClassName(compactChrome: boolean): string 
 
 /**
  * Leading/trailing adjacent-month pads. Same tile shape as in-month days
- * (price / markers / booked state live in the cell), dimmed below past
- * in-month opacity (`0.45`) so the focused month stays obvious.
+ * (markers / booked state) with muted surfaces instead of cell opacity so
+ * week-edge stay pills sit on matching tiles without failing contrast.
  */
 export function pricingCalendarOutsideCellClassName(compactChrome: boolean): string {
   return cn(
-    'border-border/40 bg-card relative flex min-w-0 flex-col rounded-lg border text-left',
-    'opacity-[0.36]',
+    'border-border/50 bg-muted/25 relative flex min-w-0 flex-col rounded-lg border text-left',
+    'hover:bg-muted/40 focus-visible:bg-muted/40',
     'sm:aspect-square',
     compactChrome
       ? 'min-h-[3rem] p-0.5 sm:min-h-[3.25rem]'
