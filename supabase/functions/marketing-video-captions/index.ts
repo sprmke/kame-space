@@ -33,6 +33,7 @@ import {
   CAPTION_MODEL,
   captionCostUsd,
   parseCaptionLanguage,
+  readBoundedBody,
   sniffAudioMime,
   transcribeCaptions,
 } from '../_shared/marketingVideoCaptions.ts';
@@ -81,9 +82,18 @@ serveAuthenticated('marketing-video-captions', async (req, user) => {
     return jsonError(req, 'That audio is too long. Captions work on up to 60 seconds.', 413);
   }
 
+  // The header can be missing or wrong, so the cap is enforced on the bytes actually read.
+  const raw = await readBoundedBody(req, MAX_BODY_BYTES);
+  if (!raw) {
+    return jsonError(req, 'That audio is too long. Captions work on up to 60 seconds.', 413);
+  }
   let form: FormData;
   try {
-    form = await req.formData();
+    form = await new Request(req.url, {
+      method: 'POST',
+      headers: { 'content-type': req.headers.get('content-type') ?? '' },
+      body: raw as BodyInit,
+    }).formData();
   } catch {
     return jsonError(req, 'That audio could not be read.', 400);
   }

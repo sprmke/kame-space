@@ -15,6 +15,8 @@ type Props = {
   /** The take is being saved to Your media. */
   saving: boolean;
   muteWhileRecording: boolean;
+  /** A role that cannot edit may not record. */
+  readOnly?: boolean;
   onMuteChange: (value: boolean) => void;
   onStart: () => void;
   onStop: () => void;
@@ -43,6 +45,7 @@ export function VideoRecordPanel({
   error,
   saving,
   muteWhileRecording,
+  readOnly = false,
   onMuteChange,
   onStart,
   onStop,
@@ -85,7 +88,7 @@ export function VideoRecordPanel({
             type="button"
             className={RECORD_BUTTON}
             aria-label="Start recording"
-            disabled={busy || saving}
+            disabled={busy || saving || readOnly}
             onClick={onStart}
           >
             {phase === 'countdown' ? (

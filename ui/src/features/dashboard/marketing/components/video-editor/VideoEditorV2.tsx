@@ -1654,6 +1654,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
           error={recorder.error}
           saving={savingVoice}
           muteWhileRecording={muteWhileRecording}
+          readOnly={!canEditContent}
           onMuteChange={setMuteWhileRecording}
           onStart={handleStartRecording}
           onStop={recorder.stop}
@@ -1949,6 +1950,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
                       error={recorder.error}
                       saving={savingVoice}
                       muteWhileRecording={muteWhileRecording}
+                      readOnly={!canEditContent}
                       onMuteChange={setMuteWhileRecording}
                       onStart={handleStartRecording}
                       onStop={recorder.stop}

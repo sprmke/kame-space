@@ -878,6 +878,15 @@ Times, deposit, and amenities come from your property settings word for word. Th
 
 Open the video and tap Text, then Text styles. Pick a Headline, Caption, Name tag, Location, Price, Rating or Button and it lands where the playhead is. Tap Style to restyle it with one tap, or Edit to change the words. Drag the ends of its bar on the timeline to show it for longer or shorter.
 
+### How do I change the words on my video?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 55.5
+
+Tap the text on the video, then tap it again to edit it. You can also select it on the timeline and tap Edit. Captions work the same way, and Edit captions lists every line so you can fix them in one place.
+
 ### Can I record a voiceover on my video?
 
 - category: Marketing Studio

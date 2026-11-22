@@ -5,6 +5,7 @@ import {
   captionCostUsd,
   normalizeWords,
   parseCaptionLanguage,
+  readBoundedBody,
   sniffAudioMime,
   transcribeCaptions,
 } from './marketingVideoCaptions.ts';
@@ -150,4 +151,35 @@ Deno.test('transcribeCaptions hides provider details and marks busy errors retry
   const down = await assertRejects(() => run(503), SpeechProviderError);
   assertEquals(down.retryable, true);
   await assertRejects(() => run(200, 'not json'), SpeechProviderError);
+});
+
+const bodyRequest = (chunks: Uint8Array[]) =>
+  new Request('http://x.test', {
+    method: 'POST',
+    body: new ReadableStream({
+      start(controller) {
+        for (const chunk of chunks) controller.enqueue(chunk);
+        controller.close();
+      },
+    }),
+    // @ts-expect-error Deno needs this for a streamed request body.
+    duplex: 'half',
+  });
+
+Deno.test('readBoundedBody returns the bytes when they fit', async () => {
+  const body = await readBoundedBody(
+    bodyRequest([new Uint8Array([1, 2]), new Uint8Array([3])]),
+    10
+  );
+  assertEquals(Array.from(body!), [1, 2, 3]);
+});
+
+Deno.test('readBoundedBody stops at the cap even with no Content-Length', async () => {
+  const body = await readBoundedBody(bodyRequest([new Uint8Array(6), new Uint8Array(6)]), 10);
+  assertEquals(body, null);
+});
+
+Deno.test('readBoundedBody treats an empty body as nothing', async () => {
+  assertEquals(await readBoundedBody(bodyRequest([]), 10), null);
+  assertEquals(await readBoundedBody(new Request('http://x.test'), 10), null);
 });

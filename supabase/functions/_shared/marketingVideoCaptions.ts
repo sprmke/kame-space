@@ -22,6 +22,36 @@ export const CAPTION_MIN_BILLED_SECONDS = 10;
 
 export type CaptionWord = { text: string; startMs: number; endMs: number };
 
+/**
+ * Read a request body but never more than `maxBytes`. `Content-Length` can be missing (chunked) or
+ * wrong, so the cap has to be enforced on the bytes actually received. Returns null when the body
+ * is empty or over the cap, and stops reading as soon as it is over.
+ */
+export async function readBoundedBody(req: Request, maxBytes: number): Promise<Uint8Array | null> {
+  const reader = req.body?.getReader();
+  if (!reader) return null;
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    chunks.push(value);
+  }
+  if (total === 0) return null;
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return body;
+}
+
 export type CaptionLanguage = 'auto' | 'en' | 'tl';
 
 export function parseCaptionLanguage(value: unknown): CaptionLanguage {
