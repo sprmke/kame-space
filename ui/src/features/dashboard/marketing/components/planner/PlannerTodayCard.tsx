@@ -10,9 +10,8 @@ import { planItemStatusView } from '@/features/dashboard/marketing/lib/planner/p
 const MAX_TODAY_ITEMS = 3;
 
 /**
- * "Marketing today" on the property Dashboard: the next few planner items and one link into
- * the Plan tab. Renders nothing for a property without the planner or without items, so it
- * never becomes dashboard clutter.
+ * "Marketing today" on the property Dashboard. Shows the next items, or a build CTA when
+ * the host is entitled and the day is empty.
  */
 export function PlannerTodayCard() {
   const gate = useFeatureGate('marketingPlanner');
@@ -24,9 +23,28 @@ export function PlannerTodayCard() {
     [query.data?.items]
   );
 
-  if (!gate.allowed || items.length === 0 || !orgSlug || !propertySlug) return null;
+  if (!gate.allowed || gate.isLoading || !orgSlug || !propertySlug) return null;
+  if (query.isLoading) return null;
 
   const href = `/org/${orgSlug}/property/${propertySlug}/marketing?plan=1&range=today`;
+
+  if (items.length === 0) {
+    return (
+      <Card className="border-border/70">
+        <CardContent className="space-y-2 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-section-title">Marketing today</p>
+            <Link to={href} className="text-caption text-primary underline-offset-2 hover:underline">
+              Open plan
+            </Link>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            No posts planned yet. Open Plan to build what to post from your calendar.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-border/70">

@@ -1,6 +1,6 @@
 /**
  * Planner item status copy and the single next action. Pure, unit-tested.
- * Every string is host-facing: short, plain, no em dash.
+ * Host-facing labels stay short. Internal status keys stay full for the API.
  */
 
 export type PlanItemStatus =
@@ -20,42 +20,110 @@ export type PlanItemStatus =
 
 export type PlanItemAction = 'create' | 'review' | 'publish' | 'share' | 'fix' | 'none';
 
+/** Collapsed host lifecycle for progress and filters. */
+export type PlanItemHostPhase = 'todo' | 'doing' | 'done' | 'blocked' | 'missed' | 'skipped';
+
 export type PlanItemStatusView = {
   label: string;
   action: PlanItemAction;
   actionLabel: string | null;
   tone: 'neutral' | 'positive' | 'warning' | 'danger';
+  phase: PlanItemHostPhase;
 };
 
 const VIEWS: Record<PlanItemStatus, PlanItemStatusView> = {
   suggested: {
-    label: 'Suggested',
+    label: 'To do',
     action: 'create',
-    actionLabel: 'Create',
+    actionLabel: 'Make this',
     tone: 'neutral',
+    phase: 'todo',
   },
-  planned: { label: 'To do', action: 'create', actionLabel: 'Create', tone: 'neutral' },
+  planned: {
+    label: 'To do',
+    action: 'create',
+    actionLabel: 'Make this',
+    tone: 'neutral',
+    phase: 'todo',
+  },
   preparing: {
-    label: 'Preparing',
+    label: 'In progress',
     action: 'review',
     actionLabel: 'Continue',
     tone: 'neutral',
+    phase: 'doing',
   },
-  ready: { label: 'Ready', action: 'review', actionLabel: 'Review', tone: 'positive' },
-  scheduled: {
-    label: 'Scheduled',
+  ready: {
+    label: 'Ready',
     action: 'review',
-    actionLabel: 'Review',
+    actionLabel: 'Open',
     tone: 'positive',
+    phase: 'doing',
   },
-  publishing: { label: 'Publishing', action: 'none', actionLabel: null, tone: 'neutral' },
-  published: { label: 'Published', action: 'none', actionLabel: null, tone: 'positive' },
-  posted_manually: { label: 'Posted', action: 'none', actionLabel: null, tone: 'positive' },
-  held: { label: 'On hold', action: 'fix', actionLabel: 'Update', tone: 'warning' },
-  stale: { label: 'Needs update', action: 'fix', actionLabel: 'Update', tone: 'warning' },
-  skipped: { label: 'Skipped', action: 'none', actionLabel: null, tone: 'neutral' },
-  expired: { label: 'Missed', action: 'none', actionLabel: null, tone: 'neutral' },
-  failed: { label: 'Failed', action: 'fix', actionLabel: 'Retry', tone: 'danger' },
+  // Meta schedule/publish is not host-ready yet; keep API keys but show a calm label.
+  scheduled: {
+    label: 'Ready',
+    action: 'review',
+    actionLabel: 'Open',
+    tone: 'positive',
+    phase: 'doing',
+  },
+  publishing: {
+    label: 'In progress',
+    action: 'none',
+    actionLabel: null,
+    tone: 'neutral',
+    phase: 'doing',
+  },
+  published: {
+    label: 'Done',
+    action: 'none',
+    actionLabel: null,
+    tone: 'positive',
+    phase: 'done',
+  },
+  posted_manually: {
+    label: 'Done',
+    action: 'none',
+    actionLabel: null,
+    tone: 'positive',
+    phase: 'done',
+  },
+  held: {
+    label: 'Needs update',
+    action: 'fix',
+    actionLabel: 'Update',
+    tone: 'warning',
+    phase: 'blocked',
+  },
+  stale: {
+    label: 'Needs update',
+    action: 'fix',
+    actionLabel: 'Update',
+    tone: 'warning',
+    phase: 'blocked',
+  },
+  skipped: {
+    label: 'Skipped',
+    action: 'none',
+    actionLabel: null,
+    tone: 'neutral',
+    phase: 'skipped',
+  },
+  expired: {
+    label: 'Missed',
+    action: 'create',
+    actionLabel: 'Make this',
+    tone: 'neutral',
+    phase: 'missed',
+  },
+  failed: {
+    label: 'Needs update',
+    action: 'fix',
+    actionLabel: 'Retry',
+    tone: 'danger',
+    phase: 'blocked',
+  },
 };
 
 export function planItemStatusView(status: string): PlanItemStatusView {
@@ -64,6 +132,26 @@ export function planItemStatusView(status: string): PlanItemStatusView {
 
 export function isOpenStatus(status: string): boolean {
   return !['published', 'posted_manually', 'skipped', 'expired'].includes(status);
+}
+
+export function planItemHostPhase(status: string): PlanItemHostPhase {
+  return planItemStatusView(status).phase;
+}
+
+/** Done count for the Suggest → Make → Share loop. */
+export function countPlanProgress(items: ReadonlyArray<{ status: string }>): {
+  done: number;
+  open: number;
+  total: number;
+} {
+  let done = 0;
+  let open = 0;
+  for (const item of items) {
+    const phase = planItemHostPhase(item.status);
+    if (phase === 'done') done += 1;
+    else if (phase !== 'skipped') open += 1;
+  }
+  return { done, open, total: done + open };
 }
 
 export const FORMAT_LABELS: Record<string, string> = {

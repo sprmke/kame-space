@@ -35,18 +35,26 @@ studio keeps four creative tabs: AI Studio, Posts, Videos, Calendar. Legacy `?ta
 migrate to `?plan=1` and open the same modal.
 
 It answers "what do I post today, and why" from data the app already holds, with no AI required.
+The modal title is **What to post**. The host loop is **Suggest → Make → Share / mark done**.
 
 **What it shows**
 
+- **Purpose:** intro with How it works (three steps). Compact when the agenda already has items.
 - **Range control:** Today (default), 3 days, 5 days, Week as a segmented control. An unknown
   `?range=` value normalizes to Today without an error.
-- **Primary action:** Build plan. Setup, Prepare week, and AI plan upgrade live in the Plan options
-  overflow so the header stays calm.
+- **Primary action:** Build plan (or Rebuild). Setup, Prepare week, and AI plan upgrade live in the
+  Plan options overflow. Rebuild copy explains it only adds new ideas.
+- **Progress:** `N of M done` from host phases (To do / In progress / Done / Needs update / Missed).
 - **Summary:** one plain sentence from the top opportunity.
-- **Agenda:** items grouped by Manila day, each with time, format, channel, title, hook, one-line why
-  and a status pill. One primary CTA per card; Skip / I posted it sit in the card overflow.
-- **Showcase on lower tiers:** Free and Starter read the summary and the first three items. Every
-  action stays disabled and the footer links to the upgrade dialog.
+- **Agenda:** items grouped by Manila day, each with time, format, channel, title, **why** (hook as
+  fallback), first claim line, optional photo, and a short status pill. Primary CTA is **Make this**
+  / **Continue** / **Open** (opens Studio) or **Update**. Manual channels also show **Share**.
+  Overflow: Edit details, I posted it, Skip.
+- **Setup:** optional nudge when goals are unset. Build plan is never blocked by setup.
+- **Showcase on lower tiers:** Free and Starter read the summary and the first three items. Actions
+  stay disabled; the footer explains the Pro loop and links to upgrade.
+- **Studio handoff:** closing Plan seeds the editor and shows a **Finishing: {title}** banner with
+  Back to Plan until dismissed.
 
 **Save paths**
 
@@ -90,11 +98,11 @@ AI Studio fills the composer, Videos sets the hook, caption and call to action o
 takes the dates, month and rate, Calendar opens on the promoted month. The caption is also copied
 as a fallback.
 
-**Goals & channels** (plan setup) opens on first visit and from Plan options. Three steps: goals (up
-to two), where you post (connected Facebook Page and Instagram from Inbox, plus manual places), then
-time budget and language, and, when the host has the AI planner, whether the weekly plan is rules
-only or AI written (20 credits a week). It stores real connection ids; the wizard is guarded against
-unsaved edits.
+**Goals & channels** (plan setup) opens from Plan options, or from an optional first-visit nudge.
+Three steps: goals (up to two), where you post (connected Facebook Page and Instagram from Inbox,
+plus primary manual places with **More places** for the rest), then time budget and language, and,
+when the host has the AI planner, whether the weekly plan is rules only or AI written (up to 20
+credits a week). It stores real connection ids; the wizard is guarded against unsaved edits.
 
 **Prepare week** moves every unbuilt item in the selected range to Preparing and returns the work
 list. Each saved draft attaches itself back to its item, which moves it to Ready. The button is
@@ -110,9 +118,9 @@ never blocks the cancellation.
 post-by date passed and sends due reminders. A every-minute sweep publishes scheduled posts, re-checks
 each post's claims first, and holds instead of publishing a stale date or price.
 
-**Share it yourself** opens from an item: caption plus tracked link, a checklist of the host's
-places, the phone share sheet where the browser allows it, a copy fallback otherwise, and I posted
-it with an optional link.
+**Share it yourself** opens from an item (title: Share it yourself): optional planned photos,
+caption plus tracked link, a checklist of the host's places, the phone share sheet where the
+browser allows it, a copy fallback otherwise, and I posted it with an optional link.
 
 **Not in this phase:** Prepare handoffs into the editors, scheduling and publishing to Meta,
 reminders, insight snapshots, autopilot. See
@@ -142,7 +150,9 @@ Marketing Content Studio is where you create promotional content for this proper
 Marketing plan
 
 - Q: What is the Plan button?
-  A: It opens a short to-do list of what to post, when, and why, built from your calendar. On a phone it is the calendar icon at the top right of the Marketing page. On a computer it is the Plan button next to the page title. It works across AI Studio, Posts, Videos and Calendar.
+  A: It opens What to post: a short list of what to share, when, and why, built from your calendar. The loop is suggest, make in Marketing Studio, then share or mark done. On a phone it is the calendar icon at the top right of Marketing. On a computer it is the Plan button next to the page title.
+- Q: What does Make this do?
+  A: It opens the right Studio tab (Posts, Videos, Calendar, or AI Studio) with the caption ready, so you can finish the creative. Use Edit details if you only need to change the copy or time.
 - Q: Where do the suggestions come from?
   A: From your own data: open nights, weekend gaps, long weekends, how far ahead guests book, recent reviews and your rates. Nothing is invented.
 - Q: Do I need AI for this?

@@ -831,7 +831,7 @@ Managed is sales-assisted. Choose Contact sales on the Managed card, or file a t
 - source: docs/guides/routes/org/property/marketing.md
 - order: 5
 
-It opens a short to-do list of what to post, when, and why, built from your own calendar: open nights, weekend gaps, long weekends, how far ahead guests book, and recent reviews. On a phone, tap the calendar icon at the top right of Marketing. On a computer, use the Plan button next to the page title. Nothing is invented, and it works without AI.
+It opens What to post: a short list of what to share, when, and why, built from your own calendar (open nights, weekend gaps, reviews, rates). The loop is suggest, make in Marketing Studio, then share or mark done. On a phone, tap the calendar icon at the top right of Marketing. On a computer, use the Plan button next to the page title. Nothing is invented, and it works without AI.
 
 ### What is Marketing Studio?
 
