@@ -14,7 +14,7 @@ Routes:
 - `/sign-in` — legacy redirect → `/for-hosts/login` (preserves `?redirect=`)
 - `/for-guests/*` (any other path) — redirects to `/for-guests/login`
 
-> **Status:** Documented — host and guest sign-in are both fully wired to Supabase: email OTP (two-step: email → code) + Google OAuth (both audiences). No passwords anywhere, no Facebook (removed — not supported). In **local dev only**, both pages also show a **Use local test account** button that signs in with the seeded password account, so reviewers can bypass Google inside embedded browsers. Guest checkout keeps its own contextual modal (unchanged) in addition to the standalone pages below.
+> **Status:** Documented — host and guest sign-in are both fully wired to Supabase: email OTP (two-step: email → code) + Google OAuth (both audiences). No passwords anywhere, no Facebook (removed — not supported). In **local dev only**, both pages also show a **Use local owner account** (host) or **Use local guest account** (guest) button that signs in with the seeded password account, so reviewers can bypass Google inside embedded browsers. Guest checkout keeps its own contextual modal (unchanged) in addition to the standalone pages below.
 
 ## Progress overview
 
@@ -59,7 +59,14 @@ On the **host dashboard**, the sidebar footer account menu shows the same avatar
 - Single email field → **Continue** → OTP code emailed (unified sign-in/sign-up via `signInWithOtp` + `shouldCreateUser: true`) → 6-digit code entry → **Verify** (auto-submits once all 6 digits are entered)
 - **Google** OAuth below the email path — same order as the guest checkout modal: email + Continue, **or** divider, then **Continue with Google** (both audiences). Facebook was removed and is not supported
 - No phone sign-in, no passwords
-- **Local dev only:** a **Use local test account** button sits under Google. It calls `signInWithPassword` for the seeded host account (first `VITE_SUPER_ADMIN_EMAILS`, or `VITE_LOCAL_TEST_EMAIL`) or the seeded guest account (`VITE_LOCAL_GUEST_EMAIL`, default `guest.demo@example.com`) with password `seed-password`. The button is gated on `import.meta.env.DEV`, so it never renders in a production build. See [local seed data](../testing/local-seed-data.md) § Signing in.
+- **Local dev only:** a **Use local owner account** button (host) or **Use
+  local guest account** (guest) sits under Google. It calls
+  `signInWithPassword` for `seed-owner@example.com` (org owner, platform super
+  admin, `/admin` access) or the guest account (`VITE_LOCAL_GUEST_EMAIL`,
+  default `guest.demo@example.com`) with password `seed-password`.
+  `VITE_LOCAL_TEST_EMAIL` overrides the host email. The buttons are gated on
+  `import.meta.env.DEV`, so they never render in a production build. See
+  [local seed data](../testing/local-seed-data.md) § Signing in.
 - **One page per audience.** Email OTP creates the account on the first verified code, so a separate sign-up screen would render the identical form. Both headings read **Log in or sign up**, and the footer is a cross-audience exit (guest page → **Sign in as host**, host page → **Sign in as guest**) instead of a register link. `/for-hosts/register` and `/for-guests/register` stay as redirects to the matching `/login`, preserving `?redirect=`, so old bookmarks and links keep working
 - The email step and the code-entry step are mutually exclusive views — once a code is sent, the Google button, divider, and the cross-audience footer are hidden so the code-entry step stays focused (just Back, the 6-digit input, Verify, and a Resend link with a 30s cooldown). Concurrent sends for the same normalized email share one in-flight request, preventing rapid clicks or two mounted auth surfaces from sending duplicate codes; Supabase Auth remains the server-side rate-limit authority.
 - **Invisible human verification:** a Cloudflare Turnstile widget (`useCaptchaToken`, `action: auth-email-otp`) is mounted for the whole login flow (kept alive on both the email and the code-entry steps so **Resend** always has a fresh single-use token). Real users see nothing; a suspicious session gets an inline challenge before **Continue** / **Resend** proceeds. The token is passed as `options.captchaToken` on `signInWithOtp` and verified by Supabase Auth's native Turnstile (`supabase/config.toml` `[auth.captcha]`; hosted: Dashboard → Authentication → Attack Protection). When `VITE_TURNSTILE_SITE_KEY` is set, **Continue** / **Resend** do not call `signInWithOtp` without a token (avoids GoTrue `captcha_failed` / `no captcha_token found`). When the site key is unset and Attack Protection is off, OTP still sends with no widget. Google OAuth is unaffected. See [PROJECT.md → Anti-spam & CAPTCHA](../../PROJECT.md).
