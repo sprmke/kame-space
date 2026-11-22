@@ -46,10 +46,27 @@ export async function maybeNotifyGuestOfHostWebReply(opts: {
     .maybeSingle();
   if (convError) throw new Error(convError.message);
   const guestUserId = conv?.guest_user_id as string | null | undefined;
-  if (!guestUserId) return;
+  const bookingId = (conv?.booking_id as string | null | undefined) ?? null;
 
-  const guest = await loadAuthUserProfile(sb, guestUserId);
-  if (!guest.email?.trim()) return;
+  let guestEmail = '';
+  let guestName = 'there';
+  if (guestUserId) {
+    const guest = await loadAuthUserProfile(sb, guestUserId);
+    guestEmail = guest.email?.trim() ?? '';
+    guestName = guest.name?.trim() || 'there';
+  }
+  // Host may message before the guest has an account: fall back to the booking email.
+  if (!guestEmail && bookingId) {
+    const { data: booking } = await sb
+      .from('guest_submissions')
+      .select('guest_email, primary_guest_name')
+      .eq('id', bookingId)
+      .maybeSingle();
+    guestEmail = (booking?.guest_email as string | null | undefined)?.trim() ?? '';
+    const bookingName = (booking?.primary_guest_name as string | null | undefined)?.trim();
+    if (bookingName) guestName = bookingName;
+  }
+  if (!guestEmail) return;
 
   let propertyName = 'Your stay inquiry';
   let propertySlug = '';
@@ -74,7 +91,6 @@ export async function maybeNotifyGuestOfHostWebReply(opts: {
   // Open the conversation the email is about. A thread linked to a booking deep-links into
   // the property chat with the booking, so the guest lands in the right thread instead of
   // hunting for it (plan 5.5, finding E4).
-  const bookingId = (conv?.booking_id as string | null | undefined) ?? null;
   const messagesUrl =
     bookingId && propertySlug
       ? `${appOrigin}/properties/${encodeURIComponent(propertySlug)}/messages?bookingId=${encodeURIComponent(bookingId)}`
@@ -93,7 +109,7 @@ export async function maybeNotifyGuestOfHostWebReply(opts: {
   const bodyTemplate = await loadEmailTemplate('guest-chat-reply');
   const bodyHtml = replacePlaceholders(bodyTemplate, {
     brand_color: primary,
-    guest_name: escapeHtml(guest.name || 'there'),
+    guest_name: escapeHtml(guestName),
     host_name: escapeHtml(hostName),
     message_preview: escapeHtml(previewFromMessage(msg.body_text, msg.attachments)),
     messages_cta: buildEmailCtaHtml('View conversation', messagesUrl, brandColor),
@@ -110,7 +126,7 @@ export async function maybeNotifyGuestOfHostWebReply(opts: {
 
   await sendResendEmail({
     from: fromEmail,
-    to: [guest.email],
+    to: [guestEmail],
     subject: `New message - ${propertyName}`,
     html,
     errorLabel: 'email',

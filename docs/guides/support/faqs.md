@@ -543,7 +543,7 @@ Meta only allows replies within 24 hours of the guest's last message. After that
 - source: docs/guides/routes/org/property/bookings.md
 - order: 15
 
-It opens that guest's conversation in Messages. One chat opens straight away, several let you pick the channel, and none shows a message with Search Messages. Website chats linked to the booking match exactly, while Facebook and Instagram chats match by the guest name or Facebook name on the booking and are labeled Name match. You only see the icon if you can view Messages.
+It opens that guest's conversation in Messages. One chat opens straight away, several let you pick the channel, and none starts a new website Chat when you can reply so you can message first. View-only team members get a Search Messages tip instead. Website chats linked to the booking match exactly, while Facebook and Instagram chats match by guest name when they are not linked. You only see the icon if you can view Messages.
 
 ### Where do I set quick replies and automation for Guest Inbox?
 
@@ -905,14 +905,14 @@ Analytics uses a night-by-night calculation like the dashboard, but it lets you 
 
 Some bookings do not have a parseable address, nationality, or guest age. They are shown as their own bucket instead of being dropped, so the percentages stay honest.
 
-### What does How you compare mean?
+### What does Marketing results show?
 
 - category: Analytics & Reports
 - audience: host
 - source: docs/guides/routes/org/property/analytics.md
 - order: 40
 
-It shows your occupancy and average nightly rate against the median of other active Pro listings on Kame, not named competitors. It stays empty until enough peer listings have bookings in the same kind of period.
+Visits and booking requests from tracked planner posts in the selected period. The numbers are a lower bound. If nothing was tracked, Open plan takes you to Marketing to schedule posts.
 
 ### Can I download an analytics report on Free?
 

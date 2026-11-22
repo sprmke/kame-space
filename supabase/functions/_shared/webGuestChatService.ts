@@ -44,6 +44,7 @@ import {
   buildWebMessageExternalId,
   buildWebThreadId,
 } from './webGuestChatIds.ts';
+import { claimHostOpenedWebChatForBooking } from './hostWebChatFromBooking.ts';
 import { resolveGuestStayGuideUrlForProperty } from './guestStayGuide.ts';
 import { resolveGuestTripPathForProperty } from './guestTrip.ts';
 import { isVoiceReceptionistAvailableForProperty } from './voiceReceptionistService.ts';
@@ -201,14 +202,15 @@ export async function resumeGuestWebChat(
     const property = await loadPublicPropertyBySlug(propertySlug);
     if (!property) return empty;
 
-    const threadId = buildWebThreadId(property.id, user.id);
+    // Prefer guest_user_id (covers host-opened threads that were claimed) over thread id.
     const { data: conv, error } = await sb
       .from('social_conversations')
       .select(
         'id, booking_id, inquiry_check_in, inquiry_check_out, subject_preview, reply_status'
       )
       .eq('platform', 'web')
-      .eq('external_thread_id', threadId)
+      .eq('property_id', property.id)
+      .eq('guest_user_id', user.id)
       .maybeSingle();
 
     if (error) {
@@ -268,12 +270,12 @@ export async function resumeGuestWebChat(
   const parking = await loadPublicParkingBySlug(parkingSlug);
   if (!parking) return empty;
 
-  const threadId = buildParkingWebThreadId(parking.id, user.id);
   const { data: conv, error } = await sb
     .from('social_conversations')
     .select('id, inquiry_check_in, inquiry_check_out, subject_preview, reply_status')
     .eq('platform', 'web')
-    .eq('external_thread_id', threadId)
+    .eq('parking_id', parking.id)
+    .eq('guest_user_id', user.id)
     .maybeSingle();
 
   if (error) {
@@ -361,22 +363,39 @@ export async function startGuestWebChat(
       throw new Error('Valid checkInDate and checkOutDate (YYYY-MM-DD) required');
     }
 
-    const conversation = await upsertConversation({
-      organization_id: propertyRow.organization_id,
-      connection_id: connection.id,
-      platform: 'web',
-      conversation_type: 'dm',
-      external_thread_id: threadId,
-      external_participant_id: user.id,
-      participant_name: participantName,
-      participant_avatar_url: profile.avatarUrl,
-      property_id: property.id,
-      guest_user_id: user.id,
-      booking_id: linkedBooking?.bookingId ?? null,
-      inquiry_check_in: dates.checkIn,
-      inquiry_check_out: dates.checkOut,
-      last_message_at: new Date().toISOString(),
-    });
+    // Host may have opened Chat first from the booking shortcut (no guest account yet).
+    const claimed = linkedBooking
+      ? await claimHostOpenedWebChatForBooking({
+          orgId: propertyRow.organization_id,
+          propertyId: property.id,
+          parkingId: null,
+          bookingId: linkedBooking.bookingId,
+          guestUserId: user.id,
+          participantName,
+          participantAvatarUrl: profile.avatarUrl,
+          checkIn: dates.checkIn,
+          checkOut: dates.checkOut,
+        })
+      : null;
+
+    const conversation =
+      claimed ??
+      (await upsertConversation({
+        organization_id: propertyRow.organization_id,
+        connection_id: connection.id,
+        platform: 'web',
+        conversation_type: 'dm',
+        external_thread_id: threadId,
+        external_participant_id: user.id,
+        participant_name: participantName,
+        participant_avatar_url: profile.avatarUrl,
+        property_id: property.id,
+        guest_user_id: user.id,
+        booking_id: linkedBooking?.bookingId ?? null,
+        inquiry_check_in: dates.checkIn,
+        inquiry_check_out: dates.checkOut,
+        last_message_at: new Date().toISOString(),
+      }));
 
     const [stayGuideUrl, tripPath] = await Promise.all([
       resolveGuestStayGuideUrlForProperty(user, property.id),
