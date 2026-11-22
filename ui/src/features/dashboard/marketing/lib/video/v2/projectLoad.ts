@@ -130,7 +130,10 @@ export function musicClipAsCue(item: AudioItem): VideoProjectMusic {
     volume: item.volume,
     title: item.title,
     artist: item.artist,
-    source: item.media.source === 'jamendo' ? 'jamendo' : 'upload',
+    source:
+      item.media.source === 'jamendo' || item.media.source === 'audius'
+        ? item.media.source
+        : 'upload',
     trackId: item.trackId,
   };
 }

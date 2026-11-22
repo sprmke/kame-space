@@ -554,14 +554,14 @@ export function VideoEditor({ document, nav, onPublish }: Props) {
     if (!project || !inputProps) throw new Error('No project');
 
     // Jamendo CDN URLs are CORS-blocked in Remotion web export — cache to Storage first.
-    const { music: exportMusic, strippedJamendo } = await ensureVideoMusicForExport(
+    const { music: exportMusic, stripped } = await ensureVideoMusicForExport(
       project.music,
       propertyId
     );
-    if (exportMusic?.url && project.music?.url !== exportMusic.url && !strippedJamendo) {
+    if (exportMusic?.url && project.music?.url !== exportMusic.url && !stripped) {
       amendProject((prev) => (prev ? { ...prev, music: exportMusic } : prev));
     }
-    if (strippedJamendo) {
+    if (stripped) {
       toast.message('Exporting without music. Track could not be cached');
     }
 

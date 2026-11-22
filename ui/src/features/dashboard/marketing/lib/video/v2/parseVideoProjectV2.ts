@@ -22,6 +22,7 @@ import {
   type CaptionItem,
   type CaptionStyle,
   type CaptionWord,
+  type InstagramSong,
   type LayerItem,
   type MediaItem,
   type MediaRef,
@@ -63,7 +64,15 @@ const TRANSITIONS = new Set<VideoTransition>([
 const OVERLAYS = new Set<VideoOverlayMode>(['none', 'soft-scrim', 'bottom-band', 'top-band']);
 const SCENE_KINDS = new Set<VideoSceneKind>(['photo', 'promo', 'slots', 'cta']);
 const LAYER_KINDS = new Set<VideoLayerKind>(['image', 'logo', 'text', 'cta', 'slots']);
-const SOURCES = new Set<MediaSource>(['property', 'library', 'ai', 'jamendo', 'upload', 'url']);
+const SOURCES = new Set<MediaSource>([
+  'property',
+  'library',
+  'ai',
+  'jamendo',
+  'audius',
+  'upload',
+  'url',
+]);
 const FORMATS = new Set<VideoFormat>(['instagram-story', 'instagram-post', 'landscape']);
 const ANIMATIONS = new Set<TextAnimation>([
   'none',
@@ -396,7 +405,37 @@ function sanitizeVideoProjectV2(raw: Rec, fallback: VideoProjectV2): VideoProjec
   if (typeof raw.sourceReviewId === 'string' || raw.sourceReviewId === null) {
     project.sourceReviewId = raw.sourceReviewId as string | null;
   }
+  const song = parseInstagramSong(raw.instagramSong);
+  if (song) project.instagramSong = song;
   return normalizeProject(resolveOverlaps(normalizeProject(capCounts(uniqueIds(project)))));
+}
+
+/** Keeps a saved Instagram song only when it has an id, a title and sane numbers. */
+export function parseInstagramSong(raw: unknown): InstagramSong | null {
+  if (!isRec(raw)) return null;
+  const audioId = typeof raw.audioId === 'string' ? raw.audioId.trim().slice(0, 80) : '';
+  const title = typeof raw.title === 'string' ? raw.title.trim().slice(0, 200) : '';
+  if (!audioId || !title) return null;
+  const imageUrl =
+    typeof raw.imageUrl === 'string' && /^https:\/\//i.test(raw.imageUrl)
+      ? raw.imageUrl.slice(0, 1000)
+      : null;
+  const duration =
+    typeof raw.durationSec === 'number' && Number.isFinite(raw.durationSec)
+      ? Math.min(3600, Math.max(0, Math.round(raw.durationSec)))
+      : 0;
+  const volume =
+    typeof raw.volume === 'number' && Number.isFinite(raw.volume)
+      ? Math.min(100, Math.max(1, Math.round(raw.volume)))
+      : 100;
+  return {
+    audioId,
+    title,
+    artist: typeof raw.artist === 'string' ? raw.artist.trim().slice(0, 200) : '',
+    imageUrl,
+    durationSec: duration,
+    volume,
+  };
 }
 
 export function parseVideoProjectV2(

@@ -110,7 +110,7 @@ export type VideoScene = {
   hiddenElements?: string[];
 };
 
-export type VideoProjectMusicSource = 'jamendo' | 'upload' | 'url';
+export type VideoProjectMusicSource = 'jamendo' | 'audius' | 'upload' | 'url';
 
 export type VideoProjectMusic = {
   url: string | null;
