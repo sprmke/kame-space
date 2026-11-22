@@ -34,10 +34,10 @@ export function TextPresetGrid({ presets, colors, disabled, onPick }: Props) {
             type="button"
             disabled={disabled}
             onClick={() => onPick(preset.id)}
-            className="border-border hover:bg-muted/50 flex min-h-[88px] touch-manipulation flex-col items-center justify-between gap-2 rounded-xl border p-2 text-left disabled:opacity-50"
+            className="border-border hover:bg-muted/50 flex min-h-[88px] touch-manipulation flex-col items-center justify-between gap-1.5 rounded-xl border p-2 text-left disabled:opacity-50 max-lg:min-h-[64px] max-lg:gap-1 max-lg:p-1.5"
           >
             <span
-              className="flex h-14 w-full items-center justify-center overflow-hidden rounded-lg"
+              className="flex h-14 w-full items-center justify-center overflow-hidden rounded-lg max-lg:h-10"
               style={{
                 backgroundImage: 'linear-gradient(135deg, #0f766e 0%, #1e293b 55%, #7c2d12 100%)',
               }}

@@ -80,6 +80,7 @@ test.describe('@ci marketing video editor v2 phone ux', () => {
       .getByRole('toolbar', { name: 'Tool options' })
       .getByRole('button', { name: 'Text styles' })
       .tap();
+    await expect(page.getByRole('region', { name: 'Add text' })).toBeVisible();
     await page.getByRole('button', { name: /Headline$/ }).tap();
     // Close the edit panel the add opened, so the next panel is the one the tap opens.
     await page
@@ -103,6 +104,8 @@ test.describe('@ci marketing video editor v2 phone ux', () => {
       .getByRole('toolbar', { name: 'Tool options' })
       .getByRole('button', { name: 'Add text' })
       .tap();
+    await expect(page.getByRole('region', { name: 'Add text' })).toBeVisible();
+    await page.getByRole('button', { name: /Headline$/ }).tap();
     // The playhead moved just past the entrance animation, so the text is fully drawn.
     await expect(page.getByLabel('Seek')).not.toHaveValue('0');
     await expect(page.getByRole('textbox', { name: 'Text' })).toHaveValue('Your headline');
@@ -196,6 +199,29 @@ test.describe('@ci marketing video editor v2 desktop ux', () => {
     await expect(record).toBeVisible();
     const color = await record.evaluate((node) => getComputedStyle(node).backgroundColor);
     expect(color).toMatch(/rgb\(2[0-3]\d, 3\d, 3\d\)|rgb\(220, 38, 38\)/);
+  });
+
+  test('open rail and inspector float over the timeline instead of shrinking it', async ({
+    page,
+  }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access');
+    await installTemplateMocks(page);
+    await installMediaMocks(page, [asset('a1', 'image', 'pool.jpg')]);
+    await openDraft(page);
+
+    const timeline = page.getByLabel('Timeline', { exact: true });
+    await expect(timeline).toBeVisible();
+    const closed = (await timeline.boundingBox())!;
+
+    await page.getByRole('tab', { name: 'Media' }).click();
+    await expect(page.locator('[data-editor-overlay="rail"]')).toBeVisible();
+    // Inspector is open by default on desktop; keep it open so both overlays are up.
+    await expect(page.locator('[data-editor-overlay="inspector"]')).toBeVisible();
+
+    const open = (await timeline.boundingBox())!;
+    // Overlay must not steal horizontal flex space from the timeline.
+    expect(Math.abs(open.width - closed.width)).toBeLessThan(8);
+    expect(open.width).toBeGreaterThan(900);
   });
 
   test('the history buttons live in the top bar only', async ({ page }) => {

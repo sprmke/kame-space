@@ -152,7 +152,7 @@ export function VideoTextStyleControls({
               type="button"
               variant={typography.fontWeight >= 700 ? 'default' : 'outline'}
               size="icon"
-              className="min-h-[44px] min-w-[44px]"
+              className="admin-overflow-trigger max-lg:border lg:min-h-[44px] lg:min-w-[44px] lg:before:content-none"
               aria-label="Bold"
               aria-pressed={typography.fontWeight >= 700}
               onClick={toggleBold}
@@ -163,7 +163,7 @@ export function VideoTextStyleControls({
               type="button"
               variant={(typography.strokeWidth ?? 0) > 0 ? 'default' : 'outline'}
               size="icon"
-              className="min-h-[44px] min-w-[44px] text-xs font-bold"
+              className="admin-overflow-trigger text-xs font-bold max-lg:border lg:min-h-[44px] lg:min-w-[44px] lg:before:content-none"
               aria-label="Outline"
               aria-pressed={(typography.strokeWidth ?? 0) > 0}
               onClick={toggleOutline}
@@ -187,7 +187,7 @@ export function VideoTextStyleControls({
             type="button"
             variant={(layer.position.align ?? 'center') === align ? 'default' : 'outline'}
             size="icon"
-            className="min-h-[44px] min-w-[44px] flex-1"
+            className="admin-overflow-trigger flex-1 max-lg:border lg:min-h-[44px] lg:min-w-[44px] lg:before:content-none"
             aria-label={`Align ${align}`}
             aria-pressed={(layer.position.align ?? 'center') === align}
             onClick={() => setAlign(align)}

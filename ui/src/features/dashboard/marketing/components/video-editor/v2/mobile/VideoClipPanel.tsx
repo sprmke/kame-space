@@ -62,7 +62,7 @@ const ENTRANCES: Array<{ value: TextAnimation; label: string }> = [
   { value: 'rise', label: 'Rise' },
   { value: 'slide-up', label: 'Slide up' },
   { value: 'pop', label: 'Pop' },
-  { value: 'typewriter', label: 'Typing' },
+  { value: 'typewriter', label: 'Typewriter' },
 ];
 const EXITS = ENTRANCES.filter((option) => option.value !== 'typewriter');
 
@@ -84,22 +84,22 @@ export function VideoClipPanel({ action, item, actions, onClose }: Props) {
   return (
     <section
       aria-label={title}
-      className="border-border bg-card max-h-[40dvh] shrink-0 overflow-y-auto overscroll-contain border-t px-4 pb-3 pt-2"
+      className="border-border bg-card max-h-[min(220px,28dvh)] shrink-0 overflow-y-auto overscroll-contain border-t px-3 pb-2 pt-1.5"
     >
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-1.5 flex items-center justify-between">
         <h2 className="text-sm font-semibold">{title}</h2>
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="size-11"
+          className="admin-overflow-trigger"
           aria-label="Close panel"
           onClick={onClose}
         >
-          <Check className="size-5" aria-hidden />
+          <Check className="size-4" aria-hidden />
         </Button>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-3">
         <PanelBody action={action} item={item} actions={actions} />
       </div>
     </section>
@@ -139,7 +139,7 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
             onChange={(value) => patch({ volume: value / 100 } as Partial<VideoItem>)}
           />
           {item.type === 'video' ? (
-            <div className="flex min-h-[44px] items-center justify-between">
+            <div className="flex h-9 min-h-0 items-center justify-between">
               <span className="text-sm">Sound off</span>
               <Switch
                 aria-label="Sound off"
@@ -184,7 +184,7 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
     case 'clip-duck': {
       if (!isAudioItem(item)) return null;
       return (
-        <div className="flex min-h-[44px] items-center justify-between gap-3">
+        <div className="flex h-9 min-h-0 items-center justify-between gap-3">
           <span className="text-sm">Lower this when someone talks</span>
           <Switch
             aria-label="Lower this when someone talks"
@@ -376,7 +376,7 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
             }
           />
           <details className="group">
-            <summary className="text-primary flex min-h-[44px] cursor-pointer list-none items-center text-sm font-medium">
+            <summary className="text-primary flex h-9 min-h-0 cursor-pointer list-none items-center text-sm font-medium">
               More options
             </summary>
             <div className="pt-2">

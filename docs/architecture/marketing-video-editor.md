@@ -39,7 +39,7 @@ AI-built videos are saved as v1 scene projects and upgrade on open. The builder 
 
 ## Phone editor (`max-lg`)
 
-A full-screen dark editor layer: `MarketingStudioShell` `fullscreen` portals to `body` at `z-[45]` (above the app tab bar and quick-access button, below sheets and dialogs at `z-100+`), makes `#root` `inert` and locks page scroll while it is open. Desktop is unchanged. Layout, top to bottom: top bar (Back, name, save status, Undo, Redo, **Export**), preview (takes the free height), transport, timeline, then a docked panel and the **tool strip** in the page flow, so nothing floats over the timeline.
+A full-screen dark editor layer: `MarketingStudioShell` `fullscreen` portals to `body` at `z-[45]` (above the app tab bar and quick-access button, below sheets and dialogs at `z-100+`), makes `#root` `inert` and locks page scroll while it is open. Desktop is unchanged. Layout, top to bottom: top bar (Back, name, save status, Undo, Redo, **Export**), preview (takes the free height), transport, timeline, then a docked panel and the **tool strip** in the page flow, so nothing floats over the timeline. Phone chrome uses admin density (`admin-overflow-trigger`, `public-chip`): visual tiles are compact (strip ~44×52, panels capped ~28dvh) with ≥44 px hit targets so the preview stays readable on short phones.
 
 - `lib/video/v2/phoneTools.ts` is the pure tool tree: root tools (Audio, Text, Captions, Media, Templates, Size, Background, AI, More), second-level rows, and the row for each selection kind (`selectionKind`, `toolsForSelection`). `PhoneToolOptions` switches voice, sound tools, captions and AI on and off.
 - `components/video-editor/v2/mobile/`: `VideoToolStrip`, `VideoClipPanel` (Speed, Volume, Fade, Duration, Fit, Motion, Adjust, Animation, Edit, Style, Lower for voice), `VideoTrimPanel` (whole file on one bar, two handles, applies on finger lift as one undo step through `setSourceWindow`), `VideoRecordPanel`, `VideoExportSheet`.
@@ -68,6 +68,7 @@ Server: `marketing-video-captions` takes the WAV (2 MiB cap, `Content-Length` ch
 - Desktop timeline: ruler, zoom, track headers (hide, mute, lock), drag, trim, snap, split, copy and paste, marquee. Shortcuts: Space, S, Delete, Shift+Delete (ripple), Cmd/Ctrl+D, C, V, A, Z, arrows (Shift = 1 s). A focused slider does not swallow them.
 - Phone (`max-lg`): see [Phone editor](#phone-editor-max-lg). Timeline: fixed centre playhead, scrolling the lanes scrubs, pinch zooms, long-press (320 ms) arms a clip drag, 44 px trim handles.
 - Left rail: Media (library), Audio (record voice, sound from a video), Text (visual preset grid), Templates, Reviews, Captions, AI. The Media panel starts open only at 1536 px and wider. Replace opens the library filtered to the clip's kind.
+- Desktop (`lg+`): the icon rail stays in flow (72 px). The left slide-out and the right inspector use `panelMode="overlay"` so they float over the preview/timeline instead of shrinking it. Phone sheets are unchanged. Calendar keeps the older in-flow (`push`) panels.
 - Autosave only; there is no manual Save, so no unsaved-changes guard applies.
 
 ## Media library

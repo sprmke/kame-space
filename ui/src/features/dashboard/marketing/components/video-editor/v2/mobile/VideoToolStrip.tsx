@@ -96,14 +96,14 @@ export function VideoToolStrip({
           type="button"
           aria-label={hasSelection ? 'Done' : 'Back'}
           onClick={hasSelection ? onDone : () => setPath((current) => current.slice(0, -1))}
-          className="border-border text-muted-foreground hover:text-foreground flex min-h-[56px] w-12 shrink-0 items-center justify-center border-r"
+          className="border-border text-muted-foreground hover:text-foreground flex min-h-[44px] w-10 shrink-0 items-center justify-center border-r"
         >
-          <ChevronLeft className="size-5" aria-hidden />
+          <ChevronLeft className="size-4" aria-hidden />
         </button>
       ) : null}
       <div
         ref={scrollRef}
-        className="flex min-w-0 flex-1 items-stretch gap-0.5 overflow-x-auto overscroll-x-contain px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 flex-1 items-stretch gap-0.5 overflow-x-auto overscroll-x-contain px-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {row.map((tool) => {
           const Icon = PHONE_TOOL_ICONS[tool.icon];
@@ -119,14 +119,15 @@ export function VideoToolStrip({
               aria-pressed={active || undefined}
               onClick={() => handle(tool)}
               className={cn(
-                'flex min-h-[60px] min-w-[68px] shrink-0 touch-manipulation flex-col items-center justify-start gap-1 rounded-md px-1.5 py-2 text-[11px] font-medium leading-tight transition-colors',
+                // 44px tall keeps WCAG / E2E; width and type are denser than CapCut-clone 60×68 tiles.
+                'flex min-h-[44px] min-w-[52px] shrink-0 touch-manipulation flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1 text-[10px] font-medium leading-tight transition-colors',
                 'text-muted-foreground hover:text-foreground disabled:opacity-40',
                 active && 'text-primary',
                 tool.destructive && 'text-destructive hover:text-destructive'
               )}
             >
-              <Icon className="size-5" aria-hidden />
-              <span className="line-clamp-2 max-w-[4.75rem] text-center">{tool.label}</span>
+              <Icon className="size-4" aria-hidden />
+              <span className="line-clamp-1 max-w-[3.75rem] text-center">{tool.label}</span>
             </button>
           );
         })}

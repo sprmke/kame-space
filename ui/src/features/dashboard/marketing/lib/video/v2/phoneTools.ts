@@ -67,6 +67,8 @@ export type PhoneToolAction =
   // Text and captions.
   | 'text-add'
   | 'text-styles'
+  /** Docked preset picker (Add text / Text styles). Not a strip button itself. */
+  | 'text-pick'
   | 'captions-make'
   | 'captions-edit'
   | 'captions-delete'
@@ -286,7 +288,7 @@ function rawToolsForSelection(kind: SelectionKind): PhoneTool[] {
         { id: 'clip.volume', label: 'Volume', icon: 'volume', action: 'clip-volume' },
         {
           id: 'clip.separate',
-          label: 'Separate sound',
+          label: 'Pull sound out',
           icon: 'sound',
           action: 'clip-separate-sound',
         },
@@ -294,6 +296,7 @@ function rawToolsForSelection(kind: SelectionKind): PhoneTool[] {
         { id: 'clip.fit', label: 'Fit', icon: 'fit', action: 'clip-fit' },
         REPLACE,
         DUPLICATE,
+        { id: 'clip.more', label: 'More', icon: 'more', action: 'clip-more' },
         DELETE,
       ];
     case 'photo':
@@ -305,6 +308,7 @@ function rawToolsForSelection(kind: SelectionKind): PhoneTool[] {
         { id: 'clip.fit', label: 'Fit', icon: 'fit', action: 'clip-fit' },
         REPLACE,
         DUPLICATE,
+        { id: 'clip.more', label: 'More', icon: 'more', action: 'clip-more' },
         DELETE,
       ];
     case 'text':
@@ -314,6 +318,7 @@ function rawToolsForSelection(kind: SelectionKind): PhoneTool[] {
         { id: 'clip.animation', label: 'Animation', icon: 'animation', action: 'clip-animation' },
         { id: 'clip.duration', label: 'Duration', icon: 'duration', action: 'clip-duration' },
         DUPLICATE,
+        { id: 'clip.more', label: 'More', icon: 'more', action: 'clip-more' },
         DELETE,
       ];
     case 'caption':

@@ -1075,7 +1075,7 @@ export function VideoEditor({ document, nav, onPublish }: Props) {
       />
       {isBelowLg ? sizeDialog : null}
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         {isBelowLg ? (
           <MarketingEditorRail
             layoutKey="video"
@@ -1089,6 +1089,7 @@ export function VideoEditor({ document, nav, onPublish }: Props) {
             sections={railSections}
             active={railPanel}
             onActiveChange={setRailPanel}
+            panelMode="overlay"
           />
         )}
 
@@ -1246,6 +1247,7 @@ export function VideoEditor({ document, nav, onPublish }: Props) {
           onOpenChange={(open) =>
             isBelowLg ? setMobilePanel(open ? 'edit' : null) : setInspectorOpen(open)
           }
+          panelMode={isBelowLg ? 'push' : 'overlay'}
         >
           {settingsPanel}
         </MarketingEditorInspector>

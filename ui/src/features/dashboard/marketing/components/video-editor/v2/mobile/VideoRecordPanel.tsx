@@ -26,7 +26,7 @@ type Props = {
 
 /** A plain button on purpose: the shared Button's gradient would turn it teal, not red. */
 const RECORD_BUTTON =
-  'flex size-16 shrink-0 touch-manipulation items-center justify-center rounded-full bg-red-600 text-white shadow-lg ring-4 ring-red-600/25 transition-transform hover:bg-red-700 active:scale-95 disabled:opacity-50';
+  "relative flex size-14 shrink-0 touch-manipulation items-center justify-center rounded-full bg-red-600 text-white shadow-md ring-2 ring-red-600/25 transition-transform hover:bg-red-700 active:scale-95 disabled:opacity-50 before:absolute before:-inset-1 before:content-['']";
 
 function formatClock(ms: number): string {
   const total = Math.floor(ms / 1000);
@@ -56,24 +56,24 @@ export function VideoRecordPanel({
   return (
     <section
       aria-label="Record voice"
-      className="border-border bg-card shrink-0 border-t px-4 pb-3 pt-2"
+      className="border-border bg-card shrink-0 border-t px-3 pb-2 pt-1.5"
     >
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-1.5 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Record voice</h2>
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="size-11"
+          className="admin-overflow-trigger"
           aria-label="Close panel"
           disabled={busy}
           onClick={onClose}
         >
-          <Check className="size-5" aria-hidden />
+          <Check className="size-4" aria-hidden />
         </Button>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {phase === 'recording' ? (
           <button
             type="button"
@@ -119,7 +119,7 @@ export function VideoRecordPanel({
               </div>
               <button
                 type="button"
-                className="text-muted-foreground min-h-[44px] text-xs underline"
+                className="text-muted-foreground relative min-h-0 py-1 text-xs underline before:absolute before:-inset-y-2 before:inset-x-0 before:content-['']"
                 onClick={onCancel}
               >
                 Cancel and start over
@@ -146,7 +146,7 @@ export function VideoRecordPanel({
         </div>
       </div>
 
-      <div className="mt-2 flex min-h-[44px] items-center justify-between">
+      <div className="mt-1.5 flex h-9 min-h-0 items-center justify-between">
         <span className="text-sm">Mute the video while I talk</span>
         <Switch
           aria-label="Mute the video while I talk"

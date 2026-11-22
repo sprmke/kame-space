@@ -204,7 +204,7 @@ test.describe('@ci marketing video editor v2 on a phone', () => {
     await expect(page.getByLabel('Timeline', { exact: true })).toBeVisible();
   });
 
-  test("Separate sound puts a video's sound on its own clip", async ({ page }) => {
+  test("Pull sound out puts a video's sound on its own clip", async ({ page }) => {
     await installMediaMocks(page, [asset('v1', 'video', 'tour.mp4')]);
     await openDraft(page);
     await page
@@ -219,9 +219,9 @@ test.describe('@ci marketing video editor v2 on a phone', () => {
 
     // The new video is selected, so its tools are showing.
     const tools = page.getByRole('toolbar', { name: 'Clip tools' });
-    await expect(tools.getByRole('button', { name: 'Separate sound' })).toBeVisible();
+    await expect(tools.getByRole('button', { name: 'Pull sound out' })).toBeVisible();
     const before = await page.locator('[data-timeline-item]').count();
-    await tools.getByRole('button', { name: 'Separate sound' }).tap();
+    await tools.getByRole('button', { name: 'Pull sound out' }).tap();
     await expect(page.locator('[data-timeline-item]')).toHaveCount(before + 1);
     // The new sound clip is selected and offers volume and fade, not video tools.
     const soundTools = page.getByRole('toolbar', { name: 'Clip tools' });

@@ -58,7 +58,7 @@ export function TextLookGallery({ value, colors, onChange, sample = 'Aa' }: Prop
             >
               <span
                 className={cn(
-                  'flex h-16 w-20 items-center justify-center overflow-hidden rounded-lg border-2',
+                  'flex h-16 w-20 items-center justify-center overflow-hidden rounded-lg border-2 max-lg:h-12 max-lg:w-14',
                   selected ? 'border-primary' : 'border-transparent'
                 )}
                 style={SWATCH_BACKDROP}

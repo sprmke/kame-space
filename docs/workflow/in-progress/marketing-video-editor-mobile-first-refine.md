@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Marketing: mobile-first video editor refine (text styles, voiceover, auto captions)'
 status: planned
 tags: [workflow, planned, marketing, video, remotion, mobile, captions, voiceover, ux]
-updated: 2026-11-22
+updated: 2026-11-23
 kind: plan
 ---
 
@@ -15,6 +15,8 @@ kind: plan
 
 - **Built and committed on `sprmke/refine-marketing-video-editor`:** the full-screen phone editor with a tool strip and clip tools, the trim view, text looks and label presets, voice recording, sound from a video, separate sound, music that lowers under voice, auto captions (browser audio mix, `marketing-video-captions`, caption lines, edit and style), server validation of saved videos, docs, FAQs and tests.
 - **Polish round (2026-11-22):** a full screenshot tour on phone, tablet and desktop found and fixed: captions failing on one unreadable clip, a teal "red" record button, new text invisible at frame 0, light sheets on a dark editor, toasts covering Export and being untappable, chips and tools clipped, number boxes on phone sliders, the tool strip leaving short screens, a crushed landscape view and a read-only role locked out of More.
+- **Critique polish (2026-11-22):** Add text / Text styles open a docked preset gallery (preview stays up) instead of dumping a Headline; clip **More** opens the full inspector; **Pull sound out** replaces "Separate sound"; read-only shows a View only line above the strip.
+- **Phone density (2026-11-23):** CapCut-scale chrome was crowding the preview on short phones. Tightened the tool strip (44×52 tiles), docked panels, transport, top bar, timeline lanes, look/preset swatches, and chips (`public-chip` / `admin-overflow-trigger`) while keeping ≥44 px hit targets.
 - **Still open:** T0.2 to T0.5 (real iPhone and Safari recording, a real export with every look, Groq on real clips), T7.3 (browser matrix) and T7.4 (`property-dashboard-qa`). These need a person and a live key.
 
 **Goal.** Make the Videos editor in Marketing Studio feel like a phone-first editor (CapCut, InShot, VN), not a desktop tool squeezed onto a phone. A non-technical host should be able to: put several videos and photos together, trim them, put good-looking text and labels on top, add background music, record a voiceover while the video plays, and get subtitles made from that voice automatically. No editing jargon.

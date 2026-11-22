@@ -71,11 +71,11 @@ export function MarketingEditorTopBar({
 
   return (
     <div className="border-border bg-card shrink-0 border-b">
-      <div className="flex min-h-[52px] items-center gap-1 px-1.5 py-1 sm:gap-2 sm:px-3">
+      <div className="flex min-h-[44px] items-center gap-1 px-1.5 py-1 sm:min-h-[52px] sm:gap-2 sm:px-3">
         <Button
           type="button"
           variant="ghost"
-          className="min-h-[44px] shrink-0 gap-1 px-2"
+          className="relative h-8 min-h-0 shrink-0 gap-1 px-1.5 before:absolute before:-inset-x-1 before:-inset-y-2 before:content-[''] sm:h-auto sm:min-h-[44px] sm:px-2 sm:before:content-none"
           onClick={() => void handleBack()}
           aria-label={`Back to ${backLabel}`}
         >

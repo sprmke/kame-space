@@ -69,9 +69,11 @@ const LONG_PRESS_MS = 320;
 const LONG_PRESS_SLOP_PX = 8;
 
 const MAIN_LANE_HEIGHT = 56;
+const MAIN_LANE_HEIGHT_PHONE = 48;
 const FREE_LANE_HEIGHT = 36;
+const FREE_LANE_HEIGHT_PHONE = 32;
 const HEADER_WIDTH = 104;
-/** Phone: height of one "Add sound" or "Add text" row under the lanes. */
+/** Phone: height of one "Add sound" or "Add text" row under the lanes (visual ~28, row slot 36). */
 const PHONE_HELPER_ROW_HEIGHT = 36;
 
 type TimelineHandlers = {
@@ -118,8 +120,14 @@ type ActiveDrag = {
   pointerId: number;
 };
 
-const laneHeight = (track: VideoTrack) =>
-  track.kind === 'main' ? MAIN_LANE_HEIGHT : FREE_LANE_HEIGHT;
+const laneHeight = (track: VideoTrack, phone: boolean) =>
+  track.kind === 'main'
+    ? phone
+      ? MAIN_LANE_HEIGHT_PHONE
+      : MAIN_LANE_HEIGHT
+    : phone
+      ? FREE_LANE_HEIGHT_PHONE
+      : FREE_LANE_HEIGHT;
 
 export function VideoTimelineV2({
   project,
@@ -172,11 +180,12 @@ export function VideoTimelineV2({
     let top = 0;
     // Visual order: top track first (CapCut), main last.
     return [...project.tracks].reverse().map((track) => {
-      const rect = { id: track.id, top, height: laneHeight(track) };
-      top += laneHeight(track) + 2;
+      const height = laneHeight(track, mobile);
+      const rect = { id: track.id, top, height };
+      top += height + 2;
       return rect;
     });
-  }, [project.tracks]);
+  }, [mobile, project.tracks]);
   const orderedTracks = useMemo(() => [...project.tracks].reverse(), [project.tracks]);
   const lanesHeight = lanes.length
     ? lanes[lanes.length - 1]!.top + lanes[lanes.length - 1]!.height
@@ -651,7 +660,7 @@ export function VideoTimelineV2({
       <div
         className={cn(
           'flex min-h-0 overflow-y-auto',
-          mobile ? 'max-h-[min(220px,30dvh)] overscroll-contain' : 'max-h-[260px]'
+          mobile ? 'max-h-[min(168px,22dvh)] overscroll-contain' : 'max-h-[260px]'
         )}
       >
         {/* Track headers */}
@@ -860,7 +869,7 @@ export function VideoTimelineV2({
                     <button
                       type="button"
                       aria-label="Add photos or videos"
-                      className="border-border bg-muted/60 text-foreground hover:bg-muted absolute flex w-11 touch-manipulation items-center justify-center rounded-md border border-dashed"
+                      className="border-border bg-muted/60 text-foreground hover:bg-muted absolute flex w-10 touch-manipulation items-center justify-center rounded-md border border-dashed"
                       style={{
                         left: frameToPx(mainEndFrame, pxPerFrame) + 8,
                         top: lanes[mainLaneIndex]!.top + 2,
@@ -871,7 +880,7 @@ export function VideoTimelineV2({
                         handlers.addMedia();
                       }}
                     >
-                      <Plus className="size-5" aria-hidden />
+                      <Plus className="size-4" aria-hidden />
                     </button>
                   ) : null}
 
@@ -879,11 +888,11 @@ export function VideoTimelineV2({
                     <button
                       key={key}
                       type="button"
-                      className="border-border text-muted-foreground hover:text-foreground absolute flex touch-manipulation items-center gap-1.5 rounded-full border border-dashed px-3 text-xs font-medium"
+                      className="border-border text-muted-foreground hover:text-foreground absolute flex touch-manipulation items-center gap-1 rounded-full border border-dashed px-2.5 text-[11px] font-medium"
                       style={{
                         left: 8,
-                        top: lanesHeight + index * PHONE_HELPER_ROW_HEIGHT + 4,
-                        height: PHONE_HELPER_ROW_HEIGHT - 8,
+                        top: lanesHeight + index * PHONE_HELPER_ROW_HEIGHT + 2,
+                        height: PHONE_HELPER_ROW_HEIGHT - 4,
                       }}
                       onClick={(event) => {
                         event.stopPropagation();

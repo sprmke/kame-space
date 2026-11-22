@@ -104,25 +104,25 @@ export function VideoTrimPanel({ item, fps, onApply, onClose }: Props) {
   const keptFrames = Math.round((shown.end - shown.start) / rate);
 
   return (
-    <section aria-label="Trim" className="border-border bg-card shrink-0 border-t px-4 pb-3 pt-2">
-      <div className="mb-2 flex items-center justify-between">
+    <section aria-label="Trim" className="border-border bg-card shrink-0 border-t px-3 pb-2 pt-1.5">
+      <div className="mb-1.5 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Trim</h2>
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="size-11"
+          className="admin-overflow-trigger"
           aria-label="Close panel"
           onClick={onClose}
         >
-          <Check className="size-5" aria-hidden />
+          <Check className="size-4" aria-hidden />
         </Button>
       </div>
       <div
         ref={barRef}
         role="group"
         aria-label="Part of the video to keep"
-        className="bg-muted relative h-14 touch-none select-none overflow-hidden rounded-lg"
+        className="bg-muted relative h-11 touch-none select-none overflow-hidden rounded-lg"
         style={
           item.media.posterUrl
             ? {

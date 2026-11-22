@@ -25,7 +25,7 @@ export function ChoiceChips<T extends string>({ label, value, options, onChange 
               aria-checked={selected}
               onClick={() => onChange(option.value)}
               className={cn(
-                'min-h-[44px] shrink-0 touch-manipulation rounded-full border px-4 text-sm font-medium transition-colors',
+                'public-chip shrink-0 touch-manipulation rounded-full border font-medium transition-colors',
                 selected
                   ? 'border-primary bg-primary/15 text-primary'
                   : 'border-border text-foreground hover:bg-muted'

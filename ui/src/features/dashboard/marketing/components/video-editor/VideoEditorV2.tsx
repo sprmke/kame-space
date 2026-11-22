@@ -61,6 +61,7 @@ import {
 import { VideoExportSheet } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoExportSheet';
 import { VideoLandscapeHint } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoLandscapeHint';
 import { VideoRecordPanel } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoRecordPanel';
+import { VideoTextPickPanel } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoTextPickPanel';
 import { VideoToolStrip } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoToolStrip';
 import { VideoTrimPanel } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoTrimPanel';
 import { TextPresetGrid } from '@/features/dashboard/marketing/components/video-editor/v2/TextPresetGrid';
@@ -270,7 +271,9 @@ const VIDEO_FORMATS = new Set<string>(Object.keys(VIDEO_FORMAT_DIMENSIONS));
 /** Below this width the library starts closed so the preview and timeline keep their room. */
 const WIDE_LAYOUT_PX = 1536;
 // Small on phones so a short screen (an iPhone SE) still fits panel, timeline and tools.
-const PREVIEW_MIN_HEIGHT_CLASS = 'min-h-[110px] sm:min-h-[220px] lg:min-h-[280px]';
+// Phone floor rises slightly once chrome is dense, so a short SE still keeps a readable preview.
+const PREVIEW_MIN_HEIGHT_CLASS =
+  'min-h-[min(140px,22dvh)] sm:min-h-[220px] lg:min-h-[280px]';
 const EDITOR_PANELS = new Set(['media', 'text', 'templates', 'reviews']);
 
 function asVideoFormat(value: unknown, fallback: VideoFormat): VideoFormat {
@@ -1425,10 +1428,12 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
           deleteCaptions();
           return;
         case 'text-add':
-          handleAddText('headline');
-          return;
         case 'text-styles':
-          openRailPanel('text');
+          setSelectedIds([]);
+          setPhoneAction('text-pick');
+          return;
+        case 'clip-more':
+          setMobilePanel('edit');
           return;
         case 'media-add':
         case 'audio-music':
@@ -1479,11 +1484,16 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   );
 
   // A panel only stays open while its tool still belongs to the selected clip.
+  // text-pick is a root action (no clip selected), so it is always valid while open.
   const phoneActionApplies = Boolean(
     phoneAction &&
-    (phoneAction === 'clip-trim'
-      ? selection === 'video'
-      : toolsForSelection(selection, phoneToolOptions).some((tool) => tool.action === phoneAction))
+    (phoneAction === 'text-pick'
+      ? true
+      : phoneAction === 'clip-trim'
+        ? selection === 'video'
+        : toolsForSelection(selection, phoneToolOptions).some(
+            (tool) => tool.action === phoneAction
+          ))
   );
   useEffect(() => {
     if (phoneAction && !phoneActionApplies) setPhoneAction(null);
@@ -1517,28 +1527,28 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         type="button"
         variant="ghost"
         size="icon"
-        className="size-11"
+        className="admin-overflow-trigger"
         aria-label="Undo"
         disabled={!canUndo}
         onClick={undo}
       >
-        <Undo2 className="size-5" aria-hidden />
+        <Undo2 className="size-4" aria-hidden />
       </Button>
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="size-11"
+        className="admin-overflow-trigger"
         aria-label="Redo"
         disabled={!canRedo}
         onClick={redo}
       >
-        <Redo2 className="size-5" aria-hidden />
+        <Redo2 className="size-4" aria-hidden />
       </Button>
       {canEditContent || (onPublish && canPublish) ? (
         <Button
           type="button"
-          className="ml-1 min-h-[44px] px-4"
+          className="relative ml-1 h-8 min-h-0 px-3 text-xs before:absolute before:-inset-x-1 before:-inset-y-2 before:content-['']"
           disabled={!hasProject || exporting}
           onClick={() => setExportSheetOpen(true)}
         >
@@ -1846,7 +1856,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
       />
       {isBelowLg ? sizeDialog : null}
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         {isBelowLg ? (
           <MarketingEditorRail
             layoutKey="video"
@@ -1860,6 +1870,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
             sections={railSections}
             active={railPanel}
             onActiveChange={setRailPanel}
+            panelMode="overlay"
           />
         )}
 
@@ -1930,12 +1941,19 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
                 onToggleSnap={() => setSnapEnabled((value) => !value)}
                 onApply={apply}
                 onDropMedia={handleDropMedia}
-                handlers={{
+                  handlers={{
                   undo,
                   redo,
                   duplicate: () => handleCommand({ type: 'duplicate' }),
                   remove: (ripple) => handleCommand({ type: 'delete', ripple }),
-                  addText: () => openRailPanel('text'),
+                  addText: () => {
+                    if (isBelowLg) {
+                      setSelectedIds([]);
+                      setPhoneAction('text-pick');
+                      return;
+                    }
+                    openRailPanel('text');
+                  },
                   addMedia: () => openRailPanel('media'),
                   addAudio: () => openRailPanel('media'),
                 }}
@@ -1958,6 +1976,14 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
                       onCancel={recorder.cancel}
                       onClose={() => setVoiceOpen(false)}
                     />
+                  ) : phoneActionApplies && phoneAction === 'text-pick' ? (
+                    <VideoTextPickPanel
+                      presets={TEXT_PRESETS}
+                      colors={lookColorsFromPalette(project.palette)}
+                      disabled={!canEditContent}
+                      onPick={handleAddText}
+                      onClose={() => setPhoneAction(null)}
+                    />
                   ) : phoneActionApplies &&
                     phoneAction === 'clip-trim' &&
                     selectedItem?.type === 'video' ? (
@@ -1977,10 +2003,17 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
                       onClose={() => setPhoneAction(null)}
                     />
                   ) : null}
+                  {!canEditContent ? (
+                    <p className="text-muted-foreground border-border bg-card shrink-0 border-t px-4 py-2 text-center text-xs">
+                      View only
+                    </p>
+                  ) : null}
                   <VideoToolStrip
                     options={phoneToolOptions}
                     selection={selection}
-                    activeAction={phoneAction}
+                    activeAction={
+                      phoneAction === 'text-pick' ? 'text-add' : phoneAction
+                    }
                     readOnly={!canEditContent}
                     disabledActions={disabledPhoneActions}
                     onAction={handlePhoneAction}
@@ -2017,6 +2050,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
           onOpenChange={(open) =>
             isBelowLg ? setMobilePanel(open ? 'edit' : null) : setInspectorOpen(open)
           }
+          panelMode={isBelowLg ? 'push' : 'overlay'}
         >
           {settingsPanel}
         </MarketingEditorInspector>
