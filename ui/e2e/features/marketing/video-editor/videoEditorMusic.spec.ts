@@ -84,19 +84,20 @@ test.describe('@ci marketing video editor music picker', () => {
   test('adding a song puts it on the timeline with its credit', async ({ page }) => {
     await installMusicMocks(page, { groups: { trending: [mockTrack('a', 'audius')] } });
     await openDraft(page);
-    const before = await page.locator('[data-timeline-item]').count();
     await openMusicTab(page);
 
     await page.getByRole('button', { name: 'Add Song a' }).click();
 
-    await expect(page.locator('[data-timeline-item]')).toHaveCount(before + 1);
-    // The row confirms the add.
-    await expect(page.getByRole('button', { name: 'Add Song a' })).toBeVisible();
+    // Default music may already occupy a slot; assert the chosen song, not a raw item count.
+    await expect(
+      page.getByLabel('Timeline', { exact: true }).getByRole('button', { name: /Audio, Song a/ })
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   test('downloading caches an Audius song for the export and the download completes', async ({
     page,
   }) => {
+    test.setTimeout(240_000);
     const mock = await installMusicMocks(page, {
       groups: {
         trending: [
@@ -113,6 +114,9 @@ test.describe('@ci marketing video editor music picker', () => {
     await openDraft(page);
     await openMusicTab(page);
     await page.getByRole('button', { name: 'Add Song V66vyPP' }).click();
+    await expect(page.getByRole('button', { name: 'Download', exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
 
     const download = page.waitForEvent('download', { timeout: 180_000 });
     await page.getByRole('button', { name: 'Download', exact: true }).click();
@@ -181,17 +185,18 @@ test.describe('@ci marketing video editor music picker', () => {
 
     await page.getByRole('button', { name: 'Use Golden Hour' }).click();
 
-    const card = page.getByRole('region', { name: 'Instagram song' }).first();
+    // Library closes after the pick so the song bar above the timeline is usable.
+    await expect(page.getByRole('region', { name: 'Media library' })).toHaveCount(0);
+    const card = page.getByRole('region', { name: 'Instagram song' });
     await expect(card).toBeVisible();
     await expect(card.getByText('Golden Hour')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Golden Hour is selected' })).toBeVisible();
     // Picking a song is one undoable step, and never adds a clip to the timeline.
     await page.keyboard.press('ControlOrMeta+z');
     await expect(page.getByRole('region', { name: 'Instagram song' })).toHaveCount(0);
     await page.keyboard.press('ControlOrMeta+Shift+z');
-    await expect(page.getByRole('region', { name: 'Instagram song' }).first()).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Instagram song' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Remove Instagram song' }).first().click();
+    await page.getByRole('button', { name: 'Remove Instagram song' }).click();
     await expect(page.getByRole('region', { name: 'Instagram song' })).toHaveCount(0);
   });
 

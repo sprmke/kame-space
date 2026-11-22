@@ -826,6 +826,9 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
             },
           },
         });
+      } else if (payload.kind === 'audio') {
+        // Music and sound leave the preview clear so Download and the timeline stay reachable.
+        setRailPanel(null);
       }
     },
     [apply, handleDropMedia, isBelowLg, openRailPanel, pickSoundMode, replaceTargetId]
@@ -1642,7 +1645,9 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
       toast.success('Song set for Instagram', {
         description: 'Instagram adds it when you post this video as a Reel.',
       });
+      // Close the library so the song bar above the timeline is free to use (remove, volume).
       if (isBelowLg) setMobilePanel(null);
+      else setRailPanel(null);
     },
     [changeProject, isBelowLg]
   );
