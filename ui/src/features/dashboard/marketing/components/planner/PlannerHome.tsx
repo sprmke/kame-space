@@ -8,9 +8,9 @@ import { MarketingOverflowMenu } from '@/features/dashboard/marketing/components
 import { captureAppEvent } from '@/lib/posthog/capture';
 import { useMarketingTheme } from '@/features/dashboard/marketing/components/themes/MarketingThemeProvider';
 import {
-  resolveHandoffTarget,
   setPendingPlannerDraft,
 } from '@/features/dashboard/marketing/lib/planner/plannerHandoff';
+import { resolveHandoffTarget } from '@/features/dashboard/marketing/lib/planner/plannerHandoff';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { usePublicPropertyDetail } from '@/features/guest/marketing/properties/hooks/usePublicPropertyDetail';
@@ -21,6 +21,7 @@ import {
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 import { PlanItemCard } from '@/features/dashboard/marketing/components/planner/PlanItemCard';
 import { PlanItemSheet } from '@/features/dashboard/marketing/components/planner/PlanItemSheet';
+import { PlannerLoopIntro } from '@/features/dashboard/marketing/components/planner/PlannerLoopIntro';
 import { PlannerSetupWizard } from '@/features/dashboard/marketing/components/planner/PlannerSetupWizard';
 import { PrepareWeekDialog } from '@/features/dashboard/marketing/components/planner/PrepareWeekDialog';
 import { ShareItYourselfSheet } from '@/features/dashboard/marketing/components/planner/ShareItYourselfSheet';
@@ -34,6 +35,7 @@ import {
   normalizePlannerRange,
   type PlannerRange,
 } from '@/features/dashboard/marketing/lib/planner/plannerRange';
+import { countPlanProgress } from '@/features/dashboard/marketing/lib/planner/planItemStatus';
 import {
   useGeneratePlan,
   useMarketingPlan,
@@ -85,6 +87,7 @@ export function PlannerHome() {
 
   const today = todayManilaYmd();
   const allowed = planGate.allowed;
+  // Soft-gate: show a nudge, but never block Build plan or the agenda.
   const needsSetup = allowed && settings.isSuccess && settings.data === null;
 
   const items = useMemo(() => {
@@ -94,6 +97,7 @@ export function PlannerHome() {
 
   const groups = useMemo(() => groupItemsByDay(items), [items]);
   const hasItems = groups.length > 0;
+  const progress = useMemo(() => countPlanProgress(items), [items]);
 
   const gallery = useMemo(
     () => normalizeGallery(listing.data?.images ?? []),
@@ -168,51 +172,65 @@ export function PlannerHome() {
 
   return (
     <div className="flex flex-col gap-4">
-      {!needsSetup ? (
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <SegmentedControl
-              value={range}
-              onChange={setRange}
-              options={RANGE_OPTIONS}
-              size="dense"
-              equalSegments
-              fullWidth
-              aria-label="Plan range"
-              className="min-w-0 flex-1"
-            />
-            {allowed ? (
-              <MarketingOverflowMenu
-                label="Plan options"
-                icon="horizontal"
-                forceSheet
-                menuItems={overflowItems}
-              />
-            ) : null}
-          </div>
-          <Button
-            className="w-full sm:w-auto sm:self-start"
-            disabled={!allowed || generate.isPending || needsSetup}
-            onClick={() => generate.mutate()}
-          >
-            {generate.isPending ? 'Building…' : hasItems ? 'Rebuild plan' : 'Build plan'}
-          </Button>
-        </div>
-      ) : null}
+      <PlannerLoopIntro compact={hasItems} />
 
       {needsSetup ? (
         <div className="border-border space-y-3 rounded-xl border bg-muted/30 p-4">
           <div className="space-y-1">
-            <p className="text-sm font-semibold">Set your goals</p>
+            <p className="text-sm font-semibold">Optional: set goals and channels</p>
             <p className="text-caption text-muted-foreground">
-              Choose what to fill, where you post, and how often. Then build this week.
+              You can build a plan now. Goals help tune suggestions later.
             </p>
           </div>
-          <Button size="sm" onClick={() => setSetupOpen(true)}>
-            Continue
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => setSetupOpen(true)}>
+              Set goals
+            </Button>
+          </div>
         </div>
       ) : null}
+
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <SegmentedControl
+            value={range}
+            onChange={setRange}
+            options={RANGE_OPTIONS}
+            size="dense"
+            equalSegments
+            fullWidth
+            aria-label="Plan range"
+            className="min-w-0 flex-1"
+          />
+          {allowed ? (
+            <MarketingOverflowMenu
+              label="Plan options"
+              icon="horizontal"
+              forceSheet
+              menuItems={overflowItems}
+            />
+          ) : null}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            className="w-full sm:w-auto"
+            disabled={!allowed || generate.isPending}
+            onClick={() => generate.mutate()}
+          >
+            {generate.isPending ? 'Building…' : hasItems ? 'Rebuild plan' : 'Build plan'}
+          </Button>
+          {hasItems && progress.total > 0 ? (
+            <p className="text-caption text-muted-foreground sm:ml-1">
+              {progress.done} of {progress.total} done
+            </p>
+          ) : null}
+        </div>
+        {hasItems ? (
+          <p className="text-caption text-muted-foreground">
+            Rebuild adds new ideas only. It does not remove posts you already planned.
+          </p>
+        ) : null}
+      </div>
 
       {isLoading ? <MarketingPlannerSkeleton /> : null}
 
@@ -226,9 +244,13 @@ export function PlannerHome() {
         </p>
       ) : null}
 
-      {!isLoading && !isError && !needsSetup && !hasItems ? (
+      {!isLoading && !isError && !hasItems ? (
         <div className="border-border flex flex-col items-center gap-3 rounded-xl border border-dashed px-4 py-8 text-center">
-          <p className="text-sm text-muted-foreground">No posts planned yet.</p>
+          <p className="text-sm font-medium">No posts planned yet</p>
+          <p className="text-caption text-muted-foreground max-w-sm">
+            Build a plan to see what to post from your open nights and reviews. Then make each
+            item in Studio and mark it done when you share.
+          </p>
           <Button
             size="sm"
             disabled={!allowed || generate.isPending}
@@ -348,8 +370,12 @@ export function PlannerHome() {
       />
 
       {!allowed && !planGate.isLoading && (data?.items.length ?? 0) > 0 ? (
-        <div className="border-border flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-muted/20 p-4">
-          <p className="text-sm">Full plan is on Pro and above.</p>
+        <div className="border-border space-y-2 rounded-xl border bg-muted/20 p-4">
+          <p className="text-sm font-medium">Sample week (Pro unlocks the full plan)</p>
+          <p className="text-caption text-muted-foreground">
+            On Pro you build the week, open each item in Studio, share it, and track visits when
+            someone taps your link.
+          </p>
           <Button size="sm" onClick={() => openUpgradeModal('marketingPlanner')}>
             View plans
           </Button>

@@ -57,8 +57,23 @@ function isAiFirst(opportunityType: string | null): boolean {
 
 let pending: PlannerHandoffPayload | null = null;
 
+const FINISHING_KEY = 'ks.marketing.planner.finishing';
+
+export type PlannerFinishingContext = {
+  itemId: string;
+  title: string;
+};
+
 export function setPendingPlannerDraft(payload: PlannerHandoffPayload | null): void {
   pending = payload;
+  if (payload) {
+    setPlannerFinishing({ itemId: payload.itemId, title: payload.title });
+  }
+}
+
+/** Peek without consuming (editors still call `takePendingPlannerDraft`). */
+export function peekPendingPlannerDraft(): PlannerHandoffPayload | null {
+  return pending;
 }
 
 /** Consumed once by the next editor that mounts. */
@@ -66,6 +81,37 @@ export function takePendingPlannerDraft(): PlannerHandoffPayload | null {
   const value = pending;
   pending = null;
   return value;
+}
+
+/** Survives the one-shot draft consume so Studio can show “Finishing: …” */
+export function setPlannerFinishing(info: PlannerFinishingContext | null): void {
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    if (!info) {
+      sessionStorage.removeItem(FINISHING_KEY);
+      return;
+    }
+    sessionStorage.setItem(FINISHING_KEY, JSON.stringify(info));
+  } catch {
+    // Private mode / quota: banner is optional.
+  }
+}
+
+export function getPlannerFinishing(): PlannerFinishingContext | null {
+  try {
+    if (typeof sessionStorage === 'undefined') return null;
+    const raw = sessionStorage.getItem(FINISHING_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PlannerFinishingContext;
+    if (!parsed?.itemId || !parsed?.title) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPlannerFinishing(): void {
+  setPlannerFinishing(null);
 }
 
 /** One-line description an AI Studio draft can start from. */

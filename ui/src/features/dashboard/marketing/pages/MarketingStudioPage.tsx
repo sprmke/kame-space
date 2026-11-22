@@ -8,6 +8,7 @@ import {
   PublishDialog,
   type PublishMedia,
 } from '@/features/dashboard/marketing/components/publishing/PublishDialog';
+import { PlannerFinishingBanner } from '@/features/dashboard/marketing/components/planner/PlannerFinishingBanner';
 import { PlannerModal } from '@/features/dashboard/marketing/components/planner/PlannerModal';
 import { PlannerOpenButton } from '@/features/dashboard/marketing/components/planner/PlannerOpenButton';
 import { MarketingEditorHost } from '@/features/dashboard/marketing/components/shared/MarketingEditorHost';
@@ -236,11 +237,14 @@ function MarketingStudioWorkspace() {
       <SlidingTabs value={tab} onValueChange={(next) => setTab(normalizeMarketingStudioTab(next))}>
         <AdminMobilePage
           title="Marketing"
-          subtitle="Make posts, videos and calendars in one theme."
+          subtitle="Plan what to post, then make it here."
           titleId="marketing-heading"
           heroTrailing={planButton}
           desktopActions={planButton}
         >
+          {!plannerOpen && !showThemes ? (
+            <PlannerFinishingBanner onBackToPlan={() => setPlannerModalOpen(true)} />
+          ) : null}
           <MarketingStudioShell
             tabs={showStudioChrome ? <MarketingStudioModeTabs /> : null}
             actions={themeBar}

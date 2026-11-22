@@ -103,8 +103,9 @@ export function ShareItYourselfSheet({ open, onOpenChange, item, onPosted, isPos
         sheetLayout="split"
         className="flex max-h-[min(92dvh,36rem)] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-md sm:p-0"
       >
-        <ResponsiveModalHeader className={cn(MODAL_HEADER_CLASS, 'space-y-0 text-left')}>
-          <ResponsiveModalTitle>{item.title}</ResponsiveModalTitle>
+        <ResponsiveModalHeader className={cn(MODAL_HEADER_CLASS, 'space-y-1 text-left')}>
+          <ResponsiveModalTitle>Share it yourself</ResponsiveModalTitle>
+          <p className="text-caption text-muted-foreground truncate">{item.title}</p>
         </ResponsiveModalHeader>
 
         <div
@@ -113,6 +114,27 @@ export function ShareItYourselfSheet({ open, onOpenChange, item, onPosted, isPos
             MODAL_BODY_CLASS
           )}
         >
+          {(item.brief.photoUrls?.length ?? 0) > 0 ? (
+            <div className="space-y-2">
+              <p className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
+                Photos for this post
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {item.brief.photoUrls!.map((url) => (
+                  <img
+                    key={url}
+                    src={url}
+                    alt=""
+                    className="border-border/60 size-16 shrink-0 rounded-lg border object-cover"
+                  />
+                ))}
+              </div>
+              <p className="text-caption text-muted-foreground">
+                Download or copy from Studio if you need the finished file.
+              </p>
+            </div>
+          ) : null}
+
           <div className="space-y-2">
             <p className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
               Caption
