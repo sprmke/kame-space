@@ -29,6 +29,7 @@ import {
   DEFAULT_VISUAL_TRANSFORM,
   VIDEO_V2_LIMITS,
   isAudioItem,
+  isCaptionItem,
   isLayerItem,
   isMediaItem,
   type AudioItem,
@@ -249,6 +250,8 @@ export function layerItemFromPreset(
 
 /** Short human label for a timeline block. */
 export function itemLabel(item: VideoItem): string {
+  if (isCaptionItem(item))
+    return item.text.length > 40 ? `${item.text.slice(0, 39)}…` : item.text || 'Caption';
   if (isLayerItem(item)) {
     const text = item.layer.text?.trim() || item.layer.lines?.join(', ').trim();
     if (text) return text.length > 40 ? `${text.slice(0, 39)}…` : text;
@@ -261,19 +264,27 @@ export function itemLabel(item: VideoItem): string {
 
 /** "Clip, 0:03 to 0:07" for screen readers and tooltips. */
 export function itemAriaLabel(item: VideoItem, fps: number): string {
-  const kind = isAudioItem(item)
-    ? 'Audio'
-    : isLayerItem(item)
-      ? 'Text'
-      : item.type === 'video'
-        ? 'Video'
-        : 'Photo';
+  const kind = isCaptionItem(item)
+    ? 'Caption'
+    : isAudioItem(item)
+      ? 'Audio'
+      : isLayerItem(item)
+        ? 'Text'
+        : item.type === 'video'
+          ? 'Video'
+          : 'Photo';
   return `${kind}, ${itemLabel(item)}, ${formatTimecode(item.from, fps)} to ${formatTimecode(itemEnd(item), fps)}`;
 }
 
 export function trackLabel(kind: VideoTrackKind, indexWithinKind: number): string {
-  const base = { main: 'Main', overlay: 'Overlay', text: 'Text', audio: 'Audio' }[kind];
-  return kind === 'main' ? base : `${base} ${indexWithinKind + 1}`;
+  const base = {
+    main: 'Main',
+    overlay: 'Overlay',
+    text: 'Text',
+    audio: 'Audio',
+    captions: 'Captions',
+  }[kind];
+  return kind === 'main' || kind === 'captions' ? base : `${base} ${indexWithinKind + 1}`;
 }
 
 /** True when anything in the project makes sound (decides whether export needs an audio track). */

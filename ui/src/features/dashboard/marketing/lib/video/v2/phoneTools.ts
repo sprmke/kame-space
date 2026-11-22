@@ -8,6 +8,7 @@
  * Plan: docs/workflow/in-progress/marketing-video-editor-mobile-first-refine.md §4.2, §4.3.
  */
 
+import { audioRoleOf } from '@/features/dashboard/marketing/lib/video/v2/audioDucking';
 import { findItem } from '@/features/dashboard/marketing/lib/video/v2/timelineOps';
 import type {
   VideoItem,
@@ -225,7 +226,13 @@ export function selectionKind(project: VideoProjectV2, selectedIds: string[]): S
     case 'layer':
       return 'text';
     case 'audio':
-      return 'music';
+      return audioRoleOf(item) === 'voice'
+        ? 'voice'
+        : audioRoleOf(item) === 'sound'
+          ? 'sound'
+          : 'music';
+    case 'caption':
+      return 'caption';
     default:
       return 'none';
   }

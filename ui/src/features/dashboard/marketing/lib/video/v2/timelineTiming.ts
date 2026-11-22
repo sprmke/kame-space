@@ -114,7 +114,9 @@ export function sourceDurationFrames(media: { durationMs?: number }, fps: number
  * Looping audio and still images are unbounded (Infinity).
  */
 export function maxItemDurationFrames(item: VideoItem, fps: number): number {
-  if (item.type === 'image' || item.type === 'layer') return Number.POSITIVE_INFINITY;
+  if (item.type === 'image' || item.type === 'layer' || item.type === 'caption') {
+    return Number.POSITIVE_INFINITY;
+  }
   if (isAudioItem(item) && item.loop) return Number.POSITIVE_INFINITY;
   const source = sourceDurationFrames(item.media, fps);
   if (source === null) return Number.POSITIVE_INFINITY;
@@ -138,7 +140,11 @@ export function allItems(project: VideoProjectV2): VideoItem[] {
 }
 
 export function countItems(project: VideoProjectV2): number {
-  return project.tracks.reduce((n, track) => n + track.items.length, 0);
+  // Caption lines have their own limit (`maxCaptionItems`).
+  return project.tracks.reduce(
+    (n, track) => n + (track.kind === 'captions' ? 0 : track.items.length),
+    0
+  );
 }
 
 export function audioItems(project: VideoProjectV2): AudioItem[] {

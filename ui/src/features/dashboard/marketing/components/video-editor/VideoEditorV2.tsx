@@ -7,6 +7,7 @@ import {
   Loader2,
   Maximize2,
   Mic,
+  Subtitles,
   Minimize2,
   Music2,
   Redo2,
@@ -46,6 +47,8 @@ import { MarketingReplaceTemplateDialog } from '@/features/dashboard/marketing/c
 import { MarketingReviewSidebarSection } from '@/features/dashboard/marketing/components/shared/MarketingReviewSidebarSection';
 import { MarketingSizeDialog } from '@/features/dashboard/marketing/components/shared/MarketingSizeDialog';
 import { useMarketingTheme } from '@/features/dashboard/marketing/components/themes/MarketingThemeProvider';
+import { AutoCaptionsSheet } from '@/features/dashboard/marketing/components/video-editor/v2/AutoCaptionsSheet';
+import { EditCaptionsSheet } from '@/features/dashboard/marketing/components/video-editor/v2/EditCaptionsSheet';
 import type { InspectorActions } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
 import {
   VideoInspectorV2,
@@ -71,6 +74,7 @@ import {
   VideoPreviewV2,
   type VideoPreviewV2Handle,
 } from '@/features/dashboard/marketing/components/video-editor/v2/VideoPreviewV2';
+import { useAutoCaptions } from '@/features/dashboard/marketing/hooks/useAutoCaptions';
 import {
   useResolveDefaultVideoMusic,
   type SetMusic,
@@ -141,6 +145,18 @@ import {
 import { isReviewVideoTemplate } from '@/features/dashboard/marketing/lib/video/applyGuestReviewToVideoProject';
 import { applyGuestReviewToVideoProjectV2 } from '@/features/dashboard/marketing/lib/video/v2/applyGuestReviewToVideoProjectV2';
 import { applyCanvasPatch } from '@/features/dashboard/marketing/lib/video/v2/canvasPatch';
+import { withCaptionText } from '@/features/dashboard/marketing/lib/video/v2/captionLines';
+import { countCaptionSources } from '@/features/dashboard/marketing/lib/video/v2/captions/captionAudio';
+import {
+  captionLinesOf,
+  deleteAllCaptions,
+  hasCaptions,
+  replaceCaptions,
+} from '@/features/dashboard/marketing/lib/video/v2/captions/captionOps';
+import {
+  captionStyleOf,
+  withCaptionStyle,
+} from '@/features/dashboard/marketing/lib/video/v2/captionStyle';
 import {
   audioItemFromPayload,
   clipboardFor,
@@ -203,6 +219,7 @@ import {
   isAudioItem,
   isMediaItem,
   type AudioItem,
+  type CaptionItem,
   type VideoItem,
   type VideoProjectV2,
 } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
@@ -349,6 +366,8 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   /** The next library pick becomes the sound of a video, not a clip. */
   const [pickSoundMode, setPickSoundMode] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [captionsSheet, setCaptionsSheet] = useState<'make' | 'edit' | null>(null);
+  const autoCaptions = useAutoCaptions();
   const [muteWhileRecording, setMuteWhileRecording] = useState(true);
   const [savingVoice, setSavingVoice] = useState(false);
   const recorder = useVoiceRecorder();
@@ -881,6 +900,9 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
             project,
             typography: templateTypography,
             lookColors: lookColorsFromPalette(project.palette),
+            captionStyle: captionStyleOf(project),
+            setCaptionStyle: (style) =>
+              changeProject((current) => withCaptionStyle(current, style)),
             update: (id, fn) => apply((p) => updateItem(p, id, fn)),
             trim: (id, edge, frame) => apply((p) => trimItem(p, id, edge, frame)),
             moveTo: (id, frame) => apply((p) => moveItem(p, id, { frame })),
@@ -1279,8 +1301,10 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
       canGenerate,
       soundTools: true,
       voice: isVoiceRecordingSupported(),
+      captions: canGenerate,
+      hasCaptions: project ? hasCaptions(project) : false,
     }),
-    [canGenerate]
+    [canGenerate, project]
   );
   const disabledPhoneActions = useMemo(() => {
     const disabled = new Set<PhoneToolAction>();
@@ -1318,6 +1342,27 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     />
   );
 
+  const makeCaptions = useCallback(
+    async (options: Parameters<typeof autoCaptions.run>[1]) => {
+      const current = projectRef.current;
+      if (!current || !canEditContent) return;
+      playerRef.current?.pause();
+      const lines = await autoCaptions.run(current, options);
+      if (!lines) return;
+      apply((p) => replaceCaptions(p, lines));
+      setCaptionsSheet(null);
+      toast.success('Captions added');
+    },
+    [apply, autoCaptions, canEditContent]
+  );
+
+  const deleteCaptions = useCallback(() => {
+    apply((p) => deleteAllCaptions(p));
+    setCaptionsSheet(null);
+    setSelectedIds([]);
+    toast.message('Captions deleted', { action: { label: 'Undo', onClick: undo } });
+  }, [apply, undo]);
+
   const handlePhoneAction = useCallback(
     (action: PhoneToolAction) => {
       if (action === 'clip-trim' || PANEL_ACTIONS.has(action)) {
@@ -1353,6 +1398,16 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
           return;
         case 'audio-record':
           setVoiceOpen(true);
+          return;
+        case 'captions-make':
+          autoCaptions.reset();
+          setCaptionsSheet('make');
+          return;
+        case 'captions-edit':
+          setCaptionsSheet('edit');
+          return;
+        case 'captions-delete':
+          deleteCaptions();
           return;
         case 'text-add':
           handleAddText('headline');
@@ -1397,6 +1452,8 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     },
     [
       apply,
+      autoCaptions,
+      deleteCaptions,
       handleAddText,
       handleCommand,
       handleResetProject,
@@ -1672,6 +1729,13 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     { key: 'reviews', label: 'Reviews', icon: Star, panel: reviewsPanel, title: 'Guest reviews' },
     ...(canGenerate
       ? [
+          {
+            key: 'captions',
+            label: 'Captions',
+            icon: Subtitles,
+            panel: null,
+            onActivate: () => setCaptionsSheet(project && hasCaptions(project) ? 'edit' : 'make'),
+          },
           {
             key: 'ai',
             label: 'AI',
@@ -2008,6 +2072,36 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         canPublish={Boolean(onPublish && canPublish)}
         onDownload={() => void handleDownload()}
         onPublish={() => void handlePublish()}
+      />
+
+      <AutoCaptionsSheet
+        open={captionsSheet === 'make'}
+        onOpenChange={(open) => setCaptionsSheet(open ? 'make' : null)}
+        counts={project ? countCaptionSources(project) : { voice: 0, video: 0 }}
+        replacing={project ? hasCaptions(project) : false}
+        busy={autoCaptions.busy}
+        phase={autoCaptions.phase}
+        error={autoCaptions.error}
+        onMake={(options) => void makeCaptions(options)}
+        onCancel={autoCaptions.cancel}
+        onUpgrade={() => openUpgradeModal('aiMarketingGeneration')}
+      />
+      <EditCaptionsSheet
+        open={captionsSheet === 'edit'}
+        onOpenChange={(open) => setCaptionsSheet(open ? 'edit' : null)}
+        lines={project ? captionLinesOf(project) : []}
+        fps={project?.fps ?? 30}
+        readOnly={!canEditContent}
+        onChangeText={(id, text) =>
+          apply((p) =>
+            updateItem(p, id, (item) => withCaptionText(item as CaptionItem, text, p.fps))
+          )
+        }
+        onMakeAgain={() => {
+          autoCaptions.reset();
+          setCaptionsSheet('make');
+        }}
+        onDeleteAll={deleteCaptions}
       />
 
       <VideoExportDialog state={exportState} onCancel={() => exportAbortRef.current?.abort()} />

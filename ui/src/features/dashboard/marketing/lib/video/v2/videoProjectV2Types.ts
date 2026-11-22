@@ -31,6 +31,10 @@ export const VIDEO_V2_LIMITS = {
   maxDurationFrames: 60 * VIDEO_V2_FPS,
   maxTracks: 10,
   maxItems: 150,
+  /** Caption lines are counted on their own, not against `maxItems`. */
+  maxCaptionItems: 200,
+  maxCaptionTextLength: 200,
+  maxCaptionWords: 100,
   /** Videos that may be visible at the same frame (preview and export decode cost). */
   maxVisibleVideos: 3,
   /** Shortest clip: 0.1 s. */
@@ -46,7 +50,7 @@ export const VIDEO_V2_LIMITS = {
 export const VIDEO_PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 export type VideoPlaybackRate = (typeof VIDEO_PLAYBACK_RATES)[number];
 
-export type VideoTrackKind = 'main' | 'overlay' | 'text' | 'audio';
+export type VideoTrackKind = 'main' | 'overlay' | 'text' | 'audio' | 'captions';
 
 export type VideoTrack = {
   id: string;
@@ -57,6 +61,8 @@ export type VideoTrack = {
   /** Audio-capable tracks (audio, and video clips on main/overlay). */
   muted?: boolean;
   locked?: boolean;
+  /** `captions` tracks only: how every caption line on the track looks. */
+  captionStyle?: CaptionStyle;
   /** Sorted by `from`. */
   items: VideoItem[];
 };
@@ -161,7 +167,35 @@ export type AudioItem = ItemBase & {
   sourceItemId?: string | null;
 };
 
-export type VideoItem = MediaItem | LayerItem | AudioItem;
+export type CaptionWord = {
+  text: string;
+  /** Milliseconds from the start of the caption line. */
+  startMs: number;
+  endMs: number;
+};
+
+/** One subtitle line. Words keep their timing so the spoken word can be highlighted. */
+export type CaptionItem = ItemBase & {
+  type: 'caption';
+  text: string;
+  words: CaptionWord[];
+  /** The voice or video clip it was made from, when known. */
+  sourceItemId?: string | null;
+};
+
+export type CaptionLookId = 'clean' | 'outline' | 'box' | 'highlight';
+
+export type CaptionStyle = {
+  look: CaptionLookId;
+  /** Vertical position, % from the top of the frame. */
+  y: number;
+  /** Size multiplier, 0.7 to 1.6. */
+  scale: number;
+};
+
+export const DEFAULT_CAPTION_STYLE: CaptionStyle = { look: 'highlight', y: 78, scale: 1 };
+
+export type VideoItem = MediaItem | LayerItem | AudioItem | CaptionItem;
 
 export type VideoProjectV2 = {
   version: 2;
@@ -188,6 +222,8 @@ export function trackAccepts(kind: VideoTrackKind, item: VideoItem): boolean {
       return item.type === 'layer';
     case 'audio':
       return item.type === 'audio';
+    case 'captions':
+      return item.type === 'caption';
   }
 }
 
@@ -197,6 +233,10 @@ export function isMediaItem(item: VideoItem): item is MediaItem {
 
 export function isLayerItem(item: VideoItem): item is LayerItem {
   return item.type === 'layer';
+}
+
+export function isCaptionItem(item: VideoItem): item is CaptionItem {
+  return item.type === 'caption';
 }
 
 export function isAudioItem(item: VideoItem): item is AudioItem {

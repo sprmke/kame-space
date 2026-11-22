@@ -4,6 +4,7 @@ import { NumberSlider } from '@/features/dashboard/marketing/components/calendar
 import type { TextLookColors } from '@/features/dashboard/marketing/lib/video/v2/textLooks';
 import { itemEnd } from '@/features/dashboard/marketing/lib/video/v2/timelineTiming';
 import type {
+  CaptionStyle,
   VideoItem,
   VideoPlaybackRate,
   VideoProjectV2,
@@ -26,6 +27,9 @@ export type InspectorActions = {
   typography: VideoTypographyContext;
   /** Brand colours for text looks that use the accent. */
   lookColors: TextLookColors;
+  /** Caption look for the whole captions track. */
+  captionStyle: CaptionStyle;
+  setCaptionStyle: (style: Partial<CaptionStyle>) => void;
   update: (itemId: string, updater: (item: VideoItem) => VideoItem) => void;
   trim: (itemId: string, edge: 'start' | 'end', frame: number) => void;
   moveTo: (itemId: string, frame: number) => void;

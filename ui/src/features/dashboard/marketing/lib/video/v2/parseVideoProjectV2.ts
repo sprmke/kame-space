@@ -4,6 +4,7 @@
  */
 
 import type { DesignBinding } from '@/features/dashboard/marketing/lib/designCanvasTypes';
+import { clampCaptionStyle } from '@/features/dashboard/marketing/lib/video/v2/captionStyle';
 import { migrateVideoProjectV1 } from '@/features/dashboard/marketing/lib/video/v2/migrateVideoProjectV1';
 import {
   createTrack,
@@ -18,6 +19,9 @@ import {
   VIDEO_V2_LIMITS,
   type AudioItem,
   type AudioRole,
+  type CaptionItem,
+  type CaptionStyle,
+  type CaptionWord,
   type LayerItem,
   type MediaItem,
   type MediaRef,
@@ -71,7 +75,7 @@ const ANIMATIONS = new Set<TextAnimation>([
   'rise',
 ]);
 const AUDIO_ROLES = new Set<AudioRole>(['music', 'voice', 'sound']);
-const TRACK_KINDS = new Set<VideoTrackKind>(['main', 'overlay', 'text', 'audio']);
+const TRACK_KINDS = new Set<VideoTrackKind>(['main', 'overlay', 'text', 'audio', 'captions']);
 const TEXT_STYLES = new Set(['headline', 'subheadline', 'promo', 'body', 'footer']);
 
 type Rec = Record<string, unknown>;
@@ -261,9 +265,34 @@ function sanitizeAudio(raw: Rec): AudioItem | null {
   return item;
 }
 
+function sanitizeCaption(raw: Rec): CaptionItem | null {
+  if (raw.type !== 'caption') return null;
+  const words = (Array.isArray(raw.words) ? raw.words : [])
+    .slice(0, VIDEO_V2_LIMITS.maxCaptionWords)
+    .filter(isRec)
+    .map((word): CaptionWord | null => {
+      const text = typeof word.text === 'string' ? word.text.trim().slice(0, 60) : '';
+      if (!text) return null;
+      const startMs = int(word.startMs, 0, 0, 120_000);
+      return {
+        text,
+        startMs,
+        endMs: Math.max(startMs + 1, int(word.endMs, startMs + 1, 0, 120_000)),
+      };
+    })
+    .filter((word): word is CaptionWord => word !== null);
+  const text =
+    typeof raw.text === 'string'
+      ? raw.text.slice(0, VIDEO_V2_LIMITS.maxCaptionTextLength)
+      : words.map((word) => word.text).join(' ');
+  const item: CaptionItem = { ...sanitizeBase(raw), type: 'caption', text, words };
+  if (typeof raw.sourceItemId === 'string') item.sourceItemId = raw.sourceItemId.slice(0, 80);
+  return item;
+}
+
 function sanitizeItem(raw: unknown): VideoItem | null {
   if (!isRec(raw)) return null;
-  return sanitizeMedia(raw) ?? sanitizeLayerItem(raw) ?? sanitizeAudio(raw);
+  return sanitizeMedia(raw) ?? sanitizeLayerItem(raw) ?? sanitizeAudio(raw) ?? sanitizeCaption(raw);
 }
 
 function sanitizeTrack(raw: unknown): VideoTrack | null {
@@ -276,10 +305,17 @@ function sanitizeTrack(raw: unknown): VideoTrack | null {
   if (raw.hidden === true) track.hidden = true;
   if (raw.muted === true) track.muted = true;
   if (raw.locked === true) track.locked = true;
+  if (track.kind === 'captions' && isRec(raw.captionStyle)) {
+    track.captionStyle = clampCaptionStyle(raw.captionStyle as Partial<CaptionStyle>);
+  }
+  const limit =
+    track.kind === 'captions' ? VIDEO_V2_LIMITS.maxCaptionItems : VIDEO_V2_LIMITS.maxItems;
   track.items = raw.items
-    .slice(0, VIDEO_V2_LIMITS.maxItems)
+    .slice(0, limit)
     .map(sanitizeItem)
-    .filter((item): item is VideoItem => item !== null);
+    .filter((item): item is VideoItem => item !== null)
+    // A captions track holds caption lines and nothing else.
+    .filter((item) => track.kind !== 'captions' || item.type === 'caption');
   return track;
 }
 
@@ -305,6 +341,8 @@ function uniqueIds(project: VideoProjectV2): VideoProjectV2 {
 function capCounts(project: VideoProjectV2): VideoProjectV2 {
   let budget = VIDEO_V2_LIMITS.maxItems;
   const tracks = project.tracks.slice(0, VIDEO_V2_LIMITS.maxTracks).map((track) => {
+    // Caption lines have their own limit, set when the track was read.
+    if (track.kind === 'captions') return track;
     const items = track.items.slice(0, Math.max(0, budget));
     budget -= items.length;
     return { ...track, items };
@@ -322,7 +360,18 @@ function sanitizeVideoProjectV2(raw: Rec, fallback: VideoProjectV2): VideoProjec
   // Extra main tracks (never produced by the editor) are folded into the first one.
   const main = mains[0] ?? createTrack('main');
   main.items = [...main.items, ...mains.slice(1).flatMap((track) => track.items)];
-  const rest = parsed.filter((track) => track.kind !== 'main');
+  // One captions track: any extras are folded into the first.
+  const captionTracks = parsed.filter((track) => track.kind === 'captions');
+  const captions = captionTracks[0];
+  if (captions) {
+    captions.items = captionTracks
+      .flatMap((track) => track.items)
+      .slice(0, VIDEO_V2_LIMITS.maxCaptionItems)
+      .sort((a, b) => a.from - b.from);
+  }
+  const rest = parsed.filter(
+    (track) => track.kind !== 'main' && (track.kind !== 'captions' || track === captions)
+  );
 
   const bg = isRec(raw.background) ? raw.background : {};
   const project: VideoProjectV2 = {

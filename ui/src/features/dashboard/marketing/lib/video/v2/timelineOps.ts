@@ -11,6 +11,7 @@
  *  - Video/audio items never exceed their source length at their speed.
  */
 
+import { joinWords, splitCaption } from '@/features/dashboard/marketing/lib/video/v2/captionLines';
 import {
   countItems,
   itemEnd,
@@ -22,11 +23,13 @@ import {
 } from '@/features/dashboard/marketing/lib/video/v2/timelineTiming';
 import {
   isAudioItem,
+  isCaptionItem,
   isLayerItem,
   isMediaItem,
   trackAccepts,
   VIDEO_V2_LIMITS,
   type AudioItem,
+  type CaptionItem,
   type MediaItem,
   type VideoItem,
   type VideoPlaybackRate,
@@ -281,6 +284,7 @@ function newTrackIndex(tracks: VideoTrack[], kind: VideoTrackKind, near?: number
 }
 
 function freeKindFor(item: VideoItem): Exclude<VideoTrackKind, 'main'> {
+  if (isCaptionItem(item)) return 'captions';
   return isAudioItem(item) ? 'audio' : isLayerItem(item) ? 'text' : 'overlay';
 }
 
@@ -662,7 +666,7 @@ export function separateSound(original: VideoProjectV2, videoId: string): OpResu
 
 // ─── Split / duplicate / paste ──────────────────────────────────────────────
 
-function splitOne(item: VideoItem, frame: number): [VideoItem, VideoItem] | null {
+function splitOne(item: VideoItem, frame: number, fps: number): [VideoItem, VideoItem] | null {
   const firstDuration = frame - item.from;
   const secondDuration = itemEnd(item) - frame;
   if (firstDuration < minItemFrames || secondDuration < minItemFrames) return null;
@@ -689,6 +693,14 @@ function splitOne(item: VideoItem, frame: number): [VideoItem, VideoItem] | null
     (second as AudioItem).fadeInFrames = 0;
     (second as AudioItem).fadeOutFrames = item.fadeOutFrames ?? 0;
   }
+  if (isCaptionItem(item)) {
+    const words = splitCaption(item, ((frame - item.from) * 1000) / fps);
+    if (!words) return null;
+    (first as CaptionItem).words = words[0];
+    (first as CaptionItem).text = joinWords(words[0]);
+    (second as CaptionItem).words = words[1];
+    (second as CaptionItem).text = joinWords(words[1]);
+  }
   if (isLayerItem(item)) {
     (second as typeof item).layer = { ...item.layer, id: newId('layer') };
     delete (first as typeof item).animationOut;
@@ -713,7 +725,7 @@ export function splitItems(project: VideoProjectV2, ids: string[], frame: number
     }
     if (!(at > loc.item.from && at < itemEnd(loc.item))) continue;
     if (countItems(working) >= maxItems) return fail(project, 'item_limit');
-    const parts = splitOne(loc.item, at);
+    const parts = splitOne(loc.item, at, project.fps);
     if (!parts) continue;
     const items = loc.track.items.slice();
     items.splice(loc.itemIndex, 1, parts[0], parts[1]);

@@ -5,6 +5,12 @@ import type { InspectorActions } from '@/features/dashboard/marketing/components
 import { ChoiceChips } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/ChoiceChips';
 import { TextLookGallery } from '@/features/dashboard/marketing/components/video-editor/v2/TextLookGallery';
 import { VideoTextStyleControls } from '@/features/dashboard/marketing/components/video-editor/VideoTextStyleControls';
+import { withCaptionText } from '@/features/dashboard/marketing/lib/video/v2/captionLines';
+import {
+  CAPTION_LOOKS,
+  CAPTION_SCALE_MAX,
+  CAPTION_SCALE_MIN,
+} from '@/features/dashboard/marketing/lib/video/v2/captionStyle';
 import type { PhoneToolAction } from '@/features/dashboard/marketing/lib/video/v2/phoneTools';
 import {
   applyTextLook,
@@ -12,9 +18,12 @@ import {
 } from '@/features/dashboard/marketing/lib/video/v2/textLooks';
 import {
   isAudioItem,
+  isCaptionItem,
   isLayerItem,
   isMediaItem,
   VIDEO_PLAYBACK_RATES,
+  type CaptionItem,
+  type CaptionLookId,
   type LayerItem,
   type MediaItem,
   type TextAnimation,
@@ -288,6 +297,22 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
       );
     }
     case 'clip-edit': {
+      if (isCaptionItem(item)) {
+        return (
+          <Textarea
+            aria-label="Caption"
+            value={item.text}
+            rows={2}
+            maxLength={200}
+            autoFocus
+            onChange={(event) =>
+              actions.update(item.id, (current) =>
+                withCaptionText(current as CaptionItem, event.target.value, actions.project.fps)
+              )
+            }
+          />
+        );
+      }
       if (!isLayerItem(item)) return null;
       const layer = item.layer;
       return (
@@ -307,6 +332,36 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
       );
     }
     case 'clip-style': {
+      if (isCaptionItem(item)) {
+        const { captionStyle } = actions;
+        return (
+          <>
+            <ChoiceChips<CaptionLookId>
+              label="Look for every caption"
+              value={captionStyle.look}
+              options={CAPTION_LOOKS.map((look) => ({ value: look.id, label: look.label }))}
+              onChange={(look) => actions.setCaptionStyle({ look })}
+            />
+            <NumberSlider
+              label="Size"
+              unit="%"
+              min={Math.round(CAPTION_SCALE_MIN * 100)}
+              max={Math.round(CAPTION_SCALE_MAX * 100)}
+              step={5}
+              value={Math.round(captionStyle.scale * 100)}
+              onChange={(value) => actions.setCaptionStyle({ scale: value / 100 })}
+            />
+            <NumberSlider
+              label="Height on screen"
+              unit="%"
+              min={5}
+              max={95}
+              value={Math.round(captionStyle.y)}
+              onChange={(value) => actions.setCaptionStyle({ y: value })}
+            />
+          </>
+        );
+      }
       if (!isLayerItem(item)) return null;
       return (
         <>
