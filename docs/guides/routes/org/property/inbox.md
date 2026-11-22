@@ -110,7 +110,7 @@ trip page.
 
 ## Behavior
 
-- **Deep links:** `?conversationId=` opens a thread and `?platform=web|facebook|instagram` selects its tab (used by the bookings list chat icon). `?search=` starts with the search box filled (used by **Search Messages**).
+- **Deep links:** `?conversationId=` opens a thread and `?platform=web|facebook|instagram` selects its tab (used by the bookings list chat icon and notification rows). `?messageId=` scrolls that chat pill into view once (Activity / push / toast click-through). `?search=` starts with the search box filled (used by **Search Messages**).
 - **Manage actions:** Desktop (`lg+`) shows separate header buttons — **Channels**, **Quick replies**, **Automation** — each opening a standard split modal (header divider, body padding). Mobile (`max-lg`) groups them in the hero **Inbox actions** menu (bottom sheet).
 - **Platform tabs + sync:** All / Chat / Facebook / Instagram sit in a taller tab track (room around the channel icons). Meta sync status (**Importing chats**, live, delayed, and so on) is a pill on the **right of that same row**, not in the page header. Tapping the pill opens a standard split modal (header divider, body padding, footer actions) with a short status explanation and **How Messages works**. Idle “Not connected” stays hidden; Channels covers connect.
 - **List / thread layout:** driven by the inbox card width (container query), not the viewport, so AI mode canvas and narrow desktops behave like tablets. Below 42rem card width: one pane at a time (list, then thread with a back button). From 42rem: side-by-side with a 17rem list. From 56rem: 400px list. In the split layout, when the filtered list has rows and nothing valid is selected (or the selection left the filter), the newest thread opens automatically (`resolveInboxAutoSelectId`) so the right pane is not an empty “Select a conversation” state. Narrow list-first layouts do not auto-open. A valid selection is kept when new threads arrive at the top.
@@ -191,7 +191,7 @@ trip page.
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
 | Unit  | `supabase/functions/_shared/inboxAiSafetyGuard_test.ts` (formatted account numbers, refusal-plus-figure leak), `tests/evals/aiEvalsOffline.test.ts` (14-case injection fence dataset) | —                     |
 | E2E   | `ui/e2e/features/inbox/inboxThreadListSmoke.spec.ts` (`@ci`) — "open Facebook thread shows org Meta badge", "cross-property match suggests switching to the matched property"         | Meta OAuth, live send |
-| E2E   | `ui/e2e/features/inbox/inboxDeepLink.spec.ts` (`@ci`) — `?conversationId`, `?search`, unknown `?platform`                                                                             | —                     |
+| E2E   | `ui/e2e/features/inbox/inboxDeepLink.spec.ts` (`@ci`) — `?conversationId`, `?messageId` scroll, `?search`, unknown `?platform`                                                        | —                     |
 | E2E   | `ui/e2e/features/dashboard/inboxChatTemplates.spec.ts` (`@ci`) — Insert → Templates, preview → Send body, email templates hidden, 375px sheet                                         | Live Meta flattening  |
 | N/A   | —                                                                                                                                                                                     | Meta connect manual   |
 

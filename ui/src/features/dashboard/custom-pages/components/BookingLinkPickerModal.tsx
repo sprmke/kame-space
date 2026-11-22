@@ -89,11 +89,9 @@ export function BookingLinkPickerModal({ open, onOpenChange, propertySlug, kind 
         sheetLayout="split"
         className="flex max-h-[min(92dvh,44rem)] w-full max-w-[min(calc(100vw-1.5rem),36rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl"
       >
-        <ResponsiveModalHeader className="border-separator shrink-0 space-y-1 border-b px-4 pb-3 pt-1 sm:px-5">
+        <ResponsiveModalHeader className="border-separator shrink-0 border-b px-4 pb-3 pt-1 sm:px-5">
           <ResponsiveModalTitle className="text-left">{copy.title}</ResponsiveModalTitle>
-          <ResponsiveModalDescription className="text-muted-foreground text-xs">
-            {copy.description}
-          </ResponsiveModalDescription>
+          <ResponsiveModalDescription>{copy.description}</ResponsiveModalDescription>
         </ResponsiveModalHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">

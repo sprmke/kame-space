@@ -77,9 +77,7 @@ export function LegalDocumentSheet({ doc, section, open, onOpenChange }: LegalDo
         <div className="border-border flex shrink-0 items-center gap-1 border-b px-4 py-3 sm:px-5">
           <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <ResponsiveModalTitle>{policy.title}</ResponsiveModalTitle>
-            <ResponsiveModalDescription className="text-muted-foreground text-[11px] sm:text-xs">
-              Updated {LEGAL_LAST_UPDATED}
-            </ResponsiveModalDescription>
+            <ResponsiveModalDescription>Updated {LEGAL_LAST_UPDATED}</ResponsiveModalDescription>
           </div>
           <Link
             to={legalHref(doc, section)}

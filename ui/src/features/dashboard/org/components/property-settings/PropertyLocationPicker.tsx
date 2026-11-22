@@ -48,17 +48,26 @@ export function PropertyLocationPicker({
   const valueRef = useRef(value);
   valueRef.current = value;
 
+  // Keep latest callbacks in refs so Map / Autocomplete effects do not tear down
+  // on every parent re-render (e.g. first keystroke → markFieldInteracted).
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const onFieldInteractRef = useRef(onFieldInteract);
+  onFieldInteractRef.current = onFieldInteract;
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
+
   const applyLocation = useCallback(
     (patch: Partial<PropertyLocationFields>, options?: PropertyLocationChangeOptions) => {
       if (options?.markEdited !== false) {
-        if ('address' in patch) onFieldInteract?.('property-address');
+        if ('address' in patch) onFieldInteractRef.current?.('property-address');
         if ('latitude' in patch || 'longitude' in patch) {
-          onFieldInteract?.('property-location-map');
+          onFieldInteractRef.current?.('property-location-map');
         }
       }
-      onChange(patch, options);
+      onChangeRef.current(patch, options);
     },
-    [onChange, onFieldInteract]
+    []
   );
 
   const syncMarkerAndMap = useCallback((latitude: number, longitude: number) => {
@@ -116,39 +125,49 @@ export function PropertyLocationPicker({
     [applyLocation, syncMarkerAndMap]
   );
 
+  const reverseGeocodeRef = useRef(reverseGeocode);
+  reverseGeocodeRef.current = reverseGeocode;
+  const applyLocationRef = useRef(applyLocation);
+  applyLocationRef.current = applyLocation;
+  const syncMarkerAndMapRef = useRef(syncMarkerAndMap);
+  syncMarkerAndMapRef.current = syncMarkerAndMap;
+  const geocodeAddressRef = useRef(geocodeAddress);
+  geocodeAddressRef.current = geocodeAddress;
+
   useEffect(() => {
     if (!ready || !mapContainerRef.current || mapRef.current) return;
 
     const current = valueRef.current;
     const latitude = current.latitude ?? DEFAULT_PROPERTY_MAP_CENTER.lat;
     const longitude = current.longitude ?? DEFAULT_PROPERTY_MAP_CENTER.lng;
+    const container = mapContainerRef.current;
 
-    const map = new google.maps.Map(mapContainerRef.current, {
+    const map = new google.maps.Map(container, {
       center: { lat: latitude, lng: longitude },
       zoom: current.latitude != null ? 16 : 11,
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: true,
-      gestureHandling: disabled ? 'none' : 'greedy',
+      gestureHandling: disabledRef.current ? 'none' : 'greedy',
     });
 
     const marker = new google.maps.Marker({
       position: { lat: latitude, lng: longitude },
       map,
-      draggable: !disabled,
+      draggable: !disabledRef.current,
     });
 
     geocoderRef.current = new google.maps.Geocoder();
 
     marker.addListener('dragend', () => {
       const position = marker.getPosition();
-      if (position) reverseGeocode(position);
+      if (position) reverseGeocodeRef.current(position);
     });
 
     map.addListener('click', (event: google.maps.MapMouseEvent) => {
-      if (disabled || !event.latLng) return;
+      if (disabledRef.current || !event.latLng) return;
       marker.setPosition(event.latLng);
-      reverseGeocode(event.latLng);
+      reverseGeocodeRef.current(event.latLng);
     });
 
     mapRef.current = map;
@@ -158,12 +177,20 @@ export function PropertyLocationPicker({
       google.maps.event.clearInstanceListeners(marker);
       google.maps.event.clearInstanceListeners(map);
       marker.setMap(null);
+      // Clear Google's leftover DOM so a later init is not on a dirty node.
+      container.replaceChildren();
       mapRef.current = null;
       markerRef.current = null;
       geocoderRef.current = null;
       initialGeocodeDoneRef.current = false;
     };
-  }, [disabled, ready, reverseGeocode]);
+  }, [ready]);
+
+  useEffect(() => {
+    if (!mapRef.current || !markerRef.current) return;
+    markerRef.current.setDraggable(!disabled);
+    mapRef.current.setOptions({ gestureHandling: disabled ? 'none' : 'greedy' });
+  }, [disabled]);
 
   useEffect(() => {
     if (!ready || !mapRef.current || !markerRef.current) return;
@@ -177,7 +204,8 @@ export function PropertyLocationPicker({
   useEffect(() => {
     if (!ready || !inputRef.current || disabled) return;
 
-    const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
+    const input = inputRef.current;
+    const autocomplete = new google.maps.places.Autocomplete(input, {
       fields: ['name', 'formatted_address', 'geometry', 'place_id', 'address_components'],
       componentRestrictions: { country: 'ph' },
     });
@@ -188,17 +216,17 @@ export function PropertyLocationPicker({
       if (!location?.latitude || location.longitude == null) return;
 
       skipInputSyncRef.current = true;
-      applyLocation(location);
+      applyLocationRef.current(location);
       if (inputRef.current) {
         inputRef.current.value = location.address;
       }
-      syncMarkerAndMap(location.latitude, location.longitude);
+      syncMarkerAndMapRef.current(location.latitude, location.longitude);
     });
 
     return () => {
       google.maps.event.clearInstanceListeners(autocomplete);
     };
-  }, [applyLocation, disabled, ready, syncMarkerAndMap]);
+  }, [disabled, ready]);
 
   useEffect(() => {
     if (!ready || initialGeocodeDoneRef.current) return;
@@ -209,8 +237,8 @@ export function PropertyLocationPicker({
     if (!value.address.trim()) return;
 
     initialGeocodeDoneRef.current = true;
-    geocodeAddress(value.address, { markEdited: false });
-  }, [geocodeAddress, ready, value.address, value.latitude, value.longitude]);
+    geocodeAddressRef.current(value.address, { markEdited: false });
+  }, [ready, value.address, value.latitude, value.longitude]);
 
   useEffect(() => {
     if (!inputRef.current) return;
@@ -224,7 +252,7 @@ export function PropertyLocationPicker({
   }, [value.address]);
 
   const handleAddressBlur = () => {
-    onFieldInteract?.('property-address');
+    onFieldInteractRef.current?.('property-address');
     const nextAddress = inputRef.current?.value.trim() ?? '';
     if (nextAddress === value.address.trim()) return;
     applyLocation({ address: nextAddress });
@@ -249,7 +277,7 @@ export function PropertyLocationPicker({
           disabled={disabled}
           placeholder="Search or enter property address"
           autoComplete="off"
-          onInput={() => onFieldInteract?.('property-address')}
+          onInput={() => onFieldInteractRef.current?.('property-address')}
           onBlur={handleAddressBlur}
           aria-invalid={Boolean(addressError)}
           className={cn('min-h-[44px]', addressError && 'border-destructive')}

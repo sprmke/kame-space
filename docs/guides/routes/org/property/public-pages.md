@@ -23,7 +23,7 @@ Legacy URL `/custom-pages` redirects here.
 | Design your pages  | —        | —          | Documented | Showcase + Stay Guide + Property; Edit + last-edited from page configs                                                  |
 | Share links        | —        | —          | Documented | Calendar, Form, Find parking; copy works with no booking                                                                |
 | Booking links      | —        | —          | Documented | Messages, SD Refund, Guest Review; copy needs stay dates or an eligible booking                                         |
-| Copy links menu    | —        | —          | Documented | Page header primary menu lists every guest-shareable link; picker links open their modal                                |
+| Copy links menu    | —        | —          | Documented | Header menu lists guest-shareable links under Design / Share / Booking labels; picker links open their modal            |
 | Stay Guide editor  | —        | explore    | Documented | 6-template engine (shared w/ Showcase): Template / Sections / Style + Content (WYSIWYG/images); live preview; save Pro+ |
 | Showcase editor    | explore  | Pro save   | Documented | Same explore-open + save gate as Stay Guide; live URL → `propertyShowcase`                                              |
 | Page Editor chrome | —        | —          | Documented | Fixed 480px sidebar; viewport + undo/redo in editor dock (phone) / unlabeled bar (`lg+`); no Preview strip              |
@@ -80,7 +80,7 @@ Three sections:
    - **Messages** — pick a check-in / check-out range; the copied link keeps both dates.
    - **SD Refund / Guest Review** — list of eligible stays (READY_FOR_CHECKOUT, PENDING_SD_REFUND) with a **Copy** button per stay. COMPLETED stays are excluded because the refund is already settled. Empty state when no stay qualifies.
 
-Page header **Copy links** menu: primary button on desktop with a chevron, icon-only in the mobile hero. Lists every `guestShareable` page (all cards except Stay Guide, which is preview-only) and runs the same action as the card: direct link copy, or the date / booking picker. Dividers separate Design, Share, and Booking links. Same grid as above: 1 / 2 (`sm`) / **3 (`lg`)**.
+Page header **Copy links** menu: primary button on desktop with a chevron, icon-only in the mobile hero. Lists every `guestShareable` page (all cards except Stay Guide, which is preview-only) and runs the same action as the card: direct link copy, or the date / booking picker. Groups are labeled **Design**, **Share**, and **Booking** (same sections as the gallery), with dividers between them. Same grid as above: 1 / 2 (`sm`) / **3 (`lg`)**.
 
 Each card lazy-loads a **scaled live iframe** at **1280px desktop width** (`?embed=1`). Booking-scoped pages render host embed previews when `embed=1` without a booking id. Page subtitle: "Every guest URL for this listing." Registry fields `group` (`design` | `share` | `booking`), `guestShareable`, and `copyPicker` (`stay-dates` | `sd-refund` | `guest-review`) drive grouping, menu contents, and copy behavior (no hardcoded IDs in the page).
 

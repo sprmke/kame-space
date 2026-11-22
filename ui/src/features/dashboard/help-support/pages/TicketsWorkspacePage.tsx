@@ -275,7 +275,8 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
                 {newTicketButton}
               </div>
             ) : null
-          ) : (
+          ) : // Host: title only when the list has tickets (no flash on empty / error).
+          !isEmpty && !isError ? (
             <div className="flex shrink-0 items-center justify-between gap-3 border-b px-3 py-2.5">
               <h3
                 id="my-tickets-heading"
@@ -285,7 +286,7 @@ export function TicketsWorkspacePage({ basePathOverride }: TicketsWorkspacePageP
               </h3>
               {showHeaderNew ? newTicketButton : null}
             </div>
-          )}
+          ) : null}
 
           <div
             className={cn(

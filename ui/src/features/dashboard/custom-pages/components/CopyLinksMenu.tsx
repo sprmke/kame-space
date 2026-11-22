@@ -9,6 +9,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -20,6 +21,8 @@ export type CopyLinkMenuItem = {
   onSelect: () => void;
   /** Render a divider above this item (group boundary). */
   separatorBefore?: boolean;
+  /** Section heading shown above the first item in a group. */
+  groupLabel?: string;
 };
 
 type Props = {
@@ -29,6 +32,14 @@ type Props = {
 };
 
 const MENU_LABEL = 'Copy links';
+
+function MobileGroupLabel({ label }: { label: string }) {
+  return (
+    <p className="text-muted-foreground px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wide first:pt-1">
+      {label}
+    </p>
+  );
+}
 
 /** Copy menu for every guest-shareable link on the page. Picker actions run from here too. */
 export function CopyLinksMenu({ items, variant }: Props) {
@@ -56,6 +67,7 @@ export function CopyLinksMenu({ items, variant }: Props) {
                   {item.separatorBefore ? (
                     <div className="border-border/60 mx-4 border-t" aria-hidden />
                   ) : null}
+                  {item.groupLabel ? <MobileGroupLabel label={item.groupLabel} /> : null}
                   <MobileChoiceItem
                     label={item.label}
                     icon={<Icon className="size-5" aria-hidden />}
@@ -88,6 +100,9 @@ export function CopyLinksMenu({ items, variant }: Props) {
           return (
             <Fragment key={item.key}>
               {item.separatorBefore ? <DropdownMenuSeparator /> : null}
+              {item.groupLabel ? (
+                <DropdownMenuLabel className="!text-[10px]">{item.groupLabel}</DropdownMenuLabel>
+              ) : null}
               <DropdownMenuItem onSelect={() => item.onSelect()} className="min-h-[44px] gap-2">
                 <Icon className="size-4 shrink-0" aria-hidden />
                 {item.label}

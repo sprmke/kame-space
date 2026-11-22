@@ -86,7 +86,7 @@ Resume after OAuth (guest): `sessionStorage` (`guestAuthResume.ts`) restores nav
 
 **Layout (lg+, host routes):** 50/50 split — left **`HostWorkspaceSidePanel`** (`variant="auth"`) shared with onboarding: solid **`bg-primary`**, **`MarketingBrandLogo`** in `.public-brand-bar` (same height as **`MarketingNav`** and the same left inset via `--public-shell-px`), headline + description, compact **`HostDashboardTourPlayer`** (expand modal — the tour film is theme-aware and follows the viewer's light/dark choice; see `for-hosts.md` § Dark mode). No footer links on the panel.
 
-**Shared panel shell:** host and guest left panels both render through **`AuthSidePanelShell`** (`marketing/shared/components`): `aside` on solid **`bg-primary-strong`**, logo in `.public-brand-bar`, left-aligned title and showcase sharing the same `--public-shell-px` gutter (no centered max-width drift). The content column uses `pt-[var(--public-nav-h)]` so the heading clears the logo. The phone auth header uses the same brand bar.
+**Shared panel shell:** host and guest left panels both render through **`AuthSidePanelShell`** (`marketing/shared/components`): `aside` on solid **`bg-primary-strong`**, logo in `.public-brand-bar` (nav-aligned top-left via `--public-shell-px`, unchanged). Headline + showcase sit in a `max-w-xl` column with the same gutter: flush to the logo edge when the half-panel is tight (`lg`), horizontally centered in the green panel when the half-panel is wider (`xl+`). Copy stays left-aligned inside the column. The content stack uses `pt-[var(--public-nav-h)]` so the heading clears the logo. The phone auth header uses the same brand bar.
 
 ### Guest sign-in layout
 

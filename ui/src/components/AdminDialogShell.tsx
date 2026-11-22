@@ -2,8 +2,10 @@ import type { ReactNode } from 'react';
 
 import {
   MODAL_BODY_CLASS,
+  MODAL_DESCRIPTION_CLASS,
   MODAL_FOOTER_CLASS,
   MODAL_HEADER_CLASS,
+  MODAL_HEADER_STACK_CLASS,
 } from '@/components/ui/modal-chrome';
 import {
   ResponsiveModal,
@@ -82,17 +84,12 @@ export function AdminDialogShell({
         {...(description == null ? { 'aria-describedby': undefined } : {})}
       >
         <ResponsiveModalHeader
-          className={cn(
-            /* Override DialogHeader gap-2 / SheetHeader space-y-2 so title + subtitle sit tight. */
-            'gap-1 space-y-1 text-left',
-            MODAL_HEADER_CLASS,
-            headerClassName
-          )}
+          className={cn(MODAL_HEADER_CLASS, MODAL_HEADER_STACK_CLASS, 'text-left', headerClassName)}
         >
           {typeof title === 'string' ? <ResponsiveModalTitle>{title}</ResponsiveModalTitle> : title}
           {description != null ? (
             typeof description === 'string' ? (
-              <ResponsiveModalDescription className="leading-snug">
+              <ResponsiveModalDescription className={MODAL_DESCRIPTION_CLASS}>
                 {description}
               </ResponsiveModalDescription>
             ) : (

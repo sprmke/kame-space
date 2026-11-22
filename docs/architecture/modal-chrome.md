@@ -34,15 +34,21 @@ Both families therefore land on the same gutter: **16px on phone, 20px from `sm`
 
 ## 2. The scale
 
-| Zone             | Classes                          | Phone | `sm`+ |
-| ---------------- | -------------------------------- | ----- | ----- |
-| Header row       | `px-4 sm:px-5 py-3`              | 16/12 | 20/12 |
-| Scrollable body  | `px-4 sm:px-5 py-4`              | 16/16 | 20/16 |
-| Footer / actions | `px-4 sm:px-5 py-3`              | 16/12 | 20/12 |
-| Title            | `text-base font-bold sm:text-lg` | 16px  | 18px  |
+| Zone             | Classes                               | Phone | `sm`+ |
+| ---------------- | ------------------------------------- | ----- | ----- |
+| Header row       | `px-4 sm:px-5 py-3`                   | 16/12 | 20/12 |
+| Title ↔ subtitle | `gap-1` (`MODAL_HEADER_STACK_CLASS`)  | 4px   | 4px   |
+| Description      | `text-sm` (`MODAL_DESCRIPTION_CLASS`) | 14px  | 14px  |
+| Scrollable body  | `px-4 sm:px-5 py-4`                   | 16/16 | 20/16 |
+| Footer / actions | `px-4 sm:px-5 py-3`                   | 16/12 | 20/12 |
+| Title            | `text-base font-bold sm:text-lg`      | 16px  | 18px  |
 
 - **Header / footer are chrome** → tight (12px vertical). They repeat on every
   modal, so extra vertical space compounds.
+- **Title and description stay close.** `DialogHeader` / `SheetHeader` /
+  `AlertDialogHeader` apply `gap-1 space-y-0` after caller classes so a
+  `space-y-2` / `space-y-4` on the header cannot double with flex gap and leave
+  a large empty band. Description is always `text-sm`, never `text-xs`.
 - **Body is content** → 16px vertical. Form fields keep their own rhythm
   (`space-y-4`) inside it.
 - Hairlines (`border-b` on the header, `border-t` on the footer) separate the
@@ -77,6 +83,21 @@ identical.
 
 > If you add a header action next to the close button, keep it in the header row
 > — do not stack it above or below the title.
+
+### Close gutter (do not break this)
+
+The absolute close needs reserved header padding on the right
+(`MODAL_HEADER_CLOSE_GUTTER_CLASS` = `pr-12 sm:pr-14`).
+
+**Trap:** `cn('… pr-11', 'px-4')` drops the `pr-*` because Tailwind Merge treats
+`px-4` as setting both left and right. That is how the Booking Workflow Free/Paid
+tabs slid under the X after the 2026-11-11 chrome normalize (headers gained
+`px-4` / `sm:px-5` without a surviving close gutter).
+
+**Guard:** `DialogHeader` always appends `MODAL_HEADER_CLOSE_GUTTER_CLASS` **after**
+the caller `className`, so a `px-*` override cannot wipe the slot. Prefer
+`MODAL_HEADER_CLASS` (uses `pl-*` + the gutter, not `px-*`). Unit test:
+`ui/src/components/ui/modalChromeCloseGutter.test.ts`.
 
 ---
 
