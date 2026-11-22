@@ -437,6 +437,17 @@ export async function installPropertyBookingParkingMocks(
     await fulfillJson(route, { success: false, error: 'Booking not found' }, 404);
   });
 
+  await page.route('**/functions/v1/booking-help**', async (route) => {
+    if (route.request().method() === 'GET') {
+      await fulfillJson(route, { success: true, data: { request: null } });
+      return;
+    }
+    await fulfillJson(route, {
+      success: true,
+      data: { request: { id: 'e2e-help-request', status: 'resolved' } },
+    });
+  });
+
   await page.route('**/rest/v1/guest_submissions*', async (route) => {
     const url = new URL(route.request().url());
     const id = url.searchParams.get('id');
