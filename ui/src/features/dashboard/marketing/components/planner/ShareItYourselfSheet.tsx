@@ -7,6 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import {
+  MODAL_BODY_CLASS,
+  MODAL_FOOTER_CLASS,
+  MODAL_HEADER_CLASS,
+} from '@/components/ui/modal-chrome';
+import {
   ResponsiveModal,
   ResponsiveModalContent,
   ResponsiveModalFooter,
@@ -19,6 +24,7 @@ import {
   resolveSharePlan,
 } from '@/features/dashboard/marketing/lib/planner/plannerShare';
 import type { PlannerItemDto } from '@/features/dashboard/marketing/lib/planner/plannerApi';
+import { cn } from '@/lib/utils';
 
 type Props = {
   open: boolean;
@@ -53,7 +59,8 @@ export function ShareItYourselfSheet({ open, onOpenChange, item, onPosted, isPos
 
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
   const caption = buildShareText(item, origin);
-  const targets = item.manualTargets.length > 0 ? item.manualTargets : [channelLabel(item.channelKind)];
+  const targets =
+    item.manualTargets.length > 0 ? item.manualTargets : [channelLabel(item.channelKind)];
 
   const toggle = (target: string) => {
     setDone((current) =>
@@ -92,15 +99,25 @@ export function ShareItYourselfSheet({ open, onOpenChange, item, onPosted, isPos
 
   return (
     <ResponsiveModal open={open} onOpenChange={onOpenChange}>
-      <ResponsiveModalContent>
-        <ResponsiveModalHeader>
+      <ResponsiveModalContent
+        sheetLayout="split"
+        className="flex max-h-[min(92dvh,36rem)] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-md sm:p-0"
+      >
+        <ResponsiveModalHeader className={cn(MODAL_HEADER_CLASS, 'space-y-0 text-left')}>
           <ResponsiveModalTitle>{item.title}</ResponsiveModalTitle>
         </ResponsiveModalHeader>
 
-        <div className="space-y-4">
+        <div
+          className={cn(
+            'min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]',
+            MODAL_BODY_CLASS
+          )}
+        >
           <div className="space-y-2">
-            <p className="text-caption text-muted-foreground">Caption</p>
-            <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-muted p-3 text-sm">
+            <p className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
+              Caption
+            </p>
+            <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-xl border border-border/60 bg-muted/30 p-3 text-sm leading-relaxed">
               {caption}
             </pre>
             <Button size="sm" variant="outline" onClick={() => void copyCaption()}>
@@ -109,9 +126,11 @@ export function ShareItYourselfSheet({ open, onOpenChange, item, onPosted, isPos
           </div>
 
           <div className="space-y-2">
-            <p className="text-caption text-muted-foreground">Where you post</p>
+            <p className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
+              Where you post
+            </p>
             {targets.map((target) => (
-              <label key={target} className="flex items-center gap-2 text-sm">
+              <label key={target} className="flex min-h-11 items-center gap-2.5 text-sm">
                 <Checkbox
                   checked={done.includes(target)}
                   onCheckedChange={() => toggle(target)}
@@ -122,7 +141,7 @@ export function ShareItYourselfSheet({ open, onOpenChange, item, onPosted, isPos
             ))}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <label htmlFor="planner-posted-url" className="text-caption text-muted-foreground">
               Post link (optional)
             </label>
@@ -136,7 +155,7 @@ export function ShareItYourselfSheet({ open, onOpenChange, item, onPosted, isPos
           </div>
         </div>
 
-        <ResponsiveModalFooter className="flex flex-wrap gap-2">
+        <ResponsiveModalFooter className={cn(MODAL_FOOTER_CLASS, 'flex flex-wrap gap-2')}>
           {plan === 'copy-only' ? null : (
             <Button size="sm" variant="outline" onClick={() => void share()}>
               Share

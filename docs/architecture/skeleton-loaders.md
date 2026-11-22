@@ -202,6 +202,6 @@ The singleton app loader renders the static F5 shell immediately from the shell-
 ## Marketing Plan tab
 
 `MarketingPlannerSkeleton` (in `MarketingSkeletons.tsx`, re-exported from `AdminSkeletons`) covers
-the Plan tab's async region: one summary line and two agenda groups. The range chips, the tab row
-and the page title stay mounted and interactive, so switching range while loading does not blank
-the tab.
+the Plan modal's async region: one summary line and two agenda groups. The range control and the
+modal title stay mounted and interactive, so switching range while loading does not blank the
+sheet.

@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { useAdminLayoutFillMain } from '@/features/dashboard/bookings/lib/adminLayoutFillMain';
 import type { DesignExportPayload } from '@/features/dashboard/marketing/components/design-editor/DesignEditor';
@@ -7,7 +8,8 @@ import {
   PublishDialog,
   type PublishMedia,
 } from '@/features/dashboard/marketing/components/publishing/PublishDialog';
-import { PlannerHome } from '@/features/dashboard/marketing/components/planner/PlannerHome';
+import { PlannerModal } from '@/features/dashboard/marketing/components/planner/PlannerModal';
+import { PlannerOpenButton } from '@/features/dashboard/marketing/components/planner/PlannerOpenButton';
 import { MarketingEditorHost } from '@/features/dashboard/marketing/components/shared/MarketingEditorHost';
 import {
   MarketingStudioModeTabs,
@@ -27,6 +29,10 @@ import {
   loadMarketingVideoEditor,
 } from '@/features/dashboard/marketing/lib/marketingEditorPreload';
 import {
+  isPlannerOpen,
+  setPlannerOpen,
+} from '@/features/dashboard/marketing/lib/planner/plannerRoute';
+import {
   isMarketingEditorTab,
   normalizeMarketingStudioTab,
 } from '@/features/dashboard/marketing/lib/theme/marketingStudioNav';
@@ -39,8 +45,8 @@ import {
   MarketingEditorSkeleton,
   MarketingLibraryBodySkeleton,
 } from '@/components/skeletons/AdminSkeletons';
-import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { useFeatureAvailability } from '@/lib/featureAvailability/useFeatureAvailability';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 
 // Lazy-loaded: Polotno (posts), Remotion (videos) and the calendar builder are heavy and
 // only load when a design is opened, never for the Library. Same specifiers as
@@ -81,9 +87,25 @@ export function MarketingStudioPage() {
 
 function MarketingStudioWorkspace() {
   const { view, tab, tabReady, setTab, active, item, openItem } = useMarketingTheme();
+  const [searchParams, setSearchParams] = useSearchParams();
   const aiStudioAvailability = useFeatureAvailability('marketing.ai_studio');
   const [publishOpen, setPublishOpen] = useState(false);
   const [publishMedia, setPublishMedia] = useState<PublishMedia | null>(null);
+  const plannerOpen = isPlannerOpen(searchParams);
+
+  const setPlannerModalOpen = useCallback(
+    (open: boolean) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          setPlannerOpen(next, open);
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
 
   const openPublishWithBlob = useCallback(
     (blob: Blob, mediaType: 'image' | 'video', templateId?: string) => {
@@ -97,13 +119,19 @@ function MarketingStudioWorkspace() {
   // Focus mode: while a design or an AI creation is open, the tab row gives way to its
   // own top bar.
   const editorOpen = (isMarketingEditorTab(tab) || tab === 'generate') && item.mode !== 'library';
-  // Theme is page-level context: beside the page title on desktop, atop the card on phones.
   const isBelowLg = useIsBelowLg();
-  const themeBar = showThemes ? null : <ThemeContextBar />;
+  // Plan is a page action (covers every studio tab). Theme chip stays on the tab row (always compact).
+  const showStudioChrome = !showThemes && !editorOpen;
+  const planButton = showStudioChrome ? (
+    <PlannerOpenButton
+      onClick={() => setPlannerModalOpen(true)}
+      variant={isBelowLg ? 'hero' : 'default'}
+    />
+  ) : null;
+  const themeBar = showStudioChrome ? <ThemeContextBar compact /> : null;
 
   const content = (() => {
     if (showThemes) return <ThemesHome />;
-    if (tab === 'plan') return <PlannerHome />;
     if (!active || !tabReady) {
       if (tab === 'generate') {
         return item.mode === 'library' ? (
@@ -210,11 +238,12 @@ function MarketingStudioWorkspace() {
           title="Marketing"
           subtitle="Make posts, videos and calendars in one theme."
           titleId="marketing-heading"
+          heroTrailing={planButton}
+          desktopActions={planButton}
         >
           <MarketingStudioShell
-            leading={isBelowLg && !editorOpen ? themeBar : null}
-            tabs={showThemes || editorOpen ? null : <MarketingStudioModeTabs />}
-            actions={!isBelowLg && !editorOpen ? themeBar : null}
+            tabs={showStudioChrome ? <MarketingStudioModeTabs /> : null}
+            actions={themeBar}
             hasDock={editorOpen && isMarketingEditorTab(tab)}
           >
             {content}
@@ -222,6 +251,7 @@ function MarketingStudioWorkspace() {
         </AdminMobilePage>
       </SlidingTabs>
 
+      <PlannerModal open={plannerOpen} onOpenChange={setPlannerModalOpen} />
       <PublishDialog open={publishOpen} onOpenChange={setPublishOpen} media={publishMedia} />
     </>
   );

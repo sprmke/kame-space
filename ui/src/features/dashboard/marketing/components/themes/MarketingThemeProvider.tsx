@@ -31,6 +31,7 @@ import {
   type MarketingTemplateRef,
 } from '@/features/dashboard/marketing/lib/marketingStudioRoute';
 import { loadMarketingFonts } from '@/features/dashboard/marketing/lib/theme/marketingFontLoader';
+import { migrateLegacyPlanTab } from '@/features/dashboard/marketing/lib/planner/plannerRoute';
 import {
   isMarketingStudioTab,
   readLastMarketingTab,
@@ -176,6 +177,14 @@ export function MarketingThemeProvider({ children }: { children: ReactNode }) {
     },
     [setSearchParams]
   );
+
+  // Retired Plan tab (`?tab=plan`) → open the planner modal (`?plan=1`).
+  useEffect(() => {
+    if (tabParam !== 'plan') return;
+    updateParams((params) => {
+      migrateLegacyPlanTab(params);
+    }, true);
+  }, [tabParam, updateParams]);
 
   // A deleted / unknown theme: fall back to Property colors once we know for sure.
   const warnedKeyRef = useRef<string | null>(null);

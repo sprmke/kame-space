@@ -3,12 +3,18 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
+  MODAL_BODY_CLASS,
+  MODAL_FOOTER_CLASS,
+  MODAL_HEADER_CLASS,
+} from '@/components/ui/modal-chrome';
+import {
   ResponsiveModal,
   ResponsiveModalContent,
   ResponsiveModalFooter,
   ResponsiveModalHeader,
   ResponsiveModalTitle,
 } from '@/components/ui/responsive-modal';
+import { cn } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -93,9 +99,13 @@ export function PlanItemSheet({
   photoOptions = [],
 }: Props) {
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
-    if (open && item) setDraft(draftFrom(item));
+    if (open && item) {
+      setDraft(draftFrom(item));
+      setEditing(false);
+    }
   }, [open, item]);
 
   const isDirty = Boolean(draft && item && !sameDraft(draft, draftFrom(item)));
@@ -124,7 +134,10 @@ export function PlanItemSheet({
     onOpenChange,
     isDirty,
     onSave: async () => ((await save()) ? true : false),
-    onDiscard: () => item && setDraft(draftFrom(item)),
+    onDiscard: () => {
+      if (item) setDraft(draftFrom(item));
+      setEditing(false);
+    },
   });
 
   if (!item || !draft) return null;
@@ -134,208 +147,246 @@ export function PlanItemSheet({
   return (
     <>
       <ResponsiveModal open={open} onOpenChange={guard.onOpenChange}>
-        <ResponsiveModalContent>
-          <ResponsiveModalHeader>
+        <ResponsiveModalContent
+          sheetLayout="split"
+          className="flex max-h-[min(92dvh,40rem)] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg sm:p-0"
+        >
+          <ResponsiveModalHeader className={cn(MODAL_HEADER_CLASS, 'space-y-0 text-left')}>
             <ResponsiveModalTitle>{item.title}</ResponsiveModalTitle>
           </ResponsiveModalHeader>
 
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <label htmlFor="planner-item-title" className="text-caption text-muted-foreground">
-                Title
-              </label>
-              <Input
-                id="planner-item-title"
-                value={draft.title}
-                maxLength={120}
-                onChange={(event) => setDraft({ ...draft, title: event.target.value })}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label htmlFor="planner-item-hook" className="text-caption text-muted-foreground">
-                First line
-              </label>
-              <Input
-                id="planner-item-hook"
-                value={draft.hook}
-                maxLength={80}
-                onChange={(event) => setDraft({ ...draft, hook: event.target.value })}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label htmlFor="planner-item-message" className="text-caption text-muted-foreground">
-                Caption
-              </label>
-              <textarea
-                id="planner-item-message"
-                value={draft.message}
-                maxLength={500}
-                rows={3}
-                className="w-full rounded-lg border border-input bg-background p-2 text-sm"
-                onChange={(event) => setDraft({ ...draft, message: event.target.value })}
-              />
-            </div>
-
-            {onRefresh ? (
-              <div className="flex flex-wrap gap-2">
-                {(
-                  [
-                    ['shorter', 'Shorter'],
-                    ['playful', 'More playful'],
-                    ['taglish', 'Taglish'],
-                  ] as const
-                ).map(([instruction, label]) => (
-                  <Button
-                    key={instruction}
-                    size="sm"
-                    variant="outline"
-                    disabled={isRefreshing}
-                    onClick={async () => {
-                      const next = await onRefresh(item, instruction);
-                      if (next) setDraft(draftFrom(next));
-                    }}
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
-            ) : null}
-
-            <div className="space-y-1">
-              <label htmlFor="planner-item-cta" className="text-caption text-muted-foreground">
-                Call to action
-              </label>
-              <Input
-                id="planner-item-cta"
-                value={draft.cta}
-                maxLength={40}
-                onChange={(event) => setDraft({ ...draft, cta: event.target.value })}
-              />
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <label
-                  htmlFor="planner-item-schedule"
-                  className="text-caption text-muted-foreground"
-                >
-                  When
-                </label>
-                <Input
-                  id="planner-item-schedule"
-                  type="datetime-local"
-                  value={draft.scheduledFor}
-                  onChange={(event) => setDraft({ ...draft, scheduledFor: event.target.value })}
-                />
-              </div>
-              <div className="space-y-1">
-                <span className="text-caption text-muted-foreground">Format</span>
-                <Select
-                  value={draft.format}
-                  onValueChange={(next) => setDraft({ ...draft, format: next })}
-                >
-                  <SelectTrigger aria-label="Format">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FORMATS.map((format) => (
-                      <SelectItem key={format} value={format}>
-                        {formatLabel(format)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {photoOptions.length > 0 ? (
-              <div className="space-y-2">
-                <p className="text-caption text-muted-foreground">Suggested photos</p>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {photoOptions.map((url) => {
-                    const selected = draft.photoUrls.includes(url);
-                    return (
-                      <button
-                        key={url}
-                        type="button"
-                        aria-pressed={selected}
-                        aria-label={selected ? 'Remove photo' : 'Use photo'}
-                        onClick={() =>
-                          setDraft({
-                            ...draft,
-                            photoUrls: togglePhotoSelection(draft.photoUrls, url, 5),
-                          })
-                        }
-                        className={`size-16 shrink-0 overflow-hidden rounded-lg border-2 ${
-                          selected ? 'border-primary' : 'border-transparent'
-                        }`}
-                      >
-                        <img src={url} alt="" className="size-full object-cover" loading="lazy" />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
-
-            <div className="rounded-lg bg-muted p-3 text-sm">
+          <div
+            className={cn(
+              'min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]',
+              MODAL_BODY_CLASS
+            )}
+          >
+            <div className="space-y-2 rounded-xl border border-border/60 bg-muted/30 p-3.5">
+              {draft.hook ? <p className="text-sm font-medium leading-snug">{draft.hook}</p> : null}
+              {draft.message ? (
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{draft.message}</p>
+              ) : null}
+              {draft.cta ? <p className="text-caption text-muted-foreground">{draft.cta}</p> : null}
               <p className="text-caption text-muted-foreground">
-                {channelLabel(item.channelKind)} · what this says
+                {channelLabel(item.channelKind)} · {formatLabel(draft.format)}
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <p className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
+                Dates & price
               </p>
               {claims.length > 0 ? (
-                <ul className="mt-1 space-y-0.5">
+                <ul className="space-y-0.5 text-sm">
                   {claims.map((line) => (
                     <li key={line}>{line}</li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-1">No dates or prices claimed.</p>
+                <p className="text-sm text-muted-foreground">No dates or prices in this post.</p>
               )}
               {item.brief.why ? (
-                <p className="mt-2 text-caption text-muted-foreground">{item.brief.why}</p>
+                <p className="text-caption text-muted-foreground">{item.brief.why}</p>
               ) : null}
             </div>
 
             {item.trackedVisits > 0 || item.insights ? (
-              <div className="space-y-1 text-sm">
-                <p className="text-caption text-muted-foreground">Results</p>
+              <div className="space-y-1.5">
+                <p className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
+                  Results
+                </p>
                 {item.trackedVisits > 0 ? (
-                  <p>
+                  <p className="text-sm">
                     {item.trackedVisits}{' '}
-                    {item.trackedVisits === 1 ? 'person opened' : 'people opened'} your page from
-                    this post.
+                    {item.trackedVisits === 1 ? 'visit' : 'visits'} from this link
                   </p>
                 ) : null}
                 {item.insights?.views != null ? (
-                  <p>{item.insights.views} views on the platform.</p>
+                  <p className="text-sm">{item.insights.views} views</p>
                 ) : null}
                 {item.insights?.reach != null ? (
-                  <p>{item.insights.reach} accounts reached.</p>
+                  <p className="text-sm">{item.insights.reach} reached</p>
                 ) : null}
               </div>
             ) : null}
+
+            {!editing ? (
+              <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+                Edit copy
+              </Button>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label htmlFor="planner-item-title" className="text-caption text-muted-foreground">
+                    Title
+                  </label>
+                  <Input
+                    id="planner-item-title"
+                    value={draft.title}
+                    maxLength={120}
+                    onChange={(event) => setDraft({ ...draft, title: event.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label htmlFor="planner-item-hook" className="text-caption text-muted-foreground">
+                    First line
+                  </label>
+                  <Input
+                    id="planner-item-hook"
+                    value={draft.hook}
+                    maxLength={80}
+                    onChange={(event) => setDraft({ ...draft, hook: event.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label
+                    htmlFor="planner-item-message"
+                    className="text-caption text-muted-foreground"
+                  >
+                    Caption
+                  </label>
+                  <textarea
+                    id="planner-item-message"
+                    value={draft.message}
+                    maxLength={500}
+                    rows={3}
+                    className="w-full rounded-lg border border-input bg-background p-2 text-sm"
+                    onChange={(event) => setDraft({ ...draft, message: event.target.value })}
+                  />
+                </div>
+
+                {onRefresh ? (
+                  <div className="flex flex-wrap gap-2">
+                    {(
+                      [
+                        ['shorter', 'Shorter'],
+                        ['playful', 'More playful'],
+                        ['taglish', 'Taglish'],
+                      ] as const
+                    ).map(([instruction, label]) => (
+                      <Button
+                        key={instruction}
+                        size="sm"
+                        variant="outline"
+                        disabled={isRefreshing}
+                        onClick={async () => {
+                          const next = await onRefresh(item, instruction);
+                          if (next) setDraft(draftFrom(next));
+                        }}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div className="space-y-1">
+                  <label htmlFor="planner-item-cta" className="text-caption text-muted-foreground">
+                    Call to action
+                  </label>
+                  <Input
+                    id="planner-item-cta"
+                    value={draft.cta}
+                    maxLength={40}
+                    onChange={(event) => setDraft({ ...draft, cta: event.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <label
+                      htmlFor="planner-item-schedule"
+                      className="text-caption text-muted-foreground"
+                    >
+                      When
+                    </label>
+                    <Input
+                      id="planner-item-schedule"
+                      type="datetime-local"
+                      value={draft.scheduledFor}
+                      onChange={(event) => setDraft({ ...draft, scheduledFor: event.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-caption text-muted-foreground">Format</span>
+                    <Select
+                      value={draft.format}
+                      onValueChange={(next) => setDraft({ ...draft, format: next })}
+                    >
+                      <SelectTrigger aria-label="Format">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FORMATS.map((format) => (
+                          <SelectItem key={format} value={format}>
+                            {formatLabel(format)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {photoOptions.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-caption text-muted-foreground">Suggested photos</p>
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {photoOptions.map((url) => {
+                        const selected = draft.photoUrls.includes(url);
+                        return (
+                          <button
+                            key={url}
+                            type="button"
+                            aria-pressed={selected}
+                            aria-label={selected ? 'Remove photo' : 'Use photo'}
+                            onClick={() =>
+                              setDraft({
+                                ...draft,
+                                photoUrls: togglePhotoSelection(draft.photoUrls, url, 5),
+                              })
+                            }
+                            className={`size-16 shrink-0 overflow-hidden rounded-lg border-2 ${
+                              selected ? 'border-primary' : 'border-transparent'
+                            }`}
+                          >
+                            <img
+                              src={url}
+                              alt=""
+                              className="size-full object-cover"
+                              loading="lazy"
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )}
           </div>
 
-          <ResponsiveModalFooter className="flex flex-wrap gap-2">
+          <ResponsiveModalFooter className={cn(MODAL_FOOTER_CLASS, 'flex flex-wrap gap-2')}>
             {onOpenEditor ? (
-              <Button size="sm" variant="outline" onClick={() => onOpenEditor(item)}>
+              <Button size="sm" onClick={() => onOpenEditor(item)}>
                 Open in editor
               </Button>
             ) : null}
             <Button size="sm" variant="outline" onClick={guard.requestClose}>
               Cancel
             </Button>
-            <Button
-              size="sm"
-              disabled={!isDirty || isSaving}
-              onClick={async () => {
-                if (await save()) guard.onOpenChange(false);
-              }}
-            >
-              {isSaving ? 'Saving' : 'Save'}
-            </Button>
+            {editing ? (
+              <Button
+                size="sm"
+                disabled={!isDirty || isSaving}
+                onClick={async () => {
+                  if (await save()) guard.onOpenChange(false);
+                }}
+              >
+                {isSaving ? 'Saving…' : 'Save'}
+              </Button>
+            ) : null}
           </ResponsiveModalFooter>
         </ResponsiveModalContent>
       </ResponsiveModal>

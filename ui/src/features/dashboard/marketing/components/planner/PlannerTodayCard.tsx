@@ -26,7 +26,7 @@ export function PlannerTodayCard() {
 
   if (!gate.allowed || items.length === 0 || !orgSlug || !propertySlug) return null;
 
-  const href = `/org/${orgSlug}/property/${propertySlug}/marketing?tab=plan&range=today`;
+  const href = `/org/${orgSlug}/property/${propertySlug}/marketing?plan=1&range=today`;
 
   return (
     <Card className="border-border/70">

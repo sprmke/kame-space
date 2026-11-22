@@ -76,6 +76,15 @@ async function installThemesMock(page: Page, initial: ThemeRow[] = []) {
   return state;
 }
 
+/** Compact theme chip: open menu/sheet, then pick an action (All themes / Edit / Customize). */
+async function openThemeMenuAction(page: Page, action: string | RegExp) {
+  await page.getByRole('button', { name: /Theme:/ }).click();
+  const item = page
+    .getByRole('menuitem', { name: action })
+    .or(page.getByRole('dialog', { name: 'Themes' }).getByRole('button', { name: action }));
+  await item.click();
+}
+
 test.describe('@ci marketing themes', () => {
   test('first visit shows the theme picker, then opens the workspace', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
@@ -112,7 +121,7 @@ test.describe('@ci marketing themes', () => {
     await expect(page.getByRole('button', { name: /Theme: Garden Bloom/ })).toBeVisible({
       timeout: 20_000,
     });
-    await page.getByRole('button', { name: 'All themes' }).click();
+    await openThemeMenuAction(page, 'All themes');
     await expect(page.getByRole('heading', { name: 'Themes', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: /Back to Garden Bloom/ })).toHaveCount(0);
     const themeGrid = page.locator('ul').filter({
@@ -167,14 +176,13 @@ test.describe('@ci marketing themes', () => {
     expect(created.name).toBe('Summer');
     expect(created.tokens.fonts.display).toBe('Instrument Serif');
 
-    await page.getByRole('button', { name: 'Edit theme' }).click();
+    await openThemeMenuAction(page, 'Edit theme');
     const edit = page.getByRole('dialog', { name: 'Edit theme' });
     await edit.getByLabel('Name').fill('Summer 2026');
     await edit.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByRole('button', { name: /Theme: Summer 2026/ })).toBeVisible();
 
-    await page.getByRole('button', { name: /Theme: Summer 2026/ }).click();
-    await page.getByRole('menuitem', { name: 'All themes' }).click();
+    await openThemeMenuAction(page, 'All themes');
     await page.getByRole('button', { name: 'Summer 2026 options' }).click();
     await page.getByRole('menuitem', { name: 'Delete' }).click();
     await page.getByRole('button', { name: 'Delete', exact: true }).click();
@@ -290,9 +298,7 @@ test.describe('@ci marketing themes', () => {
       const sheet = page.getByRole('dialog', { name: 'Themes' });
       await expect(sheet).toBeVisible();
       await page.screenshot({ path: 'test-results/marketing-themes-switcher-375.png' });
-      await page.keyboard.press('Escape');
-      await expect(sheet).toHaveCount(0);
-      await page.getByRole('button', { name: 'Customize' }).click();
+      await sheet.getByRole('button', { name: 'Customize' }).click();
       const editor = page.getByRole('dialog', { name: 'Customize Property colors' });
       await expect(editor).toBeVisible();
       await editor.getByRole('button', { name: 'Main color' }).click();

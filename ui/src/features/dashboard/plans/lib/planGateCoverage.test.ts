@@ -201,7 +201,7 @@ const GATE_COVERAGE: Record<PlanFeatureKey, Coverage> = {
   },
   marketingPlanner: {
     client: [
-      'dashboard/marketing/components/shared/MarketingStudioModeTabs.tsx',
+      'dashboard/marketing/components/planner/PlannerOpenButton.tsx',
       'dashboard/marketing/components/planner/PlannerHome.tsx',
     ],
     server: ['marketing-planner'],

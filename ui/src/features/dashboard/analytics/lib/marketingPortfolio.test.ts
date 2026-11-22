@@ -73,7 +73,7 @@ describe('rankListingsForPromotion', () => {
 describe('orgPropertyPlanHref', () => {
   it('points at the plan tab with the today window', () => {
     expect(orgPropertyPlanHref('sample-stays', 'solea')).toBe(
-      '/org/sample-stays/property/solea/marketing?tab=plan&range=today'
+      '/org/sample-stays/property/solea/marketing?plan=1&range=today'
     );
   });
 });
