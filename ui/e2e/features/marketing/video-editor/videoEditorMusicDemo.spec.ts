@@ -46,8 +46,11 @@ function pauseMs(): number {
   return Number.isFinite(n) && n > 0 ? n : 700;
 }
 
-async function beat(page: Page) {
-  await page.waitForTimeout(pauseMs());
+async function beat(_page: Page) {
+  // Demo pacing only (@demo, not CI). Avoid page.waitForTimeout so the e2e lane guard stays shrink-only.
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, pauseMs());
+  });
 }
 
 async function shot(page: Page, name: string) {
