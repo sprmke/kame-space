@@ -4,8 +4,9 @@
  * GET  ?booking_id=&property_id=  → the open request, or null
  * POST { bookingId, helpRequestId } → mark the case resolved
  *
- * A host with `bookings.detail.workflow:edit` on the booking's property. The request row is
- * the audit record; resolving it lets the guest open a new case if another issue appears.
+ * Reading needs `bookings:view` so any teammate who can open the booking sees a guest in
+ * trouble. Resolving needs `bookings.detail.workflow:edit`. The request row is the audit
+ * record; resolving it lets the guest open a new case if another issue appears.
  */
 
 import {
@@ -33,7 +34,9 @@ serveAuthenticated('booking-help', async (req, user) => {
   ).trim();
   if (!bookingId) return jsonError(req, 'bookingId is required');
 
-  const propertyAccess = await resolveScopedPropertyAccess(req, 'bookings.detail.workflow:edit');
+  const requiredPermission =
+    req.method === 'GET' ? ('bookings:view' as const) : ('bookings.detail.workflow:edit' as const);
+  const propertyAccess = await resolveScopedPropertyAccess(req, requiredPermission);
   await verifyBookingBelongsToProperty(bookingId, propertyAccess.property.id);
 
   try {

@@ -8,7 +8,10 @@ import { isOtaPrepaidSource } from './bookingChannel.ts';
 import type { DocumentRequirement, DocumentRequirementCompletion } from './documentRequirements.ts';
 import { parseDocRejectionReason, resolveDocumentRequirements } from './documentRequirements.ts';
 import { createServiceClient } from './orgAuth.ts';
-import { stayBeyondContractEnd } from './stayContractWindow.ts';
+import {
+  assertStayWithinContract as assertStayWithinPropertyContract,
+  PropertyLifecycleError,
+} from './propertyLifecycle.ts';
 import type { PropertyAccessContext } from './orgAuth.ts';
 import {
   bookingAssetPermission,
@@ -710,17 +713,13 @@ export type ApplyBookingDetailsPatchResult = {
 };
 
 async function assertStayWithinContract(propertyId: string, checkOutDate: string): Promise<void> {
-  const { data } = await createServiceClient()
-    .from('properties')
-    .select('settings')
-    .eq('id', propertyId)
-    .maybeSingle();
-  const contractEnd = stayBeyondContractEnd({
-    settings: (data?.settings as Record<string, unknown> | null) ?? null,
-    checkOutDate,
-  });
-  if (contractEnd) {
-    throw new Error(`CONTRACT_ENDED: This listing is only available until ${contractEnd}.`);
+  try {
+    await assertStayWithinPropertyContract(propertyId, checkOutDate);
+  } catch (error) {
+    if (error instanceof PropertyLifecycleError && error.code === 'STAY_EXCEEDS_CONTRACT_END') {
+      throw new Error(`CONTRACT_ENDED: ${error.message}`);
+    }
+    throw error;
   }
 }
 
