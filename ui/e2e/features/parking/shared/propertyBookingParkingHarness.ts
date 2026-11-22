@@ -355,11 +355,12 @@ export async function installPropertyBookingParkingMocks(
         status_updated_at: new Date().toISOString(),
       });
     }
+    // The check-out/SD refund email is deliberately not plan-gated, so Free still sends it.
     await fulfillJson(route, {
       success: true,
       transitioned,
-      checkoutEmailsSent: workflow.freePlan ? 0 : transitioned,
-      transitionedSdEmailSuppressed: workflow.freePlan && transitioned ? 1 : 0,
+      checkoutEmailsSent: transitioned,
+      transitionedSdEmailSuppressed: 0,
     });
   });
 
