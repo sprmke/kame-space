@@ -410,12 +410,9 @@ function PricingOutsideDayCell({
         'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1'
       )}
       onClick={() => onNavigateMonth(startOfMonth(day))}
-      aria-label={`Go to ${format(day, 'MMMM yyyy')}`}
+      aria-label={`${format(day, 'd')}, go to ${format(day, 'MMMM yyyy')}`}
     >
-      <span
-        className="text-muted-foreground text-xs font-semibold leading-none sm:text-sm"
-        aria-hidden
-      >
+      <span className="text-muted-foreground text-xs font-semibold leading-none sm:text-sm">
         {format(day, 'd')}
       </span>
 
