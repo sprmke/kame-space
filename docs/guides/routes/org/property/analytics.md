@@ -2,7 +2,7 @@
 title: 'Analytics — operator guide'
 status: active
 tags: [guides, routes, org, property]
-updated: 2026-11-05
+updated: 2026-11-23
 ---
 
 # Analytics — operator guide
@@ -197,9 +197,21 @@ for `analytics:view`. Same action-level pattern as Finance export.
 Seeded role templates: Full Access → all three; Operations and Read Only → `analytics:view` only;
 other custom roles → none by default (configurable per org).
 
+## Testing
+
+| Layer | Path / spec                                                                                                                                                                                                                                    | Manual |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Unit  | `analytics/lib/*.test.ts` (period, distributions, origins, marketing portfolio, AI review period, export CSV)                                                                                                                                  | —      |
+| E2E   | `ui/e2e/features/analytics/propertyAnalytics.spec.ts` (`@ci`, 15 tests — KPIs, cards, donut a11y, tabs, year preset, trends, AI review, refresh, prior period, sparse layout, PDF download, read-only, free plan, feature switch, phone sheet) | —      |
+| E2E   | `ui/e2e/features/analytics/aiReviewPlaybook.spec.ts` (`@ci`, AI review ↔ playbook hand-off)                                                                                                                                                    | —      |
+| Tour  | `ui/e2e/features/analytics/analyticsTour.slowmo.spec.ts` (`@demo`) — `bun run test:e2e:analytics:tour:video`                                                                                                                                   | —      |
+| N/A   | Real AI model output quality, peer-benchmark sample above the 5-listing threshold, PDF pixel layout                                                                                                                                            | Manual |
+
+UX review evidence (25 captures, 6 recordings, ranked findings): [`docs/workflow/in-progress/analytics-ux-audit/`](../../../../workflow/in-progress/analytics-ux-audit/README.md).
+
 ## States
 
-- **Loading**: `DashboardSkeleton` (shared skeleton, KPI cards + chart placeholders).
+- **Loading**: `PropertyAnalyticsSkeleton` (`ui/src/components/skeletons/AnalyticsSkeleton.tsx`) — KPI cards, tabs and chart placeholders, with the fixed titles rendered immediately.
 - **Sparse / empty period**: full layout still renders (KPIs, tabs, charts). Values and series
   may be zeros or empty when there is little booking history; no full-page "not enough history"
   gate. Chart cards with no signal use a **dashed empty body** (no axis labels or zero-filled
