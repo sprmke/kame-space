@@ -192,7 +192,10 @@ describe('parseVideoProjectV2', () => {
       items: [{ type: 'image', media: { url: `https://img.test/${index}.jpg` } }],
     }));
 
-    const value = parse({ version: 2, tracks: [mainTrack({ type: 'image', media: { url: 'a' } }), ...tracks] });
+    const value = parse({
+      version: 2,
+      tracks: [mainTrack({ type: 'image', media: { url: 'a' } }), ...tracks],
+    });
 
     expect(value.tracks.length).toBeLessThanOrEqual(10);
   });
@@ -248,12 +251,7 @@ describe('parseVideoProjectV2', () => {
   });
 
   it('migrates a v1 project instead of throwing', () => {
-    const v1 = buildDefaultVideoProject(
-      'quiet-morning',
-      'soft-stay',
-      BINDING,
-      'instagram-story'
-    );
+    const v1 = buildDefaultVideoProject('quiet-morning', 'soft-stay', BINDING, 'instagram-story');
 
     const value = parse(v1);
 

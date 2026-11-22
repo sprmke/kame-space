@@ -51,6 +51,7 @@ import {
   VideoClipPanel,
 } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoClipPanel';
 import { VideoExportSheet } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoExportSheet';
+import { TextPresetGrid } from '@/features/dashboard/marketing/components/video-editor/v2/TextPresetGrid';
 import { VideoToolStrip } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoToolStrip';
 import { VideoTrimPanel } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoTrimPanel';
 import {
@@ -129,6 +130,7 @@ import {
 } from '@/features/dashboard/marketing/lib/video/aiLibraryMedia';
 import { isReviewVideoTemplate } from '@/features/dashboard/marketing/lib/video/applyGuestReviewToVideoProject';
 import { applyGuestReviewToVideoProjectV2 } from '@/features/dashboard/marketing/lib/video/v2/applyGuestReviewToVideoProjectV2';
+import { lookColorsFromPalette } from '@/features/dashboard/marketing/lib/video/v2/textLooks';
 import { applyCanvasPatch } from '@/features/dashboard/marketing/lib/video/v2/canvasPatch';
 import {
   DEFAULT_PHONE_TOOL_OPTIONS,
@@ -743,6 +745,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     (presetId: TextPresetId) => {
       const item = layerItemFromPreset(textPresetById(presetId), {
         from: currentFrameRef.current,
+        colors: lookColorsFromPalette(projectRef.current?.palette),
       });
       apply((current) =>
         insertItem(current, item, { kind: 'text', atFrame: currentFrameRef.current })
@@ -830,6 +833,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         ? {
             project,
             typography: templateTypography,
+            lookColors: lookColorsFromPalette(project.palette),
             update: (id, fn) => apply((p) => updateItem(p, id, fn)),
             trim: (id, edge, frame) => apply((p) => trimItem(p, id, edge, frame)),
             moveTo: (id, frame) => apply((p) => moveItem(p, id, { frame })),
@@ -1438,20 +1442,12 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   );
 
   const textPanel = (
-    <div className="grid gap-2">
-      {TEXT_PRESETS.map((preset) => (
-        <Button
-          key={preset.id}
-          type="button"
-          variant="outline"
-          className="min-h-[44px] justify-start"
-          disabled={!canEditContent || !hasProject}
-          onClick={() => handleAddText(preset.id)}
-        >
-          {preset.label}
-        </Button>
-      ))}
-    </div>
+    <TextPresetGrid
+      presets={TEXT_PRESETS}
+      colors={lookColorsFromPalette(project?.palette)}
+      disabled={!canEditContent || !hasProject}
+      onPick={handleAddText}
+    />
   );
 
   const templatesPanel = (

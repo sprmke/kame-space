@@ -193,13 +193,15 @@ export function isLayerItem(item: VideoItem): item is LayerItem {
 
 export function isAudioItem(item: VideoItem): item is AudioItem {
   return item.type === 'audio';
-}export const DEFAULT_VISUAL_TRANSFORM: VisualTransform = {
+}
+export const DEFAULT_VISUAL_TRANSFORM: VisualTransform = {
   x: 50,
   y: 50,
   widthPct: 100,
   rotation: 0,
   opacity: 1,
-};export const DEFAULT_PROJECT_BACKGROUND: VideoProjectV2['background'] = {
+};
+export const DEFAULT_PROJECT_BACKGROUND: VideoProjectV2['background'] = {
   color: '#0f172a',
   fill: 'color',
 };

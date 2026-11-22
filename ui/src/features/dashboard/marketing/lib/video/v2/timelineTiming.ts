@@ -15,7 +15,7 @@ import {
 
 function framesToSeconds(frames: number, fps: number): number {
   return fps > 0 ? frames / fps : 0;
-}/** `0:07` or `0:07.5` (tenths only when requested). */
+} /** `0:07` or `0:07.5` (tenths only when requested). */
 export function formatTimecode(frames: number, fps: number, withTenths = false): string {
   const total = Math.max(0, framesToSeconds(frames, fps));
   const minutes = Math.floor(total / 60);
@@ -102,7 +102,7 @@ export function topmostVisualAt(project: VideoProjectV2, frame: number): ActiveI
     ({ item, track }) => item.type !== 'audio' && !track.hidden
   );
   return visible.at(-1) ?? null;
-}/** Source length in frames for video/audio at 1x, or null when unknown. */
+} /** Source length in frames for video/audio at 1x, or null when unknown. */
 export function sourceDurationFrames(media: { durationMs?: number }, fps: number): number | null {
   if (typeof media.durationMs !== 'number' || !Number.isFinite(media.durationMs)) return null;
   if (media.durationMs <= 0) return null;

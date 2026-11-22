@@ -1221,7 +1221,8 @@ export function VideoEditor({ document, nav, onPublish }: Props) {
               />
             </>
           ) : (
-            <div role="status"
+            <div
+              role="status"
               className="flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4"
               aria-busy="true"
               aria-label="Loading video editor"

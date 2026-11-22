@@ -3,8 +3,13 @@ import { Check } from 'lucide-react';
 import { NumberSlider } from '@/features/dashboard/marketing/components/calendar-builder/components/controls/NumberSlider';
 import type { InspectorActions } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
 import { ChoiceChips } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/ChoiceChips';
+import { TextLookGallery } from '@/features/dashboard/marketing/components/video-editor/v2/TextLookGallery';
 import { VideoTextStyleControls } from '@/features/dashboard/marketing/components/video-editor/VideoTextStyleControls';
 import type { PhoneToolAction } from '@/features/dashboard/marketing/lib/video/v2/phoneTools';
+import {
+  applyTextLook,
+  detectTextLook,
+} from '@/features/dashboard/marketing/lib/video/v2/textLooks';
 import {
   isAudioItem,
   isLayerItem,
@@ -69,7 +74,7 @@ export function VideoClipPanel({ action, item, actions, onClose }: Props) {
   return (
     <section
       aria-label={title}
-      className="border-border bg-card max-h-[42dvh] shrink-0 overflow-y-auto overscroll-contain border-t px-4 pb-3 pt-2"
+      className="border-border bg-card max-h-[40dvh] shrink-0 overflow-y-auto overscroll-contain border-t px-4 pb-3 pt-2"
     >
       <div className="mb-2 flex items-center justify-between">
         <h2 className="text-sm font-semibold">{title}</h2>
@@ -288,16 +293,36 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
     case 'clip-style': {
       if (!isLayerItem(item)) return null;
       return (
-        <VideoTextStyleControls
-          layer={item.layer}
-          templateTypography={actions.typography}
-          onChange={(changes: Partial<VideoSceneLayer>) =>
-            actions.update(item.id, (current) => ({
-              ...(current as LayerItem),
-              layer: { ...(current as LayerItem).layer, ...changes },
-            }))
-          }
-        />
+        <>
+          <TextLookGallery
+            value={detectTextLook(item.layer, actions.lookColors)}
+            colors={actions.lookColors}
+            onChange={(look) =>
+              actions.update(item.id, (current) => ({
+                ...(current as LayerItem),
+                layer: applyTextLook((current as LayerItem).layer, look, actions.lookColors),
+              }))
+            }
+          />
+          <details className="group">
+            <summary className="text-primary flex min-h-[44px] cursor-pointer list-none items-center text-sm font-medium">
+              More options
+            </summary>
+            <div className="pt-2">
+              <VideoTextStyleControls
+                showTextInput={false}
+                layer={item.layer}
+                templateTypography={actions.typography}
+                onChange={(changes: Partial<VideoSceneLayer>) =>
+                  actions.update(item.id, (current) => ({
+                    ...(current as LayerItem),
+                    layer: { ...(current as LayerItem).layer, ...changes },
+                  }))
+                }
+              />
+            </div>
+          </details>
+        </>
       );
     }
     default:

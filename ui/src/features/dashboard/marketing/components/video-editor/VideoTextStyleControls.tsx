@@ -29,9 +29,16 @@ type Props = {
   layer: VideoSceneLayer;
   templateTypography: VideoTypographyContext;
   onChange: (patch: Partial<VideoSceneLayer>) => void;
+  /** The text box. Hide it where the screen already has its own (v2 inspector, phone panel). */
+  showTextInput?: boolean;
 };
 
-export function VideoTextStyleControls({ layer, templateTypography, onChange }: Props) {
+export function VideoTextStyleControls({
+  layer,
+  templateTypography,
+  onChange,
+  showTextInput = true,
+}: Props) {
   const isCta = layer.kind === 'cta';
   const typography = resolveLayerTypography(layer, templateTypography);
   const activePreset = detectActivePreset(layer);
@@ -74,13 +81,15 @@ export function VideoTextStyleControls({ layer, templateTypography, onChange }: 
 
   return (
     <div className="space-y-3">
-      <textarea
-        value={layer.text ?? ''}
-        onChange={(event) => onChange({ text: event.target.value })}
-        rows={2}
-        aria-label="Text content"
-        className="border-input bg-card placeholder:text-muted-foreground field-focus flex min-h-[72px] w-full resize-none rounded-md border px-3 py-2 text-sm"
-      />
+      {showTextInput ? (
+        <textarea
+          value={layer.text ?? ''}
+          onChange={(event) => onChange({ text: event.target.value })}
+          rows={2}
+          aria-label="Text content"
+          className="border-input bg-card placeholder:text-muted-foreground field-focus flex min-h-[72px] w-full resize-none rounded-md border px-3 py-2 text-sm"
+        />
+      ) : null}
 
       {!isCta ? (
         <div className="flex flex-wrap gap-1.5">

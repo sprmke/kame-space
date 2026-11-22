@@ -262,6 +262,35 @@ test.describe('@ci marketing video editor v2 on a phone', () => {
     await expect(panel).toHaveCount(0);
   });
 
+  test('a label starts with its look and a new look can be picked while the preview stays up', async ({
+    page,
+  }) => {
+    await openDraft(page);
+    const strip = page.getByRole('toolbar', { name: 'Editor tools' });
+    await strip.getByRole('button', { name: 'Text' }).tap();
+    await page
+      .getByRole('toolbar', { name: 'Tool options' })
+      .getByRole('button', { name: 'Text styles' })
+      .tap();
+    await page.getByRole('button', { name: /Price$/ }).tap();
+
+    const tools = page.getByRole('toolbar', { name: 'Clip tools' });
+    await tools.getByRole('button', { name: 'Style' }).tap();
+    const gallery = page.getByRole('radiogroup', { name: 'Text style' });
+    await expect(gallery.getByRole('radio', { name: 'Price' })).toHaveAttribute(
+      'aria-checked',
+      'true'
+    );
+    await gallery.getByRole('radio', { name: 'Glow' }).tap();
+    await expect(gallery.getByRole('radio', { name: 'Glow' })).toHaveAttribute(
+      'aria-checked',
+      'true'
+    );
+    // The text box is not repeated, and the timeline is still on screen.
+    await expect(page.getByLabel('Text content')).toHaveCount(0);
+    await expect(page.getByLabel('Timeline', { exact: true })).toBeVisible();
+  });
+
   test('Export lives in the top bar and opens one sheet', async ({ page }) => {
     await openDraft(page);
     await page.getByRole('button', { name: 'Export' }).tap();

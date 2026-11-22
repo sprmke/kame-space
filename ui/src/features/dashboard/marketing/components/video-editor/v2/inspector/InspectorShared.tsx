@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { NumberSlider } from '@/features/dashboard/marketing/components/calendar-builder/components/controls/NumberSlider';
+import type { TextLookColors } from '@/features/dashboard/marketing/lib/video/v2/textLooks';
 import { itemEnd } from '@/features/dashboard/marketing/lib/video/v2/timelineTiming';
 import type {
   VideoItem,
@@ -23,6 +24,8 @@ import {
 export type InspectorActions = {
   project: VideoProjectV2;
   typography: VideoTypographyContext;
+  /** Brand colours for text looks that use the accent. */
+  lookColors: TextLookColors;
   update: (itemId: string, updater: (item: VideoItem) => VideoItem) => void;
   trim: (itemId: string, edge: 'start' | 'end', frame: number) => void;
   moveTo: (itemId: string, frame: number) => void;

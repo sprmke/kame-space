@@ -5,7 +5,12 @@ import {
   TimingFields,
   type InspectorActions,
 } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
+import { TextLookGallery } from '@/features/dashboard/marketing/components/video-editor/v2/TextLookGallery';
 import { VideoTextStyleControls } from '@/features/dashboard/marketing/components/video-editor/VideoTextStyleControls';
+import {
+  applyTextLook,
+  detectTextLook,
+} from '@/features/dashboard/marketing/lib/video/v2/textLooks';
 import type {
   LayerItem,
   TextAnimation,
@@ -102,7 +107,21 @@ export function LayerItemInspector({ item, actions }: Props) {
       <TimingFields item={item} actions={actions} />
 
       {isText ? (
+        <TextLookGallery
+          value={detectTextLook(layer, actions.lookColors)}
+          colors={actions.lookColors}
+          onChange={(look) =>
+            actions.update(item.id, (current) => ({
+              ...(current as LayerItem),
+              layer: applyTextLook((current as LayerItem).layer, look, actions.lookColors),
+            }))
+          }
+        />
+      ) : null}
+
+      {isText ? (
         <VideoTextStyleControls
+          showTextInput={false}
           layer={layer}
           templateTypography={actions.typography}
           onChange={patchLayer}

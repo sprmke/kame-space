@@ -217,6 +217,20 @@ export function buildTypographyFromPreset(
   };
 }
 
+/** Soft drop shadow and/or a glow, layered into one `text-shadow`. */
+function textShadowFor(typography: VideoLayerTypography, scale: number): string | undefined {
+  const layers: string[] = [];
+  if (typography.glowColor) {
+    const blur = Math.round(18 * scale);
+    layers.push(
+      `0 0 ${blur}px ${typography.glowColor}`,
+      `0 0 ${Math.round(blur / 2)}px ${typography.glowColor}`
+    );
+  }
+  if (typography.shadow) layers.push('0 2px 16px rgba(0,0,0,0.45)');
+  return layers.length > 0 ? layers.join(', ') : undefined;
+}
+
 export function typographyToCss(
   typography: VideoLayerTypography,
   scale: number,
@@ -234,8 +248,15 @@ export function typographyToCss(
     lineHeight: typography.lineHeight ?? 1.15,
     letterSpacing: typography.letterSpacing ? `${typography.letterSpacing * scale}px` : undefined,
     textTransform: typography.textTransform ?? 'none',
-    textShadow: typography.shadow ? '0 2px 16px rgba(0,0,0,0.45)' : undefined,
+    textShadow: textShadowFor(typography, scale),
   };
+
+  if (typography.boxColor && !options?.isCta) {
+    style.backgroundColor = typography.boxColor;
+    style.borderRadius = Math.round((typography.boxRadius ?? 12) * scale);
+    style.padding = `${Math.round(10 * scale)}px ${Math.round(22 * scale)}px`;
+    style.display = 'inline-block';
+  }
 
   if (strokeWidth > 0 && strokeColor) {
     style.WebkitTextStroke = `${Math.max(1, Math.round(strokeWidth * scale))}px ${strokeColor}`;
