@@ -198,6 +198,13 @@ type Props = {
   guestRequests?: GuestRequestDto[];
   onResolveGuestRequest?: (requestId: string, status: 'approved' | 'declined') => Promise<void>;
   resolvingGuestRequest?: boolean;
+  /**
+   * When set (notification / deep link), scroll that chat pill into view once
+   * messages are ready instead of jumping to the thread bottom.
+   */
+  focusMessageId?: string | null;
+  /** Fired after a focus scroll attempt (found or not) so the caller can clear `?messageId=`. */
+  onFocusMessageHandled?: () => void;
 };
 
 export function InboxConversationView({
@@ -227,6 +234,8 @@ export function InboxConversationView({
   onLoadOlder,
   loadError = null,
   onRetryLoad,
+  focusMessageId = null,
+  onFocusMessageHandled,
 }: Props) {
   const [draft, setDraft] = useState('');
   const [pendingAttachments, setPendingAttachments] = useState<InboxChatAttachment[]>([]);
@@ -260,6 +269,8 @@ export function InboxConversationView({
   const shouldSmoothScrollRef = useRef(false);
   const prevTailKeyRef = useRef('');
   const prevScrollHeightRef = useRef(0);
+  /** `${conversationId}:${messageId}` once we have attempted a deep-link focus scroll. */
+  const focusMessageHandledRef = useRef<string | null>(null);
   const loadingOlderRef = useRef(loadingOlder);
   loadingOlderRef.current = loadingOlder;
 
@@ -360,6 +371,7 @@ export function InboxConversationView({
     setDraftAiFlagged(false);
     setUseHumanAgentTag(false);
     shouldSmoothScrollRef.current = false;
+    focusMessageHandledRef.current = null;
   }, [conversation?.id, threadSearch.close]);
 
   useEffect(() => {
@@ -374,6 +386,24 @@ export function InboxConversationView({
     if (isLoading || !conversation || messages.length === 0) return;
     const node = scrollContainerRef.current;
     if (!node) return;
+
+    const focusId = focusMessageId?.trim() ?? '';
+    const focusKey = focusId ? `${conversation.id}:${focusId}` : '';
+    if (focusKey && focusMessageHandledRef.current !== focusKey) {
+      const el = node.querySelector(`[data-chat-message-id="${focusId}"]`);
+      if (el) {
+        focusMessageHandledRef.current = focusKey;
+        shouldSmoothScrollRef.current = true;
+        prevTailKeyRef.current = messageTailKey;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        prevScrollHeightRef.current = node.scrollHeight;
+        onFocusMessageHandled?.();
+        return;
+      }
+      // Latest-page load finished without the pill (deleted / wrong id): fall through to bottom.
+      focusMessageHandledRef.current = focusKey;
+      onFocusMessageHandled?.();
+    }
 
     const tailChanged = messageTailKey !== prevTailKeyRef.current;
     const hadTail = prevTailKeyRef.current.length > 0;
@@ -390,7 +420,15 @@ export function InboxConversationView({
     shouldSmoothScrollRef.current = true;
     node.scrollTo({ top: node.scrollHeight, behavior });
     prevScrollHeightRef.current = node.scrollHeight;
-  }, [messageTailKey, conversation?.id, isLoading, conversation, messages.length]);
+  }, [
+    messageTailKey,
+    conversation?.id,
+    isLoading,
+    conversation,
+    messages.length,
+    focusMessageId,
+    onFocusMessageHandled,
+  ]);
 
   useEffect(() => {
     const sentinel = topSentinelRef.current;

@@ -149,7 +149,7 @@ export function WorkflowDocApprovalModal({
               <ResponsiveModalTitle className="text-base font-semibold leading-snug sm:text-lg">
                 {hasApprovedFile ? uploadLabel : `Upload ${uploadLabel}`}
               </ResponsiveModalTitle>
-              <ResponsiveModalDescription className="text-muted-foreground mt-1 text-sm leading-relaxed">
+              <ResponsiveModalDescription>
                 {description}
               </ResponsiveModalDescription>
             </div>

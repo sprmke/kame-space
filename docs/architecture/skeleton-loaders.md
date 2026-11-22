@@ -8,7 +8,7 @@ Loading UI must mirror the **layout that appears after data loads**, on phone an
 2. **Shape matches content.** Reuse domain skeletons from `ui/src/components/skeletons/` (or add a sibling module). Do not reuse unrelated dashboards (e.g. property dashboard skeleton on org analytics).
 3. **Default view.** The skeleton shows the page's default view: default tab (org Plans opens on **Billing**), default list mode (org listings follow `defaultOrgListingViewMode`: list under 5 items, table at 5+ on desktop, grid at 5+ below `lg`), bookings `?view=` (table on desktop, cards on phone).
 4. **Route skeletons carry page chrome.** Page chrome is rendered by the lazy page, so route skeletons render the same `AdminMobilePage` (title, subtitle, `titleId`, `dense`, `className`, date-filter overlap placeholder, desktop header actions) as the loaded page. Without it the hero and header jump when the chunk resolves.
-5. **State-aware fallbacks.** Show a skeleton only on the first load (`isLoading && !data`); cached data stays on screen during refetches so a refresh never replaces a populated page. Match the page's default/selected state (`?view=`, default tab, section nav) rather than showing empty-state chrome.
+5. **State-aware fallbacks.** Show a skeleton only on the first load (`isLoading && !data`); cached data stays on screen during refetches so a refresh never replaces a populated page. Match the page's default/selected state (`?view=`, default tab, section nav, **empty vs list**). A list that ends as a mascot empty must not load as fake rows.
 6. **Cheap by construction.** Skeletons are static markup: no timers, observers, fetches, or shared query subscriptions. They reuse the same `StatCardSkeleton` / table / card primitives as the loaded page so metrics and spacing line up at 375, 768, and 1024px+.
 7. **Static-first.** Fixed labels, titles, subtitles, descriptions, section/card headings, tab labels, column headers, legend labels and known icons are rendered immediately, never skeletonized. Skeletons cover only async values, rows, media, charts and permission-gated actions. `StatCardSkeleton` takes `title` + `icon` (+ `changeLabel` / `footer`) for exactly this reason.
 8. **Admin tables share one grid.** List tables that load through `AdminDataTable` must skeleton with that same table shell (`AdminTableHeadRow` + `AdminTableTh` / `AdminTableActionsTh` + `adminTableCell` breakpoints). Do not invent a parallel flex row of fixed pixel widths — that is what made Finance / Bookings skeletons jump when rows arrived. Reviews already follow this pattern (`ReviewsTableSkeleton`); Finance ledger (`FinanceStaysTableSkeleton`), Bookings (`BookingsTableSkeleton`), Maintenance reminders (`FinanceOperatingTabSkeleton`), and recurring-series modals do too. Trailing action columns use a visible **Actions** (or **Open** / **Review**) header via `AdminTableActionsTh`, never an empty `sr-only` band.
@@ -52,11 +52,11 @@ Nested layouts with lazy children keep their own `Suspense` around `<Outlet />` 
 | `ParkingSkeleton.tsx`               | Parking dashboard (KPI + Cash flow / Breakdown / Calendar / Transactions grid matching `ParkingDashboardCalendarSection`), booking detail                        |
 | `GuestMarketingSkeleton.tsx`        | Property detail, development detail, browse grids, account gate, property chat                                                                                   |
 | `HelpSupportSkeleton.tsx`           | Help & Support page (module nav, intro, FAQs / guides / tickets), documentation topics                                                                           |
-| `TicketsWorkspaceSkeleton.tsx`      | My Tickets workspace — empty chrome (no header New) or list + thread chrome; driven by cached count / session layout hint                                        |
+| `TicketsWorkspaceSkeleton.tsx`      | My Tickets workspace — empty chrome (no title / New) or list + thread chrome with **My Tickets**; driven by cached count / session layout hint                   |
 | `SuperAdminSkeletons.tsx`           | List/overview/audit bodies, settings cards, card lists, host detail, organization hub                                                                            |
 | `AiAssistantSkeleton.tsx`           | AI assistant panel chunk                                                                                                                                         |
 | `GuestPageSkeletons.tsx`            | Guest form page                                                                                                                                                  |
-| `GuestAccountSkeletons.tsx`         | Profile form, voucher wallet rows                                                                                                                                |
+| `GuestAccountSkeletons.tsx`         | Profile form (incl. ID verification), Help home (mascot + topics), empty-state mascot chrome, favorites grid, trips rows, voucher wallet                         |
 | `ImportWizardSkeleton.tsx`          | Import wizard commit step                                                                                                                                        |
 | `TemplateWorkbenchSkeleton.tsx`     | Property Templates workbench — library rail (search, grouped rows) beside the editor pane; rail only below `lg`                                                  |
 | `PropertyListingStatusSkeleton.tsx` | Property Settings → Listing status card (badge, actions, optional delete row) and lifecycle confirm sheet bodies while impact loads                              |
@@ -65,13 +65,31 @@ Nested layouts with lazy children keep their own `Suspense` around `<Outlet />` 
 
 My Tickets (Help & Support + guest `/account` tickets) keys its skeleton to empty vs list:
 
-| State                                  | Skeleton                                                                |
-| -------------------------------------- | ----------------------------------------------------------------------- |
-| Cold load / known empty for this scope | `TicketsWorkspaceSkeleton` `layout="empty"` (centered empty chrome)     |
-| Cached or prior visit had tickets      | `TicketsWorkspaceSkeleton` `layout="list"` (rows + desktop thread pane) |
-| Ready                                  | Real empty state or ticket list                                         |
+| State                                  | Skeleton                                                                                     |
+| -------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Cold load / known empty for this scope | `TicketsWorkspaceSkeleton` `layout="empty"` (centered empty chrome, no **My Tickets** title) |
+| Cached or prior visit had tickets      | `TicketsWorkspaceSkeleton` `layout="list"` (title + rows + desktop thread pane)              |
+| Ready                                  | Real empty state or ticket list                                                              |
 
 Layout hint: `ticketsWorkspaceLayout.ts` (sessionStorage per ticket scope).
+
+### Guest account lists (empty vs list)
+
+Sparse account pages (Favorites, Trips, Vouchers, Messages, Reviews tabs) and Help share
+`guestAccountListLayout.ts`. Cold default is **empty** for sparse lists and **list** for Help
+(topic catalog). Empty loads use `GuestAccountEmptyStateSkeleton` with the page mascot pose;
+list loads use the matching grid/row skeleton. `GuestAccountRouteSuspenseFallback` reads the
+same session hints.
+
+| Page              | Empty pose       | List skeleton                                                           |
+| ----------------- | ---------------- | ----------------------------------------------------------------------- |
+| Favorites         | `favorites`      | `GuestFavoritesPageSkeleton`                                            |
+| Trips             | `arrival`        | `GuestTripsPageSkeleton`                                                |
+| Vouchers          | `voucher`        | `GuestVouchersPageSkeleton`                                             |
+| Messages          | `guest-inbox`    | hub row + thread chrome                                                 |
+| Reviews (per tab) | `guest-review`   | `GuestReviewsPageSkeleton`                                              |
+| Help              | n/a (catalog)    | `GuestAccountHelpPageSkeleton` (real Help title + mascot + topic tiles) |
+| Tickets           | (tickets helper) | `TicketsWorkspaceSkeleton`                                              |
 
 ### Reviews list state
 
@@ -159,19 +177,19 @@ first data load. Both use the same page chrome, so nothing jumps when the chunk 
 
 ### Guest / public routes
 
-| Route                                                  | Skeleton                                                                                                                      |
-| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `/`, `/for-hosts`, marketing landing                   | `PublicLandingPageSkeleton` — rounded hero photo panel with a bottom-left copy block, then the catalog heading and card grid  |
-| `/properties`, `/parkings`, `/developments`, `/search` | `PublicListingBrowseSkeleton` — hero, filters sidebar, toolbar, listing grid                                                  |
-| `/properties/:slug`                                    | `PropertyDetailPageSkeleton` — gallery, title/meta, stat strip, host, About / amenities / location headings                   |
-| `/parkings/:slug`                                      | `ParkingDetailPageSkeleton` — gallery, title/meta, description, booking card                                                  |
-| `/developments/:slug`                                  | `DevelopmentDetailPageSkeleton` — hero band, title, stat cards, content block                                                 |
-| `/properties/:slug/form`, `/parkings/:slug/form`       | `GuestFormPageSkeleton` — brand header, stepper, step panel                                                                   |
-| `/properties/:slug/calendar`                           | `CalendarPageSkeleton` — real month/weekday/day numbers, skeleton availability cells                                          |
-| SD form / guest review                                 | `SdFormPageSkeleton` / `GuestReviewPageSkeleton` — real review labels, category rows, feedback/private note/photos            |
-| Payment / parking request status                       | `ParkingRequestStatusPageSkeleton` — brand header + status body                                                               |
-| Showcase / stay guide                                  | `PublicFullBleedPageSkeleton` — header, hero, content sections                                                                |
-| Account profile / vouchers / reviews / messages        | `GuestProfileFormSkeleton` (real labels), `GuestVouchersPageSkeleton`, `GuestReviewsPageSkeleton`, `PropertyChatPageSkeleton` |
+| Route                                                  | Skeleton                                                                                                                                                       |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`, `/for-hosts`, marketing landing                   | `PublicLandingPageSkeleton` — rounded hero photo panel with a bottom-left copy block, then the catalog heading and card grid                                   |
+| `/properties`, `/parkings`, `/developments`, `/search` | `PublicListingBrowseSkeleton` — hero, filters sidebar, toolbar, listing grid                                                                                   |
+| `/properties/:slug`                                    | `PropertyDetailPageSkeleton` — gallery, title/meta, stat strip, host, About / amenities / location headings                                                    |
+| `/parkings/:slug`                                      | `ParkingDetailPageSkeleton` — gallery, title/meta, description, booking card                                                                                   |
+| `/developments/:slug`                                  | `DevelopmentDetailPageSkeleton` — hero band, title, stat cards, content block                                                                                  |
+| `/properties/:slug/form`, `/parkings/:slug/form`       | `GuestFormPageSkeleton` — brand header, stepper, step panel                                                                                                    |
+| `/properties/:slug/calendar`                           | `CalendarPageSkeleton` — real month/weekday/day numbers, skeleton availability cells                                                                           |
+| SD form / guest review                                 | `SdFormPageSkeleton` / `GuestReviewPageSkeleton` — real review labels, category rows, feedback/private note/photos                                             |
+| Payment / parking request status                       | `ParkingRequestStatusPageSkeleton` — brand header + status body                                                                                                |
+| Showcase / stay guide                                  | `PublicFullBleedPageSkeleton` — header, hero, content sections                                                                                                 |
+| Account profile / vouchers / reviews / messages        | `GuestProfileFormSkeleton` (real labels), `GuestVouchersPageSkeleton`, reviews card + `GuestReviewsTabsSkeleton` + empty/list body, `PropertyChatPageSkeleton` |
 
 ## Pre-shell and top-level fallbacks
 

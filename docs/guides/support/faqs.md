@@ -1632,7 +1632,7 @@ They are linked in the site footer, the More menu on phone, and your account men
 - audience: public
 - source: docs/guides/routes/account/profile.md
 
-Open your profile and choose Download my data for a file with your details, bookings, reviews and account activity. Choose Delete my account to ask us to remove your profile and personal details. We review deletion requests and aim to finish within 15 days. Bookings stay as financial records with your personal fields removed, because the law requires us to keep them.
+Open Help or Tickets from your account and ask for a copy of your data, or ask us to delete your account. We review deletion requests and aim to finish within 15 days. Bookings stay as financial records with your personal fields removed, because the law requires us to keep them.
 
 ### What does the cookie banner do, and can I change my choice later?
 
@@ -1778,7 +1778,7 @@ The first time a guest opens their trip page you get one notification, "Maria op
 - audience: guest
 - source: docs/guides/routes/account/profile.md
 
-Sign in, open your profile, and turn on Alerts on this device. On an iPhone or iPad, add the site to your home screen first, then turn it on, because Safari only allows alerts for installed apps. You get an alert when your host confirms your booking and when your check-in is ready; everything else still arrives by email.
+Sign in, open your profile, and turn on Booking alerts. On an iPhone or iPad, add the site to your home screen first, then turn it on, because Safari only allows alerts for installed apps. You get an alert when your host confirms your booking and when your check-in is ready; everything else still arrives by email.
 
 ### What are the topics under Trending today?
 

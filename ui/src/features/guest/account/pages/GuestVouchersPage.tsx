@@ -11,14 +11,26 @@ import {
   GuestVoucherWalletIcon,
 } from '@/features/guest/account/components/GuestVoucherUi';
 import { useGuestVouchersQuery } from '@/features/guest/account/hooks/useGuestVouchersQuery';
+import {
+  guestAccountListLayoutFromCount,
+  guestAccountListLayoutStorageKey,
+  readGuestAccountListLayoutHint,
+  resolveGuestAccountListLoadState,
+  writeGuestAccountListLayoutHint,
+} from '@/features/guest/account/lib/guestAccountListLayout';
 import { formatVoucherOfferLabel } from '@/features/guest/account/lib/voucherDiscount';
 import { guestFormPath } from '@/features/guest/lib/guestPublicPaths';
 
-import { GuestVouchersPageSkeleton } from '@/components/skeletons/GuestAccountSkeletons';
+import {
+  GuestAccountEmptyStateSkeleton,
+  GuestVouchersPageSkeleton,
+} from '@/components/skeletons/GuestAccountSkeletons';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { captureAppEvent } from '@/lib/posthog/capture';
 import { cn } from '@/lib/utils';
 import { formatRelative } from '@/utils/format/bookingDisplay';
+
+const LAYOUT_KEY = guestAccountListLayoutStorageKey('vouchers');
 
 function WalletVoucherRow({
   propertyName,
@@ -85,24 +97,42 @@ function WalletVoucherRow({
 
 export function GuestVouchersPage() {
   usePageTitle(publicPageTitle('Vouchers'));
-  const { data: vouchers = [], isLoading } = useGuestVouchersQuery({ includeRedeemed: true });
+  const { data, isLoading } = useGuestVouchersQuery({ includeRedeemed: true });
+  const vouchers = data ?? [];
+  const loadState = resolveGuestAccountListLoadState({
+    isPending: isLoading,
+    itemCount: data !== undefined ? data.length : undefined,
+    hint: readGuestAccountListLayoutHint(LAYOUT_KEY),
+    coldDefault: 'empty',
+  });
 
   const available = vouchers.filter((v) => !v.redeemedAt);
   const used = vouchers.filter((v) => v.redeemedAt);
+
+  useEffect(() => {
+    if (loadState !== 'ready') return;
+    writeGuestAccountListLayoutHint(LAYOUT_KEY, guestAccountListLayoutFromCount(vouchers.length));
+  }, [loadState, vouchers.length]);
 
   // Once per page load, after the wallet has actually loaded. A wallet screen is the only
   // place a guest sees voucher value, so this is the outcome worth recording.
   const reportedRef = useRef(false);
   useEffect(() => {
-    if (reportedRef.current || isLoading) return;
+    if (reportedRef.current || loadState !== 'ready') return;
     reportedRef.current = true;
     captureAppEvent('guest_voucher_viewed', {
       count: vouchers.length,
       available_count: available.length,
     });
-  }, [available.length, isLoading, vouchers.length]);
+  }, [available.length, loadState, vouchers.length]);
 
-  if (isLoading) {
+  if (loadState === 'empty') {
+    return (
+      <GuestAccountEmptyStateSkeleton mascotPose="voucher" ariaLabel="Loading vouchers" />
+    );
+  }
+
+  if (loadState === 'list') {
     return (
       <GuestAccountContentCard>
         <GuestVouchersPageSkeleton rows={4} />

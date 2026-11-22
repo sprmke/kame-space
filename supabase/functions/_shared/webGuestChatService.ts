@@ -502,7 +502,7 @@ export async function sendGuestWebMessage(
     replyFields = await resolveReplyTarget(conv.id, opts.replyToMessageId.trim());
   }
 
-  await insertMessageIfNew({
+  const inserted = await insertMessageIfNew({
     organization_id: conv.organization_id,
     conversation_id: conv.id,
     direction: 'inbound',
@@ -553,7 +553,7 @@ export async function sendGuestWebMessage(
       title: participantLabel,
       body: preview.slice(0, 200),
       conversationId: conv.id,
-      metadata: inboxNotificationMetadata(conv),
+      metadata: inboxNotificationMetadata(conv, { messageId: inserted?.id ?? null }),
       dedupeKey: `${conv.id}:inbox_new_message`,
     });
   } catch (notifErr) {

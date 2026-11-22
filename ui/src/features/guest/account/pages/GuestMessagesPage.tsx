@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 import { Building2, RefreshCw } from 'lucide-react';
 
 import { GuestAccountEmptyState } from '@/features/guest/account/components/GuestAccountEmptyState';
@@ -6,12 +8,22 @@ import {
   GuestMessagesHub,
 } from '@/features/guest/account/components/GuestMessagesHub';
 import { useGuestMessages } from '@/features/guest/account/hooks/useGuestMessages';
+import {
+  guestAccountListLayoutFromCount,
+  guestAccountListLayoutStorageKey,
+  readGuestAccountListLayoutHint,
+  resolveGuestAccountListLoadState,
+  writeGuestAccountListLayoutHint,
+} from '@/features/guest/account/lib/guestAccountListLayout';
 
+import { GuestAccountEmptyStateSkeleton } from '@/components/skeletons/GuestAccountSkeletons';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
+
+const LAYOUT_KEY = guestAccountListLayoutStorageKey('messages');
 
 function GuestMessagesHubSkeleton() {
   return (
-    <div className={GUEST_MESSAGES_HUB_SHELL_CLASS} aria-hidden>
+    <div className={GUEST_MESSAGES_HUB_SHELL_CLASS} role="status" aria-busy="true" aria-label="Loading messages">
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <div className="border-border flex h-full min-h-0 w-full shrink-0 flex-col border-r lg:w-[min(100%,320px)]">
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
@@ -56,8 +68,25 @@ export function GuestMessagesPage() {
   usePageTitle(publicPageTitle('Stays'));
   const { data, isLoading, isError, refetch } = useGuestMessages();
   const threads = data?.threads ?? [];
+  const loadState = resolveGuestAccountListLoadState({
+    isPending: isLoading,
+    itemCount: data !== undefined ? threads.length : undefined,
+    hint: readGuestAccountListLayoutHint(LAYOUT_KEY),
+    coldDefault: 'empty',
+  });
 
-  if (isLoading) {
+  useEffect(() => {
+    if (loadState !== 'ready') return;
+    writeGuestAccountListLayoutHint(LAYOUT_KEY, guestAccountListLayoutFromCount(threads.length));
+  }, [loadState, threads.length]);
+
+  if (loadState === 'empty') {
+    return (
+      <GuestAccountEmptyStateSkeleton mascotPose="guest-inbox" ariaLabel="Loading messages" />
+    );
+  }
+
+  if (loadState === 'list') {
     return <GuestMessagesHubSkeleton />;
   }
 

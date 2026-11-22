@@ -59,7 +59,7 @@ In the header **Manage** sheet: **Push notifications** (OS push opt-in — per d
 - **Activity** tab lists in-app notifications for the org (booking + inbox events). The **Activity** heading carries a hint saying so.
 - Desktop: the bell floats above the AI assistant button. Phone: tap **Notifications** in the bottom menu. Both open the same sheet; **View all** opens this page at **Activity** when more than five items exist.
 - **Activity** card scrolls inside a max height; additional pages load as you scroll (20 per request). Switching tabs with a dirty Telegram card prompts Save / Discard / Keep editing.
-- Rows show guest name with an inline inbox **channel pill** (**Chat** / **Facebook** / **Instagram**) when applicable, and stay dates (inquiry or booked) when available; realtime toasts match the same layout (channel logo + inline pill for inbox).
+- Rows show guest name with an inline inbox **channel pill** (**Chat** / **Facebook** / **Instagram**) when applicable, and stay dates (inquiry or booked) when available; realtime toasts match the same layout (channel logo + inline pill for inbox). Inbox rows open Messages with the conversation selected (and scroll to the message when `message_id` is in metadata). If both `conversation_id` and `booking_id` are set, Messages wins over booking detail.
 
 ### Telegram sections
 

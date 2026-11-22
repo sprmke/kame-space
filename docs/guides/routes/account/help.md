@@ -2,7 +2,7 @@
 title: 'Guest account Help — operator guide'
 status: active
 tags: [guides, routes, account, help-support]
-updated: 2026-11-05
+updated: 2026-11-22
 ---
 
 # Guest account Help — operator guide
@@ -17,12 +17,15 @@ Route: `/account/help`
 | ------------ | -------- | ---------- | ---------- | ----------------------------------------------------- |
 | FAQ groups   | —        | —          | Documented | Published `guest` + `public` FAQs from the public API |
 | Contact link | —        | —          | Documented | Opens `/account/tickets`                              |
+| Loading      | —        | —          | Documented | `GuestAccountHelpPageSkeleton` matches home layout    |
 
 ## Overview
 
 Signed-in explore guests open **Help** from the account menu. The page reads published FAQs from `list-public-support-faqs` (`guest` or `public` audience). Host-only answers never appear here. If none are published, curated guest fallbacks still fill the topic grid (same idea as `/support` guest fallbacks).
 
 Layout: `help-support` mascot stays on home, search, and topic views. **Help** title + short description show on the home view only (hidden once the guest searches or opens a topic). Below that: search + host-style category grid, then drill-in answers (back returns to all topics). **Contact support** in the footer opens Tickets.
+
+**Loading:** `GuestAccountHelpPageSkeleton` keeps the real mascot, **Help** title, subtitle, search chrome, and contact footer; only topic tiles skeletonize. Suspense uses the same skeleton via `GuestAccountRouteSuspenseFallback`.
 
 ## Host-facing knowledge
 
@@ -47,15 +50,16 @@ Guests can open **Help** in their account area to read answers about trips, mess
 
 ## Implementation map
 
-| Concern    | Path                                                            |
-| ---------- | --------------------------------------------------------------- |
-| Page       | `ui/src/features/guest/account/pages/GuestAccountHelpPage.tsx`  |
-| Fallbacks  | `ui/src/features/guest/account/lib/guestHelpFaqs.ts`            |
-| API client | `ui/src/features/guest/marketing/lib/publicSupportApi.ts`       |
-| Hook       | `ui/src/features/guest/marketing/hooks/usePublicSupportFaqs.ts` |
-| Nav        | `ui/src/features/guest/account/lib/guestAccountNav.ts`          |
-| Shared UI  | `HelpTopicList`, `HelpDisclosure` under help-support components |
-| Edge       | `supabase/functions/list-public-support-faqs/`                  |
+| Concern    | Path                                                                                     |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| Page       | `ui/src/features/guest/account/pages/GuestAccountHelpPage.tsx`                           |
+| Skeleton   | `ui/src/components/skeletons/GuestAccountSkeletons.tsx` (`GuestAccountHelpPageSkeleton`) |
+| Fallbacks  | `ui/src/features/guest/account/lib/guestHelpFaqs.ts`                                     |
+| API client | `ui/src/features/guest/marketing/lib/publicSupportApi.ts`                                |
+| Hook       | `ui/src/features/guest/marketing/hooks/usePublicSupportFaqs.ts`                          |
+| Nav        | `ui/src/features/guest/account/lib/guestAccountNav.ts`                                   |
+| Shared UI  | `HelpTopicList`, `HelpDisclosure` under help-support components                          |
+| Edge       | `supabase/functions/list-public-support-faqs/`                                           |
 
 ## Testing
 

@@ -113,10 +113,29 @@ Choose the skeleton from the real state, not a generic page:
 
 - `?view=table|card|calendar` → matching ledger/list shape.
 - selected tab / default tab.
-- empty vs data state.
+- empty vs data state (**required** for every list that has a mascot/empty card).
 - permission-gated cards (`finance:view`, `maintenance:view`).
 - `?view=themes`, `?tab=generate`, `?item=` for Marketing.
 - settings section count and page-specific card counts.
+
+### Empty vs list (guest account + tickets)
+
+**Hard rule:** if the loaded page can show either a mascot empty state or a
+list/grid, the loading state must pick one deliberately.
+
+| Signal                       | Skeleton                                               |
+| ---------------------------- | ------------------------------------------------------ |
+| Cached query count `> 0`     | `list` (rows / grid / split pane)                      |
+| Cached query count `=== 0`   | `empty` (same mascot pose + copy chrome)               |
+| Session hint from last visit | Prefer hint when cache is cold                         |
+| Cold, no hint                | Sparse guest lists → `empty`; Help / catalogs → `list` |
+
+Helpers: `guestAccountListLayout.ts`, `ticketsWorkspaceLayout.ts`.
+Empty skeleton: `GuestAccountEmptyStateSkeleton` (real mascot pose). Do not flash
+list titles or row shells that the empty state never shows.
+
+Any UI change that alters empty/list chrome must update the skeleton + Suspense
+fallback in the **same** change.
 
 ## Definition of done
 
@@ -126,6 +145,7 @@ Choose the skeleton from the real state, not a generic page:
 - [ ] Every fixed icon and known date/month/day is real.
 - [ ] Stat cards pass `title` + `icon` (+ `changeLabel`/`footer` when fixed).
 - [ ] Skeleton shape matches at 375 / 768 / 1024+ and the default view.
+- [ ] Empty vs list (or other variants) chosen via cache/hint; no wrong-chrome flash.
 - [ ] Cached data is not replaced by a skeleton on refetch.
 - [ ] `docs/architecture/skeleton-loaders.md` updated if a module/route map changed.
 - [ ] Route guide Loading row updated when page behavior changed.

@@ -112,6 +112,16 @@ BEGIN
     description = EXCLUDED.description,
     host_modes = EXCLUDED.host_modes;
 
+  ---------------------------------------------------------------------------
+  -- Platform super admin
+  ---------------------------------------------------------------------------
+  -- One seeded account for local review: org owner, every property, and /admin.
+  INSERT INTO public.platform_super_admins (user_id)
+  SELECT v_owner
+  WHERE NOT EXISTS (
+    SELECT 1 FROM public.platform_super_admins WHERE user_id = v_owner
+  );
+
   -- Org owner is implicit via owner_id. Seed one org admin membership.
   INSERT INTO public.organization_members (
     organization_id, user_id, role_id, status, display_name, permissions, all_listings

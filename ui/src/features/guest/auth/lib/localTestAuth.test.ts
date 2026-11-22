@@ -18,14 +18,14 @@ describe('localTestAuth', () => {
     ).toBe('local@example.com');
   });
 
-  it('falls back to the first super admin, then the allow list', () => {
-    expect(resolveHostTestEmail({ VITE_SUPER_ADMIN_EMAILS: 'super@example.com,other@example.com' })).toBe(
-      'super@example.com',
-    );
+  it('defaults to the seeded owner account', () => {
+    expect(resolveHostTestEmail({})).toBe('seed-owner@example.com');
     expect(
-      resolveHostTestEmail({ VITE_SUPER_ADMIN_EMAILS: '', VITE_ADMIN_ALLOWED_EMAILS: 'admin@example.com' }),
-    ).toBe('admin@example.com');
-    expect(resolveHostTestEmail({})).toBe('');
+      resolveHostTestEmail({ VITE_SUPER_ADMIN_EMAILS: 'super@example.com' }),
+    ).toBe('seed-owner@example.com');
+    expect(
+      resolveHostTestEmail({ VITE_ADMIN_ALLOWED_EMAILS: 'admin@example.com' }),
+    ).toBe('seed-owner@example.com');
   });
 
   it('uses the seeded guest account unless overridden', () => {

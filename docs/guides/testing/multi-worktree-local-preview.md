@@ -76,8 +76,9 @@ Pass `--split right` to open it in a split pane. It is idempotent: a running
 server and an existing tab are reused.
 
 Each Orca browser tab starts with no session. On `/for-hosts/login` or
-`/for-guests/login`, local dev shows **Use local test account**; it signs in with
-the seeded password account instead of Google. See
+`/for-guests/login`, local dev shows **Use local owner account** (host) or
+**Use local guest account** (guest); it signs in with the seeded password
+account instead of Google. See
 [local seed data](./local-seed-data.md#signing-in).
 
 ## Auth and Maps on non-5173 ports

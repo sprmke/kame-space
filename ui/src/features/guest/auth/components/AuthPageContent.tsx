@@ -38,6 +38,7 @@ export interface AuthPageActions {
   googleLoading?: boolean;
   /** Dev-only password sign-in for the seeded local test account. */
   testLogin?: { email: string } | null;
+  testLoginLabel?: string;
   onTestLogin?: () => Promise<AuthError | null>;
   testLoginLoading?: boolean;
   /** Top-of-page banner error, e.g. an OAuth redirect failure surfaced on return. */
@@ -273,7 +274,7 @@ export function AuthPageContent({ config, actions }: AuthPageContentProps) {
                 {actions.testLoginLoading ? (
                   <SpinnerIcon className="size-5" />
                 ) : (
-                  'Use local test account'
+                  (actions.testLoginLabel ?? 'Use local test account')
                 )}
               </Button>
             ) : null}

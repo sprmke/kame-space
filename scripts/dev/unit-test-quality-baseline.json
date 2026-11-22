@@ -255,7 +255,6 @@
     "ui/src/features/dashboard/team/lib/teamRoleToast.ts",
     "ui/src/features/dashboard/team/lib/teamScopeConfig.ts",
     "ui/src/features/guest/account/lib/guestAccountIdentity.ts",
-    "ui/src/features/guest/account/lib/guestAccountNav.ts",
     "ui/src/features/guest/account/lib/voucherDiscount.ts",
     "ui/src/features/guest/auth/lib/guestAuthResume.ts",
     "ui/src/features/guest/calendar/lib/guestCalendarAvailability.ts",

@@ -23,14 +23,19 @@ export type BookingGuestContext = {
   check_out_date?: string | null;
 };
 
-export function inboxNotificationMetadata(conv: InboxConversationContext): Record<string, unknown> {
+export function inboxNotificationMetadata(
+  conv: InboxConversationContext,
+  extras?: { messageId?: string | null }
+): Record<string, unknown> {
   const guestName = conv.participant_name?.trim() || null;
+  const messageId = extras?.messageId?.trim() || null;
   return {
     participant_name: conv.participant_name ?? null,
     guest_name: guestName,
     platform: conv.platform ?? null,
     inquiry_check_in: conv.inquiry_check_in ?? null,
     inquiry_check_out: conv.inquiry_check_out ?? null,
+    ...(messageId ? { message_id: messageId } : {}),
   };
 }
 
