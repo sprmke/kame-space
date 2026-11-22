@@ -30,6 +30,8 @@ type Props = {
   history?: ReactNode;
   /** Download / Publish (desktop). */
   actions?: ReactNode;
+  /** Trailing controls on phones (for example Undo, Redo and a primary Export button). */
+  phoneActions?: ReactNode;
 };
 
 /**
@@ -50,6 +52,7 @@ export function MarketingEditorTopBar({
   size,
   history,
   actions,
+  phoneActions,
 }: Props) {
   const isBelowLg = useIsBelowLg();
   const { open: openUpgradeModal } = useUpgradeModal();
@@ -106,6 +109,8 @@ export function MarketingEditorTopBar({
             {size}
             {actions}
           </div>
+        ) : phoneActions ? (
+          <div className="ml-auto flex shrink-0 items-center gap-0.5">{phoneActions}</div>
         ) : null}
       </div>
       {status === 'conflict' ? (

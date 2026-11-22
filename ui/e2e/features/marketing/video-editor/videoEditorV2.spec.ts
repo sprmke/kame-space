@@ -188,13 +188,15 @@ test.describe('@ci marketing video editor v2 on a phone', () => {
 
   const mainLane = (page: Page) => page.locator('[data-lane]').last();
 
-  test('scrolling the lanes moves the playhead and a tap on a clip shows its actions', async ({
+  test('scrolling the lanes moves the playhead and a tap on a clip shows its tools', async ({
     page,
   }) => {
     await openDraft(page);
-    // No desktop toolbar or track headers on a phone.
+    // No desktop toolbar or track headers on a phone, and the dashboard chrome is gone.
     await expect(page.getByRole('toolbar', { name: 'Timeline tools' })).toHaveCount(0);
-    await expect(page.getByRole('toolbar', { name: 'Editor actions' })).toBeVisible();
+    await expect(page.getByRole('toolbar', { name: 'Editor tools' })).toBeVisible();
+    // The dashboard behind the full-screen editor is out of reach for keyboard and readers.
+    await expect(page.locator('#root')).toHaveAttribute('inert', '');
 
     const before = await page
       .getByText(/^\d+:\d\d\.\d \/ /)
@@ -214,24 +216,56 @@ test.describe('@ci marketing video editor v2 on a phone', () => {
       .not.toBe(before);
 
     await mainLane(page).locator('[data-timeline-item]').first().tap();
-    const actions = page.getByRole('toolbar', { name: 'Clip actions' });
-    await expect(actions).toBeVisible();
-    await expect(actions.getByRole('button', { name: 'Edit' })).toBeVisible();
-    await actions.getByRole('button', { name: 'Done' }).tap();
-    await expect(actions).toHaveCount(0);
-    await expect(page.getByRole('toolbar', { name: 'Editor actions' })).toBeVisible();
+    const tools = page.getByRole('toolbar', { name: 'Clip tools' });
+    await expect(tools).toBeVisible();
+    await expect(tools.getByRole('button', { name: 'Split' })).toBeVisible();
+    await expect(tools.getByRole('button', { name: 'Delete' })).toBeVisible();
+    await tools.getByRole('button', { name: 'Done' }).tap();
+    await expect(tools).toHaveCount(0);
+    await expect(page.getByRole('toolbar', { name: 'Editor tools' })).toBeVisible();
   });
 
-  test('Split from the action bar cuts the selected clip at the playhead', async ({ page }) => {
+  test('Split from the clip tools cuts the selected clip at the playhead', async ({ page }) => {
     await openDraft(page);
     const items = page.locator('[data-timeline-item]');
     const before = await items.count();
     await mainLane(page).locator('[data-timeline-item]').first().tap();
     await page.getByLabel('Seek').fill('20');
     await page
-      .getByRole('toolbar', { name: 'Clip actions' })
+      .getByRole('toolbar', { name: 'Clip tools' })
       .getByRole('button', { name: 'Split' })
       .tap();
     await expect(items).toHaveCount(before + 1);
+  });
+
+  test('Audio opens a second row and Back returns to the first', async ({ page }) => {
+    await openDraft(page);
+    const strip = page.getByRole('toolbar', { name: 'Editor tools' });
+    await strip.getByRole('button', { name: 'Audio' }).tap();
+    const row = page.getByRole('toolbar', { name: 'Tool options' });
+    await expect(row.getByRole('button', { name: 'Music' })).toBeVisible();
+    await row.getByRole('button', { name: 'Back' }).tap();
+    await expect(page.getByRole('toolbar', { name: 'Editor tools' })).toBeVisible();
+  });
+
+  test('Speed opens a panel above the tools and keeps the preview visible', async ({ page }) => {
+    await openDraft(page);
+    await mainLane(page).locator('[data-timeline-item]').first().tap();
+    await page
+      .getByRole('toolbar', { name: 'Clip tools' })
+      .getByRole('button', { name: 'Duration' })
+      .tap();
+    const panel = page.getByRole('region', { name: 'Duration' });
+    await expect(panel).toBeVisible();
+    await expect(page.getByLabel('Timeline', { exact: true })).toBeVisible();
+    await panel.getByRole('button', { name: 'Close panel' }).tap();
+    await expect(panel).toHaveCount(0);
+  });
+
+  test('Export lives in the top bar and opens one sheet', async ({ page }) => {
+    await openDraft(page);
+    await page.getByRole('button', { name: 'Export' }).tap();
+    await expect(page.getByRole('dialog', { name: 'Export' })).toBeVisible();
+    await expect(page.getByText('Download MP4')).toBeVisible();
   });
 });

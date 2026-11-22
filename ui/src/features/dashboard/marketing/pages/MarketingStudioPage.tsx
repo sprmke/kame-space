@@ -245,6 +245,7 @@ function MarketingStudioWorkspace() {
             tabs={showStudioChrome ? <MarketingStudioModeTabs /> : null}
             actions={themeBar}
             hasDock={editorOpen && isMarketingEditorTab(tab)}
+            fullscreen={editorOpen && tab === 'video'}
           >
             {content}
           </MarketingStudioShell>

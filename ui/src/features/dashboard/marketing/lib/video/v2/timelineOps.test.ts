@@ -14,6 +14,7 @@ import {
   reorderTrack,
   resolveOverlaps,
   setPlaybackRate,
+  setSourceWindow,
   setTransition,
   snapFrame,
   snapMove,
@@ -697,5 +698,66 @@ describe('randomized operation sequences keep every invariant', () => {
       if (result) p = result.project;
       expect(validateProject(p), `seed ${seed} step ${step} action ${action}`).toEqual([]);
     }
+  });
+});
+
+describe('setSourceWindow', () => {
+  const sourceFrames = 10 * 30;
+
+  it('plays only the chosen part of a video', () => {
+    const v = clip(150, 10, { trimBeforeFrames: 0 });
+    const p = project([track('main', [v])]);
+    const result = setSourceWindow(p, v.id, 60, 150);
+    expect(result.ok).toBe(true);
+    const next = mainTrackOf(result.project).items[0] as MediaItem;
+    expect(next.trimBeforeFrames).toBe(60);
+    expect(next.durationInFrames).toBe(90);
+  });
+
+  it('can move the window left and right inside the file', () => {
+    const v = clip(60, 10, { trimBeforeFrames: 120 });
+    const p = project([track('main', [v])]);
+    const left = setSourceWindow(p, v.id, 30, 90);
+    const leftItem = mainTrackOf(left.project).items[0] as MediaItem;
+    expect(leftItem.trimBeforeFrames).toBe(30);
+    expect(leftItem.durationInFrames).toBe(60);
+    const right = setSourceWindow(left.project, v.id, 200, 260);
+    const rightItem = mainTrackOf(right.project).items[0] as MediaItem;
+    expect(rightItem.trimBeforeFrames).toBe(200);
+    expect(rightItem.durationInFrames).toBe(60);
+  });
+
+  it('keeps the length in step with the speed', () => {
+    const v = clip(60, 10, { trimBeforeFrames: 0, playbackRate: 2 });
+    const p = project([track('main', [v])]);
+    const result = setSourceWindow(p, v.id, 0, 120);
+    expect((mainTrackOf(result.project).items[0] as MediaItem).durationInFrames).toBe(60);
+  });
+
+  it('never plays past the end of the file', () => {
+    const v = clip(60, 10, { trimBeforeFrames: 0 });
+    const p = project([track('main', [v])]);
+    const result = setSourceWindow(p, v.id, 0, sourceFrames + 500);
+    const item = mainTrackOf(result.project).items[0] as MediaItem;
+    expect((item.trimBeforeFrames ?? 0) + item.durationInFrames).toBeLessThanOrEqual(sourceFrames);
+    expect(result.clamped).toBe(true);
+  });
+
+  it('ripples later clips on the main track', () => {
+    const a = clip(150, 10);
+    const b = photo(60);
+    const p = project([track('main', [a, b])]);
+    const result = setSourceWindow(p, a.id, 0, 90);
+    expect(mainTrackOf(result.project).items[1]!.from).toBe(90);
+  });
+
+  it('refuses stills, empty windows and missing clips', () => {
+    const still = photo(60);
+    const p = project([track('main', [still])]);
+    expect(setSourceWindow(p, still.id, 0, 30).reason).toBe('incompatible');
+    const v = clip(60, 10);
+    const q = project([track('main', [v])]);
+    expect(setSourceWindow(q, v.id, 40, 40).reason).toBe('invalid');
+    expect(setSourceWindow(q, 'nope', 0, 30).reason).toBe('not_found');
   });
 });

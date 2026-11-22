@@ -574,6 +574,57 @@ export function trimItem(
   return done(result, { clamped, itemIds: [itemId] });
 }
 
+/**
+ * Set which part of a video or audio file plays, in source frames (the Trim view). Built from
+ * `trimItem`, so ripple on the main track, the 60 s cap and the neighbour limits all still apply.
+ * `startSource` and `endSource` are frames in the original file at the project frame rate.
+ */
+export function setSourceWindow(
+  project: VideoProjectV2,
+  itemId: string,
+  startSource: number,
+  endSource: number
+): OpResult {
+  const loc = findItem(project, itemId);
+  if (!loc) return fail(project, 'not_found');
+  if (loc.track.locked) return fail(project, 'locked');
+  const item = loc.item;
+  if (item.type !== 'video' && item.type !== 'audio') return fail(project, 'incompatible');
+  const start = Math.max(0, Math.round(startSource));
+  const end = Math.round(endSource);
+  if (end - start < 1) return fail(project, 'invalid');
+
+  const rate = isMediaItem(item) ? (item.playbackRate ?? 1) : 1;
+  const currentStart = item.trimBeforeFrames ?? 0;
+  const edgeFrame = (current: VideoItem, source: number) =>
+    current.from +
+    timelineFramesForSource(
+      source - ((current as MediaItem | AudioItem).trimBeforeFrames ?? 0),
+      rate
+    );
+
+  const trimEnd = (p: VideoProjectV2) => {
+    const current = findItem(p, itemId)?.item;
+    return current ? trimItem(p, itemId, 'end', edgeFrame(current, end)) : fail(p, 'not_found');
+  };
+  const trimStart = (p: VideoProjectV2) => {
+    const current = findItem(p, itemId)?.item;
+    return current ? trimItem(p, itemId, 'start', edgeFrame(current, start)) : fail(p, 'not_found');
+  };
+
+  // Reveal earlier footage first when the window moves left; otherwise grow or cut the end first.
+  const steps = start < currentStart ? [trimStart, trimEnd] : [trimEnd, trimStart];
+  let working = project;
+  let clamped = false;
+  for (const step of steps) {
+    const result = step(working);
+    if (!result.ok) return result;
+    working = result.project;
+    clamped = clamped || Boolean(result.clamped);
+  }
+  return done(working, { clamped, itemIds: [itemId] });
+}
+
 // ─── Split / duplicate / paste ──────────────────────────────────────────────
 
 function splitOne(item: VideoItem, frame: number): [VideoItem, VideoItem] | null {
@@ -787,7 +838,7 @@ export function addTrack(project: VideoProjectV2, kind: Exclude<VideoTrackKind, 
 export function removeEmptyTracks(project: VideoProjectV2): VideoProjectV2 {
   const tracks = project.tracks.filter((track) => track.kind === 'main' || track.items.length > 0);
   return tracks.length === project.tracks.length ? project : { ...project, tracks };
-}/** Reorder a non-main track. `toIndex` is the final index (1 or higher; main stays at 0). */
+} /** Reorder a non-main track. `toIndex` is the final index (1 or higher; main stays at 0). */
 export function reorderTrack(project: VideoProjectV2, trackId: string, toIndex: number): OpResult {
   const found = findTrack(project, trackId);
   if (!found) return fail(project, 'not_found');

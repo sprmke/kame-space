@@ -9,8 +9,6 @@ import {
   Minimize2,
   Music2,
   Redo2,
-  RotateCcw,
-  Scaling,
   Send,
   SlidersHorizontal,
   Sparkles,
@@ -36,7 +34,6 @@ import type {
   MarketingEditorDocument,
   MarketingEditorNav,
 } from '@/features/dashboard/marketing/components/shared/MarketingEditorHost';
-import { MarketingEditorMobileToolbar } from '@/features/dashboard/marketing/components/shared/MarketingEditorMobileToolbar';
 import {
   MarketingEditorInspector,
   MarketingEditorRail,
@@ -50,6 +47,13 @@ import { MarketingSizeDialog } from '@/features/dashboard/marketing/components/s
 import { useMarketingTheme } from '@/features/dashboard/marketing/components/themes/MarketingThemeProvider';
 import type { InspectorActions } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
 import {
+  PANEL_ACTIONS,
+  VideoClipPanel,
+} from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoClipPanel';
+import { VideoExportSheet } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoExportSheet';
+import { VideoToolStrip } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoToolStrip';
+import { VideoTrimPanel } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoTrimPanel';
+import {
   VideoInspectorV2,
   inspectorTitle,
 } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/VideoInspectorV2';
@@ -60,7 +64,6 @@ import {
   VideoExportDialog,
   type VideoExportState,
 } from '@/features/dashboard/marketing/components/video-editor/v2/VideoExportDialog';
-import { VideoMobileActionBar } from '@/features/dashboard/marketing/components/video-editor/v2/VideoMobileActionBar';
 import {
   VideoPreviewV2,
   type VideoPreviewV2Handle,
@@ -128,6 +131,13 @@ import { isReviewVideoTemplate } from '@/features/dashboard/marketing/lib/video/
 import { applyGuestReviewToVideoProjectV2 } from '@/features/dashboard/marketing/lib/video/v2/applyGuestReviewToVideoProjectV2';
 import { applyCanvasPatch } from '@/features/dashboard/marketing/lib/video/v2/canvasPatch';
 import {
+  DEFAULT_PHONE_TOOL_OPTIONS,
+  selectionKind,
+  toolsForSelection,
+  type PhoneToolAction,
+  type PhoneToolOptions,
+} from '@/features/dashboard/marketing/lib/video/v2/phoneTools';
+import {
   clipboardFor,
   duplicateItems,
   itemLabel,
@@ -161,6 +171,7 @@ import {
   moveItem,
   pasteItems,
   setPlaybackRate,
+  setSourceWindow,
   setTransition,
   splitItems,
   trimItem,
@@ -168,11 +179,6 @@ import {
   type ClipboardEntry,
   type OpResult,
 } from '@/features/dashboard/marketing/lib/video/v2/timelineOps';
-import {
-  MAX_ZOOM,
-  MIN_ZOOM,
-  stepZoom,
-} from '@/features/dashboard/marketing/lib/video/v2/timelineScale';
 import {
   allItems,
   itemEnd,
@@ -205,7 +211,7 @@ import { registerVideoThumbnailPlaybackPause } from '@/features/dashboard/market
 import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { useOrgSettings } from '@/features/dashboard/org/hooks/useOrgSettings';
 import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
-import { TierBadge, TierBadgeAnchor } from '@/features/dashboard/plans/components/TierBadge';
+import { TierBadgeAnchor } from '@/features/dashboard/plans/components/TierBadge';
 import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeModalProvider';
 import { useFeatureGate } from '@/features/dashboard/plans/hooks/useFeatureGate';
 
@@ -318,6 +324,11 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   );
   const [inspectorOpen, setInspectorOpen] = useState(!isBelowLg);
   const [mobilePanel, setMobilePanel] = useState<string | null>(null);
+  /** Phone: the tool whose panel is open above the tool strip. */
+  const [phoneAction, setPhoneAction] = useState<PhoneToolAction | null>(null);
+  const [exportSheetOpen, setExportSheetOpen] = useState(false);
+  /** Phone: the next library pick goes on top of the video instead of onto the main row. */
+  const pickOnTopRef = useRef(false);
   const [sizeOpen, setSizeOpen] = useState(false);
   const [pendingTemplate, setPendingTemplate] = useState<
     (MarketingTemplatePick & { name: string }) | null
@@ -720,8 +731,9 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
       handleDropMedia(payload, {
         frame: currentFrameRef.current,
         trackId: null,
-        onMain: payload.kind !== 'audio',
+        onMain: payload.kind !== 'audio' && !pickOnTopRef.current,
       });
+      pickOnTopRef.current = false;
       if (isBelowLg) setMobilePanel(null);
     },
     [apply, handleDropMedia, isBelowLg, replaceTargetId]
@@ -735,8 +747,12 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
       apply((current) =>
         insertItem(current, item, { kind: 'text', atFrame: currentFrameRef.current })
       );
-      if (isBelowLg) setMobilePanel(null);
-      openEditPanel();
+      if (isBelowLg) {
+        setMobilePanel(null);
+        setPhoneAction('clip-edit');
+      } else {
+        openEditPanel();
+      }
     },
     [apply, isBelowLg, openEditPanel]
   );
@@ -1204,7 +1220,18 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     selectedLocation &&
     (isMediaItem(selectedLocation.item) || isAudioItem(selectedLocation.item))
   );
-  const showClipActions = isBelowLg && selectedIds.length > 0 && !mobilePanel;
+  const selection = project ? selectionKind(project, selectedIds) : 'none';
+  const selectedItem = selectedLocation?.item ?? null;
+  const phoneToolOptions = useMemo<PhoneToolOptions>(
+    () => ({ ...DEFAULT_PHONE_TOOL_OPTIONS, canGenerate }),
+    [canGenerate]
+  );
+  const disabledPhoneActions = useMemo(() => {
+    const disabled = new Set<PhoneToolAction>();
+    if (!canSplitSelection) disabled.add('clip-split');
+    if (!canReplaceSelection) disabled.add('clip-replace');
+    return disabled;
+  }, [canSplitSelection, canReplaceSelection]);
 
   const replaceTarget = replaceTargetId && project ? findItem(project, replaceTargetId) : null;
   const replaceKinds = replaceTarget
@@ -1231,6 +1258,122 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
       onOpenChange={isBelowLg ? setSizeOpen : undefined}
       hideTrigger={isBelowLg}
     />
+  );
+
+  const handlePhoneAction = useCallback(
+    (action: PhoneToolAction) => {
+      if (action === 'clip-trim' || PANEL_ACTIONS.has(action)) {
+        setPhoneAction((current) => (current === action ? null : action));
+        return;
+      }
+      setPhoneAction(null);
+      pickOnTopRef.current = false;
+      switch (action) {
+        case 'clip-split':
+          handleCommand({ type: 'split' });
+          return;
+        case 'clip-duplicate':
+          handleCommand({ type: 'duplicate' });
+          return;
+        case 'clip-delete':
+          handleCommand({ type: 'delete', ripple: false });
+          return;
+        case 'clip-replace':
+          if (selectedIds[0]) startReplace(selectedIds[0]);
+          return;
+        case 'text-add':
+          handleAddText('headline');
+          return;
+        case 'text-styles':
+          openRailPanel('text');
+          return;
+        case 'media-add':
+        case 'audio-music':
+        case 'audio-upload':
+          openRailPanel('media');
+          return;
+        case 'media-add-on-top':
+          pickOnTopRef.current = true;
+          openRailPanel('media');
+          return;
+        case 'open-templates':
+          openRailPanel('templates');
+          return;
+        case 'open-reviews':
+          openRailPanel('reviews');
+          return;
+        case 'open-size':
+          setSizeOpen(true);
+          return;
+        case 'open-background':
+          setSelectedIds([]);
+          setMobilePanel('edit');
+          return;
+        case 'open-ai':
+          setAiGenerateOpen(true);
+          return;
+        case 'open-reset':
+          handleResetProject();
+          return;
+        case 'open-guide':
+          setShowSafeArea((value) => !value);
+          return;
+        default:
+          return;
+      }
+    },
+    [handleAddText, handleCommand, handleResetProject, openRailPanel, selectedIds, startReplace]
+  );
+
+  // A panel only stays open while its tool still belongs to the selected clip.
+  const phoneActionApplies = Boolean(
+    phoneAction &&
+    (phoneAction === 'clip-trim'
+      ? selection === 'video'
+      : toolsForSelection(selection, phoneToolOptions).some((tool) => tool.action === phoneAction))
+  );
+  useEffect(() => {
+    if (phoneAction && !phoneActionApplies) setPhoneAction(null);
+  }, [phoneAction, phoneActionApplies]);
+  useEffect(() => {
+    if (!mobilePanel) pickOnTopRef.current = false;
+  }, [mobilePanel]);
+
+  const phoneTopActions = (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-11"
+        aria-label="Undo"
+        disabled={!canUndo}
+        onClick={undo}
+      >
+        <Undo2 className="size-5" aria-hidden />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-11"
+        aria-label="Redo"
+        disabled={!canRedo}
+        onClick={redo}
+      >
+        <Redo2 className="size-5" aria-hidden />
+      </Button>
+      {canEditContent || (onPublish && canPublish) ? (
+        <Button
+          type="button"
+          className="ml-1 min-h-[44px] px-4"
+          disabled={!hasProject || exporting}
+          onClick={() => setExportSheetOpen(true)}
+        >
+          Export
+        </Button>
+      ) : null}
+    </>
   );
 
   const topBarActions = (
@@ -1492,6 +1635,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         }
         size={sizeDialog}
         actions={topBarActions}
+        phoneActions={phoneTopActions}
       />
       {isBelowLg ? sizeDialog : null}
 
@@ -1512,7 +1656,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
           />
         )}
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain max-lg:pb-24 lg:overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           {project && inputProps ? (
             <>
               <div
@@ -1590,6 +1734,41 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
                   addAudio: () => openRailPanel('media'),
                 }}
               />
+              {isBelowLg ? (
+                <>
+                  {phoneActionApplies &&
+                  phoneAction === 'clip-trim' &&
+                  selectedItem?.type === 'video' ? (
+                    <VideoTrimPanel
+                      item={selectedItem}
+                      fps={project.fps}
+                      onApply={(start, end) =>
+                        apply((current) => setSourceWindow(current, selectedItem.id, start, end))
+                      }
+                      onClose={() => setPhoneAction(null)}
+                    />
+                  ) : phoneActionApplies && phoneAction && selectedItem && inspectorActions ? (
+                    <VideoClipPanel
+                      action={phoneAction}
+                      item={selectedItem}
+                      actions={inspectorActions}
+                      onClose={() => setPhoneAction(null)}
+                    />
+                  ) : null}
+                  <VideoToolStrip
+                    options={phoneToolOptions}
+                    selection={selection}
+                    activeAction={phoneAction}
+                    readOnly={!canEditContent}
+                    disabledActions={disabledPhoneActions}
+                    onAction={handlePhoneAction}
+                    onDone={() => {
+                      setSelectedIds([]);
+                      setPhoneAction(null);
+                    }}
+                  />
+                </>
+              ) : null}
             </>
           ) : (
             <div
@@ -1621,137 +1800,15 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         </MarketingEditorInspector>
       </div>
 
-      {/* Mobile editor dock (max-lg): sheets for Media / Text / Edit / Templates, AI, and ⋯. */}
-      {showClipActions ? (
-        <VideoMobileActionBar
-          canSplit={canSplitSelection}
-          canReplace={canReplaceSelection}
-          readOnly={!canEditContent}
-          onDone={() => setSelectedIds([])}
-          onSplit={() => handleCommand({ type: 'split' })}
-          onEdit={() => setMobilePanel('edit')}
-          onReplace={() => selectedIds[0] && startReplace(selectedIds[0])}
-          onDuplicate={() => handleCommand({ type: 'duplicate' })}
-          onDelete={() => handleCommand({ type: 'delete', ripple: false })}
-        />
-      ) : (
-        <MarketingEditorMobileToolbar
-          panels={[
-            { key: 'media', label: 'Media', icon: Music2 },
-            { key: 'text', label: 'Text', icon: Type },
-            { key: 'edit', label: 'Edit', icon: SlidersHorizontal },
-            { key: 'templates', label: 'Templates', icon: LayoutTemplate },
-            ...(canGenerate ? [{ key: 'ai', label: 'AI', icon: Sparkles }] : []),
-          ]}
-          activePanel={mobilePanel}
-          onSelectPanel={(key) => {
-            if (key === 'ai') {
-              setAiGenerateOpen(true);
-              return;
-            }
-            setMobilePanel(key);
-          }}
-          overflowItems={[
-            {
-              key: 'undo',
-              label: 'Undo',
-              icon: <Undo2 className="size-5" aria-hidden />,
-              disabled: !canUndo,
-              onSelect: undo,
-            },
-            {
-              key: 'redo',
-              label: 'Redo',
-              icon: <Redo2 className="size-5" aria-hidden />,
-              disabled: !canRedo,
-              onSelect: redo,
-            },
-            {
-              key: 'size',
-              label: 'Size',
-              icon: <Scaling className="size-5" aria-hidden />,
-              disabled: !hasProject,
-              onSelect: () => setSizeOpen(true),
-            },
-            {
-              key: 'reviews',
-              label: 'Guest reviews',
-              icon: <Star className="size-5" aria-hidden />,
-              onSelect: () => setMobilePanel('reviews'),
-            },
-            {
-              key: 'zoom-in',
-              label: 'Preview zoom in',
-              icon: <ZoomIn className="size-5" aria-hidden />,
-              disabled: relativeZoom >= VIDEO_MAX_RELATIVE_ZOOM,
-              onSelect: () => setRelativeZoom((prev) => stepVideoZoomIn(prev)),
-            },
-            {
-              key: 'zoom-out',
-              label: 'Preview zoom out',
-              icon: <ZoomOut className="size-5" aria-hidden />,
-              disabled: relativeZoom <= VIDEO_MIN_RELATIVE_ZOOM,
-              onSelect: () => setRelativeZoom((prev) => stepVideoZoomOut(prev)),
-            },
-            {
-              key: 'timeline-zoom-in',
-              label: 'Timeline zoom in',
-              icon: <ZoomIn className="size-5" aria-hidden />,
-              disabled: timelineZoom >= MAX_ZOOM,
-              onSelect: () => setTimelineZoom((prev) => stepZoom(prev, 1)),
-            },
-            {
-              key: 'timeline-zoom-out',
-              label: 'Timeline zoom out',
-              icon: <ZoomOut className="size-5" aria-hidden />,
-              disabled: timelineZoom <= MIN_ZOOM,
-              onSelect: () => setTimelineZoom((prev) => stepZoom(prev, -1)),
-            },
-            {
-              key: 'fit',
-              label: 'Fit to view',
-              icon: <Minimize2 className="size-5" aria-hidden />,
-              onSelect: handleFitToView,
-            },
-            {
-              key: 'fullscreen',
-              label: 'Fullscreen preview',
-              icon: <Maximize2 className="size-5" aria-hidden />,
-              onSelect: handleToggleFullscreen,
-            },
-            {
-              key: 'reset',
-              label: 'Reset to template',
-              icon: <RotateCcw className="size-5" aria-hidden />,
-              onSelect: handleResetProject,
-            },
-            ...(canEditContent
-              ? [
-                  {
-                    key: 'download',
-                    label: exporting ? 'Exporting…' : 'Download MP4',
-                    icon: <Download className="size-5" aria-hidden />,
-                    trailing: <TierBadge feature="marketingStudio" />,
-                    disabled: exporting || !hasProject,
-                    onSelect: () => void handleDownload(),
-                  },
-                ]
-              : []),
-            ...(onPublish && canPublish
-              ? [
-                  {
-                    key: 'publish',
-                    label: MARKETING_PUBLISH_META_LABEL,
-                    icon: <Send className="size-5" aria-hidden />,
-                    trailing: <TierBadge feature="marketingPublishLimitPerGroup" />,
-                    disabled: exporting || !hasProject,
-                    onSelect: () => void handlePublish(),
-                  },
-                ]
-              : []),
-          ]}
-        />
-      )}
+      <VideoExportSheet
+        open={exportSheetOpen}
+        onOpenChange={setExportSheetOpen}
+        exporting={exporting}
+        canDownload={canEditContent}
+        canPublish={Boolean(onPublish && canPublish)}
+        onDownload={() => void handleDownload()}
+        onPublish={() => void handlePublish()}
+      />
 
       <VideoExportDialog state={exportState} onCancel={() => exportAbortRef.current?.abort()} />
 

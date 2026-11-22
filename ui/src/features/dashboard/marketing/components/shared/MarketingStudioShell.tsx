@@ -1,7 +1,9 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 import { MarketingBuilderHeader } from '@/features/dashboard/marketing/components/shared/MarketingBuilderHeader';
 
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -12,8 +14,16 @@ type Props = {
   actions?: ReactNode;
   /** An editor with its floating mobile dock is open (reserve room for it). */
   hasDock?: boolean;
+  /**
+   * Phone only (`max-lg`): the editor takes the whole screen, over the dashboard header and tab
+   * bar, on a dark surface (like CapCut). Desktop is unchanged. Sheets and dialogs sit above it.
+   */
+  fullscreen?: boolean;
   children: ReactNode;
 };
+
+/** Below sheets and dialogs (z-100+), above the app tab bar (z-40) and quick-access button (z-41). */
+const FULLSCREEN_Z_CLASS = 'z-[45]';
 
 /**
  * Shared builder card chrome — keeps mode tabs mounted for sliding-pill animation.
@@ -33,8 +43,48 @@ export function MarketingStudioShell({
   leading,
   actions,
   hasDock = false,
+  fullscreen = false,
   children,
 }: Props) {
+  const isBelowLg = useIsBelowLg();
+  const takeOver = fullscreen && isBelowLg;
+
+  // The page behind the editor must not scroll under a thumb, and must not be reachable by
+  // keyboard or screen reader while it is covered. Sheets and dialogs portal to `body`, outside
+  // the app root, so they stay usable.
+  useEffect(() => {
+    if (!takeOver) return;
+    const html = document.documentElement;
+    const appRoot = document.getElementById('root');
+    const previousOverflow = html.style.overflow;
+    const wasInert = appRoot?.hasAttribute('inert') ?? false;
+    html.style.overflow = 'hidden';
+    appRoot?.setAttribute('inert', '');
+    return () => {
+      html.style.overflow = previousOverflow;
+      if (!wasInert) appRoot?.removeAttribute('inert');
+    };
+  }, [takeOver]);
+
+  if (takeOver) {
+    return createPortal(
+      <div
+        data-video-editor-fullscreen
+        className={cn(
+          'dark bg-background text-foreground fixed inset-0 flex min-h-0 flex-col overflow-hidden',
+          FULLSCREEN_Z_CLASS
+        )}
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
+      </div>,
+      document.body
+    );
+  }
+
   return (
     <div
       className={cn(
