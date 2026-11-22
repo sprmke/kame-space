@@ -1,4 +1,3 @@
-import { BenchmarkCard } from '@/features/dashboard/analytics/components/BenchmarkCard';
 import { ChannelMixCard } from '@/features/dashboard/analytics/components/ChannelMixCard';
 import { GuestAgeCard } from '@/features/dashboard/analytics/components/GuestAgeCard';
 import { GuestOriginsCard } from '@/features/dashboard/analytics/components/GuestOriginsCard';
@@ -27,10 +26,6 @@ export function AnalyticsOverviewSection({ bundle }: Props) {
         <ChannelMixCard channelMix={bundle.distributions.channelMix} compact />
         <PublicPagePerformanceCard publicPage={bundle.publicPage} />
         {bundle.marketing ? <MarketingResultsCard marketing={bundle.marketing} /> : null}
-        <BenchmarkCard
-          benchmark={bundle.benchmark}
-          ownOccupancyRatePct={bundle.kpis.occupancyRate.value}
-        />
       </div>
     </div>
   );

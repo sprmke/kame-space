@@ -3,6 +3,7 @@ import {
   lazy,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -141,7 +142,6 @@ import { BottomTabBar } from '@/components/mobile/BottomTabBar';
 import { MobileAppShell } from '@/components/mobile/ContextualActionBar';
 import { PageTransition } from '@/components/mobile/PageTransition';
 import { AiAssistantPanelSkeleton } from '@/components/skeletons/AiAssistantSkeleton';
-import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SlidingActivePill } from '@/components/ui/SlidingActivePill';
 import { useAfterFirstPaint } from '@/hooks/useAfterFirstPaint';
@@ -725,6 +725,22 @@ function AdminLayoutShell({ children, fillMain = false }: Props) {
   const sidebarWidth = railCollapsed ? RAIL_COLLAPSED_PX : RAIL_EXPANDED_PX;
   const showCollapseToggle = !(aiMode && canvasResize.railLocked);
 
+  // Publish rail width for app-root overlays (cookie consent) so they track the
+  // content column while the sidebar animates. Zero below `lg` (rail is hidden).
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const apply = () => {
+      root.style.setProperty('--admin-rail-width', mq.matches ? `${sidebarWidth}px` : '0px');
+    };
+    apply();
+    mq.addEventListener('change', apply);
+    return () => {
+      mq.removeEventListener('change', apply);
+      root.style.setProperty('--admin-rail-width', '0px');
+    };
+  }, [sidebarWidth]);
+
   return (
     <>
       <PostHogAdminScopeSync />
@@ -1132,7 +1148,6 @@ function AdminSidebarContent({
 
       <AdminProfileFooter
         collapsed={collapsed}
-        showThemeToggle={!onClose}
         displayName={displayName}
         avatarUrl={avatarUrl}
         initials={initials}
@@ -1342,7 +1357,6 @@ function AdminSidebarNav({
 
 type AdminProfileFooterProps = {
   collapsed: boolean;
-  showThemeToggle: boolean;
   displayName: string;
   avatarUrl: string | null;
   initials: string;
@@ -1356,10 +1370,10 @@ type AdminProfileFooterProps = {
  * Account menu at the bottom of each sidebar instance. State is per-instance
  * because desktop and mobile drawers both mount SidebarContent — a shared ref
  * would point at the hidden drawer and break outside-click / sign-out.
+ * Theme lives on Quick Access (icon) and the Profile modal (segmented), not here.
  */
 function AdminProfileFooter({
   collapsed,
-  showThemeToggle,
   displayName,
   avatarUrl,
   initials,
@@ -1432,15 +1446,6 @@ function AdminProfileFooter({
       </div>
       <div className={cn('border-sidebar-border space-y-2 border-t', collapsed ? 'p-2' : 'p-3')}>
         <DashboardModeToggle variant={collapsed ? 'icon' : 'row'} />
-
-        {showThemeToggle && (
-          <div className={cn(collapsed ? 'flex justify-center px-0' : 'px-1')}>
-            <ThemeToggle
-              variant={collapsed ? 'icon' : 'segmented'}
-              className={collapsed ? undefined : 'w-full'}
-            />
-          </div>
-        )}
 
         <div ref={profileRef} className="relative">
           {profileOpen && (

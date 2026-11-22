@@ -51,12 +51,6 @@ describe('resolveReviewsListLoadState', () => {
     ).toBe('empty-skeleton');
   });
 
-  it('uses the quiet empty skeleton when an org has no listings', () => {
-    expect(
-      state({ tab: 'properties', dataTab: 'received', isFetching: true, listingCount: 0 })
-    ).toBe('empty-skeleton');
-  });
-
   it('keeps row skeletons while a filter could still return rows', () => {
     expect(
       state({

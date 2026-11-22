@@ -6,7 +6,7 @@ import { ArrowUpRight, X } from 'lucide-react';
 
 import { LegalDocumentBody } from '@/components/legal/LegalDocumentBody';
 import { Button } from '@/components/ui/button';
-import { MODAL_CLOSE_BUTTON_CLASS } from '@/components/ui/modal-chrome';
+import { MODAL_CLOSE_BUTTON_CLASS, MODAL_HEADER_INLINE_CLASS } from '@/components/ui/modal-chrome';
 import {
   ResponsiveModal,
   ResponsiveModalClose,
@@ -22,6 +22,7 @@ import {
   legalSectionDomId,
   type LegalDocId,
 } from '@/lib/legal/legalMeta';
+import { cn } from '@/lib/utils';
 
 const SHEET_ID_PREFIX = 'legal-sheet-';
 
@@ -74,7 +75,7 @@ export function LegalDocumentSheet({ doc, section, open, onOpenChange }: LegalDo
         className="z-[121] flex max-h-[min(90dvh,44rem)] max-w-[min(calc(100vw-1.5rem),38rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[min(90vw,38rem)]"
         overlayClassName="z-[120]"
       >
-        <div className="border-border flex shrink-0 items-center gap-1 border-b px-4 py-3 sm:px-5">
+        <div className={cn('flex shrink-0 items-center gap-1', MODAL_HEADER_INLINE_CLASS)}>
           <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <ResponsiveModalTitle>{policy.title}</ResponsiveModalTitle>
             <ResponsiveModalDescription>Updated {LEGAL_LAST_UPDATED}</ResponsiveModalDescription>

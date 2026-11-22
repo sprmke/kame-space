@@ -18,14 +18,10 @@ import {
   ReviewsViewToggle,
 } from '@/features/reviews/components/ReviewsViewToggle';
 import {
-  ORG_PROPERTY_SORT_OPTIONS,
-  type OrgPropertySort,
-} from '@/features/reviews/lib/orgReviewsApi';
-import {
   activeReviewsFilterCount,
   REVIEWS_SORTS_BY_TAB,
   REVIEWS_SORT_LABELS,
-  type ReviewsPageTab,
+  type ReviewListTab,
   type ReviewsQuery,
   type ReviewsSort,
 } from '@/features/reviews/lib/propertyReviewsApi';
@@ -39,25 +35,21 @@ import { AdminListRefinePopover } from '@/components/navigation/AdminListRefineP
 import { AdminSortMenu } from '@/components/navigation/AdminSortMenu';
 import { cn } from '@/lib/utils';
 
-const SEARCH_PLACEHOLDER: Record<ReviewsPageTab, string> = {
+const SEARCH_PLACEHOLDER: Record<ReviewListTab, string> = {
   received: 'Search guests or review text…',
   written: 'Search guests or review text…',
   to_write: 'Search guests…',
-  properties: 'Search listings…',
 };
 
 export type ReviewsListingOption = { value: string; label: string };
 
 type Props = {
-  tab: ReviewsPageTab;
+  tab: ReviewListTab;
   query: ReviewsQuery;
   onChange: (next: ReviewsQuery) => void;
   hideTableView?: boolean;
   /** Org rollup only — every listing the caller can see. */
   listingOptions?: ReviewsListingOption[];
-  /** Sort for the By-property tab; the review tabs sort through `query.sort`. */
-  propertySort?: OrgPropertySort;
-  onPropertySortChange?: (next: OrgPropertySort) => void;
 };
 
 export function ReviewsToolbar({
@@ -66,19 +58,15 @@ export function ReviewsToolbar({
   onChange,
   hideTableView = false,
   listingOptions,
-  propertySort,
-  onPropertySortChange,
 }: Props) {
   const [searchDraft, setSearchDraft] = useState(query.q);
   const [refineOpen, setRefineOpen] = useState(false);
   const [desktopRefineOpen, setDesktopRefineOpen] = useState(false);
   const searchMount = useRef(true);
 
-  const isListings = tab === 'properties';
-  const showListingFilter = Boolean(listingOptions && listingOptions.length > 1 && !isListings);
+  const showListingFilter = Boolean(listingOptions && listingOptions.length > 1);
   const filterCount =
-    (isListings ? 0 : activeReviewsFilterCount(tab, query)) +
-    (showListingFilter ? query.properties.length : 0);
+    activeReviewsFilterCount(tab, query) + (showListingFilter ? query.properties.length : 0);
 
   useEffect(() => {
     if (searchMount.current) {
@@ -118,7 +106,7 @@ export function ReviewsToolbar({
         inputMode="search"
         enterKeyHint="search"
         placeholder={SEARCH_PLACEHOLDER[tab]}
-        aria-label={isListings ? 'Search listings' : 'Search reviews'}
+        aria-label="Search reviews"
         className={cn(
           'border-border bg-card text-foreground field-focus h-11 min-h-[44px] w-full rounded-2xl border py-2.5 pl-11 text-[13px]',
           'lg:h-10 lg:min-h-[44px] lg:rounded-lg lg:pl-10 lg:text-sm',
@@ -141,7 +129,7 @@ export function ReviewsToolbar({
     </div>
   );
 
-  const showRatingFilter = !isListings && tab !== 'to_write';
+  const showRatingFilter = tab !== 'to_write';
 
   /**
    * Only one facet sits beside Filters, or the search field is squeezed to a
@@ -170,14 +158,14 @@ export function ReviewsToolbar({
           onChange={(ratings) => onChange({ ...query, page: 1, ratings })}
         />
       ) : null}
-      {!isListings && tab === 'received' ? (
+      {tab === 'received' ? (
         <ReviewsResponseFilter
           nestedInPopover
           value={query.responded}
           onChange={(responded) => onChange({ ...query, page: 1, responded })}
         />
       ) : null}
-      {!isListings && tab === 'written' ? (
+      {tab === 'written' ? (
         <ReviewsHostAgainFilter
           nestedInPopover
           value={query.hostAgain}
@@ -188,8 +176,7 @@ export function ReviewsToolbar({
   );
 
   const hasPopoverFilters =
-    (showListingFilter && showRatingFilter) ||
-    (!isListings && (tab === 'received' || tab === 'written'));
+    (showListingFilter && showRatingFilter) || tab === 'received' || tab === 'written';
 
   const popoverCount =
     (showListingFilter ? query.ratings.length : 0) +
@@ -198,72 +185,59 @@ export function ReviewsToolbar({
       ? 1
       : 0);
 
-  const sortMenu =
-    isListings && propertySort && onPropertySortChange ? (
-      <AdminSortMenu
-        sort={propertySort}
-        onChange={onPropertySortChange}
-        options={ORG_PROPERTY_SORT_OPTIONS}
-        ariaLabel="Sort listings"
-        menuWidthClass="w-[min(calc(100vw-24px),14rem)]"
-      />
-    ) : (
-      <AdminSortMenu
-        sort={query.sort}
-        onChange={(sort: ReviewsSort) => onChange({ ...query, sort, page: 1 })}
-        options={REVIEWS_SORTS_BY_TAB[tab === 'properties' ? 'received' : tab].map((value) => ({
-          value,
-          label: REVIEWS_SORT_LABELS[tab === 'properties' ? 'received' : tab][value] ?? value,
-        }))}
-        ariaLabel="Sort reviews"
-        menuWidthClass="w-[min(calc(100vw-24px),14rem)]"
-      />
-    );
+  const sortMenu = (
+    <AdminSortMenu
+      sort={query.sort}
+      onChange={(sort: ReviewsSort) => onChange({ ...query, sort, page: 1 })}
+      options={REVIEWS_SORTS_BY_TAB[tab].map((value) => ({
+        value,
+        label: REVIEWS_SORT_LABELS[tab][value] ?? value,
+      }))}
+      ariaLabel="Sort reviews"
+      menuWidthClass="w-[min(calc(100vw-24px),14rem)]"
+    />
+  );
 
-  const perPage = isListings ? undefined : (
+  const perPage = (
     <AdminListPerPageSelect
       limit={query.limit}
       onChange={(limit) => onChange({ ...query, limit, page: 1 })}
     />
   );
 
-  const hasMobileFilters = Boolean(showListingFilter || showRatingFilter || !isListings);
-
   const mobileRefineBody = (
     <>
-      {hasMobileFilters ? (
-        <AdminListRefineSection title="Filters">
-          <div className="flex flex-col gap-2 [&_button]:w-full">
-            {showListingFilter ? (
-              <ReviewsListingFilter
-                options={listingOptions ?? []}
-                value={query.properties}
-                onChange={(properties) => onChange({ ...query, page: 1, properties })}
-              />
-            ) : null}
-            {showRatingFilter ? (
-              <ReviewsRatingFilter
-                value={query.ratings}
-                onChange={(ratings) => onChange({ ...query, page: 1, ratings })}
-              />
-            ) : null}
-            {!isListings && tab === 'received' ? (
-              <ReviewsResponseFilter
-                value={query.responded}
-                onChange={(responded) => onChange({ ...query, page: 1, responded })}
-              />
-            ) : null}
-            {!isListings && tab === 'written' ? (
-              <ReviewsHostAgainFilter
-                value={query.hostAgain}
-                onChange={(hostAgain) => onChange({ ...query, page: 1, hostAgain })}
-              />
-            ) : null}
-          </div>
-        </AdminListRefineSection>
-      ) : null}
+      <AdminListRefineSection title="Filters">
+        <div className="flex flex-col gap-2 [&_button]:w-full">
+          {showListingFilter ? (
+            <ReviewsListingFilter
+              options={listingOptions ?? []}
+              value={query.properties}
+              onChange={(properties) => onChange({ ...query, page: 1, properties })}
+            />
+          ) : null}
+          {showRatingFilter ? (
+            <ReviewsRatingFilter
+              value={query.ratings}
+              onChange={(ratings) => onChange({ ...query, page: 1, ratings })}
+            />
+          ) : null}
+          {tab === 'received' ? (
+            <ReviewsResponseFilter
+              value={query.responded}
+              onChange={(responded) => onChange({ ...query, page: 1, responded })}
+            />
+          ) : null}
+          {tab === 'written' ? (
+            <ReviewsHostAgainFilter
+              value={query.hostAgain}
+              onChange={(hostAgain) => onChange({ ...query, page: 1, hostAgain })}
+            />
+          ) : null}
+        </div>
+      </AdminListRefineSection>
       <AdminListRefineSection title="Sort">{sortMenu}</AdminListRefineSection>
-      {perPage ? <AdminListRefineSection title="Per page">{perPage}</AdminListRefineSection> : null}
+      <AdminListRefineSection title="Per page">{perPage}</AdminListRefineSection>
     </>
   );
 
@@ -275,7 +249,7 @@ export function ReviewsToolbar({
           filterCount={filterCount}
           filtersOpen={refineOpen}
           onFiltersOpenChange={setRefineOpen}
-          filterAriaLabel={isListings ? 'Refine listings' : 'Refine reviews'}
+          filterAriaLabel="Refine reviews"
         />
         {/* Card is the only phone view, so a one-option toggle is left out. */}
         {hideTableView ? null : (
@@ -296,7 +270,7 @@ export function ReviewsToolbar({
       </div>
 
       <AdminListDesktopToolbar
-        aria-label={isListings ? 'Listing filters' : 'Review filters'}
+        aria-label="Review filters"
         search={searchField}
         leading={leadingFilter ?? undefined}
         refine={

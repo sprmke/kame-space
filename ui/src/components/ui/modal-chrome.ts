@@ -37,12 +37,25 @@ export const MODAL_HEADER_STACK_CLASS = 'gap-1 space-y-0';
 export const MODAL_HEADER_CLOSE_GUTTER_CLASS = 'pr-12 sm:pr-14';
 
 /**
- * Header row: hairline under it, tight vertical padding, title on the left and
- * the close control on the right. Uses `pl-*` + close gutter (not `px-*`) so
- * the reserved right edge survives class merges. Stack gap is applied by
+ * Header row when the close is the **absolute** Dialog control (`showCloseButton`
+ * default). Hairline, tight vertical padding, `pl-*` + close gutter (not `px-*`)
+ * so the reserved right edge survives class merges. Use with
+ * `ResponsiveModalHeader` / `AdminDialogShell`. Stack gap is applied by
  * `DialogHeader` / `SheetHeader` (`MODAL_HEADER_STACK_CLASS`), not here.
+ *
+ * Do **not** put an inline `ResponsiveModalClose` in this header — the gutter
+ * leaves the X floating inset from the edge. For inline close use
+ * `MODAL_HEADER_INLINE_CLASS` on a plain flex `div` (see `GuestDialogShell`).
  */
 export const MODAL_HEADER_CLASS = `border-border shrink-0 border-b pl-4 py-3 sm:pl-5 ${MODAL_HEADER_CLOSE_GUTTER_CLASS}`;
+
+/**
+ * Header row when the close is **inline** in the flex row (`GuestDialogShell`,
+ * `LegalDocumentSheet`). Symmetric `px-*` — no absolute-close gutter. Pair with
+ * `showCloseButton={false}` and a `ResponsiveModalClose` as the last flex child.
+ * Never combine with `ResponsiveModalHeader` on desktop (that forces the gutter).
+ */
+export const MODAL_HEADER_INLINE_CLASS = 'border-border shrink-0 border-b px-4 py-3 sm:px-5';
 
 /** Scrollable body between the header and the footer. */
 export const MODAL_BODY_CLASS = 'px-4 py-4 sm:px-5';

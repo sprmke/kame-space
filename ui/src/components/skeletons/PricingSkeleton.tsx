@@ -195,7 +195,12 @@ function PricingCalendarCardSkeleton() {
                 <div
                   key={day.toISOString()}
                   className={pricingCalendarOutsideCellClassName(denseCalendar)}
-                />
+                  aria-hidden
+                >
+                  <span className="text-muted-foreground text-xs font-semibold leading-none sm:text-sm">
+                    {day.getDate()}
+                  </span>
+                </div>
               )
             )}
           </div>

@@ -176,21 +176,26 @@ export function OccupancyCalendarView<T extends OccupancyRow>({
     >
       {grid}
 
-      <CalendarDayDetailPanel
-        selectedDay={selectedDay}
-        count={selectedDayItems.length}
-        entityLabel={singular}
-        emptySelectCaption={
-          emptySelectCaption ?? `Click any day to see ${entityLabel} with a stay that night`
-        }
-        emptyDayCaption={emptyDayCaption ?? `No guest ${entityLabel} are scheduled for this night`}
-      >
-        <div className="space-y-2">
-          {selectedDayItems.map((item) => (
-            <div key={getItemKey(item)}>{renderDayItem(item)}</div>
-          ))}
-        </div>
-      </CalendarDayDetailPanel>
+      {/* Phone/tablet use CalendarDaySheet from BookingCalendarView; desktop keeps the rail. */}
+      <div className="hidden min-w-0 lg:block">
+        <CalendarDayDetailPanel
+          selectedDay={selectedDay}
+          count={selectedDayItems.length}
+          entityLabel={singular}
+          emptySelectCaption={
+            emptySelectCaption ?? `Click any day to see ${entityLabel} with a stay that night`
+          }
+          emptyDayCaption={
+            emptyDayCaption ?? `No guest ${entityLabel} are scheduled for this night`
+          }
+        >
+          <div className="space-y-2">
+            {selectedDayItems.map((item) => (
+              <div key={getItemKey(item)}>{renderDayItem(item)}</div>
+            ))}
+          </div>
+        </CalendarDayDetailPanel>
+      </div>
     </div>
   );
 }
@@ -219,29 +224,41 @@ export function CalendarOccupancyPill({
   labelClassName,
   spanPosition = 'single',
   showLabel = true,
+  showStatusDot = true,
   compact = false,
   className,
 }: {
   status: string;
+  /** Pre-resolved text (full name, initials, or price). Empty / omitted with showLabel false = bar only. */
   label: string;
   title?: string;
   labelClassName?: string;
   spanPosition?: import('@/features/dashboard/bookings/components/calendar/calendarDateUtils').CalendarOccupancySpanPosition;
   showLabel?: boolean;
+  /** Hide the tone dot when initials need the horizontal space. */
+  showStatusDot?: boolean;
   /** Dashboard mini calendar — denser stay band under the date strip. */
   compact?: boolean;
   className?: string;
 }) {
   const tone = statusToneStyle(status);
   const roundedClass = occupancySpanRoundedClass(spanPosition, compact);
+  const visibleLabel = showLabel && label.trim().length > 0;
+  const showDot = visibleLabel && showStatusDot;
 
   return (
     <div
       className={cn(
-        'flex min-w-0 items-center truncate border shadow-sm',
+        'flex min-w-0 items-center overflow-hidden border shadow-sm',
         compact
-          ? 'h-[14px] gap-1 px-1.5 text-[10px] font-semibold leading-none tracking-tight'
-          : 'h-full gap-1 px-1.5 py-0.5 text-[10px] font-semibold leading-tight',
+          ? cn(
+              'h-[14px] text-[10px] font-semibold leading-none tracking-tight',
+              showDot ? 'gap-1 px-1.5' : 'justify-center px-1'
+            )
+          : cn(
+              'h-full py-0.5 text-[10px] font-semibold leading-tight',
+              showDot ? 'gap-1 px-1.5' : 'justify-center px-1'
+            ),
         roundedClass,
         tone.badge,
         /* Multi-week fragments: keep status border on outer edges only (no join seams) */
@@ -252,21 +269,31 @@ export function CalendarOccupancyPill({
       )}
       title={title}
     >
-      {showLabel ? (
+      {visibleLabel ? (
         <>
-          <span
-            aria-hidden
-            className={cn(
-              'shrink-0 rounded-full',
-              compact ? 'size-1' : 'size-1.5',
-              tone.dot,
-              tone.pulse && 'motion-safe:animate-pulse'
-            )}
-          />
-          <span className={cn('min-w-0 truncate', labelClassName)}>{label}</span>
+          {showDot ? (
+            <span
+              aria-hidden
+              className={cn(
+                'shrink-0 rounded-full',
+                compact ? 'size-1' : 'size-1.5',
+                tone.dot,
+                tone.pulse && 'motion-safe:animate-pulse'
+              )}
+            />
+          ) : null}
+          {/* No text-ellipsis — callers pass initials when the name would clip. */}
+          <span className={cn('min-w-0 whitespace-nowrap', labelClassName)}>{label}</span>
         </>
       ) : (
-        <span aria-hidden className={cn('block w-full', compact ? 'min-h-2.5' : 'min-h-[10px]')} />
+        <span
+          aria-hidden
+          className={cn(
+            'block w-full',
+            compact ? 'min-h-2.5' : 'min-h-[10px]',
+            tone.pulse && 'motion-safe:animate-pulse'
+          )}
+        />
       )}
     </div>
   );

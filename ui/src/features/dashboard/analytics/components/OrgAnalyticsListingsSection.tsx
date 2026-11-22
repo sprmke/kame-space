@@ -7,7 +7,7 @@ import {
   OrgAnalyticsListingRow,
 } from '@/features/dashboard/analytics/components/OrgAnalyticsListingCard';
 import { OrgAnalyticsListingsTable } from '@/features/dashboard/analytics/components/OrgAnalyticsListingsTable';
-import { OrgMarketingRanking } from '@/features/dashboard/analytics/components/OrgMarketingRanking';
+import { promotionHintsByListingId } from '@/features/dashboard/analytics/lib/marketingPortfolio';
 import {
   ORG_ANALYTICS_DEFAULT_SORT,
   filterOrgAnalyticsRows,
@@ -70,6 +70,8 @@ export function OrgAnalyticsListingsSection({ rows }: Props) {
     hideTable: isMobileLayout,
   });
 
+  const promoteById = useMemo(() => promotionHintsByListingId(rows), [rows]);
+
   const visible = useMemo(
     () => sortOrgAnalyticsRows(filterOrgAnalyticsRows(rows, filters), sort),
     [rows, filters, sort]
@@ -96,7 +98,6 @@ export function OrgAnalyticsListingsSection({ rows }: Props) {
 
   return (
     <section className="flex min-w-0 flex-col gap-2.5 sm:gap-3" aria-label="Listings">
-      <OrgMarketingRanking rows={rows} orgSlug={orgSlug} />
       <FloatingToolbar>
         <OrgListingToolbar<OrgAnalyticsAttentionFilter>
           search={filters.search}
@@ -137,6 +138,7 @@ export function OrgAnalyticsListingsSection({ rows }: Props) {
               orgSlug={orgSlug}
               sort={sort}
               onSortChange={onSortChange}
+              promoteById={promoteById}
             />
           ) : null}
 
@@ -147,6 +149,7 @@ export function OrgAnalyticsListingsSection({ rows }: Props) {
                   key={`${orgPortfolioListingKind(row)}-${orgPortfolioListingId(row)}`}
                   row={row}
                   orgSlug={orgSlug}
+                  promote={promoteById.get(orgPortfolioListingId(row))}
                 />
               ))}
             </div>
@@ -159,6 +162,7 @@ export function OrgAnalyticsListingsSection({ rows }: Props) {
                   key={`${orgPortfolioListingKind(row)}-${orgPortfolioListingId(row)}`}
                   row={row}
                   orgSlug={orgSlug}
+                  promote={promoteById.get(orgPortfolioListingId(row))}
                 />
               ))}
             </div>

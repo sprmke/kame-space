@@ -41,7 +41,7 @@ Layout order:
 ### Mobile layout (`max-lg`)
 
 - **Brand hero** — teal band with tenant/property switcher (light-on-primary) and page title. Subtitle is `lg+` only. On scroll the hero **sticks**; title compresses/fades and the arc flattens while switcher + **View Property** stay visible (`useMobileHeroCollapseProgress`). In-app alerts are **not** in the hero — use the Quick Access FAB (bottom-right).
-- **Bottom tabs** — Dashboard, Bookings, Inbox, More. Quick Access is a floating FAB above the tab bar (and bottom-right on desktop): click expands it into a vertical pill for Notifications, AI assistant when enabled, Messages, and Help & Support. Finance and other pages live under More. More sheet and the expanded desktop sidebar share the same labelled module groups (**Operations**, **Guests**, **Growth** with Analytics + Marketing + Public Pages, **Manage**). More sheet nav labels use the dense admin scale (`text-[13px]`, `size-4` icons) so they match list/toolbar chrome rather than oversized body type. The sheet footer also holds the **Advanced / AI** mode switch (pages with their own phone header hide the top bar switch).
+- **Bottom tabs** — Dashboard, Bookings, Inbox, More. Quick Access is a floating FAB above the tab bar (and bottom-right on desktop): click expands it into a vertical pill for **Theme** (single icon toggle), Notifications, AI assistant when enabled, Messages, and Help & Support. Finance and other pages live under More. The desktop sidebar no longer hosts the Light/Dark segmented control; the same segmented toggle lives in the Profile modal (Theme above App). More sheet and the expanded desktop sidebar share the same labelled module groups (**Operations**, **Guests**, **Growth** with Analytics + Marketing + Public Pages, **Manage**). More sheet nav labels use the dense admin scale (`text-[13px]`, `size-4` icons) so they match list/toolbar chrome rather than oversized body type. The sheet footer also holds the **Advanced / AI** mode switch (pages with their own phone header hide the top bar switch).
 - **Overlap toolbar** — first floating white card pulled up over the hero lower edge: date range. **View Property** is the hero trailing action (icon-only).
 - **Canvas** — denser KPI cards first (no icon tiles / “vs last period” text), then the six board cards stack full-width in the same reading order. Chart/calendar headers use a compact icon + centered title (`AdminSurfaceCardHeader`; descriptions `lg+` only). Header actions (Name/Price, All/Income/Expenses) stay on the **same row, right-aligned**, using dense equal-width `SegmentedControl` (`h-7`, 11px labels). Only when a card is too narrow for both (e.g. the two-column Finance row at 1024px) does the action wrap to its own right-aligned row; the title never runs under it. Section/card gaps stay comfortable (`gap-2.5`–`3.5`, `p-3`+), not cramped.
 - **Desktop (`lg+`)** — standard `AdminPageHeader` with inline date filter and **View Property**; board is `lg:grid-cols-2`.
@@ -148,11 +148,11 @@ Empty states use a dashed panel (icon + title + short description). Maintenance 
 
 List cards (Needs attention, Maintenance, Transactions) show at most **5** rows. When more exist, a bottom **View all (+N more)** link opens the matching module with the same period (`/bookings`, `/maintenance`, `/finance`). Header **View** links remain for one-tap navigation when the list is short. Transaction rows are two lines: label + amount, then category / due / status on one meta row.
 
-Mini calendar: **fixed short day cells** (not square — keeps the card from towering over an empty Needs attention list) with the same occupancy overlay as bookings month view — status-colored stay pills sit inside the week (inset from the cell edges with a small bottom gap and lane spacing), spanning multi-night stays as one continuous band with status-tone borders. Days that exceed visible lanes show a **+N** chip; hover highlights every segment of that stay and shows a pricing-style tip. **Year** and custom ranges spanning more than one calendar month switch to the yearly dot grid (no stay pills); the Name/Price header toggle is hidden in those views because labels do not render. On single-month week/month/custom ranges, Name/Price toggle: **Price** shows the full stay total (`booking_rate`), not the per-night split. Each week fragment of a multi-week stay repeats the label (no empty continuation bars). Compact mode omits the per-day count badge.
+Mini calendar: **fixed short day cells** (not square — keeps the card from towering over an empty Needs attention list) with the same occupancy overlay as bookings month view — status-colored stay bars sit inside the week (inset from the cell edges with a small bottom gap and lane spacing), spanning multi-night stays as one continuous band with status-tone borders. Bars pick the richest guest label that fits without ellipsis: **full name → first name → two-letter initials → single letter**. Price mode scales by viewport (`max-lg`), not by mini layout: **₱7,000 → ₱7k → 7k → hide** on the tightest phone cells. Dashboard mini on desktop keeps **₱7k** (with status dot) on short spans. Tap a day below `lg` to open a **day sheet** listing every stay that night with full status badges, then open a booking. **`lg+`** also uses the day rail for the same list. Days that exceed visible lanes show a **+N** chip; hover highlights every segment of that stay and shows a pricing-style tip. **Year** and custom ranges spanning more than one calendar month switch to the yearly dot grid (no stay pills); the Name/Price header toggle is hidden in those views because labels do not render. On single-month week/month/custom ranges, Name/Price toggle: **Price** shows the full stay total (`booking_rate`), not the per-night split. Each week fragment of a multi-week stay repeats the label when labels are shown. Compact mode omits the per-day count badge.
 
 Initial page load uses `DashboardSkeleton` (`AdminSkeletons.tsx`) inside the same page header (title, subtitle, date control) as the loaded dashboard, so the board does not drop when the header appears. The board uses the same gaps as the live layout (`gap-2.5` / `lg:grid-cols-2`), compact calendar day placeholders at the same short fixed height, and header actions that match each card (Name/Price toggle, attention badge, View links, breakdown segment). Per-card refresh skeletons inside Maintenance / Transactions / Attention use the same row heights. Cash-flow / breakdown and Maintenance / Transactions cards are omitted from the skeleton when the member lacks `finance:view` / `maintenance:view`, matching the loaded board.
 
-Cash flow / breakdown / transactions / calendar data still come from `finance-line-items`, `finance-bookings`, and `list-bookings` for the selected period. Tapping a calendar day or booking pill navigates to that booking's detail page.
+Cash flow / breakdown / transactions / calendar data still come from `finance-line-items`, `finance-bookings`, and `list-bookings` for the selected period. Tapping a stay bar opens that booking; tapping a day opens the day sheet (all stays that night).
 
 ---
 
@@ -171,11 +171,13 @@ This is the home page for a single property. It starts with period performance, 
 - Q: Does changing the date range affect my actual bookings?
   A: No, changing the date range here only changes which period the numbers, maintenance list, and calendar reflect. It doesn't modify anything.
 - Q: What does the calendar Price toggle show?
-  A: The full booking amount for that stay (all nights added together), not the nightly rate.
+  A: The full booking amount for that stay (all nights added together), not the nightly rate. On phone the bars stay status-colored without names; tap the day to see who is staying.
+- Q: Why don’t I see guest names on the phone calendar?
+  A: Narrow cells would only show a few letters. Colored bars show booking status; tap the day for the full list with names and status badges.
 - Q: A contract-expired reminder appeared. If I close it, will it come back?
   A: Yes after you refresh the page. Closing it only hides it while you keep using the dashboard.
 - Q: Where do I open notifications or the AI assistant?
-  A: Tap the Quick Access button at the bottom right. It slides up into a short toolbar for notifications, the AI assistant (when available), messages, and Help & Support.
+  A: Tap the Quick Access button at the bottom right. It slides up into a short toolbar for theme, notifications, the AI assistant (when available), messages, and Help & Support.
 
 ---
 
@@ -210,6 +212,8 @@ This is the home page for a single property. It starts with period performance, 
 | Stats API             | `dashboard-stats` → `supabase/functions/_shared/dashboardService.ts`                  |
 | Finance chart         | `ui/src/features/dashboard/finance/components/FinanceTransactionsChart.tsx`           |
 | Mini calendar         | `ui/src/features/dashboard/bookings/components/BookingCalendarView.tsx`               |
+| Calendar day sheet    | `ui/src/features/dashboard/bookings/components/calendar/CalendarDaySheet.tsx`         |
+| Pill label modes      | `ui/src/features/dashboard/bookings/components/calendar/calendarPillLabel.ts`         |
 | Mobile page shell     | `ui/src/components/mobile/MobileBrandHero.tsx` (`AdminMobilePage`)                    |
 
 ---
