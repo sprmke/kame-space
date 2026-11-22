@@ -413,46 +413,40 @@ function PricingOutsideDayCell({
       onClick={() => onNavigateMonth(startOfMonth(day))}
       aria-label={`Go to ${format(day, 'MMMM yyyy')}`}
     >
-      <span className="text-muted-foreground text-xs font-semibold leading-none sm:text-sm">
-        {format(day, 'd')}
-      </span>
-
-      {showPrice ? (
-        <div className="bg-muted/70 dark:bg-muted/50 mt-auto flex w-full items-center justify-center rounded px-0.5 py-0.5 sm:rounded-md sm:py-1">
-          <span className="text-muted-foreground w-full truncate text-center text-[10px] font-semibold tabular-nums leading-none sm:text-xs">
-            {formatMoneyCompact(price)}
-          </span>
-        </div>
-      ) : null}
-
-      {hiddenBookings.length > 0 ? (
-        <span
-          className="bg-card/95 text-muted-foreground ring-border absolute right-1 top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums leading-none ring-1"
-          aria-hidden
-        >
-          +{hiddenBookings.length}
+      {/* Dim chrome is decorative; name comes from aria-label only (contrast). */}
+      <span className="relative flex min-h-0 min-w-0 flex-1 flex-col" aria-hidden>
+        <span className="text-muted-foreground text-xs font-semibold leading-none sm:text-sm">
+          {format(day, 'd')}
         </span>
-      ) : null}
 
-      {isCustom && showMarkers ? (
-        <PenLine
-          className="absolute right-1 top-1 size-3 text-amber-600 dark:text-amber-400"
-          aria-hidden
-        />
-      ) : isSmart && showMarkers ? (
-        <Wand2
-          className="absolute right-1 top-1 size-3 text-emerald-600 dark:text-emerald-400"
-          aria-hidden
-        />
-      ) : null}
-      {hasHoliday && showMarkers && !isSmart ? (
-        <Sparkles className="text-primary absolute right-1 top-1 size-3" aria-hidden />
-      ) : null}
-      {isImported && !isBooked ? (
-        <RefreshCw className="text-muted-foreground absolute right-1 top-1 size-3" aria-hidden />
-      ) : isBlocked && !isBooked ? (
-        <Ban className="text-muted-foreground absolute right-1 top-1 size-3" aria-hidden />
-      ) : null}
+        {showPrice ? (
+          <div className="bg-muted/70 dark:bg-muted/50 mt-auto flex w-full items-center justify-center rounded px-0.5 py-0.5 sm:rounded-md sm:py-1">
+            <span className="text-muted-foreground w-full truncate text-center text-[10px] font-semibold tabular-nums leading-none sm:text-xs">
+              {formatMoneyCompact(price)}
+            </span>
+          </div>
+        ) : null}
+
+        {hiddenBookings.length > 0 ? (
+          <span className="bg-card/95 text-muted-foreground ring-border absolute right-1 top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums leading-none ring-1">
+            +{hiddenBookings.length}
+          </span>
+        ) : null}
+
+        {isCustom && showMarkers ? (
+          <PenLine className="absolute right-1 top-1 size-3 text-amber-600 dark:text-amber-400" />
+        ) : isSmart && showMarkers ? (
+          <Wand2 className="absolute right-1 top-1 size-3 text-emerald-600 dark:text-emerald-400" />
+        ) : null}
+        {hasHoliday && showMarkers && !isSmart ? (
+          <Sparkles className="text-primary absolute right-1 top-1 size-3" />
+        ) : null}
+        {isImported && !isBooked ? (
+          <RefreshCw className="text-muted-foreground absolute right-1 top-1 size-3" />
+        ) : isBlocked && !isBooked ? (
+          <Ban className="text-muted-foreground absolute right-1 top-1 size-3" />
+        ) : null}
+      </span>
     </button>
   );
 }
