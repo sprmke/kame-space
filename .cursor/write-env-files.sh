@@ -16,7 +16,7 @@ VITE_SUPABASE_URL=http://127.0.0.1:54321/functions/v1
 VITE_API_URL=http://127.0.0.1:54321/functions/v1
 VITE_SUPABASE_ANON_KEY=${ANON_KEY}
 
-VITE_ADMIN_ALLOWED_EMAILS=kamehome.azurenorth@gmail.com
+VITE_ADMIN_ALLOWED_EMAILS=kamehome.azurenorth@gmail.com,seed-owner@example.com
 
 GOOGLE_CLIENT_ID=local-placeholder.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=local-placeholder-secret
@@ -36,7 +36,8 @@ RESEND_API_KEY=re_local_placeholder
 EMAIL_TO=dev@example.com
 EMAIL_REPLY_TO=dev@example.com
 
-ADMIN_ALLOWED_EMAILS=kamehome.azurenorth@gmail.com
+ADMIN_ALLOWED_EMAILS=kamehome.azurenorth@gmail.com,seed-owner@example.com
+SUPER_ADMIN_EMAILS=kamehome.azurenorth@gmail.com,seed-owner@example.com
 EOF
   echo "wrote $SB_ENV"
 else

@@ -22,6 +22,7 @@ export function GuestLoginPage() {
         googleLoading: guestAuth.googleLoading,
         bannerError: guestAuth.error ?? localTest.error?.message ?? null,
         testLogin: localTestEmail ? { email: localTestEmail } : null,
+        testLoginLabel: 'Use local guest account',
         onTestLogin: localTest.signIn,
         testLoginLoading: localTest.loading,
       }}
