@@ -187,17 +187,21 @@ test.describe('@ci marketing video editor music picker', () => {
 
     // Library closes after the pick so the song bar above the timeline is usable.
     await expect(page.getByRole('region', { name: 'Media library' })).toHaveCount(0);
-    // Desktop also shows the same song in the inspector (two regions).
+    // Desktop shows the song above the timeline and again in the inspector. The inspector
+    // card is the one hosts can reach (the timeline bar sits under the inspector overlay).
     const songBars = page.getByRole('region', { name: 'Instagram song' });
-    await expect(songBars.first()).toBeVisible();
-    await expect(songBars.first().getByText('Golden Hour')).toBeVisible();
+    const inspectorSong = page
+      .locator('[data-editor-overlay="inspector"]')
+      .getByRole('region', { name: 'Instagram song' });
+    await expect(inspectorSong).toBeVisible();
+    await expect(inspectorSong.getByText('Golden Hour')).toBeVisible();
     // Picking a song is one undoable step, and never adds a clip to the timeline.
     await page.keyboard.press('ControlOrMeta+z');
     await expect(songBars).toHaveCount(0);
     await page.keyboard.press('ControlOrMeta+Shift+z');
-    await expect(songBars.first()).toBeVisible();
+    await expect(inspectorSong).toBeVisible();
 
-    await songBars.first().getByRole('button', { name: 'Remove Instagram song' }).click();
+    await inspectorSong.getByRole('button', { name: 'Remove Instagram song' }).click();
     await expect(songBars).toHaveCount(0);
   });
 
