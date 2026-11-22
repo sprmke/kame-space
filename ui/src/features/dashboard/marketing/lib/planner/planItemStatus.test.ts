@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   channelLabel,
+  countPlanProgress,
   formatLabel,
   isManualChannel,
   isOpenStatus,
+  planItemHostPhase,
   planItemStatusView,
 } from '@/features/dashboard/marketing/lib/planner/planItemStatus';
 
@@ -29,6 +31,7 @@ describe('planItemStatusView', () => {
       const view = planItemStatusView(status);
       expect(view.label.trim()).not.toBe('');
       expect(['neutral', 'positive', 'warning', 'danger']).toContain(view.tone);
+      expect(view.phase).toBeTruthy();
     }
   });
 
@@ -43,6 +46,18 @@ describe('planItemStatusView', () => {
     expect(view.action).toBe('fix');
     expect(view.actionLabel).toBe('Update');
     expect(view.tone).toBe('warning');
+    expect(view.label).toBe('Needs update');
+  });
+
+  it('uses Make this for to-do items', () => {
+    expect(planItemStatusView('planned').actionLabel).toBe('Make this');
+    expect(planItemStatusView('planned').label).toBe('To do');
+  });
+
+  it('collapses published and posted to Done', () => {
+    expect(planItemStatusView('published').label).toBe('Done');
+    expect(planItemStatusView('posted_manually').label).toBe('Done');
+    expect(planItemStatusView('published').action).toBe('none');
   });
 
   it('keeps finished items quiet', () => {
@@ -52,6 +67,30 @@ describe('planItemStatusView', () => {
 
   it('falls back to a to-do view for an unknown status', () => {
     expect(planItemStatusView('something_new').action).toBe('create');
+    expect(planItemStatusView('something_new').actionLabel).toBe('Make this');
+  });
+});
+
+describe('planItemHostPhase', () => {
+  it('maps API statuses into a short host lifecycle', () => {
+    expect(planItemHostPhase('planned')).toBe('todo');
+    expect(planItemHostPhase('preparing')).toBe('doing');
+    expect(planItemHostPhase('published')).toBe('done');
+    expect(planItemHostPhase('stale')).toBe('blocked');
+    expect(planItemHostPhase('expired')).toBe('missed');
+  });
+});
+
+describe('countPlanProgress', () => {
+  it('counts done vs open and ignores skipped', () => {
+    expect(
+      countPlanProgress([
+        { status: 'planned' },
+        { status: 'published' },
+        { status: 'skipped' },
+        { status: 'posted_manually' },
+      ])
+    ).toEqual({ done: 2, open: 1, total: 3 });
   });
 });
 
