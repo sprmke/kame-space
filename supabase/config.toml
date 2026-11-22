@@ -1200,6 +1200,9 @@ verify_jwt = false
 [functions.marketing-media]
 verify_jwt = false
 
+[functions.marketing-video-captions]
+verify_jwt = false
+
 [functions.marketing-media-sweeper]
 verify_jwt = false
 
