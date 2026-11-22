@@ -116,7 +116,7 @@ test.describe('@ci org plan billing flows', () => {
     });
 
     await openOrgPlansBilling(page);
-    await page.getByRole('button', { name: 'View' }).click();
+    await page.locator('[aria-controls="billing-details-panel"]').click();
     await expect(page.getByLabel('Legal name')).toHaveValue('Sample Stays Holdings Inc.');
     await expect(page.getByLabel('Legal name')).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Save details' })).toHaveCount(0);
