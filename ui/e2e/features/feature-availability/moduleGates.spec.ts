@@ -23,8 +23,7 @@ test.describe('@ci @critical feature availability - host surfaces', () => {
     await expect(page.getByRole('heading', { name: 'Marketing' })).toBeVisible({
       timeout: 20_000,
     });
-    // Plan is the default tab now; the AI Studio gate only shows on its own tab.
-    await page.getByRole('tab', { name: /^AI Studio/ }).click();
+    // AI Studio is the default creative tab; the gate only shows on its own tab.
     await expect(page.getByText('Under maintenance').first()).toBeVisible();
     await expect(page.getByText(MAINTENANCE).first()).toBeVisible();
   });

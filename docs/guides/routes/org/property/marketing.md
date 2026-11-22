@@ -27,18 +27,24 @@ Saved marketing designs are bulk-copyable via org **Properties → Copy settings
 
 ## Plan
 
-Route state: `…/marketing?tab=plan&range=today|3d|5d|7d`
+Route state: `…/marketing?plan=1&range=today|3d|5d|7d`
 
-The first tab in Content Studio. It answers "what do I post today, and why" from data the app
-already holds, with no AI required.
+Opened from the **Plan** page action (top right of Marketing: icon on phone, labeled button on
+desktop), not a fifth tab. The
+studio keeps four creative tabs: AI Studio, Posts, Videos, Calendar. Legacy `?tab=plan` links
+migrate to `?plan=1` and open the same modal.
+
+It answers "what do I post today, and why" from data the app already holds, with no AI required.
 
 **What it shows**
 
-- **Range chips:** Today (default), 3 days, 5 days, Week. An unknown `?range=` value normalizes to
-  Today without an error.
-- **Summary card:** one plain sentence generated from the top opportunity, plus the horizon end.
+- **Range control:** Today (default), 3 days, 5 days, Week as a segmented control. An unknown
+  `?range=` value normalizes to Today without an error.
+- **Primary action:** Build plan. Setup, Prepare week, and AI plan upgrade live in the Plan options
+  overflow so the header stays calm.
+- **Summary:** one plain sentence from the top opportunity.
 - **Agenda:** items grouped by Manila day, each with time, format, channel, title, hook, one-line why
-  and a status pill. Today and Tomorrow get their own headings.
+  and a status pill. One primary CTA per card; Skip / I posted it sit in the card overflow.
 - **Showcase on lower tiers:** Free and Starter read the summary and the first three items. Every
   action stays disabled and the footer links to the upgrade dialog.
 
@@ -84,11 +90,11 @@ AI Studio fills the composer, Videos sets the hook, caption and call to action o
 takes the dates, month and rate, Calendar opens on the promoted month. The caption is also copied
 as a fallback.
 
-**Plan setup** opens on first visit and from the header. Three steps: goals (up to two), where you post
-(connected Facebook Page and Instagram from Inbox, plus manual places), then time budget and
-language, and, when the host has the AI planner, whether the weekly plan is rules only or AI
-written (20 credits a week). It stores real connection ids; the wizard is guarded against unsaved
-edits.
+**Goals & channels** (plan setup) opens on first visit and from Plan options. Three steps: goals (up
+to two), where you post (connected Facebook Page and Instagram from Inbox, plus manual places), then
+time budget and language, and, when the host has the AI planner, whether the weekly plan is rules
+only or AI written (20 credits a week). It stores real connection ids; the wizard is guarded against
+unsaved edits.
 
 **Prepare week** moves every unbuilt item in the selected range to Preparing and returns the work
 list. Each saved draft attaches itself back to its item, which moves it to Ready. The button is
@@ -135,8 +141,8 @@ Marketing Content Studio is where you create promotional content for this proper
 
 Marketing plan
 
-- Q: What is the Plan tab?
-  A: It is a short to-do list of what to post, when, and why, built from your calendar. It is the first tab in Marketing. You open it, see today's items, and work through them.
+- Q: What is the Plan button?
+  A: It opens a short to-do list of what to post, when, and why, built from your calendar. On a phone it is the calendar icon at the top right of the Marketing page. On a computer it is the Plan button next to the page title. It works across AI Studio, Posts, Videos and Calendar.
 - Q: Where do the suggestions come from?
   A: From your own data: open nights, weekend gaps, long weekends, how far ahead guests book, recent reviews and your rates. Nothing is invented.
 - Q: Do I need AI for this?
@@ -151,7 +157,7 @@ Marketing plan
 - Q: What is a theme?
   A: A theme is your look: a few colors, three fonts, a background style and a corner style. Calendars, posts, videos and AI results you make inside a theme all use it, so your marketing looks like one brand.
 - Q: Why did Marketing open on a page of themes?
-  A: That is your first visit. Pick a theme to start (Property colors uses your photos or brand color). Next time, Marketing opens straight into the last theme you used. Tap **Themes** at the start of the theme bar (top right on a computer, top of the editor on a phone) to come back to this page.
+  A: That is your first visit. Pick a theme to start (Property colors uses your photos or brand color). Next time, Marketing opens straight into the last theme you used. Tap the theme chip next to the studio tabs (or All themes in that menu) to come back to this page.
 - Q: Why don't I see all the starter looks?
   A: The themes page only lists your own themes, so it stays short. **New theme** is the first card. Tap it to see the starter looks: one per style first, and **More looks** shows the rest. Each look shows a sample calendar, post and video.
 - Q: How do I switch themes?
@@ -664,7 +670,7 @@ Property-team RBAC (Phase 7). Route guard: **`marketing:view`**. Org owner, org 
 
 A ranked list of what people in the Philippines are talking about **today, this week and this
 month**, rebuilt once a day. It lives inside **AI Studio**, not a separate tab: it exists to feed
-generation, and the Plan tab slot is reserved for the Strategy Planner.
+generation. Planning opens from the Plan button, not a fifth tab.
 
 ### Where it appears
 

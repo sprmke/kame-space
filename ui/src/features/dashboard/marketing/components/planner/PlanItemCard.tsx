@@ -1,10 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import {
-  formatItemTime,
-  formatDayHeading,
-} from '@/features/dashboard/marketing/lib/planner/plannerRange';
+import { MarketingOverflowMenu } from '@/features/dashboard/marketing/components/shared/MarketingOverflowMenu';
+import { formatItemTime } from '@/features/dashboard/marketing/lib/planner/plannerRange';
 import {
   channelLabel,
   formatLabel,
@@ -12,11 +9,12 @@ import {
   planItemStatusView,
 } from '@/features/dashboard/marketing/lib/planner/planItemStatus';
 import type { PlannerItemDto } from '@/features/dashboard/marketing/lib/planner/plannerApi';
+import { cn } from '@/lib/utils';
 
 const TONE_CLASS: Record<string, string> = {
   neutral: '',
-  positive: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  warning: 'border-amber-200 bg-amber-50 text-amber-900',
+  positive: 'border-success/30 bg-success/10 text-success',
+  warning: 'border-warning/40 bg-warning/15 text-warning-foreground dark:text-warning',
   danger: 'border-destructive/30 bg-destructive/5 text-destructive',
 };
 
@@ -34,8 +32,6 @@ type Props = {
 
 export function PlanItemCard({
   item,
-  day,
-  today,
   onOpen,
   onOpenEditor,
   onSkip,
@@ -45,71 +41,82 @@ export function PlanItemCard({
   const view = planItemStatusView(item.status);
   const time = formatItemTime(item.scheduledFor);
   const manual = isManualChannel(item.channelKind);
-  const dayHeading = formatDayHeading(day, today);
+
+  const overflowItems = [];
+  if (!readOnly) {
+    if (manual && item.status !== 'posted_manually') {
+      overflowItems.push({
+        id: 'posted',
+        label: 'I posted it',
+        onSelect: () => onMarkPosted(item),
+      });
+    }
+    if (view.action !== 'none') {
+      overflowItems.push({
+        id: 'skip',
+        label: 'Skip',
+        onSelect: () => onSkip(item),
+      });
+    }
+  }
 
   return (
-    <Card className="border-border/70">
-      <CardContent className="space-y-2 p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-caption text-muted-foreground">
-              {time ? `${time} · ` : ''}
-              {dayHeading} · {formatLabel(item.format)} · {channelLabel(item.channelKind)}
-            </p>
-            <p className="text-card-title font-semibold">{item.title}</p>
-          </div>
-          <Badge variant="outline" className={TONE_CLASS[view.tone]}>
-            {view.label}
-          </Badge>
-        </div>
-
-        {item.brief.hook ? <p className="text-sm text-foreground">{item.brief.hook}</p> : null}
-        {item.brief.why ? (
-          <p className="text-caption text-muted-foreground">{item.brief.why}</p>
-        ) : null}
-        {item.statusReason ? (
-          <p className="text-caption text-amber-700">{item.statusReason}</p>
-        ) : null}
-        {item.trackedVisits > 0 ? (
+    <article className="border-border/70 bg-card space-y-2.5 rounded-xl border p-3.5 sm:p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-0.5">
           <p className="text-caption text-muted-foreground">
-            {item.trackedVisits} {item.trackedVisits === 1 ? 'page visit' : 'page visits'} from
-            this link
+            {[time, formatLabel(item.format), channelLabel(item.channelKind)]
+              .filter(Boolean)
+              .join(' · ')}
           </p>
-        ) : null}
+          <h4 className="text-sm font-semibold leading-snug">{item.title}</h4>
+        </div>
+        <Badge variant="outline" className={cn('shrink-0', TONE_CLASS[view.tone])}>
+          {view.label}
+        </Badge>
+      </div>
 
-        {!readOnly ? (
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            {view.actionLabel ? (
-              <Button
-                size="sm"
-                onClick={() =>
-                  view.action === 'review' && onOpenEditor ? onOpenEditor(item) : onOpen(item)
-                }
-              >
-                {view.actionLabel}
-              </Button>
-            ) : null}
-            {manual && item.status !== 'posted_manually' ? (
-              <Button size="sm" variant="outline" onClick={() => onMarkPosted(item)}>
-                I posted it
-              </Button>
-            ) : null}
-            {manual && item.manualTargets.length > 0 ? (
-              <span className="text-caption text-muted-foreground">
-                {item.manualTargets.join(', ')}
-              </span>
-            ) : null}
+      {item.brief.hook ? (
+        <p className="text-sm leading-snug text-foreground/90">{item.brief.hook}</p>
+      ) : null}
+      {item.statusReason ? (
+        <p className="text-caption text-warning-foreground dark:text-warning">{item.statusReason}</p>
+      ) : null}
+      {item.trackedVisits > 0 ? (
+        <p className="text-caption text-muted-foreground">
+          {item.trackedVisits} {item.trackedVisits === 1 ? 'visit' : 'visits'} from this link
+        </p>
+      ) : null}
+
+      {!readOnly ? (
+        <div className="flex items-center gap-2 pt-0.5">
+          {view.actionLabel ? (
             <Button
               size="sm"
-              variant="ghost"
-              className="text-muted-foreground"
-              onClick={() => onSkip(item)}
+              onClick={() =>
+                view.action === 'review' && onOpenEditor ? onOpenEditor(item) : onOpen(item)
+              }
             >
-              Skip
+              {view.actionLabel}
             </Button>
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
+          ) : null}
+          {manual && item.manualTargets.length > 0 ? (
+            <span className="text-caption text-muted-foreground truncate">
+              {item.manualTargets.join(', ')}
+            </span>
+          ) : null}
+          {overflowItems.length > 0 ? (
+            <div className="ml-auto shrink-0">
+              <MarketingOverflowMenu
+                label={`${item.title} options`}
+                icon="horizontal"
+                forceSheet
+                menuItems={overflowItems}
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </article>
   );
 }

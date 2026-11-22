@@ -522,3 +522,24 @@ branches, `feat/multi-channel-calendar-sync`, `feat/host-set-parking-pricing`,
 `feat/local-dev-test-login`, and the earlier merged release branches. Kept: #554, #488, #495,
 #354, #353, the `backup/` and `recover/` snapshots, and the dirty `refine-payment-plans-billing`
 worktree.
+
+## 2026-11-21 auth/profile restore and WIP guard
+
+**#564** restored the auth brand-bar alignment and the dashboard Profile modal "On this device"
+card, plus the read-only cursor, slug hint, sign-in legal copy, settings order and Turnstile
+collapse. Merged `6fde56fc6`.
+
+**#565** added the WIP preservation rule, skill, `wip:save` / `wip:audit`, Cursor and Claude Code
+shell guards, OpenCode `ask` rules, a session-start WIP audit, and archived every existing stash
+as `archive/stash-*` (see [`stash-archive.md`](./stash-archive.md)). Merged `e68f12610`; backend
+pipeline `44870566636` succeeded.
+
+**#568** released both to production as `a720ff081` through `release/2026-11-21-auth-profile`.
+Vercel Production deployment `7959362384` succeeded. Live checks: `kamespace.com` returns 200
+with an enforcing CSP; the auth logo left inset is 32px at desktop and 16px on phone, matching
+the marketing nav; the production `AppInfoCard` chunk contains "On this device" and
+"Clear saved data".
+
+**Root cause:** the UI batch was written on 2026-11-16 but only existed in `stash@{1}` and the
+unmerged AI Studio branch (#488). An unrelated release shipped without it. The guard above now
+blocks that path.

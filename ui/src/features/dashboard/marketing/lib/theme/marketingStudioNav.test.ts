@@ -28,7 +28,7 @@ afterEach(() => {
 
 describe('studio tabs', () => {
   it('labels every tab in display order', () => {
-    expect(MARKETING_STUDIO_TABS[0]).toBe('plan');
+    expect([...MARKETING_STUDIO_TABS]).toEqual(['generate', 'design', 'video', 'calendar']);
     for (const tab of MARKETING_STUDIO_TABS) {
       expect(MARKETING_STUDIO_TAB_LABELS[tab].trim()).not.toBe('');
     }
@@ -37,10 +37,10 @@ describe('studio tabs', () => {
   it('narrows studio and editor tabs', () => {
     expect(isMarketingStudioTab('calendar')).toBe(true);
     expect(isMarketingStudioTab('settings')).toBe(false);
+    expect(isMarketingStudioTab('plan')).toBe(false);
 
     expect(isMarketingEditorTab('design')).toBe(true);
     expect(isMarketingEditorTab('generate')).toBe(false);
-    expect(isMarketingEditorTab('plan')).toBe(false);
     expect(isMarketingEditorTab(null)).toBe(false);
   });
 });
@@ -50,13 +50,21 @@ describe('resolveDefaultMarketingStudioTab', () => {
     expect(resolveDefaultMarketingStudioTab({ lastTab: 'video', aiAvailable: true })).toBe('video');
   });
 
-  it('opens the Plan when no tab is remembered', () => {
-    expect(resolveDefaultMarketingStudioTab({ lastTab: null, aiAvailable: true })).toBe('plan');
-    expect(resolveDefaultMarketingStudioTab({ lastTab: null, aiAvailable: false })).toBe('plan');
+  it('opens AI Studio when no tab is remembered', () => {
+    expect(resolveDefaultMarketingStudioTab({ lastTab: null, aiAvailable: true })).toBe('generate');
+    expect(resolveDefaultMarketingStudioTab({ lastTab: null, aiAvailable: false })).toBe('generate');
   });
 
   it('ignores an unknown stored tab', () => {
-    expect(resolveDefaultMarketingStudioTab({ lastTab: 'nope', aiAvailable: false })).toBe('plan');
+    expect(resolveDefaultMarketingStudioTab({ lastTab: 'nope', aiAvailable: false })).toBe(
+      'generate'
+    );
+  });
+
+  it('ignores a stored Plan tab that is no longer a studio tab', () => {
+    expect(resolveDefaultMarketingStudioTab({ lastTab: 'plan', aiAvailable: true })).toBe(
+      'generate'
+    );
   });
 });
 
