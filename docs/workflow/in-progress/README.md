@@ -2,7 +2,7 @@
 title: 'In progress'
 status: active
 tags: [workflow, in-progress]
-updated: 2026-11-23
+updated: 2026-11-21
 stage: in-progress
 kind: reference
 ---
@@ -38,7 +38,6 @@ Plans with **implementation complete** and only manual QA left live in [`../for-
 | [`marketing-video-editor-multitrack.md`](./marketing-video-editor-multitrack.md)                               | T1.10, T1.11, T1.13 and T2.7 are unimplemented                                                                                                                                                                                                                    |
 | [`marketing-studio-mobile-and-dashboard-responsive.md`](./marketing-studio-mobile-and-dashboard-responsive.md) | Studio shell verified. Touch pricing-calendar range select and phases 4-6 remain                                                                                                                                                                                  |
 | [`weekly-ops-report.md`](./weekly-ops-report.md)                                                               | Shipped list, detail, generate, idempotent email and Monday cron. Remaining: continuous collector, hosted load matrix, public cache and SQL aggregates, PostHog and Vercel adapters                                                                               |
-| [`finance-ux-review/`](./finance-ux-review/README.md)                                                          | Review complete (42 captures, 4 P1s, 12 P2s, 20 P3s). Remediation not started: pipeline-vs-collected money truth, filter scope leaking into KPIs, recurring edit scope 400, 1280 card truncation, row keyboard handling                                           |
 | [`super-admin-system-health.md`](./super-admin-system-health.md)                                               | Daily `system-health-cron` with diff email, Meta token expiry warning, `/admin/health/costs` mount                                                                                                                                                                |
 | [`guest-trip-hub.md`](./guest-trip-hub.md)                                                                     | Trip page and entry points shipped. Manual QA and the host copy-link follow-up remain                                                                                                                                                                             |
 | [`activity-log-followups.md`](./activity-log-followups.md)                                                     | `org.activity:view`, listing `activity:view` and `system.cron_run` rows shipped. Export leaves, helper, notice-tier emitters, ticket handlers and partitioning remain                                                                                             |
