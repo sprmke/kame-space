@@ -126,10 +126,14 @@ test.describe('@ci marketing planner', () => {
 
     await openPlanner(page);
     await expect(page).toHaveURL(/plan=1/);
-    await expect(page.getByRole('heading', { name: 'Plan' })).toBeVisible();
-    await expect(page.getByText('Two nights are still open this weekend.').first()).toBeVisible();
-    await expect(page.getByText('Open this weekend', { exact: true })).toBeVisible();
-    await expect(page.getByText('12 visits from this link')).toBeVisible();
+    const planDialog = page.getByRole('dialog', { name: 'What to post' });
+    await expect(planDialog.getByRole('heading', { name: 'What to post' })).toBeVisible();
+    await expect(planDialog.getByText('What to post next, and why')).toBeVisible();
+    await expect(planDialog.getByText('Two nights are still open this weekend.')).toBeVisible();
+    await expect(planDialog.getByText('Open this weekend', { exact: true })).toBeVisible();
+    await expect(planDialog.getByText('Both nights that weekend are open.').first()).toBeVisible();
+    await expect(planDialog.getByText('12 visits from this link')).toBeVisible();
+    await expect(planDialog.getByRole('button', { name: 'Make this' }).first()).toBeVisible();
   });
 
   test('legacy ?tab=plan deep link opens the planner modal', async ({ page }) => {
@@ -160,15 +164,19 @@ test.describe('@ci marketing planner', () => {
     await page.goto(`${teamRbacPaths.marketingWorkspace}&plan=1`);
     await dismissCookieConsent(page);
 
-    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20_000 });
-    await page.getByRole('button', { name: 'Create' }).first().click();
-    await expect(page.getByText('Dates & price')).toBeVisible();
-    await expect(page.getByText('Open: 2026-11-13, 2026-11-14')).toBeVisible();
-    await expect(page.getByText('From 3200 a night')).toBeVisible();
-    await page.getByRole('button', { name: 'Edit copy' }).click();
-    await expect(page.getByLabel('First line')).toHaveValue('Two nights left this weekend');
-    await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled();
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('dialog', { name: 'What to post' })).toBeVisible({
+      timeout: 20_000,
+    });
+    await page.getByRole('button', { name: 'Open this weekend options' }).click();
+    await page.getByRole('option', { name: 'Edit details' }).click();
+    const itemSheet = page.getByRole('dialog').filter({ hasText: 'Why this post' });
+    await expect(itemSheet.getByText('Why this post')).toBeVisible();
+    await expect(itemSheet.getByText('Open: 2026-11-13, 2026-11-14', { exact: true })).toBeVisible();
+    await expect(itemSheet.getByText('From 3200 a night')).toBeVisible();
+    await itemSheet.getByRole('button', { name: 'Edit copy' }).click();
+    await expect(itemSheet.getByLabel('First line')).toHaveValue('Two nights left this weekend');
+    await expect(itemSheet.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await itemSheet.getByRole('button', { name: 'Cancel' }).click();
   });
 
   test('prepare week opens from plan options overflow', async ({ page }) => {
@@ -208,7 +216,7 @@ test.describe('@ci marketing planner', () => {
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20_000 });
     await page.getByRole('button', { name: 'One night open options' }).click();
     await page.getByRole('option', { name: 'I posted it' }).click();
-    const shareSheet = page.getByRole('dialog', { name: 'One night open' });
+    const shareSheet = page.getByRole('dialog', { name: 'Share it yourself' });
     await expect(shareSheet).toBeVisible();
     await expect(shareSheet.getByText('Tagaytay Rentals')).toBeVisible();
     await expect(shareSheet.getByRole('button', { name: 'Copy caption' })).toBeVisible();
@@ -245,7 +253,7 @@ test.describe('@ci marketing planner', () => {
       await page.screenshot({ path: `test-results/marketing-planner-studio-${label}.png` });
 
       await openPlanner(page);
-      const planDialog = page.getByRole('dialog', { name: 'Plan' });
+      const planDialog = page.getByRole('dialog', { name: 'What to post' });
       await expect(planDialog).toBeVisible();
       await expect(
         planDialog.getByRole('button', { name: /^(Build plan|Rebuild plan)$/ })
