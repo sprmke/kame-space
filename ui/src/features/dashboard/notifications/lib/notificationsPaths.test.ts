@@ -15,11 +15,94 @@ describe('resolveNotificationPath', () => {
   const scope = {
     orgSlug: 'acme',
     propertySlugById: new Map([['prop-1', 'solea']]),
-    parkingSlugById: new Map<string, string>(),
+    parkingSlugById: new Map([['park-1', 'lot-a']]),
   };
 
   it('resolveNotificationPath is exported', () => {
     expect(typeof resolveNotificationPath).toBe('function');
+  });
+
+  it('opens a property inbox thread with conversation, platform, and message', () => {
+    expect(
+      resolveNotificationPath(
+        {
+          type: 'inbox_new_message',
+          booking_id: null,
+          conversation_id: 'c-1',
+          property_id: 'prop-1',
+          parking_id: null,
+          metadata: { platform: 'facebook', message_id: 'm-9' },
+        },
+        scope
+      )
+    ).toBe(
+      '/org/acme/property/solea/messages?conversationId=c-1&platform=facebook&messageId=m-9'
+    );
+  });
+
+  it('prefers Messages over booking detail when both conversation_id and booking_id are set', () => {
+    expect(
+      resolveNotificationPath(
+        {
+          type: 'inbox_new_message',
+          booking_id: 'booking-linked',
+          conversation_id: 'c-linked',
+          property_id: 'prop-1',
+          parking_id: null,
+          metadata: { platform: 'web', message_id: 'm-linked' },
+        },
+        scope
+      )
+    ).toBe(
+      '/org/acme/property/solea/messages?conversationId=c-linked&platform=web&messageId=m-linked'
+    );
+  });
+
+  it('still opens booking detail when only booking_id is set', () => {
+    expect(
+      resolveNotificationPath(
+        {
+          type: 'booking_pending_review',
+          booking_id: 'booking-1',
+          conversation_id: null,
+          property_id: 'prop-1',
+          parking_id: null,
+        },
+        scope
+      )
+    ).toBe('/org/acme/property/solea/bookings/booking-1');
+  });
+
+  it('opens a parking inbox thread when only parking_id is set', () => {
+    expect(
+      resolveNotificationPath(
+        {
+          type: 'inbox_new_message',
+          booking_id: null,
+          conversation_id: 'c-2',
+          property_id: null,
+          parking_id: 'park-1',
+          metadata: { platform: 'web' },
+        },
+        scope
+      )
+    ).toBe('/org/acme/parking/lot-a/messages?conversationId=c-2&platform=web');
+  });
+
+  it('still opens the thread when message_id is missing (legacy rows)', () => {
+    expect(
+      resolveNotificationPath(
+        {
+          type: 'inbox_new_message',
+          booking_id: null,
+          conversation_id: 'c-3',
+          property_id: 'prop-1',
+          parking_id: null,
+          metadata: { platform: 'instagram' },
+        },
+        scope
+      )
+    ).toBe('/org/acme/property/solea/messages?conversationId=c-3&platform=instagram');
   });
 
   it('routes calendar conflict notifications to pricing channel sync', () => {

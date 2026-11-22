@@ -28,7 +28,13 @@ function manilaDate(iso: string): string {
   }).format(date);
 }
 
-/** Guest profile: policies, a self-service data download, and a reviewed deletion request. */
+/**
+ * Guest profile: policies, a self-service data download, and a reviewed deletion request.
+ *
+ * Intentionally not mounted on `/account/profile` (2026-11-22). Self-serve export/delete
+ * is deferred; re-enable from `GuestProfilePage` when product wants it back. Do not delete
+ * this component. Edge `data-subject-request` stays live.
+ */
 export function GuestPrivacyCard() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [requestedDueAt, setRequestedDueAt] = useState<string | null>(null);

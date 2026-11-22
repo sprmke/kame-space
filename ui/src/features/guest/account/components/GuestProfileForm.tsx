@@ -16,6 +16,7 @@ import {
   isGuestProfileDraftValid,
 } from '@/features/guest/account/lib/guestProfileValidation';
 import { useGuestSession } from '@/features/guest/auth/hooks/useGuestSession';
+import { GuestIdentityCard } from '@/features/verification/components/GuestIdentityCard';
 
 import { GuestProfileFormSkeleton } from '@/components/skeletons/GuestAccountSkeletons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -323,13 +324,16 @@ export function GuestProfileForm({
           placeholder="Search location"
         />
       </div>
+
+      {/* Outside the profile draft dirty state on purpose. */}
+      <GuestIdentityCard />
     </div>
   );
 
   const footer = hideFooter ? null : (
     <div
       className={cn(
-        'border-border flex flex-col-reverse gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-end lg:pt-8',
+        'flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-end lg:pt-3',
         isDirty && 'lg:justify-between'
       )}
     >
@@ -389,10 +393,10 @@ export function GuestProfileForm({
   return (
     <div className={shellClassName}>
       <div className={pageGridClassName}>
-        <div className="space-y-5">
-          <div className="flex flex-col items-center gap-4 sm:items-start">{avatarButton}</div>
+        <div className="flex flex-col items-center gap-5 text-center">
+          <div className="flex flex-col items-center gap-4">{avatarButton}</div>
 
-          <div className="min-w-0 space-y-3 text-center sm:text-left">
+          <div className="min-w-0 max-w-full space-y-3">
             <div>
               <h2 className="text-foreground text-lg font-semibold tracking-tight sm:text-xl">
                 {displayNamePreview}
@@ -404,13 +408,13 @@ export function GuestProfileForm({
             {(draft.locationLabel.trim() || draft.phone.trim() || draft.bio.trim()) && (
               <div className="text-muted-foreground space-y-1.5 text-sm">
                 {draft.locationLabel.trim() ? (
-                  <p className="flex items-center justify-center gap-1.5 sm:justify-start">
+                  <p className="flex items-center justify-center gap-1.5">
                     <MapPin className="size-3.5 shrink-0" aria-hidden />
                     <span className="truncate">{draft.locationLabel.trim()}</span>
                   </p>
                 ) : null}
                 {draft.phone.trim() ? (
-                  <p className="flex items-center justify-center gap-1.5 sm:justify-start">
+                  <p className="flex items-center justify-center gap-1.5">
                     <Phone className="size-3.5 shrink-0" aria-hidden />
                     <span className="truncate">{draft.phone.trim()}</span>
                   </p>

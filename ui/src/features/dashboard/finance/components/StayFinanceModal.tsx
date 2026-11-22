@@ -82,7 +82,7 @@ export function StayFinanceModal({ row, onClose }: Props) {
       >
         {row ? (
           <>
-            <ResponsiveModalHeader className="border-separator shrink-0 gap-2 border-b px-4 pb-4 pr-14 pt-4 sm:gap-2.5 sm:px-5 sm:pt-5">
+            <ResponsiveModalHeader className="border-separator shrink-0 gap-1 border-b px-4 pb-4 pr-14 pt-4 sm:px-5 sm:pt-5">
               <ResponsiveModalTitle className="text-foreground truncate text-base font-bold leading-snug tracking-tight sm:text-lg">
                 {guestLabel}
               </ResponsiveModalTitle>

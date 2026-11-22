@@ -82,7 +82,7 @@ export function AiStudioPhotoSheet({
         sheetLayout="split"
         className="flex max-h-[min(90dvh,44rem)] w-full max-w-[min(calc(100vw-1.5rem),42rem)] flex-col gap-0 overflow-hidden p-0 pb-0 pt-0 max-lg:h-[min(92dvh,44rem)] sm:max-w-2xl sm:p-0"
       >
-        <ResponsiveModalHeader className="border-border shrink-0 space-y-3 border-b px-4 pb-3 pt-4 sm:px-5">
+        <ResponsiveModalHeader className="border-border shrink-0 border-b px-4 pb-3 pt-4 sm:px-5">
           <div className="flex items-center justify-between gap-3 pr-12">
             <ResponsiveModalTitle>
               {maxPhotos > 1 ? 'Choose photos' : 'Choose a photo'}

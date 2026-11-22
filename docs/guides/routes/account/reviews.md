@@ -2,7 +2,7 @@
 title: 'Guest Account Reviews — operator guide'
 status: active
 tags: [guides, routes, account, reviews]
-updated: 2026-10-19
+updated: 2026-11-23
 ---
 
 # Guest Account Reviews — operator guide
@@ -46,6 +46,8 @@ Guests leave stay reviews from their account, trip page, or the email link. They
 
 ## Tabs
 
+Tabs sit **inside** the page content card (compact fit-content sliding strip). Top and left inset match the review row cards (`p-4` / `sm:p-5`) so the strip lines up with row content. All tabs page 20 items with **Load more**. Load errors show **Try again**. Empty tabs use library mascot `guest-review` with a short title/description per tab (to write / by you / about you).
+
 ### To write
 
 Open 14-day windows (not expired) with no guest review yet, soonest close first. Write review opens `/properties/:slug/guest-review`, which works for every property stay past check-out, not only Airbnb stays. Paging uses a `closes_at|booking_id` cursor.
@@ -59,8 +61,6 @@ The guest's own reviews. Pending until publish. Edit while pending. Host respons
 ### About you
 
 Published host reviews of this guest (no internal notes). If the host submitted first and the guest has not, a teaser says "Hidden until you review" with no ratings or text. **Respond** (or **Edit response**) is the card button; **Report** is in the card's overflow menu.
-
-Tabs use a compact fit-content sliding strip (not full-width). All tabs page 20 items with **Load more**. Load errors show **Try again**. Empty tabs use library mascot `guest-review` with a short title/description per tab (to write / by you / about you).
 
 ---
 

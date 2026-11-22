@@ -3,6 +3,10 @@ import * as React from 'react';
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 
 import { buttonVariants } from '@/components/ui/button';
+import {
+  MODAL_DESCRIPTION_CLASS,
+  MODAL_HEADER_STACK_CLASS,
+} from '@/components/ui/modal-chrome';
 import { useModalLayer } from '@/components/ui/useModalLayer';
 import { cn } from '@/lib/utils';
 
@@ -72,7 +76,15 @@ const AlertDialogContent = React.forwardRef<
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
 const AlertDialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('flex flex-col space-y-2 text-center sm:text-left', className)} {...props} />
+  <div
+    className={cn(
+      'flex flex-col text-center sm:text-left',
+      className,
+      // Same tight title ↔ description stack as DialogHeader (see modal-chrome).
+      MODAL_HEADER_STACK_CLASS
+    )}
+    {...props}
+  />
 );
 AlertDialogHeader.displayName = 'AlertDialogHeader';
 
@@ -102,7 +114,7 @@ const AlertDialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Description
     ref={ref}
-    className={cn('text-muted-foreground text-sm', className)}
+    className={cn(className, MODAL_DESCRIPTION_CLASS)}
     {...props}
   />
 ));

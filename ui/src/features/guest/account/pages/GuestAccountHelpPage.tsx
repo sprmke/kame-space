@@ -25,8 +25,8 @@ import {
 import { sanitizeHelpBody } from '@/features/dashboard/help-support/lib/helpContentDisplay';
 
 import { KameMascotImage } from '@/components/branding/KameMascotImage';
+import { GuestAccountHelpPageSkeleton } from '@/components/skeletons/GuestAccountSkeletons';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 
 function matchesTerm(faq: PublicSupportFaq, term: string): boolean {
@@ -128,16 +128,7 @@ export function GuestAccountHelpPage() {
 
   let body: ReactNode;
   if (isPending) {
-    body = (
-      <div className="space-y-3 px-4 py-5 sm:px-6" aria-busy="true" aria-label="Loading help">
-        <div className="flex justify-center py-4">
-          <Skeleton className="size-28 rounded-full" />
-        </div>
-        <Skeleton className="h-11 w-full" />
-        <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-28 w-full" />
-      </div>
-    );
+    body = <GuestAccountHelpPageSkeleton />;
   } else if (isError) {
     body = (
       <HelpEmptyState
@@ -232,6 +223,7 @@ export function GuestAccountHelpPage() {
   return (
     <GuestAccountContentCard bodyClassName="p-0">
       {body}
+      {/* Help skeleton already includes the contact footer chrome. */}
       {!isPending && !isError ? contactFooter : null}
     </GuestAccountContentCard>
   );

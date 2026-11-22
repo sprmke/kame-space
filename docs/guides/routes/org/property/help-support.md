@@ -29,7 +29,7 @@ Property team members open Help & Support to find answers, chat with the AI assi
 
 ## App card
 
-Below the FAQ accordion, `AppInfoCard` (`ui/src/components/pwa/AppInfoCard.tsx`) shows the running build (`VITE_APP_VERSION`), a **Check for updates** action (`checkForPwaUpdate()` — throttled by the update controller), and the **Install app** entry (`InstallAppEntry`), which is hidden when the app is already installed. Support can use the version string to confirm which deploy a host is on.
+Below the FAQ accordion, `AppInfoCard` (`ui/src/components/pwa/AppInfoCard.tsx`) shows the product version (`VITE_APP_DISPLAY_VERSION` from root `package.json`, formatted like `1.0`; local builds show `Development`), a **Check for updates** action (`checkForPwaUpdate()` — throttled by the update controller), and the **Install app** entry (`InstallAppEntry`), which is hidden when the app is already installed. Support can use that label plus Sentry's git release (`VITE_APP_VERSION`) when debugging a deploy.
 
 ## Host-facing knowledge
 
@@ -76,7 +76,7 @@ Topic tiles first (Organization, Property, Parking, Guest pages), each with a ce
 
 ## Tickets
 
-List, new ticket, and conversation live in one Tickets workspace (`/tickets`, `/tickets/new`, `/tickets/:ticketId`). The workspace fills remaining height under the Help cards (same fill-main pattern as Guest Inbox). Desktop is a split pane: ticket list at `lg:w-[min(100%,400px)]`, thread in the rest. The list header is **My Tickets** on the left; **New** is on the right only when the list has tickets (the empty state uses a centered **New ticket** CTA instead). **New** opens a modal (bottom sheet on phone) so the current thread stays visible; `/tickets/new` still opens that modal for deep links. Closing it without submitting asks to discard if the draft has content, then returns to the ticket you were on. Desktop with tickets auto-selects the first row so the idle “Pick a ticket” pane is skipped. Phone shows one pane at a time; Back lives in the thread header (`lg:hidden`), not above the split. Loading uses a layout-matched skeleton: empty chrome when this scope has no tickets (or on a cold first visit), list + thread chrome when a prior visit (or cached list) had tickets.
+List, new ticket, and conversation live in one Tickets workspace (`/tickets`, `/tickets/new`, `/tickets/:ticketId`). The workspace fills remaining height under the Help cards (same fill-main pattern as Guest Inbox). Desktop is a split pane: ticket list at `lg:w-[min(100%,400px)]`, thread in the rest. The list header is **My Tickets** on the left only when there is at least one ticket; **New** is on the right in that header (the empty state uses a centered **New ticket** CTA and no title, including while the empty skeleton loads). **New** opens a modal (bottom sheet on phone) so the current thread stays visible; `/tickets/new` still opens that modal for deep links. Closing it without submitting asks to discard if the draft has content, then returns to the ticket you were on. Desktop with tickets auto-selects the first row so the idle “Pick a ticket” pane is skipped. Phone shows one pane at a time; Back lives in the thread header (`lg:hidden`), not above the split. Loading uses a layout-matched skeleton: empty chrome when this scope has no tickets (or on a cold first visit), list + thread chrome when a prior visit (or cached list) had tickets.
 
 ### Fields
 
@@ -111,7 +111,7 @@ Lists the caller's own tickets with a status badge (Open / In progress / Resolve
 | Resolved           | Shown    | Banner explains resolution; placeholder “Reply to reopen…”; reply moves ticket to **In progress** |
 | Closed             | Hidden   | Banner + **Reopen ticket** button; reopen sets status to **Open**, then composer returns          |
 
-Empty and load-error states stay inside the list pane under **My Tickets** (icon well + title + short description + CTA, or retry). Empty copy explains that tickets are for something broken, an idea, or a question, and that replies show here. Closed rows in the list render slightly muted. New ticket compose is a modal, not a second pane.
+Empty and load-error states stay inside the list pane without a **My Tickets** header (icon well + title + short description + CTA, or retry). Empty copy explains that tickets are for something broken, an idea, or a question, and that replies show here. Closed rows in the list render slightly muted. New ticket compose is a modal, not a second pane.
 
 ## API reference
 

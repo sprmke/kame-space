@@ -21,7 +21,7 @@ Route: `/account`
 
 ## Overview
 
-`GuestAccountIndexPage` renders no UI — it immediately `<Navigate replace>`s to **`/account/trips`** (guest journey plan, decision D2: a guest with an upcoming stay wants the trip first). There is no account landing/dashboard page; the sidebar nav (Profile · Trips · Reviews · Messages · Vouchers · Favorites · Tickets · Help) is the entry point instead.
+`GuestAccountIndexPage` renders no UI — it immediately `<Navigate replace>`s to **`/account/trips`** (guest journey plan, decision D2: a guest with an upcoming stay wants the trip first). There is no account landing/dashboard page; the sidebar nav (Profile · Favorites · Vouchers · Trips · Messages · Reviews · Tickets · Help) is the entry point instead. The marketing avatar menu groups those same links under **Account**, **Trips**, and **Help** (plus **Host → Dashboard**).
 
 `/account/settings` also redirects to `/account/profile` (see [profile.md](./profile.md) § Settings).
 

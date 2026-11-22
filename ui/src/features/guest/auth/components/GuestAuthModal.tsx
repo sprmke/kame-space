@@ -140,11 +140,13 @@ export function GuestAuthModal({
         onEscapeKeyDown={blockDismiss}
         className="gap-0 p-0 sm:max-w-[min(calc(100vw-1.5rem),26rem)]"
       >
-        <ResponsiveModalHeader className="border-border/60 space-y-4 border-b px-4 pb-4 pt-5 text-center sm:px-5">
-          <KameSpaceBrandIcon className="mx-auto h-11 w-11" />
-          <ResponsiveModalTitle className="text-center text-lg font-bold sm:text-xl">
-            {step === 'email' ? 'Log in or sign up' : 'Confirm your email'}
-          </ResponsiveModalTitle>
+        <ResponsiveModalHeader className="border-border/60 border-b px-4 pb-4 pt-5 text-center sm:px-5">
+          <div className="flex flex-col items-center gap-2">
+            <KameSpaceBrandIcon className="h-11 w-11" />
+            <ResponsiveModalTitle className="text-center text-lg font-bold sm:text-xl">
+              {step === 'email' ? 'Log in or sign up' : 'Confirm your email'}
+            </ResponsiveModalTitle>
+          </div>
         </ResponsiveModalHeader>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">

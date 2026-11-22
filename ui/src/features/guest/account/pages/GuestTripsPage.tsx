@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 import { Link } from 'react-router-dom';
 
 import { Building2, Car, ChevronRight, Luggage, RefreshCw } from 'lucide-react';
@@ -6,6 +8,13 @@ import { GuestAccountContentCard } from '@/features/guest/account/components/Gue
 import { GuestAccountEmptyState } from '@/features/guest/account/components/GuestAccountEmptyState';
 import { useGuestTrips } from '@/features/guest/account/hooks/useGuestTrips';
 import type { GuestTripListItemDto } from '@/features/guest/account/lib/guestAccountApi';
+import {
+  guestAccountListLayoutFromCount,
+  guestAccountListLayoutStorageKey,
+  readGuestAccountListLayoutHint,
+  resolveGuestAccountListLoadState,
+  writeGuestAccountListLayoutHint,
+} from '@/features/guest/account/lib/guestAccountListLayout';
 import { guestTripPath } from '@/features/guest/lib/guestPublicPaths';
 import { MarketingImage as Image } from '@/features/guest/marketing/shared/components/MarketingImage';
 import { GuestTripStatusPill } from '@/features/guest/trip/components/GuestTripStatusPill';
@@ -16,10 +25,15 @@ import {
 } from '@/features/guest/trip/lib/guestTripPhase';
 
 import { InstallInlineCard } from '@/components/pwa/InstallInlineCard';
-import { GuestVouchersPageSkeleton } from '@/components/skeletons/GuestAccountSkeletons';
+import {
+  GuestAccountEmptyStateSkeleton,
+  GuestTripsPageSkeleton,
+} from '@/components/skeletons/GuestAccountSkeletons';
 import { publicPageTitle, usePageTitle } from '@/lib/pageTitle';
 import { cn } from '@/lib/utils';
 import { formatStayDateRange, getManilaYmdToday } from '@/utils/format/dates';
+
+const LAYOUT_KEY = guestAccountListLayoutStorageKey('trips');
 
 const GROUPS = [
   { key: 'upcoming', label: 'Upcoming' },
@@ -74,13 +88,29 @@ function TripRow({ trip }: { trip: GuestTripListItemDto }) {
 
 export function GuestTripsPage() {
   usePageTitle(publicPageTitle('Trips'));
-  const { data: trips = [], isLoading, isError, refetch } = useGuestTrips();
+  const { data, isLoading, isError, refetch } = useGuestTrips();
+  const trips = data ?? [];
   const today = getManilaYmdToday();
+  const loadState = resolveGuestAccountListLoadState({
+    isPending: isLoading,
+    itemCount: data !== undefined ? data.length : undefined,
+    hint: readGuestAccountListLayoutHint(LAYOUT_KEY),
+    coldDefault: 'empty',
+  });
 
-  if (isLoading) {
+  useEffect(() => {
+    if (loadState !== 'ready') return;
+    writeGuestAccountListLayoutHint(LAYOUT_KEY, guestAccountListLayoutFromCount(trips.length));
+  }, [loadState, trips.length]);
+
+  if (loadState === 'empty') {
+    return <GuestAccountEmptyStateSkeleton mascotPose="arrival" ariaLabel="Loading trips" />;
+  }
+
+  if (loadState === 'list') {
     return (
       <GuestAccountContentCard>
-        <GuestVouchersPageSkeleton rows={3} />
+        <GuestTripsPageSkeleton rows={3} />
       </GuestAccountContentCard>
     );
   }
