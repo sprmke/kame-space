@@ -2,7 +2,7 @@
 title: 'Organization Settings — operator guide'
 status: active
 tags: [guides, routes, org, settings]
-updated: 2026-09-27
+updated: 2026-11-23
 ---
 
 # Organization Settings — operator guide
@@ -355,13 +355,17 @@ Danger zone: slug confirmation + `delete-organization`; blocked when booking his
 
 ## Testing
 
-| Layer | Path / spec                                                              | Manual                           |
-| ----- | ------------------------------------------------------------------------ | -------------------------------- |
-| Unit  | Org settings completion helpers when changed                             | —                                |
-| E2E   | `ui/e2e/features/org/orgSettingsSave.spec.ts` socials PATCH save (`@ci`) | Logo upload, org delete, AI save |
-| N/A   | —                                                                        | —                                |
+| Layer | Path / spec                                                                                                             | Manual                      |
+| ----- | ----------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| Unit  | Org settings completion helpers when changed                                                                            | —                           |
+| E2E   | `ui/e2e/features/org/orgSettingsSave.spec.ts` socials PATCH save (`@ci`)                                                | Logo upload, real OTP email |
+| E2E   | `ui/e2e/features/dashboard/settings/settingsModule.spec.ts` org scope (`@ci`, rail, save, slug-gated delete, AI toggle) | —                           |
+| Demo  | `ui/e2e/features/dashboard/settings/settingsTour.slowmo.spec.ts` (`@demo`, headed + video)                              | —                           |
+| N/A   | —                                                                                                                       | —                           |
 
 ---
+
+Review: [`docs/workflow/in-progress/settings-ux-review/`](../../../workflow/in-progress/settings-ux-review/README.md)
 
 ## Related docs
 

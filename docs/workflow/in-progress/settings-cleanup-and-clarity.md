@@ -3,13 +3,15 @@ stage: in-progress
 title: 'Settings cleanup — retire legacy settings, fix redundant ones, clarify Email automations'
 status: in-progress
 tags: [workflow, planned, settings, parking, email, cleanup, ux-copy]
-updated: 2026-11-07
+updated: 2026-11-23
 kind: plan
 ---
 
 # Settings cleanup — retire legacy settings, fix redundant ones, clarify Email automations
 
 **Goal.** Audit every org, property and parking setting. Remove what is dead or legacy, fix what is redundant or misleading, and rewrite the Email automations card so a non-technical host understands each field without reading docs.
+
+**Post-ship UX review (2026-11-23).** [`settings-ux-review/`](./settings-ux-review/README.md) re-audited all three settings surfaces after Phases 1-5 (63 captures, 9 recordings, 4 P1s, 18 P2s). Four blockers remain outside this plan's cleanup scope: duplicate Guest experience section on property, digits-only slot label blocking every parking save, Google Maps failure discarding typed addresses, and a legacy residence leaving an uneditable required Tower.
 
 **Constraint.** Nothing that works today may break. Removal is **expand/contract**: first the UI stops showing a field and the server stops using it (Phases 1 to 5). Columns and keys are dropped only after that ships and soaks (Phase 6, deferred).
 
