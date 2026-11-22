@@ -187,17 +187,18 @@ test.describe('@ci marketing video editor music picker', () => {
 
     // Library closes after the pick so the song bar above the timeline is usable.
     await expect(page.getByRole('region', { name: 'Media library' })).toHaveCount(0);
-    const card = page.getByRole('region', { name: 'Instagram song' });
-    await expect(card).toBeVisible();
-    await expect(card.getByText('Golden Hour')).toBeVisible();
+    // Desktop also shows the same song in the inspector (two regions).
+    const songBars = page.getByRole('region', { name: 'Instagram song' });
+    await expect(songBars.first()).toBeVisible();
+    await expect(songBars.first().getByText('Golden Hour')).toBeVisible();
     // Picking a song is one undoable step, and never adds a clip to the timeline.
     await page.keyboard.press('ControlOrMeta+z');
-    await expect(page.getByRole('region', { name: 'Instagram song' })).toHaveCount(0);
+    await expect(songBars).toHaveCount(0);
     await page.keyboard.press('ControlOrMeta+Shift+z');
-    await expect(page.getByRole('region', { name: 'Instagram song' })).toBeVisible();
+    await expect(songBars.first()).toBeVisible();
 
-    await page.getByRole('button', { name: 'Remove Instagram song' }).click();
-    await expect(page.getByRole('region', { name: 'Instagram song' })).toHaveCount(0);
+    await songBars.first().getByRole('button', { name: 'Remove Instagram song' }).click();
+    await expect(songBars).toHaveCount(0);
   });
 
   test('Instagram music: an account that is not connected is sent to the inbox', async ({
