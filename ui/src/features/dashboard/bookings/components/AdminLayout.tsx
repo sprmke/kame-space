@@ -1207,32 +1207,39 @@ function AdminSidebarNav({
           {navSections.map((section, sectionIndex) => {
             const showHeading =
               !collapsed && navSections.length > 1 && Boolean(section.label) && !section.hideLabel;
-            const groupCollapsed = showHeading && Boolean(collapsedGroups[section.label]);
+            // Only the super-admin console has enough destinations to need collapsing.
+            // Tenant sidebars keep plain headings so their labels never collide with page actions.
+            const canCollapse = showHeading && superAdmin;
+            const groupCollapsed = canCollapse && Boolean(collapsedGroups[section.label]);
             return (
               <div
                 key={section.label}
                 className={showHeading && sectionIndex > 0 ? 'pt-2.5' : undefined}
               >
                 {showHeading ? (
-                  <button
-                    type="button"
-                    onClick={() => toggleGroup(section.label)}
-                    aria-expanded={!groupCollapsed}
-                    aria-label={`${section.label} group`}
-                    className="text-sidebar-muted hover:text-sidebar-foreground bg-sidebar sticky top-0 z-[1] flex min-h-6 w-full items-center gap-1 px-3 pb-1 text-left text-[0.6875rem] font-semibold uppercase tracking-wider"
-                  >
-                    <span className="flex-1">{section.label}</span>
-                    <ChevronDown
-                      className={cn(
-                        'size-3.5 shrink-0 transition-transform',
-                        groupCollapsed && '-rotate-90'
-                      )}
-                      aria-hidden
-                    />
-                  </button>
+                  canCollapse ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(section.label)}
+                      aria-expanded={!groupCollapsed}
+                      className="text-sidebar-muted hover:text-sidebar-foreground bg-sidebar sticky top-0 z-[1] flex min-h-6 w-full items-center gap-1 px-3 pb-1 text-left text-[0.6875rem] font-semibold uppercase tracking-wider"
+                    >
+                      <span className="flex-1">{section.label}</span>
+                      <ChevronDown
+                        className={cn(
+                          'size-3.5 shrink-0 transition-transform',
+                          groupCollapsed && '-rotate-90'
+                        )}
+                        aria-hidden
+                      />
+                    </button>
+                  ) : (
+                    <p className="text-sidebar-muted px-3 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider">
+                      {section.label}
+                    </p>
+                  )
                 ) : null}
                 <div className={cn('space-y-1', groupCollapsed && 'hidden')}>
-
                   {section.items.map((item) => {
                     const { label, href, Icon, disabled } = item;
                     const active = href ? href === activeNavHref : false;
