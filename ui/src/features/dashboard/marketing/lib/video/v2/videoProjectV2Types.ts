@@ -139,6 +139,9 @@ export type LayerItem = ItemBase & {
   animationOut?: { type: TextAnimation; durationInFrames: number };
 };
 
+/** What an audio clip is for. Missing means music (or sound, when it came from a video). */
+export type AudioRole = 'music' | 'voice' | 'sound';
+
 export type AudioItem = ItemBase & {
   type: 'audio';
   media: MediaRef;
@@ -151,6 +154,11 @@ export type AudioItem = ItemBase & {
   artist?: string;
   /** Jamendo track id. */
   trackId?: string;
+  role?: AudioRole;
+  /** Music only: lower the volume while a voice clip plays. On unless `false`. */
+  duckUnderVoice?: boolean;
+  /** Set when the sound was separated from a video clip. */
+  sourceItemId?: string | null;
 };
 
 export type VideoItem = MediaItem | LayerItem | AudioItem;

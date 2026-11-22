@@ -13,6 +13,8 @@ export function noticeForFailure(reason: OpFailure | undefined): string | null {
       return 'Videos can be up to 60 seconds long.';
     case 'no_room':
       return 'There is no room for that here.';
+    case 'needs_normal_speed':
+      return 'Set the speed to 1x first, then separate the sound.';
     case 'incompatible':
       return "That doesn't work for this clip.";
     case 'not_found':

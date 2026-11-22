@@ -24,6 +24,12 @@ import {
 import type { CampaignPalette } from '@/features/dashboard/marketing/lib/designBrandColors';
 import type { MarketingThemeTokens } from '@/features/dashboard/marketing/lib/theme/marketingTheme';
 import {
+  duckFactor,
+  shouldDuck,
+  voiceRangesOf,
+  type FrameRange,
+} from '@/features/dashboard/marketing/lib/video/v2/audioDucking';
+import {
   adjustFilter,
   cropInnerStyle,
   ctaReveal,
@@ -64,6 +70,7 @@ import {
   type VideoTypographyContext,
 } from '@/features/dashboard/marketing/lib/video/videoTemplateTypography';
 import { scaleForVideoFormat } from '@/features/dashboard/marketing/lib/video/videoTextSlotContent';
+
 import { parseHexRgb } from '@/lib/theme/colorConvert';
 
 export type VideoCompositionV2Props = {
@@ -83,6 +90,8 @@ export type VideoCompositionV2Props = {
 
 type Ctx = {
   project: VideoProjectV2;
+  /** Where a voice is heard, so music can drop under it. */
+  voiceRanges: FrameRange[];
   typography: VideoTypographyContext;
   motionProfile: VideoMotionProfile;
   previewMuted: boolean;
@@ -472,11 +481,20 @@ function LayerClip({ item, ctx }: { item: LayerItem; ctx: Ctx }) {
   );
 }
 
-function AudioClip({ item, muted }: { item: AudioItem; muted: boolean }) {
+function AudioClip({
+  item,
+  muted,
+  voiceRanges,
+}: {
+  item: AudioItem;
+  muted: boolean;
+  voiceRanges: FrameRange[];
+}) {
   const { fps } = useVideoConfig();
   if (!isRenderableMediaUrl(item.media.url)) return null;
   const { durationInFrames, volume, fadeInFrames, fadeOutFrames } = item;
   const hasFade = (fadeInFrames ?? 0) > 0 || (fadeOutFrames ?? 0) > 0;
+  const ducks = voiceRanges.length > 0 && shouldDuck(item);
   return (
     <Audio
       src={item.media.url}
@@ -485,9 +503,10 @@ function AudioClip({ item, muted }: { item: AudioItem; muted: boolean }) {
       premountFor={fps}
       trimBefore={item.trimBeforeFrames || undefined}
       volume={
-        hasFade
+        hasFade || ducks
           ? (frame: number) =>
-              fadedVolume(frame, durationInFrames, volume, fadeInFrames, fadeOutFrames)
+              fadedVolume(frame, durationInFrames, volume, fadeInFrames, fadeOutFrames) *
+              (ducks ? duckFactor(item.from + frame, voiceRanges) : 1)
           : volume
       }
     />
@@ -537,7 +556,11 @@ function TrackItems({ track, ctx }: { track: VideoTrack; ctx: Ctx }) {
               durationInFrames={item.durationInFrames}
               layout="none"
             >
-              <AudioClip item={item} muted={muted || track.hidden === true} />
+              <AudioClip
+                item={item}
+                muted={muted || track.hidden === true}
+                voiceRanges={ctx.voiceRanges}
+              />
             </Sequence>
           ))}
         </>
@@ -567,6 +590,7 @@ export function CampaignVideoCompositionV2({
   const ctx = useMemo<Ctx>(
     () => ({
       project,
+      voiceRanges: voiceRangesOf(project),
       typography: resolvedTypography,
       motionProfile: resolvedMotion,
       previewMuted,

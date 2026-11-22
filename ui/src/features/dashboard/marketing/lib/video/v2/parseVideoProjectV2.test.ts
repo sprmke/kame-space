@@ -259,4 +259,50 @@ describe('parseVideoProjectV2', () => {
     expect(value.tracks[0]?.kind).toBe('main');
     expect(value.tracks[0]!.items.length).toBeGreaterThan(0);
   });
+
+  it('keeps audio roles and drops anything else', () => {
+    const audio = (extra: object) => ({
+      id: 'a1',
+      type: 'audio',
+      from: 0,
+      durationInFrames: 60,
+      media: { url: 'https://img.test/a.mp3', source: 'library' },
+      volume: 0.5,
+      ...extra,
+    });
+    const load = (extra: object) => {
+      const value = parse({
+        version: 2,
+        templateId: 't',
+        campaignCategory: 'c',
+        format: 'instagram-story',
+        fps: 30,
+        background: { color: '#000000', fill: 'color' },
+        tracks: [
+          mainTrack({
+            id: 'img-1',
+            type: 'image',
+            from: 0,
+            durationInFrames: 90,
+            media: { url: 'https://img.test/a.jpg', source: 'library' },
+            fit: 'cover',
+            transform: { x: 50, y: 50, widthPct: 100, rotation: 0, opacity: 1 },
+          }),
+          { id: 'aud', kind: 'audio', items: [audio(extra)] },
+        ],
+      });
+      return value.tracks.find((t) => t.kind === 'audio')?.items[0] as never as Record<
+        string,
+        unknown
+      >;
+    };
+    expect(load({ role: 'voice' }).role).toBe('voice');
+    expect(load({ role: 'sound', sourceItemId: 'v9' })).toMatchObject({
+      role: 'sound',
+      sourceItemId: 'v9',
+    });
+    expect(load({ duckUnderVoice: false }).duckUnderVoice).toBe(false);
+    expect(load({ role: 'bogus' }).role).toBeUndefined();
+    expect(load({ duckUnderVoice: true }).duckUnderVoice).toBeUndefined();
+  });
 });

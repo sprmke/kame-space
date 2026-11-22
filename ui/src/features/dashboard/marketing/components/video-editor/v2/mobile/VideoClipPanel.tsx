@@ -32,6 +32,7 @@ const PANEL_TITLES: Partial<Record<PhoneToolAction, string>> = {
   'clip-speed': 'Speed',
   'clip-volume': 'Volume',
   'clip-fade': 'Fade',
+  'clip-duck': 'Lower for voice',
   'clip-duration': 'Duration',
   'clip-fit': 'Fit',
   'clip-motion': 'Motion',
@@ -169,6 +170,21 @@ function PanelBody({ action, item, actions }: Omit<Props, 'onClose'>) {
             }
           />
         </>
+      );
+    }
+    case 'clip-duck': {
+      if (!isAudioItem(item)) return null;
+      return (
+        <div className="flex min-h-[44px] items-center justify-between gap-3">
+          <span className="text-sm">Lower this when someone talks</span>
+          <Switch
+            aria-label="Lower this when someone talks"
+            checked={item.duckUnderVoice !== false}
+            onCheckedChange={(checked) =>
+              patch({ duckUnderVoice: checked ? undefined : false } as Partial<VideoItem>)
+            }
+          />
+        </div>
       );
     }
     case 'clip-duration':

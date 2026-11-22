@@ -44,6 +44,7 @@ export type OpFailure =
   | 'track_limit'
   | 'duration_limit'
   | 'no_room'
+  | 'needs_normal_speed'
   | 'invalid';
 
 export type OpResult = {
@@ -623,6 +624,40 @@ export function setSourceWindow(
     clamped = clamped || Boolean(result.clamped);
   }
   return done(working, { clamped, itemIds: [itemId] });
+}
+
+/**
+ * Move a video's sound onto its own audio clip, in step with the picture, and mute the video.
+ * Only at normal speed: audio clips have no speed, so a sped up video would drift out of sync.
+ */
+export function separateSound(original: VideoProjectV2, videoId: string): OpResult {
+  // The main track's stored `from` is derived, so lay it out before reading the start frame.
+  const project = normalizeProject(original);
+  const loc = findItem(project, videoId);
+  if (!loc) return fail(original, 'not_found');
+  if (loc.track.locked) return fail(original, 'locked');
+  const item = loc.item;
+  if (item.type !== 'video' || !item.media.url) return fail(original, 'incompatible');
+  if ((item.playbackRate ?? 1) !== 1) return fail(original, 'needs_normal_speed');
+
+  const sound: AudioItem = {
+    id: newId('item'),
+    type: 'audio',
+    from: item.from,
+    durationInFrames: item.durationInFrames,
+    label: 'Sound',
+    media: { ...item.media },
+    volume: item.muted ? 1 : (item.volume ?? 1),
+    trimBeforeFrames: item.trimBeforeFrames ?? 0,
+    role: 'sound',
+    sourceItemId: item.id,
+  };
+  const muted = updateItem(project, videoId, (current) => ({
+    ...(current as MediaItem),
+    muted: true,
+  }));
+  if (!muted.ok) return muted;
+  return insertItem(muted.project, sound, { kind: 'audio', atFrame: item.from });
 }
 
 // ─── Split / duplicate / paste ──────────────────────────────────────────────

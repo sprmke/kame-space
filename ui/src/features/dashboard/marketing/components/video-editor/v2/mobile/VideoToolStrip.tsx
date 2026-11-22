@@ -49,7 +49,7 @@ export function VideoToolStrip({
   const [path, setPath] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const root = useMemo(() => rootTools(options), [options]);
-  const selectionRow = useMemo(() => toolsForSelection(selection), [selection]);
+  const selectionRow = useMemo(() => toolsForSelection(selection, options), [selection, options]);
   const hasSelection = selection !== 'none';
 
   const row = hasSelection ? selectionRow : (rowAtPath(root, path) ?? root);

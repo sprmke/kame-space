@@ -1,118 +1,19 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 
 import {
-  installPropertyTeamRbacMocks,
-  teamRbacPaths,
-} from '../../team/shared/propertyTeamRbacHarness';
+  asset,
+  installMediaMocks,
+  installTemplateMocks,
+  openDraft,
+  openMediaPanel,
+} from './videoEditorHarness';
+import { installPropertyTeamRbacMocks } from '../../team/shared/propertyTeamRbacHarness';
+
 
 /**
  * Multi-track Videos editor. Backend is mocked; this checks the editor shell, the timeline
  * model and the media library glue, not Remotion rendering quality.
  */
-
-const LIMITS = {
-  storageMb: 500,
-  maxFiles: 100,
-  maxImageMb: 10,
-  maxVideoMb: 100,
-  maxVideoSec: 60,
-  maxAudioMb: 15,
-  dailyUploads: 50,
-};
-
-function asset(id: string, kind: 'image' | 'video' | 'audio', name: string) {
-  return {
-    id,
-    kind,
-    source: 'upload',
-    fileName: name,
-    mimeType: kind === 'image' ? 'image/jpeg' : kind === 'video' ? 'video/mp4' : 'audio/mpeg',
-    url: `http://127.0.0.1:4173/favicon.ico?asset=${id}`,
-    posterUrl: null,
-    sizeBytes: 1_000_000,
-    width: 1080,
-    height: 1920,
-    durationMs: kind === 'image' ? null : 8000,
-    peaks: null,
-    createdAt: '2026-10-30T00:00:00Z',
-  };
-}
-
-async function installMediaMocks(
-  page: Page,
-  items: ReturnType<typeof asset>[],
-  usedBytes = 1_000_000
-) {
-  await page.route('**/functions/v1/marketing-media**', async (route: Route) => {
-    const url = new URL(route.request().url());
-    const isUsage = url.pathname.endsWith('/usage');
-    const data = isUsage
-      ? { usedBytes, files: items.length, uploadsToday: 0, limits: LIMITS }
-      : { items, nextCursor: null };
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ success: true, data }),
-    });
-  });
-  // Default music lookup is best effort in the editor; keep it quiet.
-  await page.route('**/functions/v1/marketing-music**', (route: Route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ success: true, data: { tracks: [] } }),
-    })
-  );
-}
-
-async function installTemplateMocks(page: Page) {
-  await page.route('**/functions/v1/marketing-templates**', async (route: Route) => {
-    const url = new URL(route.request().url());
-    const view = url.searchParams.get('view');
-    const data =
-      view === 'library'
-        ? { items: [], nextCursor: null }
-        : view === 'usage'
-          ? { usage: [] }
-          : route.request().method() === 'POST'
-            ? {
-                id: '9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b',
-                name: 'Quiet morning',
-                kind: 'design',
-                contentType: 'video',
-                platform: 'instagram',
-                aspectPreset: 'instagram-story',
-                themeKey: 'property-colors',
-                designJson: {},
-                groupMembers: [],
-                createdAt: '2026-10-30T00:00:00Z',
-                updatedAt: '2026-10-30T00:00:00Z',
-              }
-            : { templates: [] };
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ success: true, data }),
-    });
-  });
-}
-
-/** The library panel starts closed on laptop-width screens. */
-async function openMediaPanel(page: Page) {
-  const tab = page.getByRole('tab', { name: 'Media' });
-  if ((await tab.getAttribute('aria-selected')) !== 'true') await tab.click();
-  await expect(page.getByRole('region', { name: 'Media library' })).toBeVisible();
-}
-
-async function openDraft(page: Page) {
-  await page.goto(
-    `${teamRbacPaths.marketingWorkspace}&tab=video&item=new&from=preset%3Aquiet-morning&size=instagram-story`
-  );
-  await expect(page.getByRole('button', { name: 'Back to Videos' })).toBeVisible({
-    timeout: 45_000,
-  });
-  await expect(page.getByLabel('Timeline', { exact: true })).toBeVisible({ timeout: 30_000 });
-}
 
 test.describe('@ci marketing video editor v2', () => {
   test.setTimeout(120_000);
@@ -289,6 +190,31 @@ test.describe('@ci marketing video editor v2 on a phone', () => {
     // The text box is not repeated, and the timeline is still on screen.
     await expect(page.getByLabel('Text content')).toHaveCount(0);
     await expect(page.getByLabel('Timeline', { exact: true })).toBeVisible();
+  });
+
+  test("Separate sound puts a video's sound on its own clip", async ({ page }) => {
+    await installMediaMocks(page, [asset('v1', 'video', 'tour.mp4')]);
+    await openDraft(page);
+    await page
+      .getByRole('toolbar', { name: 'Editor tools' })
+      .getByRole('button', { name: 'Media' })
+      .tap();
+    await page
+      .getByRole('toolbar', { name: 'Tool options' })
+      .getByRole('button', { name: 'Photos and videos' })
+      .tap();
+    await page.getByRole('button', { name: 'Use tour.mp4' }).tap();
+
+    // The new video is selected, so its tools are showing.
+    const tools = page.getByRole('toolbar', { name: 'Clip tools' });
+    await expect(tools.getByRole('button', { name: 'Separate sound' })).toBeVisible();
+    const before = await page.locator('[data-timeline-item]').count();
+    await tools.getByRole('button', { name: 'Separate sound' }).tap();
+    await expect(page.locator('[data-timeline-item]')).toHaveCount(before + 1);
+    // The new sound clip is selected and offers volume and fade, not video tools.
+    const soundTools = page.getByRole('toolbar', { name: 'Clip tools' });
+    await expect(soundTools.getByRole('button', { name: 'Fade' })).toBeVisible();
+    await expect(soundTools.getByRole('button', { name: 'Trim' })).toHaveCount(0);
   });
 
   test('Export lives in the top bar and opens one sheet', async ({ page }) => {

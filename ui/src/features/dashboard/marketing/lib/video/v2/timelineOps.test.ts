@@ -14,6 +14,7 @@ import {
   reorderTrack,
   resolveOverlaps,
   setPlaybackRate,
+  separateSound,
   setSourceWindow,
   setTransition,
   snapFrame,
@@ -31,6 +32,7 @@ import {
 } from '@/features/dashboard/marketing/lib/video/v2/timelineTiming';
 import {
   VIDEO_V2_LIMITS,
+  type AudioItem,
   type MediaItem,
 } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
 import {
@@ -759,5 +761,59 @@ describe('setSourceWindow', () => {
     const q = project([track('main', [v])]);
     expect(setSourceWindow(q, v.id, 40, 40).reason).toBe('invalid');
     expect(setSourceWindow(q, 'nope', 0, 30).reason).toBe('not_found');
+  });
+});
+
+describe('separateSound', () => {
+  it('moves the sound to its own clip in step with the picture and mutes the video', () => {
+    const v = clip(150, 10, { trimBeforeFrames: 30, volume: 0.8 });
+    const p = project([track('main', [v])]);
+    const result = separateSound(p, v.id);
+    expect(result.ok).toBe(true);
+    const audio = result.project.tracks.find((t) => t.kind === 'audio')!.items[0] as AudioItem;
+    expect(audio.role).toBe('sound');
+    expect(audio.sourceItemId).toBe(v.id);
+    expect(audio.from).toBe(0);
+    expect(audio.durationInFrames).toBe(150);
+    expect(audio.trimBeforeFrames).toBe(30);
+    expect(audio.volume).toBe(0.8);
+    expect(audio.media.url).toBe(v.media.url);
+    expect((mainTrackOf(result.project).items[0] as MediaItem).muted).toBe(true);
+    expect(result.itemIds).toEqual([audio.id]);
+  });
+
+  it('lines up with a clip that is not first on the main track', () => {
+    const first = photo(60);
+    const v = clip(90, 10);
+    const p = project([track('main', [first, v])]);
+    const result = separateSound(p, v.id);
+    const audio = result.project.tracks.find((t) => t.kind === 'audio')!.items[0] as AudioItem;
+    expect(audio.from).toBe(60);
+  });
+
+  it('keeps full volume when the host had already muted the video', () => {
+    const v = clip(90, 10, { muted: true, volume: 0.3 });
+    const result = separateSound(project([track('main', [v])]), v.id);
+    const audio = result.project.tracks.find((t) => t.kind === 'audio')!.items[0] as AudioItem;
+    expect(audio.volume).toBe(1);
+  });
+
+  it('asks for normal speed first, because audio clips have no speed', () => {
+    const v = clip(90, 10, { playbackRate: 1.5 });
+    expect(separateSound(project([track('main', [v])]), v.id).reason).toBe('needs_normal_speed');
+  });
+
+  it('only works on videos that have media', () => {
+    const still = photo(60);
+    const empty = clip(60, 10, { media: { url: '', source: 'library' } });
+    expect(separateSound(project([track('main', [still])]), still.id).reason).toBe('incompatible');
+    expect(separateSound(project([track('main', [empty])]), empty.id).reason).toBe('incompatible');
+    expect(separateSound(project([track('main', [still])]), 'nope').reason).toBe('not_found');
+  });
+
+  it('leaves the project alone when it fails', () => {
+    const v = clip(90, 10, { playbackRate: 2 });
+    const p = project([track('main', [v])]);
+    expect(separateSound(p, v.id).project).toBe(p);
   });
 });

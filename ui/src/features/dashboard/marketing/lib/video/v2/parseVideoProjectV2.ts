@@ -17,6 +17,7 @@ import {
   VIDEO_V2_FPS,
   VIDEO_V2_LIMITS,
   type AudioItem,
+  type AudioRole,
   type LayerItem,
   type MediaItem,
   type MediaRef,
@@ -69,6 +70,7 @@ const ANIMATIONS = new Set<TextAnimation>([
   'typewriter',
   'rise',
 ]);
+const AUDIO_ROLES = new Set<AudioRole>(['music', 'voice', 'sound']);
 const TRACK_KINDS = new Set<VideoTrackKind>(['main', 'overlay', 'text', 'audio']);
 const TEXT_STYLES = new Set(['headline', 'subheadline', 'promo', 'body', 'footer']);
 
@@ -253,6 +255,9 @@ function sanitizeAudio(raw: Rec): AudioItem | null {
   if (typeof raw.title === 'string') item.title = raw.title.slice(0, 200);
   if (typeof raw.artist === 'string') item.artist = raw.artist.slice(0, 200);
   if (typeof raw.trackId === 'string') item.trackId = raw.trackId;
+  if (AUDIO_ROLES.has(raw.role as AudioRole)) item.role = raw.role as AudioRole;
+  if (raw.duckUnderVoice === false) item.duckUnderVoice = false;
+  if (typeof raw.sourceItemId === 'string') item.sourceItemId = raw.sourceItemId.slice(0, 80);
   return item;
 }
 

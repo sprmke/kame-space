@@ -6,6 +6,7 @@ import {
   LayoutTemplate,
   Loader2,
   Maximize2,
+  Mic,
   Minimize2,
   Music2,
   Redo2,
@@ -47,17 +48,18 @@ import { MarketingSizeDialog } from '@/features/dashboard/marketing/components/s
 import { useMarketingTheme } from '@/features/dashboard/marketing/components/themes/MarketingThemeProvider';
 import type { InspectorActions } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
 import {
+  VideoInspectorV2,
+  inspectorTitle,
+} from '@/features/dashboard/marketing/components/video-editor/v2/inspector/VideoInspectorV2';
+import {
   PANEL_ACTIONS,
   VideoClipPanel,
 } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoClipPanel';
 import { VideoExportSheet } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoExportSheet';
-import { TextPresetGrid } from '@/features/dashboard/marketing/components/video-editor/v2/TextPresetGrid';
+import { VideoRecordPanel } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoRecordPanel';
 import { VideoToolStrip } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoToolStrip';
 import { VideoTrimPanel } from '@/features/dashboard/marketing/components/video-editor/v2/mobile/VideoTrimPanel';
-import {
-  VideoInspectorV2,
-  inspectorTitle,
-} from '@/features/dashboard/marketing/components/video-editor/v2/inspector/VideoInspectorV2';
+import { TextPresetGrid } from '@/features/dashboard/marketing/components/video-editor/v2/TextPresetGrid';
 import { VideoTimelineV2 } from '@/features/dashboard/marketing/components/video-editor/v2/timeline/VideoTimelineV2';
 import { useVideoEditorShortcutsV2 } from '@/features/dashboard/marketing/components/video-editor/v2/useVideoEditorShortcutsV2';
 import { useVideoTransportV2 } from '@/features/dashboard/marketing/components/video-editor/v2/useVideoTransportV2';
@@ -77,7 +79,10 @@ import { useGenerateMarketingTemplate } from '@/features/dashboard/marketing/hoo
 import { useMarketingBookedDates } from '@/features/dashboard/marketing/hooks/useMarketingBookedDates';
 import { useMarketingDesignSession } from '@/features/dashboard/marketing/hooks/useMarketingDesignSession';
 import { useDuplicateMarketingItem } from '@/features/dashboard/marketing/hooks/useMarketingLibrary';
-import { useMarketingMediaLibrary } from '@/features/dashboard/marketing/hooks/useMarketingMedia';
+import {
+  useMarketingMediaLibrary,
+  useMarketingMediaUploads,
+} from '@/features/dashboard/marketing/hooks/useMarketingMedia';
 import { useMarketingPermissions } from '@/features/dashboard/marketing/hooks/useMarketingPermissions';
 import {
   fetchMarketingTemplate,
@@ -88,6 +93,10 @@ import {
   useVideoProjectHistory,
   useVideoProjectHistoryShortcuts,
 } from '@/features/dashboard/marketing/hooks/useVideoProjectHistory';
+import {
+  isVoiceRecordingSupported,
+  useVoiceRecorder,
+} from '@/features/dashboard/marketing/hooks/useVoiceRecorder';
 import type { DesignBinding } from '@/features/dashboard/marketing/lib/designCanvasTypes';
 import { blobToDataUrl } from '@/features/dashboard/marketing/lib/exportVideoMedia';
 import { exportVideoV2, VideoExportError } from '@/features/dashboard/marketing/lib/exportVideoV2';
@@ -113,6 +122,7 @@ import {
 } from '@/features/dashboard/marketing/lib/marketingStudioRoute';
 import { fetchMarketingMediaPage } from '@/features/dashboard/marketing/lib/media/marketingMediaApi';
 import type { MediaDragPayload } from '@/features/dashboard/marketing/lib/media/mediaDrag';
+import { payloadFromAsset } from '@/features/dashboard/marketing/lib/media/mediaDrag';
 import { hasMediaDrag, readMediaDrag } from '@/features/dashboard/marketing/lib/media/mediaDrag';
 import {
   propertyGalleryMediaItems,
@@ -130,16 +140,9 @@ import {
 } from '@/features/dashboard/marketing/lib/video/aiLibraryMedia';
 import { isReviewVideoTemplate } from '@/features/dashboard/marketing/lib/video/applyGuestReviewToVideoProject';
 import { applyGuestReviewToVideoProjectV2 } from '@/features/dashboard/marketing/lib/video/v2/applyGuestReviewToVideoProjectV2';
-import { lookColorsFromPalette } from '@/features/dashboard/marketing/lib/video/v2/textLooks';
 import { applyCanvasPatch } from '@/features/dashboard/marketing/lib/video/v2/canvasPatch';
 import {
-  DEFAULT_PHONE_TOOL_OPTIONS,
-  selectionKind,
-  toolsForSelection,
-  type PhoneToolAction,
-  type PhoneToolOptions,
-} from '@/features/dashboard/marketing/lib/video/v2/phoneTools';
-import {
+  audioItemFromPayload,
   clipboardFor,
   duplicateItems,
   itemLabel,
@@ -160,12 +163,20 @@ import {
   noticeForFailure,
 } from '@/features/dashboard/marketing/lib/video/v2/opNotices';
 import {
+  DEFAULT_PHONE_TOOL_OPTIONS,
+  selectionKind,
+  toolsForSelection,
+  type PhoneToolAction,
+  type PhoneToolOptions,
+} from '@/features/dashboard/marketing/lib/video/v2/phoneTools';
+import {
   buildDefaultProjectV2,
   loadProjectV2,
   withResolvedMusic,
   type LoadedProjectV2,
 } from '@/features/dashboard/marketing/lib/video/v2/projectLoad';
 import type { ShortcutCommand } from '@/features/dashboard/marketing/lib/video/v2/shortcuts';
+import { lookColorsFromPalette } from '@/features/dashboard/marketing/lib/video/v2/textLooks';
 import {
   deleteItems,
   findItem,
@@ -173,6 +184,7 @@ import {
   moveItem,
   pasteItems,
   setPlaybackRate,
+  separateSound,
   setSourceWindow,
   setTransition,
   splitItems,
@@ -190,9 +202,14 @@ import {
 import {
   isAudioItem,
   isMediaItem,
+  type AudioItem,
   type VideoItem,
   type VideoProjectV2,
 } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
+import {
+  recordingRoomMs,
+  voicePlacement,
+} from '@/features/dashboard/marketing/lib/video/v2/voicePlacement';
 import { resolveAiGeneratedVideoProjectsForAllFormats } from '@/features/dashboard/marketing/lib/video/videoAiProjectBuilder';
 import {
   VIDEO_FORMAT_DIMENSIONS,
@@ -329,6 +346,19 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   /** Phone: the tool whose panel is open above the tool strip. */
   const [phoneAction, setPhoneAction] = useState<PhoneToolAction | null>(null);
   const [exportSheetOpen, setExportSheetOpen] = useState(false);
+  /** The next library pick becomes the sound of a video, not a clip. */
+  const [pickSoundMode, setPickSoundMode] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [muteWhileRecording, setMuteWhileRecording] = useState(true);
+  const [savingVoice, setSavingVoice] = useState(false);
+  const recorder = useVoiceRecorder();
+  const uploads = useMarketingMediaUploads();
+  const pendingVoiceRef = useRef(
+    new Map<
+      string,
+      { startFrame: number; recorderStartMs: number; playStartMs: number; durationMs: number }
+    >()
+  );
   /** Phone: the next library pick goes on top of the video instead of onto the main row. */
   const pickOnTopRef = useRef(false);
   const [sizeOpen, setSizeOpen] = useState(false);
@@ -730,6 +760,23 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         }
         setReplaceTargetId(null);
       }
+      if (pickSoundMode) {
+        setPickSoundMode(false);
+        if (payload.kind !== 'video') {
+          toast.message('Pick a video to use its sound.');
+          return;
+        }
+        const sound: AudioItem = {
+          ...audioItemFromPayload(payload, { fps: current.fps, from: currentFrameRef.current }),
+          role: 'sound',
+          volume: 1,
+          label: 'Sound',
+          title: payload.title,
+        };
+        apply((p) => insertItem(p, sound, { kind: 'audio', atFrame: currentFrameRef.current }));
+        if (isBelowLg) setMobilePanel(null);
+        return;
+      }
       handleDropMedia(payload, {
         frame: currentFrameRef.current,
         trackId: null,
@@ -738,7 +785,7 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
       pickOnTopRef.current = false;
       if (isBelowLg) setMobilePanel(null);
     },
-    [apply, handleDropMedia, isBelowLg, replaceTargetId]
+    [apply, handleDropMedia, isBelowLg, pickSoundMode, replaceTargetId]
   );
 
   const handleAddText = useCallback(
@@ -1227,7 +1274,12 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   const selection = project ? selectionKind(project, selectedIds) : 'none';
   const selectedItem = selectedLocation?.item ?? null;
   const phoneToolOptions = useMemo<PhoneToolOptions>(
-    () => ({ ...DEFAULT_PHONE_TOOL_OPTIONS, canGenerate }),
+    () => ({
+      ...DEFAULT_PHONE_TOOL_OPTIONS,
+      canGenerate,
+      soundTools: true,
+      voice: isVoiceRecordingSupported(),
+    }),
     [canGenerate]
   );
   const disabledPhoneActions = useMemo(() => {
@@ -1242,7 +1294,9 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     ? isAudioItem(replaceTarget.item)
       ? (['audio'] as const)
       : (['image', 'video'] as const)
-    : undefined;
+    : pickSoundMode
+      ? (['video'] as const)
+      : undefined;
 
   const sizeDialog = (
     <MarketingSizeDialog
@@ -1271,7 +1325,9 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
         return;
       }
       setPhoneAction(null);
+      setVoiceOpen(false);
       pickOnTopRef.current = false;
+      setPickSoundMode(false);
       switch (action) {
         case 'clip-split':
           handleCommand({ type: 'split' });
@@ -1284,6 +1340,19 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
           return;
         case 'clip-replace':
           if (selectedIds[0]) startReplace(selectedIds[0]);
+          return;
+        case 'clip-separate-sound':
+          if (selectedIds[0]) {
+            const id = selectedIds[0];
+            apply((current) => separateSound(current, id));
+          }
+          return;
+        case 'audio-from-video':
+          setPickSoundMode(true);
+          openRailPanel('media');
+          return;
+        case 'audio-record':
+          setVoiceOpen(true);
           return;
         case 'text-add':
           handleAddText('headline');
@@ -1326,7 +1395,15 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
           return;
       }
     },
-    [handleAddText, handleCommand, handleResetProject, openRailPanel, selectedIds, startReplace]
+    [
+      apply,
+      handleAddText,
+      handleCommand,
+      handleResetProject,
+      openRailPanel,
+      selectedIds,
+      startReplace,
+    ]
   );
 
   // A panel only stays open while its tool still belongs to the selected clip.
@@ -1342,6 +1419,84 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
   useEffect(() => {
     if (!mobilePanel) pickOnTopRef.current = false;
   }, [mobilePanel]);
+
+  const handleStartRecording = useCallback(() => {
+    const current = projectRef.current;
+    if (!current || !canEditContent) return;
+    const startFrame = currentFrameRef.current;
+    const player = playerRef.current;
+    transport.pause();
+    let mutedByUs = false;
+    void recorder.start({
+      maxMs: recordingRoomMs(startFrame, current.fps),
+      beginPlayback: async () => {
+        if (muteWhileRecording && player && !player.isMuted()) {
+          player.mute();
+          mutedByUs = true;
+        }
+        player?.play();
+        await new Promise((resolve) => setTimeout(resolve, 120));
+        return performance.now();
+      },
+      endPlayback: () => {
+        player?.pause();
+        if (mutedByUs) player?.unmute();
+      },
+      onFinished: (recording) => {
+        const ids = uploads.enqueue([recording.file]);
+        const id = ids[0];
+        if (!id) {
+          toast.error('Could not save your voice.');
+          return;
+        }
+        pendingVoiceRef.current.set(id, {
+          startFrame,
+          recorderStartMs: recording.recorderStartMs,
+          playStartMs: recording.playStartMs,
+          durationMs: recording.durationMs,
+        });
+        setSavingVoice(true);
+      },
+    });
+  }, [canEditContent, muteWhileRecording, recorder, transport, uploads]);
+
+  // The video stopping (it ended, or the host tapped it) ends the take.
+  const wasPlayingRef = useRef(false);
+  useEffect(() => {
+    if (wasPlayingRef.current && !isPlaying && recorder.phase === 'recording') recorder.stop();
+    wasPlayingRef.current = isPlaying;
+    // Only when play state changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying]);
+
+  // A saved take becomes a voice clip. Nothing temporary is ever stored in the project.
+  useEffect(() => {
+    for (const job of uploads.jobs) {
+      const pending = pendingVoiceRef.current.get(job.id);
+      if (!pending) continue;
+      if (job.status === 'done' && job.asset) {
+        pendingVoiceRef.current.delete(job.id);
+        const fps = projectRef.current?.fps ?? 30;
+        const placement = voicePlacement({ ...pending, fps });
+        const voice: AudioItem = {
+          ...audioItemFromPayload(payloadFromAsset(job.asset), { fps, from: placement.from }),
+          role: 'voice',
+          volume: 1,
+          label: 'Voice',
+          title: 'Voice',
+          durationInFrames: placement.durationInFrames,
+          trimBeforeFrames: placement.trimBeforeFrames,
+        };
+        apply((p) => insertItem(p, voice, { kind: 'audio', atFrame: placement.from }));
+        uploads.dismiss(job.id);
+      } else if (job.status === 'error' || job.status === 'cancelled') {
+        pendingVoiceRef.current.delete(job.id);
+        toast.error(job.error?.message ?? 'Could not save your voice.');
+        uploads.dismiss(job.id);
+      }
+    }
+    setSavingVoice(pendingVoiceRef.current.size > 0);
+  }, [uploads.jobs, apply, uploads]);
 
   const phoneTopActions = (
     <>
@@ -1476,8 +1631,42 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
     />
   );
 
+  const audioPanel = (
+    <div className="space-y-3">
+      {isVoiceRecordingSupported() ? (
+        <VideoRecordPanel
+          phase={recorder.phase}
+          count={recorder.count}
+          elapsedMs={recorder.elapsedMs}
+          level={recorder.level}
+          error={recorder.error}
+          saving={savingVoice}
+          muteWhileRecording={muteWhileRecording}
+          onMuteChange={setMuteWhileRecording}
+          onStart={handleStartRecording}
+          onStop={recorder.stop}
+          onCancel={recorder.cancel}
+          onClose={() => setRailPanel(null)}
+        />
+      ) : null}
+      <Button
+        type="button"
+        variant="outline"
+        className="min-h-[44px] w-full justify-start"
+        disabled={!canEditContent || !hasProject}
+        onClick={() => {
+          setPickSoundMode(true);
+          openRailPanel('media');
+        }}
+      >
+        Sound from a video
+      </Button>
+    </div>
+  );
+
   const railSections: MarketingRailSection[] = [
     { key: 'media', label: 'Media', icon: Music2, panel: mediaPanel, title: 'Media library' },
+    { key: 'audio', label: 'Audio', icon: Mic, panel: audioPanel, title: 'Audio' },
     { key: 'text', label: 'Text', icon: Type, panel: textPanel, title: 'Add text' },
     { key: 'templates', label: 'Templates', icon: LayoutTemplate, panel: templatesPanel },
     { key: 'reviews', label: 'Reviews', icon: Star, panel: reviewsPanel, title: 'Guest reviews' },
@@ -1732,9 +1921,24 @@ export function VideoEditorV2({ document, nav, onPublish }: Props) {
               />
               {isBelowLg ? (
                 <>
-                  {phoneActionApplies &&
-                  phoneAction === 'clip-trim' &&
-                  selectedItem?.type === 'video' ? (
+                  {voiceOpen ? (
+                    <VideoRecordPanel
+                      phase={recorder.phase}
+                      count={recorder.count}
+                      elapsedMs={recorder.elapsedMs}
+                      level={recorder.level}
+                      error={recorder.error}
+                      saving={savingVoice}
+                      muteWhileRecording={muteWhileRecording}
+                      onMuteChange={setMuteWhileRecording}
+                      onStart={handleStartRecording}
+                      onStop={recorder.stop}
+                      onCancel={recorder.cancel}
+                      onClose={() => setVoiceOpen(false)}
+                    />
+                  ) : phoneActionApplies &&
+                    phoneAction === 'clip-trim' &&
+                    selectedItem?.type === 'video' ? (
                     <VideoTrimPanel
                       item={selectedItem}
                       fps={project.fps}
