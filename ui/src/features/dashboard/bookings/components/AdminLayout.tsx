@@ -1218,6 +1218,7 @@ function AdminSidebarNav({
                     type="button"
                     onClick={() => toggleGroup(section.label)}
                     aria-expanded={!groupCollapsed}
+                    aria-label={`${section.label} group`}
                     className="text-sidebar-muted hover:text-sidebar-foreground bg-sidebar sticky top-0 z-[1] flex min-h-6 w-full items-center gap-1 px-3 pb-1 text-left text-[0.6875rem] font-semibold uppercase tracking-wider"
                   >
                     <span className="flex-1">{section.label}</span>
