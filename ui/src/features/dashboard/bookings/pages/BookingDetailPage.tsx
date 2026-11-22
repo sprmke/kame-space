@@ -40,6 +40,7 @@ import { ParkingPanel } from '@/features/dashboard/bookings/components/booking-d
 import { PetsPanel } from '@/features/dashboard/bookings/components/booking-detail/panels/PetsPanel';
 import { PricingSummaryPanel } from '@/features/dashboard/bookings/components/booking-detail/panels/PricingSummaryPanel';
 import { BookingCancellationCard } from '@/features/dashboard/bookings/components/booking-detail/panels/BookingCancellationCard';
+import { BookingHelpCard } from '@/features/dashboard/bookings/components/booking-detail/panels/BookingHelpCard';
 import { StayDetailsPanel } from '@/features/dashboard/bookings/components/booking-detail/panels/StayDetailsPanel';
 import {
   BookingDetailShell,
@@ -539,6 +540,7 @@ export function BookingDetailPage() {
                       ) : null}
                       {viewTab === 'overview' && (
                         <div className="space-y-4">
+                          <BookingHelpCard bookingId={booking.id} canEdit={canMutateWorkflow} />
                           <GuestViewCard booking={booking} />
                           <StayDetailsPanel booking={booking} />
                           <BookingCancellationCard

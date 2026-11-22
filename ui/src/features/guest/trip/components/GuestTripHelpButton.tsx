@@ -35,16 +35,16 @@ const HELP_KINDS: Array<{ value: GuestTripHelpKind; label: string; hint: string 
  * that can go unread.
  */
 export function GuestTripHelpButton({ bookingId }: { bookingId: string }) {
-  const { status } = useGuestAuth();
+  const { status, requireGuestAuth } = useGuestAuth();
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<GuestTripHelpKind>('cant_get_in');
   const [note, setNote] = useState('');
-  const [sent, setSent] = useState(false);
+  const [sentAt, setSentAt] = useState<string | null>(null);
 
   const send = useMutation({
     mutationFn: () => requestGuestTripHelp({ bookingId, kind, note: note.trim() || undefined }),
     onSuccess: ({ alreadyOpen }) => {
-      setSent(true);
+      setSentAt(new Date().toISOString());
       setOpen(false);
       setNote('');
       toast.success(alreadyOpen ? 'Your request is already with the host' : 'Help request sent');
@@ -52,23 +52,38 @@ export function GuestTripHelpButton({ bookingId }: { bookingId: string }) {
     onError: (error: Error) => toast.error(error.message || 'Could not send the request'),
   });
 
-  // The request is account-scoped; a token-only visitor signs in first (existing trip auth).
-  if (status !== 'authenticated') return null;
+  const start = () => {
+    // The request is account-scoped. A token-only guest can still see the action; signing in
+    // happens here, at the moment they need it, instead of hiding the feature.
+    if (status === 'authenticated') {
+      setOpen(true);
+      return;
+    }
+    requireGuestAuth(() => setOpen(true));
+  };
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        className="min-h-[44px] w-full gap-2"
-        onClick={() => setOpen(true)}
-      >
+      <Button type="button" variant="outline" className="min-h-[44px] w-full gap-2" onClick={start}>
         <LifeBuoy className="size-4" aria-hidden />
-        {sent ? 'Help requested' : 'Get help now'}
+        {sentAt ? 'Help requested' : 'Get help now'}
       </Button>
+      {sentAt ? (
+        <p className="text-muted-foreground text-xs" role="status">
+          Help requested at{' '}
+          {new Intl.DateTimeFormat('en-PH', {
+            timeZone: 'Asia/Manila',
+            timeStyle: 'short',
+          }).format(new Date(sentAt))}
+          . The host has been notified.
+        </p>
+      ) : null}
 
       <ResponsiveModal open={open} onOpenChange={setOpen}>
-        <ResponsiveModalContent className="pb-[max(env(safe-area-inset-bottom),1rem)]">
+        <ResponsiveModalContent
+          sheetLayout="split"
+          className="pb-[max(env(safe-area-inset-bottom),1rem)]"
+        >
           <ResponsiveModalHeader>
             <ResponsiveModalTitle>Get help now</ResponsiveModalTitle>
             <ResponsiveModalDescription>
@@ -78,11 +93,12 @@ export function GuestTripHelpButton({ bookingId }: { bookingId: string }) {
           </ResponsiveModalHeader>
 
           <div className="space-y-3 px-4 py-2 sm:px-5">
-            <div className="grid gap-2">
+            <div className="grid gap-2" role="group" aria-label="What went wrong?">
               {HELP_KINDS.map((item) => (
                 <button
                   key={item.value}
                   type="button"
+                  aria-pressed={kind === item.value}
                   onClick={() => setKind(item.value)}
                   className={cn(
                     'min-h-[56px] rounded-xl border px-3 py-2 text-left',
@@ -94,6 +110,9 @@ export function GuestTripHelpButton({ bookingId }: { bookingId: string }) {
                 </button>
               ))}
             </div>
+            {kind === 'unsafe' ? (
+              <p className="text-destructive text-xs">If anyone is in danger, call 911 first.</p>
+            ) : null}
             <div className="space-y-1.5">
               <label htmlFor="help-note" className="text-sm font-medium">
                 What happened?

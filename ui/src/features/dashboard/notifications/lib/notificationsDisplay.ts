@@ -1,15 +1,16 @@
 import {
-  Eye,
   AlertTriangle,
   BarChart3,
   CalendarCheck,
   CalendarPlus,
   CalendarX,
   Car,
-  CreditCard,
   ClipboardCheck,
   Copy,
+  CreditCard,
+  Eye,
   FileCheck,
+  LifeBuoy,
   LogIn,
   LogOut,
   MessageCircle,
@@ -19,9 +20,9 @@ import {
   Reply,
   Sparkles,
   Star,
+  type LucideIcon,
   Wallet,
   Wrench,
-  type LucideIcon,
 } from 'lucide-react';
 
 import { platformLabel } from '@/features/dashboard/inbox/lib/inboxFormat';
@@ -75,6 +76,7 @@ const NOTIFICATION_ICONS: Record<NotificationType, LucideIcon> = {
   review_response_received: Reply,
   maintenance_guest_reported: Wrench,
   guest_request_submitted: CalendarPlus,
+  booking_help_requested: LifeBuoy,
   booking_receipt_uploaded: Receipt,
   billing_notice: CreditCard,
 };

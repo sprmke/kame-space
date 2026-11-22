@@ -216,6 +216,7 @@ export function BookingCancellationCard({
                   value={declineMessage}
                   rows={2}
                   placeholder="Tell the guest why"
+                  aria-label="Message to the guest"
                   onChange={(event) => setDeclineMessage(event.target.value)}
                 />
                 <div className="flex gap-2">

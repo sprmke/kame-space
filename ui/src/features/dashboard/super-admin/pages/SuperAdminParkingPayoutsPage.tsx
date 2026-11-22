@@ -70,72 +70,93 @@ function MarkDisbursedDialog({ transaction }: { transaction: ParkingPayoutTransa
   const held = transaction.payoutEligible === false;
   const canConfirm = !held || eligibilityNote.trim().length > 0;
 
+  const submitDisbursement = async (): Promise<boolean> => {
+    try {
+      await markDisbursed.mutateAsync({
+        transactionId: transaction.id,
+        reference: reference.trim() || undefined,
+        overrideEligibility: held || undefined,
+        eligibilityNote: held ? eligibilityNote.trim() : undefined,
+      });
+    } catch {
+      return false;
+    }
+    setOpen(false);
+    setReference('');
+    setEligibilityNote('');
+    return true;
+  };
+
+  const { onOpenChange: guardedOpenChange, dialogProps } = useGuardedClose({
+    open,
+    onOpenChange: setOpen,
+    isDirty: reference.trim() !== '' || eligibilityNote.trim() !== '',
+    onSave: submitDisbursement,
+    onDiscard: () => {
+      setReference('');
+      setEligibilityNote('');
+    },
+  });
+
   return (
-    <AdminDialogShell
-      open={open}
-      onOpenChange={setOpen}
-      title="Mark payout as disbursed"
-      description={`Confirms ${formatPhp(transaction.hostNetTotal)} was manually paid out to the host for this booking. Reference is optional (e.g. bank transfer/GCash reference number).`}
-      trigger={
-        <ResponsiveModalTrigger asChild>
-          <Button type="button" variant="outline" size="sm" className="min-h-[44px]">
-            Mark disbursed
+    <>
+      <AdminDialogShell
+        open={open}
+        onOpenChange={guardedOpenChange}
+        title="Mark payout as disbursed"
+        description={`Confirms ${formatPhp(transaction.hostNetTotal)} was manually paid out to the host for this booking. Reference is optional (e.g. bank transfer/GCash reference number).`}
+        trigger={
+          <ResponsiveModalTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="min-h-[44px]">
+              {held ? 'Review payout' : 'Mark disbursed'}
+            </Button>
+          </ResponsiveModalTrigger>
+        }
+        footer={
+          <Button
+            type="button"
+            className="min-h-[44px]"
+            disabled={markDisbursed.isPending || !canConfirm}
+            onClick={() => void submitDisbursement()}
+          >
+            {held ? 'Disburse early' : 'Confirm disbursed'}
           </Button>
-        </ResponsiveModalTrigger>
-      }
-      footer={
-        <Button
-          type="button"
-          className="min-h-[44px]"
-          disabled={markDisbursed.isPending || !canConfirm}
-          onClick={async () => {
-            await markDisbursed.mutateAsync({
-              transactionId: transaction.id,
-              reference: reference.trim() || undefined,
-              overrideEligibility: held || undefined,
-              eligibilityNote: held ? eligibilityNote.trim() : undefined,
-            });
-            setOpen(false);
-            setReference('');
-            setEligibilityNote('');
-          }}
-        >
-          {held ? 'Disburse early' : 'Confirm disbursed'}
-        </Button>
-      }
-    >
-      <div className="space-y-3">
-        {held ? (
-          <div className="space-y-1.5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
-            <p className="font-medium">Payout held</p>
-            <p>
-              {transaction.payoutEligibleAt
-                ? `Eligible ${payoutEligibleLabel(transaction.payoutEligibleAt)} (24 hours after the parking start).`
-                : 'The parking start date is missing, so the payout is held for review.'}
-            </p>
-          </div>
-        ) : null}
-        {held ? (
+        }
+      >
+        <div className="space-y-3">
+          {held ? (
+            <div className="border-warning/40 bg-warning/10 text-foreground space-y-1.5 rounded-xl border p-3 text-xs">
+              <p className="font-medium">Payout held</p>
+              <p>
+                {transaction.payoutEligibleAt
+                  ? `Eligible ${payoutEligibleLabel(transaction.payoutEligibleAt)} (24 hours after the parking start).`
+                  : 'The parking start date is missing, so the payout is held for review.'}
+              </p>
+            </div>
+          ) : null}
+          {held ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="eligibility-note">Why disburse early?</Label>
+              <Textarea
+                id="eligibility-note"
+                value={eligibilityNote}
+                rows={2}
+                onChange={(event) => setEligibilityNote(event.target.value)}
+              />
+            </div>
+          ) : null}
           <div className="space-y-1.5">
-            <Label htmlFor="eligibility-note">Why disburse early?</Label>
-            <Textarea
-              id="eligibility-note"
-              value={eligibilityNote}
-              rows={2}
-              onChange={(event) => setEligibilityNote(event.target.value)}
+            <Label htmlFor="disbursement-reference">Reference (optional)</Label>
+            <Input
+              id="disbursement-reference"
+              value={reference}
+              onChange={(event) => setReference(event.target.value)}
             />
           </div>
-        ) : null}
-        <div className="space-y-1.5">
-          <Label htmlFor="disbursement-reference">Reference (optional)</Label>
-          <Input
-            id="disbursement-reference"
-            value={reference}
-            onChange={(event) => setReference(event.target.value)}
-          />
         </div>
-      </div>
-    </AdminDialogShell>
+      </AdminDialogShell>
+      <UnsavedChangesDialog {...dialogProps} />
+    </>
   );
 }
 

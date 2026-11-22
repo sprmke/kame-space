@@ -47,8 +47,6 @@ function automation(input: WorkflowTransitionEffectsInput): PropertyAutomationTo
     emailGafRequest: false,
     emailBookingAcknowledgement: false,
     emailPetRequest: false,
-    emailReadyForCheckin: false,
-    emailSdRefundCheckout: false,
   };
 }
 
@@ -123,7 +121,7 @@ export function workflowTransitionEmailEffects(
       effects,
       toggles.emailBookingAcknowledgement,
       'sendBookingAcknowledgementEmail',
-      'Emails the guest the guest acknowledgement email.'
+      'Emails the guest the booking acknowledgement.'
     );
     pushEmailIf(
       effects,

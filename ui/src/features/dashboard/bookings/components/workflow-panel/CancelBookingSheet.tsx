@@ -83,6 +83,7 @@ export function CancelBookingSheet({
   // Without an open guest request the cancellation is always the host's, and the server
   // enforces that. Do not offer a label the server will ignore.
   const effectiveInitiator = allowGuestInitiator ? initiator : 'host';
+  const approveMode = allowGuestInitiator;
   const reasons = effectiveInitiator === 'host' ? HOST_REASONS : GUEST_REASONS;
   const activeReason = reasons.some((item) => item.value === reasonCode)
     ? reasonCode
@@ -145,18 +146,23 @@ export function CancelBookingSheet({
     <ResponsiveModal open={open} onOpenChange={onOpenChange}>
       <ResponsiveModalContent sheetLayout="split">
         <ResponsiveModalHeader className="border-border shrink-0 border-b px-4 py-3 sm:px-5">
-          <ResponsiveModalTitle>Cancel booking</ResponsiveModalTitle>
+          <ResponsiveModalTitle>
+            {approveMode ? 'Approve cancellation' : 'Cancel booking'}
+          </ResponsiveModalTitle>
         </ResponsiveModalHeader>
 
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4 sm:px-5">
           {allowGuestInitiator ? (
             <div className="space-y-2">
-              <Label>Who asked?</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <p id="cancel-who" className="text-sm font-medium">
+                Who asked?
+              </p>
+              <div className="grid grid-cols-2 gap-2" role="group" aria-labelledby="cancel-who">
                 {(['guest', 'host'] as const).map((value) => (
                   <button
                     key={value}
                     type="button"
+                    aria-pressed={effectiveInitiator === value}
                     onClick={() => setInitiator(value)}
                     className={cn(
                       'min-h-[44px] rounded-xl border px-3 text-sm font-medium',
@@ -201,8 +207,7 @@ export function CancelBookingSheet({
           {lateHostCancel ? (
             <p className="flex items-start gap-1.5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
               <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-              Check-in is within 24 hours. The guest may not find another place, and this
-              cancellation is reviewed by support.
+              Check-in is within 24 hours. Support will help the guest find another place.
             </p>
           ) : null}
 
@@ -295,7 +300,7 @@ export function CancelBookingSheet({
             className="min-h-[44px] flex-1 sm:flex-none"
             onClick={() => onOpenChange(false)}
           >
-            Keep booking
+            {approveMode ? 'Go back' : 'Keep booking'}
           </Button>
           <Button
             type="button"
@@ -305,7 +310,7 @@ export function CancelBookingSheet({
             loading={isPending}
             onClick={() => void submit()}
           >
-            Cancel booking
+            {approveMode ? 'Approve and cancel' : 'Cancel booking'}
           </Button>
         </ResponsiveModalFooter>
       </ResponsiveModalContent>
