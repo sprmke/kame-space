@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI receptionist UI/UX audit</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #16211f;
+        --muted: #5c6b68;
+        --line: #dce6e3;
+        --wash: #f4f8f7;
+        --teal: #177f70;
+        --teal-deep: #0f5c51;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 32px 20px 80px;
+        font-family:
+          'Plus Jakarta Sans',
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        color: var(--ink);
+        background: #fff;
+        line-height: 1.5;
+      }
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      header {
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 20px;
+        margin-bottom: 28px;
+      }
+      h1 {
+        font-size: 28px;
+        line-height: 1.2;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 18px;
+        margin: 44px 0 6px;
+      }
+      p {
+        margin: 0 0 12px;
+        color: var(--muted);
+        max-width: 78ch;
+      }
+      a {
+        color: var(--teal-deep);
+      }
+      .badge {
+        display: inline-block;
+        background: #e6f3f0;
+        color: var(--teal-deep);
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+      .video {
+        margin: 20px 0 8px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        overflow: hidden;
+        background: #000;
+      }
+      video {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 16px;
+      }
+      figure {
+        margin: 0;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        background: var(--wash);
+      }
+      figure img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      figcaption {
+        padding: 10px 14px 14px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      figcaption strong {
+        display: block;
+        color: var(--ink);
+        font-size: 13px;
+        margin-bottom: 2px;
+      }
+      .wide {
+        grid-column: 1 / -1;
+      }
+      .wide img {
+        max-height: 78vh;
+        object-fit: contain;
+        object-position: top;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="badge">Visual record</span>
+        <h1>AI receptionist UI/UX audit</h1>
+        <p>
+          Guest voice receptionist at
+          <code>/properties/:propertySlug/messages</code>, plus Org Settings → AI features and Super
+          Admin → AI → Controls. Captured from the real components with the mocked provider
+          harness. Full findings:
+          <a href="../../ai-receptionist-uiux-audit.md">ai-receptionist-uiux-audit.md</a>.
+        </p>
+      </header>
+
+      <h2>Slow-motion journey</h2>
+      <p>
+        Menu → disclosure → start → greeting → listening → guest speaking → thinking → answer →
+        tool lookup → action card → end → back to the thread. Recorded headed at 500 ms per action,
+        then slowed 3×.
+      </p>
+      <div class="video">
+        <video controls playsinline muted loop preload="metadata" poster="02-disclosure-1440.png">
+          <source src="walkthrough-slowmo.mp4" type="video/mp4" />
+        </video>
+      </div>
+
+      <h2>Entry and disclosure</h2>
+      <div class="grid">
+        <figure>
+          <img src="01-entry-chat-menu-1440.png" alt="Guest chat menu with Talk to receptionist" />
+          <figcaption>
+            <strong>Entry lives in the ⋮ menu</strong>
+            The only entry point. The empty thread shows five text starters and no voice affordance.
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="02-disclosure-1440.png" alt="Voice receptionist disclosure at 1440" />
+          <figcaption>
+            <strong>Disclosure, 1440</strong>
+            One screen, one primary action, remembered consent. The poster avatar is the WebGL
+            fallback added in this pass.
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="03-disclosure-375.png" alt="Voice receptionist disclosure at 375" />
+          <figcaption>
+            <strong>Disclosure, 375</strong>
+            No overflow, 44 px targets, safe-area footer. The empty status strip above the avatar is
+            still visible.
+          </figcaption>
+        </figure>
+      </div>
+
+      <h2>In call</h2>
+      <div class="grid">
+        <figure>
+          <img src="04-listening-1440.png" alt="Listening state with greeting caption" />
+          <figcaption>
+            <strong>Listening, 1440</strong>
+            Countdown left, status centre, mute and end right. The bottom third of the card is empty.
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="05-you-are-speaking-1440.png" alt="Guest speaking state" />
+          <figcaption>
+            <strong>You're speaking</strong>
+            Local RMS drives this state before the model closes the turn.
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="06-thinking-1440.png" alt="Thinking state" />
+          <figcaption>
+            <strong>Thinking</strong>
+            Amber ring and label while the turn is processed.
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="07-speaking-1440.png" alt="Speaking state with answer caption" />
+          <figcaption>
+            <strong>Speaking</strong>
+            Caption and spoken audio run together. The answer is announced to screen readers once it
+            commits.
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="08-looking-up-1440.png" alt="Looking that up state" />
+          <figcaption>
+            <strong>Looking that up</strong>
+            Tool in flight. Amber is now text-safe; the old token was 1.8:1 on white.
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="09-actions-1440.png" alt="Server action card after a tool call" />
+          <figcaption>
+            <strong>Action card</strong>
+            Server-authored, allowlisted link. Unsafe URLs are dropped by the client allowlist.
+          </figcaption>
+        </figure>
+      </div>
+
+      <h2>End and return</h2>
+      <div class="grid">
+        <figure>
+          <img src="10-call-ended-1440.png" alt="Call ended state with captions and delete" />
+          <figcaption>
+            <strong>Call ended</strong>
+            Captions are kept. "Delete captions" is permanent and has no confirmation.
+          </figcaption>
+        </figure>
+      </div>
+
+      <h2>Breakpoints and dark theme</h2>
+      <div class="grid">
+        <figure>
+          <img src="11-in-call-375.png" alt="In-call at 375" />
+          <figcaption>
+            <strong>375</strong>
+            Phone keeps the app bar and bottom tab bar during the call.
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="12-in-call-768.png" alt="In-call at 768" />
+          <figcaption>
+            <strong>768</strong>
+            Same composition, wider gutters.
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="13-in-call-1024.png" alt="In-call at 1024" />
+          <figcaption>
+            <strong>1024</strong>
+            Desktop proportions start to feel sparse.
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="14-in-call-dark-1440.png" alt="In-call in dark theme" />
+          <figcaption>
+            <strong>Dark, 1440</strong>
+            Tokens hold. The 2D poster is brighter than the 3D rig would be.
+          </figcaption>
+        </figure>
+      </div>
+
+      <h2>Failure states</h2>
+      <div class="grid">
+        <figure>
+          <img src="15-error-microphone-1440.png" alt="Microphone blocked error" />
+          <figcaption>
+            <strong>Microphone blocked</strong>
+            Body is accurate; the header says "Connection issue".
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="16-error-provider-1440.png" alt="Provider unavailable error" />
+          <figcaption>
+            <strong>Provider unavailable</strong>
+            Retry and Message host remain; text chat is always the fallback.
+          </figcaption>
+        </figure>
+      </div>
+
+      <h2>Host controls</h2>
+      <div class="grid">
+        <figure class="wide">
+          <img src="17-org-voice-settings-1440.png" alt="Org AI settings with voice receptionist" />
+          <figcaption>
+            <strong>Org Settings → AI features, 1440</strong>
+            Voice toggle, voice picker with preview, persona, per-property opt-out, 30-day usage.
+            The property opt-out list repeats under Dashboard assistant.
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="18-org-voice-settings-375.png" alt="Org voice settings at 375" />
+          <figcaption>
+            <strong>Org settings, 375</strong>
+            Test voice goes full-width; the floating app switcher overlaps the card.
+          </figcaption>
+        </figure>
+        <figure class="wide">
+          <img src="19-super-admin-ai-top-1440.png" alt="Super admin platform AI card top" />
+          <figcaption>
+            <strong>Super Admin → AI → Controls, top</strong>
+            Health and reliability telemetry sit at the same weight as runtime switches.
+          </figcaption>
+        </figure>
+        <figure class="wide">
+          <img src="20-super-admin-ai-bottom-1440.png" alt="Super admin platform AI card bottom" />
+          <figcaption>
+            <strong>Controls, bottom</strong>
+            Cost rates, rollout, retention and the UUID allowlist. Every number saves per keystroke.
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="21-super-admin-ai-375.png" alt="Super admin AI page at 375" />
+          <figcaption>
+            <strong>Controls, 375</strong>
+            Five tabs wrap; the active tab falls to a second line.
+          </figcaption>
+        </figure>
+      </div>
+    </main>
+  </body>
+</html>
