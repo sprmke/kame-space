@@ -52,31 +52,32 @@ export function GuestPushNotificationsCard() {
   const { canToggle, message } = guestPushCardState(push);
 
   return (
-    <div className="border-border space-y-2 rounded-xl border p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+    <div className="border-border bg-card rounded-2xl border px-4 py-3 md:px-8 md:py-5 lg:px-10 lg:py-6">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 space-y-1">
           <p className="flex items-center gap-2 text-sm font-semibold">
             <BellRing className="text-muted-foreground size-4 shrink-0" aria-hidden />
-            Alerts on this device
+            Booking alerts
           </p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Get a phone alert when your host confirms your booking or your check-in is ready.
+          <p className="text-muted-foreground text-sm">
+            Phone alert when a booking is confirmed or check-in is ready.
           </p>
+          {message ? (
+            <p className="text-muted-foreground text-sm" role="status">
+              {message}
+            </p>
+          ) : null}
         </div>
         <Switch
           checked={push.subscribed}
           disabled={!canToggle}
+          className="shrink-0"
           aria-label="Allow booking alerts on this device"
           onCheckedChange={(next) => {
             void (next ? push.enable() : push.disable());
           }}
         />
       </div>
-      {message ? (
-        <p className="text-muted-foreground text-sm" role="status">
-          {message}
-        </p>
-      ) : null}
     </div>
   );
 }

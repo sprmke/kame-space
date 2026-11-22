@@ -1,7 +1,7 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { readdirSync, rmSync } from 'node:fs';
+import { readFileSync, readdirSync, rmSync } from 'node:fs';
 
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import react from '@vitejs/plugin-react';
@@ -281,12 +281,27 @@ function seoIndexingGuardPlugin(): Plugin {
  */
 const appRelease = resolveReleaseId();
 
+/** Guest/host-facing product version (`1.0`, `2.1`) from root `package.json`. */
+function resolveAppDisplayVersion(): string {
+  try {
+    const raw = readFileSync(path.resolve(__dirname, '../package.json'), 'utf8');
+    const version = (JSON.parse(raw) as { version?: string }).version?.trim();
+    return version || '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+}
+
+const appDisplayVersion = resolveAppDisplayVersion();
+
 export default defineConfig({
   define: {
     __PWA_BUILD_ID__: JSON.stringify(pwaBuildId),
     // Read by the Sentry client and the super-admin env registry. Injected here because
     // nothing in the Vercel/CI setup exports it into `import.meta.env` on its own.
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(appRelease),
+    // Profile / App card label only. Telemetry keeps `VITE_APP_VERSION` (git SHA).
+    'import.meta.env.VITE_APP_DISPLAY_VERSION': JSON.stringify(appDisplayVersion),
   },
   // Strip dev-only code from production output (production-readiness doc 02,
   // Phase 2.2). Deliberately does NOT drop console.log/warn/error — those are

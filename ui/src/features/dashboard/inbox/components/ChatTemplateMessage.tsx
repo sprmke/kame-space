@@ -126,7 +126,7 @@ export function ChatTemplatePreviewDialog({
             <ResponsiveModalTitle className="truncate text-sm font-semibold sm:text-base">
               {title}
             </ResponsiveModalTitle>
-            <ResponsiveModalDescription className="text-muted-foreground text-[11px] sm:text-xs">
+            <ResponsiveModalDescription>
               {snapshot ? CATEGORY_LABEL[snapshot.category] : 'Loading preview'}
             </ResponsiveModalDescription>
           </div>

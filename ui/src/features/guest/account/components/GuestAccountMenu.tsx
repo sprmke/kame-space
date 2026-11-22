@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react';
+import { Fragment, type MouseEvent } from 'react';
 
 import { Link, useLocation } from 'react-router-dom';
 
@@ -11,7 +11,7 @@ import {
   resolveGuestAvatarUrl,
   resolveGuestDisplayName,
 } from '@/features/guest/account/lib/guestAccountIdentity';
-import { GUEST_ACCOUNT_NAV_ITEMS } from '@/features/guest/account/lib/guestAccountNav';
+import { GUEST_ACCOUNT_NAV_GROUPS } from '@/features/guest/account/lib/guestAccountNav';
 import { getHostMarketingNavCta } from '@/features/guest/auth/config/auth-navigation';
 import { getAppModeFromPath } from '@/features/guest/auth/config/mode-switch';
 import { useGuestSession } from '@/features/guest/auth/hooks/useGuestSession';
@@ -81,21 +81,27 @@ export function GuestAccountMenu() {
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="!text-[10px]">Explore</DropdownMenuLabel>
-        <DropdownMenuGroup>
-          {GUEST_ACCOUNT_NAV_ITEMS.map((item) => {
-            const Icon = item.Icon;
-            return (
-              <DropdownMenuItem key={item.href} asChild>
-                <Link to={item.href}>
-                  <Icon aria-hidden />
-                  {item.label}
-                </Link>
-              </DropdownMenuItem>
-            );
-          })}
-        </DropdownMenuGroup>
+
+        {GUEST_ACCOUNT_NAV_GROUPS.map((group) => (
+          <Fragment key={group.id}>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="!text-[10px]">{group.label}</DropdownMenuLabel>
+            <DropdownMenuGroup>
+              {group.items.map((item) => {
+                const Icon = item.Icon;
+                return (
+                  <DropdownMenuItem key={item.href} asChild>
+                    <Link to={item.href}>
+                      <Icon aria-hidden />
+                      {item.label}
+                    </Link>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuGroup>
+          </Fragment>
+        ))}
+
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => void handleSignOut()}>
           <LogOut aria-hidden />

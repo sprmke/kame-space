@@ -19,7 +19,7 @@ export interface AuthSidePanelShellProps {
 /**
  * Left panel chrome shared by host and guest auth (and host onboarding): solid brand surface,
  * logo in `.public-brand-bar` (same height + left inset as `MarketingNav` / `--public-shell-px`),
- * left-aligned heading, then the audience-specific showcase. Keep audience differences in
+ * then a max-width content column (headline + showcase). Keep audience differences in
  * `children` only.
  */
 export function AuthSidePanelShell({
@@ -35,6 +35,7 @@ export function AuthSidePanelShell({
       className={cn('bg-primary-strong relative hidden min-h-screen flex-col lg:flex', className)}
       aria-label={ariaLabel}
     >
+      {/* Logo stays nav-aligned top-left; content below is free to center independently. */}
       <div className="public-brand-bar absolute inset-x-0 top-0 z-20">
         <Link
           to={logoHref}
@@ -48,12 +49,13 @@ export function AuthSidePanelShell({
       </div>
 
       {/*
-        Same inline gutter as `.public-brand-bar` (`--public-shell-px`) so the headline and
-        showcase share the logo's left edge. Left-aligned (no mx-auto) so a max-width card
-        does not drift inward on wide half-panels.
+        Gutter matches `.public-brand-bar` (`--public-shell-px`). The max-w-xl column uses
+        `mx-auto` so it sits flush with that gutter when the half-panel is tight (lg), and
+        centers in the green panel when the half-panel is wider than the column (xl+).
+        Copy stays left-aligned inside the column.
       */}
       <div className="relative z-10 flex min-h-screen flex-1 flex-col justify-center px-[var(--public-shell-px)] pb-10 pt-[var(--public-nav-h)] xl:pb-12">
-        <div className="w-full max-w-xl space-y-6 xl:space-y-7">
+        <div className="mx-auto w-full max-w-xl space-y-6 xl:space-y-7">
           <div className="space-y-2">
             <h1 className="text-xl font-bold leading-tight tracking-tight text-white sm:text-2xl xl:text-3xl">
               {title}

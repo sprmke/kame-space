@@ -18,6 +18,7 @@ import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
 import { orgPropertyCardModel } from '@/features/dashboard/org/lib/orgPropertyCardModel';
 import {
   buildPropertyGuestPublicPages,
+  GUEST_PUBLIC_PAGE_GROUP_MENU_LABEL,
   type PropertyGuestPublicPage,
 } from '@/features/dashboard/property/lib/propertyGuestPublicPages';
 import { usePropertyPermissions } from '@/features/dashboard/team/hooks/usePropertyPermissions';
@@ -75,13 +76,18 @@ export function CustomPagesPage() {
   }
 
   const shareablePages = pages.filter((page) => page.guestShareable);
-  const copyMenuItems = shareablePages.map((page, index) => ({
-    key: page.id,
-    label: page.label,
-    Icon: page.icon,
-    separatorBefore: index > 0 && shareablePages[index - 1]?.group !== page.group,
-    onSelect: () => runCopyAction(page),
-  }));
+  const copyMenuItems = shareablePages.map((page, index) => {
+    const prevGroup = shareablePages[index - 1]?.group;
+    const isNewGroup = index === 0 || prevGroup !== page.group;
+    return {
+      key: page.id,
+      label: page.label,
+      Icon: page.icon,
+      separatorBefore: index > 0 && isNewGroup,
+      groupLabel: isNewGroup ? GUEST_PUBLIC_PAGE_GROUP_MENU_LABEL[page.group] : undefined,
+      onSelect: () => runCopyAction(page),
+    };
+  });
 
   return (
     <AdminMobilePage

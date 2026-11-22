@@ -17,10 +17,32 @@
 export const MODAL_TITLE_CLASS = 'text-base font-bold tracking-tight sm:text-lg';
 
 /**
- * Header row: hairline under it, tight vertical padding, title on the left and
- * the close control on the right.
+ * Modal / sheet description under the title. Always `text-sm` (never `text-xs`).
+ * Matches `DialogDescription` / `ResponsiveModalDescription`.
  */
-export const MODAL_HEADER_CLASS = 'border-border shrink-0 border-b px-4 py-3 sm:px-5';
+export const MODAL_DESCRIPTION_CLASS = 'text-muted-foreground text-sm leading-snug';
+
+/**
+ * Title ↔ description stack inside a header. Small gap only; do not combine with
+ * `space-y-*` (that doubles the flex gap and leaves a broken empty band).
+ */
+export const MODAL_HEADER_STACK_CLASS = 'gap-1 space-y-0';
+
+/**
+ * Right padding reserved for the absolute dialog close control (`size-8` at
+ * `right-3`). Applied after caller `className` in `DialogHeader` so a `px-*`
+ * override cannot wipe it via tailwind-merge (that collision put Free/Paid
+ * tabs under the X on Booking Workflow).
+ */
+export const MODAL_HEADER_CLOSE_GUTTER_CLASS = 'pr-12 sm:pr-14';
+
+/**
+ * Header row: hairline under it, tight vertical padding, title on the left and
+ * the close control on the right. Uses `pl-*` + close gutter (not `px-*`) so
+ * the reserved right edge survives class merges. Stack gap is applied by
+ * `DialogHeader` / `SheetHeader` (`MODAL_HEADER_STACK_CLASS`), not here.
+ */
+export const MODAL_HEADER_CLASS = `border-border shrink-0 border-b pl-4 py-3 sm:pl-5 ${MODAL_HEADER_CLOSE_GUTTER_CLASS}`;
 
 /** Scrollable body between the header and the footer. */
 export const MODAL_BODY_CLASS = 'px-4 py-4 sm:px-5';

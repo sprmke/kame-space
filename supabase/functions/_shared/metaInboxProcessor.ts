@@ -424,6 +424,7 @@ async function applyMetaMessageEvent(
 
   const applied = (data ?? {}) as {
     conversation_id?: string;
+    message_id?: string;
     inserted?: boolean;
     conversation_created?: boolean;
   };
@@ -433,6 +434,7 @@ async function applyMetaMessageEvent(
     await notifyInboundGuestMessage({
       orgId,
       conversationId: applied.conversation_id,
+      messageId: applied.message_id ?? null,
       text: bodyText,
       preview,
       sentAt: event.eventTime,
@@ -491,6 +493,7 @@ async function resolveParticipantIdentity(opts: {
 async function notifyInboundGuestMessage(opts: {
   orgId: string;
   conversationId: string;
+  messageId?: string | null;
   text: string;
   preview: string;
   sentAt: string;
@@ -528,7 +531,7 @@ async function notifyInboundGuestMessage(opts: {
       ),
       body: opts.preview.slice(0, 200),
       conversationId: opts.conversationId,
-      metadata: inboxNotificationMetadata(data as never),
+      metadata: inboxNotificationMetadata(data as never, { messageId: opts.messageId }),
       dedupeKey: `${opts.conversationId}:inbox_new_message`,
     });
   } catch (e) {

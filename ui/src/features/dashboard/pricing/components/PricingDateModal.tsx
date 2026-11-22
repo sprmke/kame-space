@@ -92,7 +92,7 @@ export function PricingDateModal({
         sheetLayout="split"
         className="max-w-[min(calc(100vw-1.5rem),28rem)] gap-0 overflow-hidden !p-0"
       >
-        <ResponsiveModalHeader className="border-border/60 space-y-4 border-b px-4 pb-4 pt-5 text-left sm:px-5">
+        <ResponsiveModalHeader className="border-border/60 border-b px-4 pb-4 pt-5 text-left sm:px-5">
           <div className="flex items-center gap-3">
             <div
               className={cn(
@@ -114,7 +114,7 @@ export function PricingDateModal({
           </div>
 
           {headline ? (
-            <div className="border-border/60 bg-muted/30 flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
+            <div className="border-border/60 bg-muted/30 mt-2 flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
               <p className="text-foreground min-w-0 text-sm font-medium leading-snug">{headline}</p>
               <span className="bg-background text-muted-foreground ring-border/60 shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ring-1">
                 {nights} {nights === 1 ? 'night' : 'nights'}

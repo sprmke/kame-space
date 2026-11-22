@@ -117,7 +117,7 @@ export function WorkflowDocRejectModal({ open, booking, sub, requirements, onClo
                 <ResponsiveModalTitle className="text-base font-semibold leading-snug sm:text-lg">
                   Reject {documentLabel}
                 </ResponsiveModalTitle>
-                <ResponsiveModalDescription className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                <ResponsiveModalDescription>
                   Removes the file and sets this step back to awaiting.
                 </ResponsiveModalDescription>
               </div>
