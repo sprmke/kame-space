@@ -50,6 +50,21 @@ export type PropertyTeamRbacMockOpts = {
   featureAvailabilityOff?: string[];
   /** Seed one operating transaction and one stay so the finance ledger has rows. */
   financeSeeded?: boolean;
+  /**
+   * Listing identity returned by `list-properties`. Settings rejects a residence/tower
+   * pair the product does not know, so settings specs pass a real pair.
+   */
+  propertyListing?: Partial<{
+    type: string;
+    residenceName: string;
+    tower: string;
+    unitNumber: string;
+    maxGuests: number;
+  }>;
+  /** Seed an uploaded organization logo so org settings can save. */
+  orgLogoUploaded?: boolean;
+  /** Add permission leaves the template omits (settings sections, new modules). */
+  extraPermissions?: string[];
 };
 
 /** Last dashboard mode PATCHed to user-ui-preferences in this test (mock server state). */
@@ -274,7 +289,10 @@ function organizationList() {
   };
 }
 
-function propertyList(multiProperty = false) {
+function propertyList(
+  multiProperty = false,
+  listing?: PropertyTeamRbacMockOpts['propertyListing']
+) {
   const primary = {
     id: TEAM_E2E_PROPERTY_ID,
     organizationId: ORG_ID,
@@ -291,6 +309,7 @@ function propertyList(multiProperty = false) {
     settings: {},
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
+    ...listing,
   };
   if (!multiProperty) {
     return { properties: [primary] };
@@ -670,21 +689,21 @@ function appSettingsPayload() {
   };
 }
 
-function orgSettingsPayload() {
+function orgSettingsPayload(logoUploaded = false) {
   const fieldDefault = 'default' as const;
   return {
     facebookPageUrl: '',
     airbnbUrl: '',
     instagramUrl: '',
     tiktokUrl: '',
-    emailLogoUrl: '',
+    emailLogoUrl: logoUploaded ? 'https://example.test/logo.png' : '',
     updatedAt: null,
     fieldSources: {
       facebookPageUrl: fieldDefault,
       airbnbUrl: fieldDefault,
       instagramUrl: fieldDefault,
       tiktokUrl: fieldDefault,
-      emailLogoUrl: fieldDefault,
+      emailLogoUrl: logoUploaded ? ('db' as const) : fieldDefault,
     },
   };
 }
@@ -1222,8 +1241,13 @@ export async function installPropertyTeamRbacMocks(
   template: TeamRbacTemplate,
   opts?: PropertyTeamRbacMockOpts
 ) {
-  const permissions = permissionsForTemplate(template).filter(
-    (id) => !(opts?.omitPermissions ?? []).includes(id)
+  const permissions = Array.from(
+    new Set([
+      ...permissionsForTemplate(template).filter(
+        (id) => !(opts?.omitPermissions ?? []).includes(id)
+      ),
+      ...(opts?.extraPermissions ?? []),
+    ])
   );
   const freePlan = Boolean(opts?.freePlan);
   const assistantEnabled = Boolean(opts?.assistantEnabled);
@@ -1238,7 +1262,7 @@ export async function installPropertyTeamRbacMocks(
   const financeSeeded = Boolean(opts?.financeSeeded);
   savedDashboardModeState = opts?.savedDashboardMode ?? 'advanced';
   let assistantTurn = 0;
-  let orgSettingsState = orgSettingsPayload();
+  let orgSettingsState = orgSettingsPayload(Boolean(opts?.orgLogoUploaded));
   let marketingGenerationJobs = opts?.marketingGenerationSeeded
     ? [marketingGenerationJobFixture()]
     : [];
@@ -1256,7 +1280,10 @@ export async function installPropertyTeamRbacMocks(
         await fulfillJson(route, { success: true, data: organizationList() });
         return;
       case 'list-properties':
-        await fulfillJson(route, { success: true, data: propertyList(multiProperty) });
+        await fulfillJson(route, {
+          success: true,
+          data: propertyList(multiProperty, opts?.propertyListing),
+        });
         return;
       case 'list-parkings':
         await fulfillJson(route, { success: true, data: { parkings: [] } });

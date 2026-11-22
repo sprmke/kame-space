@@ -144,6 +144,8 @@ export type ParkingFlowState = {
   lastBookingChatsUrl: string | null;
   /** Guest taps Pay now after the payment window closed; checkout returns 409. */
   paymentWindowExpiredOnCheckout: boolean;
+  /** Slot label returned by list-parkings (settings reads it; digits-only is savable). */
+  slotLabel: string;
   /** Archive/delete warnings from parking-settings. */
   archiveImpact?: {
     pendingOffers: number;
@@ -200,6 +202,7 @@ export function createParkingFlowState(): ParkingFlowState {
     claimFailsAlreadyClaimed: false,
     lastBookingChatsUrl: null,
     paymentWindowExpiredOnCheckout: false,
+    slotLabel: '12A',
   };
 }
 
@@ -619,19 +622,19 @@ export function e2ePropertyBookingRow(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function parkingList() {
+function parkingList(state: ParkingFlowState) {
   return {
     parkings: [
       {
         id: PARKING_ID,
         organizationId: ORG_ID,
-        name: 'Slot 12A',
+        name: `Slot ${state.slotLabel}`,
         slug: 'slot-12a',
         status: 'ACTIVE',
         residenceName: 'One Palm Residences',
         tower: 'Tower 1',
         level: 'B2',
-        slotLabel: '12A',
+        slotLabel: state.slotLabel,
         parkingType: 'covered',
         ratePerNight: 1200,
         acceptedVehicleTypes: ['car'],
@@ -1047,7 +1050,7 @@ export async function installParkingFlowMocks(page: Page, state: ParkingFlowStat
         await fulfillJson(route, { success: true, data: { updated: true } });
         return;
       case 'list-parkings':
-        await fulfillJson(route, { success: true, data: parkingList() });
+        await fulfillJson(route, { success: true, data: parkingList(state) });
         return;
       case 'list-bookings':
         await fulfillJson(route, {
