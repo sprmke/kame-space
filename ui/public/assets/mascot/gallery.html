@@ -14,7 +14,7 @@ const canvas=document.querySelector('canvas'), ctx=canvas.getContext('2d');
 const play=document.querySelector('#play'), nav=document.querySelector('nav');
 const images=await Promise.all(poses.map(async pose=>{const image=new Image();image.src=pose.file;await image.decode();return image}));
 let current=0, timer=null;
-function show(index){current=index;ctx.clearRect(0,0,448,468);ctx.drawImage(images[index],0,0);canvas.setAttribute('aria-label','Kame: '+names[index]);Array.from(nav.children).forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)))}
+function show(index){current=index;ctx.clearRect(0,0,448,468);const {width=448,height=468}=poses[index],scale=Math.min(448/width,468/height),renderedWidth=width*scale,renderedHeight=height*scale;ctx.drawImage(images[index],(448-renderedWidth)/2,(468-renderedHeight)/2,renderedWidth,renderedHeight);canvas.setAttribute('aria-label','Kame: '+names[index]);Array.from(nav.children).forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)))}
 function stop(){clearInterval(timer);timer=null;play.textContent='Play sequence'}
 names.forEach((name,i)=>{const b=document.createElement('button');b.textContent=name;b.onclick=()=>{stop();show(i)};nav.append(b)});
 play.onclick=()=>{if(timer){stop();return}play.textContent='Pause sequence';timer=setInterval(()=>show((current+1)%names.length),1400)};

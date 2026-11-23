@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "format": "png",
   "width": 448,
   "height": 468,
@@ -162,6 +162,293 @@
     { "name": "Explaining", "file": "explaining.png", "category": "conversation" },
     { "name": "Delighted", "file": "delighted.png", "category": "conversation" },
     { "name": "Thinking", "file": "thinking.png", "category": "conversation" },
-    { "name": "Shell", "file": "shell.png", "category": "reference" }
+    { "name": "Shell", "file": "shell.png", "category": "reference" },
+    {
+      "name": "AI welcome",
+      "file": "ai/full/ai-full-welcome.png",
+      "category": "ai",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "AI thinking",
+      "file": "ai/full/ai-full-thinking.png",
+      "category": "ai",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "AI ready",
+      "file": "ai/full/ai-full-ready.png",
+      "category": "ai",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "AI peek, bottom hello",
+      "file": "ai/peek/ai-peek-bottom-hello.png",
+      "category": "ai-peek",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "AI peek, left idea",
+      "file": "ai/peek/ai-peek-left-idea.png",
+      "category": "ai-peek",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "AI peek, right listen",
+      "file": "ai/peek/ai-peek-right-listen.png",
+      "category": "ai-peek",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Edge peek, bottom paws",
+      "file": "landing/edge/standard/bottom-two-paws.png",
+      "category": "landing-edge",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Edge peek, bottom wave",
+      "file": "landing/edge/standard/bottom-wave.png",
+      "category": "landing-edge",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Edge peek, left wink",
+      "file": "landing/edge/standard/left-wink.png",
+      "category": "landing-edge",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Edge peek, right wave",
+      "file": "landing/edge/standard/right-wave.png",
+      "category": "landing-edge",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Edge peek, top corner wave",
+      "file": "landing/edge/standard/top-corner-wave.png",
+      "category": "landing-edge",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Edge peek, upside down",
+      "file": "landing/edge/standard/top-upside-down.png",
+      "category": "landing-edge",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Costume peek, camera",
+      "file": "landing/edge/costumes/bottom-camera-peek.png",
+      "category": "landing-edge-costume",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Costume peek, witch",
+      "file": "landing/edge/costumes/bottom-witch-boo.png",
+      "category": "landing-edge-costume",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Costume peek, sunglasses",
+      "file": "landing/edge/costumes/left-sunglasses-wink.png",
+      "category": "landing-edge-costume",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Costume peek, concierge",
+      "file": "landing/edge/costumes/right-concierge-hat-tip.png",
+      "category": "landing-edge-costume",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Costume peek, umbrella",
+      "file": "landing/edge/costumes/right-umbrella-peek.png",
+      "category": "landing-edge-costume",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Costume peek, director",
+      "file": "landing/edge/costumes/top-upside-down-director.png",
+      "category": "landing-edge-costume",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Playful peek, chef",
+      "file": "landing/edge/playful/bottom-chef-taste.png",
+      "category": "landing-edge-playful",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Playful peek, party",
+      "file": "landing/edge/playful/bottom-party-confetti.png",
+      "category": "landing-edge-playful",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Playful peek, sleepy",
+      "file": "landing/edge/playful/bottom-sleep-mask.png",
+      "category": "landing-edge-playful",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Playful peek, detective",
+      "file": "landing/edge/playful/left-detective.png",
+      "category": "landing-edge-playful",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Playful peek, frog",
+      "file": "landing/edge/playful/right-frog-hood.png",
+      "category": "landing-edge-playful",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Playful peek, astronaut",
+      "file": "landing/edge/playful/top-astronaut.png",
+      "category": "landing-edge-playful",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Platform announcement, broadcast",
+      "file": "announcements/platform/platform-broadcast-card.png",
+      "category": "platform-announcement",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Platform announcement, handbell",
+      "file": "announcements/platform/platform-handbell.png",
+      "category": "platform-announcement",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Platform announcement, megaphone",
+      "file": "announcements/platform/platform-megaphone.png",
+      "category": "platform-announcement",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Building announcement, lobby board",
+      "file": "announcements/building/building-lobby-board.png",
+      "category": "building-announcement",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Building announcement, notice plaque",
+      "file": "announcements/building/building-notice-plaque.png",
+      "category": "building-announcement",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Building announcement, resident wave",
+      "file": "announcements/building/building-resident-wave.png",
+      "category": "building-announcement",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Plan cancellation",
+      "file": "billing/plan-cancellation.png",
+      "category": "billing",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Contact sales",
+      "file": "billing/plan-contact-sales.png",
+      "category": "billing",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Plan downgrade",
+      "file": "billing/plan-downgrade.png",
+      "category": "billing",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Plan renewal",
+      "file": "billing/plan-renewal.png",
+      "category": "billing",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Plan upgrade",
+      "file": "billing/plan-upgrade.png",
+      "category": "billing",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Recommended guesthouse",
+      "file": "verification/recommended-guesthouse.png",
+      "category": "recommended",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Recommended star",
+      "file": "verification/recommended-star.png",
+      "category": "recommended",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Recommended trophy",
+      "file": "verification/recommended-trophy.png",
+      "category": "recommended",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Verified ID review",
+      "file": "verification/verified-id-review.png",
+      "category": "verified",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Verified rosette",
+      "file": "verification/verified-rosette.png",
+      "category": "verified",
+      "width": 448,
+      "height": 448
+    },
+    {
+      "name": "Verified shield",
+      "file": "verification/verified-shield.png",
+      "category": "verified",
+      "width": 448,
+      "height": 448
+    }
   ]
 }
