@@ -1,4 +1,5 @@
 import { AudioItemInspector } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/AudioItemInspector';
+import { CaptionItemInspector } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/CaptionItemInspector';
 import type { InspectorActions } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
 import { LayerItemInspector } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/LayerItemInspector';
 import { MediaItemInspector } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/MediaItemInspector';
@@ -7,6 +8,7 @@ import { itemLabel } from '@/features/dashboard/marketing/lib/video/v2/editorCom
 import { findItem } from '@/features/dashboard/marketing/lib/video/v2/timelineOps';
 import {
   isAudioItem,
+  isCaptionItem,
   isLayerItem,
   type VideoProjectV2,
 } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
@@ -32,6 +34,9 @@ export function VideoInspectorV2({ actions, selectedIds, onProjectChange }: Prop
   const loc = selectedIds[0] ? findItem(project, selectedIds[0]) : null;
   if (!loc) return <ProjectInspectorV2 project={project} onChange={onProjectChange} />;
   const { item } = loc;
+  if (isCaptionItem(item)) {
+    return <CaptionItemInspector key={item.id} item={item} actions={actions} />;
+  }
   if (isLayerItem(item)) return <LayerItemInspector key={item.id} item={item} actions={actions} />;
   if (isAudioItem(item)) return <AudioItemInspector key={item.id} item={item} actions={actions} />;
   return <MediaItemInspector key={item.id} item={item} actions={actions} />;

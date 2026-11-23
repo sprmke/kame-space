@@ -139,7 +139,7 @@ export const PROBES: ProbeDef[] = [
     console: 'https://console.groq.com/keys',
     label: 'Groq',
     group: 'AI',
-    features: ['AI fallback'],
+    features: ['AI fallback', 'Video auto captions'],
     hint: 'Create a new key in the Groq console.',
     isConfigured: has('GROQ_API_KEY'),
     run: async ({ get }) => {

@@ -11,6 +11,7 @@
  *  - Video/audio items never exceed their source length at their speed.
  */
 
+import { joinWords, splitCaption } from '@/features/dashboard/marketing/lib/video/v2/captionLines';
 import {
   countItems,
   itemEnd,
@@ -22,11 +23,13 @@ import {
 } from '@/features/dashboard/marketing/lib/video/v2/timelineTiming';
 import {
   isAudioItem,
+  isCaptionItem,
   isLayerItem,
   isMediaItem,
   trackAccepts,
   VIDEO_V2_LIMITS,
   type AudioItem,
+  type CaptionItem,
   type MediaItem,
   type VideoItem,
   type VideoPlaybackRate,
@@ -44,6 +47,7 @@ export type OpFailure =
   | 'track_limit'
   | 'duration_limit'
   | 'no_room'
+  | 'needs_normal_speed'
   | 'invalid';
 
 export type OpResult = {
@@ -280,6 +284,7 @@ function newTrackIndex(tracks: VideoTrack[], kind: VideoTrackKind, near?: number
 }
 
 function freeKindFor(item: VideoItem): Exclude<VideoTrackKind, 'main'> {
+  if (isCaptionItem(item)) return 'captions';
   return isAudioItem(item) ? 'audio' : isLayerItem(item) ? 'text' : 'overlay';
 }
 
@@ -574,9 +579,94 @@ export function trimItem(
   return done(result, { clamped, itemIds: [itemId] });
 }
 
+/**
+ * Set which part of a video or audio file plays, in source frames (the Trim view). Built from
+ * `trimItem`, so ripple on the main track, the 60 s cap and the neighbour limits all still apply.
+ * `startSource` and `endSource` are frames in the original file at the project frame rate.
+ */
+export function setSourceWindow(
+  project: VideoProjectV2,
+  itemId: string,
+  startSource: number,
+  endSource: number
+): OpResult {
+  const loc = findItem(project, itemId);
+  if (!loc) return fail(project, 'not_found');
+  if (loc.track.locked) return fail(project, 'locked');
+  const item = loc.item;
+  if (item.type !== 'video' && item.type !== 'audio') return fail(project, 'incompatible');
+  const start = Math.max(0, Math.round(startSource));
+  const end = Math.round(endSource);
+  if (end - start < 1) return fail(project, 'invalid');
+
+  const rate = isMediaItem(item) ? (item.playbackRate ?? 1) : 1;
+  const currentStart = item.trimBeforeFrames ?? 0;
+  const edgeFrame = (current: VideoItem, source: number) =>
+    current.from +
+    timelineFramesForSource(
+      source - ((current as MediaItem | AudioItem).trimBeforeFrames ?? 0),
+      rate
+    );
+
+  const trimEnd = (p: VideoProjectV2) => {
+    const current = findItem(p, itemId)?.item;
+    return current ? trimItem(p, itemId, 'end', edgeFrame(current, end)) : fail(p, 'not_found');
+  };
+  const trimStart = (p: VideoProjectV2) => {
+    const current = findItem(p, itemId)?.item;
+    return current ? trimItem(p, itemId, 'start', edgeFrame(current, start)) : fail(p, 'not_found');
+  };
+
+  // Reveal earlier footage first when the window moves left; otherwise grow or cut the end first.
+  const steps = start < currentStart ? [trimStart, trimEnd] : [trimEnd, trimStart];
+  let working = project;
+  let clamped = false;
+  for (const step of steps) {
+    const result = step(working);
+    if (!result.ok) return result;
+    working = result.project;
+    clamped = clamped || Boolean(result.clamped);
+  }
+  return done(working, { clamped, itemIds: [itemId] });
+}
+
+/**
+ * Move a video's sound onto its own audio clip, in step with the picture, and mute the video.
+ * Only at normal speed: audio clips have no speed, so a sped up video would drift out of sync.
+ */
+export function separateSound(original: VideoProjectV2, videoId: string): OpResult {
+  // The main track's stored `from` is derived, so lay it out before reading the start frame.
+  const project = normalizeProject(original);
+  const loc = findItem(project, videoId);
+  if (!loc) return fail(original, 'not_found');
+  if (loc.track.locked) return fail(original, 'locked');
+  const item = loc.item;
+  if (item.type !== 'video' || !item.media.url) return fail(original, 'incompatible');
+  if ((item.playbackRate ?? 1) !== 1) return fail(original, 'needs_normal_speed');
+
+  const sound: AudioItem = {
+    id: newId('item'),
+    type: 'audio',
+    from: item.from,
+    durationInFrames: item.durationInFrames,
+    label: 'Sound',
+    media: { ...item.media },
+    volume: item.muted ? 1 : (item.volume ?? 1),
+    trimBeforeFrames: item.trimBeforeFrames ?? 0,
+    role: 'sound',
+    sourceItemId: item.id,
+  };
+  const muted = updateItem(project, videoId, (current) => ({
+    ...(current as MediaItem),
+    muted: true,
+  }));
+  if (!muted.ok) return muted;
+  return insertItem(muted.project, sound, { kind: 'audio', atFrame: item.from });
+}
+
 // ─── Split / duplicate / paste ──────────────────────────────────────────────
 
-function splitOne(item: VideoItem, frame: number): [VideoItem, VideoItem] | null {
+function splitOne(item: VideoItem, frame: number, fps: number): [VideoItem, VideoItem] | null {
   const firstDuration = frame - item.from;
   const secondDuration = itemEnd(item) - frame;
   if (firstDuration < minItemFrames || secondDuration < minItemFrames) return null;
@@ -603,6 +693,14 @@ function splitOne(item: VideoItem, frame: number): [VideoItem, VideoItem] | null
     (second as AudioItem).fadeInFrames = 0;
     (second as AudioItem).fadeOutFrames = item.fadeOutFrames ?? 0;
   }
+  if (isCaptionItem(item)) {
+    const words = splitCaption(item, ((frame - item.from) * 1000) / fps);
+    if (!words) return null;
+    (first as CaptionItem).words = words[0];
+    (first as CaptionItem).text = joinWords(words[0]);
+    (second as CaptionItem).words = words[1];
+    (second as CaptionItem).text = joinWords(words[1]);
+  }
   if (isLayerItem(item)) {
     (second as typeof item).layer = { ...item.layer, id: newId('layer') };
     delete (first as typeof item).animationOut;
@@ -627,7 +725,7 @@ export function splitItems(project: VideoProjectV2, ids: string[], frame: number
     }
     if (!(at > loc.item.from && at < itemEnd(loc.item))) continue;
     if (countItems(working) >= maxItems) return fail(project, 'item_limit');
-    const parts = splitOne(loc.item, at);
+    const parts = splitOne(loc.item, at, project.fps);
     if (!parts) continue;
     const items = loc.track.items.slice();
     items.splice(loc.itemIndex, 1, parts[0], parts[1]);
@@ -787,7 +885,7 @@ export function addTrack(project: VideoProjectV2, kind: Exclude<VideoTrackKind, 
 export function removeEmptyTracks(project: VideoProjectV2): VideoProjectV2 {
   const tracks = project.tracks.filter((track) => track.kind === 'main' || track.items.length > 0);
   return tracks.length === project.tracks.length ? project : { ...project, tracks };
-}/** Reorder a non-main track. `toIndex` is the final index (1 or higher; main stays at 0). */
+} /** Reorder a non-main track. `toIndex` is the final index (1 or higher; main stays at 0). */
 export function reorderTrack(project: VideoProjectV2, trackId: string, toIndex: number): OpResult {
   const found = findTrack(project, trackId);
   if (!found) return fail(project, 'not_found');

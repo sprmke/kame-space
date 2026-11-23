@@ -2,6 +2,7 @@ import { Replace, Trash2 } from 'lucide-react';
 
 import { NumberSlider } from '@/features/dashboard/marketing/components/calendar-builder/components/controls/NumberSlider';
 import {
+  SectionTitle,
   TimingFields,
   type InspectorActions,
 } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
@@ -52,8 +53,10 @@ export function AudioItemInspector({ item, actions }: Props) {
         </p>
       ) : null}
 
+      <SectionTitle>Timing</SectionTitle>
       <TimingFields item={item} actions={actions} />
 
+      <SectionTitle>Sound</SectionTitle>
       <NumberSlider
         label="Volume"
         unit="%"

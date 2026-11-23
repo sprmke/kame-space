@@ -4,6 +4,11 @@
 
 import type { MediaDragPayload } from '@/features/dashboard/marketing/lib/media/mediaDrag';
 import {
+  applyTextLook,
+  type TextLookColors,
+  type TextLookId,
+} from '@/features/dashboard/marketing/lib/video/v2/textLooks';
+import {
   duplicateItem,
   findItem,
   insertItem,
@@ -24,6 +29,7 @@ import {
   DEFAULT_VISUAL_TRANSFORM,
   VIDEO_V2_LIMITS,
   isAudioItem,
+  isCaptionItem,
   isLayerItem,
   isMediaItem,
   type AudioItem,
@@ -111,7 +117,8 @@ export function audioItemFromPayload(
 
 // ─── Text presets ───────────────────────────────────────────────────────────
 
-export type TextPresetId = 'headline' | 'caption' | 'lower-third' | 'cta';
+export type TextPresetId =
+  'headline' | 'caption' | 'lower-third' | 'location' | 'price' | 'rating' | 'cta';
 
 export type TextPreset = {
   id: TextPresetId;
@@ -119,6 +126,8 @@ export type TextPreset = {
   text: string;
   kind: 'text' | 'cta';
   textStyle?: VideoSceneLayer['textStyle'];
+  /** One-tap look the preset starts with. */
+  look?: TextLookId;
   position: { x: number; y: number; align: 'left' | 'center' | 'right' };
   animationIn: NonNullable<LayerItem['animationIn']>;
   animationOut?: NonNullable<LayerItem['animationOut']>;
@@ -147,12 +156,46 @@ export const TEXT_PRESETS: TextPreset[] = [
   },
   {
     id: 'lower-third',
-    label: 'Lower third',
+    label: 'Name tag',
     text: 'Name or place',
     kind: 'text',
     textStyle: 'subheadline',
+    look: 'soft-box',
     position: { x: 8, y: 84, align: 'left' },
     animationIn: { type: 'slide-up', durationInFrames: 14 },
+    animationOut: { type: 'fade', durationInFrames: 8 },
+  },
+  {
+    id: 'location',
+    label: 'Location',
+    text: 'Add a place',
+    kind: 'text',
+    textStyle: 'footer',
+    look: 'tag',
+    position: { x: 50, y: 14, align: 'center' },
+    animationIn: { type: 'pop', durationInFrames: 12 },
+    animationOut: { type: 'fade', durationInFrames: 8 },
+  },
+  {
+    id: 'price',
+    label: 'Price',
+    text: 'From ₱4,500 a night',
+    kind: 'text',
+    textStyle: 'promo',
+    look: 'price',
+    position: { x: 50, y: 70, align: 'center' },
+    animationIn: { type: 'pop', durationInFrames: 14 },
+    animationOut: { type: 'fade', durationInFrames: 8 },
+  },
+  {
+    id: 'rating',
+    label: 'Rating',
+    text: '★★★★★ Loved by guests',
+    kind: 'text',
+    textStyle: 'subheadline',
+    look: 'highlight',
+    position: { x: 50, y: 30, align: 'center' },
+    animationIn: { type: 'fade', durationInFrames: 12 },
     animationOut: { type: 'fade', durationInFrames: 8 },
   },
   {
@@ -166,13 +209,28 @@ export const TEXT_PRESETS: TextPreset[] = [
   },
 ];
 
+/**
+ * A frame where a new text clip is fully on screen: just after its entrance animation. Adding
+ * text at a frame where it is still fading in would show the host an empty box.
+ */
+export function visibleFrameForText(item: LayerItem): number {
+  const entrance = item.animationIn?.durationInFrames ?? 0;
+  return item.from + Math.max(0, Math.min(entrance + 2, item.durationInFrames - 1));
+}
+
 export function textPresetById(id: TextPresetId): TextPreset {
   return TEXT_PRESETS.find((preset) => preset.id === id) ?? TEXT_PRESETS[0]!;
 }
 
 export function layerItemFromPreset(
   preset: TextPreset,
-  options: { from: number; durationInFrames?: number; text?: string }
+  options: {
+    from: number;
+    durationInFrames?: number;
+    text?: string;
+    /** Brand colours for looks that use the accent. */
+    colors?: TextLookColors;
+  }
 ): LayerItem {
   const layer: VideoSceneLayer = {
     id: newId('layer'),
@@ -181,6 +239,7 @@ export function layerItemFromPreset(
     position: { ...preset.position },
   };
   if (preset.textStyle) layer.textStyle = preset.textStyle;
+  const looked = preset.look ? applyTextLook(layer, preset.look, options.colors) : layer;
   const item: LayerItem = {
     id: newId('item'),
     type: 'layer',
@@ -189,7 +248,7 @@ export function layerItemFromPreset(
       VIDEO_V2_LIMITS.minItemFrames,
       options.durationInFrames ?? VIDEO_V2_LIMITS.defaultItemFrames
     ),
-    layer,
+    layer: looked,
     animationIn: preset.animationIn,
   };
   if (preset.animationOut) item.animationOut = preset.animationOut;
@@ -200,6 +259,8 @@ export function layerItemFromPreset(
 
 /** Short human label for a timeline block. */
 export function itemLabel(item: VideoItem): string {
+  if (isCaptionItem(item))
+    return item.text.length > 40 ? `${item.text.slice(0, 39)}…` : item.text || 'Caption';
   if (isLayerItem(item)) {
     const text = item.layer.text?.trim() || item.layer.lines?.join(', ').trim();
     if (text) return text.length > 40 ? `${text.slice(0, 39)}…` : text;
@@ -212,19 +273,27 @@ export function itemLabel(item: VideoItem): string {
 
 /** "Clip, 0:03 to 0:07" for screen readers and tooltips. */
 export function itemAriaLabel(item: VideoItem, fps: number): string {
-  const kind = isAudioItem(item)
-    ? 'Audio'
-    : isLayerItem(item)
-      ? 'Text'
-      : item.type === 'video'
-        ? 'Video'
-        : 'Photo';
+  const kind = isCaptionItem(item)
+    ? 'Caption'
+    : isAudioItem(item)
+      ? 'Audio'
+      : isLayerItem(item)
+        ? 'Text'
+        : item.type === 'video'
+          ? 'Video'
+          : 'Photo';
   return `${kind}, ${itemLabel(item)}, ${formatTimecode(item.from, fps)} to ${formatTimecode(itemEnd(item), fps)}`;
 }
 
 export function trackLabel(kind: VideoTrackKind, indexWithinKind: number): string {
-  const base = { main: 'Main', overlay: 'Overlay', text: 'Text', audio: 'Audio' }[kind];
-  return kind === 'main' ? base : `${base} ${indexWithinKind + 1}`;
+  const base = {
+    main: 'Video',
+    overlay: 'On top',
+    text: 'Text',
+    audio: 'Audio',
+    captions: 'Captions',
+  }[kind];
+  return kind === 'main' || kind === 'captions' ? base : `${base} ${indexWithinKind + 1}`;
 }
 
 /** True when anything in the project makes sound (decides whether export needs an audio track). */

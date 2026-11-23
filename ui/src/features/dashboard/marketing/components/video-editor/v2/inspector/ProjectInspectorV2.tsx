@@ -1,5 +1,6 @@
 import { ColorPicker } from '@/features/dashboard/marketing/components/calendar-builder/components/controls/ColorPicker';
 import { OptionSelect } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
+import { InstagramSongCard } from '@/features/dashboard/marketing/components/video-editor/v2/InstagramSongCard';
 import { projectWarnings } from '@/features/dashboard/marketing/lib/video/v2/editorCommands';
 import {
   formatTimecode,
@@ -9,11 +10,17 @@ import {
   VIDEO_V2_LIMITS,
   type VideoProjectV2,
 } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
+import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
 
 type Props = {
   project: VideoProjectV2;
   onChange: (updater: (project: VideoProjectV2) => VideoProjectV2) => void;
 };
+
+function withoutInstagramSong(project: VideoProjectV2): VideoProjectV2 {
+  const { instagramSong: _removed, ...rest } = project;
+  return rest;
+}
 
 function warningText(code: ReturnType<typeof projectWarnings>[number]): string {
   switch (code.code) {
@@ -27,8 +34,10 @@ function warningText(code: ReturnType<typeof projectWarnings>[number]): string {
 }
 
 export function ProjectInspectorV2({ project, onChange }: Props) {
+  const propertyId = usePropertyIdParam();
   const total = projectDurationInFrames(project);
   const warnings = projectWarnings(project);
+  const song = project.instagramSong;
   return (
     <div className="space-y-4">
       <p className="text-sm">
@@ -50,13 +59,28 @@ export function ProjectInspectorV2({ project, onChange }: Props) {
           ))}
         </ul>
       ) : null}
+      {song ? (
+        <div className="space-y-2">
+          <p className="text-section-title">Reel song</p>
+          <InstagramSongCard
+            song={song}
+            propertyId={propertyId}
+            onRemove={() => onChange((p) => withoutInstagramSong(p))}
+            onVolumeChange={(volume) =>
+              onChange((p) =>
+                p.instagramSong ? { ...p, instagramSong: { ...p.instagramSong, volume } } : p
+              )
+            }
+          />
+        </div>
+      ) : null}
       <ColorPicker
         label="Background"
         value={project.background.color}
         onChange={(color) => onChange((p) => ({ ...p, background: { ...p.background, color } }))}
       />
       <OptionSelect<'color' | 'blur'>
-        label="Behind letterboxed media"
+        label="Fill empty space with"
         value={project.background.fill}
         options={[
           { value: 'color', label: 'Solid color' },

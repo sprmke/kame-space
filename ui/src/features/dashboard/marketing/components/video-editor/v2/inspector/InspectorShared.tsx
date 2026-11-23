@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
 
 import { NumberSlider } from '@/features/dashboard/marketing/components/calendar-builder/components/controls/NumberSlider';
+import type { TextLookColors } from '@/features/dashboard/marketing/lib/video/v2/textLooks';
 import { itemEnd } from '@/features/dashboard/marketing/lib/video/v2/timelineTiming';
 import type {
+  CaptionStyle,
   VideoItem,
   VideoPlaybackRate,
   VideoProjectV2,
@@ -23,6 +25,11 @@ import {
 export type InspectorActions = {
   project: VideoProjectV2;
   typography: VideoTypographyContext;
+  /** Brand colours for text looks that use the accent. */
+  lookColors: TextLookColors;
+  /** Caption look for the whole captions track. */
+  captionStyle: CaptionStyle;
+  setCaptionStyle: (style: Partial<CaptionStyle>) => void;
   update: (itemId: string, updater: (item: VideoItem) => VideoItem) => void;
   trim: (itemId: string, edge: 'start' | 'end', frame: number) => void;
   moveTo: (itemId: string, frame: number) => void;
@@ -31,6 +38,15 @@ export type InspectorActions = {
   replaceMedia: (itemId: string) => void;
   remove: (itemId: string) => void;
 };
+
+/** A small heading that groups the controls under it, so a long inspector reads in chunks. */
+export function SectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <h3 className="text-foreground border-border border-t pt-4 text-xs font-semibold uppercase tracking-wide first:border-t-0 first:pt-0">
+      {children}
+    </h3>
+  );
+}
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -90,7 +106,7 @@ export function TimingFields({ item, actions }: { item: VideoItem; actions: Insp
         />
       )}
       <NumberSlider
-        label="Length"
+        label="Duration"
         unit="s"
         min={0.1}
         max={60}

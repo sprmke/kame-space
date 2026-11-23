@@ -21,8 +21,16 @@ import {
   useVideoConfig,
 } from 'remotion';
 
+import { CaptionClipV2 } from '@/features/dashboard/marketing/components/video-editor/CaptionClipV2';
 import type { CampaignPalette } from '@/features/dashboard/marketing/lib/designBrandColors';
 import type { MarketingThemeTokens } from '@/features/dashboard/marketing/lib/theme/marketingTheme';
+import {
+  duckFactor,
+  shouldDuck,
+  voiceRangesOf,
+  type FrameRange,
+} from '@/features/dashboard/marketing/lib/video/v2/audioDucking';
+import { clampCaptionStyle } from '@/features/dashboard/marketing/lib/video/v2/captionStyle';
 import {
   adjustFilter,
   cropInnerStyle,
@@ -34,9 +42,14 @@ import {
   overlayBoxStyle,
   revealText,
 } from '@/features/dashboard/marketing/lib/video/v2/clipStyles';
+import {
+  lookColorsFromPalette,
+  type TextLookColors,
+} from '@/features/dashboard/marketing/lib/video/v2/textLooks';
 import { mainTrackOf } from '@/features/dashboard/marketing/lib/video/v2/timelineTiming';
 import type {
   AudioItem,
+  CaptionItem,
   LayerItem,
   MediaItem,
   VideoProjectV2,
@@ -64,6 +77,7 @@ import {
   type VideoTypographyContext,
 } from '@/features/dashboard/marketing/lib/video/videoTemplateTypography';
 import { scaleForVideoFormat } from '@/features/dashboard/marketing/lib/video/videoTextSlotContent';
+
 import { parseHexRgb } from '@/lib/theme/colorConvert';
 
 export type VideoCompositionV2Props = {
@@ -83,6 +97,10 @@ export type VideoCompositionV2Props = {
 
 type Ctx = {
   project: VideoProjectV2;
+  /** Where a voice is heard, so music can drop under it. */
+  voiceRanges: FrameRange[];
+  /** Brand colours for caption and text looks. */
+  lookColors: TextLookColors;
   typography: VideoTypographyContext;
   motionProfile: VideoMotionProfile;
   previewMuted: boolean;
@@ -223,7 +241,7 @@ function MediaElement({
       />
     );
   }
-  return <Img src={url} onError={() => setFailed(!strict)} style={style} />;
+  return <Img src={url} alt="" onError={() => setFailed(!strict)} style={style} />;
 }
 
 /** Blurred, scaled copy behind letterboxed media (images, or the video poster). */
@@ -233,6 +251,7 @@ function BlurBackdrop({ item }: { item: MediaItem }) {
   return (
     <Img
       src={url}
+      alt=""
       style={{
         position: 'absolute',
         inset: 0,
@@ -472,11 +491,20 @@ function LayerClip({ item, ctx }: { item: LayerItem; ctx: Ctx }) {
   );
 }
 
-function AudioClip({ item, muted }: { item: AudioItem; muted: boolean }) {
+function AudioClip({
+  item,
+  muted,
+  voiceRanges,
+}: {
+  item: AudioItem;
+  muted: boolean;
+  voiceRanges: FrameRange[];
+}) {
   const { fps } = useVideoConfig();
   if (!isRenderableMediaUrl(item.media.url)) return null;
   const { durationInFrames, volume, fadeInFrames, fadeOutFrames } = item;
   const hasFade = (fadeInFrames ?? 0) > 0 || (fadeOutFrames ?? 0) > 0;
+  const ducks = voiceRanges.length > 0 && shouldDuck(item);
   return (
     <Audio
       src={item.media.url}
@@ -485,9 +513,10 @@ function AudioClip({ item, muted }: { item: AudioItem; muted: boolean }) {
       premountFor={fps}
       trimBefore={item.trimBeforeFrames || undefined}
       volume={
-        hasFade
+        hasFade || ducks
           ? (frame: number) =>
-              fadedVolume(frame, durationInFrames, volume, fadeInFrames, fadeOutFrames)
+              fadedVolume(frame, durationInFrames, volume, fadeInFrames, fadeOutFrames) *
+              (ducks ? duckFactor(item.from + frame, voiceRanges) : 1)
           : volume
       }
     />
@@ -527,6 +556,18 @@ function TrackItems({ track, ctx }: { track: VideoTrack; ctx: Ctx }) {
           ))}
         </>
       );
+    case 'captions': {
+      const style = clampCaptionStyle(track.captionStyle);
+      return (
+        <>
+          {(track.items as CaptionItem[]).map((item) => (
+            <Sequence key={item.id} from={item.from} durationInFrames={item.durationInFrames}>
+              <CaptionClipV2 item={item} style={style} colors={ctx.lookColors} />
+            </Sequence>
+          ))}
+        </>
+      );
+    }
     case 'audio':
       return (
         <>
@@ -537,7 +578,11 @@ function TrackItems({ track, ctx }: { track: VideoTrack; ctx: Ctx }) {
               durationInFrames={item.durationInFrames}
               layout="none"
             >
-              <AudioClip item={item} muted={muted || track.hidden === true} />
+              <AudioClip
+                item={item}
+                muted={muted || track.hidden === true}
+                voiceRanges={ctx.voiceRanges}
+              />
             </Sequence>
           ))}
         </>
@@ -567,6 +612,8 @@ export function CampaignVideoCompositionV2({
   const ctx = useMemo<Ctx>(
     () => ({
       project,
+      voiceRanges: voiceRangesOf(project),
+      lookColors: lookColorsFromPalette(project.palette),
       typography: resolvedTypography,
       motionProfile: resolvedMotion,
       previewMuted,

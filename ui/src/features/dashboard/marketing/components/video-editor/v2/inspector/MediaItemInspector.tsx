@@ -4,6 +4,7 @@ import { NumberSlider } from '@/features/dashboard/marketing/components/calendar
 import {
   Field,
   OptionSelect,
+  SectionTitle,
   TimingFields,
   type InspectorActions,
 } from '@/features/dashboard/marketing/components/video-editor/v2/inspector/InspectorShared';
@@ -26,21 +27,21 @@ const TRANSITIONS: Array<{ value: VideoTransition; label: string }> = [
   { value: 'dissolve', label: 'Dissolve' },
   { value: 'slide-left', label: 'Slide left' },
   { value: 'slide-up', label: 'Slide up' },
-  { value: 'push-cut', label: 'Push cut' },
+  { value: 'push-cut', label: 'Push' },
   { value: 'wipe', label: 'Wipe' },
-  { value: 'clock-wipe', label: 'Clock wipe' },
+  { value: 'clock-wipe', label: 'Clock' },
   { value: 'flip', label: 'Flip' },
-  { value: 'zoom-in-out', label: 'Zoom in out' },
+  { value: 'zoom-in-out', label: 'Zoom' },
 ];
 
 const OVERLAYS: Array<{ value: VideoOverlayMode; label: string }> = [
   { value: 'none', label: 'None' },
-  { value: 'soft-scrim', label: 'Soft scrim' },
-  { value: 'bottom-band', label: 'Bottom band' },
-  { value: 'top-band', label: 'Top band' },
+  { value: 'soft-scrim', label: 'Soft shade' },
+  { value: 'bottom-band', label: 'Shade at the bottom' },
+  { value: 'top-band', label: 'Shade at the top' },
 ];
 
-const MOTIONS = [{ value: 'template', label: 'Template default' }, ...VIDEO_MOTION_OVERRIDES];
+const MOTIONS = [{ value: 'template', label: 'Auto' }, ...VIDEO_MOTION_OVERRIDES];
 
 type Props = { item: MediaItem; actions: InspectorActions };
 
@@ -84,10 +85,12 @@ export function MediaItemInspector({ item, actions }: Props) {
       </div>
       {missing ? <p className="text-xs text-amber-600">This clip has no media yet.</p> : null}
 
+      <SectionTitle>Timing</SectionTitle>
       <TimingFields item={item} actions={actions} />
 
       {isVideo ? (
         <section className="space-y-3" aria-label="Video">
+          <SectionTitle>Sound and speed</SectionTitle>
           <OptionSelect<string>
             label="Speed"
             value={String(item.playbackRate ?? 1)}
@@ -116,7 +119,7 @@ export function MediaItemInspector({ item, actions }: Props) {
           </div>
           {sourceFrames ? (
             <NumberSlider
-              label="Start in source"
+              label="Start from"
               unit="s"
               min={0}
               max={Math.max(0, Math.round((sourceFrames / project.fps) * 10) / 10 - 0.1)}
@@ -129,11 +132,12 @@ export function MediaItemInspector({ item, actions }: Props) {
       ) : null}
 
       <section className="space-y-3" aria-label="Look">
+        <SectionTitle>Picture</SectionTitle>
         <OptionSelect<'cover' | 'contain'>
           label="Fit"
           value={item.fit}
           options={[
-            { value: 'cover', label: 'Fill frame' },
+            { value: 'cover', label: 'Fill the screen' },
             { value: 'contain', label: 'Show whole' },
           ]}
           onChange={(fit) => patch({ fit })}
@@ -218,9 +222,10 @@ export function MediaItemInspector({ item, actions }: Props) {
 
       {isMain ? (
         <section className="space-y-3" aria-label="Scene">
+          <SectionTitle>Movement</SectionTitle>
           {item.type === 'image' || item.motion !== undefined ? (
             <OptionSelect<string>
-              label="Camera motion"
+              label="Camera movement"
               value={item.motion ?? 'template'}
               options={MOTIONS}
               onChange={(value) =>
@@ -229,14 +234,14 @@ export function MediaItemInspector({ item, actions }: Props) {
             />
           ) : null}
           <OptionSelect<VideoOverlayMode>
-            label="Photo wash"
+            label="Shade"
             value={item.overlay ?? 'none'}
             options={OVERLAYS}
             onChange={(overlay) => patch({ overlay })}
           />
           {!isFirstMain ? (
             <OptionSelect<VideoTransition>
-              label="Transition in"
+              label="Transition"
               value={item.transitionIn?.type ?? 'none'}
               options={TRANSITIONS}
               onChange={(type) => actions.setTransition(item.id, type)}

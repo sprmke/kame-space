@@ -21,6 +21,11 @@ function useMediaQuery(query: string): boolean {
   return matches;
 }
 
+/** A phone held sideways: wide, but too short for editors that need preview, timeline and tools. */
+export function useIsLandscapePhone(): boolean {
+  return useMediaQuery('(orientation: landscape) and (max-height: 480px)');
+}
+
 /** Matches Tailwind `sm` — phone-tier (below 640px). */
 export function useIsMobile(): boolean {
   return useMediaQuery('(max-width: 639px)');

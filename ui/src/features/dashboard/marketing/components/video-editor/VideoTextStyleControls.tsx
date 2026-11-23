@@ -29,9 +29,16 @@ type Props = {
   layer: VideoSceneLayer;
   templateTypography: VideoTypographyContext;
   onChange: (patch: Partial<VideoSceneLayer>) => void;
+  /** The text box. Hide it where the screen already has its own (v2 inspector, phone panel). */
+  showTextInput?: boolean;
 };
 
-export function VideoTextStyleControls({ layer, templateTypography, onChange }: Props) {
+export function VideoTextStyleControls({
+  layer,
+  templateTypography,
+  onChange,
+  showTextInput = true,
+}: Props) {
   const isCta = layer.kind === 'cta';
   const typography = resolveLayerTypography(layer, templateTypography);
   const activePreset = detectActivePreset(layer);
@@ -74,13 +81,15 @@ export function VideoTextStyleControls({ layer, templateTypography, onChange }: 
 
   return (
     <div className="space-y-3">
-      <textarea
-        value={layer.text ?? ''}
-        onChange={(event) => onChange({ text: event.target.value })}
-        rows={2}
-        aria-label="Text content"
-        className="border-input bg-card placeholder:text-muted-foreground field-focus flex min-h-[72px] w-full resize-none rounded-md border px-3 py-2 text-sm"
-      />
+      {showTextInput ? (
+        <textarea
+          value={layer.text ?? ''}
+          onChange={(event) => onChange({ text: event.target.value })}
+          rows={2}
+          aria-label="Text content"
+          className="border-input bg-card placeholder:text-muted-foreground field-focus flex min-h-[72px] w-full resize-none rounded-md border px-3 py-2 text-sm"
+        />
+      ) : null}
 
       {!isCta ? (
         <div className="flex flex-wrap gap-1.5">
@@ -143,7 +152,7 @@ export function VideoTextStyleControls({ layer, templateTypography, onChange }: 
               type="button"
               variant={typography.fontWeight >= 700 ? 'default' : 'outline'}
               size="icon"
-              className="min-h-[44px] min-w-[44px]"
+              className="admin-overflow-trigger max-lg:border lg:min-h-[44px] lg:min-w-[44px] lg:before:content-none"
               aria-label="Bold"
               aria-pressed={typography.fontWeight >= 700}
               onClick={toggleBold}
@@ -154,7 +163,7 @@ export function VideoTextStyleControls({ layer, templateTypography, onChange }: 
               type="button"
               variant={(typography.strokeWidth ?? 0) > 0 ? 'default' : 'outline'}
               size="icon"
-              className="min-h-[44px] min-w-[44px] text-xs font-bold"
+              className="admin-overflow-trigger text-xs font-bold max-lg:border lg:min-h-[44px] lg:min-w-[44px] lg:before:content-none"
               aria-label="Outline"
               aria-pressed={(typography.strokeWidth ?? 0) > 0}
               onClick={toggleOutline}
@@ -178,7 +187,7 @@ export function VideoTextStyleControls({ layer, templateTypography, onChange }: 
             type="button"
             variant={(layer.position.align ?? 'center') === align ? 'default' : 'outline'}
             size="icon"
-            className="min-h-[44px] min-w-[44px] flex-1"
+            className="admin-overflow-trigger flex-1 max-lg:border lg:min-h-[44px] lg:min-w-[44px] lg:before:content-none"
             aria-label={`Align ${align}`}
             aria-pressed={(layer.position.align ?? 'center') === align}
             onClick={() => setAlign(align)}

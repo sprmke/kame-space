@@ -72,7 +72,7 @@ export function buildDefaultProjectV2(
 ): LoadedProjectV2 {
   const v1 = buildDefaultVideoProject(templateId, category, binding, format);
   return { project: migrateVideoProjectV1(v1), pendingMusic: pendingFrom(v1.music) };
-}/**
+} /**
  * Put the resolved track on the project as the looping `music` clip, replacing an earlier
  * version of it. A track with no URL leaves the project untouched.
  */
@@ -130,7 +130,10 @@ export function musicClipAsCue(item: AudioItem): VideoProjectMusic {
     volume: item.volume,
     title: item.title,
     artist: item.artist,
-    source: item.media.source === 'jamendo' ? 'jamendo' : 'upload',
+    source:
+      item.media.source === 'jamendo' || item.media.source === 'audius'
+        ? item.media.source
+        : 'upload',
     trackId: item.trackId,
   };
 }

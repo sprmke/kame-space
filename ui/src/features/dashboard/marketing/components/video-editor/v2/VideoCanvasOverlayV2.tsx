@@ -9,6 +9,7 @@ import {
   safeAreaGuides,
   type Guide,
 } from '@/features/dashboard/marketing/lib/video/v2/canvasTransformMath';
+import { captionStyleOf } from '@/features/dashboard/marketing/lib/video/v2/captionStyle';
 import { overlayAspect } from '@/features/dashboard/marketing/lib/video/v2/clipStyles';
 import { itemsActiveAt } from '@/features/dashboard/marketing/lib/video/v2/timelineTiming';
 import {
@@ -45,6 +46,8 @@ type Props = {
   snap: boolean;
   readOnly?: boolean;
   onSelect: (ids: string[]) => void;
+  /** A second tap on text that is already selected: open its editor. */
+  onEditText?: (itemId: string) => void;
   /** Called once per gesture on release (history) and live while dragging (preview). */
   onPatch: (patch: CanvasPatch) => void;
   onGestureEnd?: () => void;
@@ -84,6 +87,7 @@ export function VideoCanvasOverlayV2({
   snap,
   readOnly = false,
   onSelect,
+  onEditText,
   onPatch,
   onGestureEnd,
 }: Props) {
@@ -99,6 +103,14 @@ export function VideoCanvasOverlayV2({
         .map(({ item }) => item as LayerItem),
     [active]
   );
+  const captionLine = useMemo(() => {
+    const hit = active.find(
+      ({ item, track }) => item.type === 'caption' && track.kind === 'captions' && !track.hidden
+    );
+    return hit && hit.item.type === 'caption' ? hit.item : null;
+  }, [active]);
+  const { y: captionY, scale: captionScale } = useMemo(() => captionStyleOf(project), [project]);
+
   const overlayItems = useMemo(
     () =>
       active
@@ -243,7 +255,10 @@ export function VideoCanvasOverlayV2({
           }}
           onActivateElement={(layerId) => {
             const id = itemIdByLayerId.get(layerId);
-            if (id) onSelect([id]);
+            if (!id) return;
+            // First tap selects, a tap on text that is already selected edits it.
+            if (selectedIds.includes(id) && onEditText) onEditText(id);
+            else onSelect([id]);
           }}
           onLayerPositionChange={(layerId, position) => {
             const itemId = itemIdByLayerId.get(layerId);
@@ -252,6 +267,26 @@ export function VideoCanvasOverlayV2({
           onLayerWidthChange={(layerId, widthPct) => {
             const itemId = itemIdByLayerId.get(layerId);
             if (itemId) onPatch({ kind: 'layer-width', itemId, widthPct });
+          }}
+        />
+      ) : null}
+
+      {/* The caption line on screen: tap to select it, tap again to edit the words. */}
+      {captionLine && !readOnly ? (
+        <button
+          type="button"
+          aria-label={`Caption: ${captionLine.text}`}
+          className={cn(
+            'absolute left-[7%] right-[7%] z-50 -translate-y-1/2 touch-manipulation rounded-md border-2 transition-colors',
+            selectedIds.includes(captionLine.id)
+              ? 'border-primary'
+              : 'hover:border-primary/50 border-transparent'
+          )}
+          style={{ top: `${captionY}%`, height: `${Math.max(8, 7 * captionScale)}%` }}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => {
+            if (selectedIds.includes(captionLine.id) && onEditText) onEditText(captionLine.id);
+            else onSelect([captionLine.id]);
           }}
         />
       ) : null}

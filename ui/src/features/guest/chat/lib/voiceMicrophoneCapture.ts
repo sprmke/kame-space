@@ -7,7 +7,7 @@ const WORKLET_URL = '/worklets/voice-pcm-recorder.js';
 /** Anti-alias cutoff before the worklet downsamples the device rate to 16 kHz. */
 const ANTI_ALIAS_CUTOFF_HZ = 7_200;
 
-function friendlyMicErrorMessage(error: unknown): string {
+export function friendlyMicErrorMessage(error: unknown): string {
   const name = error instanceof DOMException ? error.name : '';
   if (name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError') {
     return 'Microphone access is blocked. Allow microphone access in your browser settings and try again.';

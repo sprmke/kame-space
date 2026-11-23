@@ -3,6 +3,8 @@
  * Register a client id at https://devportal.jamendo.com/
  */
 
+import type { MusicTrack } from './musicTypes.ts';
+
 const JAMENDO_API = 'https://api.jamendo.com/v3.0';
 
 export type JamendoTrack = {
@@ -51,6 +53,12 @@ export class JamendoApiError extends Error {
   }
 }
 
+/** A bad, missing or suspended client id. The source is then treated as not configured. */
+export function isJamendoAuthFailure(error: unknown): boolean {
+  if (!(error instanceof JamendoApiError)) return false;
+  return error.code === 5 || /invalid client id|not authorized|suspended/i.test(error.message);
+}
+
 function parseJamendoResponse(json: JamendoApiResponse): JamendoApiTrack[] {
   const status = json.headers?.status?.trim().toLowerCase();
   if (status && status !== 'success') {
@@ -94,7 +102,11 @@ function mapJamendoTrack(row: JamendoApiTrack): JamendoTrack | null {
 export async function fetchJamendoTracks(params: {
   clientId: string;
   search?: string;
-  order?: 'popularity_week' | 'popularity_total' | 'relevance';
+  order?: 'popularity_week' | 'popularity_month' | 'popularity_total' | 'relevance';
+  /** Space separated. A track must carry every tag (genre groups). */
+  tags?: string;
+  /** Space separated. A track may carry any tag; best match first (mood and collection groups). */
+  fuzzytags?: string;
   limit?: number;
   offset?: number;
 }): Promise<JamendoTrack[]> {
@@ -106,6 +118,10 @@ export async function fetchJamendoTracks(params: {
   url.searchParams.set('audioformat', 'mp32');
   url.searchParams.set('include', 'musicinfo');
   url.searchParams.set('order', params.order ?? 'popularity_week');
+
+  // URLSearchParams turns the spaces into `+`, which is how Jamendo separates tags.
+  if (params.tags?.trim()) url.searchParams.set('tags', params.tags.trim());
+  if (params.fuzzytags?.trim()) url.searchParams.set('fuzzytags', params.fuzzytags.trim());
 
   const search = params.search?.trim();
   if (search) {
@@ -146,4 +162,17 @@ export async function fetchJamendoTrackById(
   const rows = parseJamendoResponse(json);
   const row = rows[0];
   return row ? mapJamendoTrack(row) : null;
+}
+
+export function jamendoToMusicTrack(track: JamendoTrack): MusicTrack {
+  return {
+    id: track.id,
+    source: 'jamendo',
+    title: track.title,
+    artist: track.artist,
+    durationSec: track.durationSec,
+    imageUrl: track.imageUrl,
+    streamUrl: track.streamUrl,
+    exportable: true,
+  };
 }
