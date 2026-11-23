@@ -939,9 +939,9 @@
       const tierLabel = { now: 'do', later: 'later', skip: 'skip' };
       const tierText = { now: 'Do now', later: 'Later', skip: 'Skip' };
       const groups = [
-        { key: 'now', label: 'A · Do before promoting' },
-        { key: 'later', label: 'B · Polish later' },
-        { key: 'skip', label: 'C · Skip for now' },
+        { key: 'A', label: 'A · Guest experience, do now' },
+        { key: 'B', label: 'B · Operator and accessibility' },
+        { key: 'C', label: 'C · Skip for now' },
       ];
 
       const rail = document.getElementById('rail');
@@ -955,7 +955,7 @@
           heading.className = 'rail-group';
           heading.textContent = group.label;
           rail.appendChild(heading);
-          for (const item of items.filter((i) => i.tier === group.key)) {
+          for (const item of items.filter((i) => i.code.startsWith(group.key))) {
             const button = document.createElement('button');
             button.type = 'button';
             button.dataset.code = item.code;
