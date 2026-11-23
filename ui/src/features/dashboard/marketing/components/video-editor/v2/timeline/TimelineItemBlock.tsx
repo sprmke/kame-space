@@ -1,8 +1,9 @@
 import { memo } from 'react';
 
-import { Film, ImageIcon, Music, Type } from 'lucide-react';
+import { Film, ImageIcon, Mic, Music, Subtitles, Type } from 'lucide-react';
 
 import { TimelineWaveform } from '@/features/dashboard/marketing/components/video-editor/v2/timeline/TimelineWaveform';
+import { audioRoleOf } from '@/features/dashboard/marketing/lib/video/v2/audioDucking';
 import {
   itemAriaLabel,
   itemLabel,
@@ -11,6 +12,7 @@ import { frameToPx } from '@/features/dashboard/marketing/lib/video/v2/timelineS
 import { sourceDurationFrames } from '@/features/dashboard/marketing/lib/video/v2/timelineTiming';
 import {
   isAudioItem,
+  isCaptionItem,
   isLayerItem,
   isMediaItem,
   type VideoItem,
@@ -91,6 +93,8 @@ export const TimelineItemBlock = memo(function TimelineItemBlock({
   const width = Math.max(6, frameToPx(durationInFrames, pxPerFrame));
   const audio = isAudioItem(item);
   const layer = isLayerItem(item);
+  const caption = isCaptionItem(item);
+  const voice = isAudioItem(item) && audioRoleOf(item) === 'voice';
   const label = itemLabel(item);
 
   let startRatio = 0;
@@ -129,8 +133,10 @@ export const TimelineItemBlock = memo(function TimelineItemBlock({
         touch ? 'touch-pan-x touch-pan-y' : 'touch-none',
         'focus-visible:ring-primary focus-visible:ring-2',
         layer && 'border-violet-400/60 bg-violet-600',
-        audio && 'border-emerald-400/60 bg-emerald-700',
-        !layer && !audio && 'border-sky-400/50 bg-slate-800',
+        caption && 'border-amber-400/60 bg-amber-600',
+        audio && !voice && 'border-emerald-400/60 bg-emerald-700',
+        voice && 'border-rose-400/60 bg-rose-700',
+        !layer && !audio && !caption && 'border-sky-400/50 bg-slate-800',
         selected && 'ring-2 ring-white',
         dimmed && 'opacity-30',
         ghost && 'pointer-events-none opacity-70 shadow-lg',
@@ -150,7 +156,9 @@ export const TimelineItemBlock = memo(function TimelineItemBlock({
       {isMediaItem(item) ? <span className="absolute inset-0 bg-black/25" aria-hidden /> : null}
       <span className="relative flex h-full items-start gap-1 px-1.5 pt-0.5 text-[10px] font-medium leading-tight">
         {layer ? <Type className="mt-px size-3 shrink-0" aria-hidden /> : null}
-        {audio ? <Music className="mt-px size-3 shrink-0" aria-hidden /> : null}
+        {caption ? <Subtitles className="mt-px size-3 shrink-0" aria-hidden /> : null}
+        {audio && !voice ? <Music className="mt-px size-3 shrink-0" aria-hidden /> : null}
+        {voice ? <Mic className="mt-px size-3 shrink-0" aria-hidden /> : null}
         <span className="truncate [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]">{label}</span>
       </span>
 

@@ -253,12 +253,7 @@ export function CalendarMonthGrid<T>({
         </div>
 
         {hasItems && showPillLabels && !spanMode && (
-          <div
-            className={cn(
-              'mt-1.5 flex w-full flex-col gap-0.5 overflow-hidden',
-              !compact && 'hidden sm:flex'
-            )}
-          >
+          <div className="mt-1.5 flex w-full flex-col gap-0.5 overflow-hidden">
             {dayItems.slice(0, compact ? 1 : 2).map((item) => (
               <div
                 key={getItemKey(item)}
@@ -445,8 +440,12 @@ export function CalendarMonthGrid<T>({
                         laneHeightPx={spanLaneHeightPx}
                         variant="overlay"
                         gapClassName="gap-px"
-                        className={compact ? 'top-[1.125rem] pb-3 sm:top-5 sm:pb-3.5' : undefined}
-                        hiddenClassName={compact ? undefined : 'hidden sm:flex'}
+                        className={
+                          compact
+                            ? /* Clear the date numeral row so day-sheet taps still hit the cell. */
+                              'top-6 pb-2.5 sm:top-6 sm:pb-3'
+                            : undefined
+                        }
                       />
                     ) : (
                       <div className="border-border/60 bg-muted/25 dark:bg-muted/15 border-t">

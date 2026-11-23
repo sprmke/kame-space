@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { usePropertyIdParam } from '@/features/dashboard/org/lib/adminApiScope';
 
 import { fetchMarketingTrends } from '../lib/trends/trendsApi';
+
 import type { TrendWindow } from '../lib/trends/trendTypes';
 
 /** The list is rebuilt once a day, so the client cache can be generous. */

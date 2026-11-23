@@ -2,7 +2,7 @@
 title: 'Guest account — operator guide'
 status: active
 tags: [guides, routes, account]
-updated: 2026-11-22
+updated: 2026-11-23
 ---
 
 # Guest account — operator guide
@@ -65,6 +65,7 @@ Guests manage their own display name, bio, phone, location, and photo from their
 
 Explore account routes use a **dashboard-style sidebar** (not horizontal tabs):
 
+- Content column uses **`.public-shell`** (same max width + gutters as MarketingNav / footer), so the sidebar left edge lines up with the logo on large desktops. Do not wrap account pages in a second `container` / `max-w-*` with extra horizontal padding.
 - Desktop: card sidebar with avatar, vertical nav + sliding active pill, log out. Sidebar and main column **stretch to the same height** (taller side wins) so empty/list cards align with the nav card. Nav uses the same **Account / Trips / Help** group labels as the marketing avatar dropdown (`GUEST_ACCOUNT_NAV_GROUPS`)
 - Mobile: the site-wide `MarketingBottomNav` bottom tab bar (Explore/Properties/Parkings/Account/More) plus a **top** `GuestAccountMobileNav` strip (`sticky top-16`, `lg:hidden`) below the marketing header for the account sub-nav — deliberately kept as a top strip rather than a second bottom tab bar (two bottom bars stacked on one screen is an anti-pattern; see `mobile-responsive` skill §2b). The strip stays flat (no group labels) so the 4-column grid stays dense
 - Content sits below the fixed marketing nav (`pt-16 lg:pt-20`) so page titles no longer clash with the site header
@@ -77,7 +78,7 @@ Sub-nav order (same groups as the avatar menu): **Account** Profile · Favorites
 
 - Edit display name, bio, phone, location, profile photo
 - Same form opens from the **host dashboard** sidebar account menu → **Profile** (modal)
-- Dashboard modal: ~32×42rem (desktop), centered larger photo, read-only **Email** field above display name
+- Dashboard modal: ~32×42rem (desktop), centered larger photo, read-only **Email** field above display name. Below the form: **Theme** (segmented Light/Dark `ThemeToggle`, same control formerly on the sidebar) then **App**
 - Page layout: identity column (avatar, name, email) stays **centered** in its column at every breakpoint; form fields stay start-aligned on the right. Profile form uses `p-4 md:p-8 lg:p-10`. Booking alerts and App cards keep the same horizontal inset with a slightly tighter vertical pad (`px-4 py-3 md:px-8 md:py-5 lg:px-10 lg:py-6`) and shared `rounded-2xl` chrome
 - **Phone:** optional; when set, must be an 11-digit Philippine mobile (`09…`) — same rules as team invites (`validatePhilippineMobilePhone`)
 - **Location:** `LocationSearchInput` — Philippines-biased Places autocomplete (legacy `AutocompleteService` + `getDetails`); loads **Places library only** on first focus; suggestions in a Radix **Popover** (works inside dashboard Profile modal); stores city/province/country label (max 120 chars); manual typing when Maps API key is unset

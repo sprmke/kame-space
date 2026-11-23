@@ -10,6 +10,7 @@ import { useUpgradeModal } from '@/features/dashboard/plans/components/UpgradeMo
 
 import { Button } from '@/components/ui/button';
 import { useIsBelowLg } from '@/hooks/useMediaQuery';
+import { cn } from '@/lib/utils';
 
 type Props = {
   /** "Posts", "Videos", "Calendar": where Back goes. */
@@ -30,6 +31,8 @@ type Props = {
   history?: ReactNode;
   /** Download / Publish (desktop). */
   actions?: ReactNode;
+  /** Trailing controls on phones (for example Undo, Redo and a primary Export button). */
+  phoneActions?: ReactNode;
 };
 
 /**
@@ -50,6 +53,7 @@ export function MarketingEditorTopBar({
   size,
   history,
   actions,
+  phoneActions,
 }: Props) {
   const isBelowLg = useIsBelowLg();
   const { open: openUpgradeModal } = useUpgradeModal();
@@ -67,11 +71,11 @@ export function MarketingEditorTopBar({
 
   return (
     <div className="border-border bg-card shrink-0 border-b">
-      <div className="flex min-h-[52px] items-center gap-1 px-1.5 py-1 sm:gap-2 sm:px-3">
+      <div className="flex min-h-[44px] items-center gap-1 px-1.5 py-1 sm:min-h-[52px] sm:gap-2 sm:px-3">
         <Button
           type="button"
           variant="ghost"
-          className="min-h-[44px] shrink-0 gap-1 px-2"
+          className="relative h-8 min-h-0 shrink-0 gap-1 px-1.5 before:absolute before:-inset-x-1 before:-inset-y-2 before:content-[''] sm:h-auto sm:min-h-[44px] sm:px-2 sm:before:content-none"
           onClick={() => void handleBack()}
           aria-label={`Back to ${backLabel}`}
         >
@@ -86,10 +90,17 @@ export function MarketingEditorTopBar({
         <MarketingInlineName
           name={name}
           onRename={canSave ? onRename : undefined}
-          className="max-w-[min(22rem,45vw)]"
+          className={cn(
+            'max-w-[min(22rem,45vw)]',
+            phoneActions && 'max-lg:max-w-none max-lg:flex-1'
+          )}
         />
         {canSave ? (
-          <MarketingAutoSaveStatus status={status} errorMessage={errorMessage} />
+          <MarketingAutoSaveStatus
+            status={status}
+            errorMessage={errorMessage}
+            compact={isBelowLg && Boolean(phoneActions)}
+          />
         ) : (
           <button
             type="button"
@@ -106,6 +117,8 @@ export function MarketingEditorTopBar({
             {size}
             {actions}
           </div>
+        ) : phoneActions ? (
+          <div className="ml-auto flex shrink-0 items-center gap-0.5">{phoneActions}</div>
         ) : null}
       </div>
       {status === 'conflict' ? (

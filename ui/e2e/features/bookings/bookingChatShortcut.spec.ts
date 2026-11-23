@@ -68,8 +68,20 @@ test.describe('@ci booking chat shortcut', () => {
     );
   });
 
-  test('no thread shows a toast that can search Messages by guest name', async ({ page }) => {
+  test('no thread creates a web chat and opens Messages when the host can reply', async ({
+    page,
+  }) => {
     const chatButton = await openBookings(page, []);
+    await chatButton.click();
+    await expect(page).toHaveURL(
+      new RegExp(`${PROPERTY_INBOX}\\?conversationId=conv-web-new&platform=web`)
+    );
+  });
+
+  test('no thread shows a search toast when the host cannot reply', async ({ page }) => {
+    const chatButton = await openBookings(page, [], {
+      mocks: { omitPermissions: ['inbox:reply', 'inbox.messages:edit'] },
+    });
     await chatButton.click();
     await expect(page.getByText('No chat for this booking yet')).toBeVisible();
     await page.getByRole('button', { name: 'Search Messages' }).click();

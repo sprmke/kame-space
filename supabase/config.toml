@@ -1051,6 +1051,9 @@ verify_jwt = false
 [functions.social-inbox-booking-chats]
 verify_jwt = false
 
+[functions.social-inbox-ensure-booking-chat]
+verify_jwt = false
+
 [functions.social-inbox-messages]
 verify_jwt = false
 
@@ -1198,6 +1201,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.marketing-media]
+verify_jwt = false
+
+[functions.marketing-video-captions]
 verify_jwt = false
 
 [functions.marketing-media-sweeper]

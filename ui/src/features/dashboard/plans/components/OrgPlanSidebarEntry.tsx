@@ -252,12 +252,13 @@ export function OrgPlanSidebarEntry({
         aria-haspopup="dialog"
         className={cn(
           surface,
-          'flex w-full min-w-0 items-center gap-2.5 rounded-xl p-2 text-left',
+          // Equal inset on all sides (p-2 left the icon optically tight top/bottom).
+          'flex w-full min-w-0 items-center gap-2.5 rounded-xl p-3 text-left',
           variant === 'more' && 'min-h-12',
           className
         )}
       >
-        <PlanTierIconWell planCode={planCode} size="sm" className="size-8 rounded-lg" />
+        <PlanTierIconWell planCode={planCode} size="sm" className="size-8 shrink-0 rounded-lg" />
         {/* WCAG 2.5.3: name keeps the visible plan + status text; the affordance is sr-only. */}
         <span className="sr-only">View features. </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -295,7 +296,7 @@ function OrgPlanChipSkeleton({
   return (
     <div
       className={cn(
-        'border-border/60 flex w-full items-center gap-2.5 rounded-xl border p-2',
+        'border-border/60 flex w-full items-center gap-2.5 rounded-xl border p-3',
         variant === 'more' && 'min-h-12',
         className
       )}

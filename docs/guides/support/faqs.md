@@ -543,7 +543,7 @@ Meta only allows replies within 24 hours of the guest's last message. After that
 - source: docs/guides/routes/org/property/bookings.md
 - order: 15
 
-It opens that guest's conversation in Messages. One chat opens straight away, several let you pick the channel, and none shows a message with Search Messages. Website chats linked to the booking match exactly, while Facebook and Instagram chats match by the guest name or Facebook name on the booking and are labeled Name match. You only see the icon if you can view Messages.
+It opens that guest's conversation in Messages. One chat opens straight away, several let you pick the channel, and none starts a new website Chat when you can reply so you can message first. View-only team members get a Search Messages tip instead. Website chats linked to the booking match exactly, while Facebook and Instagram chats match by guest name when they are not linked. You only see the icon if you can view Messages.
 
 ### Where do I set quick replies and automation for Guest Inbox?
 
@@ -869,6 +869,69 @@ Yes. Open the item from Your creations and keep editing by hand, or send a chang
 
 Times, deposit, and amenities come from your property settings word for word. The AI writes the headline and short lines, but it cannot add an amenity, price, or time you have not saved.
 
+### How do I add text and labels to a video?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 55
+
+Open the video and tap Text, then Text styles. Pick a Headline, Caption, Name tag, Location, Price, Rating or Button and it lands where the playhead is. Tap Style to restyle it with one tap, or Edit to change the words. Drag the ends of its bar on the timeline to show it for longer or shorter.
+
+### How do I change the words on my video?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 55.5
+
+Tap the text on the video, then tap it again to edit it. You can also select it on the timeline and tap Edit. Captions work the same way, and Edit captions lists every line so you can fix them in one place.
+
+### Can I record a voiceover on my video?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 56
+
+Yes. In the video editor tap Audio, then Record voice, allow the microphone and tap the red button. Talk while the video plays and tap again to stop. Your voice is saved to Your media and counts toward your storage. Music gets quieter by itself while you talk.
+
+### How do I add trending music to my video?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 57
+
+In the video editor tap Audio, then Music. You start on Trending songs. The top row is Saved, Trending, Popular, Genres, Moods and For stays. Genres, moods and stay ideas open a second row (Chill, Calm, Beach day and so on). Tap a song to hear it, the bookmark to save it on this device, and the plus button to add it where the playhead is. Songs you add are part of your video, so they are in the download and in posts.
+
+### Can I use songs from Instagram?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 58
+
+Yes, for Instagram Reels. In Music tap Instagram, pick a song and tap Use. Instagram adds the song when you post the video as a Reel from Publish. You need Instagram connected in Messages, and some accounts do not get Instagram music. The song is not in a downloaded video.
+
+### Why is my Instagram song not in the downloaded video?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 59
+
+Instagram only adds its songs when you post a Reel from Publish. A download is just your video. If you want music inside the file, pick a song from In video instead. Those are mixed into the download and into posts.
+
+### Can I get subtitles made automatically?
+
+- category: Marketing Studio
+- audience: host
+- source: docs/guides/routes/org/property/marketing.md
+- order: 57
+
+Yes. Record a voice or add a video with sound, then tap Text and Auto captions. Pick what to listen to and the language, and the words appear on your video with the spoken word highlighted. You can fix any word in Edit captions. The sound is sent to our speech service to write the words and is not kept. Captions use your AI allowance.
+
 ### Can I recover something I deleted?
 
 - category: Marketing Studio
@@ -905,14 +968,14 @@ Analytics uses a night-by-night calculation like the dashboard, but it lets you 
 
 Some bookings do not have a parseable address, nationality, or guest age. They are shown as their own bucket instead of being dropped, so the percentages stay honest.
 
-### What does How you compare mean?
+### What does Marketing results show?
 
 - category: Analytics & Reports
 - audience: host
 - source: docs/guides/routes/org/property/analytics.md
 - order: 40
 
-It shows your occupancy and average nightly rate against the median of other active Pro listings on Kame, not named competitors. It stays empty until enough peer listings have bookings in the same kind of period.
+Visits and booking requests from tracked planner posts in the selected period. The numbers are a lower bound. If nothing was tracked, Open plan takes you to Marketing to schedule posts.
 
 ### Can I download an analytics report on Free?
 

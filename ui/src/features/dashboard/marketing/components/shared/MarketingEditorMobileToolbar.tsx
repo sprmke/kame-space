@@ -95,10 +95,10 @@ export function MarketingEditorMobileToolbar({
         role="toolbar"
         aria-label="Editor actions"
       >
-        <div className={cn(mobileFloatingToolbarClassName, 'px-3 py-2.5')}>
-          <div className="pointer-events-auto flex items-center gap-2">
+        <div className={cn(mobileFloatingToolbarClassName, 'px-2 py-1.5')}>
+          <div className="pointer-events-auto flex items-center gap-1.5">
             {panels ? (
-              <div className="flex min-w-0 flex-1 items-center gap-1">
+              <div className="flex min-w-0 flex-1 items-center gap-0.5">
                 {panels.map((panel) => {
                   const Icon = panel.icon;
                   const selected = activePanel === panel.key;
@@ -107,11 +107,11 @@ export function MarketingEditorMobileToolbar({
                       key={panel.key}
                       type="button"
                       variant={selected ? 'default' : 'ghost'}
-                      className="h-auto min-h-[44px] min-w-0 flex-1 flex-col gap-0.5 px-1 py-1 text-[10px] font-medium leading-tight"
+                      className="h-auto min-h-[44px] min-w-0 flex-1 flex-col gap-0.5 px-0.5 py-0.5 text-[10px] font-medium leading-tight"
                       aria-pressed={selected}
                       onClick={() => onSelectPanel(selected ? null : panel.key)}
                     >
-                      <Icon className="size-[18px] shrink-0" aria-hidden />
+                      <Icon className="size-4 shrink-0" aria-hidden />
                       <span className="max-w-full truncate">{panel.label}</span>
                     </Button>
                   );
@@ -121,7 +121,7 @@ export function MarketingEditorMobileToolbar({
               <Button
                 type="button"
                 variant={panelOpen ? 'default' : 'outline'}
-                className="min-h-[44px] flex-1 justify-start gap-2"
+                className="h-9 min-h-[44px] flex-1 justify-start gap-2"
                 aria-pressed={panelOpen}
                 onClick={onTogglePanel}
               >
@@ -144,7 +144,7 @@ export function MarketingEditorMobileToolbar({
                 type="button"
                 variant="outline"
                 size="icon"
-                className="size-11 shrink-0"
+                className="admin-overflow-trigger shrink-0 border"
                 aria-label={overflowLabel}
                 aria-haspopup="dialog"
                 aria-expanded={overflowOpen}

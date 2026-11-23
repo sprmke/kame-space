@@ -50,8 +50,12 @@ dates that should not be available to guests.
 **Common host questions**
 
 - Q: How do I see who is staying on a night?
-  A: Booked stays appear as colored pills spanning check-in through the night before
-  check-out. Hover a pill for the guest, dates, and total. Click the pill to open details.
+  A: Booked stays appear as status-colored pills (same tones as Bookings) spanning
+  check-in through the night before check-out, with the guest photo and name. Hover a
+  pill for the guest, dates, status, and total. Click the pill to open details.
+- Q: Why are some dates at the edge of the month faded?
+  A: Those are days from the previous or next month that fill out the week. Faded pads keep
+  a stay that crosses the month edge on a real tile. Tap one to jump to that month.
 - Q: Can I change the rate on a booked night?
   A: No. Booked nights show the guest stay, not a list price. Open the stay to see the
   booking amount; change pricing on the booking itself if needed.
@@ -344,8 +348,14 @@ modal with the X or Escape (no Cancel button).
 - Cancelled stays are included on the grid (muted pill) and render **above** active stays
   when they overlap the same night. They do not lock the night or hide the list price unless
   another non-cancelled stay also occupies it.
-- A teal pill spans the stay across the week grid, inset to match the rate-chip width.
-  Multiple stays stack in separate lanes when they overlap in the same week.
+- A **status-tone pill** (same badge colors as Bookings / dashboard) spans the stay across
+  the week grid, inset to match the rate-chip width, with guest avatar + name. Nightly
+  list prices stay on unbooked cells. Multiple stays stack in separate lanes when they
+  overlap in the same week.
+- Leading and trailing **adjacent-month** days use the same cell content as in-month days
+  (nightly price, holiday/custom/smart markers, blocked/booked state) at ~36% opacity so
+  week-edge stay pills sit on matching tiles instead of empty space. Tap an outside day to
+  jump to that month; selection and rate edits stay in-month only.
 - The calendar shows up to **three** visible stay lanes per day. If a day has more than three
   overlapping stays, the cell shows a `+N` badge in the top-right. Hovering that badge lists
   the hidden bookings for that day.
@@ -417,21 +427,22 @@ double-booking-safe the moment it syncs in.
 
 ## Implementation map
 
-| UI                                                                             | Server                                                                                                                                                                              |
-| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ui/src/features/dashboard/pricing/pages/PropertyPricingPage.tsx`              | `supabase/functions/property-pricing/index.ts`                                                                                                                                      |
-| `ui/src/features/dashboard/pricing/components/PricingCalendarGrid.tsx`         | `supabase/functions/_shared/propertyPricing.ts`                                                                                                                                     |
-| `ui/src/features/dashboard/pricing/components/PricingCalendarBookingModal.tsx` | `supabase/functions/_shared/propertyBlockedDates.ts`                                                                                                                                |
-| `ui/src/features/dashboard/pricing/routes/index.tsx`                           | —                                                                                                                                                                                   |
-| Loading skeleton (`PricingPageBodySkeleton`)                                   | `ui/src/components/skeletons/PricingSkeleton.tsx` — 4 stat cards, the live month's week rows (day + price cells, outside days blank), rates card with 5 fee rows (stacked on phone) |
-| `ui/src/features/dashboard/pricing/components/ChannelSyncDialog.tsx`           | `supabase/functions/calendar-sync-settings/index.ts`                                                                                                                                |
-| `ui/src/features/dashboard/pricing/hooks/useCalendarSync.ts`                   | `supabase/functions/calendar-sync-cron/index.ts`                                                                                                                                    |
-| `ui/src/features/dashboard/pricing/lib/calendarSyncApi.ts`                     | `supabase/functions/ical-export/index.ts`                                                                                                                                           |
-| `ui/src/features/dashboard/pricing/lib/importedBooking.ts`                     | `supabase/functions/_shared/externalBookingIngest.ts`                                                                                                                               |
-| —                                                                              | `supabase/functions/_shared/calendarSyncService.ts` / `calendarSyncRun.ts`                                                                                                          |
+| UI                                                                             | Server                                                                                                                                                                                     |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ui/src/features/dashboard/pricing/pages/PropertyPricingPage.tsx`              | `supabase/functions/property-pricing/index.ts`                                                                                                                                             |
+| `ui/src/features/dashboard/pricing/components/PricingCalendarGrid.tsx`         | `supabase/functions/_shared/propertyPricing.ts`                                                                                                                                            |
+| `ui/src/features/dashboard/pricing/components/PricingCalendarBookingModal.tsx` | `supabase/functions/_shared/propertyBlockedDates.ts`                                                                                                                                       |
+| `ui/src/features/dashboard/pricing/routes/index.tsx`                           | —                                                                                                                                                                                          |
+| Loading skeleton (`PricingPageBodySkeleton`)                                   | `ui/src/components/skeletons/PricingSkeleton.tsx` — 4 stat cards, the live month's week rows (day + price cells, muted adjacent-month pads), rates card with 5 fee rows (stacked on phone) |
+| `ui/src/features/dashboard/pricing/components/ChannelSyncDialog.tsx`           | `supabase/functions/calendar-sync-settings/index.ts`                                                                                                                                       |
+| `ui/src/features/dashboard/pricing/hooks/useCalendarSync.ts`                   | `supabase/functions/calendar-sync-cron/index.ts`                                                                                                                                           |
+| `ui/src/features/dashboard/pricing/lib/calendarSyncApi.ts`                     | `supabase/functions/ical-export/index.ts`                                                                                                                                                  |
+| `ui/src/features/dashboard/pricing/lib/importedBooking.ts`                     | `supabase/functions/_shared/externalBookingIngest.ts`                                                                                                                                      |
+| —                                                                              | `supabase/functions/_shared/calendarSyncService.ts` / `calendarSyncRun.ts`                                                                                                                 |
 
-Spanning pill layout reuses `calendarDateUtils` and `CalendarOccupancySpanTrack` from the
-bookings calendar module.
+Spanning pill layout reuses `calendarDateUtils`, `CalendarOccupancySpanTrack`, and
+`occupancySpanRoundedClass` from the bookings calendar module. Booked pills use the same
+`statusToneStyle` badge chrome as occupancy calendar pills, plus guest avatar + name.
 
 ---
 

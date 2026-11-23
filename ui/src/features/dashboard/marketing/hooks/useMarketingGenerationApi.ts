@@ -16,12 +16,12 @@ import {
 import { getSessionJwt } from '@/features/dashboard/org/lib/edgeClient';
 import type { PlanFeatureKey } from '@/features/dashboard/plans/lib/planFeatures';
 
-import { friendlyToastError } from '@/lib/feedback/toastMessages';
 import {
   FeatureUnavailableMutationError,
   throwIfFeatureUnavailableBody,
   toastFeatureUnavailable,
 } from '@/lib/featureAvailability/featureUnavailableError';
+import { friendlyToastError } from '@/lib/feedback/toastMessages';
 
 const DEFAULT_QUOTA_FEATURE: PlanFeatureKey = 'aiMarketingImageGeneration';
 

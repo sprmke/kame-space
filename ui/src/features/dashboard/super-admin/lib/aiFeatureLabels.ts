@@ -23,6 +23,7 @@ const AI_FEATURE_LABELS: Record<string, string> = {
   review_draft: 'Review draft',
   identity_extraction: 'Identity document read',
   marketing_trends_classify: 'Marketing trends classify',
+  marketing_video_captions: 'Video auto captions',
 };
 
 export const AI_FEATURE_LABEL_KEYS = Object.keys(AI_FEATURE_LABELS);

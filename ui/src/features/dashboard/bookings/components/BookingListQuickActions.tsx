@@ -16,7 +16,7 @@ import {
   resolveBookingChatDestination,
 } from '@/features/dashboard/bookings/lib/bookingChatLink';
 import type { BookingRow } from '@/features/dashboard/bookings/lib/types';
-import { fetchBookingChats } from '@/features/dashboard/inbox/lib/inboxApi';
+import { ensureBookingWebChat, fetchBookingChats } from '@/features/dashboard/inbox/lib/inboxApi';
 import type { BookingChatMatch } from '@/features/dashboard/inbox/types/inbox';
 import { useOptionalOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { useOptionalParkingContext } from '@/features/dashboard/org/components/RequireParkingContext';
@@ -59,14 +59,14 @@ function failureMessage(error: unknown): string {
     if (error.status === 403) return 'You do not have access to Messages here';
     if (error.status === 404) return 'This booking is no longer available';
   }
-  return 'Could not check chats. Try again';
+  return 'Could not open chat. Try again';
 }
 
 /**
  * Chat shortcut on bookings list surfaces (table Actions, card, kanban, calendar day detail).
  *
- * One thread opens it directly in the property or parking Inbox. Several open a picker. None
- * explains itself and offers a search. Always stays inside Messages.
+ * One thread opens it directly in Messages. Several open a picker. None creates a web (Chat)
+ * thread when the host can reply, then opens it. Always stays inside Messages.
  */
 export function BookingListQuickActions({ row, className, stopPropagation = true }: Props) {
   const navigate = useNavigate();
@@ -105,6 +105,11 @@ export function BookingListQuickActions({ row, className, stopPropagation = true
       : hasParkingPermission(parkingAccess.data?.permissions, 'inbox:view');
   if (!canViewInbox) return null;
 
+  const canReplyInbox =
+    destination.kind === 'property'
+      ? hasPropertyPermission(propertyAccess.data?.permissions, 'inbox.messages:edit')
+      : hasParkingPermission(parkingAccess.data?.permissions, 'inbox:reply');
+
   const guestName = bookingChatGuestName(row);
   const scope =
     destination.kind === 'property'
@@ -140,6 +145,12 @@ export function BookingListQuickActions({ row, className, stopPropagation = true
         openMatch(outcome.match);
       } else if (outcome.kind === 'choose') {
         setPickerMatches(outcome.matches);
+      } else if (canReplyInbox) {
+        const created = await ensureBookingWebChat(orgSlug, orgId, row.id, scope);
+        void queryClient.invalidateQueries({
+          queryKey: ['booking-chats', destination.kind, destination.id, row.id],
+        });
+        openMatch(created);
       } else {
         toast('No chat for this booking yet', {
           action: { label: 'Search Messages', onClick: openSearch },

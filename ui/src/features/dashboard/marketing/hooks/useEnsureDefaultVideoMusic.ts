@@ -68,7 +68,7 @@ export function useEnsureDefaultVideoMusic(project: VideoProject | null, setProj
           const q = [baseMusic.artist, baseMusic.title].filter(Boolean).join(' ');
           try {
             const jwt = await getSessionJwt();
-            const params = new URLSearchParams({ order: 'relevance', q });
+            const params = new URLSearchParams({ only: 'jamendo', q });
             const res = await fetch(scopedFunctionsUrl(`marketing-music?${params}`, propertyId), {
               headers: { Authorization: `Bearer ${jwt}` },
             });
@@ -173,7 +173,12 @@ export function useResolveDefaultVideoMusic(
   }, []);
 
   const cueKey = pendingMusic
-    ? [pendingMusic.trackId ?? '', pendingMusic.title ?? '', pendingMusic.artist ?? '', pendingMusic.url ?? ''].join('|')
+    ? [
+        pendingMusic.trackId ?? '',
+        pendingMusic.title ?? '',
+        pendingMusic.artist ?? '',
+        pendingMusic.url ?? '',
+      ].join('|')
     : null;
 
   useEffect(() => {
@@ -201,7 +206,7 @@ export function useResolveDefaultVideoMusic(
           const q = [pendingMusic.artist, pendingMusic.title].filter(Boolean).join(' ');
           try {
             const jwt = await getSessionJwt();
-            const params = new URLSearchParams({ order: 'relevance', q });
+            const params = new URLSearchParams({ only: 'jamendo', q });
             const res = await fetch(scopedFunctionsUrl(`marketing-music?${params}`, propertyId), {
               headers: { Authorization: `Bearer ${jwt}` },
             });
@@ -246,5 +251,13 @@ export function useResolveDefaultVideoMusic(
         runningRef.current = false;
       }
     })();
-  }, [cueKey, enabled, pendingMusic, propertyId, setMusic, trendingQuery.data?.tracks, trendingQuery.refetch]);
+  }, [
+    cueKey,
+    enabled,
+    pendingMusic,
+    propertyId,
+    setMusic,
+    trendingQuery.data?.tracks,
+    trendingQuery.refetch,
+  ]);
 }

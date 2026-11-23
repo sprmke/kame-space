@@ -4,9 +4,11 @@ import {
   OrgAnalyticsAttention,
   OrgAnalyticsKindBadge,
   OrgAnalyticsOutlook,
+  OrgAnalyticsPromoteHint,
   OrgAnalyticsRevenueChange,
   orgAnalyticsListingHref,
 } from '@/features/dashboard/analytics/components/OrgAnalyticsListingParts';
+import type { PromotionCandidate } from '@/features/dashboard/analytics/lib/marketingPortfolio';
 import { orgAttentionReasons } from '@/features/dashboard/analytics/lib/orgAnalyticsListings';
 import {
   orgPortfolioListingKind,
@@ -20,6 +22,7 @@ import { formatMoneyCompact } from '@/utils/format/currency';
 type Props = {
   row: OrgPortfolioRow;
   orgSlug: string;
+  promote?: PromotionCandidate;
 };
 
 type UnlockedRow = Extract<OrgPortfolioRow, { locked: false }>;
@@ -57,7 +60,7 @@ function RevenueValue({ row }: { row: UnlockedRow }) {
   );
 }
 
-function NameLink({ row, orgSlug }: Props) {
+function NameLink({ row, orgSlug }: Pick<Props, 'row' | 'orgSlug'>) {
   const name = orgPortfolioListingName(row);
   return (
     <Link
@@ -85,7 +88,15 @@ function AttentionReasonLines({ row }: { row: UnlockedRow }) {
   );
 }
 
-function MetricsBlock({ row }: { row: UnlockedRow }) {
+function MetricsBlock({
+  row,
+  orgSlug,
+  promote,
+}: {
+  row: UnlockedRow;
+  orgSlug: string;
+  promote?: PromotionCandidate;
+}) {
   return (
     <div className="border-separator space-y-2.5 border-t pt-3">
       <div className="grid grid-cols-3 gap-3">
@@ -95,16 +106,23 @@ function MetricsBlock({ row }: { row: UnlockedRow }) {
         </Metric>
         <Metric label="Bookings">{row.reservations}</Metric>
       </div>
-      <div className="text-muted-foreground relative z-[1] flex min-w-0 items-baseline gap-1.5 text-[11px] leading-none sm:text-xs">
-        <span className="shrink-0">Outlook</span>
-        <OrgAnalyticsOutlook row={row} compact className="min-w-0 truncate text-[11px] sm:text-xs" />
+      <div className="relative z-[1] flex min-w-0 items-center justify-between gap-2">
+        <div className="text-muted-foreground flex min-w-0 items-baseline gap-1.5 text-[11px] leading-none sm:text-xs">
+          <span className="shrink-0">Outlook</span>
+          <OrgAnalyticsOutlook
+            row={row}
+            compact
+            className="min-w-0 truncate text-[11px] sm:text-xs"
+          />
+        </div>
+        <OrgAnalyticsPromoteHint candidate={promote} orgSlug={orgSlug} className="shrink-0" />
       </div>
     </div>
   );
 }
 
 /** Grid view: stacked card. */
-export function OrgAnalyticsListingCard({ row, orgSlug }: Props) {
+export function OrgAnalyticsListingCard({ row, orgSlug, promote }: Props) {
   return (
     <article className={CARD_CLASS}>
       <div className="min-w-0 space-y-1.5">
@@ -127,7 +145,7 @@ export function OrgAnalyticsListingCard({ row, orgSlug }: Props) {
       ) : (
         <>
           <AttentionReasonLines row={row} />
-          <MetricsBlock row={row} />
+          <MetricsBlock row={row} orgSlug={orgSlug} promote={promote} />
         </>
       )}
     </article>
@@ -135,7 +153,7 @@ export function OrgAnalyticsListingCard({ row, orgSlug }: Props) {
 }
 
 /** List view: one wide row per listing. */
-export function OrgAnalyticsListingRow({ row, orgSlug }: Props) {
+export function OrgAnalyticsListingRow({ row, orgSlug, promote }: Props) {
   return (
     <article className={cn(CARD_CLASS, 'lg:flex-row lg:items-center lg:gap-5')}>
       <div className="min-w-0 flex-1 space-y-1 lg:max-w-[18rem] lg:shrink-0">
@@ -157,13 +175,16 @@ export function OrgAnalyticsListingRow({ row, orgSlug }: Props) {
             </Metric>
             <Metric label="Bookings">{row.reservations}</Metric>
           </div>
-          <div className="relative z-[1] min-w-0 lg:w-40 lg:shrink-0">
-            <p className="text-muted-foreground text-[11px] font-medium leading-none">Outlook</p>
-            <OrgAnalyticsOutlook
-              row={row}
-              compact
-              className="mt-1 min-w-0 truncate text-sm font-semibold leading-none"
-            />
+          <div className="relative z-[1] flex min-w-0 items-end justify-between gap-3 lg:w-48 lg:shrink-0 lg:flex-col lg:items-start lg:justify-start lg:gap-1.5">
+            <div className="min-w-0">
+              <p className="text-muted-foreground text-[11px] font-medium leading-none">Outlook</p>
+              <OrgAnalyticsOutlook
+                row={row}
+                compact
+                className="mt-1 min-w-0 truncate text-sm font-semibold leading-none"
+              />
+            </div>
+            <OrgAnalyticsPromoteHint candidate={promote} orgSlug={orgSlug} className="shrink-0" />
           </div>
         </>
       )}

@@ -31,6 +31,10 @@ export const VIDEO_V2_LIMITS = {
   maxDurationFrames: 60 * VIDEO_V2_FPS,
   maxTracks: 10,
   maxItems: 150,
+  /** Caption lines are counted on their own, not against `maxItems`. */
+  maxCaptionItems: 200,
+  maxCaptionTextLength: 200,
+  maxCaptionWords: 100,
   /** Videos that may be visible at the same frame (preview and export decode cost). */
   maxVisibleVideos: 3,
   /** Shortest clip: 0.1 s. */
@@ -46,7 +50,7 @@ export const VIDEO_V2_LIMITS = {
 export const VIDEO_PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 export type VideoPlaybackRate = (typeof VIDEO_PLAYBACK_RATES)[number];
 
-export type VideoTrackKind = 'main' | 'overlay' | 'text' | 'audio';
+export type VideoTrackKind = 'main' | 'overlay' | 'text' | 'audio' | 'captions';
 
 export type VideoTrack = {
   id: string;
@@ -57,11 +61,13 @@ export type VideoTrack = {
   /** Audio-capable tracks (audio, and video clips on main/overlay). */
   muted?: boolean;
   locked?: boolean;
+  /** `captions` tracks only: how every caption line on the track looks. */
+  captionStyle?: CaptionStyle;
   /** Sorted by `from`. */
   items: VideoItem[];
 };
 
-export type MediaSource = 'property' | 'library' | 'ai' | 'jamendo' | 'upload' | 'url';
+export type MediaSource = 'property' | 'library' | 'ai' | 'jamendo' | 'audius' | 'upload' | 'url';
 
 export type MediaRef = {
   url: string;
@@ -139,6 +145,9 @@ export type LayerItem = ItemBase & {
   animationOut?: { type: TextAnimation; durationInFrames: number };
 };
 
+/** What an audio clip is for. Missing means music (or sound, when it came from a video). */
+export type AudioRole = 'music' | 'voice' | 'sound';
+
 export type AudioItem = ItemBase & {
   type: 'audio';
   media: MediaRef;
@@ -149,11 +158,59 @@ export type AudioItem = ItemBase & {
   loop?: boolean;
   title?: string;
   artist?: string;
-  /** Jamendo track id. */
+  /** Jamendo or Audius track id (see `media.source`). */
   trackId?: string;
+  role?: AudioRole;
+  /** Music only: lower the volume while a voice clip plays. On unless `false`. */
+  duckUnderVoice?: boolean;
+  /** Set when the sound was separated from a video clip. */
+  sourceItemId?: string | null;
 };
 
-export type VideoItem = MediaItem | LayerItem | AudioItem;
+export type CaptionWord = {
+  text: string;
+  /** Milliseconds from the start of the caption line. */
+  startMs: number;
+  endMs: number;
+};
+
+/** One subtitle line. Words keep their timing so the spoken word can be highlighted. */
+export type CaptionItem = ItemBase & {
+  type: 'caption';
+  text: string;
+  words: CaptionWord[];
+  /** The voice or video clip it was made from, when known. */
+  sourceItemId?: string | null;
+};
+
+export type CaptionLookId = 'clean' | 'outline' | 'box' | 'highlight';
+
+export type CaptionStyle = {
+  look: CaptionLookId;
+  /** Vertical position, % from the top of the frame. */
+  y: number;
+  /** Size multiplier, 0.7 to 1.6. */
+  scale: number;
+};
+
+export const DEFAULT_CAPTION_STYLE: CaptionStyle = { look: 'highlight', y: 78, scale: 1 };
+
+export type VideoItem = MediaItem | LayerItem | AudioItem | CaptionItem;
+
+/**
+ * A song from Instagram's own library, picked for a Reel. Instagram mixes it in when the video is
+ * posted, so it is not an `AudioItem`: it has no place on the timeline, cannot start at an offset
+ * and is never rendered into an exported file.
+ */
+export type InstagramSong = {
+  audioId: string;
+  title: string;
+  artist: string;
+  imageUrl: string | null;
+  durationSec: number;
+  /** How loud the song is against the video's own sound, 1 to 100. */
+  volume: number;
+};
 
 export type VideoProjectV2 = {
   version: 2;
@@ -163,6 +220,8 @@ export type VideoProjectV2 = {
   fps: number;
   palette?: CampaignPalette;
   sourceReviewId?: string | null;
+  /** Song Instagram adds when this video is posted as a Reel. */
+  instagramSong?: InstagramSong;
   /** Shows behind letterboxed media. */
   background: { color: string; fill: 'color' | 'blur' };
   /** Bottom to top. `tracks[0]` is always the single `main` track. */
@@ -180,6 +239,8 @@ export function trackAccepts(kind: VideoTrackKind, item: VideoItem): boolean {
       return item.type === 'layer';
     case 'audio':
       return item.type === 'audio';
+    case 'captions':
+      return item.type === 'caption';
   }
 }
 
@@ -191,15 +252,21 @@ export function isLayerItem(item: VideoItem): item is LayerItem {
   return item.type === 'layer';
 }
 
+export function isCaptionItem(item: VideoItem): item is CaptionItem {
+  return item.type === 'caption';
+}
+
 export function isAudioItem(item: VideoItem): item is AudioItem {
   return item.type === 'audio';
-}export const DEFAULT_VISUAL_TRANSFORM: VisualTransform = {
+}
+export const DEFAULT_VISUAL_TRANSFORM: VisualTransform = {
   x: 50,
   y: 50,
   widthPct: 100,
   rotation: 0,
   opacity: 1,
-};export const DEFAULT_PROJECT_BACKGROUND: VideoProjectV2['background'] = {
+};
+export const DEFAULT_PROJECT_BACKGROUND: VideoProjectV2['background'] = {
   color: '#0f172a',
   fill: 'color',
 };

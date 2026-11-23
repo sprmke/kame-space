@@ -204,7 +204,7 @@ When invoking `supabase functions serve` manually, `./dev.sh` / `bun run dev:api
 | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GEMINI_API_KEYS`                                                             | Comma-separated (local/dev rotation)                                                                                                                                                                                                                                                                                                           |
 | `GEMINI_API_KEY`                                                              | Single key — **required for production**                                                                                                                                                                                                                                                                                                       |
-| `GROQ_API_KEY`                                                                | Fallback when Gemini fails                                                                                                                                                                                                                                                                                                                     |
+| `GROQ_API_KEY`                                                                | Fallback when Gemini fails. Also **required** for Videos auto captions (`marketing-video-captions`, speech to text); without it captions answer 503                                                                                                                                                                                            |
 | `AI_RESPONSE_CACHE_DISABLED`                                                  | Optional. `1` bypasses the AI response cache (live evals set it). See `ai-platform.md`                                                                                                                                                                                                                                                         |
 | `EDGE_INLINE_BACKGROUND_TASKS`                                                | Optional, local. `1` runs after-response work (inbox auto-reply) inline instead of `EdgeRuntime.waitUntil`                                                                                                                                                                                                                                     |
 | `GEMINI_MODEL_OVERRIDE_<FEATURE>` / `GEMINI_MODEL_OVERRIDE`                   | Optional. Overrides the model id from `_shared/aiModelRouter.ts` (e.g. `GEMINI_MODEL_OVERRIDE_DASHBOARD_ASSISTANT=gemini-3.5-flash-lite`). Pricing metadata unchanged. Local/dev when free-tier quota is exhausted on the default model. After changing: rebuild via `scripts/dev/build-local-functions-env.sh` and restart `functions serve`. |
@@ -230,9 +230,11 @@ When invoking `supabase functions serve` manually, `./dev.sh` / `bun run dev:api
 
 #### Integrations (optional)
 
-| Variable            | Notes                               |
-| ------------------- | ----------------------------------- |
-| `JAMENDO_CLIENT_ID` | Marketing Studio video music browse |
+| Variable               | Notes                                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------- |
+| `JAMENDO_CLIENT_ID`    | Marketing Studio video music browse (Jamendo source)                                            |
+| `AUDIUS_MUSIC_ENABLED` | Optional. `0`, `false` or `off` removes Audius from the music picker. Default on, no key needed |
+| `AUDIUS_APP_NAME`      | Optional. `app_name` sent to Audius. Default `kame-space`                                       |
 
 #### Observability (optional)
 

@@ -80,11 +80,11 @@ const SETTINGS_PAYLOAD = {
   },
 };
 
-/** The analytics consent card sits above the page and swallows clicks until answered. */
+/** The analytics consent bar sits above the page and swallows clicks until answered. */
 async function dismissCookieConsent(page: Page) {
-  const necessaryOnly = page.getByRole('button', { name: 'Necessary only' });
-  if (await necessaryOnly.isVisible().catch(() => false)) {
-    await necessaryOnly.click();
+  const essentialOnly = page.getByRole('button', { name: 'Essential only' });
+  if (await essentialOnly.isVisible().catch(() => false)) {
+    await essentialOnly.click();
   }
 }
 
@@ -261,7 +261,8 @@ test.describe('@ci marketing planner', () => {
       await expect(planDialog.getByText('Open this weekend', { exact: true })).toBeVisible();
       await expect(planDialog.getByText('Two nights are still open this weekend.')).toBeVisible();
       await page.screenshot({ path: `test-results/marketing-planner-modal-${label}.png` });
-      await planDialog.getByRole('button', { name: 'Close' }).click();
+      // Phone sheets hide the X; Escape dismisses both sheet and desktop dialog.
+      await page.keyboard.press('Escape');
       await expect(planDialog).toBeHidden();
     }
   });

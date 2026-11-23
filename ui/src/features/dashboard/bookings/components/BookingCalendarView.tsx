@@ -6,7 +6,14 @@ import { bookingResourceName } from '@/features/dashboard/bookings/components/Bo
 import type { BookingCalendarPillLabelMode } from '@/features/dashboard/bookings/components/calendar/BookingCalendarPillLabelToggle';
 import { calendarOccupancySpanPosition } from '@/features/dashboard/bookings/components/calendar/calendarDateUtils';
 import { CalendarDayBookingCard } from '@/features/dashboard/bookings/components/calendar/CalendarDayBookingCard';
+import { CalendarDaySheet } from '@/features/dashboard/bookings/components/calendar/CalendarDaySheet';
 import { CalendarPeriodToggle } from '@/features/dashboard/bookings/components/calendar/CalendarPeriodToggle';
+import {
+  occupancyPillDisplayLabel,
+  occupancyPillShowStatusDot,
+  resolveOccupancyPillLabelMode,
+  resolveOccupancyPricePillPresentation,
+} from '@/features/dashboard/bookings/components/calendar/calendarPillLabel';
 import {
   amountPerOccupiedNight,
   stayTotalAmount,
@@ -22,6 +29,7 @@ import { statusLabel, statusTone } from '@/features/dashboard/bookings/lib/booki
 import type { BookingRow } from '@/features/dashboard/bookings/lib/types';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useIsBelowLg } from '@/hooks/useMediaQuery';
 import type { DatePreset } from '@/lib/date/navigation';
 import { fromIsoDate } from '@/lib/date/navigation';
 import { STATUS_TONE_CALENDAR_BLOCK } from '@/lib/statusToneColors';
@@ -36,7 +44,7 @@ type Props = {
   isRefreshing?: boolean;
   initialMonth?: Date;
   onMonthChange?: (month: Date) => void;
-  /** Compact grid without day-detail sidebar; day/pill clicks open booking detail. */
+  /** Compact grid without day-detail sidebar; day tap opens a day sheet. */
   variant?: 'full' | 'mini';
   /** ISO bounds from dashboard date filter (mini only). */
   rangeFrom?: string;
@@ -50,15 +58,56 @@ type Props = {
   resolveBookingHref?: (row: BookingRow) => string;
 };
 
+/** Full guest name for adaptive pill text (full → first → initials → single). */
 function bookingPillLabel(row: BookingRow): string {
-  return row.primary_guest_name?.split(' ')[0] || row.guest_facebook_name?.split(' ')[0] || 'Guest';
+  return bookingListDisplayName(row) || 'Guest';
 }
 
 /** Price mode shows the full stay total (sum of nights), not the per-night split. */
+function bookingPillPriceAmount(row: BookingRow): number | null {
+  return stayTotalAmount(row.booking_rate);
+}
+
 function bookingPillPriceLabel(row: BookingRow): string {
-  const stayTotal = stayTotalAmount(row.booking_rate);
+  const stayTotal = bookingPillPriceAmount(row);
   if (stayTotal == null) return '-';
   return formatMoneyCompact(stayTotal);
+}
+
+function resolveBookingPillText(opts: {
+  row: BookingRow;
+  pillLabelMode: BookingCalendarPillLabelMode;
+  isBelowLg: boolean;
+  spanCols: number;
+  showLabel: boolean;
+}): { label: string | null; showStatusDot: boolean } {
+  const { row, pillLabelMode, isBelowLg, spanCols, showLabel } = opts;
+
+  if (pillLabelMode === 'price') {
+    if (!showLabel) return { label: null, showStatusDot: false };
+    return resolveOccupancyPricePillPresentation({
+      isBelowLg,
+      spanCols,
+      amount: bookingPillPriceAmount(row),
+    });
+  }
+
+  const rawLabel = bookingPillLabel(row);
+  const labelMode = resolveOccupancyPillLabelMode({
+    isBelowLg,
+    spanCols,
+    label: rawLabel,
+    kind: 'name',
+  });
+  const label = showLabel ? occupancyPillDisplayLabel(rawLabel, labelMode) : null;
+  const showStatusDot =
+    label != null &&
+    occupancyPillShowStatusDot({
+      isBelowLg,
+      spanCols,
+      labelMode,
+    });
+  return { label, showStatusDot };
 }
 
 function bookingPillTitle(row: BookingRow, resourceSuffix: string): string {
@@ -133,10 +182,12 @@ export function BookingCalendarView({
   resolveBookingHref,
 }: Props) {
   const navigate = useNavigate();
+  const isBelowLg = useIsBelowLg();
   const mini = variant === 'mini';
   const [period, setPeriod] = useState<CalendarPeriod>('month');
   const [anchorDate, setAnchorDate] = useState<Date>(() => initialMonth ?? new Date());
   const [highlightedStayId, setHighlightedStayId] = useState<string | null>(null);
+  const [daySheet, setDaySheet] = useState<{ day: Date; items: BookingRow[] } | null>(null);
 
   useEffect(() => {
     if (initialMonth) setAnchorDate(initialMonth);
@@ -157,12 +208,23 @@ export function BookingCalendarView({
     [navigate, resolveBookingHref]
   );
 
-  const handleDayClick = useCallback(
-    (_day: Date, items: BookingRow[]) => {
-      if (items.length === 0) return;
-      openBooking(items[0]);
+  const openBookingFromSheet = useCallback(
+    (row: BookingRow) => {
+      setDaySheet(null);
+      openBooking(row);
     },
     [openBooking]
+  );
+
+  /** Mini always; full month uses a sheet below lg (desktop keeps the day rail). */
+  const useDaySheet = mini || isBelowLg;
+
+  const handleDayClick = useCallback(
+    (day: Date, items: BookingRow[]) => {
+      if (items.length === 0) return;
+      setDaySheet({ day, items });
+    },
+    []
   );
 
   const handleAnchorDateChange = useCallback(
@@ -251,15 +313,23 @@ export function BookingCalendarView({
         getItemKey={(row) => row.id}
         getItemStatus={(row) => row.status}
         renderPill={(row) => {
-          const priceLabel = bookingPillPriceLabel(row);
-          const label = pillLabelMode === 'price' ? priceLabel : bookingPillLabel(row);
+          const spanCols = 1;
+          const { label: displayLabel, showStatusDot } = resolveBookingPillText({
+            row,
+            pillLabelMode,
+            isBelowLg,
+            spanCols,
+            showLabel: true,
+          });
           const resourceSuffix =
             showProperty && bookingResourceName(row) ? ` · ${bookingResourceName(row)}` : '';
 
           return (
             <CalendarOccupancyPill
               status={row.status}
-              label={label}
+              label={displayLabel ?? ''}
+              showLabel={displayLabel != null}
+              showStatusDot={showStatusDot}
               compact={mini}
               title={bookingPillTitle(row, resourceSuffix)}
               labelClassName={pillLabelMode === 'price' ? 'tabular-nums' : undefined}
@@ -268,8 +338,14 @@ export function BookingCalendarView({
         }}
         renderOccupancySegment={(segment) => {
           const row = segment.item;
-          const priceLabel = bookingPillPriceLabel(row);
-          const label = pillLabelMode === 'price' ? priceLabel : bookingPillLabel(row);
+          const spanCols = segment.endCol - segment.startCol + 1;
+          const { label: displayLabel, showStatusDot } = resolveBookingPillText({
+            row,
+            pillLabelMode,
+            isBelowLg,
+            spanCols,
+            showLabel: segment.showLabel,
+          });
           const resourceSuffix =
             showProperty && bookingResourceName(row) ? ` · ${bookingResourceName(row)}` : '';
           const title = bookingPillTitle(row, resourceSuffix);
@@ -280,9 +356,10 @@ export function BookingCalendarView({
           const pill = (
             <CalendarOccupancyPill
               status={row.status}
-              label={label}
+              label={displayLabel ?? ''}
               compact={mini}
-              showLabel={segment.showLabel}
+              showLabel={displayLabel != null}
+              showStatusDot={showStatusDot}
               spanPosition={spanPosition}
               labelClassName={pillLabelMode === 'price' ? 'tabular-nums' : undefined}
               className={cn(
@@ -337,13 +414,33 @@ export function BookingCalendarView({
         layout={mini ? 'grid-only' : 'full'}
         compact={mini}
         embedded={mini}
-        onDayClick={mini ? handleDayClick : undefined}
+        onDayClick={useDaySheet ? handleDayClick : undefined}
         onItemClick={openBooking}
         visibleRange={visibleRange}
         datePreset={datePreset}
         hideNavigation={mini && Boolean(visibleRange)}
         navigationAccessory={combinedAccessory}
       />
+
+      <CalendarDaySheet
+        open={daySheet != null}
+        onOpenChange={(open) => {
+          if (!open) setDaySheet(null);
+        }}
+        day={daySheet?.day ?? null}
+        count={daySheet?.items.length ?? 0}
+        entityLabel="booking"
+      >
+        {daySheet?.items.map((row) => (
+          <CalendarDayBookingCard
+            key={row.id}
+            row={row}
+            amount={{ mode: 'booking_rate', amount: row.booking_rate }}
+            showProperty={showProperty}
+            onOpen={() => openBookingFromSheet(row)}
+          />
+        ))}
+      </CalendarDaySheet>
     </TooltipProvider>
   );
 }

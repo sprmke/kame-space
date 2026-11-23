@@ -554,14 +554,14 @@ export function VideoEditor({ document, nav, onPublish }: Props) {
     if (!project || !inputProps) throw new Error('No project');
 
     // Jamendo CDN URLs are CORS-blocked in Remotion web export — cache to Storage first.
-    const { music: exportMusic, strippedJamendo } = await ensureVideoMusicForExport(
+    const { music: exportMusic, stripped } = await ensureVideoMusicForExport(
       project.music,
       propertyId
     );
-    if (exportMusic?.url && project.music?.url !== exportMusic.url && !strippedJamendo) {
+    if (exportMusic?.url && project.music?.url !== exportMusic.url && !stripped) {
       amendProject((prev) => (prev ? { ...prev, music: exportMusic } : prev));
     }
-    if (strippedJamendo) {
+    if (stripped) {
       toast.message('Exporting without music. Track could not be cached');
     }
 
@@ -1075,7 +1075,7 @@ export function VideoEditor({ document, nav, onPublish }: Props) {
       />
       {isBelowLg ? sizeDialog : null}
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         {isBelowLg ? (
           <MarketingEditorRail
             layoutKey="video"
@@ -1089,6 +1089,7 @@ export function VideoEditor({ document, nav, onPublish }: Props) {
             sections={railSections}
             active={railPanel}
             onActiveChange={setRailPanel}
+            panelMode="overlay"
           />
         )}
 
@@ -1221,7 +1222,8 @@ export function VideoEditor({ document, nav, onPublish }: Props) {
               />
             </>
           ) : (
-            <div role="status"
+            <div
+              role="status"
               className="flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4"
               aria-busy="true"
               aria-label="Loading video editor"
@@ -1245,6 +1247,7 @@ export function VideoEditor({ document, nav, onPublish }: Props) {
           onOpenChange={(open) =>
             isBelowLg ? setMobilePanel(open ? 'edit' : null) : setInspectorOpen(open)
           }
+          panelMode={isBelowLg ? 'push' : 'overlay'}
         >
           {settingsPanel}
         </MarketingEditorInspector>

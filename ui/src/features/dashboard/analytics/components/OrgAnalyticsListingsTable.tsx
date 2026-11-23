@@ -6,9 +6,11 @@ import {
   OrgAnalyticsAttention,
   OrgAnalyticsKindBadge,
   OrgAnalyticsOutlook,
+  OrgAnalyticsPromoteHint,
   OrgAnalyticsRevenueChange,
   orgAnalyticsListingHref,
 } from '@/features/dashboard/analytics/components/OrgAnalyticsListingParts';
+import type { PromotionCandidate } from '@/features/dashboard/analytics/lib/marketingPortfolio';
 import type {
   OrgAnalyticsSort,
   OrgAnalyticsSortKey,
@@ -39,6 +41,7 @@ type Props = {
   orgSlug: string;
   sort: OrgAnalyticsSort;
   onSortChange: (key: OrgAnalyticsSortKey) => void;
+  promoteById: ReadonlyMap<string, PromotionCandidate>;
 };
 
 /** Match `adminTableCell` horizontal padding so headers sit over their cells. */
@@ -84,11 +87,17 @@ function SortHead({
   );
 }
 
-export function OrgAnalyticsListingsTable({ rows, orgSlug, sort, onSortChange }: Props) {
+export function OrgAnalyticsListingsTable({
+  rows,
+  orgSlug,
+  sort,
+  onSortChange,
+  promoteById,
+}: Props) {
   const navigate = useNavigate();
 
   return (
-    <AdminDataTable minWidth={880}>
+    <AdminDataTable minWidth={960}>
       <AdminTableHeadRow>
         <SortHead
           label="Listing"
@@ -127,6 +136,7 @@ export function OrgAnalyticsListingsTable({ rows, orgSlug, sort, onSortChange }:
           onSortChange={onSortChange}
           className={HEAD_PAD.body}
         />
+        <AdminTableTh className={HEAD_PAD.body}>Promote</AdminTableTh>
         <AdminTableActionsTh>Open</AdminTableActionsTh>
       </AdminTableHeadRow>
       <tbody>
@@ -134,6 +144,7 @@ export function OrgAnalyticsListingsTable({ rows, orgSlug, sort, onSortChange }:
           const kind = orgPortfolioListingKind(row);
           const name = orgPortfolioListingName(row);
           const href = orgAnalyticsListingHref(orgSlug, row);
+          const promote = promoteById.get(orgPortfolioListingId(row));
           return (
             <tr
               key={`${kind}-${orgPortfolioListingId(row)}`}
@@ -159,7 +170,7 @@ export function OrgAnalyticsListingsTable({ rows, orgSlug, sort, onSortChange }:
                 <OrgAnalyticsKindBadge kind={kind} />
               </td>
               {row.locked ? (
-                <td colSpan={5} className={cn(adminTableCell.body, adminTableBodyText.secondary)}>
+                <td colSpan={6} className={cn(adminTableCell.body, adminTableBodyText.secondary)}>
                   Unavailable on your plan
                 </td>
               ) : (
@@ -187,6 +198,13 @@ export function OrgAnalyticsListingsTable({ rows, orgSlug, sort, onSortChange }:
                   </td>
                   <td className={cn(adminTableCell.body, 'min-w-[7.5rem]')}>
                     <OrgAnalyticsOutlook row={row} />
+                  </td>
+                  <td className={cn(adminTableCell.body, 'min-w-[6.5rem]')}>
+                    {promote ? (
+                      <OrgAnalyticsPromoteHint candidate={promote} orgSlug={orgSlug} />
+                    ) : (
+                      <span className={adminTableBodyText.secondary}>-</span>
+                    )}
                   </td>
                 </>
               )}

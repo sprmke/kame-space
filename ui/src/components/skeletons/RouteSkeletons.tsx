@@ -97,9 +97,8 @@ import {
 import { SlidingTabsListSkeleton } from '@/components/skeletons/SlidingTabsListSkeleton';
 import { cn } from '@/lib/utils';
 
-/** Reviews `?tab=` → skeleton variant. `properties` is org-only. */
-function reviewsSkeletonTab(raw: string | null, allowProperties: boolean): ReviewsSkeletonTab {
-  if (allowProperties && raw === 'properties') return 'properties';
+/** Reviews `?tab=` → skeleton variant. Legacy `properties` maps to received. */
+function reviewsSkeletonTab(raw: string | null): ReviewsSkeletonTab {
   if (raw === 'written' || raw === 'to_write') return raw;
   return 'received';
 }
@@ -332,7 +331,7 @@ export function OrgPlansRouteSkeleton() {
 
 export function OrgReviewsRouteSkeleton() {
   const [searchParams] = useSearchParams();
-  const tab = reviewsSkeletonTab(searchParams.get('tab'), true);
+  const tab = reviewsSkeletonTab(searchParams.get('tab'));
   const view = searchParams.get('view') === 'card' ? 'card' : 'table';
 
   return (
@@ -342,7 +341,7 @@ export function OrgReviewsRouteSkeleton() {
       titleId="reviews-heading"
     >
       <ReviewsPageSkeleton
-        tabs={['From guests', 'To write', 'About guests', 'By property']}
+        tabs={['From guests', 'To write', 'About guests']}
         tab={tab}
         view={view}
       />
@@ -670,7 +669,7 @@ export function PropertyTeamRouteSkeleton() {
 
 export function PropertyReviewsRouteSkeleton() {
   const [searchParams] = useSearchParams();
-  const tab = reviewsSkeletonTab(searchParams.get('tab'), false);
+  const tab = reviewsSkeletonTab(searchParams.get('tab'));
   const view = searchParams.get('view') === 'card' ? 'card' : 'table';
 
   return (
