@@ -47,6 +47,17 @@ async function startCall(page: Page) {
 test.describe.configure({ timeout: 120_000 });
 
 test.describe('@demo ai receptionist after states', () => {
+  // The shared consent state is pinned to ports 4173/4174; this spec may run on another port.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        window.localStorage.setItem('kh-cookie-consent', 'declined');
+      } catch {
+        // private mode
+      }
+    });
+  });
+
   test('A1 discovery', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 960 });
     await installVoiceReceptionistMocks(page);
