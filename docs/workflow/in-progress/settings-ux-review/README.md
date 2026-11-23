@@ -36,15 +36,15 @@ get **no section navigation at all** for the longest settings page in the produc
 
 ## Evidence
 
-| Item        | Value                                                                                         |
-| ----------- | --------------------------------------------------------------------------------------------- |
-| App         | `http://127.0.0.1:5186` (Vite worktree port) + local Supabase `:54321`                        |
-| Fixtures    | Shared property-team RBAC mocks + realistic residence (`Azure North Residences` / `Monaco`)   |
-| Viewports   | 390×844, 768×1024, 1280×800, 1440×960, 1440×960 dark                                          |
-| Screenshots | 63, in [`screenshots/`](./screenshots)                                                        |
-| Recordings  | 9 slow-motion flows, in [`recordings/`](./recordings)                                         |
-| Console     | 0 page errors on the property and parking shells; one `setup-guide-state` crash on org (P2-4) |
-| DOM proof   | `section-guest-experience` × 2, `property-settings-heading` × 2 (probe output below)          |
+| Item        | Value                                                                                                 |
+| ----------- | ----------------------------------------------------------------------------------------------------- |
+| App         | `http://127.0.0.1:5186` (Vite worktree port) + local Supabase `:54321`                                |
+| Fixtures    | Shared property-team RBAC mocks + realistic residence (`Azure North Residences` / `Monaco`)           |
+| Viewports   | 390×844, 768×1024, 1280×800, 1440×960, 1440×960 dark                                                  |
+| Screenshots | 67, in [`screenshots/`](./screenshots); decision crops in [`screenshots/crops/`](./screenshots/crops) |
+| Recordings  | 9 slow-motion flows, in [`recordings/`](./recordings)                                                 |
+| Console     | 0 page errors on the property and parking shells; one `setup-guide-state` crash on org (P2-4)         |
+| DOM proof   | `section-guest-experience` × 2, `property-settings-heading` × 2 (probe output below)                  |
 
 ```
 duplicate ids (property): property-settings-heading, section-guest-experience
