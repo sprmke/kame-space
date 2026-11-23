@@ -1,0 +1,1069 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI receptionist: what to fix, what to skip</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #16211f;
+        --muted: #5c6b68;
+        --line: #dbe5e2;
+        --wash: #f5f9f8;
+        --teal: #177f70;
+        --teal-deep: #0f5c51;
+        --amber: #b45309;
+        --amber-wash: #fff7ed;
+        --slate: #64748b;
+        --red: #b91c1c;
+        --red-wash: #fef2f2;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: #fff;
+        color: var(--ink);
+        font-family:
+          'Plus Jakarta Sans',
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.92em;
+        background: var(--wash);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 1px 5px;
+      }
+      .wrap {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 28px 20px 80px;
+      }
+      header {
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 22px;
+      }
+      .eyebrow {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--teal-deep);
+        background: #e7f3f0;
+        border-radius: 999px;
+        padding: 3px 10px;
+      }
+      h1 {
+        font-size: 30px;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        margin: 12px 0 8px;
+      }
+      header > p {
+        margin: 0;
+        max-width: 80ch;
+        color: var(--muted);
+        font-size: 15px;
+      }
+      .stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .stat {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 14px;
+        min-width: 150px;
+        background: var(--wash);
+      }
+      .stat b {
+        display: block;
+        font-size: 22px;
+        line-height: 1.1;
+      }
+      .stat span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .stat.do b {
+        color: var(--teal-deep);
+      }
+      .stat.later b {
+        color: var(--amber);
+      }
+      .stat.skip b {
+        color: var(--slate);
+      }
+      .howto {
+        margin-top: 14px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      main {
+        display: grid;
+        grid-template-columns: 330px minmax(0, 1fr);
+        gap: 28px;
+        align-items: start;
+        margin-top: 28px;
+      }
+      .rail {
+        position: sticky;
+        top: 16px;
+        max-height: calc(100vh - 32px);
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 10px;
+        background: #fff;
+      }
+      .rail-group {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 12px 10px 6px;
+      }
+      .rail button {
+        display: grid;
+        grid-template-columns: 34px 1fr auto;
+        gap: 8px;
+        align-items: center;
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border: 0;
+        border-radius: 10px;
+        padding: 9px 10px;
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+      }
+      .rail button:hover {
+        background: var(--wash);
+      }
+      .rail button[aria-current='true'] {
+        background: #e7f3f0;
+      }
+      .rail .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        display: inline-block;
+        justify-self: end;
+      }
+      .dot.do {
+        background: var(--teal);
+      }
+      .dot.later {
+        background: #f59e0b;
+      }
+      .dot.skip {
+        background: #94a3b8;
+      }
+      .rail .code {
+        font-weight: 700;
+        font-size: 12px;
+        color: var(--teal-deep);
+      }
+      .rail .name {
+        font-size: 13.5px;
+        line-height: 1.25;
+        min-width: 0;
+      }
+      .chip {
+        display: inline-block;
+        border-radius: 999px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        white-space: nowrap;
+      }
+      .chip.do {
+        background: #e7f3f0;
+        color: var(--teal-deep);
+      }
+      .chip.later {
+        background: var(--amber-wash);
+        color: var(--amber);
+      }
+      .chip.skip {
+        background: #f1f5f9;
+        color: var(--slate);
+      }
+      .detail {
+        min-width: 0;
+      }
+      .detail-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+      }
+      .detail-head h2 {
+        font-size: 24px;
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+        margin: 0;
+      }
+      .detail .who {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .figure {
+        margin: 18px 0 0;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        background: var(--wash);
+      }
+      .figure img {
+        display: block;
+        width: 100%;
+        max-height: 460px;
+        object-fit: contain;
+        background: #fff;
+      }
+      .figure a {
+        color: var(--teal-deep);
+        font-weight: 700;
+        text-decoration: none;
+      }
+      .figure figcaption {
+        font-size: 12px;
+        color: var(--muted);
+        padding: 8px 12px;
+        border-top: 1px solid var(--line);
+        background: #fff;
+      }
+      .cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-top: 20px;
+      }
+      .cols h3 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--muted);
+        margin: 0 0 6px;
+      }
+      .cols p {
+        margin: 0;
+        font-size: 15px;
+      }
+      .cols ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .cols li {
+        margin-bottom: 6px;
+        font-size: 15px;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 22px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+      }
+      .meta div {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 7px 12px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .meta b {
+        color: var(--ink);
+      }
+      .call {
+        border-radius: 10px;
+        padding: 7px 12px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .call.do {
+        background: #e7f3f0;
+        color: var(--teal-deep);
+      }
+      .call.later {
+        background: var(--amber-wash);
+        color: var(--amber);
+      }
+      .call.skip {
+        background: #f1f5f9;
+        color: var(--slate);
+      }
+      .note {
+        margin-top: 18px;
+        border-left: 3px solid var(--teal);
+        background: var(--wash);
+        padding: 10px 14px;
+        font-size: 14px;
+        border-radius: 0 10px 10px 0;
+      }
+      .fixed {
+        margin-top: 34px;
+        border: 1px solid #cfe7e1;
+        background: #f2faf8;
+        border-radius: 16px;
+        padding: 18px 20px;
+      }
+      .fixed h2 {
+        font-size: 16px;
+        margin: 0 0 8px;
+      }
+      .fixed ul {
+        margin: 0;
+        padding-left: 18px;
+        columns: 2;
+        gap: 28px;
+        font-size: 14px;
+      }
+      .fixed li {
+        margin-bottom: 5px;
+        break-inside: avoid;
+      }
+      section.block {
+        margin-top: 44px;
+      }
+      section.block > h2 {
+        font-size: 20px;
+        margin: 0 0 4px;
+      }
+      section.block > p {
+        margin: 0 0 16px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .phases {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 14px;
+      }
+      .phase {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px;
+      }
+      .phase h3 {
+        margin: 0 0 4px;
+        font-size: 15px;
+      }
+      .phase p {
+        margin: 0 0 8px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .phase .codes {
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13.5px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 9px 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      th {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+      tbody tr:hover {
+        background: var(--wash);
+      }
+      td.c {
+        white-space: nowrap;
+        font-weight: 700;
+        color: var(--teal-deep);
+      }
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 10px;
+        font-size: 12.5px;
+        color: var(--muted);
+      }
+      .legend span::before {
+        content: '';
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        margin-right: 6px;
+        background: currentColor;
+      }
+      .legend .do {
+        color: var(--teal-deep);
+      }
+      .legend .later {
+        color: var(--amber);
+      }
+      .legend .skip {
+        color: var(--slate);
+      }
+      @media (max-width: 900px) {
+        .wrap {
+          padding: 20px 14px 60px;
+        }
+        h1 {
+          font-size: 24px;
+        }
+        main {
+          grid-template-columns: 1fr;
+          gap: 18px;
+        }
+        .rail {
+          position: static;
+          max-height: none;
+          display: flex;
+          gap: 8px;
+          overflow-x: auto;
+          padding: 8px;
+        }
+        .rail-group {
+          display: none;
+        }
+        .rail button {
+          grid-template-columns: auto auto;
+          flex: 0 0 auto;
+          border: 1px solid var(--line);
+          padding: 7px 10px;
+        }
+        .rail .name {
+          max-width: 150px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .rail .chip {
+          display: none;
+        }
+        .cols {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        .fixed ul {
+          columns: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <span class="eyebrow">Decision board</span>
+        <h1>AI receptionist: what to fix, what to skip</h1>
+        <p>
+          Everything below comes from the walkthrough at 375, 768, 1024 and 1440, light and dark.
+          Each item has the screen that shows it, what I would change, and my recommendation. Pick
+          the codes you want and I will work only on those.
+        </p>
+        <div class="stats">
+          <div class="stat do"><b>11</b><span>Do before promoting</span></div>
+          <div class="stat later"><b>3</b><span>Polish later</span></div>
+          <div class="stat skip"><b>8</b><span>Skip for now</span></div>
+        </div>
+        <p class="howto">
+          Reply with the codes, for example <code>A1, A2, A3, B1</code>. Or say
+          <code>Phase 1 only</code> for the one-day set.
+        </p>
+        <div class="legend">
+          <span class="do">Do now</span><span class="later">Later</span
+          ><span class="skip">Skip</span>
+        </div>
+      </header>
+
+      <div class="fixed">
+        <h2>Already shipped in the first pass</h2>
+        <ul>
+          <li>Poster fallback when WebGL fails (was a blank disc)</li>
+          <li>Screen readers hear each receptionist reply once</li>
+          <li>Text-safe amber and red for status and errors</li>
+          <li>X closes the panel before a call, hang-up ends a call</li>
+          <li>Countdown has an accessible name</li>
+        </ul>
+      </div>
+
+      <main>
+        <nav class="rail" id="rail" aria-label="Findings"></nav>
+        <section class="detail" id="detail" aria-live="polite"></section>
+      </main>
+
+      <section class="block">
+        <h2>Suggested sequence</h2>
+        <p>If you want the smallest safe path, this order keeps each change reviewable.</p>
+        <div class="phases">
+          <div class="phase">
+            <h3>Phase 1 · quick wins</h3>
+            <p>About one day. Small diffs, no schema, no new flow.</p>
+            <div class="codes">
+              A3 Delete confirm<br />A4 Failure labels<br />A6 Naming and consent copy<br />B1
+              Number fields<br />B2 Phone tabs<br />B3 Focus on open and close
+            </div>
+          </div>
+          <div class="phase">
+            <h3>Phase 2 · call experience</h3>
+            <p>Two to three days. Touches the guest call layout and copy.</p>
+            <div class="codes">
+              A1 Discoverability<br />A2 Immersive call<br />A5 Cap warning<br />B4 Handoff
+              placement<br />B5 Desktop composition
+            </div>
+          </div>
+          <div class="phase">
+            <h3>Phase 3 · operator polish</h3>
+            <p>When the module is next open. No guest impact.</p>
+            <div class="codes">
+              B6 Org settings details<br />B7 Super-admin grouping<br />B8 App-wide text tokens
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>At a glance</h2>
+        <p>Same list in one table for a quick pass or a ticket.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Item</th>
+                <th>Who feels it</th>
+                <th>Effort</th>
+                <th>My call</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const items = [
+        {
+          code: 'A1',
+          tier: 'now',
+          title: 'Make the receptionist discoverable',
+          who: 'Guest',
+          today:
+            'The only way in is the chat menu. The five starter questions and the composer never mention voice, so a guest who ignores the menu never finds it.',
+          plan: [
+            'Add a mic or call icon in the messages header when the property has voice enabled.',
+            'Add one starter card: "Talk to Kame".',
+            'Keep the menu item for the contact-host sheet.',
+          ],
+          effort: 'S to M',
+          risk: 'Low',
+          call: 'Do now',
+          image: 'recommendations/rec-01-discovery.png',
+          note: 'This is the cheapest change with the biggest effect on usage.',
+        },
+        {
+          code: 'A2',
+          tier: 'now',
+          title: 'Make an active call immersive',
+          who: 'Guest',
+          today:
+            'The app bar, back arrow, chat menu and phone tab bar stay tappable during a call. Search opens above the call, and any navigation ends it.',
+          plan: [
+            'While the booth is active, hide the phone tab bar and the chat menu.',
+            'Replace the header actions with one Close, and confirm before leaving with back.',
+            'Return to the normal shell with one tap when the call ends.',
+          ],
+          effort: 'M',
+          risk: 'Medium, navigation',
+          call: 'Do now',
+          image: 'recommendations/rec-03-immersive.png',
+          note: 'Do this with B4 and A5, they touch the same footer and header.',
+        },
+        {
+          code: 'A3',
+          tier: 'now',
+          title: 'Confirm before deleting captions',
+          who: 'Guest',
+          today:
+            'Delete captions sits beside Done and permanently removes the transcript on the first tap. There is no undo.',
+          plan: [
+            'Use the shared alert dialog: "Delete captions for this call?" with Delete and Keep.',
+            'Or keep the transcript for a short undo window.',
+          ],
+          effort: 'S',
+          risk: 'Low',
+          call: 'Do now',
+          image: 'recommendations/rec-02-delete.png',
+          note: null,
+        },
+        {
+          code: 'A4',
+          tier: 'now',
+          title: 'Name the real failure',
+          who: 'Guest',
+          today:
+            'A blocked microphone shows "CONNECTION ISSUE" in the header while the body correctly explains the microphone block.',
+          plan: [
+            'Carry the failure code into the panel and map it to a short label.',
+            'Microphone blocked, no microphone, connection lost, provider unavailable.',
+            'Use the same wording in the header and the body.',
+          ],
+          effort: 'S',
+          risk: 'Low',
+          call: 'Do now',
+          image: 'recommendations/rec-04-mic-error.png',
+          note: null,
+        },
+        {
+          code: 'A5',
+          tier: 'now',
+          title: 'Explain the timer and warn before the cap',
+          who: 'Guest',
+          today:
+            'The header shows an unlabelled 8:59. At zero the call just ends. The production plan calls for a spoken wrap-up.',
+          plan: [
+            'Show "9 min left", then amber "1 min left" under a minute.',
+            'Have Kame say it is wrapping up near the limit.',
+            'Keep a short grace window before the call ends.',
+          ],
+          effort: 'M',
+          risk: 'Low',
+          call: 'Do now',
+          image: 'recommendations/rec-07-timer-space.png',
+          note: 'The visible label and warning are quick. The spoken line needs a prompt change.',
+        },
+        {
+          code: 'A6',
+          tier: 'now',
+          title: 'One name, clearer consent',
+          who: 'Guest',
+          today:
+            'The menu says "Talk to receptionist", the panel says "AI voice receptionist", Kame introduces itself by name, and marketing says "Kame answers". Consent copy does not say how long captions are kept.',
+          plan: [
+            'Use "Kame, the AI receptionist" in the menu, the panel title and the greeting.',
+            'Add "Captions are kept in this chat for 30 days".',
+            'Add one short "AI can make mistakes" line in the call.',
+          ],
+          effort: 'S',
+          risk: 'Low',
+          call: 'Do now',
+          image: 'recommendations/rec-08-naming-consent.png',
+          note: null,
+        },
+        {
+          code: 'B1',
+          tier: 'now',
+          title: 'Stop saving super-admin numbers per keystroke',
+          who: 'Operator',
+          today:
+            'Typing 100 sends 1, then 10, then 100. Typing 0.06 briefly skips values. Each step is a live PATCH.',
+          plan: [
+            'Keep the value in local state and commit on blur or Enter.',
+            'Or debounce 500 ms and validate before sending.',
+            'Show a small saved state so the operator knows it landed.',
+          ],
+          effort: 'S',
+          risk: 'Low',
+          call: 'Do now',
+          image: 'recommendations/rec-05-superadmin-saves.png',
+          note: 'This writes wrong values to real platform settings, so treat it as a bug, not polish.',
+        },
+        {
+          code: 'B2',
+          tier: 'now',
+          title: 'Fix the super-admin tabs on phone',
+          who: 'Operator',
+          today:
+            'Five secondary tabs wrap at 375. The active Controls tab drops to a second line and reads like a button.',
+          plan: [
+            'Use the existing horizontal-scroll tab strip on phone.',
+            'Or show a select under the small breakpoint.',
+          ],
+          effort: 'S',
+          risk: 'Low',
+          call: 'Do now',
+          image: 'recommendations/rec-06-superadmin-tabs.png',
+          note: null,
+        },
+        {
+          code: 'B3',
+          tier: 'now',
+          title: 'Move focus into the panel and back',
+          who: 'Keyboard and screen reader',
+          today:
+            'Opening the panel leaves focus on the menu item. Closing does not return focus to the trigger.',
+          plan: [
+            'Focus the panel heading or Start call when it opens.',
+            'Restore focus to the chat options button on close.',
+            'Keep Escape working as it does today.',
+          ],
+          effort: 'S',
+          risk: 'Low',
+          call: 'Do now',
+          image: null,
+          note: 'Not visible in a screenshot. It is a keyboard-only defect.',
+        },
+        {
+          code: 'B4',
+          tier: 'now',
+          title: 'Keep handoff from ending the call by accident',
+          who: 'Guest',
+          today:
+            'Message host is the widest control, right beside mute, and ends the call immediately with no confirmation.',
+          plan: [
+            'Ask "End the call and message the host?" before handing off.',
+            'Or move it into the overflow menu and keep mute and end as the two primary controls.',
+            'Prefill the composer with "I was talking to Kame about..."',
+          ],
+          effort: 'S',
+          risk: 'Low',
+          call: 'Do now',
+          image: 'recommendations/rec-07-timer-space.png',
+          note: 'Shares the footer work with A2.',
+        },
+        {
+          code: 'B5',
+          tier: 'now',
+          title: 'Fill the desktop booth',
+          who: 'Guest on desktop',
+          today:
+            'At 1024 and up the booth sits at the top of a 52 rem card and the bottom third is empty.',
+          plan: [
+            'Center the booth content vertically at lg.',
+            'If you want more, use two columns: avatar left, captions and actions right.',
+          ],
+          effort: 'S for centering, M for two columns',
+          risk: 'Low',
+          call: 'Do now',
+          image: 'recommendations/rec-07-timer-space.png',
+          note: 'Centering is a one-class change. Start there.',
+        },
+        {
+          code: 'B6',
+          tier: 'later',
+          title: 'Tidy the org voice settings group',
+          who: 'Host',
+          today:
+            'Persona is a blank box with no example or counter. The same property list repeats under two groups. Test voice goes full width on phone, and the floating switcher overlaps the card.',
+          plan: [
+            'Add a placeholder and a 0/300 counter to persona.',
+            'Collapse the property opt-out into a summary and a Manage sheet.',
+            'Keep Test voice compact on phone and add clearance for the floating control.',
+          ],
+          effort: 'M',
+          risk: 'Low',
+          call: 'Later',
+          images: [
+            'recommendations/rec-09-org-settings.png',
+            'recommendations/rec-10-org-settings-375.png',
+          ],
+          note: 'No guest impact. Do it when the settings page is next open.',
+        },
+        {
+          code: 'B7',
+          tier: 'later',
+          title: 'Group the super-admin card',
+          who: 'Operator',
+          today:
+            'One card mixes runtime switches, 13 feature toggles, 7 numbers, health, reliability and raw UUIDs. The allowlist is a textarea with its own save while everything else autosaves.',
+          plan: [
+            'Group into Runtime, Features, Costs, Rollout and Health.',
+            'Move p95 telemetry under a Health details disclosure.',
+            'Replace the UUID textarea with a property picker.',
+          ],
+          effort: 'M to L',
+          risk: 'Low',
+          call: 'Later',
+          image: 'recommendations/rec-11-superadmin-density.png',
+          note: 'Worth doing before more AI features land on this page.',
+        },
+        {
+          code: 'B8',
+          tier: 'later',
+          title: 'Text-safe warning and danger tokens',
+          who: 'App-wide',
+          today:
+            'The platform warning is 1.8:1 and destructive is 3.8:1 on white, used for small status and error text. The voice panel now uses local text-safe shades.',
+          plan: [
+            'Add a text variant for warning and destructive in the token set.',
+            'Migrate small status and error text to it.',
+          ],
+          effort: 'M',
+          risk: 'Medium, visual change across screens',
+          call: 'Later',
+          image: null,
+          note: 'Do this as its own design-system pass, not inside the receptionist change.',
+        },
+        {
+          code: 'C1',
+          tier: 'skip',
+          title: 'Split merged assistant bubbles',
+          who: 'Guest',
+          today:
+            'Consecutive assistant turns, like the greeting and the answer, land in one bubble.',
+          plan: ['Leave it. Reading one paragraph is fine and extra chrome adds noise.'],
+          effort: 'S',
+          risk: 'None',
+          call: 'Skip',
+          image: 'recommendations/rec-02-delete.png',
+          note: 'Only revisit if guests say they lose track of the answer.',
+        },
+        {
+          code: 'C2',
+          tier: 'skip',
+          title: 'Fill the empty pre-call status strip',
+          who: 'Guest',
+          today: 'Before a call the header row is empty except for the close control.',
+          plan: ['Leave it now. The header is reworked in A2 anyway.'],
+          effort: 'S',
+          risk: 'None',
+          call: 'Skip',
+          image: 'recommendations/rec-08-naming-consent.png',
+          note: null,
+        },
+        {
+          code: 'C3',
+          tier: 'skip',
+          title: 'Remove the duplicate close at the end',
+          who: 'Guest',
+          today: 'The ended state shows an X and a Done button.',
+          plan: ['Leave it. Two exits are harmless and one is the keyboard path.'],
+          effort: 'S',
+          risk: 'None',
+          call: 'Skip',
+          image: 'recommendations/rec-02-delete.png',
+          note: null,
+        },
+        {
+          code: 'C4',
+          tier: 'skip',
+          title: 'Rename "You are speaking"',
+          who: 'Guest',
+          today: 'The status says "You\u2019re speaking" while the guest talks.',
+          plan: ['Leave it. It is clear and consistent with the ring.'],
+          effort: 'S',
+          risk: 'None',
+          call: 'Skip',
+          image: null,
+          note: null,
+        },
+        {
+          code: 'C5',
+          tier: 'skip',
+          title: 'Release the WebGL probe context',
+          who: 'Nobody yet',
+          today: 'The WebGL support probe creates a context and does not release it.',
+          plan: ['Leave it until there is evidence of context exhaustion. One per mount.'],
+          effort: 'S',
+          risk: 'None',
+          call: 'Skip',
+          image: null,
+          note: null,
+        },
+        {
+          code: 'C6',
+          tier: 'skip',
+          title: 'Upgrade the avatar again',
+          who: 'Guest',
+          today: 'The 3D rig runs where WebGL works, and the poster now covers the rest.',
+          plan: ['Leave it. The fallback was the actual defect, and it is fixed.'],
+          effort: 'L',
+          risk: 'Medium',
+          call: 'Skip',
+          image: 'recommendations/rec-03-immersive.png',
+          note: null,
+        },
+        {
+          code: 'C7',
+          tier: 'skip',
+          title: 'Write the transcript into the host inbox',
+          who: 'Host',
+          today: 'Captions stay as unverified session evidence, not canonical messages.',
+          plan: ['Leave it. This was a deliberate trust decision, not a UI gap.'],
+          effort: 'L',
+          risk: 'High',
+          call: 'Skip',
+          image: null,
+          note: null,
+        },
+        {
+          code: 'C8',
+          tier: 'skip',
+          title: 'Bring back property-level voice config',
+          who: 'Host',
+          today: 'Voice is configured at org level with a per-property opt-out.',
+          plan: ['Leave it. One config avoids drift between properties.'],
+          effort: 'M',
+          risk: 'Medium',
+          call: 'Skip',
+          image: 'recommendations/rec-09-org-settings.png',
+          note: null,
+        },
+      ];
+
+      const tierLabel = { now: 'do', later: 'later', skip: 'skip' };
+      const tierText = { now: 'Do now', later: 'Later', skip: 'Skip' };
+      const groups = [
+        { key: 'now', label: 'A · Do before promoting' },
+        { key: 'later', label: 'B · Polish later' },
+        { key: 'skip', label: 'C · Skip for now' },
+      ];
+
+      const rail = document.getElementById('rail');
+      const detail = document.getElementById('detail');
+      const tableBody = document.getElementById('table-body');
+
+      function renderRail(activeCode) {
+        rail.innerHTML = '';
+        for (const group of groups) {
+          const heading = document.createElement('div');
+          heading.className = 'rail-group';
+          heading.textContent = group.label;
+          rail.appendChild(heading);
+          for (const item of items.filter((i) => i.tier === group.key)) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.code = item.code;
+            button.setAttribute('aria-current', item.code === activeCode ? 'true' : 'false');
+            button.innerHTML =
+              '<span class="code">' +
+              item.code +
+              '</span><span class="name">' +
+              item.title +
+              '</span><span class="dot ' +
+              tierLabel[item.tier] +
+              '" aria-hidden="true"></span>';
+            button.addEventListener('click', () => select(item.code));
+            rail.appendChild(button);
+          }
+        }
+      }
+
+      function renderDetail(item) {
+        const chip = '<span class="chip ' + tierLabel[item.tier] + '">' + tierText[item.tier] + '</span>';
+        const imagePaths = item.images ?? (item.image ? [item.image] : []);
+        const image = imagePaths.length
+          ? imagePaths
+              .map(
+                (src, index) =>
+                  '<figure class="figure"><img src="' +
+                  src +
+                  '" alt="Screenshot for ' +
+                  item.code +
+                  ', ' +
+                  item.title +
+                  '" loading="lazy" /><figcaption>' +
+                  item.code +
+                  ' · ' +
+                  item.title +
+                  (imagePaths.length > 1 ? ' · ' + (index + 1) + ' of ' + imagePaths.length : '') +
+                  ' · <a href="' +
+                  src +
+                  '" target="_blank" rel="noopener">Open full size</a></figcaption></figure>'
+              )
+              .join('')
+          : '<div class="note">No screenshot: this issue is not visible in a still frame.</div>';
+        detail.innerHTML =
+          '<div class="detail-head"><span class="code chip ' +
+          tierLabel[item.tier] +
+          '">' +
+          item.code +
+          '</span><h2>' +
+          item.title +
+          '</h2>' +
+          chip +
+          '</div>' +
+          '<p class="who">Who feels it: ' +
+          item.who +
+          '</p>' +
+          '<div class="cols"><div><h3>What happens today</h3><p>' +
+          item.today +
+          '</p></div><div><h3>What I would change</h3><ul>' +
+          item.plan.map((line) => '<li>' + line + '</li>').join('') +
+          '</ul></div></div>' +
+          '<div class="meta"><div>Effort <b>' +
+          item.effort +
+          '</b></div><div>Risk <b>' +
+          item.risk +
+          '</b></div><div class="call ' +
+          tierLabel[item.tier] +
+          '">' +
+          item.call +
+          '</div></div>' +
+          (item.note ? '<div class="note">' + item.note + '</div>' : '') +
+          image;
+      }
+
+      function select(code) {
+        const item = items.find((i) => i.code === code) || items[0];
+        renderRail(item.code);
+        renderDetail(item);
+        if (location.hash !== '#' + item.code.toLowerCase()) {
+          history.replaceState(null, '', '#' + item.code.toLowerCase());
+        }
+      }
+
+      for (const item of items) {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td class="c">' +
+          item.code +
+          '</td><td>' +
+          item.title +
+          '</td><td>' +
+          item.who +
+          '</td><td>' +
+          item.effort +
+          '</td><td><span class="chip ' +
+          tierLabel[item.tier] +
+          '">' +
+          item.call +
+          '</span></td>';
+        tr.addEventListener('click', () => {
+          select(item.code);
+          document.getElementById('detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        tr.style.cursor = 'pointer';
+        tableBody.appendChild(tr);
+      }
+
+      const fromHash = location.hash.replace('#', '').toUpperCase();
+      select(items.some((i) => i.code === fromHash) ? fromHash : 'A1');
+    </script>
+  </body>
+</html>
