@@ -1,5 +1,5 @@
 ---
-title: 'Settings (org, property, parking) UX/UI review'
+title: "Settings (org, property, parking) UX/UI review"
 status: active
 tags: [ux, ui, settings, review, qa, e2e, org, property, parking]
 updated: 2026-11-23
@@ -23,9 +23,9 @@ desktop (1440) and in dark mode. Reviewed with the `impeccable` (critique + audi
 **Status.** This started as a review. The four P1s are fixed on `fix/settings-blockers` (PR pending):
 duplicate section removed, lettered slot labels accepted, map pin optional with manual location
 fields, residence/tower/unit editable. The phone jump list, save-truth toast, staged-modal labels, rail `aria-current`, duplicate heading
-id and the copy pass are fixed on the follow-up polish PR. The remaining P2 items (integration
-status messaging, brand swatches, parking code field, listing status layout, Activity duplication,
-USD cost) and the untouched P3s are still open. See [Test coverage added](#test-coverage-added).
+id and the copy pass are fixed on the follow-up polish PR. The remaining P2 items (brand swatches on phone,
+listing status layout, Activity duplication) and the untouched P3s are still open. Two P2s turned
+out to be fixture artifacts, not product bugs (see P2-11 and P2-15). See [Test coverage added](#test-coverage-added).
 
 ## Verdict
 
