@@ -55,21 +55,29 @@ test.describe('property settings @ci', () => {
     ).toHaveCount(1);
   });
 
-  test.fixme('offers a section jump list on phone', async ({ page }) => {
+  test('offers a section jump list on phone', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(settingsPaths.property);
     await expect(page.locator('#section-basic')).toBeVisible({ timeout: 30_000 });
-    // 18 cards on phone with no way to jump; the rail is desktop-only today.
-    await expect(page.getByRole('button', { name: /jump to section/i })).toBeVisible();
-  });
-  // SET-P1-2: the section rail is hidden below `lg` and nothing replaces it.
 
-  test.fixme('exposes one page heading id', async ({ page }) => {
+    const trigger = page.getByRole('button', { name: /Jump to/i });
+    await expect(trigger).toBeVisible();
+    await trigger.click();
+
+    const sheet = page.getByRole('dialog');
+    await expect(sheet.getByRole('heading', { name: 'Jump to section' })).toBeVisible();
+    await sheet.getByRole('option', { name: 'Payment', exact: true }).click();
+    await expect(page.locator('#section-payment')).toBeInViewport();
+  });
+
+  test('exposes one page heading id at every breakpoint', async ({ page }) => {
     await page.goto(settingsPaths.property);
     await expect(page.locator('#section-basic')).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('#property-settings-heading')).toHaveCount(1);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator('#property-settings-heading')).toHaveCount(1);
   });
-  // SET-P3-2: mobile hero and desktop header are both mounted with the same id.
 
   test('saves a profile change and shows the success toast', async ({ page }) => {
     await page.goto(settingsPaths.property);
@@ -111,9 +119,9 @@ test.describe('property settings @ci', () => {
     await nav.getByRole('button', { name: 'Payment' }).click();
 
     await expect(page.locator('#section-payment')).toBeInViewport();
-    // SET-P3-1: the active row is colour-only; it exposes no aria-current.
-    await expect(nav.getByRole('button', { name: 'Payment' })).toHaveClass(
-      /text-primary-foreground/
+    await expect(nav.getByRole('button', { name: 'Payment' })).toHaveAttribute(
+      'aria-current',
+      'true'
     );
   });
 
@@ -156,6 +164,18 @@ test.describe('property settings @ci', () => {
     await tower.click();
     await page.getByRole('option', { name: 'Bali', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Save Changes' })).toBeEnabled();
+  });
+
+  test('a partial save names the section that still needs attention', async ({ page }) => {
+    await page.goto(settingsPaths.property);
+    await expect(page.locator('#section-basic')).toBeVisible({ timeout: 30_000 });
+
+    await page.getByRole('textbox', { name: 'Property Name', exact: true }).fill('');
+    await page.getByRole('button', { name: 'Save Changes' }).click();
+
+    await expect(page.getByText('Saved your other changes')).toBeVisible();
+    await expect(page.getByText('Basic Information still needs attention.')).toBeVisible();
+    await expect(page.getByText('New changes has been saved.')).toHaveCount(0);
   });
 
   test('a required field shows an inline error', async ({ page }) => {

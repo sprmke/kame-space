@@ -274,7 +274,7 @@ export function computePropertySettingsCompletion(
   if (amenityCount < MIN_PROPERTY_AMENITIES) {
     addSectionIssue(
       'amenities',
-      `Select at least ${MIN_PROPERTY_AMENITIES} amenities (${amenityCount} selected). This helps guests know what your property offers.`
+      `Select at least ${MIN_PROPERTY_AMENITIES} amenities (${amenityCount} selected). This helps guests know what's included.`
     );
   }
 

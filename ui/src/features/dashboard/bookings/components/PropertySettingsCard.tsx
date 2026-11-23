@@ -678,10 +678,28 @@ export function usePropertySettingsController() {
       return false;
     }
 
-    if (!plan.hasSavableWork) {
+    /*
+     * Evaluate edit rights before deciding "nothing to save". A restricted member can
+     * have savable work computed for a section they cannot edit; showing a permission
+     * toast there hid the real field error (for example "Enter a property name").
+     */
+    const editableProfileSections = plan.profileSections.filter((sectionId) =>
+      canEditSettingsSection(sectionId)
+    );
+    const editableOperationalSections = plan.operationalSections.filter((sectionId) =>
+      canEditSettingsSection(sectionId)
+    );
+    const hasEditableWork =
+      editableProfileSections.length > 0 || editableOperationalSections.length > 0;
+    const permissionOnlyBlocked =
+      !hasEditableWork && (plan.profileSections.length > 0 || plan.operationalSections.length > 0);
+
+    if (!plan.hasSavableWork || permissionOnlyBlocked) {
       setShowValidationErrors(true);
       if (plan.firstBlockedMessage) {
         toast.error(plan.firstBlockedMessage);
+      } else if (permissionOnlyBlocked) {
+        toast.error('You do not have permission to save these settings');
       } else if (!profileDirty && !operationalDirty) {
         toast.message('No changes to save');
       }
@@ -705,20 +723,8 @@ export function usePropertySettingsController() {
 
     try {
       let savedSomething = false;
-      const savedProfileSections = plan.profileSections.filter((sectionId) =>
-        canEditSettingsSection(sectionId)
-      );
-      const savedOperationalSections = plan.operationalSections.filter((sectionId) =>
-        canEditSettingsSection(sectionId)
-      );
-      if (
-        (plan.profileSections.length > 0 || plan.operationalSections.length > 0) &&
-        savedProfileSections.length === 0 &&
-        savedOperationalSections.length === 0
-      ) {
-        toast.error('You do not have permission to save these settings');
-        return false;
-      }
+      const savedProfileSections = editableProfileSections;
+      const savedOperationalSections = editableOperationalSections;
 
       const profilePayload = buildProfilePatchForSections(
         profileDraft,
@@ -783,7 +789,12 @@ export function usePropertySettingsController() {
         setInteractedFields({});
         resetUserEdited();
         if (plan.blockedSections.length > 0) {
-          toast.success('New changes has been saved.');
+          const blockedLabel =
+            SETTINGS_SECTIONS.find((section) => section.id === plan.blockedSections[0])?.label ??
+            'Another section';
+          toast.success('Saved your other changes', {
+            description: `${blockedLabel} still needs attention.`,
+          });
           scrollToSettingsSection(plan.blockedSections[0]!);
         } else {
           toast.success('Settings saved');
@@ -1120,7 +1131,11 @@ export function PropertySettingsCard() {
           navLabels={SETTINGS_SECTIONS.map((section) => section.label)}
         />
       ) : appSettings && operationalDraft ? (
-        <AdminSectionNavLayout className="min-h-0 flex-1" sectionGroups={navSectionGroups}>
+        <AdminSectionNavLayout
+          className="min-h-0 flex-1"
+          sectionGroups={navSectionGroups}
+          mobileSectionNav
+        >
           <PropertyProfileMainSections
             draft={profileDraft}
             onChange={setProfileField}

@@ -72,6 +72,15 @@ export function PropertySettingsSectionAlert({
   );
 }
 
+/** One-line reminder inside a Manage modal whose edits still need the page Save. */
+export function StagedSettingsHint({ className }: { className?: string }) {
+  return (
+    <p className={cn('text-muted-foreground text-xs', className)}>
+      Applies when you save the page.
+    </p>
+  );
+}
+
 export function SectionNavIssueDot({ className }: { className?: string }) {
   return (
     <span className={cn('bg-destructive size-2 shrink-0 rounded-full', className)} aria-hidden />

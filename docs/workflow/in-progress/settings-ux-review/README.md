@@ -20,10 +20,12 @@ desktop (1440) and in dark mode. Reviewed with the `impeccable` (critique + audi
 `mobile-responsive`, `frontend-design`, `ui-ux-pro-max`, `design-md`, `accessibility`,
 `human-copy` and `property-dashboard-qa` skills.
 
-**Status.** This started as a review. The four P1s are now fixed on `fix/settings-blockers`
-(PR pending), with tests: duplicate section removed, lettered slot labels accepted, map pin made
-optional with manual location fields, and residence/tower/unit made editable. The P2/P3 list is
-still open. See [Test coverage added](#test-coverage-added).
+**Status.** This started as a review. The four P1s are fixed on `fix/settings-blockers` (PR pending):
+duplicate section removed, lettered slot labels accepted, map pin optional with manual location
+fields, residence/tower/unit editable. The phone jump list, save-truth toast, staged-modal labels, rail `aria-current`, duplicate heading
+id and the copy pass are fixed on the follow-up polish PR. The remaining P2 items (integration
+status messaging, brand swatches, parking code field, listing status layout, Activity duplication,
+USD cost) and the untouched P3s are still open. See [Test coverage added](#test-coverage-added).
 
 ## Verdict
 
@@ -156,7 +158,7 @@ with a read-only summary plus a "Change residence and tower in Properties" actio
 
 | #     | Finding                                                                                                                                                                                                                                                                                    | Evidence                                                                                                                                          |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P2-1  | **Phone has no section navigation.** The rail is `lg`-only and nothing replaces it, so the 18-section page is a 12-screen scroll.                                                                                                                                                          | [property-phone-top](./screenshots/property-phone-top.png), [property-phone-basic](./screenshots/property-phone-basic.png)                        |
+| P2-1  | **Phone has no section navigation.** Fixed: a **Jump to <section>** button opens a grouped bottom sheet.                                                                                                                                                                                   |                                                                                                                                                   | [property-phone-top](./screenshots/property-phone-top.png), [property-phone-basic](./screenshots/property-phone-basic.png) |
 | P2-2  | The rail's active row is colour-only: no `aria-current`, no selected announcement. Screen-reader users cannot tell where they are.                                                                                                                                                         | [01 rail](./screenshots/property-desktop-01-basic.png)                                                                                            |
 | P2-3  | **Partial save toasts success while a field is invalid.** Clearing the name still saves an unrelated `details` section and toasts `New changes has been saved.`; with a restricted role the same path surfaces `You do not have permission to do that` instead of `Enter a property name`. | probe: `plan {"profileSections":["details"],"blockedSections":["basic"],"firstBlockedMessage":"Enter a property name"}`                           |
 | P2-4  | `useSetupGuideStateWrite` crashes when `setup-guide-state` answers without `setupGuide`: `TypeError: Cannot read properties of undefined (reading 'dismissedAt')`. It fires automatically when the required setup steps hit zero.                                                          | pageerror captured on the org settings load                                                                                                       |
@@ -240,13 +242,13 @@ with a read-only summary plus a "Change residence and tower in Properties" actio
 
 ## Test coverage added
 
-| File                                                             | Purpose                                                                                                                                                                                 |
-| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ui/e2e/features/dashboard/settings/shared/settingsHarness.ts`   | Scope paths, section lists, the deterministic fixture set (org logo, realistic residence/tower, full settings leaves), save-path mocks and the demo pause/scroll helpers                |
-| `ui/e2e/features/dashboard/settings/settingsModule.spec.ts`      | `@ci` — 16 tests + 4 documented `fixme`s: rail, sections, save, unsaved guard, inline error, payment dialog, listing status, phone overflow, org save/delete/AI, parking save/view-only |
-| `ui/e2e/features/dashboard/settings/settingsTour.slowmo.spec.ts` | `@demo` — 9 headed slow-motion scenarios, one per flow, recorded to video                                                                                                               |
-| `ui/e2e/features/team/shared/propertyTeamRbacHarness.ts`         | Additive options only: `extraPermissions`, `propertyListing`, `orgLogoUploaded`                                                                                                         |
-| `ui/e2e/features/parking/shared/parkingFlowHarness.ts`           | Additive option only: `slotLabel` (settings reads it; digits-only is savable)                                                                                                           |
+| File                                                             | Purpose                                                                                                                                                                                                                                                                               |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ui/e2e/features/dashboard/settings/shared/settingsHarness.ts`   | Scope paths, section lists, the deterministic fixture set (org logo, realistic residence/tower, full settings leaves), save-path mocks and the demo pause/scroll helpers                                                                                                              |
+| `ui/e2e/features/dashboard/settings/settingsModule.spec.ts`      | `@ci` — 24 tests: rail, one Guest experience, editable residence/tower, save, partial-save copy, unsaved guard, inline error, optional pin, lettered slot, payment dialog, listing status, phone jump list + overflow, org save/delete/AI, parking save/view-only, read-only redirect |
+| `ui/e2e/features/dashboard/settings/settingsTour.slowmo.spec.ts` | `@demo` — 9 headed slow-motion scenarios, one per flow, recorded to video                                                                                                                                                                                                             |
+| `ui/e2e/features/team/shared/propertyTeamRbacHarness.ts`         | Additive options only: `extraPermissions`, `propertyListing`, `orgLogoUploaded`                                                                                                                                                                                                       |
+| `ui/e2e/features/parking/shared/parkingFlowHarness.ts`           | Additive option only: `slotLabel` (settings reads it; digits-only is savable)                                                                                                                                                                                                         |
 
 Commands:
 
@@ -292,10 +294,10 @@ fixed.
 2. ~~**P1-2** fix the slot-label validation (or stop validating the read-only value).~~ Done.
 3. ~~**P1-3** keep a manual address path that commits without Places, and replace provider copy.~~ Done.
 4. ~~**P1-4** make Tower editable or point at the surface that owns it.~~ Done.
-5. **P2-1** add a phone jump list (sheet or chip strip) for the section rail.
-6. **P2-3 / P2-5** make partial saves and staged modal edits say what actually happened.
-7. **P2-2 / P2-6** add `aria-current` and stop mounting two headings with one id.
-8. Copy pass (the table above), then P2 layout finishing and the P3 list.
+5. ~~**P2-1** add a phone jump list (sheet or chip strip) for the section rail.~~ Done.
+6. ~~**P2-3 / P2-5** make partial saves and staged modal edits say what actually happened.~~ Done.
+7. ~~**P2-2 / P2-6** add `aria-current` and stop mounting two headings with one id.~~ Done.
+8. ~~Copy pass (the table above)~~ Done for the shipped strings; P2 layout finishing and the P3 list remain.
 
 ## Related
 

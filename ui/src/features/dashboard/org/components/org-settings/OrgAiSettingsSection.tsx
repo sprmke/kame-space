@@ -32,6 +32,7 @@ import {
   AI_SETTINGS_SECTION_ID,
 } from '@/features/dashboard/org/lib/aiSettingsLabels';
 import { PlanUpgradeLink } from '@/features/dashboard/plans/components/PlanUpgradeLink';
+import { PLAN_CODE_DISPLAY_NAME } from '@/features/dashboard/plans/lib/planPresentation';
 import { useOrgPermissions } from '@/features/dashboard/team/hooks/useOrgPermissions';
 
 import { SettingsFormSkeleton } from '@/components/skeletons/AdminSkeletons';
@@ -180,7 +181,11 @@ export function OrgAiSettingsSection() {
                   />
                   <AiSettingsUsageStat
                     label="Plan"
-                    value={<span className="capitalize">{usage.planTier.replace('_', ' ')}</span>}
+                    value={
+                      <span>
+                        {PLAN_CODE_DISPLAY_NAME[usage.planTier] ?? usage.planTier.replace('_', ' ')}
+                      </span>
+                    }
                   />
                 </div>
                 <AiSettingsCreditsBar
