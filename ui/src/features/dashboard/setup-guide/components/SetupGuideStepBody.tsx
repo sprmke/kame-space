@@ -399,9 +399,12 @@ function ParkingSectionsInner({
         <PropertyLocationPicker
           disabled={busy}
           value={locationDraft}
+          fieldIdPrefix="parking"
           onChange={(patch) => setLocationDraft((current) => ({ ...current, ...patch }))}
           addressError={resolveFieldError('property-address')}
-          mapError={resolveFieldError('property-location-map')}
+          cityError={resolveFieldError('parking-city')}
+          provinceError={resolveFieldError('parking-province')}
+          countryError={resolveFieldError('parking-country')}
           onFieldInteract={markFieldInteracted}
         />
       ) : null}

@@ -124,6 +124,29 @@ describe('email automations validation', () => {
   });
 });
 
+describe('location validation', () => {
+  function locationCompletion(overrides: Partial<PropertyProfileDraft>) {
+    return computePropertySettingsCompletion({
+      profile: baseProfile(overrides),
+      operational: baseOperational(),
+      appSettings: null,
+      orgSocialLinks: null,
+    });
+  }
+
+  it('does not require a map pin when the address is set', () => {
+    const result = locationCompletion({ latitude: null, longitude: null, mapsUrl: '' });
+    expect(result.fieldErrors).not.toHaveProperty('property-location-map');
+    expect(result.issueSectionIds).not.toContain('location');
+  });
+
+  it('still requires a street address', () => {
+    const result = locationCompletion({ address: '' });
+    expect(result.fieldErrors['property-address']).toBe('Enter the street address');
+    expect(result.issueSectionIds).toContain('location');
+  });
+});
+
 describe('MIN_PROPERTY_PHOTOS', () => {
   it('is defined', () => {
     expect(MIN_PROPERTY_PHOTOS).toBeDefined();

@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { AdminSection } from '@/features/dashboard/bookings/components/AdminSectionNavLayout';
 import {
   applyUnitTypeDefaultsToProfile,
+  defaultUnitTypesForResidence,
   findUnitTypeById,
 } from '@/features/dashboard/bookings/lib/unitTypes';
 import { PropertyAmenitiesManageDialog } from '@/features/dashboard/org/components/property-settings/PropertyAmenitiesManageDialog';
@@ -48,6 +49,7 @@ import {
 } from '@/features/dashboard/org/lib/propertyResidenceDefaults';
 import {
   getPropertyResidenceNames,
+  getTowersForResidence,
   isCondoPropertyType,
   isTowerInResidence,
 } from '@/features/dashboard/org/lib/propertyResidences';
@@ -66,7 +68,10 @@ import {
   type PropertyProfileDraft,
 } from '@/features/dashboard/org/lib/propertySettingsForm';
 import { summarizeSettingsLabels } from '@/features/dashboard/org/lib/propertySettingsSummaryLabels';
-import { isValidUnitNumber } from '@/features/dashboard/org/lib/propertyTowerUnit';
+import {
+  isValidUnitNumber,
+  sanitizeUnitNumberInput,
+} from '@/features/dashboard/org/lib/propertyTowerUnit';
 import type { PropertyTowerUnitConflict } from '@/features/dashboard/org/lib/propertyTowerUnitConflict';
 
 import { AvailabilityCheckInput } from '@/components/AvailabilityCheckInput';
@@ -182,8 +187,29 @@ export function PropertyProfileMainSections({
   const isCondo = isCondoPropertyType(draft.type);
   const effectiveResidence = draft.residenceName.trim() || DEFAULT_RESIDENCE_NAME;
   const residenceOptions = getPropertyResidenceNames();
+  const legacyResidence =
+    Boolean(draft.residenceName.trim()) && !residenceOptions.includes(effectiveResidence);
+  const towerOptions = getTowersForResidence(effectiveResidence);
+  const legacyTower =
+    Boolean(draft.tower) && towerOptions.length > 0 && !towerOptions.includes(draft.tower);
   const towerValid =
     isCondo && Boolean(draft.tower) && isTowerInResidence(draft.tower, effectiveResidence);
+
+  const handleResidenceChange = (residenceName: string) => {
+    if (residenceName === effectiveResidence) return;
+    markFieldInteracted('property-residence');
+    onChange('residenceName', residenceName);
+    // Tower and unit type are residence-scoped. Clear them so the host re-picks
+    // instead of saving a pair the server rejects.
+    onChange('tower', '');
+    const nextUnitType = defaultUnitTypesForResidence(residenceName)[0];
+    onChange('unitTypeId', nextUnitType?.id ?? '');
+  };
+
+  const handleTowerChange = (tower: string) => {
+    markFieldInteracted('property-tower');
+    onChange('tower', tower);
+  };
   const towerUnitReady = towerValid && isValidUnitNumber(draft.unitNumber);
   const hasDuplicate = towerUnitReady && towerConflict !== null;
   const propertyTypeLabel =
@@ -413,19 +439,31 @@ export function PropertyProfileMainSections({
                 required
                 error={fieldError('property-residence')}
               >
-                <Input
-                  id="property-residence"
-                  value={draft.residenceName.trim() || residenceOptions[0] || ''}
-                  readOnly
+                <Select
+                  value={effectiveResidence}
+                  onValueChange={handleResidenceChange}
                   disabled={lock('basic')}
-                  tabIndex={-1}
-                  aria-readonly="true"
-                  aria-invalid={Boolean(fieldError('property-residence'))}
-                  className={cn(
-                    readOnlyFieldClass,
-                    fieldError('property-residence') && 'border-destructive'
-                  )}
-                />
+                >
+                  <SelectTrigger
+                    id="property-residence"
+                    aria-invalid={Boolean(fieldError('property-residence'))}
+                    className={cn(fieldError('property-residence') && 'border-destructive')}
+                  >
+                    <SelectValue placeholder="Select a residence" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {legacyResidence ? (
+                      <SelectItem value={effectiveResidence}>
+                        {effectiveResidence} (legacy)
+                      </SelectItem>
+                    ) : null}
+                    {residenceOptions.map((residenceName) => (
+                      <SelectItem key={residenceName} value={residenceName}>
+                        {residenceName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </SettingsField>
             ) : null}
 
@@ -437,19 +475,35 @@ export function PropertyProfileMainSections({
                   required
                   error={fieldError('property-tower')}
                 >
-                  <Input
-                    id="property-tower"
-                    value={draft.tower || ''}
-                    readOnly
-                    disabled={lock('basic')}
-                    tabIndex={-1}
-                    aria-readonly="true"
-                    aria-invalid={Boolean(fieldError('property-tower') || hasDuplicate)}
-                    className={cn(
-                      readOnlyFieldClass,
-                      (fieldError('property-tower') || hasDuplicate) && 'border-destructive'
-                    )}
-                  />
+                  <Select
+                    value={draft.tower || undefined}
+                    onValueChange={handleTowerChange}
+                    disabled={lock('basic') || towerOptions.length === 0}
+                  >
+                    <SelectTrigger
+                      id="property-tower"
+                      aria-invalid={Boolean(fieldError('property-tower') || hasDuplicate)}
+                      className={cn(
+                        (fieldError('property-tower') || hasDuplicate) && 'border-destructive'
+                      )}
+                    >
+                      <SelectValue
+                        placeholder={
+                          towerOptions.length === 0 ? 'Select a residence first' : 'Select a tower'
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {legacyTower ? (
+                        <SelectItem value={draft.tower}>{draft.tower} (legacy)</SelectItem>
+                      ) : null}
+                      {towerOptions.map((tower) => (
+                        <SelectItem key={tower} value={tower}>
+                          {tower}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </SettingsField>
 
                 <SettingsField
@@ -461,16 +515,18 @@ export function PropertyProfileMainSections({
                   <Input
                     id="property-unit"
                     value={draft.unitNumber}
-                    readOnly
                     disabled={lock('basic')}
-                    tabIndex={-1}
-                    aria-readonly="true"
+                    inputMode="numeric"
+                    maxLength={4}
                     aria-invalid={Boolean(fieldError('property-unit') || hasDuplicate)}
                     className={cn(
-                      readOnlyFieldClass,
                       'tabular-nums',
                       (fieldError('property-unit') || hasDuplicate) && 'border-destructive'
                     )}
+                    onChange={(event) => {
+                      markFieldInteracted('property-unit');
+                      onChange('unitNumber', sanitizeUnitNumberInput(event.target.value));
+                    }}
                   />
                 </SettingsField>
               </>
@@ -899,6 +955,7 @@ export function PropertyProfileMainSections({
             persistPending={locationPersistPending}
             manageNeedsAttention={propertySettingsSectionHasIssue('location', issueSectionIds)}
             onFieldInteract={markFieldInteracted}
+            resolveFieldError={fieldError}
             onPersist={onPersistLocation}
             value={{
               address: draft.address,

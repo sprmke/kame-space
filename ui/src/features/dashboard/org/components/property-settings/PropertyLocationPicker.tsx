@@ -12,6 +12,7 @@ import {
   type PropertyLocationFields,
 } from '@/features/dashboard/org/lib/propertyLocation';
 
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
@@ -25,7 +26,11 @@ type PropertyLocationPickerProps = {
     options?: PropertyLocationChangeOptions
   ) => void;
   addressError?: string | null;
-  mapError?: string | null;
+  cityError?: string | null;
+  provinceError?: string | null;
+  countryError?: string | null;
+  /** Completion field ids are scope-prefixed: `property-city` vs `parking-city`. */
+  fieldIdPrefix?: 'property' | 'parking';
   onFieldInteract?: (fieldId: string) => void;
 };
 
@@ -34,10 +39,13 @@ export function PropertyLocationPicker({
   disabled = false,
   onChange,
   addressError = null,
-  mapError = null,
+  cityError = null,
+  provinceError = null,
+  countryError = null,
+  fieldIdPrefix = 'property',
   onFieldInteract,
 }: PropertyLocationPickerProps) {
-  const { ready, error, apiKeyConfigured } = useGoogleMapsLoader();
+  const { ready, error, apiKeyConfigured, retry } = useGoogleMapsLoader();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -262,6 +270,10 @@ export function PropertyLocationPicker({
   };
 
   const mapsUnavailable = !apiKeyConfigured || Boolean(error);
+  const hasPin = value.latitude != null && value.longitude != null;
+  const mapsUnavailableMessage = apiKeyConfigured
+    ? 'The map could not load. Enter the address manually, or retry.'
+    : 'Map preview is unavailable right now. Enter the address manually.';
 
   return (
     <div className="space-y-4">
@@ -275,44 +287,132 @@ export function PropertyLocationPicker({
           ref={inputRef}
           defaultValue={value.address}
           disabled={disabled}
-          placeholder="Search or enter property address"
+          placeholder="Street address, building, city"
           autoComplete="off"
           onInput={() => onFieldInteractRef.current?.('property-address')}
           onBlur={handleAddressBlur}
           aria-invalid={Boolean(addressError)}
           className={cn('min-h-[44px]', addressError && 'border-destructive')}
         />
-        {addressError ? (
-          <p className="text-destructive text-xs">{addressError}</p>
-        ) : mapsUnavailable ? (
+        {addressError ? <p className="text-destructive text-xs">{addressError}</p> : null}
+        {!addressError && mapsUnavailable ? (
           <p className="text-muted-foreground text-xs">
-            {error ??
-              'Map picker requires VITE_GOOGLE_MAPS_API_KEY (Maps JavaScript + Places APIs).'}
+            Guests get directions from the address when no pin is set.
           </p>
         ) : null}
       </div>
 
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <label htmlFor="property-location-city" className="text-sm font-medium">
+            City
+            <RequiredMark />
+          </label>
+          <Input
+            id="property-location-city"
+            value={value.city}
+            disabled={disabled}
+            autoComplete="address-level2"
+            onChange={(event) => {
+              onFieldInteract?.(`${fieldIdPrefix}-city`);
+              onChange({ city: event.target.value });
+            }}
+            aria-invalid={Boolean(cityError)}
+            className={cn('min-h-[44px]', cityError && 'border-destructive')}
+          />
+          {cityError ? <p className="text-destructive text-xs">{cityError}</p> : null}
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="property-location-province" className="text-sm font-medium">
+            Province or state
+            <RequiredMark />
+          </label>
+          <Input
+            id="property-location-province"
+            value={value.province}
+            disabled={disabled}
+            autoComplete="address-level1"
+            onChange={(event) => {
+              onFieldInteract?.(`${fieldIdPrefix}-province`);
+              onChange({ province: event.target.value });
+            }}
+            aria-invalid={Boolean(provinceError)}
+            className={cn('min-h-[44px]', provinceError && 'border-destructive')}
+          />
+          {provinceError ? <p className="text-destructive text-xs">{provinceError}</p> : null}
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="property-location-country" className="text-sm font-medium">
+            Country
+            <RequiredMark />
+          </label>
+          <Input
+            id="property-location-country"
+            value={value.country}
+            disabled={disabled}
+            autoComplete="country-name"
+            onChange={(event) => {
+              onFieldInteract?.(`${fieldIdPrefix}-country`);
+              onChange({ country: event.target.value });
+            }}
+            aria-invalid={Boolean(countryError)}
+            className={cn('min-h-[44px]', countryError && 'border-destructive')}
+          />
+          {countryError ? <p className="text-destructive text-xs">{countryError}</p> : null}
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="property-location-zip" className="text-sm font-medium">
+            ZIP code
+          </label>
+          <Input
+            id="property-location-zip"
+            value={value.zipCode}
+            disabled={disabled}
+            autoComplete="postal-code"
+            onChange={(event) => {
+              onFieldInteract?.(`${fieldIdPrefix}-address`);
+              onChange({ zipCode: event.target.value });
+            }}
+            className="min-h-[44px]"
+          />
+        </div>
+      </div>
+
       {apiKeyConfigured ? (
         <div className="space-y-2">
-          <p className="text-sm font-medium">
-            Map pin
-            <RequiredMark />
-          </p>
-          <div
-            className={cn(
-              'bg-muted/20 relative aspect-video w-full overflow-hidden rounded-lg border',
-              !ready && 'animate-pulse',
-              mapError && 'border-destructive'
-            )}
-          >
-            <div ref={mapContainerRef} className="absolute inset-0 size-full" />
-            {!ready && !error ? (
-              <div className="bg-muted/40 absolute inset-0 flex items-center justify-center">
-                <MapPin className="text-muted-foreground size-8" aria-hidden />
-              </div>
-            ) : null}
-          </div>
-          {mapError ? <p className="text-destructive text-xs">{mapError}</p> : null}
+          <p className="text-sm font-medium">Map pin</p>
+          {mapsUnavailable ? (
+            <div className="flex flex-col items-start gap-2 rounded-lg border border-dashed p-4">
+              <p className="text-sm font-medium">{mapsUnavailableMessage}</p>
+              {!disabled ? (
+                <Button type="button" variant="outline" size="sm" onClick={retry}>
+                  Retry
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            <div
+              className={cn(
+                'bg-muted/20 relative aspect-video w-full overflow-hidden rounded-lg border',
+                !ready && 'animate-pulse'
+              )}
+            >
+              <div ref={mapContainerRef} className="absolute inset-0 size-full" />
+              {!ready ? (
+                <div className="bg-muted/40 absolute inset-0 flex items-center justify-center">
+                  <MapPin className="text-muted-foreground size-8" aria-hidden />
+                </div>
+              ) : null}
+            </div>
+          )}
+          {!mapsUnavailable && !hasPin ? (
+            <p className="text-muted-foreground text-xs">
+              Optional. Drop a pin so guests get exact directions.
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>

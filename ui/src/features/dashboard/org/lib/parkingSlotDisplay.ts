@@ -2,11 +2,16 @@ import type { ParkingType } from '@/features/dashboard/org/lib/parkingResidences
 import { normalizeParkingLevel } from '@/features/dashboard/org/lib/parkingResidences';
 
 export function sanitizeParkingSlotNumber(value: string): string {
-  return value.replace(/\D/g, '').slice(0, 4);
+  // Slot labels are host-facing identifiers, not strictly numeric: "12A", "B-04",
+  // "P12" all exist in the wild. Keep letters, digits and the separator, cap the length.
+  return value.replace(/[^A-Za-z0-9-]/g, '').slice(0, 8);
 }
 
 export function isValidParkingSlotNumber(value: string): boolean {
-  return /^\d{1,4}$/.test(value.trim());
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  // At least one digit, so "A" or "-" do not pass as a slot.
+  return /^[A-Za-z0-9][A-Za-z0-9-]{0,7}$/.test(trimmed) && /\d/.test(trimmed);
 }
 
 /** Display name shown in admin + guest surfaces, e.g. Monaco - Level 1 - Slot 26 */
@@ -59,7 +64,9 @@ export function inferParkingTypeForTower(tower: string): ParkingType {
 /** Best-effort numeric slot for legacy labels like M-B1-001 */
 export function parseParkingSlotNumberFromLabel(slotLabel: string): string {
   const trimmed = slotLabel.trim();
-  if (/^\d{1,4}$/.test(trimmed)) return trimmed;
+  const sanitized = sanitizeParkingSlotNumber(trimmed);
+  // The whole label is already a valid slot ("12A", "B-04"): keep it intact.
+  if (sanitized && isValidParkingSlotNumber(sanitized)) return sanitized;
   const trailingDigits = trimmed.match(/(\d{1,4})$/);
   return trailingDigits?.[1] ?? '';
 }

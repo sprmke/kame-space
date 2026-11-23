@@ -286,8 +286,11 @@ export function ParkingLocationSection({ controller }: { controller: SettingsCon
         disabled={controller.busy}
         value={controller.locationDraft}
         onChange={(patch) => controller.setLocationDraft((current) => ({ ...current, ...patch }))}
+        fieldIdPrefix="parking"
         addressError={controller.resolveFieldError('property-address')}
-        mapError={controller.resolveFieldError('property-location-map')}
+        cityError={controller.resolveFieldError('parking-city')}
+        provinceError={controller.resolveFieldError('parking-province')}
+        countryError={controller.resolveFieldError('parking-country')}
         onFieldInteract={controller.markFieldInteracted}
       />
     </AdminSection>

@@ -37,6 +37,7 @@ type Props = {
   /** Persist to the server (modal Save). Draft-only if omitted. */
   onPersist?: (next: PropertyLocationFields) => Promise<void>;
   onFieldInteract?: (fieldId: string) => void;
+  resolveFieldError?: (fieldId: string) => string | null;
   /** Inline picker (Setup Guide). */
   embedded?: boolean;
   manageNeedsAttention?: boolean;
@@ -49,6 +50,7 @@ export function PropertyLocationSettingsBlock({
   onChange,
   onPersist,
   onFieldInteract,
+  resolveFieldError,
   embedded = false,
   manageNeedsAttention = false,
 }: Props) {
@@ -171,19 +173,27 @@ export function PropertyLocationSettingsBlock({
     }
   }, [manageOpen, onFieldInteract, sessionDirty, sessionValid]);
 
-  const resolvedAddressError =
-    session && !session.address.trim() && sessionDirty ? 'Enter the street address' : null;
+  // Modal errors come from the session draft, not the saved page draft. Using the
+  // page-level completion here showed "Enter the city" while the city was filled.
+  const sessionRequiredError = (
+    key: 'address' | 'city' | 'province' | 'country',
+    message: string
+  ) => (session && sessionDirty && !session[key].trim() ? message : null);
 
-  const resolvedMapError =
-    session && sessionDirty && (session.latitude == null || session.longitude == null)
-      ? 'Pin your property on the map'
-      : null;
+  const resolvedAddressError = sessionRequiredError('address', 'Enter the street address');
+  const resolvedCityError = sessionRequiredError('city', 'Enter the city');
+  const resolvedProvinceError = sessionRequiredError('province', 'Enter the province or state');
+  const resolvedCountryError = sessionRequiredError('country', 'Enter the country');
 
   if (embedded) {
     return (
       <PropertyLocationPicker
         value={value}
         disabled={disabled || persistPending}
+        addressError={resolveFieldError?.('property-address') ?? null}
+        cityError={resolveFieldError?.('property-city') ?? null}
+        provinceError={resolveFieldError?.('property-province') ?? null}
+        countryError={resolveFieldError?.('property-country') ?? null}
         onFieldInteract={onFieldInteract}
         onChange={(patch, options) => onChange({ ...value, ...patch }, options)}
       />
@@ -262,7 +272,9 @@ export function PropertyLocationSettingsBlock({
                 value={session}
                 disabled={disabled || saving}
                 addressError={resolvedAddressError}
-                mapError={resolvedMapError}
+                cityError={resolvedCityError}
+                provinceError={resolvedProvinceError}
+                countryError={resolvedCountryError}
                 onFieldInteract={onFieldInteract}
                 onChange={applySessionPatch}
               />
