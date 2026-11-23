@@ -15,6 +15,12 @@ async function openFinance(page: Page, extra = '') {
   await expect(page.getByRole('heading', { name: 'Finance', exact: true }).first()).toBeVisible({
     timeout: 20_000,
   });
+  // Wait for the period data, not just the shell. A cold dev server can take a
+  // moment to compile the route, and every test below depends on real rows.
+  await expect(page.getByText(/^₱[\d,]+\.\d{2}$/).first()).toBeVisible({ timeout: 20_000 });
+  await expect(
+    page.locator('p:visible', { hasText: 'Electricity bill' }).first()
+  ).toBeVisible({ timeout: 20_000 });
 }
 
 test.describe('@ci finance module', () => {
