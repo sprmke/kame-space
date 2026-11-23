@@ -33,7 +33,7 @@ actions. That is the right call for this module, and it works.
 
 Two remediation batches shipped in this branch. The screenshots below are the **pre-fix**
 evidence that documents the findings; the recordings were re-captured after the fixes, and
-[`after/`](./after) holds the post-fix captures. [`before-after.png`](./before-after.png) is the
+[`after/`](./after) holds the post-fix captures. [`before-after.jpg`](./before-after.jpg) is the
 seven-pair comparison sheet (KPI and deltas, booking sources, pace chart, AI review, 1024 KPI, phone
 tabs, PDF).
 
