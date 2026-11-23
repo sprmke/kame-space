@@ -25,6 +25,7 @@ import {
   useRegenerateAnalyticsAiReview,
 } from '@/features/dashboard/analytics/hooks/useAnalyticsAiReview';
 import { usePropertyAnalyticsSummary } from '@/features/dashboard/analytics/hooks/usePropertyAnalyticsSummary';
+import { humanizeAiReview } from '@/features/dashboard/analytics/lib/aiReviewCopy';
 import {
   aiReviewMatchesPeriod,
   resolveAiReviewPeriodApplicability,
@@ -145,9 +146,12 @@ export function PropertyAnalyticsPage() {
   const { open: openUpgradeModal } = useUpgradeModal();
   const aiReviewAvailability = useFeatureAvailability('analytics.ai_review');
   const aiReviewQueryEnabled = aiReviewAvailability.available && !aiReviewAvailability.isLoading;
-  const { data: aiReview, isLoading: isAiReviewLoading } = useAnalyticsAiReview({
+  const { data: aiReviewRecord, isLoading: isAiReviewLoading } = useAnalyticsAiReview({
     enabled: aiReviewQueryEnabled,
   });
+  // Model output is stored raw: turn state ids, ISO dates and `PHP 12000` into host copy once,
+  // so the card and the PDF export read the same cleaned record.
+  const aiReview = useMemo(() => humanizeAiReview(aiReviewRecord), [aiReviewRecord]);
   const regenerateAiReview = useRegenerateAnalyticsAiReview();
   const orgContext = useOptionalOrgContext();
   const brandColor = usePdfBrandColor();

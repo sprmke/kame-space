@@ -123,7 +123,9 @@ function ReviewItem({
   onOpenPlaybook?: (slug: string) => void;
 }) {
   const deepLink = 'deepLink' in item ? item.deepLink : null;
-  const detail = 'evidence' in item ? item.evidence : item.why;
+  // Improvements carry `why`; strengths carry `evidence`. A sanitised improvement can
+  // have both keys, so prefer whichever actually has text.
+  const detail = 'why' in item ? (item.why ?? item.evidence) : item.evidence;
   const action = 'action' in item ? item.action : undefined;
   const articleSlugs = 'articleSlugs' in item ? (item.articleSlugs ?? []) : [];
   const pageLabel = analyticsDeepLinkPageLabel(deepLink);
