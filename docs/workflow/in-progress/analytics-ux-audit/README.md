@@ -31,18 +31,27 @@ actions. That is the right call for this module, and it works.
 
 ## Status after remediation
 
-The five "fix now" items shipped in this branch. The screenshots below are the **pre-fix**
-evidence that documents the findings; the recordings were re-captured after the fixes.
+Two remediation batches shipped in this branch. The screenshots below are the **pre-fix**
+evidence that documents the findings; the recordings were re-captured after the fixes, and
+[`after/`](./after) holds the post-fix captures used in the before/after comparison.
 
-| Item                              | Status  | Change                                                                                                                                            |
-| --------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P1-1 chart legends and bar values | Shipped | Donut legend (name, count, share, tail folds into Others); counts on age, party and distribution bars; party axis captioned. `lib/donutSlices.ts` |
-| P1-2 AI review copy               | Shipped | `lib/aiReviewCopy.ts` normalises state ids, ISO dates, `PHP 12000` and ADR/RevPAR in the card and the PDF; prompt rules added                     |
-| P1-3 1024 KPI                     | Shipped | Whole-peso KPI values plus a reserved second title line at `lg` so values share a baseline                                                        |
-| P1-4 zero delta                   | Shipped | `StatCard` renders `change === 0` as a neutral gray chip with a dash icon (shared with Bookings, Finance, Dashboard)                              |
-| P2-6 / P2-7 PDF                   | Shipped | Two pages, readable period, `PHP` currency code, separate channel and origin tables side by side                                                  |
-| P2-1 to P2-5, P2-8 to P2-11       | Open    | Section in URL, phone tab strip, pace chart, origins rounding, tab semantics, toggle names, hit targets                                           |
-| P3 group                          | Open    | Cosmetic pass                                                                                                                                     |
+| Item                              | Status  | Change                                                                                                                                                                 |
+| --------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1-1 chart legends and bar values | Shipped | Donut legend (name, count, share, tail folds into Others); counts on age, party and distribution bars; party axis captioned. `lib/donutSlices.ts`                      |
+| P1-2 AI review copy               | Shipped | `lib/aiReviewCopy.ts` normalises state ids, ISO dates, `PHP 12000` and ADR/RevPAR in the card and the PDF; prompt rules added                                          |
+| P1-3 1024 KPI                     | Shipped | Whole-peso KPI values plus a reserved second title line at `lg` so values share a baseline                                                                             |
+| P1-4 zero delta                   | Shipped | `StatCard` renders `change === 0` as a neutral gray chip with a dash icon (shared with Bookings, Finance, Dashboard)                                                   |
+| P2-1 section in the URL           | Shipped | `?section=` with Back/reload/deep-link support; `overview` stays out of the URL. `lib/analyticsSection.ts`                                                             |
+| P2-2 phone tab strip              | Shipped | Right-edge fade as the scroll cue, and the active tab scrolls fully into view on select                                                                                |
+| P2-4 pace chart                   | Shipped | Bookings render as bars; Revenue keeps the area chart; legend hidden for a single series                                                                               |
+| P2-5 origins rounding             | Shipped | Whole-percent shares everywhere (17%, not 16.67%); 0% no longer draws a 2% bar                                                                                         |
+| P2-6 / P2-7 PDF                   | Shipped | Two pages, readable period, `PHP` currency code, separate channel and origin tables side by side                                                                       |
+| P2-8 tab semantics                | Partial | Section tabs are a complete tab/tabpanel pattern with arrow/Home/End keys. The in-card metric toggle keeps its tablist role (shared `SegmentedControl`, separate pass) |
+| P2-9 toggle names                 | Shipped | "Bookings" / "Revenue" are the accessible names, no longer lowercase values                                                                                            |
+| P2-3 overview signal              | Open    | Product call on what the first viewport should lead with                                                                                                               |
+| P2-10 support button overlap      | Open    | Shell-level; fix once for every page                                                                                                                                   |
+| P2-11 touch targets               | Open    | The repo sets 36px tab tracks and forbids `min-h` on triggers; a hit pad is clipped by the strip's overflow. Needs a shared-strip decision                             |
+| P3 group                          | Open    | Cosmetic pass                                                                                                                                                          |
 
 ## Evidence
 

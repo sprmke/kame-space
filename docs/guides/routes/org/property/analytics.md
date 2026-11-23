@@ -30,7 +30,7 @@ grouped by channel.
 
 | Section                                      | E2E save | Validation | Docs    | Notes                                                                                                                                                                                                                                                                                                                                                                      |
 | -------------------------------------------- | -------- | ---------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Section tabs                                 | —        | —          | Done    | Overview / Trends / Guests / AI review (`AnalyticsSectionTabs`)                                                                                                                                                                                                                                                                                                            |
+| Section tabs                                 | —        | —          | Done    | Overview / Trends / Guests / AI review (`AnalyticsSectionTabs`); `?section=` in the URL, `role=tabpanel` with `aria-controls`, arrow/Home/End keys. Phone strip scrolls with a right-edge fade and keeps the active tab in view                                                                                                                                            |
 | KPI strip                                    | —        | —          | Done    | **4 headline cards** — Occupancy, Avg nightly rate, Revenue per night, Bookings. Lead time / cancellations / rating / response rate live in Trends & Guests                                                                                                                                                                                                                |
 | State banner                                 | —        | —          | Removed | Former occupancy-outlook chips (Underbooked / Building / etc.) and unpaid-balance pill above the KPI grid retired; forward state assessment remains in the API bundle, PDF export, AI review, and playbook matching only                                                                                                                                                   |
 | Occupancy & revenue trend                    | —        | —          | Removed | Former Overview "This period" chart retired; period KPIs remain in the strip; booking pace stays on Trends                                                                                                                                                                                                                                                                 |
@@ -90,6 +90,10 @@ headline cards.
 
 Below that, **four section tabs** (`AnalyticsSectionTabs`): Overview · Trends · Guests · AI review.
 
+The selected tab is the `section` query param (`?section=trends`; `overview` is omitted). Back,
+reload and a shared link land on the same tab. The tab list supports ArrowLeft/ArrowRight/Home/End,
+and the content sits in a labelled `tabpanel`.
+
 Tabs and their contents:
 
 1. **Overview** (`AnalyticsOverviewSection`)
@@ -107,8 +111,9 @@ Tabs and their contents:
      peer sample is large enough.
 2. **Trends**
    - **New bookings** — bookings **created** in the selected range (daily when ≤45 days, else
-     weekly) as a monotone area/line chart (finance-style), optional dashed last-year series.
-     Toggle bookings / revenue.
+     weekly). Counts render as **bars**; the Revenue view keeps the area chart. A dashed last-year
+     series appears when history exists, and the legend is hidden when there is only one series.
+     Toggle **Bookings** / **Revenue**.
    - **Lead time** — how far ahead guests booked (histogram).
    - **Length of stay** — nights per stay (histogram).
    - **Reviews & response** — horizontal bars for cancellation rate, average guest rating
@@ -121,8 +126,8 @@ Tabs and their contents:
      counts on each bar and a **Guests per booking** caption.
    - **Guest origins** — ranked origin list (free-text from address / nationality). PH matches
      use **City, Province** (e.g. `Makati, Metro Manila`); countries stay as country names.
-     Shows at most **6 distinct** origins. If there are more, the last row is **Others**
-     (top 5 named + remaining share).
+     Shows at most **6 distinct** origins with whole-percent shares (17%, not 16.67%). If there are
+     more, the last row is **Others** (top 5 named + remaining share).
 4. **AI review**
    - **AI Performance Review** — a score (0–100), what's working, what to improve, and what to
      avoid. Each item is grounded in the numbers above and, when relevant, cites a recent change
