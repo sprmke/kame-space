@@ -34,8 +34,8 @@ export function DashboardStatCards({ stats }: Props) {
           )}
         />
         <DashboardTrendStatCard
-          title="Total Bookings"
-          titleAdornment={<MetricHint metric="propertyNightsBooked" label="Total Bookings" />}
+          title="Nights booked"
+          titleAdornment={<MetricHint metric="propertyNightsBooked" label="Nights booked" />}
           value={`${kpis.nightsBooked.value} / ${kpis.nightsBooked.periodDays}`}
           change={kpis.totalBookings.changePercent}
           icon={FileText}

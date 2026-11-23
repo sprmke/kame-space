@@ -261,8 +261,8 @@ test.describe('@ci marketing planner', () => {
       await expect(planDialog.getByText('Open this weekend', { exact: true })).toBeVisible();
       await expect(planDialog.getByText('Two nights are still open this weekend.')).toBeVisible();
       await page.screenshot({ path: `test-results/marketing-planner-modal-${label}.png` });
-      // Phone sheets hide the X; Escape dismisses both sheet and desktop dialog.
-      await page.keyboard.press('Escape');
+      // Header Close is always mounted (sheet chrome hides only the default drawer X).
+      await planDialog.getByRole('button', { name: 'Close' }).click();
       await expect(planDialog).toBeHidden();
     }
   });

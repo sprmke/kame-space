@@ -94,6 +94,8 @@ export type DashboardStats = {
     periodDays: number;
     checkInsToday: number;
     checkOutsToday: number;
+    /** Guests on property today (check-in ≤ today < check-out, or same-day stay). */
+    stayingToday: number;
     checkInsInPeriod: number;
   };
   kpis: {

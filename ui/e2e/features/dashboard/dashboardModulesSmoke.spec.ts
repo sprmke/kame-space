@@ -48,6 +48,21 @@ test.describe('@ci dashboard module shells', () => {
     });
   });
 
+  test('property dashboard home shows Rates and ops board', async ({ page }) => {
+    await installPropertyTeamRbacMocks(page, 'full_access');
+    await page.goto(teamRbacPaths.dashboard);
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(page.getByRole('region', { name: 'Key metrics' })).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(page.getByRole('region', { name: /Needs attention|Recent bookings/i })).toBeVisible(
+      { timeout: 20_000 }
+    );
+    await expect(page.getByRole('region', { name: 'Rates' })).toBeVisible({ timeout: 20_000 });
+  });
+
   test('property maintenance page loads', async ({ page }) => {
     await installPropertyTeamRbacMocks(page, 'full_access');
     await page.goto('/org/sample-stays-ph/property/solea-mactan/maintenance');
