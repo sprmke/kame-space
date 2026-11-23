@@ -13,7 +13,8 @@ and dark mode. Reviewed with the `impeccable` (critique + audit), `mobile-respon
 `frontend-design`, `design-md`, `accessibility`, and `human-copy` skills.
 
 **This is a review, not a fix.** No product code changed. The E2E coverage added is described in
-[Test coverage added](#test-coverage-added).
+[Test coverage added](#test-coverage-added). What to approve, in order, is in
+[`remediation-decisions.md`](./remediation-decisions.md).
 
 ## Verdict
 
