@@ -3,8 +3,10 @@ import { useMemo, useState } from 'react';
 import { CalendarPlus } from 'lucide-react';
 import {
   Area,
-  AreaChart,
+  Bar,
   CartesianGrid,
+  ComposedChart,
+  Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -166,11 +168,11 @@ export function BookingPaceCard({ pace, className }: Props) {
             size="dense"
             equalSegments
             listClassName={cardHeaderSegmentedListClassName}
-            triggerClassName={cn(cardHeaderSegmentedTriggerClassName, 'capitalize')}
+            triggerClassName={cardHeaderSegmentedTriggerClassName}
             aria-label="New bookings metric"
             options={[
-              { value: 'reservations', label: 'bookings' },
-              { value: 'revenue', label: 'revenue' },
+              { value: 'reservations', label: 'Bookings' },
+              { value: 'revenue', label: 'Revenue' },
             ]}
           />
         }
@@ -178,7 +180,7 @@ export function BookingPaceCard({ pace, className }: Props) {
 
       <div className={CHART_HEIGHT_CLASS}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={defaultChartMargin(isBelowMd)}>
+          <ComposedChart data={chartData} margin={defaultChartMargin(isBelowMd)}>
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={stroke} stopOpacity={0.28} />
@@ -231,42 +233,47 @@ export function BookingPaceCard({ pace, className }: Props) {
                 />
               )}
             />
-            <Area
-              type="monotone"
-              dataKey="current"
-              stroke={stroke}
-              strokeWidth={2}
-              fill={`url(#${gradientId})`}
-              fillOpacity={1}
-              dot={false}
-              activeDot={{ r: 4 }}
-            />
-            {showLastYear ? (
+            {metric === 'reservations' ? (
+              // Counts are discrete: bars say "four bookings on four days", a smoothed
+              // area turns the same data into four mountains.
+              <Bar dataKey="current" fill={stroke} radius={[3, 3, 0, 0]} maxBarSize={26} />
+            ) : (
               <Area
+                type="monotone"
+                dataKey="current"
+                stroke={stroke}
+                strokeWidth={2}
+                fill={`url(#${gradientId})`}
+                fillOpacity={1}
+                dot={false}
+                activeDot={{ r: 4 }}
+              />
+            )}
+            {showLastYear ? (
+              <Line
                 type="monotone"
                 dataKey="lastYear"
                 stroke={lastYearStroke}
                 strokeWidth={1.5}
                 strokeDasharray="4 4"
-                fill="none"
                 dot={false}
                 activeDot={{ r: 3 }}
               />
             ) : null}
-          </AreaChart>
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
 
-      <ul className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
-        <li className="flex items-center gap-1.5">
-          <span
-            className="size-2.5 shrink-0 rounded-full"
-            style={{ backgroundColor: stroke }}
-            aria-hidden
-          />
-          <span className="text-muted-foreground">This period</span>
-        </li>
-        {showLastYear ? (
+      {showLastYear ? (
+        <ul className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
+          <li className="flex items-center gap-1.5">
+            <span
+              className="size-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: stroke }}
+              aria-hidden
+            />
+            <span className="text-muted-foreground">This period</span>
+          </li>
           <li className="flex items-center gap-1.5">
             <span
               className="border-muted-foreground/70 size-2.5 shrink-0 rounded-full border border-dashed bg-transparent"
@@ -274,8 +281,8 @@ export function BookingPaceCard({ pace, className }: Props) {
             />
             <span className="text-muted-foreground">Last year</span>
           </li>
-        ) : null}
-      </ul>
+        </ul>
+      ) : null}
     </section>
   );
 }

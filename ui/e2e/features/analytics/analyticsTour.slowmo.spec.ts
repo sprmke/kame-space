@@ -63,7 +63,7 @@ test.describe('analytics tour @demo', () => {
     await openAnalyticsTab(page, 'Trends');
     await demoPause(page, 1.4);
 
-    await page.getByRole('tab', { name: 'revenue', exact: true }).click();
+    await page.getByRole('tab', { name: 'Revenue', exact: true }).click();
     await demoPause(page, 1.6);
     await bestEffort(async () => {
       await page.locator('.recharts-area-area').first().hover({ force: true, timeout: 6000 });
@@ -73,7 +73,7 @@ test.describe('analytics tour @demo', () => {
     await demoScroll(page, { step: 330, steps: 5 });
     await demoPause(page, 0.8);
 
-    await page.getByRole('tab', { name: 'bookings', exact: true }).click();
+    await page.getByRole('tab', { name: 'Bookings', exact: true }).click();
     await demoPause(page, 1.2);
   });
 

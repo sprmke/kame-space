@@ -119,6 +119,8 @@ export type AnalyticsBundleOptions = {
   benchmarkUnavailable?: boolean;
   /** Force every KPI delta to zero, for the neutral-delta state. */
   zeroDeltas?: boolean;
+  /** Drop last-year history so the pace chart renders a single series. */
+  noLastYear?: boolean;
 };
 
 export function buildAnalyticsBundle(options: AnalyticsBundleOptions = {}) {
@@ -262,7 +264,13 @@ export function buildAnalyticsBundle(options: AnalyticsBundleOptions = {}) {
       revenueOnBooks: 128_000,
       gapNights: [{ date: month.to }, { date: month.from }],
     },
-    bookingPace: bookingPaceFixture(month.from),
+    bookingPace: options.noLastYear
+      ? bookingPaceFixture(month.from).map((bucket) => ({
+          ...bucket,
+          reservationsLastYear: 0,
+          revenueLastYear: 0,
+        }))
+      : bookingPaceFixture(month.from),
     pickup: { last7Days: 4, last30Days: 18 },
     stateAssessment: {
       forwardOccupancyState30d: 'building',

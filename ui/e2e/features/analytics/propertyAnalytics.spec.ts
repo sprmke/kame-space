@@ -114,6 +114,60 @@ test.describe('@ci property analytics', () => {
     await expect(page.getByText('New bookings')).toHaveCount(0);
   });
 
+  test('the section lives in the URL and survives reload and Back', async ({ page }) => {
+    await installAnalyticsMocks(page);
+    await page.goto(`${analyticsTourPaths.analytics}?section=trends`);
+    await expect(page.getByRole('tab', { name: 'Trends' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    await expect(page.getByText('New bookings')).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Guests' }).click();
+    await expect(page).toHaveURL(/section=guests/);
+    await expect(page.getByRole('tab', { name: 'Guests' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+
+    await page.goBack();
+    await expect(page.getByRole('tab', { name: 'Trends' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+
+    await page.reload();
+    await expect(page.getByRole('tab', { name: 'Trends' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+  });
+
+  test('section tabs expose a tabpanel and move with arrow keys', async ({ page }) => {
+    await installAnalyticsMocks(page);
+    await openAnalytics(page);
+
+    const panel = page.getByRole('tabpanel');
+    await expect(panel).toHaveAttribute('aria-labelledby', 'analytics-tab-overview');
+
+    await page.getByRole('tab', { name: 'Overview' }).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('tab', { name: 'Trends' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    await expect(page.getByRole('tabpanel')).toHaveAttribute(
+      'aria-labelledby',
+      'analytics-tab-trends'
+    );
+
+    await page.keyboard.press('End');
+    await expect(page.getByRole('tab', { name: 'AI review' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+  });
+
   test('choosing the year preset refetches the summary for that year', async ({ page }) => {
     const calls = await installAnalyticsMocks(page);
     await openAnalytics(page);
@@ -131,6 +185,19 @@ test.describe('@ci property analytics', () => {
       .toBe(`${year}-01-01..${year}-12-31`);
   });
 
+  test('bookings pace uses bars, and a single series hides the legend', async ({ page }) => {
+    await installAnalyticsMocks(page, { noLastYear: true });
+    await openAnalyticsTab(page, 'Trends');
+
+    await expect(page.locator('.recharts-bar-rectangle').first()).toBeVisible();
+    await expect(page.locator('.recharts-area-area')).toHaveCount(0);
+    await expect(page.getByText('Last year')).toHaveCount(0);
+    await expect(page.getByText('This period')).toHaveCount(0);
+
+    await page.getByRole('tab', { name: 'Revenue', exact: true }).click();
+    await expect(page.locator('.recharts-area-area').first()).toBeVisible();
+  });
+
   test('trends renders booking pace, lead time and response bars', async ({ page }) => {
     await installAnalyticsMocks(page);
     await openAnalyticsTab(page, 'Trends');
@@ -146,8 +213,8 @@ test.describe('@ci property analytics', () => {
     await expect(page.getByText('96%')).toBeVisible();
 
     // The visible labels are capitalised in CSS; the accessible names stay lowercase.
-    await page.getByRole('tab', { name: 'revenue', exact: true }).click();
-    await expect(page.getByRole('tab', { name: 'revenue', exact: true })).toHaveAttribute(
+    await page.getByRole('tab', { name: 'Revenue', exact: true }).click();
+    await expect(page.getByRole('tab', { name: 'Revenue', exact: true })).toHaveAttribute(
       'aria-selected',
       'true'
     );
@@ -273,12 +340,21 @@ test.describe('@ci property analytics on phone', () => {
     await installAnalyticsMocks(page);
     await openAnalytics(page);
 
-    // The tab strip overflows at 375; selecting the last tab must still land on it.
+    // The tab strip overflows at 375; selecting the last tab must scroll it fully into view.
+    const list = page.getByRole('tablist').first();
+    expect(await list.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
     await page.getByRole('tab', { name: 'AI review' }).click();
     await expect(page.getByRole('tab', { name: 'AI review' })).toHaveAttribute(
       'aria-selected',
       'true'
     );
+    const listBox = await list.boundingBox();
+    const tabBox = await page.getByRole('tab', { name: 'AI review' }).boundingBox();
+    expect(listBox).not.toBeNull();
+    expect(tabBox).not.toBeNull();
+    if (listBox && tabBox) {
+      expect(tabBox.x + tabBox.width).toBeLessThanOrEqual(listBox.x + listBox.width + 1);
+    }
     await expect(page.getByText('AI Performance Review')).toBeVisible();
 
     await page

@@ -46,7 +46,7 @@ export function GuestOriginsCard({ guestOrigins, className }: Props) {
                 <div
                   className="h-full rounded-full"
                   style={{
-                    width: `${Math.max(origin.pct, 2)}%`,
+                    width: origin.pct > 0 ? `${Math.max(origin.pct, 1)}%` : '0%',
                     backgroundColor: CHART_INFO_COLOR,
                   }}
                 />
