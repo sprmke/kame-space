@@ -4,6 +4,7 @@ import {
   MODAL_DESCRIPTION_CLASS,
   MODAL_HEADER_CLASS,
   MODAL_HEADER_CLOSE_GUTTER_CLASS,
+  MODAL_HEADER_INLINE_CLASS,
   MODAL_HEADER_STACK_CLASS,
 } from '@/components/ui/modal-chrome';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,13 @@ describe('modal header close gutter', () => {
     expect(MODAL_HEADER_CLASS).toContain('sm:pl-5');
     expect(MODAL_HEADER_CLASS).not.toMatch(/(?:^|\s)px-4(?:\s|$)/);
     expect(MODAL_HEADER_CLASS).toContain(MODAL_HEADER_CLOSE_GUTTER_CLASS);
+  });
+
+  it('keeps inline-close headers on symmetric px (no absolute gutter)', () => {
+    expect(MODAL_HEADER_INLINE_CLASS).toContain('px-4');
+    expect(MODAL_HEADER_INLINE_CLASS).toContain('sm:px-5');
+    expect(MODAL_HEADER_INLINE_CLASS).not.toContain(MODAL_HEADER_CLOSE_GUTTER_CLASS);
+    expect(MODAL_HEADER_INLINE_CLASS).not.toMatch(/(?:^|\s)pr-12(?:\s|$)/);
   });
 });
 

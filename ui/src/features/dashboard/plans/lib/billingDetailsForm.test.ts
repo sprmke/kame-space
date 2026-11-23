@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   billingDetailsDirty,
+  billingDetailsSummaryLine,
   EMPTY_BILLING_DETAILS,
   validateBillingDetailsForm,
 } from '@/features/dashboard/plans/lib/billingDetailsForm';
@@ -35,5 +36,29 @@ describe('billingDetailsDirty', () => {
       billingDetailsDirty({ ...saved, legalName: ' Maria Stays ', billingEmail: 'A@B.CO' }, saved)
     ).toBe(false);
     expect(billingDetailsDirty({ ...saved, tin: '123-456-789' }, saved)).toBe(true);
+  });
+});
+
+describe('billingDetailsSummaryLine', () => {
+  it('returns null when empty', () => {
+    expect(billingDetailsSummaryLine(EMPTY_BILLING_DETAILS)).toBeNull();
+  });
+
+  it('joins name, TIN and email', () => {
+    expect(
+      billingDetailsSummaryLine({
+        legalName: 'Acme Stays',
+        address: '',
+        tin: '123-456-789-000',
+        billingEmail: 'billing@acme.test',
+      })
+    ).toBe('Acme Stays · TIN 123-456-789-000 · billing@acme.test');
+  });
+
+  it('falls back to a truncated address', () => {
+    const address = 'a'.repeat(80);
+    expect(
+      billingDetailsSummaryLine({ ...EMPTY_BILLING_DETAILS, address })
+    ).toBe(`${'a'.repeat(69)}…`);
   });
 });

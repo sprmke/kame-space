@@ -16,14 +16,14 @@ Route: `/org/:orgSlug/analytics`
 
 ## Progress overview
 
-| Section                | E2E save | Validation | Docs | Notes                                                                                     |
-| ---------------------- | -------- | ---------- | ---- | ----------------------------------------------------------------------------------------- |
-| Portfolio KPI rollup   | —        | —          | Done | Revenue, Bookings, Occupancy, Needs attention (booking/demand signals only)               |
-| Listings (one table)   | —        | —          | Done | Search, attention + type filters, Table / Grid / List, pagination; attention pinned first |
-| CSV export             | —        | —          | Done | Page header Export CSV; outlook + forward occupancy %; no balance columns                 |
-| PDF export             | —        | —          | N/A  | Property-level only                                                                       |
-| Platform benchmark     | —        | —          | N/A  | Property-level only                                                                       |
-| Parking deep Analytics | —        | —          | N/A  | Out of scope; parking rows link to parking Dashboard                                      |
+| Section                | E2E save | Validation | Docs | Notes                                                                                                                                 |
+| ---------------------- | -------- | ---------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Portfolio KPI rollup   | —        | —          | Done | Revenue, Bookings, Occupancy, Needs attention (booking/demand signals only)                                                           |
+| Listings (one table)   | —        | —          | Done | Search, attention + type filters, Table / Grid / List, pagination; attention pinned first; Promote chip on top open-nights properties |
+| CSV export             | —        | —          | Done | Page header Export CSV; outlook + forward occupancy %; no balance columns                                                             |
+| PDF export             | —        | —          | N/A  | Property-level only                                                                                                                   |
+| Platform benchmark     | —        | —          | N/A  | Property-level only                                                                                                                   |
+| Parking deep Analytics | —        | —          | N/A  | Out of scope; parking rows link to parking Dashboard                                                                                  |
 
 ---
 
@@ -51,8 +51,8 @@ Layout (top → bottom):
 ## Listings table
 
 Column order is always: **Listing**, **Type**, **Attention**, **Occupancy**, **Revenue**,
-**Bookings**, **Outlook**. Header padding matches cell padding (same pattern as Bookings /
-Finance tables).
+**Bookings**, **Outlook**, **Promote**. Header padding matches cell padding (same pattern as
+Bookings / Finance tables).
 
 - **Attention** — booking and demand signals only (no guest-balance / collections copy). Shows a
   **Needs attention** badge when any signal fires; detail lines cover **No bookings** and **Soft
@@ -61,6 +61,10 @@ Finance tables).
 - **Outlook** — only the next 30 nights: **Underbooked / Building / Strong / Fully booked** with
   the % booked. Grid and list views put Outlook in the same metric row as Occupancy / Revenue /
   Bookings (no second footer block).
+- **Promote** — top open-nights × ADR property listings (max three) show a compact chip with open
+  nights that opens that listing's Marketing plan. Other rows show a dash. Parkings never appear
+  here. Grid and list views show the same chip beside Outlook only when the listing ranks; no
+  separate strip above the toolbar.
 - **Revenue** shows the change vs the prior period under the amount.
 - **Order** — needs-attention listings are always first, most urgent on top. Sorting by a column
   header (Listing, Occupancy, Revenue, Bookings, Outlook) orders inside each group. Default is
@@ -111,11 +115,11 @@ granted by default.
 
 ## Testing
 
-| Layer  | Coverage                                                                                                                                |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Unit   | `orgPortfolioRollup.test.ts` (night-weighted occupancy), `orgAnalyticsListings.test.ts` (attention order, filters), `exportCsv.test.ts` |
-| Edge   | N/A for rollup helpers (Vitest covers math; avoid Deno-importing `analyticsService`)                                                    |
-| Manual | Org with properties only / parkings only / both; Export plan gate; 375px date float + hero export                                       |
+| Layer  | Coverage                                                                                                                                                                                |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit   | `orgPortfolioRollup.test.ts` (night-weighted occupancy), `orgAnalyticsListings.test.ts` (attention order, filters), `marketingPortfolio.test.ts` (promote ranking), `exportCsv.test.ts` |
+| Edge   | N/A for rollup helpers (Vitest covers math; avoid Deno-importing `analyticsService`)                                                                                                    |
+| Manual | Org with properties only / parkings only / both; Export plan gate; 375px date float + hero export                                                                                       |
 
 ## Host-facing knowledge
 
@@ -137,3 +141,6 @@ first, with a short reason.
   A: On Finance and booking detail, not on Analytics.
 - Q: Where do parking rows go when I tap them?
   A: Parking Dashboard for now. A full parking Analytics page is not on this screen yet.
+- Q: What does the Promote chip mean?
+  A: That listing has the most open nights times nightly rate in the next 30 days. Tap it to open
+  the Marketing plan for that property.

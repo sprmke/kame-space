@@ -13,3 +13,10 @@ export function usePropertySettingsCopyLogs(orgSlug: string | undefined, enabled
     queryFn: () => listPropertySettingsCopyLogs({ orgSlug: orgSlug! }),
   });
 }
+
+/** Header History button: show only when the org has at least one copy log. */
+export function useHasPropertySettingsCopyHistory(orgSlug: string | undefined): boolean {
+  const { data, isPending, isError } = usePropertySettingsCopyLogs(orgSlug);
+  if (isPending || isError) return false;
+  return (data?.logs?.length ?? 0) > 0;
+}

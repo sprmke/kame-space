@@ -6,7 +6,7 @@ import {
   MODAL_BODY_CLASS,
   MODAL_CLOSE_BUTTON_CLASS,
   MODAL_FOOTER_CLASS,
-  MODAL_HEADER_CLASS,
+  MODAL_HEADER_INLINE_CLASS,
 } from '@/components/ui/modal-chrome';
 import {
   ResponsiveModal,
@@ -80,7 +80,11 @@ export function GuestDialogShell({
         aria-describedby={undefined}
       >
         <div
-          className={cn('flex shrink-0 items-center gap-3', MODAL_HEADER_CLASS, headerClassName)}
+          className={cn(
+            'flex shrink-0 items-center gap-3',
+            MODAL_HEADER_INLINE_CLASS,
+            headerClassName
+          )}
         >
           <div className="min-w-0 flex-1">
             {typeof title === 'string' ? (

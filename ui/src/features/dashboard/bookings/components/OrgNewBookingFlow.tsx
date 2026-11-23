@@ -8,19 +8,14 @@ import { useProperties } from '@/features/dashboard/org/hooks/useOrganizations';
 import { useParkings } from '@/features/dashboard/org/hooks/useParkings';
 import type { Parking, Property } from '@/features/dashboard/org/types';
 
+import { AdminDialogShell } from '@/components/AdminDialogShell';
 import { Button } from '@/components/ui/button';
-import {
-  ResponsiveModal,
-  ResponsiveModalContent,
-  ResponsiveModalFooter,
-  ResponsiveModalHeader,
-  ResponsiveModalTitle,
-} from '@/components/ui/responsive-modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 type ListingChoice =
-  { kind: 'property'; property: Property } | { kind: 'parking'; parking: Parking };
+  | { kind: 'property'; property: Property }
+  | { kind: 'parking'; parking: Parking };
 
 type Props = {
   open: boolean;
@@ -126,82 +121,85 @@ export function OrgNewBookingFlow({ open, onOpenChange, orgSlug }: Props) {
 
   return (
     <>
-      <ResponsiveModal
+      <AdminDialogShell
         open={pickerOpen}
         onOpenChange={(next) => {
           if (!next) closeAll();
           else setPickerOpen(true);
         }}
+        title="New booking"
+        description="Choose a property or parking slot."
+        sizeClassName="max-w-[min(calc(100vw-1.5rem),28rem)] sm:max-w-[min(90vw,28rem)]"
+        heightClassName="max-h-[min(90dvh,36rem)]"
+        /*
+         * Short lists must not stretch to max-h via flex-1 (empty band under rows).
+         * Cap the body so long org lists still scroll inside the shell.
+         */
+        bodyClassName="max-h-[min(55dvh,24rem)] flex-none space-y-4"
+        contentClassName="h-auto"
+        footer={
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11 w-full sm:min-h-10 sm:w-auto"
+            onClick={closeAll}
+          >
+            Cancel
+          </Button>
+        }
       >
-        <ResponsiveModalContent
-          sheetLayout="split"
-          className="flex max-h-[min(92dvh,36rem)] min-h-0 flex-col overflow-hidden sm:max-w-md"
-        >
-          <ResponsiveModalHeader className="shrink-0 px-4 sm:px-5">
-            <ResponsiveModalTitle>New booking</ResponsiveModalTitle>
-          </ResponsiveModalHeader>
-
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2 sm:px-3">
-            {listingsLoading ? (
-              <div className="space-y-2 px-2 py-2">
-                {[0, 1, 2].map((row) => (
-                  <Skeleton key={row} className="h-12 w-full rounded-lg" />
-                ))}
-              </div>
-            ) : totalChoices === 0 ? (
-              <p className="text-muted-foreground px-3 py-8 text-center text-sm">
-                No properties or parking slots to book yet.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {properties.length > 0 ? (
-                  <ListingGroup label="Properties">
-                    {properties.map((property) => (
-                      <ListingRow
-                        key={property.id}
-                        icon={<Building2 className="size-4" aria-hidden />}
-                        label={property.name}
-                        description={
-                          property.status === 'ACTIVE'
-                            ? undefined
-                            : property.status === 'INACTIVE'
-                              ? 'Paused'
-                              : property.status
-                        }
-                        onSelect={() => openChoice({ kind: 'property', property })}
-                      />
-                    ))}
-                  </ListingGroup>
-                ) : null}
-
-                {parkings.length > 0 ? (
-                  <ListingGroup label="Parking">
-                    {parkings.map((parking) => (
-                      <ListingRow
-                        key={parking.id}
-                        icon={<CarFront className="size-4" aria-hidden />}
-                        label={parking.name}
-                        description={
-                          [parking.residenceName, parking.tower, parking.slotLabel]
-                            .filter(Boolean)
-                            .join(' · ') || undefined
-                        }
-                        onSelect={() => openChoice({ kind: 'parking', parking })}
-                      />
-                    ))}
-                  </ListingGroup>
-                ) : null}
-              </div>
-            )}
+        {listingsLoading ? (
+          <div className="space-y-2" aria-hidden>
+            {[0, 1, 2].map((row) => (
+              <Skeleton key={row} className="h-14 w-full rounded-xl" />
+            ))}
           </div>
+        ) : totalChoices === 0 ? (
+          <p className="text-muted-foreground py-6 text-center text-sm">
+            No properties or parking slots to book yet.
+          </p>
+        ) : (
+          <>
+            {properties.length > 0 ? (
+              <ListingGroup label="Properties">
+                {properties.map((property) => (
+                  <ListingRow
+                    key={property.id}
+                    icon={<Building2 className="size-4" aria-hidden />}
+                    label={property.name}
+                    description={
+                      property.status === 'ACTIVE'
+                        ? undefined
+                        : property.status === 'INACTIVE'
+                          ? 'Paused'
+                          : property.status
+                    }
+                    onSelect={() => openChoice({ kind: 'property', property })}
+                  />
+                ))}
+              </ListingGroup>
+            ) : null}
 
-          <ResponsiveModalFooter className="shrink-0 px-4 sm:px-5">
-            <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={closeAll}>
-              Cancel
-            </Button>
-          </ResponsiveModalFooter>
-        </ResponsiveModalContent>
-      </ResponsiveModal>
+            {parkings.length > 0 ? (
+              <ListingGroup label="Parking">
+                {parkings.map((parking) => (
+                  <ListingRow
+                    key={parking.id}
+                    icon={<CarFront className="size-4" aria-hidden />}
+                    label={parking.name}
+                    description={
+                      [parking.residenceName, parking.tower, parking.slotLabel]
+                        .filter(Boolean)
+                        .join(' · ') || undefined
+                    }
+                    onSelect={() => openChoice({ kind: 'parking', parking })}
+                  />
+                ))}
+              </ListingGroup>
+            ) : null}
+          </>
+        )}
+      </AdminDialogShell>
 
       <AdminNewBookingModal
         open={Boolean(propertyTarget)}
@@ -230,12 +228,14 @@ export function OrgNewBookingFlow({ open, onOpenChange, orgSlug }: Props) {
 
 function ListingGroup({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div>
-      <p className="text-muted-foreground px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide">
+    <section className="space-y-2">
+      <h3 className="text-muted-foreground text-[11px] font-semibold uppercase tracking-wide">
         {label}
-      </p>
-      <ul className="space-y-0.5">{children}</ul>
-    </div>
+      </h3>
+      <ul className="border-border/60 divide-border/60 overflow-hidden rounded-xl border divide-y">
+        {children}
+      </ul>
+    </section>
   );
 }
 
@@ -256,17 +256,22 @@ function ListingRow({
         type="button"
         onClick={onSelect}
         className={cn(
-          'flex min-h-[52px] w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
-          'hover:bg-muted/50 active:bg-muted/70'
+          'flex min-h-[52px] w-full items-center gap-3 px-3 py-2.5 text-left transition-colors',
+          'hover:bg-muted/50 active:bg-muted/70',
+          'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset'
         )}
       >
         <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg">
           {icon}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="text-foreground block truncate text-sm font-semibold">{label}</span>
+          <span className="text-foreground block truncate text-sm font-semibold leading-tight">
+            {label}
+          </span>
           {description ? (
-            <span className="text-muted-foreground block truncate text-xs">{description}</span>
+            <span className="text-muted-foreground mt-0.5 block truncate text-xs leading-tight">
+              {description}
+            </span>
           ) : null}
         </span>
       </button>

@@ -2,7 +2,7 @@
 title: 'Organization Properties — operator guide'
 status: active
 tags: [guides, routes, org, properties]
-updated: 2026-11-18
+updated: 2026-11-23
 ---
 
 # Organization Properties — operator guide
@@ -21,12 +21,15 @@ Route: `/org/:orgSlug/properties`
 | Property cards      | Done     | —          | Done | Name title, tower/unit subtitle                                                                    |
 | Add property        | Done     | Done       | Done | Dialog → settings on create                                                                        |
 | Copy settings       | Done     | Done       | Done | 4-step wizard; Phases 0–4 coded; see [[workflow/for-testing/property-settings-copy-to-properties]] |
+| Copy history        | Done     | —          | Done | Header **History** → sheet/dialog; hidden when no logs                                             |
 
 ---
 
 ## Overview
 
-Org-level inventory of all properties. On **phone/tablet**, uses the shared **brand hero** shell (`AdminMobilePage`, `dense`) with a **`MobileHeroActionMenu`** (Copy settings / Add property when permitted). Filters sit in a **`FloatingToolbar`** via shared **`OrgListingToolbar`** (Bookings chrome: search + refine + view toggle; desktop Status + Filters popover + per-page + View). Cards / list / table surface profile data from `properties` + `properties.settings` and booking KPIs for the **current Manila calendar month** (not all-time). Large catalogs paginate client-side (31 / 50 / 100); no always-on results count meta. Table is desktop-only (`lg+`).
+Org-level inventory of all properties. On **phone/tablet**, uses the shared **brand hero** shell (`AdminMobilePage`, `dense`) with a **`MobileHeroActionMenu`** (Copy settings / History / Add property when permitted). Filters sit in a **`FloatingToolbar`** via shared **`OrgListingToolbar`** (Bookings chrome: search + refine + view toggle; desktop Status + Filters popover + per-page + View). Cards / list / table surface profile data from `properties` + `properties.settings` and booking KPIs for the **current Manila calendar month** (not all-time). Large catalogs paginate client-side (31 / 50 / 100); no always-on results count meta. Table is desktop-only (`lg+`).
+
+**Copy history:** When the org has at least one settings-copy run, a neutral **History** control appears in the header (desktop outline button next to Copy settings / Add property; phone hero menu). It opens a bottom sheet on phone and a dialog on desktop listing recent runs (source → targets, groups, Manila time). History is not shown as an always-on block under the property list.
 
 **Access:** Requires **`org.properties:view`** (org owner, org hub member with the leaf, platform admin). **Property-only members** (`accessKind: property_member`) cannot open org routes — `RequireOrgPermission` redirects them to an assigned property dashboard. Scoped org admins (`all_listings = false`) only see assigned properties.
 
@@ -54,6 +57,8 @@ This page is the catalog of every rental you operate under the organization. Sum
   A: Open the property’s actions menu and choose **Copy guest link** or **Guest calendar**. Both point guests to that property’s public booking entry.
 - Q: How do I copy settings from one property to another?
   A: On **Properties**, tap **Copy settings** in the header, or open a property's ⋯ menu and choose **Copy settings**. Pick the source property, choose which groups to copy (listing, pricing, templates, notifications, and more), select one or more other properties, review the preview, then confirm. Name, address, and tower/unit stay on each target. Bookings, guests, payment methods, team members, and calendar date blocks are never copied. If a target's plan or your permissions don't allow a group, that group is skipped for that property and listed in the review.
+- Q: Where can I see past settings copies?
+  A: On **Properties**, tap **History** in the header (it appears after your first successful copy). The list shows which property was the source, how many targets and groups were included, and when it ran.
 - Q: Does archiving or deleting a property remove its bookings?
   A: No. Archive keeps every booking and all history, stops automations, and takes the property off your bill from the next cycle. Delete permanently removes a property that has no records, so use Archive for a unit with past stays.
 - Q: What do the status badges mean?
@@ -157,7 +162,7 @@ Toolbar layout matches Bookings / Finance: phone uses search + refine icon + seg
 
 **Plans / Team RBAC:** Plan feature **`copyPropertySettings`** (Pro / `growth` and above). Wizard is browseable below Pro; Confirm **Copy settings** and the real edge write require the feature (`TierBadge` / upgrade modal). Team RBAC: N/A new leaf — reuses existing per-group edit leaves. Entry is not gated by a dedicated org leaf.
 
-**After a real run:** `property_settings_copy_log` row; in-app `property_settings_copied` per target with applied groups; settings-change notice email to org owner / target notify recipients. Recent runs appear under **Copy history** on the org Properties page (`POST copy-property-settings` with `{ action: 'listLogs', orgSlug }`).
+**After a real run:** `property_settings_copy_log` row; in-app `property_settings_copied` per target with applied groups; settings-change notice email to org owner / target notify recipients. Recent runs open from the Properties header **History** control (`POST copy-property-settings` with `{ action: 'listLogs', orgSlug }`).
 
 Full registry table: [[workflow/for-testing/property-settings-copy-to-properties]] §2.
 
@@ -195,7 +200,7 @@ Server: `list-properties` loads org properties, batch-loads `guest_submissions` 
 | Page                     | `ui/src/features/dashboard/org/pages/OrgPropertiesPage.tsx`                                                                                                               |
 | Cards / list / table     | `OrgPropertyCard.tsx`, `OrgPropertiesTable.tsx`                                                                                                                           |
 | Copy settings UI         | `ui/src/features/dashboard/org/components/org-properties/CopyPropertySettingsDialog.tsx`                                                                                  |
-| Copy history UI          | `ui/src/features/dashboard/org/components/org-properties/CopyPropertySettingsHistory.tsx`                                                                                 |
+| Copy history UI          | `CopyPropertySettingsHistory.tsx` (`CopyPropertySettingsHistoryDialog`); visibility via `useHasPropertySettingsCopyHistory`                                               |
 | Copy settings hook / API | `ui/src/features/dashboard/org/hooks/useCopyPropertySettings.ts`, `usePropertySettingsCopyLogs.ts`, `lib/copyPropertySettingsApi.ts`, `lib/copyPropertySettingsGroups.ts` |
 | Carousel                 | `ui/src/features/dashboard/org/components/org-properties/OrgPropertyImageCarousel.tsx`                                                                                    |
 | Summary / toolbar        | `OrgPropertiesSummaryCards.tsx`, `OrgPropertiesToolbar.tsx` → shared `OrgListingToolbar.tsx`                                                                              |

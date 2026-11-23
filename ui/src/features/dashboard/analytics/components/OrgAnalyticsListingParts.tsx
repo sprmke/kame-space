@@ -1,10 +1,16 @@
-import { CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+import { CheckCircle2, AlertTriangle, Megaphone } from 'lucide-react';
 
 import {
   orgAttentionReasons,
   outlookDetail,
   type OrgAnalyticsUnlockedRow,
 } from '@/features/dashboard/analytics/lib/orgAnalyticsListings';
+import {
+  orgPropertyPlanHref,
+  type PromotionCandidate,
+} from '@/features/dashboard/analytics/lib/marketingPortfolio';
 import { ORG_OUTLOOK_LABEL } from '@/features/dashboard/analytics/lib/orgPortfolioLabels';
 import {
   orgPortfolioListingKind,
@@ -13,7 +19,11 @@ import {
 } from '@/features/dashboard/analytics/lib/types';
 import { parkingSectionPath, propertySectionPath } from '@/features/dashboard/org/lib/tenantPaths';
 
-import { compactStatusBadgeClasses, resourceKindBadgeClasses } from '@/lib/statusToneColors';
+import {
+  compactStatusBadgeClasses,
+  resourceKindBadgeClasses,
+  softBadgeClasses,
+} from '@/lib/statusToneColors';
 import { cn } from '@/lib/utils';
 
 export function orgAnalyticsListingHref(orgSlug: string, row: OrgPortfolioRow): string {
@@ -161,5 +171,39 @@ export function OrgAnalyticsRevenueChange({ pct }: { pct?: number | null }) {
       {up ? '+' : ''}
       {pct.toFixed(1)}%
     </span>
+  );
+}
+
+/**
+ * Quiet promote affordance for top open-nights × ADR listings. Links to the
+ * listing plan; stops row navigation so the host can open Marketing without
+ * bouncing into Analytics first.
+ */
+export function OrgAnalyticsPromoteHint({
+  candidate,
+  orgSlug,
+  className,
+}: {
+  candidate: PromotionCandidate | undefined;
+  orgSlug: string;
+  className?: string;
+}) {
+  if (!candidate) return null;
+  const nightsLabel = candidate.openNights === 1 ? '1 open' : `${candidate.openNights} open`;
+  return (
+    <Link
+      to={orgPropertyPlanHref(orgSlug, candidate.slug)}
+      onClick={(event) => event.stopPropagation()}
+      className={cn(
+        softBadgeClasses('info'),
+        'relative z-[1] min-h-9 gap-1 px-2 py-1.5 normal-case tracking-normal sm:min-h-0 sm:py-0.5',
+        className
+      )}
+      aria-label={`Promote ${candidate.name}: ${candidate.openNights} ${candidate.openNights === 1 ? 'night' : 'nights'} open`}
+      title={`${candidate.openNights} ${candidate.openNights === 1 ? 'night' : 'nights'} open`}
+    >
+      <Megaphone className="size-3.5 shrink-0 sm:size-3" aria-hidden />
+      <span className="tabular-nums">{nightsLabel}</span>
+    </Link>
   );
 }

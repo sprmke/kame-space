@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { OrgPortfolioRow } from '@/features/dashboard/analytics/lib/types';
 import {
   orgPropertyPlanHref,
+  promotionHintsByListingId,
   rankListingsForPromotion,
 } from '@/features/dashboard/analytics/lib/marketingPortfolio';
 
@@ -67,6 +68,17 @@ describe('rankListingsForPromotion', () => {
       property({ id: `p${index}`, slug: `p${index}`, forwardOccupancyRate30d: 50 })
     );
     expect(rankListingsForPromotion(rows, { limit: 2 })).toHaveLength(2);
+  });
+});
+
+describe('promotionHintsByListingId', () => {
+  it('maps the ranked candidates by listing id', () => {
+    const hints = promotionHintsByListingId([
+      property({ id: 'a', name: 'A', slug: 'a', adr: 2000, forwardOccupancyRate30d: 50 }),
+      property({ id: 'b', name: 'B', slug: 'b', adr: 5000, forwardOccupancyRate30d: 20 }),
+    ]);
+    expect([...hints.keys()]).toEqual(['b', 'a']);
+    expect(hints.get('b')?.openNights).toBe(24);
   });
 });
 

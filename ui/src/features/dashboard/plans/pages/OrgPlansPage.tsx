@@ -105,7 +105,7 @@ export function OrgPlansPage() {
     onCheckoutReturnHandled: clearCheckoutReturnParam,
   });
 
-  const [activeTab, setActiveTab] = useState<PlansTab>('billing');
+  const [activeTab, setActiveTab] = useState<PlansTab>('plans');
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [cancelMode, setCancelMode] = useState<'period_end' | 'now' | null>(null);
@@ -378,18 +378,18 @@ export function OrgPlansPage() {
           >
             <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto p-1 max-lg:h-9 sm:w-auto">
               <TabsTrigger
-                value="billing"
-                className="gap-2 px-3 py-2 max-lg:gap-1.5 max-lg:px-2.5 max-lg:py-0 max-lg:text-[13px]"
-              >
-                <Receipt className="size-4 shrink-0" aria-hidden />
-                <span>Billing</span>
-              </TabsTrigger>
-              <TabsTrigger
                 value="plans"
                 className="gap-2 px-3 py-2 max-lg:gap-1.5 max-lg:px-2.5 max-lg:py-0 max-lg:text-[13px]"
               >
                 <LayoutGrid className="size-4 shrink-0" aria-hidden />
                 <span>Plans</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="billing"
+                className="gap-2 px-3 py-2 max-lg:gap-1.5 max-lg:px-2.5 max-lg:py-0 max-lg:text-[13px]"
+              >
+                <Receipt className="size-4 shrink-0" aria-hidden />
+                <span>Billing</span>
               </TabsTrigger>
               <TabsTrigger
                 value="compare"
@@ -407,9 +407,19 @@ export function OrgPlansPage() {
               </TabsTrigger>
             </TabsList>
 
+            <TabsContent value="plans" className="mt-3" aria-labelledby="choose-plan-heading">
+              <PlanTierRail
+                tiers={tiers}
+                hasCurrentPlan={Boolean(effectiveCurrentPlanId)}
+                canSelect={canManageBilling}
+                onSelectPlan={handleSelectPlan}
+              />
+            </TabsContent>
+
             <TabsContent
               value="billing"
-              className="mt-3 space-y-4"
+              forceMount
+              className="mt-3 space-y-4 data-[state=inactive]:hidden"
               aria-labelledby="plans-billing-heading"
             >
               <PlanBillingHistory
@@ -426,15 +436,6 @@ export function OrgPlansPage() {
                 orgId={org.id}
                 details={data?.billingDetails}
                 canEdit={canManageBilling}
-              />
-            </TabsContent>
-
-            <TabsContent value="plans" className="mt-3" aria-labelledby="choose-plan-heading">
-              <PlanTierRail
-                tiers={tiers}
-                hasCurrentPlan={Boolean(effectiveCurrentPlanId)}
-                canSelect={canManageBilling}
-                onSelectPlan={handleSelectPlan}
               />
             </TabsContent>
 

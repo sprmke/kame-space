@@ -25,7 +25,6 @@ export function resolveReviewsListLoadState({
   isFetching,
   hasActiveQuery,
   summary,
-  listingCount,
 }: LoadInput): ReviewsListLoadState {
   const tabMismatch = Boolean(dataTab && dataTab !== tab);
   const loading = isLoading || (tabMismatch && isFetching);
@@ -34,9 +33,7 @@ export function resolveReviewsListLoadState({
   if (hasActiveQuery || !summary) return 'skeleton';
 
   const knownEmpty =
-    (tab === 'received' && summary.count === 0) ||
-    (tab === 'to_write' && summary.dueCount === 0) ||
-    (tab === 'properties' && listingCount === 0);
+    (tab === 'received' && summary.count === 0) || (tab === 'to_write' && summary.dueCount === 0);
 
   return knownEmpty ? 'empty-skeleton' : 'skeleton';
 }

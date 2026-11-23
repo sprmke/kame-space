@@ -24,7 +24,8 @@ export function GuestAccountLayout() {
         className="sticky top-[var(--public-nav-h)] z-30 lg:hidden"
       />
 
-      <div className="container mx-auto px-4 pb-10 pt-4 sm:px-6 sm:pb-12 md:pt-6 lg:px-8 lg:pb-14 lg:pt-0">
+      {/* Same horizontal rhythm as MarketingNav (`.public-shell`). Do not add px-* here. */}
+      <div className="public-shell pb-10 pt-4 sm:pb-12 md:pt-6 lg:pb-14 lg:pt-0">
         <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-8 xl:gap-10">
           <aside
             className="border-sidebar-border bg-sidebar hidden w-[260px] shrink-0 flex-col overflow-hidden rounded-2xl border shadow-sm lg:flex"

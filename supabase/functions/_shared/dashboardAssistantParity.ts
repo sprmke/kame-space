@@ -348,6 +348,10 @@ export const DASHBOARD_ASSISTANT_PARITY: Record<string, ParityEntry> = {
   'smart-pricing-apply': tool('get_smart_pricing_preview', 'propose_apply_smart_pricing'),
   'smart-pricing-settings': handoff('property.pricing', 'Smart pricing settings'),
   'social-inbox-settings': handoff('property.inbox', 'Inbox settings'),
+  'social-inbox-ensure-booking-chat': handoff(
+    'property.inbox',
+    'Open or create the web chat thread from a booking'
+  ),
   'social-inbox-templates': tool(
     'list_inbox_quick_reply_templates',
     'propose_manage_quick_reply_template'

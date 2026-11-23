@@ -58,3 +58,17 @@ export function billingDetailsDirty(a: BillingDetailsForm, b: BillingDetailsForm
     norm(a.billingEmail).toLowerCase() !== norm(b.billingEmail).toLowerCase()
   );
 }
+
+/** Compact one-line summary for the collapsed Billing details card; null when empty. */
+export function billingDetailsSummaryLine(form: BillingDetailsForm): string | null {
+  const legalName = form.legalName.trim();
+  const tin = form.tin.trim();
+  const email = form.billingEmail.trim();
+  const address = form.address.trim();
+  const parts = [legalName || null, tin ? `TIN ${tin}` : null, email || null].filter(
+    Boolean
+  ) as string[];
+  if (parts.length > 0) return parts.join(' · ');
+  if (address) return address.length > 72 ? `${address.slice(0, 69)}…` : address;
+  return null;
+}

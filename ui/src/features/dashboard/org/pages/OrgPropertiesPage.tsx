@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { CopyPlus, Plus } from 'lucide-react';
+import { CopyPlus, History, Plus } from 'lucide-react';
 
 import { AdminListPagination } from '@/features/dashboard/bookings/components/AdminListToolbar';
 import { RequireAdmin } from '@/features/dashboard/bookings/components/RequireAdmin';
@@ -11,7 +11,7 @@ import {
   CopyPropertySettingsDialog,
   type CopyPropertySettingsDialogProperty,
 } from '@/features/dashboard/org/components/org-properties/CopyPropertySettingsDialog';
-import { CopyPropertySettingsHistory } from '@/features/dashboard/org/components/org-properties/CopyPropertySettingsHistory';
+import { CopyPropertySettingsHistoryDialog } from '@/features/dashboard/org/components/org-properties/CopyPropertySettingsHistory';
 import {
   orgListingGridClassName,
   orgListingStackClassName,
@@ -28,6 +28,7 @@ import { useOrgListingPagination } from '@/features/dashboard/org/hooks/useOrgLi
 import { useOrgListingSkeletonView } from '@/features/dashboard/org/hooks/useOrgListingSkeletonView';
 import { useOrgListingViewMode } from '@/features/dashboard/org/hooks/useOrgListingViewMode';
 import { useOrganizations, useProperties } from '@/features/dashboard/org/hooks/useOrganizations';
+import { useHasPropertySettingsCopyHistory } from '@/features/dashboard/org/hooks/usePropertySettingsCopyLogs';
 import { sliceOrgListingPage } from '@/features/dashboard/org/lib/orgListingPagination';
 import {
   filterOrgProperties,
@@ -64,8 +65,10 @@ export function OrgPropertiesPage() {
 
   const [addOpen, setAddOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [copySourcePropertyId, setCopySourcePropertyId] = useState<string | null>(null);
   const [copyLockedTargetId, setCopyLockedTargetId] = useState<string | null>(null);
+  const hasCopyHistory = useHasPropertySettingsCopyHistory(orgSlug);
   const [filters, setFilters] = useState<OrgPropertiesFilters>({
     search: '',
     status: 'all',
@@ -155,6 +158,14 @@ export function OrgPropertiesPage() {
         onSelect: () => openCopySettings(properties[0]?.id ?? null),
       });
     }
+    if (hasCopyHistory) {
+      items.push({
+        key: 'copy-history',
+        label: 'History',
+        Icon: History,
+        onSelect: () => setHistoryOpen(true),
+      });
+    }
     if (canCreateProperties) {
       items.push({
         key: 'add-property',
@@ -164,7 +175,7 @@ export function OrgPropertiesPage() {
       });
     }
     return items;
-  }, [canCopySettings, canCreateProperties, properties]);
+  }, [canCopySettings, canCreateProperties, hasCopyHistory, properties]);
 
   const heroTrailing =
     heroMenuItems.length > 0 ? (
@@ -172,7 +183,7 @@ export function OrgPropertiesPage() {
     ) : undefined;
 
   const desktopActions =
-    canCreateProperties || canCopySettings ? (
+    canCreateProperties || canCopySettings || hasCopyHistory ? (
       <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
         {canCopySettings ? (
           <TierBadgeAnchor feature="copyPropertySettings">
@@ -186,6 +197,17 @@ export function OrgPropertiesPage() {
               Copy settings
             </Button>
           </TierBadgeAnchor>
+        ) : null}
+        {hasCopyHistory ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setHistoryOpen(true)}
+            className="min-h-[44px] gap-1.5"
+          >
+            <History className="size-4" aria-hidden />
+            History
+          </Button>
         ) : null}
         {canCreateProperties ? (
           <Button type="button" onClick={() => setAddOpen(true)} className="min-h-[44px] gap-1.5">
@@ -281,8 +303,6 @@ export function OrgPropertiesPage() {
                 onAdd={() => setAddOpen(true)}
               />
             )}
-
-            <CopyPropertySettingsHistory orgSlug={org.slug} propertyNameById={propertyNameById} />
           </>
         )}
       </AdminMobilePage>
@@ -312,6 +332,15 @@ export function OrgPropertiesPage() {
           properties={copyDialogProperties}
           initialSourcePropertyId={copySourcePropertyId}
           lockedTargetPropertyId={copyLockedTargetId}
+        />
+      ) : null}
+
+      {org ? (
+        <CopyPropertySettingsHistoryDialog
+          orgSlug={org.slug}
+          open={historyOpen}
+          onOpenChange={setHistoryOpen}
+          propertyNameById={propertyNameById}
         />
       ) : null}
     </RequireAdmin>

@@ -216,7 +216,7 @@ Input: capabilities, platform, route, viewer role, engagement counters, UI state
 
 ### 2C. Install surfaces
 
-- [x] **2.1** Replace `InstallPrompt.tsx` with `InstallOfferSheet` (phone/tablet: compact bottom chip via `FloatingBottomOverlay`, non-blocking; desktop: top-right chip). Platform guide stays in `ResponsiveModal`. Follow `mobile-responsive` and `human-copy`.
+- [x] **2.1** Replace `InstallPrompt.tsx` with `InstallOfferSheet` (fixed flush bottom bar via `FixedBottomNoticeBar`, one line; stacks above cookie consent when both show). Platform guide stays in `ResponsiveModal`. Follow `mobile-responsive` and `human-copy`.
 - [x] **2.2** Permanent entry point "Install app" in: admin More sheet / account menu, guest account menu, footer on public pages, Help & Support. Hidden when standalone. Opens the platform guide when no native prompt exists.
 - [x] **2.3** iOS guide sheet with three illustrated steps (SVG, light/dark), version-aware.
 - [x] **2.4** Notifications page: on iOS not installed, the push card shows "Install the app to get notifications" and opens the guide (today it just hides the control).
