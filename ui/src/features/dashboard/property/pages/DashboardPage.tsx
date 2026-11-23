@@ -7,12 +7,12 @@ import {
   useDateNavigation,
   useSyncDateRangeWithQuery,
 } from '@/features/dashboard/bookings/hooks/useDateNavigation';
+import { PlannerTodayCard } from '@/features/dashboard/marketing/components/planner/PlannerTodayCard';
 import { useOrgContext } from '@/features/dashboard/org/components/RequireOrgContext';
 import { usePropertyCalendarConflictAttentionItem } from '@/features/dashboard/org/hooks/usePropertyCalendarConflictAttentionItem';
 import { usePropertyRejectedExternalReviewsAttentionItem } from '@/features/dashboard/org/hooks/usePropertyRejectedExternalReviewsAttentionItem';
 import { DashboardFinanceCalendarSection } from '@/features/dashboard/property/components/DashboardFinanceCalendarSection';
 import { DashboardStatCards } from '@/features/dashboard/property/components/DashboardStatCards';
-import { PlannerTodayCard } from '@/features/dashboard/marketing/components/planner/PlannerTodayCard';
 import { ViewPropertyButton } from '@/features/dashboard/property/components/ViewPropertyButton';
 import { useDashboardStats } from '@/features/dashboard/property/hooks/useDashboardStats';
 import {
@@ -32,11 +32,11 @@ import { useRouteContentReady } from '@/hooks/useRouteContentReady';
 import { detectPresetFromRange, fromIsoDate } from '@/lib/date/navigation';
 
 /**
- * THESIS: KPIs lead; equal 2×3 board for ops + money + calendar.
+ * THESIS: Period KPIs, then blockers + calendar; Messages + Rates; slim money.
  * OWN-WORLD: Kame surface-card peers, Plus Jakarta admin density.
- * STORY: Scan period stats, then attention/calendar, cash, maintenance/transactions.
- * FIRST VIEWPORT: KPI strip, then Calendar | Needs attention (Recent bookings when clear).
- * FORM: equal-width board (user 2026-08-09).
+ * STORY: Period pulse first, then work and next-week rates.
+ * FIRST VIEWPORT: KPI strip (attention before calendar on phone).
+ * FORM: ops-first board (2026-11-23 redesign).
  */
 export function DashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -45,6 +45,9 @@ export function DashboardPage() {
   const { data: access } = usePropertyPermissions();
   const canViewFinance = hasPropertyPermission(access?.permissions, 'finance:view');
   const canViewMaintenance = hasPropertyPermission(access?.permissions, 'maintenance:view');
+  const canViewInbox = hasPropertyPermission(access?.permissions, 'inbox:view');
+  const canViewPricing = hasPropertyPermission(access?.permissions, 'pricing:view');
+  const canEditRates = hasPropertyPermission(access?.permissions, 'pricing.rates:edit');
   const { data, isLoading, error, refetch } = useDashboardStats();
 
   // Perf timeline: the dashboard counts as "content" once its stats have resolved.
@@ -118,7 +121,7 @@ export function DashboardPage() {
   return (
     <AdminMobilePage
       title="Dashboard"
-      subtitle="Overview of your property's performance and activity."
+      subtitle="Blockers, calendar, and period performance."
       titleId="dashboard-heading"
       heroTrailing={heroViewProperty}
       overlap={overlapControls}
@@ -128,7 +131,12 @@ export function DashboardPage() {
       className="min-w-0 max-w-full"
     >
       {isLoading && !data ? (
-        <DashboardSkeleton showFinance={canViewFinance} showMaintenance={canViewMaintenance} />
+        <DashboardSkeleton
+          showFinance={canViewFinance}
+          showMaintenance={canViewMaintenance}
+          showInbox={canViewInbox}
+          showPricing={canViewPricing}
+        />
       ) : error ? (
         <FloatingPanel
           padding="lg"
@@ -164,6 +172,9 @@ export function DashboardPage() {
               attentionLoading={isLoading}
               canViewFinance={canViewFinance}
               canViewMaintenance={canViewMaintenance}
+              canViewInbox={canViewInbox}
+              canViewPricing={canViewPricing}
+              canEditRates={canEditRates}
             />
           ) : null}
         </div>

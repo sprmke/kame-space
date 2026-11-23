@@ -63,6 +63,8 @@ export type DashboardStats = {
     periodDays: number;
     checkInsToday: number;
     checkOutsToday: number;
+    /** Guests on property today (check-in ≤ today < check-out, or same-day stay). */
+    stayingToday: number;
     checkInsInPeriod: number;
   };
   kpis: {
@@ -611,6 +613,7 @@ export async function computeDashboardStats(
           periodDays,
           checkInsToday: 0,
           checkOutsToday: 0,
+          stayingToday: 0,
           checkInsInPeriod: 0,
         },
         kpis: {
@@ -735,6 +738,7 @@ export async function computeDashboardStats(
   let totalBookings = 0;
   let checkInsToday = 0;
   let checkOutsToday = 0;
+  let stayingToday = 0;
   let pendingReview = 0;
   let pendingDocuments = 0;
   let pendingSdRefund = 0;
@@ -744,7 +748,6 @@ export async function computeDashboardStats(
   let outstandingBalance = 0;
   let pipelineEstimate = 0;
 
-  const todayInRange = today >= from && today <= to;
   const occupancyWindowTo = addDaysIso(today, 29);
   let forwardOccupiedNights = 0;
 
@@ -919,8 +922,16 @@ export async function computeDashboardStats(
       }
     }
 
-    if (todayInRange && checkInIso === today) checkInsToday += 1;
-    if (todayInRange && checkOutIso === today) checkOutsToday += 1;
+    if (checkInIso === today) checkInsToday += 1;
+    if (checkOutIso === today) checkOutsToday += 1;
+    // Overnight: check-in ≤ today < check-out. Same-day day-use: both dates are today.
+    const sameDayStay = Boolean(checkOutIso && checkOutIso === checkInIso);
+    if (
+      checkInIso <= today &&
+      (sameDayStay ? checkInIso === today : Boolean(checkOutIso && checkOutIso > today))
+    ) {
+      stayingToday += 1;
+    }
 
     if (status === 'COMPLETED' && checkInInRange) {
       const net = bookingKind === 'parking' ? (parkingLedger?.hostNetTotal ?? 0) : fin.hostNet;
@@ -1142,6 +1153,7 @@ export async function computeDashboardStats(
       periodDays,
       checkInsToday,
       checkOutsToday,
+      stayingToday,
       checkInsInPeriod: totalBookings,
     },
     kpis: {
