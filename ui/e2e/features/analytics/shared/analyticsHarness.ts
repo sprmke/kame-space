@@ -117,6 +117,8 @@ export type AnalyticsBundleOptions = {
   empty?: boolean;
   /** Omit the benchmark block values (peers too few) while keeping the card. */
   benchmarkUnavailable?: boolean;
+  /** Force every KPI delta to zero, for the neutral-delta state. */
+  zeroDeltas?: boolean;
 };
 
 export function buildAnalyticsBundle(options: AnalyticsBundleOptions = {}) {
@@ -124,6 +126,7 @@ export function buildAnalyticsBundle(options: AnalyticsBundleOptions = {}) {
   const prior = priorManilaMonthRange();
   const empty = options.empty ?? false;
   const sampleSize = options.sampleSize ?? 36;
+  const zero = options.zeroDeltas === true;
 
   if (empty) {
     return {
@@ -193,19 +196,19 @@ export function buildAnalyticsBundle(options: AnalyticsBundleOptions = {}) {
     priorPeriod: prior,
     lastYearPeriod: { from: '2025-01-01', to: '2025-01-31' },
     kpis: {
-      occupancyRate: kpi(72, 6.4),
-      adr: kpi(3480, 4.1),
-      revpar: kpi(2506, 3.2),
-      grossRevenue: kpi(184_650, 12.4),
-      netProfit: kpi(142_300, 9.8),
-      reservations: kpi(18, 12.5),
-      nightsBooked: kpi(27, 8.0),
-      avgLeadTimeDays: kpi(14, -2.0),
-      cancellationRate: kpi(5.6, -1.2),
-      avgRating: kpi(4.7, 0.2),
-      repeatGuestRate: kpi(11, 1.0),
-      avgResponseMinutes: kpi(22, -8.0),
-      responseWithin24hRate: kpi(96, 3.0),
+      occupancyRate: kpi(72, zero ? 0 : 6.4),
+      adr: kpi(3480, zero ? 0 : 4.1),
+      revpar: kpi(2506, zero ? 0 : 3.2),
+      grossRevenue: kpi(184_650, zero ? 0 : 12.4),
+      netProfit: kpi(142_300, zero ? 0 : 9.8),
+      reservations: kpi(18, zero ? 0 : 12.5),
+      nightsBooked: kpi(27, zero ? 0 : 8.0),
+      avgLeadTimeDays: kpi(14, zero ? 0 : -2.0),
+      cancellationRate: kpi(5.6, zero ? 0 : -1.2),
+      avgRating: kpi(4.7, zero ? 0 : 0.2),
+      repeatGuestRate: kpi(11, zero ? 0 : 1.0),
+      avgResponseMinutes: kpi(22, zero ? 0 : -8.0),
+      responseWithin24hRate: kpi(96, zero ? 0 : 3.0),
     },
     trend: [],
     distributions: {

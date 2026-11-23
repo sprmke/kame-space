@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 
 import { Link } from 'react-router-dom';
 
-import { TrendingDown, TrendingUp } from 'lucide-react';
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 
 import { useDashboardCompactChrome } from '@/features/dashboard/lib/dashboardChromeContext';
 
@@ -20,6 +20,8 @@ export const STAT_CARD_ICON_MUTED = {
 
 export type StatCardProps = {
   title: string;
+  /** Optional extra classes for the title line (e.g. reserve two lines in a narrow KPI row). */
+  titleClassName?: string;
   /** Optional control rendered right after the title (e.g. a metric info tooltip). */
   titleAdornment?: ReactNode;
   value: string;
@@ -56,6 +58,7 @@ const OVERLAY_CLASS =
  */
 export function StatCard({
   title,
+  titleClassName,
   titleAdornment,
   value,
   icon: Icon,
@@ -73,7 +76,8 @@ export function StatCard({
   density = 'default',
 }: StatCardProps) {
   const hasChange = change !== undefined;
-  const isPositive = change !== undefined && change >= 0;
+  const isNeutral = change === 0;
+  const isPositive = change !== undefined && change > 0;
   const interactive = onClick !== undefined || to !== undefined;
   const compactChrome = useDashboardCompactChrome();
   const compact = density === 'compact';
@@ -124,7 +128,8 @@ export function StatCard({
               <p
                 className={cn(
                   'text-muted-foreground line-clamp-2 font-medium leading-snug',
-                  compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:line-clamp-none sm:text-sm'
+                  compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:line-clamp-none sm:text-sm',
+                  titleClassName
                 )}
               >
                 {title}
@@ -152,13 +157,17 @@ export function StatCard({
                 <span
                   className={cn(
                     'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-semibold sm:text-xs sm:font-medium',
-                    isPositive
-                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                    isNeutral
+                      ? 'bg-muted text-muted-foreground'
+                      : isPositive
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                   )}
                   title={changeLabel}
                 >
-                  {isPositive ? (
+                  {isNeutral ? (
+                    <Minus className="size-3" aria-hidden />
+                  ) : isPositive ? (
                     <TrendingUp className="size-3" aria-hidden />
                   ) : (
                     <TrendingDown className="size-3" aria-hidden />

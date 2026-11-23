@@ -5,7 +5,7 @@ import type { AnalyticsMetricKey } from '@/features/dashboard/analytics/lib/metr
 import type { AnalyticsKpi, AnalyticsKpis } from '@/features/dashboard/analytics/lib/types';
 
 import { StatCard } from '@/components/shared/StatCard';
-import { formatMoney } from '@/utils/format/currency';
+import { formatMoneyCompact } from '@/utils/format/currency';
 
 import type { LucideIcon } from 'lucide-react';
 
@@ -35,14 +35,14 @@ const METRICS: MetricRow[] = [
     key: 'adr',
     title: 'Avg nightly rate',
     icon: BedDouble,
-    value: (k) => formatMoney(k.adr.value),
+    value: (k) => formatMoneyCompact(k.adr.value),
     kpi: (k) => k.adr,
   },
   {
     key: 'revpar',
     title: 'Revenue per night',
     icon: BarChart3,
-    value: (k) => formatMoney(k.revpar.value),
+    value: (k) => formatMoneyCompact(k.revpar.value),
     kpi: (k) => k.revpar,
   },
   {
@@ -62,6 +62,7 @@ export function AnalyticsKpiStrip({ kpis }: Props) {
           <StatCard
             key={metric.key}
             title={metric.title}
+            titleClassName="lg:min-h-10 xl:min-h-0"
             titleAdornment={<MetricInfoDot metric={metric.key} label={metric.title} />}
             value={metric.value(kpis)}
             change={metric.kpi(kpis).changePctVsPrior ?? undefined}

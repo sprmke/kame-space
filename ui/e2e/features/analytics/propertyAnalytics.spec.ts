@@ -42,12 +42,22 @@ test.describe('@ci property analytics', () => {
     await expect(kpis.getByText('Bookings', { exact: true })).toBeVisible();
 
     await expect(kpis.getByText('72%')).toBeVisible();
-    await expect(kpis.getByText('₱3,480.00')).toBeVisible();
-    await expect(kpis.getByText('₱2,506.00')).toBeVisible();
+    await expect(kpis.getByText('₱3,480', { exact: true })).toBeVisible();
+    await expect(kpis.getByText('₱2,506', { exact: true })).toBeVisible();
     await expect(kpis.getByText('18', { exact: true })).toBeVisible();
 
     await expect(kpis.getByText('+6 pts')).toBeVisible();
     await expect(kpis.getByText('+4.1%')).toBeVisible();
+  });
+
+  test('a flat month is neutral, not a green up arrow', async ({ page }) => {
+    await installAnalyticsMocks(page, { zeroDeltas: true });
+    await openAnalytics(page);
+
+    const kpis = page.getByRole('region', { name: 'Key metrics' });
+    await expect(kpis.locator('.lucide-minus')).toHaveCount(4);
+    await expect(kpis.locator('.lucide-trending-up')).toHaveCount(0);
+    await expect(kpis.getByText('0 pts')).toBeVisible();
   });
 
   test('overview shows guest, channel, visits, marketing and peer cards', async ({ page }) => {
@@ -79,6 +89,12 @@ test.describe('@ci property analytics', () => {
     await expect(donut).toBeVisible();
     await expect(donut).toHaveAttribute('aria-label', /Direct 22% \(4\)/);
     await expect(donut).toHaveAttribute('aria-label', /bookings: 18/);
+
+    // The legend carries the same numbers, so the ring is readable without hovering.
+    const sources = page.getByRole('region', { name: 'Booking sources' });
+    await expect(sources.getByText('Airbnb', { exact: true })).toBeVisible();
+    await expect(sources.getByText('9 · 50%')).toBeVisible();
+    await expect(sources.getByText('Direct', { exact: true })).toBeVisible();
   });
 
   test('switching sections swaps content and marks the tab selected', async ({ page }) => {
@@ -272,5 +288,22 @@ test.describe('@ci property analytics on phone', () => {
     const sheet = page.getByRole('dialog');
     await expect(sheet.getByLabel('View by')).toBeVisible();
     await expect(sheet.getByRole('option', { name: /Month/ })).toBeVisible();
+  });
+});
+
+test.describe('@ci property analytics on a 1024 laptop', () => {
+  test.use({ viewport: { width: 1024, height: 768 } });
+
+  test('KPI money stays whole and is not ellipsized', async ({ page }) => {
+    await installAnalyticsMocks(page);
+    await openAnalytics(page);
+
+    const kpis = page.getByRole('region', { name: 'Key metrics' });
+    await expect(kpis.getByText('₱3,480', { exact: true })).toBeVisible();
+    await expect(kpis.getByText('₱2,506', { exact: true })).toBeVisible();
+    await expect(kpis.getByText('₱3,480.00', { exact: true })).toHaveCount(0);
+
+    const values = await kpis.locator('p').allInnerTexts();
+    expect(values.some((text) => text.includes('...'))).toBe(false);
   });
 });
