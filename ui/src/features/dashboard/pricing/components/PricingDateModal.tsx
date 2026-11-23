@@ -23,6 +23,8 @@ type Props = {
   mode?: 'available' | 'blocked';
   selectedDates: Date[];
   suggestedPrice: number;
+  /** Optional Smart Pricing suggestion; tap fills the input only (never auto-applies). */
+  smartSuggestedPrice?: number | null;
   newPrice: string;
   onNewPriceChange: (value: string) => void;
   onResetToDefault: () => void;
@@ -63,6 +65,7 @@ export function PricingDateModal({
   mode = 'available',
   selectedDates,
   suggestedPrice,
+  smartSuggestedPrice = null,
   newPrice,
   onNewPriceChange,
   onResetToDefault,
@@ -76,6 +79,15 @@ export function PricingDateModal({
   const parsedPrice = Number(newPrice);
   const matchesDefault =
     newPrice.trim() !== '' && Number.isFinite(parsedPrice) && parsedPrice === suggestedPrice;
+  const showSmart =
+    smartSuggestedPrice != null &&
+    Number.isFinite(smartSuggestedPrice) &&
+    smartSuggestedPrice !== suggestedPrice;
+  const matchesSmart =
+    showSmart &&
+    newPrice.trim() !== '' &&
+    Number.isFinite(parsedPrice) &&
+    parsedPrice === smartSuggestedPrice;
 
   useEffect(() => {
     if (!open || mode !== 'available') return;
@@ -129,18 +141,34 @@ export function PricingDateModal({
               <Label htmlFor="custom-nightly-price" className="flex text-sm font-medium">
                 Rate per night
               </Label>
-              <button
-                type="button"
-                className={cn(
-                  'shrink-0 rounded-md px-2 text-xs font-medium tabular-nums transition-colors',
-                  matchesDefault
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
-                )}
-                onClick={() => onNewPriceChange(String(suggestedPrice))}
-              >
-                Default {formatMoneyCompact(suggestedPrice)}
-              </button>
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+                <button
+                  type="button"
+                  className={cn(
+                    'rounded-md px-2 text-xs font-medium tabular-nums transition-colors',
+                    matchesDefault
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                  )}
+                  onClick={() => onNewPriceChange(String(suggestedPrice))}
+                >
+                  Default {formatMoneyCompact(suggestedPrice)}
+                </button>
+                {showSmart ? (
+                  <button
+                    type="button"
+                    className={cn(
+                      'rounded-md px-2 text-xs font-medium tabular-nums transition-colors',
+                      matchesSmart
+                        ? 'text-primary'
+                        : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                    )}
+                    onClick={() => onNewPriceChange(String(smartSuggestedPrice))}
+                  >
+                    Smart {formatMoneyCompact(smartSuggestedPrice)}
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             <div className="relative">

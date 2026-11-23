@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Marketing — Multi-track video editor, media library and upload quotas'
 status: in-progress
 tags: [workflow, in-progress, marketing, video, remotion, storage, plans, quotas]
-updated: 2026-11-22
+updated: 2026-11-23
 kind: plan
 ---
 
