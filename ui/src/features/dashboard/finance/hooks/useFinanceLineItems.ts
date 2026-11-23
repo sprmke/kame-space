@@ -112,7 +112,9 @@ export function useFinanceLineItemMutations(query: FinanceQuery) {
       });
       toast.success(
         result.created_count > 1
-          ? `${result.created_count} recurring transactions created`
+          ? result.row.kind === 'income'
+            ? 'Recurring income added'
+            : 'Recurring expense added'
           : 'Transaction saved'
       );
       if (result.created_count === 1 && lineItemMatchesQuery(result.row, query)) {
@@ -142,11 +144,7 @@ export function useFinanceLineItemMutations(query: FinanceQuery) {
         kind: result.row.kind,
         has_receipt: Boolean(result.row.receipt_path),
       });
-      toast.success(
-        result.updated_count > 1
-          ? `${result.updated_count} transactions updated`
-          : 'Transaction updated'
-      );
+      toast.success(result.updated_count > 1 ? 'Recurring series updated' : 'Transaction updated');
       if (result.updated_count === 1) {
         qc.setQueryData<FinanceLineItem[]>(listKey, (current) => {
           if (!current) return current;
@@ -165,11 +163,7 @@ export function useFinanceLineItemMutations(query: FinanceQuery) {
     mutationFn: ({ id, scope: editScope }: { id: string; scope?: RecurrenceEditScope }) =>
       deleteFinanceLineItemApi(id, editScope, scope),
     onSuccess: async (result, { id }) => {
-      toast.success(
-        result.deleted_count > 1
-          ? `${result.deleted_count} transactions deleted`
-          : 'Transaction deleted'
-      );
+      toast.success(result.deleted_count > 1 ? 'Recurring series deleted' : 'Transaction deleted');
       if (result.deleted_count === 1) {
         qc.setQueryData<FinanceLineItem[]>(listKey, (current) =>
           current ? current.filter((item) => item.id !== id) : current
@@ -230,11 +224,7 @@ export function useRecurringSeriesMutations(seriesId: string | null, query: Fina
       scope?: RecurrenceEditScope;
     }) => updateFinanceLineItemApi(id, patch, editScope ?? 'this', scope),
     onSuccess: async (result) => {
-      toast.success(
-        result.updated_count > 1
-          ? `${result.updated_count} transactions updated`
-          : 'Occurrence updated'
-      );
+      toast.success(result.updated_count > 1 ? 'Recurring series updated' : 'Occurrence updated');
       await refresh();
     },
     onError: (e: Error) => toast.error(financeMutationErrorMessage(e)),

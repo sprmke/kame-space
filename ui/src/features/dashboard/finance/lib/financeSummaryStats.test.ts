@@ -58,7 +58,7 @@ function lineItem(overrides: Partial<FinanceLineItem> = {}): FinanceLineItem {
 }
 
 describe('computeFinanceSummaryCardStats', () => {
-  it('adds completed stay net and pipeline to operating income', () => {
+  it('counts completed stay net but reports pipeline separately', () => {
     const stats = computeFinanceSummaryCardStats(
       summary({
         operating: { income: 1000, expenses: 0, net: 1000 },
@@ -66,9 +66,10 @@ describe('computeFinanceSummaryCardStats', () => {
       })
     );
 
-    expect(stats.totalIncome).toBe(6500);
+    expect(stats.totalIncome).toBe(5000);
     expect(stats.totalExpenses).toBe(0);
-    expect(stats.netProfit).toBe(6500);
+    expect(stats.netProfit).toBe(5000);
+    expect(stats.pipelineAmount).toBe(1500);
   });
 
   it('does not let a negative completed net reduce income; it becomes an expense', () => {
@@ -83,12 +84,23 @@ describe('computeFinanceSummaryCardStats', () => {
     expect(stats.netProfit).toBe(-1000);
   });
 
+  it('reports a positive pipeline estimate without adding it to income', () => {
+    const stats = computeFinanceSummaryCardStats(
+      summary({ stays: stays({ projectedNetPipeline: 900, hostNetCompleted: 300 }) })
+    );
+
+    expect(stats.totalIncome).toBe(300);
+    expect(stats.netProfit).toBe(300);
+    expect(stats.pipelineAmount).toBe(900);
+  });
+
   it('ignores a negative pipeline projection instead of subtracting it', () => {
     const stats = computeFinanceSummaryCardStats(
       summary({ stays: stays({ projectedNetPipeline: -500, hostNetCompleted: 300 }) })
     );
 
     expect(stats.totalIncome).toBe(300);
+    expect(stats.pipelineAmount).toBe(0);
   });
 
   it('adds operating expenses to stay expenses', () => {
@@ -125,6 +137,7 @@ describe('computeFinanceSummaryCardStats', () => {
       totalExpenses: 0,
       netProfit: 0,
       pendingAmount: 0,
+      pipelineAmount: 0,
     });
   });
 });
@@ -147,14 +160,26 @@ describe('calculatePercentageChange', () => {
 });
 
 describe('withPeriodComparison', () => {
-  const current = { totalIncome: 200, totalExpenses: 100, netProfit: 100, pendingAmount: 0 };
+  const current = {
+    totalIncome: 200,
+    totalExpenses: 100,
+    netProfit: 100,
+    pendingAmount: 0,
+    pipelineAmount: 0,
+  };
 
   it('returns the current stats untouched without a previous period', () => {
     expect(withPeriodComparison(current)).toBe(current);
   });
 
   it('adds income, expense and net changes', () => {
-    const previous = { totalIncome: 100, totalExpenses: 100, netProfit: 50, pendingAmount: 0 };
+    const previous = {
+      totalIncome: 100,
+      totalExpenses: 100,
+      netProfit: 50,
+      pendingAmount: 0,
+      pipelineAmount: 0,
+    };
     const compared = withPeriodComparison(current, previous);
 
     expect(compared.incomeChange).toBeCloseTo(100, 6);

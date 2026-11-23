@@ -1,14 +1,7 @@
 import { useState } from 'react';
 
 import { format, parseISO } from 'date-fns';
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  Eye,
-  Pencil,
-  Repeat,
-  Trash2,
-} from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Eye, Pencil, Receipt, Repeat, Trash2 } from 'lucide-react';
 
 import {
   AdminDataTable,
@@ -23,7 +16,13 @@ import {
 } from '@/features/dashboard/bookings/components/AdminDataTable';
 import { FinanceLedgerStatusBadge } from '@/features/dashboard/finance/components/FinanceLedgerStatusBadge';
 import { StayFinanceModal } from '@/features/dashboard/finance/components/StayFinanceModal';
-import type { FinanceLedgerEntry } from '@/features/dashboard/finance/lib/financeLedger';
+import {
+  ledgerAmountClassName,
+  ledgerAmountTone,
+  ledgerIconClassName,
+  ledgerIconTone,
+  type FinanceLedgerEntry,
+} from '@/features/dashboard/finance/lib/financeLedger';
 import { recurrenceIntervalLabel } from '@/features/dashboard/finance/lib/recurrence';
 import type { FinanceBookingLedgerRow } from '@/features/dashboard/finance/lib/types';
 
@@ -55,9 +54,11 @@ export function FinanceLedgerTable({
     return (
       <div className="surface-card flex flex-col items-center justify-center gap-3 py-20 text-center">
         <div className="bg-muted flex size-9 items-center justify-center rounded-full">
-          <span className="text-muted-foreground text-lg leading-none">∅</span>
+          <Receipt className="text-muted-foreground size-4" aria-hidden />
         </div>
-        <p className="text-section-title text-foreground font-bold">No transactions found</p>
+        <p className="text-section-title text-foreground font-bold">
+          No transactions in this period
+        </p>
       </div>
     );
   }
@@ -70,16 +71,15 @@ export function FinanceLedgerTable({
           <AdminTableTh className="px-3 sm:px-4">Description</AdminTableTh>
           <AdminTableTh className="hidden px-3 sm:px-4 md:table-cell">Category</AdminTableTh>
           <AdminTableTh className="px-3 sm:px-4">Status</AdminTableTh>
-          <AdminTableTh className="px-3 sm:px-4">Amount</AdminTableTh>
+          <AdminTableTh className="px-3 text-right sm:px-4">Amount</AdminTableTh>
           <AdminTableActionsTh />
         </AdminTableHeadRow>
         <tbody>
           {rows.map((entry, index) => {
             const isIncome = entry.type === 'income';
             const amountPrefix = isIncome ? '+' : '−';
-            const amountClass = isIncome
-              ? 'text-emerald-700 dark:text-emerald-300'
-              : 'text-red-600 dark:text-red-400';
+            const amountClass = ledgerAmountClassName(ledgerAmountTone(entry));
+            const iconTone = ledgerIconTone(entry);
 
             const handleOpen = () => {
               if (entry.source === 'stay' && entry.stay) {
@@ -97,37 +97,20 @@ export function FinanceLedgerTable({
             return (
               <tr
                 key={entry.id}
-                role={isInteractive ? 'button' : undefined}
-                tabIndex={isInteractive ? 0 : undefined}
-                className={adminTableRowClass(index)}
+                className={cn(adminTableRowClass(index), isInteractive && 'cursor-pointer')}
                 onClick={isInteractive ? handleOpen : undefined}
-                onKeyDown={
-                  isInteractive
-                    ? (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleOpen();
-                        }
-                      }
-                    : undefined
-                }
               >
                 <td className={adminTableCell.status}>
                   <div className="flex items-center gap-3">
-                    <div
-                      className={cn(
-                        'size-9 shrink-0',
-                        toneIconWrapClasses(isIncome ? 'green' : 'red')
-                      )}
-                    >
+                    <div className={cn('size-9 shrink-0', toneIconWrapClasses(iconTone))}>
                       {isIncome ? (
                         <ArrowUpRight
-                          className="size-4 text-emerald-600 dark:text-emerald-400"
+                          className={cn('size-4', ledgerIconClassName(iconTone))}
                           aria-hidden
                         />
                       ) : (
                         <ArrowDownRight
-                          className="size-4 text-red-600 dark:text-red-400"
+                          className={cn('size-4', ledgerIconClassName(iconTone))}
                           aria-hidden
                         />
                       )}

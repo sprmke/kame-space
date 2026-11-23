@@ -10,6 +10,8 @@ import {
   sortFinanceLedgerEntries,
   paginateFinanceLedgerEntries,
   collectLedgerCategories,
+  ledgerAmountTone,
+  ledgerAmountClassName,
 } from '@/features/dashboard/finance/lib/financeLedger';
 
 describe('stayLedgerStatus', () => {
@@ -63,5 +65,32 @@ describe('paginateFinanceLedgerEntries', () => {
 describe('collectLedgerCategories', () => {
   it('collectLedgerCategories is exported', () => {
     expect(typeof collectLedgerCategories).toBe('function');
+  });
+});
+
+describe('ledgerAmountTone', () => {
+  const base = {
+    id: 'entry-1',
+    source: 'transaction' as const,
+    date: '2026-03-01',
+    description: 'Electricity bill',
+    category: 'Utilities',
+    type: 'income' as const,
+    netAmount: 100,
+  };
+
+  it('does not present pending money as collected income', () => {
+    expect(ledgerAmountTone({ ...base, status: 'pending' })).toBe('pending');
+    expect(ledgerAmountTone({ ...base, status: 'canceled' })).toBe('canceled');
+  });
+
+  it('uses the income and expense tones only for completed entries', () => {
+    expect(ledgerAmountTone({ ...base, status: 'completed' })).toBe('income');
+    expect(ledgerAmountTone({ ...base, status: 'completed', type: 'expense' })).toBe('expense');
+  });
+
+  it('renders pending amounts in amber, not green', () => {
+    expect(ledgerAmountClassName('pending')).toContain('amber');
+    expect(ledgerAmountClassName('income')).not.toContain('amber');
   });
 });

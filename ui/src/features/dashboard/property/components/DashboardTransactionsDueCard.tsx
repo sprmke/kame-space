@@ -107,7 +107,8 @@ export function DashboardTransactionsDueCard({
         )}
       >
         {isLoading ? (
-          <div role="status"
+          <div
+            role="status"
             className="min-h-0 flex-1 space-y-2"
             aria-busy="true"
             aria-label="Loading transactions"
@@ -132,7 +133,7 @@ export function DashboardTransactionsDueCard({
               Recurring bills and payment due dates for {rangeLabel} will show here.
             </p>
             <Button asChild variant="outline" size="sm" className="mt-1 min-h-[44px]">
-              <Link to={transactionsHref}>Add Transaction</Link>
+              <Link to={transactionsHref}>Add transaction</Link>
             </Button>
           </div>
         ) : (

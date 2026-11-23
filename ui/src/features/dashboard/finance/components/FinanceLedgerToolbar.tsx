@@ -138,7 +138,7 @@ export function FinanceLedgerToolbar({
           value={query.view}
           onChange={(view) => onChange({ ...query, view, page: 1 })}
           hideTableView={hideTableView}
-          ariaLabel="Choose stays view"
+          ariaLabel="Choose ledger view"
         />
         <AdminListRefineSheet
           open={refineOpen}
@@ -202,7 +202,7 @@ export function FinanceLedgerToolbar({
             value={query.view}
             onChange={(view) => onChange({ ...query, view, page: 1 })}
             hideTableView={hideTableView}
-            ariaLabel="Choose stays view"
+            ariaLabel="Choose ledger view"
           />
         }
       />
@@ -232,6 +232,8 @@ function FinanceSearchField({
           'border-border bg-card text-foreground field-focus h-11 min-h-[44px] w-full rounded-2xl border py-2.5 pl-11 text-[13px]',
           'sm:h-10 sm:min-h-[44px] sm:rounded-xl sm:pl-10 sm:text-[13px]',
           'lg:h-10 lg:min-h-[44px] lg:rounded-lg lg:text-sm',
+          // Hide the native search clear; the field renders its own 44px button.
+          '[&::-webkit-search-cancel-button]:hidden',
           value ? 'pr-11' : 'pr-3.5',
           'placeholder:text-muted-foreground placeholder:text-[13px] lg:placeholder:text-sm'
         )}

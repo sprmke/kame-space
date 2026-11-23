@@ -213,7 +213,7 @@ export function ParkingFinancePage() {
       />
       <button type="button" className="native-cta sm:px-3.5" onClick={handleOpenCreate}>
         <Plus className="size-4" aria-hidden />
-        <span className="hidden sm:inline">Add Transaction</span>
+        <span className="hidden sm:inline">Add transaction</span>
         <span className="sm:hidden">Add</span>
       </button>
     </div>

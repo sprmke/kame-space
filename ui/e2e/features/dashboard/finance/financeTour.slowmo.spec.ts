@@ -100,14 +100,14 @@ test.describe('finance tour — reporting shell @demo', () => {
     await installFinanceMocks(page);
     await openFinance(page, 'view=table');
 
-    await page.getByRole('button', { name: /Choose stays view/ }).click();
+    await page.getByRole('button', { name: /Choose ledger view/ }).click();
     await demoPause(page, 1.2);
     await page.getByRole('option', { name: 'Card' }).click();
     await demoPause(page, 1.5);
     await demoScroll(page, 'main', { steps: 3 });
     await demoPause(page);
 
-    await page.getByRole('button', { name: /Choose stays view/ }).click();
+    await page.getByRole('button', { name: /Choose ledger view/ }).click();
     await page.getByRole('option', { name: 'Calendar' }).click();
     await demoPause(page, 1.5);
     await page.getByRole('button', { name: /^March 1, 2026/ }).click();
@@ -124,7 +124,7 @@ test.describe('finance tour — reporting shell @demo', () => {
     await openFinance(page);
 
     // Create
-    await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByRole('button', { name: 'Add transaction' }).click();
     await demoPause(page, 1.5);
     const dialog = await walkWizardToPreview(page);
     await dialog.getByRole('button', { name: 'Add transaction' }).click();

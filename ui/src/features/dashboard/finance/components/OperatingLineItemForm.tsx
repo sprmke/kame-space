@@ -1,14 +1,7 @@
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { AlertTriangle, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -166,7 +159,9 @@ function defaultValues(
   return {
     kind: initial?.kind ?? 'expense',
     label: initial?.label ?? '',
-    amount: initial?.amount ?? 0,
+    // Empty for a new transaction so the placeholder shows; the schema treats
+    // '' as "required" rather than 0.
+    amount: (initial?.amount ?? '') as number,
     category: initial?.category ?? '',
     occurred_on: start,
     notes: initial?.notes ?? '',
@@ -429,7 +424,7 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
               />
             </FormFieldBlock>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FormFieldBlock label="Category" required error={errors.category?.message}>
                 <Controller
                   name="category"
@@ -577,9 +572,22 @@ export const OperatingLineItemForm = forwardRef<OperatingLineItemFormHandle, Pro
               )}
             />
 
+            {telegramReminderEnabled && financeSettings && !financeSettings.enabled ? (
+              <p className="border-border/60 bg-muted/30 text-muted-foreground text-caption flex items-start gap-2 rounded-lg border px-3 py-2">
+                <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-600" aria-hidden />
+                <span>
+                  Finance Telegram is not connected. Reminders will not send until you connect it
+                  under Notifications &gt; Finance.
+                </span>
+              </p>
+            ) : null}
+
             {telegramReminderEnabled ? (
               <div className="space-y-4">
-                <FormFieldBlock label="Days before due" error={errors.telegram_days_before?.message}>
+                <FormFieldBlock
+                  label="Days before due"
+                  error={errors.telegram_days_before?.message}
+                >
                   <input
                     type="number"
                     min={0}

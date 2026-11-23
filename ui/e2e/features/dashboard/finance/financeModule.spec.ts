@@ -25,10 +25,13 @@ test.describe('@ci finance module', () => {
     // Period label in the header.
     await expect(page.getByText('March 2026')).toBeVisible();
 
-    // KPI cards: 3,500 operating income + 5,000 completed + 7,000 pipeline.
+    // KPI cards count collected money only: 3,500 operating + 5,000 completed.
     await expect(page.getByText('Net Profit')).toBeVisible();
-    await expect(page.getByText(/15,500\.00/).first()).toBeVisible();
+    await expect(page.getByText(/8,500\.00/).first()).toBeVisible();
+    await expect(page.getByText(/4,100\.00/).first()).toBeVisible();
     await expect(page.getByText(/4,400\.00/).first()).toBeVisible();
+    // The 7,000 pipeline estimate is reported separately, not as income.
+    await expect(page.getByText(/7,000\.00 in pipeline/)).toBeVisible();
 
     // Charts render; the cash-flow card has data (not the empty state).
     await expect(page.getByText('Cash flow')).toBeVisible();
@@ -44,7 +47,7 @@ test.describe('@ci finance module', () => {
     const calls = await installFinanceMocks(page);
     await openFinance(page);
 
-    await expect(page.getByText('+55.0%')).toBeVisible();
+    await expect(page.getByText('-5.6%')).toBeVisible();
     await expect(page.getByText('vs last period').first()).toBeVisible();
     // Current and previous summaries were both requested for the period.
     expect(calls.summaryRequests.length).toBeGreaterThanOrEqual(2);
@@ -66,6 +69,20 @@ test.describe('@ci finance module', () => {
     await expect(page.getByText('Net Profit')).toBeVisible();
   });
 
+  test('ledger search no longer rewrites the summary cards', async ({ page }) => {
+    await installFinanceMocks(page);
+    await openFinance(page, 'view=table');
+
+    const search = page.getByRole('searchbox', { name: 'Search transactions' }).first();
+    await search.fill('no such transaction');
+    await expect(page.getByText('No transactions in this period')).toBeVisible();
+
+    // The period summary is independent of the ledger search.
+    await expect(page.getByText(/8,500\.00/).first()).toBeVisible();
+    await expect(page.getByText(/4,100\.00/).first()).toBeVisible();
+    await expect(page.getByText('No cash flow in this period')).toHaveCount(0);
+  });
+
   test('search filters the ledger and shows an explicit empty state', async ({ page }) => {
     await installFinanceMocks(page);
     await openFinance(page, 'view=table');
@@ -73,8 +90,10 @@ test.describe('@ci finance module', () => {
     const search = page.getByRole('searchbox', { name: 'Search transactions' }).first();
     await search.fill('no such transaction');
 
-    await expect(page.getByText('No transactions found')).toBeVisible();
+    await expect(page.getByText('No transactions in this period')).toBeVisible();
     await expect(page.getByRole('cell', { name: /Maria Santos: Stay/ })).toHaveCount(0);
+    // One clear control, not the native search clear plus a custom one.
+    await expect(page.getByRole('button', { name: 'Clear search' })).toHaveCount(1);
 
     await page.getByRole('button', { name: 'Clear search' }).first().click();
     await expect(page.getByRole('cell', { name: /Maria Santos: Stay/ }).first()).toBeVisible();
@@ -86,16 +105,32 @@ test.describe('@ci finance module', () => {
     await installFinanceMocks(page);
     await openFinance(page, 'view=table');
 
-    await page.getByRole('button', { name: /Choose stays view/ }).click();
+    await page.getByRole('button', { name: /Choose ledger view/ }).click();
     await page.getByRole('option', { name: 'Calendar' }).click();
 
     await page.getByRole('button', { name: /^March 1, 2026/ }).click();
     await expect(page.getByText('SUNDAY, MARCH 1, 2026')).toBeVisible();
     await expect(page.getByText('Maria Santos: Stay')).toBeVisible();
 
-    await page.getByRole('button', { name: /Choose stays view/ }).click();
+    await page.getByRole('button', { name: /Choose ledger view/ }).click();
     await page.getByRole('option', { name: 'Card' }).click();
     await expect(page.getByRole('button', { name: /Electricity bill/ }).first()).toBeVisible();
+  });
+
+  test('keyboard Delete opens the delete dialog, not edit', async ({ page }) => {
+    await installFinanceMocks(page);
+    await openFinance(page, 'view=table');
+
+    const deleteButton = page
+      .locator('tbody tr', { hasText: 'Electricity bill' })
+      .getByRole('button', { name: 'Delete transaction' });
+    await deleteButton.focus();
+    await page.keyboard.press('Enter');
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText('Delete transaction')).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: 'Edit transaction' })).toHaveCount(0);
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
   });
 
   test('stay row opens the read-only finance breakdown', async ({ page }) => {
@@ -113,7 +148,7 @@ test.describe('@ci finance module', () => {
     const calls = await installFinanceMocks(page);
     await openFinance(page);
 
-    await page.getByRole('button', { name: 'Add Transaction' }).click();
+    await page.getByRole('button', { name: 'Add transaction' }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog.getByRole('heading', { name: 'New transaction' })).toBeVisible();
 
@@ -169,6 +204,44 @@ test.describe('@ci finance module', () => {
 
     await expect(page.getByText('Transaction deleted')).toBeVisible();
     expect(calls.lineItemDeletes).toBe(1);
+  });
+
+  test('recurring edit keeps the three scope choices', async ({ page }) => {
+    await installFinanceMocks(page);
+    await openFinance(page, 'view=table');
+
+    await page
+      .locator('tbody tr', { hasText: 'Internet plan' })
+      .getByRole('button', { name: 'Edit transaction' })
+      .click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('button', { name: 'Next' }).click();
+
+    await expect(dialog.getByText('This occurrence only')).toBeVisible();
+    await expect(dialog.getByText('This and future')).toBeVisible();
+    await expect(dialog.getByText('All occurrences')).toBeVisible();
+  });
+
+  test('reminders open on the daily default and warn when telegram is not connected', async ({
+    page,
+  }) => {
+    await installFinanceMocks(page);
+    await openFinance(page);
+
+    await page.getByRole('button', { name: 'Add transaction' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByPlaceholder('e.g. Monthly rent').fill('Building insurance');
+    await dialog.locator('input[type="number"]').fill('1250');
+    await dialog.getByRole('combobox', { name: 'Category' }).click();
+    await dialog.getByRole('option', { name: 'Rent', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Next' }).click();
+    await dialog.getByRole('button', { name: 'Next' }).click();
+    await dialog.getByText('Send payment due reminders').click();
+
+    const daily = dialog.getByRole('radio', { name: /Daily at 12:00 PM/ });
+    await expect(daily).toBeVisible();
+    await expect(daily).toHaveAttribute('aria-checked', 'true');
+    await expect(dialog.getByText(/Finance Telegram is not connected/)).toBeVisible();
   });
 
   test('recurring transaction opens its series with every occurrence', async ({ page }) => {

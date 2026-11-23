@@ -81,7 +81,7 @@ export function StatCard({
 
   const shellClassName = cn(
     'surface-card group relative flex h-full w-full flex-col items-start justify-start overflow-hidden text-left transition-all duration-300',
-    compact ? 'p-2 sm:p-2.5' : 'p-3 sm:p-3.5 md:p-5',
+    compact ? 'p-2 sm:p-2.5' : 'p-3 sm:p-3.5 md:p-4 2xl:p-5',
     interactive && 'native-press',
     'sm:hover:shadow-elevated-lg sm:hover:-translate-y-0.5',
     interactive &&
@@ -118,7 +118,7 @@ export function StatCard({
           footer && 'space-y-2 sm:space-y-2.5'
         )}
       >
-        <div className="flex w-full items-start justify-between gap-2.5 sm:gap-3">
+        <div className="flex w-full items-start justify-between gap-2.5 sm:gap-3 xl:gap-1.5 2xl:gap-3">
           <div className="min-w-0 flex-1 space-y-1 sm:space-y-1.5">
             <div className="flex items-center gap-0.5">
               <p
@@ -175,8 +175,10 @@ export function StatCard({
             <div
               data-stat-card-icon
               className={cn(
-                'hidden shrink-0 items-center justify-center transition-transform lg:flex',
-                compact ? 'size-7 rounded-lg' : 'native-icon-tile sm:group-hover:scale-110',
+                'hidden shrink-0 items-center justify-center transition-transform xl:flex',
+                compact
+                  ? 'size-7 rounded-lg'
+                  : 'native-icon-tile sm:group-hover:scale-110 xl:size-7 2xl:size-10',
                 iconBgClassName
               )}
             >
@@ -265,14 +267,14 @@ export function StatCardSkeleton({
           {Icon ? (
             <div
               className={cn(
-                'native-icon-tile hidden shrink-0 items-center justify-center lg:flex',
+                'native-icon-tile hidden shrink-0 items-center justify-center xl:flex',
                 iconBgClassName
               )}
             >
               <Icon className={cn('size-4 sm:size-5', iconClassName)} aria-hidden />
             </div>
           ) : (
-            <Skeleton className="hidden size-8 shrink-0 rounded-lg sm:size-10 sm:rounded-xl lg:block" />
+            <Skeleton className="hidden size-8 shrink-0 rounded-lg sm:size-10 sm:rounded-xl xl:block" />
           )}
         </div>
         {footer ? (

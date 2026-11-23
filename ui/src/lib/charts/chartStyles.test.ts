@@ -14,6 +14,16 @@ describe('formatChartMoneyAxis', () => {
   it('formatChartMoneyAxis is exported', () => {
     expect(typeof formatChartMoneyAxis).toBe('function');
   });
+
+  it('keeps one decimal for half-thousand steps and drops it for whole ones', () => {
+    expect(formatChartMoneyAxis(0)).toBe('₱0');
+    expect(formatChartMoneyAxis(2500)).toBe('₱2.5k');
+    expect(formatChartMoneyAxis(5000)).toBe('₱5k');
+    expect(formatChartMoneyAxis(7500)).toBe('₱7.5k');
+    expect(formatChartMoneyAxis(10000)).toBe('₱10k');
+    expect(formatChartMoneyAxis(1_500_000)).toBe('₱1.5M');
+    expect(formatChartMoneyAxis(2_000_000)).toBe('₱2M');
+  });
 });
 
 describe('defaultChartMargin', () => {
