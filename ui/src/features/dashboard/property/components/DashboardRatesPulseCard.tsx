@@ -300,7 +300,7 @@ export function DashboardRatesPulseCard({
                             className={cn(
                               'flex size-9 shrink-0 items-center justify-center rounded-lg border transition-colors',
                               selected
-                                ? 'border-primary bg-primary text-primary-foreground'
+                                ? 'border-primary bg-primary-strong text-primary-foreground'
                                 : 'border-border/70 bg-background hover:bg-muted/50'
                             )}
                             onClick={() => toggleNight(night.dateKey)}
@@ -367,7 +367,7 @@ export function DashboardRatesPulseCard({
               </button>
               <button
                 type="button"
-                className="bg-primary text-primary-foreground native-press min-h-11 rounded-lg px-3 text-sm font-semibold"
+                className="bg-primary-strong text-primary-foreground native-press min-h-11 rounded-lg px-3 text-sm font-semibold"
                 onClick={() => openEditor(selectedKeys)}
               >
                 Set rate
