@@ -18,6 +18,7 @@ import {
   textPresetById,
   TEXT_PRESETS,
   trackLabel,
+  visibleFrameForText,
 } from '@/features/dashboard/marketing/lib/video/v2/editorCommands';
 import {
   insertItem,
@@ -149,7 +150,7 @@ describe('labels and warnings', () => {
     expect(itemAriaLabel({ ...caption(90, 120, 'Hello'), from: 90 }, 30)).toBe(
       'Text, Hello, 0:03 to 0:07'
     );
-    expect(trackLabel('main', 0)).toBe('Main');
+    expect(trackLabel('main', 0)).toBe('Video');
     expect(trackLabel('text', 1)).toBe('Text 2');
   });
 
@@ -342,5 +343,33 @@ describe('audioItemFromPayload credits', () => {
     });
     expect('trackId' in item).toBe(false);
     expect('artist' in item).toBe(false);
+  });
+});
+
+describe('visibleFrameForText', () => {
+  it('lands just after the entrance animation', () => {
+    const item = layerItemFromPreset(textPresetById('headline'), {
+      from: 30,
+      durationInFrames: 90,
+    });
+    expect(visibleFrameForText(item)).toBe(30 + 14 + 2);
+  });
+
+  it('never leaves the clip, even a very short one', () => {
+    const short = layerItemFromPreset(textPresetById('headline'), {
+      from: 10,
+      durationInFrames: 3,
+    });
+    const frame = visibleFrameForText(short);
+    expect(frame).toBeGreaterThanOrEqual(10);
+    expect(frame).toBeLessThan(10 + short.durationInFrames);
+  });
+
+  it('stays at the start when there is no entrance animation', () => {
+    const item = {
+      ...layerItemFromPreset(textPresetById('caption'), { from: 5 }),
+      animationIn: undefined,
+    };
+    expect(visibleFrameForText(item)).toBe(5 + 2);
   });
 });

@@ -11,13 +11,15 @@ import { getSessionJwt } from '@/features/dashboard/org/lib/edgeClient';
 
 export type PublishToMetaPayload = {
   platform: 'facebook' | 'instagram';
-  postType: 'post' | 'story';
+  postType: 'post' | 'reel' | 'story';
   caption: string;
   connectionId: string;
   mediaType: 'image' | 'video';
   /** Base64 data URL or remote URL */
   mediaUrl: string;
   templateId?: string;
+  /** A song from Instagram's library. Only valid on an Instagram Reel. */
+  instagramAudio?: { audioId: string; audioVolume: number };
 };
 
 export type MarketingPublication = {
@@ -58,10 +60,14 @@ export async function publishToMetaRequest(
     body: JSON.stringify({
       connectionId: payload.connectionId,
       platform: payload.platform,
-      postType: payload.postType,
+      postType: payload.postType === 'story' ? 'story' : 'post',
+      ...(payload.platform === 'instagram' && payload.postType === 'reel'
+        ? { publishType: 'instagram_reel' }
+        : {}),
       mediaUrl: payload.mediaUrl,
       mediaType: payload.mediaType,
       caption: payload.caption,
+      ...(payload.instagramAudio ? { instagramAudio: payload.instagramAudio } : {}),
     }),
   });
 

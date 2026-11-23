@@ -1,24 +1,23 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+import {
+  DEFAULT_MUSIC_GROUP,
+  type InstagramMusicStatus,
+  type JamendoTrack,
+  type MusicSourceStatus,
+  type MusicTrack,
+} from '@/features/dashboard/marketing/lib/music/musicTypes';
 import { scopedFunctionsUrl } from '@/features/dashboard/org/lib/adminApiScope';
 import { getSessionJwt } from '@/features/dashboard/org/lib/edgeClient';
 
-export type JamendoTrack = {
-  id: string;
-  title: string;
-  artist: string;
-  durationSec: number;
-  imageUrl: string | null;
-  streamUrl: string;
-  downloadUrl: string;
-};
+export type { JamendoTrack } from '@/features/dashboard/marketing/lib/music/musicTypes';
 
 export type ImportedMarketingMusic = {
   url: string;
   title?: string;
   artist?: string;
-  source: 'jamendo' | 'upload' | 'url';
+  source: 'jamendo' | 'audius' | 'upload' | 'url';
   trackId?: string;
 };
 
@@ -38,16 +37,21 @@ function marketingMusicGetUrl(propertyId: string | null, params: Record<string, 
   return scopedFunctionsUrl(path, propertyId);
 }
 
+/**
+ * Jamendo only. The default-music resolver and the older scene editor ask for a Jamendo track id,
+ * so they must never see Audius results.
+ */
 export function useMarketingMusicBrowse(
   propertyId: string | null,
   options: { q?: string; order?: string; enabled?: boolean } = {}
 ) {
   const { q, order = 'popularity_week', enabled = true } = options;
+  const group = order === 'popularity_total' ? 'popular' : DEFAULT_MUSIC_GROUP;
   return useQuery({
-    queryKey: [...MARKETING_MUSIC_QUERY_KEY, 'browse', propertyId, q ?? '', order],
+    queryKey: [...MARKETING_MUSIC_QUERY_KEY, 'browse', propertyId, q ?? '', group],
     queryFn: async () => {
       const jwt = await getSessionJwt();
-      const params: Record<string, string> = { order };
+      const params: Record<string, string> = { only: 'jamendo', group };
       if (q?.trim()) params.q = q.trim();
       const res = await fetch(marketingMusicGetUrl(propertyId, params), {
         headers: { Authorization: `Bearer ${jwt}` },
@@ -59,6 +63,88 @@ export function useMarketingMusicBrowse(
     gcTime: 10 * 60 * 1000,
     retry: 2,
   });
+}
+
+export type MusicBrowsePage = {
+  tracks: MusicTrack[];
+  hasMore: boolean;
+  sources: { jamendo: MusicSourceStatus; audius: MusicSourceStatus };
+};
+
+/** One group (or a typed search) from every free source, a page at a time. */
+export function useMusicBrowse(
+  propertyId: string | null,
+  options: { group: string; q?: string; enabled?: boolean }
+) {
+  const { group, q, enabled = true } = options;
+  const search = q?.trim() ?? '';
+  return useInfiniteQuery({
+    queryKey: [
+      ...MARKETING_MUSIC_QUERY_KEY,
+      'groups',
+      propertyId,
+      search ? 'search' : group,
+      search,
+    ],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }): Promise<MusicBrowsePage> => {
+      const jwt = await getSessionJwt();
+      const params: Record<string, string> = { group, page: String(pageParam) };
+      if (search) params.q = search;
+      const res = await fetch(marketingMusicGetUrl(propertyId, params), {
+        headers: { Authorization: `Bearer ${jwt}` },
+      });
+      return parseEdgeJson<MusicBrowsePage>(res);
+    },
+    getNextPageParam: (last, pages) => (last.hasMore ? pages.length : undefined),
+    enabled: Boolean(propertyId) && enabled,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+export type InstagramMusicResult = {
+  tracks: MusicTrack[];
+  instagram: { status: InstagramMusicStatus; message?: string };
+};
+
+/** Instagram's own music for Reels: trending when `q` is empty, a search otherwise. */
+export function useInstagramMusic(
+  propertyId: string | null,
+  options: { q?: string; enabled?: boolean } = {}
+) {
+  const search = options.q?.trim() ?? '';
+  return useQuery({
+    queryKey: [...MARKETING_MUSIC_QUERY_KEY, 'instagram', propertyId, search],
+    queryFn: async (): Promise<InstagramMusicResult> => {
+      const jwt = await getSessionJwt();
+      const params: Record<string, string> = { source: 'instagram' };
+      if (search) params.q = search;
+      const res = await fetch(marketingMusicGetUrl(propertyId, params), {
+        headers: { Authorization: `Bearer ${jwt}` },
+      });
+      return parseEdgeJson<InstagramMusicResult>(res);
+    },
+    enabled: Boolean(propertyId) && (options.enabled ?? true),
+    // Preview links Instagram hands out expire after about a day and a half.
+    staleTime: 10 * 60 * 1000,
+    gcTime: 20 * 60 * 1000,
+    retry: false,
+  });
+}
+
+/** One Instagram song with a fresh preview link (saved projects keep only the id). */
+export async function fetchInstagramSong(
+  propertyId: string | null,
+  audioId: string
+): Promise<MusicTrack> {
+  const jwt = await getSessionJwt();
+  const res = await fetch(marketingMusicGetUrl(propertyId, { source: 'instagram', audioId }), {
+    headers: { Authorization: `Bearer ${jwt}` },
+  });
+  const data = await parseEdgeJson<{ track: MusicTrack }>(res);
+  return data.track;
 }
 
 async function postMarketingMusicJson(
@@ -128,6 +214,7 @@ function sanitizeFileStem(value: string): string {
 
 /** Jamendo stream URLs are browser-only; fetch client-side then upload to Storage. */
 export async function fetchJamendoStreamAsFile(track: JamendoTrack): Promise<File> {
+  if (!track.streamUrl) throw new Error('This track has no audio to fetch');
   const res = await fetch(track.streamUrl);
   if (!res.ok) {
     throw new Error(`Could not fetch audio (${res.status})`);

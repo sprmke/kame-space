@@ -9,6 +9,7 @@ import type {
   MarketingEditorNav,
 } from '@/features/dashboard/marketing/components/shared/MarketingEditorHost';
 import type { MarketingContentType } from '@/features/dashboard/marketing/hooks/useMarketingTemplates';
+import type { InstagramSong } from '@/features/dashboard/marketing/lib/video/v2/videoProjectV2Types';
 import { isVideoEditorV2Enabled } from '@/features/dashboard/marketing/lib/video/videoEditorFlag';
 
 /** What the Publish flow needs from either editor's export. */
@@ -16,6 +17,8 @@ export type MarketingVideoExportPayload = {
   templateId: string;
   blob: Blob;
   dataUrl: string;
+  /** The song Instagram adds when this video is posted as a Reel. */
+  instagramSong?: InstagramSong;
 };
 
 export type MarketingVideoEditorProps = {

@@ -2,7 +2,7 @@
 title: 'In progress'
 status: active
 tags: [workflow, in-progress]
-updated: 2026-11-21
+updated: 2026-11-23
 stage: in-progress
 kind: reference
 ---
@@ -17,6 +17,7 @@ Plans with **implementation complete** and only manual QA left live in [`../for-
 
 | Plan                                                                                                           | Open scope                                                                                                                                                                                                                                                                                                                        |
 | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`marketing-video-trending-music.md`](./marketing-video-trending-music.md)                                     | Music picker with Trending, Popular, genres, moods and stay collections over Jamendo and Audius, plus Instagram's Reels music added by Meta on publish. Phases 1 to 3 built and tested with mocks. Open: one live check of Meta's `ig_audio` and a post-deploy check of Jamendo tag groups                                        |
 | [`analytics-ux-review/`](./analytics-ux-review/README.md)                                                      | Review complete (25 captures, 6 recordings, 4 P1s, 11 P2s, 13 P3s). Five fix-now items shipped: chart legends and bar values, AI review copy normalisation, 1024 KPI money, neutral zero delta, PDF pages/tables/currency. Open: section tab in the URL, phone tab strip, pace chart, tab semantics, touch targets, cosmetic pass |
 | [`guest-inbox-meta-sync-overhaul.md`](./guest-inbox-meta-sync-overhaul.md)                                     | Phase 1 shipped (stop data loss, close the Page-token leak, webhook ordering, thread summary). Phases 2-8 remain: durable outbox, server-owned import and reconciliation, Broadcast realtime, host copy, messaging parity, observability, cleanup                                                                                 |
 | [`parking-module-hardening.md`](./parking-module-hardening.md)                                                 | Phase 0 (payment, claim, CI) and the RBAC slice shipped. Host and guest UX coverage plus the remaining lifecycle items                                                                                                                                                                                                            |

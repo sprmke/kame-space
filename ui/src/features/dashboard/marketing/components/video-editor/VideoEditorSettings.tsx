@@ -23,7 +23,6 @@ import { videoTemplateFieldsToSceneTexts } from '@/features/dashboard/marketing/
 import type { VideoTypographyContext } from '@/features/dashboard/marketing/lib/video/videoTemplateTypography';
 import { defaultVideoFields } from '@/features/dashboard/marketing/lib/videoCampaignTemplates';
 
-
 type Props = {
   project: VideoProject;
   selectedScene: VideoScene;
@@ -123,7 +122,6 @@ export function VideoEditorSettings({
           onChange={(music) => onProjectChange({ ...project, music })}
         />
       </StyleSection>
-
     </div>
   );
 }

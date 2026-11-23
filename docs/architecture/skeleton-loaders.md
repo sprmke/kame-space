@@ -135,7 +135,7 @@ first data load. Both use the same page chrome, so nothing jumps when the chunk 
 | `/org/:orgSlug/team`                      | `OrgTeamRouteSkeleton`                     | `TeamPageSkeleton`                                                                                          |
 | `/org/:orgSlug/plans`                     | `OrgPlansRouteSkeleton`                    | `PlansPageSkeleton`                                                                                         |
 | `/org/:orgSlug/analytics`                 | `OrgAnalyticsRouteSkeleton`                | `OrgAnalyticsSkeleton`                                                                                      |
-| property `dashboard`                      | `PropertyDashboardRouteSkeleton`           | `DashboardSkeleton`                                                                                         |
+| property `dashboard`                      | `PropertyDashboardRouteSkeleton`           | `DashboardSkeleton` (KPIs + ops board: attention, calendar, Messages, Rates, cash flow)                     |
 | property `bookings`                       | `PropertyBookingsRouteSkeleton`            | `BookingsListBodySkeleton` (table / cards / calendar / kanban, cards below `md`)                            |
 | property `bookings/:bookingId`            | `PropertyBookingDetailRouteSkeleton`       | `BookingDetailPageSkeleton`                                                                                 |
 | property `notifications`                  | `PropertyNotificationsRouteSkeleton`       | `NotificationsPageBodySkeleton`                                                                             |

@@ -45,6 +45,7 @@ export function buildEmptyParkingDashboardStats(
       periodDays,
       checkInsToday: 0,
       checkOutsToday: 0,
+      stayingToday: 0,
       checkInsInPeriod: 0,
     },
     kpis: {

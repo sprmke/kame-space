@@ -2,6 +2,7 @@
  * Meta Graph API helpers for Marketing Content Studio publishing.
  */
 
+import { buildAudioConfiguration } from './instagramAudio.ts';
 import { META_GRAPH_BASE } from './metaInboxConfig.ts';
 import { parseMetaGraphJson } from './metaInboxGraph.ts';
 
@@ -104,6 +105,8 @@ export async function publishToInstagramMedia(input: {
   videoUrl?: string;
   caption?: string;
   mediaType: 'IMAGE' | 'STORIES' | 'REELS';
+  /** Reels only: a song from Instagram's own music library, mixed in by Meta on publish. */
+  audio?: { audioId: string; audioVolume?: number; videoVolume?: number };
 }): Promise<InstagramMediaPublishResult> {
   const containerUrl = new URL(`${META_GRAPH_BASE}/${input.igUserId}/media`);
   containerUrl.searchParams.set('access_token', input.pageAccessToken);
@@ -124,8 +127,16 @@ export async function publishToInstagramMedia(input: {
     throw new Error('imageUrl or videoUrl is required');
   }
 
-  if (input.mediaType === 'IMAGE' && input.caption?.trim()) {
+  // Stories carry no caption. Feed posts and Reels do.
+  if ((input.mediaType === 'IMAGE' || input.mediaType === 'REELS') && input.caption?.trim()) {
     containerUrl.searchParams.set('caption', input.caption.trim());
+  }
+
+  if (input.audio?.audioId) {
+    if (input.mediaType !== 'REELS' || !input.videoUrl) {
+      throw new Error('Instagram songs can only be added to Reels');
+    }
+    containerUrl.searchParams.set('audio_configuration', buildAudioConfiguration(input.audio));
   }
 
   const containerRes = await fetch(containerUrl.toString(), { method: 'POST' });

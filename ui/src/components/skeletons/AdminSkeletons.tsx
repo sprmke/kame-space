@@ -19,6 +19,7 @@ import {
   LayoutGrid,
   ListChecks,
   Mail,
+  MessageSquare,
   PencilLine,
   Percent,
   PieChart,
@@ -33,6 +34,7 @@ import {
   Users,
   Wallet,
   Wrench,
+  CalendarRange,
 } from 'lucide-react';
 
 import {
@@ -961,9 +963,13 @@ function DashboardListRowSkeleton({ tall = false }: { tall?: boolean }) {
 export function DashboardSkeleton({
   showFinance = true,
   showMaintenance = true,
+  showInbox = true,
+  showPricing = true,
 }: {
   showFinance?: boolean;
   showMaintenance?: boolean;
+  showInbox?: boolean;
+  showPricing?: boolean;
 } = {}) {
   return (
     <div
@@ -976,7 +982,7 @@ export function DashboardSkeleton({
         <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4">
           {[
             { title: 'Total Revenue', icon: DollarSign },
-            { title: 'Total Bookings', icon: FileText },
+            { title: 'Nights booked', icon: FileText },
             { title: 'Occupancy Rate', icon: Percent },
             { title: 'Average Nightly Rate', icon: BedDouble },
           ].map((card) => (
@@ -986,25 +992,7 @@ export function DashboardSkeleton({
       </section>
 
       <div className="grid min-w-0 items-stretch gap-2.5 sm:gap-3 lg:grid-cols-2 lg:gap-4">
-        {/* Calendar | Needs attention */}
-        <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 sm:p-4">
-          <DashboardChartCardHeaderSkeleton
-            action="toggle"
-            title="Calendar"
-            icon={CalendarDays}
-            descriptionWidthClass="w-52"
-          />
-          <div className="grid grid-cols-7 gap-0.5 px-0.5 pb-1 pt-1">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <Skeleton key={`dow-${i}`} className="mx-auto h-3 w-6 rounded-full" />
-            ))}
-            {Array.from({ length: 35 }).map((_, i) => (
-              <Skeleton key={`day-${i}`} className="h-[3rem] w-full self-start rounded-md" />
-            ))}
-          </div>
-        </section>
-
-        <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 sm:p-4">
+        <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 max-lg:order-1 sm:p-4">
           <DashboardChartCardHeaderSkeleton
             action="badge"
             title="Needs attention"
@@ -1026,55 +1014,72 @@ export function DashboardSkeleton({
           </div>
         </section>
 
-        {/* Cash flow | Breakdown */}
-        {showFinance ? (
-          <>
-            <section className="surface-card flex h-full min-w-0 flex-col p-3 sm:p-4">
-              <DashboardChartCardHeaderSkeleton
-                action="view"
-                title="Cash flow"
-                icon={BarChart3}
-                descriptionWidthClass="w-48"
-              />
-              <Skeleton className="h-[180px] w-full min-w-0 rounded-xl sm:h-[220px]" />
-            </section>
+        <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 max-lg:order-2 sm:p-4">
+          <DashboardChartCardHeaderSkeleton
+            action="toggle"
+            title="Calendar"
+            icon={CalendarDays}
+            descriptionWidthClass="w-52"
+          />
+          <div className="grid grid-cols-7 gap-0.5 px-0.5 pb-1 pt-1">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <Skeleton key={`dow-${i}`} className="mx-auto h-3 w-6 rounded-full" />
+            ))}
+            {Array.from({ length: 35 }).map((_, i) => (
+              <Skeleton key={`day-${i}`} className="h-[3rem] w-full self-start rounded-md" />
+            ))}
+          </div>
+        </section>
 
-            <section className="surface-card flex h-full min-w-0 flex-col p-3 sm:p-4">
-              <DashboardChartCardHeaderSkeleton
-                action="segment"
-                title="Breakdown"
-                icon={PieChart}
-              />
-              <div className="flex min-h-[180px] flex-1 items-center justify-center px-2 sm:min-h-[220px]">
-                <Skeleton className="size-36 shrink-0 rounded-full sm:size-44" />
-              </div>
-            </section>
-          </>
-        ) : null}
-
-        {/* Maintenance | Transactions */}
-        {showMaintenance ? (
-          <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 sm:p-4">
+        {showInbox ? (
+          <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 max-lg:order-3 sm:p-4">
             <DashboardChartCardHeaderSkeleton
               action="view"
-              title="Maintenance"
-              icon={Wrench}
-              descriptionWidthClass="w-36"
+              title="Messages"
+              icon={MessageSquare}
+              descriptionWidthClass="w-28"
             />
             <div className="mb-3 flex flex-wrap gap-2">
               <Skeleton className="h-7 w-20 rounded-full" />
-              <Skeleton className="h-7 w-16 rounded-full" />
             </div>
             <div className="flex min-h-0 flex-1 flex-col space-y-2">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <DashboardListRowSkeleton key={`maint-${i}`} tall />
+              {Array.from({ length: 2 }).map((_, i) => (
+                <DashboardListRowSkeleton key={`msg-${i}`} tall />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {showPricing ? (
+          <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 max-lg:order-4 sm:p-4">
+            <DashboardChartCardHeaderSkeleton
+              action="view"
+              title="Rates"
+              icon={CalendarRange}
+              descriptionWidthClass="w-28"
+            />
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={`rate-${i}`} className="h-12 w-full rounded-xl" />
               ))}
             </div>
           </section>
         ) : null}
 
         {showFinance ? (
-          <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 sm:p-4">
+          <section className="surface-card flex h-full min-w-0 flex-col p-3 max-lg:order-5 sm:p-4 lg:col-span-2">
+            <DashboardChartCardHeaderSkeleton
+              action="view"
+              title="Cash flow"
+              icon={BarChart3}
+              descriptionWidthClass="w-48"
+            />
+            <Skeleton className="h-[180px] w-full min-w-0 rounded-xl sm:h-[220px]" />
+          </section>
+        ) : null}
+
+        {showFinance ? (
+          <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 max-lg:order-6 sm:p-4">
             <DashboardChartCardHeaderSkeleton
               action="view"
               title="Transactions"
@@ -1088,6 +1093,26 @@ export function DashboardSkeleton({
             <div className="flex min-h-0 flex-1 flex-col space-y-2">
               {Array.from({ length: 3 }).map((_, i) => (
                 <DashboardListRowSkeleton key={`txn-${i}`} tall />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {showMaintenance ? (
+          <section className="surface-card flex h-full min-w-0 flex-col overflow-hidden p-3 max-lg:order-7 sm:p-4">
+            <DashboardChartCardHeaderSkeleton
+              action="view"
+              title="Maintenance"
+              icon={Wrench}
+              descriptionWidthClass="w-36"
+            />
+            <div className="mb-3 flex flex-wrap gap-2">
+              <Skeleton className="h-7 w-20 rounded-full" />
+              <Skeleton className="h-7 w-16 rounded-full" />
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <DashboardListRowSkeleton key={`maint-${i}`} tall />
               ))}
             </div>
           </section>

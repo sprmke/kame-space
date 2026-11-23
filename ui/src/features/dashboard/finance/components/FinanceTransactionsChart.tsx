@@ -52,6 +52,8 @@ type Props = {
   cashFlowCardClassName?: string;
   /** Grid placement for the Breakdown card when embedded in a non-2-col parent grid. */
   breakdownCardClassName?: string;
+  /** When false, omit the category Breakdown card (property home keeps cash flow only). */
+  showBreakdown?: boolean;
   /** Show chart skeletons instead of empty states while data is loading. */
   isLoading?: boolean;
   /** Period-scoped finance deep link (shows View on Cash flow when set). */
@@ -232,6 +234,7 @@ export function FinanceTransactionsChart({
   embedded = false,
   cashFlowCardClassName,
   breakdownCardClassName,
+  showBreakdown = true,
   isLoading = false,
   financeHref,
 }: Props) {
@@ -355,99 +358,101 @@ export function FinanceTransactionsChart({
         )}
       </FinanceChartCard>
 
-      <FinanceChartCard
-        className={cn(
-          'flex h-full min-h-0 flex-col',
-          !embedded && 'lg:col-span-2',
-          breakdownCardClassName
-        )}
-        icon={PieChartIcon}
-        title="Breakdown"
-        description="By category"
-        action={
-          <SegmentedControl
-            value={pieChartType}
-            onChange={setPieChartType}
-            size="dense"
-            equalSegments
-            listClassName={cardHeaderSegmentedListClassName}
-            triggerClassName={cardHeaderSegmentedTriggerClassName}
-            aria-label="Breakdown filter"
-            options={[
-              { value: 'all', label: 'All' },
-              { value: 'income', label: 'Income' },
-              { value: 'expenses', label: 'Expenses' },
-            ]}
-          />
-        }
-      >
-        {isLoading ? (
-          <BreakdownChartSkeleton />
-        ) : pieData.length > 0 ? (
-          <div className="flex min-h-0 flex-1 flex-col">
-            <div className="flex min-h-[160px] flex-1 items-center justify-center px-2 pb-10 sm:min-h-[200px]">
-              <div className={cn('shrink-0 translate-y-1', breakdownChartSize)}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart key={pieChartType}>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius="58%"
-                      outerRadius="92%"
-                      paddingAngle={2}
-                      dataKey="amount"
-                      isAnimationActive
-                      animationBegin={0}
-                      animationDuration={CHART_ANIMATION_MS}
-                      animationEasing="ease-out"
-                    >
-                      {pieData.map((entry) => (
-                        <Cell
-                          key={`${pieChartType}-${entry.category}`}
-                          fill={entry.color}
-                          className="stroke-background stroke-2 transition-opacity hover:opacity-80"
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<BreakdownTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
+      {showBreakdown ? (
+        <FinanceChartCard
+          className={cn(
+            'flex h-full min-h-0 flex-col',
+            !embedded && 'lg:col-span-2',
+            breakdownCardClassName
+          )}
+          icon={PieChartIcon}
+          title="Breakdown"
+          description="By category"
+          action={
+            <SegmentedControl
+              value={pieChartType}
+              onChange={setPieChartType}
+              size="dense"
+              equalSegments
+              listClassName={cardHeaderSegmentedListClassName}
+              triggerClassName={cardHeaderSegmentedTriggerClassName}
+              aria-label="Breakdown filter"
+              options={[
+                { value: 'all', label: 'All' },
+                { value: 'income', label: 'Income' },
+                { value: 'expenses', label: 'Expenses' },
+              ]}
+            />
+          }
+        >
+          {isLoading ? (
+            <BreakdownChartSkeleton />
+          ) : pieData.length > 0 ? (
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="flex min-h-[160px] flex-1 items-center justify-center px-2 pb-10 sm:min-h-[200px]">
+                <div className={cn('shrink-0 translate-y-1', breakdownChartSize)}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart key={pieChartType}>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius="58%"
+                        outerRadius="92%"
+                        paddingAngle={2}
+                        dataKey="amount"
+                        isAnimationActive
+                        animationBegin={0}
+                        animationDuration={CHART_ANIMATION_MS}
+                        animationEasing="ease-out"
+                      >
+                        {pieData.map((entry) => (
+                          <Cell
+                            key={`${pieChartType}-${entry.category}`}
+                            fill={entry.color}
+                            className="stroke-background stroke-2 transition-opacity hover:opacity-80"
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<BreakdownTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div
+                key={pieChartType}
+                className="border-border/50 animate-fade-in shrink-0 border-t pt-2"
+              >
+                <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
+                  {pieData.slice(0, 6).map((item) => (
+                    <div key={item.category} className="flex min-w-0 items-center gap-2">
+                      <span
+                        className="size-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="text-muted-foreground truncate text-xs">{item.label}</span>
+                      <span className="ml-auto shrink-0 text-xs font-semibold tabular-nums">
+                        {item.percentage.toFixed(0)}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-            <div
-              key={pieChartType}
-              className="border-border/50 animate-fade-in shrink-0 border-t pt-2"
-            >
-              <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
-                {pieData.slice(0, 6).map((item) => (
-                  <div key={item.category} className="flex min-w-0 items-center gap-2">
-                    <span
-                      className="size-2.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-muted-foreground truncate text-xs">{item.label}</span>
-                    <span className="ml-auto shrink-0 text-xs font-semibold tabular-nums">
-                      {item.percentage.toFixed(0)}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <ChartEmptyState
-            icon={PieChartIcon}
-            title={
-              pieChartType === 'all'
-                ? 'No breakdown data available'
-                : `No ${pieChartType} data available`
-            }
-            description="Add transactions or widen the date range to see categories."
-            className="min-h-[200px] sm:min-h-[260px]"
-          />
-        )}
-      </FinanceChartCard>
+          ) : (
+            <ChartEmptyState
+              icon={PieChartIcon}
+              title={
+                pieChartType === 'all'
+                  ? 'No breakdown data available'
+                  : `No ${pieChartType} data available`
+              }
+              description="Add transactions or widen the date range to see categories."
+              className="min-h-[200px] sm:min-h-[260px]"
+            />
+          )}
+        </FinanceChartCard>
+      ) : null}
     </div>
   );
 }

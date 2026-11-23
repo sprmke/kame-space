@@ -3,7 +3,7 @@ stage: in-progress
 title: 'Marketing — Multi-track video editor, media library and upload quotas'
 status: in-progress
 tags: [workflow, in-progress, marketing, video, remotion, storage, plans, quotas]
-updated: 2026-11-07
+updated: 2026-11-23
 kind: plan
 ---
 
@@ -14,6 +14,7 @@ kind: plan
 - **Done:** the track model, migration, renderer, editor UI (desktop + phone), media library (bucket, table, quota RPCs, edge functions, sweeper cron, upload pipeline, UI), plan quotas and RBAC leaves, and the automated suites (Vitest for every pure module, Deno for the edge helpers, Playwright for the editor).
 - **Wired 2026-11-04:** the multi-track editor is reachable again — `loadMarketingVideoEditor()` picks `VideoEditorV2` unless `VITE_VIDEO_EDITOR_V2=false`, and the Videos rail mounts the media library. Before this, both existed as unreachable modules.
 - **Fixed 2026-11-04:** undo/redo was swallowed while a slider had focus (`useVideoProjectHistoryShortcuts` treated every input as text entry), so Split → Undo did nothing. Non-text inputs no longer block the shortcut.
+- **T1.13 done 2026-11-22** (in the mobile-first refine plan, T5.0): `_shared/marketingVideoProject.ts` validates a saved video on create and update (size, version, counts, 60 s, caption limits, blocked URL schemes; no host allowlist yet).
 - **Still open (this is why the plan stays in progress, not for-testing):** T1.10 (`upload-marketing-asset` through the reserve RPC), T1.11 (`marketing-music` quota + library row), T1.13 (server-side v2 project validation on save), T2.7 (Polotno Upload panel through the library). Those four integrate the library into the Posts/Music paths and are not in this tree yet.
 - **Pending manual:** export matrix (Safari, Firefox), iPhone HEVC and 150 MB uploads, hosted file limit, Remotion licence, `property-dashboard-qa` pass, security review follow-ups. Deferred: delete the v1 editor, spanning-text recipes (T7.1).
 
@@ -548,9 +549,7 @@ Each phase ends shippable behind the existing editor. A feature flag `VITE_VIDEO
 
 ## 11. Later (not in this plan, small follow-ups)
 
-- Voiceover recording (MediaRecorder → audio asset; same quota).
-- Auto captions (STT, AI-credit gated) into a text track.
-- Audio ducking (music volume drops under voiceover) and a beat marker grid.
+- ~~Voiceover recording~~, ~~auto captions~~ and ~~audio ducking~~: built in [`marketing-video-editor-mobile-first-refine.md`](./marketing-video-editor-mobile-first-refine.md). Still later: a beat marker grid.
 - Retention policy for long-unused assets on Free (notify, then archive), tied to `last_used_at`.
 - Server-side render (Remotion Lambda) for long or 4K exports, if client export proves too slow.
 - Org-pooled storage (if chosen in §13).
