@@ -24,7 +24,29 @@ table, card and calendar views. It also carries **four money-trust and interacti
 host will hit on a normal working day, plus a set of polish issues in copy, density and mobile
 chrome.
 
-Do not treat the KPI numbers as statements of fact until P1-1 and P1-2 are resolved.
+**Remediation status:** the four P1s and the approved P2 groups are implemented on
+`review/finance-fixes`. See [before/after](./before-after/index.html) and the decision sheet
+[`remediation-decisions.md`](./remediation-decisions.md). The findings below describe the app at the
+time of the review.
+
+## Before and after
+
+| Surface                             | Pair                                        |
+| ----------------------------------- | ------------------------------------------- |
+| Net Profit, collected vs pipeline   | [01](./before-after/01-money-truth.jpg)     |
+| Ledger search vs summary            | [02](./before-after/02-search-scope.jpg)    |
+| Pending row tone                    | [03](./before-after/03-pending-rows.jpg)    |
+| Recurring edit scopes               | [04](./before-after/04-recurring-scope.jpg) |
+| Reminder default + Telegram warning | [05](./before-after/05-reminders.jpg)       |
+| Phone wizard fields                 | [06](./before-after/06-phone-wizard.jpg)    |
+| Phone quick-access clearance        | [07](./before-after/07-phone-fab.jpg)       |
+| 1280 card layout                    | [08](./before-after/08-1280-cards.jpg)      |
+| Delete dialog copy                  | [09](./before-after/09-delete-copy.jpg)     |
+| Dark mode                           | [10](./before-after/10-dark.jpg)            |
+| Card view                           | [11](./before-after/11-cards.jpg)           |
+
+All pairs on one page: [`before-after/index.html`](./before-after/index.html). Raw after captures:
+[`after/`](./after).
 
 ## Evidence
 

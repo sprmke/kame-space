@@ -1,6 +1,6 @@
 ---
 title: 'Finance remediation decisions'
-status: proposed
+status: implemented
 tags: [ux, ui, finance, decisions]
 updated: 2026-11-23
 ---
@@ -10,7 +10,8 @@ updated: 2026-11-23
 What to change, in what order, and what to leave alone. Source evidence is in
 [`README.md`](./README.md) and [`screenshots/`](./screenshots).
 
-**Status: proposed. Nothing here is implemented.** Tick a row and I will start there.
+**Status: implemented on `review/finance-fixes`, awaiting visual review.** Every item below is in
+the branch; the before/after captures are in [`before-after/`](./before-after).
 
 ## At a glance
 
@@ -98,18 +99,24 @@ the screen, amount field starts empty with a placeholder.
 | Sidebar promo and alert dot         | Outside finance                          |
 | Mobile category truncation          | Mostly solved by the wizard fix          |
 
-## Decisions needed
+## Decisions taken
 
-1. **Net Profit.** Cash collected only, with a separate pipeline estimate (recommended), or keep the
-   current number and rename the card "Projected net"?
-2. **Filters.** Summary stays period-only (recommended), or filters drive everything with a filtered
-   badge and a clearer search label?
+1. **Net Profit** now counts cash collected only, with a separate pipeline estimate under it.
+2. **Filters and search** scope the ledger only; the summary cards and charts stay period-wide.
 
-## Order
+## What shipped
 
-1. Batch 1: A (money truth) — needs decision 1.
-2. Batch 2: B and C (query split, recurring scope).
-3. Batch 3: D, E, F, G, H.
-4. Batch 4: copy and micro-polish, then re-run `bun run test:e2e:finance:tour:video`.
+| Item | Behaviour now                                                                                                                                                            |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A    | Income and Net Profit count collected money; the pipeline estimate sits under Net Profit; pending rows are amber; the four hints match the maths.                        |
+| B    | A separate reporting query feeds the cards and charts; search, filters, sort and view only touch the ledger.                                                             |
+| C    | The series window loads with asset scope; all three edit scopes are offered and an unknown series end no longer marks the schedule dirty.                                |
+| D    | Values fit at 1280 and all four card titles stay on one line.                                                                                                            |
+| E    | Table rows keep table semantics; `Enter` on a row action runs that action. Cards only open when the card itself has focus.                                               |
+| F    | Category and Date stack on phone, and the amount field opens empty with a placeholder.                                                                                   |
+| G    | The phone page reserves space for the quick-access button, and search has one clear control.                                                                             |
+| H    | Reminders open on "Daily at 12:00 PM" and warn when Finance Telegram is not connected.                                                                                   |
+| Copy | Sentence case for "Add transaction", ledger view label, sort labels, delete-dialog verbs, toast copy, shared empty state, round axis ticks, right-aligned amount header. |
 
-Each batch keeps the 13-test mocked suite green and adds a regression test where the defect had none.
+Tests: `financeModule.spec.ts` now has 17 cases, including regression coverage for the summary
+scope, recurring scopes, the Delete/Enter path, one clear control and the Telegram warning.

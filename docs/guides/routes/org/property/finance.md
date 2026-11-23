@@ -32,7 +32,7 @@ Single-page finance view — no tabs. A **date range** picker in the page header
 
 **Mobile (`max-lg`):** teal brand hero (tenant switcher + title); **one** hero ··· menu with **Add transaction** and PDF export options (Full report / Overview / Stays / Transactions); overlapping floating card with date range only; summary metrics, charts, and ledger toolbar stack on the soft canvas. Layout frosted header is hidden on this route. **Desktop (`lg+`)** keeps the compact header with date filter, **Export report**, and **Add Transaction**.
 
-**Summary cards:** Total Income, Total Expenses, Net Profit, Pending Payments, each with a vs-previous-period delta when a bounded date range is selected.
+**Summary cards:** Net Profit, Total Income, Total Expenses, Pending Payments, each with a vs-previous-period delta when a bounded date range is selected. Income and Net Profit count **collected** money only (operating entries plus completed stays). Unpaid bookings appear under Net Profit as a separate **pipeline (estimate)** line and are never added to income or net. Pending Payments stays separate.
 
 **Charts:** a cash-flow area chart plus an income/expense/all category-breakdown donut — the same chart components used on the property dashboard.
 
@@ -59,7 +59,9 @@ Finance gives hosts one place to see how much money is coming in and going out f
 - Q: I set up a recurring expense. Can I edit just one occurrence without changing future ones?
   A: Yes. When editing or deleting a recurring transaction you're asked whether the change applies to just that occurrence, that one and all future ones, or the whole series.
 - Q: Do the charts and totals follow the date range I pick?
-  A: Yes. The summary cards, charts, and transaction list all use the selected range. Booking income is counted for the nights that fall inside it.
+  A: Yes. The summary cards, charts, and transaction list all use the selected range. Searching or filtering the list below does not change the cards or the charts.
+- Q: Why is my Net Profit lower than my booking totals?
+  A: Net Profit counts money you have collected: completed stays plus your manual entries. Bookings that are still pending are shown separately under Net Profit as pipeline (estimate), so they are not counted as profit yet.
 - Q: My expense does not fit any category. Can I add my own?
   A: Yes. Pick **Other (type your own)**, then type the category name and press Enter (or choose **Use "…"**). Custom categories work in filters, charts, and exports like any other category.
 - Q: My rent repeats on the 31st. What happens in February?
@@ -73,12 +75,18 @@ Finance gives hosts one place to see how much money is coming in and going out f
 
 | Card             | Computation                                                                                      |
 | ---------------- | ------------------------------------------------------------------------------------------------ |
-| Total Income     | Completed stay net + in-progress stay projections + manual income items                          |
+| Net Profit       | Collected income − expenses. Never includes unpaid pipeline.                                     |
+| Total Income     | Manual income items + **completed** stay net (host net > 0)                                      |
 | Total Expenses   | Manual expense items + stay-related costs (SD expenses / completed stay losses where applicable) |
-| Net Profit       | Income − Expenses for the period (same figure the AI assistant uses for profit questions)        |
-| Pending Payments | Outstanding guest balances / unpaid manual items                                                 |
+| Pending Payments | Outstanding guest balances + ledger entries marked pending                                       |
+| Pipeline (note)  | `projectedNetPipeline` from the summary, shown under Net Profit as an estimate only              |
 
-Charts (`FinanceTransactionsChart`) plot the same underlying data as cash-flow (by day/week) and income vs. expense category breakdown, reused from the property dashboard's chart components.
+The API also returns `grandNet` for the same range (operating net plus completed stays). It matches
+Net Profit; pipeline is deliberately excluded from both.
+
+Charts (`FinanceTransactionsChart`) plot the same underlying data as cash-flow (by day/week) and income vs. expense category breakdown, reused from the property dashboard's chart components. Charts follow the date range only; ledger filters never change them.
+
+Ledger **filters, search, sort and pagination scope the ledger only**. The summary cards and both charts always reflect the selected period. This is enforced by a separate reporting query in `FinancePage`.
 
 ---
 
@@ -98,6 +106,7 @@ Charts (`FinanceTransactionsChart`) plot the same underlying data as cash-flow (
 ### Toolbar (`FinanceLedgerToolbar`)
 
 - **Mobile (`max-lg`):** search + refine icon (sheet: type / status / category / sort / per-page) + view toggle.
+- Search and filters match the ledger rows only. Clearing them never changes the KPI cards.
 - **Desktop (`lg+`):** **Status** · **Filters** (type / category; nested selects stay open inside Filters and match trigger width) · **search (flex)** · sort · per-page · **View**.
 
 ### Behavior / edge cases
@@ -105,6 +114,9 @@ Charts (`FinanceTransactionsChart`) plot the same underlying data as cash-flow (
 - Legacy URLs (`?tab=overview|stays|transactions`) still parse for backward compatibility with old links.
 - **`?tab=settings`** redirects to **Notifications → Finance** (`propertyNotificationsPath(orgSlug, propertySlug, 'finance')`) — Finance has no in-page settings tab anymore; due-date reminder configuration lives there.
 - Stay rows open the **stay finance modal** (read-only financial breakdown for that booking); transaction rows support **edit**, **delete**, and (for recurring items) **view series**.
+- Money tone follows status: completed income is green, expenses red, **pending amounts amber**, canceled muted. A pending stay never reads as collected cash.
+- Empty states share one string, "No transactions in this period", in the table and card views.
+- The table stays a real table for screen readers: the row opens on click, and keyboard users activate the row's own action buttons. `Enter` on Delete opens Delete, never Edit.
 
 ---
 
@@ -129,7 +141,7 @@ Charts (`FinanceTransactionsChart`) plot the same underlying data as cash-flow (
 
 ### Save path
 
-1. **Add Transaction** (page header) or **Edit** on a ledger row opens a stepper modal (`OperatingLineItemForm` via `FinanceTransactionModals`).
+1. **Add transaction** (page header) or **Edit** on a ledger row opens a stepper modal (`OperatingLineItemForm` via `FinanceTransactionModals`).
 2. Steps: **Details** (kind, label, amount, category, date, notes) → **Repeat** (create + recurring edit only) → **Reminders** (Telegram) → **Preview**. One-shot edits skip Repeat.
 3. Footer is **Back** (left, after step 1) · **Cancel** + **Next** (right), then **Add transaction** or **Save** on Preview. **Next / Save** stay disabled until the active step is valid; invalid fields use a red border plus the error line (blur, then re-check on change). Activity history for an existing entry appears on the Preview step.
 4. Submit → **`finance-line-items`** POST (create) or PATCH (update).
@@ -139,7 +151,7 @@ Charts (`FinanceTransactionsChart`) plot the same underlying data as cash-flow (
 ### Behavior / edge cases
 
 - **Category picker** (`CategoryCombobox`): presets are ordered by common use, typing filters them, and the pinned **Use "…"** row saves a custom category. Choosing **Other (type your own)** clears the field, focuses it, and switches the placeholder to **Type your custom category**, so the next keystrokes name a real category instead of saving `Other`. Enter picks the highlighted preset (or the typed custom value); Escape restores the value from before the dropdown opened. Matching a preset case-insensitively restores its canonical casing (`rent` → `Rent`) so filters and charts stay grouped. Presets live in `financeCategories.ts`.
-- Telegram due-date reminders are sent via the property's Finance Telegram integration, configured under **Notifications → Finance** (not on this page).
+- Telegram due-date reminders are sent via the property's Finance Telegram integration, configured under **Notifications → Finance** (not on this page). The Reminders step opens on **Daily at 12:00 PM** and warns inline when the property has no connected Finance Telegram group, so a host does not enable reminders that cannot send.
 - A recurrence day the target month does not have clamps to that month's last day (31st to the 30th, 28th, or 29th), anchored on the series day so the series returns to the 31st in a long month. This matches `_shared/financeRecurrence.ts`; the reminder preview uses the same dates. A 31st series used to skip every short month.
 - `paid_at` on a line item stops future reminders for that item across every reminder interval.
 
